@@ -2,12 +2,12 @@ import { DocsContent } from "@/app/docs/_components/docs-content";
 
 export function ProhibitedUseBody() {
   return (
-    <DocsContent title="Vellum Prohibited Use Policy" breadcrumb="Docs / Legal / Prohibited Use">
+    <DocsContent title="Cadet Prohibited Use Policy" breadcrumb="Docs / Legal / Prohibited Use">
                   <p>
                     <em>Last Updated: April 6, 2026</em>
                   </p>
                   <p>
-                    Vellum (&quot;<strong>we</strong>&quot; or &quot;<strong>us</strong>&quot;) makes
+                    Cadet (&quot;<strong>we</strong>&quot; or &quot;<strong>us</strong>&quot;) makes
                     its Services available subject to the terms of the Terms of Service (the
                     &quot;<strong>Agreement</strong>&quot;) and this Prohibited Use Policy
                     (&quot;<strong>Policy</strong>&quot;). The purpose of this Policy is to ensure

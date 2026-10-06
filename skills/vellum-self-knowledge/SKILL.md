@@ -110,7 +110,7 @@ Base URL: `https://www.vellum.ai/docs`
 
 | Topic                    | Path                                      |
 | ------------------------ | ----------------------------------------- |
-| What is Vellum           | `/getting-started/what-is-vellum`         |
+| What is Cadet           | `/getting-started/what-is-cadet`         |
 | Installation             | `/getting-started/installation`           |
 | Quick start              | `/getting-started/quick-start`            |
 | Your first skill         | `/getting-started/your-first-skill`       |

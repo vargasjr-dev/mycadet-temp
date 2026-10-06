@@ -53,7 +53,7 @@ export function HelpGettingHelpContent() {
             Share feedback
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            <strong>Share feedback</strong> sends your recent logs to the Vellum team along with a
+            <strong>Share feedback</strong> sends your recent logs to the Cadet team along with a
             short note from you. It&apos;s the single most useful thing you can do when something
             goes wrong — without logs, we&apos;re guessing.
           </p>
@@ -64,7 +64,7 @@ export function HelpGettingHelpContent() {
           <div className="mb-6 overflow-hidden rounded-xl border border-zinc-200 bg-white">
             <Image
               src="/docs/docs-share-feedback-macos.webp"
-              alt="The Vellum desktop app's Help menu opened from the macOS menu bar, showing Documentation, Discord Community, and Share Feedback items with Share Feedback highlighted."
+              alt="The Cadet desktop app's Help menu opened from the macOS menu bar, showing Documentation, Discord Community, and Share Feedback items with Share Feedback highlighted."
               width={962}
               height={360}
               unoptimized
@@ -83,7 +83,7 @@ export function HelpGettingHelpContent() {
           <div className="mb-6 overflow-hidden rounded-xl border border-zinc-200 bg-white">
             <Image
               src="/docs/docs-share-feedback-web.webp"
-              alt="The Vellum web app's user menu opened in the top-right corner, showing Theme, credits, Earn credits, Settings, Usage, Share Feedback (highlighted), Admin, and Log Out items."
+              alt="The Cadet web app's user menu opened in the top-right corner, showing Theme, credits, Earn credits, Settings, Usage, Share Feedback (highlighted), Admin, and Log Out items."
               width={622}
               height={774}
               unoptimized
@@ -103,7 +103,7 @@ export function HelpGettingHelpContent() {
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
             Check out our{" "}
-            <Link href="https://www.vellum.ai/community" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
+            <Link href="https://www.mycadet.ai/community" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
               Community page
             </Link>{" "}
             for links to Discord, forums, and other channels.
@@ -122,8 +122,8 @@ export function HelpGettingHelpContent() {
             Email support
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            <a href="mailto:support@vellum.ai" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
-              support@vellum.ai
+            <a href="mailto:support@cadet.ai" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
+              support@cadet.ai
             </a>
           </p>
           <p className="mb-0 text-zinc-600">
@@ -169,7 +169,7 @@ export function HelpGettingHelpContent() {
                   <td className="px-3 py-2">Compatibility issues are real</td>
                 </tr>
                 <tr>
-                  <td className="px-3 py-2"><strong>Vellum version</strong></td>
+                  <td className="px-3 py-2"><strong>Cadet version</strong></td>
                   <td className="px-3 py-2">Bugs get fixed in updates</td>
                 </tr>
                 <tr>
@@ -196,7 +196,7 @@ export function HelpGettingHelpContent() {
             &ldquo;Check for updates.&rdquo;
           </blockquote>
           <blockquote className="mb-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-zinc-700">
-            &ldquo;Update Vellum.&rdquo;
+            &ldquo;Update Cadet.&rdquo;
           </blockquote>
           <p className="mb-0 text-zinc-600">
             Your assistant can check for and install updates. Many issues are resolved by simply

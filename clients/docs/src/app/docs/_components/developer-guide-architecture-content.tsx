@@ -18,7 +18,7 @@ export function DeveloperGuideArchitectureContent() {
     <>
       <DocsContent title="Architecture" breadcrumb="Docs / Developer Guide / Architecture">
         <p className="mb-8 text-zinc-600">
-          The Vellum Assistant platform has three main domains that work together: a runtime that manages conversations and tools,
+          The Cadet Assistant platform has three main domains that work together: a runtime that manages conversations and tools,
           a native client for macOS, and a gateway that handles all external communication.
         </p>
 
@@ -49,7 +49,7 @@ export function DeveloperGuideArchitectureContent() {
               <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">clients/</code>
             </p>
             <p className="mb-4 text-zinc-600">
-              Native macOS app built with Swift via <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">VellumAssistantShared</code>.
+              Native macOS app built with Swift via <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">CadetAssistantShared</code>.
               A menu bar assistant with computer-use (accessibility + CGEvent), chat, and full tool access.
             </p>
           </section>
@@ -80,7 +80,7 @@ export function DeveloperGuideArchitectureContent() {
 ├── gateway/              # Gateway service (Telegram, Twilio, OAuth, reverse proxy)
 ├── credential-executor/  # Credential Execution Service (isolated RPC boundary)
 ├── packages/             # Shared private packages (CES contracts, credential storage, egress proxy)
-├── cli/                  # Vellum CLI
+├── cli/                  # Cadet CLI
 ├── skills/               # Bundled skill definitions
 ├── benchmarking/         # Load testing scripts
 ├── scripts/              # Utility scripts (publishing, tunneling, releases)
@@ -107,20 +107,8 @@ export function DeveloperGuideArchitectureContent() {
               </thead>
               <tbody className="text-zinc-600 dark:text-zinc-400">
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-4"><code className="text-xs">ARCHITECTURE.md</code></td>
-                  <td className="py-2">Cross-system index — invariants, domain boundaries, data flow</td>
-                </tr>
-                <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-4"><code className="text-xs">assistant/ARCHITECTURE.md</code></td>
-                  <td className="py-2">Runtime internals — conversation loop, tool dispatch, memory, scheduling</td>
-                </tr>
-                <tr className="border-b border-zinc-100 dark:border-zinc-800">
                   <td className="py-2 pr-4"><code className="text-xs">gateway/ARCHITECTURE.md</code></td>
                   <td className="py-2">Ingress boundary — webhooks, Telegram, Twilio, reverse proxy</td>
-                </tr>
-                <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-4"><code className="text-xs">clients/ARCHITECTURE.md</code></td>
-                  <td className="py-2">Native macOS client — menu bar app</td>
                 </tr>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
                   <td className="py-2 pr-4"><code className="text-xs">assistant/docs/architecture/security.md</code></td>

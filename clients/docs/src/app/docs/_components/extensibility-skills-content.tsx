@@ -50,25 +50,25 @@ const FRONTMATTER_FIELDS: SkillField[] = [
     desc: "Glyph shown next to the skill in clients that render a skill list.",
   },
   {
-    name: "metadata.vellum.display-name",
+    name: "metadata.cadet.display-name",
     type: "string",
     required: "No",
     desc: "Human-friendly label for the skill. Falls back to name when omitted.",
   },
   {
-    name: "metadata.vellum.activation-hints",
+    name: "metadata.cadet.activation-hints",
     type: "string[]",
     required: "No",
     desc: "Plain-language situations where the skill should activate. These sharpen the match beyond the description.",
   },
   {
-    name: "metadata.vellum.avoid-when",
+    name: "metadata.cadet.avoid-when",
     type: "string[]",
     required: "No",
     desc: "Situations where the skill should not activate, used to keep it from firing on adjacent-but-wrong requests.",
   },
   {
-    name: "metadata.vellum.category",
+    name: "metadata.cadet.category",
     type: "string",
     required: "No",
     desc: 'Grouping used when the skill is listed in a client. Defaults to "system".',
@@ -243,7 +243,7 @@ description: >-
   Draft a daily standup update from recent activity. Use when the user
   asks for their standup, daily update, or what they did yesterday.
 metadata:
-  vellum:
+  cadet:
     display-name: "Standup Notes"
     activation-hints:
       - "User asks for their standup or daily update"

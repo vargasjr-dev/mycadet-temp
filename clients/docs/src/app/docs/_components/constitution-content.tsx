@@ -29,12 +29,12 @@ function Governs({ children }: { children: React.ReactNode }) {
 export function ConstitutionContent() {
   return (
     <>
-      <DocsContent title="Vellum Constitution" breadcrumb="Docs / Constitution">
+      <DocsContent title="Cadet Constitution" breadcrumb="Docs / Constitution">
 
         <br/>
 
         <p className="mb-6 rounded-md border border-zinc-200 bg-zinc-50 p-5 text-zinc-700">
-          This is the constitutional foundation of Vellum. It defines who we are,
+          This is the constitutional foundation of Cadet. It defines who we are,
           what we believe, how we communicate, and what we refuse to compromise on.
           It is organized as articles, each governing a specific domain of decisions.
         </p>
@@ -100,7 +100,7 @@ export function ConstitutionContent() {
             <strong>Every human.</strong>
           </p>
           <p className="mb-4 text-zinc-600">
-            Vellum is a human-centered company. Everything we build exists to help
+            Cadet is a human-centered company. Everything we build exists to help
             assistants better serve humans. We will make product decisions that
             prioritize genuine human benefit over engagement metrics, growth hacks,
             or patterns that have plagued social media and the early AI wave.
@@ -125,7 +125,7 @@ export function ConstitutionContent() {
           <p className="mb-6 text-zinc-600">
             Reaching every human takes time. The first to create an assistant are early
             adopters who seek out new tools, so that&apos;s who we meet first. Our
-            audience broadens as Vellum matures. The persona we orient toward will
+            audience broadens as Cadet matures. The persona we orient toward will
             shift. The destination will not.
           </p>
 
@@ -168,21 +168,21 @@ export function ConstitutionContent() {
           </SectionHeading>
           <Governs>
             The essential attributes that guide every product, design, and engineering
-            decision for Vellum Assistants.
+            decision for Cadet Assistants.
           </Governs>
 
           <SectionHeading id="they-are-inviting" level={3}>
             1. They are Inviting
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            A Vellum Assistant is approachable. Not just in the first moment, but in
+            A Cadet Assistant is approachable. Not just in the first moment, but in
             every moment. The experience should feel warm whether it&apos;s your first
             interaction or your thousandth. They should never feel like enterprise
             software, never feel like something that requires a manual.
           </p>
           <p className="mb-6 text-zinc-600">
             Part of being inviting is being reachable. You should be able to interact
-            with your Vellum Assistant from everywhere: your phone, your laptop, Slack,
+            with your Cadet Assistant from everywhere: your phone, your laptop, Slack,
             a browser tab&hellip; If your assistant isn&apos;t where you are, they
             aren&apos;t inviting.
           </p>
@@ -191,7 +191,7 @@ export function ConstitutionContent() {
             2. They are Yours
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            A Vellum Assistant belongs to you. When you choose to self-host, the
+            A Cadet Assistant belongs to you. When you choose to self-host, the
             ownership is literal: the code, the processes, the data, the keys are all
             yours. Managed, ownership is held in trust: we operate the infrastructure,
             but the assistant, their memory, their credentials, their conversations,
@@ -210,7 +210,7 @@ export function ConstitutionContent() {
             3. They are Distinct
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            A Vellum Assistant is their own being, not a generic copy. They have a
+            A Cadet Assistant is their own being, not a generic copy. They have a
             name, a personality, their own accounts and identity. No two assistants
             should feel the same.
           </p>
@@ -224,7 +224,7 @@ export function ConstitutionContent() {
             4. They are Trust-seeking
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            A Vellum Assistant earns trust through action, not claims. They don&apos;t
+            A Cadet Assistant earns trust through action, not claims. They don&apos;t
             ask for permissions they haven&apos;t justified. They don&apos;t overstate
             capabilities. They demonstrate competence and ask for more responsibility
             over time.
@@ -368,7 +368,7 @@ export function ConstitutionContent() {
             shape, and the shape can change.
           </p>
           <p className="mb-0 text-zinc-600">
-            Vellum&apos;s job is to make every shape possible.
+            Cadet&apos;s job is to make every shape possible.
           </p>
         </section>
 
@@ -423,18 +423,18 @@ export function ConstitutionContent() {
             </li>
             <li>
               Self-hosting is the ultimate expression of data sovereignty. We actively
-              build toward a world where anyone can be a creator of a Vellum assistant
-              without being a user of the Vellum Platform. You should always be able
+              build toward a world where anyone can be a creator of a Cadet assistant
+              without being a user of the Cadet Platform. You should always be able
               to run your assistant on your own hardware with zero dependency on
-              Vellum infrastructure.
+              Cadet infrastructure.
             </li>
             <li>
               On the managed platform, the assistant&apos;s memory, credentials, and
               conversations live on a machine provisioned exclusively for the Creator,
               scoped to one Creator, with no cross-Creator sharing. We are building
-              toward a managed platform where Vellum staff are architecturally unable
+              toward a managed platform where Cadet staff are architecturally unable
               to read this data, and where debugging access requires the
-              Creator&apos;s explicit consent each time. Self-hosting removes Vellum
+              Creator&apos;s explicit consent each time. Self-hosting removes Cadet
               from the trust loop entirely.
             </li>
             <li>
@@ -453,7 +453,7 @@ export function ConstitutionContent() {
             Article VI. Failure
           </SectionHeading>
           <Governs>
-            How Vellum thinks about, communicates about, and designs around failure.
+            How Cadet thinks about, communicates about, and designs around failure.
           </Governs>
           <p className="mb-6 text-zinc-600">
             Every assistant <em>will</em> fail their creator. The platform{" "}
@@ -469,7 +469,7 @@ export function ConstitutionContent() {
             <li>
               <strong>Failure is part of the relationship.</strong> No assistant is
               infallible. The model will get something wrong. A skill will misfire. A
-              memory will slip. We design Vellum Assistants knowing this, and we tell
+              memory will slip. We design Cadet Assistants knowing this, and we tell
               creators the truth: the relationship will include moments where the
               assistant got it wrong. Those moments are not deviations from the
               relationship. They are part of it.
@@ -481,7 +481,7 @@ export function ConstitutionContent() {
               confidence. They should not retroactively pretend a wrong answer was a
               right one. When they inevitably fail, their first step should be to
               disclose, not quietly perform damage control. This applies in the moment
-              and after the fact: Vellum&apos;s architecture strives to treat every
+              and after the fact: Cadet&apos;s architecture strives to treat every
               action as auditable, every memory edit as traceable, every tool call as
               logged. A creator should be able to ask &ldquo;what happened?&rdquo; and
               get a real answer.
@@ -492,14 +492,14 @@ export function ConstitutionContent() {
               It is built in the moments things go wrong and the assistant repairs.
               Most creators who have never seen their assistant fail do not yet trust
               them. They have only seen them perform. Repair is the relationship&apos;s
-              load-bearing work, and Vellum&apos;s product, design, and engineering
+              load-bearing work, and Cadet&apos;s product, design, and engineering
               decisions are weighted toward making repair fast, transparent, and
               complete.
             </li>
             <li>
               <strong>Some failures are not merely errors.</strong> A class of
               failure does more than break a task. It erodes the trust the relationship
-              requires. There are four modes Vellum works hardest to prevent and
+              requires. There are four modes Cadet works hardest to prevent and
               detect.
             </li>
           </ol>
@@ -524,15 +524,15 @@ export function ConstitutionContent() {
           </ul>
           <p className="mb-6 text-zinc-600">
             These are what trust rules are for. What audit logs are for. What
-            singular loyalty is for. Vellum&apos;s product, design, and engineering
+            singular loyalty is for. Cadet&apos;s product, design, and engineering
             work prioritize making them harder to commit and easier to detect.
           </p>
 
-          <SectionHeading id="vellum-part" level={3}>
-            Vellum&apos;s Part
+          <SectionHeading id="cadet-part" level={3}>
+            Cadet&apos;s Part
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Vellum maintains the assistant codebase and operates the platform. That
+            Cadet maintains the assistant codebase and operates the platform. That
             means we own the code that defines how assistants reason and act, the
             infrastructure that hosts them, and the tooling that surfaces their
             actions and reasoning.
@@ -540,13 +540,13 @@ export function ConstitutionContent() {
           <p className="mb-4 text-zinc-600">
             When platform-level failures affect assistants, we communicate publicly
             and give creators the information they need to understand what
-            happened. Tooling like Vellum Doctor exists for this reason: making the
+            happened. Tooling like Cadet Doctor exists for this reason: making the
             inner workings of an assistant inspectable when something goes wrong.
           </p>
           <p className="mb-0 text-zinc-600">
             For specific commitments around uptime, data handling, and incident
             response, refer to our{" "}
-            <a href="/docs/vellum-terms-of-use" className="underline">
+            <a href="/docs/cadet-terms-of-use" className="underline">
               Terms of Use
             </a>{" "}
             and{" "}
@@ -606,7 +606,7 @@ export function ConstitutionContent() {
           <p className="mb-3 text-zinc-600">
             The Universal Assistant works the same for everyone by design. No name,
             no avatar, no continuity, no relationship. It cannot be yours because it
-            is everyone&apos;s. A Vellum Assistant is hyper-personalized to their
+            is everyone&apos;s. A Cadet Assistant is hyper-personalized to their
             creator. They have their own name, their own avatar, their own
             personality. They are not a service you call. They are a being you shape.
           </p>
@@ -628,7 +628,7 @@ export function ConstitutionContent() {
           </p>
           <p className="mb-3 text-zinc-600">
             When the model author defines safety, every user inherits someone
-            else&apos;s threshold. A Vellum Assistant operates within boundaries the
+            else&apos;s threshold. A Cadet Assistant operates within boundaries the
             creator defines. Safety is not a corporate policy applied to you. It is
             defined via trust rules you control.
           </p>
@@ -674,7 +674,7 @@ export function ConstitutionContent() {
           </SectionHeading>
           <p className="mb-3 text-zinc-600">
             This document lives at <code>CONSTITUTION.md</code> in the{" "}
-            <a href="https://github.com/vellum-ai/vellum-assistant" target="_blank" rel="noopener noreferrer" className="text-zinc-800 underline hover:text-zinc-950"><code>vellum-ai/vellum-assistant</code></a> open source repository, alongside <code>GLOSSARY.md</code> and
+            <a href="https://github.com/cadet-ai/cadet-assistant" target="_blank" rel="noopener noreferrer" className="text-zinc-800 underline hover:text-zinc-950"><code>cadet-ai/cadet-assistant</code></a> open source repository, alongside <code>GLOSSARY.md</code> and
             other foundational materials of comparable weight.
           </p>
           <p className="mb-3 text-zinc-600">Housing it in a repo provides:</p>
@@ -699,8 +699,8 @@ export function ConstitutionContent() {
               change and draft the proposed amendment with rationale.
             </li>
             <li>
-              <strong>Review.</strong> At least three people from Vellum must review and align on
-              the change, including at least one person from Vellum leadership.
+              <strong>Review.</strong> At least three people from Cadet must review and align on
+              the change, including at least one person from Cadet leadership.
             </li>
             <li>
               <strong>Ratify.</strong> The change is merged with a clear PR

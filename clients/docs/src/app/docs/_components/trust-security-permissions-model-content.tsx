@@ -226,7 +226,7 @@ export function TrustSecurityPermissionsModelContent() {
             your approval. Anything that happens inside this inner computer stays contained.
           </p>
           <p className="mb-2 text-zinc-600">
-            <strong>Inside the workspace</strong> (<code>~/.vellum/workspace/</code>):
+            <strong>Inside the workspace</strong> (<code>~/.cadet/workspace/</code>):
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>Reading, writing, and editing files — no approval needed</li>
@@ -401,7 +401,7 @@ export function TrustSecurityPermissionsModelContent() {
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
             Tools provided by third-party skills (ones you&apos;ve installed, not the ones
-            bundled with Vellum) are always prompted by default, regardless of risk level.
+            bundled with Cadet) are always prompted by default, regardless of risk level.
             This prevents a malicious or buggy skill from executing actions without your
             knowledge.
           </p>
@@ -489,8 +489,8 @@ export function TrustSecurityPermissionsModelContent() {
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
             Windows does not have macOS Accessibility, Input Monitoring, or Automation
-            permission prompts. Those rows are hidden in Vellum on Windows. Open
-            Settings &gt; Permissions &amp; Privacy in Vellum to check microphone, screen
+            permission prompts. Those rows are hidden in Cadet on Windows. Open
+            Settings &gt; Permissions &amp; Privacy in Cadet to check microphone, screen
             capture, speech, and notification access; the settings links open the
             corresponding Windows settings pages.
           </p>

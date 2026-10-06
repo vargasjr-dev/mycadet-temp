@@ -2,7 +2,7 @@ import { ExtensibilityToolsContent } from "@/app/docs/_components/extensibility-
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Tools - Vellum Docs",
+  title: "Tools - Cadet Docs",
   description:
     "Tools let a plugin add new actions the model can call, landing in the same catalog as the Assistant's built-in tools.",
   path: "/docs/extensibility/tools",

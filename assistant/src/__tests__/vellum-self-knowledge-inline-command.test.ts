@@ -117,7 +117,7 @@ describe("vellum-self-knowledge skill", () => {
   test("references the docs site for conceptual questions", async () => {
     const result = await executeSkillLoad({ skill: "vellum-self-knowledge" });
     expect(result.content).toContain("https://www.vellum.ai/docs");
-    expect(result.content).toContain("/getting-started/what-is-vellum");
+    expect(result.content).toContain("/getting-started/what-is-cadet");
     expect(result.content).toContain("/developer-guide/architecture");
     expect(result.content).toContain("/trust-security/the-permissions-model");
   });

@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Attribution-only port of the platform marketing proxy
- * (vellum-assistant-platform `web/src/proxy.ts`): page_view logging, the
- * `vellum_vid` visitor cookie, and UTM/click-ID capture. The page_view JSON
+ * (the platform repo `web/src/proxy.ts`): page_view logging, the
+ * `cadet_vid` visitor cookie, and UTM/click-ID capture. The page_view JSON
  * contract is parsed downstream (BigQuery log sink + dbt
  * `stg_marketing_events__page_views`); field names must not change.
  *
@@ -14,14 +14,14 @@ import { NextRequest, NextResponse } from "next/server";
  * directly. See https://github.com/vercel/next.js/issues/37536.
  */
 
-const APEX_DOMAIN = "vellum.ai";
-const VELLUM_COOKIE_DOMAIN = ".vellum.ai";
+const APEX_DOMAIN = "mycadet.ai";
+const CADET_COOKIE_DOMAIN = ".mycadet.ai";
 
-function isVellumDomain(host: string): boolean {
+function isCadetDomain(host: string): boolean {
   return host === APEX_DOMAIN || host.endsWith(`.${APEX_DOMAIN}`);
 }
 
-const VID_COOKIE_NAME = "vellum_vid";
+const VID_COOKIE_NAME = "cadet_vid";
 const VID_MAX_AGE = 90 * 24 * 60 * 60; // 90 days, same as the platform proxy
 
 const UTM_PARAMS = [
@@ -385,7 +385,7 @@ function setVisitorIdCookie(
   }
 
   const secure = request.nextUrl.protocol === "https:";
-  const domain = isVellumDomain(host) ? `; Domain=${VELLUM_COOKIE_DOMAIN}` : "";
+  const domain = isCadetDomain(host) ? `; Domain=${CADET_COOKIE_DOMAIN}` : "";
   response.headers.append(
     "Set-Cookie",
     `${VID_COOKIE_NAME}=${vid}; Path=/; Max-Age=${VID_MAX_AGE}; SameSite=Lax; HttpOnly${secure ? "; Secure" : ""}${domain}`,

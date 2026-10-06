@@ -22,7 +22,7 @@ export function SkillsReferenceChatGPTImportContent() {
             What it does
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            Imports your conversation history from ChatGPT into Vellum so your assistant can learn
+            Imports your conversation history from ChatGPT into Cadet so your assistant can learn
             from your past interactions.
           </p>
         </section>

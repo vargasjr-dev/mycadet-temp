@@ -48,14 +48,14 @@ const TOC_ITEMS = [
 export function HomepageContent() {
   return (
     <>
-      <DocsContent title="Meet Vellum" breadcrumb="Docs / Homepage">
-        <section id="meet-vellum">
+      <DocsContent title="Meet Cadet" breadcrumb="Docs / Homepage">
+        <section id="meet-cadet">
           <p className="mb-4 text-zinc-600">
             <strong>Your personal AI assistant. For real this time.</strong>
           </p>
           <p className="mb-4 text-zinc-600">
-            Not another chatbot in a browser tab. Vellum is a personal AI assistant that lives
-            in the secure Vellum Cloud, has its own identity, and actually does things in the
+            Not another chatbot in a browser tab. Cadet is a personal AI assistant that lives
+            in the secure Cadet Cloud, has its own identity, and actually does things in the
             world. It can have its own email, its own accounts, its own presence, set up in
             minutes, not hours. It works for you, but it isn&apos;t you.
           </p>
@@ -66,7 +66,7 @@ export function HomepageContent() {
             Curious what we believe, who we&apos;re building for, and what we refuse to
             compromise on?{" "}
             <Link href="/docs/constitution" className="underline">
-              Read the Vellum Constitution
+              Read the Cadet Constitution
             </Link>
             .
           </p>
@@ -88,7 +88,7 @@ export function HomepageContent() {
             </p>
             <p className="mb-3 text-zinc-600">
               <strong>Simple by design.</strong> We don&apos;t dump every feature on you at once.
-              Vellum reveals capabilities as they become relevant. You won&apos;t see a permissions
+              Cadet reveals capabilities as they become relevant. You won&apos;t see a permissions
               screen before you&apos;ve even said hello. You won&apos;t configure OAuth scopes
               before you&apos;ve sent your first email. Things show up when they matter, not before.
             </p>
@@ -112,10 +112,10 @@ export function HomepageContent() {
               is opt-in.
             </p>
             <p className="mb-3 text-zinc-600">
-              <strong>It runs in the secure cloud.</strong> Vellum Cloud hosts your assistant
+              <strong>It runs in the secure cloud.</strong> Cadet Cloud hosts your assistant
               so it&apos;s always on and reachable from any browser, ready when you are. Your
               workspace, memories, and config are encrypted, exportable, and yours to delete.
-              Want to keep everything on your own machine instead? You can self-host Vellum on
+              Want to keep everything on your own machine instead? You can self-host Cadet on
               macOS, Windows, or your own infrastructure.
             </p>
             <p className="mb-3 text-zinc-600">
@@ -125,9 +125,9 @@ export function HomepageContent() {
               fit you.
             </p>
             <p className="mb-3 text-zinc-600">
-              <strong>Open by default.</strong> Vellum is open source. The assistant runtime, the
+              <strong>Open by default.</strong> Cadet is open source. The assistant runtime, the
               skills, the channels, the docs themselves. All of it lives on{" "}
-              <a href="https://github.com/vellum-ai/vellum-assistant" target="_blank" rel="noopener noreferrer">
+              <a href="https://github.com/cadet-ai/cadet-assistant" target="_blank" rel="noopener noreferrer">
                 GitHub
               </a>
               . Read the code, file an issue, or send a PR. We&apos;re building this in public.
@@ -152,7 +152,7 @@ export function HomepageContent() {
             </p>
             <p className="mb-3 text-zinc-600">
               <strong>Its own infrastructure.</strong> By default your assistant lives in
-              Vellum Cloud, always on, accessible from web, desktop, mobile, voice, and your
+              Cadet Cloud, always on, accessible from web, desktop, mobile, voice, and your
               chat channels. If you&apos;d rather run it on your own Mac or your own server,
               you can. Either way, it operates as its own entity, separate from your daily
               workflow.
@@ -317,7 +317,7 @@ export function HomepageContent() {
           </p>
           <ol className="mb-6 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>
-              <strong>Sign up</strong> at <a href={routes.signup}>vellum.ai</a>. Free, no credit
+              <strong>Sign up</strong> at <a href={routes.signup}>cadet.ai</a>. Free, no credit
               card.
             </li>
             <li>
@@ -349,7 +349,7 @@ export function HomepageContent() {
             A note about trust. (Because we promised transparency.)
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Whether you use Vellum Cloud or run it on your own machine, your assistant{" "}
+            Whether you use Cadet Cloud or run it on your own machine, your assistant{" "}
             <em>can</em> access your files, your tools, your services. That&apos;s what makes
             it powerful. It&apos;s also what makes it worth understanding.
           </p>
@@ -362,7 +362,7 @@ export function HomepageContent() {
             </li>
             <li>
               <strong>Your data is yours.</strong> Your workspace, memories, and config live in
-              your private Vellum Cloud account, encrypted and isolated, or on your own machine
+              your private Cadet Cloud account, encrypted and isolated, or on your own machine
               if you self-host. Either way, you can export them, back them up, or delete them
               at any time.
             </li>
@@ -397,7 +397,7 @@ export function HomepageContent() {
               : a curated index of every docs page with short descriptions and Markdown mirrors.
             </li>
             <li>
-              <a href="https://www.vellum.ai/llms.txt">
+              <a href="https://www.mycadet.ai/llms.txt">
                 <code className="text-sm">/llms.txt</code>
               </a>
               : a site-wide index for agents, covering the product identity plus
@@ -446,11 +446,11 @@ export function HomepageContent() {
             <a href="/docs/developer-guide" className="docs-nav-card">
               <div className="docs-nav-card-content">
                 <span className="docs-nav-card-title">Developer Guide</span>
-                <span className="docs-nav-card-desc">Architecture, security model, and how to build on top of Vellum.</span>
+                <span className="docs-nav-card-desc">Architecture, security model, and how to build on top of Cadet.</span>
               </div>
               <span className="docs-nav-card-arrow" aria-hidden="true">→</span>
             </a>
-            <Link href="https://www.vellum.ai/roadmap" className="docs-nav-card">
+            <Link href="https://www.mycadet.ai/roadmap" className="docs-nav-card">
               <div className="docs-nav-card-content">
                 <span className="docs-nav-card-title">Roadmap</span>
                 <span className="docs-nav-card-desc">What&apos;s shipping soon, what&apos;s next, and what we&apos;re exploring in the open.</span>

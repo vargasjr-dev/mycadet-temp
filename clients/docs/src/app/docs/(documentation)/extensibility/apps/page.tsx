@@ -2,7 +2,7 @@ import { ExtensibilityAppsContent } from "@/app/docs/_components/extensibility-a
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Apps - Vellum Docs",
+  title: "Apps - Cadet Docs",
   description:
     "Apps let a plugin ship persistent, interactive UI (dashboards, tools, games) served in the workspace panel, built as compiled React.",
   path: "/docs/extensibility/apps",

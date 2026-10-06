@@ -72,7 +72,7 @@ export function DocsVideo({ video: slug, id }: DocsVideoProps) {
     duration: isoDuration(video.durationSeconds),
     embedUrl: structuredDataEmbedUrl(video),
     contentUrl: href,
-    publisher: { "@type": "Organization", name: "Vellum" },
+    publisher: { "@type": "Organization", name: "Cadet" },
   };
 
   return (

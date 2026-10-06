@@ -18,7 +18,7 @@ export function WebSearchExaContent() {
       <DocsContent
         title="Exa"
         breadcrumb="Docs / Key Concepts / Web Search / Exa"
-        subtitle="Neural web search built for AI agents. Use Exa in your Vellum assistant for meaning-based retrieval that returns the most relevant passages from each page alongside the link."
+        subtitle="Neural web search built for AI agents. Use Exa in your Cadet assistant for meaning-based retrieval that returns the most relevant passages from each page alongside the link."
       >
         <section id="what-it-does">
           <SectionHeading id="what-it-does" level={2}>
@@ -33,7 +33,7 @@ export function WebSearchExaContent() {
             that best answer the query.
           </p>
           <p className="mb-0 text-zinc-600 dark:text-zinc-400">
-            When configured, Vellum sends web search calls to Exa, asks for
+            When configured, Cadet sends web search calls to Exa, asks for
             highlights on every result, and feeds them back to your assistant in
             context. The model can cite the passages directly, open a source
             with web fetch, or synthesize an answer across several results.
@@ -46,7 +46,7 @@ export function WebSearchExaContent() {
           </SectionHeading>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600 dark:text-zinc-400">
             <li>
-              A running Vellum assistant. Cloud, self-hosted, or the desktop
+              A running Cadet assistant. Cloud, self-hosted, or the desktop
               apps all work.
             </li>
             <li>
@@ -74,7 +74,7 @@ export function WebSearchExaContent() {
           </p>
           <ol className="mb-6 list-decimal space-y-3 pl-6 text-zinc-600 dark:text-zinc-400">
             <li>
-              <strong>Open assistant settings.</strong> In Vellum, head to{" "}
+              <strong>Open assistant settings.</strong> In Cadet, head to{" "}
               <span className="font-medium text-zinc-900 dark:text-zinc-100">
                 Settings &rarr; Models &amp; Services
               </span>
@@ -89,12 +89,12 @@ export function WebSearchExaContent() {
               <span className="font-medium text-zinc-900 dark:text-zinc-100">
                 Exa
               </span>{" "}
-              as the provider and paste your API key. Vellum stores the key in
+              as the provider and paste your API key. Cadet stores the key in
               your local secure store and never writes it to disk in plaintext.
             </li>
             <li>
               <strong>Try it.</strong> Start a new conversation and ask a
-              question that needs fresh or hard-to-find information. Vellum
+              question that needs fresh or hard-to-find information. Cadet
               calls Exa under the hood and feeds the highlighted passages back
               to the model in context.
             </li>
@@ -133,7 +133,7 @@ assistant config set services.web-search.provider exa`}
             <li>
               <strong>Recency filters are hard cutoffs.</strong> When the
               assistant asks for results from the past day, week, month, or
-              year, Vellum passes that window to Exa as a publish-date filter.
+              year, Cadet passes that window to Exa as a publish-date filter.
               Pages without a detectable publish date are dropped from filtered
               searches, so leave the filter off for evergreen topics.
             </li>
@@ -152,7 +152,7 @@ assistant config set services.web-search.provider exa`}
             </li>
             <li>
               <strong>Billing.</strong> Exa usage is billed per request directly
-              by Exa under the account that owns the key, separately from Vellum
+              by Exa under the account that owns the key, separately from Cadet
               credits.
             </li>
             <li>
@@ -201,7 +201,7 @@ assistant config set services.web-search.provider exa`}
                 href="/docs/key-concepts/web-search"
                 className="text-emerald-700 underline hover:text-emerald-800"
               >
-                Vellum Web Search reference
+                Cadet Web Search reference
               </Link>
             </li>
           </ul>

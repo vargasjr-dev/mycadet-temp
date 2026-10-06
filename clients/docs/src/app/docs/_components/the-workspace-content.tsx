@@ -37,14 +37,14 @@ export function TheWorkspaceContent() {
           and edit.
         </p>
         <p className="mb-4 text-zinc-600">
-          On <strong>Vellum Cloud</strong>, your workspace is encrypted and
+          On <strong>Cadet Cloud</strong>, your workspace is encrypted and
           isolated to your account. You browse and edit it through the web
           app. There&apos;s no folder on your computer to worry about.
         </p>
         <p className="mb-8 text-zinc-600">
           On the <strong>desktop app with local hosting</strong>, the same
           workspace lives in a folder on your machine at{" "}
-          <code>~/.vellum/workspace/</code>, where you can also open it in any
+          <code>~/.cadet/workspace/</code>, where you can also open it in any
           text editor. The structure and the files are the same in both
           places.
         </p>
@@ -65,7 +65,7 @@ export function TheWorkspaceContent() {
             What&apos;s in there
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Whether your workspace lives in Vellum Cloud or on your local
+            Whether your workspace lives in Cadet Cloud or on your local
             machine, the structure is the same. The tree below shows the
             local layout; on Cloud, you see the same files in the web app.
           </p>
@@ -91,7 +91,7 @@ export function TheWorkspaceContent() {
           </div>
           <p className="mb-0 text-zinc-600">
             Credentials and secrets are kept in a separate, isolated store
-            (the credential vault on Cloud, or <code>~/.vellum/protected/</code>{" "}
+            (the credential vault on Cloud, or <code>~/.cadet/protected/</code>{" "}
             on local). They&apos;re never included in workspace exports or
             diagnostic logs.
           </p>
@@ -463,7 +463,7 @@ export function TheWorkspaceContent() {
             stored in a protected vault that lives outside the workspace.
             On Cloud, this is the managed credential vault tied to your
             account. On local, it&apos;s a separate directory at{" "}
-            <code>~/.vellum/protected/</code>.
+            <code>~/.cadet/protected/</code>.
           </p>
           <p className="mb-0 text-zinc-600">
             Either way, secrets are never included in diagnostic exports or
@@ -478,7 +478,7 @@ export function TheWorkspaceContent() {
             The sandbox
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            On <strong>Vellum Cloud</strong>, your assistant runs in an
+            On <strong>Cadet Cloud</strong>, your assistant runs in an
             isolated cloud sandbox. It can read and write files inside its
             own workspace, but has no access to a host machine, so the host
             tools and shell commands described below don&apos;t apply.
@@ -510,7 +510,7 @@ export function TheWorkspaceContent() {
                   </td>
                   <td className="px-4 py-3 text-zinc-600">
                     file_read, file_write, file_edit &mdash; restricted
-                    to <code>~/.vellum/workspace/</code>
+                    to <code>~/.cadet/workspace/</code>
                   </td>
                   <td className="px-4 py-3 text-zinc-600">
                     No approval needed
@@ -577,7 +577,7 @@ export function TheWorkspaceContent() {
             </li>
             <li>
               <strong>It&apos;s yours.</strong> Your workspace lives in your
-              private Vellum Cloud account, or on your own machine if you
+              private Cadet Cloud account, or on your own machine if you
               self-host. Credentials are stored separately and excluded from
               any exports. We don&apos;t share your workspace with other
               users, and we don&apos;t read it.

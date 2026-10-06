@@ -17,16 +17,16 @@ const TOC_ITEMS = [
   { id: "is-it-safe", label: "Is it safe?", level: 2 },
 ];
 
-export function WhatIsVellumContent() {
+export function WhatIsCadetContent() {
   return (
     <>
-      <DocsContent title="What is Vellum?" breadcrumb="Docs / Getting Started / What is Vellum?">
+      <DocsContent title="What is Cadet?" breadcrumb="Docs / Getting Started / What is Cadet?">
         <section id="short-version">
           <SectionHeading id="short-version" level={2}>
             The short version
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Vellum is a personal AI assistant that lives in the secure Vellum
+            Cadet is a personal AI assistant that lives in the secure Cadet
             Cloud, available wherever you are. It can have its own identity,
             its own email, its own accounts, its own logins. It can read your
             files, manage your calendar, order you food, build you an app,
@@ -49,7 +49,7 @@ export function WhatIsVellumContent() {
             answer somewhere useful. The conversation ends and everything resets.
           </p>
           <p className="mb-6 text-zinc-600">
-            Vellum is different in a few important ways:
+            Cadet is different in a few important ways:
           </p>
           <p className="mb-3 text-zinc-600">
             <strong>It has tools, not just words.</strong> Your assistant can browse
@@ -75,7 +75,7 @@ export function WhatIsVellumContent() {
           </p>
           <p className="mb-3 text-zinc-600">
             <strong>Your data stays yours.</strong> Your workspace, your memories,
-            your configuration... all live in your private Vellum Cloud account,
+            your configuration... all live in your private Cadet Cloud account,
             encrypted and isolated, or on your own machine if you self-host. No
             shared database, no opaque storage, no data you can&apos;t access.
             Plain-text, exportable, deletable, yours.
@@ -111,14 +111,14 @@ export function WhatIsVellumContent() {
             <strong>It&apos;s built for security and reliability.</strong>{" "}
             Credentials are encrypted at rest. Sensitive actions require explicit
             approval. Your workspace is isolated to your account with no shared
-            state. Vellum Cloud runs on managed infrastructure with monitoring and
+            state. Cadet Cloud runs on managed infrastructure with monitoring and
             uptime you don&apos;t have to maintain. Self-hosting is there if you want
             full control, but you don&apos;t have to trade reliability for
             ownership.
           </p>
           <p className="mb-0 text-zinc-600">
             OpenClaw and Hermes are powerful if you&apos;re technical and want to
-            build everything yourself. Vellum is for people who want the power
+            build everything yourself. Cadet is for people who want the power
             without the setup tax.
           </p>
         </section>
@@ -212,20 +212,20 @@ export function WhatIsVellumContent() {
             Where does it run?
           </SectionHeading>
           <p className="mb-6 text-zinc-600">
-            Your assistant lives in Vellum Cloud by default and is reachable from
+            Your assistant lives in Cadet Cloud by default and is reachable from
             anywhere. You can also self-host it on your own Mac if you want full
             control of the runtime.
           </p>
           <div className="mb-6">
-            <h3 className="mb-2 text-base font-semibold text-zinc-800">☁️ Vellum Cloud (default)</h3>
+            <h3 className="mb-2 text-base font-semibold text-zinc-800">☁️ Cadet Cloud (default)</h3>
             <p className="mb-2 text-zinc-600">
               Sign up and your assistant is provisioned in seconds, hosted in
-              Vellum&apos;s secure cloud, always on, always reachable. No install,
+              Cadet&apos;s secure cloud, always on, always reachable. No install,
               no servers to manage. Your workspace is encrypted and isolated to
               your account.
             </p>
             <ul className="list-disc space-y-1 pl-6 text-zinc-600">
-              <li>Use it instantly in your browser at vellum.ai</li>
+              <li>Use it instantly in your browser at cadet.ai</li>
               <li>Always-on availability, even when your laptop is closed</li>
               <li>Encrypted, isolated workspace tied to your account</li>
               <li>One assistant, reachable across web, desktop, mobile, voice, and chat channels</li>
@@ -255,13 +255,13 @@ export function WhatIsVellumContent() {
               <li>macOS DMG or Windows EXE installer</li>
               <li>Desktop automation through macOS accessibility APIs or Windows UI Automation</li>
               <li>Voice input with platform-specific shortcuts</li>
-              <li>Connects to your Vellum Cloud assistant, or run a fully self-hosted local workspace</li>
+              <li>Connects to your Cadet Cloud assistant, or run a fully self-hosted local workspace</li>
             </ul>
           </div>
           <div className="mb-6">
             <h3 className="mb-2 text-base font-semibold text-zinc-800">📱 iOS app</h3>
             <p className="mb-2 text-zinc-600">
-              Install Vellum Assistant on your iPhone or iPad and sign in to the
+              Install Cadet Assistant on your iPhone or iPad and sign in to the
               same assistant you use on the web and Mac. Your conversations,
               memories, tools, and workspace stay with you across devices.
             </p>
@@ -317,7 +317,7 @@ export function WhatIsVellumContent() {
           </ol>
           <blockquote className="m-0 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-zinc-700">
             <strong>Transparency moment:</strong> Whether your assistant lives in
-            Vellum Cloud or on your own machine, it <em>thinks</em> by talking to
+            Cadet Cloud or on your own machine, it <em>thinks</em> by talking to
             an AI model provider (like Anthropic). Your prompts and context are
             sent there to generate responses. This is the trade-off of a smart
             assistant. We&apos;d rather tell you upfront than have you discover it
@@ -330,10 +330,10 @@ export function WhatIsVellumContent() {
             Is it safe?
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Vellum has a built-in trust system. Sensitive actions like sending
+            Cadet has a built-in trust system. Sensitive actions like sending
             emails, making purchases, or controlling your desktop require your
             explicit approval. You can configure trust rules per channel.
-            Credentials are encrypted at rest in Vellum Cloud, or stored in the
+            Credentials are encrypted at rest in Cadet Cloud, or stored in the
             macOS Keychain when you self-host, never in plain text.
           </p>
           <p className="mb-0 text-zinc-600">

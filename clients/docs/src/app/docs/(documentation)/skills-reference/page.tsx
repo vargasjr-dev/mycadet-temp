@@ -2,9 +2,9 @@ import { SkillsReferenceContent } from "@/app/docs/_components/skills-reference-
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Skills Reference - Vellum Docs",
+  title: "Skills Reference - Cadet Docs",
   description:
-    "Vellum skills reference — documentation for all available skills, capabilities, and configuration options.",
+    "Cadet skills reference — documentation for all available skills, capabilities, and configuration options.",
   path: "/docs/skills-reference",
 });
 

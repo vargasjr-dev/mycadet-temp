@@ -173,7 +173,7 @@ export function ExtensibilityAppsContent() {
             when the UI needs a backend it can talk to, and bundle both in one
             plugin so the whole capability ships, versions, and installs
             together. The app reaches those routes through{" "}
-            <code>window.vellum.fetch</code> at{" "}
+            <code>window.cadet.fetch</code> at{" "}
             <code>/x/plugins/&lt;name&gt;/…</code> (the wrapper prepends the{" "}
             <code>/v1</code> API prefix) —{" "}
             <strong>

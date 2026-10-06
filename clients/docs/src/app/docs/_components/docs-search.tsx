@@ -23,7 +23,7 @@ const SPOTLIGHT_TRANSITION_MS = 220;
 const SUGGESTED_SECTIONS = [
   {
     label: "Getting Started",
-    description: "Install Vellum and set up your first assistant",
+    description: "Install Cadet and set up your first assistant",
     url: "/docs/getting-started",
     icon: Rocket,
   },

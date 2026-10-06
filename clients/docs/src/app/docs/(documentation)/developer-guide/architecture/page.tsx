@@ -2,7 +2,7 @@ import { DeveloperGuideArchitectureContent } from "@/app/docs/_components/develo
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Architecture - Developer Guide - Vellum Docs",
+  title: "Architecture - Developer Guide - Cadet Docs",
   description:
     "Platform domains, repository structure, and how the runtime, clients, and gateway fit together.",
   path: "/docs/developer-guide/architecture",

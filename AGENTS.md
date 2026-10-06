@@ -102,7 +102,7 @@ When a Vellum [Linear](https://linear.app/) ticket exists for the work, link it 
 
 ## Keep Docs Up to Date
 
-- **Architecture**: When introducing, removing, or significantly modifying a service/module/data flow, update `ARCHITECTURE.md` and impacted domain docs. Mermaid diagrams must reflect current architecture.
+- **Architecture**: When introducing, removing, or significantly modifying a service/module/data flow, update impacted domain docs. Mermaid diagrams must reflect current architecture.
 - **AGENTS.md**: When a PR establishes a new mandatory pattern or architectural constraint, update `AGENTS.md`. Only for project-wide rules — use code comments for module-scoped patterns.
 
 ## Worktrees & Source Control

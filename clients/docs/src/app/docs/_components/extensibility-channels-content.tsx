@@ -26,7 +26,7 @@ const linkClass =
 
 const ROUTES_PAGE_URL = "/docs/extensibility/routes";
 const PLUGIN_API_URL =
-  "https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api";
+  "https://github.com/cadet-ai/cadet-assistant/tree/main/assistant/src/plugin-api";
 
 type FieldRow = {
   field: string;
@@ -124,7 +124,7 @@ export function ExtensibilityChannelsContent() {
             hand a vendor with{" "}
             <code>resolveWebhookUrl({"{ path: \"events\" }"})</code> from{" "}
             <Link href={PLUGIN_API_URL} className={linkClass}>
-              <code>@vellumai/plugin-api</code>
+              <code>@cadetai/plugin-api</code>
             </Link>
             . Do not hardcode a hostname. Do not tell a vendor to POST at{" "}
             <code>/x/plugins/...</code>.

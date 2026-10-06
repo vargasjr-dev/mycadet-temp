@@ -29,7 +29,7 @@ export function DeveloperGuideContributingContent() {
     <>
       <DocsContent title="Contributing" breadcrumb="Docs / Developer Guide / Contributing">
         <p className="mb-8 text-zinc-600">
-          Everything you need to set up the Vellum Assistant repo locally, run tests, and submit a pull request.
+          Everything you need to set up the Cadet Assistant repo locally, run tests, and submit a pull request.
           Whether you&apos;re fixing a bug, adding a feature, or improving docs — this page has you covered.
         </p>
 
@@ -52,7 +52,7 @@ export function DeveloperGuideContributingContent() {
           </ul>
           <p className="mb-4 text-zinc-600">
             For Windows desktop development, start with the{" "}
-            <a href="https://github.com/vellum-ai/vellum-assistant/blob/main/clients/windows/README.md">
+            <a href="https://github.com/cadet-ai/cadet-assistant/blob/main/clients/windows/README.md">
               Windows client README
             </a>. It covers Git Bash or WSL for POSIX scripts, a PowerShell development
             flow, and native packaging. The packaged Windows app includes its runtime
@@ -61,7 +61,7 @@ export function DeveloperGuideContributingContent() {
           <p className="text-sm text-zinc-500">
             Docker Desktop is optional. It is only needed if you want to run or
             test the containerized deployment mode ({" "}
-            <code className="text-sm">vellum hatch --remote docker</code> ).
+            <code className="text-sm">cadet hatch --remote docker</code> ).
           </p>
         </section>
 
@@ -71,8 +71,8 @@ export function DeveloperGuideContributingContent() {
             Local Development Setup
           </SectionHeading>
           <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-{`git clone https://github.com/vellum-ai/vellum-assistant.git
-cd vellum-assistant
+{`git clone https://github.com/cadet-ai/cadet-assistant.git
+cd cadet-assistant
 ./setup.sh`}
           </pre>
           <p className="mb-4 text-zinc-600">
@@ -82,7 +82,7 @@ cd vellum-assistant
             <li>Configure git to use <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">.githooks/</code> for pre-commit and pre-push hooks</li>
             <li>Install dependencies for each package (<code className="text-sm">assistant</code>, <code className="text-sm">cli</code>, <code className="text-sm">gateway</code>, <code className="text-sm">credential-executor</code>, <code className="text-sm">scripts</code>)</li>
             <li>Register local packages as linkable and wire them together via <code className="text-sm">bun link</code></li>
-            <li>Link the global <code className="text-sm">vellum</code> CLI so it&apos;s available from anywhere</li>
+            <li>Link the global <code className="text-sm">cadet</code> CLI so it&apos;s available from anywhere</li>
             <li>Install shell completions for Bash and Zsh</li>
           </ol>
 
@@ -92,7 +92,7 @@ cd vellum-assistant
             </SectionHeading>
             <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
 {`├── assistant/            # Bun-based assistant runtime (core logic, HTTP API)
-├── cli/                  # Vellum CLI (multi-assistant management)
+├── cli/                  # Cadet CLI (multi-assistant management)
 ├── clients/              # Web, desktop (macOS, Windows, Linux), and mobile clients
 ├── gateway/              # Channel gateway (Telegram, Twilio, OAuth, reverse proxy)
 ├── credential-executor/  # Credential Execution Service (isolated RPC)
@@ -115,12 +115,12 @@ cd vellum-assistant
               Running the Assistant
             </SectionHeading>
             <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-{`vellum hatch            # first-time setup (creates config, provisions keys)
-vellum wake             # start assistant + gateway
-vellum ps               # check process status
-vellum sleep            # stop everything
-vellum terminal         # shell into a managed assistant container
-vellum doctor           # diagnose issues`}
+{`cadet hatch            # first-time setup (creates config, provisions keys)
+cadet wake             # start assistant + gateway
+cadet ps               # check process status
+cadet sleep            # stop everything
+cadet terminal         # shell into a managed assistant container
+cadet doctor           # diagnose issues`}
             </pre>
           </section>
 
@@ -241,7 +241,7 @@ cd assistant && bunx tsc --noEmit`}
             <p className="mt-4 text-sm text-zinc-500">
               Bypass with <code className="text-sm">--no-verify</code> in exceptional cases, but this is strongly discouraged.
               See{" "}
-              <a href="https://github.com/vellum-ai/vellum-assistant/blob/main/.githooks/README.md" className="text-emerald-600 hover:text-emerald-500 dark:text-emerald-400">
+              <a href="https://github.com/cadet-ai/cadet-assistant/blob/main/.githooks/README.md" className="text-emerald-600 hover:text-emerald-500 dark:text-emerald-400">
                 .githooks/README.md
               </a>{" "}
               for full details.
@@ -322,7 +322,7 @@ cd assistant && bunx tsc --noEmit`}
                 </tr>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
                   <td className="py-2 pr-4">Services, modules, or data flows</td>
-                  <td className="py-2"><code className="text-xs">ARCHITECTURE.md</code> and impacted domain docs</td>
+                  <td className="py-2">Impacted domain docs</td>
                 </tr>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
                   <td className="py-2 pr-4">New project-wide patterns or constraints</td>
@@ -343,7 +343,7 @@ cd assistant && bunx tsc --noEmit`}
             Backwards Compatibility
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Vellum has real users — maintain backwards compatibility for all interfaces, persisted state, and data.
+            Cadet has real users — maintain backwards compatibility for all interfaces, persisted state, and data.
             Never ship a change that silently breaks existing behavior.
           </p>
           <p className="mb-4 text-zinc-600">

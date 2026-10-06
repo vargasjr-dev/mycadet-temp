@@ -31,9 +31,9 @@ export const VIDEO_POSTER_HEIGHT = 720;
 export const DOCS_VIDEOS = {
   "local-hosting-setup": {
     youtubeId: "SJgflx6XDeQ",
-    title: "How to setup a locally hosted Vellum AI assistant in under 5 minutes",
+    title: "How to setup a locally hosted Vocify Inc assistant in under 5 minutes",
     description:
-      "A walkthrough of installing Vellum and running your assistant locally on your own Mac.",
+      "A walkthrough of installing Cadet and running your assistant locally on your own Mac.",
     durationSeconds: 205,
     uploadDate: "2026-08-25T11:06:40-07:00",
     poster: "/docs/video-local-hosting-setup.webp",
@@ -42,7 +42,7 @@ export const DOCS_VIDEOS = {
     youtubeId: "Bg3Wx7J7b-s",
     title: "Connect your Stripe Link wallet to your AI assistant",
     description:
-      "A walkthrough of connecting a Stripe Link wallet to Vellum Assistant through Settings or by asking the assistant directly.",
+      "A walkthrough of connecting a Stripe Link wallet to Cadet Assistant through Settings or by asking the assistant directly.",
     durationSeconds: 67,
     uploadDate: "2026-09-10T18:11:11+00:00",
     poster: "/docs/video-agentic-payments-link-wallet.webp",
@@ -58,7 +58,7 @@ export const DOCS_VIDEOS = {
   },
   "gcp-vm-setup": {
     youtubeId: "7kwHOvhk8Nk",
-    title: "How to set up a Vellum AI assistant on Google Cloud VPS/VM",
+    title: "How to set up a Vocify Inc assistant on Google Cloud VPS/VM",
     description:
       "A walkthrough of provisioning a Compute Engine VM in your own Google Cloud project and running your assistant on it.",
     durationSeconds: 650,
@@ -69,7 +69,7 @@ export const DOCS_VIDEOS = {
     youtubeId: "S_iAv6c_-6E",
     title: "How to set up a free AI Assistant that works while you sleep",
     description:
-      "A walkthrough of setting up an assistant on Vellum Cloud so it keeps running when your computer is off.",
+      "A walkthrough of setting up an assistant on Cadet Cloud so it keeps running when your computer is off.",
     durationSeconds: 227,
     uploadDate: "2026-09-01T11:17:50-07:00",
     poster: "/docs/video-always-on-assistant.webp",

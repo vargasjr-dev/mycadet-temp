@@ -19,7 +19,7 @@ import "@/app/docs/docs-theme.css";
 
 export const metadata: Metadata = {
   description:
-    "Release notes for Vellum. See what's new, what changed, and what's coming.",
+    "Release notes for Cadet. See what's new, what changed, and what's coming.",
 };
 
 interface ReleasesLayoutProps {
@@ -48,8 +48,8 @@ export default async function ReleasesLayout({
                   className="hidden md:flex items-center gap-2 no-underline"
                 >
                   <Image
-                    src="/docs/vellum-logo.svg"
-                    alt="Vellum"
+                    src="/docs/cadet-logo.svg"
+                    alt="Cadet"
                     width={100}
                     height={24}
                     unoptimized

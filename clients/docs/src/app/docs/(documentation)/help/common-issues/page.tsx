@@ -2,9 +2,9 @@ import { HelpCommonIssuesContent } from "@/app/docs/_components/help-common-issu
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Common Issues - Vellum Docs",
+  title: "Common Issues - Cadet Docs",
   description:
-    "Troubleshoot common Vellum issues — installation, permissions, skills, performance, and workspace problems.",
+    "Troubleshoot common Cadet issues — installation, permissions, skills, performance, and workspace problems.",
   path: "/docs/help/common-issues",
 });
 

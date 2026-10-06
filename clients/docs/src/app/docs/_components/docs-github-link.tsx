@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-const GITHUB_REPO_URL = "https://github.com/vellum-ai/vellum-assistant";
+const GITHUB_REPO_URL = "https://github.com/cadet-ai/cadet-assistant";
 
 /**
  * GitHub wordmark link rendered at the end of the docs header.
@@ -12,7 +12,7 @@ export function DocsGithubLink() {
       href={GITHUB_REPO_URL}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Vellum Assistant on GitHub"
+      aria-label="Cadet Assistant on GitHub"
       className="docs-github-link"
     >
       <Image

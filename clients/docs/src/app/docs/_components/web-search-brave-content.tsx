@@ -18,7 +18,7 @@ export function WebSearchBraveContent() {
       <DocsContent
         title="Brave Search"
         breadcrumb="Docs / Key Concepts / Web Search / Brave Search"
-        subtitle="Privacy-first web search with an independent index. Use Brave Search as a web search provider in your Vellum assistant for ad-free, tracking-free results."
+        subtitle="Privacy-first web search with an independent index. Use Brave Search as a web search provider in your Cadet assistant for ad-free, tracking-free results."
       >
         <section id="what-it-does">
           <SectionHeading id="what-it-does" level={2}>
@@ -31,7 +31,7 @@ export function WebSearchBraveContent() {
             sourcing, Brave is a strong choice.
           </p>
           <p className="mb-0 text-zinc-600">
-            When configured as your web search provider, Vellum routes queries through the
+            When configured as your web search provider, Cadet routes queries through the
             Brave Search API and feeds the ranked results back to your assistant. The model
             can then read snippets, visit sources, or synthesize an answer from the retrieved
             pages.
@@ -44,7 +44,7 @@ export function WebSearchBraveContent() {
           </SectionHeading>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              A running Vellum assistant. Cloud, self-hosted, or the desktop apps all work.
+              A running Cadet assistant. Cloud, self-hosted, or the desktop apps all work.
             </li>
             <li>
               A Brave Search API key. Create one at{" "}
@@ -75,7 +75,7 @@ export function WebSearchBraveContent() {
           <ol className="mb-6 list-decimal space-y-3 pl-6 text-zinc-600">
             <li>
               <strong>Open assistant settings.</strong>{" "}
-              In Vellum, head to{" "}
+              In Cadet, head to{" "}
               <span className="font-medium text-zinc-900">
                 Settings &rarr; Models &amp; Services
               </span>
@@ -85,12 +85,12 @@ export function WebSearchBraveContent() {
               <strong>Add your Brave Search API key.</strong>{" "}
               Under the <span className="font-medium text-zinc-900">Web Search</span> section,
               choose <span className="font-medium text-zinc-900">Brave Search</span> as the provider and
-              paste your API key. Vellum stores the key in your local secure store and never
+              paste your API key. Cadet stores the key in your local secure store and never
               writes it to disk in plaintext.
             </li>
             <li>
               <strong>Ask something current.</strong>{" "}
-              Start a new conversation and ask a question that needs fresh information. Vellum
+              Start a new conversation and ask a question that needs fresh information. Cadet
               calls Brave Search under the hood and feeds the results back to the model in context.
             </li>
           </ol>
@@ -142,7 +142,7 @@ assistant config set services.web-search.provider brave`}
             <li>
               <strong>Billing.</strong>{" "}
               Brave Search usage is billed directly by Brave under the account that owns the key,
-              separately from Vellum credits.
+              separately from Cadet credits.
             </li>
             <li>
               <strong>Privacy.</strong>{" "}
@@ -190,7 +190,7 @@ assistant config set services.web-search.provider brave`}
                 href="/docs/key-concepts/web-search"
                 className="text-emerald-700 underline hover:text-emerald-800"
               >
-                Vellum Web Search reference
+                Cadet Web Search reference
               </Link>
             </li>
           </ul>

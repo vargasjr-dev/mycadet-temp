@@ -268,7 +268,7 @@ export function MemoryAndContextContent() {
           <p className="mb-0 text-zinc-600">
             Self-hosted assistants keep their workspace and memory on
             infrastructure you control. Managed hosting stores that data in
-            Vellum’s hosted environment. See{" "}
+            Cadet’s hosted environment. See{" "}
             <Link
               href="/docs/trust-security/privacy-and-data"
               className="text-mint-600 hover:underline"

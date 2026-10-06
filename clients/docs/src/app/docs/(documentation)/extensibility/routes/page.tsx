@@ -2,7 +2,7 @@ import { ExtensibilityRoutesContent } from "@/app/docs/_components/extensibility
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Routes - Vellum Docs",
+  title: "Routes - Cadet Docs",
   description:
     "Routes let a plugin serve HTTP endpoints in its own /x/plugins/<name>/ namespace. Public internet webhooks are declared separately as plugin ingress.",
   path: "/docs/extensibility/routes",

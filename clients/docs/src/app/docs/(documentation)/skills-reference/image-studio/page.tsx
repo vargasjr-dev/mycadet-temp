@@ -2,9 +2,9 @@ import { SkillsReferenceImageStudioContent } from "@/app/docs/_components/skills
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Image Studio - Vellum Docs",
+  title: "Image Studio - Cadet Docs",
   description:
-    "Image Studio skill for Vellum — generate and edit images using AI through your assistant.",
+    "Image Studio skill for Cadet — generate and edit images using AI through your assistant.",
   path: "/docs/skills-reference/image-studio",
 });
 

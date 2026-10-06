@@ -29,12 +29,12 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     term: "Channel",
     definition:
-      "A communication medium through which a guardian or contact can interact with the assistant. Examples: Telegram, Slack, SMS, phone, Vellum clients. An assistant can be reachable across many channels simultaneously.",
+      "A communication medium through which a guardian or contact can interact with the assistant. Examples: Telegram, Slack, SMS, phone, Cadet clients. An assistant can be reachable across many channels simultaneously.",
   },
   {
     term: "Client",
     definition:
-      "A device or application used to interact with the assistant. The Vellum macOS and Windows apps, iOS app, web interface, and Chrome extension are all clients. A client connects to the assistant through a channel.",
+      "A device or application used to interact with the assistant. The Cadet macOS and Windows apps, iOS app, web interface, and Chrome extension are all clients. A client connects to the assistant through a channel.",
   },
   {
     term: "Contact",
@@ -65,7 +65,7 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     term: "Guardian",
     definition:
-      "The person who creates, owns, and is responsible for an assistant. The guardian grants permissions, teaches, and is liable for the assistant’s actions, but the assistant acts as their own entity, not as the guardian. This is not a “user” relationship. People are users of the Vellum Platform, which is a SaaS tool. But the relationship between a person and their Vellum Assistant is guardianship, not usage.",
+      "The person who creates, owns, and is responsible for an assistant. The guardian grants permissions, teaches, and is liable for the assistant’s actions, but the assistant acts as their own entity, not as the guardian. This is not a “user” relationship. People are users of the Cadet Platform, which is a SaaS tool. But the relationship between a person and their Cadet Assistant is guardianship, not usage.",
   },
   {
     term: "Hatch",
@@ -80,7 +80,7 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     term: "Home",
     definition:
-      "Where the assistant runs: Vellum’s managed platform, a self-hosted machine, a Docker container, or a local daemon on a desktop. The home determines the assistant’s networking, security boundary, capabilities, and available resources. Distinct from a client, which is how the guardian reaches the assistant.",
+      "Where the assistant runs: Cadet’s managed platform, a self-hosted machine, a Docker container, or a local daemon on a desktop. The home determines the assistant’s networking, security boundary, capabilities, and available resources. Distinct from a client, which is how the guardian reaches the assistant.",
   },
   {
     term: "Memory",
@@ -92,19 +92,19 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     definition: (
       <>
         <span className="mb-3 block">
-          At Vellum, open source means everything that runs your assistant is
+          At Cadet, open source means everything that runs your assistant is
           publicly available: the assistant, the gateway, the clients, the
           skills, the tools. Guardians can inspect, modify, fork, and contribute
           to any of it. This is a core part of the &ldquo;Yours&rdquo;
           principle. Self-hosted assistants run on fully open code with zero
-          dependency on Vellum.
+          dependency on Cadet.
         </span>
         <span className="block">
           The exception is the platform &ndash; the multi-tenant infrastructure
           that hosts assistants for guardians who don&apos;t want to run their
           own. Billing, tenancy isolation, secrets management, support tooling,
           the operational surface around managed hosting: this is the convenience
-          layer Vellum builds and operates as a business. You rent the platform.
+          layer Cadet builds and operates as a business. You rent the platform.
           You own the assistant.
         </span>
       </>
@@ -123,7 +123,7 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     term: "Platform",
     definition:
-      "Vellum’s managed infrastructure that hosts and runs assistants. The platform is a SaaS tool, and people who use it are users. It exists as a bridge to bootstrap the Personal Intelligence experience for those who value convenience. We actively invest in the platform, and are committed to always supporting self-hosting. Never use “platform” to describe the assistant.",
+      "Cadet’s managed infrastructure that hosts and runs assistants. The platform is a SaaS tool, and people who use it are users. It exists as a bridge to bootstrap the Personal Intelligence experience for those who value convenience. We actively invest in the platform, and are committed to always supporting self-hosting. Never use “platform” to describe the assistant.",
   },
   {
     term: "Schedule",
@@ -138,17 +138,17 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     term: "Skill",
     definition:
-      "A reusable package of instructions, tools, and supporting files. Skills can ship with Vellum, be installed or authored by a guardian, or be learned from a procedure the assistant carried out. Installed and learned skills can be inspected and removed, and their editable text files can be updated.",
+      "A reusable package of instructions, tools, and supporting files. Skills can ship with Cadet, be installed or authored by a guardian, or be learned from a procedure the assistant carried out. Installed and learned skills can be inspected and removed, and their editable text files can be updated.",
   },
   {
     term: "Species",
     definition:
-      "The kind of assistant a guardian builds. Different organizations may build different species of assistant on shared infrastructure: Vellum builds one species; OpenClaw and Hermes Agents are examples of others. The species sets the assistant’s underlying architecture, capabilities, and behavioral patterns. A guardian could in principle have assistants of multiple species.",
+      "The kind of assistant a guardian builds. Different organizations may build different species of assistant on shared infrastructure: Cadet builds one species; OpenClaw and Hermes Agents are examples of others. The species sets the assistant’s underlying architecture, capabilities, and behavioral patterns. A guardian could in principle have assistants of multiple species.",
   },
   {
     term: "Teleport",
     definition:
-      "Moving an assistant from one home to another. For example, migrating from the Vellum managed platform to a self-hosted Mac Mini, or from a desktop app to a Docker container. The assistant’s identity, memory, and relationships should survive the move intact.",
+      "Moving an assistant from one home to another. For example, migrating from the Cadet managed platform to a self-hosted Mac Mini, or from a desktop app to a Docker container. The assistant’s identity, memory, and relationships should survive the move intact.",
   },
   {
     term: "Trust Rules",
@@ -158,19 +158,19 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     term: "User",
     definition:
-      "A person who uses the Vellum Platform. This is a standard SaaS relationship. Importantly, “user” does not describe the relationship between a person and their assistant. They are a guardian, not a user. A person can be a guardian of a Vellum assistant without being a user of the Vellum Platform.",
+      "A person who uses the Cadet Platform. This is a standard SaaS relationship. Importantly, “user” does not describe the relationship between a person and their assistant. They are a guardian, not a user. A person can be a guardian of a Cadet assistant without being a user of the Cadet Platform.",
   },
   {
-    term: "Vellum Doctor",
+    term: "Cadet Doctor",
     definition: (
       <>
         <span className="mb-3 block">
-          Vellum&apos;s customer support tool. The Doctor helps guardians
+          Cadet&apos;s customer support tool. The Doctor helps guardians
           troubleshoot issues, diagnose problems, and nurse their assistant back
           to health.
         </span>
         <span className="block">
-          The Doctor is intentionally not a Vellum Assistant. A Vellum Assistant
+          The Doctor is intentionally not a Cadet Assistant. A Cadet Assistant
           accumulates memory across a relationship; the Doctor accumulates none.
           Every support session starts fresh. This is not a limitation. It is the
           architectural guarantee that nothing the Doctor learns about one

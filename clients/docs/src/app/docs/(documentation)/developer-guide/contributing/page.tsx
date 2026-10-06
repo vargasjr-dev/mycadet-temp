@@ -2,9 +2,9 @@ import { DeveloperGuideContributingContent } from "@/app/docs/_components/develo
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Contributing - Vellum Docs",
+  title: "Contributing - Cadet Docs",
   description:
-    "How to set up the Vellum Assistant repo locally, run tests, follow code conventions, and submit a pull request.",
+    "How to set up the Cadet Assistant repo locally, run tests, follow code conventions, and submit a pull request.",
   path: "/docs/developer-guide/contributing",
 });
 

@@ -2,9 +2,9 @@ import { SkillsReferenceMessagingContent } from "@/app/docs/_components/skills-r
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Messaging - Vellum Docs",
+  title: "Messaging - Cadet Docs",
   description:
-    "Messaging skill for Vellum — send and receive messages across Slack, Gmail, and Telegram.",
+    "Messaging skill for Cadet — send and receive messages across Slack, Gmail, and Telegram.",
   path: "/docs/skills-reference/messaging",
 });
 

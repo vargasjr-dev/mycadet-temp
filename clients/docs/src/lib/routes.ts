@@ -10,13 +10,13 @@ export const routes = {
   docs: {
     legal: {
       privacyPolicy: "/docs/privacy-policy",
-      termsOfUse: "/docs/vellum-terms-of-use",
+      termsOfUse: "/docs/cadet-terms-of-use",
       prohibitedUse: "/docs/prohibited-use",
       privacyAndData: "/docs/trust-security/privacy-and-data",
     },
   },
 
-  // Cross-app destinations served by other Vellum apps.
+  // Cross-app destinations served by other Cadet apps.
   signup: `https://${WWW_DOMAIN}/account/signup`,
   login: `https://${WWW_DOMAIN}/account/login`,
   assistant: `https://${WWW_DOMAIN}/assistant`,

@@ -22,7 +22,7 @@ export function OauthIntegrationsContent() {
         title="OAuth Integrations"
         breadcrumb="Docs / Key Concepts / OAuth Integrations"
         eyebrow="Key Concepts"
-        subtitle="How Vellum connects to third-party services via OAuth2, what services are supported, and how your credentials stay secure."
+        subtitle="How Cadet connects to third-party services via OAuth2, what services are supported, and how your credentials stay secure."
       >
         {/* ------------------------------------------------------------------ */}
         {/* Overview                                                             */}
@@ -32,7 +32,7 @@ export function OauthIntegrationsContent() {
             Overview
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            Vellum connects to external services through OAuth2 integrations. Instead of
+            Cadet connects to external services through OAuth2 integrations. Instead of
             copying API keys into chat, you authorize your assistant once through a
             standard browser-based OAuth flow. The resulting access token is stored
             securely in your local credential vault, and your assistant can call the
@@ -57,7 +57,7 @@ export function OauthIntegrationsContent() {
             Supported services
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            The following integrations ship with every Vellum workspace and connect via
+            The following integrations ship with every Cadet workspace and connect via
             OAuth2 unless noted otherwise.
           </p>
           <div className="overflow-x-auto">
@@ -148,7 +148,7 @@ export function OauthIntegrationsContent() {
                       Posts and direct messages
                     </td>
                     <td className="py-3">
-                      Paid. Per-call billing through Vellum credits at the platform rate.
+                      Paid. Per-call billing through Cadet credits at the platform rate.
                     </td>
                   </tr>
                   <tr>
@@ -207,7 +207,7 @@ export function OauthIntegrationsContent() {
             you can often connect it via a custom skill using its API key, or request it
             through the{" "}
             <Link
-              href="https://www.vellum.ai/roadmap"
+              href="https://www.mycadet.ai/roadmap"
               className="text-emerald-700 underline hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
             >
               roadmap
@@ -236,7 +236,7 @@ export function OauthIntegrationsContent() {
           </p>
           <ol className="mb-4 list-decimal space-y-2 pl-6 text-stone-600 dark:text-stone-400 marker:text-stone-400 dark:marker:text-stone-500">
             <li>
-              Open <strong>Settings</strong> in your Vellum app.
+              Open <strong>Settings</strong> in your Cadet app.
             </li>
             <li>
               Navigate to the <strong>Integrations</strong> or <strong>Services</strong> tab.
@@ -248,7 +248,7 @@ export function OauthIntegrationsContent() {
               Complete the OAuth flow in the browser window that opens.
             </li>
             <li>
-              Return to Vellum. The integration status should show <strong>Connected</strong>.
+              Return to Cadet. The integration status should show <strong>Connected</strong>.
             </li>
           </ol>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
@@ -271,7 +271,7 @@ export function OauthIntegrationsContent() {
           <ul className="mb-4 list-disc space-y-2 pl-6 text-stone-600 dark:text-stone-400 marker:text-stone-400 dark:marker:text-stone-500">
             <li>
               <strong>Local vault:</strong> Tokens are stored in your workspace&apos;s local
-              credential vault, not on Vellum&apos;s servers. The platform never sees them.
+              credential vault, not on Cadet&apos;s servers. The platform never sees them.
             </li>
             <li>
               <strong>LLM isolation:</strong> The LLM never receives raw tokens. When a
@@ -279,12 +279,12 @@ export function OauthIntegrationsContent() {
               into the HTTP request at the transport layer.
             </li>
             <li>
-              <strong>Scoped permissions:</strong> Vellum requests the minimum OAuth scopes
+              <strong>Scoped permissions:</strong> Cadet requests the minimum OAuth scopes
               required for each service. You can review the exact scopes on the
               integration&apos;s detail page before connecting.
             </li>
             <li>
-              <strong>Revocation:</strong> Disconnecting an integration in Vellum deletes
+              <strong>Revocation:</strong> Disconnecting an integration in Cadet deletes
               the local token. You can also revoke access from the third-party service&apos;s
               own settings page (e.g., Google Account permissions) for an additional layer
               of control.
@@ -333,10 +333,10 @@ export function OauthIntegrationsContent() {
                     Managed OAuth (free)
                   </td>
                   <td className="py-3 pr-4">
-                    Services where Vellum manages the OAuth app registration (Discord, GitHub, Google, HubSpot, Linear, Asana, Notion, Outlook, Todoist)
+                    Services where Cadet manages the OAuth app registration (Discord, GitHub, Google, HubSpot, Linear, Asana, Notion, Outlook, Todoist)
                   </td>
                   <td className="py-3">
-                    No additional cost. These integrations are bundled with your Vellum workspace.
+                    No additional cost. These integrations are bundled with your Cadet workspace.
                   </td>
                 </tr>
                 <tr>
@@ -344,10 +344,10 @@ export function OauthIntegrationsContent() {
                     Managed OAuth (billed)
                   </td>
                   <td className="py-3 pr-4">
-                    Twitter (X) — Vellum manages the OAuth app, but the underlying API usage is billed per call.
+                    Twitter (X) — Cadet manages the OAuth app, but the underlying API usage is billed per call.
                   </td>
                   <td className="py-3">
-                    API calls are billed through Vellum credits at the platform rate.
+                    API calls are billed through Cadet credits at the platform rate.
                   </td>
                 </tr>
                 <tr>
@@ -367,7 +367,7 @@ export function OauthIntegrationsContent() {
           <p className="mb-0 text-stone-600 dark:text-stone-400">
             Most integrations (GitHub, Notion, Linear, Google, Discord, Asana, Outlook,
             Todoist, and HubSpot) are managed OAuth with no additional cost. Only Twitter (X)
-            managed OAuth incurs per-call billing through Vellum credits. BYOK is for
+            managed OAuth incurs per-call billing through Cadet credits. BYOK is for
             advanced cases where you bring your own API keys or enterprise OAuth apps. For
             details on credit denominations and usage, see the{" "}
             <Link

@@ -139,14 +139,14 @@ describe("docs sitemap", () => {
       (route) => !REDIRECT_STUB_ROUTES.has(route),
     );
     expect(entries.map((entry) => entry.url)).toEqual(
-      expected.map((route) => `https://www.vellum.ai${route}`),
+      expected.map((route) => `https://www.mycadet.ai${route}`),
     );
   });
 
   test("excludes the key-concepts redirect stub", () => {
     expect(discoverDocsRoutes()).toContain("/docs/getting-started/key-concepts");
     expect(entries.map((entry) => entry.url)).not.toContain(
-      "https://www.vellum.ai/docs/getting-started/key-concepts",
+      "https://www.mycadet.ai/docs/getting-started/key-concepts",
     );
   });
 

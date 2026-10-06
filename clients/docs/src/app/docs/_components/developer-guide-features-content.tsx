@@ -27,7 +27,7 @@ export function DeveloperGuideFeaturesContent() {
             Integrations
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Vellum integrates with third-party services via OAuth2, each exposed as a bundled skill with its own set of tools.
+            Cadet integrates with third-party services via OAuth2, each exposed as a bundled skill with its own set of tools.
           </p>
           <p className="mb-4 text-zinc-600">
             The unified messaging layer provides platform-agnostic tools (<code className="text-sm">messaging_send</code>,{" "}
@@ -52,7 +52,7 @@ export function DeveloperGuideFeaturesContent() {
           </p>
           <ol className="mb-6 list-decimal space-y-2 pl-6 text-zinc-600">
             <li><strong>Evaluate</strong> — drafts a TypeScript snippet, tests in a sandbox via <code className="text-sm">evaluate_typescript_code</code>. Iterates until it passes.</li>
-            <li><strong>Persist</strong> — writes the skill to <code className="text-sm">~/.vellum/workspace/skills/&lt;id&gt;/</code> via <code className="text-sm">scaffold_managed_skill</code>.</li>
+            <li><strong>Persist</strong> — writes the skill to <code className="text-sm">~/.cadet/workspace/skills/&lt;id&gt;/</code> via <code className="text-sm">scaffold_managed_skill</code>.</li>
             <li><strong>Load</strong> — calls <code className="text-sm">skill_load</code> to activate the new skill.</li>
             <li><strong>Delete</strong> — removes via <code className="text-sm">delete_managed_skill</code>.</li>
           </ol>
@@ -172,7 +172,7 @@ export function DeveloperGuideFeaturesContent() {
             <li><strong>HTTP API</strong> — <code className="text-sm">GET /v1/assistants/:id/messages</code> returns metadata; <code className="text-sm">GET /v1/assistants/:assistantId/attachments/:attachmentId</code> returns full payload</li>
           </ul>
           <p className="mb-4 text-zinc-600">
-            Sources: <code className="text-sm">&lt;vellum-attachment&gt;</code> directives in response text, or auto-converted from
+            Sources: <code className="text-sm">&lt;cadet-attachment&gt;</code> directives in response text, or auto-converted from
             tool output. Limit: 100 MB per attachment.
           </p>
         </section>
@@ -193,7 +193,7 @@ export function DeveloperGuideFeaturesContent() {
           </ul>
           <p className="mb-4 text-zinc-600">
             Controlled via <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">ui.mediaEmbeds</code> in{" "}
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">~/.vellum/workspace/config.json</code>.
+            <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">~/.cadet/workspace/config.json</code>.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

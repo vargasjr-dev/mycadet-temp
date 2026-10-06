@@ -75,7 +75,7 @@ export function SelfImprovingSkillsContent() {
             along the way, and what a finished result looks like.
           </p>
           <p className="mb-0 text-zinc-600 dark:text-zinc-400">
-            Vellum includes skills for common tasks, and you can add or create
+            Cadet includes skills for common tasks, and you can add or create
             more. When a request matches a skill, your assistant loads its
             instructions and follows the procedure instead of starting from
             scratch.
@@ -87,7 +87,7 @@ export function SelfImprovingSkillsContent() {
             What self-improving means
           </SectionHeading>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
-            Self-improving does not mean that Vellum retrains the model or
+            Self-improving does not mean that Cadet retrains the model or
             changes its underlying intelligence. After eligible work is
             complete, memory can preserve procedures your assistant actually used
             as reusable instructions.
@@ -113,7 +113,7 @@ export function SelfImprovingSkillsContent() {
             into a skill.
           </p>
           <p className="mb-0 text-zinc-600 dark:text-zinc-400">
-            When the work contains a reusable procedure, Vellum can express that
+            When the work contains a reusable procedure, Cadet can express that
             procedure as a managed skill with instructions and supporting files.
             Future conversations can then load the skill when a request calls
             for the same kind of work.
@@ -144,14 +144,14 @@ export function SelfImprovingSkillsContent() {
             Create vs. refine
           </SectionHeading>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
-            Before creating anything, Vellum checks the skills already available
+            Before creating anything, Cadet checks the skills already available
             to your assistant. It creates a new skill only when the procedure is
             distinct. If an assistant-authored skill already covers the work,
-            Vellum may refine that skill with what the assistant verified in the
+            Cadet may refine that skill with what the assistant verified in the
             new conversation.
           </p>
           <p className="mb-0 text-zinc-600 dark:text-zinc-400">
-            Vellum does not overwrite skills you authored or other skills you
+            Cadet does not overwrite skills you authored or other skills you
             installed. Those remain unchanged, so automatic learning cannot
             replace instructions that came from you or another source.
           </p>
@@ -166,7 +166,7 @@ export function SelfImprovingSkillsContent() {
             for review. You do not need to approve it before it is created.
           </p>
           <p className="mb-0 text-zinc-600">
-            When Vellum learns a genuinely new skill, the source conversation
+            When Cadet learns a genuinely new skill, the source conversation
             shows an &ldquo;I just learned how to do...&rdquo; card. You can review
             the learned skill from Skills to inspect what was preserved.
             Routine memory updates and refinements that do not create

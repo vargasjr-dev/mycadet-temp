@@ -40,7 +40,7 @@ export function HostingOptionsGcpContent() {
         <p className={paraClass}>
           It keeps your assistant running after you close your laptop, on a
           machine and a disk you own. This is the VPS approach: you create the
-          VM, install Vellum on it, and reach it through a tunnel.
+          VM, install Cadet on it, and reach it through a tunnel.
         </p>
         <div className="mb-8" />
 
@@ -103,7 +103,7 @@ gcloud services enable compute.googleapis.com`}</code>
               disks can be grown later, never shrunk.
               <div className="mt-3 overflow-x-auto">
                 <pre className={preClass}>
-<code>{`gcloud compute instances create vellum-assistant \\
+<code>{`gcloud compute instances create cadet-assistant \\
   --zone=us-central1-a \\
   --machine-type=e2-standard-4 \\
   --boot-disk-size=20GB \\
@@ -130,7 +130,7 @@ gcloud services enable compute.googleapis.com`}</code>
               retry if the first attempt is refused.
               <div className="mt-3 overflow-x-auto">
                 <pre className={preClass}>
-<code>{`gcloud compute ssh vellum-assistant --zone=us-central1-a`}</code>
+<code>{`gcloud compute ssh cadet-assistant --zone=us-central1-a`}</code>
                 </pre>
               </div>
             </li>
@@ -144,19 +144,19 @@ gcloud services enable compute.googleapis.com`}</code>
           <p className={paraClass}>Everything from here runs on the VM.</p>
           <ol className={stepListClass}>
             <li>
-              <strong>Install Vellum and its dependencies.</strong>
+              <strong>Install Cadet and its dependencies.</strong>
               <div className="mt-3 overflow-x-auto">
                 <pre className={preClass}>
 <code>{`# Bun's installer needs curl and unzip
 sudo apt-get update
 sudo apt-get install -y curl unzip git
 
-# Vellum ships as a Bun package, so Bun needs to be installed
+# Cadet ships as a Bun package, so Bun needs to be installed
 curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.11"
 source ~/.bashrc
 
-# Install Vellum itself
-bun install -g vellum`}</code>
+# Install Cadet itself
+bun install -g cadet`}</code>
                 </pre>
               </div>
             </li>
@@ -165,7 +165,7 @@ bun install -g vellum`}</code>
               <strong>Hatch the assistant.</strong>
               <div className="mt-3 overflow-x-auto">
                 <pre className={preClass}>
-<code>{`vellum hatch`}</code>
+<code>{`cadet hatch`}</code>
                 </pre>
               </div>
               <p className="mt-3 mb-0">
@@ -182,7 +182,7 @@ bun install -g vellum`}</code>
               terminal and confirm everything works.
               <div className="mt-3 overflow-x-auto">
                 <pre className={preClass}>
-<code>{`vellum client`}</code>
+<code>{`cadet client`}</code>
                 </pre>
               </div>
             </li>
@@ -206,23 +206,23 @@ bun install -g vellum`}</code>
           </SectionHeading>
           <ul className={bulletClass}>
             <li>
-              <code className={codeClass}>vellum ps</code> shows what&apos;s
+              <code className={codeClass}>cadet ps</code> shows what&apos;s
               running;{" "}
-              <code className={codeClass}>vellum wake</code> and{" "}
-              <code className={codeClass}>vellum sleep</code> start and stop it,
+              <code className={codeClass}>cadet wake</code> and{" "}
+              <code className={codeClass}>cadet sleep</code> start and stop it,
               keeping the workspace on disk.
             </li>
             <li>
               If you paired any devices,{" "}
-              <code className={codeClass}>vellum devices</code> lists them and{" "}
-              <code className={codeClass}>vellum devices revoke &lt;id&gt;</code>{" "}
+              <code className={codeClass}>cadet devices</code> lists them and{" "}
+              <code className={codeClass}>cadet devices revoke &lt;id&gt;</code>{" "}
               cuts one off.
             </li>
           </ul>
           <p className={paraClass}>
             Nothing restarts on its own after a VM reboot. Bring the assistant
             back with{" "}
-            <code className={codeClass}>vellum wake</code>, and restart your
+            <code className={codeClass}>cadet wake</code>, and restart your
             tunnel too if you set one up.
           </p>
           <p className={lastParaClass}>
@@ -264,7 +264,7 @@ bun install -g vellum`}</code>
             </div>
             <div className={cardClass}>
               <dt className={cardTitleClass}>
-                <code className={codeClass}>vellum</code>: command not found
+                <code className={codeClass}>cadet</code>: command not found
               </dt>
               <dd className={cardBodyClass}>
                 Bun&apos;s install directory isn&apos;t on your{" "}

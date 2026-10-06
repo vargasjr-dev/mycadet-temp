@@ -2,7 +2,7 @@ import { ExtensibilityMcpContent } from "@/app/docs/_components/extensibility-mc
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "MCP servers - Vellum Docs",
+  title: "MCP servers - Cadet Docs",
   description:
     "A plugin declares MCP servers in a root mcp.json. The assistant connects them on install and registers their tools alongside workspace-configured MCP tools.",
   path: "/docs/extensibility/mcp",

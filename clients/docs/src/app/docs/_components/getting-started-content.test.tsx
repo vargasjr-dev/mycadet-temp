@@ -28,7 +28,7 @@ describe("GettingStartedContent", () => {
   });
 
   test("points desktop install at the public downloads page", () => {
-    expect(html).toContain("vellum.ai/downloads");
+    expect(html).toContain("cadet.ai/downloads");
     expect(html).toContain("/downloads");
     expect(html).toContain("Desktop app (macOS and Windows)");
   });

@@ -2,9 +2,9 @@ import { SkillsReferenceDoorDashContent } from "@/app/docs/_components/skills-re
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "DoorDash - Vellum Docs",
+  title: "DoorDash - Cadet Docs",
   description:
-    "DoorDash skill for Vellum — order food, groceries, and convenience items through your assistant.",
+    "DoorDash skill for Cadet — order food, groceries, and convenience items through your assistant.",
   path: "/docs/skills-reference/doordash",
 });
 

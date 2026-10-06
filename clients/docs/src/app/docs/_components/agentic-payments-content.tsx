@@ -143,7 +143,7 @@ export function AgenticPaymentsContent() {
           </p>
           <ol className="mb-4 list-decimal space-y-2 pl-6 text-stone-600 dark:text-stone-400 marker:text-stone-400 dark:marker:text-stone-500">
             <li>
-              Open <strong>Settings</strong> in your Vellum app.
+              Open <strong>Settings</strong> in your Cadet app.
             </li>
             <li>
               Navigate to the <strong>Integrations</strong> tab.
@@ -161,8 +161,8 @@ export function AgenticPaymentsContent() {
             numbers.
           </p>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
-            The connection runs through Vellum&apos;s managed OAuth, so it needs
-            an assistant that is connected to the Vellum platform. If yours is
+            The connection runs through Cadet&apos;s managed OAuth, so it needs
+            an assistant that is connected to the Cadet platform. If yours is
             not, your assistant falls back to Link&apos;s own device login: it
             shows you a link and a short phrase, and you approve the connection
             in the Link app. Purchases work the same way either way.

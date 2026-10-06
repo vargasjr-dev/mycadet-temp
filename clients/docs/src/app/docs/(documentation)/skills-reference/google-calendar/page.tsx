@@ -2,9 +2,9 @@ import { SkillsReferenceGoogleCalendarContent } from "@/app/docs/_components/ski
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Google Calendar - Vellum Docs",
+  title: "Google Calendar - Cadet Docs",
   description:
-    "Google Calendar skill for Vellum — view events, create meetings, and check availability.",
+    "Google Calendar skill for Cadet — view events, create meetings, and check availability.",
   path: "/docs/skills-reference/google-calendar",
 });
 

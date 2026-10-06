@@ -71,10 +71,10 @@ export function HostingOptionsPairADeviceContent() {
           </ul>
           <p className="mb-0 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200">
             <strong>You connect through your own address, not through
-            vellum.ai.</strong>{" "}
-            The tunnel URL serves the Vellum web app pointed at your assistant,
+            cadet.ai.</strong>{" "}
+            The tunnel URL serves the Cadet web app pointed at your assistant,
             so a paired device talks straight to your machine. Conversations
-            never pass through Vellum&apos;s servers.
+            never pass through Cadet&apos;s servers.
           </p>
         </section>
 
@@ -84,8 +84,8 @@ export function HostingOptionsPairADeviceContent() {
           </SectionHeading>
           <p className={lastParaClass}>
             Your assistant has to be running on the computer that hosts it.{" "}
-            <code className={codeClass}>vellum ps</code> to check,{" "}
-            <code className={codeClass}>vellum wake</code> to start it. No
+            <code className={codeClass}>cadet ps</code> to check,{" "}
+            <code className={codeClass}>cadet wake</code> to start it. No
             assistant yet? See{" "}
             <Link href="/docs/hosting-options/local-hosting" className={linkClass}>
               Local hosting
@@ -99,7 +99,7 @@ export function HostingOptionsPairADeviceContent() {
             Install nginx
           </SectionHeading>
           <p className={paraClass}>
-            Tunnels run through nginx. Vellum starts it for you, but
+            Tunnels run through nginx. Cadet starts it for you, but
             won&apos;t install it. Run this on the computer hosting your
             assistant.
           </p>
@@ -151,7 +151,7 @@ echo 'export PATH="$PATH:/usr/sbin"' >> ~/.bashrc && source ~/.bashrc`}</code>
             costs you two things. Every device you pair needs Tailscale
             installed and signed in, phone included. And a Tailscale address
             can&apos;t receive inbound webhooks, so channels like Telegram and
-            Twilio still need a public tunnel alongside it. Vellum leaves an
+            Twilio still need a public tunnel alongside it. Cadet leaves an
             existing one in place and uses the Tailscale address for pairing
             only.
           </p>
@@ -242,7 +242,7 @@ ngrok --version`}</code>
                 Without one, ngrok issues a new URL every time the tunnel
                 restarts, and your paired devices keep pointing at the old one.
                 Restarts are easy to trigger: a reboot, a Ctrl+C, or a{" "}
-                <code className={codeClass}>vellum wake</code>. Reserving a
+                <code className={codeClass}>cadet wake</code>. Reserving a
                 domain on the{" "}
                 <Link
                   href="https://dashboard.ngrok.com/domains"
@@ -253,7 +253,7 @@ ngrok --version`}</code>
                   Domains
                 </Link>{" "}
                 page saves you re-pairing each time. Note the one you pick;
-                you&apos;ll pass it to Vellum in the next section.
+                you&apos;ll pass it to Cadet in the next section.
               </li>
             </ol>
           </div>
@@ -315,13 +315,13 @@ ngrok --version`}</code>
           </p>
           <div className={blockClass}>
             <pre className={preClass}>
-<code>{`vellum tunnel --provider ngrok --domain your-assistant.ngrok.app -d`}</code>
+<code>{`cadet tunnel --provider ngrok --domain your-assistant.ngrok.app -d`}</code>
             </pre>
           </div>
           <p className={paraClass}>For Tailscale:</p>
           <div className={blockClass}>
             <pre className={preClass}>
-<code>{`vellum tunnel --provider tailscale -d`}</code>
+<code>{`cadet tunnel --provider tailscale -d`}</code>
             </pre>
           </div>
           <p className={paraClass}>
@@ -334,7 +334,7 @@ ngrok --version`}</code>
             <code className={codeClass}>Tunnel established:</code> with the
             address your devices will use, where it is logging, and the{" "}
             <code className={codeClass}>kill</code>{" "}
-            command that stops it again. Vellum saves that address so the
+            command that stops it again. Cadet saves that address so the
             pairing steps below fill it in for you, and remembers your ngrok
             domain so later runs don&apos;t need{" "}
             <code className={codeClass}>--domain</code>.
@@ -347,7 +347,7 @@ ngrok --version`}</code>
           </SectionHeading>
           <p className={paraClass}>
             The last step is to pair the device, and the easiest route is the
-            desktop app on the host computer. Open Vellum there and go to{" "}
+            desktop app on the host computer. Open Cadet there and go to{" "}
             <span className={uiClass}>
               Settings &rarr; General &rarr; Pair a device
             </span>
@@ -363,7 +363,7 @@ ngrok --version`}</code>
           <p className={paraClass}>
             Scanning finishes the job. The host approved that code when it
             created it, so there is nothing to confirm and no code to type. With
-            the Vellum mobile app installed, the page offers to hand the pairing
+            the Cadet mobile app installed, the page offers to hand the pairing
             over to it.
           </p>
           <p className={lastParaClass}>
@@ -390,7 +390,7 @@ ngrok --version`}</code>
               in the same card. Check that code against the device&apos;s screen
               before approving: the match is what proves the request came from
               your device. Or approve from a shell with{" "}
-              <code className={codeClass}>vellum pair --web-approve &lt;code&gt;</code>
+              <code className={codeClass}>cadet pair --web-approve &lt;code&gt;</code>
               .
             </p>
             <p className={paraClass}>
@@ -398,11 +398,11 @@ ngrok --version`}</code>
               If you hatched the assistant over SSH on a VPS, pair from the CLI
               instead. It prints a pairing link and the same link as a QR
               code, using the address from{" "}
-              <code className={codeClass}>vellum tunnel</code>:
+              <code className={codeClass}>cadet tunnel</code>:
             </p>
             <div className={blockClass}>
               <pre className={preClass}>
-<code>{`vellum pair`}</code>
+<code>{`cadet pair`}</code>
               </pre>
             </div>
             <p className={paraClass}>
@@ -416,17 +416,17 @@ ngrok --version`}</code>
             <p className={paraClass}>
               <strong>Pair another computer.</strong>{" "}
               A second machine with the{" "}
-              <code className={codeClass}>vellum</code> CLI joins with that
+              <code className={codeClass}>cadet</code> CLI joins with that
               link rather than a browser, and{" "}
-              <code className={codeClass}>vellum pair</code> prints the exact
+              <code className={codeClass}>cadet pair</code> prints the exact
               command to run under it. The link already carries an approved
               code, so the import finishes right away and registers the
               assistant locally for{" "}
-              <code className={codeClass}>vellum client</code>:
+              <code className={codeClass}>cadet client</code>:
             </p>
             <div className={blockClass}>
               <pre className={preClass}>
-<code>{`vellum connect import "https://your-assistant.ngrok.app/assistant/pair#device_code=..."`}</code>
+<code>{`cadet connect import "https://your-assistant.ngrok.app/assistant/pair#device_code=..."`}</code>
               </pre>
             </div>
             <p className={paraClass}>
@@ -435,11 +435,11 @@ ngrok --version`}</code>
               approve it on the host, from{" "}
               <span className={uiClass}>Pairing requests</span> in the card or
               with{" "}
-              <code className={codeClass}>vellum pair --web-approve &lt;code&gt;</code>:
+              <code className={codeClass}>cadet pair --web-approve &lt;code&gt;</code>:
             </p>
             <div className={blockClass}>
               <pre className={preClass}>
-<code>{`vellum connect import https://your-assistant.ngrok.app`}</code>
+<code>{`cadet connect import https://your-assistant.ngrok.app`}</code>
               </pre>
             </div>
             <p className={lastParaClass}>
@@ -463,7 +463,7 @@ ngrok --version`}</code>
           </p>
           <div className={blockClass}>
             <pre className={preClass}>
-<code>{`vellum devices`}</code>
+<code>{`cadet devices`}</code>
             </pre>
           </div>
           <p className={paraClass}>
@@ -472,7 +472,7 @@ ngrok --version`}</code>
           </p>
           <div className={blockClass}>
             <pre className={preClass}>
-<code>{`vellum devices revoke 3f9a1c...`}</code>
+<code>{`cadet devices revoke 3f9a1c...`}</code>
             </pre>
           </div>
           <p className={paraClass}>
@@ -488,7 +488,7 @@ ngrok --version`}</code>
           </p>
           <ul className={bulletClass}>
             <li>
-              <code className={codeClass}>vellum unpair &lt;name&gt;</code>{" "}
+              <code className={codeClass}>cadet unpair &lt;name&gt;</code>{" "}
               runs on the paired machine and only forgets the connection there.
               The host still trusts it.
             </li>
@@ -535,7 +535,7 @@ ngrok --version`}</code>
                 Pairing says it needs a public https address
               </dt>
               <dd className={cardBodyClass}>
-                No tunnel is running yet. Vellum won&apos;t build a pairing code
+                No tunnel is running yet. Cadet won&apos;t build a pairing code
                 around a <code className={codeClass}>localhost</code> address,
                 which would point the phone back at itself.
               </dd>
@@ -565,7 +565,7 @@ ngrok --version`}</code>
               <dd className={cardBodyClass}>
                 Codes last 10 minutes and work once. Generate a fresh one from
                 the settings card or with{" "}
-                <code className={codeClass}>vellum pair</code>.
+                <code className={codeClass}>cadet pair</code>.
               </dd>
             </div>
           </dl>

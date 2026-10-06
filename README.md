@@ -69,4 +69,4 @@ We welcome contributions from everyone.
 
 MIT. See [License](https://github.com/vargasjr-dev/mycadet-temp?tab=MIT-1-ov-file). Integration logos from [Simple Icons](https://github.com/simple-icons/simple-icons), licensed [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
 
-Cadet is open-source software built by [Vargas JR LLC](https://vargasjr.dev). Based on the Vellum Assistant by Vocify Inc, used under the MIT license. Free to use and modify under MIT, and we're committed to keeping it that way.
+Cadet is open-source software built by [Vargas JR LLC](https://vargasjr.dev). Free to use and modify under MIT, and we're committed to keeping it that way.

@@ -2,9 +2,9 @@ import { HelpFaqContent } from "@/app/docs/_components/help-faq-content";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "FAQ - Vellum Docs",
+  title: "FAQ - Cadet Docs",
   description:
-    "Frequently asked questions about Vellum — product capabilities, privacy, data handling, and your assistant.",
+    "Frequently asked questions about Cadet — product capabilities, privacy, data handling, and your assistant.",
   path: "/docs/help/faq",
 });
 

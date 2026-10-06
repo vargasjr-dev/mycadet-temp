@@ -112,8 +112,8 @@ export function TrustSecurityPrivacyDataContent() {
       >
         <p className="mb-4 text-zinc-600">
           Your assistant&apos;s data lives wherever your assistant is hosted.
-          On Vellum Cloud (the default), your data lives in your private,
-          encrypted Vellum Cloud account. If you self-host on your Mac,
+          On Cadet Cloud (the default), your data lives in your private,
+          encrypted Cadet Cloud account. If you self-host on your Mac,
           everything stays on your machine.
         </p>
         <p className="mb-8 text-zinc-600">
@@ -133,7 +133,7 @@ export function TrustSecurityPrivacyDataContent() {
 
           <p className="mb-4 text-zinc-600">
             All of the following data stays within your assistant&apos;s
-            environment and never leaves it, except where noted. On Vellum
+            environment and never leaves it, except where noted. On Cadet
             Cloud this means your private cloud account; on self-hosted
             installations this means your machine.
           </p>
@@ -248,12 +248,12 @@ export function TrustSecurityPrivacyDataContent() {
           </ul>
 
           <Callout>
-            On Vellum Cloud (the default), your data is stored in
-            Vellum&apos;s infrastructure, isolated in a dedicated, encrypted
-            container, and accessible to Vellum only for operational purposes.
+            On Cadet Cloud (the default), your data is stored in
+            Cadet&apos;s infrastructure, isolated in a dedicated, encrypted
+            container, and accessible to Cadet only for operational purposes.
             If you self-host and opt out of usage analytics, your workspace
             files, memories, conversation history, credentials, and trust
-            rules are never sent to Vellum, and the only external party that
+            rules are never sent to Cadet, and the only external party that
             receives conversation context is the AI model provider. The
             exception in both cases is the <strong>Share Feedback</strong>{" "}
             feature, which explicitly sends logs when you choose to use it.
@@ -277,11 +277,11 @@ export function TrustSecurityPrivacyDataContent() {
 
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              <strong>Isolation</strong>: on Vellum Cloud, CES runs in a
+              <strong>Isolation</strong>: on Cadet Cloud, CES runs in a
               dedicated container with its own private storage that the
               assistant container literally cannot read. On desktop, CES
               runs as a separate process with its own sandboxed data
-              directory under your Vellum root. Same architectural
+              directory under your Cadet root. Same architectural
               property in both cases: the assistant and the AI model
               never touch raw secrets.
             </li>
@@ -489,7 +489,7 @@ export function TrustSecurityPrivacyDataContent() {
           <p className="mb-4 text-zinc-600">
             Your assistant uses a third-party AI model to generate
             responses. By default, data is routed to{" "}
-            <strong>Anthropic</strong> (Claude) using Vellum&apos;s
+            <strong>Anthropic</strong> (Claude) using Cadet&apos;s
             credentials. If you connect your own API key, you can switch
             to <strong>OpenAI</strong>, <strong>Google</strong> (Gemini),{" "}
             <strong>OpenRouter</strong>, or <strong>Fireworks</strong>. If
@@ -579,10 +579,10 @@ export function TrustSecurityPrivacyDataContent() {
 
           <div className="mb-8">
             <h4 className="mb-2 font-semibold text-zinc-900">
-              Vellum Cloud (recommended)
+              Cadet Cloud (recommended)
             </h4>
             <p className="mb-0 text-zinc-600">
-              Your assistant runs in Vellum&apos;s cloud infrastructure. Your
+              Your assistant runs in Cadet&apos;s cloud infrastructure. Your
               data is isolated in a dedicated, encrypted container that is
               not shared with other users. You get 24/7 uptime, automatic
               updates, and no local machine dependency. Schedules, watchers,

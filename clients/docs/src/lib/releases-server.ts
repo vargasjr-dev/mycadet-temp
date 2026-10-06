@@ -17,7 +17,7 @@ function getReleasesBaseUrl(): string {
   return (
     process.env.RELEASES_API_URL ||
     process.env.DJANGO_INTERNAL_URL ||
-    "https://www.vellum.ai"
+    "https://www.mycadet.ai"
   );
 }
 

@@ -219,7 +219,7 @@ export function SkillsReferenceAppBuilderContent() {
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
             <li>No configuration needed</li>
             <li>
-              Apps use the Vellum design system by default (semantic colors, spacing, components)
+              Apps use the Cadet design system by default (semantic colors, spacing, components)
             </li>
             <li>
               You can specify aesthetics: &ldquo;make it minimal,&rdquo; &ldquo;go bold and colorful,&rdquo;
