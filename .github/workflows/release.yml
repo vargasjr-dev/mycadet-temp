@@ -438,11 +438,11 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
         with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Configure Docker for GCR
-        run: gcloud auth configure-docker ${{ vars.GCP_REGISTRY_HOST }}
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGISTRY_HOST }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
@@ -453,7 +453,7 @@ jobs:
       - name: Compute image names
         id: image
         run: |
-          echo "gcp=${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.ASSISTANT_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "gcp=${{ secrets.GCP_REGISTRY_HOST }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.ASSISTANT_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
       - name: Sync feature flag registry for Docker context
         run: cp meta/feature-flags/feature-flag-registry.json assistant/src/config/feature-flag-registry.json
@@ -526,11 +526,11 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
         with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Configure Docker for GCR
-        run: gcloud auth configure-docker ${{ vars.GCP_REGISTRY_HOST }}
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGISTRY_HOST }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
@@ -547,7 +547,7 @@ jobs:
       - name: Compute image tags
         id: tags
         run: |
-          GCP_IMAGE="${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.ASSISTANT_IMAGE_NAME }}"
+          GCP_IMAGE="${{ secrets.GCP_REGISTRY_HOST }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.ASSISTANT_IMAGE_NAME }}"
           VERSION="${{ needs.extract-version.outputs.version }}"
           SHA="${{ steps.release-sha.outputs.sha }}"
           IS_STAGING="${{ needs.extract-version.outputs.is_staging }}"
@@ -596,7 +596,7 @@ jobs:
       - name: Export image metadata
         id: meta
         run: |
-          echo "repository=${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.ASSISTANT_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "repository=${{ secrets.GCP_REGISTRY_HOST }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.ASSISTANT_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
           echo "tag=v${{ needs.extract-version.outputs.version }}" >> "$GITHUB_OUTPUT"
           echo "sha=${{ steps.release-sha.outputs.sha }}" >> "$GITHUB_OUTPUT"
 
@@ -638,11 +638,11 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
         with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Configure Docker for GCR
-        run: gcloud auth configure-docker ${{ vars.GCP_REGISTRY_HOST }}
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGISTRY_HOST }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
@@ -653,7 +653,7 @@ jobs:
       - name: Compute image names
         id: image
         run: |
-          echo "gcp=${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.GATEWAY_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "gcp=${{ secrets.GCP_REGISTRY_HOST }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.GATEWAY_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
       - name: Sync feature flag registry for Docker context
         run: cp meta/feature-flags/feature-flag-registry.json gateway/src/feature-flag-registry.json
@@ -721,11 +721,11 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
         with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Configure Docker for GCR
-        run: gcloud auth configure-docker ${{ vars.GCP_REGISTRY_HOST }}
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGISTRY_HOST }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
@@ -736,7 +736,7 @@ jobs:
       - name: Compute image names
         id: image
         run: |
-          echo "gcp=${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "gcp=${{ secrets.GCP_REGISTRY_HOST }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
       - name: Stamp release version into package.json
         run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' credential-executor/package.json > credential-executor/package.json.tmp && mv credential-executor/package.json.tmp credential-executor/package.json
@@ -806,11 +806,11 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
         with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Configure Docker for GCR
-        run: gcloud auth configure-docker ${{ vars.GCP_REGISTRY_HOST }}
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGISTRY_HOST }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
@@ -827,7 +827,7 @@ jobs:
       - name: Compute image tags
         id: tags
         run: |
-          GCP_IMAGE="${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.GATEWAY_IMAGE_NAME }}"
+          GCP_IMAGE="${{ secrets.GCP_REGISTRY_HOST }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.GATEWAY_IMAGE_NAME }}"
           VERSION="${{ needs.extract-version.outputs.version }}"
           SHA="${{ steps.release-sha.outputs.sha }}"
           IS_STAGING="${{ needs.extract-version.outputs.is_staging }}"
@@ -876,7 +876,7 @@ jobs:
       - name: Export image metadata
         id: meta
         run: |
-          echo "repository=${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.GATEWAY_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "repository=${{ secrets.GCP_REGISTRY_HOST }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.GATEWAY_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
           echo "tag=v${{ needs.extract-version.outputs.version }}" >> "$GITHUB_OUTPUT"
           echo "sha=${{ steps.release-sha.outputs.sha }}" >> "$GITHUB_OUTPUT"
 
@@ -923,11 +923,11 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
         with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Configure Docker for GCR
-        run: gcloud auth configure-docker ${{ vars.GCP_REGISTRY_HOST }}
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGISTRY_HOST }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
@@ -944,7 +944,7 @@ jobs:
       - name: Compute image tags
         id: tags
         run: |
-          GCP_IMAGE="${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}"
+          GCP_IMAGE="${{ secrets.GCP_REGISTRY_HOST }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}"
           VERSION="${{ needs.extract-version.outputs.version }}"
           SHA="${{ steps.release-sha.outputs.sha }}"
           IS_STAGING="${{ needs.extract-version.outputs.is_staging }}"
@@ -993,7 +993,7 @@ jobs:
       - name: Export image metadata
         id: meta
         run: |
-          echo "repository=${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "repository=${{ secrets.GCP_REGISTRY_HOST }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
           echo "tag=v${{ needs.extract-version.outputs.version }}" >> "$GITHUB_OUTPUT"
           echo "sha=${{ steps.release-sha.outputs.sha }}" >> "$GITHUB_OUTPUT"
 
@@ -1177,9 +1177,9 @@ jobs:
         run: |
           VERSION="${{ needs.extract-version.outputs.version }}"
           SHA="${{ steps.release-sha.outputs.sha }}"
-          ASSISTANT_REPO="${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.ASSISTANT_IMAGE_NAME }}"
-          GATEWAY_REPO="${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.GATEWAY_IMAGE_NAME }}"
-          CREDENTIAL_EXECUTOR_REPO="${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}"
+          ASSISTANT_REPO="${{ secrets.GCP_REGISTRY_HOST }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.ASSISTANT_IMAGE_NAME }}"
+          GATEWAY_REPO="${{ secrets.GCP_REGISTRY_HOST }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.GATEWAY_IMAGE_NAME }}"
+          CREDENTIAL_EXECUTOR_REPO="${{ secrets.GCP_REGISTRY_HOST }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}"
           IS_STABLE="true"
 
           PAYLOAD=$(jq -n \
@@ -2443,8 +2443,8 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
         with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Upload Electron update artifacts to GCS
         run: |
