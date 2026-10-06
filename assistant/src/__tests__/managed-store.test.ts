@@ -1453,7 +1453,7 @@ describe("YAML metadata round-trip", () => {
         "---",
         "name: yaml-nested-skill",
         "description: Hand-authored YAML nested metadata test",
-        'compatibility: "Designed for Vellum personal assistants"',
+        'compatibility: "Designed for Cadet personal assistants"',
         "metadata:",
         '  emoji: "🧪"',
         "  vellum:",

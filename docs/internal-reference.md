@@ -1,6 +1,6 @@
 # Internal Reference
 
-Detailed reference documentation for the Vellum Assistant platform. For an overview and quick start, see the [README](../README.md).
+Detailed reference documentation for the Cadet platform. For an overview and quick start, see the [README](../README.md).
 
 ## Table of Contents
 
@@ -56,15 +56,15 @@ See [.githooks/README.md](../.githooks/README.md) for more details about availab
 
 ### Assistant Runtime
 
-The assistant runtime lives in `/assistant`. The recommended way to start it is via the `vellum` CLI:
+The assistant runtime lives in `/assistant`. The recommended way to start it is via the `cadet` CLI:
 
 ```bash
-vellum wake    # starts assistant + gateway from current checkout
-vellum ps      # check process status
-vellum sleep   # stop assistant + gateway
+cadet wake    # starts assistant + gateway from current checkout
+cadet ps      # check process status
+cadet sleep   # stop assistant + gateway
 ```
 
-> **Note:** `vellum wake` requires a hatched assistant. Run `vellum hatch` first, or launch the macOS app which handles hatching automatically. Alternatively, the macOS app supports **managed sign-in** during onboarding — authenticating via the platform and connecting to a platform-hosted assistant without running a local assistant.
+> **Note:** `cadet wake` requires a hatched assistant. Run `cadet hatch` first, or launch the macOS app which handles hatching automatically. Alternatively, the macOS app supports **managed sign-in** during onboarding — authenticating via the platform and connecting to a platform-hosted assistant without running a local assistant.
 
 #### Development: raw bun commands
 
@@ -92,7 +92,7 @@ bun run src/index.ts assistant start
 
 Sandbox tools are workspace-scoped in software: `file_read`, `file_write`, and `file_edit` validate that every resolved path (including symlinks) stays inside `$VELLUM_WORKSPACE_DIR`, and `bash` runs in the workspace directory with a sanitized environment (env allowlist, secret values stripped).
 
-There is no OS-level sandbox for shell commands on a local install. OS-level isolation comes from containerized deployments (`vellum hatch --remote docker` or a remote host), where the whole assistant runs inside a container boundary.
+There is no OS-level sandbox for shell commands on a local install. OS-level isolation comes from containerized deployments (`cadet hatch --remote docker` or a remote host), where the whole assistant runs inside a container boundary.
 
 **Approval policy:**
 
@@ -209,7 +209,7 @@ See [`assistant/docs/architecture/security.md`](../assistant/docs/architecture/s
 
 ### Integrations
 
-Vellum integrates with third-party services via OAuth2. Each integration is exposed as a bundled skill with its own set of tools.
+Cadet integrates with third-party services via OAuth2. Each integration is exposed as a bundled skill with its own set of tools.
 
 #### Messaging (Gmail, Telegram)
 
@@ -394,7 +394,7 @@ The runtime HTTP server exposes a Server-Sent Events (SSE) endpoint that streams
 GET /v1/events?conversationId=<id>
 ```
 
-**Auth**: JWT bearer token (same rules as other runtime HTTP endpoints). The SSE endpoint requires a valid JWT with the `chat.read` scope, passed as `Authorization: Bearer <jwt>`. JWTs are issued by the assistant's auth system (see Vellum Guardian Identity for the bootstrap flow). The route policy in `route-policy.ts` enforces scope requirements per endpoint.
+**Auth**: JWT bearer token (same rules as other runtime HTTP endpoints). The SSE endpoint requires a valid JWT with the `chat.read` scope, passed as `Authorization: Bearer <jwt>`. JWTs are issued by the assistant's auth system (see Cadet Guardian Identity for the bootstrap flow). The route policy in `route-policy.ts` enforces scope requirements per endpoint.
 
 **Query params**:
 
@@ -523,7 +523,7 @@ VELLUM_DAEMON_URL=http://localhost:8741 open -a Vellum
 | CLI: "could not connect to assistant"                 | Is the SSH port tunnel active? Check `VELLUM_DAEMON_URL` |
 | CLI: assistant starts locally despite remote override | Check that `VELLUM_DAEMON_AUTOSTART` is not set to `1`   |
 | macOS: not connecting                                 | Verify the assistant URL is reachable                    |
-| Any: "connection refused"                             | Is the remote assistant running? (`vellum ps` on remote) |
+| Any: "connection refused"                             | Is the remote assistant running? (`cadet ps` on remote) |
 
 ## Development Workflow
 

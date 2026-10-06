@@ -1260,7 +1260,7 @@ graph TB
     USER --> CHECK
 ```
 
-- **Workspace scoping (software-enforced)**: `file_read`, `file_write`, and `file_edit` path-check every access against `$VELLUM_WORKSPACE_DIR`, including symlink resolution. `bash` spawns `bash -c` in the workspace directory with a sanitized environment and is not OS-confined on local installs; commands are gated by risk classification and the conversation's auto-approve threshold, with workspace path checks applied to allowlisted commands on non-containerized installs. Containerized deployments (`vellum hatch --remote docker`, remote hosts) get OS-level isolation from the container boundary. Workflow scripts run in a separate QuickJS-WASM sandbox with no ambient capabilities.
+- **Workspace scoping (software-enforced)**: `file_read`, `file_write`, and `file_edit` path-check every access against `$VELLUM_WORKSPACE_DIR`, including symlink resolution. `bash` spawns `bash -c` in the workspace directory with a sanitized environment and is not OS-confined on local installs; commands are gated by risk classification and the conversation's auto-approve threshold, with workspace path checks applied to allowlisted commands on non-containerized installs. Containerized deployments (`cadet hatch --remote docker`, remote hosts) get OS-level isolation from the container boundary. Workflow scripts run in a separate QuickJS-WASM sandbox with no ambient capabilities.
 - **Host tools unchanged**: `host_bash`, `host_file_read`, `host_file_write`, and `host_file_edit` always execute directly on the host regardless of deployment mode.
 - Sandbox defaults: `file_*` and `bash` execute within `$VELLUM_WORKSPACE_DIR`.
 - Host access is explicit: `host_file_read`, `host_file_write`, `host_file_edit`, and `host_bash` are separate tools.
@@ -1401,7 +1401,7 @@ Skills can expose custom tools via a `TOOLS.json` manifest alongside their `SKIL
 
 ### Bundled Skill Retrieval Contract (CLI-First)
 
-Config/status retrieval instructions in bundled `SKILL.md` files are CLI-first. Retrieval should flow through canonical `vellum` CLI surfaces (`assistant config get` for generic settings, secure credential surfaces for secrets, and domain reads where available) instead of direct gateway curl snippets or credential store lookups.
+Config/status retrieval instructions in bundled `SKILL.md` files are CLI-first. Retrieval should flow through canonical `cadet` CLI surfaces (`assistant config get` for generic settings, secure credential surfaces for secrets, and domain reads where available) instead of direct gateway curl snippets or credential store lookups.
 
 ```mermaid
 graph LR
