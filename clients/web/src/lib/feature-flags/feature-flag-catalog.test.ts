@@ -6,15 +6,12 @@ import {
   CLIENT_FLAG_DEFAULTS,
   CLIENT_STRING_FLAG_DEFAULTS,
   getEnvFlagOverridesForScope,
-  readEnvFlagOverrides,
-  resetEnvOverridesCache,
   scopeIncludes,
 } from "@/lib/feature-flags/feature-flag-catalog";
 
 const originalWindow = (globalThis as Record<string, unknown>).window;
 
 afterEach(() => {
-  resetEnvOverridesCache();
   (globalThis as Record<string, unknown>).window = originalWindow;
 });
 
@@ -179,29 +176,6 @@ describe("feature flag catalog", () => {
   });
 });
 
-describe("readEnvFlagOverrides", () => {
-  test("returns empty object when neither window global nor Vite env vars are present", () => {
-    const overrides = readEnvFlagOverrides();
-    expect(overrides).toEqual({});
-  });
-
-  test("reads from window.__VELLUM_FLAG_OVERRIDES__ when set", () => {
-    (globalThis as Record<string, unknown>).window = {
-      __VELLUM_FLAG_OVERRIDES__: {
-        "self-intro-greeting": true,
-        "velvet": "variant-a",
-      },
-    };
-    resetEnvOverridesCache();
-
-    const overrides = readEnvFlagOverrides();
-    expect(overrides).toEqual({
-      "self-intro-greeting": true,
-      "velvet": "variant-a",
-    });
-  });
-});
-
 describe("getEnvFlagOverridesForScope", () => {
   test("returns empty bool and str maps when no overrides are present", () => {
     const result = getEnvFlagOverridesForScope("client");
@@ -219,7 +193,6 @@ describe("getEnvFlagOverridesForScope", () => {
         "experiment-activation-flow-2026-06-03": "variant-a",
       },
     };
-    resetEnvOverridesCache();
 
     const result = getEnvFlagOverridesForScope("client");
     expect(result.bool).toEqual({ velvet: true });
@@ -233,13 +206,11 @@ describe("getEnvFlagOverridesForScope", () => {
     (globalThis as Record<string, unknown>).window = undefined;
     process.env.VITE_VELLUM_FLAG_VISION_MODE = "on";
     try {
-      resetEnvOverridesCache();
       const result = getEnvFlagOverridesForScope("client");
       expect(result.str.visionMode).toBe("on");
       expect(result.bool).not.toHaveProperty("visionMode");
 
       process.env.VITE_VELLUM_FLAG_VISION_MODE = "off";
-      resetEnvOverridesCache();
       expect(getEnvFlagOverridesForScope("client").str.visionMode).toBe("off");
     } finally {
       delete process.env.VITE_VELLUM_FLAG_VISION_MODE;
@@ -250,11 +221,9 @@ describe("getEnvFlagOverridesForScope", () => {
     (globalThis as Record<string, unknown>).window = undefined;
     process.env.VITE_VELLUM_FLAG_VISION_MODE = "ON";
     try {
-      resetEnvOverridesCache();
       expect(getEnvFlagOverridesForScope("client").str.visionMode).toBe("on");
 
       process.env.VITE_VELLUM_FLAG_VISION_MODE = "On";
-      resetEnvOverridesCache();
       expect(getEnvFlagOverridesForScope("client").str.visionMode).toBe("on");
     } finally {
       delete process.env.VITE_VELLUM_FLAG_VISION_MODE;
@@ -265,7 +234,6 @@ describe("getEnvFlagOverridesForScope", () => {
     (globalThis as Record<string, unknown>).window = undefined;
     process.env.VITE_VELLUM_FLAG_VISION_MODE = "bogus";
     try {
-      resetEnvOverridesCache();
       const result = getEnvFlagOverridesForScope("client");
       expect(result.str).not.toHaveProperty("visionMode");
       expect(result.bool).not.toHaveProperty("visionMode");
@@ -279,7 +247,6 @@ describe("getEnvFlagOverridesForScope", () => {
     for (const raw of ["on", "ON"]) {
       process.env.VITE_VELLUM_FLAG_VELVET = raw;
       try {
-        resetEnvOverridesCache();
         const result = getEnvFlagOverridesForScope("client");
         expect(result.bool.velvet).toBe(true);
         expect(result.str).not.toHaveProperty("velvet");
@@ -293,13 +260,11 @@ describe("getEnvFlagOverridesForScope", () => {
     (globalThis as Record<string, unknown>).window = {
       __VELLUM_FLAG_OVERRIDES__: { "vision-mode": true },
     };
-    resetEnvOverridesCache();
     expect(getEnvFlagOverridesForScope("client").str.visionMode).toBe("on");
 
     (globalThis as Record<string, unknown>).window = {
       __VELLUM_FLAG_OVERRIDES__: { "vision-mode": false },
     };
-    resetEnvOverridesCache();
     expect(getEnvFlagOverridesForScope("client").str.visionMode).toBe("off");
   });
 
@@ -309,7 +274,6 @@ describe("getEnvFlagOverridesForScope", () => {
         "pre-chat-onboarding-experiment-2026-06-06": true,
       },
     };
-    resetEnvOverridesCache();
 
     const result = getEnvFlagOverridesForScope("client");
     expect(result.str).not.toHaveProperty(
@@ -326,7 +290,6 @@ describe("getEnvFlagOverridesForScope", () => {
         "self-intro-greeting": true,
       },
     };
-    resetEnvOverridesCache();
 
     const clientResult = getEnvFlagOverridesForScope("client");
     const assistantResult = getEnvFlagOverridesForScope("assistant");

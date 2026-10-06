@@ -7,7 +7,7 @@ export function scopeIncludes(scope: FlagScope, target: SingleScope): boolean {
   return scope === target || scope === "both";
 }
 
-export interface FlagDefinition {
+interface FlagDefinition {
   id: string;
   scope: FlagScope;
   key: string;
@@ -71,9 +71,6 @@ export const ASSISTANT_FLAG_DEFAULTS = buildScopeDefaults("assistant");
 export const CLIENT_STRING_FLAG_DEFAULTS = buildStringScopeDefaults("client");
 export const ASSISTANT_STRING_FLAG_DEFAULTS =
   buildStringScopeDefaults("assistant");
-
-export type ClientFeatureFlags = Record<string, boolean>;
-export type AssistantFeatureFlags = Record<string, boolean>;
 
 const STORE_KEY_TO_FLAG = new Map<string, FlagDefinition>();
 for (const flag of flags) {
@@ -165,24 +162,11 @@ function computeEnvFlagOverrides(): Record<string, boolean | string> {
   return overrides;
 }
 
-let cachedOverrides: Record<string, boolean | string> | null = null;
-
-export function readEnvFlagOverrides(): Record<string, boolean | string> {
-  if (cachedOverrides === null) {
-    cachedOverrides = computeEnvFlagOverrides();
-  }
-  return cachedOverrides;
-}
-
-export function resetEnvOverridesCache(): void {
-  cachedOverrides = null;
-}
-
 export function getEnvFlagOverridesForScope(scope: SingleScope): {
   bool: Record<string, boolean>;
   str: Record<string, string>;
 } {
-  const overrides = readEnvFlagOverrides();
+  const overrides = computeEnvFlagOverrides();
   const bool: Record<string, boolean> = {};
   const str: Record<string, string> = {};
 
