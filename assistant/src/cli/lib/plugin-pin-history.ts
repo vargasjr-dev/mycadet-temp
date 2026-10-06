@@ -29,6 +29,7 @@ import {
   fetchMarketplaceEntries,
   MARKETPLACE_MANIFEST_LOCATION,
 } from "./plugin-marketplace.js";
+import { USER_AGENT } from "./user-agent.js";
 
 /**
  * Cap on how many manifest-touching commits are inspected in one walk. Bounds
@@ -113,7 +114,7 @@ async function listManifestCommits(
   const res = await fetchFn(url, {
     headers: {
       Accept: "application/vnd.github+json",
-      "User-Agent": "cadet-cli",
+      "User-Agent": USER_AGENT,
     },
   });
   if (res.status === 404) {

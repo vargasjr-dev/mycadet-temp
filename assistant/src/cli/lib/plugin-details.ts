@@ -57,6 +57,7 @@ import {
   type PluginMatchSource,
   type PluginSearchMatch,
 } from "./search-plugins.js";
+import { USER_AGENT } from "./user-agent.js";
 
 /** Recognised README filenames, matched case-insensitively against a listing. */
 const README_RE = /^readme(\.md|\.markdown)?$/i;
@@ -482,7 +483,7 @@ function githubFetch(
   fetchFn: FetchLike,
 ): Promise<Response> {
   return fetchFn(url, {
-    headers: { Accept: accept, "User-Agent": "cadet-cli" },
+    headers: { Accept: accept, "User-Agent": USER_AGENT },
   });
 }
 

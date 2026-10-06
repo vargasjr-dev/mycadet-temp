@@ -28,6 +28,7 @@ import {
   projectMarketplaceEntries,
   type SearchPluginsDeps,
 } from "./search-plugins.js";
+import { USER_AGENT } from "./user-agent.js";
 
 const log = getLogger("plugin-catalog");
 
@@ -69,7 +70,7 @@ export async function fetchPluginCatalogFromPlatform(
   try {
     res = await deps.fetch(url, {
       signal: AbortSignal.timeout(10_000),
-      headers: { "User-Agent": "cadet-cli" },
+      headers: { "User-Agent": USER_AGENT },
     });
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);

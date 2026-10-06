@@ -25,6 +25,7 @@
 import { z } from "zod";
 
 import type { FetchLike } from "./fetch-like.js";
+import { USER_AGENT } from "./user-agent.js";
 
 /** Canonical location of the marketplace manifest. */
 const MARKETPLACE_SOURCE_OWNER = "vellum-ai";
@@ -296,7 +297,7 @@ export async function fetchMarketplaceEntries(
       // Ask for the raw file body rather than the base64-wrapped Contents
       // envelope, so the response text is the manifest JSON directly.
       Accept: "application/vnd.github.raw",
-      "User-Agent": "cadet-cli",
+      "User-Agent": USER_AGENT,
     },
   });
 

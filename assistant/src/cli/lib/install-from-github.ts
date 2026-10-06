@@ -81,6 +81,7 @@ const PLUGIN_SOURCE_REPO = "vellum-assistant";
 const PLUGIN_SOURCE_PATH_PREFIX = "plugins";
 import { DEFAULT_DIRECT_REF } from "./parse-github-plugin-spec.js";
 import { DEFAULT_PLUGIN_REF } from "./plugin-constants.js";
+import { USER_AGENT } from "./user-agent.js";
 
 /** Full Git commit SHA — 40 hex chars (SHA-1) or 64 (SHA-256). */
 const FULL_COMMIT_SHA_RE = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i;
@@ -1883,7 +1884,7 @@ async function githubFetch(
   return fetchFn(url, {
     headers: {
       Accept: accept,
-      "User-Agent": "cadet-cli",
+      "User-Agent": USER_AGENT,
     },
   });
 }

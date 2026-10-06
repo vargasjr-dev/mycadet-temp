@@ -51,6 +51,7 @@ import {
   sanitizePluginName,
   synthesizeMinimalPackageJson,
 } from "./install-from-github.js";
+import { USER_AGENT } from "./user-agent.js";
 
 /**
  * The downloaded artifact's sha256 did not match the `ETag` the endpoint
@@ -301,7 +302,7 @@ async function downloadInstallArchive(
     // The platform (Django) 406s a specific `application/gzip` Accept, so ask
     // for anything and sniff the body ourselves (see extractPluginTarball).
     Accept: "*/*",
-    "User-Agent": "cadet-cli",
+    "User-Agent": USER_AGENT,
   };
   if (deps.apiKey) {
     headers.Authorization = `Api-Key ${deps.apiKey}`;

@@ -48,6 +48,7 @@ import {
   type PluginSurfaces,
 } from "./plugin-surfaces.js";
 import type { PluginCatalog, PluginSearchMatch } from "./search-plugins.js";
+import { USER_AGENT } from "./user-agent.js";
 
 /** Full commit SHA (40 hex SHA-1 or 64 hex SHA-256). */
 const FULL_SHA_RE = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i;
@@ -298,7 +299,7 @@ export async function fetchCommitDate(
     const res = await fetch(url, {
       headers: {
         Accept: "application/vnd.github+json",
-        "User-Agent": "cadet-cli",
+        "User-Agent": USER_AGENT,
       },
     });
     if (!res.ok) {

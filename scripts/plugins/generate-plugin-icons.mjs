@@ -217,7 +217,7 @@ function readLocalIconBytes(iconPath) {
 async function fetchIconBytes(fetchImpl, entry, token) {
   const headers = {
     Accept: "application/vnd.github.raw",
-    "User-Agent": "cadet-cli",
+    "User-Agent": "cadet-assistant" // keep in sync with assistant/src/cli/lib/user-agent.ts,
   };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
