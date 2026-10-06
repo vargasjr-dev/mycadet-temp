@@ -27346,8 +27346,8 @@ paths:
       operationId: platform_status_get
       summary: Get platform deployment context and connection status
       description:
-        Aggregates platform context, credentials, assistant ID, and webhook secret. Tunnel tunnel status is reported
-        separately by gateway_status.
+        Aggregates platform context, credentials, assistant ID, and webhook secret. Tunnel tunnel status is
+        reported separately by gateway_status.
       tags:
         - platform
       responses:
