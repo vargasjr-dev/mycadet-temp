@@ -8,17 +8,21 @@ on:
       - "bun.lock"
       - "patches/**"
       - "assistant/**"
-      - "plugins/marketplace.json"
-      - "plugins/mcp-catalog/**"
-      - "credential-executor/**"
-      - "gateway/**"
-      - "packages/**"
+      - "packages/app-icons/**"
+      - "packages/avatar-catalog/**"
+      - "packages/avatar-manifest/**"
+      - "packages/ces-client/**"
+      - "packages/credential-storage/**"
+      - "packages/egress-proxy/**"
+      - "packages/environments/**"
+      - "packages/gateway-client/**"
+      - "packages/ipc-server-utils/**"
+      - "packages/service-contracts/**"
+      - "packages/slack-text/**"
+      - "packages/twilio-client/**"
       - "scripts/skills/**"
       - "meta/feature-flags/**"
       - "meta/sync-bundled-copies.ts"
-      # The daemon LLM catalog parity test reads these files, so hand edits to
-      # either catalog JSON must run the assistant tests on the PR that
-      # introduces drift.
       - "meta/llm-provider-catalog.json"
       - ".github/workflows/pr-assistant.yaml"
   workflow_dispatch:
@@ -29,7 +33,7 @@ concurrency:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest-8-cores
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     defaults:
       run:
@@ -65,7 +69,7 @@ jobs:
 
   typecheck:
     name: Type Check
-    runs-on: ubuntu-latest-8-cores
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     defaults:
       run:
@@ -98,7 +102,7 @@ jobs:
 
   test:
     name: Test
-    runs-on: ubuntu-latest-8-cores
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     defaults:
       run:
