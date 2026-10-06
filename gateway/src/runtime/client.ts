@@ -573,7 +573,7 @@ export async function forwardTwilioVoiceWebhook(
     } else {
       log.error(
         "TwiML contains public URL placeholder but no public base URL is configured. " +
-          "Twilio will fail to connect. Wait for Tunnel tunnel registration or set ingress.publicBaseUrl.",
+          "Twilio will fail to connect. Wait for Tunnel registration or set ingress.publicBaseUrl.",
       );
     }
   }

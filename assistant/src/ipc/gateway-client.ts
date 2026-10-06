@@ -158,11 +158,11 @@ export async function ipcGetFeatureFlags(
 }
 
 // ---------------------------------------------------------------------------
-// Tunnel tunnel status
+// Tunnel status
 // ---------------------------------------------------------------------------
 
 /**
- * Fetch the current Tunnel tunnel status from the gateway via IPC.
+ * Fetch the current Tunnel status from the gateway via IPC.
  * Returns `null` when the gateway is unreachable or returns an unexpected
  * response — callers should treat `null` as "gateway not running".
  */

@@ -1,5 +1,5 @@
 /**
- * IPC route definitions for Tunnel tunnel status.
+ * IPC route definitions for Tunnel status.
  *
  * Exports a factory that takes the optional TunnelClient and returns
  * a single `get_tunnel_status` IPC route. Returns disconnected/null when no

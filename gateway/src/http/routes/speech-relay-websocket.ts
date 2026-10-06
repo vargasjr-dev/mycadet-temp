@@ -157,7 +157,7 @@ function jsonError(status: number, code: string, detail: string): Response {
 }
 
 /**
- * Map a Vellum platform host onto its environment's tunnel origin. The
+ * Map a Cadet Cloud host onto its environment's tunnel origin. The
  * host-naming convention lives in `@mycadet/service-contracts/ingress`,
  * shared with the web live-voice client; this wrapper adds the scheme.
  */

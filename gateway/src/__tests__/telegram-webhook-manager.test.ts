@@ -667,7 +667,7 @@ describe("reconcileTelegramWebhook", () => {
     const calls: string[] = [];
     let registeredUrl: string | undefined;
     process.env.IS_PLATFORM = "true";
-    // A platform pod always has an `ingress.publicBaseUrl`: the Tunnel tunnel
+    // A platform pod always has an `ingress.publicBaseUrl`: the Tunnel
     // client publishes one at boot. It must not win over the managed callback
     // route — the Tunnel address dies with the tunnel, and the daemon's
     // `hasWebhookRoutingConfigured` reports this pod as managed-callback mode.

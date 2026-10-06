@@ -3,7 +3,7 @@
  * resolve callback URLs: `resolveCallbackUrl` and the `webhooks_register` route
  * handler.
  *
- * A pod's Tunnel tunnel only forwards subpaths the gateway has claimed, so the
+ * A pod's Tunnel only forwards subpaths the gateway has claimed, so the
  * published ingress URL is handed out only once the claim succeeds. Anything
  * else leaves the caller to register with the platform instead.
  */

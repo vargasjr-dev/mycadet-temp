@@ -55,7 +55,7 @@ Follow the steps below in order to fully configure Twilio in preparation to make
 
 ## Step 1: Check Current Configuration
 
-Mark setup as started before doing any read-only checks. This lets a managed gateway begin opening the Tunnel tunnel WebSocket immediately, so the public Twilio HTTP and WebSocket routes are warming up while the user finishes entering credentials and selecting a phone number:
+Mark setup as started before doing any read-only checks. This lets a managed gateway begin opening the Tunnel WebSocket immediately, so the public Twilio HTTP and WebSocket routes are warming up while the user finishes entering credentials and selecting a phone number:
 
 ```bash
 assistant config set twilio.setupStarted true
@@ -178,7 +178,7 @@ assistant platform status --json
 assistant gateway status --json
 ```
 
-If `assistant platform status --json` reports an available platform assistant and `assistant gateway status --json` reports a `tunnel` URL (a `{ "tunnel": "..." }` object), do not load `public-ingress` or install ngrok. Use the managed Tunnel route for the WebSocket leg. If it returns `{}`, restart or re-hatch the assistant/gateway and check gateway logs for `Tunnel tunnel registered`; do not treat that as an ngrok setup problem.
+If `assistant platform status --json` reports an available platform assistant and `assistant gateway status --json` reports a `tunnel` URL (a `{ "tunnel": "..." }` object), do not load `public-ingress` or install ngrok. Use the managed Tunnel route for the WebSocket leg. If it returns `{}`, restart or re-hatch the assistant/gateway and check gateway logs for `Tunnel registered`; do not treat that as an ngrok setup problem.
 
 For local/self-hosted assistants without Tunnel, load the `public-ingress` skill to determine whether `ingress.publicBaseUrl` is configured and walk the user through setting one up if not.
 

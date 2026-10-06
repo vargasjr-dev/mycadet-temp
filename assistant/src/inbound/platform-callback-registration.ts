@@ -193,7 +193,7 @@ function resolveSelfHostedCallbackBaseUrl(): string | undefined {
 }
 
 /**
- * Claim a webhook subpath on the gateway so the Tunnel tunnel forwards it.
+ * Claim a webhook subpath on the gateway so the Tunnel forwards it.
  *
  * The registry matches paths exactly, so query parameters a caller appends to
  * the resolved URL play no part. Returns false when the gateway declines the

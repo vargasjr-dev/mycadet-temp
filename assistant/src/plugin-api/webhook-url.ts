@@ -6,7 +6,7 @@
  * a platform pod and a platform-connected assistant are served through a
  * managed callback route, while a self-hosted deployment is served through its
  * configured public ingress. `ingress.publicBaseUrl` alone does not decide it,
- * because on a platform-connected assistant that value holds the Tunnel tunnel
+ * because on a platform-connected assistant that value holds the Tunnel
  * address, which is not where plugin routes are served.
  *
  * `resolveCallbackUrl` owns that decision for every caller in the codebase

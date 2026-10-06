@@ -20,7 +20,7 @@
  *     at the gateway handler, the same shape as the watch stream.
  *
  * If you add a new public route to `gateway/src/index.ts` that must be
- * reachable through the Tunnel tunnel (i.e. anything an external provider
+ * reachable through the Tunnel (i.e. anything an external provider
  * calls or any unauthenticated callback endpoint), add a matching pattern
  * here as well. Webhook routes instead go in the webhook ingress registry,
  * which {@link buildTunnelAllowedPathsHeaderValue} advertises row by row. The

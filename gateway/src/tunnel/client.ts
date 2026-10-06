@@ -183,10 +183,7 @@ export class TunnelClient {
 
     const ws = this.ws;
     if (ws) {
-      log.info(
-        { reason },
-        "Restarting Tunnel tunnel with refreshed credentials",
-      );
+      log.info({ reason }, "Restarting Tunnel with refreshed credentials");
       this.disconnectActiveWebSocket(ws, 1000, "credentials changed");
       return;
     }
@@ -226,7 +223,7 @@ export class TunnelClient {
         this.refreshDue = true;
         return;
       }
-      log.info({ reason }, "Reconnecting Tunnel tunnel to advertise new rules");
+      log.info({ reason }, "Reconnecting Tunnel to advertise new rules");
       this.performTunnelRefresh(ws);
     }, RULES_REFRESH_DEBOUNCE_MS);
   }
@@ -242,7 +239,7 @@ export class TunnelClient {
     );
     this.startAsync().catch((err) => {
       this.connecting = false;
-      log.error({ err }, "Failed to start Tunnel tunnel client");
+      log.error({ err }, "Failed to start Tunnel client");
       this.scheduleReconnect();
     });
   }
@@ -303,7 +300,7 @@ export class TunnelClient {
     if (this.isPublicIngressDisabled()) {
       this.connecting = false;
       await this.clearPublishedPublicBaseUrl();
-      log.info("Tunnel tunnel waiting because public ingress is disabled");
+      log.info("Tunnel waiting because public ingress is disabled");
       this.scheduleReconnect();
       return;
     }
@@ -315,7 +312,7 @@ export class TunnelClient {
       );
     } catch (err) {
       this.connecting = false;
-      log.warn({ err }, "Failed to read Tunnel tunnel credentials");
+      log.warn({ err }, "Failed to read Tunnel credentials");
       if (this.consumePendingCredentialRefresh("credentials read failed")) {
         return;
       }
@@ -334,7 +331,7 @@ export class TunnelClient {
       if (this.consumePendingCredentialRefresh("assistant API key missing")) {
         return;
       }
-      log.info("Tunnel tunnel waiting for assistant API key");
+      log.info("Tunnel waiting for assistant API key");
       this.scheduleReconnect();
       return;
     }
@@ -365,8 +362,8 @@ export class TunnelClient {
           // webhook routes registered since the last one. See
           // ./allowed-paths.ts for the route inventory and the platform-side
           // enforcement (ATL-402).
-          [TUNNEL_ALLOWED_PATHS_HEADER]: buildTunnelAllowedPathsHeaderValue(() =>
-            this.readRegisteredWebhookPaths(),
+          [TUNNEL_ALLOWED_PATHS_HEADER]: buildTunnelAllowedPathsHeaderValue(
+            () => this.readRegisteredWebhookPaths(),
           ),
         },
       });
@@ -376,7 +373,7 @@ export class TunnelClient {
 
       ws.addEventListener("open", () => {
         if (this.ws !== ws || !this.running) return;
-        log.info("Tunnel tunnel connected");
+        log.info("Tunnel connected");
         this.startHeartbeat(ws);
       });
 
@@ -394,7 +391,7 @@ export class TunnelClient {
 
       ws.addEventListener("error", (event) => {
         if (this.ws !== ws || !this.running) return;
-        log.warn({ error: String(event) }, "Tunnel tunnel WebSocket error");
+        log.warn({ error: String(event) }, "Tunnel WebSocket error");
         if (ws.readyState === WebSocket.CONNECTING) {
           this.disconnectActiveWebSocket(ws);
         }
@@ -403,14 +400,14 @@ export class TunnelClient {
       if (this.credentialRefreshPending) {
         this.credentialRefreshPending = false;
         log.info(
-          "Restarting Tunnel tunnel because credentials changed during connect",
+          "Restarting Tunnel because credentials changed during connect",
         );
         this.disconnectActiveWebSocket(ws, 1000, "credentials changed");
       }
     } catch (err) {
       this.ws = null;
       this.connecting = false;
-      log.warn({ err }, "Failed to connect Tunnel tunnel");
+      log.warn({ err }, "Failed to connect Tunnel");
       if (this.consumePendingCredentialRefresh("WebSocket connect failed")) {
         return;
       }
@@ -430,10 +427,7 @@ export class TunnelClient {
     if (!this.credentialRefreshPending || !this.running) return false;
 
     this.credentialRefreshPending = false;
-    log.info(
-      { reason },
-      "Retrying Tunnel tunnel connect with refreshed credentials",
-    );
+    log.info({ reason }, "Retrying Tunnel connect with refreshed credentials");
     this.connectForCredentialRefresh(reason);
     return true;
   }
@@ -529,7 +523,7 @@ export class TunnelClient {
     await writeManagedPublicBaseUrl(publicUrl, this.options.configFile);
     this.publishedPublicBaseUrl = publicUrl;
     this.backoff.reset();
-    log.info({ publicUrl }, "Tunnel tunnel registered");
+    log.info({ publicUrl }, "Tunnel registered");
     this.scheduleTunnelRefresh(originWs, this.refreshAfterMs);
   }
 
@@ -562,10 +556,7 @@ export class TunnelClient {
     this.clearHeartbeat();
     this.clearTunnelRefresh();
     this.webSocketBridge.closeAll();
-    log.info(
-      { code: event.code, reason: event.reason },
-      "Tunnel tunnel disconnected",
-    );
+    log.info({ code: event.code, reason: event.reason }, "Tunnel disconnected");
     this.clearPublishedPublicBaseUrlThenReconnect();
   }
 
@@ -640,7 +631,7 @@ export class TunnelClient {
   }
 
   private performTunnelRefresh(ws: WebSocket): void {
-    log.info("Refreshing idle Tunnel tunnel before the load balancer timeout");
+    log.info("Refreshing idle Tunnel before the load balancer timeout");
     this.backoff.reset();
     this.disconnectActiveWebSocket(ws, 1000, "proactive tunnel refresh");
   }
@@ -680,10 +671,7 @@ export class TunnelClient {
       );
       return true;
     } catch (err) {
-      log.warn(
-        { err },
-        "Tunnel tunnel WebSocket send failed; forcing reconnect",
-      );
+      log.warn({ err }, "Tunnel WebSocket send failed; forcing reconnect");
       this.disconnectActiveWebSocket(ws, 1000, "websocket send failed");
       return false;
     }
@@ -733,7 +721,7 @@ export class TunnelClient {
       if (this.ws !== ws || !this.running) return;
       log.warn(
         { timeoutMs: this.heartbeatReadTimeoutMs },
-        "Tunnel tunnel heartbeat read-timeout expired; forcing reconnect",
+        "Tunnel heartbeat read-timeout expired; forcing reconnect",
       );
       this.disconnectActiveWebSocket(ws, 1000, "heartbeat read timeout");
     }, this.heartbeatReadTimeoutMs);
@@ -763,7 +751,7 @@ export class TunnelClient {
 
     if (disabled) {
       if (ws) {
-        log.info("Closing Tunnel tunnel because public ingress is disabled");
+        log.info("Closing Tunnel because public ingress is disabled");
         this.disconnectActiveWebSocket(ws, 1000, "public ingress disabled");
       }
       return;

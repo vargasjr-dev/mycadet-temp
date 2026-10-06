@@ -63,7 +63,7 @@ Fields:
   organizationId      The platform organization ID (from stored credentials)
   userId              The platform user ID (from stored credentials)
 
-For the Tunnel tunnel state (only relevant for Twilio webhooks and live
+For the Tunnel state (only relevant for Twilio webhooks and live
 voice/audio), use 'assistant gateway status' instead.
 
 Examples:

@@ -82,7 +82,7 @@ export function loadRecordedAssistantId(): string | null {
 /** Key under `ingress` naming the component that owns `publicBaseUrl`. */
 const INGRESS_MANAGED_BY_KEY = "publicBaseUrlManagedBy";
 
-/** Value that key carries when a self-hosted gateway's Tunnel tunnel owns it. */
+/** Value that key carries when a self-hosted gateway's Tunnel owns it. */
 const TUNNEL_MANAGED_BY = "tunnel";
 
 /**

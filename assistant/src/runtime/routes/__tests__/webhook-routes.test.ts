@@ -210,7 +210,7 @@ describe("webhooks_register callback URL resolution", () => {
     expect(registerLocalWebhookRouteMock).not.toHaveBeenCalled();
   });
 
-  // The gateway publishes the Tunnel tunnel URL into ingress.publicBaseUrl, so
+  // The gateway publishes the Tunnel URL into ingress.publicBaseUrl, so
   // a tunneled platform-connected assistant already resolves to a stable
   // platform-owned URL through the ingress tier.
   test("a Tunnel-managed publicBaseUrl resolves through the ingress tier", async () => {

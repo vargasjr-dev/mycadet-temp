@@ -4,7 +4,7 @@ import type { OutgoingHttpHeaders } from "node:http";
 
 /**
  * Process-local proof that a loopback request was opened by this gateway's
- * Tunnel tunnel bridge. Direct callers can know the header name, but not the
+ * Tunnel bridge. Direct callers can know the header name, but not the
  * per-process value.
  */
 export const TUNNEL_BRIDGE_AUTH_HEADER = "x-vellum-tunnel-bridge-auth" as const;

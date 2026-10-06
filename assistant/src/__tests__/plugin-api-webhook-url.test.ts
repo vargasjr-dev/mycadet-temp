@@ -160,7 +160,7 @@ describe("resolveWebhookUrl", () => {
   });
 
   test("hands out an ingress URL under exactly the path it claimed", async () => {
-    // The Tunnel tunnel forwards the request path verbatim and the gateway
+    // The Tunnel forwards the request path verbatim and the gateway
     // admits it only when it matches a claimed path byte for byte. A trailing
     // slash on this URL would be rejected before the gateway ever saw it.
     mockIsPlatform = true;

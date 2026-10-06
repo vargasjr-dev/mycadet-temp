@@ -1,5 +1,5 @@
 /**
- * Tunnel tunnel status endpoint (GET /v1/tunnel/status).
+ * Tunnel status endpoint (GET /v1/tunnel/status).
  *
  * Exposes the in-process TunnelClient state over HTTP so web clients
  * and the CLI can query tunnel connectivity without a custom IPC call.

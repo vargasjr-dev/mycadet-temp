@@ -192,14 +192,14 @@ export function buildSchema(): Record<string, unknown> {
       },
       "/v1/tunnel/status": {
         get: {
-          summary: "Tunnel tunnel status",
+          summary: "Tunnel status",
           description:
-            "Returns the current state of the Tunnel tunnel connection: whether it is connected and its public URL when available. Returns { connected: false, publicUrl: null } when Tunnel is not configured (TUNNEL_BASE_URL not set).",
+            "Returns the current state of the Tunnel connection: whether it is connected and its public URL when available. Returns { connected: false, publicUrl: null } when Tunnel is not configured (TUNNEL_BASE_URL not set).",
           operationId: "tunnelStatus",
           security: [{ BearerAuth: [] }],
           responses: {
             "200": {
-              description: "Tunnel tunnel status returned",
+              description: "Tunnel status returned",
               content: {
                 "application/json": {
                   schema: {

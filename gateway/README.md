@@ -164,7 +164,7 @@ Control-plane routes are listed with their flat paths. Clients emit assistant-sc
 
 ### Webhook Ingress Route Registry
 
-Which of the `/webhooks/*` routes above an assistant actually answers through the Tunnel tunnel is a per-assistant allowlist, gated on the `tunnel-webhooks` feature flag. With the flag off the whole namespace is reachable, as it always was; with it on an assistant answers exactly the paths it has claimed.
+Which of the `/webhooks/*` routes above an assistant actually answers through the Tunnel is a per-assistant allowlist, gated on the `tunnel-webhooks` feature flag. With the flag off the whole namespace is reachable, as it always was; with it on an assistant answers exactly the paths it has claimed.
 
 Three layers admit a request, each narrower than the last: Tunnel drops anything matching none of the RE2 rules the gateway advertises on the tunnel upgrade, the gateway's Tunnel bridge re-checks the registry as the frame arrives, and the route itself runs its own authentication (Telegram's `secret_token`, Twilio's signature, a plugin webhook's token).
 
@@ -210,7 +210,7 @@ The assistant runtime uses this URL to construct all webhook and OAuth callback 
 
 ### Tunnel for Twilio Testing
 
-Tunnel is a managed ingress transport for assistant-hosted HTTP and WebSocket traffic. The gateway starts the Tunnel tunnel only after Twilio setup has been started in the workspace, or when existing Twilio config shows it was set up before. When Tunnel registration succeeds, the gateway writes the registered public assistant URL to `ingress.publicBaseUrl` and marks it with `ingress.publicBaseUrlManagedBy: "tunnel"`. Twilio URL builders use that public base URL for voice, status, and media-stream endpoints.
+Tunnel is a managed ingress transport for assistant-hosted HTTP and WebSocket traffic. The gateway starts the Tunnel only after Twilio setup has been started in the workspace, or when existing Twilio config shows it was set up before. When Tunnel registration succeeds, the gateway writes the registered public assistant URL to `ingress.publicBaseUrl` and marks it with `ingress.publicBaseUrlManagedBy: "tunnel"`. Twilio URL builders use that public base URL for voice, status, and media-stream endpoints.
 
 Use Tunnel when testing Twilio voice webhooks or Twilio WebSocket upgrades through the platform-managed tunnel:
 
@@ -230,7 +230,7 @@ Use Tunnel when testing Twilio voice webhooks or Twilio WebSocket upgrades throu
 
 3. Start or complete Twilio setup in the workspace so the gateway is allowed to connect the tunnel.
 4. Re-hatch or restart the assistant so the gateway process receives `TUNNEL_BASE_URL`.
-5. Confirm the gateway logs include `Tunnel tunnel connected` followed by `Tunnel tunnel registered`. Registration publishes the returned Tunnel URL to `ingress.publicBaseUrl`.
+5. Confirm the gateway logs include `Tunnel connected` followed by `Tunnel registered`. Registration publishes the returned Tunnel URL to `ingress.publicBaseUrl`.
 
 For an HTTP bridge smoke test, send a request to the registered Tunnel public URL and confirm it reaches the loopback gateway, for example:
 

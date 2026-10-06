@@ -3,7 +3,7 @@
  *
  * Serves ten operations:
  *   - platform_status (GET platform/status): aggregates platform context,
- *     credentials, assistant ID, and webhook secret. (Tunnel tunnel status
+ *     credentials, assistant ID, and webhook secret. (Tunnel status
  *     lives on the gateway — see gateway_status.)
  *   - platform_connect (POST platform/connect): reports whether the stored
  *     credentials still connect, and when the stored key has been rejected,
@@ -924,7 +924,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Get platform deployment context and connection status",
     description:
-      "Aggregates platform context, credentials, assistant ID, and webhook secret. Tunnel tunnel status is reported separately by gateway_status.",
+      "Aggregates platform context, credentials, assistant ID, and webhook secret. Tunnel status is reported separately by gateway_status.",
     tags: ["platform"],
     handler: handlePlatformStatus,
     responseBody: PlatformStatusResponseSchema,

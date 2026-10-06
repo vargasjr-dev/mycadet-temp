@@ -23,7 +23,7 @@ If it reports an available platform assistant, do not install or start ngrok for
 - Check that the phone number is in E.164 format
 - Verify Twilio credentials are correct (wrong auth token causes API errors)
 - On trial accounts, ensure the destination number is verified
-- Check that the configured tunnel is still running. For ngrok, use `curl -s http://127.0.0.1:4040/api/tunnels`. For Tunnel, run `assistant gateway status --json` and confirm it reports a `tunnel` URL (not `{}`), or check gateway logs for `Tunnel tunnel registered`.
+- Check that the configured tunnel is still running. For ngrok, use `curl -s http://127.0.0.1:4040/api/tunnels`. For Tunnel, run `assistant gateway status --json` and confirm it reports a `tunnel` URL (not `{}`), or check gateway logs for `Tunnel registered`.
 
 ## Call connects but no audio / one-way audio
 
@@ -56,13 +56,13 @@ assistant config set ingress.publicBaseUrl "<new-url>"
 
 Or re-run the public-ingress skill to auto-detect and save the new URL.
 
-Do not rotate ngrok to work around a managed Tunnel WebSocket failure. Fix the Tunnel tunnel state instead, or restart the assistant/gateway so it re-registers.
+Do not rotate ngrok to work around a managed Tunnel WebSocket failure. Fix the Tunnel state instead, or restart the assistant/gateway so it re-registers.
 
-## Tunnel tunnel is not registering
+## Tunnel is not registering
 
 - Confirm vembda passes the environment-appropriate `TUNNEL_BASE_URL` to the gateway container.
 - Re-hatch or restart the assistant after changing the environment.
-- Check gateway logs for `Tunnel tunnel connected` followed by `Tunnel tunnel registered`.
+- Check gateway logs for `Tunnel connected` followed by `Tunnel registered`.
 - If `TUNNEL_BASE_URL` is not set on a local/self-hosted assistant, the gateway does not start the Tunnel client. Use ngrok or another custom tunnel in `ingress.publicBaseUrl`.
 
 ## Local Twilio Tunnel smoke tests
@@ -89,7 +89,7 @@ Load `twilio-setup` and follow its Channel Trust Floors section. Change **Who ca
 ## Twilio says "application error" right after answer
 
 - This often means the voice webhook failed or returned invalid TwiML, or the media-stream WebSocket could not connect
-- Check the assistant logs for voice-webhook errors and confirm `ingress.publicBaseUrl` (or the Tunnel tunnel) is reachable from Twilio
+- Check the assistant logs for voice-webhook errors and confirm `ingress.publicBaseUrl` (or the Tunnel) is reachable from Twilio
 
 ## Call answers with a spoken "setup required" message and hangs up
 

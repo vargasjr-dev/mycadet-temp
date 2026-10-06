@@ -78,7 +78,7 @@ export interface CreateCredentialRequestDeps {
    */
   getPlatformAssistantId?: () => Promise<string | undefined>;
   /**
-   * Enable public ingress (if disabled) and start the Tunnel tunnel so the
+   * Enable public ingress (if disabled) and start the Tunnel so the
    * minted link is actually reachable. Wired by the gateway entrypoint, which
    * owns the tunnel client.
    */
@@ -131,7 +131,7 @@ export async function createCredentialRequest(
   }
 
   // All guards passed — the link WILL be minted, so now make ingress live:
-  // enable it if it was explicitly disabled AND start the Tunnel tunnel (on
+  // enable it if it was explicitly disabled AND start the Tunnel (on
   // platform the tunnel otherwise only starts for Twilio / live voice, so the
   const ttlMs = Math.min(
     params.ttlMs ?? DEFAULT_CREDENTIAL_REQUEST_TTL_MS,
@@ -151,7 +151,7 @@ export async function createCredentialRequest(
   });
 
   // The link row is persisted, so now make ingress live: enable it if it was
-  // explicitly disabled AND start the Tunnel tunnel (on platform the tunnel
+  // explicitly disabled AND start the Tunnel (on platform the tunnel
   // otherwise only starts for Twilio / live voice, so the config bit alone
   // would leave the link unreachable). Ordered after store.create so a failed
   // insert — and every earlier guard (no resolvable URL, rate limit, too many

@@ -483,18 +483,18 @@ async function main() {
     }
 
     tunnelStartRequested = true;
-    log.info({ reason }, "Starting Tunnel tunnel after Twilio setup detected");
+    log.info({ reason }, "Starting Tunnel after Twilio setup detected");
     tunnelClient.start();
     return true;
   }
 
   /**
-   * Start the Tunnel tunnel for web live voice.
+   * Start the Tunnel for web live voice.
    *
    * Tunnel is the browser's ingress for the live-voice WebSocket, but the tunnel
    * was historically only started for Twilio (see
    * {@link maybeStartTunnelTunnelForTwilio}). Without this, an assistant with no
-   * Twilio setup never registers a Tunnel tunnel, so the browser's
+   * Twilio setup never registers a Tunnel, so the browser's
    * `/v1/live-voice` upgrade fails with "assistant tunnel is not connected".
    * Live voice is available to every assistant, so this runs unconditionally at
    * startup. Shares the `tunnelStartRequested` latch with the Twilio path — one
@@ -506,13 +506,13 @@ async function main() {
     }
 
     tunnelStartRequested = true;
-    log.info({ reason }, "Starting Tunnel tunnel for live voice");
+    log.info({ reason }, "Starting Tunnel for live voice");
     tunnelClient.start();
     return true;
   }
 
   /**
-   * Start the Tunnel tunnel when a credential link is minted. Unlike the Twilio
+   * Start the Tunnel when a credential link is minted. Unlike the Twilio
    * and live-voice paths this has no precondition: creating a one-time
    * credential link is itself the request to expose public ingress, and the
    * tunnel is the browser's route to the credential-entry page. Shares the
@@ -524,7 +524,7 @@ async function main() {
       return tunnelStartRequested;
     }
     tunnelStartRequested = true;
-    log.info({ reason }, "Starting Tunnel tunnel after credential link minted");
+    log.info({ reason }, "Starting Tunnel after credential link minted");
     tunnelClient.start();
     return true;
   }
@@ -532,7 +532,7 @@ async function main() {
   /**
    * Make public ingress live for a freshly minted credential link: enable it
    * when explicitly disabled (only an explicit `false` — a default `undefined`
-   * already means enabled on platform) and start the Tunnel tunnel so the link
+   * already means enabled on platform) and start the Tunnel so the link
    * is actually reachable.
    */
   async function ensurePublicIngressLiveForCredentialLink(): Promise<void> {
@@ -888,7 +888,7 @@ async function main() {
       handler: () => psHandler.handlePs(),
     },
 
-    // ── Tunnel tunnel status ──
+    // ── Tunnel status ──
     {
       path: "/v1/tunnel/status",
       method: "GET",

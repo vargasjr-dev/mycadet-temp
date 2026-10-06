@@ -330,7 +330,7 @@ Local platform smoke-test flow:
 2. Ensure vembda passes the environment-appropriate `TUNNEL_BASE_URL` into assistant gateway containers.
 3. Start or complete Twilio setup in the workspace so the gateway is allowed to connect the tunnel.
 4. Re-hatch or restart the assistant so the gateway receives the new environment.
-5. Confirm gateway logs show `Tunnel tunnel connected` and `Tunnel tunnel registered`.
+5. Confirm gateway logs show `Tunnel connected` and `Tunnel registered`.
 6. Verify HTTP forwarding by requesting `${TUNNEL_PUBLIC_BASE_URL}/<assistant-id>/healthz` and `${TUNNEL_PUBLIC_BASE_URL}/<assistant-id>/schema`. For MCP OAuth testing, request `${TUNNEL_PUBLIC_BASE_URL}/<assistant-id>/oauth/client-metadata.json` and confirm its `redirect_uris` entry points at the same public assistant URL. When validating a JSON webhook route under active development, POST a small JSON body through the same Tunnel public URL and confirm it reaches the loopback gateway.
 7. Verify Twilio WebSocket forwarding with a synthetic local WebSocket client against `${TUNNEL_PUBLIC_BASE_URL}/<assistant-id>/webhooks/twilio/media-stream/<callSessionId>/<token>`, then with a real Twilio call after the gateway has registered with Tunnel.
 

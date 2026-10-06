@@ -215,7 +215,7 @@ async function resolveExpectedTelegramWebhookUrl(
   //
   //   1. Platform pods (`IS_PLATFORM`) with `tunnel-webhooks` off always use
   //      the managed callback route and never consult ingress at all. A pod's
-  //      `ingress.publicBaseUrl` is written by the Tunnel tunnel client, not by
+  //      `ingress.publicBaseUrl` is written by the Tunnel client, not by
   //      a user, and that address is only live while the tunnel is:
   //      `clearManagedPublicBaseUrl` wipes the key when the tunnel drops, but
   //      Telegram keeps delivering to whatever was last registered, so a pod

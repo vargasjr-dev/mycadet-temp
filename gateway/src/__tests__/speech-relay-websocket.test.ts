@@ -87,15 +87,16 @@ describe("tunnel origin derivation", () => {
   });
 
   test("tunnelOriginForPlatformHost follows the deployment naming convention", () => {
-    expect(tunnelOriginForPlatformHost("platform.vellum.ai")).toBe(
+    expect(tunnelOriginForPlatformHost("cloud.mycadet.ai")).toBe(
       "https://tunnel.mycadet.ai",
     );
-    expect(tunnelOriginForPlatformHost("staging-platform.vellum.ai")).toBe(
+    expect(tunnelOriginForPlatformHost("staging-cloud.mycadet.ai")).toBe(
       "https://tunnel-staging.mycadet.ai",
     );
-    expect(tunnelOriginForPlatformHost("dev-platform.vellum.ai")).toBe(
+    expect(tunnelOriginForPlatformHost("dev-cloud.mycadet.ai")).toBe(
       "https://tunnel-dev.mycadet.ai",
     );
+    expect(tunnelOriginForPlatformHost("platform.vellum.ai")).toBeNull();
     expect(tunnelOriginForPlatformHost("localhost")).toBeNull();
     expect(tunnelOriginForPlatformHost("example.com")).toBeNull();
     expect(
