@@ -1199,8 +1199,8 @@
       "updatedAt": "2026-09-22T23:46:21.000Z"
     },
     {
-      "id": "vellum-self-knowledge",
-      "name": "vellum-self-knowledge",
+      "id": "cadet-self-knowledge",
+      "name": "cadet-self-knowledge",
       "description": "Answer questions about Vellum, its config, billing, and hosting from live sources of truth",
       "metadata": {
         "emoji": "🪞",

@@ -215,7 +215,7 @@ describe("remote gateway token exchange", () => {
       "http://localhost:3000/assistant-123",
     );
     expect(getSelfHostedActorToken()).toBe("access-token");
-    expect(localStorage.getItem("vellum:gw:token")).toBeNull();
+    expect(localStorage.getItem("cadet:gw:token")).toBeNull();
   });
 
   test("does not rotate the refresh cookie before refreshAfter", async () => {

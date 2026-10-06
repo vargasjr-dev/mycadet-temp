@@ -48,7 +48,7 @@ describe("server-effective verdict fields", () => {
     // device key, so nothing can sync it across tabs.
     localStorage.setItem("device:share_analytics", "true");
     window.dispatchEvent(
-      new CustomEvent("vellum:pref-changed", {
+      new CustomEvent("cadet:pref-changed", {
         detail: { key: "device:share_analytics", value: "true" },
       }),
     );

@@ -7,8 +7,8 @@ import {
   getEnvFlagOverridesForScope,
 } from "@/lib/feature-flags/feature-flag-catalog";
 
-const LS_PREFIX = "vellum:ff:";
-const LS_STRING_PREFIX = "vellum:ff-str:";
+const LS_PREFIX = "cadet:ff:";
+const LS_STRING_PREFIX = "cadet:ff-str:";
 
 function readOverrides(): Record<string, boolean> {
   if (typeof window === "undefined") {

@@ -213,7 +213,7 @@ export function moveSectionKey(
 // ---------------------------------------------------------------------------
 
 const sectionOrderStorage = createKeyedStorageAccessor<string[]>({
-  keyFn: (assistantId) => `vellum:sidebar-section-order:${assistantId}`,
+  keyFn: (assistantId) => `cadet:sidebar-section-order:${assistantId}`,
   scope: "user",
   parse: parseStringArray,
   serialize: JSON.stringify,

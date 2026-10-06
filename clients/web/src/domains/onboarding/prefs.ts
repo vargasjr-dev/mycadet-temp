@@ -33,7 +33,7 @@ import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
  * hatching screen and forwarded to `hatchAssistant({ version })`. Empty
  * string / absent means "latest" (the normal managed default).
  */
-const KEY_SELECTED_VERSION = "vellum:onboarding:selectedVersion";
+const KEY_SELECTED_VERSION = "cadet:onboarding:selectedVersion";
 
 // ---------------------------------------------------------------------------
 // Public hooks — thin wrappers around the Zustand store

@@ -16,7 +16,7 @@ export type { AppVersionInfo, VellumBridge, VellumCommand };
 const bridge = composePreloadFeatures(createLinuxCoreBridge(ipcRenderer));
 contextBridge.exposeInMainWorld("vellum", bridge);
 
-const vellumConfig = ipcRenderer.sendSync("vellum:config:get") as {
+const vellumConfig = ipcRenderer.sendSync("cadet:config:get") as {
   webUrl: string;
   platformUrl: string;
   disablePlatform?: boolean;

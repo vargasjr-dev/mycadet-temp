@@ -36,7 +36,7 @@ const log = getLogger("slack-withdraw");
  * between the writer and the stripper.
  */
 export const APPROVAL_INSTRUCTION_BLOCK_ID_PREFIX =
-  "vellum:approval-instructions";
+  "cadet:approval-instructions";
 
 const STATUS_GLYPH: Record<string, string> = {
   approved: ":white_check_mark:",

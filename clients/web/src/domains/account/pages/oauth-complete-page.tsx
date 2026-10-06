@@ -242,7 +242,7 @@ export function OAuthCompletePage() {
     completionSent.current = true;
 
     const payload: OAuthCompletePayload = {
-      type: "vellum:oauth-complete",
+      type: "cadet:oauth-complete",
       requestId,
       oauthStatus: oauthStatus || null,
       oauthProvider: oauthProvider || null,

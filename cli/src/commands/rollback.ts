@@ -1,3 +1,4 @@
+import { isManagedCloud } from "@vellumai/local-mode/contract";
 import {
   findAssistantByName,
   getActiveAssistant,
@@ -223,7 +224,7 @@ export async function rollback(): Promise<void> {
   }
 
   // ---------- Managed (Vellum platform) rollback ----------
-  if (cloud === "vellum") {
+  if (isManagedCloud(cloud)) {
     await rollbackPlatformViaEndpoint(entry, version ?? undefined);
     return;
   }

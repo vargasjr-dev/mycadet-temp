@@ -7,7 +7,7 @@ import {
 } from "@/domains/chat/utils/dismissed-acp-connect-storage";
 import { clearUserScopedOverrides } from "@/utils/typed-storage";
 
-const KEY = "vellum:dismissed-acp-connect";
+const KEY = "cadet:dismissed-acp-connect";
 
 afterEach(() => {
   localStorage.clear();

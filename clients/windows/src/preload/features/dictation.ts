@@ -71,7 +71,7 @@ const dictation: CapabilityModule<BridgeCapabilityRegistry<VellumBridge>> = {
             pushAudio,
           ),
         pushAudioChunk: (chunk) => {
-          ipcRenderer.send("vellum:helper:dictation:audio", chunk);
+          ipcRenderer.send("cadet:helper:dictation:audio", chunk);
         },
         onPartial: subscribe<DictationPartialEvent>(
           HELPER_DICTATION_PARTIAL_EVENT,

@@ -14,7 +14,7 @@ mock.module("@/runtime/native-dictation-partials", () => ({
 
 const { prefersMacosNativeStt } = await import("@/domains/chat/voice/stt-api");
 
-const LS_STT_PROVIDER = "vellum:voice:sttProvider";
+const LS_STT_PROVIDER = "cadet:voice:sttProvider";
 
 describe("prefersMacosNativeStt", () => {
   afterEach(() => {

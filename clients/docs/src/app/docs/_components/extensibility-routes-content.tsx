@@ -31,7 +31,7 @@ const APPS_PAGE_URL = "/docs/extensibility/apps";
 const CHANNELS_PAGE_URL = "/docs/extensibility/channels";
 
 const PLUGIN_API_URL =
-  "https://github.com/cadet-ai/cadet-assistant/tree/main/assistant/src/plugin-api";
+  "https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api";
 
 type PathRow = { file: string; served: string };
 

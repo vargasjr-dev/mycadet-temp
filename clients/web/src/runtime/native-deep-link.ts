@@ -14,7 +14,7 @@
 
 import type { BillingCheckoutFlow } from "@/lib/event-bus";
 
-export const OAUTH_COMPLETE_DEEP_LINK_EVENT = "vellum:oauth-complete-deeplink";
+export const OAUTH_COMPLETE_DEEP_LINK_EVENT = "cadet:oauth-complete-deeplink";
 export const OAUTH_COMPLETE_DEEP_LINK_HOST = "oauth-complete";
 
 export interface OAuthCompleteDeepLinkPayload {
@@ -26,7 +26,7 @@ export interface OAuthCompleteDeepLinkPayload {
 
 declare global {
   interface WindowEventMap {
-    "vellum:oauth-complete-deeplink": CustomEvent<OAuthCompleteDeepLinkPayload>;
+    "cadet:oauth-complete-deeplink": CustomEvent<OAuthCompleteDeepLinkPayload>;
   }
 }
 

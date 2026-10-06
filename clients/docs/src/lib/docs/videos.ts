@@ -31,7 +31,7 @@ export const VIDEO_POSTER_HEIGHT = 720;
 export const DOCS_VIDEOS = {
   "local-hosting-setup": {
     youtubeId: "SJgflx6XDeQ",
-    title: "How to setup a locally hosted Vocify Inc assistant in under 5 minutes",
+    title: "How to setup a locally hosted Cadet assistant in under 5 minutes",
     description:
       "A walkthrough of installing Cadet and running your assistant locally on your own Mac.",
     durationSeconds: 205,
@@ -58,7 +58,7 @@ export const DOCS_VIDEOS = {
   },
   "gcp-vm-setup": {
     youtubeId: "7kwHOvhk8Nk",
-    title: "How to set up a Vocify Inc assistant on Google Cloud VPS/VM",
+    title: "How to set up a Cadet assistant on Google Cloud VPS/VM",
     description:
       "A walkthrough of provisioning a Compute Engine VM in your own Google Cloud project and running your assistant on it.",
     durationSeconds: 650,

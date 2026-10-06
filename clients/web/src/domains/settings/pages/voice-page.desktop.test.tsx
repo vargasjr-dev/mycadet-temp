@@ -93,7 +93,7 @@ function renderPage() {
 }
 
 function storedKey() {
-  return JSON.parse(localStorage.getItem("vellum:voice:voiceKey") ?? "null");
+  return JSON.parse(localStorage.getItem("cadet:voice:voiceKey") ?? "null");
 }
 
 /** The chip row is the recording zone; key events go to it. */

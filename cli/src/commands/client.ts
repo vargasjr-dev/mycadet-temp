@@ -1,3 +1,4 @@
+import { isManagedCloud } from "@vellumai/local-mode/contract";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -92,7 +93,7 @@ interface ParsedArgs {
   assistantName?: string;
   /** "vellum" for platform-hosted assistants, undefined for local. */
   cloud?: string;
-  /** Platform session token (X-Session-Token), set when cloud === "vellum". */
+  /** Platform session token (X-Session-Token), set when isManagedCloud(cloud). */
   platformToken?: string;
   /** Guardian JWT (Authorization: Bearer), set for local assistants. */
   bearerToken?: string;
@@ -257,12 +258,12 @@ export function parseArgs(): ParsedArgs {
   // entirely when --token supplies the credential, so no saved creds are read.
   const platformToken = bearerTokenOverride
     ? undefined
-    : cloud === "vellum"
+    : isManagedCloud(cloud)
       ? (readPlatformToken() ?? undefined)
       : undefined;
   const bearerToken = bearerTokenOverride
     ? bearerTokenOverride
-    : cloud === "vellum"
+    : isManagedCloud(cloud)
       ? undefined
       : (loadGuardianToken(entry?.assistantId ?? "")?.accessToken ?? undefined);
 
@@ -372,7 +373,7 @@ async function maybeHydratePlatformAssistantName(
   cloud: string | undefined,
   platformToken: string | undefined,
 ): Promise<string | undefined> {
-  if (cloud !== "vellum" || assistantName || !platformToken) {
+  if (!isManagedCloud(cloud) || assistantName || !platformToken) {
     return assistantName;
   }
 
@@ -1532,7 +1533,7 @@ async function runViteDevServer(
  * Return a possibly-refreshed bearer token for the TUI's startup auth.
  *
  * Only a STORED guardian token is refreshable: platform session auth
- * (`cloud === "vellum"`) and ephemeral `--token` overrides (whose token won't
+ * (`isManagedCloud(cloud)`) and ephemeral `--token` overrides (whose token won't
  * match the store) are left untouched, as is a token that's still fresh. When
  * the stored token has passed its `refreshAfter` (or expiry) and a refresh
  * token is available, refresh once via the concurrency-safe refreshGuardianToken
@@ -1545,7 +1546,7 @@ export async function resolveFreshBearerToken(
   bearerToken: string | undefined,
   cloud: string | undefined,
 ): Promise<string | undefined> {
-  if (cloud === "vellum" || !bearerToken || !assistantId) return bearerToken;
+  if (isManagedCloud(cloud) || !bearerToken || !assistantId) return bearerToken;
 
   const stored = loadGuardianToken(assistantId);
   // Refresh only the stored token (an ephemeral --token won't match), and only
@@ -1625,7 +1626,7 @@ export async function client(): Promise<void> {
   // Build pre-constructed request headers merged from auth + client registration.
   // Spreading into every fetch site ensures consistency across REST and SSE endpoints.
   let auth: Record<string, string> | undefined;
-  if (cloud === "vellum" && platformToken) {
+  if (isManagedCloud(cloud) && platformToken) {
     const orgId = await fetchOrganizationId(platformToken).catch((err) => {
       tuiLog.warn("failed to fetch organization id", { err: String(err) });
       return undefined;

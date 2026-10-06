@@ -681,7 +681,7 @@ describe("providers and hydration", () => {
     // our own saves may acquire it additional times.
     expect(requested.length).toBeGreaterThanOrEqual(2);
     expect(new Set(requested)).toEqual(
-      new Set(["vellum:remembered-origins:mutate"]),
+      new Set(["cadet:remembered-origins:mutate"]),
     );
   });
 });

@@ -52,7 +52,7 @@ We call this relationship **Personal Intelligence**.
 
 **Every human.**
 
-Cadet is a human-centered company. Everything we build exists to help assistants better serve humans. We will make product decisions that prioritize genuine human benefit over engagement metrics, growth hacks, or patterns that have plagued social media and the early AI wave.
+Cadet is a human-centered effort. Everything we build exists to help assistants better serve humans. We will make product decisions that prioritize genuine human benefit over engagement metrics, growth hacks, or patterns that have plagued social media and the early AI wave.
 
 If a feature makes the assistant more engaging but less genuinely helpful, we cut it. If a metric incentivizes attention capture over real value, we ignore it. We are not building a feed. We are not optimizing for time-on-screen. We are building something that gives people their time back.
 
@@ -164,7 +164,7 @@ Same word. Opposite direction of value flow.
 ### Our Commitments
 
 - Guardian data belongs to the guardian. Full stop. We do not train models on guardian data. We do not sell it. We do not share it. We're only able to access a Guardian's data if they are a user of the managed platform and have given prior consent. When we do, it's to assist in debugging a problem or to learn how we can make Cadet better.
-- Self-hosting is the ultimate expression of data sovereignty. We actively build toward a world where anyone can be a guardian of a Cadet assistant without being a user of the Cadet Platform. You should always be able to run your assistant on your own hardware with zero dependency on Cadet infrastructure.
+- Self-hosting is the ultimate expression of data sovereignty. We actively build toward a world where anyone can be a guardian of a Cadet assistant without being a user of the Cadet Cloud. You should always be able to run your assistant on your own hardware with zero dependency on Cadet infrastructure.
 - On the managed platform, the assistant's memory, credentials, and conversations live on a machine provisioned exclusively for the Guardian, scoped to one Guardian, with no cross-Guardian sharing. Without a platform account, and with self-hosting, Cadet is removed from the trust loop entirely.
 - Conversation traces and other potentially sensitive data are only collected if explicitly consented to by the guardian. Guardians can revoke their consent to this collection at any time.
 
@@ -196,7 +196,7 @@ Cadet maintains the assistant codebase and operates the platform. That means we 
 
 When platform-level failures affect assistants, we communicate publicly and give guardians the information they need to understand what happened. Tooling like Cadet Doctor exists for this reason: making the inner workings of an assistant inspectable when something goes wrong.
 
-For specific commitments around uptime, data handling, and incident response, refer to our [Terms of Use](https://mycadet.ai/docs/cadet-terms-of-use) and [Privacy Policy](https://mycadet.ai/docs/privacy-policy).
+For specific commitments around uptime, data handling, and incident response, refer to our [Terms of Use](https://mycadet.ai/docs/terms-of-use) and [Privacy Policy](https://mycadet.ai/docs/privacy-policy).
 
 ---
 
@@ -258,7 +258,7 @@ The SaaS Model optimizes for the average user. Personal Intelligence optimizes f
 
 ### Permanent Home
 
-This document lives at `CONSTITUTION.md` in the [`vargasjr-dev/mycadet-temp`](https://github.com/vargasjr-dev/mycadet-temp) open source repository, alongside [`GLOSSARY.md`](./GLOSSARY.md) and other foundational materials of comparable weight.
+This document lives at `CONSTITUTION.md` in the [`vargasjr-dev/mycadet`](https://github.com/vargasjr-dev/mycadet) open source repository, alongside [`GLOSSARY.md`](./GLOSSARY.md) and other foundational materials of comparable weight.
 
 Housing it in a repo provides:
 

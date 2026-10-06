@@ -111,15 +111,15 @@ export function removePersistedPairedGatewayCredential(): void {
   }
   try {
     const source =
-      localStorage.getItem("vellum:gw:tokenSource") ??
+      localStorage.getItem("cadet:gw:tokenSource") ??
       localStorage.getItem("gw:tokenSource");
     if (!source?.includes("/__gateway-paired/")) {
       return;
     }
     for (const key of [
-      "vellum:gw:token",
-      "vellum:gw:expiresAt",
-      "vellum:gw:tokenSource",
+      "cadet:gw:token",
+      "cadet:gw:expiresAt",
+      "cadet:gw:tokenSource",
       "gw:token",
       "gw:expiresAt",
       "gw:tokenSource",
@@ -150,9 +150,9 @@ function removeAllWithPrefix(prefix: string): void {
 
 /**
  * Collapse the two legacy selection schemes — the tab-local
- * `vellum:local:selectedAssistantId` and the per-org
- * `vellum:currentAssistantId:<org>` map — into the single
- * `vellum:selectedAssistantId` key.
+ * `cadet:local:selectedAssistantId` and the per-org
+ * `cadet:currentAssistantId:<org>` map — into the single
+ * `cadet:selectedAssistantId` key.
  *
  * Among per-org entries, prefer the persisted active org's selection (the org
  * store records it in sessionStorage as `vellum_active_organization_id`) so a
@@ -166,9 +166,9 @@ export function collapseSelectedAssistantKeys(): void {
   if (typeof window === "undefined") {
     return;
   }
-  const target = "vellum:selectedAssistantId";
-  const tabLocalKey = "vellum:local:selectedAssistantId";
-  const perOrgPrefix = "vellum:currentAssistantId:";
+  const target = "cadet:selectedAssistantId";
+  const tabLocalKey = "cadet:local:selectedAssistantId";
+  const perOrgPrefix = "cadet:currentAssistantId:";
   try {
     if (localStorage.getItem(target) === null) {
       let candidate = localStorage.getItem(tabLocalKey);
@@ -231,113 +231,113 @@ export function runStorageMigrations(): void {
   // -- Static key renames ------------------------------------------------
 
   // Unprefixed → vellum: (these escaped cleanup entirely before)
-  migrateKey("assistantSidebarCollapsed", "vellum:sidebar:collapsed");
-  migrateKey("assistantSidebarWidth", "vellum:sidebar:width");
+  migrateKey("assistantSidebarCollapsed", "cadet:sidebar:collapsed");
+  migrateKey("assistantSidebarWidth", "cadet:sidebar:width");
 
-  // voice: → vellum:voice:
-  migrateKey("voice:permissionPrimerSeen", "vellum:voice:permissionPrimerSeen");
+  // voice: → cadet:voice:
+  migrateKey("voice:permissionPrimerSeen", "cadet:voice:permissionPrimerSeen");
   // `voice:conversationTimeoutSeconds` is intentionally not migrated: the
   // setting was a leftover of the Swift macOS app, and nothing on web has read
   // it since that client was removed.
-  migrateKey("voice:ttsProvider", "vellum:voice:ttsProvider");
-  migrateKey("voice:sttProvider", "vellum:voice:sttProvider");
-  migrateKey("voice:activationKey", "vellum:voice:activationKey");
+  migrateKey("voice:ttsProvider", "cadet:voice:ttsProvider");
+  migrateKey("voice:sttProvider", "cadet:voice:sttProvider");
+  migrateKey("voice:activationKey", "cadet:voice:activationKey");
 
-  // integrations. → vellum:integrations:
+  // integrations. → cadet:integrations:
   migrateKey(
     "integrations.bannerDismissed",
-    "vellum:integrations:bannerDismissed",
+    "cadet:integrations:bannerDismissed",
   );
 
-  // onboarding. → vellum:onboarding:
-  migrateKey("onboarding.tosAccepted", "vellum:onboarding:tosAccepted");
-  migrateKey("onboarding.aiDataConsent", "vellum:onboarding:aiDataConsent");
+  // onboarding. → cadet:onboarding:
+  migrateKey("onboarding.tosAccepted", "cadet:onboarding:tosAccepted");
+  migrateKey("onboarding.aiDataConsent", "cadet:onboarding:aiDataConsent");
   removeKey("onboarding.completed");
-  removeKey("vellum:onboarding:completed");
-  migrateKey("onboarding.selectedVersion", "vellum:onboarding:selectedVersion");
+  removeKey("cadet:onboarding:completed");
+  migrateKey("onboarding.selectedVersion", "cadet:onboarding:selectedVersion");
 
-  // vellum:skillsTabTipDismissed → vellum:skills:tipDismissed (consistent naming)
-  migrateKey("vellum:skillsTabTipDismissed", "vellum:skills:tipDismissed");
+  // cadet:skillsTabTipDismissed → cadet:skills:tipDismissed (consistent naming)
+  migrateKey("cadet:skillsTabTipDismissed", "cadet:skills:tipDismissed");
 
-  // vellum_ → vellum:ai: (AI settings page)
-  migrateKey("vellum_image_gen_mode", "vellum:ai:imageGenMode");
-  migrateKey("vellum_image_gen_model", "vellum:ai:imageGenModel");
+  // vellum_ → cadet:ai: (AI settings page)
+  migrateKey("vellum_image_gen_mode", "cadet:ai:imageGenMode");
+  migrateKey("vellum_image_gen_model", "cadet:ai:imageGenModel");
   // Image generation is configured by provider alone; convert a stored
   // legacy mode into the equivalent provider so a previously-managed
   // browser does not fall back to the BYOK default before the daemon
   // config loads.
   try {
-    if (localStorage.getItem("vellum:ai:imageGenProvider") === null) {
-      const legacyImageGenMode = localStorage.getItem("vellum:ai:imageGenMode");
+    if (localStorage.getItem("cadet:ai:imageGenProvider") === null) {
+      const legacyImageGenMode = localStorage.getItem("cadet:ai:imageGenMode");
       if (legacyImageGenMode === "managed") {
-        localStorage.setItem("vellum:ai:imageGenProvider", "vellum");
+        localStorage.setItem("cadet:ai:imageGenProvider", "vellum");
       } else if (legacyImageGenMode === "your-own") {
-        localStorage.setItem("vellum:ai:imageGenProvider", "gemini");
+        localStorage.setItem("cadet:ai:imageGenProvider", "gemini");
       }
     }
   } catch {
     // Storage unavailable. Retry on next load.
   }
-  migrateKey("vellum_web_search_mode", "vellum:ai:webSearchMode");
-  migrateKey("vellum_web_search_provider", "vellum:ai:webSearchProvider");
-  migrateKey("vellum_email_mode", "vellum:ai:emailMode");
-  migrateKey("vellum_email_byo_provider", "vellum:ai:emailByoProvider");
-  migrateKey("vellum_gemini_key", "vellum:ai:geminiKey");
-  migrateKey("vellum_perplexity_key", "vellum:ai:perplexityKey");
-  migrateKey("vellum_brave_key", "vellum:ai:braveKey");
-  migrateKey("vellum_tavily_key", "vellum:ai:tavilyKey");
+  migrateKey("vellum_web_search_mode", "cadet:ai:webSearchMode");
+  migrateKey("vellum_web_search_provider", "cadet:ai:webSearchProvider");
+  migrateKey("vellum_email_mode", "cadet:ai:emailMode");
+  migrateKey("vellum_email_byo_provider", "cadet:ai:emailByoProvider");
+  migrateKey("vellum_gemini_key", "cadet:ai:geminiKey");
+  migrateKey("vellum_perplexity_key", "cadet:ai:perplexityKey");
+  migrateKey("vellum_brave_key", "cadet:ai:braveKey");
+  migrateKey("vellum_tavily_key", "cadet:ai:tavilyKey");
 
-  // vellumDebug. → vellum:debug:
+  // vellumDebug. → cadet:debug:
   migrateKey(
     "vellumDebug.flags.impersonateAssistantVersion",
-    "vellum:debug:impersonateAssistantVersion",
+    "cadet:debug:impersonateAssistantVersion",
   );
 
-  // gw: → vellum:gw:
-  migrateKey("gw:token", "vellum:gw:token");
-  migrateKey("gw:expiresAt", "vellum:gw:expiresAt");
-  migrateKey("gw:tokenSource", "vellum:gw:tokenSource");
+  // gw: → cadet:gw:
+  migrateKey("gw:token", "cadet:gw:token");
+  migrateKey("gw:expiresAt", "cadet:gw:expiresAt");
+  migrateKey("gw:tokenSource", "cadet:gw:tokenSource");
   removePersistedPairedGatewayCredential();
 
-  // local: → vellum:local:
-  migrateKey("local:lockfile", "vellum:local:lockfile");
-  migrateKey("local:selectedAssistantId", "vellum:local:selectedAssistantId");
+  // local: → cadet:local:
+  migrateKey("local:lockfile", "cadet:local:lockfile");
+  migrateKey("local:selectedAssistantId", "cadet:local:selectedAssistantId");
 
   // Flag key renames. A developer's local override is stored under the flag
   // key, so renaming a key orphans the override and the flag silently falls
   // back to its registry default.
-  migrateKey("vellum:ff:watch", "vellum:ff:teach");
+  migrateKey("cadet:ff:watch", "cadet:ff:teach");
 
   // -- Prefix renames (dynamic/per-entity keys) --------------------------
 
-  // voice: per-provider keys → vellum:voice:
-  migratePrefix("voice:ttsApiKey:", "vellum:voice:ttsApiKey:");
-  migratePrefix("voice:ttsVoiceId:", "vellum:voice:ttsVoiceId:");
-  migratePrefix("voice:sttApiKey:", "vellum:voice:sttApiKey:");
+  // voice: per-provider keys → cadet:voice:
+  migratePrefix("voice:ttsApiKey:", "cadet:voice:ttsApiKey:");
+  migratePrefix("voice:ttsVoiceId:", "cadet:voice:ttsVoiceId:");
+  migratePrefix("voice:sttApiKey:", "cadet:voice:sttApiKey:");
 
-  // ff:client: → vellum:ff:
-  migratePrefix("ff:client:", "vellum:ff:");
+  // ff:client: → cadet:ff:
+  migratePrefix("ff:client:", "cadet:ff:");
 
   // Unprefixed per-entity → vellum:
   migratePrefix(
     "disk-pressure-warning-dismissed-",
-    "vellum:diskPressureDismissed:",
+    "cadet:diskPressureDismissed:",
   );
 
   // vellum_ per-org → vellum:
-  migratePrefix("vellum_current_assistant_id__", "vellum:currentAssistantId:");
+  migratePrefix("vellum_current_assistant_id__", "cadet:currentAssistantId:");
 
   // Collapse the canonicalized legacy selection keys (tab-local + per-org map)
-  // into the single `vellum:selectedAssistantId`. Must run AFTER the renames
+  // into the single `cadet:selectedAssistantId`. Must run AFTER the renames
   // above so it sees the canonical key names.
   collapseSelectedAssistantKeys();
 
   // -- Value format migrations ---------------------------------------------
   // Skills tip was stored as "1"; getLocalBool expects "true".
-  migrateValue("vellum:skills:tipDismissed", "1", "true");
+  migrateValue("cadet:skills:tipDismissed", "1", "true");
 
   // -- Dead key removals --------------------------------------------------
-  // Legacy nudge keys superseded by the `vellum:nudge-prefs` Zustand
+  // Legacy nudge keys superseded by the `cadet:nudge-prefs` Zustand
   // persist store. Also remove the one-time cleanup flag itself.
   removeKey("app.githubNudge.starred");
   removeKey("app.githubNudge.bannerDismissed");
@@ -351,5 +351,5 @@ export function runStorageMigrations(): void {
   removeKey("device:tips:records");
   removeKey("device:tips:enabled");
   removeKey("device:tips:first_seen_at");
-  removeKey("vellum:ff-str:proactiveTips");
+  removeKey("cadet:ff-str:proactiveTips");
 }

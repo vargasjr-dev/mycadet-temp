@@ -87,7 +87,7 @@ scrim.
       photos are in the strip, and the assistant keeps answering questions
       about what the camera is pointed at.
 - [ ] A device that used voice before converges too. On a profile that already
-      has a `vellum:voice-prefs` payload, the switch is off on the first launch
+      has a `cadet:voice-prefs` payload, the switch is off on the first launch
       after this change whatever that payload said, and the thumbnail does not
       draw until the panel turns it on. Turn it on and relaunch: it stays on.
       A value written from here is the first one that is a choice, since every
@@ -98,7 +98,7 @@ scrim.
       in one is reflected in the other's panel.
 - [ ] An older build does not eat a newer one's preferences. Only checkable
       around a rollback or with two builds side by side. Let the newer build
-      write `vellum:voice-prefs`, then open the older one: it reads the
+      write `cadet:voice-prefs`, then open the older one: it reads the
       preferences it understands and shows them, and the key on disk is
       untouched, still carrying the newer build's stamp and any field the older
       one has no name for. Changing a preference in the older build moves it on
@@ -463,7 +463,7 @@ exercises the native preview underneath.
 
 A device that has already seen it will not show it again, so reset between runs
 by clearing the app's site data, or by deleting `cameraExplainerSeen` from
-`vellum:voice-prefs` in local storage.
+`cadet:voice-prefs` in local storage.
 
 - [ ] It comes up after the preview, not before it. Open the camera: the
       viewfinder is already drawing frames when the sheet arrives. Nothing

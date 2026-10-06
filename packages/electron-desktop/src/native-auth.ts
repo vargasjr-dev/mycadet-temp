@@ -155,22 +155,22 @@ export const installNativeAuth = (): void => {
   void clearLegacySessionCookies();
 
   options.ipc.handle(
-    "vellum:auth:startOAuth",
+    "cadet:auth:startOAuth",
     startOAuthSchema,
     async ([authOptions]): Promise<{ sessionToken: string }> =>
       startOAuth(authOptions),
   );
 
-  options.ipc.handle("vellum:auth:cancelOAuth", z.tuple([]), () => {
+  options.ipc.handle("cadet:auth:cancelOAuth", z.tuple([]), () => {
     activePkceCancel?.();
   });
 
-  options.ipc.handle("vellum:auth:signOut", z.tuple([]), () => {
+  options.ipc.handle("cadet:auth:signOut", z.tuple([]), () => {
     clearNotificationIdentityMemory();
     options.sessionStore.clear();
   });
 
-  options.ipc.handleSync("vellum:auth:getSessionToken", () =>
+  options.ipc.handleSync("cadet:auth:getSessionToken", () =>
     options.sessionStore.get(),
   );
 };

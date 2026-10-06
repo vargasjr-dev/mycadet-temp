@@ -19,7 +19,7 @@ const notificationsShare: CapabilityModule<
     bridge.contribute("share", {
       shareFile: (bytes: Uint8Array, filename: string) =>
         ipcRenderer.invoke(
-          "vellum:share:file",
+          "cadet:share:file",
           bytes,
           filename,
         ) as Promise<void>,

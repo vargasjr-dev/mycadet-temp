@@ -7,6 +7,15 @@
  * managed-speech transport can't drift.
  */
 export function velayHostForPlatformHost(host: string): string | null {
+  if (host === "cloud.mycadet.ai") {
+    return "velay.mycadet.ai";
+  }
+  const cadetMatch = /^([a-z0-9-]+)-cloud\.mycadet\.ai$/.exec(host);
+  if (cadetMatch) {
+    return `velay-${cadetMatch[1]}.mycadet.ai`;
+  }
+  // Legacy Vellum-era platform hosts: existing lockfile entries still carry
+  // these runtimeUrls, so keep them resolvable.
   if (host === "platform.vellum.ai") {
     return "velay.vellum.ai";
   }

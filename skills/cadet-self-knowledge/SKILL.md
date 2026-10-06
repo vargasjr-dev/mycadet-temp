@@ -1,5 +1,5 @@
 ---
-name: vellum-self-knowledge
+name: cadet-self-knowledge
 description: Answer questions about Vellum, its config, billing, and hosting from live sources of truth
 compatibility: "Designed for Vellum personal assistants"
 metadata:
@@ -161,8 +161,8 @@ For questions the docs and CLI can't answer (internal architecture, how a specif
    - `skills/` — Bundled skill definitions
    - `ARCHITECTURE.md` — Cross-system index
    - `assistant/ARCHITECTURE.md` — Runtime internals
-   - `gateway/ARCHITECTURE.md` — Gateway internals
-   - `assistant/docs/architecture/` — Detailed architecture docs (security, memory, etc.)
+   - Gateway internals: https://www.mycadet.ai/docs/developer-guide/internals/gateway-architecture
+   - Detailed architecture docs (security, memory, etc.): https://www.mycadet.ai/docs/developer-guide/internals/security
 6. Read the relevant source files to answer the question.
 
 ### Resolution Order

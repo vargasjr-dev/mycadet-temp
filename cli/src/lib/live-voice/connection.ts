@@ -25,6 +25,7 @@
  * passes by construction, and there is nothing new to provision here.
  */
 
+import { isManagedCloud } from "@vellumai/local-mode/contract";
 import {
   formatAssistantLookupError,
   formatAssistantReference,
@@ -91,7 +92,7 @@ export async function resolveLiveVoiceConnection(
   // is behind velay, which authenticates nobody and forwards an attestation
   // the gateway trusts, so the credential is not the guardian JWT below but a
   // WS token minted from the platform session the CLI already holds.
-  if (entry.cloud === "vellum") {
+  if (isManagedCloud(entry.cloud)) {
     return await resolveCloudConnection(entry);
   }
 

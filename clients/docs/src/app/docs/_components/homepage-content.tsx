@@ -127,7 +127,7 @@ export function HomepageContent() {
             <p className="mb-3 text-zinc-600">
               <strong>Open by default.</strong> Cadet is open source. The assistant runtime, the
               skills, the channels, the docs themselves. All of it lives on{" "}
-              <a href="https://github.com/cadet-ai/cadet-assistant" target="_blank" rel="noopener noreferrer">
+              <a href="https://github.com/vargasjr-dev/mycadet" target="_blank" rel="noopener noreferrer">
                 GitHub
               </a>
               . Read the code, file an issue, or send a PR. We&apos;re building this in public.

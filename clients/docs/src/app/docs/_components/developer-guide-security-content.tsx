@@ -45,7 +45,7 @@ export function DeveloperGuideSecurityContent() {
             assistant runs in a container (Docker or remote deployments).
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
-            <li><strong>Workspace tools</strong> (<code className="text-sm">file_read</code>, <code className="text-sm">file_write</code>, <code className="text-sm">file_edit</code>, <code className="text-sm">bash</code>) operate within <code className="text-sm">~/.cadet/workspace</code>.</li>
+            <li><strong>Workspace tools</strong> (<code className="text-sm">file_read</code>, <code className="text-sm">file_write</code>, <code className="text-sm">file_edit</code>, <code className="text-sm">bash</code>) operate within <code className="text-sm">$VELLUM_WORKSPACE_DIR</code>.</li>
             <li><strong>Host tools</strong> (<code className="text-sm">host_bash</code>, <code className="text-sm">host_file_read</code>, <code className="text-sm">host_file_write</code>, <code className="text-sm">host_file_edit</code>) execute directly on the host, subject to trust rules and permission prompts.</li>
           </ul>
 
@@ -76,7 +76,7 @@ export function DeveloperGuideSecurityContent() {
                   <tr className="border-b border-zinc-100 dark:border-zinc-800">
                     <td className="py-2 pr-4"><code className="text-xs">Cannot bind-mount the sandbox root</code></td>
                     <td className="py-2 pr-4">File sharing not configured</td>
-                    <td className="py-2">Add <code className="text-xs">~/.cadet/workspace</code> to Docker file sharing</td>
+                    <td className="py-2">Add <code className="text-xs">$VELLUM_WORKSPACE_DIR</code> to Docker file sharing</td>
                   </tr>
                 </tbody>
               </table>

@@ -41,8 +41,8 @@ test("identifies the app entry for an unpackaged login item", () => {
   configureLoginItem({ handle, identity });
   installLoginItemIpc();
 
-  expect(handlers.get("vellum:launchAtLogin:get")?.([])).toBe(false);
-  handlers.get("vellum:launchAtLogin:set")?.([true]);
+  expect(handlers.get("cadet:launchAtLogin:get")?.([])).toBe(false);
+  handlers.get("cadet:launchAtLogin:set")?.([true]);
 
   expect(getLoginItemSettings).toHaveBeenCalledWith(identity);
   expect(setLoginItemSettings).toHaveBeenCalledWith({
@@ -55,11 +55,11 @@ test("reads and changes the operating-system login item", () => {
   configureLoginItem({ handle });
   installLoginItemIpc();
 
-  expect(handlers.get("vellum:launchAtLogin:get")?.([])).toBe(false);
-  handlers.get("vellum:launchAtLogin:set")?.([true]);
+  expect(handlers.get("cadet:launchAtLogin:get")?.([])).toBe(false);
+  handlers.get("cadet:launchAtLogin:set")?.([true]);
 
   expect(setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: true });
-  expect(handlers.get("vellum:launchAtLogin:get")?.([])).toBe(true);
+  expect(handlers.get("cadet:launchAtLogin:get")?.([])).toBe(true);
 });
 
 test("keeps a persisted setting synchronized with the login item", () => {
@@ -89,7 +89,7 @@ test("keeps a persisted setting synchronized with the login item", () => {
   expect(write).toHaveBeenCalledWith(false);
   expect(setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: false });
 
-  handlers.get("vellum:launchAtLogin:set")?.([true]);
+  handlers.get("cadet:launchAtLogin:set")?.([true]);
   notify();
 
   expect(write).toHaveBeenLastCalledWith(true);

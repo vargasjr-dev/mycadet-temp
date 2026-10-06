@@ -21,12 +21,12 @@ const makeSender = (): {
 };
 
 const subscribeWith = (s: ReturnType<typeof makeSender>) =>
-  ipcOnListeners.get("vellum:fileOpen:subscribe")?.({
+  ipcOnListeners.get("cadet:fileOpen:subscribe")?.({
     sender: s.sender,
     senderFrame: allowedSenderFrame,
   });
 const unsubscribeWith = (s: ReturnType<typeof makeSender>) =>
-  ipcOnListeners.get("vellum:fileOpen:unsubscribe")?.({
+  ipcOnListeners.get("cadet:fileOpen:unsubscribe")?.({
     sender: s.sender,
     senderFrame: allowedSenderFrame,
   });
@@ -154,7 +154,7 @@ describe("handleFileOpen", () => {
     handleFileOpen("/tmp/example.vellum");
 
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:fileOpen:drain",
+      (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
     expect(drainHandler(allowedEvent)).toEqual(["/tmp/example.vellum"]);
   });
@@ -167,7 +167,7 @@ describe("handleFileOpen", () => {
     handleFileOpen("/tmp/readme.md");
 
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:fileOpen:drain",
+      (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
     expect(drainHandler(allowedEvent)).toEqual([]);
   });
@@ -178,7 +178,7 @@ describe("handleFileOpen", () => {
     handleFileOpen("/tmp/example.VELLUM");
 
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:fileOpen:drain",
+      (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
     expect(drainHandler(allowedEvent)).toEqual(["/tmp/example.VELLUM"]);
   });
@@ -203,7 +203,7 @@ describe("drain", () => {
     handleFileOpen("/tmp/b.vellum");
 
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:fileOpen:drain",
+      (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
 
     expect(drainHandler(allowedEvent)).toEqual([
@@ -220,7 +220,7 @@ describe("drain", () => {
     handleFileOpen("/tmp/backlog.vellum");
 
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:fileOpen:drain",
+      (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
     drainHandler(allowedEvent);
 
@@ -239,11 +239,11 @@ describe("broadcast", () => {
     handleFileOpen("/tmp/example.vellum");
 
     expect(w1.webContents.send).toHaveBeenCalledWith(
-      "vellum:fileOpen:event",
+      "cadet:fileOpen:event",
       "/tmp/example.vellum",
     );
     expect(w2.webContents.send).toHaveBeenCalledWith(
-      "vellum:fileOpen:event",
+      "cadet:fileOpen:event",
       "/tmp/example.vellum",
     );
   });
@@ -264,7 +264,7 @@ describe("subscriber lifecycle", () => {
   test("with a subscriber present, live files broadcast but do NOT enter the buffer", () => {
     installFileOpen();
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:fileOpen:drain",
+      (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
 
     handleFileOpen("/tmp/backlog.vellum");
@@ -284,7 +284,7 @@ describe("subscriber lifecycle", () => {
   test("file arriving while unsubscribed lands in the buffer for the next subscriber", () => {
     installFileOpen();
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:fileOpen:drain",
+      (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
 
     // Drain with a fresh event (also subscribes the drain sender).
@@ -304,7 +304,7 @@ describe("subscriber lifecycle", () => {
   test("destroyed webContents auto-clears its subscription", () => {
     installFileOpen();
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:fileOpen:drain",
+      (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
 
     // Drain subscribes its sender; verify the buffer is empty.
@@ -376,7 +376,7 @@ describe("onFileOpen", () => {
     handleFileOpen("/tmp/early.vellum");
 
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:fileOpen:drain",
+      (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
     drainHandler(allowedEvent);
 

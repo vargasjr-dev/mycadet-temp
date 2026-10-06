@@ -91,9 +91,9 @@ mock.module("@/lib/auth/gateway-session", () => ({
   },
   clearGatewayToken: () => {
     for (const key of [
-      "vellum:gw:token",
-      "vellum:gw:expiresAt",
-      "vellum:gw:tokenSource",
+      "cadet:gw:token",
+      "cadet:gw:expiresAt",
+      "cadet:gw:tokenSource",
       "gw:token",
       "gw:expiresAt",
       "gw:tokenSource",
@@ -234,7 +234,7 @@ beforeEach(() => {
     assistantsHydrated: false,
     selectedAssistantId: null,
   });
-  localStorage.removeItem("vellum:selectedAssistantId");
+  localStorage.removeItem("cadet:selectedAssistantId");
 });
 
 afterEach(() => {

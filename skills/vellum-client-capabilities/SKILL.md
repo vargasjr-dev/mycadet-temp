@@ -51,7 +51,7 @@ Tell the user only what is actually downloadable. Do not invent a Linux desktop 
 - Chrome extension: https://chromewebstore.google.com/detail/vellum-assistant-browser/hphbdmpffeigpcdjkckleobjmhhokpne
 - Linux desktop: not shipped. Use the web app or Chrome extension. The runtime can self-host on Linux; that is the server, not a desktop app.
 
-For install, pricing, or "how do I install you" questions, also load `vellum-self-knowledge` and fetch Installation, FAQ, and Pricing from the docs. Do not answer those from memory.
+For install, pricing, or "how do I install you" questions, also load `cadet-self-knowledge` and fetch Installation, FAQ, and Pricing from the docs. Do not answer those from memory.
 
 ## Desktop App And Chrome Extension
 

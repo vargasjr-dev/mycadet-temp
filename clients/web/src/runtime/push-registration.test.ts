@@ -711,7 +711,7 @@ describe("hasSessionConfirmedRemotePushRegistration", () => {
     // whether the platform still holds the token row (the server prunes
     // rows on APNs BadDeviceToken), so it must not count as confirmed.
     localStorage.setItem(
-      "vellum:push_registration",
+      "cadet:push_registration",
       JSON.stringify({
         token: "persisted-token",
         bundleId: "ai.vocify-inc.vellum-assistant-ios",
@@ -784,7 +784,7 @@ describe("unregisterFromRemotePush", () => {
     // reload that wiped module memory — `lastRegistered` is null but the
     // platform still has the token, so logout must still delete it.
     localStorage.setItem(
-      "vellum:push_registration",
+      "cadet:push_registration",
       JSON.stringify({
         token: "persisted-token",
         bundleId: "ai.vocify-inc.vellum-assistant-ios",

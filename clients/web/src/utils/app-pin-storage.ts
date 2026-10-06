@@ -2,7 +2,7 @@
  * LEGACY. The pre-daemon home for pinned apps, kept only for daemons that do
  * not advertise the `appPins` capability. Nothing new should be built on it.
  *
- * One `vellum:pinnedApps` key serves the whole browser profile, with no
+ * One `cadet:pinnedApps` key serves the whole browser profile, with no
  * assistant in it, which is the defect this module exists to preserve rather
  * than fix: pins made under one assistant show up under another (LUM-3452).
  * That is a daemon-side problem and an old daemon cannot be fixed from here, so
@@ -77,7 +77,7 @@ function parsePinnedApps(raw: string): PinnedAppEntry[] | null {
 }
 
 const storage = createStorageAccessor<PinnedAppEntry[]>({
-  key: "vellum:pinnedApps",
+  key: "cadet:pinnedApps",
   scope: "user",
   parse: parsePinnedApps,
   serialize: JSON.stringify,

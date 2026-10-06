@@ -130,7 +130,7 @@ gcloud services enable compute.googleapis.com`}</code>
               retry if the first attempt is refused.
               <div className="mt-3 overflow-x-auto">
                 <pre className={preClass}>
-<code>{`gcloud compute ssh cadet-assistant --zone=us-central1-a`}</code>
+<code>{`gcloud compute ssh cadet --zone=us-central1-a`}</code>
                 </pre>
               </div>
             </li>

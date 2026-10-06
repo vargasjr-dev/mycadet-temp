@@ -387,7 +387,7 @@ export const installLocalMode = (): void => {
       if (!unavailableError) {
         return fn(args, event);
       }
-      if (channel === "vellum:localMode:readLockfile") {
+      if (channel === "cadet:localMode:readLockfile") {
         throw new Error(unavailableError);
       }
       const hasStatus = channel.endsWith("Token") || channel.endsWith("status");
@@ -400,11 +400,11 @@ export const installLocalMode = (): void => {
   const { configDir, lockfilePaths } = configured.paths;
   const { refreshLockfile } = configured;
 
-  ipc("vellum:localMode:hatch", z.tuple([z.string().optional()]), ([remote]) =>
+  ipc("cadet:localMode:hatch", z.tuple([z.string().optional()]), ([remote]) =>
     hatch(remote || undefined),
   );
 
-  ipc("vellum:localMode:readLockfile", z.tuple([]), () => {
+  ipc("cadet:localMode:readLockfile", z.tuple([]), () => {
     const result = getLockfileData(lockfilePaths);
     if (result.ok) {
       return result.data;
@@ -415,7 +415,7 @@ export const installLocalMode = (): void => {
   });
 
   ipc(
-    "vellum:localMode:saveLockfileAssistant",
+    "cadet:localMode:saveLockfileAssistant",
     z.tuple([assistantRecord, z.string().optional()]),
     ([assistant, activeAssistant]): LockfileWriteResult => {
       const result = upsertRendererLockfileAssistant(
@@ -433,7 +433,7 @@ export const installLocalMode = (): void => {
   // of upserting, so a stale renderer cache never re-creates an entry. Both
   // args stay optional on the wire, keeping the never-reject contract.
   ipc(
-    "vellum:localMode:renameLockfileAssistant",
+    "cadet:localMode:renameLockfileAssistant",
     z.tuple([z.string().optional(), z.string().optional()]),
     ([assistantId, name]): LockfileWriteResult => {
       if (!assistantId || !name) {
@@ -457,7 +457,7 @@ export const installLocalMode = (): void => {
   // Update-only, like the rename above: the host decides against the on-disk
   // registry so a completion racing a retire cannot resurrect the entry.
   ipc(
-    "vellum:localMode:stampLockfileAssistantOnboarded",
+    "cadet:localMode:stampLockfileAssistantOnboarded",
     z.tuple([z.string().optional(), z.string().optional()]),
     ([assistantId, onboardedAt]): LockfileWriteResult => {
       if (!assistantId || !onboardedAt) {
@@ -477,7 +477,7 @@ export const installLocalMode = (): void => {
   );
 
   ipc(
-    "vellum:localMode:replacePlatformAssistants",
+    "cadet:localMode:replacePlatformAssistants",
     z.tuple([z.array(assistantRecord), z.string().optional()]),
     ([list, organizationId]): LockfileWriteResult => {
       const result = replacePlatformAssistants(
@@ -491,7 +491,7 @@ export const installLocalMode = (): void => {
     },
   );
 
-  ipc("vellum:localMode:retire", assistantIdArgs, ([assistantId]) => {
+  ipc("cadet:localMode:retire", assistantIdArgs, ([assistantId]) => {
     if (!assistantId) {
       return { ok: false, error: "Missing assistantId" };
     }
@@ -499,7 +499,7 @@ export const installLocalMode = (): void => {
   });
 
   ipc(
-    "vellum:localMode:unpair",
+    "cadet:localMode:unpair",
     assistantIdArgs,
     ([assistantId]): LockfileWriteResult => {
       if (!assistantId) {
@@ -521,7 +521,7 @@ export const installLocalMode = (): void => {
   // on `pairingStart`, the renderer polls the returned handle, and the device
   // code plus the credentials it buys never cross the boundary.
   ipc(
-    "vellum:localMode:pairingStart",
+    "cadet:localMode:pairingStart",
     oneOptionalStringArgs,
     async ([address]): Promise<LocalPairingStartResult> => {
       const result = await pairingStart(address);
@@ -546,7 +546,7 @@ export const installLocalMode = (): void => {
   );
 
   ipc(
-    "vellum:localMode:pairingPoll",
+    "cadet:localMode:pairingPoll",
     twoOptionalStringArgs,
     async ([handle, name]): Promise<LocalPairingPollResult> => {
       const result = await pairingPoll(lockfilePaths, configDir, {
@@ -574,18 +574,18 @@ export const installLocalMode = (): void => {
     },
   );
 
-  ipc("vellum:localMode:pairingCancel", oneOptionalStringArgs, ([handle]) => ({
+  ipc("cadet:localMode:pairingCancel", oneOptionalStringArgs, ([handle]) => ({
     ok: pairingCancel(handle),
   }));
 
-  ipc("vellum:localMode:sleep", assistantIdArgs, ([assistantId]) => {
+  ipc("cadet:localMode:sleep", assistantIdArgs, ([assistantId]) => {
     if (!assistantId) {
       return { ok: false, error: "Missing assistantId" };
     }
     return sleep(assistantId);
   });
 
-  ipc("vellum:localMode:listDevices", assistantIdArgs, ([assistantId]) => {
+  ipc("cadet:localMode:listDevices", assistantIdArgs, ([assistantId]) => {
     if (!assistantId) {
       return { ok: false, error: "Missing assistantId" };
     }
@@ -593,7 +593,7 @@ export const installLocalMode = (): void => {
   });
 
   ipc(
-    "vellum:localMode:revokeDevice",
+    "cadet:localMode:revokeDevice",
     twoOptionalStringArgs,
     ([assistantId, hashedDeviceId]) => {
       if (!assistantId) {
@@ -606,21 +606,21 @@ export const installLocalMode = (): void => {
     },
   );
 
-  ipc("vellum:localMode:wake", wakeArgs, ([assistantId, options]) => {
+  ipc("cadet:localMode:wake", wakeArgs, ([assistantId, options]) => {
     if (!assistantId) {
       return { ok: false, error: "Missing assistantId" };
     }
     return wake(assistantId, options);
   });
 
-  ipc("vellum:localMode:upgrade", upgradeArgs, ([assistantId, options]) => {
+  ipc("cadet:localMode:upgrade", upgradeArgs, ([assistantId, options]) => {
     if (!assistantId) {
       return { ok: false, error: "Missing assistantId" };
     }
     return upgrade(lockfilePaths, assistantId, options);
   });
 
-  ipc("vellum:localMode:status", assistantIdArgs, ([assistantId]) => {
+  ipc("cadet:localMode:status", assistantIdArgs, ([assistantId]) => {
     if (!assistantId) {
       return { ok: false, status: 400, error: "Missing assistantId" };
     }
@@ -631,7 +631,7 @@ export const installLocalMode = (): void => {
   });
 
   ipc(
-    "vellum:localMode:readAssistantAvatar",
+    "cadet:localMode:readAssistantAvatar",
     assistantIdArgs,
     ([assistantId]): LocalReadAssistantAvatarResult => {
       if (!assistantId) {
@@ -646,7 +646,7 @@ export const installLocalMode = (): void => {
   );
 
   ipc(
-    "vellum:localMode:guardianToken",
+    "cadet:localMode:guardianToken",
     assistantIdArgs,
     async ([assistantId]): Promise<TokenResult> => {
       if (!assistantId) {

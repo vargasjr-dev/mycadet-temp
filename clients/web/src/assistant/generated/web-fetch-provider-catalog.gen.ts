@@ -35,9 +35,9 @@ export const WEB_FETCH_PROVIDER_KEY_PLACEHOLDERS: Readonly<
  */
 export const WEB_FETCH_PROVIDER_KEY_STORAGE: Readonly<Record<string, string>> =
   {
-    firecrawl: "vellum:ai:firecrawlKey",
-    fastcrw: "vellum:ai:fastcrwKey",
-    tinyfish: "vellum:ai:tinyfishKey",
+    firecrawl: "cadet:ai:firecrawlKey",
+    fastcrw: "cadet:ai:fastcrwKey",
+    tinyfish: "cadet:ai:tinyfishKey",
   };
 
 /** Provider ids that require a user-supplied API key. */

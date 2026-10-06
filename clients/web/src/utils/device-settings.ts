@@ -88,7 +88,7 @@ export function getDeviceSetting(
   }
 }
 
-/** Write a device-scoped setting. Fires the `vellum:pref-changed` event for same-tab observers. */
+/** Write a device-scoped setting. Fires the `cadet:pref-changed` event for same-tab observers. */
 export function setDeviceSetting(name: DeviceSettingName, value: string): void {
   setLocalSetting(DEVICE_SETTINGS[name].key, value);
 }

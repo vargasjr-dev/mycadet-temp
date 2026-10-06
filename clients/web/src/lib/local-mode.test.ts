@@ -134,7 +134,7 @@ import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useLockfileStore } from "@/stores/lockfile-store";
 
-const LOCKFILE_STORAGE_KEY = "vellum:local:lockfile";
+const LOCKFILE_STORAGE_KEY = "cadet:local:lockfile";
 const realFetch = globalThis.fetch;
 
 function setSelected(id: string): void {
@@ -1265,8 +1265,8 @@ describe("primeLocalGatewayConnection", () => {
     );
     expect(getSelfHostedActorToken()).toBeNull();
     expect(isGatewayAuthMode()).toBe(true);
-    expect(localStorage.getItem("vellum:gw:token")).toBeNull();
-    expect(localStorage.getItem("vellum:gw:tokenSource")).toBeNull();
+    expect(localStorage.getItem("cadet:gw:token")).toBeNull();
+    expect(localStorage.getItem("cadet:gw:tokenSource")).toBeNull();
   });
 
   test("paired re-prime keeps the connection live while the readiness probe is in flight", async () => {

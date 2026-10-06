@@ -58,7 +58,7 @@ const dispatch = (command: VellumCommand): void => {
   if (!win || win.isDestroyed()) {
     return;
   }
-  const send = () => win.webContents.send("vellum:command", command);
+  const send = () => win.webContents.send("cadet:command", command);
   if (win.webContents.isLoading()) {
     win.webContents.once("did-finish-load", send);
   } else {

@@ -51,7 +51,7 @@ Configuration lives in `src/main/auto-update.ts`:
 - **Poll interval** — checks on launch, then every 4 hours.
 - **Manual trigger** — users can check via the `Vellum > Check for Updates…`
   menu item (packaged builds only), or the renderer can invoke
-  `vellum:update:check` / `vellum:update:install` over IPC.
+  `cadet:update:check` / `cadet:update:install` over IPC.
 
 Because the web UI is bundled locally, **web changes require an Electron
 release** to reach users. The update typically lands within hours (next
@@ -138,7 +138,7 @@ whichever Swift channel you have around.
   Most items are role-based so they work without renderer IPC; the `File`
   items dispatch through the typed command bus in `src/main/commands.ts`,
   which broadcasts to the focused window's renderer via a single
-  `vellum:command` IPC channel (subscribed to by `useVellumCommands` in
+  `cadet:command` IPC channel (subscribed to by `useVellumCommands` in
   `clients/web/src/runtime/vellum-commands.ts`). Accelerators are read from
   `settings.hotkeys.<kind>` with defaults from `DEFAULT_ACCELERATORS`.
   `View > Toggle Developer Tools` is gated to dev builds only so the
@@ -146,7 +146,7 @@ whichever Swift channel you have around.
 
 - **Share Sheet** (`src/main/share.ts`). The renderer's `shareFile`
   (`clients/web/src/runtime/native-file.ts`) hands file bytes over the
-  `vellum:share:file` channel; the main process writes them to a temp file and
+  `cadet:share:file` channel; the main process writes them to a temp file and
   presents the native `NSSharingServicePicker` via Electron's `ShareMenu`.
   Only the _share_ intent routes here. A "Download" action goes through
   `saveFile` and the download handler below, never this sheet. Two
@@ -177,9 +177,9 @@ whichever Swift channel you have around.
   for every download, so this picks the save path itself: `~/Downloads`,
   uniquified Finder-style (`report.pdf`, `report (1).pdf`) so a repeat download
   never clobbers an existing file. On each terminal state the originating
-  window is sent a `DownloadDoneEvent` (`vellum:downloads:done`), which the
+  window is sent a `DownloadDoneEvent` (`cadet:downloads:done`), which the
   renderer surfaces as a completion toast whose "Show in Finder" action calls
-  back over `vellum:downloads:reveal` with the event's opaque id. Main
+  back over `cadet:downloads:reveal` with the event's opaque id. Main
   resolves the id to the saved path itself, so the channel can only reveal
   files this handler saved. The Dock Downloads-stack still bounces via
   `app.dock.downloadFinished` on completion. `setSavePath` is only honored

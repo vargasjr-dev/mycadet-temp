@@ -36,7 +36,7 @@ import { getWindowsHelperClient } from "../windows-helper";
 
 /**
  * Windows native helper bridge for dictation partials, served over the
- * same `vellum:helper:*` channels as the macOS shell. The renderer owns
+ * same `cadet:helper:*` channels as the macOS shell. The renderer owns
  * the microphone and pushes 16 kHz mono Int16 PCM; the helper only runs
  * the recognizer, so no audio or transcript content is ever persisted.
  */
@@ -220,7 +220,7 @@ export const installDictation = (): void => {
   );
   // Fire-and-forget PCM from the partials owner (no per-chunk round-trip).
   on(
-    "vellum:helper:dictation:audio",
+    "cadet:helper:dictation:audio",
     z.tuple([z.unknown()]),
     ([chunk], event) => {
       if (!dictationOwners.ownsPartials(event.sender)) {

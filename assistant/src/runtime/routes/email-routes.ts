@@ -307,7 +307,7 @@ async function handleEmailSend({ body = {} }: RouteHandlerArgs) {
   if (!response.ok) {
     if (response.status === 402) {
       throw new RouteError(
-        "Insufficient balance to send email. Add credits at https://platform.vellum.ai/billing",
+        "Insufficient balance to send email. Add credits at https://cloud.mycadet.ai/billing",
         "PAYMENT_REQUIRED",
         402,
       );

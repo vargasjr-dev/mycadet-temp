@@ -52,9 +52,9 @@ import {
  *
  * The renderer drives notifications through two IPC surfaces:
  *
- *   - `vellum:notifications:show` (invoke) — renderer asks main to
+ *   - `cadet:notifications:show` (invoke) — renderer asks main to
  *     post a notification; resolves with `{ success, errorMessage? }`.
- *   - `vellum:notifications:action` (send to renderer) — main
+ *   - `cadet:notifications:action` (send to renderer) — main
  *     broadcasts click/action events so the renderer can navigate,
  *     approve/reject tool calls, etc.
  *

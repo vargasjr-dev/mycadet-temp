@@ -917,11 +917,11 @@ const sendHotkeyEventToOwner = (event: HotkeyEvent): void => {
     if (chordOwner === null || chordOwner.isDestroyed()) {
       return;
     }
-    chordOwner.send("vellum:helper:hotkey:event", event);
+    chordOwner.send("cadet:helper:hotkey:event", event);
     return;
   }
   holdIsOpen = event.state === "down";
-  hotkeyOwnerTarget()?.send("vellum:helper:hotkey:event", event);
+  hotkeyOwnerTarget()?.send("cadet:helper:hotkey:event", event);
 };
 
 const sendInputActivityToOwner = (): void => {
@@ -952,7 +952,7 @@ const sendSyntheticHotkeyUpIfNeeded = (): void => {
 const sendHelperStateToRenderers = (state: MacHelperState): void => {
   for (const win of BrowserWindow.getAllWindows()) {
     if (win.webContents.isDestroyed()) continue;
-    win.webContents.send("vellum:helper:state", state);
+    win.webContents.send("cadet:helper:state", state);
   }
 };
 
@@ -1131,9 +1131,9 @@ export const installHotkeyHelper = (): void => {
   );
   unsubscribeHelperState = client.onState(handleHelperState);
 
-  handle("vellum:helper:ping", z.tuple([]), () => ping());
-  handle("vellum:helper:state:get", z.tuple([]), () => client.getState());
-  handle("vellum:helper:restart", z.tuple([]), () => restartHelper());
+  handle("cadet:helper:ping", z.tuple([]), () => ping());
+  handle("cadet:helper:state:get", z.tuple([]), () => client.getState());
+  handle("cadet:helper:restart", z.tuple([]), () => restartHelper());
 
   handle(
     HELPER_HOTKEY_SET_MODIFIER_HOLD,
@@ -1188,7 +1188,7 @@ export const installHotkeyHelper = (): void => {
 
   // High-frequency fire-and-forget PCM from the partials owner — plain
   // `on`, not `handle`: a round-trip per ~100ms chunk buys nothing.
-  ipcMain.on("vellum:helper:dictation:audio", (event, chunk: unknown) => {
+  ipcMain.on("cadet:helper:dictation:audio", (event, chunk: unknown) => {
     if (!dictationOwners.ownsPartials(event.sender)) {
       audioChunkCount += 1;
       if (audioChunkCount === 1 || audioChunkCount % 50 === 0) {
@@ -1236,7 +1236,7 @@ export const installHotkeyHelper = (): void => {
 
 export const __resetForTesting = (): void => {
   installed = false;
-  ipcMain.removeAllListeners("vellum:helper:dictation:audio");
+  ipcMain.removeAllListeners("cadet:helper:dictation:audio");
   platformForTesting = null;
   supervisorOptionsForTesting = {};
   modifierHoldBinding = { kind: "off" };

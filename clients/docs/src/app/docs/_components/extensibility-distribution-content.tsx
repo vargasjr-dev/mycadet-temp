@@ -29,7 +29,7 @@ const linkClass =
   "font-semibold text-emerald-700 underline hover:text-emerald-800";
 
 const MARKETPLACE_URL =
-  "https://github.com/cadet-ai/cadet-assistant/blob/main/plugins/marketplace.json";
+  "https://github.com/vargasjr-dev/mycadet/blob/main/plugins/marketplace.json";
 
 const CLAUDE_MARKETPLACE_URL =
   "https://code.claude.com/docs/en/plugin-marketplaces";
@@ -354,7 +354,7 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290`}</code>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
             Open a PR against{" "}
             <Link
-              href="https://github.com/cadet-ai/cadet-assistant"
+              href="https://github.com/vargasjr-dev/mycadet"
               className={linkClass}
             >
               <code>cadet-ai/cadet-assistant</code>
@@ -437,7 +437,7 @@ simple-memory  cadet-ai/simple-memory
 
 # Install it by name (clones the pinned commit)
 $ assistant plugins install simple-memory
-Installed plugin "simple-memory" (12 files) at ed09a4c → ~/.cadet/workspace/plugins/simple-memory
+Installed plugin "simple-memory" (12 files) at ed09a4c → $VELLUM_WORKSPACE_DIR/plugins/simple-memory
 The new plugin is picked up automatically.
 
 # Confirm what is installed
@@ -520,7 +520,7 @@ $ assistant plugins install https://github.com/owner/repo
 ⚠ Installing "repo" from an unreviewed GitHub source: owner/repo @ default branch.
  This plugin is NOT in the Cadet marketplace and has not been reviewed.
  Its hooks and tools run inside the assistant with full access — install it only if you trust the source.
-Installed untrusted plugin "repo" (8 files) → ~/.cadet/workspace/plugins/repo
+Installed untrusted plugin "repo" (8 files) → $VELLUM_WORKSPACE_DIR/plugins/repo
 
 # Install from a specific branch and sub-path
 $ assistant plugins install https://github.com/owner/repo/tree/my-branch/packages/cool-plugin
@@ -756,7 +756,7 @@ Upgraded "simple-memory" 2026-06-01T12:34:56 (ed09a4c) → 2026-06-05T08:12:24 (
           <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
             <code>{`{
   "name": "cadet-assistant",
-  "owner": { "name": "Cadet", "url": "https://github.com/cadet-ai/cadet-assistant" },
+  "owner": { "name": "Cadet", "url": "https://github.com/vargasjr-dev/mycadet" },
   "plugins": [
     {
       "name": "example-plugin",

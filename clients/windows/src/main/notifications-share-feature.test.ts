@@ -285,7 +285,7 @@ describe("share feature", () => {
   const installShare = (): HandleRegistration => {
     shareFeature.install(new DesktopCapabilityRegistry());
     const registration = handleRegistrations.find(
-      (candidate) => candidate.channel === "vellum:share:file",
+      (candidate) => candidate.channel === "cadet:share:file",
     );
     if (!registration) throw new Error("share handler was not registered");
     return registration;

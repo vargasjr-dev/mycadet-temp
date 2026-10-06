@@ -162,7 +162,7 @@ export const installAbout = ({ handle }: AboutIpc): void => {
   // live identity.
   runtime.onAssistantNameChange?.(applyAboutPanelOptions);
 
-  handle("vellum:app:versionInfo", z.tuple([]), () => getVersionInfo());
+  handle("cadet:app:versionInfo", z.tuple([]), () => getVersionInfo());
 
   // The renderer is sandboxed — `shell.openExternal` only works from
   // main. The About page's website-link click handler routes through
@@ -170,7 +170,7 @@ export const installAbout = ({ handle }: AboutIpc): void => {
   // of navigating the About window away from its route. The target is
   // a fixed constant, never a renderer-supplied URL, so there's no
   // open-redirect surface here.
-  handle("vellum:app:openWebsite", z.tuple([]), () =>
+  handle("cadet:app:openWebsite", z.tuple([]), () =>
     shell.openExternal(WEBSITE),
   );
 };

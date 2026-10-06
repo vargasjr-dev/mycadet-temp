@@ -118,5 +118,5 @@ export const acceleratorOption = (
 export const dispatchToFocused = (command: VellumCommand): void => {
   const target =
     BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
-  target?.webContents.send("vellum:command", command);
+  target?.webContents.send("cadet:command", command);
 };

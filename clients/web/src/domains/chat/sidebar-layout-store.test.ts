@@ -27,11 +27,11 @@ describe("SidebarLayoutStore", () => {
 
   test("setAssistantId hydrates from localStorage", () => {
     localStorage.setItem(
-      "vellum:sidebar-open-categories:asst-1",
+      "cadet:sidebar-open-categories:asst-1",
       JSON.stringify([channelSectionKey("slack"), channelSectionKey("email")]),
     );
     localStorage.setItem(
-      "vellum:sidebar-open-custom-groups:asst-1",
+      "cadet:sidebar-open-custom-groups:asst-1",
       JSON.stringify(["grp-abc"]),
     );
 
@@ -50,7 +50,7 @@ describe("SidebarLayoutStore", () => {
     // No section carries those keys; loading filters them, and the next
     // save rewrites storage without them.
     localStorage.setItem(
-      "vellum:sidebar-open-categories:asst-1",
+      "cadet:sidebar-open-categories:asst-1",
       JSON.stringify(["background", "scheduled", channelSectionKey("slack")]),
     );
 
@@ -80,7 +80,7 @@ describe("SidebarLayoutStore", () => {
       .getState()
       .setOpenCategories([channelSectionKey("slack")]);
 
-    const raw = localStorage.getItem("vellum:sidebar-open-categories:asst-1");
+    const raw = localStorage.getItem("cadet:sidebar-open-categories:asst-1");
     expect(JSON.parse(raw!)).toEqual([channelSectionKey("slack")]);
     expect(useSidebarLayoutStore.getState().openCategories).toEqual([
       channelSectionKey("slack"),
@@ -92,18 +92,18 @@ describe("SidebarLayoutStore", () => {
     useSidebarLayoutStore.getState().setOpenCustomGroups(["grp-1", "grp-2"]);
 
     const raw = localStorage.getItem(
-      "vellum:sidebar-open-custom-groups:asst-1",
+      "cadet:sidebar-open-custom-groups:asst-1",
     );
     expect(JSON.parse(raw!)).toEqual(["grp-1", "grp-2"]);
   });
 
   test("switching assistant re-hydrates from new assistant's storage", () => {
     localStorage.setItem(
-      "vellum:sidebar-open-categories:asst-1",
+      "cadet:sidebar-open-categories:asst-1",
       JSON.stringify([channelSectionKey("email")]),
     );
     localStorage.setItem(
-      "vellum:sidebar-open-categories:asst-2",
+      "cadet:sidebar-open-categories:asst-2",
       JSON.stringify([channelSectionKey("slack")]),
     );
 
@@ -119,7 +119,7 @@ describe("SidebarLayoutStore", () => {
   });
 
   test("falls back to defaults when localStorage has invalid data", () => {
-    localStorage.setItem("vellum:sidebar-open-categories:asst-1", "not-json");
+    localStorage.setItem("cadet:sidebar-open-categories:asst-1", "not-json");
 
     useSidebarLayoutStore.getState().setAssistantId("asst-1");
 
@@ -152,7 +152,7 @@ describe("SidebarLayoutStore", () => {
     useSidebarLayoutStore.getState().setAssistantId("asst-1");
     useSidebarLayoutStore.getState().setOpenPrimary(["pinned"]);
 
-    const raw = localStorage.getItem("vellum:sidebar-open-primary:asst-1");
+    const raw = localStorage.getItem("cadet:sidebar-open-primary:asst-1");
     expect(JSON.parse(raw!)).toEqual(["pinned"]);
     expect(useSidebarLayoutStore.getState().openPrimary).toEqual(["pinned"]);
   });
@@ -160,7 +160,7 @@ describe("SidebarLayoutStore", () => {
   test("setAssistantId hydrates a collapsed primary section from storage", () => {
     // Stored empty array = user collapsed both; must not fall back to open.
     localStorage.setItem(
-      "vellum:sidebar-open-primary:asst-1",
+      "cadet:sidebar-open-primary:asst-1",
       JSON.stringify([]),
     );
     useSidebarLayoutStore.getState().setAssistantId("asst-1");

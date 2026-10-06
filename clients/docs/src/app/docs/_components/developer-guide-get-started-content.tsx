@@ -162,10 +162,10 @@ export function DeveloperGuideGetStartedContent() {
                 desktop app
               </Link>{" "}
               and walk through onboarding. Your workspace will live at{" "}
-              <code>~/.cadet/</code>.
+              <code>~/.vellum/</code>.
             </li>
             <li>
-              Clone <code>cadet-assistant</code> alongside it. Use the
+              Clone <code>mycadet</code> alongside it. Use the
               repo&apos;s top-level setup scripts to install
               dependencies and link your local build into the running
               installation.

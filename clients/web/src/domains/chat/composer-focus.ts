@@ -18,7 +18,7 @@
  * one tree for docked and undocked empty states, so starters arriving
  * cannot replace the focused textarea and drop the caret onto `<body>`.
  */
-export const COMPOSER_FOCUS_EVENT = "vellum:focus-composer";
+export const COMPOSER_FOCUS_EVENT = "cadet:focus-composer";
 
 let pending = false;
 

@@ -4,13 +4,13 @@ import { subscribe } from "@/lib/event-bus";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { mintRandomId } from "@/lib/telemetry/random-id";
 
-const STORAGE_KEY = "vellum:browser-notification-deliveries:v1";
-const SOUND_STORAGE_KEY = "vellum:browser-notification-sounds:v1";
+const STORAGE_KEY = "cadet:browser-notification-deliveries:v1";
+const SOUND_STORAGE_KEY = "cadet:browser-notification-sounds:v1";
 const DATABASE_NAME = "vellum-browser-notifications";
 const RECEIPTS_STORE = "receipts";
 const MAX_DELIVERIES = 128;
 const RETENTION_MS = 10 * 60_000;
-const ATTENTION_PREFIX = "vellum:browser-notification-attention:v1:";
+const ATTENTION_PREFIX = "cadet:browser-notification-attention:v1:";
 const ATTENTION_TTL_MS = 15_000;
 const ATTENTION_REFRESH_MS = 5_000;
 

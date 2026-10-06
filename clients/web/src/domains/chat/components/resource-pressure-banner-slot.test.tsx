@@ -49,8 +49,8 @@ const { routes } = await import("@/utils/routes");
 const { getResourcePressureMonitorMode } =
   await import("@/assistant/resource-pressure");
 
-const DISMISSED_UNTIL_KEY = "vellum:resourcePressureDismissedUntil:assistant-1";
-const SUPPRESSED_KEY = "vellum:resourcePressureSuppressed:assistant-1";
+const DISMISSED_UNTIL_KEY = "cadet:resourcePressureDismissedUntil:assistant-1";
+const SUPPRESSED_KEY = "cadet:resourcePressureSuppressed:assistant-1";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 const elevatedStatus: ResourcePressureStatus = {
@@ -283,7 +283,7 @@ describe("ResourcePressureBannerSlot", () => {
     // GIVEN assistant-1's banner was just dismissed in memory, and
     // assistant-2 carries a stored permanent suppress
     localStorage.setItem(
-      "vellum:resourcePressureSuppressed:assistant-2",
+      "cadet:resourcePressureSuppressed:assistant-2",
       "true",
     );
     const view = render(slot(elevatedStatus));
@@ -321,12 +321,12 @@ describe("ResourcePressureBannerSlot", () => {
 
     expect(queryBanner()).toBeNull();
     expect(
-      localStorage.getItem("vellum:resourcePressureSuppressed:assistant-2"),
+      localStorage.getItem("cadet:resourcePressureSuppressed:assistant-2"),
     ).toBeNull();
     expect(
       Number(
         localStorage.getItem(
-          "vellum:resourcePressureDismissedUntil:assistant-2",
+          "cadet:resourcePressureDismissedUntil:assistant-2",
         ),
       ),
     ).toBeGreaterThan(Date.now());

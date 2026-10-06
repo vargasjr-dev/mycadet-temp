@@ -1,3 +1,4 @@
+import { isManagedCloud } from "@vellumai/local-mode/contract";
 import { mkdirSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
@@ -100,7 +101,7 @@ export async function backup(): Promise<void> {
     process.exit(1);
   }
 
-  if (cloud === "vellum") {
+  if (isManagedCloud(cloud)) {
     await backupPlatform(entry, name, outputArg);
     return;
   }

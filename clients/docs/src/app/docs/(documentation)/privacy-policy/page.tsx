@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
                     <em>Last Updated: June 22, 2026</em>
                   </p>
                   <p>
-                    This Privacy Notice describes how Vocify, Inc., the provider of Cadet (collectively, &quot;<strong><em>Cadet</em></strong>,&quot; &quot;<strong><em>we</em></strong>,&quot; or &quot;<strong><em>us</em></strong>&quot;), collects, uses, discloses and otherwise processes information we collect when you access or use our websites (collectively, the &quot;<strong><em>Website</em></strong>&quot;) or applications (the &quot;<strong><em>Services</em></strong>&quot;), or when you otherwise interact with us, such as through our customer support channels.
+                    This Privacy Notice describes how Cadet, Inc., the provider of Cadet (collectively, &quot;<strong><em>Cadet</em></strong>,&quot; &quot;<strong><em>we</em></strong>,&quot; or &quot;<strong><em>us</em></strong>&quot;), collects, uses, discloses and otherwise processes information we collect when you access or use our websites (collectively, the &quot;<strong><em>Website</em></strong>&quot;) or applications (the &quot;<strong><em>Services</em></strong>&quot;), or when you otherwise interact with us, such as through our customer support channels.
                   </p>
                   <p>
                     This Privacy Notice is effective as of the &quot;Last Updated&quot; date above. We may change this Privacy Notice from time to time. If we make changes, we will notify you by revising the &quot;Last Updated&quot; date. Where required by law, we will notify you of changes through the Website, Services, or by other means.

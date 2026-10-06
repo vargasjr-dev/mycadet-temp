@@ -275,9 +275,9 @@ export function restoreConsentForUser(userId: string | null): {
     // would stamp stale consent as current (and let the empty-server fallback
     // backfill it) without showing the updated privacy checkbox. Force
     // privacy through re-review instead.
-    const legacyTos = getLocalBool("vellum:onboarding:tosAccepted", false);
+    const legacyTos = getLocalBool("cadet:onboarding:tosAccepted", false);
     const legacyPrivacy = getLocalBool(
-      "vellum:onboarding:aiDataConsent",
+      "cadet:onboarding:aiDataConsent",
       false,
     );
     if (legacyTos || legacyPrivacy) {
@@ -348,9 +348,9 @@ export function persistDiagnosticsAck(userId: string | null): void {
 }
 
 export function clearConsentForUser(userId: string | null): void {
-  removeLocalSetting("vellum:onboarding:tosAccepted");
-  removeLocalSetting("vellum:onboarding:aiDataConsent");
-  removeLocalSetting("vellum:onboarding:selectedVersion");
+  removeLocalSetting("cadet:onboarding:tosAccepted");
+  removeLocalSetting("cadet:onboarding:aiDataConsent");
+  removeLocalSetting("cadet:onboarding:selectedVersion");
   if (typeof window === "undefined" || !userId) {
     return;
   }

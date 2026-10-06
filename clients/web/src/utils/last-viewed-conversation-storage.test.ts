@@ -15,7 +15,7 @@ import {
 import { installMemoryStorage } from "@/utils/memory-storage.test-helper";
 
 const ASSISTANT_ID = "asst_123";
-const STORAGE_KEY = `vellum:lastViewedConversation:${ASSISTANT_ID}`;
+const STORAGE_KEY = `cadet:lastViewedConversation:${ASSISTANT_ID}`;
 
 const memoryStorage = installMemoryStorage({
   beforeAll,

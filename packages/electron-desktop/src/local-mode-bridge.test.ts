@@ -27,16 +27,16 @@ test("forwards the complete local-mode namespace through IPC", async () => {
   await bridge.revokeDevice("assistant-1", "hash-1");
 
   expect(invoke).toHaveBeenCalledTimes(16);
-  expect(invoke).toHaveBeenCalledWith("vellum:localMode:wake", "assistant-1", {
+  expect(invoke).toHaveBeenCalledWith("cadet:localMode:wake", "assistant-1", {
     repairGuardian: true,
   });
   expect(invoke).toHaveBeenCalledWith(
-    "vellum:localMode:revokeDevice",
+    "cadet:localMode:revokeDevice",
     "assistant-1",
     "hash-1",
   );
   expect(invoke).toHaveBeenCalledWith(
-    "vellum:localMode:pairingPoll",
+    "cadet:localMode:pairingPoll",
     "handle-1",
     "Assistant 1",
   );

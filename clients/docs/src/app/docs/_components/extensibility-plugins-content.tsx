@@ -30,7 +30,7 @@ const linkClass =
   "font-semibold text-emerald-700 underline hover:text-emerald-800";
 
 const PLUGIN_API_URL =
-  "https://github.com/cadet-ai/cadet-assistant/tree/main/assistant/src/plugin-api";
+  "https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api";
 
 const HOOKS_PAGE_URL = "/docs/extensibility/hooks";
 const TOOLS_PAGE_URL = "/docs/extensibility/tools";

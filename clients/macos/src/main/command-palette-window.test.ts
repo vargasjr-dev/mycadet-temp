@@ -405,24 +405,24 @@ describe("installCommandPaletteWindow", () => {
     installCommandPaletteWindow();
 
     expect(handleMock.mock.calls.map((call) => call[0])).toEqual([
-      "vellum:commandPalette:open",
-      "vellum:commandPalette:dismiss",
-      "vellum:commandPalette:select",
+      "cadet:commandPalette:open",
+      "cadet:commandPalette:dismiss",
+      "cadet:commandPalette:select",
     ]);
 
-    ipcHandlers.get("vellum:commandPalette:open")?.([]);
+    ipcHandlers.get("cadet:commandPalette:open")?.([]);
     expect(created).toHaveLength(1);
 
-    ipcHandlers.get("vellum:commandPalette:dismiss")?.([]);
+    ipcHandlers.get("cadet:commandPalette:dismiss")?.([]);
     expect(created[0]!.win.close).toHaveBeenCalledTimes(1);
 
     currentMainWindow = makeMainWindow({ visible: true });
-    await ipcHandlers.get("vellum:commandPalette:select")?.([
+    await ipcHandlers.get("cadet:commandPalette:select")?.([
       { kind: "sidebarToggle" },
     ]);
     expect(dispatchToMainMock).toHaveBeenCalledWith({ kind: "sidebarToggle" });
 
-    await ipcHandlers.get("vellum:commandPalette:select")?.([
+    await ipcHandlers.get("cadet:commandPalette:select")?.([
       { kind: "openConversation", conversationId: "conv-123" },
     ]);
     expect(dispatchToMainMock).toHaveBeenCalledWith({
@@ -513,7 +513,7 @@ describe("dispatchMenuCommand", () => {
     dispatchMenuCommand({ kind: "newConversation" });
 
     expect(created).toHaveLength(0);
-    expect(source.webContents.send).toHaveBeenCalledWith("vellum:command", {
+    expect(source.webContents.send).toHaveBeenCalledWith("cadet:command", {
       kind: "newConversation",
     });
   });
@@ -525,7 +525,7 @@ describe("dispatchMenuCommand", () => {
     dispatchMenuCommand({ kind: "openSettings" });
 
     expect(palette.webContents.send).not.toHaveBeenCalledWith(
-      "vellum:command",
+      "cadet:command",
       { kind: "openSettings" },
     );
     expect(dispatchToMainMock).toHaveBeenCalledWith({ kind: "openSettings" });

@@ -9,7 +9,7 @@
  * **Storage model:**
  *
  * - The persist middleware serialises the whole voice-prefs slice into
- *   a single localStorage key, `vellum:voice-prefs`.
+ *   a single localStorage key, `cadet:voice-prefs`.
  * - A payload stamped past this build's version is read but never
  *   written over, so an older bundle running after a newer one cannot
  *   take fields it has no name for with it. Three layers hold that:
@@ -17,7 +17,7 @@
  *   memory, {@link versionGuardedLocalStorage} refuses the write that
  *   follows, and the listener below declines the read that starts it.
  * - Cross-tab updates: the persist middleware doesn't sync across tabs
- *   on its own. We listen for `storage` events on `vellum:voice-prefs`
+ *   on its own. We listen for `storage` events on `cadet:voice-prefs`
  *   and call `persist.rehydrate()` to pull in the other tab's write,
  *   except for a payload stamped past this build's version, which it
  *   leaves for the build that wrote it. See
@@ -200,7 +200,7 @@ const INITIAL_STATE: VoicePrefsState = {
 // Store
 // ---------------------------------------------------------------------------
 
-const VOICE_PREFS_STORE_KEY = "vellum:voice-prefs";
+const VOICE_PREFS_STORE_KEY = "cadet:voice-prefs";
 
 /**
  * The persisted shape's version. Anything on disk stamped with a different one,

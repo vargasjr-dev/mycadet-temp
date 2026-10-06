@@ -5,7 +5,7 @@ import { getLocalBool, setLocalBool } from "@/utils/local-settings";
 import { Button, Modal } from "@mycadet/design-library";
 import { useTranslation } from "@/i18n";
 
-const MIC_PRIMER_STORAGE_KEY = "vellum:voice:permissionPrimerSeen";
+const MIC_PRIMER_STORAGE_KEY = "cadet:voice:permissionPrimerSeen";
 
 /**
  * Returns `true` when the microphone permission primer should be shown —

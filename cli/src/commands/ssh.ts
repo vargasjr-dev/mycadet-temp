@@ -1,3 +1,4 @@
+import { isManagedCloud } from "@vellumai/local-mode/contract";
 import { spawn } from "child_process";
 
 import { extractHostFromUrl, resolveAssistant } from "../lib/assistant-config";
@@ -96,7 +97,7 @@ export async function ssh(): Promise<void> {
       ["compute", "ssh", sshTarget, `--project=${project}`, `--zone=${zone}`],
       { stdio: "inherit", windowsHide: true },
     );
-  } else if (cloud === "vellum") {
+  } else if (isManagedCloud(cloud)) {
     const token = readPlatformToken();
     if (!token) {
       console.error(

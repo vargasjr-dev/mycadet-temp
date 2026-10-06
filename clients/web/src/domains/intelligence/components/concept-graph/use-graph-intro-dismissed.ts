@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from "react";
  * When storage is unavailable (private mode / blocked), reads resolve to
  * "dismissed" so we never nag on every load with a dismissal that can't stick.
  */
-const KEY_PREFIX = "vellum:memoryGraph:introDismissed:";
+const KEY_PREFIX = "cadet:memoryGraph:introDismissed:";
 
 function storageKey(assistantId: string): string {
   return `${KEY_PREFIX}${assistantId}`;

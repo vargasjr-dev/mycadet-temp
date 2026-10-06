@@ -121,7 +121,7 @@ function parseRegistration(raw: string): ActivityRegistration | null {
  */
 const persistedRegistration =
   createStorageAccessor<ActivityRegistration | null>({
-    key: "vellum:live_activity_registration",
+    key: "cadet:live_activity_registration",
     scope: "user",
     parse: parseRegistration,
     serialize: JSON.stringify,

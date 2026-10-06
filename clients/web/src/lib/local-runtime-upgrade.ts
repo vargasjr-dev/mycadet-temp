@@ -8,8 +8,8 @@ import { compareParsed, parseSemver } from "@/utils/semver";
 export const RUNTIME_RELEASES_REFETCH_INTERVAL_MS = 20 * 60 * 1000;
 export const LOCAL_RUNTIME_RELEASES_FETCH_LIMIT = 100;
 
-const DISMISSED_KEY_PREFIX = "vellum:runtimeUpgradeDismissed";
-const LEGACY_LOCAL_DISMISSED_KEY_PREFIX = "vellum:localRuntimeUpgradeDismissed";
+const DISMISSED_KEY_PREFIX = "cadet:runtimeUpgradeDismissed";
+const LEGACY_LOCAL_DISMISSED_KEY_PREFIX = "cadet:localRuntimeUpgradeDismissed";
 
 export function isLocalBuildVersion(
   version: string | null | undefined,

@@ -40,8 +40,8 @@ const MAX_EVENTS = 200;
  */
 const MAX_LIFECYCLE_EVENTS = 200;
 
-const STORAGE_KEY = "vellum:chat-diagnostics:v1";
-const LIFECYCLE_STORAGE_KEY = "vellum:chat-diagnostics-lifecycle:v1";
+const STORAGE_KEY = "cadet:chat-diagnostics:v1";
+const LIFECYCLE_STORAGE_KEY = "cadet:chat-diagnostics-lifecycle:v1";
 
 interface Ring {
   readonly storageKey: string;

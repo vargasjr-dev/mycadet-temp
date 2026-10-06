@@ -33,7 +33,7 @@ export interface EnvironmentDefinition {
   /**
    * The web app (Next.js) base URL for browser-facing pages like
    * `/account/login`. In production this is separate from the API backend
-   * (e.g. `www.vellum.ai` vs `platform.vellum.ai`); locally it's
+   * (e.g. `www.vellum.ai` vs `cloud.mycadet.ai`); locally it's
    * `localhost:3000` vs `localhost:8000`.
    *
    * Mirrors `VellumEnvironment.webURL` on the Swift side.

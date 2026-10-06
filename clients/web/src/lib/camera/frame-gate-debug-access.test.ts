@@ -20,7 +20,7 @@ import { useAuthStore, type AuthUser } from "@/stores/auth-store";
 import { useCameraGateDebugStore } from "@/stores/camera-gate-debug-store";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 
-const STORAGE_KEY = "vellum:debug:cameraGateHud";
+const STORAGE_KEY = "cadet:debug:cameraGateHud";
 
 const STAFF_USER: AuthUser = {
   kind: "platform",
@@ -428,10 +428,10 @@ describe("camera gate readout access", () => {
       // restores this slice, which is a switch moving under a session that
       // changed nothing.
       localStorage.setItem(STORAGE_KEY, payloadFrom(STAFF_USER.id ?? "", 42));
-      localStorage.setItem("vellum:debug:somethingElse", "{}");
+      localStorage.setItem("cadet:debug:somethingElse", "{}");
       window.dispatchEvent(
         new StorageEvent("storage", {
-          key: "vellum:debug:somethingElse",
+          key: "cadet:debug:somethingElse",
           newValue: "{}",
         }),
       );
@@ -439,7 +439,7 @@ describe("camera gate readout access", () => {
       await Promise.resolve();
 
       expect(useCameraGateDebugStore.getState().hudEnabled).toBe(true);
-      localStorage.removeItem("vellum:debug:somethingElse");
+      localStorage.removeItem("cadet:debug:somethingElse");
     });
 
     test("stops arriving once the access sync is torn down", async () => {

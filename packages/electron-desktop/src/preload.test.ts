@@ -131,8 +131,8 @@ test("creates the bundle confirmation IPC bridge", async () => {
   await bridge.getData();
   bridge.respond(true);
 
-  expect(invoke).toHaveBeenCalledWith("vellum:bundleConfirm:getData");
-  expect(send).toHaveBeenCalledWith("vellum:bundleConfirm:respond", true);
+  expect(invoke).toHaveBeenCalledWith("cadet:bundleConfirm:getData");
+  expect(send).toHaveBeenCalledWith("cadet:bundleConfirm:respond", true);
 });
 
 test("creates the downloads IPC bridge", async () => {
@@ -155,9 +155,9 @@ test("creates the downloads IPC bridge", async () => {
   const unsubscribe = bridge.onDone((event) => received.push(event));
   await bridge.reveal("dl-1");
 
-  expect(invoke).toHaveBeenCalledWith("vellum:downloads:reveal", "dl-1");
+  expect(invoke).toHaveBeenCalledWith("cadet:downloads:reveal", "dl-1");
   expect(on).toHaveBeenCalledWith(
-    "vellum:downloads:done",
+    "cadet:downloads:done",
     expect.any(Function),
   );
   handler!({}, { id: "dl-1", filename: "report.pdf", state: "completed" });
@@ -166,7 +166,7 @@ test("creates the downloads IPC bridge", async () => {
   ]);
 
   unsubscribe();
-  expect(off).toHaveBeenCalledWith("vellum:downloads:done", handler);
+  expect(off).toHaveBeenCalledWith("cadet:downloads:done", handler);
 });
 
 type AttentionHandler = (
@@ -323,9 +323,9 @@ test("permission guide drag sends only its id and releases state subscriptions",
   } as unknown as IpcRenderer;
   const bridge = createPermissionSetupBridge(ipc);
   bridge.cancel();
-  expect(send).toHaveBeenCalledWith("vellum:permissions:guide:cancel");
+  expect(send).toHaveBeenCalledWith("cadet:permissions:guide:cancel");
   bridge.startDrag(7);
-  expect(send).toHaveBeenCalledWith("vellum:permissions:guide:drag", 7);
+  expect(send).toHaveBeenCalledWith("cadet:permissions:guide:drag", 7);
   const unsubscribe = bridge.onGuide(() => undefined);
   expect(on).toHaveBeenCalledTimes(1);
   unsubscribe();

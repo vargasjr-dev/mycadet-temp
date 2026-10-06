@@ -24,7 +24,7 @@ import { NOTIFICATION_AVATAR_MAX_LOCAL_BYTES } from "@mycadet/avatar-manifest/no
 
 /**
  * Discriminated union of every app command. Main dispatches these to the
- * focused renderer window via `vellum:command` IPC; the renderer routes
+ * focused renderer window via `cadet:command` IPC; the renderer routes
  * them through the event bus.
  */
 /**
@@ -3108,7 +3108,7 @@ export interface CompanionSurfaceState {
    * The assistant's avatar as a base64 PNG, or `undefined` when there is none.
    *
    * Reuses the cache main already keeps for the Dock and Tray icons, which the
-   * renderer publishes over `vellum:icon:setAvatar`. One avatar feeds every
+   * renderer publishes over `cadet:icon:setAvatar`. One avatar feeds every
    * surface, so the companion cannot drift from the icon in the Dock beside it.
    */
   avatarBase64?: string;

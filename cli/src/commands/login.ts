@@ -1,3 +1,4 @@
+import { isManagedCloud } from "@vellumai/local-mode/contract";
 import { randomBytes } from "crypto";
 import { createServer } from "http";
 import type { AddressInfo } from "net";
@@ -376,7 +377,7 @@ export async function login(): Promise<void> {
       const entry = resolveAssistant();
 
       // Skip managed ("vellum") assistants — they are handled by the platform.
-      if (entry && entry.cloud !== "vellum") {
+      if (entry && !isManagedCloud(entry.cloud)) {
         const orgId = await fetchOrganizationId(token);
         const clientInstallationId = computeDeviceId();
         const [assistantVersion, ingressUrl] = await Promise.all([
@@ -491,8 +492,8 @@ export async function logout(): Promise<void> {
   }
 
   // Remove cloud-managed assistants from the lockfile.
-  const cloudAssistants = loadAllAssistants().filter(
-    (a) => a.cloud === "vellum",
+  const cloudAssistants = loadAllAssistants().filter((a) =>
+    isManagedCloud(a.cloud),
   );
   for (const a of cloudAssistants) {
     removeAssistantEntry(a.assistantId);

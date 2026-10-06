@@ -10,7 +10,7 @@ export const routes = {
   docs: {
     legal: {
       privacyPolicy: "/docs/privacy-policy",
-      termsOfUse: "/docs/cadet-terms-of-use",
+      termsOfUse: "/docs/terms-of-use",
       prohibitedUse: "/docs/prohibited-use",
       privacyAndData: "/docs/trust-security/privacy-and-data",
     },

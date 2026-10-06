@@ -1,3 +1,4 @@
+import { isManagedCloud } from "@vellumai/local-mode/contract";
 import { join } from "path";
 
 import {
@@ -396,7 +397,7 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
     return;
   }
 
-  if (cloud === "vellum") {
+  if (isManagedCloud(cloud)) {
     console.log(`  Platform ID: ${entry.assistantId}\n`);
 
     const psData = await fetchManagedPs(entry.runtimeUrl, entry.assistantId);
@@ -538,7 +539,7 @@ async function getAssistantListHealth(
       : { status: "unknown", detail: "no runtime URL" };
   }
 
-  if (entry.cloud === "vellum") {
+  if (isManagedCloud(entry.cloud)) {
     return checkManagedHealth(entry.runtimeUrl, entry.assistantId);
   }
 

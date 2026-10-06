@@ -17,7 +17,7 @@ export const metadata: Metadata = {
  * SPA's inline shell-init script in clients/web/index.html (`device:theme`
  * first, then the
  * shared `cadet_theme` key, then system preference; platform-only "velvet"
- * counts as dark) since both apps share the www.cadet.ai origin. Stamps
+ * counts as dark) since both apps share the www.mycadet.ai origin. Stamps
  * BOTH `.dark` (docs-theme.css) and `data-theme` (design-library tokens) to
  * avoid a light-mode flash for dark users. */
 const themeInitScript = `

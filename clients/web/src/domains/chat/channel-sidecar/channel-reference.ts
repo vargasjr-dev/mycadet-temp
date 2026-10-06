@@ -128,8 +128,8 @@ export function toChannelReference({
  * it is a protocol token the assistant matches on, so it is not translated and
  * not reworded for tone. The same reasoning applies to the field names below.
  */
-const REFERENCE_OPEN = "[vellum:channel-reference]";
-const REFERENCE_CLOSE = "[/vellum:channel-reference]";
+const REFERENCE_OPEN = "[cadet:channel-reference]";
+const REFERENCE_CLOSE = "[/cadet:channel-reference]";
 
 /**
  * Render a reference as the delimited block that ships inside the outgoing

@@ -228,7 +228,7 @@ describe("ImageGenerationCard — provider-only configuration", () => {
   });
 
   test("Gemini lists only gemini models and snaps an off-list model", async () => {
-    localStorage.setItem("vellum:ai:imageGenModel", "gpt-image-2");
+    localStorage.setItem("cadet:ai:imageGenModel", "gpt-image-2");
     renderCard();
 
     fireEvent.click(trigger("Image generation provider"));
@@ -344,7 +344,7 @@ describe("ImageGenerationCard — provider-only configuration", () => {
     // gpt-image-2 was selectable under the legacy managed toggle; under a
     // gemini daemon config it must snap to a gemini model, not save a
     // provider/model mismatch.
-    localStorage.setItem("vellum:ai:imageGenModel", "gpt-image-2");
+    localStorage.setItem("cadet:ai:imageGenModel", "gpt-image-2");
     daemonConfigData = {
       services: {
         "image-generation": { mode: "your-own", provider: "gemini" },
@@ -372,7 +372,7 @@ describe("ImageGenerationCard — provider-only configuration", () => {
     // localStorage default (gemini) while the stored model is a gpt one.
     // The derived reconciliation must still gate the save and the key
     // provisioning — never a gemini provider with an openai model/key.
-    localStorage.setItem("vellum:ai:imageGenModel", "gpt-image-2");
+    localStorage.setItem("cadet:ai:imageGenModel", "gpt-image-2");
     daemonConfigData = { services: {} };
     renderCard();
 
@@ -392,7 +392,7 @@ describe("ImageGenerationCard — provider-only configuration", () => {
       modelId: "gemini-3.1-flash-image-preview",
     });
     expect(provisionedKeys).toEqual([{ provider: "gemini", key: "gm-secret" }]);
-    expect(localStorage.getItem("vellum:ai:imageGenModel")).toBe(
+    expect(localStorage.getItem("cadet:ai:imageGenModel")).toBe(
       "gemini-3.1-flash-image-preview",
     );
   });
@@ -437,7 +437,7 @@ describe("ImageGenerationCard — provider-only configuration", () => {
       modelId: "google/gemini-3.5-flash",
     });
     expect(localStorage.getItem(LS_IMAGE_GEN_PROVIDER)).toBe("openrouter");
-    expect(localStorage.getItem("vellum:ai:imageGenModel")).toBe(
+    expect(localStorage.getItem("cadet:ai:imageGenModel")).toBe(
       "google/gemini-3.5-flash",
     );
   });

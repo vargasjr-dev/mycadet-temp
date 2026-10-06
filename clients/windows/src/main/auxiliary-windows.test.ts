@@ -160,8 +160,8 @@ afterEach(() => {
 });
 describe("Windows auxiliary windows", () => {
   test("reuses a focused command palette with Windows frame policy", () => {
-    handleListeners.get("vellum:commandPalette:open")?.([]);
-    handleListeners.get("vellum:commandPalette:open")?.([]);
+    handleListeners.get("cadet:commandPalette:open")?.([]);
+    handleListeners.get("cadet:commandPalette:open")?.([]);
     expect(created).toHaveLength(1);
     const { options, window } = created[0]!;
     expect(options.browserWindow).toMatchObject({
@@ -191,7 +191,7 @@ describe("Windows auxiliary windows", () => {
   });
 
   test("keeps the dictation overlay passive and topmost", () => {
-    onListeners.get("vellum:dictationOverlay:setState")?.([
+    onListeners.get("cadet:dictationOverlay:setState")?.([
       { kind: "recording", transcription: "hello" },
     ]);
     const { options, window } = created[0]!;
@@ -204,14 +204,14 @@ describe("Windows auxiliary windows", () => {
     expect(window.loadURL).toHaveBeenCalledWith(
       "http://localhost:5173/assistant/floating/dictation-overlay",
     );
-    onListeners.get("vellum:dictationOverlay:setState")?.([
+    onListeners.get("cadet:dictationOverlay:setState")?.([
       { kind: "dismiss" },
     ]);
     expect(window.isDestroyed()).toBe(true);
   });
 
   test("Escape cancels dictation only while Vellum is unfocused", () => {
-    onListeners.get("vellum:dictationOverlay:setState")?.([
+    onListeners.get("cadet:dictationOverlay:setState")?.([
       { kind: "recording", transcription: "" },
     ]);
     shortcutListeners.get("Escape")?.();
@@ -224,7 +224,7 @@ describe("Windows auxiliary windows", () => {
 
     focusedWindow = null;
     appListeners.get("browser-window-blur")?.();
-    onListeners.get("vellum:dictationOverlay:setState")?.([
+    onListeners.get("cadet:dictationOverlay:setState")?.([
       { kind: "dismiss" },
     ]);
     expect(shortcutListeners.has("Escape")).toBe(false);
@@ -237,16 +237,16 @@ describe("Windows auxiliary windows", () => {
     // Stop region the overlay page reports. The mocked cursor sits at the
     // window's origin; a region covering it must flip the window
     // interactive.
-    onListeners.get("vellum:dictationOverlay:setState")?.([
+    onListeners.get("cadet:dictationOverlay:setState")?.([
       { kind: "recording", transcription: "" },
     ]);
-    onListeners.get("vellum:dictationOverlay:setHitRegion")?.([
+    onListeners.get("cadet:dictationOverlay:setHitRegion")?.([
       { x: 0, y: 0, width: 24, height: 24 },
     ]);
     const { window } = created[0]!;
     await new Promise((resolve) => setTimeout(resolve, 120));
     expect(window.setIgnoreMouseEvents).toHaveBeenCalledWith(false);
-    onListeners.get("vellum:dictationOverlay:setState")?.([
+    onListeners.get("cadet:dictationOverlay:setState")?.([
       { kind: "dismiss" },
     ]);
   });
@@ -258,14 +258,14 @@ describe("Windows auxiliary windows", () => {
     process.env.VELLUM_LOCAL_RENDERER = "true";
     process.env.VELLUM_DEV_URL = "https://dev-assistant.example.com/assistant";
     try {
-      onListeners.get("vellum:dictationOverlay:setState")?.([
+      onListeners.get("cadet:dictationOverlay:setState")?.([
         { kind: "recording", transcription: "" },
       ]);
       expect(created[0]!.window.loadURL).toHaveBeenCalledWith(
         "app://vellum.ai/assistant/floating/dictation-overlay",
       );
     } finally {
-      onListeners.get("vellum:dictationOverlay:setState")?.([
+      onListeners.get("cadet:dictationOverlay:setState")?.([
         { kind: "dismiss" },
       ]);
       delete process.env.VELLUM_LOCAL_RENDERER;
@@ -274,9 +274,9 @@ describe("Windows auxiliary windows", () => {
   });
 
   test("repositions transient windows after a display change", () => {
-    handleListeners.get("vellum:commandPalette:open")?.([]);
+    handleListeners.get("cadet:commandPalette:open")?.([]);
     toggleQuickInput();
-    onListeners.get("vellum:dictationOverlay:setState")?.([
+    onListeners.get("cadet:dictationOverlay:setState")?.([
       { kind: "recording", transcription: "" },
     ]);
     workArea = { x: 1920, y: 20, width: 1000, height: 700 };
@@ -287,11 +287,11 @@ describe("Windows auxiliary windows", () => {
   });
 
   test("keeps popouts independent from the main window", () => {
-    handleListeners.get("vellum:popout:open")?.(["conv-123"]);
+    handleListeners.get("cadet:popout:open")?.(["conv-123"]);
     const { options, window: popout } = created[0]!;
     makeWindow().close();
     popout.emit("ready-to-show");
-    handleListeners.get("vellum:popout:open")?.(["conv-123"]);
+    handleListeners.get("cadet:popout:open")?.(["conv-123"]);
     expect(popout.isDestroyed()).toBe(false);
     expect(restoreBounds).toHaveBeenCalledWith("thread.conv-123", {
       width: 720,

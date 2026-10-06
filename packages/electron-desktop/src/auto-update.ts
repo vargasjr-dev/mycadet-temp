@@ -52,7 +52,7 @@ const setState = (next: UpdateState): void => {
   currentState = next;
   for (const win of BrowserWindow.getAllWindows()) {
     if (!win.isDestroyed()) {
-      win.webContents.send("vellum:update:state", currentState);
+      win.webContents.send("cadet:update:state", currentState);
     }
   }
 };
@@ -73,9 +73,9 @@ export const checkForUpdates = (): void => {
 };
 
 export const installAutoUpdate = (): void => {
-  handle("vellum:update:getState", z.tuple([]), () => currentState);
-  handle("vellum:update:check", z.tuple([]), () => checkForUpdates());
-  handle("vellum:update:install", z.tuple([]), () =>
+  handle("cadet:update:getState", z.tuple([]), () => currentState);
+  handle("cadet:update:check", z.tuple([]), () => checkForUpdates());
+  handle("cadet:update:install", z.tuple([]), () =>
     autoUpdater.quitAndInstall(),
   );
 

@@ -4,7 +4,7 @@ Thank you for your interest in Cadet Assistant! We welcome contributions of all 
 
 ## Before You Start
 
-- **Bug reports and feature requests**: [Open an issue](https://github.com/vargasjr-dev/mycadet-temp/issues). Use the provided templates.
+- **Bug reports and feature requests**: [Open an issue](https://github.com/vargasjr-dev/mycadet/issues). Use the provided templates.
 - **Security vulnerabilities**: Report these privately. See [SECURITY.md](SECURITY.md).
 - **Questions and discussion**: Join us on the #contributors channel on [Discord](https://discord.com/channels/1471183263174234245/1503398277092081875).
 
@@ -86,7 +86,7 @@ Adding or changing a **core tool** (anything under `assistant/src/tools/` regist
 - a bug fix, performance, security, or developer-experience improvement to existing behavior, or
 - there is pre-existing discussion on GitHub or Discord with the core team on why it will be broadly useful to most users.
 
-If you can build it as a skill in your own workspace, do that first. If you think a personal skill would genuinely benefit others, contribute it to [`skills/`](skills/) (see [`skills/AGENTS.md`](skills/AGENTS.md)) rather than adding a core tool. When in doubt, [open an issue](https://github.com/vargasjr-dev/mycadet-temp/issues) or ask on [Discord](https://mycadet.ai/community) before writing new core capabilities.
+If you can build it as a skill in your own workspace, do that first. If you think a personal skill would genuinely benefit others, contribute it to [`skills/`](skills/) (see [`skills/AGENTS.md`](skills/AGENTS.md)) rather than adding a core tool. When in doubt, [open an issue](https://github.com/vargasjr-dev/mycadet/issues) or ask on [Discord](https://mycadet.ai/community) before writing new core capabilities.
 
 ## Submitting a Pull Request
 

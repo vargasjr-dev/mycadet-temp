@@ -10,8 +10,8 @@ import {
   writeVoiceKey,
 } from "@/utils/voice-key";
 
-const LS_LEGACY_HOLD = "vellum:voice:holdToDictate";
-const LS_LEGACY_ACTIVATION = "vellum:voice:voiceModeActivation";
+const LS_LEGACY_HOLD = "cadet:voice:holdToDictate";
+const LS_LEGACY_ACTIVATION = "cadet:voice:voiceModeActivation";
 
 afterEach(() => {
   markHoldDictation(false);

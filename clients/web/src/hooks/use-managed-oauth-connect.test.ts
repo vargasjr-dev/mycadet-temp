@@ -148,7 +148,7 @@ function completionEvent(
   return new StorageEvent("storage", {
     key: oauthCompletionStorageKey(requestId),
     newValue: JSON.stringify({
-      type: "vellum:oauth-complete",
+      type: "cadet:oauth-complete",
       requestId,
       oauthStatus,
       oauthCode: code ?? null,
@@ -369,7 +369,7 @@ describe("useManagedOAuthConnect", () => {
     window.localStorage.setItem(
       oauthCompletionStorageKey(attemptFor()!.requestId),
       JSON.stringify({
-        type: "vellum:oauth-complete",
+        type: "cadet:oauth-complete",
         requestId: attemptFor()!.requestId,
         oauthStatus: "error",
         oauthCode: "access_denied",

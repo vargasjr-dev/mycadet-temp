@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability in Cadet Assistant, please report it responsibly. **Do not open a public GitHub issue.**
 
-Email **security@mycadet.ai** with:
+Email **support@mycadet.ai** with:
 - A description of the vulnerability
 - Steps to reproduce
 - The potential impact

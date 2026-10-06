@@ -443,7 +443,7 @@ describe("handleMigrationImport — no-swap path omits newer-migration warning",
       files: [
         { path: "data/db/assistant.db", data: new Uint8Array() },
         {
-          path: "credentials/vellum:device-id",
+          path: "credentials/cadet:device-id",
           data: new TextEncoder().encode("test-device-id"),
         },
       ],

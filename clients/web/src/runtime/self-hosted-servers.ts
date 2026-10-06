@@ -97,7 +97,7 @@ async function listNativeServers(): Promise<SelfHostedServersList | null> {
  * successful native load folds those entries in rather than letting the
  * native list silently drop them.
  */
-const MIGRATION_MARKER_KEY = "vellum:remembered-origins:native-migrated";
+const MIGRATION_MARKER_KEY = "cadet:remembered-origins:native-migrated";
 
 function migrationDone(): boolean {
   try {

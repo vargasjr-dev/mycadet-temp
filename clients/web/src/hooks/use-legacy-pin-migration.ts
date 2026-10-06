@@ -1,7 +1,7 @@
 /**
  * Hand the browser's old pinned-app list to the daemon, once per assistant.
  *
- * The `vellum:pinnedApps` key holds one list for the whole browser profile,
+ * The `cadet:pinnedApps` key holds one list for the whole browser profile,
  * shared by every assistant. That is the defect this migration exists to clean
  * up, and it makes the stored list a union of pins from every assistant the
  * user has opened, with nothing in it saying which pin belongs to which.

@@ -81,10 +81,10 @@ describe("broadcast", () => {
 
     powerListeners.get("suspend")?.();
 
-    expect(w1.webContents.send).toHaveBeenCalledWith("vellum:power:event", {
+    expect(w1.webContents.send).toHaveBeenCalledWith("cadet:power:event", {
       kind: "suspend",
     });
-    expect(w2.webContents.send).toHaveBeenCalledWith("vellum:power:event", {
+    expect(w2.webContents.send).toHaveBeenCalledWith("cadet:power:event", {
       kind: "suspend",
     });
   });

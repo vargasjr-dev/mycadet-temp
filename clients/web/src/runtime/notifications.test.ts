@@ -2070,7 +2070,7 @@ describe("browser delivery receipts", () => {
     expect(await postLocalNotification(args)).toBe("web-sound");
     expect(ackArgs.map(({ body }) => body.success)).toEqual([false, false]);
     expect(
-      localStorage.getItem("vellum:browser-notification-sounds:v1"),
+      localStorage.getItem("cadet:browser-notification-sounds:v1"),
     ).toBeNull();
   });
 
@@ -2130,11 +2130,11 @@ describe("browser delivery receipts", () => {
           }),
         ]);
         expect(
-          localStorage.getItem("vellum:browser-notification-deliveries:v1"),
+          localStorage.getItem("cadet:browser-notification-deliveries:v1"),
         ).toBeNull();
         expect(
           JSON.parse(
-            localStorage.getItem("vellum:browser-notification-sounds:v1")!,
+            localStorage.getItem("cadet:browser-notification-sounds:v1")!,
           ),
         ).toHaveLength(1);
       });
@@ -2170,7 +2170,7 @@ describe("browser delivery receipts", () => {
         }),
       ]);
       expect(
-        localStorage.getItem("vellum:browser-notification-deliveries:v1"),
+        localStorage.getItem("cadet:browser-notification-deliveries:v1"),
       ).toBeNull();
     } finally {
       if (originalNotification) {
@@ -2215,7 +2215,7 @@ describe("browser delivery receipts", () => {
         };
         expect(await postLocalNotification(args)).toBe("web-sound");
         expect(
-          localStorage.getItem("vellum:browser-notification-deliveries:v1"),
+          localStorage.getItem("cadet:browser-notification-deliveries:v1"),
         ).toBeNull();
         expect(
           await postLocalNotification({ ...args, deliveryId: "delivery-2" }),
@@ -2257,7 +2257,7 @@ describe("browser delivery receipts", () => {
           }),
         ]);
         expect(
-          localStorage.getItem("vellum:browser-notification-deliveries:v1"),
+          localStorage.getItem("cadet:browser-notification-deliveries:v1"),
         ).toBeNull();
       });
     } finally {

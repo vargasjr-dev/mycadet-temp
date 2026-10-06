@@ -3,7 +3,7 @@ import { expect, mock, test } from "bun:test";
 const listeners = new Map<string, (...args: unknown[]) => void>();
 const send = mock((_channel: string, ..._args: unknown[]) => undefined);
 const invoke = mock((channel: string) =>
-  Promise.resolve(channel === "vellum:connectivity:get" ? "online" : null),
+  Promise.resolve(channel === "cadet:connectivity:get" ? "online" : null),
 );
 const off = mock(() => undefined);
 
@@ -54,12 +54,12 @@ test("publishes flags, status, identity, avatar, and unread state", () => {
   contributions.get("dock")?.setBadge(3);
 
   expect(send.mock.calls.map((call) => call[0])).toEqual([
-    "vellum:featureFlags:set",
-    "vellum:status:connection",
-    "vellum:identity:name",
-    "vellum:icon:setAvatar",
-    "vellum:icon:setCharacter",
-    "vellum:dock:setBadge",
+    "cadet:featureFlags:set",
+    "cadet:status:connection",
+    "cadet:identity:name",
+    "cadet:icon:setAvatar",
+    "cadet:icon:setCharacter",
+    "cadet:dock:setBadge",
   ]);
 });
 
@@ -78,7 +78,7 @@ test("delivers power and current connectivity state with cleanup", async () => {
   const stopConnectivity = contributions
     .get("connectivity")
     ?.onState((state: unknown) => states.push(state)) as () => void;
-  listeners.get("vellum:power:event")?.({}, { kind: "resume" });
+  listeners.get("cadet:power:event")?.({}, { kind: "resume" });
   await Promise.resolve();
   stopPower();
   stopConnectivity();

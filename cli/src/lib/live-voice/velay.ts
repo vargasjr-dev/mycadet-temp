@@ -54,7 +54,7 @@ export class VelayWsTokenError extends Error {
  * `VELLUM_VELAY_HOST` wins when set, which is how a local `vel up` stack is
  * reached: its velay is a loopback port that no naming convention predicts.
  * Otherwise the deployment convention maps the platform host onto its sibling
- * (`platform.vellum.ai` to `velay.vellum.ai`, `dev-platform.vellum.ai` to
+ * (`cloud.mycadet.ai` to `velay.vellum.ai`, `dev-cloud.mycadet.ai` to
  * `velay-dev.vellum.ai`). A host outside that convention, including localhost,
  * yields the production default, because guessing a velay for it would be
  * worse than dialing the one host that certainly exists.

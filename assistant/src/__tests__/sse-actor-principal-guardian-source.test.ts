@@ -41,7 +41,7 @@ const gatewayVellumGuardian: GuardianDelivery = {
   channelType: "vellum",
   contactId: "contact-gw",
   principalId: "guardian-from-gateway",
-  address: "vellum:self",
+  address: "cadet:self",
   status: "active",
 };
 

@@ -16,7 +16,7 @@ import { handle, log, on } from "./presence-runtime";
  * Five states, each with its own color and "thinking pulses" behavior.
  *
  * The renderer is the source of truth — it holds the live gateway/auth
- * connection and publishes transitions over the `vellum:status:connection`
+ * connection and publishes transitions over the `cadet:status:connection`
  * IPC channel. Main owns only the presentation (icon composition, pulse
  * timer, menu header), so this module never reaches into connection code.
  */
@@ -134,7 +134,7 @@ export const setStatus = (status: AssistantStatus): void => {
 const connectionPayloadSchema = z.tuple([assistantStatusSchema]);
 
 /**
- * Register the `vellum:status:connection` renderer→main channel. Fire-and-
+ * Register the `cadet:status:connection` renderer→main channel. Fire-and-
  * forget (`ipcRenderer.send`): a status republish has no return value, and a
  * rejected sender or malformed payload should drop silently rather than
  * surface an error in the renderer. Call once from `whenReady`.
@@ -146,7 +146,7 @@ export const installStatusIpc = (): void => {
   }
   installed = true;
 
-  on("vellum:status:connection", connectionPayloadSchema, ([status]) => {
+  on("cadet:status:connection", connectionPayloadSchema, ([status]) => {
     setStatus(status);
   });
 };
@@ -174,7 +174,7 @@ const broadcastConnectivity = (): void => {
     if (win.isDestroyed()) {
       continue;
     }
-    win.webContents.send("vellum:connectivity:state", currentConnectivity);
+    win.webContents.send("cadet:connectivity:state", currentConnectivity);
   }
 };
 
@@ -228,9 +228,9 @@ export const installConnectivityIpc = (
   }
   connectivityInstalled = true;
 
-  handle("vellum:connectivity:get", z.tuple([]), () => currentConnectivity);
+  handle("cadet:connectivity:get", z.tuple([]), () => currentConnectivity);
 
-  on("vellum:connectivity:device", z.tuple([z.boolean()]), ([online]) => {
+  on("cadet:connectivity:device", z.tuple([z.boolean()]), ([online]) => {
     setDeviceOnline(online);
   });
 
@@ -240,7 +240,7 @@ export const installConnectivityIpc = (
   // `setConnectivity` would then never resend. Run the probe to completion,
   // rebroadcast unconditionally, and return the fresh state so the renderer
   // can apply it without depending on broadcast delivery at all.
-  handle("vellum:connectivity:retry", z.tuple([]), async () => {
+  handle("cadet:connectivity:retry", z.tuple([]), async () => {
     await onRetry?.();
     broadcastConnectivity();
     return currentConnectivity;

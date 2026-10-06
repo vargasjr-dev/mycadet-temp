@@ -130,7 +130,7 @@ export function SkillsReferenceSkillManagementContent() {
               its frontmatter) stays as it was unless the edit changes or
               clears it
             </li>
-            <li>Skills are saved to ~/.cadet/workspace/skills/</li>
+            <li>Skills are saved to $VELLUM_WORKSPACE_DIR/skills/</li>
           </ul>
         </section>
 

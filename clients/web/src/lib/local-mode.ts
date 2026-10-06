@@ -80,7 +80,7 @@ const setCachedLockfile = (data: Lockfile, committed = true): void =>
 
 const EMPTY_LOCKFILE: Lockfile = { assistants: [], activeAssistant: null };
 
-const LOCKFILE_STORAGE_KEY = "vellum:local:lockfile";
+const LOCKFILE_STORAGE_KEY = "cadet:local:lockfile";
 
 export { getPlatformRuntimeUrl };
 

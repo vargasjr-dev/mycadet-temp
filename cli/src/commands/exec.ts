@@ -1,3 +1,4 @@
+import { isManagedCloud } from "@vellumai/local-mode/contract";
 import { spawn } from "child_process";
 
 import { resolveAssistant } from "../lib/assistant-config";
@@ -207,7 +208,7 @@ export async function exec(): Promise<void> {
     return;
   }
 
-  if (cloud === "vellum") {
+  if (isManagedCloud(cloud)) {
     const token = readPlatformToken();
     if (!token) {
       console.error(

@@ -17,7 +17,7 @@ import {
 } from "@/domains/chat/utils/sidebar-group-collapse-storage";
 
 const KEY = (assistantId: string) =>
-  `vellum:sidebar-expanded-sections:${assistantId}`;
+  `cadet:sidebar-expanded-sections:${assistantId}`;
 
 afterEach(() => {
   cleanup();

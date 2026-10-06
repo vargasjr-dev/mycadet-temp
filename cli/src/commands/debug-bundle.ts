@@ -11,6 +11,7 @@
  * the upload URL, the daemon exports with the debug profile, and this
  * command waits for the job so the result is real.
  */
+import { isManagedCloud } from "@vellumai/local-mode/contract";
 import {
   formatAssistantReference,
   resolveTargetAssistant,
@@ -86,7 +87,7 @@ export async function debugBundle(): Promise<void> {
 
   const entry = resolveTargetAssistant(parseAssistantTargetArg(args));
   const reference = formatAssistantReference(entry);
-  if (entry.cloud === "vellum") {
+  if (isManagedCloud(entry.cloud)) {
     console.error(
       `${reference} is hosted by Vellum, so staff can clone it directly. No bundle is needed.`,
     );

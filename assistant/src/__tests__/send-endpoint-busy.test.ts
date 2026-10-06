@@ -1044,7 +1044,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
     // The vellum channel never falls through to the shared
     // `default:vellum:<interface>` thread: each empty-handed send mints
     // a fresh conversation so the first-message id surfaces to the client.
-    expect(getConversationByKey("default:vellum:macos")).toBeNull();
+    expect(getConversationByKey("default:cadet:macos")).toBeNull();
 
     await stopServer();
   });

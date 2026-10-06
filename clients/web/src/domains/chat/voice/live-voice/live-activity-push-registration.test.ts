@@ -82,7 +82,7 @@ beforeEach(() => {
   upsertMock.mockClear();
   deleteMock.mockClear();
   captureErrorMock.mockClear();
-  localStorage.removeItem("vellum:live_activity_registration");
+  localStorage.removeItem("cadet:live_activity_registration");
 });
 
 const REGISTRATION = {

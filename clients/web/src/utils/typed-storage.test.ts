@@ -27,7 +27,7 @@ afterEach(() => {
 
 describe("createStorageAccessor", () => {
   const accessor = createStorageAccessor<string[]>({
-    key: "vellum:test-items",
+    key: "cadet:test-items",
     scope: "user",
     parse: (raw) => {
       const parsed: unknown = JSON.parse(raw);
@@ -44,7 +44,7 @@ describe("createStorageAccessor", () => {
   test("save writes and load reads back", () => {
     accessor.save(["a", "b"]);
     expect(accessor.load()).toEqual(["a", "b"]);
-    expect(localStorage.getItem("vellum:test-items")).toBe('["a","b"]');
+    expect(localStorage.getItem("cadet:test-items")).toBe('["a","b"]');
   });
 
   /* The imperative counterpart to `useValue`, for the readers that are not
@@ -71,7 +71,7 @@ describe("createStorageAccessor", () => {
       });
 
       window.dispatchEvent(
-        new StorageEvent("storage", { key: "vellum:test-items" }),
+        new StorageEvent("storage", { key: "cadet:test-items" }),
       );
 
       expect(calls).toBe(1);
@@ -85,7 +85,7 @@ describe("createStorageAccessor", () => {
       });
 
       window.dispatchEvent(
-        new StorageEvent("storage", { key: "vellum:something-else" }),
+        new StorageEvent("storage", { key: "cadet:something-else" }),
       );
 
       expect(calls).toBe(0);
@@ -109,16 +109,16 @@ describe("createStorageAccessor", () => {
     accessor.save(["a"]);
     accessor.remove();
     expect(accessor.load()).toEqual([]);
-    expect(localStorage.getItem("vellum:test-items")).toBeNull();
+    expect(localStorage.getItem("cadet:test-items")).toBeNull();
   });
 
   test("load returns fallback on corrupted data", () => {
-    localStorage.setItem("vellum:test-items", "not-json");
+    localStorage.setItem("cadet:test-items", "not-json");
     expect(accessor.load()).toEqual([]);
   });
 
   test("load returns fallback when parse returns null", () => {
-    localStorage.setItem("vellum:test-items", '"a string"');
+    localStorage.setItem("cadet:test-items", '"a string"');
     expect(accessor.load()).toEqual([]);
   });
 
@@ -139,13 +139,13 @@ describe("createStorageAccessor", () => {
   });
 
   test("exposes key and scope", () => {
-    expect(accessor.key).toBe("vellum:test-items");
+    expect(accessor.key).toBe("cadet:test-items");
     expect(accessor.scope).toBe("user");
   });
 
   describe("boolean accessor", () => {
     const boolAccessor = createStorageAccessor<boolean>({
-      key: "vellum:test-flag",
+      key: "cadet:test-flag",
       scope: "user",
       parse: parseBool,
       serialize: (v) => String(v),
@@ -161,14 +161,14 @@ describe("createStorageAccessor", () => {
     });
 
     test("returns fallback on non-boolean string", () => {
-      localStorage.setItem("vellum:test-flag", "maybe");
+      localStorage.setItem("cadet:test-flag", "maybe");
       expect(boolAccessor.load()).toBe(false);
     });
   });
 
   describe("number accessor", () => {
     const numAccessor = createStorageAccessor<number>({
-      key: "vellum:test-width",
+      key: "cadet:test-width",
       scope: "device",
       parse: (raw) => {
         const n = Number(raw);
@@ -184,7 +184,7 @@ describe("createStorageAccessor", () => {
     });
 
     test("returns fallback on NaN", () => {
-      localStorage.setItem("vellum:test-width", "abc");
+      localStorage.setItem("cadet:test-width", "abc");
       expect(numAccessor.load()).toBe(300);
     });
 
@@ -200,7 +200,7 @@ describe("createStorageAccessor", () => {
 
 describe("createKeyedStorageAccessor", () => {
   const keyed = createKeyedStorageAccessor<string>({
-    keyFn: (id) => `vellum:lastConvo:${id}`,
+    keyFn: (id) => `cadet:lastConvo:${id}`,
     scope: "user",
     parse: (raw) => (raw.length > 0 ? raw : null),
     serialize: (v) => v,
@@ -223,13 +223,13 @@ describe("createKeyedStorageAccessor", () => {
   });
 
   test("exposes keyFn and scope", () => {
-    expect(keyed.keyFn("asst-1")).toBe("vellum:lastConvo:asst-1");
+    expect(keyed.keyFn("asst-1")).toBe("cadet:lastConvo:asst-1");
     expect(keyed.scope).toBe("user");
   });
 
   describe("useValue", () => {
     const list = createKeyedStorageAccessor<string[]>({
-      keyFn: (id) => `vellum:list:${id}`,
+      keyFn: (id) => `cadet:list:${id}`,
       scope: "user",
       parse: (raw) => JSON.parse(raw) as string[],
       serialize: JSON.stringify,
@@ -279,7 +279,7 @@ describe("createKeyedStorageAccessor", () => {
       });
 
       // Nothing was persisted, so both reads can only be served in memory.
-      expect(localStorage.getItem("vellum:lastConvo:asst-1")).toBeNull();
+      expect(localStorage.getItem("cadet:lastConvo:asst-1")).toBeNull();
       expect(result.current).toBe("conv-abc");
       expect(keyed.load("asst-1")).toBe("conv-abc");
     });
@@ -298,7 +298,7 @@ describe("createKeyedStorageAccessor", () => {
 
       act(() => keyed.save("asst-1", "persisted"));
 
-      expect(localStorage.getItem("vellum:lastConvo:asst-1")).toBe("persisted");
+      expect(localStorage.getItem("cadet:lastConvo:asst-1")).toBe("persisted");
       expect(result.current).toBe("persisted");
     });
 
@@ -308,9 +308,9 @@ describe("createKeyedStorageAccessor", () => {
 
       keyed.save("asst-1", "conv-xyz");
 
-      expect(localStorage.getItem("vellum:lastConvo:asst-1")).toBe("conv-xyz");
+      expect(localStorage.getItem("cadet:lastConvo:asst-1")).toBe("conv-xyz");
       // Reading past the override, not through a stale copy of it.
-      localStorage.setItem("vellum:lastConvo:asst-1", "conv-external");
+      localStorage.setItem("cadet:lastConvo:asst-1", "conv-external");
       expect(keyed.load("asst-1")).toBe("conv-external");
     });
 
@@ -321,7 +321,7 @@ describe("createKeyedStorageAccessor", () => {
     test("clearUserScopedOverrides drops a value the logout sweep cannot see", () => {
       withRejectedWrites(() => keyed.save("asst-1", "conv-abc"));
       expect(keyed.load("asst-1")).toBe("conv-abc");
-      expect(localStorage.getItem("vellum:lastConvo:asst-1")).toBeNull();
+      expect(localStorage.getItem("cadet:lastConvo:asst-1")).toBeNull();
 
       clearUserScopedOverrides();
 
@@ -384,7 +384,7 @@ describe("createRecordStorageAccessor", () => {
   }
 
   const record = createRecordStorageAccessor<TestEntry>({
-    keyFn: (id) => `vellum:test-record:${id}`,
+    keyFn: (id) => `cadet:test-record:${id}`,
     scope: "user",
     parseValue: parseEntry,
     fallback: {},
@@ -443,7 +443,7 @@ describe("createRecordStorageAccessor", () => {
 
   test("load filters out invalid entries", () => {
     localStorage.setItem(
-      "vellum:test-record:entity-1",
+      "cadet:test-record:entity-1",
       JSON.stringify({
         good: { value: 1, label: "ok" },
         bad: { value: "not-a-number", label: "fail" },
@@ -457,18 +457,18 @@ describe("createRecordStorageAccessor", () => {
   });
 
   test("load returns fallback on corrupted JSON", () => {
-    localStorage.setItem("vellum:test-record:entity-1", "{{broken");
+    localStorage.setItem("cadet:test-record:entity-1", "{{broken");
     expect(record.load("entity-1")).toEqual({});
   });
 
   test("load returns fallback on non-object JSON", () => {
-    localStorage.setItem("vellum:test-record:entity-1", "[1,2,3]");
+    localStorage.setItem("cadet:test-record:entity-1", "[1,2,3]");
     expect(record.load("entity-1")).toEqual({});
   });
 
   describe("without maxEntries", () => {
     const unbounded = createRecordStorageAccessor<TestEntry>({
-      keyFn: (id) => `vellum:unbounded:${id}`,
+      keyFn: (id) => `cadet:unbounded:${id}`,
       scope: "user",
       parseValue: parseEntry,
       fallback: {},

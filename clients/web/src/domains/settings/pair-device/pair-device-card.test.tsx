@@ -106,7 +106,7 @@ const ASSISTANT_ID = "self";
 const TUNNEL_URL = "https://tunnel.example.ts.net";
 const RECORDED_INGRESS_URL = "https://recorded.example.ts.net";
 /** Where `usePairDevice` remembers the last URL that minted a code. */
-const STORED_URL_KEY = "vellum:pair-device:public-base-url";
+const STORED_URL_KEY = "cadet:pair-device:public-base-url";
 const STORED_URL = "https://stored.example.ts.net";
 
 /** Move the active assistant onto a version whose daemon serves the probe. */

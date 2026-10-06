@@ -301,7 +301,7 @@ describe("installDock IPC registration", () => {
     expect(handleRegistrations).toHaveLength(0);
 
     const channels = onRegistrations.map((r) => r.channel);
-    expect(channels.filter((c) => c === "vellum:dock:setBadge")).toHaveLength(
+    expect(channels.filter((c) => c === "cadet:dock:setBadge")).toHaveLength(
       1,
     );
   });
@@ -309,7 +309,7 @@ describe("installDock IPC registration", () => {
   test("the setBadge schema accepts a single number and rejects anything else", () => {
     // GIVEN the setBadge IPC registration
     const schema = onRegistrations.find(
-      (r) => r.channel === "vellum:dock:setBadge",
+      (r) => r.channel === "cadet:dock:setBadge",
     )!.schema;
 
     // WHEN we parse valid and invalid payloads
@@ -324,7 +324,7 @@ describe("installDock IPC registration", () => {
   test("a published badge count is formatted onto the Dock", () => {
     // GIVEN the setBadge IPC handler
     const fn = onRegistrations.find(
-      (r) => r.channel === "vellum:dock:setBadge",
+      (r) => r.channel === "cadet:dock:setBadge",
     )!.fn;
     setBadgeMock.mockClear();
 
@@ -364,7 +364,7 @@ describe("session-token-driven signed-in state", () => {
 
     // AND there is a badge count
     const badgeFn = onRegistrations.find(
-      (r) => r.channel === "vellum:dock:setBadge",
+      (r) => r.channel === "cadet:dock:setBadge",
     )!.fn;
     badgeFn([5]);
     setBadgeMock.mockClear();
@@ -385,7 +385,7 @@ describe("session-token-driven signed-in state", () => {
 
     // AND there is a badge count
     const badgeFn = onRegistrations.find(
-      (r) => r.channel === "vellum:dock:setBadge",
+      (r) => r.channel === "cadet:dock:setBadge",
     )!.fn;
     badgeFn([3]);
     setBadgeMock.mockClear();

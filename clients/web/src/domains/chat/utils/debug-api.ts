@@ -384,7 +384,7 @@ export interface ChatDebugApi {
    * `getDiagnostics("reconciliation_applied")`.
    *
    * Reads the sessionStorage-backed ring from `@/lib/diagnostics`
-   * (`vellum:chat-diagnostics:v1`, capped at 200 entries). Synchronous
+   * (`cadet:chat-diagnostics:v1`, capped at 200 entries). Synchronous
    * and side-effect-free; returns defensive copies.
    */
   getDiagnostics(kindPrefix?: string): DiagnosticsEvent[];
@@ -392,7 +392,7 @@ export interface ChatDebugApi {
    * Return the durable lifecycle diagnostics ring — stream open / close /
    * reconnect / watchdog, tab visibility, network, power transitions —
    * newest last. Optionally filter by kind prefix. Kept in a separate
-   * buffer (`vellum:chat-diagnostics-lifecycle:v1`) so high-volume
+   * buffer (`cadet:chat-diagnostics-lifecycle:v1`) so high-volume
    * per-delta events never flush the connection timeline.
    *
    * Synchronous and side-effect-free; returns defensive copies.

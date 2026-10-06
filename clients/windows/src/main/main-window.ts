@@ -142,7 +142,7 @@ export const current = (): BrowserWindow | null => mainWindow;
 export const dispatchToMain = (command: VellumCommand): void => {
   const win = current();
   if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
-    win.webContents.send("vellum:command", command);
+    win.webContents.send("cadet:command", command);
   }
 };
 

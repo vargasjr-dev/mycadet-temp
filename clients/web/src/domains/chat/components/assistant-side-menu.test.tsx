@@ -184,7 +184,7 @@ beforeEach(() => {
   // live in localStorage, so a test that seeds one would otherwise carry it
   // into every test after it.
   localStorage.clear();
-  localStorage.setItem("vellum:sidebar-view-mode:asst-1", "grouped");
+  localStorage.setItem("cadet:sidebar-view-mode:asst-1", "grouped");
   useSidebarLayoutStore.setState({
     assistantId: null,
     sectionOrder: [],
@@ -367,7 +367,7 @@ describe("AssistantSideMenu · Chats category rows", () => {
 
 describe("AssistantSideMenu · All view", () => {
   beforeEach(() => {
-    localStorage.setItem("vellum:sidebar-view-mode:asst-1", "all");
+    localStorage.setItem("cadet:sidebar-view-mode:asst-1", "all");
     useSidebarLayoutStore.setState({ assistantId: null });
   });
 
@@ -1070,7 +1070,7 @@ describe("AssistantSideMenu · section header menus", () => {
   }
 
   test("a section header covers only that section", async () => {
-    localStorage.setItem("vellum:sidebar-view-mode:asst-1", "grouped");
+    localStorage.setItem("cadet:sidebar-view-mode:asst-1", "grouped");
     const received: Array<[string, Conversation[]]> = [];
     const { container } = renderWithGroupActions({
       archiveAll: (label, c) => received.push([label, c]),
@@ -1186,7 +1186,7 @@ describe("AssistantSideMenu · channel grouping toggle", () => {
   const OTHER_VIEW: Record<string, string> = { all: "grouped", grouped: "all" };
 
   function renderInView(viewMode: string) {
-    localStorage.setItem("vellum:sidebar-view-mode:asst-1", viewMode);
+    localStorage.setItem("cadet:sidebar-view-mode:asst-1", viewMode);
     // The layout store is a module singleton keyed by assistant; clearing the
     // id makes the next render re-read the view from localStorage.
     useSidebarLayoutStore.setState({ assistantId: null });
@@ -1238,7 +1238,7 @@ describe("AssistantSideMenu · channel grouping toggle", () => {
         });
         // The switch is a persisted per-assistant preference, so the stored
         // value is where "it actually did something" is observable.
-        expect(localStorage.getItem("vellum:sidebar-view-mode:asst-1")).toBe(
+        expect(localStorage.getItem("cadet:sidebar-view-mode:asst-1")).toBe(
           OTHER_VIEW[viewMode],
         );
       } finally {
@@ -1277,7 +1277,7 @@ describe("AssistantSideMenu · channel grouping toggle", () => {
         act(() => {
           row!.click();
         });
-        expect(localStorage.getItem("vellum:sidebar-view-mode:asst-1")).toBe(
+        expect(localStorage.getItem("cadet:sidebar-view-mode:asst-1")).toBe(
           OTHER_VIEW[viewMode],
         );
       } finally {
@@ -1676,7 +1676,7 @@ describe("AssistantSideMenu · equal section treatment", () => {
    * bottom-most section that fills runs a hundred threads down the rail's
    * whole height, so it rests at the same cap the sections above it take
    * and grows to the rail's leftover height only on request (the Expand
-   * control writes `vellum:sidebar-expanded-sections`, which the section
+   * control writes `cadet:sidebar-expanded-sections`, which the section
    * reads on render). These pin the rest height and the growth themselves.
    */
   test("the bottom-most section rests at the mid height; the ones above it cap", () => {
@@ -1731,7 +1731,7 @@ describe("AssistantSideMenu · equal section treatment", () => {
   });
 
   test("the overlay windows a long Chats list against the drawer body", async () => {
-    localStorage.setItem("vellum:sidebar-view-mode:asst-1", "all");
+    localStorage.setItem("cadet:sidebar-view-mode:asst-1", "all");
     const { container } = render(
       createElement(SideMenuUnderTest, {
         assistantId: "asst-1",
@@ -1774,7 +1774,7 @@ describe("AssistantSideMenu · equal section treatment", () => {
   test("ungrouped, Chats is bottom-most: rests at the mid height and grows on request", () => {
     // No channel sections, so Chats sits last and holds every conversation
     // the curated sections didn't claim.
-    localStorage.setItem("vellum:sidebar-view-mode:asst-1", "all");
+    localStorage.setItem("cadet:sidebar-view-mode:asst-1", "all");
     const scroller = renderRail(["Alpha"]);
     try {
       expect(scroller("Chats").style.maxHeight).toBe(
@@ -1816,7 +1816,7 @@ describe("AssistantSideMenu · equal section treatment", () => {
    * yields a scrollable section rather than a zero-height one.
    */
   function renderWindowedChats() {
-    localStorage.setItem("vellum:sidebar-view-mode:asst-1", "all");
+    localStorage.setItem("cadet:sidebar-view-mode:asst-1", "all");
     const container = parse(
       renderMenu({
         conversations: Array.from(
@@ -1858,7 +1858,7 @@ describe("AssistantSideMenu · equal section treatment", () => {
   test("expanded past the virtualize threshold, Chats windows into a bounded, filling box", () => {
     // What the Expand control writes.
     localStorage.setItem(
-      "vellum:sidebar-expanded-sections:asst-1",
+      "cadet:sidebar-expanded-sections:asst-1",
       JSON.stringify(["recents"]),
     );
     const { container, box } = renderWindowedChats();

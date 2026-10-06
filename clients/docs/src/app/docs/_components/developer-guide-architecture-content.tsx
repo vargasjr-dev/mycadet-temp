@@ -82,7 +82,6 @@ export function DeveloperGuideArchitectureContent() {
 ├── packages/             # Shared private packages (CES contracts, credential storage, egress proxy)
 ├── cli/                  # Cadet CLI
 ├── skills/               # Bundled skill definitions
-├── benchmarking/         # Load testing scripts
 ├── scripts/              # Utility scripts (publishing, tunneling, releases)
 ├── meta/                 # Meta configuration
 ├── .claude/              # Claude Code slash commands and workflow tools
@@ -107,19 +106,39 @@ export function DeveloperGuideArchitectureContent() {
               </thead>
               <tbody className="text-zinc-600 dark:text-zinc-400">
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-4"><code className="text-xs">gateway/ARCHITECTURE.md</code></td>
+                  <td className="py-2 pr-4"><a className="text-xs underline" href="/docs/developer-guide/internals/architecture">Architecture</a></td>
+                  <td className="py-2">Cross-system index — invariants, domain boundaries, data flow</td>
+                </tr>
+                <tr className="border-b border-zinc-100 dark:border-zinc-800">
+                  <td className="py-2 pr-4"><a className="text-xs underline" href="/docs/developer-guide/internals/assistant-architecture">Assistant Architecture</a></td>
+                  <td className="py-2">Runtime internals — conversation loop, tool dispatch, memory, scheduling</td>
+                </tr>
+                <tr className="border-b border-zinc-100 dark:border-zinc-800">
+                  <td className="py-2 pr-4"><a className="text-xs underline" href="/docs/developer-guide/internals/gateway-architecture">Gateway Architecture</a></td>
                   <td className="py-2">Ingress boundary — webhooks, Telegram, Twilio, reverse proxy</td>
                 </tr>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-4"><code className="text-xs">assistant/docs/architecture/security.md</code></td>
+                  <td className="py-2 pr-4"><a className="text-xs underline" href="/docs/developer-guide/internals/security">Security Architecture</a></td>
                   <td className="py-2">Security model — sandbox, credentials, permissions, secret handling</td>
                 </tr>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-4"><code className="text-xs">assistant/docs/architecture/memory.md</code></td>
+                  <td className="py-2 pr-4"><a className="text-xs underline" href="/docs/developer-guide/internals/memory">Memory Architecture</a></td>
                   <td className="py-2">Memory system — extraction, recall, provenance gates</td>
                 </tr>
+                <tr className="border-b border-zinc-100 dark:border-zinc-800">
+                  <td className="py-2 pr-4"><a className="text-xs underline" href="/docs/developer-guide/internals/scheduling">Scheduling Architecture</a></td>
+                  <td className="py-2">Heartbeats, wake intents, and task queues</td>
+                </tr>
+                <tr className="border-b border-zinc-100 dark:border-zinc-800">
+                  <td className="py-2 pr-4"><a className="text-xs underline" href="/docs/developer-guide/internals/integrations">Integrations Architecture</a></td>
+                  <td className="py-2">How OAuth2 skills, channels, and plugins attach to the assistant</td>
+                </tr>
+                <tr className="border-b border-zinc-100 dark:border-zinc-800">
+                  <td className="py-2 pr-4"><a className="text-xs underline" href="/docs/developer-guide/internals/turn-actor">Turn Actor Architecture</a></td>
+                  <td className="py-2">How a conversation turn is routed and executed</td>
+                </tr>
                 <tr>
-                  <td className="py-2 pr-4"><code className="text-xs">assistant/docs/credential-execution-service.md</code></td>
+                  <td className="py-2 pr-4"><a className="text-xs underline" href="/docs/developer-guide/internals/credential-execution-service">Credential Execution Service</a></td>
                   <td className="py-2">CES — credential isolation, secure commands, RPC boundary</td>
                 </tr>
               </tbody>

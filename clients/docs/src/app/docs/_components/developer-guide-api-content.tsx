@@ -151,14 +151,14 @@ while (true) {
           <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
 {`# CLI
 ssh -L 8741:localhost:8741 user@remote-host -N &
-CADET_DAEMON_URL=http://localhost:8741 cadet
+VELLUM_DAEMON_URL=http://localhost:8741 cadet
 
 # macOS app
 ssh -L 8741:localhost:8741 user@remote-host -N &
-CADET_DAEMON_URL=http://localhost:8741 open -a Cadet`}
+VELLUM_DAEMON_URL=http://localhost:8741 open -a Cadet`}
           </pre>
           <p className="mb-4 text-zinc-600">
-            Autostart is disabled by default for remote connections. Set <code className="text-sm">CADET_DAEMON_AUTOSTART=1</code> to override.
+            Autostart is disabled by default for remote connections. Set <code className="text-sm">VELLUM_DAEMON_AUTOSTART=1</code> to override.
           </p>
 
           <section id="remote-troubleshooting" className="mt-6">
@@ -176,11 +176,11 @@ CADET_DAEMON_URL=http://localhost:8741 open -a Cadet`}
                 <tbody className="text-zinc-600 dark:text-zinc-400">
                   <tr className="border-b border-zinc-100 dark:border-zinc-800">
                     <td className="py-2 pr-4">&ldquo;could not connect to assistant&rdquo;</td>
-                    <td className="py-2">Is the SSH tunnel active? Check <code className="text-xs">CADET_DAEMON_URL</code></td>
+                    <td className="py-2">Is the SSH tunnel active? Check <code className="text-xs">VELLUM_DAEMON_URL</code></td>
                   </tr>
                   <tr className="border-b border-zinc-100 dark:border-zinc-800">
                     <td className="py-2 pr-4">Assistant starts locally despite remote override</td>
-                    <td className="py-2">Check that <code className="text-xs">CADET_DAEMON_AUTOSTART</code> is not set to <code className="text-xs">1</code></td>
+                    <td className="py-2">Check that <code className="text-xs">VELLUM_DAEMON_AUTOSTART</code> is not set to <code className="text-xs">1</code></td>
                   </tr>
                   <tr className="border-b border-zinc-100 dark:border-zinc-800">
                     <td className="py-2 pr-4">macOS app not connecting</td>

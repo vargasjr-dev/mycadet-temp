@@ -14,7 +14,7 @@ import { createStorageAccessor } from "@/utils/typed-storage";
 const MAX_IDS = 500;
 
 const storage = createStorageAccessor<string[]>({
-  key: "vellum:dismissed-acp-connect",
+  key: "cadet:dismissed-acp-connect",
   scope: "user",
   parse: parseStringArray,
   serialize: JSON.stringify,

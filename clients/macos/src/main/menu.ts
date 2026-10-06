@@ -336,7 +336,7 @@ export const installApplicationMenu = (): void => {
   if (installed) return;
   installed = true;
 
-  handle("vellum:menu:setPlatformSession", z.tuple([z.boolean()]), ([has]) => {
+  handle("cadet:menu:setPlatformSession", z.tuple([z.boolean()]), ([has]) => {
     if (state.hasPlatformSession === has) return;
     state.hasPlatformSession = has;
     applyMenu();

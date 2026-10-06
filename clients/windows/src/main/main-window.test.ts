@@ -345,7 +345,7 @@ describe("Windows main window", () => {
     void ensureVisible();
     dispatchToMain({ kind: "openSettings" });
     expect(constructed[0]?.webContents.send).toHaveBeenCalledWith(
-      "vellum:command",
+      "cadet:command",
       { kind: "openSettings" },
     );
   });

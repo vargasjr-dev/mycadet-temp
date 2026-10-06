@@ -44,9 +44,9 @@ let mockContactsByAddress: Record<string, { userFile: string | null }> = {};
 
 function seedVellumGuardian(userFile: string | null): void {
   mockGuardianDeliveries = [
-    { channelType: "vellum", address: "vellum:self", status: "active" },
+    { channelType: "vellum", address: "cadet:self", status: "active" },
   ];
-  mockContactsByAddress["vellum:vellum:self"] = { userFile };
+  mockContactsByAddress["cadet:cadet:self"] = { userFile };
 }
 
 // ── Mock modules (must precede imports from the module under test) ──

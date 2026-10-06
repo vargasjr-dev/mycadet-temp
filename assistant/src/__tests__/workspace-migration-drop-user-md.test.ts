@@ -91,7 +91,7 @@ function seedGuardian(input: {
       `${input.id}-ch`,
       input.id,
       input.channelType ?? "vellum",
-      input.address ?? "vellum:self",
+      input.address ?? "cadet:self",
       input.verifiedAt ?? now,
       now,
     ],
@@ -332,7 +332,7 @@ describe("workspace migration 031-drop-user-md", () => {
       displayName: "Vee",
       userFile: "vee.md",
       channelType: "vellum",
-      address: "vellum:self",
+      address: "cadet:self",
       verifiedAt: 1_000,
     });
     seedGuardian({

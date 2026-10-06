@@ -327,7 +327,7 @@ const gatewayForwardFetcher: GatewayForwardFetcher = (url, init) =>
   net.fetch(url, init);
 
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
-handleSync("vellum:config:get", () => ({
+handleSync("cadet:config:get", () => ({
   webUrl: resolvedConfig.webUrl,
   platformUrl: resolvedConfig.platformUrl,
   disablePlatform:

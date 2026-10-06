@@ -6,6 +6,7 @@
  * resolver without cross-importing commands (per cli/CONTRIBUTING.md).
  */
 
+import { isManagedCloud } from "@vellumai/local-mode/contract";
 import { resolveAssistant } from "./assistant-config.js";
 import { getPlatformUrl, readPlatformToken } from "./platform-client.js";
 import {
@@ -50,7 +51,7 @@ export function resolveManagedAssistant(
   }
 
   const cloud = entry.cloud;
-  if (cloud !== "vellum") {
+  if (!isManagedCloud(cloud)) {
     if (cloud === "local") {
       console.error(
         "This assistant runs locally on your machine. You can access it directly.",

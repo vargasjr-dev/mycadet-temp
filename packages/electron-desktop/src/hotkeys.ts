@@ -155,7 +155,7 @@ const writeHotkey = (key: string, accelerator: string | null): void => {
 const broadcastCatalog = (): void => {
   const catalog = resolveHotkeyCatalog();
   for (const window of BrowserWindow.getAllWindows()) {
-    window.webContents.send("vellum:hotkeys:changed", catalog);
+    window.webContents.send("cadet:hotkeys:changed", catalog);
   }
 };
 
@@ -176,9 +176,9 @@ export const installHotkeysIpc = ({
   }
   excludedKeys = new Set(exclude);
 
-  handle("vellum:hotkeys:get", z.tuple([]), () => resolveHotkeyCatalog());
+  handle("cadet:hotkeys:get", z.tuple([]), () => resolveHotkeyCatalog());
   handle(
-    "vellum:hotkeys:set",
+    "cadet:hotkeys:set",
     z.tuple([z.string(), z.union([z.string(), z.null()])]),
     ([key, accelerator]) => {
       writeHotkey(key, accelerator);

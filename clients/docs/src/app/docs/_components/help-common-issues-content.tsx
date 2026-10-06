@@ -176,7 +176,7 @@ export function HelpCommonIssuesContent() {
             </li>
             <li>
               Open Console.app and filter on{" "}
-              <code>com.cadet.cadet-assistant</code> for crash
+              <code>com.vellum.vellum-assistant</code> for crash
               logs.
             </li>
             <li>

@@ -52,7 +52,7 @@ export function DeveloperGuideFeaturesContent() {
           </p>
           <ol className="mb-6 list-decimal space-y-2 pl-6 text-zinc-600">
             <li><strong>Evaluate</strong> — drafts a TypeScript snippet, tests in a sandbox via <code className="text-sm">evaluate_typescript_code</code>. Iterates until it passes.</li>
-            <li><strong>Persist</strong> — writes the skill to <code className="text-sm">~/.cadet/workspace/skills/&lt;id&gt;/</code> via <code className="text-sm">scaffold_managed_skill</code>.</li>
+            <li><strong>Persist</strong> — writes the skill to <code className="text-sm">$VELLUM_WORKSPACE_DIR/skills/&lt;id&gt;/</code> via <code className="text-sm">scaffold_managed_skill</code>.</li>
             <li><strong>Load</strong> — calls <code className="text-sm">skill_load</code> to activate the new skill.</li>
             <li><strong>Delete</strong> — removes via <code className="text-sm">delete_managed_skill</code>.</li>
           </ol>
@@ -193,7 +193,7 @@ export function DeveloperGuideFeaturesContent() {
           </ul>
           <p className="mb-4 text-zinc-600">
             Controlled via <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">ui.mediaEmbeds</code> in{" "}
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">~/.cadet/workspace/config.json</code>.
+            <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">$VELLUM_WORKSPACE_DIR/config.json</code>.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

@@ -59,7 +59,7 @@ function setActiveConversation(id: string | null) {
 }
 
 function storedDraft(assistantId: string, key: string): string | undefined {
-  const raw = localSettingsStore.get(`vellum:chatDrafts:${assistantId}`);
+  const raw = localSettingsStore.get(`cadet:chatDrafts:${assistantId}`);
   return raw ? (JSON.parse(raw)[key] as string | undefined) : undefined;
 }
 

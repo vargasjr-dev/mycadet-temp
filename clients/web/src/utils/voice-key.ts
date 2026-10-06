@@ -25,7 +25,7 @@ export type VoiceKey =
   | { kind: "off" }
   | { kind: "modifierOnly"; modifiers: KeyboardModifier[] };
 
-export const LS_VOICE_KEY = "vellum:voice:voiceKey";
+export const LS_VOICE_KEY = "cadet:voice:voiceKey";
 
 /**
  * Fn, out of the box.
@@ -49,8 +49,8 @@ const LEGACY_HOLD_MODIFIERS: KeyboardModifier[] = ["control", "option"];
  * a chosen Fn tap lands on Fn, and anything the user switched off (the hold,
  * or the shortcut) stays off rather than becoming a key they never asked for.
  */
-const LS_LEGACY_HOLD_TO_DICTATE = "vellum:voice:holdToDictate";
-const LS_LEGACY_VOICE_MODE_ACTIVATION = "vellum:voice:voiceModeActivation";
+const LS_LEGACY_HOLD_TO_DICTATE = "cadet:voice:holdToDictate";
+const LS_LEGACY_VOICE_MODE_ACTIVATION = "cadet:voice:voiceModeActivation";
 
 const MODIFIER_NAMES: ReadonlySet<string> = new Set<KeyboardModifier>([
   "function",

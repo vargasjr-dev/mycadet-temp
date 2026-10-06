@@ -25,10 +25,10 @@ const linkClass =
   "font-semibold text-emerald-700 underline hover:text-emerald-800";
 
 const HOOKS_CONSTANT_URL =
-  "https://github.com/cadet-ai/cadet-assistant/blob/main/assistant/src/plugin-api/constants.ts";
+  "https://github.com/vargasjr-dev/mycadet/blob/main/assistant/src/plugin-api/constants.ts";
 
 const PLUGIN_API_URL =
-  "https://github.com/cadet-ai/cadet-assistant/tree/main/assistant/src/plugin-api";
+  "https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api";
 
 type HookField = {
   name: string;
@@ -55,7 +55,7 @@ const HOOK_REFERENCE: HookReference[] = [
     can: "Validate config and open resources. This is where plugin-owned storage is set up: create data files under pluginStorageDir and apply the plugin's own schema, idempotently, since init runs on every boot. Throwing aborts the plugin's load.",
     example: {
       label: "image-fallback",
-      href: "https://github.com/cadet-ai/cadet-assistant/blob/main/assistant/src/plugins/defaults/image-fallback/hooks/init.ts",
+      href: "https://github.com/vargasjr-dev/mycadet/blob/main/assistant/src/plugins/defaults/image-fallback/hooks/init.ts",
     },
     fields: [
       {
@@ -91,7 +91,7 @@ const HOOK_REFERENCE: HookReference[] = [
     can: "Read or rewrite the message list the model is about to see.",
     example: {
       label: "advisor",
-      href: "https://github.com/cadet-ai/cadet-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/user-prompt-submit.ts",
+      href: "https://github.com/vargasjr-dev/mycadet/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/user-prompt-submit.ts",
     },
     fields: [
       {
@@ -163,7 +163,7 @@ const HOOK_REFERENCE: HookReference[] = [
     can: "Re-apply context that compaction dropped (for example memory injections) onto the compacted history before the next model call.",
     example: {
       label: "memory-v3-shadow",
-      href: "https://github.com/cadet-ai/cadet-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/memory-v3-shadow/hooks/post-compact.ts",
+      href: "https://github.com/vargasjr-dev/mycadet/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/memory-v3-shadow/hooks/post-compact.ts",
     },
     fields: [
       {
@@ -223,7 +223,7 @@ const HOOK_REFERENCE: HookReference[] = [
     can: "Edit the outbound request (for example the system prompt), route the call to a chosen inference profile, or defer this turn's live output stream.",
     example: {
       label: "advisor",
-      href: "https://github.com/cadet-ai/cadet-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/pre-model-call.ts",
+      href: "https://github.com/vargasjr-dev/mycadet/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/pre-model-call.ts",
     },
     fields: [
       {
@@ -277,7 +277,7 @@ const HOOK_REFERENCE: HookReference[] = [
     can: "Transform the reply's text blocks (leave tool_use intact), and own the continue decision. On a degenerate no-tool reply or a recoverable rejection, repair the history and set decision to continue to re-query the model. Use isMaxTokensStopReason() from @cadetai/plugin-api on ctx.stopReason to detect truncated replies that may need continuation.",
     example: {
       label: "advisor",
-      href: "https://github.com/cadet-ai/cadet-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/post-model-call.ts",
+      href: "https://github.com/vargasjr-dev/mycadet/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/post-model-call.ts",
     },
     fields: [
       {
@@ -343,7 +343,7 @@ const HOOK_REFERENCE: HookReference[] = [
     can: "Transform the tool result, for example truncating oversized output to fit the context window.",
     example: {
       label: "tool-result-truncate",
-      href: "https://github.com/cadet-ai/cadet-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/tool-result-truncate/hooks/post-tool-use.ts",
+      href: "https://github.com/vargasjr-dev/mycadet/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/tool-result-truncate/hooks/post-tool-use.ts",
     },
     fields: [
       {
@@ -397,7 +397,7 @@ const HOOK_REFERENCE: HookReference[] = [
     can: "Run teardown: release per-turn resources or clear per-turn state, knowing nothing will re-enter the loop this run. It cannot continue the loop; the retry decision lives in post-model-call.",
     example: {
       label: "max-tokens-continue",
-      href: "https://github.com/cadet-ai/cadet-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/max-tokens-continue/hooks/stop.ts",
+      href: "https://github.com/vargasjr-dev/mycadet/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/max-tokens-continue/hooks/stop.ts",
     },
     fields: [
       {
@@ -445,7 +445,7 @@ const HOOK_REFERENCE: HookReference[] = [
     can: "Best-effort cleanup: close storage handles opened in init and release other resources. Do not rely on it for critical writes; persist durably during normal operation instead.",
     example: {
       label: "image-fallback",
-      href: "https://github.com/cadet-ai/cadet-assistant/blob/main/assistant/src/plugins/defaults/image-fallback/hooks/shutdown.ts",
+      href: "https://github.com/vargasjr-dev/mycadet/blob/main/assistant/src/plugins/defaults/image-fallback/hooks/shutdown.ts",
     },
     fields: [
       {
@@ -463,7 +463,7 @@ const HOOK_REFERENCE: HookReference[] = [
     can: "Clean up per-conversation state: cancel pending background jobs, evict caches, remove external records. The dispatch is fire-and-forget, so hooks run concurrently with whatever the caller does after the delete and must not assume any ordering relative to it.",
     example: {
       label: "memory",
-      href: "https://github.com/cadet-ai/cadet-assistant/blob/96643af728e245424e112dd112315c5e75f5d204/assistant/src/plugins/defaults/memory/hooks/conversation-deleted.ts",
+      href: "https://github.com/vargasjr-dev/mycadet/blob/96643af728e245424e112dd112315c5e75f5d204/assistant/src/plugins/defaults/memory/hooks/conversation-deleted.ts",
     },
     fields: [
       {

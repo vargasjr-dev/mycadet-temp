@@ -226,7 +226,7 @@ export function TrustSecurityPermissionsModelContent() {
             your approval. Anything that happens inside this inner computer stays contained.
           </p>
           <p className="mb-2 text-zinc-600">
-            <strong>Inside the workspace</strong> (<code>~/.cadet/workspace/</code>):
+            <strong>Inside the workspace</strong> (<code>$VELLUM_WORKSPACE_DIR</code>):
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>Reading, writing, and editing files — no approval needed</li>

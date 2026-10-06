@@ -311,11 +311,11 @@ export const openAutomationSettings = (): Promise<void> =>
   shell.openExternal(AUTOMATION_SETTINGS_URL);
 
 export const installTextInsertionIpc = (): void => {
-  handle("vellum:text:insertIntoFrontApp", z.tuple([z.string()]), ([text]) =>
+  handle("cadet:text:insertIntoFrontApp", z.tuple([z.string()]), ([text]) =>
     typeIntoFrontApp(text),
   );
-  handle("vellum:text:openAutomationSettings", z.tuple([]), () =>
+  handle("cadet:text:openAutomationSettings", z.tuple([]), () =>
     openAutomationSettings(),
   );
-  handle("vellum:text:undoInFrontApp", z.tuple([]), () => undoInFrontApp());
+  handle("cadet:text:undoInFrontApp", z.tuple([]), () => undoInFrontApp());
 };

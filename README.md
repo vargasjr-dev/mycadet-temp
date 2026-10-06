@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://mycadet.ai/docs"><img src="https://img.shields.io/badge/Docs-mycadet.ai%2Fdocs-FFD700?style=for-the-badge" alt="Documentation"></a>
   <a href="https://mycadet.ai/community"><img src="https://img.shields.io/badge/Community-mycadet.ai%2Fcommunity-5865F2?style=for-the-badge" alt="Community"></a>
-  <a href="https://github.com/vargasjr-dev/mycadet-temp/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <a href="https://github.com/vargasjr-dev/mycadet/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <a href="https://mycadet.ai"><img src="https://img.shields.io/badge/Built%20by-Vargas%20JR%20LLC-blueviolet?style=for-the-badge" alt="Built by Vargas JR LLC"></a>
 </p>
 
@@ -63,10 +63,10 @@ We welcome contributions from everyone.
 ## Community
 
 - 💬 [Community](https://mycadet.ai/community)
-- 🐛 [Issues](https://github.com/vargasjr-dev/mycadet-temp/issues)
+- 🐛 [Issues](https://github.com/vargasjr-dev/mycadet/issues)
 
 ## License
 
-MIT. See [License](https://github.com/vargasjr-dev/mycadet-temp?tab=MIT-1-ov-file). Integration logos from [Simple Icons](https://github.com/simple-icons/simple-icons), licensed [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+MIT. See [License](https://github.com/vargasjr-dev/mycadet?tab=MIT-1-ov-file). Integration logos from [Simple Icons](https://github.com/simple-icons/simple-icons), licensed [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
 
 Cadet is open-source software built by [Vargas JR LLC](https://vargasjr.dev). Free to use and modify under MIT, and we're committed to keeping it that way.

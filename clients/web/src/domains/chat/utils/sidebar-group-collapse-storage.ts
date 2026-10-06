@@ -77,7 +77,7 @@ export function isKnownCategoryKey(category: string): boolean {
 }
 
 const categoriesStorage = createKeyedStorageAccessor<string[]>({
-  keyFn: (assistantId) => `vellum:sidebar-open-categories:${assistantId}`,
+  keyFn: (assistantId) => `cadet:sidebar-open-categories:${assistantId}`,
   scope: "user",
   parse: parseStringArray,
   serialize: JSON.stringify,
@@ -85,7 +85,7 @@ const categoriesStorage = createKeyedStorageAccessor<string[]>({
 });
 
 const customGroupsStorage = createKeyedStorageAccessor<string[]>({
-  keyFn: (assistantId) => `vellum:sidebar-open-custom-groups:${assistantId}`,
+  keyFn: (assistantId) => `cadet:sidebar-open-custom-groups:${assistantId}`,
   scope: "user",
   parse: parseStringArray,
   serialize: JSON.stringify,
@@ -97,7 +97,7 @@ const customGroupsStorage = createKeyedStorageAccessor<string[]>({
 // array is distinct — it means the user explicitly collapsed both — because
 // createKeyedStorageAccessor only falls back when the key is absent.
 const primaryStorage = createKeyedStorageAccessor<string[]>({
-  keyFn: (assistantId) => `vellum:sidebar-open-primary:${assistantId}`,
+  keyFn: (assistantId) => `cadet:sidebar-open-primary:${assistantId}`,
   scope: "user",
   parse: parseStringArray,
   serialize: JSON.stringify,
@@ -108,7 +108,7 @@ const primaryStorage = createKeyedStorageAccessor<string[]>({
    at its cap until the user asks for the rest. Keys are section keys from the
    same namespace as the buckets above (`recents`, `channel:slack`, ...). */
 const expandedStorage = createKeyedStorageAccessor<string[]>({
-  keyFn: (assistantId) => `vellum:sidebar-expanded-sections:${assistantId}`,
+  keyFn: (assistantId) => `cadet:sidebar-expanded-sections:${assistantId}`,
   scope: "user",
   parse: parseStringArray,
   serialize: JSON.stringify,

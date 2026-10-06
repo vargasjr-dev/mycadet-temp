@@ -55,7 +55,7 @@ afterEach(() => {
 describe("assistant skills uninstall", () => {
   test("removes skill directory while leaving a stale SKILLS.md index unchanged", () => {
     installFakeSkill("weather");
-    const originalIndex = "- weather\n- vellum-self-knowledge\n";
+    const originalIndex = "- weather\n- cadet-self-knowledge\n";
     writeSkillsIndex(originalIndex);
 
     uninstallSkillLocally("weather");

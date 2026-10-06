@@ -7,7 +7,6 @@ import { resolveGatewayWsUrl } from "@/domains/chat/voice/live-voice/connection"
 
 const DESKTOP_STREAM_ROUTE = "/v1/desktop/stream";
 
-// Mirrors the assistant's `DESKTOP_CLOSE`.
 const DESKTOP_CLOSE_UNAVAILABLE = 4008;
 const DESKTOP_CLOSE_FAILED = 4011;
 const DESKTOP_CLOSE_BUSY = 4013;

@@ -10,8 +10,8 @@
  */
 
 const FALLBACK_WEB_URL = "https://www.vellum.ai";
-const LOOPBACK_STATE_KEY = "vellum:loopback:state";
-const LOOPBACK_RETURN_TO_KEY = "vellum:loopback:returnTo";
+const LOOPBACK_STATE_KEY = "cadet:loopback:state";
+const LOOPBACK_RETURN_TO_KEY = "cadet:loopback:returnTo";
 
 interface VellumConfig {
   webUrl?: string;

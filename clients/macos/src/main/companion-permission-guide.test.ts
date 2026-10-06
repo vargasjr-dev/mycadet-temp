@@ -181,18 +181,18 @@ installCompanionPermissionGuide({
   refresh: async () => state(),
 } as unknown as PermissionsService);
 const get = (): PermissionGuideState | null =>
-  handles.get("vellum:permissions:guide:get")!([]);
+  handles.get("cadet:permissions:guide:get")!([]);
 const begin = (
   kind = "screen",
   sender: unknown = new FakeWindow().webContents,
-) => handles.get("vellum:permissions:setup:begin")!([kind], { sender });
+) => handles.get("cadet:permissions:setup:begin")!([kind], { sender });
 const flush = async () => {
   await new Promise((resolve) => setImmediate(resolve));
 };
 const dismiss = () => {
   const current = get();
   if (current) {
-    listeners.get("vellum:permissions:guide:dismiss")!([current.id], {
+    listeners.get("cadet:permissions:guide:dismiss")!([current.id], {
       sender: windows.get("permission-guide")!.webContents,
     });
   }
@@ -224,7 +224,7 @@ describe("native permission guide", () => {
     expect(session.appIcon).toBe(avatarIcon.toDataURL());
     expect(session.accentHex).toBe(accentHex);
     const win = windows.get("permission-guide")!;
-    listeners.get("vellum:permissions:guide:drag")!([session.id], {
+    listeners.get("cadet:permissions:guide:drag")!([session.id], {
       sender: win.webContents,
     });
     expect(win.webContents.startDrag).toHaveBeenCalledWith({
@@ -287,7 +287,7 @@ describe("native permission guide", () => {
     const session = get()!;
     expect(session.appName).toBe("Vellum Helper");
     const win = windows.get("permission-guide")!;
-    const drag = listeners.get("vellum:permissions:guide:drag")!;
+    const drag = listeners.get("cadet:permissions:guide:drag")!;
     drag([session.id], { sender: {} });
     drag([session.id + 1], { sender: win.webContents });
     expect(win.webContents.startDrag).not.toHaveBeenCalled();
@@ -303,7 +303,7 @@ describe("native permission guide", () => {
     windows.set("companion", owner);
     await begin("screen", owner.webContents);
     const win = windows.get("permission-guide")!;
-    listeners.get("vellum:permissions:guide:ready")!([get()!.id, 148], {
+    listeners.get("cadet:permissions:guide:ready")!([get()!.id, 148], {
       sender: win.webContents,
     });
     await flush();
@@ -324,7 +324,7 @@ describe("native permission guide", () => {
     await begin("inputMonitoring");
     expect(previousWindow.destroyed).toBe(true);
     expect(get()!.kind).toBe("inputMonitoring");
-    listeners.get("vellum:permissions:guide:drag")!([previous.id], {
+    listeners.get("cadet:permissions:guide:drag")!([previous.id], {
       sender: previousWindow.webContents,
     });
     expect(previousWindow.webContents.startDrag).not.toHaveBeenCalled();
@@ -361,7 +361,7 @@ describe("native permission guide", () => {
     settingsWindows = [dialog, mainSettings];
     await begin();
     const win = windows.get("permission-guide")!;
-    listeners.get("vellum:permissions:guide:ready")!([get()!.id, 148], {
+    listeners.get("cadet:permissions:guide:ready")!([get()!.id, 148], {
       sender: win.webContents,
     });
     await flush();
@@ -378,7 +378,7 @@ describe("native permission guide", () => {
   test("yields before native drag and ignores pending positioning or renderer resize", async () => {
     await begin();
     const win = windows.get("permission-guide")!;
-    const ready = listeners.get("vellum:permissions:guide:ready")!;
+    const ready = listeners.get("cadet:permissions:guide:ready")!;
     ready([get()!.id, 148], { sender: win.webContents });
     await flush();
     const previous = { ...win.bounds };
@@ -391,7 +391,7 @@ describe("native permission guide", () => {
       expect(win.alwaysOnTop).toBe(false);
       expect(preparePresentation).toHaveBeenCalledTimes(1);
     });
-    listeners.get("vellum:permissions:guide:drag")!([get()!.id], {
+    listeners.get("cadet:permissions:guide:drag")!([get()!.id], {
       sender: win.webContents,
     });
     const shows = win.showInactive.mock.calls.length;
@@ -416,7 +416,7 @@ describe("native permission guide", () => {
     win.webContents.startDrag.mockImplementation(() => {
       throw new Error("drag failed");
     });
-    listeners.get("vellum:permissions:guide:drag")!([get()!.id], {
+    listeners.get("cadet:permissions:guide:drag")!([get()!.id], {
       sender: win.webContents,
     });
     expect(win.alwaysOnTop).toBe(true);
@@ -428,7 +428,7 @@ describe("native permission guide", () => {
     windows.set("companion", owner);
     await begin("screen", owner.webContents);
     const win = windows.get("permission-guide")!;
-    handles.get("vellum:permissions:guide:reveal")!([get()!.id], {
+    handles.get("cadet:permissions:guide:reveal")!([get()!.id], {
       sender: win.webContents,
     });
     expect(win.alwaysOnTop).toBe(false);
@@ -444,7 +444,7 @@ describe("native permission guide", () => {
     });
     const pending = begin("screen", owner.webContents);
     await flush();
-    const cancel = listeners.get("vellum:permissions:guide:cancel")!;
+    const cancel = listeners.get("cadet:permissions:guide:cancel")!;
     cancel([], { sender: {} });
     cancel([], { sender: owner.webContents });
     resolve();

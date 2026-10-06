@@ -727,8 +727,8 @@ export function daemonUnreachableInterceptor(
  * the bottom of this file. Platform-client 401s belong to
  * {@link platformAuthRecoveryInterceptor}.
  */
-const GW_401_RECOVERY_AT_KEY = "vellum:gw:401-reload-at";
-const GW_401_ATTEMPTS_KEY = "vellum:gw:401-reload-attempts";
+const GW_401_RECOVERY_AT_KEY = "cadet:gw:401-reload-at";
+const GW_401_ATTEMPTS_KEY = "cadet:gw:401-reload-attempts";
 const GW_401_COOLDOWN_MS = 600_000;
 const GW_401_MAX_ATTEMPTS = 3;
 
@@ -985,7 +985,7 @@ let platformAuthRecoveryFired = false;
  * session restores the budget; sessionStorage means a relaunch grants a fresh
  * one.
  */
-const PLATFORM_AUTH_REDIRECT_KEY = "vellum:platform:auth-redirect-attempts";
+const PLATFORM_AUTH_REDIRECT_KEY = "cadet:platform:auth-redirect-attempts";
 const PLATFORM_AUTH_MAX_REDIRECTS = 3;
 
 /** @internal Exposed for test teardown only. */
@@ -1034,9 +1034,9 @@ function clearPlatformAuthRedirectBudget(): void {
  * fail to settle (refreshSession throwing on a flaky network while the API
  * keeps rejecting). Quitting the app grants a fresh budget (sessionStorage).
  */
-const PLATFORM_RECOVERY_AT_KEY = "vellum:platform:recovery-attempt-at";
-const PLATFORM_RECOVERY_ATTEMPTS_KEY = "vellum:platform:recovery-attempts";
-const PLATFORM_RECOVERY_PATH_KEY = "vellum:platform:recovery-path";
+const PLATFORM_RECOVERY_AT_KEY = "cadet:platform:recovery-attempt-at";
+const PLATFORM_RECOVERY_ATTEMPTS_KEY = "cadet:platform:recovery-attempts";
+const PLATFORM_RECOVERY_PATH_KEY = "cadet:platform:recovery-path";
 const PLATFORM_RECOVERY_COOLDOWN_MS = 600_000;
 const PLATFORM_RECOVERY_MAX_ATTEMPTS = 3;
 

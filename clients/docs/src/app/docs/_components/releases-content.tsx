@@ -121,7 +121,7 @@ export function ReleasesContent({ releases }: ReleasesContentProps) {
                           {formatFullDate(release.released_at)}
                         </time>
                         <a
-                          href={`https://github.com/cadet-ai/cadet-assistant/releases/tag/v${release.version}`}
+                          href={`https://github.com/vargasjr-dev/mycadet/releases/tag/v${release.version}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`View v${release.version} on GitHub`}

@@ -9,7 +9,7 @@
  * **Storage model:**
  *
  * - The persist middleware serialises the slice into one localStorage key,
- *   `vellum:debug:cameraGateHud`. The `vellum:debug:` namespace is what gets
+ *   `cadet:debug:cameraGateHud`. The `cadet:debug:` namespace is what gets
  *   the key captured into a support export, so a report filed from a session
  *   with a moved threshold says so (see `lib/feature-flags/debug-flag-snapshot.ts`).
  * - A persisted payload is never trusted. Every restored value is clamped to
@@ -136,7 +136,7 @@ function completeOverrides(saved: unknown): FrameGateOverrides {
 // Store
 // ---------------------------------------------------------------------------
 
-const CAMERA_GATE_DEBUG_STORE_KEY = "vellum:debug:cameraGateHud";
+const CAMERA_GATE_DEBUG_STORE_KEY = "cadet:debug:cameraGateHud";
 
 const useCameraGateDebugStoreBase = create<CameraGateDebugStore>()(
   persist(

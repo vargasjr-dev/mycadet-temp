@@ -123,7 +123,7 @@ function parseRegisteredToken(raw: string): RegisteredToken | null {
  * here (unlike session tokens, which must stay in HttpOnly cookies).
  */
 const persistedRegistration = createStorageAccessor<RegisteredToken | null>({
-  key: "vellum:push_registration",
+  key: "cadet:push_registration",
   scope: "user",
   parse: parseRegisteredToken,
   serialize: JSON.stringify,

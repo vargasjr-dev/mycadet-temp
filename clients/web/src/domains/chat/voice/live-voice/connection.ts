@@ -6,7 +6,7 @@
  *
  * - **Cloud** — streams audio to the platform environment's velay (prod
  *   `velay.vellum.ai`, staging `velay-staging.vellum.ai`, …), which is
- *   cross-origin from the `platform.vellum.ai` SPA. A same-origin cookie WS
+ *   cross-origin from the `cloud.mycadet.ai` SPA. A same-origin cookie WS
  *   upgrade is NOT viable: velay does no user auth, and the channel gateway
  *   only accepts a local actor edge JWT. So the browser first mints a
  *   short-lived, org+assistant-scoped WS token from the platform and passes it

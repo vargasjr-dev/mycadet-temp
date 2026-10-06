@@ -365,7 +365,7 @@ export const routes = {
     localHosting: r("/docs/hosting-options/local-hosting"),
     legal: {
       privacyPolicy: r("/docs/privacy-policy"),
-      termsOfUse: r("/docs/cadet-terms-of-use"),
+      termsOfUse: r("/docs/terms-of-use"),
       dataSharing: r("/docs/data-sharing"),
       prohibitedUse: r("/docs/prohibited-use"),
       privacyAndData: r("/docs/trust-security/privacy-and-data"),

@@ -42,7 +42,7 @@ The security-driven server that controls who is allowed to communicate with the 
 
 ### Guardian
 
-The person who creates, owns, and is responsible for an assistant. The guardian grants permissions, teaches, and is liable for the assistant's actions, but the assistant acts as their own entity, not as the guardian. This is not a "user" relationship. People are users of the Cadet Platform, which is a SaaS tool. But the relationship between a person and their Cadet Assistant is guardianship, not usage.
+The person who creates, owns, and is responsible for an assistant. The guardian grants permissions, teaches, and is liable for the assistant's actions, but the assistant acts as their own entity, not as the guardian. This is not a "user" relationship. People are users of the Cadet Cloud, which is a SaaS tool. But the relationship between a person and their Cadet Assistant is guardianship, not usage.
 
 ### Hatch
 
@@ -104,7 +104,7 @@ Policies governing what assistants can do autonomously without the guardian's co
 
 ### User
 
-A person who uses the Cadet Platform. This is a standard SaaS relationship. Importantly, "user" does not describe the relationship between a person and their assistant. They are a guardian, not a user. A person can be a guardian of a Cadet assistant without being a user of the Cadet Platform.
+A person who uses the Cadet Cloud. This is a standard SaaS relationship. Importantly, "user" does not describe the relationship between a person and their assistant. They are a guardian, not a user. A person can be a guardian of a Cadet assistant without being a user of the Cadet Cloud.
 
 ### Cadet Doctor
 

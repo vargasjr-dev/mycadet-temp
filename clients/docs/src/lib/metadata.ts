@@ -18,6 +18,8 @@ interface CreateMetadataOptions {
   path: string;
 }
 
+const TWITTER_HANDLE = "@mycadet_ai";
+
 export function createMetadata({
   title,
   description,
@@ -54,6 +56,8 @@ export function createMetadata({
     },
     twitter: {
       card: "summary_large_image",
+      site: TWITTER_HANDLE,
+      creator: TWITTER_HANDLE,
       title,
       description,
       images: [

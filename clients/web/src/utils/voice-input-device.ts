@@ -10,7 +10,7 @@ import {
  * stored as a `MediaDeviceInfo.deviceId`. Empty/absent means "follow the
  * system default".
  */
-export const LS_VOICE_INPUT_DEVICE = "vellum:voice:inputDeviceId";
+export const LS_VOICE_INPUT_DEVICE = "cadet:voice:inputDeviceId";
 
 export function getPreferredInputDeviceId(): string {
   return getLocalSetting(LS_VOICE_INPUT_DEVICE, "");

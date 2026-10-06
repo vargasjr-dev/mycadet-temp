@@ -206,7 +206,7 @@ const registerAppProtocol = (): void => {
 // Synchronous config snapshot the preload reads at startup and exposes to the
 // renderer as `window.__VELLUM_CONFIG__`.
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
-handleSync("vellum:config:get", () => ({
+handleSync("cadet:config:get", () => ({
   webUrl: resolvedConfig.webUrl,
   platformUrl: resolvedConfig.platformUrl,
   disablePlatform:

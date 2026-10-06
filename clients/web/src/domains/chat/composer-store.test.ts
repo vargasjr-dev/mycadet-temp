@@ -229,7 +229,7 @@ describe("loadAssistantDrafts", () => {
     // Switch back to assistant-1 — draft should be restored.
     getStore().loadAssistantDrafts("assistant-1", null);
     // The draft was persisted to localStorage for assistant-1.
-    const stored = localSettingsStore.get("vellum:chatDrafts:assistant-1");
+    const stored = localSettingsStore.get("cadet:chatDrafts:assistant-1");
     expect(stored).toBeDefined();
     const parsed = JSON.parse(stored!);
     expect(parsed["conv-A"]).toBe("draft for assistant-1");
@@ -245,7 +245,7 @@ describe("loadAssistantDrafts", () => {
     getStore().loadAssistantDrafts("assistant-2", "conv-A");
 
     // The draft should be DELETED, not left stale.
-    const stored = localSettingsStore.get("vellum:chatDrafts:assistant-1");
+    const stored = localSettingsStore.get("cadet:chatDrafts:assistant-1");
     if (stored) {
       const parsed = JSON.parse(stored);
       expect(parsed["conv-A"]).toBeUndefined();
@@ -261,7 +261,7 @@ describe("loadAssistantDrafts", () => {
 
     expect(getStore().input).toBe("");
     // The text is lost because we didn't know which conversation to save it under.
-    const stored = localSettingsStore.get("vellum:chatDrafts:assistant-1");
+    const stored = localSettingsStore.get("cadet:chatDrafts:assistant-1");
     if (stored) {
       const parsed = JSON.parse(stored);
       expect(Object.keys(parsed)).toHaveLength(0);
@@ -278,7 +278,7 @@ describe("saveDraft and clearDraft", () => {
     getStore().loadAssistantDrafts("assistant-1");
     getStore().saveDraft("conv-A", "hello world");
 
-    const stored = localSettingsStore.get("vellum:chatDrafts:assistant-1");
+    const stored = localSettingsStore.get("cadet:chatDrafts:assistant-1");
     expect(stored).toBeDefined();
     expect(JSON.parse(stored!)["conv-A"]).toBe("hello world");
   });
@@ -288,7 +288,7 @@ describe("saveDraft and clearDraft", () => {
     getStore().saveDraft("conv-A", "hello");
     getStore().saveDraft("conv-A", "  ");
 
-    const stored = localSettingsStore.get("vellum:chatDrafts:assistant-1");
+    const stored = localSettingsStore.get("cadet:chatDrafts:assistant-1");
     expect(stored).toBeDefined();
     expect(JSON.parse(stored!)["conv-A"]).toBeUndefined();
   });
@@ -298,7 +298,7 @@ describe("saveDraft and clearDraft", () => {
     getStore().saveDraft("conv-A", "hello");
     getStore().clearDraft("conv-A");
 
-    const stored = localSettingsStore.get("vellum:chatDrafts:assistant-1");
+    const stored = localSettingsStore.get("cadet:chatDrafts:assistant-1");
     expect(stored).toBeDefined();
     expect(JSON.parse(stored!)["conv-A"]).toBeUndefined();
   });
@@ -350,7 +350,7 @@ describe("restoreDraftIfEmpty", () => {
     // Inject a whitespace-only draft directly into the persisted blob so the
     // trim guard is exercised (saveDraft itself never stores whitespace).
     localSettingsStore.set(
-      "vellum:chatDrafts:assistant-1",
+      "cadet:chatDrafts:assistant-1",
       JSON.stringify({ "conv-A": "   " }),
     );
     getStore().loadAssistantDrafts("assistant-1");

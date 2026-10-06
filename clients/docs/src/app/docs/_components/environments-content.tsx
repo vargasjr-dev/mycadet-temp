@@ -45,7 +45,7 @@ export function EnvironmentsContent() {
           </p>
           <div className="mb-6 overflow-x-auto">
             <pre className="font-[family-name:var(--font-dm-mono)] text-sm">
-<code>{`cadet hatch --remote <local | docker | cadet>`}</code>
+<code>{`cadet hatch --remote <local | docker | cloud>`}</code>
             </pre>
           </div>
         </section>

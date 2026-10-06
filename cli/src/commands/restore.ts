@@ -1,3 +1,4 @@
+import { isManagedCloud } from "@vellumai/local-mode/contract";
 import { existsSync, readFileSync } from "fs";
 
 import { findAssistantByName } from "../lib/assistant-config.js";
@@ -573,7 +574,7 @@ export async function restore(): Promise<void> {
     process.exit(1);
   }
 
-  if (cloud === "vellum") {
+  if (isManagedCloud(cloud)) {
     const bundleData = readFileSync(fromPath);
     await restorePlatform(entry, name, bundleData, { version, dryRun });
     return;

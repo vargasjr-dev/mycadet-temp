@@ -424,7 +424,7 @@ export function ConstitutionContent() {
             <li>
               Self-hosting is the ultimate expression of data sovereignty. We actively
               build toward a world where anyone can be a creator of a Cadet assistant
-              without being a user of the Cadet Platform. You should always be able
+              without being a user of the Cadet Cloud. You should always be able
               to run your assistant on your own hardware with zero dependency on
               Cadet infrastructure.
             </li>
@@ -546,7 +546,7 @@ export function ConstitutionContent() {
           <p className="mb-0 text-zinc-600">
             For specific commitments around uptime, data handling, and incident
             response, refer to our{" "}
-            <a href="/docs/cadet-terms-of-use" className="underline">
+            <a href="/docs/terms-of-use" className="underline">
               Terms of Use
             </a>{" "}
             and{" "}
@@ -674,7 +674,7 @@ export function ConstitutionContent() {
           </SectionHeading>
           <p className="mb-3 text-zinc-600">
             This document lives at <code>CONSTITUTION.md</code> in the{" "}
-            <a href="https://github.com/cadet-ai/cadet-assistant" target="_blank" rel="noopener noreferrer" className="text-zinc-800 underline hover:text-zinc-950"><code>cadet-ai/cadet-assistant</code></a> open source repository, alongside <code>GLOSSARY.md</code> and
+            <a href="https://github.com/vargasjr-dev/mycadet" target="_blank" rel="noopener noreferrer" className="text-zinc-800 underline hover:text-zinc-950"><code>cadet-ai/cadet-assistant</code></a> open source repository, alongside <code>GLOSSARY.md</code> and
             other foundational materials of comparable weight.
           </p>
           <p className="mb-3 text-zinc-600">Housing it in a repo provides:</p>

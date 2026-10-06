@@ -83,7 +83,7 @@ installShare();
 const readdirCallsAtInstall = readdirMock.mock.calls.length;
 
 const shareReg = (): Registration =>
-  handleRegistrations.find((r) => r.channel === "vellum:share:file")!;
+  handleRegistrations.find((r) => r.channel === "cadet:share:file")!;
 
 // A stand-in for `IpcMainInvokeEvent` — the handler only reads `.sender`.
 const fakeSender = { id: 1 };
@@ -111,9 +111,9 @@ beforeEach(() => {
 });
 
 describe("installShare wiring", () => {
-  test("registers vellum:share:file exactly once over the invocable `handle` path", () => {
+  test("registers cadet:share:file exactly once over the invocable `handle` path", () => {
     const matches = handleRegistrations.filter(
-      (r) => r.channel === "vellum:share:file",
+      (r) => r.channel === "cadet:share:file",
     );
     expect(matches).toHaveLength(1);
   });

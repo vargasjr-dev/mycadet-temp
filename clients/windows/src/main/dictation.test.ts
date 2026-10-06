@@ -106,7 +106,7 @@ beforeEach(() => {
 test("dictation partials route to the owner and gate pushed audio", async () => {
   const owner = makeSender();
   const stranger = makeSender();
-  const result = await handlers["vellum:helper:dictation:setPartials"]!(
+  const result = await handlers["cadet:helper:dictation:setPartials"]!(
     [true, undefined, true],
     { sender: owner },
   );
@@ -117,18 +117,18 @@ test("dictation partials route to the owner and gate pushed audio", async () => 
   });
 
   fakeClient.notifications.get("dictation.partial")!({ text: "hello" });
-  expect(owner.send).toHaveBeenCalledWith("vellum:helper:dictation:partial", {
+  expect(owner.send).toHaveBeenCalledWith("cadet:helper:dictation:partial", {
     text: "hello",
   });
   expect(stranger.send).not.toHaveBeenCalled();
 
-  handlers["vellum:helper:dictation:audio"]!([new Uint8Array([1, 2]).buffer], {
+  handlers["cadet:helper:dictation:audio"]!([new Uint8Array([1, 2]).buffer], {
     sender: stranger,
   });
   expect(
     fakeClient.calls.some((c) => c.method === "dictation.appendAudio"),
   ).toBe(false);
-  handlers["vellum:helper:dictation:audio"]!([new Uint8Array([1, 2]).buffer], {
+  handlers["cadet:helper:dictation:audio"]!([new Uint8Array([1, 2]).buffer], {
     sender: owner,
   });
   expect(
@@ -136,12 +136,12 @@ test("dictation partials route to the owner and gate pushed audio", async () => 
   ).toBe(true);
 
   // The finalized transcript still routes after disable.
-  await handlers["vellum:helper:dictation:setPartials"]!(
+  await handlers["cadet:helper:dictation:setPartials"]!(
     [false, undefined, undefined],
     { sender: owner },
   );
   fakeClient.notifications.get("dictation.finalized")!({ text: "done" });
-  expect(owner.send).toHaveBeenCalledWith("vellum:helper:dictation:finalized", {
+  expect(owner.send).toHaveBeenCalledWith("cadet:helper:dictation:finalized", {
     text: "done",
   });
 });
@@ -149,21 +149,21 @@ test("dictation partials route to the owner and gate pushed audio", async () => 
 test("a replaced owner cannot stop the active dictation", async () => {
   const replaced = makeSender();
   const active = makeSender();
-  await handlers["vellum:helper:dictation:setPartials"]!(
+  await handlers["cadet:helper:dictation:setPartials"]!(
     [true, undefined, true],
     { sender: replaced },
   );
-  await handlers["vellum:helper:dictation:setPartials"]!(
+  await handlers["cadet:helper:dictation:setPartials"]!(
     [true, undefined, true],
     { sender: active },
   );
 
   expect(replaced.send).toHaveBeenCalledWith(
-    "vellum:helper:dictation:finalized",
+    "cadet:helper:dictation:finalized",
     { text: "" },
   );
   expect(
-    await handlers["vellum:helper:dictation:setPartials"]!(
+    await handlers["cadet:helper:dictation:setPartials"]!(
       [false, undefined, undefined],
       { sender: replaced },
     ),
@@ -171,7 +171,7 @@ test("a replaced owner cannot stop the active dictation", async () => {
   expect(fakeClient.calls).toHaveLength(2);
 
   fakeClient.notifications.get("dictation.partial")!({ text: "active" });
-  expect(active.send).toHaveBeenCalledWith("vellum:helper:dictation:partial", {
+  expect(active.send).toHaveBeenCalledWith("cadet:helper:dictation:partial", {
     text: "active",
   });
 });
@@ -179,21 +179,21 @@ test("a replaced owner cannot stop the active dictation", async () => {
 test("a helper crash drops the session owners", async () => {
   const owner = makeSender();
   const transcribing = makeSender();
-  await handlers["vellum:helper:dictation:setPartials"]!(
+  await handlers["cadet:helper:dictation:setPartials"]!(
     [true, undefined, true],
     { sender: owner },
   );
-  await handlers["vellum:helper:dictation:transcribe"]!(
+  await handlers["cadet:helper:dictation:transcribe"]!(
     [new Uint8Array([1]).buffer],
     { sender: transcribing },
   );
   fakeClient.stateListener!({ status: "backing-off" });
 
-  expect(owner.send).toHaveBeenCalledWith("vellum:helper:dictation:finalized", {
+  expect(owner.send).toHaveBeenCalledWith("cadet:helper:dictation:finalized", {
     text: "",
   });
   expect(transcribing.send).toHaveBeenCalledWith(
-    "vellum:helper:dictation:transcribed",
+    "cadet:helper:dictation:transcribed",
     { text: "" },
   );
   owner.send.mockClear();
@@ -202,7 +202,7 @@ test("a helper crash drops the session owners", async () => {
   fakeClient.notifications.get("dictation.finalized")!({ text: "late" });
   expect(owner.send).not.toHaveBeenCalled();
 
-  handlers["vellum:helper:dictation:audio"]!([new Uint8Array([1]).buffer], {
+  handlers["cadet:helper:dictation:audio"]!([new Uint8Array([1]).buffer], {
     sender: owner,
   });
   expect(
@@ -212,13 +212,13 @@ test("a helper crash drops the session owners", async () => {
 
 test("a terminal recognition error settles and clears the owner", async () => {
   const owner = makeSender();
-  await handlers["vellum:helper:dictation:setPartials"]!(
+  await handlers["cadet:helper:dictation:setPartials"]!(
     [true, undefined, true],
     { sender: owner },
   );
 
   fakeClient.notifications.get("dictation.error")!({ message: "failed" });
-  expect(owner.send).toHaveBeenCalledWith("vellum:helper:dictation:finalized", {
+  expect(owner.send).toHaveBeenCalledWith("cadet:helper:dictation:finalized", {
     text: "",
   });
 
@@ -228,7 +228,7 @@ test("a terminal recognition error settles and clears the owner", async () => {
 
 test("server-path retry keeps the streaming owner", async () => {
   const owner = makeSender();
-  await handlers["vellum:helper:dictation:setPartials"]!(
+  await handlers["cadet:helper:dictation:setPartials"]!(
     [true, undefined, false],
     { sender: owner },
   );
@@ -241,7 +241,7 @@ test("server-path retry keeps the streaming owner", async () => {
   expect(owner.send).not.toHaveBeenCalled();
 
   fakeClient.notifications.get("dictation.partial")!({ text: "server" });
-  expect(owner.send).toHaveBeenCalledWith("vellum:helper:dictation:partial", {
+  expect(owner.send).toHaveBeenCalledWith("cadet:helper:dictation:partial", {
     text: "server",
   });
 });
@@ -249,13 +249,13 @@ test("server-path retry keeps the streaming owner", async () => {
 test("one-shot transcription routes independently from streaming", async () => {
   const recording = makeSender();
   const transcribing = makeSender();
-  await handlers["vellum:helper:dictation:setPartials"]!(
+  await handlers["cadet:helper:dictation:setPartials"]!(
     [true, undefined, true],
     { sender: recording },
   );
 
   expect(
-    await handlers["vellum:helper:dictation:transcribe"]!(
+    await handlers["cadet:helper:dictation:transcribe"]!(
       [new Uint8Array([1, 2]).buffer],
       { sender: transcribing },
     ),
@@ -278,11 +278,11 @@ test("one-shot transcription routes independently from streaming", async () => {
     text: "complete",
   });
   expect(recording.send).toHaveBeenCalledWith(
-    "vellum:helper:dictation:partial",
+    "cadet:helper:dictation:partial",
     { text: "streaming" },
   );
   expect(transcribing.send).toHaveBeenCalledWith(
-    "vellum:helper:dictation:transcribed",
+    "cadet:helper:dictation:transcribed",
     { text: "complete" },
   );
 });
@@ -291,7 +291,7 @@ test("one-shot transcription settles replacements and drops stale completions", 
   const replaced = makeSender();
   const active = makeSender();
   expect(
-    await handlers["vellum:helper:dictation:transcribe"]!(
+    await handlers["cadet:helper:dictation:transcribe"]!(
       [new ArrayBuffer(0)],
       {
         sender: replaced,
@@ -311,16 +311,16 @@ test("one-shot transcription settles replacements and drops stale completions", 
     }
     return Promise.resolve({ ok: true });
   };
-  const first = handlers["vellum:helper:dictation:transcribe"]!(
+  const first = handlers["cadet:helper:dictation:transcribe"]!(
     [new Uint8Array([1]).buffer],
     { sender: replaced },
   ) as Promise<unknown>;
-  await handlers["vellum:helper:dictation:transcribe"]!(
+  await handlers["cadet:helper:dictation:transcribe"]!(
     [new Uint8Array([2]).buffer],
     { sender: active },
   );
   expect(replaced.send).toHaveBeenCalledWith(
-    "vellum:helper:dictation:transcribed",
+    "cadet:helper:dictation:transcribed",
     { text: "" },
   );
   const transcriptionCalls = fakeClient.calls.filter(
@@ -346,7 +346,7 @@ test("one-shot transcription settles replacements and drops stale completions", 
     text: "active",
   });
   expect(active.send).toHaveBeenCalledWith(
-    "vellum:helper:dictation:transcribed",
+    "cadet:helper:dictation:transcribed",
     { text: "active" },
   );
   expect(replaced.send).toHaveBeenCalledTimes(1);

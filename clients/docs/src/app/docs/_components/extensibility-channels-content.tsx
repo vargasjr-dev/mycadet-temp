@@ -26,7 +26,7 @@ const linkClass =
 
 const ROUTES_PAGE_URL = "/docs/extensibility/routes";
 const PLUGIN_API_URL =
-  "https://github.com/cadet-ai/cadet-assistant/tree/main/assistant/src/plugin-api";
+  "https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api";
 
 type FieldRow = {
   field: string;

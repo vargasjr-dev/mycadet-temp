@@ -104,12 +104,12 @@ describe("migratePrefix", () => {
     localStorage.setItem("voice:ttsApiKey:elevenlabs", "el-456");
     localStorage.setItem("voice:sttProvider", "whisper");
 
-    migratePrefix("voice:ttsApiKey:", "vellum:voice:ttsApiKey:");
+    migratePrefix("voice:ttsApiKey:", "cadet:voice:ttsApiKey:");
 
-    expect(localStorage.getItem("vellum:voice:ttsApiKey:openai")).toBe(
+    expect(localStorage.getItem("cadet:voice:ttsApiKey:openai")).toBe(
       "sk-123",
     );
-    expect(localStorage.getItem("vellum:voice:ttsApiKey:elevenlabs")).toBe(
+    expect(localStorage.getItem("cadet:voice:ttsApiKey:elevenlabs")).toBe(
       "el-456",
     );
     expect(localStorage.getItem("voice:ttsApiKey:openai")).toBeNull();
@@ -121,7 +121,7 @@ describe("migratePrefix", () => {
   test("no-op when no keys match", () => {
     localStorage.setItem("other:key", "value");
 
-    migratePrefix("voice:", "vellum:voice:");
+    migratePrefix("voice:", "cadet:voice:");
 
     expect(localStorage.getItem("other:key")).toBe("value");
     expect(localStorage.length).toBe(1);
@@ -129,11 +129,11 @@ describe("migratePrefix", () => {
 
   test("preserves existing new keys (idempotent)", () => {
     localStorage.setItem("ff:client:flag-a", "old");
-    localStorage.setItem("vellum:ff:flag-a", "already-migrated");
+    localStorage.setItem("cadet:ff:flag-a", "already-migrated");
 
-    migratePrefix("ff:client:", "vellum:ff:");
+    migratePrefix("ff:client:", "cadet:ff:");
 
-    expect(localStorage.getItem("vellum:ff:flag-a")).toBe("already-migrated");
+    expect(localStorage.getItem("cadet:ff:flag-a")).toBe("already-migrated");
     expect(localStorage.getItem("ff:client:flag-a")).toBeNull();
   });
 });
@@ -141,34 +141,36 @@ describe("migratePrefix", () => {
 describe("removePersistedPairedGatewayCredential", () => {
   test("removes a paired guardian bearer and its metadata", () => {
     // eslint-disable-next-line no-restricted-syntax -- test: seeding a legacy paired credential to verify removal
-    localStorage.setItem("vellum:gw:token", "guardian-token");
-    localStorage.setItem("vellum:gw:expiresAt", "2000000000");
+    localStorage.setItem("cadet:gw:token", "guardian-token");
+    // generic-examples:ignore-next-line — reason: real test fixture seeding a legacy storage key to verify cleanup behavior
+    localStorage.setItem("cadet:gw:expiresAt", "2000000000");
     // eslint-disable-next-line no-restricted-syntax -- test: seeding legacy paired credential metadata to verify removal
     localStorage.setItem(
-      "vellum:gw:tokenSource",
+      "cadet:gw:tokenSource",
       "/assistant/__gateway-paired/paired-a/auth/token",
     );
 
     removePersistedPairedGatewayCredential();
 
-    expect(localStorage.getItem("vellum:gw:token")).toBeNull();
-    expect(localStorage.getItem("vellum:gw:expiresAt")).toBeNull();
-    expect(localStorage.getItem("vellum:gw:tokenSource")).toBeNull();
+    expect(localStorage.getItem("cadet:gw:token")).toBeNull();
+    expect(localStorage.getItem("cadet:gw:expiresAt")).toBeNull();
+    expect(localStorage.getItem("cadet:gw:tokenSource")).toBeNull();
   });
 
   test("preserves a locally minted gateway actor token", () => {
     // eslint-disable-next-line no-restricted-syntax -- test: seeding a legacy local actor token to verify preservation
-    localStorage.setItem("vellum:gw:token", "local-actor-token");
-    localStorage.setItem("vellum:gw:expiresAt", "2000000000");
+    localStorage.setItem("cadet:gw:token", "local-actor-token");
+    // generic-examples:ignore-next-line — reason: real test fixture seeding a legacy storage key to verify preservation
+    localStorage.setItem("cadet:gw:expiresAt", "2000000000");
     // eslint-disable-next-line no-restricted-syntax -- test: seeding legacy local actor metadata to verify preservation
     localStorage.setItem(
-      "vellum:gw:tokenSource",
+      "cadet:gw:tokenSource",
       "/assistant/__gateway/20100/auth/token",
     );
 
     removePersistedPairedGatewayCredential();
 
-    expect(localStorage.getItem("vellum:gw:token")).toBe("local-actor-token");
+    expect(localStorage.getItem("cadet:gw:token")).toBe("local-actor-token");
   });
 });
 
@@ -177,14 +179,14 @@ describe("runStorageMigrations", () => {
     localStorage.setItem("device:tips:records", '{"quick-input":{}}');
     localStorage.setItem("device:tips:enabled", "false");
     localStorage.setItem("device:tips:first_seen_at", "1700000000000");
-    localStorage.setItem("vellum:ff-str:proactiveTips", "on");
+    localStorage.setItem("cadet:ff-str:proactiveTips", "on");
 
     runStorageMigrations();
 
     expect(localStorage.getItem("device:tips:records")).toBeNull();
     expect(localStorage.getItem("device:tips:enabled")).toBeNull();
     expect(localStorage.getItem("device:tips:first_seen_at")).toBeNull();
-    expect(localStorage.getItem("vellum:ff-str:proactiveTips")).toBeNull();
+    expect(localStorage.getItem("cadet:ff-str:proactiveTips")).toBeNull();
   });
 
   test("migrates sidebar keys", () => {
@@ -193,8 +195,8 @@ describe("runStorageMigrations", () => {
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:sidebar:collapsed")).toBe("true");
-    expect(localStorage.getItem("vellum:sidebar:width")).toBe("300");
+    expect(localStorage.getItem("cadet:sidebar:collapsed")).toBe("true");
+    expect(localStorage.getItem("cadet:sidebar:width")).toBe("300");
     expect(localStorage.getItem("assistantSidebarCollapsed")).toBeNull();
     expect(localStorage.getItem("assistantSidebarWidth")).toBeNull();
   });
@@ -212,19 +214,19 @@ describe("runStorageMigrations", () => {
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:voice:permissionPrimerSeen")).toBe(
+    expect(localStorage.getItem("cadet:voice:permissionPrimerSeen")).toBe(
       "true",
     );
-    expect(localStorage.getItem("vellum:voice:ttsProvider")).toBe("openai");
-    expect(localStorage.getItem("vellum:voice:sttProvider")).toBe("whisper");
-    expect(localStorage.getItem("vellum:voice:activationKey")).toBe("Space");
-    expect(localStorage.getItem("vellum:voice:ttsApiKey:openai")).toBe(
+    expect(localStorage.getItem("cadet:voice:ttsProvider")).toBe("openai");
+    expect(localStorage.getItem("cadet:voice:sttProvider")).toBe("whisper");
+    expect(localStorage.getItem("cadet:voice:activationKey")).toBe("Space");
+    expect(localStorage.getItem("cadet:voice:ttsApiKey:openai")).toBe(
       "sk-123",
     );
-    expect(localStorage.getItem("vellum:voice:ttsVoiceId:openai")).toBe(
+    expect(localStorage.getItem("cadet:voice:ttsVoiceId:openai")).toBe(
       "alloy",
     );
-    expect(localStorage.getItem("vellum:voice:sttApiKey:deepgram")).toBe(
+    expect(localStorage.getItem("cadet:voice:sttApiKey:deepgram")).toBe(
       "dg-456",
     );
     // Old keys removed
@@ -240,14 +242,14 @@ describe("runStorageMigrations", () => {
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:onboarding:tosAccepted")).toBe("true");
-    expect(localStorage.getItem("vellum:onboarding:aiDataConsent")).toBe(
+    expect(localStorage.getItem("cadet:onboarding:tosAccepted")).toBe("true");
+    expect(localStorage.getItem("cadet:onboarding:aiDataConsent")).toBe(
       "true",
     );
     // completed key is removed (no longer used), not migrated
     expect(localStorage.getItem("onboarding.completed")).toBeNull();
-    expect(localStorage.getItem("vellum:onboarding:completed")).toBeNull();
-    expect(localStorage.getItem("vellum:onboarding:selectedVersion")).toBe(
+    expect(localStorage.getItem("cadet:onboarding:completed")).toBeNull();
+    expect(localStorage.getItem("cadet:onboarding:selectedVersion")).toBe(
       "v1.0",
     );
     expect(localStorage.getItem("onboarding.tosAccepted")).toBeNull();
@@ -263,14 +265,14 @@ describe("runStorageMigrations", () => {
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:ai:imageGenMode")).toBe("enabled");
-    expect(localStorage.getItem("vellum:ai:webSearchProvider")).toBe(
+    expect(localStorage.getItem("cadet:ai:imageGenMode")).toBe("enabled");
+    expect(localStorage.getItem("cadet:ai:webSearchProvider")).toBe(
       "perplexity",
     );
-    expect(localStorage.getItem("vellum:ai:geminiKey")).toBe("gk-789");
-    expect(localStorage.getItem("vellum:ai:perplexityKey")).toBe("pplx-abc");
-    expect(localStorage.getItem("vellum:ai:braveKey")).toBe("BSA-def");
-    expect(localStorage.getItem("vellum:ai:tavilyKey")).toBe("tvly-ghi");
+    expect(localStorage.getItem("cadet:ai:geminiKey")).toBe("gk-789");
+    expect(localStorage.getItem("cadet:ai:perplexityKey")).toBe("pplx-abc");
+    expect(localStorage.getItem("cadet:ai:braveKey")).toBe("BSA-def");
+    expect(localStorage.getItem("cadet:ai:tavilyKey")).toBe("tvly-ghi");
     expect(localStorage.getItem("vellum_image_gen_mode")).toBeNull();
   });
 
@@ -280,36 +282,36 @@ describe("runStorageMigrations", () => {
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:ff:my-flag")).toBe("true");
-    expect(localStorage.getItem("vellum:ff:another-flag")).toBe("false");
+    expect(localStorage.getItem("cadet:ff:my-flag")).toBe("true");
+    expect(localStorage.getItem("cadet:ff:another-flag")).toBe("false");
     expect(localStorage.getItem("ff:client:my-flag")).toBeNull();
   });
 
   test("carries the watch flag override onto the teach key", () => {
-    localStorage.setItem("vellum:ff:watch", "true");
+    localStorage.setItem("cadet:ff:watch", "true");
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:ff:teach")).toBe("true");
-    expect(localStorage.getItem("vellum:ff:watch")).toBeNull();
+    expect(localStorage.getItem("cadet:ff:teach")).toBe("true");
+    expect(localStorage.getItem("cadet:ff:watch")).toBeNull();
   });
 
   test("carries an off override too, rather than dropping it", () => {
-    localStorage.setItem("vellum:ff:watch", "false");
+    localStorage.setItem("cadet:ff:watch", "false");
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:ff:teach")).toBe("false");
+    expect(localStorage.getItem("cadet:ff:teach")).toBe("false");
   });
 
   test("leaves an existing teach override alone", () => {
-    localStorage.setItem("vellum:ff:watch", "false");
-    localStorage.setItem("vellum:ff:teach", "true");
+    localStorage.setItem("cadet:ff:watch", "false");
+    localStorage.setItem("cadet:ff:teach", "true");
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:ff:teach")).toBe("true");
-    expect(localStorage.getItem("vellum:ff:watch")).toBeNull();
+    expect(localStorage.getItem("cadet:ff:teach")).toBe("true");
+    expect(localStorage.getItem("cadet:ff:watch")).toBeNull();
   });
 
   test("migrates gw: and local: keys", () => {
@@ -324,15 +326,15 @@ describe("runStorageMigrations", () => {
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:gw:token")).toBe("jwt-abc");
+    expect(localStorage.getItem("cadet:gw:token")).toBe("jwt-abc");
     // generic-examples:ignore-next-line — reason: epoch timestamp, not a phone number
-    expect(localStorage.getItem("vellum:gw:expiresAt")).toBe("1700000000");
-    expect(localStorage.getItem("vellum:gw:tokenSource")).toBe("/auth/token");
-    expect(localStorage.getItem("vellum:local:lockfile")).toBe("{}");
+    expect(localStorage.getItem("cadet:gw:expiresAt")).toBe("1700000000");
+    expect(localStorage.getItem("cadet:gw:tokenSource")).toBe("/auth/token");
+    expect(localStorage.getItem("cadet:local:lockfile")).toBe("{}");
     // local:selectedAssistantId is canonicalized then collapsed into the single
-    // vellum:selectedAssistantId, so the intermediate key no longer survives.
-    expect(localStorage.getItem("vellum:selectedAssistantId")).toBe("asst-1");
-    expect(localStorage.getItem("vellum:local:selectedAssistantId")).toBeNull();
+    // cadet:selectedAssistantId, so the intermediate key no longer survives.
+    expect(localStorage.getItem("cadet:selectedAssistantId")).toBe("asst-1");
+    expect(localStorage.getItem("cadet:local:selectedAssistantId")).toBeNull();
     expect(localStorage.getItem("gw:token")).toBeNull();
     expect(localStorage.getItem("local:lockfile")).toBeNull();
   });
@@ -343,10 +345,10 @@ describe("runStorageMigrations", () => {
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:diskPressureDismissed:asst-1")).toBe(
+    expect(localStorage.getItem("cadet:diskPressureDismissed:asst-1")).toBe(
       "true",
     );
-    expect(localStorage.getItem("vellum:diskPressureDismissed:asst-2")).toBe(
+    expect(localStorage.getItem("cadet:diskPressureDismissed:asst-2")).toBe(
       "true",
     );
     expect(
@@ -355,17 +357,17 @@ describe("runStorageMigrations", () => {
   });
 
   test("collapses the legacy per-org assistant map into one key", () => {
-    // Canonicalized first (vellum_current_assistant_id__ → vellum:currentAssistantId:),
-    // then collapsed into the single vellum:selectedAssistantId. With no current
+    // Canonicalized first (vellum_current_assistant_id__ → cadet:currentAssistantId:),
+    // then collapsed into the single cadet:selectedAssistantId. With no current
     // org at migration time, the lexicographically-smallest org suffix wins.
     localStorage.setItem("vellum_current_assistant_id__org-2", "asst-b");
     localStorage.setItem("vellum_current_assistant_id__org-1", "asst-a");
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:selectedAssistantId")).toBe("asst-a");
-    expect(localStorage.getItem("vellum:currentAssistantId:org-1")).toBeNull();
-    expect(localStorage.getItem("vellum:currentAssistantId:org-2")).toBeNull();
+    expect(localStorage.getItem("cadet:selectedAssistantId")).toBe("asst-a");
+    expect(localStorage.getItem("cadet:currentAssistantId:org-1")).toBeNull();
+    expect(localStorage.getItem("cadet:currentAssistantId:org-2")).toBeNull();
     expect(
       localStorage.getItem("vellum_current_assistant_id__org-1"),
     ).toBeNull();
@@ -375,30 +377,30 @@ describe("runStorageMigrations", () => {
     // Active org is org-2 even though org-1 sorts first; the active org's pick
     // must win so a multi-org user keeps their current selection on upgrade.
     sessionStorage.setItem("vellum_active_organization_id", "org-2");
-    localStorage.setItem("vellum:currentAssistantId:org-1", "asst-1");
-    localStorage.setItem("vellum:currentAssistantId:org-2", "asst-2");
+    localStorage.setItem("cadet:currentAssistantId:org-1", "asst-1");
+    localStorage.setItem("cadet:currentAssistantId:org-2", "asst-2");
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:selectedAssistantId")).toBe("asst-2");
-    expect(localStorage.getItem("vellum:currentAssistantId:org-1")).toBeNull();
-    expect(localStorage.getItem("vellum:currentAssistantId:org-2")).toBeNull();
+    expect(localStorage.getItem("cadet:selectedAssistantId")).toBe("asst-2");
+    expect(localStorage.getItem("cadet:currentAssistantId:org-1")).toBeNull();
+    expect(localStorage.getItem("cadet:currentAssistantId:org-2")).toBeNull();
   });
 
   test("collapse prefers the tab-local key and is idempotent", () => {
-    localStorage.setItem("vellum:local:selectedAssistantId", "tab-local");
-    localStorage.setItem("vellum:currentAssistantId:org-1", "per-org");
+    localStorage.setItem("cadet:local:selectedAssistantId", "tab-local");
+    localStorage.setItem("cadet:currentAssistantId:org-1", "per-org");
 
     runStorageMigrations();
-    expect(localStorage.getItem("vellum:selectedAssistantId")).toBe(
+    expect(localStorage.getItem("cadet:selectedAssistantId")).toBe(
       "tab-local",
     );
-    expect(localStorage.getItem("vellum:local:selectedAssistantId")).toBeNull();
-    expect(localStorage.getItem("vellum:currentAssistantId:org-1")).toBeNull();
+    expect(localStorage.getItem("cadet:local:selectedAssistantId")).toBeNull();
+    expect(localStorage.getItem("cadet:currentAssistantId:org-1")).toBeNull();
 
     // Re-running leaves the collapsed value untouched and removes nothing new.
     runStorageMigrations();
-    expect(localStorage.getItem("vellum:selectedAssistantId")).toBe(
+    expect(localStorage.getItem("cadet:selectedAssistantId")).toBe(
       "tab-local",
     );
   });
@@ -412,7 +414,7 @@ describe("runStorageMigrations", () => {
     runStorageMigrations();
 
     expect(
-      localStorage.getItem("vellum:debug:impersonateAssistantVersion"),
+      localStorage.getItem("cadet:debug:impersonateAssistantVersion"),
     ).toBe("0.8.6");
     expect(
       localStorage.getItem("vellumDebug.flags.impersonateAssistantVersion"),
@@ -420,20 +422,20 @@ describe("runStorageMigrations", () => {
   });
 
   test("migrates skillsTabTipDismissed to new name", () => {
-    localStorage.setItem("vellum:skillsTabTipDismissed", "true");
+    localStorage.setItem("cadet:skillsTabTipDismissed", "true");
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:skills:tipDismissed")).toBe("true");
-    expect(localStorage.getItem("vellum:skillsTabTipDismissed")).toBeNull();
+    expect(localStorage.getItem("cadet:skills:tipDismissed")).toBe("true");
+    expect(localStorage.getItem("cadet:skillsTabTipDismissed")).toBeNull();
   });
 
   test("converts skills tip value from '1' to 'true'", () => {
-    localStorage.setItem("vellum:skills:tipDismissed", "1");
+    localStorage.setItem("cadet:skills:tipDismissed", "1");
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("vellum:skills:tipDismissed")).toBe("true");
+    expect(localStorage.getItem("cadet:skills:tipDismissed")).toBe("true");
   });
 
   test("does not touch unrelated device: keys", () => {
@@ -483,28 +485,28 @@ describe("runStorageMigrations", () => {
     expect(snapshot1).toEqual(snapshot2);
   });
   test("converts a legacy imageGenMode into the equivalent provider", () => {
-    localStorage.setItem("vellum:ai:imageGenMode", "managed");
+    localStorage.setItem("cadet:ai:imageGenMode", "managed");
     runStorageMigrations();
-    expect(localStorage.getItem("vellum:ai:imageGenProvider")).toBe("vellum");
+    expect(localStorage.getItem("cadet:ai:imageGenProvider")).toBe("vellum");
 
     localStorage.clear();
-    localStorage.setItem("vellum:ai:imageGenMode", "your-own");
+    localStorage.setItem("cadet:ai:imageGenMode", "your-own");
     runStorageMigrations();
-    expect(localStorage.getItem("vellum:ai:imageGenProvider")).toBe("gemini");
+    expect(localStorage.getItem("cadet:ai:imageGenProvider")).toBe("gemini");
   });
 
   test("a stored imageGenProvider wins over the legacy mode", () => {
-    localStorage.setItem("vellum:ai:imageGenMode", "managed");
-    localStorage.setItem("vellum:ai:imageGenProvider", "gemini");
+    localStorage.setItem("cadet:ai:imageGenMode", "managed");
+    localStorage.setItem("cadet:ai:imageGenProvider", "gemini");
     runStorageMigrations();
-    expect(localStorage.getItem("vellum:ai:imageGenProvider")).toBe("gemini");
+    expect(localStorage.getItem("cadet:ai:imageGenProvider")).toBe("gemini");
   });
 
   test("continues when image provider storage is unavailable", () => {
     const originalGetItem = localStorage.getItem;
     Object.defineProperty(localStorage, "getItem", {
       value(key: string) {
-        if (key === "vellum:ai:imageGenProvider") {
+        if (key === "cadet:ai:imageGenProvider") {
           throw new DOMException("Storage unavailable", "SecurityError");
         }
         return originalGetItem.call(localStorage, key);

@@ -83,7 +83,7 @@ export const installShare = (): void => {
   void sweepStaleShareDirs();
 
   handle(
-    "vellum:share:file",
+    "cadet:share:file",
     ShareFileArgs,
     async ([bytes, filename], event): Promise<void> => {
       // `ShareMenu` wraps NSSharingServicePicker, so it is macOS-only. The

@@ -18,8 +18,8 @@ import {
 import { installMemoryStorage } from "@/utils/memory-storage.test-helper";
 
 const ASSISTANT_ID = "asst_123";
-const STORAGE_KEY = `vellum:sidebar-open-categories:${ASSISTANT_ID}`;
-const PRIMARY_STORAGE_KEY = `vellum:sidebar-open-primary:${ASSISTANT_ID}`;
+const STORAGE_KEY = `cadet:sidebar-open-categories:${ASSISTANT_ID}`;
+const PRIMARY_STORAGE_KEY = `cadet:sidebar-open-primary:${ASSISTANT_ID}`;
 
 const memoryStorage = installMemoryStorage({
   beforeAll,

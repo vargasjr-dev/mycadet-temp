@@ -37,7 +37,7 @@ const share: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "share",
   install: () => {
     handle(
-      "vellum:share:file",
+      "cadet:share:file",
       ShareFileArgs,
       async ([bytes, filename], event): Promise<void> => {
         const window = BrowserWindow.fromWebContents(event.sender);

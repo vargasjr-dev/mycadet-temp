@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-const GITHUB_REPO_URL = "https://github.com/cadet-ai/cadet-assistant";
+const GITHUB_REPO_URL = "https://github.com/vargasjr-dev/mycadet";
 
 /**
  * GitHub wordmark link rendered at the end of the docs header.

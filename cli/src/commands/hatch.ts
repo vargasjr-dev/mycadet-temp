@@ -1,4 +1,5 @@
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
+import { isManagedCloud } from "@vellumai/local-mode/contract";
 import cliPkg from "../../package.json";
 
 import {
@@ -69,7 +70,7 @@ function parseArgs(): HatchArgs {
       console.log("  -d                        Run in detached mode");
       console.log("  --name <name>             Custom instance name");
       console.log(
-        "  --remote <host>           Remote host (local, docker, custom, vellum)",
+        '  --remote <host>           Remote host (local, docker, custom, cloud; "vellum" is the legacy spelling)',
       );
       console.log(
         "  --watch                   Run assistant and gateway in watch mode (hot reload on source changes)",
@@ -306,7 +307,7 @@ export async function hatch(): Promise<void> {
     return;
   }
 
-  if (remote === "vellum") {
+  if (isManagedCloud(remote)) {
     await hatchVellumPlatform();
     return;
   }
@@ -327,7 +328,7 @@ async function hatchVellumPlatform(): Promise<void> {
     console.log(`   ${line}`);
   }
   console.log("");
-  console.log("   Hatching assistant on Vellum platform...");
+  console.log("   Hatching assistant on Cadet Cloud...");
   console.log("");
 
   const { assistant: result } = await hatchAssistant(token);
@@ -337,7 +338,7 @@ async function hatchVellumPlatform(): Promise<void> {
   saveAssistantEntry({
     assistantId: result.id,
     runtimeUrl: platformUrl,
-    cloud: "vellum",
+    cloud: "cloud",
     hatchedAt: new Date().toISOString(),
   });
   setActiveAssistant(result.id);

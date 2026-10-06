@@ -162,7 +162,7 @@ describe("DiskPressureBannerSlot", () => {
   });
 
   test("a stored permanent suppress frees the slot from the first render", () => {
-    localStorage.setItem("vellum:diskPressureSuppressed:assistant-1", "true");
+    localStorage.setItem("cadet:diskPressureSuppressed:assistant-1", "true");
 
     render(<PrecedenceHarness monitor={diskPressure} />);
 
@@ -171,8 +171,8 @@ describe("DiskPressureBannerSlot", () => {
   });
 
   test("acknowledgement-required ignores dismiss flags and keeps precedence", () => {
-    localStorage.setItem("vellum:diskPressureDismissed:assistant-1", "true");
-    localStorage.setItem("vellum:diskPressureSuppressed:assistant-1", "true");
+    localStorage.setItem("cadet:diskPressureDismissed:assistant-1", "true");
+    localStorage.setItem("cadet:diskPressureSuppressed:assistant-1", "true");
 
     render(<PrecedenceHarness monitor={acknowledgementRequired} />);
 

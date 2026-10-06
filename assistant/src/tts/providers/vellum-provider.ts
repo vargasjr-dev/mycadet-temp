@@ -222,7 +222,7 @@ export const vellumTtsProviderDefinition: TtsProviderDefinition = {
   credentialsGuide: {
     description:
       "Connect this assistant to your Vellum account; managed speech uses that connection instead of a provider API key.",
-    url: "https://platform.vellum.ai/",
+    url: "https://cloud.mycadet.ai/",
     linkLabel: "Open Vellum Platform",
   },
   callMode: "synthesized-play",

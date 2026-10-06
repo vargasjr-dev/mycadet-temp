@@ -484,9 +484,9 @@ describe("installMainWindow", () => {
     expect(constructed).toHaveLength(1);
   });
 
-  test("registers the vellum:mainWindow:ensureVisible IPC handler", () => {
+  test("registers the cadet:mainWindow:ensureVisible IPC handler", () => {
     installMainWindow();
-    expect(ipcHandlers.has("vellum:mainWindow:ensureVisible")).toBe(true);
+    expect(ipcHandlers.has("cadet:mainWindow:ensureVisible")).toBe(true);
   });
 
   test("the IPC handler routes through ensureVisible (recreating if destroyed, showing + focusing otherwise)", async () => {
@@ -501,7 +501,7 @@ describe("installMainWindow", () => {
     const showsBefore = win.stub.show.mock.calls.length;
     const focusBefore = win.stub.focus.mock.calls.length;
 
-    const handler = ipcHandlers.get("vellum:mainWindow:ensureVisible");
+    const handler = ipcHandlers.get("cadet:mainWindow:ensureVisible");
     const promise = (handler as (event: unknown) => Promise<void>)(
       allowedEvent,
     );
@@ -614,11 +614,11 @@ describe("onboarding window sizing", () => {
 
   test("installMainWindow registers the setOnboarding IPC handler routing through setOnboarding", async () => {
     installMainWindow();
-    expect(ipcHandlers.has("vellum:mainWindow:setOnboarding")).toBe(true);
+    expect(ipcHandlers.has("cadet:mainWindow:setOnboarding")).toBe(true);
     const win = constructed[0];
     if (!win) throw new Error("expected a window");
 
-    const handler = ipcHandlers.get("vellum:mainWindow:setOnboarding");
+    const handler = ipcHandlers.get("cadet:mainWindow:setOnboarding");
     await (handler as (event: unknown, active: boolean) => Promise<void>)(
       allowedEvent,
       true,
@@ -761,14 +761,14 @@ describe("fullscreen session restore", () => {
 });
 
 describe("dispatchToMain", () => {
-  test("sends `vellum:command` to the main window's webContents", () => {
+  test("sends `cadet:command` to the main window's webContents", () => {
     ensureVisible();
     const win = constructed[0];
     if (!win) throw new Error("expected a window");
 
     dispatchToMain({ kind: "newConversation" });
 
-    expect(win.stub.webContents.send).toHaveBeenCalledWith("vellum:command", {
+    expect(win.stub.webContents.send).toHaveBeenCalledWith("cadet:command", {
       kind: "newConversation",
     });
   });
@@ -848,7 +848,7 @@ describe("close button", () => {
 
     dispatchToMain({ kind: "startVoice" });
 
-    expect(stub.webContents.send).toHaveBeenCalledWith("vellum:command", {
+    expect(stub.webContents.send).toHaveBeenCalledWith("cadet:command", {
       kind: "startVoice",
     });
   });

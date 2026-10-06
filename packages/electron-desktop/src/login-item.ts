@@ -61,8 +61,8 @@ const syncLoginItem = (): void => {
 
 export const installLoginItemIpc = (): void => {
   const { handle } = requireRuntime();
-  handle("vellum:launchAtLogin:get", z.tuple([]), readLaunchAtLogin);
-  handle("vellum:launchAtLogin:set", z.tuple([z.boolean()]), ([enabled]) => {
+  handle("cadet:launchAtLogin:get", z.tuple([]), readLaunchAtLogin);
+  handle("cadet:launchAtLogin:set", z.tuple([z.boolean()]), ([enabled]) => {
     writeLaunchAtLogin(enabled);
   });
 };

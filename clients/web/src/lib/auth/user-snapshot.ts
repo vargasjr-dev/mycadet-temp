@@ -12,7 +12,7 @@
  */
 import type { AuthUser } from "@/stores/auth-store";
 
-const SNAPSHOT_KEY = "vellum:auth:userSnapshot";
+const SNAPSHOT_KEY = "cadet:auth:userSnapshot";
 
 export function persistUserSnapshot(user: AuthUser | null): void {
   if (!user) {

@@ -1674,7 +1674,7 @@ export function ChatMainPanel({
     mainContent = (
       <AnimatedRightDrawer
         open={Boolean(selectedSuggestion)}
-        storageKey="vellum:suggestion-drawer-width"
+        storageKey="cadet:suggestion-drawer-width"
         left={chatBody}
         right={suggestionDetailPanel}
       />

@@ -32,10 +32,10 @@ try {
         assert.ok(await page.evaluate(() => !!navigator.locks));
       }));
       await pages[0].evaluate(() => {
-        localStorage.setItem("vellum:browser-notification-deliveries:v1", JSON.stringify([
+        localStorage.setItem("cadet:browser-notification-deliveries:v1", JSON.stringify([
           ["legacy-post", Date.now() + 60_000],
         ]));
-        localStorage.setItem("vellum:browser-notification-sounds:v1", JSON.stringify([
+        localStorage.setItem("cadet:browser-notification-sounds:v1", JSON.stringify([
           ["legacy-sound", Date.now() + 60_000],
         ]));
       });
@@ -67,7 +67,7 @@ try {
         assert.deepEqual(results.sort(), ["claimed", "duplicate"]);
       }
       assert.equal(await pages[0].evaluate(() =>
-        JSON.parse(localStorage.getItem("vellum:browser-notification-deliveries:v1")!).length,
+        JSON.parse(localStorage.getItem("cadet:browser-notification-deliveries:v1")!).length,
       ), 128);
 
       assert.equal(await pages[0].evaluate(async () => {
@@ -82,7 +82,7 @@ try {
         }
       }), "posted");
       await pages[1].waitForFunction(() =>
-        JSON.parse(localStorage.getItem("vellum:browser-notification-deliveries:v1") ?? "[]")
+        JSON.parse(localStorage.getItem("cadet:browser-notification-deliveries:v1") ?? "[]")
           .some(([key]: [string, number]) => key === "commit-failure"),
       );
       assert.equal(await pages[1].evaluate(
@@ -107,7 +107,7 @@ try {
         });
         const read = () => new Promise<[string, number][]>((resolve, reject) => {
           const request = db.transaction("receipts").objectStore("receipts")
-            .get("vellum:browser-notification-deliveries:v1");
+            .get("cadet:browser-notification-deliveries:v1");
           request.onsuccess = () => resolve(request.result);
           request.onerror = () => reject(request.error);
         });
@@ -117,7 +117,7 @@ try {
           if (!canonical) {
             throw new Error("Missing canonical receipt");
           }
-          localStorage.setItem("vellum:browser-notification-deliveries:v1", JSON.stringify([
+          localStorage.setItem("cadet:browser-notification-deliveries:v1", JSON.stringify([
             [canonical[0], canonical[1] - 1_000],
           ]));
           const result = await window.notificationDeliveryTest.deliver("canonical-post");
@@ -133,13 +133,13 @@ try {
           const getItem = Storage.prototype.getItem;
           if (mirror === "unavailable") {
             Storage.prototype.getItem = function (key) {
-              if (key === "vellum:browser-notification-deliveries:v1") {
+              if (key === "cadet:browser-notification-deliveries:v1") {
                 throw new DOMException("Storage refused", "SecurityError");
               }
               return getItem.call(this, key);
             };
           } else {
-            localStorage.setItem("vellum:browser-notification-deliveries:v1", mirror);
+            localStorage.setItem("cadet:browser-notification-deliveries:v1", mirror);
           }
           try {
             return await window.notificationDeliveryTest.deliver("canonical-post");
@@ -207,7 +207,7 @@ try {
         (key) => window.notificationDeliveryTest.deliver("after-logout", false, true, key), conversationKey,
       ), "posted");
       await pages[0].evaluate((key) => {
-        localStorage.setItem("vellum:browser-notification-attention:v1:abandoned", JSON.stringify([key, Date.now() - 1]));
+        localStorage.setItem("cadet:browser-notification-attention:v1:abandoned", JSON.stringify([key, Date.now() - 1]));
       }, conversationKey);
       assert.equal(await pages[1].evaluate(
         (key) => window.notificationDeliveryTest.deliver("after-expiry", false, true, key), conversationKey,

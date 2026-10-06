@@ -1,5 +1,5 @@
 /**
- * Tests that vellum-self-knowledge loads correctly and contains the expected
+ * Tests that cadet-self-knowledge loads correctly and contains the expected
  * routing structure — pointers to sources of truth (CLI, docs, source code)
  * rather than static content.
  */
@@ -19,7 +19,7 @@ const SKILL_SRC_DIR = join(
   "..",
   "..",
   "skills",
-  "vellum-self-knowledge",
+  "cadet-self-knowledge",
 );
 
 // ── Mocks (must be declared before any imports from the project) ──────────
@@ -32,9 +32,13 @@ mock.module("../util/logger.js", () => ({
   truncateForLog: (s: unknown) => String(s),
 }));
 
-// Mock autoInstallFromCatalog
+// Mock autoInstallFromCatalog — partial: spread the real module so sibling
+// test files in the same process still see the real exports (getRepoSkillsDir
+// etc.) no matter which file loads first.
+const actualCatalogInstall = await import("../skills/catalog-install.js");
 const mockAutoInstall = mock((_skillId: string) => Promise.resolve(false));
 mock.module("../skills/catalog-install.js", () => ({
+  ...actualCatalogInstall,
   autoInstallFromCatalog: (skillId: string) => mockAutoInstall(skillId),
   resolveCatalog: (_skillId?: string) => Promise.resolve([]),
 }));
@@ -45,9 +49,9 @@ const { skillLoadTool } = await import("../tools/skills/load.js");
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-/** Copy the real vellum-self-knowledge SKILL.md into the test skills dir. */
+/** Copy the real cadet-self-knowledge SKILL.md into the test skills dir. */
 function installSelfKnowledgeSkill(): void {
-  const destDir = join(TEST_DIR, "skills", "vellum-self-knowledge");
+  const destDir = join(TEST_DIR, "skills", "cadet-self-knowledge");
   mkdirSync(destDir, { recursive: true });
   copyFileSync(join(SKILL_SRC_DIR, "SKILL.md"), join(destDir, "SKILL.md"));
 }
@@ -68,7 +72,7 @@ async function executeSkillLoad(
 
 // ── Tests ────────────────────────────────────────────────────────────────
 
-describe("vellum-self-knowledge skill", () => {
+describe("cadet-self-knowledge skill", () => {
   beforeEach(() => {
     mkdirSync(join(TEST_DIR, "skills"), { recursive: true });
     mockAutoInstall.mockReset();
@@ -81,14 +85,14 @@ describe("vellum-self-knowledge skill", () => {
   // ── Loads successfully ───────────────────────────────────────────────
 
   test("loads without error", async () => {
-    const result = await executeSkillLoad({ skill: "vellum-self-knowledge" });
+    const result = await executeSkillLoad({ skill: "cadet-self-knowledge" });
     expect(result.isError).toBe(false);
   });
 
   // ── Contains no static content ───────────────────────────────────────
 
   test("does not contain hard-coded model names or provider catalogs", async () => {
-    const result = await executeSkillLoad({ skill: "vellum-self-knowledge" });
+    const result = await executeSkillLoad({ skill: "cadet-self-knowledge" });
     // Old skill had a model catalog table with specific model IDs
     expect(result.content).not.toContain("claude-sonnet-4-6");
     expect(result.content).not.toContain("claude-opus-4-6");
@@ -97,7 +101,7 @@ describe("vellum-self-knowledge skill", () => {
   });
 
   test("does not contain inline command tokens", async () => {
-    const result = await executeSkillLoad({ skill: "vellum-self-knowledge" });
+    const result = await executeSkillLoad({ skill: "cadet-self-knowledge" });
     expect(result.content).not.toContain("!`bun run");
     expect(result.content).not.toContain("self-info.ts");
   });
@@ -105,7 +109,7 @@ describe("vellum-self-knowledge skill", () => {
   // ── Routes to CLI ────────────────────────────────────────────────────
 
   test("references the assistant CLI for runtime state", async () => {
-    const result = await executeSkillLoad({ skill: "vellum-self-knowledge" });
+    const result = await executeSkillLoad({ skill: "cadet-self-knowledge" });
     expect(result.content).toContain("assistant config get llm");
     expect(result.content).toContain("assistant --version");
     expect(result.content).toContain("assistant skills list");
@@ -115,7 +119,7 @@ describe("vellum-self-knowledge skill", () => {
   // ── Routes to docs site ──────────────────────────────────────────────
 
   test("references the docs site for conceptual questions", async () => {
-    const result = await executeSkillLoad({ skill: "vellum-self-knowledge" });
+    const result = await executeSkillLoad({ skill: "cadet-self-knowledge" });
     expect(result.content).toContain("https://www.vellum.ai/docs");
     expect(result.content).toContain("/getting-started/what-is-cadet");
     expect(result.content).toContain("/developer-guide/architecture");
@@ -125,7 +129,7 @@ describe("vellum-self-knowledge skill", () => {
   // ── Routes to source code ────────────────────────────────────────────
 
   test("references the GitHub repo for deep implementation questions", async () => {
-    const result = await executeSkillLoad({ skill: "vellum-self-knowledge" });
+    const result = await executeSkillLoad({ skill: "cadet-self-knowledge" });
     expect(result.content).toContain("github.com/vellum-ai/vellum-assistant");
     expect(result.content).toContain("ARCHITECTURE.md");
   });
@@ -133,7 +137,7 @@ describe("vellum-self-knowledge skill", () => {
   // ── Critical rule ────────────────────────────────────────────────────
 
   test("contains the critical rule about not answering from memory", async () => {
-    const result = await executeSkillLoad({ skill: "vellum-self-knowledge" });
+    const result = await executeSkillLoad({ skill: "cadet-self-knowledge" });
     expect(result.content).toContain("## Critical Rule");
     expect(result.content).toContain("Never answer from memory");
     expect(result.content).toContain("distinct, legacy Vellum product");
@@ -145,7 +149,7 @@ describe("vellum-self-knowledge skill", () => {
   // ── Resolution order ─────────────────────────────────────────────────
 
   test("specifies resolution order (CLI → docs → source)", async () => {
-    const result = await executeSkillLoad({ skill: "vellum-self-knowledge" });
+    const result = await executeSkillLoad({ skill: "cadet-self-knowledge" });
     expect(result.content).toContain("### Resolution Order");
     expect(result.content).toContain("CLI first");
     expect(result.content).toContain("Docs second");

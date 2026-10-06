@@ -50,8 +50,8 @@ test("two pages share sound ownership separately from accepted banner receipts",
   const key = '["account-1","assistant-1","signal-1"]';
   expect(await Promise.all([firstTab.claimSound(key), secondTab.claimSound(key)]))
     .toEqual(["claimed", "duplicate"]);
-  expect(localStorage.getItem("vellum:browser-notification-deliveries:v1")).toBeNull();
-  expect(JSON.parse(localStorage.getItem("vellum:browser-notification-sounds:v1")!))
+  expect(localStorage.getItem("cadet:browser-notification-deliveries:v1")).toBeNull();
+  expect(JSON.parse(localStorage.getItem("cadet:browser-notification-sounds:v1")!))
     .toHaveLength(1);
   expect(await secondTab.post(key, () => undefined)).toBe("posted");
   expect(await secondTab.claimSound(key)).toBe("duplicate");
@@ -68,7 +68,7 @@ test("cancelled and attended sound claims retain no ownership receipt", async ()
   const stop = tab.trackAttention(() => "conversation-key");
   try {
     expect(await tab.claimSound("signal-2", undefined, "conversation-key")).toBe("suppressed");
-    expect(localStorage.getItem("vellum:browser-notification-sounds:v1")).toBeNull();
+    expect(localStorage.getItem("cadet:browser-notification-sounds:v1")).toBeNull();
   } finally {
     stop();
   }
@@ -98,9 +98,9 @@ test("receipts expire and are bounded", async () => {
   for (let i = 0; i < 150; i++) {
     await tab.post(`signal-${i}`, () => undefined);
   }
-  const receipts = JSON.parse(localStorage.getItem("vellum:browser-notification-deliveries:v1")!);
+  const receipts = JSON.parse(localStorage.getItem("cadet:browser-notification-deliveries:v1")!);
   expect(receipts).toHaveLength(128);
-  localStorage.setItem("vellum:browser-notification-deliveries:v1", JSON.stringify([["expired", Date.now() - 1]]));
+  localStorage.setItem("cadet:browser-notification-deliveries:v1", JSON.stringify([["expired", Date.now() - 1]]));
   expect(await new BrowserNotificationDelivery().post("expired", () => undefined)).toBe("posted");
 });
 
@@ -135,7 +135,7 @@ test("attended conversation suppresses a hidden tab before either tab receives i
     expect(await hiddenTab.post("signal-1", post, undefined, conversationKey)).toBe("suppressed");
     expect(await focusedTab.post("signal-1", post, undefined, conversationKey)).toBe("suppressed");
     expect(post).not.toHaveBeenCalled();
-    expect(localStorage.getItem("vellum:browser-notification-deliveries:v1")).toBeNull();
+    expect(localStorage.getItem("cadet:browser-notification-deliveries:v1")).toBeNull();
     const previousKey = conversationKey;
     conversationKey = null;
     publish("app.attention", { attended: false });
@@ -163,7 +163,7 @@ test("attention respects account, assistant, and conversation scope and cleanup"
 });
 
 test("expired, corrupt, and impossible future attention leases cannot suppress delivery", async () => {
-  const prefix = "vellum:browser-notification-attention:v1:";
+  const prefix = "cadet:browser-notification-attention:v1:";
   const key = '["account-1","assistant-1","conversation-1"]';
   localStorage.setItem(`${prefix}expired`, JSON.stringify([key, Date.now() - 1]));
   localStorage.setItem(`${prefix}future`, JSON.stringify([key, Date.now() + 60_000]));

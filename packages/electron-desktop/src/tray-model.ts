@@ -11,6 +11,7 @@ import {
   pairedHostLabel,
   type Lockfile,
   type LockfileAssistant,
+  isManagedCloud,
 } from "@mycadet/local-mode/contract";
 import {
   type CompanionSize,
@@ -210,7 +211,7 @@ const buildTrayMenu = (
     // belong in the switcher. Local/Docker lockfile entries are handled by
     // separate flows and would mis-route through the platform selection path.
     const assistants = lockfile.assistants.filter(
-      (a) => a.cloud === "vellum" || a.cloud === "paired",
+      (a) => isManagedCloud(a.cloud) || a.cloud === "paired",
     );
     const activeId = lockfile.activeAssistant;
 

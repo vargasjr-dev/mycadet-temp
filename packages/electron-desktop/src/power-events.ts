@@ -47,7 +47,7 @@ const broadcast = (kind: PowerEventKind): void => {
     if (win.isDestroyed()) {
       continue;
     }
-    win.webContents.send("vellum:power:event", payload);
+    win.webContents.send("cadet:power:event", payload);
   }
 };
 

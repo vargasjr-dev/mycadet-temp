@@ -138,7 +138,7 @@ describe("installNativeAuth session-token wiring", () => {
   test("persists the exchanged token on successful PKCE login", async () => {
     installNativeAuth();
 
-    const startOAuth = ipcHandlers["vellum:auth:startOAuth"];
+    const startOAuth = ipcHandlers["cadet:auth:startOAuth"];
     expect(startOAuth).toBeDefined();
 
     const pending = startOAuth([{}]) as Promise<{ sessionToken: string }>;
@@ -192,7 +192,7 @@ describe("installNativeAuth session-token wiring", () => {
     });
     installNativeAuth();
 
-    const signOut = ipcHandlers["vellum:auth:signOut"];
+    const signOut = ipcHandlers["cadet:auth:signOut"];
     expect(signOut).toBeDefined();
 
     await signOut([]);
@@ -212,14 +212,14 @@ describe("installNativeAuth session-token wiring", () => {
   test("cancelOAuth stops an active loopback flow", async () => {
     installNativeAuth();
 
-    const pending = ipcHandlers["vellum:auth:startOAuth"]!([{}]) as Promise<{
+    const pending = ipcHandlers["cadet:auth:startOAuth"]!([{}]) as Promise<{
       sessionToken: string;
     }>;
     while (!lastOpenedUrl) {
       await Bun.sleep(1);
     }
 
-    await ipcHandlers["vellum:auth:cancelOAuth"]!([]);
+    await ipcHandlers["cadet:auth:cancelOAuth"]!([]);
     await expect(pending).rejects.toThrow("Auth flow cancelled");
   });
 
@@ -227,7 +227,7 @@ describe("installNativeAuth session-token wiring", () => {
     installNativeAuth();
     store.saved.push("cached-tok");
 
-    const getToken = ipcSyncHandlers["vellum:auth:getSessionToken"];
+    const getToken = ipcSyncHandlers["cadet:auth:getSessionToken"];
     expect(getToken).toBeDefined();
     expect(getToken()).toBe("cached-tok");
   });

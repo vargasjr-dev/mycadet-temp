@@ -112,7 +112,7 @@ The assistant can store and use credentials (API keys, tokens, passwords) withou
 - **One-time send**: When `secretDetection.allowOneTimeSend` is enabled (default: `false`), a "Send Once" button lets users provide a value for immediate use without persisting it.
 - **No plaintext read API**: There is no tool-layer function that returns a stored secret as plaintext. Secrets are only consumed by the broker for scoped tool execution.
 
-See [`assistant/docs/architecture/security.md`](../assistant/docs/architecture/security.md) for the full security model and [`ARCHITECTURE.md`](../ARCHITECTURE.md) for the cross-system map.
+See [Security Architecture](https://www.mycadet.ai/docs/developer-guide/internals/security) for the full security model and [Architecture](https://www.mycadet.ai/docs/developer-guide/internals/architecture) for the cross-system map.
 
 #### Credential References
 
@@ -203,7 +203,7 @@ When `autoApproveUpTo` is `"none"`, a **starter bundle** can be accepted to seed
 
 When `file_write`, `file_edit`, `host_file_write`, or `host_file_edit` targets a path inside a skill directory (managed, bundled, workspace, or extra), the operation is escalated to **high risk**. This prevents the agent from modifying skill code — which could alter its own capabilities — without explicit user consent. Note that mutations via `bash` are not covered by this escalation.
 
-See [`assistant/docs/architecture/security.md`](../assistant/docs/architecture/security.md) for permission evaluation flow diagrams and [`assistant/docs/skills.md`](../assistant/docs/skills.md) for detailed skills security documentation.
+See [Security Architecture](https://www.mycadet.ai/docs/developer-guide/internals/security) for permission evaluation flow diagrams and [`assistant/docs/skills.md`](../assistant/docs/skills.md) for detailed skills security documentation.
 
 ## Features & Capabilities
 
@@ -230,7 +230,7 @@ The assistant can create, test, and persist new skills at runtime. This is usefu
 3. **Load**: The assistant calls `skill_load` with the new skill ID to load its instructions.
 4. **Delete**: To remove a managed skill, use `delete_managed_skill`.
 
-Installed managed skills are discovered from valid directories under `$VELLUM_WORKSPACE_DIR/skills/<id>/` that contain a top-level `SKILL.md` with standardized frontmatter. On startup and skill directory changes, the assistant parses that frontmatter and seeds the skill's capabilities into the memory concept-page collection (see `assistant/docs/architecture/memory.md`); those entries represent available skills to the assistant. The legacy `SKILLS.md` index is removed by workspace migration and is no longer created by current install or scaffold paths.
+Installed managed skills are discovered from valid directories under `$VELLUM_WORKSPACE_DIR/skills/<id>/` that contain a top-level `SKILL.md` with standardized frontmatter. On startup and skill directory changes, the assistant parses that frontmatter and seeds the skill's capabilities into the memory concept-page collection (see [Memory Architecture](https://www.mycadet.ai/docs/developer-guide/internals/memory)); those entries represent available skills to the assistant. The legacy `SKILLS.md` index is removed by workspace migration and is no longer created by current install or scaffold paths.
 
 #### Tools
 

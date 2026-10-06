@@ -9,7 +9,7 @@ type StoredTheme = Theme | "velvet";
 /* Theme state lives under BOTH `device:theme` (the assistant SPA's key, read
  * first by the pre-hydration bootstrap in src/app/layout.tsx) and
  * `cadet_theme` (the shared platform key), since both apps share the
- * www.cadet.ai origin. Dark mode is stamped as both the `.dark` class
+ * www.mycadet.ai origin. Dark mode is stamped as both the `.dark` class
  * (docs-theme.css) and the `data-theme` attribute (design-library tokens). */
 
 const THEMES: { value: Theme; icon: typeof Sun; label: string }[] = [

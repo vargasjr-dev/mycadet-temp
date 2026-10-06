@@ -4,7 +4,7 @@ import { on } from "./presence-runtime";
 
 /**
  * Active assistant display name (e.g. "Aria"), published by the renderer
- * over the `vellum:identity:name` channel.
+ * over the `cadet:identity:name` channel.
  *
  * The renderer holds the identity — fetched from the daemon `/identity`
  * endpoint into `useAssistantIdentityStore` — and is the source of truth;
@@ -57,7 +57,7 @@ export const setName = (name: string | null): void => {
 const namePayloadSchema = z.tuple([z.string()]);
 
 /**
- * Register the `vellum:identity:name` renderer→main channel. Fire-and-forget
+ * Register the `cadet:identity:name` renderer→main channel. Fire-and-forget
  * (`ipcRenderer.send`): a name republish has no return value, and a malformed
  * payload should drop silently rather than surface in the renderer. Call once
  * from `whenReady`, before the tray / main window / About install so their
@@ -70,7 +70,7 @@ export const installIdentityIpc = (): void => {
   }
   installed = true;
 
-  on("vellum:identity:name", namePayloadSchema, ([name]) => {
+  on("cadet:identity:name", namePayloadSchema, ([name]) => {
     setName(name);
   });
 };

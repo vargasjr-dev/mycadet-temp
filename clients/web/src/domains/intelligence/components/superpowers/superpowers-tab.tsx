@@ -82,7 +82,7 @@ interface SuperpowersTabProps {
 }
 
 const SEARCH_DEBOUNCE_MS = 300;
-const TIP_STORAGE_KEY = "vellum:superpowers:tipDismissed";
+const TIP_STORAGE_KEY = "cadet:superpowers:tipDismissed";
 
 /** One merged, sortable row — a skill or a plugin. */
 type SuperpowerRow =

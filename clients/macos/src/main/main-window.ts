@@ -363,7 +363,7 @@ export const toggleVisibility = (): void => {
 export const current = (): BrowserWindow | null => mainWindow;
 
 /**
- * Send a `vellum:command` IPC message directly to the main window,
+ * Send a `cadet:command` IPC message directly to the main window,
  * bypassing the application-menu `dispatchToFocused` "find focused
  * window" lookup. The tray click happens with the app potentially
  * backgrounded, so `getFocusedWindow()` can disagree with what the
@@ -376,7 +376,7 @@ export const current = (): BrowserWindow | null => mainWindow;
  */
 export const dispatchToMain = (command: VellumCommand): void => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
-  mainWindow.webContents.send("vellum:command", command);
+  mainWindow.webContents.send("cadet:command", command);
 };
 
 /**
@@ -416,7 +416,7 @@ export const installMainWindow = (): void => {
   // wrapper at `clients/web/src/runtime/main-window.ts` calls this; the
   // handler returns void so the caller can `await` without value.
   handle(
-    "vellum:mainWindow:ensureVisible",
+    "cadet:mainWindow:ensureVisible",
     z.tuple([]),
     async (): Promise<void> => {
       await ensureVisible();
@@ -427,7 +427,7 @@ export const installMainWindow = (): void => {
   // knows whether the current route is an onboarding step, so it toggles
   // the mode (traffic-light position) on/off as the user navigates.
   handle(
-    "vellum:mainWindow:setOnboarding",
+    "cadet:mainWindow:setOnboarding",
     z.tuple([z.boolean()]),
     async ([active]): Promise<void> => {
       setOnboarding(active);

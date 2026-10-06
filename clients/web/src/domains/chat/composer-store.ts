@@ -100,7 +100,7 @@ export type ChatAttachment =
 // Constants
 // ---------------------------------------------------------------------------
 
-const STORAGE_KEY_PREFIX = "vellum:chatDrafts:";
+const STORAGE_KEY_PREFIX = "cadet:chatDrafts:";
 
 /**
  * Size limit enforced on the client before we attempt an upload. The Django

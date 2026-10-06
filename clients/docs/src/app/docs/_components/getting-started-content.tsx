@@ -270,7 +270,7 @@ export function GettingStartedContent() {
           <p className="mb-4 text-zinc-600">
             Want to run Cadet entirely on your own machine or your own infrastructure? You can.
             The runtime is open source and supports local-only mode (workspace at{" "}
-            <code>~/.cadet/workspace/</code>) as well as remote deployment to your own
+            <code>$VELLUM_WORKSPACE_DIR</code>) as well as remote deployment to your own
             GCP project or any Linux host.
           </p>
           <p className="mb-6 text-zinc-600">
@@ -311,7 +311,7 @@ export function GettingStartedContent() {
           </p>
           <div className="mb-6 overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-950 p-4">
             <pre className="font-[family-name:var(--font-dm-mono)] text-sm text-zinc-100">
-{`~/.cadet/
+{`~/.vellum/
 ├── workspace/
 │   ├── IDENTITY.md        # Name, personality, emoji
 │   ├── SOUL.md            # Principles and behavior rules
@@ -333,7 +333,7 @@ export function GettingStartedContent() {
           <p className="mb-6 text-zinc-600">
             Session logs are stored in{" "}
             <code>~/Library/Application Support/cadet-assistant/logs/</code>. The daemon binary
-            lives inside the <code>.app</code> bundle, not in <code>~/.cadet/</code>.
+            lives inside the <code>.app</code> bundle, not in <code>~/.vellum/</code>.
           </p>
         </section>
 
