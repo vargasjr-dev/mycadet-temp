@@ -8,7 +8,7 @@ import {
   test,
 } from "bun:test";
 
-mock.module("../../config/env.js", () => ({ isHttpAuthDisabled: () => true }));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 // Guardian requests/deliveries are created through the gateway client; serve
 // that surface from the in-memory sim so dispatch never opens IPC.

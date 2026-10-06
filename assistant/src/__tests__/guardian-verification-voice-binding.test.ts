@@ -25,9 +25,7 @@ mock.module("../calls/twilio-provider.js", () => ({
 
 mock.module("../security/secure-keys.js", () => ({}));
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 mock.module("../inbound/public-ingress-urls.js", () => ({
   getTwilioVoiceWebhookUrl: () => "https://test.example.com/voice",

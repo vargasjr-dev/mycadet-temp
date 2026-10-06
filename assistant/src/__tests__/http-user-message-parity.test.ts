@@ -16,7 +16,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // modules. These are shared across all describe blocks in this file.
 // ────────────────────────────────────────────────────────────────────────────
 
-mock.module("../config/env.js", () => ({ isHttpAuthDisabled: () => true }));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 const routeGuardianReplyMock = mock(async () => ({
   consumed: false,

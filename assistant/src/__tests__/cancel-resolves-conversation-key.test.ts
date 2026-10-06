@@ -8,7 +8,7 @@
  */
 import { describe, expect, mock, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({ isHttpAuthDisabled: () => true }));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 let cancelledId: string | undefined;
 mock.module("../daemon/handlers/conversations.js", () => ({

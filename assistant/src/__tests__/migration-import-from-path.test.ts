@@ -33,17 +33,7 @@ mock.module("../permissions/trust-store.js", () => ({
   clearCache: () => {},
 }));
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  hasUngatedHttpAuthDisabled: () => false,
-  getGatewayInternalBaseUrl: () => "http://127.0.0.1:7830",
-  getGatewayPort: () => 7830,
-  getRuntimeHttpPort: () => 7821,
-  getRuntimeHttpHost: () => "127.0.0.1",
-  getRuntimeGatewayOriginSecret: () => undefined,
-  getIngressPublicBaseUrl: () => undefined,
-  setIngressPublicBaseUrl: () => {},
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 import { defaultV1Options } from "../runtime/migrations/__tests__/v1-test-helpers.js";
 import { RESTORE_STAGING_DIRNAME } from "../runtime/migrations/staged-import-path.js";
@@ -151,10 +141,7 @@ afterAll(() => {
 
 describe("handleMigrationImport — JSON {path} body", () => {
   test("happy path: streams a staged .vbundle and imports it", async () => {
-    const relativePath = stageBundle(
-      testWorkspaceRoot,
-      makeSmallValidBundle(),
-    );
+    const relativePath = stageBundle(testWorkspaceRoot, makeSmallValidBundle());
 
     const req = new Request("http://localhost/v1/migrations/import", {
       method: "POST",
@@ -169,17 +156,14 @@ describe("handleMigrationImport — JSON {path} body", () => {
     expect(body.success).toBe(true);
     expect(body.summary.total_files).toBeGreaterThan(0);
     expect(body.files.length).toBeGreaterThan(0);
-    expect(existsSync(join(testWorkspaceRoot, "data", "db", "assistant.db"))).toBe(
-      true,
-    );
+    expect(
+      existsSync(join(testWorkspaceRoot, "data", "db", "assistant.db")),
+    ).toBe(true);
     expect(existsSync(join(testWorkspaceRoot, "config.json"))).toBe(true);
   });
 
   test("absolute path inside staging is accepted", async () => {
-    const relativePath = stageBundle(
-      testWorkspaceRoot,
-      makeSmallValidBundle(),
-    );
+    const relativePath = stageBundle(testWorkspaceRoot, makeSmallValidBundle());
     const absolutePath = join(testWorkspaceRoot, relativePath);
 
     const req = new Request("http://localhost/v1/migrations/import", {
@@ -267,12 +251,13 @@ describe("handleMigrationImport — JSON {path} body", () => {
   });
 
   test("symlink in staging returns 400", async () => {
-    const relativePath = stageBundle(
-      testWorkspaceRoot,
-      makeSmallValidBundle(),
-    );
+    const relativePath = stageBundle(testWorkspaceRoot, makeSmallValidBundle());
     const target = join(testWorkspaceRoot, relativePath);
-    const link = join(testWorkspaceRoot, RESTORE_STAGING_DIRNAME, "alias.vbundle");
+    const link = join(
+      testWorkspaceRoot,
+      RESTORE_STAGING_DIRNAME,
+      "alias.vbundle",
+    );
     symlinkSync(target, link);
 
     const req = new Request("http://localhost/v1/migrations/import", {
@@ -294,10 +279,7 @@ describe("handleMigrationImport — JSON {path} body", () => {
 
 describe("handleMigrationImportPreflight — JSON {path} body", () => {
   test("happy path: analyzes a staged .vbundle without writing files", async () => {
-    const relativePath = stageBundle(
-      testWorkspaceRoot,
-      makeSmallValidBundle(),
-    );
+    const relativePath = stageBundle(testWorkspaceRoot, makeSmallValidBundle());
 
     const req = new Request("http://localhost/v1/migrations/import-preflight", {
       method: "POST",

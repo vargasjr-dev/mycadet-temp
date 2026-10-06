@@ -18,12 +18,9 @@
  */
 
 import { existsSync } from "node:fs";
-import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  hasUngatedHttpAuthDisabled: () => false,
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 import type { Database } from "bun:sqlite";
 

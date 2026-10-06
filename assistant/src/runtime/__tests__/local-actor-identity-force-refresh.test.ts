@@ -16,10 +16,7 @@ let freshResult: GuardianDelivery[] | null = null;
 let cachedCalls = 0;
 let freshCalls = 0;
 
-mock.module("../../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  hasUngatedHttpAuthDisabled: () => false,
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 mock.module("../../contacts/guardian-delivery-reader.js", () => ({
   getGuardianDelivery: () => {

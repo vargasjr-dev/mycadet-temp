@@ -11,17 +11,7 @@ import type { Conversation } from "../daemon/conversation.js";
 import type { SecretPromptResult } from "../permissions/secret-prompt-types.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  hasUngatedHttpAuthDisabled: () => false,
-  getGatewayInternalBaseUrl: () => "http://127.0.0.1:7830",
-  getGatewayPort: () => 7830,
-  getRuntimeHttpPort: () => 7821,
-  getRuntimeHttpHost: () => "127.0.0.1",
-  getRuntimeGatewayOriginSecret: () => undefined,
-  getIngressPublicBaseUrl: () => undefined,
-  setIngressPublicBaseUrl: () => {},
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 // Mock the trust store so addRule doesn't touch disk or require full config.
 // Track calls to addRule so tests can verify canonicalization.

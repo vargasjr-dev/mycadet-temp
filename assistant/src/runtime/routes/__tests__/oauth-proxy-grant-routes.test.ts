@@ -52,15 +52,9 @@ mock.module("../../../oauth/connection-resolver.js", () => ({
   },
 }));
 
-// Spread the real module so the rest of the import graph keeps its env
-// readers; only the gateway base and the auth bypass are pinned.
-const env = await import("../../../config/env.js");
-mock.module("../../../config/env.js", () => ({
-  ...env,
-  getGatewayInternalBaseUrl: () => "http://127.0.0.1:7830",
-  isHttpAuthDisabled: () => false,
-}));
-
+// Pin the gateway base URL: these tests assert the proxy base URL is built
+// from it, so the value may not ride on ambient shell env.
+process.env.GATEWAY_INTERNAL_URL = "http://127.0.0.1:7830";
 const logCalls: unknown[][] = [];
 const realLogger = await import("../../../util/logger.js");
 mock.module("../../../util/logger.js", () => ({

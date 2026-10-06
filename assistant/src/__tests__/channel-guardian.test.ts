@@ -1,10 +1,7 @@
 import { createHash } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  getGatewayInternalBaseUrl: () => "http://127.0.0.1:7830",
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 // Telegram bot username mock — production code now reads from config via getTelegramBotUsername()
 let mockBotUsername: string | undefined = "test_bot";

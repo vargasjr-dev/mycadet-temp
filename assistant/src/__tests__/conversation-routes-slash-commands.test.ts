@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { setConfig } from "./helpers/set-config.js";
 
-mock.module("../config/env.js", () => ({ isHttpAuthDisabled: () => true }));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 const formatCompactResultMock = mock(
   (result: { maxInputTokens: number }) =>

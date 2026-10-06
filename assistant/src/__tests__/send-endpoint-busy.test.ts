@@ -8,7 +8,7 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({ isHttpAuthDisabled: () => true }));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 import type { AssistantEvent } from "../api/index.js";
 import type { Conversation } from "../daemon/conversation.js";

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({ isHttpAuthDisabled: () => true }));
+process.env.DISABLE_HTTP_AUTH = "true";
+
 import { eq } from "drizzle-orm";
 
 // ---------------------------------------------------------------------------

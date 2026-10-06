@@ -19,19 +19,12 @@ import {
   beforeEach,
   describe,
   expect,
-  mock,
   test,
 } from "bun:test";
 
 import { PLUGIN_ADMISSION_DENIED_NOTICE_PATH } from "@mycadet/gateway-client";
 
 // Route policies are only evaluated when HTTP auth is on.
-const actualEnv = await import("../../../config/env.js");
-mock.module("../../../config/env.js", () => ({
-  ...actualEnv,
-  isHttpAuthDisabled: () => false,
-}));
-
 import { getWorkspacePluginsDir } from "../../../util/platform.js";
 import { resolveScopeProfile } from "../../auth/scopes.js";
 import type { AuthContext, ScopeProfile } from "../../auth/types.js";

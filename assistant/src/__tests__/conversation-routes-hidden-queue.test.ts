@@ -9,7 +9,7 @@
  */
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({ isHttpAuthDisabled: () => true }));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 mock.module("../persistence/conversation-key-store.js", () => ({
   getOrCreateConversation: () => ({ conversationId: "conv-hidden-queue" }),

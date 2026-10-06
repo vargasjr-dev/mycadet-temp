@@ -11,19 +11,9 @@
  *   - Conversations seeded with a non-default source (e.g. `"auto-analysis"`)
  *     are returned with that value reflected verbatim.
  */
-import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  hasUngatedHttpAuthDisabled: () => false,
-  getGatewayInternalBaseUrl: () => "http://127.0.0.1:7830",
-  getGatewayPort: () => 7830,
-  getRuntimeHttpPort: () => 7821,
-  getRuntimeHttpHost: () => "127.0.0.1",
-  getRuntimeGatewayOriginSecret: () => undefined,
-  getIngressPublicBaseUrl: () => undefined,
-  setIngressPublicBaseUrl: () => {},
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 import { createConversation } from "../persistence/conversation-crud.js";
 import { getDb } from "../persistence/db-connection.js";

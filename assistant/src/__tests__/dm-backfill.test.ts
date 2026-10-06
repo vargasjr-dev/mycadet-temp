@@ -25,10 +25,7 @@ import {
 // Mocks (must precede module imports under test)
 // ---------------------------------------------------------------------------
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  getGatewayInternalBaseUrl: () => "http://127.0.0.1:7830",
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 mock.module("../tools/credentials/metadata-store.js", () => ({
   getCredentialMetadata: () => undefined,

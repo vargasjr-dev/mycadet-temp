@@ -10,10 +10,7 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 // ── Module mocks ─────────────────────────────────────────────────────
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  hasUngatedHttpAuthDisabled: () => false,
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 import type { PendingInteraction } from "../runtime/pending-interactions.js";
 

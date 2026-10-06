@@ -12,7 +12,7 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({ isHttpAuthDisabled: () => true }));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 const addMessageMock = mock(async (_conversationId: string, role: string) => ({
   id: role === "user" ? "persisted-user-id" : "persisted-assistant-id",

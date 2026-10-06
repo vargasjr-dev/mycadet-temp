@@ -22,12 +22,7 @@ import "./test-preload.js";
 // module wholesale drops every export the test did not think to list, and the
 // failure surfaces as an unrelated import crash in whichever module happens to
 // need one of them.
-const realEnv = await import("../config/env.js");
-mock.module("../config/env.js", () => ({
-  ...realEnv,
-  isHttpAuthDisabled: () => true,
-  getGatewayInternalBaseUrl: () => "http://127.0.0.1:7830",
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 /** Every delivery attempt, whichever transport it went out on. */
 const deliveries: Array<{ transport: string; to: string; text: string }> = [];

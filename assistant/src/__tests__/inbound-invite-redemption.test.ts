@@ -14,10 +14,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // Test isolation: in-memory SQLite via temp directory
 // ---------------------------------------------------------------------------
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  getGatewayInternalBaseUrl: () => "http://127.0.0.1:7830",
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 // Mock the credential metadata store so the Telegram transport adapter
 // resolves without touching the filesystem.

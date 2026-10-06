@@ -34,10 +34,8 @@ mock.module("../oauth/connection-resolver.js", () => ({
   resolveOAuthConnection: resolveOAuthConnectionMock,
 }));
 
-// Telegram adapter imports modules that need more stubs
-mock.module("../config/env.js", () => ({
-  getGatewayInternalBaseUrl: () => "http://localhost:3000",
-}));
+process.env.GATEWAY_INTERNAL_URL = "http://localhost:3000";
+
 mock.module("../persistence/conversation-key-store.js", () => ({
   getOrCreateConversation: async () => "conv-1",
 }));

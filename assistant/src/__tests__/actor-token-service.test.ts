@@ -13,15 +13,6 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => false,
-  getInternalGatewayTarget: () => "http://localhost:7822",
-  getGatewayBaseUrl: () => "http://localhost:7822",
-  getRuntimeGatewayOriginSecret: () => undefined,
-  isHttpAuthDisabledWithoutSafetyGate: () => false,
-  checkUnrecognizedEnvVars: () => {},
-}));
-
 // No gateway in tests: force the reader to miss so resolution exercises the
 // local-store bootstrap fallback deterministically.
 let fakeGuardianDelivery: { principalId?: string | null } | null = null;

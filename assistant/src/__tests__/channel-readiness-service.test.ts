@@ -18,10 +18,6 @@ mock.module("../calls/twilio-rest.js", () => ({
   hasTwilioCredentials: () => mockHasTwilioCredentials,
 }));
 
-mock.module("../config/env.js", () => ({
-  getIngressPublicBaseUrl: () => undefined,
-}));
-
 mock.module("../config/env-registry.js", () => ({
   getIsPlatform: () => mockGetIsPlatform,
 }));

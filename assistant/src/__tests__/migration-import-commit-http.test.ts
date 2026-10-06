@@ -52,16 +52,7 @@ mock.module("../permissions/trust-store.js", () => ({
   clearCache: () => {},
 }));
 
-const realEnv = await import("../config/env.js");
-mock.module("../config/env.js", () => ({
-  ...realEnv,
-  isHttpAuthDisabled: () => true,
-  hasUngatedHttpAuthDisabled: () => false,
-  getGatewayInternalBaseUrl: () => "http://127.0.0.1:7830",
-  getRuntimeHttpPort: () => 7821,
-  getRuntimeHttpHost: () => "127.0.0.1",
-  getRuntimeGatewayOriginSecret: () => undefined,
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 import { DefaultPathResolver } from "../runtime/migrations/vbundle-import-analyzer.js";
 import { commitImport } from "../runtime/migrations/vbundle-importer.js";

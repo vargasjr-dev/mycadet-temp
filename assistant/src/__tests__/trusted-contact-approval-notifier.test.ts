@@ -98,11 +98,8 @@ mock.module("../runtime/channel-approvals.js", () => ({
   buildApprovalUIMetadata: () => ({}),
 }));
 
-// ── Config env mock ──
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  getGatewayInternalBaseUrl: () => "http://localhost:3000",
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
+process.env.GATEWAY_INTERNAL_URL = "http://localhost:3000";
 
 // ── User reference mock ──
 // eslint-disable-next-line @typescript-eslint/no-require-imports

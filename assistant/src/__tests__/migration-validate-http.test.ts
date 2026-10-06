@@ -10,7 +10,7 @@
  */
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
 /** Convert a Uint8Array to an ArrayBuffer for BodyInit compatibility. */
 function toArrayBuffer(data: Uint8Array): ArrayBuffer {
@@ -21,16 +21,7 @@ function toArrayBuffer(data: Uint8Array): ArrayBuffer {
   ) as ArrayBuffer;
 }
 
-const realEnv = await import("../config/env.js");
-mock.module("../config/env.js", () => ({
-  ...realEnv,
-  isHttpAuthDisabled: () => true,
-  hasUngatedHttpAuthDisabled: () => false,
-  getGatewayInternalBaseUrl: () => "http://127.0.0.1:7830",
-  getRuntimeHttpPort: () => 7821,
-  getRuntimeHttpHost: () => "127.0.0.1",
-  getRuntimeGatewayOriginSecret: () => undefined,
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 import { validateVBundle } from "../runtime/migrations/vbundle-validator.js";
 import { BadRequestError } from "../runtime/routes/errors.js";

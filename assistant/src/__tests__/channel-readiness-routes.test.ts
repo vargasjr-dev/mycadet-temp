@@ -21,8 +21,6 @@ mock.module("../calls/twilio-rest.js", () => ({
   getPhoneNumberSid: async () => null,
 }));
 
-mock.module("../config/env.js", () => ({}));
-
 mock.module("../security/secure-keys.js", () => ({
   getSecureKeyAsync: async (key: string) => mockSecureKeys[key] ?? null,
 }));

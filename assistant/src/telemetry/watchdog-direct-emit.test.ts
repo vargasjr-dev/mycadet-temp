@@ -36,10 +36,10 @@ mock.module("../platform/client.js", () => ({
   },
 }));
 
-mock.module("../config/env.js", () => ({
-  getPlatformOrganizationId: () => "org-1",
-  getPlatformUserId: () => "user-1",
-}));
+import { setPlatformOrganizationId, setPlatformUserId } from "../config/env.js";
+setPlatformOrganizationId("org-1");
+setPlatformUserId("user-1");
+
 mock.module("../util/device-id.js", () => ({
   getDeviceId: () => "device-xyz",
 }));

@@ -8,7 +8,7 @@ import {
   test,
 } from "bun:test";
 
-mock.module("../config/env.js", () => ({ isHttpAuthDisabled: () => true }));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 // The inbound handler imports processMessage directly — stub it so it doesn't
 // attempt to spin up an LLM turn. The background dispatch is fire-and-forget;

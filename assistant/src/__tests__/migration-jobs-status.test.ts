@@ -11,19 +11,9 @@
  *   throws a `kFetchBodyError`-tagged error with `upstreamStatus`.
  */
 
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  hasUngatedHttpAuthDisabled: () => false,
-  getGatewayInternalBaseUrl: () => "http://127.0.0.1:7830",
-  getGatewayPort: () => 7830,
-  getRuntimeHttpPort: () => 7821,
-  getRuntimeHttpHost: () => "127.0.0.1",
-  getRuntimeGatewayOriginSecret: () => undefined,
-  getIngressPublicBaseUrl: () => undefined,
-  setIngressPublicBaseUrl: () => {},
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 import { migrationJobs } from "../runtime/migrations/job-registry.js";
 import { NotFoundError } from "../runtime/routes/errors.js";

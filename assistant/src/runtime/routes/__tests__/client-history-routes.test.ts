@@ -40,11 +40,6 @@ const listHistory = mock((params: Record<string, unknown>) => {
   return { events: [], sessions: [] };
 });
 
-mock.module("../../../config/env.js", () => ({
-  isHttpAuthDisabled: () => false,
-  hasUngatedHttpAuthDisabled: () => false,
-}));
-
 mock.module("../../../persistence/client-connection-events-store.js", () => ({
   listClientConnectionHistory: listHistory,
 }));

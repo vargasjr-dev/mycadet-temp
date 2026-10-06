@@ -6,7 +6,7 @@ import { setConfig } from "./helpers/set-config.js";
 // Mocks — must be declared before any imports that depend on them
 // ---------------------------------------------------------------------------
 
-mock.module("../config/env.js", () => ({ isHttpAuthDisabled: () => true }));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 mock.module("../persistence/conversation-key-store.js", () => ({
   getOrCreateConversation: () => ({ conversationId: "conv-test" }),

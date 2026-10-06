@@ -28,10 +28,7 @@ import {
 // into other test files (e.g. backfill.test.ts) that import the same module.
 // ---------------------------------------------------------------------------
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  getGatewayInternalBaseUrl: () => "http://127.0.0.1:7830",
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 mock.module("../tools/credentials/metadata-store.js", () => ({
   getCredentialMetadata: () => undefined,

@@ -18,7 +18,7 @@ import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({ isHttpAuthDisabled: () => true }));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 // Gateway IPC mock — session lifecycle goes through the gateway session
 // client; delegate verification_sessions_* methods to the local-service sim

@@ -12,11 +12,9 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({
-  getPlatformBaseUrl: () => "https://platform.example.com",
-}));
+process.env.VELLUM_PLATFORM_URL = "https://platform.example.com";
 
 import { fetchCatalog, readLocalCatalog } from "../skills/catalog-install.js";
 

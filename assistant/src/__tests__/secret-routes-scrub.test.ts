@@ -91,14 +91,6 @@ mock.module("../tools/credentials/metadata-store.js", () => ({
 mock.module("../oauth/manual-token-connection.js", () => ({
   syncManualTokenConnection: mock(async () => {}),
 }));
-mock.module("../config/env.js", () => ({
-  getPlatformAssistantId: () => undefined,
-  setPlatformAssistantId: () => {},
-  setPlatformBaseUrl: () => {},
-  setPlatformOrganizationId: () => {},
-  setPlatformUserId: () => {},
-}));
-
 import { BadRequestError } from "../runtime/routes/errors.js";
 import { ROUTES } from "../runtime/routes/secret-routes.js";
 import { credentialKey } from "../security/credential-key.js";

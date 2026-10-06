@@ -6,7 +6,7 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({ isHttpAuthDisabled: () => true }));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 // Enable the channel-trust-floors flag so the admission-policy stage runs.
 mock.module("../config/assistant-feature-flags.js", () => ({

@@ -5,10 +5,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  hasUngatedHttpAuthDisabled: () => false,
-}));
+process.env.DISABLE_HTTP_AUTH = "true";
 
 mock.module("../daemon/handlers/conversations.js", () => ({
   cancelGeneration: () => true,
