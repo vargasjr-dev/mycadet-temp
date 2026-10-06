@@ -361,6 +361,7 @@ describe("taxonomy", () => {
       "local",
       "docker",
       "apple-container",
+      "cloud",
       "vellum",
       "gcp",
       "aws",
