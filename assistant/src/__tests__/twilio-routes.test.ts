@@ -22,8 +22,13 @@ import {
   test,
 } from "bun:test";
 
+import {
+  reseedMemorySecureKeys,
+  useMemorySecureKeys,
+} from "./helpers/secure-keys.js";
+
 let mockIngressPublicBaseUrl = "https://ingress.example.com";
-let mockSecureKeyStore: Record<string, string | undefined> = {};
+const mockSecureKeyStore = useMemorySecureKeys();
 let mockAvailableNumbers = [{ phoneNumber: "+15556667777" }];
 let mockProvisionedNumber = { phoneNumber: "+15556667777" };
 let updatePhoneNumberWebhookCalls: Array<{
@@ -153,17 +158,6 @@ mock.module("../config/env.js", () => ({
   getIngressPublicBaseUrl: () => mockIngressPublicBaseUrl,
   setIngressPublicBaseUrl: (value: string | undefined) => {
     mockIngressPublicBaseUrl = value ?? "";
-  },
-}));
-
-mock.module("../security/secure-keys.js", () => ({
-  setSecureKeyAsync: async (key: string, value: string) => {
-    mockSecureKeyStore[key] = value;
-    return true;
-  },
-  deleteSecureKeyAsync: async (key: string) => {
-    delete mockSecureKeyStore[key];
-    return "deleted";
   },
 }));
 
@@ -422,10 +416,10 @@ describe("twilio webhook routes", () => {
       accountSid: "AC_existing",
       phoneNumber: "+14155550111",
     });
-    mockSecureKeyStore = {
+    reseedMemorySecureKeys(mockSecureKeyStore, {
       [credentialKey("twilio", "account_sid")]: "AC_existing",
       [credentialKey("twilio", "auth_token")]: "test-auth-token",
-    };
+    });
     mockAvailableNumbers = [{ phoneNumber: "+15556667777" }];
     mockProvisionedNumber = { phoneNumber: "+15556667777" };
     updatePhoneNumberWebhookCalls = [];
@@ -1369,7 +1363,7 @@ describe("twilio webhook routes", () => {
   describe("Twilio control-plane credential and number operations", () => {
     test("setting credentials stores them and returns success", async () => {
       setConfig("twilio", {});
-      mockSecureKeyStore = {};
+      reseedMemorySecureKeys(mockSecureKeyStore);
 
       const result = await handleSetTwilioCredentials({
         body: {

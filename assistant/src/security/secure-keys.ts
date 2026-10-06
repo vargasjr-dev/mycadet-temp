@@ -78,6 +78,22 @@ let _resolvedBackend: CredentialBackend | undefined;
 let _resolvePromise: Promise<CredentialBackend> | undefined;
 
 /**
+ * Test-only backend pin. When set, resolveBackendAsync() returns it directly,
+ * bypassing CES routing, the encrypted store, and their reconnection logic —
+ * the same way a test process has no CES daemon to reach. Prefer the
+ * `useMemorySecureKeys` test helper over calling this directly.
+ */
+let _testingBackend: CredentialBackend | undefined;
+
+export function setSecureKeyBackendForTesting(
+  backend: CredentialBackend | undefined,
+): void {
+  _testingBackend = backend;
+  _resolvedBackend = undefined;
+  _resolvePromise = undefined;
+}
+
+/**
  * In-flight CES RPC session promise for processes that did not call startCes().
  *
  * Workers and CLI subprocesses never call startCes(). When they hit
@@ -230,6 +246,9 @@ function getEncryptedStoreBackend(): CredentialBackend {
 async function resolveBackendAsync(
   options: { forceReconnect?: boolean } = {},
 ): Promise<CredentialBackend> {
+  if (_testingBackend) {
+    return _testingBackend;
+  }
   if (_resolvedBackend) {
     if (!_resolvedBackend.isAvailable()) {
       const cesHttpFallback = tryFailoverToCesHttpBackend(_resolvedBackend);

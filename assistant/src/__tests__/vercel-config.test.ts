@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { credentialKey } from "../security/credential-key.js";
+import {
+  reseedMemorySecureKeys,
+  useMemorySecureKeys,
+} from "./helpers/secure-keys.js";
 
-let secureKeyStore: Record<string, string> = {};
+const secureKeyStore = useMemorySecureKeys();
 
 // Track metadata upsert calls to verify policy
 let lastUpsertCall: {
@@ -11,22 +15,6 @@ let lastUpsertCall: {
   policy: Record<string, unknown> | undefined;
 } | null = null;
 let metadataDeleted: { service: string; field: string } | null = null;
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (account: string) =>
-    secureKeyStore[account] ?? undefined,
-  setSecureKeyAsync: async (account: string, value: string) => {
-    secureKeyStore[account] = value;
-    return true;
-  },
-  deleteSecureKeyAsync: async (account: string) => {
-    if (account in secureKeyStore) {
-      delete secureKeyStore[account];
-      return "deleted" as const;
-    }
-    return "not-found" as const;
-  },
-}));
 
 mock.module("../tools/credentials/metadata-store.js", () => ({
   deleteCredentialMetadata: (service: string, field: string) => {
@@ -51,7 +39,7 @@ import {
 
 describe("Vercel config handler", () => {
   beforeEach(() => {
-    secureKeyStore = {};
+    reseedMemorySecureKeys(secureKeyStore);
     lastUpsertCall = null;
     metadataDeleted = null;
   });

@@ -7,8 +7,12 @@ import {
   setNestedValue,
 } from "../config/loader.js";
 import { credentialKey } from "../security/credential-key.js";
+import {
+  reseedMemorySecureKeys,
+  useMemorySecureKeys,
+} from "./helpers/secure-keys.js";
 
-let secureKeyStore: Record<string, string> = {};
+const secureKeyStore = useMemorySecureKeys();
 let oauthConnectionStore: Record<
   string,
   { id: string; status: string; accountInfo?: string | null }
@@ -44,22 +48,6 @@ mock.module("../daemon/handlers/shared.js", () => ({
     info: () => {},
     error: () => {},
     debug: () => {},
-  },
-}));
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (account: string) =>
-    secureKeyStore[account] ?? undefined,
-  setSecureKeyAsync: async (account: string, value: string) => {
-    secureKeyStore[account] = value;
-    return true;
-  },
-  deleteSecureKeyAsync: async (account: string) => {
-    if (account in secureKeyStore) {
-      delete secureKeyStore[account];
-      return "deleted" as const;
-    }
-    return "not-found" as const;
   },
 }));
 
@@ -129,7 +117,7 @@ function setIngressPublicBaseUrl(url: string): void {
 
 describe("Telegram config handler", () => {
   beforeEach(() => {
-    secureKeyStore = {};
+    reseedMemorySecureKeys(secureKeyStore);
     oauthConnectionStore = {};
     syncCalls.length = 0;
     platformContextEnabled = false;
