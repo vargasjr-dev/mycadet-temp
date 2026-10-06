@@ -222,7 +222,7 @@ describe("sandbox containment — resource guards", () => {
     );
     // slow(n) = n + 1, applied three times starting from 0 -> 3.
     expect(result).toBe(3);
-  }, 20_000);
+  }, 60_000);
 
   test("a tight CPU loop with no host calls is still interrupted (spin guard)", async () => {
     // Companion to the latency test above: a genuine spin that never yields to a
@@ -242,7 +242,7 @@ describe("sandbox containment — resource guards", () => {
     expect(caught).toBeInstanceOf(WorkflowResourceError);
     // 200ms deadline; allow generous slack but assert it is bounded.
     expect(elapsed).toBeLessThan(10_000);
-  }, 20_000);
+  }, 60_000);
 
   test("an infinite loop is interrupted within a bounded time", async () => {
     const start = Date.now();
@@ -256,7 +256,7 @@ describe("sandbox containment — resource guards", () => {
     expect(caught).toBeInstanceOf(WorkflowResourceError);
     // INTERRUPT_DEADLINE_MS is 5s; allow generous slack but assert it is bounded.
     expect(elapsed).toBeLessThan(15_000);
-  }, 20_000);
+  }, 60_000);
 
   test("AbortSignal interrupts a running script", async () => {
     const controller = new AbortController();
@@ -273,7 +273,7 @@ describe("sandbox containment — resource guards", () => {
       caught = e;
     }
     expect(caught).toBeInstanceOf(WorkflowResourceError);
-  }, 20_000);
+  }, 60_000);
 
   test("a large allocation hits the memory limit and throws rather than growing RSS", async () => {
     const sb = createWorkflowSandbox({
@@ -299,7 +299,7 @@ describe("sandbox containment — resource guards", () => {
       caught instanceof WorkflowScriptError ||
         caught instanceof WorkflowResourceError,
     ).toBe(true);
-  }, 20_000);
+  }, 60_000);
 });
 
 describe("sandbox containment — host failures are contained", () => {

@@ -43,6 +43,16 @@ const COVERAGE = Bun.env.COVERAGE === "true";
 const PER_TEST_TIMEOUT = Number.parseInt(Bun.env.PER_TEST_TIMEOUT ?? "120", 10);
 // SIGKILL grace after SIGTERM, mirroring `timeout -k 10`.
 const KILL_GRACE_MS = 10_000;
+// Per-test timeout bun applies to each individual test() call (default: 5s).
+// Sized for unstarved machines; on the 2-core standard runners each of the
+// TEST_WORKERS concurrent processes gets a fraction of a core, so wall-clock
+// per test runs 4-8x local and the 5s default tripped across the suite (26
+// files failed on timeouts in run 37497324626). 30s keeps bun's per-test kill
+// well under the per-file PER_TEST_TIMEOUT kill below. Tune via env.
+const BUN_TEST_TIMEOUT_MS = Number.parseInt(
+  Bun.env.BUN_TEST_TIMEOUT ?? "30000",
+  10,
+);
 // Longest-first scheduling: a durations file from a previous run sorts slow
 // tests to the front, improving parallel utilization.
 const TEST_DURATIONS_FILE = Bun.env.TEST_DURATIONS_FILE ?? "";
@@ -168,6 +178,7 @@ async function runBunTest(
   if (EXCLUDE_EXPERIMENTAL) {
     args.push("--test-name-pattern", "^(?!.*\\[experimental\\])");
   }
+  args.push(`--timeout=${BUN_TEST_TIMEOUT_MS}`);
   args.push(file);
 
   const proc = Bun.spawn(["bun", ...args], { stdout: "pipe", stderr: "pipe" });
