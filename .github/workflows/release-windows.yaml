@@ -30,7 +30,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: ${{ inputs.environment }}
-    outputs:
     steps:
       - name: Validate inputs and signing gate
         id: gates
