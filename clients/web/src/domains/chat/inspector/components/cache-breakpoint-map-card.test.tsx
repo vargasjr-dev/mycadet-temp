@@ -14,7 +14,7 @@ import { CacheBreakpointMapCard } from "./cache-breakpoint-map-card";
 import type {
   LLMCallSummary,
   LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 const ASSISTANT_ID = "assistant-1";
 

@@ -1,7 +1,7 @@
 /**
  * Tests for `ConnectRecoveryDialog`.
  *
- * The component composes `@vellumai/design-library`'s `Modal` and
+ * The component composes `@mycadet/design-library`'s `Modal` and
  * `ConfirmDialog` (Radix Dialog under the hood), mounted via
  * `@testing-library/react` on happy-dom — same approach as
  * `name-input-dialog.test.tsx`. The real library components are

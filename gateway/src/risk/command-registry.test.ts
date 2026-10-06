@@ -1,4 +1,4 @@
-import { CHANNEL_BOT_PROVIDER } from "@vellumai/service-contracts/channels";
+import { CHANNEL_BOT_PROVIDER } from "@mycadet/service-contracts/channels";
 import { describe, expect, test } from "bun:test";
 
 import { DEFAULT_COMMAND_REGISTRY } from "./command-registry/index.js";

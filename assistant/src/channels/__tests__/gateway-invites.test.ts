@@ -9,8 +9,8 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { INVITES_IPC_METHODS } from "@vellumai/gateway-client";
-import { IpcCallError } from "@vellumai/gateway-client/ipc-client";
+import { INVITES_IPC_METHODS } from "@mycadet/gateway-client";
+import { IpcCallError } from "@mycadet/gateway-client/ipc-client";
 
 type IpcCall = { method: string; params?: Record<string, unknown> };
 

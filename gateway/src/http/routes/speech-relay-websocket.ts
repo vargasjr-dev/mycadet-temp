@@ -22,7 +22,7 @@
 
 import type { OutgoingHttpHeaders } from "node:http";
 
-import { velayHostForPlatformHost } from "@vellumai/service-contracts/ingress";
+import { velayHostForPlatformHost } from "@mycadet/service-contracts/ingress";
 
 import { resolveScopeProfile } from "../../auth/scopes.js";
 import { validateEdgeToken } from "../../auth/token-exchange.js";
@@ -158,7 +158,7 @@ function jsonError(status: number, code: string, detail: string): Response {
 
 /**
  * Map a Vellum platform host onto its environment's velay origin. The
- * host-naming convention lives in `@vellumai/service-contracts/ingress`,
+ * host-naming convention lives in `@mycadet/service-contracts/ingress`,
  * shared with the web live-voice client; this wrapper adds the scheme.
  */
 export function velayOriginForPlatformHost(host: string): string | null {

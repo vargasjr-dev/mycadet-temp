@@ -1,4 +1,4 @@
-import type { ContactRead } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import type { ContactRead } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import { cliIpcCall } from "../../../../ipc/cli-client.js";
 import { resolveGuardianName } from "../../../../prompts/user-reference.js";

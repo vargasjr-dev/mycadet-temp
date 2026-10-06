@@ -6,13 +6,13 @@ import {
   configureLocalMode,
   getPairedGuardianAccessToken,
   installLocalMode,
-} from "@vellumai/electron-desktop/local-mode";
+} from "@mycadet/electron-desktop/local-mode";
 import {
   resolveConfigDir,
   resolveEnvironmentName,
   resolveLockfilePaths,
   type CliInvocation,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 import {
   ensureCliInstalled,

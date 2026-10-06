@@ -1,7 +1,7 @@
 import {
   createDesktopPresenceMonitor,
   IDLE_THRESHOLD_MS,
-} from "@vellumai/electron-desktop/desktop-presence-monitor";
+} from "@mycadet/electron-desktop/desktop-presence-monitor";
 
 import log from "./logger";
 

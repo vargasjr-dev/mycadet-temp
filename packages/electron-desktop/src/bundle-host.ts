@@ -4,7 +4,7 @@ import {
   resolveConfigDir,
   resolveLockfilePaths,
   type CliInvocation,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 import type {
   ActiveBundleGateway,

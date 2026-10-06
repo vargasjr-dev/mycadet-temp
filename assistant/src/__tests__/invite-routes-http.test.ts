@@ -37,7 +37,7 @@ mock.module("../calls/call-domain.js", () => ({
 // relay (the gateway redemption engine owns validation, the atomic claim,
 // and the ACL write), so the mock captures the relayed params and serves a
 // scripted gateway response or a scripted relay failure.
-import { IpcCallError } from "@vellumai/gateway-client/ipc-client";
+import { IpcCallError } from "@mycadet/gateway-client/ipc-client";
 
 const redeemRelay: {
   calls: Array<Record<string, unknown> | undefined>;

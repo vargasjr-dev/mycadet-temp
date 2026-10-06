@@ -8,11 +8,11 @@
   ],
   "project": ["src/**/*.ts", "src/**/*.tsx"],
   "ignoreDependencies": [
-    "@vellumai/avatar-manifest",
-    "@vellumai/environments",
-    "@vellumai/ipc-server-utils",
-    "@vellumai/local-mode",
-    "@vellumai/service-contracts",
-    "@vellumai/web"
+    "@mycadet/avatar-manifest",
+    "@mycadet/environments",
+    "@mycadet/ipc-server-utils",
+    "@mycadet/local-mode",
+    "@mycadet/service-contracts",
+    "@mycadet/web"
   ]
 }

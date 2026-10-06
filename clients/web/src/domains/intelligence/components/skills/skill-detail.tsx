@@ -39,7 +39,7 @@ import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { openWorkspaceFile } from "@/utils/open-workspace-file";
 import { invalidateSkillsList, isRemovableSkill } from "@/utils/skills";
-import { Button, Card, Tabs } from "@vellumai/design-library";
+import { Button, Card, Tabs } from "@mycadet/design-library";
 
 export type SkillDetailTab = "files" | "history";
 

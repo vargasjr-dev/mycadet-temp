@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { ApprovalUIMetadata } from "@vellumai/gateway-client";
+import type { ApprovalUIMetadata } from "@mycadet/gateway-client";
 
 import type { RuntimeAttachmentMetadata } from "../../../runtime/http-types.js";
 import type { CallbackContext } from "../channel-transport.js";

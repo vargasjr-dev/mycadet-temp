@@ -14,7 +14,7 @@ import {
   test,
 } from "bun:test";
 
-import { hashInviteToken } from "@vellumai/gateway-client";
+import { hashInviteToken } from "@mycadet/gateway-client";
 
 type FetchFn = (
   input: string | URL | Request,

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ConversationMessage } from "@vellumai/assistant-api";
+import type { ConversationMessage } from "@mycadet/assistant-api";
 
 import { latestAssistantText } from "./latest-assistant-text";
 

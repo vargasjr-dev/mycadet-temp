@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { CommandPaletteWindowDependencies } from "@vellumai/electron-desktop/command-palette-window";
-import type { FloatingWindowDependencies } from "@vellumai/electron-desktop/floating-window";
+import type { CommandPaletteWindowDependencies } from "@mycadet/electron-desktop/command-palette-window";
+import type { FloatingWindowDependencies } from "@mycadet/electron-desktop/floating-window";
 
 import { RENDERER_BASE_PROD, getDevRendererBase } from "./app-config";
 
@@ -175,11 +175,7 @@ const createWindowMock = mock((opts: CreateWindowOptions): StubWindow => {
 });
 
 const handleMock = mock(
-  (
-    channel: string,
-    _schema: unknown,
-    fn: (...args: unknown[]) => unknown,
-  ) => {
+  (channel: string, _schema: unknown, fn: (...args: unknown[]) => unknown) => {
     ipcHandlers.set(channel, fn);
   },
 );
@@ -232,7 +228,7 @@ mock.module("./main-window", () => ({
   dispatchToMain: dispatchToMainMock,
 }));
 
-mock.module("@vellumai/electron-desktop/settings", () => ({
+mock.module("@mycadet/electron-desktop/settings", () => ({
   readHotkeyOverride: () => null,
   readSetting: () => null,
   writeSetting: () => {},
@@ -251,7 +247,7 @@ mock.module("./devtools", () => ({
   areChromeDevToolsEnabled: () => false,
 }));
 
-mock.module("@vellumai/electron-desktop/window-state", () => ({
+mock.module("@mycadet/electron-desktop/window-state", () => ({
   readOnboardingActive: () => false,
   readCompanionHidden: () => false,
   onCompanionHiddenChange: () => () => {},
@@ -290,20 +286,21 @@ const {
   installCommandPaletteWindow,
   openCommandPaletteWindow,
   selectCommandPaletteCommand,
-} = await import("@vellumai/electron-desktop/command-palette-window");
-const { configureFloatingWindows, createWindowRouteResolver } = await import(
-  "@vellumai/electron-desktop/floating-window"
-);
+} = await import("@mycadet/electron-desktop/command-palette-window");
+const { configureFloatingWindows, createWindowRouteResolver } =
+  await import("@mycadet/electron-desktop/floating-window");
 
 configureFloatingWindows({
-  createWindow: createWindowMock as unknown as FloatingWindowDependencies["createWindow"],
+  createWindow:
+    createWindowMock as unknown as FloatingWindowDependencies["createWindow"],
   platform: "darwin",
   resolveRoute: createWindowRouteResolver(() =>
     appState.isPackaged ? RENDERER_BASE_PROD : getDevRendererBase(),
   ),
 });
 configureCommandPaletteWindow({
-  currentMainWindow: (() => currentMainWindow) as unknown as CommandPaletteWindowDependencies["currentMainWindow"],
+  currentMainWindow: (() =>
+    currentMainWindow) as unknown as CommandPaletteWindowDependencies["currentMainWindow"],
   dispatchToMain: dispatchToMainMock,
   ensureMainWindowVisible: ensureVisibleMock,
   handle: handleMock as unknown as CommandPaletteWindowDependencies["handle"],
@@ -461,7 +458,8 @@ describe("selectCommandPaletteCommand", () => {
 describe("commandPaletteDispatchCommandSchema", () => {
   test("accepts palette-dispatchable commands, with and without payloads", () => {
     expect(
-      commandPaletteDispatchCommandSchema.safeParse({ kind: "sidebarToggle" }).success,
+      commandPaletteDispatchCommandSchema.safeParse({ kind: "sidebarToggle" })
+        .success,
     ).toBe(true);
     expect(
       commandPaletteDispatchCommandSchema.safeParse({

@@ -1,7 +1,7 @@
 import {
   Select,
   type SelectOption,
-} from "@vellumai/design-library/components/select";
+} from "@mycadet/design-library/components/select";
 
 import {
   CAPABILITY_TIER_META,

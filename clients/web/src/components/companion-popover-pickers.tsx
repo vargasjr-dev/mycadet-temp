@@ -14,9 +14,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import type {
   CompanionPopover,
   CompanionPopoverAnswer,
-} from "@vellumai/ipc-contract";
-import { Button } from "@vellumai/design-library/components/button";
-import { ScrollShadow } from "@vellumai/design-library/components/scroll-shadow";
+} from "@mycadet/ipc-contract";
+import { Button } from "@mycadet/design-library/components/button";
+import { ScrollShadow } from "@mycadet/design-library/components/scroll-shadow";
 
 import { useTranslation } from "@/i18n";
 import { cn } from "@/utils/misc";

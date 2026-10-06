@@ -7,7 +7,7 @@ import {
   createDictationOverlayController,
   positionDictationOverlayInWorkArea,
   type DictationOverlayState,
-} from "@vellumai/electron-desktop/dictation-overlay-window";
+} from "@mycadet/electron-desktop/dictation-overlay-window";
 
 type Harness = {
   controller: ReturnType<typeof createDictationOverlayController>;
@@ -84,7 +84,10 @@ describe("createDictationOverlayController", () => {
     const h = createHarness();
 
     h.controller.handleMessage({ kind: "recording", transcription: "" });
-    h.controller.handleMessage({ kind: "recording", transcription: "still showing" });
+    h.controller.handleMessage({
+      kind: "recording",
+      transcription: "still showing",
+    });
 
     expect(h.showOverlay).toHaveBeenCalledTimes(1);
     expect(h.forwarded).toHaveLength(2);
@@ -127,7 +130,10 @@ describe("createDictationOverlayController", () => {
 
     h.controller.handleMessage({ kind: "recording", transcription: "" });
     h.controller.handleMessage({ kind: "error", message: "Paste blocked" });
-    expect(h.forwarded).toContainEqual({ kind: "error", message: "Paste blocked" });
+    expect(h.forwarded).toContainEqual({
+      kind: "error",
+      message: "Paste blocked",
+    });
     expect(h.pendingTimerDelays()).toEqual([ERROR_HIDE_MS]);
 
     h.controller.handleMessage({ kind: "dismiss" });
@@ -149,7 +155,10 @@ describe("createDictationOverlayController", () => {
     expect(h.hideOverlay).not.toHaveBeenCalled();
     // Window already visible — no second show needed.
     expect(h.showOverlay).toHaveBeenCalledTimes(1);
-    expect(h.forwarded).toContainEqual({ kind: "recording", transcription: "again" });
+    expect(h.forwarded).toContainEqual({
+      kind: "recording",
+      transcription: "again",
+    });
   });
 
   test("a session can start again after a terminal hide completes", () => {

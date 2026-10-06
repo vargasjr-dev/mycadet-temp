@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { WINDOW_ATTENTION } from "@vellumai/ipc-contract";
+import { WINDOW_ATTENTION } from "@mycadet/ipc-contract";
 
 // `app.on` subscriptions are captured by event name so the test can fire
 // them at will, and `BrowserWindow.getAllWindows` returns a controllable

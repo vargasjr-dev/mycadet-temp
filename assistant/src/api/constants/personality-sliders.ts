@@ -4,7 +4,7 @@
  *
  * The web writes `data/personality-sliders.json`. The assistant reads the
  * same path and maps each slider onto one left/right pole. Both import
- * these constants from `@vellumai/assistant-api` so the ids cannot drift.
+ * these constants from `@mycadet/assistant-api` so the ids cannot drift.
  */
 
 /** Workspace-relative sidecar holding the five 0-100 slider values. */

@@ -16,8 +16,8 @@
  * Done is the only exit, and it waits out an in-flight write.
  */
 
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Button } from "@vellumai/design-library/components/button";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Button } from "@mycadet/design-library/components/button";
 
 import { useManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
 import { VoiceList } from "@/components/speech/voice-list";

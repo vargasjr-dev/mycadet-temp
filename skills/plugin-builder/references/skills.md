@@ -115,7 +115,7 @@ A skill can carry real, schema-validated tools that exist only while the skill i
 }
 ```
 
-The executor is a module inside the skill directory exporting `run(input, context)` that returns `{ content: string, isError: boolean }`. It executes in the skill sandbox, a subprocess with a sanitized environment (`VELLUM_WORKSPACE_DIR` is available for locating plugin data). A plugin-resident skill tool also receives a short-lived invocation grant so `resolveCredential()` can read credentials under the owning plugin's service. Keep the executor self-contained: node stdlib and `@vellumai/plugin-api` only, no imports from outside the skill directory, no shared module state with hooks.
+The executor is a module inside the skill directory exporting `run(input, context)` that returns `{ content: string, isError: boolean }`. It executes in the skill sandbox, a subprocess with a sanitized environment (`VELLUM_WORKSPACE_DIR` is available for locating plugin data). A plugin-resident skill tool also receives a short-lived invocation grant so `resolveCredential()` can read credentials under the owning plugin's service. Keep the executor self-contained: node stdlib and `@mycadet/plugin-api` only, no imports from outside the skill directory, no shared module state with hooks.
 
 Rules the host enforces:
 

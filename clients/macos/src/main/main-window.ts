@@ -1,18 +1,18 @@
 import { BrowserWindow, app, autoUpdater, shell } from "electron";
 import { z } from "zod";
-import { createWindowReadiness } from "@vellumai/electron-desktop/window-readiness";
+import { createWindowReadiness } from "@mycadet/electron-desktop/window-readiness";
 import {
   readOnboardingActive,
   restoreBounds,
   track as trackWindowState,
   writeOnboardingActive,
-} from "@vellumai/electron-desktop/window-state";
+} from "@mycadet/electron-desktop/window-state";
 
 import { getRendererRootUrl } from "./app-config";
 import { resolveAllowedOrigin } from "./app-origin";
 import { decideNavigation } from "./auth-nav";
-import { type VellumCommand } from "@vellumai/electron-desktop/commands";
-import { getName, onNameChange } from "@vellumai/electron-desktop/identity";
+import { type VellumCommand } from "@mycadet/electron-desktop/commands";
+import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
 import { handle } from "./ipc";
 import { createWindow } from "./windows";
 
@@ -173,10 +173,11 @@ const createMainWindow = (): BrowserWindow => {
   // `contentMinSize`). The persisted onboarding flag only drives the
   // traffic-light position (compact surfaces have no inline title bar).
   const onboardingActive = readOnboardingActive();
-  const { maximized: _maximized, fullscreen, ...restoredBounds } = restoreBounds(
-    "main",
-    MAIN_DEFAULT_STATE,
-  );
+  const {
+    maximized: _maximized,
+    fullscreen,
+    ...restoredBounds
+  } = restoreBounds("main", MAIN_DEFAULT_STATE);
   const sizing = {
     ...restoredBounds,
     minWidth: MAIN_MIN_SIZE.width,

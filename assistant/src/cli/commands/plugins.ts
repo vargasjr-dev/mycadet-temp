@@ -180,7 +180,7 @@ export function registerPluginsCommand(program: Command): void {
     transport: "local",
     description: pluginsHelp.description,
     build: (plugins) => {
-      // Materialize the `@vellumai/plugin-api` shim once for the whole command
+      // Materialize the `@mycadet/plugin-api` shim once for the whole command
       // group, before any subcommand action runs. A subcommand that resolves a
       // plugin hook in this fresh CLI process — `uninstall` running a plugin's
       // `shutdown` — needs the package importable; the daemon materializes the

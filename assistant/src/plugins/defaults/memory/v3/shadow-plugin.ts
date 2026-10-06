@@ -37,7 +37,7 @@ import {
   safeStringSlice,
   stringifyMessageContent,
   VOICE_ESCALATION_CONTINUATION_MESSAGE_KIND,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import { getConfig } from "../../../../config/loader.js";
 import { isMemoryEnabled } from "../../../../config/memory-v3-gate.js";

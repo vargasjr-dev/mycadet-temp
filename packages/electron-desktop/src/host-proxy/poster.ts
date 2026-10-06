@@ -15,7 +15,7 @@
  * via the optional refreshAuth callback and retries once.
  */
 
-import type { DesktopPresenceState } from "@vellumai/service-contracts/desktop-presence";
+import type { DesktopPresenceState } from "@mycadet/service-contracts/desktop-presence";
 
 export type PresenceState = DesktopPresenceState;
 
@@ -173,9 +173,7 @@ export class HostProxyPoster {
     return this.postJson("/host-transfer-result", result);
   }
 
-  async postBrowserResult(
-    result: HostBrowserResultPayload,
-  ): Promise<boolean> {
+  async postBrowserResult(result: HostBrowserResultPayload): Promise<boolean> {
     return this.postJson("/host-browser-result", result);
   }
 
@@ -246,7 +244,11 @@ export class HostProxyPoster {
       headers["X-Transfer-SHA256"] = sha256;
       return this.attemptWithTimeout(
         url,
-        { method: "PUT", headers, body: data as unknown as RequestInit["body"] },
+        {
+          method: "PUT",
+          headers,
+          body: data as unknown as RequestInit["body"],
+        },
         timeout,
         async (res) => res.ok,
       );
@@ -265,10 +267,7 @@ export class HostProxyPoster {
     };
   }
 
-  private async postJson(
-    path: string,
-    payload: object,
-  ): Promise<boolean> {
+  private async postJson(path: string, payload: object): Promise<boolean> {
     const ok = await this.sendJson(path, payload, async (res) => res.ok);
     return ok ?? false;
   }

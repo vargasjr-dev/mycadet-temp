@@ -13,7 +13,7 @@
  */
 
 import { mkdirSync, watch, type FSWatcher } from "node:fs";
-import { createCesHttpCredentialClient } from "@vellumai/ces-client/http-credentials";
+import { createCesHttpCredentialClient } from "@mycadet/ces-client/http-credentials";
 import { getLogger } from "./logger.js";
 import {
   ALL_CREDENTIAL_SPECS,

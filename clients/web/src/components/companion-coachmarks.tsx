@@ -32,7 +32,7 @@ import type {
   CompanionCoachmark,
   CompanionCoachmarkPoint,
   CompanionCoachmarkRegion,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /**
  * Which side of its mark a caption hangs from, across the surface.

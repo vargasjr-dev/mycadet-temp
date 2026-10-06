@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { ResizablePanel } from "@vellumai/design-library";
+import { ResizablePanel } from "@mycadet/design-library";
 
 /**
  * Desktop master–detail drawer shared by the Activity and Schedules pages:

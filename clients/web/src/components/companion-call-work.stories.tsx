@@ -6,7 +6,7 @@ import type {
   CompanionDock,
   VoiceActivityState,
   VoiceActivityWork,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { CompanionSurface } from "@/components/companion-surface";
 

@@ -13,7 +13,7 @@
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect } from "react";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { StagedQuotesStrip } from "./staged-quotes-strip";
 import { ChatColumn } from "@/domains/chat/components/chat-column";

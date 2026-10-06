@@ -6,9 +6,9 @@ import {
   AVATAR_IMAGE_FILENAME,
   AVATAR_MANIFEST_FILENAME,
   resolveAvatarDir,
-} from "@vellumai/avatar-manifest";
-import { SEEDS } from "@vellumai/environments";
-import { assertTestPathIsEphemeral as assertEphemeralInTests } from "@vellumai/environments/test-path-guard";
+} from "@mycadet/avatar-manifest";
+import { SEEDS } from "@mycadet/environments";
+import { assertTestPathIsEphemeral as assertEphemeralInTests } from "@mycadet/environments/test-path-guard";
 
 import { getWorkspaceDirOverride } from "../config/env-registry.js";
 
@@ -236,7 +236,7 @@ export function getAvatarManifestPath(): string {
 }
 
 // The set of known environment names, derived from the shared
-// `@vellumai/environments` seed table so this site can never drift from the
+// `@mycadet/environments` seed table so this site can never drift from the
 // CLI. The Swift client mirrors the same list (it can't import TS); that
 // cross-language pair is guarded by `cli/src/__tests__/env-drift.test.ts`.
 const KNOWN_ENVIRONMENTS: ReadonlySet<string> = new Set(Object.keys(SEEDS));
@@ -398,7 +398,7 @@ export function getProcPidPath(name: string): string {
 // A test process must never resolve the workspace (or the vellum root) to a
 // real, non-temp directory: production code exercised by a test would then
 // read and destructively write live state. The containment assertion is
-// shared with the gateway via @vellumai/environments/test-path-guard;
+// shared with the gateway via @mycadet/environments/test-path-guard;
 // src/__tests__/assert-not-live-db.ts keeps its own containment check
 // because test machinery must not import production dependencies.
 

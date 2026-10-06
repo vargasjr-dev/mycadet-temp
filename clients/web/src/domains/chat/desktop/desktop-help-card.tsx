@@ -1,4 +1,4 @@
-import { Button, Card, Typography } from "@vellumai/design-library";
+import { Button, Card, Typography } from "@mycadet/design-library";
 import { useCallback, useState } from "react";
 
 import type { QuestionResponseEntry } from "@/domains/chat/api/event-types";

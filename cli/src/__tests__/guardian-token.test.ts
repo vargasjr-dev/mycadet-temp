@@ -11,7 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { guardianTokenPath, resolveConfigDir } from "@vellumai/local-mode";
+import { guardianTokenPath, resolveConfigDir } from "@mycadet/local-mode";
 
 import {
   getOrCreatePersistedDeviceId,
@@ -576,7 +576,7 @@ describe("guardianTokenDueForRenewal", () => {
 // Drift guard between the guardian-token WRITE path (CLI: getGuardianTokenPath
 // → getConfigDir(getCurrentEnvironment())) and the READ path used by every
 // host-seam reader (getGuardianAccessToken → resolveConfigDir(env) from
-// @vellumai/local-mode). A divergence here writes a freshly leased token where
+// @mycadet/local-mode). A divergence here writes a freshly leased token where
 // the connect can't read it, bricking local-assistant connect. saveGuardianToken
 // already resolves through the shared resolver; this asserts the two resolvers
 // stay in lockstep so a future change to either can't silently relocate tokens.
@@ -601,7 +601,7 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     rmSync(tempHome, { recursive: true, force: true });
   });
 
-  // The CLI's own resolver and the shared @vellumai/local-mode resolver must
+  // The CLI's own resolver and the shared @mycadet/local-mode resolver must
   // agree on the config dir for every environment source.
   const expectResolversAgree = () => {
     expect(getConfigDir(getCurrentEnvironment())).toBe(

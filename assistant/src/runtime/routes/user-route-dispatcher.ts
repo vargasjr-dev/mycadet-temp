@@ -15,7 +15,7 @@
  *
  * Each handler file exports named functions for HTTP methods (GET, POST, PUT,
  * etc.) using the standard Web API Request/Response signature. New handlers
- * reach daemon capabilities by importing `@vellumai/plugin-api` (e.g.
+ * reach daemon capabilities by importing `@mycadet/plugin-api` (e.g.
  * `publishEvent`, `runConversationTurn`), which broker process-safe access — so
  * a handler behaves identically in-process and in the route-host subprocess.
  *
@@ -83,7 +83,7 @@ type HttpMethod = (typeof HTTP_METHODS)[number];
 /**
  * The function signature that user-defined route handlers must follow. New
  * handlers take just the `Request` and reach daemon state through
- * `@vellumai/plugin-api`. A deprecated `context` second argument is still passed
+ * `@mycadet/plugin-api`. A deprecated `context` second argument is still passed
  * on the in-process path for backward compatibility (see
  * `deprecated-route-context.ts`); handlers that omit the parameter ignore it.
  */

@@ -11,7 +11,7 @@
  * principals.
  */
 
-import type { GuardianDelivery } from "@vellumai/gateway-client";
+import type { GuardianDelivery } from "@mycadet/gateway-client";
 
 import type { ChannelId } from "../channels/types.js";
 import { guardianForChannel } from "../contacts/guardian-delivery-reader.js";

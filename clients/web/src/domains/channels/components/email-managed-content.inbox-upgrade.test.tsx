@@ -22,7 +22,7 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
 
 // The design library's index re-exports every name from this module, so the
 // stand-in has to carry them all or the import graph fails to link.
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {}, info: () => {} },
   Toaster: () => null,
   ToastContent: () => null,

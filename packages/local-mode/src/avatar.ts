@@ -4,7 +4,7 @@ import path from "node:path";
 import {
   readWorkspaceAvatar,
   type CharacterTraits,
-} from "@vellumai/avatar-manifest";
+} from "@mycadet/avatar-manifest";
 
 import { resolveLockfileInstanceDir } from "./status";
 
@@ -14,7 +14,7 @@ import { resolveLockfileInstanceDir } from "./status";
  * workspace, no avatar); an unreadable lockfile, or a file the manifest
  * points at but the host cannot serve (unreadable, oversized), is `ok: false`
  * so callers keep their last-seen avatar. Structurally identical to
- * `LocalReadAssistantAvatarResult` in `@vellumai/ipc-contract`, which this
+ * `LocalReadAssistantAvatarResult` in `@mycadet/ipc-contract`, which this
  * package cannot depend on; hosts return it straight over IPC/HTTP.
  */
 type LockfileAssistantAvatar =

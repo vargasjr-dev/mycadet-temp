@@ -41,7 +41,7 @@ import {
   writeMessage,
   writeStreamChunk,
   writeStreamEnd,
-} from "@vellumai/ipc-server-utils";
+} from "@mycadet/ipc-server-utils";
 
 import {
   getDbMigrationReadiness,

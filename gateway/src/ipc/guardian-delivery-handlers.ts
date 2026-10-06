@@ -6,7 +6,7 @@
  * gateway ACL DB.
  */
 
-import { ResolveGuardianDeliveryRequestSchema } from "@vellumai/gateway-client";
+import { ResolveGuardianDeliveryRequestSchema } from "@mycadet/gateway-client";
 
 import { resolveGuardianDelivery } from "../risk/guardian-delivery-resolver.js";
 import type { IpcRoute } from "./server.js";

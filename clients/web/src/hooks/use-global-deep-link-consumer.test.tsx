@@ -39,7 +39,7 @@ import {
 } from "@/stores/open-app.test-helper";
 import type { ShareInboxItem } from "@/runtime/share-inbox-parse";
 import { routes } from "@/utils/routes";
-import * as toastModule from "@vellumai/design-library/components/toast";
+import * as toastModule from "@mycadet/design-library/components/toast";
 import { stubViewportAxes } from "@/hooks/viewport-axes.test-helper";
 import {
   restoreStubbedModules,
@@ -92,7 +92,7 @@ const toastSuccessMock = mock<typeof toastModule.toast.success>(
 );
 // The real toast carries its other kinds and `dismiss`; only the success
 // branch this suite asserts on is replaced.
-stubModule("@vellumai/design-library/components/toast", toastModule, {
+stubModule("@mycadet/design-library/components/toast", toastModule, {
   toast: Object.assign(
     (..._args: Parameters<typeof toastModule.toast>): string | number => "",
     toastModule.toast,

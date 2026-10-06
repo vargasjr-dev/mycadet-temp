@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { LlmLogPayload } from "@/domains/chat/inspector/inspector-payload-api";
-import type { LlmContextResponse } from "@vellumai/assistant-api";
+import type { LlmContextResponse } from "@mycadet/assistant-api";
 
 import {
   buildInspectorExportFilename,

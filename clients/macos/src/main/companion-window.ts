@@ -74,12 +74,12 @@ import {
   type VellumCommand,
   type VoiceActivityState,
   type WatchCaptureTarget,
-} from "@vellumai/ipc-contract";
-import { companionSizeSubmenus } from "@vellumai/electron-desktop/companion-menu";
+} from "@mycadet/ipc-contract";
+import { companionSizeSubmenus } from "@mycadet/electron-desktop/companion-menu";
 import {
   onSettingChange,
   readSetting,
-} from "@vellumai/electron-desktop/settings";
+} from "@mycadet/electron-desktop/settings";
 import {
   clearCompanionIntroSeen,
   readCompanionCallDock,
@@ -90,22 +90,22 @@ import {
   writeCompanionIntroSeen,
   writeCompanionSize,
   writeCompanionHidden,
-} from "@vellumai/electron-desktop/window-state";
+} from "@mycadet/electron-desktop/window-state";
 
 import {
   getAccentHex,
   getAvatarPng,
   getCharacter,
   onAvatarChange,
-} from "@vellumai/electron-desktop/avatar";
+} from "@mycadet/electron-desktop/avatar";
 import {
   getName as getAssistantName,
   onNameChange,
-} from "@vellumai/electron-desktop/identity";
+} from "@mycadet/electron-desktop/identity";
 import {
   createFloatingWindow,
   getFloatingWindow,
-} from "@vellumai/electron-desktop/floating-window";
+} from "@mycadet/electron-desktop/floating-window";
 import {
   captureSourceThumbnail,
   captureTargetFrame,

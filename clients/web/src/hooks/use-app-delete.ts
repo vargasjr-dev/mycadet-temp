@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 
 import { appsGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import { appsByIdDeletePost } from "@/generated/daemon/sdk.gen";

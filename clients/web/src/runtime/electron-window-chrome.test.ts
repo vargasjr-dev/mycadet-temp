@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { TitleBarOverlayTheme } from "@vellumai/ipc-contract";
+import type { TitleBarOverlayTheme } from "@mycadet/ipc-contract";
 
 import type { ElectronHostOS } from "@/runtime/platform-detection";
 

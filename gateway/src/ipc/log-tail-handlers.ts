@@ -5,7 +5,7 @@
  * without requiring the assistant to mint gateway-audience bearer tokens.
  */
 
-import { GatewayLogsTailIpcParamsSchema } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import { GatewayLogsTailIpcParamsSchema } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import type { GatewayConfig } from "../config.js";
 import { tailGatewayLogs } from "../http/routes/log-tail.js";

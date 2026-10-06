@@ -3,7 +3,7 @@
 // is released. Callers own the failure posture (re-queue vs drop) — this
 // helper only performs the transport.
 
-import { buildUpstreamUrl } from "@vellumai/assistant-client";
+import { buildUpstreamUrl } from "@mycadet/assistant-client";
 
 import { mintServiceToken } from "./auth/token-exchange.js";
 import { fetchImpl as defaultFetchImpl } from "./fetch.js";

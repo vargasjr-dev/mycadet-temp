@@ -1,10 +1,10 @@
 import { Hash, MessageSquare } from "lucide-react";
 import { Link } from "react-router";
 
-import { Card } from "@vellumai/design-library/components/card";
-import { ListRow } from "@vellumai/design-library/components/list-row";
-import { textLinkVariants } from "@vellumai/design-library/components/text-link";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Card } from "@mycadet/design-library/components/card";
+import { ListRow } from "@mycadet/design-library/components/list-row";
+import { textLinkVariants } from "@mycadet/design-library/components/text-link";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { Trans, useTranslation } from "@/i18n";
 import { SlackChannelTierLegend } from "@/domains/channels/components/slack-channel-tier-legend";

@@ -8,13 +8,13 @@ import {
   COMPANION_INTRO_PERCH_GAP,
   COMPANION_PERCH_HOP,
   companionIntroCallControlFor,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import type {
   CompanionIntroAction,
   CompanionIntroBeat,
   CompanionIntroCallControl,
-} from "@vellumai/ipc-contract";
-import type { VoiceActivityState } from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
+import type { VoiceActivityState } from "@mycadet/ipc-contract";
 import { useEffect, useState } from "react";
 import type { CSSProperties, ReactNode, Ref } from "react";
 

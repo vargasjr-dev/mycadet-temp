@@ -14,7 +14,7 @@ const pathsToken = { id: "desktop.local-mode-paths" };
 const sessionToken = { id: "desktop.local-mode-session" };
 const configureLocalMode = mock(() => undefined);
 const installLocalMode = mock(() => undefined);
-mock.module("@vellumai/electron-desktop/local-mode", () => ({
+mock.module("@mycadet/electron-desktop/local-mode", () => ({
   configureLocalMode,
   installLocalMode,
   LOCAL_MODE_CLI: cliToken,
@@ -23,16 +23,16 @@ mock.module("@vellumai/electron-desktop/local-mode", () => ({
 }));
 
 const refreshLockfileNow = mock(() => undefined);
-mock.module("@vellumai/electron-desktop/lockfile-watcher", () => ({
+mock.module("@mycadet/electron-desktop/lockfile-watcher", () => ({
   refreshLockfileNow,
 }));
 mock.module("./ipc.client", () => ({ handle: mock(() => undefined) }));
-mock.module("@vellumai/electron-desktop/session-token-store", () => ({
+mock.module("@mycadet/electron-desktop/session-token-store", () => ({
   getSessionToken: () => "session-token",
 }));
 
 const { DesktopCapabilityRegistry } =
-  await import("@vellumai/electron-desktop/capability-registry");
+  await import("@mycadet/electron-desktop/capability-registry");
 const { default: localModeFeature } = await import("./features/local-mode");
 
 beforeEach(() => {

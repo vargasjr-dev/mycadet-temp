@@ -1,4 +1,4 @@
-import { ReactionEmojiFieldsSchema } from "@vellumai/service-contracts/reactions";
+import { ReactionEmojiFieldsSchema } from "@mycadet/service-contracts/reactions";
 import { z } from "zod";
 
 import { CHANNEL_IDS } from "../channels/types.js";

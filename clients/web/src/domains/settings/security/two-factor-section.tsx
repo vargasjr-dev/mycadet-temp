@@ -9,10 +9,10 @@ import {
   useUserMfaFactorsDestroyMutation,
 } from "@/generated/api/@tanstack/react-query.gen";
 import { Trans, useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { EnrollTotpModal } from "./enroll-totp-modal";
 import { mfaErrorCode } from "./mfa-error";

@@ -8,11 +8,11 @@ live web app over HTTPS.
 
 The Android app loads the web UI from the environment-specific web origin:
 
-| Environment | Server |
-|-------------|--------|
-| `production` | `https://www.vellum.ai/assistant` |
-| `staging` | `https://staging-assistant.vellum.ai/assistant` |
-| `dev` | `https://dev-assistant.vellum.ai/assistant` |
+| Environment  | Server                                          |
+| ------------ | ----------------------------------------------- |
+| `production` | `https://www.vellum.ai/assistant`               |
+| `staging`    | `https://staging-assistant.vellum.ai/assistant` |
+| `dev`        | `https://dev-assistant.vellum.ai/assistant`     |
 
 Set `VELLUM_ENVIRONMENT` before `bunx cap sync android` to bake the matching
 URL into `app/src/main/assets/capacitor.config.json`. The default is `dev`.
@@ -41,11 +41,11 @@ Gradle defines three product flavors so dev, staging, and production can have
 separate package IDs, display names, auth callback schemes, and allowed auth
 hosts.
 
-| Flavor | Application ID | Display Name | Auth Scheme | Auth Host |
-|--------|----------------|--------------|-------------|-----------|
-| `production` | `ai.vellum.assistant` | Vellum | `vellum-assistant` | `www.vellum.ai` |
-| `staging` | `ai.vellum.assistant.staging` | Vellum Staging | `vellum-assistant-staging` | `staging-assistant.vellum.ai` |
-| `dev` | `ai.vellum.assistant.dev` | Vellum Dev | `vellum-assistant-dev` | `dev-assistant.vellum.ai` |
+| Flavor       | Application ID                | Display Name   | Auth Scheme                | Auth Host                     |
+| ------------ | ----------------------------- | -------------- | -------------------------- | ----------------------------- |
+| `production` | `ai.vellum.assistant`         | Vellum         | `vellum-assistant`         | `www.vellum.ai`               |
+| `staging`    | `ai.vellum.assistant.staging` | Vellum Staging | `vellum-assistant-staging` | `staging-assistant.vellum.ai` |
+| `dev`        | `ai.vellum.assistant.dev`     | Vellum Dev     | `vellum-assistant-dev`     | `dev-assistant.vellum.ai`     |
 
 For local development, pick the `devDebug` variant in Android Studio. If you
 sync a different `VELLUM_ENVIRONMENT`, build the matching flavor so the WebView
@@ -112,19 +112,19 @@ a local run down to a 12-set slice while iterating, and verify with
 `cd clients/ios && bun test scripts/__tests__/android-avatar-icons.test.ts`.
 Measuring where an eye pair's artwork reaches goes through the native
 `@resvg/resvg-js` binding, so install the assistant package's dependencies
-first: `bun install --filter=@vellumai/assistant`. `pr-native-drift.yaml` and
+first: `bun install --filter=@mycadet/assistant`. `pr-native-drift.yaml` and
 `ci-main-native-drift.yaml` run that same test and watch both
 `app/src/main/res/**` and `app/src/main/AndroidManifest.xml`, so an edit without
 a regeneration fails CI.
 
-| Generated resource | Count | Contents |
-|--------------------|-------|----------|
-| `drawable/avatar_eyes_fg_<eye>.xml` | 9 | The eye pair on a transparent field, sized for the 72dp an adaptive-icon mask keeps visible |
-| `drawable/avatar_eyes_mono_<eye>.xml` | 9 | The same pair reduced to its sclera silhouette, which a themed icon reads for alpha |
-| `mipmap-anydpi-v26/avatar_eyes_<eye>_<color>.xml` | 54 | Adaptive icon pairing the foreground with a background color |
-| `mipmap-anydpi-v33/avatar_eyes_<eye>_<color>.xml` | 54 | The same adaptive icon plus the monochrome layer |
-| `mipmap-anydpi/avatar_eyes_<eye>_<color>.xml` | 54 | Pre-adaptive fallback that paints its own background and draws the pair 1.5x larger to fill all 108dp |
-| `values/avatar_icon_colors.xml` | 6 colors | The alternate backgrounds, kept apart from the flavor-owned `launcher_background` because an alternate looks the same in every flavor |
+| Generated resource                                | Count    | Contents                                                                                                                              |
+| ------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `drawable/avatar_eyes_fg_<eye>.xml`               | 9        | The eye pair on a transparent field, sized for the 72dp an adaptive-icon mask keeps visible                                           |
+| `drawable/avatar_eyes_mono_<eye>.xml`             | 9        | The same pair reduced to its sclera silhouette, which a themed icon reads for alpha                                                   |
+| `mipmap-anydpi-v26/avatar_eyes_<eye>_<color>.xml` | 54       | Adaptive icon pairing the foreground with a background color                                                                          |
+| `mipmap-anydpi-v33/avatar_eyes_<eye>_<color>.xml` | 54       | The same adaptive icon plus the monochrome layer                                                                                      |
+| `mipmap-anydpi/avatar_eyes_<eye>_<color>.xml`     | 54       | Pre-adaptive fallback that paints its own background and draws the pair 1.5x larger to fill all 108dp                                 |
+| `values/avatar_icon_colors.xml`                   | 6 colors | The alternate backgrounds, kept apart from the flavor-owned `launcher_background` because an alternate looks the same in every flavor |
 
 The generator also owns the `avatar-icon-aliases` marker block in
 `AndroidManifest.xml`. Android reads the launcher icon off whichever launcher
@@ -186,11 +186,11 @@ the picker. Each pair is fitted by the longer edge of its measured artwork
 bounds to a fraction of the 72dp an adaptive mask keeps visible, and the
 pre-adaptive fallback multiplies that scale by 108/72.
 
-| Eye style | Span of the masked square |
-|-----------|---------------------------|
-| `dazed` | 0.55 |
-| `bashful` | 0.40 |
-| Every other style | 0.5 |
+| Eye style         | Span of the masked square |
+| ----------------- | ------------------------- |
+| `dazed`           | 0.55                      |
+| `bashful`         | 0.40                      |
+| Every other style | 0.5                       |
 
 The 0.5 default is the framing the default launcher icon uses, so the generated
 `quirky` foreground lands on that icon's own scale, within the rounding step
@@ -611,15 +611,15 @@ CI runs JVM tests once, then syncs, lints, and bundles every flavor.
 `app/build.gradle` reads release values from Gradle properties or matching
 environment variables:
 
-| Input | Purpose |
-|-------|---------|
-| `VELLUM_ANDROID_VERSION_CODE` | Positive, monotonically increasing Play build number |
-| `VELLUM_ANDROID_VERSION_NAME` | User-visible version, such as `1.2.3` |
-| `VELLUM_ANDROID_KEYSTORE_PATH` | Path to the upload keystore |
-| `VELLUM_ANDROID_KEYSTORE_PASSWORD` | Upload keystore password |
-| `VELLUM_ANDROID_KEY_ALIAS` | Upload key alias |
-| `VELLUM_ANDROID_KEY_PASSWORD` | Upload key password |
-| `VELLUM_ANDROID_REQUIRE_SIGNING` | Set to `true` to reject an unsigned bundle |
+| Input                              | Purpose                                              |
+| ---------------------------------- | ---------------------------------------------------- |
+| `VELLUM_ANDROID_VERSION_CODE`      | Positive, monotonically increasing Play build number |
+| `VELLUM_ANDROID_VERSION_NAME`      | User-visible version, such as `1.2.3`                |
+| `VELLUM_ANDROID_KEYSTORE_PATH`     | Path to the upload keystore                          |
+| `VELLUM_ANDROID_KEYSTORE_PASSWORD` | Upload keystore password                             |
+| `VELLUM_ANDROID_KEY_ALIAS`         | Upload key alias                                     |
+| `VELLUM_ANDROID_KEY_PASSWORD`      | Upload key password                                  |
+| `VELLUM_ANDROID_REQUIRE_SIGNING`   | Set to `true` to reject an unsigned bundle           |
 
 Local debug builds and CI do not need signing credentials. A release build is
 unsigned when no signing input is supplied. Supplying only part of the signing
@@ -643,12 +643,12 @@ matches the selected flavor before including it in the build.
 
 Configure these shared repository-level GitHub secrets once:
 
-| Secret | Format |
-|--------|--------|
-| `ANDROID_UPLOAD_KEYSTORE_B64` | Base64-encoded Play upload keystore |
-| `ANDROID_UPLOAD_KEYSTORE_PASSWORD` | Upload keystore password |
-| `ANDROID_UPLOAD_KEY_ALIAS` | Upload key alias |
-| `ANDROID_UPLOAD_KEY_PASSWORD` | Upload key password |
+| Secret                             | Format                              |
+| ---------------------------------- | ----------------------------------- |
+| `ANDROID_UPLOAD_KEYSTORE_B64`      | Base64-encoded Play upload keystore |
+| `ANDROID_UPLOAD_KEYSTORE_PASSWORD` | Upload keystore password            |
+| `ANDROID_UPLOAD_KEY_ALIAS`         | Upload key alias                    |
+| `ANDROID_UPLOAD_KEY_PASSWORD`      | Upload key password                 |
 
 Configure the optional `ANDROID_FIREBASE_CONFIG_B64` secret independently on
 the `dev`, `staging`, and `production` GitHub environments. Each value must be
@@ -670,10 +670,10 @@ malformed base64, invalid JSON, or a package mismatch fails the build.
 After completing the prerequisites and GitHub configuration, enable Android
 distribution independently with these repository variables:
 
-| Variable | Release workflow |
-|----------|------------------|
-| `ANDROID_DEV_RELEASE_ENABLED` | Dev releases |
-| `ANDROID_STAGING_RELEASE_ENABLED` | Staging releases |
+| Variable                             | Release workflow                                 |
+| ------------------------------------ | ------------------------------------------------ |
+| `ANDROID_DEV_RELEASE_ENABLED`        | Dev releases                                     |
+| `ANDROID_STAGING_RELEASE_ENABLED`    | Staging releases                                 |
 | `ANDROID_PRODUCTION_RELEASE_ENABLED` | Production releases to the Play production track |
 
 Set only `ANDROID_DEV_RELEASE_ENABLED` to `true` to test the dev app on its Play
@@ -712,11 +712,11 @@ identity, web origin, authentication, keyboard, and file sharing.
 
 Create a separate Firebase Android app in each matching Firebase project:
 
-| GitHub environment | Android package ID |
-|--------------------|--------------------|
-| `production` | `ai.vellum.assistant` |
-| `staging` | `ai.vellum.assistant.staging` |
-| `dev` | `ai.vellum.assistant.dev` |
+| GitHub environment | Android package ID            |
+| ------------------ | ----------------------------- |
+| `production`       | `ai.vellum.assistant`         |
+| `staging`          | `ai.vellum.assistant.staging` |
+| `dev`              | `ai.vellum.assistant.dev`     |
 
 For each app, download its `google-services.json`, encode it without line
 breaks, and save the result as the `ANDROID_FIREBASE_CONFIG_B64` secret on the

@@ -1,7 +1,7 @@
 /**
  * Custom ESLint rule: prefer-design-library-controls.
  *
- * `@vellumai/design-library` has a primitive for every control a screen
+ * `@mycadet/design-library` has a primitive for every control a screen
  * needs: `Button` (with `iconOnly`, `loading`, `variant="link"`), `TextLink`,
  * `Chip`, `FilterChip`, `ListRow`, `PanelItem`, `OptionCard`, `Disclosure`.
  * A component audit on 2026-09-18 found the app hand-rolling them anyway:
@@ -49,11 +49,11 @@
 
 const MESSAGES = {
   rawButton:
-    "Raw <button>. Use Button from @vellumai/design-library (iconOnly for a glyph, variant=\"link\" for a link-shaped action), or a row or chip primitive. See docs/STYLE_GUIDE.md, \"Which primitive\".",
+    'Raw <button>. Use Button from @mycadet/design-library (iconOnly for a glyph, variant="link" for a link-shaped action), or a row or chip primitive. See docs/STYLE_GUIDE.md, "Which primitive".',
   blankAnchor:
-    "<a target=\"_blank\"> does nothing inside the iOS and Android shells. Use ExternalAnchor from @/components/external-anchor, which carries the native click handler and the rel hardening.",
+    '<a target="_blank"> does nothing inside the iOS and Android shells. Use ExternalAnchor from @/components/external-anchor, which carries the native click handler and the rel hardening.',
   roleButton:
-    "role=\"button\" on a non-button element. Use a real Button, or PanelItem / ListRow for a row, so keyboard activation and focus come for free.",
+    'role="button" on a non-button element. Use a real Button, or PanelItem / ListRow for a row, so keyboard activation and focus come for free.',
   focusVisible:
     "focus-visible: paints the ring on tap and on programmatic focus. Use the library's keyboard-focus: variant (keyboard-focus:ring-2 keyboard-focus:ring-[var(--ring)]).",
   spinnerInButton:
@@ -155,10 +155,19 @@ function containsSpinner(node) {
     }
     const child = node[key];
     if (Array.isArray(child)) {
-      if (child.some((item) => item && typeof item.type === "string" && containsSpinner(item))) {
+      if (
+        child.some(
+          (item) =>
+            item && typeof item.type === "string" && containsSpinner(item),
+        )
+      ) {
         return true;
       }
-    } else if (child && typeof child.type === "string" && containsSpinner(child)) {
+    } else if (
+      child &&
+      typeof child.type === "string" &&
+      containsSpinner(child)
+    ) {
       return true;
     }
   }
@@ -170,7 +179,7 @@ export const preferDesignLibraryControls = {
     type: "problem",
     docs: {
       description:
-        "Prefer @vellumai/design-library controls over raw buttons, bare external anchors, role=button, focus-visible rings and hand-rolled spinners.",
+        "Prefer @mycadet/design-library controls over raw buttons, bare external anchors, role=button, focus-visible rings and hand-rolled spinners.",
     },
     schema: [],
     messages: MESSAGES,
@@ -185,7 +194,10 @@ export const preferDesignLibraryControls = {
           context.report({ node: node.name, messageId: "rawButton" });
         }
 
-        if (name === "a" && staticValue(attribute(node, "target")) === "_blank") {
+        if (
+          name === "a" &&
+          staticValue(attribute(node, "target")) === "_blank"
+        ) {
           context.report({ node: node.name, messageId: "blankAnchor" });
         }
 

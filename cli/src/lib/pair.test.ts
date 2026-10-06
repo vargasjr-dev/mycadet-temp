@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { REMOTE_WEB_PAIRING_CODE_TTL_MS } from "@vellumai/service-contracts/remote-web-pairing";
+import { REMOTE_WEB_PAIRING_CODE_TTL_MS } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { formatWebApproveFailure, parseGatewayErrorCode } from "./pair.js";
 

@@ -5,7 +5,7 @@
  *
  * Canonical wire-contract source. Assistant code imports the types
  * directly from this file via relative paths; external consumers (web
- * client, gateway, evals) import via `@vellumai/assistant-api`.
+ * client, gateway, evals) import via `@mycadet/assistant-api`.
  *
  * The route is implemented in
  * `assistant/src/runtime/routes/conversation-query-routes.ts` and the

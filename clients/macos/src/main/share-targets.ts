@@ -12,7 +12,7 @@
  * Pure, so the rules are exercised without a helper or a window server.
  */
 
-import type { ShareTarget, ShareTargetSnapshot } from "@vellumai/ipc-contract";
+import type { ShareTarget, ShareTargetSnapshot } from "@mycadet/ipc-contract";
 
 /** One control as the helper describes it, in screen points. */
 export interface HelperShareTarget {

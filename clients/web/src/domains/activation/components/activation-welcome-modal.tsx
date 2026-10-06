@@ -40,7 +40,7 @@ import {
   Modal,
   Typography,
   useTouchSurface,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";

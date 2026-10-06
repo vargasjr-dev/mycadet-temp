@@ -12,9 +12,9 @@
 
 import { useState } from "react";
 
-import { Popover, Typography } from "@vellumai/design-library";
+import { Popover, Typography } from "@mycadet/design-library";
 
-import type { WebSearchResultItem } from "@vellumai/assistant-api";
+import type { WebSearchResultItem } from "@mycadet/assistant-api";
 import { ExternalAnchor } from "@/components/external-anchor";
 import { ToolStepPill } from "@/domains/chat/components/tool-progress-card/tool-step-pill";
 import type { ToolCallCardStep } from "@/domains/chat/utils/tool-call-card-utils";

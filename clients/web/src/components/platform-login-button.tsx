@@ -1,7 +1,7 @@
 import { LogIn } from "lucide-react";
 import { useLocation } from "react-router";
 
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { useTranslation } from "@/i18n";

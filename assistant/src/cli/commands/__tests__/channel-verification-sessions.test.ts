@@ -18,7 +18,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { CHANNEL_IDS } from "@vellumai/service-contracts/channels";
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
 import { Command } from "commander";
 
 // ---------------------------------------------------------------------------

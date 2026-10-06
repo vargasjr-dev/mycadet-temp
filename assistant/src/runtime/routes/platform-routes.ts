@@ -31,12 +31,12 @@ import {
   type BillingPlanId,
   extraCreditUsd,
   planCreditUsedFraction,
-} from "@vellumai/service-contracts/plan-credit";
+} from "@mycadet/service-contracts/plan-credit";
 import {
   type PlatformCredentialVerificationStatus,
   type PlatformVerifyCredentialResponse,
   PlatformVerifyCredentialResponseSchema,
-} from "@vellumai/service-contracts/platform-credential";
+} from "@mycadet/service-contracts/platform-credential";
 import { z } from "zod";
 
 import {

@@ -21,10 +21,10 @@ import type {
   CompanionDictationOffer as CompanionDictationOfferWords,
   CompanionGrowth,
   DictationOfferAnswer,
-} from "@vellumai/ipc-contract";
-import { COMPANION_BASE_AVATAR_BOX } from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
+import { COMPANION_BASE_AVATAR_BOX } from "@mycadet/ipc-contract";
 
-import { ScrollShadow } from "@vellumai/design-library/components/scroll-shadow";
+import { ScrollShadow } from "@mycadet/design-library/components/scroll-shadow";
 
 import { companionLayoutFor } from "@/components/companion-layout";
 import { useTranslation } from "@/i18n";

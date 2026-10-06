@@ -5,7 +5,7 @@ import type {
   TitleBarOverlayTheme,
   VellumBridge,
   VellumCommand,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 export const WINDOWS_CORE_CAPABILITIES = [
   "platform",

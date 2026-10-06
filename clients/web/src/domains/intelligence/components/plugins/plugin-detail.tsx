@@ -17,7 +17,7 @@ import { usePluginToggle } from "@/domains/intelligence/plugins/use-plugin-toggl
 import type { PluginDrift } from "@/domains/intelligence/use-plugin-drift";
 import type { PluginsByNameGetResponse } from "@/generated/daemon/types.gen";
 import { useTranslation } from "@/i18n";
-import { Button, Card } from "@vellumai/design-library";
+import { Button, Card } from "@mycadet/design-library";
 
 interface PluginDetailProps {
   assistantId: string;

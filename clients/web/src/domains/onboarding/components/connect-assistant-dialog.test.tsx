@@ -23,7 +23,7 @@ import {
   isRetryablePairingReason,
   type PairingFailureReason,
   type PublicBaseUrlRejection,
-} from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { ComponentProps, ReactNode } from "react";
 
@@ -85,7 +85,7 @@ mock.module("@/lib/local-mode", () => ({
     isRetryablePairingReason(failure.reason),
 }));
 
-mock.module("@vellumai/design-library/components/button", () => ({
+mock.module("@mycadet/design-library/components/button", () => ({
   Button: ({
     children,
     onClick,
@@ -101,14 +101,14 @@ mock.module("@vellumai/design-library/components/button", () => ({
   ),
 }));
 
-mock.module("@vellumai/design-library/components/input", () => ({
+mock.module("@mycadet/design-library/components/input", () => ({
   Input: ({
     fullWidth: _fullWidth,
     ...props
   }: ComponentProps<"input"> & { fullWidth?: boolean }) => <input {...props} />,
 }));
 
-mock.module("@vellumai/design-library/components/modal", () => ({
+mock.module("@mycadet/design-library/components/modal", () => ({
   Modal: {
     Root: ({ open, children }: { open: boolean; children: ReactNode }) =>
       open ? <div>{children}</div> : null,
@@ -121,7 +121,7 @@ mock.module("@vellumai/design-library/components/modal", () => ({
   },
 }));
 
-mock.module("@vellumai/design-library/components/notice", () => ({
+mock.module("@mycadet/design-library/components/notice", () => ({
   Notice: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 

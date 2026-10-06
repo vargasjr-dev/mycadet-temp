@@ -23,7 +23,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { TUNNEL_PROVIDERS } from "@vellumai/service-contracts/ingress";
+import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 
 import * as cloudflareTunnel from "../lib/cloudflare-tunnel.js";
 import * as ngrok from "../lib/ngrok.js";

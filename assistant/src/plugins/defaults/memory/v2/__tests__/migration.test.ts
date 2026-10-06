@@ -29,7 +29,7 @@ import type {
   Message,
   Provider,
   SendMessageOptions,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 // -- Mocks that must be installed before importing the module under test ---
 //
@@ -65,8 +65,8 @@ let providerStub: Provider | null = null;
 // Spread the real module so the memory code under test keeps every other
 // plugin-API export (`safeStringSlice` among them); only the provider lookup
 // is stubbed.
-const realPluginApi = await import("@vellumai/plugin-api");
-mock.module("@vellumai/plugin-api", () => ({
+const realPluginApi = await import("@mycadet/plugin-api");
+mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,
   getConfiguredProvider: async () => providerStub,
 }));
@@ -95,7 +95,7 @@ import * as schema from "../../../../../persistence/schema/index.js";
 import type { Cluster, V1Edge, V1Item } from "../migration.js";
 
 // Dynamic import — runs *after* the mock.module calls above so the migration
-// module's transitive references to logger / jobs-store / @vellumai/plugin-api
+// module's transitive references to logger / jobs-store / @mycadet/plugin-api
 // resolve to our stubs (matches the pattern used in `qdrant.test.ts`).
 const {
   clusterByTopic,

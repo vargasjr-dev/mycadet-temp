@@ -4,7 +4,7 @@ import type {
   RemoteWebPairingTokenApprovedResponse,
   RemoteWebPairingTokenPendingResponse,
   RemoteWebPairingTokenRequest,
-} from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
 
 import {
   getGatewayToken,
@@ -15,7 +15,7 @@ import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 export {
   parseRemoteWebPairingParams,
   type RemoteWebPairingParams,
-} from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
 
 const PAIRING_TOKEN_PATH = "/v1/remote-web/pairing-token";
 const PAIRING_CHALLENGE_PATH = "/v1/remote-web/pairing-challenge";

@@ -5,7 +5,7 @@ import {
   panelItemWashStyle,
   SIDE_MENU_TILE_SIZE,
   type CustomPropertyStyle,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 import { SidebarIconTile } from "@/components/sidebar-icon-tile";
 import { SIDEBAR_PILL_GAP_CLASSES } from "@/components/sidebar-nav-geometry";

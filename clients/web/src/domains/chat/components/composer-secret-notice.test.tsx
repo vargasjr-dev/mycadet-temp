@@ -9,7 +9,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-import type { DetectedSecret } from "@vellumai/service-contracts/secret-detection";
+import type { DetectedSecret } from "@mycadet/service-contracts/secret-detection";
 
 import {
   ComposerSecretNotice,

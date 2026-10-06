@@ -9,7 +9,7 @@
  * `(prev: DisplayMessage[], ...args) => DisplayMessage[]`.
  */
 
-import { isNoResponseOnlyText } from "@vellumai/service-contracts/no-response";
+import { isNoResponseOnlyText } from "@mycadet/service-contracts/no-response";
 
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import { readAssistantTextVisibility } from "@/domains/chat/utils/assistant-text-visibility";
@@ -20,7 +20,7 @@ import type {
   GenerationHandoffEvent,
   MessageCompleteEvent,
   ModeSession,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import {
   tailIsAssistant,
   findAssistantRowIndexByMessageId,

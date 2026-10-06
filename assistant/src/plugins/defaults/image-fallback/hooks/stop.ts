@@ -12,7 +12,7 @@
  * refused).
  */
 
-import type { HookFunction, StopContext } from "@vellumai/plugin-api";
+import type { HookFunction, StopContext } from "@mycadet/plugin-api";
 
 import { clearVisionRecoveryAttempted } from "../src/recovery-state.js";
 

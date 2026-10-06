@@ -39,7 +39,7 @@ import { useSupportsBookmarks } from "@/lib/backwards-compat/use-supports-bookma
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { t } from "@/i18n";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 
 /** A single bookmark row as returned by `GET /v1/.../bookmarks`. */
 export type Bookmark = NonNullable<BookmarksGetResponse>["bookmarks"][number];

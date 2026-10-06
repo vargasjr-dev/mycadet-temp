@@ -11,7 +11,7 @@
  * refused).
  */
 
-import type { HookFunction, StopContext } from "@vellumai/plugin-api";
+import type { HookFunction, StopContext } from "@mycadet/plugin-api";
 
 import { clearSurfaceCompletionNudged } from "../nudge-state-store.js";
 

@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { FileMarkdown } from "@/components/file-markdown";
 import { memoryGraphNodeOptions } from "@/domains/intelligence/memory-graph/get-memory-graph-node";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { EDGE_LEARNED_COLOR } from "./constants";
 

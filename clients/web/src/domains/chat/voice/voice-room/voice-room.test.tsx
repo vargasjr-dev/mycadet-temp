@@ -345,7 +345,7 @@ const { VoiceRoom } =
   await import("@/domains/chat/voice/voice-room/voice-room");
 // The query the camera explainer's sheet-versus-modal fork reads, which is the
 // only seam the design library offers for forcing one presentation.
-const { TOUCH_SURFACE_MEDIA_QUERY } = await import("@vellumai/design-library");
+const { TOUCH_SURFACE_MEDIA_QUERY } = await import("@mycadet/design-library");
 const { pressBackdrop } = await import("@/lib/overlay-test-helpers");
 type VoiceRoomVariant = Parameters<typeof VoiceRoom>[0]["variant"];
 // The caption is exercised directly as well as through the room: the room

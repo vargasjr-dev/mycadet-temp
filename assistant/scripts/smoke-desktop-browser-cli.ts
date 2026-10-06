@@ -4,7 +4,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { IpcFrameReader, writeMessage } from "@vellumai/ipc-server-utils";
+import { IpcFrameReader, writeMessage } from "@mycadet/ipc-server-utils";
 import { Command } from "commander";
 import sharp from "sharp";
 

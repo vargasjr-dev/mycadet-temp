@@ -14,7 +14,7 @@ import { useEffect } from "react";
 import {
   COMPANION_PICKER_MICROPHONES,
   COMPANION_PICKER_VOICES,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { useManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
 import {

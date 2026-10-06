@@ -12,7 +12,7 @@ import { useTranslation } from "@/i18n";
 import { useAppIframeSandboxDisabled } from "@/lib/app-sandbox-debug-flag";
 import { cn } from "@/utils/misc";
 import { injectBridge } from "@/utils/sandbox-bridge";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 /**
  * Sandbox tokens the app frame runs under. No `allow-same-origin`, so the

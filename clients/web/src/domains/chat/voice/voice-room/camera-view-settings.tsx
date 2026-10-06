@@ -44,7 +44,7 @@ import {
   PortalContainerProvider,
   Toggle,
   cn,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 import { useCameraGateHudAvailable } from "@/hooks/use-camera-gate-hud";

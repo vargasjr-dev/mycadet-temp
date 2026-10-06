@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@vellumai/service-contracts/ingress";
+import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/ingress";
 
 import { VELAY_BRIDGE_AUTH_HEADER } from "./bridge-auth.js";
 import {

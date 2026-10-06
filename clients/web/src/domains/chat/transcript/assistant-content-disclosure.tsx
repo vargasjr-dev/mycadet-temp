@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Bolt, ChevronRight } from "lucide-react";
-import { Collapsible } from "@vellumai/design-library";
+import { Collapsible } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

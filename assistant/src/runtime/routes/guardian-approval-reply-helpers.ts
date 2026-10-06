@@ -3,7 +3,7 @@
  * identity mismatch notices, reminders, etc.) that were duplicated across
  * guardian-approval-interception.ts.
  */
-import type { MessageAudience } from "@vellumai/gateway-client";
+import type { MessageAudience } from "@mycadet/gateway-client";
 import type pino from "pino";
 
 import type { ChannelId } from "../../channels/types.js";

@@ -7,7 +7,7 @@
  * on their own.
  */
 
-import type { AnsweredQuestion } from "@vellumai/assistant-api";
+import type { AnsweredQuestion } from "@mycadet/assistant-api";
 
 /** The rendered answer for one question, resolved against the options as asked. */
 export interface ResolvedAnswer {

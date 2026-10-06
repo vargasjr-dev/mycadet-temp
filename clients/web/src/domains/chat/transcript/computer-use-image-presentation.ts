@@ -1,4 +1,4 @@
-import { isComputerUseToolCall } from "@vellumai/assistant-api";
+import { isComputerUseToolCall } from "@mycadet/assistant-api";
 
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import {
@@ -39,7 +39,8 @@ export function deriveTranscriptImagePresentation(
 
   const selectedToolCall = toolCalls.findLast(
     (toolCall) =>
-      computerUseToolCallIds.has(toolCall.id) && hasToolResultImages([toolCall]),
+      computerUseToolCallIds.has(toolCall.id) &&
+      hasToolResultImages([toolCall]),
   );
   const rawImages = projectImages(
     toolCalls,

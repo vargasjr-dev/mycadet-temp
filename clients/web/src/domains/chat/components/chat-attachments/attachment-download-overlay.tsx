@@ -1,4 +1,3 @@
-
 import { useTranslation } from "@/i18n";
 /**
  * The download affordance laid over an attachment thumbnail, for the image
@@ -22,9 +21,9 @@ import { useTranslation } from "@/i18n";
 
 import { Download } from "lucide-react";
 import type { MouseEvent } from "react";
-import { Button } from "@vellumai/design-library/components/button";
-import { Tooltip } from "@vellumai/design-library/components/tooltip";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { Button } from "@mycadet/design-library/components/button";
+import { Tooltip } from "@mycadet/design-library/components/tooltip";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 interface AttachmentDownloadOverlayProps {
   /** Names the control, since the icon alone does not say what it downloads. */

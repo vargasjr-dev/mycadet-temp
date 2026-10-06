@@ -1,5 +1,5 @@
 {
-  "name": "@vellumai/electron-desktop",
+  "name": "@mycadet/electron-desktop",
   "version": "0.0.1",
   "private": true,
   "license": "MIT",
@@ -92,10 +92,10 @@
     "test": "bun scripts/run-tests.ts"
   },
   "dependencies": {
-    "@vellumai/electron-utils": "workspace:*",
-    "@vellumai/ipc-contract": "workspace:*",
-    "@vellumai/local-mode": "workspace:*",
-    "@vellumai/service-contracts": "workspace:*",
+    "@mycadet/electron-utils": "workspace:*",
+    "@mycadet/ipc-contract": "workspace:*",
+    "@mycadet/local-mode": "workspace:*",
+    "@mycadet/service-contracts": "workspace:*",
     "electron-store": "11.0.2",
     "jszip": "3.10.1"
   },

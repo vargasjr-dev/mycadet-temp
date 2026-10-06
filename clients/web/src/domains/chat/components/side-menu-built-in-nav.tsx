@@ -8,7 +8,7 @@ import { EmailNavItem } from "@/domains/chat/components/email-nav-item";
 import { PinnedAppNavItem } from "@/domains/chat/components/pinned-app-nav-item";
 import { useEmailPinned } from "@/hooks/use-email-pinned";
 import { usePinnedApps } from "@/hooks/use-pinned-apps";
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 import { useTranslation } from "@/i18n";
 import { routes } from "@/utils/routes";
 

@@ -141,7 +141,7 @@ mock.module("../config.js", () => ({
 // (restored in afterEach) rather than mock.module — a module mock here would
 // replace the plugin-api registry for every other test file sharing the
 // process.
-import * as pluginApi from "@vellumai/plugin-api";
+import * as pluginApi from "@mycadet/plugin-api";
 
 import { sweepOrphanMemoryRetrospectiveConversations } from "../memory-retrospective-startup-cleanup.js";
 

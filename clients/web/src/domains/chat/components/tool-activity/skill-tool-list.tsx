@@ -13,7 +13,7 @@
  * so a composite skill's provenance stays visible.
  */
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { MachineText } from "@/components/detail-primitives";
 import type { SkillToolSummary } from "@/domains/chat/utils/skill-activity";

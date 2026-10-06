@@ -9,7 +9,7 @@ import {
   STORYBOOKS,
   resolveStorybookUrl,
   siblingOf,
-} from "@vellumai/design-library/storybook-links";
+} from "@mycadet/design-library/storybook-links";
 
 const lightManagerTheme = create({
   base: "light",

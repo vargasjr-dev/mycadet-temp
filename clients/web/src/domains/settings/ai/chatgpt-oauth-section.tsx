@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import { useTranslation } from "@/i18n";

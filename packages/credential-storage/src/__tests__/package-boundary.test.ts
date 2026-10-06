@@ -1,11 +1,11 @@
 /**
- * Package boundary tests for @vellumai/credential-storage.
+ * Package boundary tests for @mycadet/credential-storage.
  *
  * Ensures the package:
  * 1. Does NOT import from the assistant daemon or CES modules.
- * 2. Does NOT import from x-client packages (@vellumai/assistant-client,
- *    @vellumai/ces-client, @vellumai/gateway-client).
- * 3. Does NOT import from @vellumai/service-contracts runtime/internal modules
+ * 2. Does NOT import from x-client packages (@mycadet/assistant-client,
+ *    @mycadet/ces-client, @mycadet/gateway-client).
+ * 3. Does NOT import from @mycadet/service-contracts runtime/internal modules
  *    (the aggregate root or any subpath beyond what credential-storage needs
  *    for pure type definitions is not required at all).
  * 4. Exposes only local storage/runtime abstractions.
@@ -135,11 +135,11 @@ describe("package boundary", () => {
         dep.includes("assistant") ||
         dep.includes("daemon") ||
         [
-          "@vellumai/ces-client",
-          "@vellumai/ces-contracts",
-          "@vellumai/service-contracts",
-          "@vellumai/assistant-client",
-          "@vellumai/gateway-client",
+          "@mycadet/ces-client",
+          "@mycadet/ces-contracts",
+          "@mycadet/service-contracts",
+          "@mycadet/assistant-client",
+          "@mycadet/gateway-client",
         ].includes(dep),
     );
     expect(forbidden).toEqual([]);

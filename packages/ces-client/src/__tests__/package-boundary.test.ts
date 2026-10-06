@@ -1,15 +1,15 @@
 /**
- * Package boundary tests for @vellumai/ces-client.
+ * Package boundary tests for @mycadet/ces-client.
  *
  * Ensures the package:
  * 1. Does NOT import from assistant, gateway, or credential-executor service
  *    runtime modules.
- * 2. Does NOT import from runtime shared packages (@vellumai/credential-storage,
- *    @vellumai/egress-proxy).
+ * 2. Does NOT import from runtime shared packages (@mycadet/credential-storage,
+ *    @mycadet/egress-proxy).
  * 3. Remains a lightweight client package with no runtime service dependencies.
  *
- * @vellumai/ces-client is a typed HTTP and RPC client for
- * assistant/gateway-to-CES calls. It may depend on @vellumai/service-contracts
+ * @mycadet/ces-client is a typed HTTP and RPC client for
+ * assistant/gateway-to-CES calls. It may depend on @mycadet/service-contracts
  * for shared type definitions, but must not pull in runtime service internals.
  */
 
@@ -102,7 +102,7 @@ describe("package boundary", () => {
         `Found ${violations.length} forbidden import(s) in ces-client package:\n` +
           violations.map((v) => `  - ${v}`).join("\n") +
           "\n\n" +
-          "@vellumai/ces-client must not import from service runtime modules\n" +
+          "@mycadet/ces-client must not import from service runtime modules\n" +
           "or runtime shared packages (credential-storage, egress-proxy).",
       );
     }
@@ -127,9 +127,9 @@ describe("package boundary", () => {
 
     const forbidden = Object.keys(allDeps).filter((dep) =>
       [
-        "@vellumai/assistant",
-        "@vellumai/credential-storage",
-        "@vellumai/egress-proxy",
+        "@mycadet/assistant",
+        "@mycadet/credential-storage",
+        "@mycadet/egress-proxy",
       ].includes(dep),
     );
 

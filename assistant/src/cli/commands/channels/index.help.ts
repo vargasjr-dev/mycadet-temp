@@ -3,7 +3,7 @@
 import {
   CHANNEL_BOT_PROVIDER,
   CHANNEL_IDS,
-} from "@vellumai/service-contracts/channels";
+} from "@mycadet/service-contracts/channels";
 
 import type { CliCommandHelp } from "../../lib/cli-command-help.js";
 

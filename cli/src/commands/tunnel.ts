@@ -4,7 +4,7 @@ import { join } from "path";
 import {
   TUNNEL_PROVIDERS,
   type TunnelProviderName,
-} from "@vellumai/service-contracts/ingress";
+} from "@mycadet/service-contracts/ingress";
 
 import {
   formatAssistantReference,

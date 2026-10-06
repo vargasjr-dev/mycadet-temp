@@ -31,7 +31,7 @@ import {
 } from "node:fs";
 import { join, resolve, sep } from "node:path";
 
-import { stringifyMessageContent } from "@vellumai/plugin-api";
+import { stringifyMessageContent } from "@mycadet/plugin-api";
 import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
 
 import type { AssistantConfig } from "../../../../config/types.js";

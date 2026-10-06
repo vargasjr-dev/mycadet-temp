@@ -19,7 +19,7 @@ import { Brain, MoreHorizontal, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
-import { Button, Menu, Notice, Typography } from "@vellumai/design-library";
+import { Button, Menu, Notice, Typography } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 import { FileMarkdown } from "@/components/file-markdown";
@@ -179,9 +179,7 @@ export function SkillDetailPanel({ skillId, onClose }: SkillDetailPanelProps) {
                 {skill.description}
               </Typography>
             )}
-            {skill && (
-              <SkillLineageLink skill={skill} onNavigate={onClose} />
-            )}
+            {skill && <SkillLineageLink skill={skill} onNavigate={onClose} />}
             {/* `FileMarkdown` renders its blocks with no wrapper of its own, so
                 the skill's body is boxed here: as bare children of the root
                 above, every heading and paragraph would space as a section. */}

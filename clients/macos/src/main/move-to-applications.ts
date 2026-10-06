@@ -1,9 +1,6 @@
 import { app, BrowserWindow, dialog, shell } from "electron";
 
-import {
-  readSetting,
-  writeSetting,
-} from "@vellumai/electron-desktop/settings";
+import { readSetting, writeSetting } from "@mycadet/electron-desktop/settings";
 
 import {
   getInstallLocation,
@@ -20,7 +17,7 @@ declare const __VELLUM_ENVIRONMENT__: string;
  * The app's user-facing product name ("Vellum", "Vellum Local", "Vellum Dev",
  * …). `app.getName()` can't be used here: electron-builder writes the product
  * name to the bundle Info.plist (`CFBundleName`), not into the asar'd
- * package.json, so `app.getName()` returns the package `name` (`@vellumai/macos`)
+ * package.json, so `app.getName()` returns the package `name` (`@mycadet/macos`)
  * for packaged builds. We instead mirror the per-environment derivation in
  * electron-builder.config.cjs so the two always agree. (Setting it via
  * `app.setName()` is avoided — that would shift the production `userData` path.)
@@ -255,20 +252,22 @@ export async function promptToRelocateIfStranded(): Promise<void> {
     return;
   }
 
-  await dialog.showMessageBox({
-    type: "error",
-    buttons: ["Show Me", "Close"],
-    defaultId: 0,
-    cancelId: 1,
-    message: `${name} couldn't move itself`,
-    detail:
-      `Drag ${name} into your Applications folder in Finder, then open it ` +
-      `from there.`,
-  }).then(({ response: fallbackResponse }) => {
-    if (fallbackResponse === 0) {
-      shell.showItemInFolder(app.getPath("exe"));
-    }
-  });
+  await dialog
+    .showMessageBox({
+      type: "error",
+      buttons: ["Show Me", "Close"],
+      defaultId: 0,
+      cancelId: 1,
+      message: `${name} couldn't move itself`,
+      detail:
+        `Drag ${name} into your Applications folder in Finder, then open it ` +
+        `from there.`,
+    })
+    .then(({ response: fallbackResponse }) => {
+      if (fallbackResponse === 0) {
+        shell.showItemInFolder(app.getPath("exe"));
+      }
+    });
 }
 
 // Test seam, exported only for unit-test setup. Production code never

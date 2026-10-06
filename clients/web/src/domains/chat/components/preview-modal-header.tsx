@@ -1,4 +1,4 @@
-import { Button, Typography } from "@vellumai/design-library";
+import { Button, Typography } from "@mycadet/design-library";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 

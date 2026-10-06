@@ -6,7 +6,7 @@
  * whether applied live or rebuilt from a snapshot.
  */
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 import type { AssistantEvent } from "@/types/event-types";
 import {
   type Surface,

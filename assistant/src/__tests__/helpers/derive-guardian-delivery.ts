@@ -12,7 +12,7 @@
  * binding. No assistant ACL columns are read here — the ACL is gateway-owned.
  */
 
-import type { GuardianDelivery } from "@vellumai/gateway-client";
+import type { GuardianDelivery } from "@mycadet/gateway-client";
 
 import { gatewayAclRows } from "./gateway-acl-store.js";
 

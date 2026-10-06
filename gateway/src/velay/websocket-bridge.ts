@@ -1,6 +1,6 @@
 import type { OutgoingHttpHeaders } from "node:http";
 
-import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@vellumai/service-contracts/ingress";
+import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/ingress";
 
 import type { VelayBinaryWebSocketFrame } from "./binary-websocket.js";
 import { addVelayBridgeAuthHeader } from "./bridge-auth.js";

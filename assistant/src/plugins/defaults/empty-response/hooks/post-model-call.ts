@@ -54,7 +54,7 @@ import {
   type Message,
   type PostModelCallContext,
   REFUSAL_FALLBACK_TEXT,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import {
   isEmptyResponseNudged,

@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState, type ReactNode } from "react";
 
-import { Modal } from "@vellumai/design-library";
+import { Modal } from "@mycadet/design-library";
 
 import { AssistantHandleSection } from "@/components/profile-card";
 import {

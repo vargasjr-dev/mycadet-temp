@@ -5,7 +5,7 @@
  * authenticated fetch for all platform API calls.
  */
 
-import type { PlatformCredentialVerificationStatus } from "@vellumai/service-contracts/platform-credential";
+import type { PlatformCredentialVerificationStatus } from "@mycadet/service-contracts/platform-credential";
 
 import { resolvePlatformAssistantId } from "../config/platform-identity.js";
 import { resolveManagedProxyContext } from "../providers/platform-proxy/context.js";

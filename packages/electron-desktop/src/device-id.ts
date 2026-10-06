@@ -17,14 +17,14 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { resolveConfigDir, resolveEnvironmentName } from "@vellumai/local-mode";
+import { resolveConfigDir, resolveEnvironmentName } from "@mycadet/local-mode";
 
 let cached: string | undefined;
 
 /**
  * Resolve the directory containing device.json. Production uses the legacy
  * ~/.vellum path (shared with the Swift client and daemon); non-production
- * uses resolveConfigDir from @vellumai/local-mode.
+ * uses resolveConfigDir from @mycadet/local-mode.
  */
 function resolveDeviceDir(): string {
   const env = resolveEnvironmentName(process.env);
@@ -60,7 +60,10 @@ export function getDeviceId(): string {
     const raw = JSON.parse(readFileSync(filePath, "utf-8"));
     if (raw && typeof raw === "object" && !Array.isArray(raw)) {
       existing = raw as Record<string, unknown>;
-      if (typeof existing.deviceId === "string" && existing.deviceId.length > 0) {
+      if (
+        typeof existing.deviceId === "string" &&
+        existing.deviceId.length > 0
+      ) {
         cached = existing.deviceId as string;
         return cached;
       }

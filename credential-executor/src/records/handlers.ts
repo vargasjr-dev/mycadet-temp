@@ -2,13 +2,10 @@
  * RPC handlers for CES credential metadata.
  */
 
-import { CesRpcMethod } from "@vellumai/service-contracts/credential-rpc";
+import { CesRpcMethod } from "@mycadet/service-contracts/credential-rpc";
 
 import type { RpcHandlerRegistry } from "../server.js";
-import {
-  getMetadataStore,
-  type CesMetadataStore,
-} from "./metadata-store.js";
+import { getMetadataStore, type CesMetadataStore } from "./metadata-store.js";
 
 export function buildRecordHandlers(): RpcHandlerRegistry {
   const handlers: RpcHandlerRegistry = {};

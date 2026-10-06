@@ -17,7 +17,7 @@
  * have no sentence to show.
  */
 
-import { Tooltip, Typography } from "@vellumai/design-library";
+import { Tooltip, Typography } from "@mycadet/design-library";
 
 import { RiskBadge } from "@/domains/chat/components/risk-badge";
 import { getRiskToleranceHint } from "@/domains/chat/utils/risk";

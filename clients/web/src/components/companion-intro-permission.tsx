@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import { useTranslation } from "@/i18n";
 import {

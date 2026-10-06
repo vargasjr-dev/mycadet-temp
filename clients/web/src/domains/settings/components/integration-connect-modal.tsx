@@ -11,17 +11,17 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-import { ActionMenu } from "@vellumai/design-library/components/action-menu";
-import { Button } from "@vellumai/design-library/components/button";
-import { Checkbox } from "@vellumai/design-library/components/checkbox";
-import { Collapsible } from "@vellumai/design-library/components/collapsible";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { Input } from "@vellumai/design-library/components/input";
-import { ListRow } from "@vellumai/design-library/components/list-row";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { SplitButton } from "@vellumai/design-library/components/split-button";
-import { Tag } from "@vellumai/design-library/components/tag";
+import { ActionMenu } from "@mycadet/design-library/components/action-menu";
+import { Button } from "@mycadet/design-library/components/button";
+import { Checkbox } from "@mycadet/design-library/components/checkbox";
+import { Collapsible } from "@mycadet/design-library/components/collapsible";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { Input } from "@mycadet/design-library/components/input";
+import { ListRow } from "@mycadet/design-library/components/list-row";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { SplitButton } from "@mycadet/design-library/components/split-button";
+import { Tag } from "@mycadet/design-library/components/tag";
 
 import { IntegrationIcon } from "@/components/integrations/integration-icon";
 import {
@@ -226,9 +226,7 @@ export function IntegrationConnectModal({
     }
     const gone =
       requested.kind === "tools" &&
-      !connections.some(
-        (candidate) => candidate.id === requested.connectionId,
-      );
+      !connections.some((candidate) => candidate.id === requested.connectionId);
     return gone ? { kind: "connections" } : requested;
   }
   const view = resolveView(requestedView);
@@ -617,7 +615,9 @@ function AttemptNotice({
           </div>
         }
       >
-        <p>{attempt.error ?? t("integrationConnect.attemptFailed", { name })}</p>
+        <p>
+          {attempt.error ?? t("integrationConnect.attemptFailed", { name })}
+        </p>
       </Notice>
     );
   }

@@ -19,7 +19,7 @@ import {
   useState,
 } from "react";
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 
@@ -112,8 +112,9 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
   TStatus,
   TMode
 >): UseAssistantStatusMonitorResult<TStatus, TMode> {
-  const [snapshot, setSnapshot] =
-    useState<AssistantStatusMonitorSnapshot<TStatus>>(EMPTY_MONITOR_SNAPSHOT);
+  const [snapshot, setSnapshot] = useState<
+    AssistantStatusMonitorSnapshot<TStatus>
+  >(EMPTY_MONITOR_SNAPSHOT);
   const activeAssistantIdRef = useRef<string | null>(assistantId);
   const enabledRef = useRef(enabled);
   const generationRef = useRef(0);

@@ -28,7 +28,7 @@
 import {
   pickReactionEmojiFields,
   type ReactionEmojiFields,
-} from "@vellumai/service-contracts/reactions";
+} from "@mycadet/service-contracts/reactions";
 import { isExternalChannelOrigin } from "@/domains/chat/utils/conversation-channel";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import type {

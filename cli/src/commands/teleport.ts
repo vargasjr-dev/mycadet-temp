@@ -68,7 +68,7 @@ import { join } from "node:path";
 import {
   hasRecentBackup,
   RECENT_BACKUP_MAX_AGE_MS,
-} from "@vellumai/local-mode/teleport-backup-policy";
+} from "@mycadet/local-mode/teleport-backup-policy";
 
 function printHelp(): void {
   console.log(

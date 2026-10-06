@@ -6,7 +6,7 @@ import {
   cn,
   type ButtonProps,
   type ButtonVariant,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 export interface SidebarDiscButtonProps extends Omit<
   ButtonProps,

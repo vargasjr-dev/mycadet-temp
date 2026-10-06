@@ -1,7 +1,7 @@
 import {
   type ListSurfaceData,
   ListSurfaceDataSchema,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import { useMemo } from "react";
 
 import { SelectionIndicator } from "@/domains/chat/components/surfaces/selection-indicator";

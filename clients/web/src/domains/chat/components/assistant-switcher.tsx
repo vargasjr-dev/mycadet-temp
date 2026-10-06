@@ -18,7 +18,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
 
-import { cn, toast } from "@vellumai/design-library";
+import { cn, toast } from "@mycadet/design-library";
 
 import { switchToResolvedAssistant } from "@/assistant/switch-service";
 import { useSwitchableAssistants } from "@/assistant/use-switchable-assistants";

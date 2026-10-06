@@ -136,7 +136,7 @@ import {
   PortalContainerProvider,
   Tooltip,
   cn,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 import {
   endLiveVoiceSession,

@@ -24,9 +24,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Check, Square, Volume2 } from "lucide-react";
 
-import { cn, CrossfadeStack } from "@vellumai/design-library";
-import { Button } from "@vellumai/design-library/components/button";
-import { Select } from "@vellumai/design-library/components/select";
+import { cn, CrossfadeStack } from "@mycadet/design-library";
+import { Button } from "@mycadet/design-library/components/button";
+import { Select } from "@mycadet/design-library/components/select";
 
 import { useManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
 import { useVoiceSamplePreview } from "@/components/speech/use-voice-sample-preview";

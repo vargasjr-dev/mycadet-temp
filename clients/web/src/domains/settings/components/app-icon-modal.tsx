@@ -24,8 +24,8 @@ import {
   appIconNameForTraits,
   traitsForAppIconName,
 } from "@/utils/avatar-app-icon";
-import { Button } from "@vellumai/design-library/components/button";
-import { Modal } from "@vellumai/design-library/components/modal";
+import { Button } from "@mycadet/design-library/components/button";
+import { Modal } from "@mycadet/design-library/components/modal";
 import type { CharacterComponents } from "@/types/avatar";
 
 /** Size of the live preview, matching the avatar builder's own. */

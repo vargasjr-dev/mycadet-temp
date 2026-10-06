@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { useTranslation } from "@/i18n";
 import type { AssistantChannelState } from "@/types/channel-types";

@@ -5,7 +5,7 @@
  * in-memory-only caching and the plugin keeps working.
  */
 
-import { type HookFunction, type InitContext } from "@vellumai/plugin-api";
+import { type HookFunction, type InitContext } from "@mycadet/plugin-api";
 
 import { initCaptionStore } from "../src/caption-cache.js";
 

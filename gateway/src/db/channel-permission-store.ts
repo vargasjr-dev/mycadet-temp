@@ -6,7 +6,7 @@
  * Resolution walks the cascade most-specific-first and returns the first
  * cell present for the contact-type.
  *
- * Vocabulary lives in `@vellumai/gateway-client`
+ * Vocabulary lives in `@mycadet/gateway-client`
  * (`channel-permission-contract.ts`) so the gateway, the runtime evaluator,
  * and the web client share one canonical definition — same pattern as the
  * admission-policy contract.
@@ -27,7 +27,7 @@ import {
   isTrustClass,
   type ResolveChannelPermissionRequest,
   type ResolvedChannelPermission,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import { type GatewayDb, getGatewayDb } from "./connection.js";
 import { channelPermissionOverrides } from "./schema.js";
 

@@ -8,7 +8,7 @@
 // next run's dedup baseline). Lives in its own module so the sweep doesn't
 // have to import the job handler's full dependency graph.
 
-import { getMessages } from "@vellumai/plugin-api";
+import { getMessages } from "@mycadet/plugin-api";
 
 import { getLogger } from "./logging.js";
 import {

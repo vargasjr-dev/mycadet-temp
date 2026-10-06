@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 interface PreviewNoticeProps {
   /** Already-translated sentence explaining what is not on screen. */

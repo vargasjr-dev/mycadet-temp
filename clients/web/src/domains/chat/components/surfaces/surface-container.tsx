@@ -1,7 +1,7 @@
 import { CheckCircle, CircleSlash, XCircle } from "lucide-react";
 import { type ComponentType, type ReactNode, useState } from "react";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { inferCompletionTone } from "@/domains/chat/completion-tone";
 import type {
   Surface,

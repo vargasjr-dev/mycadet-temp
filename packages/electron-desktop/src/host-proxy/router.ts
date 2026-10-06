@@ -14,7 +14,7 @@
 import {
   isLoopbackGatewayCloud,
   type Lockfile,
-} from "@vellumai/local-mode/contract";
+} from "@mycadet/local-mode/contract";
 
 import { HostProxySseClient, type HostProxySseMessage } from "./sse";
 import { HostProxyPoster, type PresenceState } from "./poster";
@@ -46,7 +46,7 @@ export interface HostProxyLogger {
 
 /**
  * Guardian-token result for a local host-proxy connect. Mirrors the
- * `TokenResult` from `@vellumai/local-mode` so the startup ride-out can
+ * `TokenResult` from `@mycadet/local-mode` so the startup ride-out can
  * retry a still-starting gateway (`503`) without stalling on a missing
  * (`404`), spent (`401`), refused (`403`), or permanent (`500`) credential.
  */
@@ -105,9 +105,7 @@ export function createHostProxyClientHeaders(
         ? { "X-Vellum-Cu-Window-Capture": "1" }
         : {}),
       ...(identity.supportsSequence ? { "X-Vellum-Cu-Sequence": "1" } : {}),
-      ...(identity.supportsCoachmarks
-        ? { "X-Vellum-Cu-Annotate": "1" }
-        : {}),
+      ...(identity.supportsCoachmarks ? { "X-Vellum-Cu-Annotate": "1" } : {}),
     }),
   };
 }
@@ -180,10 +178,20 @@ export function removeExecutor(kind: string): void {
 // Message dispatch
 // ---------------------------------------------------------------------------
 
-const EXECUTOR_KINDS: readonly HostProxyExecutorKind[] = ["host_bash", "host_file", "host_transfer", "host_browser", "host_cu", "host_app_control", "host_ui_snapshot"];
+const EXECUTOR_KINDS: readonly HostProxyExecutorKind[] = [
+  "host_bash",
+  "host_file",
+  "host_transfer",
+  "host_browser",
+  "host_cu",
+  "host_app_control",
+  "host_ui_snapshot",
+];
 
 /** Route type → executor kind. Returns null for unknown types. */
-function executorKindForType(type: string): { kind: string; action: "request" | "cancel" } | null {
+function executorKindForType(
+  type: string,
+): { kind: string; action: "request" | "cancel" } | null {
   for (const kind of EXECUTOR_KINDS) {
     if (type === `${kind}_request`) return { kind, action: "request" };
     if (type === `${kind}_cancel`) return { kind, action: "cancel" };
@@ -191,7 +199,10 @@ function executorKindForType(type: string): { kind: string; action: "request" | 
   return null;
 }
 
-function dispatchMessage(message: HostProxySseMessage, poster: HostProxyPoster): void {
+function dispatchMessage(
+  message: HostProxySseMessage,
+  poster: HostProxyPoster,
+): void {
   const { type } = message;
   const route = executorKindForType(type);
   if (!route) {
@@ -206,7 +217,10 @@ function dispatchMessage(message: HostProxySseMessage, poster: HostProxyPoster):
     // — dominated by streaming deltas — which buried real errors in the log
     // and pushed it toward the 10 MB rotation cap.)
     if (type.startsWith("host_")) {
-      log.warn("[host-proxy-router] unrecognized host proxy message type, ignoring", { type });
+      log.warn(
+        "[host-proxy-router] unrecognized host proxy message type, ignoring",
+        { type },
+      );
     }
     return;
   }
@@ -225,7 +239,10 @@ function dispatchMessage(message: HostProxySseMessage, poster: HostProxyPoster):
   // No executor registered — post an error result so the daemon doesn't hang.
   const requestId = message.requestId as string | undefined;
   if (!requestId) {
-    log.warn("[host-proxy-router] message missing requestId, cannot post stub error", { type });
+    log.warn(
+      "[host-proxy-router] message missing requestId, cannot post stub error",
+      { type },
+    );
     return;
   }
 
@@ -348,7 +365,10 @@ const lastRecordedState = new Map<string, PresenceState>();
  * whatever that post carries, so what was confirmed before it says nothing
  * about what the daemon will hold once it lands.
  */
-function shouldPostPresence(assistantId: string, state: PresenceState): boolean {
+function shouldPostPresence(
+  assistantId: string,
+  state: PresenceState,
+): boolean {
   if (state === "active") {
     return true;
   }
@@ -393,7 +413,10 @@ async function postPresenceTo(
   }
   if (!conn.presencePostFailing) {
     conn.presencePostFailing = true;
-    log.warn("[host-proxy-router] presence post failed", { assistantId, state });
+    log.warn("[host-proxy-router] presence post failed", {
+      assistantId,
+      state,
+    });
   }
 }
 
@@ -437,7 +460,10 @@ async function drainPresencePosts(
       next = pending === posting ? undefined : pending;
     }
   } catch (err) {
-    log.warn("[host-proxy-router] presence post loop failed", { assistantId, err });
+    log.warn("[host-proxy-router] presence post loop failed", {
+      assistantId,
+      err,
+    });
   } finally {
     queue.pending = undefined;
     // Only if this drain still owns the latch: an assistant that went away and
@@ -554,7 +580,9 @@ async function exchangeForGatewayToken(
       },
     });
     if (!res.ok) {
-      log.warn("[host-proxy-router] gateway token exchange failed", { status: res.status });
+      log.warn("[host-proxy-router] gateway token exchange failed", {
+        status: res.status,
+      });
       return { kind: res.status === 403 ? "terminal" : "retryable" };
     }
     const body = (await res.json()) as { token: string; expiresAt: number };
@@ -624,7 +652,10 @@ async function acquireGatewayTokenRidingStartup(
     }
     const guardianToken = await acquireGuardianToken(assistantId);
     if (!guardianToken.ok) {
-      if (!isTransientGuardianStatus(guardianToken.status) || attempt >= attempts) {
+      if (
+        !isTransientGuardianStatus(guardianToken.status) ||
+        attempt >= attempts
+      ) {
         return null;
       }
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
@@ -649,9 +680,12 @@ async function acquireGatewayTokenRidingStartup(
 // reconnect. Single-sourced here so the value set on connect and the value
 // recomputed in `handleLockfileChange` can never drift (a mismatch would loop
 // connect/disconnect forever).
-const localFingerprint = (gatewayPort: number): string => `local:${gatewayPort}`;
-const cloudFingerprint = (runtimeUrl: string, organizationId?: string): string =>
-  `cloud:${runtimeUrl}:${organizationId ?? ""}`;
+const localFingerprint = (gatewayPort: number): string =>
+  `local:${gatewayPort}`;
+const cloudFingerprint = (
+  runtimeUrl: string,
+  organizationId?: string,
+): string => `cloud:${runtimeUrl}:${organizationId ?? ""}`;
 
 // -- Pending-connect guard ---------------------------------------------------
 
@@ -676,17 +710,24 @@ async function connectWithPendingGuard(
   try {
     const token = await acquireToken(isCurrentAttempt);
     if (!isCurrentAttempt() || connections.has(assistantId)) {
-      log.info("[host-proxy-router] lockfile changed during token acquisition, aborting stale connect", { assistantId, fingerprint });
+      log.info(
+        "[host-proxy-router] lockfile changed during token acquisition, aborting stale connect",
+        { assistantId, fingerprint },
+      );
       return;
     }
     if (!token) {
-      log.warn("[host-proxy-router] could not acquire token, skipping connection", { assistantId, fingerprint });
+      log.warn(
+        "[host-proxy-router] could not acquire token, skipping connection",
+        { assistantId, fingerprint },
+      );
       return;
     }
 
     open(token);
   } finally {
-    if (pendingConnects.get(assistantId) === pending) pendingConnects.delete(assistantId);
+    if (pendingConnects.get(assistantId) === pending)
+      pendingConnects.delete(assistantId);
   }
 }
 
@@ -701,8 +742,13 @@ async function connectLocalAssistant(
     assistantId,
     fingerprint,
     (isCurrentAttempt) =>
-      acquireGatewayTokenRidingStartup(assistantId, gatewayPort, isCurrentAttempt),
-    (token) => openLocalConnection(assistantId, gatewayPort, token, fingerprint),
+      acquireGatewayTokenRidingStartup(
+        assistantId,
+        gatewayPort,
+        isCurrentAttempt,
+      ),
+    (token) =>
+      openLocalConnection(assistantId, gatewayPort, token, fingerprint),
   );
 }
 
@@ -744,7 +790,10 @@ function openLocalConnection(
   // Registered before the stream opens so the onConnected seed can find it.
   connections.set(assistantId, { sse, poster, fingerprint });
   sse.connect();
-  log.info("[host-proxy-router] connected to local assistant", { assistantId, gatewayPort });
+  log.info("[host-proxy-router] connected to local assistant", {
+    assistantId,
+    gatewayPort,
+  });
 }
 
 // -- Cloud assistant connection ---------------------------------------------
@@ -758,7 +807,10 @@ function connectCloudAssistant(
 
   const sessionToken = requireRuntime().getSessionToken();
   if (!sessionToken) {
-    log.warn("[host-proxy-router] no session token, skipping cloud connection", { assistantId });
+    log.warn(
+      "[host-proxy-router] no session token, skipping cloud connection",
+      { assistantId },
+    );
     return;
   }
 
@@ -797,7 +849,11 @@ function connectCloudAssistant(
     fingerprint: cloudFingerprint(runtimeUrl, organizationId),
   });
   sse.connect();
-  log.info("[host-proxy-router] connected to cloud assistant", { assistantId, runtimeUrl, organizationId });
+  log.info("[host-proxy-router] connected to cloud assistant", {
+    assistantId,
+    runtimeUrl,
+    organizationId,
+  });
 }
 
 // -- Disconnect -------------------------------------------------------------
@@ -810,7 +866,9 @@ function connectCloudAssistant(
 // assistant is gone for good clear both.
 function disconnectAssistant(assistantId: string): void {
   if (pendingConnects.delete(assistantId)) {
-    log.info("[host-proxy-router] cancelled pending connection", { assistantId });
+    log.info("[host-proxy-router] cancelled pending connection", {
+      assistantId,
+    });
   }
   const conn = connections.get(assistantId);
   if (!conn) return;
@@ -835,9 +893,7 @@ function handleLockfileChange(lockfile: Lockfile): void {
       ? assistant.resources?.gatewayPort
       : undefined;
     const isCloud =
-      assistant.cloud === "vellum" &&
-      assistant.runtimeUrl &&
-      hasSessionToken;
+      assistant.cloud === "vellum" && assistant.runtimeUrl && hasSessionToken;
     if (!port && !isCloud) continue;
 
     activeIds.add(assistant.assistantId);
@@ -847,7 +903,10 @@ function handleLockfileChange(lockfile: Lockfile): void {
 
     const existing = connections.get(assistant.assistantId);
     const pending = pendingConnects.get(assistant.assistantId);
-    if ((existing && existing.fingerprint !== fp) || (pending && pending.fingerprint !== fp)) {
+    if (
+      (existing && existing.fingerprint !== fp) ||
+      (pending && pending.fingerprint !== fp)
+    ) {
       log.info("[host-proxy-router] connection config changed, reconnecting", {
         assistantId: assistant.assistantId,
         oldFingerprint: existing?.fingerprint ?? pending?.fingerprint,
@@ -869,7 +928,10 @@ function handleLockfileChange(lockfile: Lockfile): void {
   }
 
   // Disconnect assistants (including in-flight connects) no longer in the lockfile
-  for (const assistantId of new Set([...connections.keys(), ...pendingConnects.keys()])) {
+  for (const assistantId of new Set([
+    ...connections.keys(),
+    ...pendingConnects.keys(),
+  ])) {
     if (!activeIds.has(assistantId)) {
       disconnectAssistant(assistantId);
       // Gone rather than reconnecting, so nothing is left to serve the queue
@@ -893,9 +955,7 @@ let stopPresenceMonitor: (() => void) | null = null;
  * `app.whenReady()` after `installLockfileWatcher()`. Returns a teardown
  * function for `before-quit`.
  */
-export function installHostProxyBridge(
-  runtime: HostProxyRuntime,
-): () => void {
+export function installHostProxyBridge(runtime: HostProxyRuntime): () => void {
   hostRuntime = runtime;
   setHostProxyExecutorLogger(runtime.logger);
   executors.clear();
@@ -942,7 +1002,10 @@ export function installHostProxyBridge(
     unsubscribe = null;
     unsubscribeSessionToken?.();
     unsubscribeSessionToken = null;
-    for (const assistantId of new Set([...connections.keys(), ...pendingConnects.keys()])) {
+    for (const assistantId of new Set([
+      ...connections.keys(),
+      ...pendingConnects.keys(),
+    ])) {
       disconnectAssistant(assistantId);
     }
     presencePostQueues.clear();
@@ -985,7 +1048,10 @@ export const __testing = {
     stopPresenceMonitor?.();
     stopPresenceMonitor = null;
     lastPresenceState = null;
-    for (const assistantId of new Set([...connections.keys(), ...pendingConnects.keys()])) {
+    for (const assistantId of new Set([
+      ...connections.keys(),
+      ...pendingConnects.keys(),
+    ])) {
       disconnectAssistant(assistantId);
     }
     presencePostQueues.clear();

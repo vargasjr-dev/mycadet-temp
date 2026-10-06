@@ -4,7 +4,7 @@
  * Electron's notification path cannot attach an `INSendMessageIntent`, so the
  * assistant avatar can only become the notification icon by going around it.
  * This module supplies the `create` and `isSupported` seams that
- * `@vellumai/electron-desktop/notifications` calls, and shapes the payload the
+ * `@mycadet/electron-desktop/notifications` calls, and shapes the payload the
  * addon expects: with a sender the assistant's name is the title and a distinct
  * conversation title becomes the subtitle, which is the layout Communication
  * Notifications render (avatar large, app icon badged in the corner). A
@@ -21,7 +21,7 @@ import { createHash, randomUUID } from "node:crypto";
 
 import { app } from "electron";
 
-import { resolveNotificationAvatarPath } from "@vellumai/electron-desktop/notification-avatar-path";
+import { resolveNotificationAvatarPath } from "@mycadet/electron-desktop/notification-avatar-path";
 import {
   CATEGORY_ACTIONS,
   createElectronNotification,
@@ -29,7 +29,7 @@ import {
   type CategoryAction,
   type NotificationCreateOptions,
   type NotificationLike,
-} from "@vellumai/electron-desktop/notifications";
+} from "@mycadet/electron-desktop/notifications";
 
 import log from "./logger";
 import {

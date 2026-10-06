@@ -9,7 +9,7 @@
  * Canonical wire-contract source. Assistant code imports the types/schema
  * directly from this file via relative paths (the daemon route sources its
  * `requestBody` from here); external consumers (web client, gateway, evals)
- * import via `@vellumai/assistant-api`.
+ * import via `@mycadet/assistant-api`.
  */
 
 import { z } from "zod";

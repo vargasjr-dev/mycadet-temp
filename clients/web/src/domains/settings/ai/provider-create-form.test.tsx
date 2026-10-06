@@ -25,7 +25,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
-import { Modal } from "@vellumai/design-library/components/modal";
+import { Modal } from "@mycadet/design-library/components/modal";
 import { createElement, type ReactNode } from "react";
 
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
@@ -54,7 +54,7 @@ let createResponseJson: unknown = null;
 let toastSuccessCalls: string[] = [];
 const initialLifecycleState = useAssistantLifecycleStore.getState();
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     success: (message: string) => {
       toastSuccessCalls.push(message);
@@ -104,9 +104,8 @@ mock.module("@/domains/settings/ai/use-provider-credentials-list", () => ({
   }),
 }));
 
-const { ProviderCreateForm } = await import(
-  "@/domains/settings/ai/provider-create-form"
-);
+const { ProviderCreateForm } =
+  await import("@/domains/settings/ai/provider-create-form");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -445,9 +444,7 @@ describe("ProviderCreateForm submit sequence", () => {
       </ModalWrapper>,
     );
 
-    expect(
-      getInputByPlaceholder("http://127.0.0.1:11434/v1"),
-    ).toBeDefined();
+    expect(getInputByPlaceholder("http://127.0.0.1:11434/v1")).toBeDefined();
     expect(document.body.textContent).toContain(
       "Leave blank to use the local Ollama default, or enter a remote or non-default host.",
     );

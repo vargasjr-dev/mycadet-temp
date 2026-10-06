@@ -12,7 +12,7 @@
 import {
   isAdmissionPolicyExemptChannel,
   isAdmissionPolicyHiddenChannel,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import {
   ADMISSION_POLICY_DEFAULT,
   ADMISSION_POLICY_VALUES,

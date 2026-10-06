@@ -5,14 +5,14 @@ import { useTranslation } from "@/i18n";
 import { ChevronDown, ChevronUp, Info } from "lucide-react";
 import { Link } from "react-router";
 
-import { Tooltip } from "@vellumai/design-library";
+import { Tooltip } from "@mycadet/design-library";
 
 import { routes } from "@/utils/routes";
 
 import { PluginPill } from "./plugin-pill";
 import type { UseNewChatPluginsResult } from "./use-new-chat-plugins";
-import { cn } from "@vellumai/design-library/utils/cn";
-import { textLinkVariants } from "@vellumai/design-library/components/text-link";
+import { cn } from "@mycadet/design-library/utils/cn";
+import { textLinkVariants } from "@mycadet/design-library/components/text-link";
 
 /** Pills shown before the "Show all (+N)" expander reveals the rest. */
 const COLLAPSED_PILL_COUNT = 12;

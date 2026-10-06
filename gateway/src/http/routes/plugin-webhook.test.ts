@@ -30,7 +30,7 @@ import { inboundSeenEvents } from "../../db/schema.js";
 import {
   ACCESS_DENIED_NOT_APPROVED_REPLY,
   PLUGIN_ADMISSION_DENIED_NOTICE_PATH,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import type {
   HandleInboundOptions,
@@ -1016,8 +1016,7 @@ describe("standard-webhooks verification", () => {
     opts: { id?: string; timestamp?: string } = {},
   ): { id: string; timestamp: string; signature: string } {
     const id = opts.id ?? MSG_ID;
-    const timestamp =
-      opts.timestamp ?? String(Math.floor(Date.now() / 1000));
+    const timestamp = opts.timestamp ?? String(Math.floor(Date.now() / 1000));
     const digest = createHmac("sha256", KEY_BYTES)
       .update(`${id}.${timestamp}.${body}`, "utf8")
       .digest("base64");
@@ -1689,7 +1688,11 @@ describe("HMAC URL and form-encoded inbound", () => {
 
   function twilioPost(
     params: Record<string, string>,
-    opts: { url?: string; signature?: string; headers?: Record<string, string> } = {},
+    opts: {
+      url?: string;
+      signature?: string;
+      headers?: Record<string, string>;
+    } = {},
   ): Request {
     const url =
       opts.url ?? "http://gateway/webhooks/plugins/meeting-bot/realtime";
@@ -1816,8 +1819,7 @@ describe("HMAC URL and form-encoded inbound", () => {
     // Twilio signed the platform callback URL; the gateway sees localhost.
     // The proxy injects the original URL it handed the vendor, and the
     // signature covers that spelling rather than the one on the wire here.
-    const injected =
-      "https://platform.example.test/v1/gateway/callbacks/cb-1";
+    const injected = "https://platform.example.test/v1/gateway/callbacks/cb-1";
     const params: Record<string, string> = {
       MessageSid: "SM9004",
       From: "+15555550101",

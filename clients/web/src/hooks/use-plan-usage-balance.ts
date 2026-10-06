@@ -28,7 +28,7 @@ import {
   extraCreditUsd,
   planCreditUsedFraction,
   usageGrantRatio,
-} from "@vellumai/service-contracts/plan-credit";
+} from "@mycadet/service-contracts/plan-credit";
 
 export { usageGrantRatio };
 

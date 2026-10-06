@@ -10,7 +10,7 @@ import { z } from "zod";
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 import {
   PERMISSIONS_GET_STATE,
   PERMISSIONS_OPEN_SETTINGS,
@@ -26,7 +26,7 @@ import {
   type SystemPermissionStatus,
   type SystemPermissionsState,
   type TextInsertionResult,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { handle } from "../ipc.client";
 import log from "../logger";

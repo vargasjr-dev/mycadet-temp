@@ -2,7 +2,7 @@ import {
   type ContentBlock,
   extractTextFromStoredMessageContent,
   selectedBackendSupportsMultimodal,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 import { createHash } from "crypto";
 import { eq } from "drizzle-orm";
 

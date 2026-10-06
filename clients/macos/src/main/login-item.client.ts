@@ -2,12 +2,12 @@ import {
   configureLoginItem,
   installLoginItem,
   installLoginItemIpc,
-} from "@vellumai/electron-desktop/login-item";
+} from "@mycadet/electron-desktop/login-item";
 import {
   onSettingChange,
   readSetting,
   writeSetting,
-} from "@vellumai/electron-desktop/settings";
+} from "@mycadet/electron-desktop/settings";
 
 import { handle } from "./ipc";
 

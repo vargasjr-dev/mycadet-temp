@@ -5,7 +5,7 @@ import {
   resolveStorybookUrl,
   siblingOf,
   type StorybookId,
-} from "@vellumai/design-library/storybook-links";
+} from "@mycadet/design-library/storybook-links";
 
 // The two Storybooks share one resolver, so this suite covers both toolbars.
 // `packages/design-library` cannot host it: its vitest config declares only the

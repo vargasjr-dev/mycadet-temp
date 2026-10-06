@@ -33,7 +33,7 @@ mock.module("@/stores/resolved-assistants-store", () => {
 // --- toast -------------------------------------------------------------------
 const toastSuccess = mock((_msg: string) => {});
 const toastWarning = mock((_msg: string) => {});
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: toastSuccess, warning: toastWarning, error: () => {} },
 }));
 

@@ -70,7 +70,7 @@ class FakeClient {
   shutdown(): void {}
 }
 let fakeClient = new FakeClient();
-mock.module("@vellumai/native-sidecar/supervisor", () => ({
+mock.module("@mycadet/native-sidecar/supervisor", () => ({
   NativeSidecarClient: class {
     constructor() {
       return fakeClient as never;
@@ -122,17 +122,15 @@ test("dictation partials route to the owner and gate pushed audio", async () => 
   });
   expect(stranger.send).not.toHaveBeenCalled();
 
-  handlers["vellum:helper:dictation:audio"]!(
-    [new Uint8Array([1, 2]).buffer],
-    { sender: stranger },
-  );
+  handlers["vellum:helper:dictation:audio"]!([new Uint8Array([1, 2]).buffer], {
+    sender: stranger,
+  });
   expect(
     fakeClient.calls.some((c) => c.method === "dictation.appendAudio"),
   ).toBe(false);
-  handlers["vellum:helper:dictation:audio"]!(
-    [new Uint8Array([1, 2]).buffer],
-    { sender: owner },
-  );
+  handlers["vellum:helper:dictation:audio"]!([new Uint8Array([1, 2]).buffer], {
+    sender: owner,
+  });
   expect(
     fakeClient.calls.some((c) => c.method === "dictation.appendAudio"),
   ).toBe(true);
@@ -173,10 +171,9 @@ test("a replaced owner cannot stop the active dictation", async () => {
   expect(fakeClient.calls).toHaveLength(2);
 
   fakeClient.notifications.get("dictation.partial")!({ text: "active" });
-  expect(active.send).toHaveBeenCalledWith(
-    "vellum:helper:dictation:partial",
-    { text: "active" },
-  );
+  expect(active.send).toHaveBeenCalledWith("vellum:helper:dictation:partial", {
+    text: "active",
+  });
 });
 
 test("a helper crash drops the session owners", async () => {
@@ -205,10 +202,9 @@ test("a helper crash drops the session owners", async () => {
   fakeClient.notifications.get("dictation.finalized")!({ text: "late" });
   expect(owner.send).not.toHaveBeenCalled();
 
-  handlers["vellum:helper:dictation:audio"]!(
-    [new Uint8Array([1]).buffer],
-    { sender: owner },
-  );
+  handlers["vellum:helper:dictation:audio"]!([new Uint8Array([1]).buffer], {
+    sender: owner,
+  });
   expect(
     fakeClient.calls.some((c) => c.method === "dictation.appendAudio"),
   ).toBe(false);
@@ -245,10 +241,9 @@ test("server-path retry keeps the streaming owner", async () => {
   expect(owner.send).not.toHaveBeenCalled();
 
   fakeClient.notifications.get("dictation.partial")!({ text: "server" });
-  expect(owner.send).toHaveBeenCalledWith(
-    "vellum:helper:dictation:partial",
-    { text: "server" },
-  );
+  expect(owner.send).toHaveBeenCalledWith("vellum:helper:dictation:partial", {
+    text: "server",
+  });
 });
 
 test("one-shot transcription routes independently from streaming", async () => {
@@ -296,15 +291,20 @@ test("one-shot transcription settles replacements and drops stale completions", 
   const replaced = makeSender();
   const active = makeSender();
   expect(
-    await handlers["vellum:helper:dictation:transcribe"]!([new ArrayBuffer(0)], {
-      sender: replaced,
-    }),
+    await handlers["vellum:helper:dictation:transcribe"]!(
+      [new ArrayBuffer(0)],
+      {
+        sender: replaced,
+      },
+    ),
   ).toEqual({ ok: false, reason: "empty audio" });
 
   let rejectFirst!: (reason: Error) => void;
   fakeClient.call = (method: string, params?: unknown): Promise<unknown> => {
     fakeClient.calls.push({ method, params });
-    if (fakeClient.calls.filter((call) => call.method === method).length === 1) {
+    if (
+      fakeClient.calls.filter((call) => call.method === method).length === 1
+    ) {
       return new Promise((_resolve, reject) => {
         rejectFirst = reject;
       });

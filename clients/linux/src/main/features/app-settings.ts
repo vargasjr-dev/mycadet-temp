@@ -1,16 +1,16 @@
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 import {
   HOTKEY_SETTINGS,
   type HotkeySettingsProvider,
-} from "@vellumai/electron-desktop/commands";
+} from "@mycadet/electron-desktop/commands";
 import {
   onSettingChange,
   readSetting,
   writeSetting,
-} from "@vellumai/electron-desktop/settings";
+} from "@mycadet/electron-desktop/settings";
 
 const hotkeySettings: HotkeySettingsProvider = {
   read: () => ({ ...(readSetting("hotkeys") ?? {}) }),

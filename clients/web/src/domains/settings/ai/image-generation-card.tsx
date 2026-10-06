@@ -8,9 +8,9 @@ import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
-import { Select } from "@vellumai/design-library/components/select";
-import { Input } from "@vellumai/design-library/components/input";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Select } from "@mycadet/design-library/components/select";
+import { Input } from "@mycadet/design-library/components/input";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import {
   LS_IMAGE_GEN_MODEL,
@@ -110,7 +110,8 @@ export function ImageGenerationCard() {
     string | null
   >(null);
   const serverOpenRouterModel =
-    serverProvider === "openrouter" && typeof imageGenService?.model === "string"
+    serverProvider === "openrouter" &&
+    typeof imageGenService?.model === "string"
       ? imageGenService.model
       : undefined;
   const openrouterModelValue =

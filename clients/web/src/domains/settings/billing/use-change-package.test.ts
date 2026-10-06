@@ -41,7 +41,7 @@ mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
 }));
 
 const toastErrorCalls: string[] = [];
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     error: (message: string) => {
       toastErrorCalls.push(message);

@@ -3,7 +3,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { CredentialRecord } from "@vellumai/service-contracts/credential-rpc";
+import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 
 import { handleMetadataRoute } from "../metadata-routes.js";
 import {

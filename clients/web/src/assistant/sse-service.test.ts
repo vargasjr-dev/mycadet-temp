@@ -9,7 +9,7 @@ import {
   test,
 } from "bun:test";
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 import { makeEnvelope } from "@/assistant/sse-service.test-helper";
 import * as eventBus from "@/lib/event-bus";
 import { requestSseReconnect } from "@/lib/streaming/sse-reconnect-control";
@@ -80,9 +80,8 @@ mock.module("@/lib/streaming/reconnect-cursor", () => ({
   resetReconnectCursor: resetReconnectCursorMock,
 }));
 
-const { sseService, __setHiddenTeardownGraceMsForTesting } = await import(
-  "@/assistant/sse-service"
-);
+const { sseService, __setHiddenTeardownGraceMsForTesting } =
+  await import("@/assistant/sse-service");
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

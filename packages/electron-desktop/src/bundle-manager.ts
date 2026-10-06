@@ -4,10 +4,10 @@ import path from "node:path";
 
 import JSZip from "jszip";
 
-import { resolveRelativePath } from "@vellumai/electron-utils/app-protocol";
-import type { BundleScanData } from "@vellumai/ipc-contract";
+import { resolveRelativePath } from "@mycadet/electron-utils/app-protocol";
+import type { BundleScanData } from "@mycadet/ipc-contract";
 
-export type { BundleScanData } from "@vellumai/ipc-contract";
+export type { BundleScanData } from "@mycadet/ipc-contract";
 
 // ---------------------------------------------------------------------------
 // Types

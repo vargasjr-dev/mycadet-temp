@@ -1,5 +1,5 @@
 import { LIVE_VOICE_AUDIO_FORMAT_PARAMS } from "@/domains/chat/voice/live-voice/protocol";
-import type { WatchCaptureTarget } from "@vellumai/ipc-contract";
+import type { WatchCaptureTarget } from "@mycadet/ipc-contract";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type {

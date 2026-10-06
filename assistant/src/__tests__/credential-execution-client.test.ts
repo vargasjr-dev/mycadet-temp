@@ -20,8 +20,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { resolveIpcEndpoint } from "@vellumai/ipc-server-utils";
-import { CES_PROTOCOL_VERSION } from "@vellumai/service-contracts/credential-rpc";
+import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
+import { CES_PROTOCOL_VERSION } from "@mycadet/service-contracts/credential-rpc";
 
 import {
   CesClientError,

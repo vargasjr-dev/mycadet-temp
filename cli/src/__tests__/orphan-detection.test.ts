@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { EnvironmentDefinition } from "@vellumai/environments";
+import type { EnvironmentDefinition } from "@mycadet/environments";
 
 // Point lockfile operations at a temp directory before importing anything that
 // would otherwise resolve real on-host paths.

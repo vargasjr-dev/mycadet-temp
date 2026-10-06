@@ -2,7 +2,7 @@
 
 Ship MCP servers with a plugin. A root `mcp.json` declares servers the assistant connects on install, and their tools land in the same catalog as workspace-configured MCP tools.
 
-This is a declaration, not a TypeScript surface: there is no `mcp/` directory and nothing to import from `@vellumai/plugin-api`. The file follows the [Agent Plugins 1.0.0](https://agent-plugins.org) MCP schema.
+This is a declaration, not a TypeScript surface: there is no `mcp/` directory and nothing to import from `@mycadet/plugin-api`. The file follows the [Agent Plugins 1.0.0](https://agent-plugins.org) MCP schema.
 
 ## When to ship MCP
 

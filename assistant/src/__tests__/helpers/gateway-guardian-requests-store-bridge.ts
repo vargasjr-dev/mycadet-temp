@@ -34,7 +34,7 @@ import {
   DecideGuardianRequestIpcParamsSchema,
   type DecideGuardianRequestIpcResponse,
   type GuardianRequestAclOutcome,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import {
   createGuardianGatewaySim,

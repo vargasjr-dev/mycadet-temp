@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { Info, LoaderCircle } from "lucide-react";
 
 import { StatusBannerNotice } from "@/components/status-banner";

@@ -1,6 +1,6 @@
 /**
  * Global test utility for mocking gateway IPC calls via
- * `@vellumai/gateway-client/ipc-client`.
+ * `@mycadet/gateway-client/ipc-client`.
  *
  * Usage:
  *   import { mockGatewayIpc, resetMockGatewayIpc } from "./mock-gateway-ipc.js";
@@ -24,7 +24,7 @@
  * a real gateway socket. Call `mockGatewayIpc()` to configure specific
  * responses when the test cares about the IPC result.
  *
- * Mocks `@vellumai/gateway-client/ipc-client` at the package level so the
+ * Mocks `@mycadet/gateway-client/ipc-client` at the package level so the
  * assistant's thin wrapper in `ipc/gateway-client.ts` (which delegates to
  * the package) gets the fake implementation. Non-gateway IPC paths (e.g.
  * CLI IPC) are unaffected since they don't import from the package.
@@ -167,7 +167,7 @@ export function installGatewayIpcMock(): void {
   // Named exports here must cover every ipc-client symbol the package barrel
   // re-exports. Bun's mock replaces that module for relative and package
   // imports, so a missing name fails assistant tests at load time.
-  mock.module("@vellumai/gateway-client/ipc-client", () => ({
+  mock.module("@mycadet/gateway-client/ipc-client", () => ({
     ipcCall: async (
       _socketPath: string,
       method: string,

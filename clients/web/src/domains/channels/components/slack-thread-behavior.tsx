@@ -1,5 +1,5 @@
-import { Radio, RadioGroup } from "@vellumai/design-library/components/radio";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Radio, RadioGroup } from "@mycadet/design-library/components/radio";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { useTranslation } from "@/i18n";
 import type { IntegrationsSlackChannelConfigGetResponse } from "@/generated/daemon/types.gen";

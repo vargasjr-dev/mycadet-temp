@@ -10,7 +10,7 @@
 // (same format as extraction) that is applied to the graph.
 // ---------------------------------------------------------------------------
 
-import { getConfiguredProvider, safeStringSlice } from "@vellumai/plugin-api";
+import { getConfiguredProvider, safeStringSlice } from "@mycadet/plugin-api";
 
 import type { AssistantConfig } from "../../../../../config/types.js";
 import { getMemoryDb } from "../../../../../persistence/db-connection.js";

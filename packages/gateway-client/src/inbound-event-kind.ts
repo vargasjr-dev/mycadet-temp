@@ -79,7 +79,7 @@ import {
   parseDiscordEmojiMention,
   reactionEmojiIdentity,
   type ReactionEmojiKind,
-} from "@vellumai/service-contracts/reactions";
+} from "@mycadet/service-contracts/reactions";
 
 /** The structured payload of a reaction event. */
 export interface InboundReactionPayload {

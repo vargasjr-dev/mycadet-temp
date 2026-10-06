@@ -19,7 +19,7 @@
 import {
   type HookFunction,
   type PostCompactContext,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import {
   captionImagesInMessages,

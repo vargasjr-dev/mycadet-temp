@@ -30,13 +30,13 @@
 import {
   buildMcpOAuthCallbackUrl,
   buildMcpOAuthClientMetadataUrl,
-} from "@vellumai/service-contracts/mcp-oauth";
+} from "@mycadet/service-contracts/mcp-oauth";
 import {
   buildTwilioMediaStreamUrl,
   buildTwilioStatusWebhookUrl,
   buildTwilioVoiceWebhookUrl,
   normalizePublicBaseUrl,
-} from "@vellumai/service-contracts/twilio-ingress";
+} from "@mycadet/service-contracts/twilio-ingress";
 
 import { getIngressPublicBaseUrl } from "../config/env.js";
 

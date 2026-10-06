@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { withQueryCache } from "@/lib/story-query-cache";
 
-import type { LLMRequestLogEntry } from "@vellumai/assistant-api";
+import type { LLMRequestLogEntry } from "@mycadet/assistant-api";
 
 import { CacheDiffCard } from "./cache-diff-card";
 

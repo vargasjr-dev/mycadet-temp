@@ -1,6 +1,6 @@
 import { readdirSync } from "fs";
 
-import { SEEDS, type EnvironmentDefinition } from "@vellumai/environments";
+import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
 
 import { getMultiInstanceDir } from "./paths.js";
 import { getCurrentEnvironment } from "./resolve.js";

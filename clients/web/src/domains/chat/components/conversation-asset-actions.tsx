@@ -10,7 +10,7 @@ import {
 import { useCallback } from "react";
 import type { FC, ReactNode } from "react";
 
-import { ActionMenu, Button, toast } from "@vellumai/design-library";
+import { ActionMenu, Button, toast } from "@mycadet/design-library";
 
 import { downloadDocumentPdf } from "@/domains/chat/api/surfaces";
 import { t } from "@/i18n";

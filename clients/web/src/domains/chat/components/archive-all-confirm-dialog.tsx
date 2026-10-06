@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useConversationDoneLabels } from "@/utils/done-labels";
 
 import type { Conversation } from "@/types/conversation-types";
-import { ConfirmDialog } from "@vellumai/design-library";
+import { ConfirmDialog } from "@mycadet/design-library";
 
 /**
  * Confirmation gate for the sidebar's section-header bulk action:

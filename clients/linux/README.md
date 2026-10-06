@@ -9,7 +9,7 @@ protocol. Packaged builds are AppImages.
 This is the first iteration toward a Linux distribution. It re-homes the
 community Linux packaging work from
 [#39066](https://github.com/vellum-ai/vellum-assistant/pull/39066) onto the
-current `@vellumai/electron-desktop` adapter used by Windows.
+current `@mycadet/electron-desktop` adapter used by Windows.
 
 ## What works now
 

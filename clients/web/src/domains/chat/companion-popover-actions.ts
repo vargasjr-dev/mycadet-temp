@@ -1,7 +1,7 @@
 import {
   COMPANION_VOICE_START_CONFIRMATION,
   type CompanionPopoverAnswer,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   closeCompanionPicker,

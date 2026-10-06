@@ -12,7 +12,7 @@ import type {
   DirectoryScopeOption,
   ScopeOption,
 } from "@/types/interaction-ui-types";
-import { Card } from "@vellumai/design-library";
+import { Card } from "@mycadet/design-library";
 
 export interface ConfirmationPromptCardProps {
   confirmation: {
@@ -142,7 +142,9 @@ export function ConfirmationPromptCard({
             <ChevronRight
               className={`h-3 w-3 transition-transform ${showDetails ? "rotate-90" : ""}`}
             />
-            {showDetails ? t("confirmationPromptCard.hideDetails") : t("confirmationPromptCard.showDetails")}
+            {showDetails
+              ? t("confirmationPromptCard.hideDetails")
+              : t("confirmationPromptCard.showDetails")}
           </button>
           {showDetails && (
             <div className="mt-2 space-y-1.5">

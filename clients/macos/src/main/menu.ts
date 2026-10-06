@@ -1,16 +1,16 @@
 import { Menu, type MenuItemConstructorOptions, app, shell } from "electron";
 import { z } from "zod";
 
-import { companionVisibilityItem } from "@vellumai/electron-desktop/companion-menu";
+import { companionVisibilityItem } from "@mycadet/electron-desktop/companion-menu";
 import {
   onSettingChange,
   readSetting,
-} from "@vellumai/electron-desktop/settings";
+} from "@mycadet/electron-desktop/settings";
 import {
   onCompanionHiddenChange,
   readCompanionHidden,
   readOnboardingActive,
-} from "@vellumai/electron-desktop/window-state";
+} from "@mycadet/electron-desktop/window-state";
 
 import { openAboutWindow } from "./about.client";
 import { checkForUpdates } from "./auto-update.client";
@@ -232,9 +232,7 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
         { type: "separator" },
         { role: "reload" },
         { role: "forceReload" },
-        ...(chromeDevToolsEnabled
-          ? [{ role: "toggleDevTools" as const }]
-          : []),
+        ...(chromeDevToolsEnabled ? [{ role: "toggleDevTools" as const }] : []),
         { type: "separator" },
         { role: "resetZoom" },
         { role: "zoomIn" },
@@ -338,15 +336,11 @@ export const installApplicationMenu = (): void => {
   if (installed) return;
   installed = true;
 
-  handle(
-    "vellum:menu:setPlatformSession",
-    z.tuple([z.boolean()]),
-    ([has]) => {
-      if (state.hasPlatformSession === has) return;
-      state.hasPlatformSession = has;
-      applyMenu();
-    },
-  );
+  handle("vellum:menu:setPlatformSession", z.tuple([z.boolean()]), ([has]) => {
+    if (state.hasPlatformSession === has) return;
+    state.hasPlatformSession = has;
+    applyMenu();
+  });
 
   // Rebuild the menu when hotkey settings change so accelerators update
   // immediately without requiring an app restart.

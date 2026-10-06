@@ -18,7 +18,7 @@
 import type {
   PairingFailureReason,
   PublicBaseUrlRejection,
-} from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
 
 import type {
   AppVersionInfo,
@@ -109,7 +109,7 @@ export type ElectronHostOS = "macos" | "windows" | "linux";
 
 /**
  * What a pairing step failed on, for callers picking recovery copy. The
- * bridge's name for `@vellumai/service-contracts`'s `PairingFailureReason`,
+ * bridge's name for `@mycadet/service-contracts`'s `PairingFailureReason`,
  * which owns the union and the retryable classification read off it. That
  * package is zod-only and environment-neutral, so the preload takes on nothing
  * at runtime: this is a type-only import.
@@ -159,7 +159,7 @@ export type LocalPairingPollResult =
 
 /**
  * One paired-device row as returned by `localMode.listDevices`. Structural
- * duplicate of `@vellumai/local-mode`'s `DeviceRecord`, declared here so this
+ * duplicate of `@mycadet/local-mode`'s `DeviceRecord`, declared here so this
  * package has no `file:` dependency on local-mode (which carries a transitive
  * `file:` chain that breaks lockfile resolution in consumer packages; see the
  * lockfile types in `./types.ts`). The gateway stores only the HASHED device

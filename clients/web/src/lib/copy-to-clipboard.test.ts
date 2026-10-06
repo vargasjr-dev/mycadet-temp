@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 const toastSuccess = mock(() => {});
 const toastError = mock(() => {});
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: toastSuccess, error: toastError },
 }));
 

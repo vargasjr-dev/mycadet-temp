@@ -11,7 +11,7 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { SourceMetadata, TrustVerdict } from "@vellumai/gateway-client";
+import type { SourceMetadata, TrustVerdict } from "@mycadet/gateway-client";
 
 import { createGatewayVerificationSessionsStub } from "../../../__tests__/helpers/gateway-verification-sessions-stub.js";
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { FEATURE_FLAGS_SET } from "@vellumai/ipc-contract";
+import { FEATURE_FLAGS_SET } from "@mycadet/ipc-contract";
 
 import type { IpcOn } from "./diagnostics-contract";
 

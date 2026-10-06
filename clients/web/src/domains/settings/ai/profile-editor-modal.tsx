@@ -1,8 +1,8 @@
 import { useState } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Tag } from "@vellumai/design-library/components/tag";
+import { Button } from "@mycadet/design-library/components/button";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Tag } from "@mycadet/design-library/components/tag";
 
 import { useTranslation } from "@/i18n";
 

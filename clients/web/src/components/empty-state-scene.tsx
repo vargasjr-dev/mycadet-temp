@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { Tag } from "@vellumai/design-library";
+import { Tag } from "@mycadet/design-library";
 
 import { cn } from "@/utils/misc";
 

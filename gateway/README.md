@@ -178,7 +178,7 @@ To receive external callbacks during local development, point a tunnel service a
 
 #### Test Gateway Source Changes Locally (No Release Needed)
 
-Use this flow when you are changing files under `gateway/` and need to validate immediately without publishing `@vellumai/vellum-gateway`.
+Use this flow when you are changing files under `gateway/` and need to validate immediately without publishing `@mycadet/vellum-gateway`.
 
 ```bash
 # Terminal 1: restart assistant runtime HTTP server

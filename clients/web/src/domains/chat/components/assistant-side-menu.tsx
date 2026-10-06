@@ -1,7 +1,7 @@
 import {
   acceleratorToAriaKeyShortcuts,
   formatAcceleratorHint,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 import { Search, X } from "lucide-react";
 import {
   useCallback,
@@ -49,7 +49,7 @@ import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { NATIVE_MOBILE_BARE_ICON_BUTTON } from "@/domains/chat/utils/native-mobile-button-constants";
 import type { Conversation } from "@/types/conversation-types";
-import { Button, cn, SideMenu, toast } from "@vellumai/design-library";
+import { Button, cn, SideMenu, toast } from "@mycadet/design-library";
 
 export interface AssistantSideMenuProps extends UseSidebarStateParams {
   assistantName?: string | null;

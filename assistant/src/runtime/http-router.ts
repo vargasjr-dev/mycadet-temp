@@ -10,7 +10,7 @@
  * `normalizeEndpointForPolicy`.
  */
 
-import { tokenMayReachRoute } from "@vellumai/gateway-client";
+import { tokenMayReachRoute } from "@mycadet/gateway-client";
 
 import { getLogger } from "../util/logger.js";
 import { enforcePolicy, type RoutePolicy } from "./auth/route-policy.js";

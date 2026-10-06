@@ -17,9 +17,9 @@ import { useScrollToAnchor } from "@/hooks/use-scroll-to-anchor";
 import { useTranslation } from "@/i18n";
 import { dailyResetTimePhrase } from "@/utils/daily-reset-time";
 import { formatUsd } from "@/utils/format-usd";
-import { Button } from "@vellumai/design-library/components/button";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Button } from "@mycadet/design-library/components/button";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 /**
  * In-page anchor for deep links straight to this card (chat banner "Adjust
@@ -81,9 +81,7 @@ export function DailyCreditLimitCard() {
   if (limitQuery.isError || !limitQuery.data) {
     return (
       <div data-testid="daily-credit-limit-card">
-        <Notice tone="error">
-          {t("dailyCreditLimitCard.loadError")}
-        </Notice>
+        <Notice tone="error">{t("dailyCreditLimitCard.loadError")}</Notice>
       </div>
     );
   }
@@ -169,9 +167,7 @@ export function DailyCreditLimitCard() {
   ).daily_credit_limit_usd;
   const saveError =
     serverLimitError ??
-    (updateMutation.isError
-      ? t("dailyCreditLimitCard.saveError")
-      : undefined);
+    (updateMutation.isError ? t("dailyCreditLimitCard.saveError") : undefined);
   const visibleError = touched ? clientError : undefined;
 
   return (

@@ -10,7 +10,7 @@ import {
   getFlagDefinition,
   storeKeyToFlagKey,
 } from "@/lib/feature-flags/feature-flag-catalog";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 /**
  * Internal store fields that are NOT feature flag values. Surfaces that
@@ -113,7 +113,8 @@ const useAssistantFeatureFlagStoreBase = create<AssistantFeatureFlagStore>()((
       | ((
           state: AssistantFeatureFlagStore,
         ) =>
-          { stringFlags: Record<string, string> } | AssistantFeatureFlagStore),
+          | { stringFlags: Record<string, string> }
+          | AssistantFeatureFlagStore),
   ) => void;
 
   return {

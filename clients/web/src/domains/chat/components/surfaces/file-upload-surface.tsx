@@ -7,8 +7,8 @@ import {
   useState,
 } from "react";
 
-import { Button } from "@vellumai/design-library";
-import { FileUploadSurfaceDataSchema } from "@vellumai/assistant-api";
+import { Button } from "@mycadet/design-library";
+import { FileUploadSurfaceDataSchema } from "@mycadet/assistant-api";
 import type { Surface } from "@/domains/chat/types/types";
 
 import { ChatMarkdownMessage } from "@/domains/chat/components/chat-markdown-message";
@@ -358,12 +358,16 @@ export function FileUploadSurface({
         </p>
         {data.acceptedTypes && data.acceptedTypes.length > 0 && (
           <p className="text-body-small-default text-[var(--content-faint)]">
-            {t("fileUploadSurface.accepted", { types: data.acceptedTypes.join(", ") })}
+            {t("fileUploadSurface.accepted", {
+              types: data.acceptedTypes.join(", "),
+            })}
           </p>
         )}
         {data.maxSizeBytes && (
           <p className="text-body-small-default text-[var(--content-faint)]">
-            {t("fileUploadSurface.maxSize", { size: formatFileSize(data.maxSizeBytes) })}
+            {t("fileUploadSurface.maxSize", {
+              size: formatFileSize(data.maxSizeBytes),
+            })}
           </p>
         )}
       </div>
@@ -437,7 +441,9 @@ export function FileUploadSurface({
           loading={isSubmitting}
           leftIcon={<Upload />}
         >
-          {isSubmitting ? t("fileUploadSurface.uploading") : t("fileUploadSurface.upload")}
+          {isSubmitting
+            ? t("fileUploadSurface.uploading")
+            : t("fileUploadSurface.upload")}
         </Button>
       </div>
     </div>

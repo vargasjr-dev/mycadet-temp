@@ -1,7 +1,7 @@
 import { BrowserWindow, app, shell } from "electron";
 import { z } from "zod";
 
-import type { AppVersionInfo } from "@vellumai/ipc-contract";
+import type { AppVersionInfo } from "@mycadet/ipc-contract";
 
 import type { IpcHandle } from "./ipc";
 import { createWindow } from "./windows";

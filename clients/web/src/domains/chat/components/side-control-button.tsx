@@ -28,13 +28,15 @@
 
 import type { ComponentProps, ReactNode } from "react";
 
-import { Button, SIDE_MENU_TILE_SIZE } from "@vellumai/design-library";
+import { Button, SIDE_MENU_TILE_SIZE } from "@mycadet/design-library";
 
 import { ShimmerSurface } from "@/domains/chat/components/shimmer-surface";
 import { cn } from "@/utils/misc";
 
-export interface SideControlButtonProps
-  extends Omit<ComponentProps<typeof Button>, "size" | "variant"> {
+export interface SideControlButtonProps extends Omit<
+  ComponentProps<typeof Button>,
+  "size" | "variant"
+> {
   /** Sweeps the whole pill while true. */
   loading?: boolean;
   children?: ReactNode;

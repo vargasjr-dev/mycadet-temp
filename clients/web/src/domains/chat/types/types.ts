@@ -8,7 +8,7 @@ import type {
   ConversationMessageSurface,
   ModeSession,
   ModeSessionActivity,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { AssistantTextVisibility } from "@/domains/chat/utils/assistant-text-visibility";
 import { isToolCallCompleted } from "@/domains/chat/utils/tool-call-status";

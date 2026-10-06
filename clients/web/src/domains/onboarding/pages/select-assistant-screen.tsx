@@ -68,10 +68,10 @@ import {
   type ResolvedAssistant,
 } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";
-import { pairedHostLabel } from "@vellumai/local-mode/contract";
-import { actionMenuDestructiveClasses } from "@vellumai/design-library/components/action-menu";
-import { Button } from "@vellumai/design-library/components/button";
-import { Menu } from "@vellumai/design-library/components/menu";
+import { pairedHostLabel } from "@mycadet/local-mode/contract";
+import { actionMenuDestructiveClasses } from "@mycadet/design-library/components/action-menu";
+import { Button } from "@mycadet/design-library/components/button";
+import { Menu } from "@mycadet/design-library/components/menu";
 import { useTranslation } from "@/i18n";
 import type { TFunction } from "i18next";
 

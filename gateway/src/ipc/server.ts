@@ -23,7 +23,7 @@ import {
   ensureSocketDir,
   ipcListenOptions,
   removeIpcEndpointFile,
-} from "@vellumai/ipc-server-utils";
+} from "@mycadet/ipc-server-utils";
 import { createServer, type Server, type Socket } from "node:net";
 
 import type { z } from "zod";

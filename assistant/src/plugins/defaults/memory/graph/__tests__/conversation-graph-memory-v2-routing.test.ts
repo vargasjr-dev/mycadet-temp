@@ -27,7 +27,7 @@ import {
   test,
 } from "bun:test";
 
-import type { Message } from "@vellumai/plugin-api";
+import type { Message } from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import { createMockLoggerModule } from "../../../../../__tests__/helpers/mock-logger.js";

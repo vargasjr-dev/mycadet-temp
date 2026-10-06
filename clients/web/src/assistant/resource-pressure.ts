@@ -1,4 +1,4 @@
-import type { ResourcePressureStatus } from "@vellumai/assistant-api";
+import type { ResourcePressureStatus } from "@mycadet/assistant-api";
 
 export type ResourcePressureMonitorMode = "inactive" | "warning";
 

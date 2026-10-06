@@ -8,8 +8,8 @@
 import type {
   ApprovalUIMetadata,
   ChannelDeliveryResult,
-} from "@vellumai/gateway-client";
-import { parseDiscordEmojiMention } from "@vellumai/service-contracts/reactions";
+} from "@mycadet/gateway-client";
+import { parseDiscordEmojiMention } from "@mycadet/service-contracts/reactions";
 
 import { getAttachmentContent } from "../../../persistence/attachments-store.js";
 import type { RuntimeAttachmentMetadata } from "../../../runtime/http-types.js";

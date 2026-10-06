@@ -22,7 +22,7 @@ import {
   test,
 } from "bun:test";
 
-import { hashVerificationSecret } from "@vellumai/gateway-client";
+import { hashVerificationSecret } from "@mycadet/gateway-client";
 
 // Spread the actual module so untouched exports stay importable by
 // later-loaded files when suites share a bun process.

@@ -88,15 +88,15 @@ in `.github/workflows/release-ios.yaml`.
 
 What _is_ committed and what generates from where:
 
-| File / directory                           | Source of truth | Status     |
-| ------------------------------------------ | --------------- | ---------- |
-| `App/project.yml`                          | Hand-authored   | Committed  |
-| `App/App/Config/*.xcconfig`                | Hand-authored   | Committed  |
-| `App/CapApp-SPM/Package.swift`             | `cap sync ios`  | Committed  |
-| `App/App.xcodeproj/**`                     | `xcodegen`      | Gitignored |
-| `App/App/capacitor.config.json`            | `cap sync ios`  | Gitignored |
-| `App/App/config.xml`                       | `cap sync ios`  | Gitignored |
-| `App/App/public/`                          | `cap sync ios`  | Gitignored |
+| File / directory                | Source of truth | Status     |
+| ------------------------------- | --------------- | ---------- |
+| `App/project.yml`               | Hand-authored   | Committed  |
+| `App/App/Config/*.xcconfig`     | Hand-authored   | Committed  |
+| `App/CapApp-SPM/Package.swift`  | `cap sync ios`  | Committed  |
+| `App/App.xcodeproj/**`          | `xcodegen`      | Gitignored |
+| `App/App/capacitor.config.json` | `cap sync ios`  | Gitignored |
+| `App/App/config.xml`            | `cap sync ios`  | Gitignored |
+| `App/App/public/`               | `cap sync ios`  | Gitignored |
 
 A pre-build script wired into every target via `project.yml` fails the
 Xcode build with a clear error if `project.yml` is newer than the
@@ -294,11 +294,11 @@ building, since the extensions build as embedded dependencies. See
 and [Signing: four profiles per environment](#signing-four-profiles-per-environment)
 for what the extra App IDs cost at release time.
 
-| Target | Bundle ID | Display Name | Icon | Server |
-|--------|-----------|-------------|------|--------|
-| App | `ai.vocify-inc.vellum-assistant-ios` | Vellum | Green | `www.vellum.ai` |
-| App Staging | `.staging` | Vellum Staging | Yellow | staging server |
-| App Dev | `.dev` | Vellum Dev | Pink | dev server |
+| Target      | Bundle ID                            | Display Name   | Icon   | Server          |
+| ----------- | ------------------------------------ | -------------- | ------ | --------------- |
+| App         | `ai.vocify-inc.vellum-assistant-ios` | Vellum         | Green  | `www.vellum.ai` |
+| App Staging | `.staging`                           | Vellum Staging | Yellow | staging server  |
+| App Dev     | `.dev`                               | Vellum Dev     | Pink   | dev server      |
 
 Build settings shared across all three targets live in
 `App/App/Config/Base.xcconfig`. Per-target overrides (bundle ID, display
@@ -350,7 +350,7 @@ inline in `App/project.yml` under the `AppEnvironment` template.
   `cd clients/ios && bun test scripts/__tests__/generate-avatar-icons.test.ts`.
   Both the generator and the test rasterize through the native
   `@resvg/resvg-js` binding, so the assistant package's dependencies have to
-  be installed first: `bun install --filter=@vellumai/assistant`.
+  be installed first: `bun install --filter=@mycadet/assistant`.
   `pr-native-drift.yaml` and `ci-main-native-drift.yaml` run that same check,
   and both watch `packages/avatar-catalog/**` as well as
   `assistant/src/avatar/**`, so a catalog edit without a regeneration fails
@@ -389,8 +389,8 @@ Measured by compiling `AvatarIcons.xcassets` on its own through `actool`
 unsigned `App Dev` build within 0.1 percent, so it is the cheap way to check
 the cost.
 
-| Catalog | Committed PNGs | `Assets.car` |
-| ------- | -------------- | ------------ |
+| Catalog                     | Committed PNGs       | `Assets.car`           |
+| --------------------------- | -------------------- | ---------------------- |
 | 54 eyes-on-color alternates | 590,542 B (0.56 MiB) | 1,188,152 B (1.13 MiB) |
 
 That is **21.5 KiB per alternate icon** compiled. The whole catalog is one
@@ -405,9 +405,9 @@ render is almost entirely uniform regions separated by hairline antialiased
 edges, which is the best case there is for compression. A bilinear upscale
 replaces every one of those edges with a six-pixel gradient ramp:
 
-| Full catalog, 54 icons | Committed PNGs | `Assets.car` |
-| ---------------------- | -------------- | ------------ |
-| Native 1024 render | 590,542 B (0.56 MiB) | 1,188,152 B (1.13 MiB) |
+| Full catalog, 54 icons          | Committed PNGs         | `Assets.car`           |
+| ------------------------------- | ---------------------- | ---------------------- |
+| Native 1024 render              | 590,542 B (0.56 MiB)   | 1,188,152 B (1.13 MiB) |
 | 180 px detail, bilinear upscale | 3,764,157 B (3.59 MiB) | 6,817,336 B (6.50 MiB) |
 
 Rendering at 360 px instead of 180 only halves the overshoot. Nearest-neighbour
@@ -421,10 +421,10 @@ a catalog that already costs about one.
 
 There's a deliberate mismatch:
 
-| Where                       | Value                                      |
-| --------------------------- | ------------------------------------------ |
+| Where                             | Value                                           |
+| --------------------------------- | ----------------------------------------------- |
 | Xcode `PRODUCT_BUNDLE_IDENTIFIER` | `ai.vocify-inc.vellum-assistant-ios` ← real one |
-| `capacitor.config.ts` `appId`     | `ai.vellum.assistant`                     |
+| `capacitor.config.ts` `appId`     | `ai.vellum.assistant`                           |
 
 Capacitor requires `appId` to use Java package form because Android uses it as
 the application namespace. The iOS project is generated from `project.yml`
@@ -613,17 +613,17 @@ release.yml (manual dispatch on release/v* branch)
 
 ### Workflow
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
+| Workflow           | Trigger                                | Purpose                                           |
+| ------------------ | -------------------------------------- | ------------------------------------------------- |
 | `release-ios.yaml` | `workflow_call` from release workflows | Automated release builds (dev/staging/production) |
 
 ### Environment → scheme mapping
 
-| Environment | Scheme | TestFlight | ExportOptions |
-|-------------|--------|------------|---------------|
-| `production` | App | External + App Store eligible | `app-store-connect` |
-| `staging` | App Staging | Internal only | `app-store-connect` + `testFlightInternalTestingOnly` |
-| `dev` | App Dev | Internal only | `app-store-connect` + `testFlightInternalTestingOnly` |
+| Environment  | Scheme      | TestFlight                    | ExportOptions                                         |
+| ------------ | ----------- | ----------------------------- | ----------------------------------------------------- |
+| `production` | App         | External + App Store eligible | `app-store-connect`                                   |
+| `staging`    | App Staging | Internal only                 | `app-store-connect` + `testFlightInternalTestingOnly` |
+| `dev`        | App Dev     | Internal only                 | `app-store-connect` + `testFlightInternalTestingOnly` |
 
 Non-production builds set
 [`testFlightInternalTestingOnly`](https://developer.apple.com/documentation/xcode/creating-a-workflow-that-builds-your-app-for-distribution)
@@ -701,7 +701,7 @@ That has three consequences in the pipeline:
   `PRODUCT_BUNDLE_IDENTIFIER` it has to agree with. Those files set
   `PROVISIONING_PROFILE_SPECIFIER_Manual` and resolve
   `PROVISIONING_PROFILE_SPECIFIER =
-  $(PROVISIONING_PROFILE_SPECIFIER_$(CODE_SIGN_STYLE))`, so the specifier
+$(PROVISIONING_PROFILE_SPECIFIER_$(CODE_SIGN_STYLE))`, so the specifier
   applies only under the workflow's `CODE_SIGN_STYLE=Manual` override —
   local Xcode builds stay on automatic signing and see no specifier,
   which matters because the distribution profiles are not on developer
@@ -811,13 +811,13 @@ build of the affected environment fails while signing or exporting.
 >
 > The run still fails, one step later, at **Archive**, with Xcode's own
 > error: `No profile for team '7FZDXZR8P5' matching '<profile name>' found
-> … (in target 'VoiceActivity …')`. That is unavoidable — every app target
+… (in target 'VoiceActivity …')`. That is unavoidable — every app target
 > embeds its extension, and the release archives with
 > `CODE_SIGN_STYLE=Manual`, which never auto-provisions. **No iOS release,
 > of any environment, can be produced until the rows below are done.**
 > Deleting the extension's `PROVISIONING_PROFILE_SPECIFIER_Manual` does not
 > help either; manual signing then fails with `"VoiceActivity …" requires a
-> provisioning profile` instead. The fix is the portal work below, not a
+provisioning profile` instead. The fix is the portal work below, not a
 > workflow change.
 >
 > **The app's own profiles are equally stale.** `App.entitlements` and
@@ -832,17 +832,17 @@ build of the affected environment fails while signing or exporting.
 > it means doing step 2 and step 4 below for the app App ID of the environment
 > being released and replacing its `IOS_PROVISIONING_PROFILE*` secret.
 
-| Environment | Extension bundle ID | Profile name (exact) | GitHub secret |
-|-------------|---------------------|----------------------|---------------|
-| production | `ai.vocify-inc.vellum-assistant-ios.VoiceActivity` | `Vellum Assistant iOS VoiceActivity Distribution` | `IOS_PROVISIONING_PROFILE_EXT` |
-| staging | `ai.vocify-inc.vellum-assistant-ios.staging.VoiceActivity` | `Vellum Assistant iOS Staging VoiceActivity Distribution` | `IOS_PROVISIONING_PROFILE_EXT_STAGING` |
-| dev | `ai.vocify-inc.vellum-assistant-ios.dev.VoiceActivity` | `Vellum Assistant iOS Dev VoiceActivity Distribution` | `IOS_PROVISIONING_PROFILE_EXT_DEV` |
-| production | `ai.vocify-inc.vellum-assistant-ios.Share` | `Vellum Assistant iOS Share Distribution` | `IOS_PROVISIONING_PROFILE_SHARE` |
-| staging | `ai.vocify-inc.vellum-assistant-ios.staging.Share` | `Vellum Assistant iOS Staging Share Distribution` | `IOS_PROVISIONING_PROFILE_SHARE_STAGING` |
-| dev | `ai.vocify-inc.vellum-assistant-ios.dev.Share` | `Vellum Assistant iOS Dev Share Distribution` | `IOS_PROVISIONING_PROFILE_SHARE_DEV` |
-| production | `ai.vocify-inc.vellum-assistant-ios.NotificationService` | `Vellum Assistant iOS NotificationService Distribution` | `IOS_PROVISIONING_PROFILE_NSE` |
-| staging | `ai.vocify-inc.vellum-assistant-ios.staging.NotificationService` | `Vellum Assistant iOS Staging NotificationService Distribution` | `IOS_PROVISIONING_PROFILE_NSE_STAGING` |
-| dev | `ai.vocify-inc.vellum-assistant-ios.dev.NotificationService` | `Vellum Assistant iOS Dev NotificationService Distribution` | `IOS_PROVISIONING_PROFILE_NSE_DEV` |
+| Environment | Extension bundle ID                                              | Profile name (exact)                                            | GitHub secret                            |
+| ----------- | ---------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------- |
+| production  | `ai.vocify-inc.vellum-assistant-ios.VoiceActivity`               | `Vellum Assistant iOS VoiceActivity Distribution`               | `IOS_PROVISIONING_PROFILE_EXT`           |
+| staging     | `ai.vocify-inc.vellum-assistant-ios.staging.VoiceActivity`       | `Vellum Assistant iOS Staging VoiceActivity Distribution`       | `IOS_PROVISIONING_PROFILE_EXT_STAGING`   |
+| dev         | `ai.vocify-inc.vellum-assistant-ios.dev.VoiceActivity`           | `Vellum Assistant iOS Dev VoiceActivity Distribution`           | `IOS_PROVISIONING_PROFILE_EXT_DEV`       |
+| production  | `ai.vocify-inc.vellum-assistant-ios.Share`                       | `Vellum Assistant iOS Share Distribution`                       | `IOS_PROVISIONING_PROFILE_SHARE`         |
+| staging     | `ai.vocify-inc.vellum-assistant-ios.staging.Share`               | `Vellum Assistant iOS Staging Share Distribution`               | `IOS_PROVISIONING_PROFILE_SHARE_STAGING` |
+| dev         | `ai.vocify-inc.vellum-assistant-ios.dev.Share`                   | `Vellum Assistant iOS Dev Share Distribution`                   | `IOS_PROVISIONING_PROFILE_SHARE_DEV`     |
+| production  | `ai.vocify-inc.vellum-assistant-ios.NotificationService`         | `Vellum Assistant iOS NotificationService Distribution`         | `IOS_PROVISIONING_PROFILE_NSE`           |
+| staging     | `ai.vocify-inc.vellum-assistant-ios.staging.NotificationService` | `Vellum Assistant iOS Staging NotificationService Distribution` | `IOS_PROVISIONING_PROFILE_NSE_STAGING`   |
+| dev         | `ai.vocify-inc.vellum-assistant-ios.dev.NotificationService`     | `Vellum Assistant iOS Dev NotificationService Distribution`     | `IOS_PROVISIONING_PROFILE_NSE_DEV`       |
 
 The containing app App IDs already exist, and each one already carries
 the App Group from the VoiceActivity row. A new Share or
@@ -851,11 +851,11 @@ capability added to an App ID does not reach profiles already issued
 against it, so a first-time extension row also issues that extension's
 distribution profile:
 
-| Environment | App bundle ID | Profile name (exact) | GitHub secret |
-|-------------|--------------|----------------------|---------------|
-| production | `ai.vocify-inc.vellum-assistant-ios` | `Vellum Assistant iOS Distribution` | `IOS_PROVISIONING_PROFILE` |
-| staging | `ai.vocify-inc.vellum-assistant-ios.staging` | `Vellum Assistant iOS Staging Distribution` | `IOS_PROVISIONING_PROFILE_STAGING` |
-| dev | `ai.vocify-inc.vellum-assistant-ios.dev` | `Vellum Assistant iOS Dev Distribution` | `IOS_PROVISIONING_PROFILE_DEV` |
+| Environment | App bundle ID                                | Profile name (exact)                        | GitHub secret                      |
+| ----------- | -------------------------------------------- | ------------------------------------------- | ---------------------------------- |
+| production  | `ai.vocify-inc.vellum-assistant-ios`         | `Vellum Assistant iOS Distribution`         | `IOS_PROVISIONING_PROFILE`         |
+| staging     | `ai.vocify-inc.vellum-assistant-ios.staging` | `Vellum Assistant iOS Staging Distribution` | `IOS_PROVISIONING_PROFILE_STAGING` |
+| dev         | `ai.vocify-inc.vellum-assistant-ios.dev`     | `Vellum Assistant iOS Dev Distribution`     | `IOS_PROVISIONING_PROFILE_DEV`     |
 
 For the NotificationService rows only, step 2 below also enables
 **Communication Notifications** on the containing app's App ID, and step 4
@@ -1007,19 +1007,19 @@ guessing.
 `nse.avatar_unavailable` carries a `reason=` token naming the cause, so one
 line is enough to tell a trimmed payload from a rejected download:
 
-| `reason=` | What it means |
-|-----------|---------------|
-| `no_url` | Cache miss and the payload carried no `avatar_url` (usually a payload trimmed for size). |
-| `invalid_url` | `avatar_url` was present but `URL(string:)` could not read it. |
-| `bad_hash` | `avatar_hash` is not 64 lowercase hex characters. |
-| `insecure_url` | `avatar_url` is not `https`. |
-| `request_failed` | The request never produced a response (offline, DNS, TLS). |
-| `bad_status` | The response was not an HTTP 200. |
-| `declared_too_large` | The response declared a `Content-Length` past 512 KB. |
-| `body_too_large` | The body crossed 512 KB while streaming, declared or not. |
-| `read_failed` | The body stopped mid-transfer, including on extension expiry. |
-| `timed_out` | The body kept arriving, too slowly to go idle, past the download's total budget. |
-| `digest_mismatch` | The bytes did not hash to `avatar_hash`. |
+| `reason=`            | What it means                                                                            |
+| -------------------- | ---------------------------------------------------------------------------------------- |
+| `no_url`             | Cache miss and the payload carried no `avatar_url` (usually a payload trimmed for size). |
+| `invalid_url`        | `avatar_url` was present but `URL(string:)` could not read it.                           |
+| `bad_hash`           | `avatar_hash` is not 64 lowercase hex characters.                                        |
+| `insecure_url`       | `avatar_url` is not `https`.                                                             |
+| `request_failed`     | The request never produced a response (offline, DNS, TLS).                               |
+| `bad_status`         | The response was not an HTTP 200.                                                        |
+| `declared_too_large` | The response declared a `Content-Length` past 512 KB.                                    |
+| `body_too_large`     | The body crossed 512 KB while streaming, declared or not.                                |
+| `read_failed`        | The body stopped mid-transfer, including on extension expiry.                            |
+| `timed_out`          | The body kept arriving, too slowly to go idle, past the download's total budget.         |
+| `digest_mismatch`    | The bytes did not hash to `avatar_hash`.                                                 |
 
 `declared_too_large`, `body_too_large` and `timed_out` are the download's own
 bounds: 512 KB whether the response declares a length or streams one, and six

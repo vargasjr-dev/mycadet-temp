@@ -16,7 +16,7 @@
 import { useCallback, type ReactNode } from "react";
 import { TableVirtuoso, type TableComponents } from "react-virtuoso";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import type { ParsedCsv } from "@/domains/chat/components/local-file/preview/csv";
 import { PreviewNotice } from "@/domains/chat/components/local-file/preview/preview-notice";

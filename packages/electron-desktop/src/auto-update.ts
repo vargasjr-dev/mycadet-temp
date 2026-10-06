@@ -1,7 +1,7 @@
 import { app, BrowserWindow } from "electron";
 import { z } from "zod";
 
-import type { UpdateState, UpdateStatus } from "@vellumai/ipc-contract";
+import type { UpdateState, UpdateStatus } from "@mycadet/ipc-contract";
 
 import type {
   AutoUpdateConfig,

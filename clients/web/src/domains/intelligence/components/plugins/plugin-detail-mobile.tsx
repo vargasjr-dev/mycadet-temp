@@ -17,7 +17,7 @@ import { usePluginDetail } from "@/domains/intelligence/plugins/use-plugin-detai
 import { usePluginIconSrc } from "@/hooks/use-plugin-icon-src";
 import { usePluginToggle } from "@/domains/intelligence/plugins/use-plugin-toggle";
 import { useTranslation } from "@/i18n";
-import { Button, Card } from "@vellumai/design-library";
+import { Button, Card } from "@mycadet/design-library";
 
 interface PluginDetailMobileProps {
   assistantId: string;

@@ -4,7 +4,7 @@
  * link-token hash and the invite's expiry, never the token itself.
  */
 
-import { hashInviteToken } from "@vellumai/gateway-client";
+import { hashInviteToken } from "@mycadet/gateway-client";
 
 import { credentialKey } from "../credential-key.js";
 import { readCredentialResult } from "../credential-reader.js";

@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router";
 
-import { Button, Typography, cn } from "@vellumai/design-library";
+import { Button, Typography, cn } from "@mycadet/design-library";
 
 interface MobileTopBarTitleProps {
   children: ReactNode;

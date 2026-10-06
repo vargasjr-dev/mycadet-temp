@@ -25,13 +25,13 @@ import {
 } from "@/utils/avatar-image-color";
 import { toneForBg, type AvatarTone } from "@/utils/avatar-tone";
 import type { CharacterTraits } from "@/types/avatar";
-import { AVATAR_COLORS } from "@vellumai/avatar-catalog/colors";
+import { AVATAR_COLORS } from "@mycadet/avatar-catalog/colors";
 import {
   Button,
   Select,
   type SelectOption,
   Typography,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 import { ArrowUp } from "lucide-react";
 
 type SampleState =

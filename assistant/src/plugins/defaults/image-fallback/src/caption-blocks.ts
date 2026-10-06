@@ -43,7 +43,7 @@ import {
   type Message,
   type PluginLogger,
   resolveMediaSourceData,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import { persistImage } from "./image-persist.js";
 import {

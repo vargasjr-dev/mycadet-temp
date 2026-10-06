@@ -4,8 +4,8 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import type { SecureKeyBackend } from "@vellumai/credential-storage";
-import type { CredentialRecord } from "@vellumai/service-contracts/credential-rpc";
+import type { SecureKeyBackend } from "@mycadet/credential-storage";
+import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 
 import { importWorkspaceMetadataMigration } from "../migrations/003-import-workspace-metadata.js";
 import {
@@ -66,7 +66,9 @@ describe("CesMetadataStore", () => {
   });
 
   test("writes metadata.json under the CES data root", () => {
-    expect(getMetadataPath("/tmp/ces-data")).toBe("/tmp/ces-data/metadata.json");
+    expect(getMetadataPath("/tmp/ces-data")).toBe(
+      "/tmp/ces-data/metadata.json",
+    );
   });
 });
 
@@ -96,7 +98,12 @@ describe("003-import-workspace-metadata", () => {
   test("imports leftover workspace metadata without deleting the file", async () => {
     const workspace = mkdtempSync(join(tmpdir(), "ces-ws-"));
     const cesData = mkdtempSync(join(tmpdir(), "ces-data-"));
-    const leftoverPath = join(workspace, "data", "credentials", "metadata.json");
+    const leftoverPath = join(
+      workspace,
+      "data",
+      "credentials",
+      "metadata.json",
+    );
     mkdirSync(join(workspace, "data", "credentials"), { recursive: true });
     writeFileSync(
       leftoverPath,
@@ -151,7 +158,12 @@ describe("003-import-workspace-metadata", () => {
   test("keeps an existing CES record instead of overwriting it", async () => {
     const workspace = mkdtempSync(join(tmpdir(), "ces-ws-"));
     const cesData = mkdtempSync(join(tmpdir(), "ces-data-"));
-    const leftoverPath = join(workspace, "data", "credentials", "metadata.json");
+    const leftoverPath = join(
+      workspace,
+      "data",
+      "credentials",
+      "metadata.json",
+    );
     mkdirSync(join(workspace, "data", "credentials"), { recursive: true });
     writeFileSync(
       leftoverPath,

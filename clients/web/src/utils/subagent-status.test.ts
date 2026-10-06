@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import type { SubagentStatus } from "@vellumai/assistant-api";
+import type { SubagentStatus } from "@mycadet/assistant-api";
 
 import { shouldApplyStatus } from "@/utils/subagent-status";
 

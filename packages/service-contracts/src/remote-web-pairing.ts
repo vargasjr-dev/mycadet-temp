@@ -691,7 +691,7 @@ export function parsePairingAddress(raw: string): ParsePairingAddressResult {
 /**
  * What a pairing attempt failed on, for callers picking recovery copy. Every
  * pairing surface reports one of these: the host-side sessions in
- * `@vellumai/local-mode`, the Electron bridge, the desktop connect dialog, and
+ * `@mycadet/local-mode`, the Electron bridge, the desktop connect dialog, and
  * the `vellum connect import` CLI.
  */
 export type PairingFailureReason =

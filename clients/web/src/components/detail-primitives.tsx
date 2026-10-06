@@ -23,7 +23,7 @@ import {
   CardRoot,
   Typography,
   type TypographyAs,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 import { CopyButton } from "@/components/copy-button";
 import { useOverflows } from "@/hooks/use-overflows";

@@ -4,7 +4,7 @@ import { useTranslation } from "@/i18n";
 
 import type { Conversation } from "@/types/conversation-types";
 import { useDisplayConversationTitle } from "@/utils/conversation-title";
-import { Checkbox, ConfirmDialog } from "@vellumai/design-library";
+import { Checkbox, ConfirmDialog } from "@mycadet/design-library";
 
 /**
  * Confirmation gate for the per-conversation Delete action. One click
@@ -92,9 +92,7 @@ export function DeleteConversationConfirmDialog({
       open={pending !== null}
       title={t("deleteConversationConfirmDialog.title")}
       message={
-        pending
-          ? t("deleteConversationConfirmDialog.message", { title })
-          : ""
+        pending ? t("deleteConversationConfirmDialog.message", { title }) : ""
       }
       confirmLabel={t("deleteConversationConfirmDialog.confirm")}
       cancelLabel={t("deleteConversationConfirmDialog.cancel")}

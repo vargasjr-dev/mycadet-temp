@@ -10,7 +10,7 @@ import { createDecipheriv, pbkdf2Sync } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { hostname, userInfo } from "node:os";
 import { join } from "node:path";
-import { createCesHttpCredentialClient } from "@vellumai/ces-client/http-credentials";
+import { createCesHttpCredentialClient } from "@mycadet/ces-client/http-credentials";
 import { credentialKey } from "./credential-key.js";
 import { getLogger } from "./logger.js";
 import { getGatewaySecurityDir } from "./paths.js";
@@ -198,7 +198,7 @@ export function getCesHttpConfig():
 /**
  * Try to read a credential from the CES managed service over HTTP.
  *
- * Delegates to `@vellumai/ces-client/http-credentials` for the transport.
+ * Delegates to `@mycadet/ces-client/http-credentials` for the transport.
  * Activated when `CES_CREDENTIAL_URL` is set (e.g. `http://ces-host:8090`).
  * Requires `CES_SERVICE_TOKEN` for bearer auth.
  *

@@ -7,7 +7,7 @@ import { useViewerStore } from "@/stores/viewer-store";
 
 import { Trans, useTranslation } from "@/i18n";
 
-import { Button, Input, Typography } from "@vellumai/design-library";
+import { Button, Input, Typography } from "@mycadet/design-library";
 
 import { SlackSetupWizard } from "@/components/slack-setup-wizard";
 import { DiscordSetupWizard } from "@/components/discord-setup-wizard";

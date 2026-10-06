@@ -11,7 +11,7 @@
  * retry the loop's per-run backstop refused).
  */
 
-import type { HookFunction, StopContext } from "@vellumai/plugin-api";
+import type { HookFunction, StopContext } from "@mycadet/plugin-api";
 
 import { clearImageRecoveryAttempted } from "../image-recovery-state-store.js";
 

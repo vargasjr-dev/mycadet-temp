@@ -8,13 +8,13 @@
  * after switching conversations, reloading, or reopening from history.
  */
 
-import type { AnsweredQuestion } from "@vellumai/assistant-api";
+import type { AnsweredQuestion } from "@mycadet/assistant-api";
 import {
   hasRenderableAnswer,
   resolveAnswers,
 } from "@/domains/chat/answered-question";
 import { AnsweredQuestionRow } from "@/domains/chat/components/answered-question-row";
-import { Card, Typography } from "@vellumai/design-library";
+import { Card, Typography } from "@mycadet/design-library";
 
 export interface AnsweredQuestionCardProps {
   answered: AnsweredQuestion;

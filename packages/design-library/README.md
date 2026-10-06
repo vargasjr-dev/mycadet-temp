@@ -1,4 +1,4 @@
-# @vellumai/design-library
+# @mycadet/design-library
 
 Shared UI component library for Vellum web applications. Built with React 19 and Tailwind CSS v4.
 
@@ -32,11 +32,11 @@ className={VARIANT_CLASSES[variant]}
 
 Choose the pattern that fits the component's complexity:
 
-| Pattern | When to use | Examples |
-|---|---|---|
-| `Record<Variant, string>` map | Simple lookups — 1–2 axes with short class strings | Button, Typography |
-| [`cva`](https://cva.style/docs) (class-variance-authority) | Long base classes, `VariantProps` type extraction, `defaultVariants`, compound variants | Tag, Badge, Alert |
-| `cn()` (clsx + tailwind-merge) | Boolean toggles, className overrides, merge scenarios | Card, any component with `className` prop |
+| Pattern                                                    | When to use                                                                             | Examples                                  |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `Record<Variant, string>` map                              | Simple lookups — 1–2 axes with short class strings                                      | Button, Typography                        |
+| [`cva`](https://cva.style/docs) (class-variance-authority) | Long base classes, `VariantProps` type extraction, `defaultVariants`, compound variants | Tag, Badge, Alert                         |
+| `cn()` (clsx + tailwind-merge)                             | Boolean toggles, className overrides, merge scenarios                                   | Card, any component with `className` prop |
 
 **`cva` is for declarative variant definitions** — it provides type-safe
 `VariantProps`, `defaultVariants`, and compound variant support. **`Record`
@@ -45,6 +45,7 @@ always used for className merging** — it pairs with both CVA and Record
 patterns.
 
 References:
+
 - [Tailwind CSS — Detecting classes in source files](https://tailwindcss.com/docs/detecting-classes-in-source-files#dynamic-class-names)
 - [CVA docs](https://cva.style/docs)
 
@@ -58,14 +59,20 @@ Components are single flat files in `src/components/`. See
 Import from the package root:
 
 ```ts
-import { Button, Typography, Tag, tagVariants, cn } from "@vellumai/design-library";
+import {
+  Button,
+  Typography,
+  Tag,
+  tagVariants,
+  cn,
+} from "@mycadet/design-library";
 ```
 
 Subpath imports are also available for targeted imports:
 
 ```ts
-import { Button } from "@vellumai/design-library/components/button";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { Button } from "@mycadet/design-library/components/button";
+import { cn } from "@mycadet/design-library/utils/cn";
 ```
 
 ### Just-in-Time compilation
@@ -87,6 +94,7 @@ the [compiled package strategy](https://turborepo.dev/docs/core-concepts/interna
 instead.
 
 References:
+
 - [Turborepo — Internal Packages: Just-in-Time strategy](https://turborepo.dev/docs/core-concepts/internal-packages#just-in-time-packages)
 - [Hiroki Osame — Think twice before importing package source files](https://hirok.io/posts/importing-source-files-in-dev) (tradeoffs of source imports)
 
@@ -97,8 +105,8 @@ package's source in its Tailwind source scan:
 
 ```css
 /* In your app's global CSS (e.g. globals.css) */
-@import "@vellumai/design-library/tokens.css";
-@source "../node_modules/@vellumai/design-library/src";
+@import "@mycadet/design-library/tokens.css";
+@source "../node_modules/@mycadet/design-library/src";
 ```
 
 The token stylesheet provides:
@@ -114,7 +122,9 @@ The token stylesheet provides:
 Theme selection is controlled by a `data-theme` attribute on an ancestor element:
 
 ```html
-<html data-theme="dark">  <!-- "light" | "dark" | "velvet" -->
+<html data-theme="dark">
+  <!-- "light" | "dark" | "velvet" -->
+</html>
 ```
 
 ## Adding design tokens
@@ -144,7 +154,7 @@ border-radius scale, shadows, color ramps like Moss/Stone/Forest/Amber) that
 have not been brought into the design library yet. These should be added
 incrementally as components that need them are migrated. When adding them, follow
 the same three-step pattern above and keep values in sync with the platform's
-[`appTheme.css`](https://github.com/vellum-ai/vellum-assistant-platform/blob/main/web/src/app/(app)/appTheme.css)
+[`appTheme.css`](<https://github.com/vellum-ai/vellum-assistant-platform/blob/main/web/src/app/(app)/appTheme.css>)
 and [`globals.css`](https://github.com/vellum-ai/vellum-assistant-platform/blob/main/web/src/app/globals.css).
 
 ## Customization
@@ -154,7 +164,7 @@ domain-specific behavior. The library provides sensible defaults;
 consumers override only what they need.
 
 ```tsx
-import { MarkdownMessage } from "@vellumai/design-library";
+import { MarkdownMessage } from "@mycadet/design-library";
 
 // Default behavior — links open in a new tab with noopener noreferrer
 <MarkdownMessage content={text} />
@@ -171,6 +181,7 @@ prop), and [Radix](https://www.radix-ui.com/docs/primitives/guides/composition)
 (`asChild`).
 
 References:
+
 - [React — Passing Props to a Component](https://react.dev/learn/passing-props-to-a-component)
 
 ## Storybook

@@ -26,7 +26,7 @@ import {
   DELIVERY_STATUS,
   deriveGuardianRequestSourceType,
   isGuardianRequestExpired,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 export interface SimGuardianRequest {
   id: string;

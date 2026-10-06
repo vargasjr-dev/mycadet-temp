@@ -1,7 +1,7 @@
 import { BrowserWindow } from "electron";
 import { z } from "zod";
 
-import type { HotkeyScope, ResolvedHotkey } from "@vellumai/ipc-contract";
+import type { HotkeyScope, ResolvedHotkey } from "@mycadet/ipc-contract";
 
 import { isValidAccelerator } from "./accelerator";
 import {
@@ -58,7 +58,11 @@ const HOTKEY_CATALOG: readonly HotkeyCommand[] = [
   { key: "togglePinConversation", label: "Pin conversation", scope: "menu" },
   { key: "sidebarToggle", label: "Toggle sidebar", scope: "menu" },
   { key: "popOut", label: "Pop out conversation", scope: "menu" },
-  { key: "previousConversation", label: "Previous conversation", scope: "menu" },
+  {
+    key: "previousConversation",
+    label: "Previous conversation",
+    scope: "menu",
+  },
   { key: "nextConversation", label: "Next conversation", scope: "menu" },
 ];
 
@@ -163,7 +167,10 @@ let teardown: (() => void) | null = null;
  * broadcast to every window whenever the hotkeys setting changes (including
  * changes a different window initiated) so open settings views stay in sync.
  */
-export const installHotkeysIpc = ({ handle, exclude = [] }: HotkeysIpc): void => {
+export const installHotkeysIpc = ({
+  handle,
+  exclude = [],
+}: HotkeysIpc): void => {
   if (teardown) {
     return;
   }

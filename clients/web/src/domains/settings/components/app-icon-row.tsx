@@ -29,7 +29,7 @@ import {
   traitsForAppIconName,
 } from "@/utils/avatar-app-icon";
 import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 /** Size of the row's thumbnail, sitting beside a single-line control. */
 const ROW_PREVIEW_SIZE = 32;

@@ -8,7 +8,7 @@
  * intended output, not a gap the render failed to fill.
  *
  * The geometry, the disc colour, and the byte cap come from
- * `@vellumai/avatar-manifest` so the daemon, the desktop renderer, and every
+ * `@mycadet/avatar-manifest` so the daemon, the desktop renderer, and every
  * mobile client draw the same picture. This module only resolves the current
  * avatar and rasterizes it.
  *
@@ -20,12 +20,12 @@
  * missing even though the package itself is a plain dependency.
  */
 
-import type { NotificationAvatarMediaType } from "@vellumai/avatar-manifest/notification-avatar";
+import type { NotificationAvatarMediaType } from "@mycadet/avatar-manifest/notification-avatar";
 import {
   NOTIFICATION_AVATAR_MAX_BYTES,
   NOTIFICATION_AVATAR_SIZE,
   notificationAvatarSvg,
-} from "@vellumai/avatar-manifest/notification-avatar";
+} from "@mycadet/avatar-manifest/notification-avatar";
 import type sharpDefault from "sharp";
 
 import { detectMediaType } from "../tools/shared/filesystem/image-read.js";

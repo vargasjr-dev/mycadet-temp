@@ -10,7 +10,7 @@ import {
   ProgressBar,
   Tooltip,
   TooltipProvider,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 export interface ContextWindowUsage {
   tokens: number;

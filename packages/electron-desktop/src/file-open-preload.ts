@@ -4,7 +4,7 @@ import {
   FILE_OPEN_SUBSCRIBE,
   FILE_OPEN_UNSUBSCRIBE,
   type VellumBridge,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 export interface FileOpenPreloadDependencies {
   ipcRenderer: Pick<

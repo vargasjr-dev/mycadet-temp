@@ -1,7 +1,7 @@
 import {
   type CopyBlockSurfaceData,
   CopyBlockSurfaceDataSchema,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import { Check, Copy } from "lucide-react";
 import { useTranslation } from "@/i18n";
 

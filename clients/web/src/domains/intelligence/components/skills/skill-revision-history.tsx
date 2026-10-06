@@ -20,7 +20,7 @@ import { parseUnifiedDiff } from "@/domains/intelligence/skills/parse-unified-di
 import { useSkillHistory, type SkillRevision } from "@/hooks/use-skill-history";
 import { useTranslation } from "@/i18n";
 import { formatFullLocalDate, formatRelativeDate } from "@/utils/format-date";
-import { Collapsible } from "@vellumai/design-library";
+import { Collapsible } from "@mycadet/design-library";
 
 export function SkillRevisionHistory({
   assistantId,

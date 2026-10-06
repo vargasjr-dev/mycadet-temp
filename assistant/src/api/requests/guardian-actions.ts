@@ -4,10 +4,10 @@
  *
  * Canonical wire-contract source. The daemon route sources its `requestBody`
  * from here and validates each body against it; external consumers (web
- * client, gateway, evals) import via `@vellumai/assistant-api`.
+ * client, gateway, evals) import via `@mycadet/assistant-api`.
  */
 
-import { GuardianDecisionActionIdSchema } from "@vellumai/service-contracts/guardian-requests";
+import { GuardianDecisionActionIdSchema } from "@mycadet/service-contracts/guardian-requests";
 import { z } from "zod";
 
 export const GuardianActionDecisionRequestSchema = z.object({

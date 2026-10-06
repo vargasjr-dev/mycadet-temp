@@ -49,7 +49,7 @@ import {
   getConversation,
   isConversationProcessing,
   syncMessageToDisk,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import {
   type MemoryJob,

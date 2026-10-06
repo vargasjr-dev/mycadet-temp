@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { Surface } from "@/domains/chat/types/types";
-import type { ConversationContentBlock } from "@vellumai/assistant-api";
+import type { ConversationContentBlock } from "@mycadet/assistant-api";
 import {
   activityHasDedicatedCard,
   activityItemsToCardData,

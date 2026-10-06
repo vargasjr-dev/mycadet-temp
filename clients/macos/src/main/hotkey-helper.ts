@@ -20,14 +20,14 @@ import {
   HELPER_HOTKEY_READ_FRONT_SELECTION,
   HELPER_HOTKEY_SET_CHORDS,
   HELPER_HOTKEY_SET_MODIFIER_HOLD,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import {
   DICTATION_PUSH_SAMPLE_RATE,
   dictationPartialsHelperResultSchema,
   DictationOwnerRouter,
   requestDictationTranscription,
   toAudioBuffer,
-} from "@vellumai/electron-desktop/dictation-routing";
+} from "@mycadet/electron-desktop/dictation-routing";
 import type {
   ChordBinding,
   ChordRegistrationResult,
@@ -40,7 +40,7 @@ import type {
   HotkeySelectionResult,
   ModifierHold,
   ModifierHoldRegistrationResult,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   coachmarkPressed,
@@ -503,7 +503,7 @@ const sendPressWatch = async (
   try {
     const result = await client.call("input.setPressWatch", { rects });
     const parsed = HOTKEY_RESULT_SCHEMA.safeParse(result);
-    return parsed.success && parsed.data.enabled === (rects.length > 0);
+    return parsed.success && parsed.data.enabled === rects.length > 0;
   } catch (err) {
     log.warn(
       `[mac-helper] press watch failed: ${err instanceof Error ? err.message : String(err)}`,

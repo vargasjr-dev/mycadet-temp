@@ -12,7 +12,7 @@
  * (see `toolDetailPayloadFromToolCall`), so it never re-parses or fetches.
  */
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { DetailShellNotice } from "@/components/detail-shell";
 import { SectionLabel } from "@/components/detail-primitives";

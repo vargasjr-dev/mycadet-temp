@@ -2,19 +2,19 @@ import { app } from "electron";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import type { DesktopCapabilityRegistry } from "@vellumai/electron-desktop/capability-registry";
+import type { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   LOCAL_MODE_CLI,
   LOCAL_MODE_PATHS,
   LOCAL_MODE_SESSION,
-} from "@vellumai/electron-desktop/local-mode";
-import { getSessionToken } from "@vellumai/electron-desktop/session-token-store";
+} from "@mycadet/electron-desktop/local-mode";
+import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
 import {
   resolveConfigDir,
   resolveEnvironmentName,
   resolveLockfilePaths,
   type CliInvocation,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 import {
   ensureCliInstalled,

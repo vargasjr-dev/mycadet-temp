@@ -29,7 +29,7 @@ import {
   restoreStubbedModules,
   stubModule,
 } from "@/utils/module-mock.test-helper";
-import type { toast } from "@vellumai/design-library";
+import type { toast } from "@mycadet/design-library";
 
 const HEALTHZ: HealthzGetResponse = {
   version: "1.2.3",
@@ -118,13 +118,9 @@ stubModule(
   { captureError: captureErrorMock },
 );
 
-stubModule(
-  "@vellumai/design-library",
-  await import("@vellumai/design-library"),
-  {
-    toast: { error: toastErrorMock } as unknown as typeof toast,
-  },
-);
+stubModule("@mycadet/design-library", await import("@mycadet/design-library"), {
+  toast: { error: toastErrorMock } as unknown as typeof toast,
+});
 
 const { useAssistantWithHealthz, resizePollInterval } =
   await import("@/domains/settings/components/assistant-status-panel");

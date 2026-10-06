@@ -11,7 +11,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { IpcCallError } from "@vellumai/gateway-client/ipc-client";
+import { IpcCallError } from "@mycadet/gateway-client/ipc-client";
 
 type IpcCall = {
   method: string;

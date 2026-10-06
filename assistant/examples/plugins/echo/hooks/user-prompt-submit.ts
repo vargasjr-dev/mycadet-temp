@@ -7,7 +7,7 @@
  * Convention: the default export is the function the harness invokes.
  */
 
-import type { UserPromptSubmitContext } from "@vellumai/plugin-api";
+import type { UserPromptSubmitContext } from "@mycadet/plugin-api";
 
 import { emit } from "../src/emit.js";
 

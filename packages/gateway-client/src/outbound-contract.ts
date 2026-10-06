@@ -15,7 +15,7 @@
  */
 
 import type { KnownBlock } from "@slack/types";
-import { GuardianActionEmphasisSchema } from "@vellumai/service-contracts/guardian-requests";
+import { GuardianActionEmphasisSchema } from "@mycadet/service-contracts/guardian-requests";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------

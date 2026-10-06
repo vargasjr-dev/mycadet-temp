@@ -16,7 +16,7 @@ import { describe, expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 
-import type { LLMRequestLogEntry } from "@vellumai/assistant-api";
+import type { LLMRequestLogEntry } from "@mycadet/assistant-api";
 
 // Mirror the mock used in `inspect-page.test.tsx` so `Link` renders as
 // a plain `<a>` and the rail doesn't trip on missing router context.

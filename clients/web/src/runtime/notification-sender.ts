@@ -4,7 +4,7 @@ import {
   type NotificationNameProvenance,
   type NotificationPresentation,
   type NotificationSender,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   sameNotificationIdentity,

@@ -125,7 +125,7 @@ mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
 const OK: PackageChangeResponse = { status: "ok", package: null };
 
 const toastErrorCalls: string[] = [];
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     error: (message: string) => {
       toastErrorCalls.push(message);
@@ -453,7 +453,9 @@ describe("useChangeTiers", () => {
     });
 
     expect(packageCalls).toEqual([
-      { body: { machine_tier: "medium", storage_tier: "s", credit_tier: null } },
+      {
+        body: { machine_tier: "medium", storage_tier: "s", credit_tier: null },
+      },
     ]);
     expect(captured.value).toEqual({ needsResize: true, creditChanged: false });
   });
@@ -583,7 +585,9 @@ describe("useChangeTiers", () => {
     });
 
     expect(packageCalls).toEqual([
-      { body: { machine_tier: "medium", storage_tier: "xs", credit_tier: null } },
+      {
+        body: { machine_tier: "medium", storage_tier: "xs", credit_tier: null },
+      },
     ]);
     // Nothing to provision: no ceiling moved and the bundle is unchanged.
     expect(captured.value).toEqual({
@@ -631,7 +635,9 @@ describe("useChangeTiers", () => {
       selected_storage_tier: "s",
       selected_storage_gib: 30,
     });
-    subscriptionFixture = proSubscription({ selected_credit_tier: "credits_50" });
+    subscriptionFixture = proSubscription({
+      selected_credit_tier: "credits_50",
+    });
 
     const captured: { value: ChangeTiersResult | null } = { value: null };
     await act(async () => {

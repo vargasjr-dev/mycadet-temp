@@ -10,7 +10,7 @@ import type {
 import type { RuntimeSubagentNotification } from "@/domains/chat/api/messages";
 import type { BackgroundTaskEntry } from "@/domains/chat/background-task-store";
 import type { MessagesGetResponse } from "@/generated/daemon/types.gen";
-import type { ModeSessionDescriptor } from "@vellumai/assistant-api";
+import type { ModeSessionDescriptor } from "@mycadet/assistant-api";
 
 export type TranscriptItemKind =
   | "message"

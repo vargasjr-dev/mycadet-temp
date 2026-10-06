@@ -2,7 +2,7 @@
  * The Electron desktop window's chrome, as the renderer owns it: the band the
  * app's own title bar occupies, and the native window controls drawn into it.
  */
-import type { TitleBarOverlayTheme } from "@vellumai/ipc-contract";
+import type { TitleBarOverlayTheme } from "@mycadet/ipc-contract";
 
 import { detectElectronHostOS } from "@/runtime/platform-detection";
 import { isPopoutWindow } from "@/runtime/popout-window";

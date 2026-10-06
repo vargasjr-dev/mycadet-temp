@@ -13,7 +13,7 @@
  * its own, so the flyout keeps a single scrollbar and its full height.
  */
 
-import { VirtualList } from "@vellumai/design-library/components/virtual-list";
+import { VirtualList } from "@mycadet/design-library/components/virtual-list";
 
 import { CONVERSATION_LIST_VIRTUALIZE_THRESHOLD } from "@/domains/chat/components/conversation-nav-section";
 import { useConversationListContext } from "@/domains/chat/components/conversation-list-context";

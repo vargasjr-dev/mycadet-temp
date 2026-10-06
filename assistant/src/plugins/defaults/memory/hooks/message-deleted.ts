@@ -8,7 +8,7 @@
  * deletes, and once the row is gone only the timestamp can place it.
  */
 
-import type { HookFunction, MessageDeletedContext } from "@vellumai/plugin-api";
+import type { HookFunction, MessageDeletedContext } from "@mycadet/plugin-api";
 
 import { preserveRetrospectiveCursorTimestamps } from "../memory-retrospective-cursor-preserve.js";
 

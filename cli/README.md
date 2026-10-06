@@ -55,7 +55,7 @@ cadet hatch [options]
 
 #### Remote Targets
 
-- **`local`** -- Starts the local assistant and local gateway. Gateway source resolution order is: repo source tree, then installed `@vellumai/vellum-gateway` package.
+- **`local`** -- Starts the local assistant and local gateway. Gateway source resolution order is: repo source tree, then installed `@mycadet/vellum-gateway` package.
 - **`docker`** -- Starts the assistant, gateway, and credential service in Docker containers.
 - **`cadet`** -- Hatches an assistant on the Cadet Platform.
 - **`custom`** -- Recognized but not yet implemented.

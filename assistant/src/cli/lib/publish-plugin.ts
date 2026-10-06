@@ -106,7 +106,7 @@ export function findPluginRoot(startDir: string): string | null {
  * Validate a plugin directory for publish readiness.
  *
  * Checks the same things the review team will verify:
- * - package.json exists with name, version, and @vellumai/plugin-api peer dep
+ * - package.json exists with name, version, and @mycadet/plugin-api peer dep
  * - At least one surface directory (hooks/, tools/, skills/) has entries
  * - No stale .js artifacts without matching .ts source
  */
@@ -151,10 +151,8 @@ export function validatePluginForPublish(dir: string): PublishValidation {
   }
 
   const peerDeps = pkg.peerDependencies ?? {};
-  if (!("@vellumai/plugin-api" in peerDeps)) {
-    issues.push(
-      "package.json missing peerDependencies['@vellumai/plugin-api']",
-    );
+  if (!("@mycadet/plugin-api" in peerDeps)) {
+    issues.push("package.json missing peerDependencies['@mycadet/plugin-api']");
   }
 
   // Check for at least one surface directory with entries
@@ -642,7 +640,7 @@ export function formatPublishResult(result: PublishResult): string {
     "",
     "The Vellum team will review your plugin. The review checks:",
     "  • Pinned commit is reachable and public",
-    "  • package.json has @vellumai/plugin-api peer dependency",
+    "  • package.json has @mycadet/plugin-api peer dependency",
     "  • Plugin loads cleanly (hooks register, tools validate)",
     "  • Surfaces contribute on boot (not silently failing)",
     "",

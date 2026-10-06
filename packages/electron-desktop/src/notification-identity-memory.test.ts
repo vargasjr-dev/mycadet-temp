@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import type {
   NotificationIdentity,
   PrepareNotificationIdentityPayload,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   NOTIFICATION_IDENTITY_MEMORY_LIMIT,
@@ -397,7 +397,11 @@ describe("notification identity memory", () => {
   });
 
   test("seals a scope when generation guards reach their bound", () => {
-    for (let index = 0; index < NOTIFICATION_IDENTITY_MEMORY_LIMIT * 2; index++) {
+    for (
+      let index = 0;
+      index < NOTIFICATION_IDENTITY_MEMORY_LIMIT * 2;
+      index++
+    ) {
       expect(
         prepareNotificationIdentity(
           publication({
@@ -429,7 +433,11 @@ describe("notification identity memory", () => {
   });
 
   test("fails closed when the bounded scope guard set is full", () => {
-    for (let index = 0; index < NOTIFICATION_IDENTITY_MEMORY_LIMIT * 2; index++) {
+    for (
+      let index = 0;
+      index < NOTIFICATION_IDENTITY_MEMORY_LIMIT * 2;
+      index++
+    ) {
       expect(
         prepareNotificationIdentity(
           publication({
@@ -442,10 +450,7 @@ describe("notification identity memory", () => {
     expect(
       prepareNotificationIdentity(
         publication({
-          identity: identity(
-            "assistant-a",
-            `scope:v1:${"f".repeat(64)}`,
-          ),
+          identity: identity("assistant-a", `scope:v1:${"f".repeat(64)}`),
         }),
       ),
     ).toBe(false);

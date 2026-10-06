@@ -16,7 +16,7 @@ export function findWebDistDir(options: WebDistOptions = {}): string | null {
   try {
     const packageJson = (
       options.resolvePackage ??
-      (() => loadModule.resolve("@vellumai/web/package.json"))
+      (() => loadModule.resolve("@mycadet/web/package.json"))
     )();
     const distDir = join(dirname(packageJson), "dist");
     if (existsSync(join(distDir, "index.html"))) {

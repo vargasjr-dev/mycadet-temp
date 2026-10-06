@@ -2,8 +2,8 @@ import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { credentialKey } from "@vellumai/credential-storage";
-import type { CredentialRecord } from "@vellumai/service-contracts/credential-rpc";
+import { credentialKey } from "@mycadet/credential-storage";
+import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 
 import type { CredentialRecordBackend } from "../security/ces-rpc-record-backend.js";
 import {

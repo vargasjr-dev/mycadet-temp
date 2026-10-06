@@ -28,7 +28,7 @@ import {
   type AssistantEventEnvelope,
   type SubagentStatus,
   type SubagentInnerEvent,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import {
   applyEvent,
   emptyHistory,
@@ -36,7 +36,7 @@ import {
 } from "@/domains/chat/transcript/rolling-snapshot";
 import type { PaginatedHistoryResult } from "@/domains/chat/transcript/types";
 import { getSseEnvelopesSince } from "@/lib/streaming/stream-debug";
-import type { ToolActivityMetadata } from "@vellumai/assistant-api";
+import type { ToolActivityMetadata } from "@mycadet/assistant-api";
 import { isActiveStatus, shouldApplyStatus } from "@/utils/subagent-status";
 import { supportsSubagentsReconcile } from "@/lib/backwards-compat/subagents-reconcile";
 import { fetchSubagentDetail } from "./fetch-subagent-detail";

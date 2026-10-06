@@ -1,6 +1,6 @@
 import { Settings } from "lucide-react";
 
-import { Modal } from "@vellumai/design-library";
+import { Modal } from "@mycadet/design-library";
 
 import { ChannelTrustFloorSection } from "@/domains/channels/components/channel-trust-floor-section";
 import { EmailManagedContent } from "@/domains/channels/components/email-managed-content";

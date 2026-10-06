@@ -24,9 +24,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CalendarClock, KeyRound, Sparkles } from "lucide-react";
 
-import type { DiskPressureStatus } from "@vellumai/assistant-api";
-import { Button } from "@vellumai/design-library/components/button";
-import { Tag } from "@vellumai/design-library/components/tag";
+import type { DiskPressureStatus } from "@mycadet/assistant-api";
+import { Button } from "@mycadet/design-library/components/button";
+import { Tag } from "@mycadet/design-library/components/tag";
 import { withQueryCache } from "@/lib/story-query-cache";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 

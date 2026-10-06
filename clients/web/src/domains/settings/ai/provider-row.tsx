@@ -1,10 +1,10 @@
 import { EllipsisVertical } from "lucide-react";
 
-import { actionMenuDestructiveClasses } from "@vellumai/design-library/components/action-menu";
-import { Button } from "@vellumai/design-library/components/button";
-import { ListRow } from "@vellumai/design-library/components/list-row";
-import { Menu } from "@vellumai/design-library/components/menu";
-import { Tag } from "@vellumai/design-library/components/tag";
+import { actionMenuDestructiveClasses } from "@mycadet/design-library/components/action-menu";
+import { Button } from "@mycadet/design-library/components/button";
+import { ListRow } from "@mycadet/design-library/components/list-row";
+import { Menu } from "@mycadet/design-library/components/menu";
+import { Tag } from "@mycadet/design-library/components/tag";
 
 import { providerConnectionDisplayName } from "@/domains/settings/ai/provider-editor-constants";
 import {
@@ -77,10 +77,7 @@ export function ProviderRow({
       trailing={
         <>
           {isManaged ? (
-            <Tag
-              tone="neutral"
-              title={t("providerRow.managedTagTitle")}
-            >
+            <Tag tone="neutral" title={t("providerRow.managedTagTitle")}>
               {t("providerRow.managedTag")}
             </Tag>
           ) : null}
@@ -118,7 +115,10 @@ export function ProviderRow({
                   </Menu.Item>
                 ) : null}
                 {showSetDefault ? (
-                  <Menu.Item disabled={isSettingDefault} onSelect={onSetDefault}>
+                  <Menu.Item
+                    disabled={isSettingDefault}
+                    onSelect={onSetDefault}
+                  >
                     {t("providerRow.setAsDefault")}
                   </Menu.Item>
                 ) : null}

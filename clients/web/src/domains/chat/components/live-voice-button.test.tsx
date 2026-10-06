@@ -16,7 +16,7 @@ import {
   MOBILE_GLYPH_CLASS,
 } from "@/domains/chat/components/chat-composer/composer-mobile-chrome";
 import { LiveVoiceButton } from "@/domains/chat/components/live-voice-button";
-import { HoverCapabilityOverride } from "@vellumai/design-library/utils/hover-capability";
+import { HoverCapabilityOverride } from "@mycadet/design-library/utils/hover-capability";
 
 const onStartSpy = mock(() => {});
 

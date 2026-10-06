@@ -9,16 +9,16 @@ import {
 } from "bun:test";
 import fs from "node:fs";
 
-import type { Lockfile } from "@vellumai/local-mode/contract";
+import type { Lockfile } from "@mycadet/local-mode/contract";
 
 const CANONICAL_PATH = "/tmp/test-lockfile.json";
 const LEGACY_PATH = "/tmp/test-lockfile-legacy.json";
 let mockPaths = [CANONICAL_PATH];
 
-// Passthrough the real parseLockfile, stubbing the @vellumai/local-mode
+// Passthrough the real parseLockfile, stubbing the @mycadet/local-mode
 // entry above doesn't touch the /contract subpath it lives in.
-const { parseLockfile } = await import("@vellumai/local-mode/contract");
-mock.module("@vellumai/local-mode/contract", () => ({
+const { parseLockfile } = await import("@mycadet/local-mode/contract");
+mock.module("@mycadet/local-mode/contract", () => ({
   parseLockfile,
 }));
 

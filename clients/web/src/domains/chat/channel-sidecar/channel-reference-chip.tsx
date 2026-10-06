@@ -12,12 +12,12 @@
 import { X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-import { Button, Card, Typography } from "@vellumai/design-library";
+import { Button, Card, Typography } from "@mycadet/design-library";
 import {
   quoteBlockquoteAccentClassName,
   quoteBlockquoteClassName,
   quoteBlockquoteContentClassName,
-} from "@vellumai/design-library/components/markdown-message";
+} from "@mycadet/design-library/components/markdown-message";
 
 import { useChannelReferenceStore } from "@/domains/chat/channel-sidecar/channel-reference-store";
 import { useTranslation } from "@/i18n";
@@ -39,7 +39,9 @@ export function ChannelReferenceChip() {
           }
           animate={{ opacity: 1, height: "auto", scale: 1 }}
           exit={
-            reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0, scale: 0.98 }
+            reduceMotion
+              ? { opacity: 0 }
+              : { opacity: 0, height: 0, scale: 0.98 }
           }
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           className="mb-2 overflow-hidden"
@@ -50,7 +52,10 @@ export function ChannelReferenceChip() {
             className="bg-[var(--surface-lift)]"
             data-testid="channel-reference-chip"
           >
-            <Card.Body padding="md" className="relative flex flex-col gap-2 pr-8">
+            <Card.Body
+              padding="md"
+              className="relative flex flex-col gap-2 pr-8"
+            >
               <div className="flex min-w-0 items-center gap-1.5">
                 <ChannelIcon
                   channelId={reference.channelId}

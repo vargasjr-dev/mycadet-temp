@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { SENSITIVE_KEYS } from "./lockfile-contract";
 
-const CLI_PACKAGE_NAME = "@vellumai/cli";
+const CLI_PACKAGE_NAME = "@mycadet/cli";
 
 /**
  * How to invoke the Vellum CLI as a child process: a base command plus the
@@ -120,7 +120,7 @@ let _resolvedCliPath: string | undefined;
  * Resolve the CLI entry point.
  *
  * 1. Source tree — `<baseDir>/cli/src/index.ts` (dev mode in monorepo).
- * 2. Installed package — `require.resolve("@vellumai/cli/package.json")`.
+ * 2. Installed package — `require.resolve("@mycadet/cli/package.json")`.
  */
 function resolveCliPath(baseDir: string, importMetaUrl?: string): string {
   if (_resolvedCliPath) return _resolvedCliPath;
@@ -134,7 +134,9 @@ function resolveCliPath(baseDir: string, importMetaUrl?: string): string {
   const _require = createRequire(importMetaUrl ?? `file://${baseDir}/`);
   try {
     const pkgPath = _require.resolve(`${CLI_PACKAGE_NAME}/package.json`);
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8")) as { bin?: Record<string, string> };
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8")) as {
+      bin?: Record<string, string>;
+    };
     const binEntry = pkg.bin?.["vellum"];
     if (binEntry) {
       const entryPoint = path.resolve(path.dirname(pkgPath), binEntry);
@@ -161,5 +163,8 @@ export function resolveDevCliInvocation(
   baseDir: string,
   importMetaUrl?: string,
 ): CliInvocation {
-  return { command: "bun", baseArgs: ["run", resolveCliPath(baseDir, importMetaUrl)] };
+  return {
+    command: "bun",
+    baseArgs: ["run", resolveCliPath(baseDir, importMetaUrl)],
+  };
 }

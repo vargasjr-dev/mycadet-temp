@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import type { CompanionIntroCallControl } from "@vellumai/ipc-contract";
+import type { CompanionIntroCallControl } from "@mycadet/ipc-contract";
 
 import { createSelectors } from "@/utils/create-selectors";
 

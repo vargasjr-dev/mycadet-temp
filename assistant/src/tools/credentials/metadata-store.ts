@@ -17,8 +17,8 @@
 import {
   credentialKey,
   StaticCredentialMetadataStore,
-} from "@vellumai/credential-storage";
-import type { CredentialRecord } from "@vellumai/service-contracts/credential-rpc";
+} from "@mycadet/credential-storage";
+import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 
 import { createCesHttpRecordBackendIfConfigured } from "../../security/ces-http-record-backend.js";
 import type { CredentialRecordBackend } from "../../security/ces-rpc-record-backend.js";
@@ -225,7 +225,11 @@ export function upsertCredentialMetadata(
   },
 ): CredentialMetadata {
   touchCesCache();
-  const record = getStore().upsert(service, field, policy) as CredentialMetadata;
+  const record = getStore().upsert(
+    service,
+    field,
+    policy,
+  ) as CredentialMetadata;
   void persistCredentialMetadata(record);
   return record;
 }

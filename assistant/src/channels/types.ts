@@ -2,7 +2,7 @@ import {
   CHANNEL_IDS,
   type ChannelId,
   isChannelId,
-} from "@vellumai/service-contracts/channels";
+} from "@mycadet/service-contracts/channels";
 
 import {
   HOST_PROXY_CAPABILITIES,

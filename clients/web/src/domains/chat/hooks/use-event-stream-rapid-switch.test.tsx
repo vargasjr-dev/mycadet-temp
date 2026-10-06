@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { cleanup, renderHook } from "@testing-library/react";
 import { act } from "react";
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 import type { AssistantEvent } from "@/types/event-types";
 import { __resetForTesting, publish } from "@/lib/event-bus";
 import { useEventStream } from "@/domains/chat/hooks/use-event-stream";

@@ -3,8 +3,8 @@ import { type ReactNode } from "react";
 
 import { displayProvider } from "@/domains/chat/inspector/inspector-formatters";
 import { t, useTranslation } from "@/i18n";
-import type { LLMCallError } from "@vellumai/assistant-api";
-import { Card } from "@vellumai/design-library";
+import type { LLMCallError } from "@mycadet/assistant-api";
+import { Card } from "@mycadet/design-library";
 
 /**
  * Failure banner shared by the Overview and Response tabs. Rendered when a

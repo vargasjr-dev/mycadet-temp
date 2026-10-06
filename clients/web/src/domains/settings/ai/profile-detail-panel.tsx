@@ -3,8 +3,8 @@ import { useEffect, useMemo } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Tag } from "@vellumai/design-library/components/tag";
+import { Button } from "@mycadet/design-library/components/button";
+import { Tag } from "@mycadet/design-library/components/tag";
 
 import { DetailShell } from "@/components/detail-shell";
 import { BlockedDeleteModal } from "@/domains/settings/ai/manage-profiles-blocked-delete-modal";

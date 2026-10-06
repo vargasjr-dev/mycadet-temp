@@ -5,8 +5,8 @@ import type {
   LLMCallSummary,
   LLMContextSection,
   LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
-import { Card } from "@vellumai/design-library";
+} from "@mycadet/assistant-api";
+import { Card } from "@mycadet/design-library";
 
 import { CopyButton } from "@/components/copy-button";
 import { LlmCallErrorCard } from "@/domains/chat/inspector/components/llm-call-error-card";

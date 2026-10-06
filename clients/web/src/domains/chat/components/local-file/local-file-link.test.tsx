@@ -17,8 +17,8 @@ mock.module("@/utils/open-workspace-file", () => ({ openWorkspaceFile }));
 
 // The barrel re-exports this module, so mocking the leaf keeps the rest of the
 // design library intact for everything else in the process.
-const toastModule = await import("@vellumai/design-library/components/toast");
-mock.module("@vellumai/design-library/components/toast", () => ({
+const toastModule = await import("@mycadet/design-library/components/toast");
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...toastModule,
   toast: { ...toastModule.toast, error: toastError },
 }));

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 
-import { parseLockfile, type Lockfile } from "@vellumai/local-mode/contract";
+import { parseLockfile, type Lockfile } from "@mycadet/local-mode/contract";
 
 /**
  * Lockfile watcher for the main process. Polls the lockfile's mtime every
@@ -46,7 +46,7 @@ export const configureLockfileWatcher = (
 /**
  * Parse the first readable candidate lockfile, canonical first. The first
  * readable file is authoritative even when its entry list is empty, matching
- * `readPairedGatewayTargets` in @vellumai/local-mode: an unpair leaves a
+ * `readPairedGatewayTargets` in @mycadet/local-mode: an unpair leaves a
  * readable canonical file with the entry removed, so a stale legacy fallback
  * can never resurrect it. The fallback keeps legacy-only installs (no
  * canonical file yet) populated. Returns EMPTY_LOCKFILE when no candidate

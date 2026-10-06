@@ -58,7 +58,7 @@ import type {
   Message,
   Provider,
   ProviderResponse,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import { setConfig } from "../../../../../__tests__/helpers/set-config.js";
@@ -103,7 +103,7 @@ import {
 
 let carryMockActive = false;
 
-const realPluginApi = await import("@vellumai/plugin-api");
+const realPluginApi = await import("@mycadet/plugin-api");
 const realFlags = {
   ...(await import("../../../../../config/assistant-feature-flags.js")),
 };
@@ -118,7 +118,7 @@ const realConversationRegistry = {
 };
 
 let providerStub: Provider | null = null;
-mock.module("@vellumai/plugin-api", () => ({
+mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,
   getConfiguredProvider: async (
     ...args: Parameters<typeof realPluginApi.getConfiguredProvider>

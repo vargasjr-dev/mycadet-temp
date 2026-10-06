@@ -7,7 +7,7 @@ import {
   CONNECTIVITY_STATES,
   type ConnectivityState,
   assistantStatusSchema,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { handle, log, on } from "./presence-runtime";
 

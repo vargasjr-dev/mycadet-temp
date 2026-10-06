@@ -23,7 +23,7 @@
 import {
   type GuardianDelivery,
   ResolveGuardianDeliveryResponseSchema,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import { ipcCall } from "../ipc/gateway-client.js";
 

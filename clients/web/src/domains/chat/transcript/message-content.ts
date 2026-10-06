@@ -12,7 +12,7 @@ import type {
   ConversationSurfaceBlock,
   ConversationTextBlock,
   ConversationThinkingBlock,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { Surface } from "@/domains/chat/types/types";

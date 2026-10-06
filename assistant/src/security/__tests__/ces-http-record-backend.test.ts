@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 
-import type { CredentialRecord } from "@vellumai/service-contracts/credential-rpc";
+import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 
 import * as envRegistry from "../../config/env-registry.js";
 import {

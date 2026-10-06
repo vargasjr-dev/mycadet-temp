@@ -17,7 +17,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { userEvent, within } from "storybook/test";
 
-import type { DiskPressureStatus } from "@vellumai/assistant-api";
+import type { DiskPressureStatus } from "@mycadet/assistant-api";
 
 import { DiskPressureBanner } from "@/components/disk-pressure-banner";
 

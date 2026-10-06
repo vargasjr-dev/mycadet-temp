@@ -81,7 +81,7 @@
 import {
   listInstalledSkills,
   type ResolvedSkillEntry,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import { isMemoryV3Live } from "../../../../config/memory-v3-gate.js";
 import type { AssistantConfig } from "../../../../config/types.js";

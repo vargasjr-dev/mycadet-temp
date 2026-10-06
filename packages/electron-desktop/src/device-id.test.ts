@@ -6,9 +6,9 @@ import path from "node:path";
 const TEST_DIR = path.join(os.tmpdir(), `device-id-test-${process.pid}`);
 const DEVICE_FILE = path.join(TEST_DIR, "device.json");
 
-// Stub @vellumai/local-mode so we control the resolved paths.
+// Stub @mycadet/local-mode so we control the resolved paths.
 let mockEnvironment = "dev";
-mock.module("@vellumai/local-mode", () => ({
+mock.module("@mycadet/local-mode", () => ({
   resolveConfigDir: () => TEST_DIR,
   resolveEnvironmentName: () => mockEnvironment,
 }));

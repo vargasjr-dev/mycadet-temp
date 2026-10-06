@@ -1,4 +1,4 @@
-import { stripHopByHop } from "@vellumai/assistant-client";
+import { stripHopByHop } from "@mycadet/assistant-client";
 
 import { fetchImpl } from "../fetch.js";
 import {

@@ -34,7 +34,7 @@ import type { PaginatedHistoryResult } from "@/domains/chat/transcript/types";
 import { mergeAdjacentAssistantMessages } from "@/domains/chat/utils/message-merge";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import type { BackgroundTaskEntry } from "@/domains/chat/background-task-store";
-import type { ModeSessionDescriptor } from "@vellumai/assistant-api";
+import type { ModeSessionDescriptor } from "@mycadet/assistant-api";
 
 const EMPTY_MODE_SESSION_DESCRIPTORS: ModeSessionDescriptor[] = [];
 const EMPTY_MODE_SESSION_IDS: string[] = [];
@@ -189,7 +189,8 @@ export interface HistoryPaginationResult {
   latestPage: PaginatedHistoryResult | undefined;
   /** Subagent notifications aggregated across all loaded pages, oldest-first. */
   subagentNotifications:
-    NonNullable<PaginatedHistoryResult["subagentNotifications"]> | undefined;
+    | NonNullable<PaginatedHistoryResult["subagentNotifications"]>
+    | undefined;
   /** Background-task completions aggregated across all loaded pages, oldest-first. */
   backgroundToolCompletions: BackgroundTaskEntry[] | undefined;
   /** Lifecycle descriptors aggregated across every loaded page. */

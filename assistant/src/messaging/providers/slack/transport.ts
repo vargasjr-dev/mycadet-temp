@@ -1,5 +1,5 @@
+import { ChannelDeliveryError } from "@mycadet/gateway-client/http-delivery";
 import type { KnownBlock } from "@slack/types";
-import { ChannelDeliveryError } from "@vellumai/gateway-client/http-delivery";
 
 import { extractThreadTsFromCallbackUrl } from "../../../channels/slack-callback-url.js";
 import { getLogger } from "../../../util/logger.js";

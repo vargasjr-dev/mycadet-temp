@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   VOICE_ACTIVITY_WORK_MAX,
   VOICE_ACTIVITY_WORK_TEXT_MAX,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import type { SubagentEntry } from "@/domains/chat/subagent-store";
 

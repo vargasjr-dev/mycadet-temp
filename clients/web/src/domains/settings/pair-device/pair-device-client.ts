@@ -29,7 +29,7 @@ import type {
   RemoteWebPairingRequestListResponse,
   RemoteWebPairingRequestSummary,
   RemoteWebPairingVerificationRequest,
-} from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
 
 import { t } from "@/i18n";
 import { getLocalGatewayUrl, getSelectedAssistant } from "@/lib/local-mode";

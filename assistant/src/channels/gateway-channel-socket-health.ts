@@ -9,7 +9,7 @@ import {
   type ChannelSocketHealthIpcParams,
   type ChannelSocketHealthIpcResponse,
   ChannelSocketHealthIpcResponseSchema,
-} from "@vellumai/gateway-client/gateway-ipc-contracts";
+} from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import { ipcCallPersistentValidated } from "../ipc/gateway-validated-call.js";
 

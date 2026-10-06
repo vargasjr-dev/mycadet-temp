@@ -18,7 +18,7 @@
  *   always taken.
  *
  * Policy shared with the CLI teleport lives in
- * `@vellumai/local-mode/teleport-backup-policy`.
+ * `@mycadet/local-mode/teleport-backup-policy`.
  */
 
 import {
@@ -28,7 +28,7 @@ import {
   managedBackupIsReady,
   readyManagedBackupCreatedAts,
   type ManagedBackupEntry,
-} from "@vellumai/local-mode/teleport-backup-policy";
+} from "@mycadet/local-mode/teleport-backup-policy";
 
 import {
   assistantsBackupsCreate,

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, render } from "@testing-library/react";
-import type { CompanionSurfaceState } from "@vellumai/ipc-contract";
+import type { CompanionSurfaceState } from "@mycadet/ipc-contract";
 
 const STATE: CompanionSurfaceState = {
   growth: "right",

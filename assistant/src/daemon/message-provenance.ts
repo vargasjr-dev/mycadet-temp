@@ -17,7 +17,7 @@
  * It also owns the author field (`actorAuthorProvenance`), which says who
  * wrote a row rather than whose turn wrote it.
  */
-import { type TrustClass, TrustClassSchema } from "@vellumai/gateway-client";
+import { type TrustClass, TrustClassSchema } from "@mycadet/gateway-client";
 
 import type { MessageRow } from "../persistence/conversation-crud.js";
 import type { TrustContext } from "./trust-context-types.js";

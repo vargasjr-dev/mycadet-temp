@@ -7,7 +7,7 @@
  * Behavioral interfaces (ChannelAdapter) remain as TypeScript interfaces.
  */
 
-import { ApprovalUIMetadataSchema } from "@vellumai/gateway-client";
+import { ApprovalUIMetadataSchema } from "@mycadet/gateway-client";
 import { z } from "zod";
 
 import type { DeliverableChannelId } from "../channels/config.js";

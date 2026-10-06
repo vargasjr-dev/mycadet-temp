@@ -27,7 +27,7 @@ import { basename, dirname, join, sep } from "node:path";
 import {
   findAssistantCommand,
   isRepoCheckoutPath,
-} from "@vellumai/environments";
+} from "@mycadet/environments";
 
 import { getLogger } from "../util/logger.js";
 

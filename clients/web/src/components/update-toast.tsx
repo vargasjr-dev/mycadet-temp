@@ -1,6 +1,6 @@
 import { CircleCheck, Download, X } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { ProgressBar, toast } from "@vellumai/design-library";
+import { ProgressBar, toast } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 import { isElectron } from "@/runtime/is-electron";

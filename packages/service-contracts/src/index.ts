@@ -1,13 +1,13 @@
 /**
- * @vellumai/service-contracts — aggregate export (compat entry point)
+ * @mycadet/service-contracts — aggregate export (compat entry point)
  *
  * This is a compatibility aggregate that re-exports everything from all
  * submodules. Prefer the explicit domain subpaths for new code:
  *
- *   - `@vellumai/service-contracts/credential-rpc`  — transport, RPC, handles, error
- *   - `@vellumai/service-contracts/trust-rules`     — trust-rule types and parsing helpers
- *   - `@vellumai/service-contracts/twilio-ingress`  — shared Twilio ingress config constants
- *   - `@vellumai/service-contracts/ingress`         — shared public ingress URL helpers
+ *   - `@mycadet/service-contracts/credential-rpc`  — transport, RPC, handles, error
+ *   - `@mycadet/service-contracts/trust-rules`     — trust-rule types and parsing helpers
+ *   - `@mycadet/service-contracts/twilio-ingress`  — shared Twilio ingress config constants
+ *   - `@mycadet/service-contracts/ingress`         — shared public ingress URL helpers
  *
  * Fine-grained subpaths are also available for low-friction migration:
  *   `./rpc`, `./handles`, `./error`, `./trust-rules`, `./ingress`, `./twilio-ingress`

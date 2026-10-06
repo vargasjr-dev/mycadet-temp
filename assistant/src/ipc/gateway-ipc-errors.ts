@@ -9,7 +9,7 @@
 import {
   IpcCallError,
   IpcConnectError,
-} from "@vellumai/gateway-client/ipc-client";
+} from "@mycadet/gateway-client/ipc-client";
 
 import {
   RouteError,

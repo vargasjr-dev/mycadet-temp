@@ -1,23 +1,23 @@
 import { app } from "electron";
 
-import { installAvatarIpc } from "@vellumai/electron-desktop/avatar";
+import { installAvatarIpc } from "@mycadet/electron-desktop/avatar";
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
-import { installConnectivityProbe } from "@vellumai/electron-desktop/connectivity-probe";
-import { installIdentityIpc } from "@vellumai/electron-desktop/identity";
+} from "@mycadet/electron-desktop/capability-registry";
+import { installConnectivityProbe } from "@mycadet/electron-desktop/connectivity-probe";
+import { installIdentityIpc } from "@mycadet/electron-desktop/identity";
 import {
   configureLockfileWatcher,
   installLockfileWatcher,
-} from "@vellumai/electron-desktop/lockfile-watcher";
-import { installPowerEvents } from "@vellumai/electron-desktop/power-events";
-import { configurePresenceRuntime } from "@vellumai/electron-desktop/presence-runtime";
+} from "@mycadet/electron-desktop/lockfile-watcher";
+import { installPowerEvents } from "@mycadet/electron-desktop/power-events";
+import { configurePresenceRuntime } from "@mycadet/electron-desktop/presence-runtime";
 import {
   installConnectivityIpc,
   installStatusIpc,
-} from "@vellumai/electron-desktop/status";
-import { resolveLockfilePaths } from "@vellumai/local-mode";
+} from "@mycadet/electron-desktop/status";
+import { resolveLockfilePaths } from "@mycadet/local-mode";
 
 import { handle, on } from "../ipc.client";
 import { installFeatureFlagsIpc, isFeatureEnabled } from "../feature-flags";

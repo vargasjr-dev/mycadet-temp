@@ -16,9 +16,9 @@ import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { isNativeDictationSupported } from "@/runtime/native-dictation-partials";
 import { detectElectronHostOS } from "@/runtime/platform-detection";
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
-import { Select } from "@vellumai/design-library/components/select";
-import { Input } from "@vellumai/design-library/components/input";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Select } from "@mycadet/design-library/components/select";
+import { Input } from "@mycadet/design-library/components/input";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import {
   CredentialsGuide,
@@ -338,9 +338,7 @@ export function SttProviderForm({
       return true;
     } catch (err) {
       toast.error(
-        err instanceof Error
-          ? err.message
-          : t("sttProviderForm.saveFailed"),
+        err instanceof Error ? err.message : t("sttProviderForm.saveFailed"),
       );
       return false;
     } finally {

@@ -27,7 +27,7 @@ import type {
   ScreenCaptureFrame,
   ShareTargetSnapshot,
   WatchCaptureTarget,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 type CompanionBridge = NonNullable<NonNullable<Window["vellum"]>["companion"]>;
 

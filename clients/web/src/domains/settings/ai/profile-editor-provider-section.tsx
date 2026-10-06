@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useTranslation } from "@/i18n";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Select } from "@vellumai/design-library/components/select";
-import { SearchableSelect } from "@vellumai/design-library/components/searchable-select";
-import { Input } from "@vellumai/design-library/components/input";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Select } from "@mycadet/design-library/components/select";
+import { SearchableSelect } from "@mycadet/design-library/components/searchable-select";
+import { Input } from "@mycadet/design-library/components/input";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import {
   catalogEnabledFlags,
@@ -181,9 +181,7 @@ export function ProfileEditorProviderSection({
   // `connections === []` is distinct: zero connections confirmed, so the
   // filter runs and yields empty — the empty-state hint fires.
   const providerOptionsSource =
-    connections === undefined
-      ? CATALOG_PROVIDERS
-      : visibleProviders;
+    connections === undefined ? CATALOG_PROVIDERS : visibleProviders;
 
   // A confirmed-empty connection list. Read-only profiles cannot act on it,
   // so they are not told to.
@@ -215,10 +213,7 @@ export function ProfileEditorProviderSection({
       if (!provider) {
         return [];
       }
-      const catalogModels = getVisibleModelsForProvider(
-        provider,
-        catalogFlags,
-      );
+      const catalogModels = getVisibleModelsForProvider(provider, catalogFlags);
       if (catalogModels.length > 0) {
         if (
           restrictsToSubscriptionModels(

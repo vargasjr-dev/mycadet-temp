@@ -34,7 +34,7 @@ import type {
   CompanionCaptureSources,
   ScreenCaptureFrame,
   WatchCaptureTarget,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { runAppleScript } from "./appleScriptExecutor";
 import log from "./logger";

@@ -12,7 +12,7 @@
 
 import { create } from "zustand";
 
-import type { AcpSessionModelUpdateEvent } from "@vellumai/assistant-api";
+import type { AcpSessionModelUpdateEvent } from "@mycadet/assistant-api";
 
 import { createSelectors } from "@/utils/create-selectors";
 import { isActiveAcpStatus, type AcpRunStatus } from "@/utils/acp-run-status";
@@ -390,14 +390,13 @@ function mergeModelSelection(
   const existingChangedSinceFetch =
     existingAtFetch !== undefined &&
     !sameModelRevision(modelRevisionOf(existing), existingAtFetch);
-  const keepExisting =
-    differentEpochs
-      ? incomingEpoch === undefined
-        ? existingEpoch !== undefined
-        : existingChangedSinceFetch
-      : existing.modelRevision !== undefined &&
-        (incoming.modelRevision === undefined ||
-          existing.modelRevision >= incoming.modelRevision);
+  const keepExisting = differentEpochs
+    ? incomingEpoch === undefined
+      ? existingEpoch !== undefined
+      : existingChangedSinceFetch
+    : existing.modelRevision !== undefined &&
+      (incoming.modelRevision === undefined ||
+        existing.modelRevision >= incoming.modelRevision);
   if (keepExisting) {
     return {
       model: existing.model,
@@ -427,9 +426,7 @@ function mergeModelSelection(
   };
 }
 
-function modelRevisionOf(
-  value: AcpModelRevision,
-): AcpModelRevision | null {
+function modelRevisionOf(value: AcpModelRevision): AcpModelRevision | null {
   if (
     value.modelRevisionEpoch === undefined &&
     value.modelRevision === undefined

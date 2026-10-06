@@ -8,7 +8,7 @@ import {
   beforeAll,
   afterAll,
 } from "bun:test";
-import { hashInviteCode, hashInviteToken } from "@vellumai/gateway-client";
+import { hashInviteCode, hashInviteToken } from "@mycadet/gateway-client";
 import type { GatewayConfig } from "../config.js";
 import { initSigningKey } from "../auth/token-service.js";
 

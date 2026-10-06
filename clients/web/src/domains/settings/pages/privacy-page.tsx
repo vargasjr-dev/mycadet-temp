@@ -22,7 +22,7 @@ import {
 import { getDeviceSetting, setDeviceSetting } from "@/utils/device-settings";
 import { savePreferenceToggle } from "@/lib/consent/consent-persistence";
 import { legalUrl, routes } from "@/utils/routes";
-import { Select } from "@vellumai/design-library/components/select";
+import { Select } from "@mycadet/design-library/components/select";
 
 const RETENTION_OPTIONS = [
   { value: "dontRetain", labelKey: "privacyPage.retentionDontRetain" },

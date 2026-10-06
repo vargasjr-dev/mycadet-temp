@@ -1,7 +1,7 @@
 import { Mail, Send, X } from "lucide-react";
 import type { MouseEventHandler } from "react";
 
-import { Button, cn } from "@vellumai/design-library";
+import { Button, cn } from "@mycadet/design-library";
 
 import type { EmailReferenceAttachment } from "@/domains/chat/composer-store";
 import { useTranslation } from "@/i18n";

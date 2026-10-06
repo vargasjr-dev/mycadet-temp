@@ -49,7 +49,7 @@ import {
   getConversationProcessingStartedAt,
   getRecordedConversationToolSurface,
   isConversationProcessing,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import {
   type ClientOs,

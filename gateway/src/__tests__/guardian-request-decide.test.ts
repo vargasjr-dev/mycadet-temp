@@ -22,8 +22,8 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { and, eq } from "drizzle-orm";
 
-import { hashVerificationSecret } from "@vellumai/gateway-client";
-import type { DecideGuardianRequestIpcParams } from "@vellumai/gateway-client";
+import { hashVerificationSecret } from "@mycadet/gateway-client";
+import type { DecideGuardianRequestIpcParams } from "@mycadet/gateway-client";
 
 import "./test-preload.js";
 

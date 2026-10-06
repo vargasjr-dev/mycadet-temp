@@ -2,8 +2,8 @@ import {
   type ChoiceOption,
   type ChoiceSurfaceData,
   ChoiceSurfaceDataSchema,
-} from "@vellumai/assistant-api";
-import { OptionCard, OptionCardGroup } from "@vellumai/design-library";
+} from "@mycadet/assistant-api";
+import { OptionCard, OptionCardGroup } from "@mycadet/design-library";
 import { Loader2 } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 

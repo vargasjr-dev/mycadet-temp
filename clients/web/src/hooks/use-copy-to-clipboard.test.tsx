@@ -16,10 +16,10 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, render } from "@testing-library/react";
 
-import * as toastModule from "@vellumai/design-library/components/toast";
+import * as toastModule from "@mycadet/design-library/components/toast";
 
 const successToasts: string[] = [];
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...toastModule,
   toast: {
     ...toastModule.toast,

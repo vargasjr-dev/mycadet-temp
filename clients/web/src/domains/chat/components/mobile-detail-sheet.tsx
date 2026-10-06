@@ -6,8 +6,8 @@ import {
   type ReactNode,
   type CSSProperties,
 } from "react";
-import { BottomSheet } from "@vellumai/design-library";
-import { PortalContainerProvider } from "@vellumai/design-library/utils/portal-container";
+import { BottomSheet } from "@mycadet/design-library";
+import { PortalContainerProvider } from "@mycadet/design-library/utils/portal-container";
 
 import { LazyBoundary } from "@/components/lazy-boundary";
 import { useMobileOverlayViewportStyle } from "@/hooks/use-mobile-overlay-viewport-style";

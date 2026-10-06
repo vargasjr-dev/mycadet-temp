@@ -7,8 +7,8 @@ import {
   BridgeCapabilityRegistry,
   installCapabilityModules,
   type CapabilityModuleExport,
-} from "@vellumai/electron-desktop/capability-registry";
-import { VELLUM_BRIDGE_KEYS, type VellumBridge } from "@vellumai/ipc-contract";
+} from "@mycadet/electron-desktop/capability-registry";
+import { VELLUM_BRIDGE_KEYS, type VellumBridge } from "@mycadet/ipc-contract";
 
 const exposed = new Map<string, unknown>();
 const ipcRenderer = {

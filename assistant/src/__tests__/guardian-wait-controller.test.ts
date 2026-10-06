@@ -81,7 +81,7 @@ mock.module("../calls/call-store.js", () => ({
 
 // ── Source imports (after mocks) ─────────────────────────────────────
 
-import type { GuardianRequestWire } from "@vellumai/gateway-client";
+import type { GuardianRequestWire } from "@mycadet/gateway-client";
 
 import {
   GuardianWaitController,

@@ -1,8 +1,8 @@
-import { isChannelUserIntegration } from "@vellumai/service-contracts/channels";
+import { isChannelUserIntegration } from "@mycadet/service-contracts/channels";
 import {
   type IntegrationCategory,
   isIntegrationCategory,
-} from "@vellumai/service-contracts/integration-categories";
+} from "@mycadet/service-contracts/integration-categories";
 
 import type { OAuthConnection } from "@/generated/api/types.gen";
 import type { OauthProvidersGetResponse } from "@/generated/daemon/types.gen";
@@ -68,7 +68,9 @@ export type IntegrationItem = {
  * it: a newer assistant can file an integration under a category the client
  * has no chip for, and that integration must still list.
  */
-export function integrationCategory(value: unknown): IntegrationCategory | null {
+export function integrationCategory(
+  value: unknown,
+): IntegrationCategory | null {
   return isIntegrationCategory(value) ? value : null;
 }
 

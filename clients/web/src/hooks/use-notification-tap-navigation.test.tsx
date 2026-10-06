@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 
-import type { NotificationIdentity } from "@vellumai/ipc-contract";
+import type { NotificationIdentity } from "@mycadet/ipc-contract";
 
 import * as switchServiceRuntime from "@/assistant/switch-service";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
@@ -41,9 +41,11 @@ const ASSISTANT_B: ResolvedAssistant = {
 };
 
 let capturedHandler: NotificationTapHandler | null = null;
-const setNotificationTapHandlerMock = mock((handler: NotificationTapHandler) => {
-  capturedHandler = handler;
-});
+const setNotificationTapHandlerMock = mock(
+  (handler: NotificationTapHandler) => {
+    capturedHandler = handler;
+  },
+);
 const postLocalNotificationMock = mock(async () => {});
 mock.module("@/runtime/notifications", () => ({
   setNotificationTapHandler: setNotificationTapHandlerMock,
@@ -278,7 +280,9 @@ describe("useNotificationTapNavigation", () => {
     expect(received).toEqual([]);
 
     act(() => {
-      useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_A.id });
+      useResolvedAssistantsStore.setState({
+        activeAssistantId: ASSISTANT_A.id,
+      });
     });
     await pendingTap;
 
@@ -343,7 +347,11 @@ describe("useNotificationTapNavigation", () => {
   });
 
   test("does not open an identity from a stale account or organization scope", async () => {
-    const staleIdentity = platformIdentity(ASSISTANT_A, "account-old", "org-old");
+    const staleIdentity = platformIdentity(
+      ASSISTANT_A,
+      "account-old",
+      "org-old",
+    );
     renderHook(() => useNotificationTapNavigation());
     const received = collectThreadOpens();
 

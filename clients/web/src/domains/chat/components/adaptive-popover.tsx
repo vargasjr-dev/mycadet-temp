@@ -16,7 +16,7 @@
 
 import { useState, type ReactNode } from "react";
 
-import { BottomSheet, Popover } from "@vellumai/design-library";
+import { BottomSheet, Popover } from "@mycadet/design-library";
 
 import { useTouchMobile } from "@/hooks/use-touch-mobile";
 

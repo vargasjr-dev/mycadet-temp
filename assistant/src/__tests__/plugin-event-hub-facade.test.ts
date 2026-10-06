@@ -1,6 +1,6 @@
 /**
  * Guard test: the event hub exposed to workspace plugins through
- * `@vellumai/plugin-api` must not let an in-process plugin drive privileged
+ * `@mycadet/plugin-api` must not let an in-process plugin drive privileged
  * host execution. It refuses to publish daemon-to-client host-proxy control
  * events (`host_*`), withholds methods that hand out live subscriber callbacks
  * (a direct delivery primitive), and snapshots published events so a mutating

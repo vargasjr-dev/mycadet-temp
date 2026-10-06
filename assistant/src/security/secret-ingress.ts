@@ -16,7 +16,7 @@ import {
   TOKEN_SHAPE_LABEL,
   TOKEN_SHAPE_MAX_LENGTH,
   TOKEN_SHAPE_MIN_LENGTH,
-} from "@vellumai/service-contracts/secret-detection";
+} from "@mycadet/service-contracts/secret-detection";
 
 import { getConfig } from "../config/loader.js";
 import { memoizePluginPatternDerivation } from "./plugin-secret-patterns.js";

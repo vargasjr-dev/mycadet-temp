@@ -63,7 +63,7 @@ import type {
   ToolContext,
   ToolDefinition,
   ToolExecutionResult,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 const tool: ToolDefinition = {
   description: "Skill loader (custom workspace implementation)",

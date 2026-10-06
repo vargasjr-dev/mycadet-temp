@@ -19,7 +19,7 @@ import {
   MarkdownMessage,
   type MarkdownMessageProps,
   textLinkVariants,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 import type { DisplayAttachment } from "@/types/attachment-types";
 import { useAttachmentObjectUrl } from "@/domains/chat/components/chat-attachments/use-attachment-object-url";
 import { useAttachmentPreview } from "@/domains/chat/components/chat-attachments/use-attachment-preview";

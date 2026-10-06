@@ -9,8 +9,8 @@ import type {
 } from "@/generated/api/types.gen";
 import { useTranslation } from "@/i18n";
 import { MACHINE_TIER_LABEL } from "@/lib/billing/machine-sizes";
-import { Select } from "@vellumai/design-library/components/select";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Select } from "@mycadet/design-library/components/select";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { formatDelta, formatMonthly } from "./tier-pricing";
 

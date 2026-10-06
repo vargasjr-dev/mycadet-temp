@@ -1,4 +1,4 @@
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { Monitor, MoveDiagonal2, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { type ReactNode } from "react";

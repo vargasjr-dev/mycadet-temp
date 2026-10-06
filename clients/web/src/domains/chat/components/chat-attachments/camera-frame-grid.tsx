@@ -1,6 +1,6 @@
 import { Camera } from "lucide-react";
 import { useMemo } from "react";
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { MessageAttachmentSquare } from "@/domains/chat/components/chat-attachments/message-attachment-square";
 import { useAttachmentSquares } from "@/domains/chat/components/chat-attachments/use-attachment-squares";

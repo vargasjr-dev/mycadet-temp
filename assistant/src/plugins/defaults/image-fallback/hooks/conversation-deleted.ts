@@ -8,7 +8,7 @@
 import {
   type ConversationDeletedContext,
   type HookFunction,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import { deleteConversationCaptions } from "../src/caption-cache.js";
 

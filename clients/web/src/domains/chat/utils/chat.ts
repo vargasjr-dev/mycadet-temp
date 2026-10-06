@@ -16,7 +16,7 @@ import {
   ACP_CLAUDE_OAUTH_MISSING_CODE,
 } from "@/domains/chat/utils/acp-connect";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
-import type { PendingToolConfirmation } from "@vellumai/assistant-api";
+import type { PendingToolConfirmation } from "@mycadet/assistant-api";
 import type { ToolCallRuleContext } from "@/domains/chat/rule-editor-actions";
 import { t } from "@/i18n";
 import {

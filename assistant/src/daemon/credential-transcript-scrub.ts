@@ -31,7 +31,7 @@
 import {
   neutralizeRedactedSentinels,
   SENTINEL_REDACTION_VERSION,
-} from "@vellumai/service-contracts/redacted-credential";
+} from "@mycadet/service-contracts/redacted-credential";
 import { and, eq, gte, or, sql } from "drizzle-orm";
 
 import { updateMessageContent } from "../persistence/conversation-crud.js";

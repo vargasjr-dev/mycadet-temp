@@ -122,7 +122,7 @@ const CONTACTS_KEY = ["contactsGet", "test"] as const;
 // Module mocks
 // ---------------------------------------------------------------------------
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     success: () => {},
     error: (message: string) => {
@@ -133,7 +133,7 @@ mock.module("@vellumai/design-library/components/toast", () => ({
   ToastContent: () => null,
 }));
 
-mock.module("@vellumai/design-library/components/select", () => ({
+mock.module("@mycadet/design-library/components/select", () => ({
   Select: ({
     value,
     onChange,

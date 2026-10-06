@@ -1,5 +1,5 @@
-import { windowAttentionPayloadSchema } from "@vellumai/ipc-contract";
-import type { WindowAttentionPayload } from "@vellumai/ipc-contract";
+import { windowAttentionPayloadSchema } from "@mycadet/ipc-contract";
+import type { WindowAttentionPayload } from "@mycadet/ipc-contract";
 
 import { isElectron } from "@/runtime/is-electron";
 import { isNativePlatform } from "@/runtime/native-auth";

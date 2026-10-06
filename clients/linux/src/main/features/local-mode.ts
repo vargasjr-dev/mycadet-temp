@@ -1,15 +1,15 @@
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 import {
   configureLocalMode,
   installLocalMode,
   LOCAL_MODE_CLI,
   LOCAL_MODE_PATHS,
   LOCAL_MODE_SESSION,
-} from "@vellumai/electron-desktop/local-mode";
-import { refreshLockfileNow } from "@vellumai/electron-desktop/lockfile-watcher";
+} from "@mycadet/electron-desktop/local-mode";
+import { refreshLockfileNow } from "@mycadet/electron-desktop/lockfile-watcher";
 
 import { handle } from "../ipc.client";
 import { installLinuxLocalModeProviders } from "../local-mode-providers";

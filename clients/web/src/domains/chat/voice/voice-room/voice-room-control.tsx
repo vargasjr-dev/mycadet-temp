@@ -21,7 +21,7 @@
  * vars that module publishes, so all three surfaces are one visual system.
  */
 
-import { Tooltip, cn } from "@vellumai/design-library";
+import { Tooltip, cn } from "@mycadet/design-library";
 import type { ComponentProps, MouseEventHandler, ReactNode } from "react";
 
 import { CAMERA_MEDIA_GLASS_CLASS, cameraModeStyle } from "./camera-mode-paint";

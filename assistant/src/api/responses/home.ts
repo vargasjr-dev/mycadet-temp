@@ -14,13 +14,13 @@
  *
  * Canonical wire-contract source. Assistant code imports the types
  * directly from this file via relative paths; external consumers
- * (web client, gateway, evals) import via `@vellumai/assistant-api`.
+ * (web client, gateway, evals) import via `@mycadet/assistant-api`.
  */
 
 import {
   type GuardianRequestStatus,
   GuardianRequestStatusSchema,
-} from "@vellumai/service-contracts/guardian-requests";
+} from "@mycadet/service-contracts/guardian-requests";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------

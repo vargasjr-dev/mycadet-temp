@@ -23,7 +23,7 @@ import {
   type RedeemInviteByCodeRequest,
   type RedeemInviteByTokenRequest,
   type TrustVerdict,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import { ContactStore, type IngressInviteRow } from "../db/contact-store.js";
 import { ipcCallAssistant } from "../ipc/assistant-client.js";

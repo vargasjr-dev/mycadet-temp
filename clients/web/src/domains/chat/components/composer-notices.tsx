@@ -9,7 +9,7 @@ import {
   isMicPermissionPermanentError,
   isTextInsertionPermissionError,
 } from "@/domains/chat/utils/chat";
-import { Button, Notice } from "@vellumai/design-library";
+import { Button, Notice } from "@mycadet/design-library";
 import { useTranslation } from "@/i18n";
 
 /**

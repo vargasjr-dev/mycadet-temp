@@ -13,11 +13,11 @@ import {
   capabilityToken,
   type CapabilityModule,
   type DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
-import { createCuHelperProxyExecutor } from "@vellumai/electron-desktop/host-proxy/cu-executor";
-import type { CuHelperClient } from "@vellumai/electron-desktop/host-proxy/helper-proxy-executor";
-import type { HostProxyExecutor } from "@vellumai/electron-desktop/host-proxy/router";
-import { NativeSidecarClient } from "@vellumai/native-sidecar/supervisor";
+} from "@mycadet/electron-desktop/capability-registry";
+import { createCuHelperProxyExecutor } from "@mycadet/electron-desktop/host-proxy/cu-executor";
+import type { CuHelperClient } from "@mycadet/electron-desktop/host-proxy/helper-proxy-executor";
+import type { HostProxyExecutor } from "@mycadet/electron-desktop/host-proxy/router";
+import { NativeSidecarClient } from "@mycadet/native-sidecar/supervisor";
 
 import log from "../logger";
 
@@ -110,9 +110,8 @@ export const protectComputerUseCapture = (
 let protectedSharedHelper: CuHelperClient | null = null;
 
 const getProtectedSharedCuHelper = (): CuHelperClient => {
-  protectedSharedHelper ??= protectComputerUseCapture(
-    getSharedCuHelper(),
-    () => BrowserWindow.getAllWindows(),
+  protectedSharedHelper ??= protectComputerUseCapture(getSharedCuHelper(), () =>
+    BrowserWindow.getAllWindows(),
   );
   return protectedSharedHelper;
 };

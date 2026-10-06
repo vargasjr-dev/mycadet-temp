@@ -1,4 +1,4 @@
-import type { ClassifyRiskIpcParams } from "@vellumai/gateway-client";
+import type { ClassifyRiskIpcParams } from "@mycadet/gateway-client";
 
 import { resolveInvocationHostClientOs } from "./client-os.js";
 import type { ToolContext } from "./types.js";

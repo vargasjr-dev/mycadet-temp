@@ -59,7 +59,7 @@ function configPayload(): ConfigGetResponse {
   } as ConfigGetResponse;
 }
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     success: () => {},
     error: (message: string) => {

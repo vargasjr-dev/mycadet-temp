@@ -20,8 +20,8 @@ import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useEnvironmentStore } from "@/stores/environment-store";
 import { shouldRetryDaemonError } from "@/utils/daemon-errors";
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
-import { Select } from "@vellumai/design-library/components/select";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Select } from "@mycadet/design-library/components/select";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { Trans, useTranslation } from "@/i18n";
 import { ByoServiceCard } from "@/components/byo-service-card";

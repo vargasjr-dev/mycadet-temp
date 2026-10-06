@@ -27,7 +27,7 @@ import {
 import { useLlmCallDetail } from "@/domains/chat/inspector/inspector-detail-api";
 import { formatCount } from "@/domains/chat/inspector/inspector-formatters";
 import { useTranslation } from "@/i18n";
-import type { LLMRequestLogEntry } from "@vellumai/assistant-api";
+import type { LLMRequestLogEntry } from "@mycadet/assistant-api";
 import {
   Button,
   Card,
@@ -35,7 +35,7 @@ import {
   type NoticeTone,
   Tag,
   type TagTone,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 type ChatTranslate = ReturnType<typeof useTranslation<"chat">>["t"];
 
 export interface CacheDiffCardProps {
@@ -505,14 +505,10 @@ export function CacheDiffCard({
 
   if (needsPreviousFetch) {
     if (isPreviousLoading) {
-      return (
-        <StateNote>{t("cacheDiffCard.loadingPreviousCall")}</StateNote>
-      );
+      return <StateNote>{t("cacheDiffCard.loadingPreviousCall")}</StateNote>;
     }
     if (isPreviousError) {
-      return (
-        <StateNote>{t("cacheDiffCard.loadPreviousCallError")}</StateNote>
-      );
+      return <StateNote>{t("cacheDiffCard.loadPreviousCallError")}</StateNote>;
     }
   }
 

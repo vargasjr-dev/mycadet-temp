@@ -2,13 +2,13 @@
   "entry": ["src/**/*.test.ts", "src/**/__tests__/**/*.ts", "src/cli/index.ts"],
   "project": ["src/**/*.ts"],
   "ignoreDependencies": [
-    "@vellumai/assistant-client",
-    "@vellumai/ces-client",
-    "@vellumai/environments",
-    "@vellumai/gateway-client",
-    "@vellumai/ipc-server-utils",
-    "@vellumai/service-contracts",
-    "@vellumai/slack-text",
-    "@vellumai/twilio-client"
+    "@mycadet/assistant-client",
+    "@mycadet/ces-client",
+    "@mycadet/environments",
+    "@mycadet/gateway-client",
+    "@mycadet/ipc-server-utils",
+    "@mycadet/service-contracts",
+    "@mycadet/slack-text",
+    "@mycadet/twilio-client"
   ]
 }

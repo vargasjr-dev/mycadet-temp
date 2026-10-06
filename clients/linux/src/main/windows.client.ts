@@ -1,1 +1,1 @@
-export * from "@vellumai/electron-desktop/windows";
+export * from "@mycadet/electron-desktop/windows";

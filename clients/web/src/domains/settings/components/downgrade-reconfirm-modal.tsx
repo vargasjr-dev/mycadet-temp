@@ -1,9 +1,9 @@
 import { AlertTriangle } from "lucide-react";
 
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 export interface DowngradeReconfirmModalProps {
   open: boolean;

@@ -7,9 +7,9 @@ import {
 import { useDailyCreditLimitUpdate } from "@/domains/settings/hooks/use-daily-credit-limit-update";
 import { extractDrfFieldErrors } from "@/domains/settings/utils/drf-errors";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Notice } from "@vellumai/design-library/components/notice";
+import { Button } from "@mycadet/design-library/components/button";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Notice } from "@mycadet/design-library/components/notice";
 
 /** Limit proposed when the org has none; the user edits it before saving. */
 export const DEFAULT_DAILY_CREDIT_LIMIT_USD = "25";

@@ -37,7 +37,7 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-/** Build `<root>/<prefix>/node_modules/@vellumai/assistant/src/daemon`. */
+/** Build `<root>/<prefix>/node_modules/@mycadet/assistant/src/daemon`. */
 function seedInstalledLayout(options: { withBin: boolean }): string {
   const nodeModules = join(root, "cli", "latest", "node_modules");
   const moduleDir = join(
@@ -145,8 +145,7 @@ describe("installCommandAt", () => {
   const target = {
     kind: "bun-entry" as const,
     bun: "/Applications/Vellum Staging.app/Contents/Resources/bun",
-    entry:
-      "/Users/x/Library/Application Support/@vellumai/macos/.bin/assistant",
+    entry: "/Users/x/Library/Application Support/@mycadet/macos/.bin/assistant",
   };
 
   test("writes an executable wrapper that quotes paths with spaces", () => {
@@ -158,7 +157,7 @@ describe("installCommandAt", () => {
     expect(content.startsWith("#!/bin/sh\n")).toBe(true);
     expect(content).toContain(
       `exec '/Applications/Vellum Staging.app/Contents/Resources/bun' ` +
-        `'/Users/x/Library/Application Support/@vellumai/macos/.bin/assistant' "$@"`,
+        `'/Users/x/Library/Application Support/@mycadet/macos/.bin/assistant' "$@"`,
     );
     expect(lstatSync(commandPath).mode & 0o111).toBeGreaterThan(0);
   });

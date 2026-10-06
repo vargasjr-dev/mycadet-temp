@@ -47,7 +47,7 @@ const PLUGINS_DATA_DIR = join(ROOT, "plugins-data");
 
 const SIMPLE_PKG = {
   version: "1.0.0",
-  peerDependencies: { "@vellumai/plugin-api": "*" },
+  peerDependencies: { "@mycadet/plugin-api": "*" },
 };
 
 function freshPluginDir(name: string): string {
@@ -92,7 +92,11 @@ describe("PRESERVED_ENTRIES", () => {
   });
 
   test("user-state entries are the preserved set minus the provenance sidecar", () => {
-    expect([...USER_STATE_ENTRIES]).toEqual(["config.json", "data", ".disabled"]);
+    expect([...USER_STATE_ENTRIES]).toEqual([
+      "config.json",
+      "data",
+      ".disabled",
+    ]);
   });
 });
 

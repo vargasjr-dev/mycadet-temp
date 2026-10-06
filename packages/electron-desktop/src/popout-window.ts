@@ -1,7 +1,7 @@
 import { BrowserWindow, type BrowserWindowConstructorOptions } from "electron";
 import { z } from "zod";
 
-import { POPOUT_OPEN } from "@vellumai/ipc-contract";
+import { POPOUT_OPEN } from "@mycadet/ipc-contract";
 
 import type { IpcHandle } from "./ipc";
 import { createModuleConfiguration } from "./module-configuration";
@@ -133,17 +133,14 @@ export const openPopout = (conversationId: string): void => {
   // links to shell.openExternal and allowing OAuth popups. Our custom
   // installGuard intentionally does NOT override it.
 
-  void win.loadURL(
-    resolveRoute(`/conversations/${conversationId}?popout=1`),
-  );
+  void win.loadURL(resolveRoute(`/conversations/${conversationId}?popout=1`));
 };
 
 /**
  * Returns the set of conversation IDs that currently have open pop-out windows.
  * Used by tests; not exposed to the renderer.
  */
-export const openPopoutIds = (): ReadonlySet<string> =>
-  new Set(popouts.keys());
+export const openPopoutIds = (): ReadonlySet<string> => new Set(popouts.keys());
 
 let installed = false;
 
@@ -154,11 +151,7 @@ export const installPopoutWindows = (): void => {
   installed = true;
   const { handle } = configuration.get();
 
-  handle(
-    POPOUT_OPEN,
-    z.tuple([z.string()]),
-    ([conversationId]) => {
-      openPopout(conversationId);
-    },
-  );
+  handle(POPOUT_OPEN, z.tuple([z.string()]), ([conversationId]) => {
+    openPopout(conversationId);
+  });
 };

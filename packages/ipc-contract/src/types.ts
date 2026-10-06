@@ -16,7 +16,7 @@
  *     etc.); those are retired by this package.
  */
 
-import { NOTIFICATION_AVATAR_MAX_LOCAL_BYTES } from "@vellumai/avatar-manifest/notification-avatar";
+import { NOTIFICATION_AVATAR_MAX_LOCAL_BYTES } from "@mycadet/avatar-manifest/notification-avatar";
 
 // ---------------------------------------------------------------------------
 // Commands
@@ -1091,16 +1091,16 @@ export interface AppVersionInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Lockfile (bridge-facing subset of @vellumai/local-mode/contract)
+// Lockfile (bridge-facing subset of @mycadet/local-mode/contract)
 // ---------------------------------------------------------------------------
 
 /**
  * Shape of the lockfile as returned across the Electron bridge.
  *
  * Matches the canonical `Lockfile` / `LockfileWriteResult` types in
- * `@vellumai/local-mode/contract`. Declared here so the contract package
+ * `@mycadet/local-mode/contract`. Declared here so the contract package
  * has no `file:` dependency on local-mode (which carries a transitive
- * `file:` chain to `@vellumai/environments` that breaks lockfile
+ * `file:` chain to `@mycadet/environments` that breaks lockfile
  * resolution in consumer packages).
  */
 

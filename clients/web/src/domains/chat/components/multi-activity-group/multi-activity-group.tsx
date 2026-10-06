@@ -3,7 +3,7 @@ import { Fragment, useCallback, useMemo } from "react";
 
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { ToolCallChip } from "@/domains/chat/components/tool-call-chip/tool-call-chip";
 import { SingleActivity } from "@/domains/chat/components/single-activity/single-activity";

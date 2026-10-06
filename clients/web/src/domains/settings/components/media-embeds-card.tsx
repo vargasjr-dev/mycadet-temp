@@ -10,9 +10,9 @@ import {
   setDeviceBool,
   setDeviceSetting,
 } from "@/utils/device-settings";
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 const DEFAULT_VIDEO_ALLOWLIST: ReadonlyArray<string> = [
   "youtube.com",

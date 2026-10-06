@@ -11,7 +11,7 @@ import {
 } from "node:fs";
 import path from "node:path";
 
-import { NOTIFICATION_AVATAR_HASH_PATTERN } from "@vellumai/ipc-contract";
+import { NOTIFICATION_AVATAR_HASH_PATTERN } from "@mycadet/ipc-contract";
 
 /**
  * The notification avatar on disk, because the OS draws a notification's

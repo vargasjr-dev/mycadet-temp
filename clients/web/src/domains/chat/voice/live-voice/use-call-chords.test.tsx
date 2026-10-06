@@ -14,7 +14,7 @@ import type {
   ChordBinding,
   CompanionIntroCallControl,
   HotkeyEvent,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 let permissionGranted: (() => void) | null = null;
 mock.module("@/runtime/system-permissions", () => ({

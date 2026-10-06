@@ -11,7 +11,7 @@ import { useTranslation } from "@/i18n";
  * into a monospace `<pre>`.
  */
 
-import { Notice, Skeleton } from "@vellumai/design-library";
+import { Notice, Skeleton } from "@mycadet/design-library";
 
 import { ClampedContent, SectionLabel } from "@/components/detail-primitives";
 import { SkillLoadCard } from "@/domains/chat/components/tool-activity/skill-load-card";

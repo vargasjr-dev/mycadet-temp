@@ -3,7 +3,7 @@
  * Bash via the shared host shell executor.
  */
 
-import { createHostShellExecutor } from "@vellumai/electron-desktop/host-proxy/executors/host-shell-executor";
+import { createHostShellExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-shell-executor";
 
 export const hostBashExecutor = createHostShellExecutor({
   buildSpawn: (command) => ({ file: "/bin/bash", args: ["-c", "--", command] }),

@@ -13,7 +13,7 @@
 import { ChevronLeft } from "lucide-react";
 
 import { useTranslation } from "@/i18n";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 export function OnboardingBackButton({
   onClick,

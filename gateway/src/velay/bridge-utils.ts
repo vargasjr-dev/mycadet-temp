@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import type { OutgoingHttpHeaders } from "node:http";
-import { buildUpstreamUrl, stripHopByHop } from "@vellumai/assistant-client";
+import { buildUpstreamUrl, stripHopByHop } from "@mycadet/assistant-client";
 
 import { hasWebhookIngressRoute } from "../db/webhook-ingress-route-store.js";
 import { isFeatureFlagEnabled } from "../feature-flag-resolver.js";

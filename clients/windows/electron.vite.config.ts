@@ -18,7 +18,7 @@ import { resolveShortBuildCommitSha } from "./scripts/build-metadata";
 // scripts/preload-externals.test.ts.
 const DEPS_TO_INLINE = [
   ...SHARED_DESKTOP_INLINE_DEPS,
-  "@vellumai/native-sidecar",
+  "@mycadet/native-sidecar",
 ];
 
 // The installer shortcut and `app.setAppUserModelId` must agree, so the

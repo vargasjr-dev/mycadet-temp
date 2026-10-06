@@ -15,7 +15,7 @@
  * field it does not know, so additive signals get their own event type.
  *
  * Canonical wire-contract source. Re-exported to external consumers via
- * `@vellumai/assistant-api` (the `api/index.ts` barrel).
+ * `@mycadet/assistant-api` (the `api/index.ts` barrel).
  */
 
 import { z } from "zod";

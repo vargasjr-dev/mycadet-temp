@@ -177,8 +177,8 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
 const toastSuccessSpy = mock((_message: string) => {});
 const toastErrorSpy = mock((_message: string) => {});
 const toastWarningSpy = mock((_message: string) => {});
-const dlActual = await import("@vellumai/design-library");
-mock.module("@vellumai/design-library", () => ({
+const dlActual = await import("@mycadet/design-library");
+mock.module("@mycadet/design-library", () => ({
   ...dlActual,
   toast: Object.assign((_message: string) => {}, {
     success: toastSuccessSpy,
@@ -255,8 +255,7 @@ function pluginDetail(name: string): PluginsByNameGetResponse {
 function catalog(overrides: Partial<CatalogMatch> = {}): CatalogMatch {
   return {
     name: "apollo-bot-brain",
-    path:
-      "github:acme/apollo-bot-brain@1111111111111111111111111111111111111111",
+    path: "github:acme/apollo-bot-brain@1111111111111111111111111111111111111111",
     category: null,
     source: {
       kind: "github",

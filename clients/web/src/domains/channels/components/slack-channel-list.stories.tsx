@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { userEvent, within } from "storybook/test";
 
-import { Card } from "@vellumai/design-library/components/card";
+import { Card } from "@mycadet/design-library/components/card";
 
 import type { SlackChannel } from "@/domains/channels/slack-channels-query";
 

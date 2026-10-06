@@ -13,7 +13,7 @@ import { ChevronLeft, Layers } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 import { useCallback, useEffect, useMemo } from "react";
 
-import { Button, Notice } from "@vellumai/design-library";
+import { Button, Notice } from "@mycadet/design-library";
 
 import { DeleteAppDialog } from "@/components/delete-app-dialog";
 import {

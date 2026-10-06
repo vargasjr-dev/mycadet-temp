@@ -1,7 +1,7 @@
 import {
   type PlatformCredentialVerificationStatus,
   PlatformVerifyCredentialResponseSchema,
-} from "@vellumai/service-contracts/platform-credential";
+} from "@mycadet/service-contracts/platform-credential";
 import {
   chmodSync,
   readFileSync,

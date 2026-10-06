@@ -12,11 +12,11 @@ import type {
   ChannelDeliveryResult,
   ChannelReplyPayload,
   StreamOp,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import {
   classifyReactionEmojiSpelling,
   type ReactionEmojiIdentity,
-} from "@vellumai/service-contracts/reactions";
+} from "@mycadet/service-contracts/reactions";
 
 import { a2aTransport } from "./a2a/transport.js";
 import type { DirectDeliveryChannel } from "./callback-routing.js";

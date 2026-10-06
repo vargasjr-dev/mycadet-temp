@@ -2,8 +2,8 @@ import {
   BridgeCapabilityRegistry,
   installCapabilityModules,
   type CapabilityModuleExport,
-} from "@vellumai/electron-desktop/capability-registry";
-import type { VellumBridge } from "@vellumai/ipc-contract";
+} from "@mycadet/electron-desktop/capability-registry";
+import type { VellumBridge } from "@mycadet/ipc-contract";
 
 const modules = import.meta.glob<
   CapabilityModuleExport<BridgeCapabilityRegistry<VellumBridge>>

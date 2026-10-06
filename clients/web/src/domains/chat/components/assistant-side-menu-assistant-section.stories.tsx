@@ -26,7 +26,7 @@
 import { createStoryQueryClient } from "@/lib/story-query-cache";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import { AssistantSideMenu } from "@/domains/chat/components/assistant-side-menu";

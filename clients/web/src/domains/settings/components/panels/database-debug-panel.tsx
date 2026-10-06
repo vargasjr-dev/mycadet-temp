@@ -8,11 +8,11 @@ import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
 import { useSupportsDebugDatabase } from "@/lib/backwards-compat/use-supports-debug-database";
 import { ApiError } from "@/utils/api-errors";
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Tag, type TagTone } from "@vellumai/design-library/components/tag";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Tag, type TagTone } from "@mycadet/design-library/components/tag";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 function isUnsupportedError(error: unknown): boolean {
   return error instanceof ApiError && error.status === 404;

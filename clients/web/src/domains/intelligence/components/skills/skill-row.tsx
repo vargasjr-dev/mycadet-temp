@@ -9,7 +9,7 @@ import {
 } from "@/domains/intelligence/skills/types";
 import { useTranslation } from "@/i18n";
 import { isRemovableSkill } from "@/utils/skills";
-import { Button, Card } from "@vellumai/design-library";
+import { Button, Card } from "@mycadet/design-library";
 
 interface SkillRowProps {
   skill: SkillInfo;

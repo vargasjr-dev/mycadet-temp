@@ -1,4 +1,4 @@
-import { Tooltip } from "@vellumai/design-library";
+import { Tooltip } from "@mycadet/design-library";
 import {
   CheckCircle2,
   ExternalLink,
@@ -17,15 +17,15 @@ import {
 import {
   type OAuthConnectSurfaceData,
   OAuthConnectSurfaceDataSchema,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import type { Surface } from "@/domains/chat/types/types";
 import { useManagedOAuthConnect } from "@/hooks/use-managed-oauth-connect";
 import { useTenantHostInput } from "@/hooks/use-tenant-host-input";
 import { useTenantHostRequirement } from "@/hooks/use-tenant-host-requirement";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
 
 interface OAuthConnectSurfaceProps {
   surface: Surface;

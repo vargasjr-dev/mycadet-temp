@@ -1,4 +1,4 @@
-import { formatGuardianRefreshCliFailure } from "@vellumai/local-mode";
+import { formatGuardianRefreshCliFailure } from "@mycadet/local-mode";
 
 import {
   lookupAssistantByIdentifier,

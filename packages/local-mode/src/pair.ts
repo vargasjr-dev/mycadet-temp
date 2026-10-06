@@ -12,7 +12,7 @@ import {
   type RemoteWebPairingChallengeResponse,
   type RemoteWebPairingTokenPendingResponse,
   type RemoteWebPairingTokenRequest,
-} from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
 import { nanoid } from "nanoid";
 
 import { guardianTokenPath } from "./config";
@@ -484,7 +484,7 @@ const PAIRING_TOKEN_PATH = "/v1/remote-web/pairing-token";
 
 /**
  * What a pairing attempt failed on. Defined by
- * `@vellumai/service-contracts/remote-web-pairing`, which also owns the
+ * `@mycadet/service-contracts/remote-web-pairing`, which also owns the
  * retryable classification every pairing surface reads.
  */
 export type { PairingFailureReason };

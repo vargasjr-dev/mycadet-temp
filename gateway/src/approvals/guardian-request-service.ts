@@ -35,7 +35,7 @@ import {
   type ListGuardianRequestsIpcParams,
   type ListPendingGuardianRequestsByDestinationIpcParams,
   type UpdateGuardianRequestDeliveryIpcParams,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import { getGatewayDb } from "../db/connection.js";
 import { ContactStore } from "../db/contact-store.js";

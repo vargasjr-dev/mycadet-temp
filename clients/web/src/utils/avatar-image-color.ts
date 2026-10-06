@@ -3,7 +3,7 @@
  *
  * The daemon reads an uploaded image's accent out of its pixels and serves it
  * with the avatar manifest; {@link sampleAvatarAccentHex} runs the same maths
- * (`dominantAccentHex`, shared through `@vellumai/avatar-manifest`) on a
+ * (`dominantAccentHex`, shared through `@mycadet/avatar-manifest`) on a
  * canvas for assistants that predate accents, so the two can never disagree
  * about what colour an image is.
  *
@@ -14,7 +14,7 @@
  * treatments are tuned against.
  */
 
-import { dominantAccentHex } from "@vellumai/avatar-manifest/accent";
+import { dominantAccentHex } from "@mycadet/avatar-manifest/accent";
 
 import { coverCropSquare } from "./avatar-raster";
 

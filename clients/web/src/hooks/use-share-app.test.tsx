@@ -15,7 +15,7 @@ import {
   test,
 } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
-import * as toastModule from "@vellumai/design-library/components/toast";
+import * as toastModule from "@mycadet/design-library/components/toast";
 
 import * as captureErrorModule from "@/lib/error-reporting/capture-error";
 import type { AppSummary } from "@/types/app-types";
@@ -36,7 +36,7 @@ let captured: CapturedError[] = [];
 let shareCalls: Array<[string, string, string]> = [];
 let shareResult: Promise<void> = Promise.resolve();
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...toastModule,
   toast: {
     success: (title: string, options?: { description?: string }) => {

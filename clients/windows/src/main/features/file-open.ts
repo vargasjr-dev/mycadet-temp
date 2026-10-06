@@ -3,12 +3,12 @@ import { app } from "electron";
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 import {
   configureFileOpen,
   handleFileOpenArgv,
   installFileOpen,
-} from "@vellumai/electron-desktop/file-open";
+} from "@mycadet/electron-desktop/file-open";
 
 import { handle, on } from "../ipc.client";
 import { ensureVisible } from "../main-window";

@@ -2,7 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 
 import { organizationsBillingSummaryRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
 import { t } from "@/i18n";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 /**
  * Success landing shared by every completed-checkout return path: toast

@@ -5,8 +5,8 @@ import { t } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { ApiError } from "@/utils/api-errors";
-import { toast } from "@vellumai/design-library/components/toast";
-import type { GuardianDecisionActionId } from "@vellumai/service-contracts/guardian-requests";
+import { toast } from "@mycadet/design-library/components/toast";
+import type { GuardianDecisionActionId } from "@mycadet/service-contracts/guardian-requests";
 
 import {
   type GuardianDecisionOutcome,

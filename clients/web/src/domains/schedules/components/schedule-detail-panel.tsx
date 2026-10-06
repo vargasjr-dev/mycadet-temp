@@ -10,7 +10,7 @@ import {
   DetailShellLoading,
   DetailShellNotice,
 } from "@/components/detail-shell";
-import { StatSquare } from "@vellumai/design-library/components/stat-square";
+import { StatSquare } from "@mycadet/design-library/components/stat-square";
 
 import { InsetDetailCard } from "@/components/inset-detail-card";
 import { useScheduleConversationDoneLabel } from "@/utils/done-labels";
@@ -46,9 +46,9 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { navigateToConversation } from "@/utils/conversation-navigation";
 import { routes } from "@/utils/routes";
-import { Button, Skeleton, cn } from "@vellumai/design-library";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button, Skeleton, cn } from "@mycadet/design-library";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import type { Schedule, ScheduleRun } from "@/domains/settings/types/schedules";
 

@@ -16,7 +16,7 @@ import {
 import type { SidebarSection } from "@/domains/chat/use-sidebar-state";
 import type { Conversation } from "@/types/conversation-types";
 import { SIDEBAR_ASSISTANT_DISC_SIZE } from "@/components/sidebar-nav-geometry";
-import { SIDE_MENU_TILE_SIZE } from "@vellumai/design-library";
+import { SIDE_MENU_TILE_SIZE } from "@mycadet/design-library";
 
 let conversations: Conversation[] = [];
 let attention = new Set<string>();

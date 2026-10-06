@@ -3,8 +3,8 @@ import type {
   Provider,
   ProviderResponse,
   ToolUseContent,
-} from "@vellumai/plugin-api";
-import { getConfiguredProvider } from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
+import { getConfiguredProvider } from "@mycadet/plugin-api";
 
 import type {
   RecallMetadata,

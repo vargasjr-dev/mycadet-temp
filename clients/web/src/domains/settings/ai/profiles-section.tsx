@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { LanguageModelSection } from "@/domains/settings/ai/language-model-section";
 import { BlockedDeleteModal } from "@/domains/settings/ai/manage-profiles-blocked-delete-modal";

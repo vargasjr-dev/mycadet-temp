@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { render } from "@testing-library/react";
 
-import { MarkdownMessage } from "@vellumai/design-library";
+import { MarkdownMessage } from "@mycadet/design-library";
 
 import { rehypeStreamWordFade } from "@/domains/chat/utils/rehype-stream-word-fade";
 

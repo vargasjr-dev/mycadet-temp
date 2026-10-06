@@ -12,7 +12,7 @@
 import { useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router";
-import { PortalContainerProvider } from "@vellumai/design-library/utils/portal-container";
+import { PortalContainerProvider } from "@mycadet/design-library/utils/portal-container";
 
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useDeployStore } from "@/stores/deploy-store";

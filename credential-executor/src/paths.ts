@@ -22,7 +22,7 @@
 import { join } from "node:path";
 import { homedir } from "node:os";
 
-import { resolveIpcEndpoint } from "@vellumai/ipc-server-utils";
+import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 
 // ---------------------------------------------------------------------------
 // Mode detection

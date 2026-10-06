@@ -11,7 +11,7 @@
  *
  *     <pluginDir>/
  *       package.json              ← legacy Vellum manifest, selected first;
- *                                   peerDependencies["@vellumai/plugin-api"]
+ *                                   peerDependencies["@mycadet/plugin-api"]
  *                                   semver range is checked against the
  *                                   running assistant version and rejects
  *                                   the plugin if unsatisfied
@@ -65,7 +65,7 @@ import type {
   PluginManifest,
 } from "./types.js";
 
-const PLUGIN_API_PEER_DEP = "@vellumai/plugin-api";
+const PLUGIN_API_PEER_DEP = "@mycadet/plugin-api";
 
 const log = getLogger("external-plugin-loader");
 
@@ -263,7 +263,7 @@ async function buildPluginFromDir(pluginDir: string): Promise<Plugin> {
       : "0.0.0";
 
   // Host-compat negotiation: plugins declare their plugin-api version
-  // range via standard `peerDependencies["@vellumai/plugin-api"]`. We
+  // range via standard `peerDependencies["@mycadet/plugin-api"]`. We
   // inspect the range and report unparseable / unsatisfied cases via
   // `log.error` but still load the plugin — the plugin-installation
   // flow is in flux and a strict gate here would block experimentation

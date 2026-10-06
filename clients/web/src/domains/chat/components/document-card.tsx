@@ -10,7 +10,7 @@
  * the two cannot drift into looking like different kinds of thing.
  */
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { ChevronRight, FileText } from "lucide-react";
 
 export interface DocumentCardProps {

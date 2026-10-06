@@ -31,7 +31,7 @@ export interface SecretIngressCheckParams {
   content: string | undefined;
   trimmedContent: string;
   attachmentIds: string[] | undefined;
-  sourceMetadata: import("@vellumai/gateway-client").SourceMetadata | undefined;
+  sourceMetadata: import("@mycadet/gateway-client").SourceMetadata | undefined;
   actorDisplayName: string | undefined;
   actorExternalId: string | undefined;
   actorUsername: string | undefined;

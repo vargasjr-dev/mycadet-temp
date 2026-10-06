@@ -9,7 +9,7 @@ import type {
   UpdateState,
   VellumBridge,
   WindowAttentionPayload,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import {
   PERMISSION_GUIDE_CANCEL,
   PERMISSION_SETUP_BEGIN,
@@ -28,7 +28,7 @@ import {
   NOTIFICATIONS_RESET_IDENTITIES,
   NOTIFICATIONS_SHOW,
   WINDOW_ATTENTION,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 type RendererIpc = Pick<IpcRenderer, "invoke" | "off" | "on" | "send">;
 

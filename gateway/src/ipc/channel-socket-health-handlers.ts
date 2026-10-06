@@ -16,7 +16,7 @@ import {
   ChannelSocketHealthIpcParamsSchema,
   type ChannelSocketHealthIpcParams,
   type ChannelSocketHealthIpcResponse,
-} from "@vellumai/gateway-client/gateway-ipc-contracts";
+} from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import type { ChannelConnectionHealth } from "../channels/types.js";
 import type { IpcRoute } from "./server.js";

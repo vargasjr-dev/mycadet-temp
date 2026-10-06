@@ -50,7 +50,7 @@ The `name` must be a single kebab-case segment (e.g. `my-plugin`, not `myPlugin`
 The Vellum team reviews each entry before it lands in the catalog. The review checks that:
 
 - The pinned commit matches a public, reachable revision of the repo.
-- The plugin has a valid `package.json` with a `@vellumai/plugin-api` peer dependency.
+- The plugin has a valid `package.json` with a `@mycadet/plugin-api` peer dependency.
 - The plugin loads cleanly (hooks register, tools validate, no import errors at boot).
 - The surfaces the plugin claims contribute something on boot rather than silently failing.
 

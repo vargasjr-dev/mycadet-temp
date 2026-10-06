@@ -15,7 +15,7 @@
  * back to editing the message down to a status-only block — still an edit.
  */
 
-import { isParkGuardianAction } from "@vellumai/service-contracts/guardian-requests";
+import { isParkGuardianAction } from "@mycadet/service-contracts/guardian-requests";
 
 import { resolveDecisionStatusWord } from "../../../runtime/channel-approval-types.js";
 import { getLogger } from "../../../util/logger.js";

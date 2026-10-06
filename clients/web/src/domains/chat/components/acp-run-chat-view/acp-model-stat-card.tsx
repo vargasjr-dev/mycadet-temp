@@ -10,7 +10,7 @@
 import { Sparkles } from "lucide-react";
 
 import type { AcpModelOption } from "@/domains/chat/acp-run-store";
-import { StatSquare } from "@vellumai/design-library/components/stat-square";
+import { StatSquare } from "@mycadet/design-library/components/stat-square";
 
 import { useTranslation } from "@/i18n";
 

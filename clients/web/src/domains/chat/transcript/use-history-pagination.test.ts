@@ -14,7 +14,7 @@ import {
   type HistoryCache,
   modeSessionIdsForRefresh,
 } from "@/domains/chat/transcript/use-history-pagination";
-import type { ModeSessionDescriptor } from "@vellumai/assistant-api";
+import type { ModeSessionDescriptor } from "@mycadet/assistant-api";
 import type { RuntimeSubagentNotification } from "@/domains/chat/api/messages";
 import type { BackgroundTaskEntry } from "@/domains/chat/background-task-store";
 import type { PaginatedHistoryResult } from "@/domains/chat/transcript/types";

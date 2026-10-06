@@ -30,7 +30,7 @@ import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useTranslation } from "@/i18n";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 /**
  * Dedicated page for a single skill at `/assistant/skills/:skillId`.

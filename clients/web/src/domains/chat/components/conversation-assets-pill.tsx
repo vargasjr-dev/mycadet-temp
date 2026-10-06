@@ -13,7 +13,7 @@ import { Layers } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { useCallback, useLayoutEffect } from "react";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { useConversationAssets } from "@/domains/chat/hooks/use-conversation-assets";
 import { useHasUnseenDocumentChanges } from "@/domains/chat/unseen-document-changes-store";

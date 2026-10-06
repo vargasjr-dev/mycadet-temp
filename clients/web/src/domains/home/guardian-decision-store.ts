@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import { createSelectors } from "@/utils/create-selectors";
-import type { GuardianDecisionActionId } from "@vellumai/service-contracts/guardian-requests";
+import type { GuardianDecisionActionId } from "@mycadet/service-contracts/guardian-requests";
 
 /**
  * How a decision settled: what was decided on which request, whether the

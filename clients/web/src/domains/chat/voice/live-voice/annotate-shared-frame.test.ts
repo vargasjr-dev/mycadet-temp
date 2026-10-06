@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { CompanionAnnotationStroke } from "@vellumai/ipc-contract";
+import type { CompanionAnnotationStroke } from "@mycadet/ipc-contract";
 
 import { annotateSharedFrame, draw } from "./annotate-shared-frame";
 

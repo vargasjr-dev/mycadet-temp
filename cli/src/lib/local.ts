@@ -21,13 +21,13 @@ import { basename, dirname, isAbsolute, join } from "path";
 import {
   findAssistantCommand,
   isRepoCheckoutPath,
-} from "@vellumai/environments";
+} from "@mycadet/environments";
 import {
   isNamedPipePath,
   removeIpcEndpointFile,
   resolveIpcEndpoint,
-} from "@vellumai/ipc-server-utils";
-import { isValidReleaseVersion } from "@vellumai/local-mode";
+} from "@mycadet/ipc-server-utils";
+import { isValidReleaseVersion } from "@mycadet/local-mode";
 
 import {
   getDaemonPidPath,
@@ -108,14 +108,12 @@ function packagePath(
 
 function hasLocalRuntimeComponents(installDir: string): boolean {
   return (
+    existsSync(packagePath(installDir, "@mycadet/assistant", "src/index.ts")) &&
     existsSync(
-      packagePath(installDir, "@vellumai/assistant", "src/index.ts"),
+      packagePath(installDir, "@mycadet/vellum-gateway", "src/index.ts"),
     ) &&
     existsSync(
-      packagePath(installDir, "@vellumai/vellum-gateway", "src/index.ts"),
-    ) &&
-    existsSync(
-      packagePath(installDir, "@vellumai/credential-executor", "src/main.ts"),
+      packagePath(installDir, "@mycadet/credential-executor", "src/main.ts"),
     )
   );
 }
@@ -205,7 +203,7 @@ function localRuntimeAssistantIndex(
   if (!installDir) return undefined;
   const candidate = packagePath(
     installDir,
-    "@vellumai/assistant",
+    "@mycadet/assistant",
     "src/index.ts",
   );
   return existsSync(candidate) ? candidate : undefined;
@@ -216,7 +214,7 @@ function localRuntimeGatewayDir(
 ): string | undefined {
   const installDir = resources?.runtimeInstallDir;
   if (!installDir) return undefined;
-  const candidate = packagePath(installDir, "@vellumai/vellum-gateway", "");
+  const candidate = packagePath(installDir, "@mycadet/vellum-gateway", "");
   return isGatewaySourceDir(candidate) ? candidate : undefined;
 }
 
@@ -225,11 +223,7 @@ function localRuntimeCesDir(
 ): string | undefined {
   const installDir = resources?.runtimeInstallDir;
   if (!installDir) return undefined;
-  const candidate = packagePath(
-    installDir,
-    "@vellumai/credential-executor",
-    "",
-  );
+  const candidate = packagePath(installDir, "@mycadet/credential-executor", "");
   return isCesSourceDir(candidate) ? candidate : undefined;
 }
 
@@ -399,7 +393,7 @@ function isAssistantSourceDir(dir: string): boolean {
     return false;
   try {
     const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
-    return pkg.name === "@vellumai/assistant";
+    return pkg.name === "@mycadet/assistant";
   } catch {
     return false;
   }
@@ -429,7 +423,7 @@ function isGatewaySourceDir(dir: string): boolean {
     return false;
   try {
     const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
-    return pkg.name === "@vellumai/vellum-gateway";
+    return pkg.name === "@mycadet/vellum-gateway";
   } catch {
     return false;
   }
@@ -441,7 +435,7 @@ function isCesSourceDir(dir: string): boolean {
     return false;
   try {
     const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
-    return pkg.name === "@vellumai/credential-executor";
+    return pkg.name === "@mycadet/credential-executor";
   } catch {
     return false;
   }
@@ -487,7 +481,7 @@ function resolveAssistantIndexPath(
     return sourceTreeIndex;
   }
 
-  // bunx layout: @vellumai/cli/src/lib/ -> ../../../.. -> node_modules/vellum/src/index.ts
+  // bunx layout: @mycadet/cli/src/lib/ -> ../../../.. -> node_modules/vellum/src/index.ts
   const bunxIndex = join(
     import.meta.dir,
     "..",
@@ -514,7 +508,7 @@ function resolveAssistantIndexPath(
 
   try {
     const assistantPkgPath = _require.resolve(
-      "@vellumai/assistant/package.json",
+      "@mycadet/assistant/package.json",
     );
     const resolved = join(dirname(assistantPkgPath), "src", "index.ts");
     if (existsSync(resolved)) {
@@ -975,7 +969,7 @@ function resolveGatewayDir(resources?: LocalInstanceResources): string {
     return sourceDir;
   }
 
-  // npm-installed: @vellumai/cli and @vellumai/vellum-gateway are siblings
+  // npm-installed: @mycadet/cli and @mycadet/vellum-gateway are siblings
   const npmGatewayDir = join(
     import.meta.dir,
     "..",
@@ -999,11 +993,11 @@ function resolveGatewayDir(resources?: LocalInstanceResources): string {
   }
 
   try {
-    const pkgPath = _require.resolve("@vellumai/vellum-gateway/package.json");
+    const pkgPath = _require.resolve("@mycadet/vellum-gateway/package.json");
     return dirname(pkgPath);
   } catch {
     throw new Error(
-      "Gateway not found. Ensure @vellumai/vellum-gateway is installed or run from the source tree.",
+      "Gateway not found. Ensure @mycadet/vellum-gateway is installed or run from the source tree.",
     );
   }
 }
@@ -1027,12 +1021,12 @@ function resolveCesDir(resources?: LocalInstanceResources): string {
   // npm-installed elsewhere on disk: resolve via the package entry.
   try {
     const pkgPath = _require.resolve(
-      "@vellumai/credential-executor/package.json",
+      "@mycadet/credential-executor/package.json",
     );
     return dirname(pkgPath);
   } catch {
     throw new Error(
-      "credential-executor not found. Ensure @vellumai/credential-executor is installed or run from the source tree.",
+      "credential-executor not found. Ensure @mycadet/credential-executor is installed or run from the source tree.",
     );
   }
 }

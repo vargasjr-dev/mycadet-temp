@@ -15,13 +15,13 @@ import {
   AVATAR_MANIFEST_FILENAME,
   AVATAR_TRAITS_FILENAME,
   resolveAvatarDir,
-} from "@vellumai/avatar-manifest";
-import * as actualLocalMode from "@vellumai/local-mode";
+} from "@mycadet/avatar-manifest";
+import * as actualLocalMode from "@mycadet/local-mode";
 import {
   guardianTokenPath,
   type DevicesListResult,
   type DevicesRevokeResult,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 // Per-test stubs for the CLI-spawning device helpers. The rest of the module
 // stays real so the other middlewares under test keep their behavior.
@@ -35,8 +35,8 @@ const runDevicesRevokeMock = mock(
     Promise.resolve(devicesRevokeResult),
 );
 
-mock.module("@vellumai/local-mode", () => {
-  const mocked: Partial<typeof import("@vellumai/local-mode")> = {
+mock.module("@mycadet/local-mode", () => {
+  const mocked: Partial<typeof import("@mycadet/local-mode")> = {
     ...actualLocalMode,
     resolveDevCliInvocation: () => ({ command: "vellum", baseArgs: [] }),
     runDevicesList: runDevicesListMock,

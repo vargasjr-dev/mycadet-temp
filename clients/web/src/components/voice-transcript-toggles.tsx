@@ -1,4 +1,4 @@
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 import { useTranslation } from "@/i18n";
 import { useVoicePrefsStore } from "@/stores/voice-prefs-store";
@@ -93,7 +93,10 @@ export function VoiceTranscriptToggles({
     },
   };
 
-  const getToggleLabel = (prefKey: VoiceTranscriptPrefKey, fallback: string) => {
+  const getToggleLabel = (
+    prefKey: VoiceTranscriptPrefKey,
+    fallback: string,
+  ) => {
     if (prefKey === "showUserTranscript") {
       return t("voiceTranscriptToggles.userTranscriptLabel", fallback);
     }

@@ -12,7 +12,7 @@ import { randomUUID } from "node:crypto";
 
 import { z } from "zod";
 
-import { generateInviteToken, hashInviteToken } from "@vellumai/gateway-client";
+import { generateInviteToken, hashInviteToken } from "@mycadet/gateway-client";
 import type { GatewayConfig } from "../config.js";
 import type { ConfigFileCache } from "../config-file-cache.js";
 import {

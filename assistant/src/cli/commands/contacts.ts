@@ -1103,7 +1103,7 @@ export function registerContactsCommand(program: Command): void {
       // -----------------------------------------------------------------------
 
       // Invite subcommands dispatch daemon route operationIds that mirror the
-      // gateway wire names in INVITES_IPC_METHODS (@vellumai/gateway-client) —
+      // gateway wire names in INVITES_IPC_METHODS (@mycadet/gateway-client) —
       // kept as literals to avoid pulling the gateway-client contract module
       // into the CLI here.
       const invites = subcommand(contacts, "invites");

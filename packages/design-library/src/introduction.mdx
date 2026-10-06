@@ -11,19 +11,19 @@ A shared component library for the [Vellum](https://github.com/vellum-ai/vellum-
 Install the package in your app:
 
 ```bash
-bun add @vellumai/design-library
+bun add @mycadet/design-library
 ```
 
 Import components directly:
 
 ```tsx
-import { Button, Card, Typography } from "@vellumai/design-library";
+import { Button, Card, Typography } from "@mycadet/design-library";
 ```
 
 Or use subpath imports for targeted access:
 
 ```tsx
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 ```
 
 ## Design Tokens
@@ -31,7 +31,7 @@ import { Button } from "@vellumai/design-library/components/button";
 The library ships CSS custom properties via `tokens.css`. Import it in your app's CSS entry point:
 
 ```css
-@import "@vellumai/design-library/tokens.css";
+@import "@mycadet/design-library/tokens.css";
 ```
 
 Tokens adapt to light, dark, and velvet themes via the `data-theme` attribute on a parent element.

@@ -19,7 +19,7 @@ import {
   getMessages,
   listConversations,
   stringifyMessageContent,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import type { AssistantConfig } from "../../../../config/types.js";
 import { getMemoryDb } from "../../../../persistence/db-connection.js";

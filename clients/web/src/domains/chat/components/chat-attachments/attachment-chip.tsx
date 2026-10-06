@@ -3,7 +3,7 @@ import type { FC, MouseEventHandler } from "react";
 
 import { useTranslation } from "@/i18n";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import {
   ATTACHMENT_ICON_BY_KIND,

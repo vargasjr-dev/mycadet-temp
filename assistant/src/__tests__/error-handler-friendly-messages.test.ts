@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { IpcConnectError } from "@vellumai/gateway-client/ipc-client";
+import { IpcConnectError } from "@mycadet/gateway-client/ipc-client";
 
 import { withErrorHandling } from "../runtime/middleware/error-handler.js";
 import { ConfigError, ProviderNotConfiguredError } from "../util/errors.js";

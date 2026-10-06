@@ -1,11 +1,11 @@
 import { ipcRenderer } from "electron";
 
-import type { VellumBridge } from "@vellumai/ipc-contract";
+import type { VellumBridge } from "@mycadet/ipc-contract";
 import type {
   BridgeCapabilityRegistry,
   CapabilityModule,
-} from "@vellumai/electron-desktop/capability-registry";
-import { createNotificationsBridge } from "@vellumai/electron-desktop/preload";
+} from "@mycadet/electron-desktop/capability-registry";
+import { createNotificationsBridge } from "@mycadet/electron-desktop/preload";
 
 // Renderer bridge for native notifications and file sharing, mirroring the
 // macOS preload surface channel-for-channel so the renderer's runtime

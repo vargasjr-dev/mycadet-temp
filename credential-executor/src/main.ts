@@ -25,13 +25,13 @@ import { Readable, Writable } from "node:stream";
 import {
   CES_PROTOCOL_VERSION,
   CesRpcMethod,
-} from "@vellumai/service-contracts/credential-rpc";
-import type { SecureKeyBackend } from "@vellumai/credential-storage";
+} from "@mycadet/service-contracts/credential-rpc";
+import type { SecureKeyBackend } from "@mycadet/credential-storage";
 import {
   ipcListenOptions,
   isNamedPipePath,
   removeIpcEndpointFile,
-} from "@vellumai/ipc-server-utils";
+} from "@mycadet/ipc-server-utils";
 
 import { createLocalSecureKeyBackend } from "./materializers/local-secure-key-backend.js";
 import { initLogger, getLogger } from "./logger.js";

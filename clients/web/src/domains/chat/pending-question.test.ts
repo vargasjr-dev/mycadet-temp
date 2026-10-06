@@ -7,7 +7,7 @@ import { describe, expect, test } from "bun:test";
 
 import { decidePendingQuestion } from "@/domains/chat/pending-question";
 import type { PendingQuestionState } from "@/types/interaction-ui-types";
-import type { QuestionEntry } from "@vellumai/assistant-api";
+import type { QuestionEntry } from "@mycadet/assistant-api";
 
 const ENTRIES: QuestionEntry[] = [
   {

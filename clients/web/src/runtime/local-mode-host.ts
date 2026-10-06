@@ -10,14 +10,14 @@ import type {
   LocalRevokeDeviceResult,
   LocalUpgradeOptions,
   LocalWakeOptions,
-} from "@vellumai/ipc-contract";
-import { parseLockfile } from "@vellumai/local-mode/contract";
+} from "@mycadet/ipc-contract";
+import { parseLockfile } from "@mycadet/local-mode/contract";
 import type {
   Lockfile,
   LockfileAssistant,
   LocalAssistantResources,
   LockfileWriteResult,
-} from "@vellumai/local-mode/contract";
+} from "@mycadet/local-mode/contract";
 
 import { isElectron } from "@/runtime/is-electron";
 
@@ -35,7 +35,7 @@ import { isElectron } from "@/runtime/is-electron";
  * `runtime/` wrapper rule in `clients/web/docs/ELECTRON.md`.
  *
  * Both branches return the same wire contract, so callers never observe which
- * host they're on. The contract types are owned by `@vellumai/local-mode` —
+ * host they're on. The contract types are owned by `@mycadet/local-mode` —
  * the package every host produces them from — and re-exported here so `lib/`
  * can keep importing them from `runtime/` without reaching back into `lib/`.
  *

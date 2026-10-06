@@ -1,9 +1,9 @@
 import { ArrowRight, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
-import { Modal } from "@vellumai/design-library/components/modal";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
+import { Modal } from "@mycadet/design-library/components/modal";
 
 import type { RosterAccount } from "@/domains/contacts/channel-linking";
 import { Trans, useTranslation } from "@/i18n";

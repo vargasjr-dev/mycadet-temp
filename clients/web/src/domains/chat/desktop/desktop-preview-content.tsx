@@ -1,4 +1,4 @@
-import { Button, Modal } from "@vellumai/design-library";
+import { Button, Modal } from "@mycadet/design-library";
 import { useIsPresent } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";

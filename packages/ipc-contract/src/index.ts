@@ -1,5 +1,5 @@
 /**
- * @vellumai/ipc-contract — Single source of truth for the Electron bridge
+ * @mycadet/ipc-contract — Single source of truth for the Electron bridge
  * IPC surface: payload types, Zod validation schemas, the VellumBridge
  * interface, and channel name constants.
  *

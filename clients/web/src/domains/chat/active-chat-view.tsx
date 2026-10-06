@@ -74,8 +74,8 @@ import { useScrollToMessageParam } from "@/domains/chat/hooks/use-scroll-to-mess
 import { lifecycleService } from "@/assistant/lifecycle-service";
 import { isSending, useTurnStore } from "@/domains/chat/turn-store";
 import { useOnboardingFocusStore } from "@/stores/onboarding-focus-store";
-import { Button } from "@vellumai/design-library/components/button";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
+import { Button } from "@mycadet/design-library/components/button";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
 
 const DeployDialogs = lazy(() =>
   import("@/components/deploy-dialogs").then((m) => ({

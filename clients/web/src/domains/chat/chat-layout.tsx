@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation, useNavigate, useNavigationType } from "react-router";
-import { SIDE_MENU_TILE_SIZE } from "@vellumai/design-library";
+import { SIDE_MENU_TILE_SIZE } from "@mycadet/design-library";
 
 import { assistantStateCanServeChat } from "@/assistant/lifecycle";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";

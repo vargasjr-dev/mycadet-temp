@@ -10,7 +10,7 @@
  *
  * Local and docker sources are backed up host-side by `backup-ops` instead,
  * so the restore point survives the source's retirement. Policy shared with
- * the web teleport lives in `@vellumai/local-mode/teleport-backup-policy`.
+ * the web teleport lives in `@mycadet/local-mode/teleport-backup-policy`.
  */
 
 import {
@@ -19,7 +19,7 @@ import {
   managedBackupIsReady,
   readyManagedBackupCreatedAts,
   type ManagedBackupEntry,
-} from "@vellumai/local-mode/teleport-backup-policy";
+} from "@mycadet/local-mode/teleport-backup-policy";
 
 import type { AssistantEntry } from "./assistant-config.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";

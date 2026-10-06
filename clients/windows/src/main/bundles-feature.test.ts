@@ -27,17 +27,17 @@ mock.module("electron", () => ({
   shell: {},
 }));
 
-mock.module("@vellumai/electron-desktop/bundle-flow", () => ({
+mock.module("@mycadet/electron-desktop/bundle-flow", () => ({
   installBundleFlow: installBundleFlowMock,
   handleBundleFile: handleBundleFileMock,
 }));
 
-mock.module("@vellumai/electron-desktop/file-open", () => ({
+mock.module("@mycadet/electron-desktop/file-open", () => ({
   onFileOpen: onFileOpenMock,
 }));
 
-const localMode = await import("@vellumai/local-mode");
-mock.module("@vellumai/local-mode", () => ({
+const localMode = await import("@mycadet/local-mode");
+mock.module("@mycadet/local-mode", () => ({
   ...localMode,
   getGuardianAccessToken: getGuardianAccessTokenMock,
   getLockfileData: () => ({ ok: false, error: "missing" }),
@@ -54,11 +54,10 @@ const {
   bundleFileHandlerToken,
   getBundlePlatform,
   resetBundlePlatformForTest,
-} = await import("@vellumai/electron-desktop/bundle-platform");
+} = await import("@mycadet/electron-desktop/bundle-platform");
 const { DesktopCapabilityRegistry } =
-  await import("@vellumai/electron-desktop/capability-registry");
-const { LOCAL_MODE_CLI } =
-  await import("@vellumai/electron-desktop/local-mode");
+  await import("@mycadet/electron-desktop/capability-registry");
+const { LOCAL_MODE_CLI } = await import("@mycadet/electron-desktop/local-mode");
 const { default: bundles } = await import("./features/bundles");
 
 beforeEach(() => {

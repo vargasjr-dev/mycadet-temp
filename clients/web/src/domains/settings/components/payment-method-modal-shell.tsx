@@ -16,14 +16,18 @@ import {
   cardExpiryParts,
 } from "@/domains/settings/utils/payment-method-brand";
 import { useTranslation, type TFunction } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { Button } from "@mycadet/design-library/components/button";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 export type PaymentMethodModalMode = "add" | "replace";
 
 export type PaymentMethodModalState =
-  "idle" | "submitting" | "requires_action" | "error" | "saved";
+  | "idle"
+  | "submitting"
+  | "requires_action"
+  | "error"
+  | "saved";
 
 export interface CardOnFile {
   brand: string | null;

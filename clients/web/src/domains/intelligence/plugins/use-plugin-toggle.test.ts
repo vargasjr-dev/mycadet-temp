@@ -71,8 +71,8 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
 }));
 
 const toastErrorSpy = mock((_message: string) => {});
-const dlActual = await import("@vellumai/design-library");
-mock.module("@vellumai/design-library", () => ({
+const dlActual = await import("@mycadet/design-library");
+mock.module("@mycadet/design-library", () => ({
   ...dlActual,
   toast: Object.assign((_message: string) => {}, {
     success: () => {},

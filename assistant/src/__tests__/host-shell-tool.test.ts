@@ -45,7 +45,7 @@ mock.module("../daemon/host-bash-proxy.js", () => ({
   },
 }));
 
-import { buildShellInvocation } from "@vellumai/environments/shell";
+import { buildShellInvocation } from "@mycadet/environments/shell";
 
 import { hostShellTool } from "../tools/host-terminal/host-shell.js";
 import type { ToolContext, ToolExecutionResult } from "../tools/types.js";

@@ -12,9 +12,9 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "@/i18n";
 import { updateTrustRule } from "@/lib/trust-rules-api";
 import type { TrustRuleItem, TrustRuleRisk } from "@/types/trust-rules";
-import { Select } from "@vellumai/design-library/components/select";
-import { Input } from "@vellumai/design-library/components/input";
-import { Notice } from "@vellumai/design-library/components/notice";
+import { Select } from "@mycadet/design-library/components/select";
+import { Input } from "@mycadet/design-library/components/input";
+import { Notice } from "@mycadet/design-library/components/notice";
 
 const TOOL_OPTIONS = [
   "bash",

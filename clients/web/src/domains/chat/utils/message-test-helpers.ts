@@ -1,4 +1,4 @@
-import type { ConversationMessage } from "@vellumai/assistant-api";
+import type { ConversationMessage } from "@mycadet/assistant-api";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import { messagePlainText } from "@/domains/chat/utils/message-plain-text";

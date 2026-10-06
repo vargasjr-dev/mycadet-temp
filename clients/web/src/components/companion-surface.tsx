@@ -40,12 +40,12 @@ import type {
 import type {
   CompanionDictating,
   CompanionDictationOffer,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import {
   COMPANION_BASE_AVATAR_BOX,
   COMPANION_BASE_AVATAR_IMAGE,
   COMPANION_PERCH_HOP,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import type {
   CompanionAnnotationTool,
   CompanionCharacter,
@@ -54,7 +54,7 @@ import type {
   VoiceActivityControlAction,
   VoiceActivityState,
   VoiceActivityWork,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { AnimatedAvatar } from "@/components/avatar/animated-avatar";
 import {

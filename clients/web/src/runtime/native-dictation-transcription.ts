@@ -1,10 +1,7 @@
-import type { VellumBridge } from "@vellumai/ipc-contract";
+import type { VellumBridge } from "@mycadet/ipc-contract";
 
 type NativeTranscriptionBridge = Required<
-  Pick<
-    VellumBridge["helper"]["dictation"],
-    "transcribe" | "onTranscribed"
-  >
+  Pick<VellumBridge["helper"]["dictation"], "transcribe" | "onTranscribed">
 >;
 
 type NativeTranscriptionResult =

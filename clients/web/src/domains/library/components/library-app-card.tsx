@@ -23,7 +23,7 @@ import { formatFriendlyDate } from "@/utils/format-date";
 import { cn } from "@/utils/misc";
 import { useShareApp } from "@/hooks/use-share-app";
 import type { SwipeAction } from "@/hooks/use-swipe-to-reveal";
-import { ActionMenu, Button } from "@vellumai/design-library";
+import { ActionMenu, Button } from "@mycadet/design-library";
 
 interface LibraryAppCardProps {
   app: AppSummary;

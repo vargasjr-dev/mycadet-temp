@@ -7,7 +7,7 @@
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { WindowAttentionPayload } from "@vellumai/ipc-contract";
+import type { WindowAttentionPayload } from "@mycadet/ipc-contract";
 
 import {
   canHandleForegroundDirective,

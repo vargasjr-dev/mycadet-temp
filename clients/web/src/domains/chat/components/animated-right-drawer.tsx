@@ -25,7 +25,7 @@
 
 import { useState, type ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { PaneResizeHandle, useResizablePane } from "@vellumai/design-library";
+import { PaneResizeHandle, useResizablePane } from "@mycadet/design-library";
 
 import { cn } from "@/utils/misc";
 

@@ -8,7 +8,7 @@
 import { statSync } from "node:fs";
 import { join } from "node:path";
 
-import { TrustClassSchema } from "@vellumai/gateway-client";
+import { TrustClassSchema } from "@mycadet/gateway-client";
 
 import {
   getApp,

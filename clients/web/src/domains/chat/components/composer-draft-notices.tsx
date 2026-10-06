@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 import { useTranslation } from "@/i18n";
 
-import { Notice } from "@vellumai/design-library";
+import { Notice } from "@mycadet/design-library";
 
 import {
   selectUploadedIds,

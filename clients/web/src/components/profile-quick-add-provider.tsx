@@ -46,7 +46,7 @@ import { useLlmConfigPatch } from "@/domains/settings/ai/use-llm-config-patch";
 import { configGet } from "@/generated/daemon/sdk.gen";
 import { inferenceProviderconnectionsGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useTranslation } from "@/i18n";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 interface OpenProfileQuickAddArgs {
   /**

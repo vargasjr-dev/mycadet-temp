@@ -5,7 +5,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { BottomSheet } from "@vellumai/design-library";
+import { BottomSheet } from "@mycadet/design-library";
 
 import { useMobileOverlayViewportStyle } from "@/hooks/use-mobile-overlay-viewport-style";
 import { useTranslation } from "@/i18n";

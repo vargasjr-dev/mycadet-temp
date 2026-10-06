@@ -1,8 +1,8 @@
 import { Plus } from "lucide-react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { ProgressBar } from "@vellumai/design-library/components/progress-bar";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { ProgressBar } from "@mycadet/design-library/components/progress-bar";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { type TFunction, useTranslation } from "@/i18n";
 import { formatMonthDay } from "@/utils/format-date";

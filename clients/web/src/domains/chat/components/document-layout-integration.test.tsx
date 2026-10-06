@@ -8,7 +8,7 @@ import {
   test,
 } from "bun:test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Notice } from "@vellumai/design-library";
+import { Notice } from "@mycadet/design-library";
 import {
   act,
   cleanup,

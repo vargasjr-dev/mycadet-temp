@@ -15,7 +15,7 @@ import { useTranslation } from "@/i18n";
 import { formatFileSize } from "@/utils/format-file-size";
 import type { WorkspaceTreeEntry } from "@/domains/workspace/utils/build-workspace-tree-rows";
 import { isHiddenPath } from "@/domains/workspace/utils/is-hidden-path";
-import { ContextMenu } from "@vellumai/design-library/components/context-menu";
+import { ContextMenu } from "@mycadet/design-library/components/context-menu";
 
 export interface EntryTarget {
   path: string;

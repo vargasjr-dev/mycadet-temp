@@ -6,7 +6,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import type { GuardianDelivery } from "@vellumai/gateway-client";
+import type { GuardianDelivery } from "@mycadet/gateway-client";
 
 const { resolveDestinations } = await import("../destination-resolver.js");
 

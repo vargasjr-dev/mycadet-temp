@@ -227,7 +227,7 @@ function getCliVersion(): string {
 
 export async function hatch(): Promise<void> {
   const cliVersion = getCliVersion();
-  console.log(`@vellumai/cli v${cliVersion}`);
+  console.log(`@mycadet/cli v${cliVersion}`);
 
   const {
     detached,

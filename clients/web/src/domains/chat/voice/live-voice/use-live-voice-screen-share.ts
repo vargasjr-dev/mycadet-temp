@@ -104,7 +104,7 @@ import {
   reportCompanionSharedFrame,
 } from "@/runtime/companion-surface";
 import { decodeBase64Payload } from "@/utils/base64";
-import type { CompanionAnnotationStroke } from "@vellumai/ipc-contract";
+import type { CompanionAnnotationStroke } from "@mycadet/ipc-contract";
 
 /** Where a failure is filed, so the tag says which source it came from. */
 const ERROR_CONTEXT = "live-voice screen share: capture/upload frame";

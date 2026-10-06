@@ -13,7 +13,7 @@
  *
  * Canonical wire-contract source. Daemon code imports the type and the
  * `ConversationErrorCode` enum directly from this file; external
- * consumers import via `@vellumai/assistant-api`.
+ * consumers import via `@mycadet/assistant-api`.
  */
 
 import { z } from "zod";

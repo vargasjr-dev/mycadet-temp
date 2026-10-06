@@ -1,13 +1,7 @@
-import {
-  BrowserWindow,
-  app,
-  clipboard,
-  shell,
-  type Data,
-} from "electron";
+import { BrowserWindow, app, clipboard, shell, type Data } from "electron";
 import { z } from "zod";
 
-import type { TextInsertionResult } from "@vellumai/ipc-contract";
+import type { TextInsertionResult } from "@mycadet/ipc-contract";
 
 import { runAppleScript } from "./appleScriptExecutor";
 import {
@@ -88,7 +82,11 @@ const readRawClipboardSnapshot = (
         return { kind: "raw", format, buffer };
       }
     } catch (err) {
-      log.warn("[text-insertion] failed to snapshot clipboard format:", format, err);
+      log.warn(
+        "[text-insertion] failed to snapshot clipboard format:",
+        format,
+        err,
+      );
     }
   }
   return null;
@@ -97,15 +95,18 @@ const readRawClipboardSnapshot = (
 const hasStructuredClipboardData = (data: Data): boolean =>
   Boolean(
     data.text ||
-      data.html ||
-      data.rtf ||
-      data.bookmark ||
-      (data.image && !data.image.isEmpty()),
+    data.html ||
+    data.rtf ||
+    data.bookmark ||
+    (data.image && !data.image.isEmpty()),
   );
 
 const readClipboardSnapshot = (): ClipboardSnapshot => {
   const formats = clipboard.availableFormats();
-  const fileSnapshot = readRawClipboardSnapshot(formats, FILE_CLIPBOARD_FORMATS);
+  const fileSnapshot = readRawClipboardSnapshot(
+    formats,
+    FILE_CLIPBOARD_FORMATS,
+  );
   if (fileSnapshot) {
     return fileSnapshot;
   }

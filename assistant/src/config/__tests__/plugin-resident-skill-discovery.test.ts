@@ -35,7 +35,7 @@ function writePlugin(
         JSON.stringify({
           name: packageName,
           version: "1.0.0",
-          peerDependencies: { "@vellumai/plugin-api": "*" },
+          peerDependencies: { "@mycadet/plugin-api": "*" },
         }),
     );
   }

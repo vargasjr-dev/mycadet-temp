@@ -4,33 +4,33 @@ import {
   configureCommandPaletteWindow,
   installCommandPaletteWindow,
   repositionCommandPaletteWindow,
-} from "@vellumai/electron-desktop/command-palette-window";
+} from "@mycadet/electron-desktop/command-palette-window";
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 import {
   configureDictationOverlayWindow,
   installDictationOverlay,
   repositionDictationOverlayWindow,
-} from "@vellumai/electron-desktop/dictation-overlay-window";
+} from "@mycadet/electron-desktop/dictation-overlay-window";
 import {
   configureFloatingWindows,
   createWindowRouteResolver,
-} from "@vellumai/electron-desktop/floating-window";
+} from "@mycadet/electron-desktop/floating-window";
 import {
   configurePopoutWindows,
   installPopoutWindows,
-} from "@vellumai/electron-desktop/popout-window";
+} from "@mycadet/electron-desktop/popout-window";
 import {
   configureQuickInputWindow,
   installQuickInput,
   repositionQuickInputWindow,
-} from "@vellumai/electron-desktop/quick-input-window";
+} from "@mycadet/electron-desktop/quick-input-window";
 import {
   restoreBounds,
   track as trackWindowState,
-} from "@vellumai/electron-desktop/window-state";
+} from "@mycadet/electron-desktop/window-state";
 
 import { getRendererBase } from "../app-config";
 import { installEscapeMonitor, setDictationRecording } from "../escape-monitor";

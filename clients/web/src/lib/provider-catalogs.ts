@@ -5,7 +5,7 @@
  * corresponding settings card to populate dropdowns, display credential
  * guides, and gate feature availability.
  */
-import type { ElectronHostOS } from "@vellumai/ipc-contract";
+import type { ElectronHostOS } from "@mycadet/ipc-contract";
 
 // ---------------------------------------------------------------------------
 // Shared types

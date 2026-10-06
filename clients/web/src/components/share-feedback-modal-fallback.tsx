@@ -1,5 +1,5 @@
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Skeleton } from "@vellumai/design-library/components/skeleton";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Skeleton } from "@mycadet/design-library/components/skeleton";
 
 import { useTranslation } from "@/i18n";
 

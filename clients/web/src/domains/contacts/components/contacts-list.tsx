@@ -1,13 +1,13 @@
 import type { LucideIcon } from "lucide-react";
 import { MoreVertical, Pencil, Plus, Search, UserPlus } from "lucide-react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { Input } from "@vellumai/design-library/components/input";
-import { PanelItem } from "@vellumai/design-library/components/panel-item";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { Input } from "@mycadet/design-library/components/input";
+import { PanelItem } from "@mycadet/design-library/components/panel-item";
 
-import { Tag } from "@vellumai/design-library/components/tag";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { Tag } from "@mycadet/design-library/components/tag";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 import { ContactTypeBadge } from "@/domains/contacts/components/contact-type-badge";
 import { useTranslation } from "@/i18n";

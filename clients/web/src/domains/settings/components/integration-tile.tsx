@@ -8,15 +8,15 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-import { ActionMenu } from "@vellumai/design-library/components/action-menu";
+import { ActionMenu } from "@mycadet/design-library/components/action-menu";
 import {
   Button,
   buttonVariants,
-} from "@vellumai/design-library/components/button";
-import { SplitButton } from "@vellumai/design-library/components/split-button";
-import { Tooltip } from "@vellumai/design-library/components/tooltip";
-import { cn } from "@vellumai/design-library/utils/cn";
-import { useHoverCapable } from "@vellumai/design-library/utils/hover-capability";
+} from "@mycadet/design-library/components/button";
+import { SplitButton } from "@mycadet/design-library/components/split-button";
+import { Tooltip } from "@mycadet/design-library/components/tooltip";
+import { cn } from "@mycadet/design-library/utils/cn";
+import { useHoverCapable } from "@mycadet/design-library/utils/hover-capability";
 
 import { IntegrationIcon } from "@/components/integrations/integration-icon";
 import { useTranslation } from "@/i18n";

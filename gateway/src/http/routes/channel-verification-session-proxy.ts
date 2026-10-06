@@ -8,7 +8,7 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { proxyForwardToResponse } from "@vellumai/assistant-client";
+import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 import { bootstrapGuardian } from "../../auth/guardian-bootstrap.js";
 import { mintServiceToken } from "../../auth/token-exchange.js";

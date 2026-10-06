@@ -45,7 +45,7 @@
  * {@link PostCompactContext}.
  */
 
-import type { HookFunction, PostCompactContext } from "@vellumai/plugin-api";
+import type { HookFunction, PostCompactContext } from "@mycadet/plugin-api";
 
 import { getConfig } from "../../../../config/loader.js";
 import { findConversationOrSubagent } from "../../../../daemon/conversation-registry.js";

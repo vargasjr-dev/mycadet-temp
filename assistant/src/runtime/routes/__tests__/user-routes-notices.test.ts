@@ -23,7 +23,7 @@ import {
   test,
 } from "bun:test";
 
-import { PLUGIN_ADMISSION_DENIED_NOTICE_PATH } from "@vellumai/gateway-client";
+import { PLUGIN_ADMISSION_DENIED_NOTICE_PATH } from "@mycadet/gateway-client";
 
 // Route policies are only evaluated when HTTP auth is on.
 const actualEnv = await import("../../../config/env.js");

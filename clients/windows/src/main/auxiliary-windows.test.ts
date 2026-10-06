@@ -8,7 +8,7 @@ import {
   test,
 } from "bun:test";
 
-import type { CreateWindowOptions } from "@vellumai/electron-desktop/windows";
+import type { CreateWindowOptions } from "@mycadet/electron-desktop/windows";
 
 type Listener = (...args: unknown[]) => void;
 
@@ -115,7 +115,7 @@ const restoreBounds = mock(
   (_key: string, defaults: { width: number; height: number }) => defaults,
 );
 const trackWindowState = mock((_key: string, _win: unknown) => undefined);
-mock.module("@vellumai/electron-desktop/window-state", () => ({
+mock.module("@mycadet/electron-desktop/window-state", () => ({
   restoreBounds,
   track: trackWindowState,
 }));
@@ -140,7 +140,7 @@ mock.module("./logger", () => ({
 const { default: auxiliaryWindowsModule } =
   await import("./features/auxiliary-windows");
 const { toggleQuickInput } =
-  await import("@vellumai/electron-desktop/quick-input-window");
+  await import("@mycadet/electron-desktop/quick-input-window");
 beforeAll(() => {
   auxiliaryWindowsModule.install({} as never);
 });

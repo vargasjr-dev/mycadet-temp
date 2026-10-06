@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { CompanionPopover } from "@/components/companion-popover";
-import { COMPANION_POPOVER_INSET } from "@vellumai/ipc-contract";
+import { COMPANION_POPOVER_INSET } from "@mycadet/ipc-contract";
 
 /**
  * The popover beside the companion, over a desktop it floats above: the short
@@ -156,13 +156,23 @@ export const VoicePicker: Story = {
           accent: "American",
           voices: [
             { id: "v1", label: "Warm, clear", sampleUrl: "", isDefault: true },
-            { id: "v2", label: "Bright, upbeat", sampleUrl: "", isDefault: false },
+            {
+              id: "v2",
+              label: "Bright, upbeat",
+              sampleUrl: "",
+              isDefault: false,
+            },
           ],
         },
         {
           accent: "British",
           voices: [
-            { id: "v3", label: "Calm, measured", sampleUrl: "", isDefault: false },
+            {
+              id: "v3",
+              label: "Calm, measured",
+              sampleUrl: "",
+              isDefault: false,
+            },
           ],
         },
       ],

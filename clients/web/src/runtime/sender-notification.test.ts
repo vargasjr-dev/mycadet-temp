@@ -4,7 +4,7 @@ import type {
   NotificationDeliveryResult,
   PrepareNotificationIdentityPayload,
   ResetNotificationIdentitiesPayload,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 let nativePlatform = true;
 let platform = "ios";
@@ -12,11 +12,7 @@ let pluginAvailable = true;
 
 const getCapabilities = mock(async () => ({
   version: 1,
-  capabilities: [
-    "preparedIdentity",
-    "singlePostOwner",
-    "deliveryStatus",
-  ],
+  capabilities: ["preparedIdentity", "singlePostOwner", "deliveryStatus"],
 }));
 const prepare = mock(async (_payload: PrepareNotificationIdentityPayload) => ({
   ok: true,
@@ -24,12 +20,16 @@ const prepare = mock(async (_payload: PrepareNotificationIdentityPayload) => ({
 const reset = mock(async (_payload: ResetNotificationIdentitiesPayload) => ({
   ok: true,
 }));
-const post = mock(async (_payload: unknown): Promise<NotificationDeliveryResult> => ({
-  status: "posted",
-}));
-const status = mock(async (): Promise<NotificationDeliveryResult> => ({
-  status: "posted",
-}));
+const post = mock(
+  async (_payload: unknown): Promise<NotificationDeliveryResult> => ({
+    status: "posted",
+  }),
+);
+const status = mock(
+  async (): Promise<NotificationDeliveryResult> => ({
+    status: "posted",
+  }),
+);
 
 mock.module("@capacitor/core", () => ({
   Capacitor: {
@@ -94,11 +94,7 @@ beforeEach(() => {
   getCapabilities.mockReset();
   getCapabilities.mockResolvedValue({
     version: 1,
-    capabilities: [
-      "preparedIdentity",
-      "singlePostOwner",
-      "deliveryStatus",
-    ],
+    capabilities: ["preparedIdentity", "singlePostOwner", "deliveryStatus"],
   });
   prepare.mockClear();
   reset.mockClear();
@@ -245,9 +241,9 @@ describe("sender notification delivery ownership", () => {
   });
 
   test("allows fallback only after explicit no-ownership confirmation", () => {
-    expect(
-      allowsLegacyNotificationFallback({ status: "unavailable" }),
-    ).toBe(true);
+    expect(allowsLegacyNotificationFallback({ status: "unavailable" })).toBe(
+      true,
+    );
     expect(
       allowsLegacyNotificationFallback({
         status: "failed",
@@ -260,12 +256,8 @@ describe("sender notification delivery ownership", () => {
         postingMayHaveBegun: true,
       }),
     ).toBe(false);
-    expect(allowsLegacyNotificationFallback({ status: "unknown" })).toBe(
-      false,
-    );
-    expect(allowsLegacyNotificationFallback({ status: "blocked" })).toBe(
-      false,
-    );
+    expect(allowsLegacyNotificationFallback({ status: "unknown" })).toBe(false);
+    expect(allowsLegacyNotificationFallback({ status: "blocked" })).toBe(false);
   });
 
   test("returns unknown without reposting when the native bridge never resolves", async () => {
@@ -309,9 +301,7 @@ describe("sender notification delivery ownership", () => {
 
   test("falls back before ownership when capability discovery never resolves", async () => {
     __setSenderNotificationWatchdogForTests(5);
-    getCapabilities.mockImplementationOnce(
-      () => new Promise<never>(() => {}),
-    );
+    getCapabilities.mockImplementationOnce(() => new Promise<never>(() => {}));
 
     const result = await postSenderNotification(postPayload);
 

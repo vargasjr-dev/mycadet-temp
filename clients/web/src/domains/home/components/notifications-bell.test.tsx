@@ -29,7 +29,7 @@ import type {
   FeedItem,
   FeedItemStatus,
   FeedItemUpdate,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import {
   feedItem,
@@ -146,7 +146,7 @@ mock.module("@/domains/home/hooks/use-home-feed-query", () => ({
   },
 }));
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     error: (message: string) => {
       toastCalls.push(["error", message]);

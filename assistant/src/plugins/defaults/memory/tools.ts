@@ -8,7 +8,7 @@
  * own input.
  */
 
-import { invalidToolInputResult, throwIfCancelled } from "@vellumai/plugin-api";
+import { invalidToolInputResult, throwIfCancelled } from "@mycadet/plugin-api";
 
 import { RememberInputSchema } from "../../../api/remember-tool.js";
 import { getConfig, getConfigReadOnly } from "../../../config/loader.js";

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Navigate, useSearchParams } from "react-router";
-import { Tabs } from "@vellumai/design-library/components/tabs";
+import { Tabs } from "@mycadet/design-library/components/tabs";
 
 import { MemoryCard } from "@/domains/settings/components/memory-card";
 import { AssistantLifecyclePanel } from "@/domains/settings/components/panels/assistant-lifecycle-panel";

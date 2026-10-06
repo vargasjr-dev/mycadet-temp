@@ -10,10 +10,10 @@ import {
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useCredentialsSetPostMutation } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { toast } from "@mycadet/design-library/components/toast";
 
 /**
  * Cache key of the credentials list shown on Settings → Credentials. The

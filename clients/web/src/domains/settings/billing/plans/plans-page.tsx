@@ -82,8 +82,8 @@ import { isElectron } from "@/runtime/is-electron";
 import { useIsNativeAndroid } from "@/runtime/platform-detection";
 import { PACKAGE_PARAM, routes } from "@/utils/routes";
 import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
-import { Button } from "@vellumai/design-library/components/button";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { toast } from "@mycadet/design-library/components/toast";
 
 // How long the `?package=` deep link waits for its forced re-read of the
 // billing data before deciding on whatever the cache already holds.

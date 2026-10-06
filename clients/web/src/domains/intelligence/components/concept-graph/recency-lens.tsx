@@ -1,7 +1,7 @@
 import {
   SegmentControl,
   type SegmentControlItem,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

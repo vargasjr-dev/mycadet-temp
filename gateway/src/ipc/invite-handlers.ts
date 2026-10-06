@@ -71,7 +71,7 @@ import {
   GetActiveVoiceInviteRequestSchema,
   INVITES_IPC_METHODS,
   RedeemVoiceInviteRequestSchema,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import { z } from "zod";
 
 import { ContactStore } from "../db/contact-store.js";

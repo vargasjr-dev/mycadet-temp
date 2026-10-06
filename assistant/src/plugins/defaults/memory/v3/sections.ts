@@ -1,4 +1,4 @@
-import { safeStringSlice } from "@vellumai/plugin-api";
+import { safeStringSlice } from "@mycadet/plugin-api";
 
 import type { Section, SectionIndex, Slug } from "./types.js";
 

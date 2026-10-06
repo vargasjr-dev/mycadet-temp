@@ -5,21 +5,21 @@ import os from "node:os";
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
-import { installDiagnosticsIpc } from "@vellumai/electron-desktop/diagnostics";
-import { installFeatureFlagsIpc } from "@vellumai/electron-desktop/feature-flags";
+} from "@mycadet/electron-desktop/capability-registry";
+import { installDiagnosticsIpc } from "@mycadet/electron-desktop/diagnostics";
+import { installFeatureFlagsIpc } from "@mycadet/electron-desktop/feature-flags";
 import {
   configureFeedback,
   installFeedbackIpc,
   type FeedbackDependencies,
-} from "@vellumai/electron-desktop/feedback";
-import { installFeedbackIpc, type FeedbackDependencies } from "@vellumai/electron-desktop/feedback";
-import { writeSetting as writeSharedSetting } from "@vellumai/electron-desktop/settings";
-import { getSessionToken } from "@vellumai/electron-desktop/session-token-store";
+} from "@mycadet/electron-desktop/feedback";
+import { installFeedbackIpc, type FeedbackDependencies } from "@mycadet/electron-desktop/feedback";
+import { writeSetting as writeSharedSetting } from "@mycadet/electron-desktop/settings";
+import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
 import {
   readSetting,
   writeSetting,
-} from "@vellumai/electron-desktop/settings";
+} from "@mycadet/electron-desktop/settings";
 
 import { WINDOWS_RELEASE_INFO } from "../app-config";
 import { handle, on } from "../ipc.client";

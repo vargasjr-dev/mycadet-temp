@@ -6,7 +6,7 @@ import { createStoryQueryClient } from "@/lib/story-query-cache";
 import type {
   LLMCallSummary,
   LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import { CacheBreakpointMapCard } from "./cache-breakpoint-map-card";
 

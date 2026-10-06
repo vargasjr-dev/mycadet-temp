@@ -1,7 +1,7 @@
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 
 import { installAutoUpdate } from "../auto-update";
 

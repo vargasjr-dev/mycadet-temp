@@ -1,7 +1,7 @@
 import { Check, Zap } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { Button, cn } from "@vellumai/design-library";
+import { Button, cn } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

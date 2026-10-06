@@ -16,7 +16,7 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { DELIVER_GATEWAY_REPLY_IPC_METHOD } from "@vellumai/gateway-client";
+import { DELIVER_GATEWAY_REPLY_IPC_METHOD } from "@mycadet/gateway-client";
 
 import type { GatewayConfig } from "../config.js";
 import type {

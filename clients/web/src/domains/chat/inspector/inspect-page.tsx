@@ -37,11 +37,11 @@ import type {
   ConversationTextBlock,
   LlmContextResponse,
   LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
-import { Button } from "@vellumai/design-library";
-import { toast } from "@vellumai/design-library/components/toast";
-import { Tabs } from "@vellumai/design-library/components/tabs";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+} from "@mycadet/assistant-api";
+import { Button } from "@mycadet/design-library";
+import { toast } from "@mycadet/design-library/components/toast";
+import { Tabs } from "@mycadet/design-library/components/tabs";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 import { CallRail } from "./components/call-rail";
 import {
@@ -98,7 +98,9 @@ export function InspectPage(): ReactNode {
 
   if (authLoading || (!canInspect && !flagsHydrated)) {
     return (
-      <CenteredMessage tone="muted">{tChat("inspectPage.loading")}</CenteredMessage>
+      <CenteredMessage tone="muted">
+        {tChat("inspectPage.loading")}
+      </CenteredMessage>
     );
   }
 
@@ -114,7 +116,9 @@ export function InspectPage(): ReactNode {
     // Defensive only — React Router would render NotFound before reaching
     // this branch, but we keep a graceful fallback rather than crashing.
     return (
-      <CenteredMessage tone="muted">{tChat("inspectPage.loading")}</CenteredMessage>
+      <CenteredMessage tone="muted">
+        {tChat("inspectPage.loading")}
+      </CenteredMessage>
     );
   }
 
@@ -885,13 +889,13 @@ function DetailPlaceholder({ state }: { state: DetailState }): ReactNode {
 
   if (state === "error") {
     return (
-      <CenteredMessage>
-        {tChat("inspectPage.detailLoadFailed")}
-      </CenteredMessage>
+      <CenteredMessage>{tChat("inspectPage.detailLoadFailed")}</CenteredMessage>
     );
   }
   return (
-    <CenteredMessage tone="muted">{tChat("inspectPage.loading")}</CenteredMessage>
+    <CenteredMessage tone="muted">
+      {tChat("inspectPage.loading")}
+    </CenteredMessage>
   );
 }
 

@@ -38,7 +38,7 @@
 import {
   normalizeHttpPublicBaseUrlWithoutTrailingSlash,
   trimmedNonEmptyString,
-} from "@vellumai/service-contracts/ingress";
+} from "@mycadet/service-contracts/ingress";
 
 import { isPlainObject } from "../util/object.js";
 import { truncate } from "../util/truncate.js";

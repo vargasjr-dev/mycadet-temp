@@ -1,7 +1,7 @@
 /**
  * Plugin execution context. Tracks which plugin's code is currently running.
  *
- * Host APIs exposed to plugins through `@vellumai/plugin-api` sometimes need to
+ * Host APIs exposed to plugins through `@mycadet/plugin-api` sometimes need to
  * know *which* plugin is calling them so they can scope their behavior to that
  * plugin (e.g. {@link ../plugin-api/resolve-credential.resolveCredential} limits
  * a plugin to its own credentials). A plugin's manifest name is not threaded

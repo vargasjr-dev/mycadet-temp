@@ -27,7 +27,7 @@ import type {
   OAuthClientMetadata,
   OAuthTokens,
 } from "@modelcontextprotocol/sdk/shared/auth.js";
-import { buildMcpOAuthClientMetadata } from "@vellumai/service-contracts/mcp-oauth";
+import { buildMcpOAuthClientMetadata } from "@mycadet/service-contracts/mcp-oauth";
 
 import { getPlatformAssistantId } from "../config/env.js";
 import { getAssistantName } from "../daemon/identity-helpers.js";

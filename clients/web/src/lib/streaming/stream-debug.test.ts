@@ -21,7 +21,7 @@ import {
   resetSseDebugStateForTests,
 } from "@/lib/streaming/stream-debug";
 import type { AssistantEvent } from "@/types/event-types";
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 beforeEach(() => {
   resetSseDebugStateForTests();
@@ -469,7 +469,10 @@ describe("recordSseTraffic connect-latency and keepalive cadence", () => {
   test("reports the daemon heartbeat cadence for evenly spaced keepalives", () => {
     // GIVEN ten keepalives 7s apart (a healthy end-to-end daemon heartbeat)
     const id = registerSseClient(new AbortController().signal);
-    replayKeepalives(id, Array.from({ length: 9 }, () => 7_000));
+    replayKeepalives(
+      id,
+      Array.from({ length: 9 }, () => 7_000),
+    );
 
     // THEN the median gap reads back as the heartbeat interval
     expect(clientById(id).interKeepaliveMs).toBe(7_000);

@@ -2,7 +2,7 @@ import {
   type TableCellValue,
   type TableSurfaceData,
   TableSurfaceDataSchema,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import { useMemo } from "react";
 
 import {

@@ -21,8 +21,8 @@
  * Reference: https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { TooltipProvider } from "@vellumai/design-library";
-import { Toaster } from "@vellumai/design-library/components/toast";
+import { TooltipProvider } from "@mycadet/design-library";
+import { Toaster } from "@mycadet/design-library/components/toast";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { ProfileQuickAddProvider } from "@/components/profile-quick-add-provider";

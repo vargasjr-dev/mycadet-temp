@@ -2,7 +2,7 @@ import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
 import { Editor } from "@tiptap/core";
 import { TextSelection } from "@tiptap/pm/state";
 import { cleanup, renderHook } from "@testing-library/react";
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 
 import {
   buildDocumentEditorExtensions,

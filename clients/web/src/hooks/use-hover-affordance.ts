@@ -1,4 +1,4 @@
-import { useHoverCapable } from "@vellumai/design-library/utils/hover-capability";
+import { useHoverCapable } from "@mycadet/design-library/utils/hover-capability";
 
 /**
  * Whether the device can hover, which is the only axis that says whether an

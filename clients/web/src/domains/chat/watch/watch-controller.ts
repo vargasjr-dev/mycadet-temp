@@ -92,7 +92,7 @@ import { supportsWatchCaptureTarget } from "@/lib/backwards-compat/watch-capture
 import { supportsWatchRetroCompletion } from "@/lib/backwards-compat/watch-retro-completion";
 import { resolveSupportsWatchSessions } from "@/lib/backwards-compat/watch-sessions";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import type { WatchCaptureTarget } from "@vellumai/ipc-contract";
+import type { WatchCaptureTarget } from "@mycadet/ipc-contract";
 
 /**
  * What a watch session looks like from outside: whether one is running, and

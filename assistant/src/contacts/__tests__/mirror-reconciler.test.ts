@@ -15,7 +15,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { ContactsIdentitySnapshotIpcResponse } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import type { ContactsIdentitySnapshotIpcResponse } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 let snapshot: ContactsIdentitySnapshotIpcResponse = { ok: true, contacts: [] };
 const ipcCallPersistentMock = mock(async (method: string) => {

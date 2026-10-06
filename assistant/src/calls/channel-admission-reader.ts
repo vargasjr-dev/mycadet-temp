@@ -25,7 +25,7 @@
 import {
   type AdmissionPolicy,
   isAdmissionPolicy,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import { z } from "zod";
 
 import type { ChannelId } from "../channels/types.js";

@@ -10,7 +10,7 @@
 // only have to delete one file when the backend is fixed.
 // -----------------------------------------------------------------------------
 
-import { DEFAULT_TOOL_EXECUTION_TIMEOUT_SEC } from "@vellumai/assistant-api";
+import { DEFAULT_TOOL_EXECUTION_TIMEOUT_SEC } from "@mycadet/assistant-api";
 
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import { isToolCallRunning } from "@/domains/chat/utils/tool-call-status";
@@ -327,7 +327,7 @@ function repairIfDangling(tc: ChatMessageToolCall): ChatMessageToolCall {
 //
 // The timeout uses `DEFAULT_TOOL_EXECUTION_TIMEOUT_SEC` (the canonical
 // default the daemon uses when no override is configured), exported from
-// `@vellumai/assistant-api` so backend enforcement and frontend detection
+// `@mycadet/assistant-api` so backend enforcement and frontend detection
 // reference the same wire-contract default — drift between them would let
 // stale tools spin past the server-side ceiling, or worse, fail tools the
 // server still considers in-flight.

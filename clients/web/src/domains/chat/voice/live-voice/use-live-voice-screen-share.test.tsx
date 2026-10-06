@@ -34,7 +34,7 @@ import type {
   ScreenCaptureFrame,
   ShareTargetSnapshot,
   WatchCaptureTarget,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /**
  * A frame of a named view, as the helper would answer. The "JPEG" is the

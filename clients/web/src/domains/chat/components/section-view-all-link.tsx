@@ -17,7 +17,7 @@ import { Link } from "react-router";
 
 import { SECTION_HEADER_CONTROL_CLASSES } from "@/components/section-actions-button";
 import { useTranslation } from "@/i18n";
-import { Tooltip } from "@vellumai/design-library";
+import { Tooltip } from "@mycadet/design-library";
 
 export function SectionViewAllLink({ to }: { to: string }) {
   const { t } = useTranslation("chat");

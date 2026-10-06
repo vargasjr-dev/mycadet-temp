@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { CompanionCharacter } from "@vellumai/ipc-contract";
+import type { CompanionCharacter } from "@mycadet/ipc-contract";
 
 import { on } from "./presence-runtime";
 

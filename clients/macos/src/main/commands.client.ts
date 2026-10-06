@@ -1,13 +1,13 @@
 import {
   configureHotkeySettings,
   type HotkeySettingsProvider,
-} from "@vellumai/electron-desktop/commands";
+} from "@mycadet/electron-desktop/commands";
 
 import {
   onSettingChange,
   readSetting,
   writeSetting,
-} from "@vellumai/electron-desktop/settings";
+} from "@mycadet/electron-desktop/settings";
 
 const provider: HotkeySettingsProvider = {
   read: () => ({ ...(readSetting("hotkeys") ?? {}) }),
@@ -19,4 +19,4 @@ const provider: HotkeySettingsProvider = {
 
 configureHotkeySettings(provider);
 
-export * from "@vellumai/electron-desktop/commands";
+export * from "@mycadet/electron-desktop/commands";

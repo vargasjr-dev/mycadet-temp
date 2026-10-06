@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 
-import { Tooltip, Typography } from "@vellumai/design-library";
+import { Tooltip, Typography } from "@mycadet/design-library";
 
 import type { IconName } from "@/domains/chat/components/tool-progress-card/derive-step-label";
 import { useActionDisplayLabel } from "@/domains/chat/components/tool-progress-card/action-display-label";

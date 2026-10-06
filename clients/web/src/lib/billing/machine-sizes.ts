@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { MachineSizeEnum } from "@/generated/api/types.gen";
-import type { SelectOption } from "@vellumai/design-library/components/select";
+import type { SelectOption } from "@mycadet/design-library/components/select";
 
 /**
  * Pro tier ceilings → machine sizes the org may run at within that tier.

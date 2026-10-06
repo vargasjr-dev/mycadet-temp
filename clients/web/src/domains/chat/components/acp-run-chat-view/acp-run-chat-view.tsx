@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useCallback, useMemo, useState, type FormEvent } from "react";
 
-import { Button, cn, Typography } from "@vellumai/design-library";
+import { Button, cn, Typography } from "@mycadet/design-library";
 
 import { DetailShellHeader } from "@/components/detail-shell";
 import {

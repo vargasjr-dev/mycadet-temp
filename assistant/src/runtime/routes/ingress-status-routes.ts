@@ -18,7 +18,7 @@
  * carries webhooks alone, so it is `unconfigured` for pairing too, and the
  * gateway publishes and restores it without a tunnel command either way.
  */
-import { normalizePublicBaseUrl } from "@vellumai/service-contracts/ingress";
+import { normalizePublicBaseUrl } from "@mycadet/service-contracts/ingress";
 import { z } from "zod";
 
 import {

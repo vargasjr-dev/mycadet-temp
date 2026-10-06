@@ -5,7 +5,7 @@
  * path escape (tracked by `plugin-import-boundary-guard.test.ts`), mirroring
  * `logging.ts`.
  *
- * A plain forward is deliberate: `@vellumai/plugin-api` has no workspace-dir
+ * A plain forward is deliberate: `@mycadet/plugin-api` has no workspace-dir
  * facet today (identity facets take the workspace dir as a parameter), and
  * these resolvers also run inside the jobs worker and CLI processes where no
  * plugin bootstrap exists. Centralizing the import keeps a future cutover —

@@ -9,7 +9,7 @@
  * ingest builders use.
  */
 
-import type { ConversationContentBlock } from "@vellumai/assistant-api";
+import type { ConversationContentBlock } from "@mycadet/assistant-api";
 import type { DisplayMessage, Surface } from "@/domains/chat/types/types";
 
 /**

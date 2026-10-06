@@ -1,6 +1,6 @@
 /**
  * The deprecated `/x/*` route context is a compatibility shim: each field
- * delegates to a `@vellumai/plugin-api` call and records a one-per-route
+ * delegates to a `@mycadet/plugin-api` call and records a one-per-route
  * deprecation-usage telemetry signal. These tests mock the three collaborators
  * (`publishEvent`, `runConversationTurn`, `recordWatchdogEvent`) and assert the
  * delegation, the telemetry payload, and the fire-once dedup.

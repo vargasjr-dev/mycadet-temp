@@ -103,11 +103,11 @@ const SELF_MODULE = "slow-query-log.ts";
 
 /**
  * Marks the assistant package's own source. In local-runtime installs the CLI
- * runs the daemon from `<installDir>/node_modules/@vellumai/assistant/src/…`, so
+ * runs the daemon from `<installDir>/node_modules/@mycadet/assistant/src/…`, so
  * the assistant's own frames also contain `node_modules` — they must NOT be
  * treated as third-party dependency frames when deriving the caller.
  */
-const ASSISTANT_SRC_MARKER = "@vellumai/assistant/src/";
+const ASSISTANT_SRC_MARKER = "@mycadet/assistant/src/";
 
 /**
  * True for stack frames that are runtime/ORM/instrumentation plumbing rather

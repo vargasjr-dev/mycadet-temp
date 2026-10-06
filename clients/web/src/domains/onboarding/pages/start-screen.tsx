@@ -5,7 +5,7 @@ import { NEW_ASSISTANT_PARAM } from "@/domains/onboarding/onboarding-destination
 import { SETUP_NAVIGATE } from "@/domains/onboarding/onboarding-navigation";
 import { useTranslation } from "@/i18n";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 /**
  * Platform onboarding welcome / front door.

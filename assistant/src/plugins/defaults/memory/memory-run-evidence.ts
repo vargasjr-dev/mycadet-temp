@@ -15,7 +15,7 @@
 // nothing from the plugin, so `substrate/` and the spine can both reach it
 // without a tier importing spine.
 
-import type { ContentBlock } from "@vellumai/plugin-api";
+import type { ContentBlock } from "@mycadet/plugin-api";
 
 /**
  * Whether the LAST persisted assistant row on the run's tail carries a text

@@ -21,7 +21,7 @@
  * asserts its own (narrower) inbound list is a subset of it so the two sides
  * cannot silently drift.
  *
- * Both packages depend on `@vellumai/service-contracts`, so hoisting the set
+ * Both packages depend on `@mycadet/service-contracts`, so hoisting the set
  * here (rather than maintaining a copy on each side) means adding or renaming
  * a channel happens in exactly one place.
  *

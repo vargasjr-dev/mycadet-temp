@@ -3,7 +3,7 @@ import { LayoutGrid } from "lucide-react";
 import { resolveCategoryIcon } from "@/domains/intelligence/skills/category-icon-map";
 import type { CategoryInfo } from "@/domains/intelligence/skills/use-skill-categories";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 const CATEGORY_KEYS = {
   email: "categories.email",

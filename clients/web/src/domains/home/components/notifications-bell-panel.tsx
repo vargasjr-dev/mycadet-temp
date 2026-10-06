@@ -7,7 +7,7 @@ import {
   Button,
   Toggle,
   Typography,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 import { NOTIFICATIONS_PANEL_HEADER_CLASS } from "./notifications-bell-detail";
 

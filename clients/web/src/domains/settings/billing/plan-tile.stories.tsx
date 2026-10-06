@@ -16,9 +16,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Loader2, Sparkles } from "lucide-react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Tag } from "@vellumai/design-library/components/tag";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Tag } from "@mycadet/design-library/components/tag";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import {
   freePlanSpecs,

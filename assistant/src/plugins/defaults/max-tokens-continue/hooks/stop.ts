@@ -9,7 +9,7 @@
  * budget, no matter how the turn ended.
  */
 
-import type { HookFunction, StopContext } from "@vellumai/plugin-api";
+import type { HookFunction, StopContext } from "@mycadet/plugin-api";
 
 import { clearMaxTokensContinueBudget } from "../continue-state-store.js";
 

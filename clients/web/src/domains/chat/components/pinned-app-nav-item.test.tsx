@@ -18,7 +18,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createElement, type CSSProperties, type ReactNode } from "react";
 
-mock.module("@vellumai/design-library", () => {
+mock.module("@mycadet/design-library", () => {
   const SideMenu = {
     Item: ({
       label,

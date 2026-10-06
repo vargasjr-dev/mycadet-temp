@@ -6,7 +6,7 @@
 
 import type { MouseEvent, ReactNode } from "react";
 
-import { cn, textLinkVariants, toast } from "@vellumai/design-library";
+import { cn, textLinkVariants, toast } from "@mycadet/design-library";
 
 import {
   LocalFileIcon,

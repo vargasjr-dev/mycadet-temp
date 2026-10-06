@@ -17,7 +17,7 @@
  * ## Why symlinks (not generated re-export shims)
  *
  * Re-export shims re-bind each export from `globalThis`, which works for
- * the `@vellumai/plugin-api` surface (a small set of identifiers the
+ * the `@mycadet/plugin-api` surface (a small set of identifiers the
  * assistant controls) but is fragile for real npm packages: zod ships 238
  * exports including reserved words (`enum`, `function`, `instanceof`,
  * `void`, `default`) that need alias-form codegen, and any export added in

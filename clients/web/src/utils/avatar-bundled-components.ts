@@ -12,7 +12,7 @@
  * only the palette imports `@/utils/avatar-bundled-colors` instead.
  */
 
-import { getCharacterComponents } from "@vellumai/avatar-catalog";
+import { getCharacterComponents } from "@mycadet/avatar-catalog";
 
 import type { CharacterComponents } from "@/types/avatar";
 

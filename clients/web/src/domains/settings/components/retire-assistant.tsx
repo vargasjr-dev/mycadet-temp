@@ -4,9 +4,9 @@ import { useNavigate } from "react-router";
 
 import { retireAssistant } from "@/assistant/retire-service";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 import { RetireConfirmDialog } from "@/components/retire-confirm-dialog";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 interface RetireAssistantProps {
   assistantId: string;

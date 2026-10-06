@@ -10,7 +10,7 @@ import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   WorkflowJournalResponseSchema,
   type WorkflowJournalResponse,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import { workflowsRunsByIdJournalGet } from "@/generated/daemon/sdk.gen";
 

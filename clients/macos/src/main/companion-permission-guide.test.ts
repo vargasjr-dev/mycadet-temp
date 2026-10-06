@@ -8,7 +8,7 @@ import {
   test,
 } from "bun:test";
 import type { PermissionsService } from "./permissions-service";
-import type { PermissionGuideState } from "@vellumai/ipc-contract";
+import type { PermissionGuideState } from "@mycadet/ipc-contract";
 
 const handles = new Map<string, Function>();
 const listeners = new Map<string, Function>();
@@ -90,8 +90,8 @@ const avatarIcon = {
   resize: () => avatarIcon,
 };
 mock.module(
-  "@vellumai/electron-desktop/avatar",
-  (): Partial<typeof import("@vellumai/electron-desktop/avatar")> => ({
+  "@mycadet/electron-desktop/avatar",
+  (): Partial<typeof import("@mycadet/electron-desktop/avatar")> => ({
     getAvatarPng: () => avatarPng,
     getAccentHex: () => accentHex,
     onAvatarChange: (callback: () => void) => {
@@ -130,7 +130,7 @@ mock.module("electron", () => ({
     getAnimationSettings: () => ({ prefersReducedMotion: true }),
   },
 }));
-mock.module("@vellumai/electron-desktop/floating-window", () => ({
+mock.module("@mycadet/electron-desktop/floating-window", () => ({
   createFloatingWindow: ({ kind }: { kind: string }) => {
     const win = new FakeWindow();
     windows.set(kind, win);

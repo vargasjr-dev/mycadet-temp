@@ -15,9 +15,9 @@ import { CircleCheck } from "lucide-react";
 import { ChatAvatar } from "@/components/avatar/chat-avatar";
 import { useActiveAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { ProgressBar } from "@vellumai/design-library/components/progress-bar";
+import { Button } from "@mycadet/design-library/components/button";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { ProgressBar } from "@mycadet/design-library/components/progress-bar";
 
 import type { TeleportPhase } from "./teleport-types";
 

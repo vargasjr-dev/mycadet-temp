@@ -36,7 +36,7 @@ mock.module("../../ipc/gateway-client.js", () => ({
   resetPersistentClient: () => {},
 }));
 
-import type { TrustVerdict } from "@vellumai/gateway-client";
+import type { TrustVerdict } from "@mycadet/gateway-client";
 
 import { _clearCacheForTesting } from "../channel-admission-reader.js";
 import {

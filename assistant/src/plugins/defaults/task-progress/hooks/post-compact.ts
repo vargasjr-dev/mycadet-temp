@@ -1,7 +1,7 @@
 import {
   type HookFunction,
   type PostCompactContext,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import { applyTaskProgressContext } from "../src/apply-task-progress-context.js";
 

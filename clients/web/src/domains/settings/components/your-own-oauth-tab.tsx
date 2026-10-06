@@ -20,11 +20,11 @@ import type {
 } from "@/generated/daemon/types.gen";
 import { useTranslation } from "@/i18n";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { Input } from "@vellumai/design-library/components/input";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { Input } from "@mycadet/design-library/components/input";
+import { toast } from "@mycadet/design-library/components/toast";
 
 type OAuthApp = OauthAppsGetResponses[200]["apps"][number];
 type OAuthAppConnection =
@@ -116,9 +116,7 @@ export function YourOwnTab({
       setClientId("");
       setClientSecret("");
       setIsShowingAddAppForm(false);
-      toast.success(
-        t("yourOwnOauthTab.appAddedToast", { name: displayName }),
-      );
+      toast.success(t("yourOwnOauthTab.appAddedToast", { name: displayName }));
     },
     onError: (err) => {
       toast.error(err.message || t("yourOwnOauthTab.createFailedToast"));

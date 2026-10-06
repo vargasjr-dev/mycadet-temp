@@ -42,11 +42,11 @@ import { checkoutReturnTarget } from "@/lib/billing/checkout-return-target";
 import { useTranslation } from "@/i18n";
 import { openUrl, openUrlFinishedListener } from "@/runtime/browser";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { toast } from "@vellumai/design-library/components/toast";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { toast } from "@mycadet/design-library/components/toast";
+import { Typography } from "@mycadet/design-library/components/typography";
 import {
   TIER_CHANGE_ELIGIBLE_STATUSES,
   extractMutationError,

@@ -13,7 +13,7 @@ import { t } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { schedulesListQueryOptions } from "@/utils/schedules";
 import { useEffectiveTimezone } from "@/utils/use-effective-timezone";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 export interface SchedulesData {
   recurring: Schedule[];

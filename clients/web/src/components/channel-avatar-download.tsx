@@ -5,7 +5,7 @@ import { fetchAvatarImageUrlResult } from "@/assistant/avatar-api";
 import { useTranslation } from "@/i18n";
 import { trackBlobUrl } from "@/lib/blob-url-tracker";
 import type { BotSetupChannel } from "@/types/channel-types";
-import { Button, Typography } from "@vellumai/design-library";
+import { Button, Typography } from "@mycadet/design-library";
 
 /** Side of the square preview, large enough to judge the image by. */
 const PREVIEW_PX = 64;

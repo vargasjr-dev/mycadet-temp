@@ -17,7 +17,7 @@ import {
   type SubagentTimelineEvent,
 } from "@/domains/chat/subagent-store";
 import { useViewerStore } from "@/stores/viewer-store";
-import type { SubagentStatus } from "@vellumai/assistant-api";
+import type { SubagentStatus } from "@mycadet/assistant-api";
 
 const NOW = 1700000000000;
 

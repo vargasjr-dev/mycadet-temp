@@ -15,7 +15,7 @@ import { cleanup, render } from "@testing-library/react";
 
 import { SubagentAvatarBadge } from "@/components/avatar/subagent-avatar-badge";
 import { useSubagentStore } from "@/domains/chat/subagent-store";
-import type { SubagentStatus } from "@vellumai/assistant-api";
+import type { SubagentStatus } from "@mycadet/assistant-api";
 
 const NOW = 1700000000000;
 

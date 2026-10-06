@@ -2,7 +2,7 @@ import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState, type MouseEvent, type ReactNode } from "react";
 
-import { Button, Typography } from "@vellumai/design-library";
+import { Button, Typography } from "@mycadet/design-library";
 
 import { HeaderStepCarousel } from "@/domains/chat/components/tool-progress-card/header-step-carousel";
 
@@ -21,7 +21,11 @@ import { HeaderStepCarousel } from "@/domains/chat/components/tool-progress-card
  * the two semantics can diverge visually later without a prop break.
  */
 export type ToolProgressCardState =
-  "loading" | "complete" | "warning" | "denied" | "error";
+  | "loading"
+  | "complete"
+  | "warning"
+  | "denied"
+  | "error";
 
 export interface ToolProgressCardShellProps {
   /**

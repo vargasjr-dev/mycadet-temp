@@ -8,9 +8,9 @@ import {
 import type { FC, KeyboardEvent, MouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { usePortalContainer } from "@vellumai/design-library/utils/portal-container";
+import { usePortalContainer } from "@mycadet/design-library/utils/portal-container";
 
-import { Button, Typography } from "@vellumai/design-library";
+import { Button, Typography } from "@mycadet/design-library";
 
 import { PreviewModalHeader } from "@/domains/chat/components/preview-modal-header";
 

@@ -6,7 +6,7 @@ import { useTranscriptMessages } from "@/domains/chat/transcript/use-transcript-
 import type { PaginatedHistoryResult } from "@/domains/chat/transcript/types";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import type { AssistantEvent } from "@/types/event-types";
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 function textRow(id: string, text: string): DisplayMessage {
   return {

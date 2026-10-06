@@ -4,7 +4,7 @@ import {
   resolvePairedGatewayProxyTarget,
   sanitizePairedForwardHeaders,
   type PairedGuardianTokenProvider,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 import {
   fetchForwardPlanWithRetry,

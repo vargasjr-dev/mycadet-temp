@@ -2,7 +2,7 @@
  * Shared IPC contracts for assistant-to-gateway gateway-owned reads.
  */
 
-import { CHANNEL_IDS } from "@vellumai/service-contracts/channels";
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
 import { RiskThresholdSchema } from "./channel-permission-contract.js";

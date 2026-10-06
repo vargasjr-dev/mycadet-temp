@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { FEEDBACK_DIAGNOSTICS, FEEDBACK_LOGS } from "@vellumai/ipc-contract";
+import { FEEDBACK_DIAGNOSTICS, FEEDBACK_LOGS } from "@mycadet/ipc-contract";
 
 import type { FeedbackDependencies, FeedbackIpc } from "./diagnostics-contract";
 import { redactText, REDACTION_VERSION } from "./redact";
@@ -115,9 +115,7 @@ export function installFeedbackIpc(): void {
   }
   installed = true;
 
-  handle(FEEDBACK_DIAGNOSTICS, z.tuple([]), () =>
-    collectDiagnostics(),
-  );
+  handle(FEEDBACK_DIAGNOSTICS, z.tuple([]), () => collectDiagnostics());
 
   handle(FEEDBACK_LOGS, z.tuple([]), () => collectRedactedLogs());
 }

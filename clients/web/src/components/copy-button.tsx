@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 interface CopyButtonProps {
   /**

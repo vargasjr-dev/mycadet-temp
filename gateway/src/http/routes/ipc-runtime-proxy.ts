@@ -15,7 +15,7 @@
 import {
   routeAdmitsTrustClass,
   tokenMayReachRoute,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import {

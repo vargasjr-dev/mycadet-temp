@@ -6,7 +6,7 @@ import type {
   AcpSessionModelUpdateEvent,
   AcpSessionCompletedEvent,
   AcpSessionErrorEvent,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import { useAcpRunStore } from "@/domains/chat/acp-run-store";
 import { useInteractionStore } from "@/domains/chat/interaction-store";

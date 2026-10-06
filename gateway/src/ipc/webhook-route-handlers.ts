@@ -7,7 +7,7 @@
  * remove what was claimed while the flag was on.
  *
  * The request and response shapes are the shared contract in
- * `@vellumai/gateway-client`, which the daemon reads the other end of.
+ * `@mycadet/gateway-client`, which the daemon reads the other end of.
  */
 
 import {
@@ -16,7 +16,7 @@ import {
   type RegisterWebhookRouteIpcResponse,
   UnregisterWebhookRouteIpcParamsSchema,
   type UnregisterWebhookRouteIpcResponse,
-} from "@vellumai/gateway-client/gateway-ipc-contracts";
+} from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import {
   listWebhookIngressRoutes,

@@ -20,7 +20,7 @@ import { useState } from "react";
 
 import { Bolt } from "lucide-react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { ExternalAnchor } from "@/components/external-anchor";
 import type { IconName } from "@/domains/chat/components/tool-progress-card/derive-step-label";

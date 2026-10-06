@@ -1,4 +1,4 @@
-import { Button, Notice } from "@vellumai/design-library";
+import { Button, Notice } from "@mycadet/design-library";
 import { Loader2 } from "lucide-react";
 import { useLayoutEffect, type RefObject } from "react";
 

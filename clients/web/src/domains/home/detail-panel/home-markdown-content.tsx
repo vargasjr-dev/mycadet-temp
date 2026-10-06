@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { ExternalAnchor } from "@/components/external-anchor";
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 
 import { decodeLiteralLineBreaks } from "../decode-literal-line-breaks";
 

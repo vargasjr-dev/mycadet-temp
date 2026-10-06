@@ -34,7 +34,7 @@ describe("isRepoCheckoutPath", () => {
   test("an installed package is not a checkout", () => {
     expect(
       isRepoCheckoutPath(
-        "/Users/x/Library/Application Support/@vellumai/macos/cli/latest/node_modules/@vellumai/assistant/src/index.ts",
+        "/Users/x/Library/Application Support/@mycadet/macos/cli/latest/node_modules/@mycadet/assistant/src/index.ts",
       ),
     ).toBe(false);
   });

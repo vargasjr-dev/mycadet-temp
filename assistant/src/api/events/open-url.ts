@@ -7,7 +7,7 @@
  * detection, an OAuth popup, or `window.open`, depending on the URL shape.
  *
  * Canonical wire-contract source. Assistant code imports the type directly
- * from this file; external consumers import via `@vellumai/assistant-api`.
+ * from this file; external consumers import via `@mycadet/assistant-api`.
  *
  * `conversationId` is optional: emit sites with a conversation context
  * (OAuth orchestrator, conversation-scoped tools) should set it on the

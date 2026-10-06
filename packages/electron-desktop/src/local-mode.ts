@@ -30,14 +30,14 @@ import {
   type TokenResult,
   type UpgradeOptions,
   type WakeOptions,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 import type {
   LocalListDevicesResult,
   LocalPairingPollResult,
   LocalPairingStartResult,
   LocalReadAssistantAvatarResult,
   LocalRevokeDeviceResult,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import { capabilityToken } from "./capability-registry";
 import type { IpcHandle } from "./ipc";
 
@@ -45,7 +45,7 @@ import type { IpcHandle } from "./ipc";
  * Local-mode host bridge: provisions and retires local assistants and reads
  * and writes the lockfile, exposed to the renderer as `window.vellum.localMode.*`.
  *
- * Lifecycle ops delegate to `@vellumai/local-mode`, the shared host library
+ * Lifecycle ops delegate to `@mycadet/local-mode`, the shared host library
  * that also backs the web app's dev-server middleware
  * (`clients/web/vite-plugin-local-mode.ts`). The CLI is driven as a subprocess
  * rather than imported in-process so the CLI's own dependency tree never

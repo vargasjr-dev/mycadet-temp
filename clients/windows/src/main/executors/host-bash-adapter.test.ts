@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import os from "node:os";
 
-import { HostProxyPoster } from "@vellumai/electron-desktop/host-proxy/poster";
-import { __testing as executorTesting } from "@vellumai/electron-desktop/host-proxy/executors/host-shell-executor";
+import { HostProxyPoster } from "@mycadet/electron-desktop/host-proxy/poster";
+import { __testing as executorTesting } from "@mycadet/electron-desktop/host-proxy/executors/host-shell-executor";
 
 import { createWindowsHostBashExecutor } from "./host-bash-adapter";
 

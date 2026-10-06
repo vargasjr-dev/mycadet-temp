@@ -4,7 +4,7 @@ import { setSelectedAssistant } from "@/assistant/selection";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import { CreatureCorners, WizardCardHeading } from "./primitives";
 import { takeoverCopy, type TakeoverDirection } from "./takeover-copy";

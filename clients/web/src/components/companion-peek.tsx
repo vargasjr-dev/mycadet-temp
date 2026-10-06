@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 
 import { AnimatedAvatar } from "@/components/avatar/animated-avatar";
-import type { CompanionCharacter } from "@vellumai/ipc-contract";
+import type { CompanionCharacter } from "@mycadet/ipc-contract";
 import { BUNDLED_COMPONENTS } from "@/utils/avatar-bundled-components";
 import {
   avatarPeekMetrics,

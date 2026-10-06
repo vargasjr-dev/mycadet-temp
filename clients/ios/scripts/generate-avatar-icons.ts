@@ -11,7 +11,7 @@
  *
  * Rasterizing the icons needs the native `@resvg/resvg-js` binding, so the
  * assistant package's dependencies have to be installed first:
- * `bun install --filter=@vellumai/assistant`.
+ * `bun install --filter=@mycadet/assistant`.
  *
  * Every run deletes and recreates the whole catalog, and the output is
  * deterministic, so regenerating an unchanged catalog produces byte-identical

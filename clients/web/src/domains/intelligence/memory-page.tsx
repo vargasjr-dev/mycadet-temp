@@ -12,7 +12,7 @@ import { memoryGraphOptions } from "@/domains/intelligence/memory-graph/get-memo
 import { memoryStatsOptions } from "@/domains/intelligence/memory-graph/get-memory-stats";
 import { emitMemoryEvent } from "@/domains/intelligence/memory-telemetry";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 interface MemoryPageProps {
   onOpenThread?: (message: string) => void;

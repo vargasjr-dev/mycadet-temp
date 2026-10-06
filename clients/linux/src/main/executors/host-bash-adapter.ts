@@ -3,12 +3,12 @@
  * bash via the shared host shell executor.
  */
 
-import type { HostProxyExecutor } from "@vellumai/electron-desktop/host-proxy/router";
+import type { HostProxyExecutor } from "@mycadet/electron-desktop/host-proxy/router";
 import {
   createHostShellExecutor,
   type HostShellSpec,
-} from "@vellumai/electron-desktop/host-proxy/executors/host-shell-executor";
-import { buildShellInvocation } from "@vellumai/environments/shell";
+} from "@mycadet/electron-desktop/host-proxy/executors/host-shell-executor";
+import { buildShellInvocation } from "@mycadet/environments/shell";
 
 const createBashSpec = (): HostShellSpec => ({
   buildSpawn: (command) => {

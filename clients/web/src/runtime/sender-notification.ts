@@ -18,7 +18,7 @@ import {
   type NotificationSender,
   type PrepareNotificationIdentityPayload,
   type ResetNotificationIdentitiesPayload,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { setNotificationIdentityNativeAdapter } from "@/runtime/notification-avatar";
 
@@ -35,8 +35,7 @@ interface SenderNotificationCapabilities {
   capabilities?: unknown;
 }
 
-export interface SenderNotificationPostRequest
-  extends NotificationDeliveryIdentifiers {
+export interface SenderNotificationPostRequest extends NotificationDeliveryIdentifiers {
   id: number;
   title: string;
   body: string;
@@ -57,9 +56,7 @@ interface SenderNotificationPlugin {
   prepare(
     payload: PrepareNotificationIdentityPayload,
   ): Promise<{ ok?: boolean }>;
-  reset(
-    payload: ResetNotificationIdentitiesPayload,
-  ): Promise<{ ok?: boolean }>;
+  reset(payload: ResetNotificationIdentitiesPayload): Promise<{ ok?: boolean }>;
   post(
     payload: SenderNotificationPostRequest,
   ): Promise<NotificationDeliveryResult>;
@@ -160,9 +157,7 @@ function normalizeCapabilities(
   return new Set(result.capabilities);
 }
 
-async function beforeOwnershipCapabilities(): Promise<
-  ReadonlySet<string> | null
-> {
+async function beforeOwnershipCapabilities(): Promise<ReadonlySet<string> | null> {
   if (!isBridgeRegistered()) {
     return null;
   }
@@ -196,7 +191,9 @@ async function callPreparedIdentityMethod(
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     await Promise.race([
-      Promise.resolve().then(call).catch(() => undefined),
+      Promise.resolve()
+        .then(call)
+        .catch(() => undefined),
       new Promise<void>((resolve) => {
         timer = setTimeout(resolve, watchdogMs);
       }),

@@ -8,7 +8,7 @@ import { resolveQdrantUrl as resolveQdrantUrlWithConfig } from "../../../persist
 
 /**
  * Memory-internal accessor for the embeddings operations that stay off
- * `@vellumai/plugin-api` (the self-contained ops live there — see
+ * `@mycadet/plugin-api` (the self-contained ops live there — see
  * `persistence/embeddings/plugin-facade.ts`).
  *
  * `embedWithBackend` keeps its `config` parameter — it is a primitive whose

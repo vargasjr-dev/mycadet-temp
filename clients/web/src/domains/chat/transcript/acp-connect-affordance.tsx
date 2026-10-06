@@ -1,5 +1,5 @@
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
 import { Check, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 

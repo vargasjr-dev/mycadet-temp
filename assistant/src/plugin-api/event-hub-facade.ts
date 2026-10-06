@@ -1,6 +1,6 @@
 /**
  * Capability-restricted view of the assistant event hub handed to workspace
- * plugins through `@vellumai/plugin-api`.
+ * plugins through `@mycadet/plugin-api`.
  *
  * Plugins receive this facade instead of the raw {@link AssistantEventHub}
  * singleton. It exposes only the operations a plugin legitimately needs —

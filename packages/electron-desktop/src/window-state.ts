@@ -11,7 +11,7 @@ import {
   type CompanionSize,
   type CompanionSizeAxis,
   type TitleBarOverlayTheme,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /**
  * Window-geometry persistence. Kept in its own `electron-store` instance

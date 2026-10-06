@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Disclosure } from "@vellumai/design-library/components/disclosure";
-import { Select } from "@vellumai/design-library/components/select";
-import { Input } from "@vellumai/design-library/components/input";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Disclosure } from "@mycadet/design-library/components/disclosure";
+import { Select } from "@mycadet/design-library/components/select";
+import { Input } from "@mycadet/design-library/components/input";
+import { Typography } from "@mycadet/design-library/components/typography";
 import { Loader2 } from "lucide-react";
 
 import type { ConnectionProvider } from "@/generated/daemon/types.gen";

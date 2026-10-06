@@ -1,4 +1,4 @@
-import { cn } from "@vellumai/design-library/utils/cn";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 import { Trans, type TFunction, useTranslation } from "@/i18n";
 

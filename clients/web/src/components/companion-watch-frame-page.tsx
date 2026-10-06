@@ -63,7 +63,7 @@ import {
 import type {
   CompanionSurfaceState,
   WatchCaptureTarget,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /**
  * What the frame is around, as the one thing the label has to say.

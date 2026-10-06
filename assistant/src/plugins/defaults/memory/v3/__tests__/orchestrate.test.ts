@@ -25,7 +25,7 @@ import {
   test,
 } from "bun:test";
 
-import type { Message, Provider, ProviderResponse } from "@vellumai/plugin-api";
+import type { Message, Provider, ProviderResponse } from "@mycadet/plugin-api";
 
 import { runWithLatencySubSpans } from "../../../../../daemon/turn-latency-sub-spans.js";
 import {
@@ -49,8 +49,8 @@ import type { MemoryRoutingTurn, SectionIndex, Slug } from "../types.js";
 
 let providerStub: Provider | null = null;
 
-const realPluginApi = await import("@vellumai/plugin-api");
-mock.module("@vellumai/plugin-api", () => ({
+const realPluginApi = await import("@mycadet/plugin-api");
+mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,
   getConfiguredProvider: async () => providerStub,
 }));

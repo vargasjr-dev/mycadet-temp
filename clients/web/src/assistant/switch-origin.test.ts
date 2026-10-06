@@ -9,7 +9,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { parseRemoteWebPairingParams } from "@vellumai/service-contracts/remote-web-pairing";
+import { parseRemoteWebPairingParams } from "@mycadet/service-contracts/remote-web-pairing";
 
 import type { RememberedOrigin } from "@/stores/remembered-origins-store";
 

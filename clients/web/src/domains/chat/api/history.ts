@@ -31,7 +31,7 @@ import type { BackgroundTaskEntry } from "@/domains/chat/background-task-store";
 import {
   ModeSessionDescriptorSchema,
   type ModeSessionDescriptor,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 export type { PaginatedHistoryResult };
 

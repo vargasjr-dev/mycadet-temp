@@ -12,7 +12,7 @@
  * renders a sensible control rather than nothing.
  */
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { PanelRight } from "lucide-react";
 
 import type { ChannelSidecarTarget } from "@/domains/chat/channel-sidecar/channel-sidecar-transcript";
@@ -29,8 +29,7 @@ export function ChannelThreadControl({ target }: ChannelThreadControlProps) {
   const { t } = useTranslation("chat");
   const isMobile = useIsMobile();
   const mainView = useViewerStore.use.mainView();
-  const activeChannelTranscript =
-    useViewerStore.use.activeChannelTranscript();
+  const activeChannelTranscript = useViewerStore.use.activeChannelTranscript();
 
   const isOpen =
     mainView === "channel-transcript" &&

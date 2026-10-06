@@ -1,4 +1,4 @@
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { t } from "@/i18n";

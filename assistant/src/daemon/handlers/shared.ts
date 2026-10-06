@@ -1,7 +1,7 @@
 import {
   neutralizeRedactedSentinels,
   SENTINEL_REDACTION_VERSION,
-} from "@vellumai/service-contracts/redacted-credential";
+} from "@mycadet/service-contracts/redacted-credential";
 import { v4 as uuid } from "uuid";
 import { z } from "zod";
 

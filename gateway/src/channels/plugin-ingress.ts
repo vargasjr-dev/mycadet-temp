@@ -129,7 +129,7 @@ export const IngressRouteSchema = z.object({
    * case that forced it: a third party dialing a socket has no place to put a
    * header. The tradeoff is that such a URL is a bearer credential until it
    * expires, which is why it carries an expiry the minter chooses and the
-   * scheme bounds (`@vellumai/service-contracts/plugin-ingress-handshake`).
+   * scheme bounds (`@mycadet/service-contracts/plugin-ingress-handshake`).
    *
    * WebSocket only. An HTTP route declaring it is rejected: an HTTP request
    * always has somewhere to put a header, so the weaker scheme would buy

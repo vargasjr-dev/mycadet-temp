@@ -21,7 +21,7 @@
 import {
   botProviderForChannel,
   CHANNEL_BOT_PROVIDER,
-} from "@vellumai/service-contracts/channels";
+} from "@mycadet/service-contracts/channels";
 import type { Command } from "commander";
 
 import { subcommand } from "../../lib/cli-command-help.js";

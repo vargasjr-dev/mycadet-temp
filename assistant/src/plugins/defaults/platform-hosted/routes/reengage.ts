@@ -29,7 +29,7 @@ import {
   getWorkspaceDir,
   listConversations,
   runConversationTurn,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 // ---------------------------------------------------------------------------
 // Output location — the plugin's own data directory

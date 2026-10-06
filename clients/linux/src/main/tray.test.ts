@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { Lockfile } from "@vellumai/local-mode/contract";
+import type { Lockfile } from "@mycadet/local-mode/contract";
 
 const trayIcon = { isEmpty: () => false };
 mock.module("electron", () => ({
@@ -17,7 +17,7 @@ let currentLockfile: Lockfile = {
   activeAssistant: "assistant-1",
 };
 const getWatchedLockfile = mock(() => currentLockfile);
-mock.module("@vellumai/electron-desktop/lockfile-watcher", () => ({
+mock.module("@mycadet/electron-desktop/lockfile-watcher", () => ({
   getWatchedLockfile,
 }));
 
@@ -35,16 +35,16 @@ type TrayRuntime = {
   icon: (icon: string) => unknown;
 };
 let trayRuntime: TrayRuntime | null = null;
-mock.module("@vellumai/electron-desktop/status-icon", () => ({
+mock.module("@mycadet/electron-desktop/status-icon", () => ({
   configureStatusIconFallback: () => undefined,
 }));
-mock.module("@vellumai/electron-desktop/window-state", () => ({
+mock.module("@mycadet/electron-desktop/window-state", () => ({
   readOnboardingActive: () => false,
 }));
-mock.module("@vellumai/electron-desktop/about", () => ({
+mock.module("@mycadet/electron-desktop/about", () => ({
   openAboutWindow: () => undefined,
 }));
-mock.module("@vellumai/electron-desktop/commands", () => ({
+mock.module("@mycadet/electron-desktop/commands", () => ({
   acceleratorOption: (kind: string) =>
     kind === "newConversation" ? { accelerator: "CmdOrCtrl+N" } : {},
 }));
@@ -52,7 +52,7 @@ const themedIcon = { dark: false };
 mock.module("./menu-icon", () => ({
   menuIcon: () => () => themedIcon,
 }));
-mock.module("@vellumai/electron-desktop/tray-model", () => ({
+mock.module("@mycadet/electron-desktop/tray-model", () => ({
   configureTrayModel: (runtime: TrayRuntime) => {
     trayRuntime = runtime;
   },

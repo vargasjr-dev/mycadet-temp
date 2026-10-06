@@ -10,7 +10,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { VerificationSessionWire } from "@vellumai/gateway-client";
+import type { VerificationSessionWire } from "@mycadet/gateway-client";
 
 type IpcCall = { method: string; params?: Record<string, unknown> };
 

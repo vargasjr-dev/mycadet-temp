@@ -16,7 +16,7 @@ import { assertProvisionSuccess } from "@/domains/settings/ai/utils";
 import { t } from "@/i18n";
 import { secretsPost } from "@/generated/daemon/sdk.gen";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 // ---------------------------------------------------------------------------
 // useProvisionProviderKey — API key provisioning

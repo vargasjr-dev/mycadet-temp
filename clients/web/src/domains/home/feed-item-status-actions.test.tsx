@@ -13,7 +13,7 @@
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import type { FeedItem } from "@vellumai/assistant-api";
+import type { FeedItem } from "@mycadet/assistant-api";
 
 import { feedItem } from "./feed-test-fixtures";
 import { FeedItemStatusActions } from "./feed-item-status-actions";

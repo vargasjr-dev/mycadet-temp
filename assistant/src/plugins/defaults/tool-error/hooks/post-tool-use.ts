@@ -29,7 +29,7 @@ import type {
   HookFunction,
   Message,
   PostToolUseContext,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 /**
  * Canonical tool-error coaching text. Kept as a module-level constant so tests

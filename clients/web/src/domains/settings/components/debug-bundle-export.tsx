@@ -13,8 +13,8 @@ import {
   useSupportsDebugExportProfile,
 } from "@/lib/backwards-compat/use-supports-debug-export-profile";
 import { getLocalGatewayUrl, getSelectedAssistant } from "@/lib/local-mode";
-import { Button } from "@vellumai/design-library/components/button";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { toast } from "@mycadet/design-library/components/toast";
 
 const POLL_INTERVAL_MS = 2_000;
 // Matches the daemon's own upload deadline (EXPORT_TO_GCS_PUT_TIMEOUT_MS), so

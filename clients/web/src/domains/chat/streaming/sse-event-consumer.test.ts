@@ -5,7 +5,7 @@ import {
   getLocalSeq,
   recordLocalSeq,
 } from "@/lib/streaming/local-seq";
-import { SSE_REPLAY_RING_COUNT_LIMIT } from "@vellumai/assistant-api";
+import { SSE_REPLAY_RING_COUNT_LIMIT } from "@mycadet/assistant-api";
 import type { AssistantEvent } from "@/types/event-types";
 
 let mockStreamEpoch = 7;

@@ -16,8 +16,8 @@ import {
 } from "react-router";
 import { Loader2, Plus } from "lucide-react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { useIntelligenceLayoutSlotsStore } from "@/components/layout/intelligence-layout-slots-store";
 import { SideListDrawer, SideListTrigger } from "@/components/side-list-drawer";

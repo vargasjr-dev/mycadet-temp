@@ -15,7 +15,7 @@ import {
   type BiometricCapability,
 } from "@/runtime/native-biometric";
 import { useIsNativeIOS } from "@/runtime/platform-detection";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 export function BiometricSettingsCard() {
   const { t } = useTranslation("settings");

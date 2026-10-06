@@ -9,8 +9,8 @@ import {
 } from "@/generated/api/@tanstack/react-query.gen";
 import { useTranslation } from "@/i18n";
 import { useEnvironmentStore } from "@/stores/environment-store";
-import { Button } from "@vellumai/design-library/components/button";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { toast } from "@mycadet/design-library/components/toast";
 
 const PRESET_SECONDS = [
   0, 300, 600, 3600, 10800, 86400, 259200, 604800, 1209600, 2592000,

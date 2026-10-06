@@ -23,7 +23,7 @@
 import type {
   ConversationDeletedContext,
   HookFunction,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import { removeSkillUpdateReceiptEntriesForConversation } from "../../../../persistence/jobs-store.js";
 import { purgeConversationMemoryTables } from "../conversation-memory-purge.js";

@@ -2,7 +2,7 @@
 // Memory Tool definitions for agentic recall and remember.
 // ---------------------------------------------------------------------------
 
-import { toToolInputSchema } from "@vellumai/plugin-api";
+import { toToolInputSchema } from "@mycadet/plugin-api";
 
 import { RememberInputSchema } from "../../../../api/remember-tool.js";
 import { RecallInputSchema } from "../context-search/recall-input.js";

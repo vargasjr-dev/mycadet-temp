@@ -26,7 +26,7 @@ import type {
   ConversationContentBlock,
   ConversationMessage,
   ConversationMessageToolCall,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 function wireMessage(
   overrides: Partial<ConversationMessage>,

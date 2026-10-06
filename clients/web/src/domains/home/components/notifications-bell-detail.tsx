@@ -9,8 +9,8 @@ import {
   isPendingGuardianFeedItem,
   type FeedItem,
   type FeedItemStatus,
-} from "@vellumai/assistant-api";
-import { Button, Tag, Typography } from "@vellumai/design-library";
+} from "@mycadet/assistant-api";
+import { Button, Tag, Typography } from "@mycadet/design-library";
 
 import { HomeGenericDetail } from "../detail-panel/home-generic-detail";
 import { HomeGuardianRequestCard } from "../detail-panel/home-guardian-request-card";

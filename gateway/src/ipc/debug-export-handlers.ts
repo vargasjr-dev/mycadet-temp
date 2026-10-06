@@ -14,7 +14,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { GatewayDebugExportIpcParamsSchema } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import { GatewayDebugExportIpcParamsSchema } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import type { GatewayConfig } from "../config.js";
 import { snapshotGatewayDb } from "../db/connection.js";

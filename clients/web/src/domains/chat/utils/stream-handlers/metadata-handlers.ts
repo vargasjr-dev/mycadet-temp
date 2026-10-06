@@ -6,7 +6,7 @@ import type {
   CompactionCircuitOpenEvent,
   ContextWindowUsageEvent,
   UsageUpdateEvent,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 /**
  * Apply a context-window measurement to the indicator: the live conversation

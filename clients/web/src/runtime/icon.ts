@@ -1,5 +1,5 @@
 import { isElectron } from "@/runtime/is-electron";
-import type { CompanionCharacter } from "@vellumai/ipc-contract";
+import type { CompanionCharacter } from "@mycadet/ipc-contract";
 
 /**
  * Per-capability wrapper for the Electron host's app-icon surfaces (the macOS

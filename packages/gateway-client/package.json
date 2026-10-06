@@ -1,5 +1,5 @@
 {
-  "name": "@vellumai/gateway-client",
+  "name": "@mycadet/gateway-client",
   "version": "0.0.1",
   "private": true,
   "license": "MIT",
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@slack/types": "2.22.0",
-    "@vellumai/service-contracts": "workspace:*",
+    "@mycadet/service-contracts": "workspace:*",
     "zod": "4.3.6"
   },
   "devDependencies": {

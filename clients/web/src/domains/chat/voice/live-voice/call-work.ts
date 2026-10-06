@@ -14,7 +14,7 @@ import {
   VOICE_ACTIVITY_WORK_MAX,
   VOICE_ACTIVITY_WORK_TEXT_MAX,
   type VoiceActivityWork,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { computeSubagentSteps } from "@/domains/chat/hooks/use-subagent-card-data";
 import type { SubagentEntry } from "@/domains/chat/subagent-store";

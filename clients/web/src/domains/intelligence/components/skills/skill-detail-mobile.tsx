@@ -21,7 +21,7 @@ import {
 } from "@/hooks/use-skill-detail-files";
 import { useTranslation } from "@/i18n";
 import { isRemovableSkill } from "@/utils/skills";
-import { Button, Card, Menu } from "@vellumai/design-library";
+import { Button, Card, Menu } from "@mycadet/design-library";
 import { SkillIcon } from "@/components/skill-icon";
 import { SkillFileContent } from "./skill-file-content";
 import { SkillOriginBadge } from "./skill-origin-badge";

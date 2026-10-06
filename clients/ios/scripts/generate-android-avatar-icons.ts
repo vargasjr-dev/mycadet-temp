@@ -10,7 +10,7 @@
  *
  * Measuring where an eye pair's artwork actually reaches needs the native
  * `@resvg/resvg-js` binding, so the assistant package's dependencies have to be
- * installed first: `bun install --filter=@vellumai/assistant`.
+ * installed first: `bun install --filter=@mycadet/assistant`.
  *
  * Every run deletes and rewrites the whole owned set, and the output is
  * deterministic, so regenerating unchanged resources produces byte-identical

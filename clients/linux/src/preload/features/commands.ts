@@ -3,14 +3,14 @@ import { ipcRenderer } from "electron";
 import type {
   BridgeCapabilityRegistry,
   CapabilityModule,
-} from "@vellumai/electron-desktop/capability-registry";
-import { createHotkeysBridge } from "@vellumai/electron-desktop/preload";
+} from "@mycadet/electron-desktop/capability-registry";
+import { createHotkeysBridge } from "@mycadet/electron-desktop/preload";
 import {
   MENU_POPUP,
   MENU_SET_PLATFORM_SESSION,
   MENU_TITLES,
   type VellumBridge,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 const commandsFeature: CapabilityModule<
   BridgeCapabilityRegistry<VellumBridge>

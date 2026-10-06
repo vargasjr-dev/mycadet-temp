@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * @vellumai/credential-executor
+ * @mycadet/credential-executor
  *
  * Credential Execution Service (CES) — an isolated runtime that stores and
  * serves credentials on behalf of the assistant daemon over RPC. The CES owns

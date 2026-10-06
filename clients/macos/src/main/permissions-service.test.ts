@@ -127,11 +127,11 @@ let nativeShowError: Error | null = null;
 const nativePosts: NotifierRequest[] = [];
 const resolveNotificationAvatarPath = mock(() => "/tmp/avatar.png");
 
-mock.module("@vellumai/electron-desktop/notification-avatar-path", () => ({
+mock.module("@mycadet/electron-desktop/notification-avatar-path", () => ({
   resolveNotificationAvatarPath,
 }));
 
-mock.module("@vellumai/electron-desktop/notifications", () => ({
+mock.module("@mycadet/electron-desktop/notifications", () => ({
   isPreparedNotificationSenderCurrent: (identity: { scopeId: string }) =>
     preparedSenderCurrent && /^scope:v1:[a-f0-9]{64}$/.test(identity.scopeId),
 }));

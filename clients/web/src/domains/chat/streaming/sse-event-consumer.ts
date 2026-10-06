@@ -101,7 +101,7 @@
 import {
   SSE_REPLAY_RING_AGE_LIMIT_MS,
   SSE_REPLAY_RING_COUNT_LIMIT,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import { useStreamStore } from "@/domains/chat/stream-store";
 import { isConversationScopedStreamEvent } from "@/domains/chat/utils/chat";
@@ -127,7 +127,7 @@ import type { AssistantEvent } from "@/types/event-types";
 /**
  * Narrow input shape — only the three envelope fields the consumer
  * actually reads. The bus delivers `AssistantEventEnvelope` (from
- * `@vellumai/assistant-api`), which is covariant with this shape, so
+ * `@mycadet/assistant-api`), which is covariant with this shape, so
  * the hook can pass the full envelope through unchanged. Keeping the
  * input type narrow here means test fixtures can build partial
  * envelopes without lying about full-shape with a double-cast.

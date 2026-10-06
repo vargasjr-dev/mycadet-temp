@@ -1,8 +1,8 @@
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
-import { installDownloads } from "@vellumai/electron-desktop/downloads";
+} from "@mycadet/electron-desktop/capability-registry";
+import { installDownloads } from "@mycadet/electron-desktop/downloads";
 
 import { handle } from "../ipc.client";
 

@@ -1,6 +1,6 @@
 import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import {
   AnimatedStatSquare,

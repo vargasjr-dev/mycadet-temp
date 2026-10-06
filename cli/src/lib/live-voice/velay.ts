@@ -28,7 +28,7 @@
  * mint again rather than reuse what resolution returned.
  */
 
-import { velayHostForPlatformHost } from "@vellumai/service-contracts/ingress";
+import { velayHostForPlatformHost } from "@mycadet/service-contracts/ingress";
 
 import { authHeaders } from "../platform-client.js";
 

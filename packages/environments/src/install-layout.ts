@@ -2,7 +2,7 @@
  * Reading the layout a Vellum runtime is installed in.
  *
  * The daemon is started either from a developer's repo checkout or from an
- * installed npm package (`<install>/node_modules/@vellumai/assistant/src/
+ * installed npm package (`<install>/node_modules/@mycadet/assistant/src/
  * index.ts`, which is what the desktop app runs). The CLI needs the layout to
  * decide whether a launch is a dev run and what to put on the daemon's PATH;
  * the daemon needs it to decide what to install as the `assistant` command.

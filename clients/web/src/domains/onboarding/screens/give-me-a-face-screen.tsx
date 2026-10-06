@@ -39,7 +39,7 @@ import { useUnscopedManagedVoices } from "@/lib/tts/use-managed-voices";
 import { randomCharacterTraits } from "@/utils/avatar-random";
 import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 import type { CharacterTraits } from "@/types/avatar";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 import { useTranslation } from "@/i18n";
 
 export interface GiveMeAFaceValues {

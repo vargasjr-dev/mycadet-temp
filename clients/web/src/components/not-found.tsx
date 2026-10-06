@@ -2,7 +2,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useNavigate } from "react-router";
 
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import { useTranslation } from "@/i18n";
 import { routes } from "@/utils/routes";

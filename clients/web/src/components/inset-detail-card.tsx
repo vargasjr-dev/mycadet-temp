@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Card, Typography, cn } from "@vellumai/design-library";
+import { Card, Typography, cn } from "@mycadet/design-library";
 
 /**
  * A details card sized for **inset** contexts: inside a sidepanel body, a

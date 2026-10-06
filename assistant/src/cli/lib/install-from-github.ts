@@ -1094,7 +1094,7 @@ async function applyAdapterStub(
 }
 
 /**
- * Default `@vellumai/plugin-api` peer-dependency range stamped onto an adapted
+ * Default `@mycadet/plugin-api` peer-dependency range stamped onto an adapted
  * plugin that doesn't already declare one.
  */
 const PLUGIN_API_PEER_RANGE = ">=0.8.0";
@@ -1127,7 +1127,7 @@ function readPackageJson(path: string): PackageManifest | null {
  * adapter has run we rebuild the manifest from the upstream `package.json`
  * captured before the overlay — preserving its `version`, `description`,
  * `license`, and every other field — and mutate only what the Vellum loader
- * requires: `name` must equal the install directory, and `@vellumai/plugin-api`
+ * requires: `name` must equal the install directory, and `@mycadet/plugin-api`
  * must be declared as a peer dependency. The spent `postinstall` script is
  * dropped so the installed plugin carries no install-time machinery.
  *
@@ -1146,14 +1146,14 @@ function normalizeInstalledManifest(
     typeof base.peerDependencies === "object" && base.peerDependencies !== null
       ? (base.peerDependencies as Record<string, unknown>)
       : {};
-  const existingRange = peer["@vellumai/plugin-api"];
+  const existingRange = peer["@mycadet/plugin-api"];
 
   const manifest: PackageManifest = {
     ...base,
     name,
     peerDependencies: {
       ...peer,
-      "@vellumai/plugin-api":
+      "@mycadet/plugin-api":
         typeof existingRange === "string"
           ? existingRange
           : PLUGIN_API_PEER_RANGE,
@@ -1181,7 +1181,7 @@ function normalizeInstalledManifest(
  *
  * Used by both the GitHub clone path and the platform tarball path. The
  * synthesized manifest carries the install name and the default
- * `@vellumai/plugin-api` peer dependency range. No foreign-ecosystem
+ * `@mycadet/plugin-api` peer dependency range. No foreign-ecosystem
  * manifest data is read: the install name is the only identity we trust
  * when upstream ships no Vellum package.json.
  */
@@ -1195,7 +1195,7 @@ export function synthesizeMinimalPackageJson(
     name,
     version: "0.0.0",
     peerDependencies: {
-      "@vellumai/plugin-api": PLUGIN_API_PEER_RANGE,
+      "@mycadet/plugin-api": PLUGIN_API_PEER_RANGE,
     },
   };
 

@@ -83,7 +83,7 @@ const {
   resolveAuthCallbackScheme,
   resolveRegisteredSchemes,
 } = await import("./deep-links");
-const { resolveEnvironmentName } = await import("@vellumai/local-mode");
+const { resolveEnvironmentName } = await import("@mycadet/local-mode");
 
 const allowedEvent = {};
 

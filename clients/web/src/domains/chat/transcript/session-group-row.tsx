@@ -7,7 +7,7 @@ import {
   Waves,
   type LucideIcon,
 } from "lucide-react";
-import { Collapsible, Typography } from "@vellumai/design-library";
+import { Collapsible, Typography } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 import { cn } from "@/utils/misc";
@@ -24,7 +24,10 @@ const SESSION_RAIL_CLASS =
   "ml-[7px] border-l border-[var(--border-element)] pl-4";
 
 export type SessionGroupMode =
-  "computerUse" | "browser" | "liveVision" | "ambient";
+  | "computerUse"
+  | "browser"
+  | "liveVision"
+  | "ambient";
 
 const MODE_ICONS: Record<SessionGroupMode, LucideIcon> = {
   computerUse: Monitor,

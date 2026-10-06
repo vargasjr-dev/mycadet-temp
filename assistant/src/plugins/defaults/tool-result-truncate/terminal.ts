@@ -6,7 +6,7 @@
  * This module is side-effect free: importing it does not register any plugin.
  */
 
-import { safeStringSlice } from "@vellumai/plugin-api";
+import { safeStringSlice } from "@mycadet/plugin-api";
 
 /**
  * Minimum number of characters to preserve when truncating.

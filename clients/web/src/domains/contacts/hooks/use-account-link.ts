@@ -11,7 +11,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import type { RosterAccount } from "@/domains/contacts/channel-linking";
 import { linkContactChannelAccount } from "@/domains/contacts/contacts-gateway";

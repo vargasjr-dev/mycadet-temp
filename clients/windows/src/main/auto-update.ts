@@ -3,7 +3,7 @@ import { autoUpdater } from "electron-updater";
 import {
   configureAutoUpdate,
   resolveUpdateFeedUrl,
-} from "@vellumai/electron-desktop/auto-update";
+} from "@mycadet/electron-desktop/auto-update";
 
 import { WINDOWS_RELEASE_INFO } from "./app-config";
 import { handle } from "./ipc.client";
@@ -30,4 +30,4 @@ export {
   installAutoUpdate,
   type UpdateState,
   type UpdateStatus,
-} from "@vellumai/electron-desktop/auto-update";
+} from "@mycadet/electron-desktop/auto-update";

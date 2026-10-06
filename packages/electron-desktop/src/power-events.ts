@@ -1,6 +1,6 @@
 import { BrowserWindow, app, powerMonitor } from "electron";
 
-import type { PowerEvent, PowerEventKind } from "@vellumai/ipc-contract";
+import type { PowerEvent, PowerEventKind } from "@mycadet/ipc-contract";
 
 /**
  * System power-state events: sleep/wake, screen lock/unlock, idle-recover.

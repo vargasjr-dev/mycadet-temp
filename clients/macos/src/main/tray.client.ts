@@ -6,12 +6,12 @@ import {
   __resetForTesting,
   type TrayHandlers,
   type TrayMenuIcon,
-} from "@vellumai/electron-desktop/tray-model";
+} from "@mycadet/electron-desktop/tray-model";
 import {
   readCompanionHidden,
   readCompanionSize,
   readOnboardingActive,
-} from "@vellumai/electron-desktop/window-state";
+} from "@mycadet/electron-desktop/window-state";
 
 import {
   MENU_ICON_CIRCLECHECK,
@@ -31,7 +31,7 @@ import {
 import { getWatchedLockfile } from "./lockfile-watcher.client";
 import { dispatchToMain } from "./main-window";
 import { menuIcon } from "./menu-icon";
-import { readSetting } from "@vellumai/electron-desktop/settings";
+import { readSetting } from "@mycadet/electron-desktop/settings";
 
 const ICONS: Record<TrayMenuIcon, NativeImage> = {
   check: menuIcon(MENU_ICON_CIRCLECHECK),

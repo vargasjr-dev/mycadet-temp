@@ -1,5 +1,5 @@
 import { useTranslation } from "@/i18n";
-import type { FeedItem } from "@vellumai/assistant-api";
+import type { FeedItem } from "@mycadet/assistant-api";
 
 import { getFeedItemUpdates, groupFeedItemUpdates } from "../utils";
 

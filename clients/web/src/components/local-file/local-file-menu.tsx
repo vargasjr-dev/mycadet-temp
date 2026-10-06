@@ -20,7 +20,7 @@ import {
 import { useCallback } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 
-import { Button, cn, Menu, toast } from "@vellumai/design-library";
+import { Button, cn, Menu, toast } from "@mycadet/design-library";
 
 import { t, useTranslation } from "@/i18n";
 import { downloadWorkspaceFile } from "@/utils/download-workspace-file";

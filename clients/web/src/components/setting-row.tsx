@@ -1,6 +1,6 @@
 import { useId } from "react";
 
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 type SettingRowVariant = "toggle-leading" | "toggle-trailing";
 

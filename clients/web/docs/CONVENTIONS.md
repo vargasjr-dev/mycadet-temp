@@ -933,7 +933,7 @@ second copy of React and white-screens the app. See
 [`clients/web/AGENTS.md`](../AGENTS.md) for the full constraint.
 
 ```ts
-import { Button, Typography } from "@vellumai/design-library";
+import { Button, Typography } from "@mycadet/design-library";
 ```
 
 Design system components accept props and render UI. They must not
@@ -965,7 +965,7 @@ usage).
 
 ```ts
 // Domain wrapper — lives in domains/chat/components/chat-markdown-message.tsx
-import { MarkdownMessage } from "@vellumai/design-library";
+import { MarkdownMessage } from "@mycadet/design-library";
 
 // OAuthAwareLink defined in the same file (or extracted to a lib file)
 export function ChatMarkdownMessage(props: ChatMarkdownMessageProps) {
@@ -1121,7 +1121,7 @@ from the wire the moment the schema changes.
 
 `src/generated/` covers what the HTTP routes carry. A wire shape no route
 declares, such as a conversation stream event and the shapes nested in it,
-comes from `@vellumai/assistant-api` instead: the zod schemas in
+comes from `@mycadet/assistant-api` instead: the zod schemas in
 `assistant/src/api`, served to the web as source (see `AGENTS.md`). The two
 share one origin, since a route whose `responseBody` embeds one of those
 schemas reaches `src/generated/` through the OpenAPI spec. Import the value
@@ -1132,7 +1132,7 @@ client: add or correct the route's `responseBody` (the daemon routes in
 `assistant/src/runtime/routes/*` declare zod `responseBody` schemas that
 drive the OpenAPI spec) and regenerate — do **not** paper over it with a
 hand-rolled type. A missing response-body schema is the usual reason a
-type isn't generated. For a shape from `@vellumai/assistant-api`, the fix
+type isn't generated. For a shape from `@mycadet/assistant-api`, the fix
 is its schema in `assistant/src/api`.
 
 ```ts

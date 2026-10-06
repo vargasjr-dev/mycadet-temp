@@ -2,7 +2,7 @@ import { forwardRef } from "react";
 
 import { cn } from "@/utils/misc";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 /**
  * Suggestion-pill primitive used in the chat empty state's bottom dock and by

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { FilterChip } from "@vellumai/design-library/components/filter-chip";
-import { Input } from "@vellumai/design-library/components/input";
+import { FilterChip } from "@mycadet/design-library/components/filter-chip";
+import { Input } from "@mycadet/design-library/components/input";
 import { Search } from "lucide-react";
 import { useState } from "react";
 

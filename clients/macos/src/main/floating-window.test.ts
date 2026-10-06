@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { FloatingWindowDependencies } from "@vellumai/electron-desktop/floating-window";
+import type { FloatingWindowDependencies } from "@mycadet/electron-desktop/floating-window";
 
 import { RENDERER_BASE_PROD, getDevRendererBase } from "./app-config";
 
@@ -122,10 +122,11 @@ const {
   createFloatingWindow,
   createWindowRouteResolver,
   getFloatingWindow,
-} = await import("@vellumai/electron-desktop/floating-window");
+} = await import("@mycadet/electron-desktop/floating-window");
 
 configureFloatingWindows({
-  createWindow: createWindowMock as unknown as FloatingWindowDependencies["createWindow"],
+  createWindow:
+    createWindowMock as unknown as FloatingWindowDependencies["createWindow"],
   platform: "darwin",
   resolveRoute: createWindowRouteResolver(() =>
     appState.isPackaged ? RENDERER_BASE_PROD : getDevRendererBase(),

@@ -1,5 +1,5 @@
 import type { Rectangle } from "electron";
-import { PERMISSION_GUIDE_MIN_HEIGHT } from "@vellumai/ipc-contract";
+import { PERMISSION_GUIDE_MIN_HEIGHT } from "@mycadet/ipc-contract";
 
 export const GUIDE_WIDTH = 560;
 export const GUIDE_HEIGHT = PERMISSION_GUIDE_MIN_HEIGHT;

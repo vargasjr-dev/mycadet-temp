@@ -16,7 +16,7 @@
  * when to spend the refresh token lives in `claude-token-refresh.ts`.
  */
 
-import { computeExpiresAt, isTokenExpired } from "@vellumai/credential-storage";
+import { computeExpiresAt, isTokenExpired } from "@mycadet/credential-storage";
 
 import { credentialKey } from "../security/credential-key.js";
 import type { OAuth2Config } from "../security/oauth2.js";
@@ -549,7 +549,9 @@ export async function isAcpClaudeTokenExpiring(): Promise<boolean> {
 
 /** The stored refresh token, or null when none was captured. */
 export async function readAcpClaudeRefreshToken(): Promise<string | null> {
-  const token = await getSecureKeyAsync(vaultKey(ACP_OAUTH_REFRESH_TOKEN_FIELD));
+  const token = await getSecureKeyAsync(
+    vaultKey(ACP_OAUTH_REFRESH_TOKEN_FIELD),
+  );
   return token != null && token.length > 0 ? token : null;
 }
 
@@ -639,4 +641,3 @@ export async function forgetAcpClaudeRenewalStateIfUnbound(): Promise<void> {
     await clearRenewalFields();
   });
 }
-

@@ -6,7 +6,7 @@
  * client is configured (e.g. VELAY_BASE_URL not set).
  */
 
-import type { VelayStatusIpcResponse } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import type { VelayStatusIpcResponse } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import type { VelayTunnelClient } from "../velay/client.js";
 import type { IpcRoute } from "./server.js";

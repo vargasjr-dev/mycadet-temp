@@ -49,8 +49,8 @@ import { type ReactNode } from "react";
 
 import { type LucideIcon } from "lucide-react";
 
-import { ContextMenu, SideMenu } from "@vellumai/design-library";
-import { VirtualList } from "@vellumai/design-library/components/virtual-list";
+import { ContextMenu, SideMenu } from "@mycadet/design-library";
+import { VirtualList } from "@mycadet/design-library/components/virtual-list";
 
 import {
   CollapsibleNavSection,

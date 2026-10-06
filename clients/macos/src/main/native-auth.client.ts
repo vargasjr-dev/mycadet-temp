@@ -3,8 +3,8 @@ import { app, session, shell } from "electron";
 import {
   configureNativeAuth,
   installNativeAuth,
-} from "@vellumai/electron-desktop/native-auth";
-import { resolveLocalConfigFromEnv } from "@vellumai/local-mode";
+} from "@mycadet/electron-desktop/native-auth";
+import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
 
 import { handle, handleSync } from "./ipc";
 import { ensureVisible } from "./main-window";
@@ -22,8 +22,7 @@ configureNativeAuth({
   getPlatformUrl: () => resolveLocalConfigFromEnv(process.env).platformUrl,
   ipc: { handle, handleSync },
   openExternal: (url) => shell.openExternal(url),
-  removeCookie: (url, name) =>
-    session.defaultSession.cookies.remove(url, name),
+  removeCookie: (url, name) => session.defaultSession.cookies.remove(url, name),
   sessionStore: {
     clear: clearSessionToken,
     get: getSessionToken,

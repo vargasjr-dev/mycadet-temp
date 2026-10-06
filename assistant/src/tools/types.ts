@@ -2,7 +2,7 @@ import type {
   ChannelConversationType,
   RiskAllowlistOption,
   RiskDirectoryScopeOption,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import { z } from "zod";
 
 import type { AnsweredQuestion } from "../api/events/question-answered.js";
@@ -205,7 +205,7 @@ export function stringifyToolInput(input: Record<string, unknown>): string {
  * The fields fall into two groups:
  *
  * - A small, stable core that we are comfortable exposing to any tool —
- *   including workspace- and plugin-authored tools via `@vellumai/plugin-api`:
+ *   including workspace- and plugin-authored tools via `@mycadet/plugin-api`:
  *   `conversationId`, `workingDir`, `requestId`, `signal`, `onOutput`,
  *   `assistantId`, `isInteractive`.
  * - Everything tagged `@legacy` below: host-internal routing, permission,
@@ -588,7 +588,7 @@ export const ToolDefinitionSchema = z.object({
 });
 
 /**
- * Author-facing tool spec — re-exported from `@vellumai/plugin-api`.
+ * Author-facing tool spec — re-exported from `@mycadet/plugin-api`.
  * Loaders fill documented defaults for omitted fields via `finalizeTool`
  * in `tool-defaults.ts`. The type is a direct `z.infer` of
  * {@link ToolDefinitionSchema} — both `input_schema` and `execute` are

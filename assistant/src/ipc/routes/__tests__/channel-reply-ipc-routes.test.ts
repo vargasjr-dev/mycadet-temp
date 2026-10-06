@@ -9,7 +9,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { DELIVER_GATEWAY_REPLY_IPC_METHOD } from "@vellumai/gateway-client";
+import { DELIVER_GATEWAY_REPLY_IPC_METHOD } from "@mycadet/gateway-client";
 
 type CallTelegramBotApi =
   typeof import("../../../messaging/providers/telegram-bot/api.js").callTelegramBotApi;

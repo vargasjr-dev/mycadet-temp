@@ -34,10 +34,7 @@
 // it; a row that exhausts it loses its entries, as the per-update notice it
 // replaces would have.
 
-import {
-  getConversation,
-  isConversationProcessing,
-} from "@vellumai/plugin-api";
+import { getConversation, isConversationProcessing } from "@mycadet/plugin-api";
 
 import { emitNotificationSignal } from "../../../notifications/emit-signal.js";
 import {

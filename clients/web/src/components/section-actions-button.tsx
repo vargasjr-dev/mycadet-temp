@@ -17,7 +17,7 @@ import { MoreHorizontal } from "lucide-react";
 import type { ComponentProps, MouseEvent } from "react";
 
 import { useTranslation } from "@/i18n";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 /**
  * The box every control in a section header's trailing cluster draws in, so a
@@ -33,8 +33,10 @@ export const SECTION_HEADER_CONTROL_CLASSES = [
   "max-md:h-[30px] max-md:w-[30px]",
 ].join(" ");
 
-export interface SectionActionsButtonProps
-  extends Omit<ComponentProps<"button">, "children" | "aria-label"> {
+export interface SectionActionsButtonProps extends Omit<
+  ComponentProps<"button">,
+  "children" | "aria-label"
+> {
   /** Section name, which names the control for assistive tech. */
   label: string;
 }

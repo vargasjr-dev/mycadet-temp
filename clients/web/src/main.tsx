@@ -39,7 +39,7 @@ import { initNativePlatformAttributes } from "@/runtime/native-platform-attribut
 import { initSafeAreaBridge } from "@/runtime/native-safe-area";
 import { restorePendingNativeLogin } from "@/runtime/native-auth";
 import { markNativeLaunchScreenReady } from "@/runtime/native-launch-screen";
-import { initInputModality } from "@vellumai/design-library";
+import { initInputModality } from "@mycadet/design-library";
 
 async function boot() {
   // Install before React first commits so the reconciler survives DOM

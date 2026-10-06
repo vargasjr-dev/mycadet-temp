@@ -5,7 +5,7 @@ import type {
   ModifierHold,
   ModifierHoldRegistrationResult,
   VoiceModeChord,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { isElectron, type HotkeyEvent } from "@/runtime/is-electron";
 

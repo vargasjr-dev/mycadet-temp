@@ -25,7 +25,7 @@
  * (non-React).
  */
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import type { CommandUrlProvenance } from "@/runtime/native-deep-link";
 

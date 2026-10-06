@@ -67,8 +67,8 @@ import { BUNDLED_COMPONENTS } from "@/utils/avatar-bundled-components";
 import { randomCharacterTraits } from "@/utils/avatar-random";
 import { composeSvg } from "@/utils/avatar-svg-compositor";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
-import { ProgressBar } from "@vellumai/design-library/components/progress-bar";
+import { Button } from "@mycadet/design-library/components/button";
+import { ProgressBar } from "@mycadet/design-library/components/progress-bar";
 import { useTranslation } from "@/i18n";
 
 const COMPLETION_NAVIGATE_DELAY_MS = 800;

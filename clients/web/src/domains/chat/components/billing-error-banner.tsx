@@ -3,7 +3,7 @@ import { useTranslation } from "@/i18n";
 
 import { X } from "lucide-react";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 interface BillingErrorBannerAction {
   label: string;

@@ -11,14 +11,14 @@ export type {
   QuestionOption,
   RiskScopeOption,
   ScopeOption,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import type {
   AllowlistOption,
   DirectoryScopeOption,
   QuestionEntry,
   ScopeOption,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 // ---------------------------------------------------------------------------
 // Chat UI state types — used by interaction store and chat domain
@@ -143,6 +143,6 @@ export interface PendingAcpConnectState {
 
 // ---------------------------------------------------------------------------
 // Subagent event types — canonical types now live in
-// `@vellumai/assistant-api` (see `subagent-event.ts` /
+// `@mycadet/assistant-api` (see `subagent-event.ts` /
 // `subagent-status-changed.ts`). Re-imported by consumers from
 // that package directly.

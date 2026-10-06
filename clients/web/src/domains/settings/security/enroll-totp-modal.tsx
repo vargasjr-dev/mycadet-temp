@@ -11,10 +11,10 @@ import {
 import { userMfaFactorsDestroy } from "@/generated/api/sdk.gen";
 import { useTranslation } from "@/i18n";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { mfaErrorCode } from "./mfa-error";
 
@@ -163,7 +163,9 @@ export function EnrollTotpModal({ open, onOpenChange }: EnrollTotpModalProps) {
       <Modal.Content size="sm">
         <Modal.Header>
           <Modal.Title>{t("enrollTotpModal.title")}</Modal.Title>
-          <Modal.Description>{t("enrollTotpModal.description")}</Modal.Description>
+          <Modal.Description>
+            {t("enrollTotpModal.description")}
+          </Modal.Description>
         </Modal.Header>
         <Modal.Body>
           {enrollment === null ? (

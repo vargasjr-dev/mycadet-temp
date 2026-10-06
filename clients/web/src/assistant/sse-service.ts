@@ -24,7 +24,7 @@
  * the real implementation in `sse-service.test.ts`).
  */
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 import { lifecycleService } from "@/assistant/lifecycle-service";
 import {

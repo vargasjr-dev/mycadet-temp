@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { HoverCapabilityOverride } from "@vellumai/design-library/utils/hover-capability";
+import { HoverCapabilityOverride } from "@mycadet/design-library/utils/hover-capability";
 import { expect, screen, userEvent } from "storybook/test";
 
 import {

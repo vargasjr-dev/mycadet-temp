@@ -128,7 +128,7 @@ function touchFile(filePath: string, offsetSeconds = 2): void {
 const SIMPLE_PKG = {
   name: "test-plugin",
   version: "1.0.0",
-  peerDependencies: { "@vellumai/plugin-api": "*" },
+  peerDependencies: { "@mycadet/plugin-api": "*" },
 };
 
 /** Strictly increasing mtime offset for source-file touches within one test. */

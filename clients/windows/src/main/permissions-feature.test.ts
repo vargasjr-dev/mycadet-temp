@@ -5,7 +5,7 @@ import {
   PERMISSIONS_OPEN_SETTINGS,
   PERMISSIONS_REQUEST,
   TEXT_INSERT,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 type Handler = (args: unknown[]) => unknown;
 

@@ -11,12 +11,12 @@
 
 import { z } from "zod";
 
-import type { HostProxyExecutor } from "@vellumai/electron-desktop/host-proxy/router";
+import type { HostProxyExecutor } from "@mycadet/electron-desktop/host-proxy/router";
 import {
   HostHelperProxyExecutor,
   type CuHelperClient,
   type HostHelperProxyConfig,
-} from "@vellumai/electron-desktop/host-proxy/helper-proxy-executor";
+} from "@mycadet/electron-desktop/host-proxy/helper-proxy-executor";
 import log from "../logger";
 import { getSharedCuHelper } from "../sidecar/shared-cu-helper";
 
@@ -41,14 +41,16 @@ const APP_CONTROL_RESULT_SCHEMA = z
   })
   .passthrough();
 
-function config(deps: HostAppControlExecutorDeps): HostHelperProxyConfig<
-  z.infer<typeof APP_CONTROL_RESULT_SCHEMA>
-> {
+function config(
+  deps: HostAppControlExecutorDeps,
+): HostHelperProxyConfig<z.infer<typeof APP_CONTROL_RESULT_SCHEMA>> {
   return {
     label: "host-app-control-executor",
     logger: log,
     method: "appControl.perform",
-    resolveHelper: deps.helper ? () => deps.helper as CuHelperClient : getSharedCuHelper,
+    resolveHelper: deps.helper
+      ? () => deps.helper as CuHelperClient
+      : getSharedCuHelper,
     schema: APP_CONTROL_RESULT_SCHEMA,
     buildParams: (message, requestId) => {
       const input = message.input as Record<string, unknown> | undefined;
@@ -57,7 +59,9 @@ function config(deps: HostAppControlExecutorDeps): HostHelperProxyConfig<
         params: {
           requestId,
           conversationId: (message.conversationId as string | undefined) ?? "",
-          ...(typeof message.toolName === "string" ? { toolName: message.toolName } : {}),
+          ...(typeof message.toolName === "string"
+            ? { toolName: message.toolName }
+            : {}),
           input,
         },
       };
@@ -66,7 +70,11 @@ function config(deps: HostAppControlExecutorDeps): HostHelperProxyConfig<
       void poster.postAppControlResult({ requestId, ...result });
     },
     postError: (poster, requestId, message) => {
-      void poster.postAppControlResult({ requestId, state: "missing", executionError: message });
+      void poster.postAppControlResult({
+        requestId,
+        state: "missing",
+        executionError: message,
+      });
     },
   };
 }
@@ -77,4 +85,5 @@ export function createHostAppControlExecutor(
   return new HostHelperProxyExecutor(config(deps));
 }
 
-export const hostAppControlExecutor: HostProxyExecutor = createHostAppControlExecutor();
+export const hostAppControlExecutor: HostProxyExecutor =
+  createHostAppControlExecutor();

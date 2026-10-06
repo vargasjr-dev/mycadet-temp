@@ -67,7 +67,7 @@ mock.module("@/hooks/use-assistant-avatar", () => ({
 // The design library's index re-exports every name from this module, so the
 // stand-in has to carry them all or the import graph fails to link.
 const toastSuccessCalls: string[] = [];
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     success: (message: string) => {
       toastSuccessCalls.push(message);

@@ -4,7 +4,7 @@ import { useThemePreference } from "@/hooks/use-theme-preference";
 import { useTranslation } from "@/i18n";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { type ThemePreference } from "@/utils/theme-preferences";
-import { SegmentControl } from "@vellumai/design-library/components/segment-control";
+import { SegmentControl } from "@mycadet/design-library/components/segment-control";
 
 /**
  * Theme picker (System / Light / Dark, plus Velvet when the flag is on), shown

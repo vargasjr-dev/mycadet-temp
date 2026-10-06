@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

@@ -5,7 +5,7 @@
  * The gateway owns the `guardian_requests` + `guardian_request_deliveries`
  * tables; the daemon relays its guardian-request lifecycle operations here.
  * Request/response shapes are pinned by the shared contract in
- * `@vellumai/gateway-client` (guardian-request-contract.ts). Read methods
+ * `@mycadet/gateway-client` (guardian-request-contract.ts). Read methods
  * return the wire DTO (or null / an array); mutations return a minimal
  * `{ ok: true }` ack.
  *
@@ -33,7 +33,7 @@ import {
   ListExpiredPendingGuardianRequestsIpcParamsSchema,
   UpdateGuardianRequestDeliveryIpcParamsSchema,
   UpdateGuardianRequestIpcParamsSchema,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import { z } from "zod";
 
 import {

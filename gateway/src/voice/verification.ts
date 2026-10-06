@@ -16,7 +16,7 @@
  * Verification sessions and rate limits live in the gateway DB.
  */
 
-import { hashVerificationSecret } from "@vellumai/gateway-client";
+import { hashVerificationSecret } from "@mycadet/gateway-client";
 
 import type { VerificationSession } from "../db/session-store.js";
 import {

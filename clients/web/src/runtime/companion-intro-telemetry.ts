@@ -1,4 +1,4 @@
-import type { CompanionIntroReport } from "@vellumai/ipc-contract";
+import type { CompanionIntroReport } from "@mycadet/ipc-contract";
 
 import { isElectron } from "@/runtime/is-electron";
 

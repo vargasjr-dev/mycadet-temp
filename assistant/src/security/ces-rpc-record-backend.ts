@@ -2,8 +2,8 @@
  * CES RPC backend for non-secret credential records (identity + policy).
  */
 
-import type { CredentialRecord } from "@vellumai/service-contracts/credential-rpc";
-import { CesRpcMethod } from "@vellumai/service-contracts/credential-rpc";
+import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
+import { CesRpcMethod } from "@mycadet/service-contracts/credential-rpc";
 
 import type { CesClient } from "../credential-execution/client.js";
 import { getLogger } from "../util/logger.js";
@@ -73,9 +73,7 @@ export class CesRpcRecordBackend implements CredentialRecordBackend {
     }
   }
 
-  async delete(
-    account: string,
-  ): Promise<"deleted" | "not-found" | "error"> {
+  async delete(account: string): Promise<"deleted" | "not-found" | "error"> {
     if (!this.isAvailable()) {
       return "error";
     }

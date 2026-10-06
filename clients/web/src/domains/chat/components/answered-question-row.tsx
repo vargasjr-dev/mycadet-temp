@@ -14,7 +14,7 @@
 import { Check, Pencil, SkipForward } from "lucide-react";
 
 import type { ResolvedAnswer } from "@/domains/chat/answered-question";
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 export interface AnsweredQuestionRowProps {
   item: ResolvedAnswer;

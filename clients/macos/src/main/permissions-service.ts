@@ -14,9 +14,9 @@ import {
   showNotificationPayloadSchema,
   type NotificationIdentity,
   type NotificationSender,
-} from "@vellumai/ipc-contract";
-import { resolveNotificationAvatarPath } from "@vellumai/electron-desktop/notification-avatar-path";
-import { isPreparedNotificationSenderCurrent } from "@vellumai/electron-desktop/notifications";
+} from "@mycadet/ipc-contract";
+import { resolveNotificationAvatarPath } from "@mycadet/electron-desktop/notification-avatar-path";
+import { isPreparedNotificationSenderCurrent } from "@mycadet/electron-desktop/notifications";
 
 import { runAppleScript } from "./appleScriptExecutor";
 import {
@@ -300,7 +300,10 @@ export class PermissionsService {
   private lastStateJson: string | null = null;
 
   private helperRequests = new Set<PermissionKind>();
-  private pollTimers = new Map<PermissionKind, ReturnType<typeof setInterval>>();
+  private pollTimers = new Map<
+    PermissionKind,
+    ReturnType<typeof setInterval>
+  >();
   private automationStatus: PermissionStatus = "unknown";
   private notificationStatus: PermissionStatus = initialNotificationStatus();
 

@@ -24,7 +24,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { MutableRefObject } from "react";
 
-import * as assistantApi from "@vellumai/assistant-api";
+import * as assistantApi from "@mycadet/assistant-api";
 import type { MessagesGetResponse } from "@/generated/daemon/types.gen";
 import {
   type ChatDebugEventsApi,
@@ -948,7 +948,7 @@ declare global {
  *     {@link eventsDebugApi}. Stable singleton; same surface every call.
  *   - `chat` — the per-page chat introspection API built from React refs.
  *     Component-scoped; rebuilt on each mount.
- *   - `api` — the full `@vellumai/assistant-api` namespace, so a developer
+ *   - `api` — the full `@mycadet/assistant-api` namespace, so a developer
  *     can pull canonical SSE schemas (`RelationshipStateUpdatedEventSchema`, …)
  *     out of the shipped bundle from the console.
  *   - `flags`: dev-toggleable feature flags (`impersonateVersion`,

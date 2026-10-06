@@ -40,8 +40,8 @@ import {
   PanelItem,
   Typography,
   VirtualList,
-} from "@vellumai/design-library";
-import { cn } from "@vellumai/design-library/utils/cn";
+} from "@mycadet/design-library";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 import { usePublishPageSurface } from "@/stores/page-surface-store";
 import {
@@ -483,11 +483,13 @@ export function AllChatsPage({
         key: `header:${band.key}`,
         label: bandLabel(band.id, t, locale),
       },
-      ...band.items.map((conversation): AllChatsListItem => ({
-        kind: "row",
-        key: conversation.conversationId,
-        conversation,
-      })),
+      ...band.items.map(
+        (conversation): AllChatsListItem => ({
+          kind: "row",
+          key: conversation.conversationId,
+          conversation,
+        }),
+      ),
     ]);
   }, [rows, bandedAt, t, locale]);
 

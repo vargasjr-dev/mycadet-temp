@@ -4,7 +4,7 @@ import { KeyboardResize, KeyboardStyle } from "@capacitor/keyboard";
 // node-based TS config loader transpiles one file at a time and cannot
 // resolve the index's `.js`-suffixed runtime re-exports, while the seeds
 // module is self-contained (type-only imports) and loads cleanly.
-import { cloudAssistantHubUrl } from "@vellumai/environments/seeds";
+import { cloudAssistantHubUrl } from "@mycadet/environments/seeds";
 
 // `server.url` is baked into native Capacitor config by `cap sync`, so
 // whatever URL resolves here at sync time is what the archived mobile build
@@ -13,7 +13,7 @@ import { cloudAssistantHubUrl } from "@vellumai/environments/seeds";
 //
 // The environment-to-hub mapping (including the deliberate `/assistant`
 // suffix) is shared with the CLI's remote-web edge via
-// `@vellumai/environments`; see `cloudAssistantHubUrl` for the rationale.
+// `@mycadet/environments`; see `cloudAssistantHubUrl` for the rationale.
 const env = process.env.VELLUM_ENVIRONMENT ?? "dev";
 
 const ENV_SERVER_URL = cloudAssistantHubUrl(env);

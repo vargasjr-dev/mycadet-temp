@@ -12,7 +12,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 // system socket (e.g. stale root-owned /run/assistant-ipc/assistant.sock).
 delete process.env.ASSISTANT_IPC_SOCKET_DIR;
 
-import { writeMessage } from "@vellumai/ipc-server-utils";
+import { writeMessage } from "@mycadet/ipc-server-utils";
 
 import { AssistantIpcServer } from "../assistant-server.js";
 import { cliIpcCallBinary, cliIpcCallStream } from "../cli-client.js";

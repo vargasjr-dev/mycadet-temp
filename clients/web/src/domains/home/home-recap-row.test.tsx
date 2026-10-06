@@ -20,7 +20,7 @@ import {
   viewportAxesStub,
   type ViewportAxes,
 } from "@/hooks/viewport-axes.test-helper";
-import type { FeedItem, FeedItemStatus } from "@vellumai/assistant-api";
+import type { FeedItem, FeedItemStatus } from "@mycadet/assistant-api";
 
 import { HomeRecapRow, type HomeRecapRowProps } from "./home-recap-row";
 import { feedItem } from "./feed-test-fixtures";

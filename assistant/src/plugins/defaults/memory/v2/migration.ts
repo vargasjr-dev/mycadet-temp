@@ -21,8 +21,8 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import type { Provider } from "@vellumai/plugin-api";
-import { getConfiguredProvider } from "@vellumai/plugin-api";
+import type { Provider } from "@mycadet/plugin-api";
+import { getConfiguredProvider } from "@mycadet/plugin-api";
 
 import type { AssistantConfig } from "../../../../config/types.js";
 import {

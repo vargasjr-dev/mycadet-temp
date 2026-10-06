@@ -1,7 +1,7 @@
 import { type LucideIcon } from "lucide-react";
 import { type ReactNode } from "react";
 
-import { Card } from "@vellumai/design-library";
+import { Card } from "@mycadet/design-library";
 
 interface SkillsStateCardProps {
   icon: LucideIcon;

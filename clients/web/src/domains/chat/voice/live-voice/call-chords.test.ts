@@ -9,7 +9,7 @@
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { CompanionCapturePick } from "@vellumai/ipc-contract";
+import type { CompanionCapturePick } from "@mycadet/ipc-contract";
 
 const setCompanionScreenShare = mock((_pick?: CompanionCapturePick) => {});
 const toggleCompanionAnnotating = mock(() => {});

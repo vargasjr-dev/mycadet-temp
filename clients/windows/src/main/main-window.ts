@@ -8,7 +8,7 @@ import {
   type ColorScheme,
   type TitleBarOverlayTheme,
   type VellumCommand,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import {
   readOnboardingActive,
   readTitleBarOverlayTheme,
@@ -16,8 +16,8 @@ import {
   track as trackWindowState,
   writeOnboardingActive,
   writeTitleBarOverlayTheme,
-} from "@vellumai/electron-desktop/window-state";
-import { createWindowReadiness } from "@vellumai/electron-desktop/window-readiness";
+} from "@mycadet/electron-desktop/window-state";
+import { createWindowReadiness } from "@mycadet/electron-desktop/window-readiness";
 import { z } from "zod";
 
 import { getRendererRootUrl } from "./app-config";
@@ -59,10 +59,7 @@ const installSameOriginNavigationGuard = (win: BrowserWindow): void => {
 };
 
 const createMainWindow = (): BrowserWindow => {
-  const { maximized, ...bounds } = restoreBounds(
-    "main",
-    MAIN_DEFAULT_BOUNDS,
-  );
+  const { maximized, ...bounds } = restoreBounds("main", MAIN_DEFAULT_BOUNDS);
   const overlay = readTitleBarOverlayTheme();
   if (overlay) {
     syncNativeColorScheme(overlay.colorScheme);
@@ -255,13 +252,9 @@ export const installMainWindow = (): void => {
   handle(MAIN_WINDOW_ENSURE_VISIBLE, z.tuple([]), async () => {
     await ensureVisible();
   });
-  handle(
-    MAIN_WINDOW_SET_ONBOARDING,
-    z.tuple([z.boolean()]),
-    ([active]) => {
-      setOnboarding(active);
-    },
-  );
+  handle(MAIN_WINDOW_SET_ONBOARDING, z.tuple([z.boolean()]), ([active]) => {
+    setOnboarding(active);
+  });
   handle(
     MAIN_WINDOW_SET_TITLE_BAR_OVERLAY,
     z.tuple([titleBarOverlayThemeSchema]),

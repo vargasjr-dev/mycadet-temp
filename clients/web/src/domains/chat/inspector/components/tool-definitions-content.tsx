@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import type { ParsedToolDefinition } from "@/domains/chat/inspector/tool-definitions";
 import { useTranslation } from "@/i18n";
-import { Collapsible, Tag } from "@vellumai/design-library";
+import { Collapsible, Tag } from "@mycadet/design-library";
 import { isRecord } from "@/utils/is-record";
 
 interface ToolDefinitionsContentProps {

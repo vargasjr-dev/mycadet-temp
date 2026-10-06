@@ -41,7 +41,7 @@ function portBlock(base: number): PortMap {
  * bounces non-prod shells off their own host.
  *
  * NOTE: this module is loaded by Capacitor's single-file TS config loader
- * (via the `@vellumai/environments/seeds` subpath), which cannot follow the
+ * (via the `@mycadet/environments/seeds` subpath), which cannot follow the
  * package index's `.js`-suffixed runtime re-exports. Keep this file's
  * imports type-only so it stays loadable on its own.
  */

@@ -1,4 +1,4 @@
-import { configureDeepLinks } from "@vellumai/electron-desktop/deep-links";
+import { configureDeepLinks } from "@mycadet/electron-desktop/deep-links";
 
 import { handle, on } from "./ipc";
 import { ensureVisible } from "./main-window";
@@ -10,4 +10,4 @@ configureDeepLinks({
   on,
 });
 
-export * from "@vellumai/electron-desktop/deep-links";
+export * from "@mycadet/electron-desktop/deep-links";

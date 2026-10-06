@@ -13,7 +13,7 @@ import type { PropsWithChildren } from "react";
 
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 
 import { useNewLibraryDocument } from "./use-new-library-document";
 

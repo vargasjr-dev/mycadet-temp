@@ -1,6 +1,6 @@
 import { Ban, Check } from "lucide-react";
 
-import { cn, ContextMenu } from "@vellumai/design-library";
+import { cn, ContextMenu } from "@mycadet/design-library";
 
 import {
   getPinColorHex,

@@ -4,7 +4,7 @@ import {
   type AdmissionPolicy,
 } from "../db/admission-policy-store.js";
 import { isChannelId, type ChannelId } from "../channels/types.js";
-import { isAdmissionPolicyExemptChannel } from "@vellumai/gateway-client";
+import { isAdmissionPolicyExemptChannel } from "@mycadet/gateway-client";
 import { isFeatureFlagEnabled } from "../feature-flag-resolver.js";
 
 // ---------------------------------------------------------------------------

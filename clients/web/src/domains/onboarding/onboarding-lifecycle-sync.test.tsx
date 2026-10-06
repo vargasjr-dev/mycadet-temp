@@ -105,7 +105,7 @@ mock.module("@/components/onboarding-layout", () => ({
   ),
 }));
 
-mock.module("@vellumai/design-library/components/button", () => ({
+mock.module("@mycadet/design-library/components/button", () => ({
   Button: ({
     children,
     onClick,
@@ -119,7 +119,7 @@ mock.module("@vellumai/design-library/components/button", () => ({
   ),
 }));
 
-mock.module("@vellumai/design-library/components/progress-bar", () => ({
+mock.module("@mycadet/design-library/components/progress-bar", () => ({
   ProgressBar: ({ value }: { value: number }) => (
     <div data-testid="progress" data-value={value} />
   ),

@@ -9,11 +9,11 @@ import {
 import { assistantsUpgradePolicyDetailPartialUpdate } from "@/generated/api/sdk.gen";
 import type { FrequencyEnum, UpgradePolicy } from "@/generated/api/types.gen";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
-import { SegmentControl } from "@vellumai/design-library/components/segment-control";
-import { toast } from "@vellumai/design-library/components/toast";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
+import { SegmentControl } from "@mycadet/design-library/components/segment-control";
+import { toast } from "@mycadet/design-library/components/toast";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 const DAY_BACKEND_INDEXES = [0, 1, 2, 3, 4, 5, 6] as const;
 

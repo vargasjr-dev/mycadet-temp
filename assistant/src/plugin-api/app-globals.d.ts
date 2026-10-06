@@ -12,19 +12,19 @@
  * actually use. Other injected members are intentionally left undeclared until
  * there's a concrete need.
  *
- * A plugin app that depends on `@vellumai/plugin-api` pulls this in via a
+ * A plugin app that depends on `@mycadet/plugin-api` pulls this in via a
  * one-line reference (recommended — no runtime import, which apps can't rely
  * on inside the sandbox):
  *
  * ```ts
- * /// <reference types="@vellumai/plugin-api/app" />
+ * /// <reference types="@mycadet/plugin-api/app" />
  * ```
  *
- * or by adding `"@vellumai/plugin-api/app"` to `compilerOptions.types` in
+ * or by adding `"@mycadet/plugin-api/app"` to `compilerOptions.types` in
  * `tsconfig.json`. Either way the app no longer needs its own `vellum.d.ts`.
  *
  * The named types below are also exported, so app code that wants to annotate
- * a variable can `import type { VellumAppBridge } from "@vellumai/plugin-api/app"`.
+ * a variable can `import type { VellumAppBridge } from "@mycadet/plugin-api/app"`.
  */
 
 /**

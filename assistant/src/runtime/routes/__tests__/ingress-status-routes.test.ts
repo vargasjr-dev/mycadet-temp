@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { TunnelRecord } from "@vellumai/service-contracts/ingress";
+import type { TunnelRecord } from "@mycadet/service-contracts/ingress";
 
 import type { TunnelProbeResult } from "../../../inbound/tunnel-probe.js";
 import { ACTOR_PRINCIPALS } from "../../auth/route-policy.js";

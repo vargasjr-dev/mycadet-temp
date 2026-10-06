@@ -3,8 +3,8 @@ import { CircleCheck } from "lucide-react";
 import { PlanTierAvatar } from "@/domains/settings/billing/plan-tier-meta";
 import type { TierRelation } from "@/domains/settings/billing/package-types";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Tag } from "@vellumai/design-library/components/tag";
+import { Button } from "@mycadet/design-library/components/button";
+import { Tag } from "@mycadet/design-library/components/tag";
 
 export interface PlanColumnCardProps {
   /** Tier key ("free" or a `ProPackage.key`) — selects the creature avatar. */

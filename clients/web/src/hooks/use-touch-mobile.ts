@@ -1,7 +1,7 @@
 import {
   TOUCH_SURFACE_MEDIA_QUERY,
   useTouchSurface,
-} from "@vellumai/design-library/utils/touch-surface";
+} from "@mycadet/design-library/utils/touch-surface";
 
 /**
  * A narrow viewport AND a coarse pointer: a phone, rather than a tablet or a

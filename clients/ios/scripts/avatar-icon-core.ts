@@ -5,7 +5,7 @@
  * pieces that decide *which* icons exist and *how big* the eyes are drawn live
  * here rather than in any one platform's script. Rasterizing needs the native
  * `@resvg/resvg-js` binding, so the assistant package's dependencies have to be
- * installed first: `bun install --filter=@vellumai/assistant`.
+ * installed first: `bun install --filter=@mycadet/assistant`.
  */
 
 import { getCharacterComponents } from "../../../packages/avatar-catalog/src/index.js";

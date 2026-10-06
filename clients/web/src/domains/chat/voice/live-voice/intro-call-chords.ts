@@ -24,7 +24,7 @@
 import type {
   ChordBinding,
   CompanionIntroCallControl,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   CALL_DRAW_KEY,

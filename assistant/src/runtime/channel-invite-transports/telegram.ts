@@ -9,7 +9,7 @@
  * verification) tokens that use the same `/start` deep-link mechanism.
  */
 
-import type { CommandIntent, SourceMetadata } from "@vellumai/gateway-client";
+import type { CommandIntent, SourceMetadata } from "@mycadet/gateway-client";
 
 import type { ChannelId } from "../../channels/types.js";
 import {

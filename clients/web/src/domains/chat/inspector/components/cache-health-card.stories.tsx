@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import type { LLMCallSummary } from "@vellumai/assistant-api";
+import type { LLMCallSummary } from "@mycadet/assistant-api";
 
 import { CacheHealthCard } from "./cache-health-card";
 

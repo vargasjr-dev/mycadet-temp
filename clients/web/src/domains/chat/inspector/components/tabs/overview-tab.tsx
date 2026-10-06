@@ -16,8 +16,8 @@ import type {
   LatencyBreakdown,
   LLMCallSummary,
   LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
-import { Card } from "@vellumai/design-library";
+} from "@mycadet/assistant-api";
+import { Card } from "@mycadet/design-library";
 
 interface OverviewTabProps {
   entry: LLMRequestLogEntry;
@@ -232,7 +232,10 @@ function buildIdentityRows(
     },
   ];
   if (hasError) {
-    rows.push({ label: t("overviewTab.statusLabel"), value: t("overviewTab.failedStatus") });
+    rows.push({
+      label: t("overviewTab.statusLabel"),
+      value: t("overviewTab.failedStatus"),
+    });
   }
   if (agentLoopExitReason != null && agentLoopExitReason.trim().length > 0) {
     rows.push({

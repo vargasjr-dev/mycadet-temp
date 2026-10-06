@@ -14,11 +14,11 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 
-import * as toastModule from "@vellumai/design-library/components/toast";
+import * as toastModule from "@mycadet/design-library/components/toast";
 
 // Spread the real module: the design library's barrel re-exports `Toaster` and
 // `ToastContent` from here, so a partial mock breaks unrelated imports.
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...toastModule,
   toast: { ...toastModule.toast, success: () => {}, error: () => {} },
 }));

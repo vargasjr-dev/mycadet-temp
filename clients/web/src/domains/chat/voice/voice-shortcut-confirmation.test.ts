@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { COMPANION_VOICE_START_CONFIRMATION } from "@vellumai/ipc-contract";
+import { COMPANION_VOICE_START_CONFIRMATION } from "@mycadet/ipc-contract";
 
 import {
   currentCompanionPopover,

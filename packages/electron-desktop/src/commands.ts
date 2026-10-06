@@ -3,7 +3,7 @@ import { BrowserWindow } from "electron";
 import {
   DEFAULT_ACCELERATORS,
   type VellumCommand,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { capabilityToken } from "./capability-registry";
 

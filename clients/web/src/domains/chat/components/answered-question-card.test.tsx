@@ -12,7 +12,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 import { cleanup, render, screen } from "@testing-library/react";
 
-import type { AnsweredQuestion } from "@vellumai/assistant-api";
+import type { AnsweredQuestion } from "@mycadet/assistant-api";
 
 import { hasRenderableAnswer } from "@/domains/chat/answered-question";
 import { AnsweredQuestionCard } from "@/domains/chat/components/answered-question-card";

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { type StepperStep } from "@vellumai/design-library";
+import { type StepperStep } from "@mycadet/design-library";
 import {
   ChannelSetupWizard,
   type MutationStatus,

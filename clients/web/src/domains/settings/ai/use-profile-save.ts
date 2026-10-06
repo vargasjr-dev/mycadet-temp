@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { useLlmConfigPatch } from "@/domains/settings/ai/use-llm-config-patch";
 import { t } from "@/i18n";

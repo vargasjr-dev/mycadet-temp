@@ -7,8 +7,8 @@
  * footer are not markdown.
  */
 
-import type { RecallMetadata } from "@vellumai/assistant-api";
-import { Typography } from "@vellumai/design-library";
+import type { RecallMetadata } from "@mycadet/assistant-api";
+import { Typography } from "@mycadet/design-library";
 
 import { DetailBlock, SectionLabel } from "@/components/detail-primitives";
 import {

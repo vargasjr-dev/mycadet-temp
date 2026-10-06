@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 
-import type { VellumBridge } from "@vellumai/ipc-contract";
+import type { VellumBridge } from "@mycadet/ipc-contract";
 
 const invoke = mock(() => Promise.resolve());
 const on = mock(() => undefined);
@@ -12,7 +12,7 @@ mock.module("electron", () => ({
 }));
 
 const { BridgeCapabilityRegistry } =
-  await import("@vellumai/electron-desktop/capability-registry");
+  await import("@mycadet/electron-desktop/capability-registry");
 const { default: deepLinksFeature } = await import("./features/deep-links");
 
 beforeEach(() => {

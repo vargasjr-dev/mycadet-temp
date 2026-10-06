@@ -12,7 +12,7 @@ import {
   test,
 } from "bun:test";
 
-import { credentialKey } from "@vellumai/credential-storage";
+import { credentialKey } from "@mycadet/credential-storage";
 
 import { PLUGIN_NAME_ENV } from "../plugin-api/plugin-name-env.js";
 import {
@@ -141,7 +141,9 @@ describe("resolveCredential", () => {
       seedCredential("imessage", "api_key", "comms-key");
       seedCredential("imessage", "photon_project_id", "proj-id");
       await expect(
-        runInPluginContext("imessage", () => resolveCredential("imessage/api_key")),
+        runInPluginContext("imessage", () =>
+          resolveCredential("imessage/api_key"),
+        ),
       ).resolves.toBe("comms-key");
       await expect(
         runInPluginContext("imessage", () =>
@@ -168,10 +170,7 @@ describe("resolveCredential", () => {
   });
 
   describe("live catalog on cache miss", () => {
-    function liveRecord(
-      service: string,
-      field: string,
-    ): CredentialMetadata {
+    function liveRecord(service: string, field: string): CredentialMetadata {
       return {
         credentialId: `${service}-${field}`,
         service,

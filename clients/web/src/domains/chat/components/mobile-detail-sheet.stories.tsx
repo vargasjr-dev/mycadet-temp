@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { PortalContainerProvider } from "@vellumai/design-library/utils/portal-container";
+import { PortalContainerProvider } from "@mycadet/design-library/utils/portal-container";
 
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import {

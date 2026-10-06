@@ -11,7 +11,7 @@ import {
   fireEvent,
   render as rtlRender,
 } from "@testing-library/react";
-import type { RecallMetadata } from "@vellumai/assistant-api";
+import type { RecallMetadata } from "@mycadet/assistant-api";
 import { MemoryRouter } from "react-router";
 
 import { isWorkspaceFileOpen } from "@/components/local-file/open-local-file";

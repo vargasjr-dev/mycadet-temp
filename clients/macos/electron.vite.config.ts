@@ -18,7 +18,7 @@ import { SHARED_DESKTOP_INLINE_DEPS } from "../../packages/electron-desktop/src/
 const DEPS_TO_INLINE = [
   ...SHARED_DESKTOP_INLINE_DEPS,
   "electron-updater",
-  "@vellumai/native-sidecar",
+  "@mycadet/native-sidecar",
 ];
 
 // Resolved at config-evaluation time and inlined into the main bundle via

@@ -36,14 +36,14 @@ mock.module("electron", () => ({
 let featureFlags: Record<string, boolean> = {};
 let onboardingActive = false;
 let chromeDevTools = false;
-mock.module("@vellumai/electron-desktop/settings", () => ({
+mock.module("@mycadet/electron-desktop/settings", () => ({
   readSetting: () => featureFlags,
   onSettingChange: () => () => undefined,
 }));
-mock.module("@vellumai/electron-desktop/window-state", () => ({
+mock.module("@mycadet/electron-desktop/window-state", () => ({
   readOnboardingActive: () => onboardingActive,
 }));
-mock.module("@vellumai/electron-desktop/devtools", () => ({
+mock.module("@mycadet/electron-desktop/devtools", () => ({
   areChromeDevToolsEnabled: () => chromeDevTools,
 }));
 mock.module("./main-window", () => ({

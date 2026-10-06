@@ -8,8 +8,8 @@ import {
 import { isElectron } from "@/runtime/is-electron";
 import { useDesktopAppPlatform } from "@/runtime/desktop-app-platform";
 import { useTranslation } from "@/i18n";
-import { cn } from "@vellumai/design-library/utils/cn";
-import { textLinkVariants } from "@vellumai/design-library/components/text-link";
+import { cn } from "@mycadet/design-library/utils/cn";
+import { textLinkVariants } from "@mycadet/design-library/components/text-link";
 
 /**
  * Branded About page rendered inside the Electron About BrowserWindow

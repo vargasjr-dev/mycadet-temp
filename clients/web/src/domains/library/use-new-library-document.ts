@@ -8,7 +8,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 
 import { useCreateDocument } from "@/domains/library/use-create-document";
 import { useTranslation } from "@/i18n";

@@ -23,8 +23,8 @@ import {
 import { useLlmLogPayload } from "@/domains/chat/inspector/inspector-payload-api";
 import { formatCount } from "@/domains/chat/inspector/inspector-formatters";
 import { useTranslation } from "@/i18n";
-import type { LLMRequestLogEntry } from "@vellumai/assistant-api";
-import { Card, Notice, Tag } from "@vellumai/design-library";
+import type { LLMRequestLogEntry } from "@mycadet/assistant-api";
+import { Card, Notice, Tag } from "@mycadet/design-library";
 type ChatTranslate = ReturnType<typeof useTranslation<"chat">>["t"];
 
 export interface CacheBreakpointMapCardProps {
@@ -38,10 +38,7 @@ const STATUS_COLOR: Record<CacheSegmentStatus, string> = {
   unknown: "var(--content-faint)",
 };
 
-function statusLabel(
-  status: CacheSegmentStatus,
-  t: ChatTranslate,
-): string {
+function statusLabel(status: CacheSegmentStatus, t: ChatTranslate): string {
   switch (status) {
     case "read":
       return t("cacheBreakpointMapCard.statusRead");
@@ -185,14 +182,10 @@ export function CacheBreakpointMapCard({
   }
 
   if (isLoading) {
-    return (
-      <StateNote>{t("cacheBreakpointMapCard.loading")}</StateNote>
-    );
+    return <StateNote>{t("cacheBreakpointMapCard.loading")}</StateNote>;
   }
   if (isError) {
-    return (
-      <StateNote>{t("cacheBreakpointMapCard.loadError")}</StateNote>
-    );
+    return <StateNote>{t("cacheBreakpointMapCard.loadError")}</StateNote>;
   }
 
   const map = parseCacheBreakpoints(payload?.requestPayload, entry.summary);
@@ -201,9 +194,7 @@ export function CacheBreakpointMapCard({
   }
 
   if (map.segments.length === 0) {
-    return (
-      <StateNote>{t("cacheBreakpointMapCard.noBreakpoints")}</StateNote>
-    );
+    return <StateNote>{t("cacheBreakpointMapCard.noBreakpoints")}</StateNote>;
   }
 
   const maxTokens = Math.max(

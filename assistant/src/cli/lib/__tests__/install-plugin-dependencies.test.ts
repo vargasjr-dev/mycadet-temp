@@ -117,7 +117,7 @@ describe("installPluginDependencies", () => {
   test("skips when the only peer is the host-provided plugin-api shim", async () => {
     writePkg({
       name: "p",
-      peerDependencies: { "@vellumai/plugin-api": ">=0.8.0" },
+      peerDependencies: { "@mycadet/plugin-api": ">=0.8.0" },
     });
     let ran = false;
     const run: DependencyInstaller = async () => {
@@ -148,7 +148,7 @@ describe("installPluginDependencies", () => {
     writePkg({
       name: "p",
       dependencies: { "date-fns": "3.0.0" },
-      peerDependencies: { "@vellumai/plugin-api": ">=0.8.0", react: "^18.0.0" },
+      peerDependencies: { "@mycadet/plugin-api": ">=0.8.0", react: "^18.0.0" },
     });
     const pkgPath = join(dir, "package.json");
     const original = readFileSync(pkgPath, "utf8");
@@ -173,7 +173,7 @@ describe("installPluginDependencies", () => {
     writePkg({
       name: "p",
       dependencies: { "date-fns": "3.0.0" },
-      peerDependencies: { "@vellumai/plugin-api": ">=0.8.0" },
+      peerDependencies: { "@mycadet/plugin-api": ">=0.8.0" },
     });
     const pkgPath = join(dir, "package.json");
     const original = readFileSync(pkgPath, "utf8");
@@ -191,7 +191,7 @@ describe("installPluginDependencies", () => {
     writePkg({
       name: "p",
       dependencies: { "date-fns": "3.0.0" },
-      peerDependencies: { "@vellumai/plugin-api": ">=0.8.0" },
+      peerDependencies: { "@mycadet/plugin-api": ">=0.8.0" },
     });
     const run: DependencyInstaller = async () => {};
 
@@ -206,7 +206,7 @@ describe("installPluginDependencies", () => {
     writePkg({
       name: "p",
       dependencies: { "date-fns": "3.0.0" },
-      peerDependencies: { "@vellumai/plugin-api": ">=0.8.0" },
+      peerDependencies: { "@mycadet/plugin-api": ">=0.8.0" },
     });
     // Simulate the manifest becoming unrestorable during the install (e.g. the
     // dir vanished / the disk filled) by removing the plugin directory, so the

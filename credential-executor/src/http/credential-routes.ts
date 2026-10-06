@@ -19,7 +19,7 @@
 
 import { timingSafeEqual } from "node:crypto";
 
-import type { SecureKeyBackend } from "@vellumai/credential-storage";
+import type { SecureKeyBackend } from "@mycadet/credential-storage";
 
 // ---------------------------------------------------------------------------
 // Account key normalization
@@ -84,18 +84,23 @@ function checkAuth(req: Request, serviceToken: string): Response | null {
   const parts = authHeader.split(" ");
   if (parts.length !== 2 || parts[0]!.toLowerCase() !== "bearer") {
     return new Response(
-      JSON.stringify({ error: "Invalid Authorization header format. Expected: Bearer <token>" }),
+      JSON.stringify({
+        error: "Invalid Authorization header format. Expected: Bearer <token>",
+      }),
       { status: 401, headers: { "Content-Type": "application/json" } },
     );
   }
 
   const provided = Buffer.from(parts[1]!);
   const expected = Buffer.from(serviceToken);
-  if (provided.length !== expected.length || !timingSafeEqual(provided, expected)) {
-    return new Response(
-      JSON.stringify({ error: "Invalid service token" }),
-      { status: 403, headers: { "Content-Type": "application/json" } },
-    );
+  if (
+    provided.length !== expected.length ||
+    !timingSafeEqual(provided, expected)
+  ) {
+    return new Response(JSON.stringify({ error: "Invalid service token" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   return null;
@@ -148,15 +153,17 @@ export async function handleCredentialRoute(
     try {
       body = await req.json();
     } catch {
-      return new Response(
-        JSON.stringify({ error: "Invalid JSON body" }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     if (!Array.isArray(body.credentials)) {
       return new Response(
-        JSON.stringify({ error: "Body must contain a 'credentials' array field" }),
+        JSON.stringify({
+          error: "Body must contain a 'credentials' array field",
+        }),
         { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
@@ -170,7 +177,8 @@ export async function handleCredentialRoute(
       ) {
         return new Response(
           JSON.stringify({
-            error: "Each credential entry must have string 'account' and 'value' fields",
+            error:
+              "Each credential entry must have string 'account' and 'value' fields",
           }),
           { status: 400, headers: { "Content-Type": "application/json" } },
         );
@@ -178,32 +186,35 @@ export async function handleCredentialRoute(
     }
 
     const results: Array<{ account: string; ok: boolean }> = [];
-    for (const entry of body.credentials as Array<{ account: string; value: string }>) {
+    for (const entry of body.credentials as Array<{
+      account: string;
+      value: string;
+    }>) {
       const normalized = normalizeAccountKey(entry.account);
       const ok = await backend.set(normalized, entry.value);
       results.push({ account: normalized, ok: !!ok });
     }
 
-    return new Response(
-      JSON.stringify({ results }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ results }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   // GET /v1/credentials — list all credential account names
   if (accountSegment === "" || accountSegment === "/") {
     if (req.method !== "GET") {
-      return new Response(
-        JSON.stringify({ error: "Method not allowed" }),
-        { status: 405, headers: { "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        status: 405,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const accounts = await backend.list();
-    return new Response(
-      JSON.stringify({ accounts }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ accounts }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   // Remaining routes require /:account
@@ -213,15 +224,15 @@ export async function handleCredentialRoute(
 
   const rawAccount = decodeURIComponent(accountSegment.slice(1));
   if (!rawAccount) {
-    return new Response(
-      JSON.stringify({ error: "Account name is required" }),
-      { status: 400, headers: { "Content-Type": "application/json" } },
-      );
-    }
+    return new Response(JSON.stringify({ error: "Account name is required" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
-    const account = normalizeAccountKey(rawAccount);
+  const account = normalizeAccountKey(rawAccount);
 
-    switch (req.method) {
+  switch (req.method) {
     // GET /v1/credentials/:account — get credential value
     case "GET": {
       const value = await backend.get(account);
@@ -231,10 +242,10 @@ export async function handleCredentialRoute(
           { status: 404, headers: { "Content-Type": "application/json" } },
         );
       }
-      return new Response(
-        JSON.stringify({ account, value }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ account, value }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // POST /v1/credentials/:account — set credential value
@@ -243,10 +254,10 @@ export async function handleCredentialRoute(
       try {
         body = await req.json();
       } catch {
-        return new Response(
-          JSON.stringify({ error: "Invalid JSON body" }),
-          { status: 400, headers: { "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
       if (typeof body.value !== "string") {
@@ -263,10 +274,10 @@ export async function handleCredentialRoute(
           { status: 500, headers: { "Content-Type": "application/json" } },
         );
       }
-      return new Response(
-        JSON.stringify({ ok: true, account }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ ok: true, account }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // DELETE /v1/credentials/:account — delete credential
@@ -284,16 +295,16 @@ export async function handleCredentialRoute(
           { status: 500, headers: { "Content-Type": "application/json" } },
         );
       }
-      return new Response(
-        JSON.stringify({ ok: true, account }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ ok: true, account }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     default:
-      return new Response(
-        JSON.stringify({ error: "Method not allowed" }),
-        { status: 405, headers: { "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        status: 405,
+        headers: { "Content-Type": "application/json" },
+      });
   }
 }

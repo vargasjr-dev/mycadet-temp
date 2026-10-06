@@ -21,8 +21,8 @@ import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAuthStore } from "@/stores/auth-store";
 import { useEnvironmentStore } from "@/stores/environment-store";
 import { isTransientNetworkError } from "@/utils/is-transient-network-error";
-import { toast } from "@vellumai/design-library";
-import { Tag } from "@vellumai/design-library/components/tag";
+import { toast } from "@mycadet/design-library";
+import { Tag } from "@mycadet/design-library/components/tag";
 
 const CURRENT_ASSISTANT_QUERY_KEY = "currentAssistant";
 

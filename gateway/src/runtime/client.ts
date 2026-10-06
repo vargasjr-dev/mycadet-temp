@@ -1,14 +1,14 @@
 import {
   buildUpstreamUrl,
   createTimeoutController,
-} from "@vellumai/assistant-client";
+} from "@mycadet/assistant-client";
 import {
   normalizePublicBaseUrl,
   TWILIO_PUBLIC_BASE_WSS_PLACEHOLDER,
-} from "@vellumai/service-contracts/twilio-ingress";
-import { normalizeHttpPublicBaseUrl } from "@vellumai/service-contracts/ingress";
+} from "@mycadet/service-contracts/twilio-ingress";
+import { normalizeHttpPublicBaseUrl } from "@mycadet/service-contracts/ingress";
 
-import type { RuntimeInboundPayload } from "@vellumai/gateway-client";
+import type { RuntimeInboundPayload } from "@mycadet/gateway-client";
 import type { ChannelId } from "../channels/types.js";
 import type { ConfigFileCache } from "../config-file-cache.js";
 import {
@@ -166,7 +166,7 @@ export class AttachmentValidationError extends Error {
   }
 }
 
-export type { RuntimeInboundPayload } from "@vellumai/gateway-client";
+export type { RuntimeInboundPayload } from "@mycadet/gateway-client";
 
 export type RuntimeAttachmentMeta = {
   id: string;

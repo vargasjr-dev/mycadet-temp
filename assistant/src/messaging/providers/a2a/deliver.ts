@@ -8,7 +8,7 @@
 import type {
   ChannelDeliveryResult,
   ChannelReplyPayload,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import {
   A2A_CONTENT_TYPE,

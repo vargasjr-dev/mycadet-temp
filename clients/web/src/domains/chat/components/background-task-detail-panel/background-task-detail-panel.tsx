@@ -10,7 +10,7 @@
 
 import { useCallback, useState } from "react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { BackgroundTaskStatusBadge } from "@/domains/chat/components/background-task-status-badge";
 import { backgroundTaskGlyph } from "@/domains/chat/components/background-task-glyph";

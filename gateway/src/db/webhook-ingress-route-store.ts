@@ -1,6 +1,6 @@
 /** Store for the webhook subpaths this assistant accepts from outside. */
 
-import type { WebhookIngressRoute } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import type { WebhookIngressRoute } from "@mycadet/gateway-client/gateway-ipc-contracts";
 import { and, eq, inArray } from "drizzle-orm";
 
 import {

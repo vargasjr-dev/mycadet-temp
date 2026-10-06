@@ -33,7 +33,7 @@ import {
 } from "@/domains/settings/utils/schedule-usage-window";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { t } from "@/i18n";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import type {
   ScheduleRun,

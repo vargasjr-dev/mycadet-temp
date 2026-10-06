@@ -1,4 +1,4 @@
-import type { FeedItem, FeedItemUpdate } from "@vellumai/assistant-api";
+import type { FeedItem, FeedItemUpdate } from "@mycadet/assistant-api";
 
 /**
  * Build a `FeedItem` carrying the fields the daemon always writes, so a

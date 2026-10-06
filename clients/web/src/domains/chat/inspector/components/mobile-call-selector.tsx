@@ -2,8 +2,8 @@ import { ChevronDown } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { useTranslation } from "@/i18n";
-import type { LLMRequestLogEntry } from "@vellumai/assistant-api";
-import { BottomSheet } from "@vellumai/design-library";
+import type { LLMRequestLogEntry } from "@mycadet/assistant-api";
+import { BottomSheet } from "@mycadet/design-library";
 
 import { CallRail } from "./call-rail";
 

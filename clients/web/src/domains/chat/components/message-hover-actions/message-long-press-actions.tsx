@@ -23,7 +23,7 @@ import {
 } from "@/hooks/use-bookmarks";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { BottomSheet, PanelItem } from "@vellumai/design-library";
+import { BottomSheet, PanelItem } from "@mycadet/design-library";
 
 type MessageLongPressActionsProps = MessageHoverActionsProps & {
   /** Controlled open state for the BottomSheet. */

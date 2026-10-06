@@ -15,7 +15,7 @@ import {
   PERSONALITY_AXIS_IDS,
   PERSONALITY_SLIDER_DEFAULT,
   PERSONALITY_SLIDERS_PATH,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import {
   workspaceFileGet,
@@ -27,7 +27,7 @@ export {
   PERSONALITY_AXIS_IDS,
   PERSONALITY_SLIDER_DEFAULT,
   PERSONALITY_SLIDERS_PATH,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 export type PersonalitySliderValues = Record<string, number>;
 

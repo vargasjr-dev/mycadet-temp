@@ -1,12 +1,12 @@
 import { app, BrowserWindow, net, powerMonitor } from "electron";
 
-import { getLockfileData } from "@vellumai/local-mode";
+import { getLockfileData } from "@mycadet/local-mode";
 import {
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
   resolveCloud,
-} from "@vellumai/local-mode/contract";
+} from "@mycadet/local-mode/contract";
 
 import { setBackendReachable } from "./status";
 

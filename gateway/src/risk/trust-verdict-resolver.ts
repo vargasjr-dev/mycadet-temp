@@ -14,7 +14,7 @@
  * member_blocked / member_revoked hard-deny.
  */
 
-import type { TrustClass, TrustVerdict } from "@vellumai/gateway-client";
+import type { TrustClass, TrustVerdict } from "@mycadet/gateway-client";
 import { and, desc, eq, sql } from "drizzle-orm";
 
 import { guardianIntegrityState } from "../auth/guardian-integrity.js";
@@ -242,8 +242,9 @@ export async function resolveTrustVerdict(
   // — an omitted stamp just falls back to those reads, so a store failure
   // must not convert an otherwise-good verdict into a resolver failure.
   try {
-    verdict.hasInterceptableVerificationSession =
-      hasInterceptableSession(input.channelType);
+    verdict.hasInterceptableVerificationSession = hasInterceptableSession(
+      input.channelType,
+    );
   } catch {
     // Stamp omitted; consumer falls back to IPC reads.
   }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { TRUST_CLASS_VALUES } from "@vellumai/gateway-client";
+import { TRUST_CLASS_VALUES } from "@mycadet/gateway-client";
 
 import { resolveCapabilities } from "./capabilities.js";
 import {

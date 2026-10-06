@@ -40,7 +40,7 @@ mock.module("./ipc", () => ({
     handleRegistrations.push({ channel, schema, fn });
   },
 }));
-mock.module("@vellumai/electron-desktop/avatar", () => ({
+mock.module("@mycadet/electron-desktop/avatar", () => ({
   onAvatarChange: () => () => undefined,
 }));
 
@@ -59,11 +59,11 @@ mock.module("./session-token-store.client", () => ({
   },
 }));
 
-// Mock @vellumai/local-mode so the dock's lockfile-based local-assistant
+// Mock @mycadet/local-mode so the dock's lockfile-based local-assistant
 // check works without a real filesystem. Controls whether the dock sees
 // active local assistants (gateway-only auth, no platform token).
 let mockLockfileAssistants: Array<Record<string, unknown>> = [];
-mock.module("@vellumai/local-mode", () => ({
+mock.module("@mycadet/local-mode", () => ({
   resolveLockfilePaths: () => ["/fake/.vellum.lock.json"],
   getLockfileData: () => ({
     ok: true as const,
@@ -72,7 +72,7 @@ mock.module("@vellumai/local-mode", () => ({
 }));
 
 const avatarBitmapMock = mock((_size: number): Buffer | null => null);
-mock.module("@vellumai/electron-desktop/avatar-image", () => ({
+mock.module("@mycadet/electron-desktop/avatar-image", () => ({
   avatarBitmap: avatarBitmapMock,
 }));
 

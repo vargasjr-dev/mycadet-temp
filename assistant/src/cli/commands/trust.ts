@@ -5,7 +5,7 @@
  * IPC route (`trust_rules_list`).
  */
 
-import type { TrustRulesListIpcResponse } from "@vellumai/gateway-client";
+import type { TrustRulesListIpcResponse } from "@mycadet/gateway-client";
 import type { Command } from "commander";
 
 import { cliIpcCall } from "../../ipc/cli-client.js";

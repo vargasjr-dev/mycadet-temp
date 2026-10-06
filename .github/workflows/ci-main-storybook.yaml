@@ -6,9 +6,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'package.json'
-      - 'bun.lock'
-      - 'patches/**'
+      - "package.json"
+      - "bun.lock"
+      - "patches/**"
       - "packages/design-library/**"
       # The web's Storybook bundles this contract's values, so a change here
       # can break the Storybook build with no web file touched.
@@ -46,7 +46,7 @@ jobs:
           bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/design-library
+        run: bun install --frozen-lockfile --filter=@mycadet/design-library
 
       - name: Build Storybook
         run: STORYBOOK_BASE_PATH=/design-library/main/ bun run build-storybook
@@ -130,7 +130,7 @@ jobs:
           bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/web
+        run: bun install --frozen-lockfile --filter=@mycadet/web
 
       - name: Generate API clients
         run: bun run openapi-ts

@@ -1,8 +1,8 @@
 import { BrowserWindow, app } from "electron";
 import type { WebContents } from "electron";
 
-import { WINDOW_ATTENTION } from "@vellumai/ipc-contract";
-import type { WindowAttentionPayload } from "@vellumai/ipc-contract";
+import { WINDOW_ATTENTION } from "@mycadet/ipc-contract";
+import type { WindowAttentionPayload } from "@mycadet/ipc-contract";
 
 /**
  * Authoritative window state, published from main to the renderer that each

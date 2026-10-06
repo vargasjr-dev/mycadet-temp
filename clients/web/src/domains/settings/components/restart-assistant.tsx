@@ -9,9 +9,9 @@ import {
   sleepLocalAssistantHost,
   wakeLocalAssistantHost,
 } from "@/runtime/local-mode-host";
-import { Button } from "@vellumai/design-library/components/button";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { toast } from "@mycadet/design-library/components/toast";
 
 async function restartLocalAssistant(
   assistantId: string,

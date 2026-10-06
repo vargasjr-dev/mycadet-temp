@@ -6,7 +6,7 @@
  * `dependencies` in `package.json` shipped no way to resolve them: its hooks'
  * and tools' bare imports (`import { ... } from "date-fns"`) had nothing to
  * resolve against. The workspace-level shims cover only the tiny curated set
- * (`@vellumai/plugin-api`, the whitelisted shared deps like `zod`); anything a
+ * (`@mycadet/plugin-api`, the whitelisted shared deps like `zod`); anything a
  * plugin brings itself was unresolvable.
  *
  * This module closes that gap: after the tree is staged and before it is
@@ -19,7 +19,7 @@
  * - **peers installed, except the host shim** — bun installs `peerDependencies`
  *   by default, and a plugin may legitimately declare a non-host peer (e.g.
  *   `react`) it imports at runtime, so peers are kept. The sole exception is
- *   `@vellumai/plugin-api`: every adapted plugin declares it as a peer (see
+ *   `@mycadet/plugin-api`: every adapted plugin declares it as a peer (see
  *   {@link ./install-from-github} `normalizeInstalledManifest`), but that
  *   package is a workspace shim materialized at daemon startup
  *   (`../../plugins/ensure-plugin-api-shim.ts`), not a registry package.
@@ -73,11 +73,11 @@ const DEPENDENCY_INSTALL_TIMEOUT_MS = 120_000;
  * install so bun never resolves it (see the module docstring). Other peers are
  * kept and installed normally.
  */
-const PLUGIN_API_PACKAGE = "@vellumai/plugin-api";
+const PLUGIN_API_PACKAGE = "@mycadet/plugin-api";
 
 /**
  * `bun install` argv for a plugin's dependencies. Peers are installed (bun's
- * default) so a plugin's non-host peers resolve; the `@vellumai/plugin-api`
+ * default) so a plugin's non-host peers resolve; the `@mycadet/plugin-api`
  * shim is withheld by stripping it from the manifest, not by omitting all peers
  * (see the module docstring). Exported so a guard test pins the flag set against
  * silent regressions.
@@ -102,7 +102,7 @@ export type DependencyInstaller = (opts: {
 
 /**
  * The plugin's `package.json` could not be restored to its original bytes after
- * the dependency install temporarily stripped the `@vellumai/plugin-api` peer.
+ * the dependency install temporarily stripped the `@mycadet/plugin-api` peer.
  * Thrown so {@link ./install-from-github.finalizeStagedInstall} aborts rather
  * than fingerprint and swap in a plugin whose manifest is left shim-stripped.
  */
@@ -143,7 +143,7 @@ interface ManifestInstallPlan {
   readonly originalManifest: string;
   /**
    * Manifest bytes to write for the duration of the install — a copy with only
-   * the `@vellumai/plugin-api` peer removed — or `null` when the manifest needs
+   * the `@mycadet/plugin-api` peer removed — or `null` when the manifest needs
    * no rewrite (it declares no plugin-api peer, so it installs as-is).
    */
   readonly installManifest: string | null;
@@ -163,7 +163,7 @@ function nonEmptyRecord(value: unknown): Record<string, unknown> | null {
  *
  * Returns `null` when there is nothing to install: a missing/unparseable
  * manifest, or one whose only installable declarations are the host-provided
- * `@vellumai/plugin-api` peer (the common case for plugins that import only the
+ * `@mycadet/plugin-api` peer (the common case for plugins that import only the
  * plugin-api and whitelisted shared deps).
  *
  * Otherwise the plan carries the original manifest bytes and, when the manifest
@@ -230,7 +230,7 @@ function planManifestForInstall(pluginDir: string): ManifestInstallPlan | null {
  * Install the plugin's declared dependencies (and non-host peers) into
  * `<pluginDir>/node_modules/`, a no-op when it declares nothing installable.
  *
- * The `@vellumai/plugin-api` peer is stripped from the manifest for the duration
+ * The `@mycadet/plugin-api` peer is stripped from the manifest for the duration
  * of the install and restored afterward (see the module docstring), so the
  * daemon-provided shim is never resolved or shadowed and `package.json` ends
  * byte-for-byte as materialized.

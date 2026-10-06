@@ -1,4 +1,4 @@
-import { Button, Notice, Typography } from "@vellumai/design-library";
+import { Button, Notice, Typography } from "@mycadet/design-library";
 import { useTranslation } from "@/i18n";
 
 export interface DiscordSetupInviteStepProps {

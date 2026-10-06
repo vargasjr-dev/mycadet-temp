@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type {
   ApprovalUIMetadata,
   ChannelReplyPayload,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import type { RuntimeAttachmentMetadata } from "../../../runtime/http-types.js";
 import type { CallbackContext } from "../channel-transport.js";

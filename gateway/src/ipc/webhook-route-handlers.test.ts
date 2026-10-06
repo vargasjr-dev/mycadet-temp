@@ -26,7 +26,7 @@ import {
   ListWebhookRoutesIpcResponseSchema,
   RegisterWebhookRouteIpcResponseSchema,
   UnregisterWebhookRouteIpcResponseSchema,
-} from "@vellumai/gateway-client/gateway-ipc-contracts";
+} from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import {
   getGatewayDb,

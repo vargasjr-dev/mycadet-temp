@@ -4,7 +4,7 @@
  *
  * The daemon persists chat secret redactions as plain-text sentinels —
  * `〔redacted:TYPE〕` or `〔redacted:TYPE:SERVICE:FIELD〕` (see
- * `@vellumai/service-contracts/redacted-credential`). Plain text is the only
+ * `@mycadet/service-contracts/redacted-credential`). Plain text is the only
  * marker shape that survives the chat markdown pipeline: there is no
  * rehype-raw, so an HTML marker can never become an element, but a text
  * sentinel arrives here as an ordinary hast text node. This plugin finds
@@ -30,7 +30,7 @@ import {
   createRedactedSentinelRegex,
   decodeRedactedSentinelMatch,
   REDACTED_SENTINEL_OPEN,
-} from "@vellumai/service-contracts/redacted-credential";
+} from "@mycadet/service-contracts/redacted-credential";
 
 export const REDACTED_CREDENTIAL_TAG = "redacted-credential";
 

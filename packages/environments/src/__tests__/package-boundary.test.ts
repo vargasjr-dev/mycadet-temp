@@ -1,5 +1,5 @@
 /**
- * Package boundary tests for @vellumai/environments.
+ * Package boundary tests for @mycadet/environments.
  *
  * This package is the lowest layer of the shared-packages hierarchy:
  * environment types, constants, and small helpers over node builtins, with no
@@ -7,7 +7,7 @@
  * local-mode host) can depend on it without dragging in a dependency tree.
  *
  * Enforces that the package:
- * 1. Imports only node builtins and its own relative modules — no `@vellumai/*`
+ * 1. Imports only node builtins and its own relative modules — no `@mycadet/*`
  *    packages and no third-party runtime imports.
  * 2. Declares no runtime `dependencies` (devDependencies only).
  * 3. Is marked `private`.
@@ -77,9 +77,9 @@ describe("package boundary", () => {
 
     if (violations.length > 0) {
       throw new Error(
-        `Found ${violations.length} forbidden import(s) in @vellumai/environments:\n` +
+        `Found ${violations.length} forbidden import(s) in @mycadet/environments:\n` +
           violations.map((v) => `  - ${v}`).join("\n") +
-          "\n\n@vellumai/environments is a dependency-free leaf and must\n" +
+          "\n\n@mycadet/environments is a dependency-free leaf and must\n" +
           "import only node builtins and its own relative modules.",
       );
     }

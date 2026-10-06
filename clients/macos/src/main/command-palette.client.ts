@@ -2,4 +2,4 @@ export {
   closeCommandPaletteWindow,
   isCommandPaletteWindowFocused,
   openCommandPaletteWindow,
-} from "@vellumai/electron-desktop/command-palette-window";
+} from "@mycadet/electron-desktop/command-palette-window";

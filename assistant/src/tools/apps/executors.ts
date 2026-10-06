@@ -8,7 +8,7 @@
  * ToolDefinition or ToolContext types.
  */
 
-import { normalizeAppIcon } from "@vellumai/app-icons";
+import { normalizeAppIcon } from "@mycadet/app-icons";
 
 import type { AppDefinition } from "../../apps/app-store.js";
 import { getAppDirPath } from "../../apps/app-store.js";
@@ -211,7 +211,7 @@ export async function executeAppCreate(
   }
 
   // The app's icon comes from preview.icon: a name from the app icon
-  // registry (`@vellumai/app-icons`), or an emoji the registry maps. URLs are
+  // registry (`@mycadet/app-icons`), or an emoji the registry maps. URLs are
   // dropped there; they would render as raw strings in UI and bundle
   // manifests. Lenient alias: a top-level `icon` is folded in when
   // preview.icon is absent.

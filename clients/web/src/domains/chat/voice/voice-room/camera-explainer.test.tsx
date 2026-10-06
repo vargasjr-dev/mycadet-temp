@@ -24,7 +24,7 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import { TOUCH_SURFACE_MEDIA_QUERY } from "@vellumai/design-library";
+import { TOUCH_SURFACE_MEDIA_QUERY } from "@mycadet/design-library";
 
 import { pressBackdrop } from "@/lib/overlay-test-helpers";
 

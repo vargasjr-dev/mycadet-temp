@@ -12,7 +12,7 @@ import { createElement } from "react";
 import { render } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { SIDE_MENU_TILE_SIZE } from "@vellumai/design-library";
+import { SIDE_MENU_TILE_SIZE } from "@mycadet/design-library";
 
 import { SIDEBAR_ASSISTANT_DISC_SIZE } from "@/components/sidebar-nav-geometry";
 import type { CharacterComponents, CharacterTraits } from "@/types/avatar";

@@ -1,1 +1,1 @@
-export { areChromeDevToolsEnabled } from "@vellumai/electron-desktop/devtools";
+export { areChromeDevToolsEnabled } from "@mycadet/electron-desktop/devtools";

@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import type { SecureKeyBackend } from "@vellumai/credential-storage";
+import type { SecureKeyBackend } from "@mycadet/credential-storage";
 
 import { getLogger } from "../logger.js";
 import { getCesDataRoot } from "../paths.js";

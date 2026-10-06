@@ -14,7 +14,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { cleanup, render } from "@testing-library/react";
 
-import { PanelItem } from "@vellumai/design-library/components/panel-item";
+import { PanelItem } from "@mycadet/design-library/components/panel-item";
 
 import {
   META_SLOT_CLASSES,

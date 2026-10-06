@@ -6,7 +6,7 @@
  * test patterns (see trust-rules-handlers.test.ts).
  */
 
-import type { AdmissionPolicy } from "@vellumai/gateway-client";
+import type { AdmissionPolicy } from "@mycadet/gateway-client";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 let flagEnabled = true;

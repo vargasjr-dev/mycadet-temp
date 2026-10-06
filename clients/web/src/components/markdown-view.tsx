@@ -15,7 +15,7 @@
 
 import { useState } from "react";
 
-import { cn } from "@vellumai/design-library/utils/cn";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 import { SourcePre } from "@/components/file-editor";
 import { FileMarkdown } from "@/components/file-markdown";

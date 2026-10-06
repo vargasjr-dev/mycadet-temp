@@ -22,7 +22,7 @@ const dialogCalls: { message?: string }[] = [];
 let revealedInFinder = 0;
 let settingsStore: Record<string, unknown> = {};
 
-mock.module("@vellumai/electron-desktop/settings", () => ({
+mock.module("@mycadet/electron-desktop/settings", () => ({
   readSetting: (key: string) => settingsStore[key] ?? null,
   writeSetting: (key: string, value: unknown) => {
     settingsStore[key] = value;
@@ -58,7 +58,9 @@ mock.module("electron", () => ({
   },
   dialog: {
     showMessageBox: (options: { message?: string }) => {
-      dialogCalls.push({ ...(options.message == null ? {} : { message: options.message }) });
+      dialogCalls.push({
+        ...(options.message == null ? {} : { message: options.message }),
+      });
       const next = dialogAnswers.shift() ?? { response: 1 };
       return Promise.resolve({
         response: next.response,

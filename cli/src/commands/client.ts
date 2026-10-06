@@ -56,7 +56,7 @@ import {
   resolveLockfilePaths,
   resolveConfigDir,
   type CliInvocation,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { parseFeatureFlagArgs, readAmbientFlagEnvVars } from "../lib/flag-args";
 import {
@@ -1167,7 +1167,7 @@ const WEB_BACKGROUND_START_TIMEOUT_MS = 30_000;
  * URL printed here is the one the child binds. The child's stdout/stderr go to
  * `<xdg-log-dir>/client-web.log` — same detach idiom as the nginx/ngrok
  * spawns. Success is only reported once the child is accepting connections on
- * the port; an early child exit (e.g. missing @vellumai/web assets) or a
+ * the port; an early child exit (e.g. missing @mycadet/web assets) or a
  * startup timeout fails with a pointer at the log file.
  */
 async function spawnBackgroundWebInterface(
@@ -1193,7 +1193,7 @@ async function spawnBackgroundWebInterface(
   childArgs.push("--port", String(port));
 
   // Don't report success until the child is actually serving: watch for an
-  // early exit (e.g. missing @vellumai/web assets, port lost to the TOCTOU
+  // early exit (e.g. missing @mycadet/web assets, port lost to the TOCTOU
   // window) and poll the port until it accepts connections.
   const { child, logPath, ready, exitCode } = await relaunchDetached({
     args: childArgs,
@@ -1279,8 +1279,8 @@ async function runWebInterface(
   if (!distDir) {
     console.error(
       `${ANSI.bold}--interface web${ANSI.reset}: unable to locate ` +
-        `@vellumai/web assets.\n\n` +
-        `  npm/bunx install:   npm install @vellumai/web\n` +
+        `@mycadet/web assets.\n\n` +
+        `  npm/bunx install:   npm install @mycadet/web\n` +
         `  source checkout:    cd clients/web && VITE_PLATFORM_MODE=false bun run build`,
     );
     process.exit(1);

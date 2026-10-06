@@ -81,7 +81,7 @@ const log = getLogger("assistant-stream-state");
 // ── Tunables ─────────────────────────────────────────────────────────
 
 // Count and age bounds on the replay ring. Shared with the web client
-// (via `@vellumai/assistant-api`) so its seq-gap tolerance is sized
+// (via `@mycadet/assistant-api`) so its seq-gap tolerance is sized
 // against the same numbers the daemon buffers against.
 const RING_COUNT_LIMIT = SSE_REPLAY_RING_COUNT_LIMIT;
 const RING_SIZE_LIMIT_BYTES = 256 * 1024;

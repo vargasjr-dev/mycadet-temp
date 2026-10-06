@@ -14,7 +14,7 @@
 import { VercelTokenDialog } from "@/components/vercel-token-dialog";
 import { useTranslation } from "@/i18n";
 import { useDeployStore } from "@/stores/deploy-store";
-import { ConfirmDialog } from "@vellumai/design-library";
+import { ConfirmDialog } from "@mycadet/design-library";
 
 export interface DeployDialogsProps {
   assistantId: string;

@@ -9,7 +9,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 import { cleanup, render, screen } from "@testing-library/react";
 
-import type { AnsweredQuestion, QuestionEntry } from "@vellumai/assistant-api";
+import type { AnsweredQuestion, QuestionEntry } from "@mycadet/assistant-api";
 
 import { AskQuestionDetail } from "@/domains/chat/components/tool-activity/ask-question-detail";
 import { useInteractionStore } from "@/domains/chat/interaction-store";

@@ -18,7 +18,7 @@
 import {
   DELIVER_GATEWAY_REPLY_IPC_METHOD,
   GatewayReplyRequestSchema,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import {
   deliverDirect,

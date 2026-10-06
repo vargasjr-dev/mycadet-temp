@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { TrustVerdict } from "@vellumai/gateway-client";
+import type { TrustVerdict } from "@mycadet/gateway-client";
 
 import { channelStatusToMemberStatus } from "../../contacts/member-status.js";
 import type {

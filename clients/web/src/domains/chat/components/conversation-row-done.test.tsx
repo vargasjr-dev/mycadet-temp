@@ -27,7 +27,7 @@ import {
 import { createElement, type ReactNode, type Ref } from "react";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 
-mock.module("@vellumai/design-library", () => ({
+mock.module("@mycadet/design-library", () => ({
   PanelItem: ({
     label,
     onSelect,
@@ -60,7 +60,7 @@ mock.module("@vellumai/design-library", () => ({
   },
 }));
 
-mock.module("@vellumai/design-library/utils/cn", () => ({
+mock.module("@mycadet/design-library/utils/cn", () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(" "),
 }));
 

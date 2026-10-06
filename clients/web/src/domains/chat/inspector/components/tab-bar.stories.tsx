@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useArgs } from "storybook/preview-api";
 
-import { Tabs } from "@vellumai/design-library/components/tabs";
+import { Tabs } from "@mycadet/design-library/components/tabs";
 
 import { TABS, TabBar, isInspectorTab, type InspectorTab } from "./tab-bar";
 

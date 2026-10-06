@@ -1,6 +1,6 @@
 import { powerMonitor } from "electron";
 
-import type { DesktopPresenceState } from "@vellumai/service-contracts/desktop-presence";
+import type { DesktopPresenceState } from "@mycadet/service-contracts/desktop-presence";
 
 export type PresenceState = DesktopPresenceState;
 
@@ -33,7 +33,9 @@ export const createDesktopPresenceMonitor = (
 
   return (onReport): (() => void) => {
     if (installed) {
-      logger.warn("[presence] monitor already installed, ignoring second install");
+      logger.warn(
+        "[presence] monitor already installed, ignoring second install",
+      );
       return (): void => {};
     }
 

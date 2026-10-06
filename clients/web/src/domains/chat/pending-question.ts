@@ -18,7 +18,7 @@
  */
 
 import type { PendingQuestionState } from "@/types/interaction-ui-types";
-import type { QuestionEntry } from "@vellumai/assistant-api";
+import type { QuestionEntry } from "@mycadet/assistant-api";
 
 /**
  * The registry's answer for one conversation, straight off the wire.

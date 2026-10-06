@@ -1,5 +1,5 @@
-import { Button, Notice } from "@vellumai/design-library";
-import type { DetectedSecret } from "@vellumai/service-contracts/secret-detection";
+import { Button, Notice } from "@mycadet/design-library";
+import type { DetectedSecret } from "@mycadet/service-contracts/secret-detection";
 
 import { isStorableFromInput } from "@/domains/chat/components/store-credential-dialog";
 import { useTranslation } from "@/i18n";

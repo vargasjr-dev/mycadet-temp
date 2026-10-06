@@ -1,4 +1,4 @@
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 
 export function SettingsDivider({ className }: { className?: string }) {
   return (

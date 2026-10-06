@@ -12,7 +12,7 @@
 import {
   normalizePublicBaseUrl,
   resolveTwilioPublicBaseUrl,
-} from "@vellumai/service-contracts/twilio-ingress";
+} from "@mycadet/service-contracts/twilio-ingress";
 
 import { resolvePlatformCallbackRegistrationContext } from "../inbound/platform-callback-registration.js";
 import { isPublicIngressDisabled } from "../inbound/public-ingress-urls.js";

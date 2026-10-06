@@ -1,7 +1,7 @@
 import { readdir, readFile, realpath, stat } from "node:fs/promises";
 import { extname, isAbsolute, join, relative, sep } from "node:path";
 
-import { safeStringSlice } from "@vellumai/plugin-api";
+import { safeStringSlice } from "@mycadet/plugin-api";
 
 import { isPathInsideRoot } from "../../path-containment.js";
 import type {

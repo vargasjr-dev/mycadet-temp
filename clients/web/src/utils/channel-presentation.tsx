@@ -30,11 +30,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { ChannelId } from "@vellumai/service-contracts/channels";
+import type { ChannelId } from "@mycadet/service-contracts/channels";
 
 import { DiscordLogo } from "@/components/icons/discord-logo";
 
-import type { TagTone } from "@vellumai/design-library/components/tag";
+import type { TagTone } from "@mycadet/design-library/components/tag";
 
 import { useTranslation } from "@/i18n";
 import type { AssistantChannelState } from "@/types/channel-types";

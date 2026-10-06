@@ -1,17 +1,17 @@
 import { app } from "electron";
 
-import { configureCommandPaletteWindow } from "@vellumai/electron-desktop/command-palette-window";
-import { configureDictationOverlayWindow } from "@vellumai/electron-desktop/dictation-overlay-window";
+import { configureCommandPaletteWindow } from "@mycadet/electron-desktop/command-palette-window";
+import { configureDictationOverlayWindow } from "@mycadet/electron-desktop/dictation-overlay-window";
 import {
   configureFloatingWindows,
   createWindowRouteResolver,
-} from "@vellumai/electron-desktop/floating-window";
-import { configurePopoutWindows } from "@vellumai/electron-desktop/popout-window";
-import { configureQuickInputWindow } from "@vellumai/electron-desktop/quick-input-window";
+} from "@mycadet/electron-desktop/floating-window";
+import { configurePopoutWindows } from "@mycadet/electron-desktop/popout-window";
+import { configureQuickInputWindow } from "@mycadet/electron-desktop/quick-input-window";
 import {
   restoreBounds,
   track as trackWindowState,
-} from "@vellumai/electron-desktop/window-state";
+} from "@mycadet/electron-desktop/window-state";
 
 import { RENDERER_BASE_PROD, getDevRendererBase } from "./app-config";
 import { handle, on } from "./ipc";

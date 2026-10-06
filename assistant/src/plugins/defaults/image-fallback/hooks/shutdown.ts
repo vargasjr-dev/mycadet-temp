@@ -3,7 +3,7 @@
  * daemon shutdown or an in-place plugin redeploy never leaks the handle.
  */
 
-import { type HookFunction, type ShutdownContext } from "@vellumai/plugin-api";
+import { type HookFunction, type ShutdownContext } from "@mycadet/plugin-api";
 
 import { closeCaptionStore } from "../src/caption-cache.js";
 

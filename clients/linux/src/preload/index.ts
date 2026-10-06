@@ -4,7 +4,7 @@ import type {
   AppVersionInfo,
   VellumBridge,
   VellumCommand,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { createLinuxCoreBridge } from "./core-capabilities";
 import { composePreloadFeatures } from "./features";

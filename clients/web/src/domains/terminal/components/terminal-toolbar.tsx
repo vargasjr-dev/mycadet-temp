@@ -2,8 +2,8 @@ import { PlugZap, Terminal, Unplug, Wrench, X } from "lucide-react";
 
 import { useTranslation } from "@/i18n";
 import type { TerminalStatus } from "@/domains/terminal/types";
-import { Button } from "@vellumai/design-library/components/button";
-import { Tag, type TagTone } from "@vellumai/design-library/components/tag";
+import { Button } from "@mycadet/design-library/components/button";
+import { Tag, type TagTone } from "@mycadet/design-library/components/tag";
 
 interface TerminalToolbarProps {
   status: TerminalStatus;

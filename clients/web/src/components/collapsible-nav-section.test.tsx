@@ -12,7 +12,7 @@ import { Clock } from "lucide-react";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { SIDE_MENU_TILE_SIZE } from "@vellumai/design-library";
+import { SIDE_MENU_TILE_SIZE } from "@mycadet/design-library";
 
 import {
   SIDEBAR_SECTION_CONTENT_PADDING_TOP,

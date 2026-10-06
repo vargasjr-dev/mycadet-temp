@@ -11,7 +11,7 @@ import type {
   MessageQueuedEvent,
   MessageRequestCompleteEvent,
   MessageRequeuedEvent,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import { useConversationStore } from "@/stores/conversation-store";
 import { patchTranscriptMessages } from "@/domains/chat/transcript/patch-transcript-messages";
 import { confirmQueuedMessageDeletion } from "@/domains/chat/queue-cancellation";

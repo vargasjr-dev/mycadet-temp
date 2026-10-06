@@ -30,7 +30,7 @@
 import { Database } from "bun:sqlite";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { Message, Provider, ProviderResponse } from "@vellumai/plugin-api";
+import type { Message, Provider, ProviderResponse } from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import { ensureMemoryV3SelectionsSchema } from "../../../../../persistence/migrations/338-move-memory-v3-selections-to-memory-db.js";
@@ -56,12 +56,12 @@ let mockActive = false;
 
 let providerStub: Provider | null = null;
 
-// The select pool imports `getConfiguredProvider` from `@vellumai/plugin-api`.
+// The select pool imports `getConfiguredProvider` from `@mycadet/plugin-api`.
 // Spread the real contract module so unrelated exports stay present; override
 // only `getConfiguredProvider`, and only while this file is active so the stub
 // cannot leak into sibling tests.
-const realPluginApi = await import("@vellumai/plugin-api");
-mock.module("@vellumai/plugin-api", () => ({
+const realPluginApi = await import("@mycadet/plugin-api");
+mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,
   getConfiguredProvider: async (
     ...args: Parameters<typeof realPluginApi.getConfiguredProvider>

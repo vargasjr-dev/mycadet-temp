@@ -70,7 +70,7 @@ mock.module("@/domains/chat/voice/live-voice/live-voice-preflight-api", () => ({
 }));
 
 const toastError = mock((_message: string, _options?: { id?: string }) => {});
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { error: toastError },
   Toaster: () => null,
   ToastContent: () => null,

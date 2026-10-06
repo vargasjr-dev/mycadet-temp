@@ -25,7 +25,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomBytes } from "node:crypto";
 
-import { fetchCesLogExport } from "@vellumai/ces-client/http-log-export";
+import { fetchCesLogExport } from "@mycadet/ces-client/http-log-export";
 
 import { mintServiceToken } from "../../auth/token-exchange.js";
 import type { GatewayConfig } from "../../config.js";

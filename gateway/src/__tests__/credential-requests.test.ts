@@ -20,7 +20,7 @@ import {
 
 import "./test-preload.js";
 
-import { generateInviteToken, hashInviteToken } from "@vellumai/gateway-client";
+import { generateInviteToken, hashInviteToken } from "@mycadet/gateway-client";
 
 // Mock the daemon IPC client before importing the handlers under test.
 let ipcCalls: Array<{ method: string; params: unknown }> = [];

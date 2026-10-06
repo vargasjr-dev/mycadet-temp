@@ -1,10 +1,11 @@
-import type { TextInsertionResult as BridgeTextInsertionResult } from "@vellumai/ipc-contract";
+import type { TextInsertionResult as BridgeTextInsertionResult } from "@mycadet/ipc-contract";
 
 import { isElectron } from "@/runtime/is-electron";
 import { openSystemPermissionSettings } from "@/runtime/system-permissions";
 
 export type TextInsertionResult =
-  BridgeTextInsertionResult | { status: "unavailable" };
+  | BridgeTextInsertionResult
+  | { status: "unavailable" };
 
 export async function insertTextIntoFrontApp(
   text: string,

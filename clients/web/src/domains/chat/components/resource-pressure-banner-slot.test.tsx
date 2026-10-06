@@ -9,7 +9,7 @@ import {
 import { MemoryRouter } from "react-router";
 
 import type { UseResourcePressureMonitorResult } from "@/assistant/use-resource-pressure-monitor";
-import type { ResourcePressureStatus } from "@vellumai/assistant-api";
+import type { ResourcePressureStatus } from "@mycadet/assistant-api";
 
 let nativeAndroid = false;
 

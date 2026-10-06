@@ -5,7 +5,7 @@ import { OnboardingLayout } from "@/components/onboarding-layout";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { useTranslation } from "@/i18n";
 import { isElectron } from "@/runtime/is-electron";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 /**
  * The way off the welcome screen that isn't logging in. Local onboarding
@@ -47,7 +47,10 @@ export function WelcomeScreenShell({
   fillsViewport?: boolean;
 }) {
   const content = (
-    <OnboardingLayout avatarWave="around" animateAvatarWaveIn={animateAvatarWaveIn}>
+    <OnboardingLayout
+      avatarWave="around"
+      animateAvatarWaveIn={animateAvatarWaveIn}
+    >
       <div className="mx-auto flex min-h-full w-full max-w-xl flex-col items-center px-6 pb-40 text-[var(--content-default)] md:pb-0">
         <div className="flex flex-1 flex-col items-center justify-center">
           {children}

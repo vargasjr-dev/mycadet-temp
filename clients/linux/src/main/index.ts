@@ -7,31 +7,31 @@ import path from "node:path";
 import {
   BUNDLES_DIR_NAME,
   VELLUMAPP_PROTOCOL,
-} from "@vellumai/electron-desktop/bundle-platform";
-import { installCsp } from "@vellumai/electron-desktop/csp";
-import { getDeviceId } from "@vellumai/electron-desktop/device-id";
+} from "@mycadet/electron-desktop/bundle-platform";
+import { installCsp } from "@mycadet/electron-desktop/csp";
+import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import {
   forwardGatewayRequest,
   forwardPairedGatewayRequest,
   type GatewayForwardFetcher,
-} from "@vellumai/electron-desktop/gateway-forward";
-import { getPairedGuardianAccessToken } from "@vellumai/electron-desktop/local-mode";
-import { getWatchedLockfileSnapshot } from "@vellumai/electron-desktop/lockfile-watcher";
-import { installPairedGatewayRequestGuard } from "@vellumai/electron-desktop/paired-gateway-request-guard";
-import { installPermissionHandler } from "@vellumai/electron-desktop/permissions";
+} from "@mycadet/electron-desktop/gateway-forward";
+import { getPairedGuardianAccessToken } from "@mycadet/electron-desktop/local-mode";
+import { getWatchedLockfileSnapshot } from "@mycadet/electron-desktop/lockfile-watcher";
+import { installPairedGatewayRequestGuard } from "@mycadet/electron-desktop/paired-gateway-request-guard";
+import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import {
   executePlatformForwardPlan,
   planPlatformForward,
-} from "@vellumai/electron-desktop/platform-forward";
-import { registerVellumAppProtocol } from "@vellumai/electron-desktop/vellumapp-protocol";
-import { planAppProtocolAssetRequest } from "@vellumai/electron-utils/app-protocol";
+} from "@mycadet/electron-desktop/platform-forward";
+import { registerVellumAppProtocol } from "@mycadet/electron-desktop/vellumapp-protocol";
+import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
   pairedGatewayTargetsFromLockfile,
   readAllowedGatewayPorts,
   readPairedGatewayTargets,
   resolveLocalConfigFromEnv,
   resolveLockfilePaths,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 import {
   APP_HOST,
@@ -56,7 +56,7 @@ import { installWebContentsSecurity } from "./windows.client";
  * the app is ready.
  */
 
-// Dev-only: override the package `name` (`@vellumai/linux`) so
+// Dev-only: override the package `name` (`@mycadet/linux`) so
 // `app.getPath("userData")` resolves to its own directory, cleanly separate
 // from other Vellum installs. Packaged builds get a real `productName` from
 // electron-builder. Must run before `userData` is first read.

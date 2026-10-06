@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
-import type { TrustVerdict } from "@vellumai/gateway-client";
+import type { TrustVerdict } from "@mycadet/gateway-client";
 
 import type { InboundTrustReadResult } from "../../../calls/inbound-trust-reader.js";
 import * as inboundTrustReader from "../../../calls/inbound-trust-reader.js";

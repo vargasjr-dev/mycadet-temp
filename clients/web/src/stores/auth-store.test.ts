@@ -354,8 +354,7 @@ mock.module("@/runtime/widget-snapshot", () => ({
   retryPendingWidgetSnapshotClear: async () => true,
 }));
 
-const notificationAvatarRuntime =
-  await import("@/runtime/notification-avatar");
+const notificationAvatarRuntime = await import("@/runtime/notification-avatar");
 
 function seedNotificationIdentityMemory() {
   const identity = notificationAvatarRuntime.createNotificationIdentity(
@@ -411,7 +410,7 @@ mock.module("@/assistant/lifecycle-service", () => ({
   },
 }));
 
-// `@/assistant/api` transitively pulls in `@vellumai/assistant-api`
+// `@/assistant/api` transitively pulls in `@mycadet/assistant-api`
 // exports that are currently missing on main. Mock the call sites
 // `auth-store` actually uses; the real module load would crash
 // before any test runs.
@@ -2348,10 +2347,7 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     mockOrgFetchOutcome = new Promise(() => {});
     const originalSetTimeout = globalThis.setTimeout;
     const setTimeoutSpy = spyOn(globalThis, "setTimeout");
-    setTimeoutSpy.mockImplementation(((
-      handler: () => void,
-      timeout?: number,
-    ) =>
+    setTimeoutSpy.mockImplementation(((handler: () => void, timeout?: number) =>
       originalSetTimeout(
         handler,
         timeout === 3_000 ? 0 : timeout,
@@ -2388,10 +2384,7 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     mockListAssistantsResult = { ok: false, status: 403, error: {} };
     const originalSetTimeout = globalThis.setTimeout;
     const setTimeoutSpy = spyOn(globalThis, "setTimeout");
-    setTimeoutSpy.mockImplementation(((
-      handler: () => void,
-      timeout?: number,
-    ) =>
+    setTimeoutSpy.mockImplementation(((handler: () => void, timeout?: number) =>
       originalSetTimeout(
         handler,
         timeout === 3_000 ? 0 : timeout,

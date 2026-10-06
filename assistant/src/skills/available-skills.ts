@@ -15,7 +15,7 @@ import {
  *
  * The underlying skill and flag modules are loaded via dynamic `import()`
  * inside each function so that importing this module — which every
- * `@vellumai/plugin-api` consumer does transitively — does not eagerly pull
+ * `@mycadet/plugin-api` consumer does transitively — does not eagerly pull
  * the catalog/flag import graph. An eager pull would force those modules'
  * named exports to resolve at instantiation, which breaks the intentional
  * partial module mocks in tests.

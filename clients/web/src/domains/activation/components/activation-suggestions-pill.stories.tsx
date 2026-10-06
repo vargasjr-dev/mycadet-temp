@@ -15,7 +15,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Bell } from "lucide-react";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { ActivationSuggestionsPill } from "@/domains/activation/components/activation-suggestions-pill";
 

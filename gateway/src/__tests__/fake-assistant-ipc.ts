@@ -14,7 +14,7 @@ import { createServer, type Server } from "node:net";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
-import { IpcFrameReader, writeMessage } from "@vellumai/ipc-server-utils";
+import { IpcFrameReader, writeMessage } from "@mycadet/ipc-server-utils";
 
 export function startFakeAssistantIpc(workspaceDir: string): Server {
   mkdirSync(workspaceDir, { recursive: true });

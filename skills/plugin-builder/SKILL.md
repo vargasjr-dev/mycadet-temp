@@ -52,11 +52,11 @@ A single plugin can contribute several different kinds of behavior. Each surface
 | [Channels](references/channels.md)         | `channels/ingress.json` | Declare public webhook and WebSocket routes that make the plugin a channel. The gateway verifies them and forwards to matching routes.           |
 | [Apps](references/apps.md)                 | `apps/<name>/`          | Ship persistent interactive apps (dashboards, trackers, visualizations) compiled from a Preact + TSX bundle and rendered in the workspace panel. |
 
-The two extensibility patterns serve different goals. **Plugins are for distribution**: you intend to share the capability, publish to the marketplace, or install it across multiple assistants. The plugin manifest (`package.json`), the `@vellumai/plugin-api` peer dependency, and the install flow exist to make a capability portable, versioned, and discoverable by others.
+The two extensibility patterns serve different goals. **Plugins are for distribution**: you intend to share the capability, publish to the marketplace, or install it across multiple assistants. The plugin manifest (`package.json`), the `@mycadet/plugin-api` peer dependency, and the install flow exist to make a capability portable, versioned, and discoverable by others.
 
 **Direct workspace contributions are for personal extension**: you simply want to extend your assistant and have no intention of distributing the work. Skip the plugin packaging entirely. Drop the file directly into the matching top-level workspace directory (`/workspace/tools/<name>/` for a tool, `/workspace/skills/<name>/` for a skill, `/workspace/mcp.json` for MCP servers) and the assistant picks it up automatically. No manifest, no install step, no peer dependency. A plugin is the way to ship those same servers with a versioned, installable unit.
 
-Several surfaces that plugins contribute run in the same process as the main Assistant process. They can import all internal methods from the Assistant from the single public package, [`@vellumai/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api), which is the only supported contract. Anything not exported from there is internal and can change without notice. See `references/plugins.md` for the full export surface.
+Several surfaces that plugins contribute run in the same process as the main Assistant process. They can import all internal methods from the Assistant from the single public package, [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api), which is the only supported contract. Anything not exported from there is internal and can change without notice. See `references/plugins.md` for the full export surface.
 
 ## Before you write a single file
 
@@ -64,7 +64,7 @@ Ask before building. Six questions, in this order. Stop if the user is unclear o
 
 1. **What job does the plugin do?** One sentence, plain language. If you cannot write this, the plugin should not be built yet.
 2. **Which surfaces does it ship?** Pick from the surfaces table above. Most plugins ship one or two, not all of them. See `references/plugins.md` for the directory layout and manifest, and the surface-specific references for each surface's contract.
-3. **Does it need credentials?** An API key, OAuth token, or webhook secret is not a value that belongs in a `.ts` file. For LLM inference credentials, use `getConfiguredProvider()` from `@vellumai/plugin-api` to route through the workspace's stored credentials without handling plaintext. For other credential types (OAuth tokens, webhook secrets), store them via the credential vault and resolve at runtime with `resolveCredential()` from `@vellumai/plugin-api`, which returns the plaintext value scoped to the service named after your plugin (the install-directory basename). Call it from a hook, plugin tool, plugin route, a plugin skill `TOOLS.json` executor, or a companion script under `skills/<skill>/{scripts,tools}/`. A bash or skill-sandbox child inherits `VELLUM_PLUGIN_NAME` when exactly one plugin skill is active. A standalone `bun` invocation of a script under that layout also recovers the plugin name from its path. Catch `CredentialResolutionError` to degrade gracefully. Do not shell out to `assistant credentials reveal`.
+3. **Does it need credentials?** An API key, OAuth token, or webhook secret is not a value that belongs in a `.ts` file. For LLM inference credentials, use `getConfiguredProvider()` from `@mycadet/plugin-api` to route through the workspace's stored credentials without handling plaintext. For other credential types (OAuth tokens, webhook secrets), store them via the credential vault and resolve at runtime with `resolveCredential()` from `@mycadet/plugin-api`, which returns the plaintext value scoped to the service named after your plugin (the install-directory basename). Call it from a hook, plugin tool, plugin route, a plugin skill `TOOLS.json` executor, or a companion script under `skills/<skill>/{scripts,tools}/`. A bash or skill-sandbox child inherits `VELLUM_PLUGIN_NAME` when exactly one plugin skill is active. A standalone `bun` invocation of a script under that layout also recovers the plugin name from its path. Catch `CredentialResolutionError` to degrade gracefully. Do not shell out to `assistant credentials reveal`.
 4. **Does it keep state?** A plugin is fully self-contained: durable state lives in its `data/` directory (`InitContext.pluginStorageDir`), with schema created idempotently by the `init` hook, handles closed in `shutdown`, and per-conversation rows purged in `conversation-deleted`. A plugin never persists state in the assistant's database or elsewhere in the workspace. See "State is plugin-owned" in `references/plugins.md`.
 5. **Where will the source live?** A GitHub repo, ideally under the user's own namespace. The marketplace entry pins to a full commit SHA.
 6. **Is the user writing TypeScript or compiling ahead?** In-repo Bun/Node compile on assistant start is the default. If they want a different build, ask now.
@@ -112,14 +112,14 @@ Once merged, users install by name: `assistant plugins install my-plugin`. The n
 
 - Job and surfaces locked in the alignment pass (questions 1 and 2 answered).
 - Directory matches the loader convention: one subdirectory (or declared file) per surface it ships (see the surfaces table), plus an optional `src/` for internal modules.
-- `package.json` declares `name`, `version`, and a real `peerDependencies["@vellumai/plugin-api"]` range.
+- `package.json` declares `name`, `version`, and a real `peerDependencies["@mycadet/plugin-api"]` range.
 - Any durable state lives in `data/`, created by `init` and cleaned up by `shutdown` / `conversation-deleted`.
 - Each surface has been exercised locally with a working example.
 - A `marketplace.json` entry exists with a full SHA in `source.ref`, and the Vellum team's review is in flight.
 
 ## Reference files
 
-- `references/plugins.md`: Directory layout, manifest fields, and the full `@vellumai/plugin-api` export surface.
+- `references/plugins.md`: Directory layout, manifest fields, and the full `@mycadet/plugin-api` export surface.
 - `references/hooks.md`: Every lifecycle hook with its context fields, the agent loop diagram, resolution order, and a hook anatomy example.
 - `references/tools.md`: Tool definition fields, the execute context, result shape, resolution order, and a tool anatomy example.
 - `references/skills.md`: Frontmatter reference, resolution order, and a skill anatomy example.

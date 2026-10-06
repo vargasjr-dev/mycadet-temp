@@ -6,7 +6,7 @@
  * more, and every named value copies from its label.
  */
 
-import { CardRoot, Typography } from "@vellumai/design-library";
+import { CardRoot, Typography } from "@mycadet/design-library";
 import type { ReactNode } from "react";
 
 import { CopyButton } from "@/components/copy-button";

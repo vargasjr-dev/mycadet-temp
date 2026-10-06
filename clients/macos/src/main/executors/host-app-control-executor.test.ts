@@ -12,7 +12,12 @@ mock.module("electron-log/main", () => {
       debug: noop,
       initialize: noop,
       transports: {
-        file: { maxSize: 0, fileName: "", format: "", getFile: () => ({ path: "" }) },
+        file: {
+          maxSize: 0,
+          fileName: "",
+          format: "",
+          getFile: () => ({ path: "" }),
+        },
       },
     },
   };
@@ -25,8 +30,8 @@ mock.module("../sidecar/shared-cu-helper", () => ({
 }));
 
 import { createHostAppControlExecutor } from "./host-app-control-executor";
-import type { HostProxyPoster } from "@vellumai/electron-desktop/host-proxy/poster";
-import type { HostProxySseMessage } from "@vellumai/electron-desktop/host-proxy/sse";
+import type { HostProxyPoster } from "@mycadet/electron-desktop/host-proxy/poster";
+import type { HostProxySseMessage } from "@mycadet/electron-desktop/host-proxy/sse";
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -38,7 +43,9 @@ function makePoster() {
   };
 }
 
-function request(overrides: Partial<HostProxySseMessage> = {}): HostProxySseMessage {
+function request(
+  overrides: Partial<HostProxySseMessage> = {},
+): HostProxySseMessage {
   return {
     type: "host_app_control_request",
     requestId: "req-1",

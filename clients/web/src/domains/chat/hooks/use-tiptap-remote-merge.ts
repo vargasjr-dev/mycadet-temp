@@ -1,5 +1,5 @@
 import type { Editor, EditorEvents } from "@tiptap/core";
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 import { useLayoutEffect, useRef } from "react";
 
 import { getEditorMarkdown } from "@/domains/chat/components/tiptap-editor-extensions";

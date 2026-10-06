@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { WatchRetroCompletedEvent } from "@vellumai/assistant-api";
+import type { WatchRetroCompletedEvent } from "@mycadet/assistant-api";
 
 import {
   beginWatchRetro,

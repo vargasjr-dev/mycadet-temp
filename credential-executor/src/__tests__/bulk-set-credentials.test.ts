@@ -7,8 +7,8 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { CesRpcMethod } from "@vellumai/service-contracts/credential-rpc";
-import type { SecureKeyBackend } from "@vellumai/credential-storage";
+import { CesRpcMethod } from "@mycadet/service-contracts/credential-rpc";
+import type { SecureKeyBackend } from "@mycadet/credential-storage";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -19,7 +19,9 @@ import type { SecureKeyBackend } from "@vellumai/credential-storage";
  * main.ts, backed by the given SecureKeyBackend.
  */
 function buildBulkSetHandler(secureKeyBackend: SecureKeyBackend) {
-  return async (req: { credentials: Array<{ account: string; value: string }> }) => {
+  return async (req: {
+    credentials: Array<{ account: string; value: string }>;
+  }) => {
     const results = [];
     for (const { account, value } of req.credentials) {
       const ok = await secureKeyBackend.set(account, value);
@@ -33,7 +35,9 @@ function buildBulkSetHandler(secureKeyBackend: SecureKeyBackend) {
  * Create an in-memory SecureKeyBackend for testing.
  * Optionally accepts a set of accounts that should fail on set().
  */
-function createMockBackend(failingAccounts: Set<string> = new Set()): SecureKeyBackend & { store: Map<string, string> } {
+function createMockBackend(
+  failingAccounts: Set<string> = new Set(),
+): SecureKeyBackend & { store: Map<string, string> } {
   const store = new Map<string, string>();
   return {
     store,

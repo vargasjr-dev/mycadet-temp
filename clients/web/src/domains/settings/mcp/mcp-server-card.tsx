@@ -1,8 +1,8 @@
 import { MoreHorizontal, Settings, Trash2 } from "lucide-react";
 
-import { ActionMenu } from "@vellumai/design-library/components/action-menu";
-import { Button } from "@vellumai/design-library/components/button";
-import { Tag } from "@vellumai/design-library/components/tag";
+import { ActionMenu } from "@mycadet/design-library/components/action-menu";
+import { Button } from "@mycadet/design-library/components/button";
+import { Tag } from "@mycadet/design-library/components/tag";
 
 import { useTranslation } from "@/i18n";
 

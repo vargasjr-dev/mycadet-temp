@@ -2,16 +2,15 @@ import path from "node:path";
 
 import { describe, expect, mock, test } from "bun:test";
 
-import { resolveRelativePath } from "@vellumai/electron-utils/app-protocol";
+import { resolveRelativePath } from "@mycadet/electron-utils/app-protocol";
 
 mock.module("electron", () => ({
   net: { fetch: mock(async () => new Response()) },
   protocol: { handle: mock(() => undefined) },
 }));
 
-const { mimeTypeForPath, resolveBundlePath } = await import(
-  "./vellumapp-protocol"
-);
+const { mimeTypeForPath, resolveBundlePath } =
+  await import("./vellumapp-protocol");
 
 const BUNDLES_ROOT = "/data/bundles";
 const VALID_UUID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";

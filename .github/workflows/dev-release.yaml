@@ -160,10 +160,10 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/assistant --filter=@vellumai/vellum-gateway
+        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/vellum-gateway
         working-directory: assistant
 
       - name: Install bundled skill dependencies
@@ -188,8 +188,8 @@ jobs:
         run: bun run test
         working-directory: assistant
         env:
-          EXCLUDE_EXPERIMENTAL: 'true'
-          TEST_WORKERS: '4'
+          EXCLUDE_EXPERIMENTAL: "true"
+          TEST_WORKERS: "4"
 
   ci-gateway:
     needs: [check-for-new-commits]
@@ -201,10 +201,10 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/vellum-gateway
+        run: bun install --frozen-lockfile --filter=@mycadet/vellum-gateway
         working-directory: gateway
 
       - name: Sync feature flag registry
@@ -232,10 +232,10 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/credential-executor
+        run: bun install --frozen-lockfile --filter=@mycadet/credential-executor
         working-directory: credential-executor
 
       - name: Typecheck
@@ -256,10 +256,10 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/cli
+        run: bun install --frozen-lockfile --filter=@mycadet/cli
         working-directory: cli
 
       - name: Lint
@@ -280,10 +280,10 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/web
+        run: bun install --frozen-lockfile --filter=@mycadet/web
         working-directory: clients/web
 
       - name: Generate API clients
@@ -855,7 +855,13 @@ jobs:
     secrets: inherit
 
   publish-production-preview-image-tags:
-    needs: [compute-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
+    needs:
+      [
+        compute-version,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+      ]
     if: ${{ always() && !cancelled() && github.ref_name == 'main' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -1194,7 +1200,13 @@ jobs:
   # ── Register Release with Dev Platform ─────────────────────────────────
 
   register-release:
-    needs: [compute-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
+    needs:
+      [
+        compute-version,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: dev
@@ -1202,11 +1214,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-
       - name: Download manifest digests
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          pattern: '*-manifest-digest-dev'
+          pattern: "*-manifest-digest-dev"
           path: /tmp/digests
 
       - name: Extract manifest digests
@@ -1324,7 +1335,16 @@ jobs:
   # SLACK_RELEASES_WEBHOOK_URL (releases). The job no-ops if the secret is unset.
 
   notify-dev-release:
-    needs: [compute-version, register-release, register-preview-release, build-electron, upload-electron-updates, deploy-web-spa, deploy-web-spa-preview]
+    needs:
+      [
+        compute-version,
+        register-release,
+        register-preview-release,
+        build-electron,
+        upload-electron-updates,
+        deploy-web-spa,
+        deploy-web-spa-preview,
+      ]
     # Run on success and failure alike, but not when the run was cancelled
     # (e.g. superseded by a newer hourly run via cancel-in-progress) — a
     # cancelled run is not a real failure and should not alert the channel.
@@ -1667,7 +1687,7 @@ jobs:
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
         working-directory: clients/chrome-extension
@@ -1757,13 +1777,13 @@ jobs:
       - name: Install Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
         working-directory: ${{ github.workspace }}
         run: |
-          if ! bun install --frozen-lockfile --filter=@vellumai/macos --filter=@vellumai/web; then
-            rm -f bun.lock && rm -rf node_modules && bun install --filter=@vellumai/macos --filter=@vellumai/web
+          if ! bun install --frozen-lockfile --filter=@mycadet/macos --filter=@mycadet/web; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/macos --filter=@mycadet/web
           fi
 
       # Installing does not download the Electron binary or build the mac
@@ -2023,7 +2043,14 @@ jobs:
   # ── Dev npm publishing ─────────────────────────────────────────────────
 
   build-npm-dev:
-    needs: [compute-version, ci-assistant, ci-cli, ci-gateway, ci-credential-executor]
+    needs:
+      [
+        compute-version,
+        ci-assistant,
+        ci-cli,
+        ci-gateway,
+        ci-credential-executor,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -2035,7 +2062,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
@@ -2101,12 +2128,19 @@ jobs:
           fi
           npm publish /tmp/npm-dist/package.tgz --tag dev --access public --no-provenance
 
-  # `@vellumai/plugin-api` is generated by scripts/build-plugin-api.ts (a single
+  # `@mycadet/plugin-api` is generated by scripts/build-plugin-api.ts (a single
   # self-contained `index.d.ts` rollup, zod-only external), not a package dir
   # `npm pack` consumes directly, so it gets its own build/publish pair instead
   # of a slot in the npm matrix. Mirrors build/publish-plugin-api-* in release.yml.
   build-plugin-api-dev:
-    needs: [compute-version, ci-assistant, ci-cli, ci-gateway, ci-credential-executor]
+    needs:
+      [
+        compute-version,
+        ci-assistant,
+        ci-cli,
+        ci-gateway,
+        ci-credential-executor,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -2115,16 +2149,16 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
       - name: Install dependencies
         run: |
-          if ! bun install --frozen-lockfile --filter=@vellumai/assistant; then
+          if ! bun install --frozen-lockfile --filter=@mycadet/assistant; then
             echo "bun install --frozen-lockfile failed; regenerating lockfile and retrying..."
             rm -f bun.lock
-            bun install --filter=@vellumai/assistant
+            bun install --filter=@mycadet/assistant
           fi
       - name: Build plugin-api package
         run: cd assistant && bun run scripts/build-plugin-api.ts --version "${{ needs.compute-version.outputs.version }}"
@@ -2176,7 +2210,15 @@ jobs:
           npm publish /tmp/npm-dist/package.tgz --tag dev --access public --no-provenance
 
   build-web-dev:
-    needs: [compute-version, ci-assistant, ci-cli, ci-gateway, ci-credential-executor, ci-web]
+    needs:
+      [
+        compute-version,
+        ci-assistant,
+        ci-cli,
+        ci-gateway,
+        ci-credential-executor,
+        ci-web,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -2185,18 +2227,18 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
       - name: Install design-library dependencies
         working-directory: packages/design-library
-        run: bun install --frozen-lockfile --filter=@vellumai/design-library
+        run: bun install --frozen-lockfile --filter=@mycadet/design-library
       - name: Install web dependencies
         working-directory: clients/web
         run: |
-          if ! bun install --frozen-lockfile --filter=@vellumai/web; then
-            rm -f bun.lock && rm -rf node_modules && bun install --filter=@vellumai/web
+          if ! bun install --frozen-lockfile --filter=@mycadet/web; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/web
           fi
       - name: Generate API clients
         working-directory: clients/web
@@ -2278,11 +2320,11 @@ jobs:
           cd meta
           jq --arg v "$VERSION" '
             .version = $v |
-            .dependencies["@vellumai/assistant"] = $v |
-            .dependencies["@vellumai/cli"] = $v |
-            .dependencies["@vellumai/credential-executor"] = $v |
-            .dependencies["@vellumai/vellum-gateway"] = $v |
-            .dependencies["@vellumai/web"] = $v
+            .dependencies["@mycadet/assistant"] = $v |
+            .dependencies["@mycadet/cli"] = $v |
+            .dependencies["@mycadet/credential-executor"] = $v |
+            .dependencies["@mycadet/vellum-gateway"] = $v |
+            .dependencies["@mycadet/web"] = $v
           ' package.json > tmp && mv tmp package.json
       - name: Wait for dependencies to propagate
         run: ./scripts/npm-wait-for-meta-deps.sh
@@ -2334,7 +2376,8 @@ jobs:
     secrets: inherit
 
   release-windows:
-    needs: [build-windows, compute-version, register-release, build-chrome-extension]
+    needs:
+      [build-windows, compute-version, register-release, build-chrome-extension]
     permissions:
       contents: read
       id-token: write

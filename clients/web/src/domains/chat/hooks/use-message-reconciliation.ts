@@ -31,7 +31,7 @@ import {
   fetchConversationMessages,
   RECONCILE_LATEST_PAGE_LIMIT,
 } from "@/domains/chat/api/messages";
-import type { ConversationMessage } from "@vellumai/assistant-api";
+import type { ConversationMessage } from "@mycadet/assistant-api";
 import { useConversationStore } from "@/stores/conversation-store";
 import { endTurn } from "@/domains/chat/turn-coordinator";
 

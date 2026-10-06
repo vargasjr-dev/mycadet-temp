@@ -14,8 +14,8 @@ import { useSubagentStore } from "@/domains/chat/subagent-store";
 import {
   SubagentStatusSchema,
   type SubagentStatus,
-} from "@vellumai/assistant-api";
-import { Typography } from "@vellumai/design-library";
+} from "@mycadet/assistant-api";
+import { Typography } from "@mycadet/design-library";
 
 const SPAWNED_AT = 1_717_000_000_000;
 

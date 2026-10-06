@@ -73,7 +73,7 @@ import {
 import { supportsChords } from "@/runtime/hotkey";
 import { callChordHints } from "@/domains/chat/voice/live-voice/call-chord-keys";
 import { useTranslation } from "@/i18n";
-import { COMPANION_BASE_AVATAR_BOX } from "@vellumai/ipc-contract";
+import { COMPANION_BASE_AVATAR_BOX } from "@mycadet/ipc-contract";
 import type {
   CompanionAnnotationTool,
   CompanionCapturePick,
@@ -92,7 +92,7 @@ import type {
   VoiceActivityState,
   CompanionDictationOffer as CompanionDictationOfferWords,
   WatchCaptureTarget,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /**
  * How far a press may travel and still count as a click.

@@ -1,7 +1,11 @@
-import { ClipboardCopy, EllipsisVertical, MessageSquareText } from "lucide-react";
+import {
+  ClipboardCopy,
+  EllipsisVertical,
+  MessageSquareText,
+} from "lucide-react";
 
-import { ActionMenu } from "@vellumai/design-library/components/action-menu";
-import { Button } from "@vellumai/design-library/components/button";
+import { ActionMenu } from "@mycadet/design-library/components/action-menu";
+import { Button } from "@mycadet/design-library/components/button";
 
 import { useTranslation } from "@/i18n";
 

@@ -8,7 +8,7 @@
 // Also detects behavioral patterns in the assistant's own actions.
 // ---------------------------------------------------------------------------
 
-import { getConfiguredProvider } from "@vellumai/plugin-api";
+import { getConfiguredProvider } from "@mycadet/plugin-api";
 
 import type { AssistantConfig } from "../../../../../config/types.js";
 import { createEdge, createNode, queryNodes } from "../../graph/store.js";

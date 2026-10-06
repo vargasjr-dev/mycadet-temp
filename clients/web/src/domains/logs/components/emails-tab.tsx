@@ -3,7 +3,7 @@ import { AlertTriangle, Clock, Inbox, Loader2, Send } from "lucide-react";
 import { type ReactNode } from "react";
 import { Link } from "react-router";
 
-import { Tag, TextLink } from "@vellumai/design-library";
+import { Tag, TextLink } from "@mycadet/design-library";
 
 import {
   assistantsEmailAddressesListOptions,

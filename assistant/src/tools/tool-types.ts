@@ -6,7 +6,7 @@
  * value). No runtime helpers live here — the assistant keeps all behavior
  * functions in `assistant/src/tools/` and re-exports the types from this
  * file. This module imports nothing from `assistant/src` (only type-only
- * wire shapes from `@vellumai/gateway-client`), so it can sit at the bottom
+ * wire shapes from `@mycadet/gateway-client`), so it can sit at the bottom
  * of the import graph and be consumed by `tools/types.ts`,
  * `providers/types.ts`, and `permissions/types.ts` without creating cycles.
  *
@@ -30,7 +30,7 @@ import type {
   RiskAllowlistOption,
   RiskDirectoryScopeOption,
   RiskPatternScopeOption,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 export type ExecutionTarget = "sandbox" | "host";
 
@@ -280,7 +280,7 @@ export interface ToolContext {
   /**
    * Trust classification of the actor who initiated this tool invocation.
    * Broadened to `string` here; the assistant narrows this back to
-   * `TrustClass` (declared in `@vellumai/gateway-client`) in
+   * `TrustClass` (declared in `@mycadet/gateway-client`) in
    * `assistant/src/tools/types.ts`.
    */
   trustClass: string;

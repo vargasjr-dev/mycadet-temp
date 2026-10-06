@@ -1,4 +1,4 @@
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 /**
  * Build a TanStack Query `onError` handler that surfaces a failed mutation

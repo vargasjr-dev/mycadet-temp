@@ -26,12 +26,12 @@ import {
 
 import { Lock } from "lucide-react";
 
-import { Typography } from "@vellumai/design-library";
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Radio, RadioGroup } from "@vellumai/design-library/components/radio";
-import { SegmentControl } from "@vellumai/design-library/components/segment-control";
+import { Typography } from "@mycadet/design-library";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Radio, RadioGroup } from "@mycadet/design-library/components/radio";
+import { SegmentControl } from "@mycadet/design-library/components/segment-control";
 import type { TrustRulePayload } from "@/domains/chat/rule-editor-actions";
 import { getRiskToleranceHint, toRiskLevel } from "@/domains/chat/utils/risk";
 

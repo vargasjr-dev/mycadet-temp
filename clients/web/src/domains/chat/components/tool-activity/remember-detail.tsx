@@ -10,8 +10,8 @@
 import {
   type RememberInput,
   RememberInputSchema,
-} from "@vellumai/assistant-api";
-import { Typography } from "@vellumai/design-library";
+} from "@mycadet/assistant-api";
+import { Typography } from "@mycadet/design-library";
 
 import { ClampedContent, SectionLabel } from "@/components/detail-primitives";
 import { ToolOutputBody } from "@/domains/chat/components/tool-activity/tool-output-body";

@@ -1,4 +1,4 @@
-import { Notice } from "@vellumai/design-library/components/notice";
+import { Notice } from "@mycadet/design-library/components/notice";
 
 import { useTranslation } from "@/i18n";
 

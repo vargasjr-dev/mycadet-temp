@@ -48,14 +48,14 @@ import { saveFile } from "@/runtime/native-file";
 import { Trans, useTranslation } from "@/i18n";
 import { useAuthStore } from "@/stores/auth-store";
 import { VELLUM_COMMUNITY_URL } from "@/utils/external-urls";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 import {
   Select,
   type SelectOption,
-} from "@vellumai/design-library/components/select";
-import { Input, Textarea } from "@vellumai/design-library/components/input";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+} from "@mycadet/design-library/components/select";
+import { Input, Textarea } from "@mycadet/design-library/components/input";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 import type { FeedbackReason } from "@/components/share-feedback-types";
 
 const BACKDROP_CLASS =

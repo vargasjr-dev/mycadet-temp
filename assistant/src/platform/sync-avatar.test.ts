@@ -22,7 +22,7 @@ import {
   test,
 } from "bun:test";
 
-import { NOTIFICATION_AVATAR_SPEC_VERSION } from "@vellumai/avatar-manifest/notification-avatar";
+import { NOTIFICATION_AVATAR_SPEC_VERSION } from "@mycadet/avatar-manifest/notification-avatar";
 
 import type { AvatarState } from "../avatar/avatar-manifest.js";
 import * as realAvatarManifest from "../avatar/avatar-manifest.js";

@@ -5,7 +5,7 @@ import {
   DiskPressureStatusResponseSchema,
   type ResourcePressureStatusResponse,
   ResourcePressureStatusResponseSchema,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import {
   assistantsActivateCreate,
@@ -596,7 +596,8 @@ export async function restartAssistant(
 }
 
 export type RetireResult =
-  { ok: true } | { ok: false; status: number; error: Record<string, unknown> };
+  | { ok: true }
+  | { ok: false; status: number; error: Record<string, unknown> };
 
 export interface RetireAssistantOptions {
   /**

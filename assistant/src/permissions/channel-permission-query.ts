@@ -15,7 +15,7 @@ import {
   type ResolveChannelPermissionRequest,
   type ResolvedChannelPermission,
   type RiskThreshold,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import type { PolicyContext } from "./types.js";
 

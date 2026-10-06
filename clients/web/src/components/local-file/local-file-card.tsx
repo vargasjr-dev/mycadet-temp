@@ -16,7 +16,7 @@
 import { ExternalLink, PanelRight } from "lucide-react";
 import type { ComponentType, KeyboardEvent, ReactNode } from "react";
 
-import { cn, Typography } from "@vellumai/design-library";
+import { cn, Typography } from "@mycadet/design-library";
 
 import { formatAttachmentSize, middleTruncate } from "@/utils/attachment-utils";
 import { LocalFileIcon } from "@/components/local-file/local-file-icon";

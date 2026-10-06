@@ -15,7 +15,7 @@ import { useTranslation } from "@/i18n";
 
 import { Bolt, Brain } from "lucide-react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { DetailShell } from "@/components/detail-shell";
 import { RiskChip } from "@/domains/chat/components/risk-chip";

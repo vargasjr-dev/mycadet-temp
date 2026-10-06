@@ -36,7 +36,7 @@ import type {
   CompanionAnnotationPhase,
   CompanionAnnotationStroke,
   WatchCaptureTarget,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 // ---------------------------------------------------------------------------
 // Types

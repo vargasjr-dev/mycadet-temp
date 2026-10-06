@@ -1,6 +1,6 @@
 import { AlertCircle } from "lucide-react";
 
-import { Select } from "@vellumai/design-library/components/select";
+import { Select } from "@mycadet/design-library/components/select";
 
 import { useProfileOptions } from "@/domains/settings/hooks/use-profile-options";
 import { useTranslation } from "@/i18n";
@@ -8,7 +8,7 @@ import { useTranslation } from "@/i18n";
 import type {
   SelectMenuAlign,
   SelectVariant,
-} from "@vellumai/design-library/components/select";
+} from "@mycadet/design-library/components/select";
 
 export interface ModelProfileSelectProps {
   assistantId: string;

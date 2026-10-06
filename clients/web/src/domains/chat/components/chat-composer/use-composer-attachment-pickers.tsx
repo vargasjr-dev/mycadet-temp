@@ -1,4 +1,4 @@
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 import { useCallback, useEffect, useRef } from "react";
 import { requestComposerFocus } from "@/domains/chat/composer-focus";
 import {

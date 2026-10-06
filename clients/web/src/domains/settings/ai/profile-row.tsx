@@ -1,11 +1,11 @@
 import { AlertCircle, EllipsisVertical } from "lucide-react";
 
-import { actionMenuDestructiveClasses } from "@vellumai/design-library/components/action-menu";
-import { Button } from "@vellumai/design-library/components/button";
-import { ListRow } from "@vellumai/design-library/components/list-row";
-import { Menu } from "@vellumai/design-library/components/menu";
-import { Tag } from "@vellumai/design-library/components/tag";
-import { Tooltip } from "@vellumai/design-library/components/tooltip";
+import { actionMenuDestructiveClasses } from "@mycadet/design-library/components/action-menu";
+import { Button } from "@mycadet/design-library/components/button";
+import { ListRow } from "@mycadet/design-library/components/list-row";
+import { Menu } from "@mycadet/design-library/components/menu";
+import { Tag } from "@mycadet/design-library/components/tag";
+import { Tooltip } from "@mycadet/design-library/components/tooltip";
 
 import { catalogModelSupportsText } from "@/assistant/llm-model-catalog";
 import { resolveModelDisplayName } from "@/assistant/model-display";

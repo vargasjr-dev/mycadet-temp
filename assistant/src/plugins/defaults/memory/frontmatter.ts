@@ -3,7 +3,7 @@
  *
  * Frontmatter is a YAML block delimited by `---` at the top of a file. Memory
  * owns this parser rather than importing the host `skills/` copy so the plugin
- * depends only on its own files, `@vellumai/plugin-api`, and external packages.
+ * depends only on its own files, `@mycadet/plugin-api`, and external packages.
  */
 
 import { parse as parseYaml } from "yaml";

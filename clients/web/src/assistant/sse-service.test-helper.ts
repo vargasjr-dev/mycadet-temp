@@ -1,4 +1,4 @@
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 /** A minimal stream envelope carrying `seq`, for driving the SSE service. */
 export function makeEnvelope(seq: number): AssistantEventEnvelope {

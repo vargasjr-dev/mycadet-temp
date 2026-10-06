@@ -100,7 +100,7 @@ mock.module("lucide-react", () => ({
   EyeOff: () => null,
   ExternalLink: () => null,
 }));
-mock.module("@vellumai/design-library/components/button", () => ({
+mock.module("@mycadet/design-library/components/button", () => ({
   Button: ({
     children,
     onClick,
@@ -115,13 +115,13 @@ mock.module("@vellumai/design-library/components/button", () => ({
     </button>
   ),
 }));
-mock.module("@vellumai/design-library/components/card", () => ({
+mock.module("@mycadet/design-library/components/card", () => ({
   Card: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
-mock.module("@vellumai/design-library/components/checkbox", () => ({
+mock.module("@mycadet/design-library/components/checkbox", () => ({
   Checkbox: () => null,
 }));
-mock.module("@vellumai/design-library/components/toggle", () => ({
+mock.module("@mycadet/design-library/components/toggle", () => ({
   Toggle: () => null,
 }));
 
@@ -243,7 +243,9 @@ describe("PrivacyScreen — Start navigation", () => {
       assistants: [
         {
           id: "asst-1",
-          hatchedAt: new Date(Date.now() - ONBOARDED_HATCH_AGE_MS).toISOString(),
+          hatchedAt: new Date(
+            Date.now() - ONBOARDED_HATCH_AGE_MS,
+          ).toISOString(),
           isLocal: false,
           isPlatformHosted: true,
           isPaired: false,
@@ -268,7 +270,9 @@ describe("PrivacyScreen — Start navigation", () => {
       assistants: [
         {
           id: "asst-old",
-          hatchedAt: new Date(Date.now() - ONBOARDED_HATCH_AGE_MS).toISOString(),
+          hatchedAt: new Date(
+            Date.now() - ONBOARDED_HATCH_AGE_MS,
+          ).toISOString(),
           isLocal: false,
           isPlatformHosted: true,
           isPaired: false,

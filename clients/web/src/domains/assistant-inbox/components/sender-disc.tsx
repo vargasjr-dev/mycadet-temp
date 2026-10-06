@@ -1,4 +1,4 @@
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 
 import type { EmailParticipant } from "../types";
 

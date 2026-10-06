@@ -8,7 +8,7 @@
 import type {
   ApprovalUIMetadata,
   ChannelDeliveryResult,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import { getAttachmentContent } from "../../../persistence/attachments-store.js";
 import type { RuntimeAttachmentMetadata } from "../../../runtime/http-types.js";

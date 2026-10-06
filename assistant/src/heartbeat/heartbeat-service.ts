@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { channelForBotProvider } from "@vellumai/service-contracts/channels";
+import { channelForBotProvider } from "@mycadet/service-contracts/channels";
 
 import { getConfig } from "../config/loader.js";
 import type { HeartbeatConfig } from "../config/schemas/heartbeat.js";

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 // Self-referencing package import — proves the `./secret-detection` subpath
 // export resolves for consumers.
-import * as subpathExport from "@vellumai/service-contracts/secret-detection";
+import * as subpathExport from "@mycadet/service-contracts/secret-detection";
 
 import {
   detectSecretsInText,
@@ -67,7 +67,7 @@ const FIXTURES: Record<string, string> = {
 };
 
 describe("subpath export", () => {
-  test("@vellumai/service-contracts/secret-detection resolves to this module", () => {
+  test("@mycadet/service-contracts/secret-detection resolves to this module", () => {
     expect(subpathExport.PREFIX_PATTERNS).toBe(PREFIX_PATTERNS);
     expect(subpathExport.detectSecretsInText).toBe(detectSecretsInText);
   });

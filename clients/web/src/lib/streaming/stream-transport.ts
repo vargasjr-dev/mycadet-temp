@@ -8,7 +8,7 @@
  */
 
 import { client } from "@/generated/api/client.gen";
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 import { parseAssistantEvent } from "@/lib/streaming/event-parser";
 import { normalizeSSEPayload } from "@/lib/streaming/sse-payload";
 import { toError } from "@/utils/to-error";

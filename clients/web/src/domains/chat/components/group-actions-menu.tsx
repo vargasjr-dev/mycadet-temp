@@ -46,7 +46,7 @@ import {
   ContextMenu,
   Menu,
   Popover,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 // ---------------------------------------------------------------------------
 // Shared group menu items — used by the hover popover, the right-click

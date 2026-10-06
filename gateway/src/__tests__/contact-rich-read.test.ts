@@ -100,7 +100,7 @@ mock.module("../ipc/assistant-client.js", () => ({
 import {
   ContactReadSchema,
   GetContactIpcResponseSchema,
-} from "@vellumai/gateway-client/gateway-ipc-contracts";
+} from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import { ContactStore } from "../db/contact-store.js";
 import {

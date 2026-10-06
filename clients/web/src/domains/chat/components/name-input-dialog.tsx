@@ -4,7 +4,7 @@ import { useTranslation } from "@/i18n";
 
 import { Ban } from "lucide-react";
 
-import { Button, Input, Modal } from "@vellumai/design-library";
+import { Button, Input, Modal } from "@mycadet/design-library";
 
 import {
   getGroupIcon,

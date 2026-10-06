@@ -3,8 +3,8 @@ import { resolve } from "node:path";
 import { BrowserWindow, app, type WebContents } from "electron";
 import { z } from "zod";
 
-import type { DeepLink } from "@vellumai/ipc-contract";
-import { resolveEnvironmentName } from "@vellumai/local-mode";
+import type { DeepLink } from "@mycadet/ipc-contract";
+import { resolveEnvironmentName } from "@mycadet/local-mode";
 
 import { capabilityToken } from "./capability-registry";
 import type { IpcHandle, IpcOn } from "./ipc";

@@ -1,8 +1,8 @@
 import { useState, type ChangeEvent } from "react";
 
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
 
 export interface AutoTopUpFormValues {
   threshold_usd: string;

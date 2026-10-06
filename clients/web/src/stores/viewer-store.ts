@@ -29,7 +29,7 @@
  * Reference: {@link https://zustand.docs.pmnd.rs/}
  */
 
-import type { AnsweredQuestion } from "@vellumai/assistant-api";
+import type { AnsweredQuestion } from "@mycadet/assistant-api";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { create } from "zustand";
 
@@ -51,7 +51,7 @@ import { useUnseenDocumentChangesStore } from "@/domains/chat/unseen-document-ch
 import type {
   ToolActivityMetadata,
   WebSearchResultItem,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import { createSelectors } from "@/utils/create-selectors";
 import { isAppMainView } from "@/stores/pane-state";
 

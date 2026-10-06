@@ -3,10 +3,10 @@ import { useMemo, type ReactNode } from "react";
 
 import { type ResolvedHotkey } from "@/runtime/hotkeys";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { ShortcutKeys } from "@vellumai/design-library/components/shortcut-keys";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { ShortcutKeys } from "@mycadet/design-library/components/shortcut-keys";
 
 import { useHotkeyRecorder } from "@/domains/settings/keyboard-shortcuts/use-hotkey-recorder";
 

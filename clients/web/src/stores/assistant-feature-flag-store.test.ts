@@ -16,7 +16,7 @@ mock.module("@/generated/gateway/sdk.gen", () => ({
 
 const toastErrorMock = mock((_message: string) => {});
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { error: toastErrorMock, success: () => {} },
 }));
 

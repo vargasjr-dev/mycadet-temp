@@ -13,7 +13,7 @@ import type {
   UISurfaceDismissEvent,
   UISurfaceShowEvent,
   UISurfaceUpdateEvent,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 // Surface content (attach / update / dismiss / complete) is folded onto the
 // assistant row in the materialized snapshot by the rolling-snapshot reducer.

@@ -14,7 +14,7 @@ import { resolveShortBuildCommitSha } from "./scripts/build-metadata";
 const DEPS_TO_INLINE = [
   ...SHARED_DESKTOP_INLINE_DEPS,
   "electron-updater",
-  "@vellumai/native-sidecar",
+  "@mycadet/native-sidecar",
 ];
 
 const resolveBunVersion = (): string => {

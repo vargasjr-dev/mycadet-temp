@@ -5,9 +5,9 @@ import { CopyButton } from "@/components/copy-button";
 import { useLlmLogPayload } from "@/domains/chat/inspector/inspector-payload-api";
 import { t, useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import type { LLMRequestLogEntry } from "@vellumai/assistant-api";
-import { Button, Card } from "@vellumai/design-library";
-import { toast } from "@vellumai/design-library/components/toast";
+import type { LLMRequestLogEntry } from "@mycadet/assistant-api";
+import { Button, Card } from "@mycadet/design-library";
+import { toast } from "@mycadet/design-library/components/toast";
 
 type RawPane = "request" | "response";
 

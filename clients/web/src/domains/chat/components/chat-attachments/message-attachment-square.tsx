@@ -1,7 +1,7 @@
 import type { MouseEvent, ReactNode } from "react";
 import { useCallback } from "react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 import { AttachmentDownloadOverlay } from "@/domains/chat/components/chat-attachments/attachment-download-overlay";
 import { AttachmentPreviewBox } from "@/domains/chat/components/chat-attachments/attachment-preview-box";
 

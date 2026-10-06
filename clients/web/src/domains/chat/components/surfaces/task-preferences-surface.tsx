@@ -7,7 +7,7 @@ import {
   OptionCard,
   OptionCardGroup,
   Textarea,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 import { TASK_ICONS } from "@/components/prechat-task-icons";
 import type { Surface } from "@/domains/chat/types/types";

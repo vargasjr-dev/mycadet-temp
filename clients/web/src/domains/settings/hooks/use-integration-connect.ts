@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { usePluginsInstallPostMutation } from "@/generated/daemon/@tanstack/react-query.gen";
@@ -523,7 +523,9 @@ export function useIntegrationConnect({
     }
     setManagedReport(null);
     setManaged((current) =>
-      current ? { ...current, restartToken: current.restartToken + 1 } : current,
+      current
+        ? { ...current, restartToken: current.restartToken + 1 }
+        : current,
     );
   }, [authAttempt, authRetry, mcpAttempt]);
 

@@ -3,7 +3,7 @@ import {
   type SlackReactionEvent,
   type NormalizedSlackEvent,
 } from "./message-schemas.js";
-import { slackEmojiCharacter } from "@vellumai/slack-text";
+import { slackEmojiCharacter } from "@mycadet/slack-text";
 import type { GatewayConfig } from "../config.js";
 import { resolveAssistant, isRejection } from "../routing/resolve-assistant.js";
 

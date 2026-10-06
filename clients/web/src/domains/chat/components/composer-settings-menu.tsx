@@ -27,7 +27,7 @@ import {
   SegmentControl,
   ShortcutKeys,
   acceleratorToAriaKeyShortcuts,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 import {
   isDispatchableProfile,

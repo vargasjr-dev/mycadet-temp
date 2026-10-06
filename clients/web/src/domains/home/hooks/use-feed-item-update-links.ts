@@ -12,7 +12,7 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-import type { FeedItemUpdate } from "@vellumai/assistant-api";
+import type { FeedItemUpdate } from "@mycadet/assistant-api";
 
 import { feedItemConversationExistsQueryOptions } from "./use-feed-item-conversation-link";
 import { installedSkillsQueryOptions } from "./use-feed-item-entity-links";

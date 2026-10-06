@@ -20,8 +20,8 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router";
-import { Button } from "@vellumai/design-library/components/button";
-import { type NoticeTone } from "@vellumai/design-library/components/notice";
+import { Button } from "@mycadet/design-library/components/button";
+import { type NoticeTone } from "@mycadet/design-library/components/notice";
 
 import {
   type LocalAssistantHealth,

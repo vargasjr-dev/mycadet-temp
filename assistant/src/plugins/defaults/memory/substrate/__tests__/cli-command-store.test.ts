@@ -14,7 +14,7 @@
  *
  * Hermetic by design: the embedding backend and Qdrant module are
  * module-mocked, and the declarative command list is staged per test — the
- * seed reads pure data from `@vellumai/plugin-api`, so it never imports the
+ * seed reads pure data from `@mycadet/plugin-api`, so it never imports the
  * CLI's action graph.
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
@@ -92,7 +92,7 @@ function setCommands(...commands: CliCommandHelp[]): void {
 }
 
 // Stage the declarative command list per test. The store imports
-// `CLI_COMMAND_HELP` from `@vellumai/plugin-api`, which re-exports it from
+// `CLI_COMMAND_HELP` from `@mycadet/plugin-api`, which re-exports it from
 // `cli/index.help.js` — mocking that module drives the seed with pure data,
 // so no test wires the Commander action graph.
 mock.module("../../../../../cli/index.help.js", () => ({

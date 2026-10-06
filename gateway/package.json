@@ -1,5 +1,5 @@
 {
-  "name": "@vellumai/vellum-gateway",
+  "name": "@mycadet/vellum-gateway",
   "version": "0.12.6",
   "license": "MIT",
   "type": "module",
@@ -28,14 +28,14 @@
     "postinstall": "cd .. && (git config core.hooksPath || git config core.hooksPath .githooks 2>/dev/null || true) && ([ -f meta/sync-bundled-copies.ts ] && bun run meta/sync-bundled-copies.ts 2>/dev/null || true)"
   },
   "dependencies": {
-    "@vellumai/assistant-client": "workspace:*",
-    "@vellumai/ces-client": "workspace:*",
-    "@vellumai/environments": "workspace:*",
-    "@vellumai/gateway-client": "workspace:*",
-    "@vellumai/ipc-server-utils": "workspace:*",
-    "@vellumai/service-contracts": "workspace:*",
-    "@vellumai/slack-text": "workspace:*",
-    "@vellumai/twilio-client": "workspace:*",
+    "@mycadet/assistant-client": "workspace:*",
+    "@mycadet/ces-client": "workspace:*",
+    "@mycadet/environments": "workspace:*",
+    "@mycadet/gateway-client": "workspace:*",
+    "@mycadet/ipc-server-utils": "workspace:*",
+    "@mycadet/service-contracts": "workspace:*",
+    "@mycadet/slack-text": "workspace:*",
+    "@mycadet/twilio-client": "workspace:*",
     "drizzle-kit": "0.31.10",
     "drizzle-orm": "0.45.2",
     "file-type": "21.3.0",
@@ -47,14 +47,14 @@
     "zod-openapi": "5.4.6"
   },
   "bundledDependencies": [
-    "@vellumai/assistant-client",
-    "@vellumai/ces-client",
-    "@vellumai/environments",
-    "@vellumai/gateway-client",
-    "@vellumai/ipc-server-utils",
-    "@vellumai/service-contracts",
-    "@vellumai/slack-text",
-    "@vellumai/twilio-client"
+    "@mycadet/assistant-client",
+    "@mycadet/ces-client",
+    "@mycadet/environments",
+    "@mycadet/gateway-client",
+    "@mycadet/ipc-server-utils",
+    "@mycadet/service-contracts",
+    "@mycadet/slack-text",
+    "@mycadet/twilio-client"
   ],
   "devDependencies": {
     "@grammyjs/types": "4.0.0",

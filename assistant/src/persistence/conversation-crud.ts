@@ -1,6 +1,6 @@
 import { mkdirSync, rmSync } from "node:fs";
 
-import { TrustClassSchema } from "@vellumai/gateway-client";
+import { TrustClassSchema } from "@mycadet/gateway-client";
 import {
   and,
   asc,
@@ -362,7 +362,7 @@ export const messageMetadataSchema = z
      * per-platform attribution. `browser_family` / `browser_version` /
      * `interface_version` (and an `os` override) come from the sanitized
      * `x-vellum-*` client-metadata headers read by `handleSendMessage`
-     * (see `@vellumai/service-contracts/client-metadata`). Forwarded
+     * (see `@mycadet/service-contracts/client-metadata`). Forwarded
      * verbatim onto `TurnTelemetryEvent.client` for downstream analytics.
      * Kept as a permissive `record` so adding a new client field doesn't
      * require a migration -- dbt can unpack later via JSON_VALUE.

@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Download } from "lucide-react";
 import { type ReactNode } from "react";
 
 import { useTranslation } from "@/i18n";
-import { Button, Modal, ProgressBar } from "@vellumai/design-library";
+import { Button, Modal, ProgressBar } from "@mycadet/design-library";
 
 export type ExportPhase = "running" | "done" | "error";
 

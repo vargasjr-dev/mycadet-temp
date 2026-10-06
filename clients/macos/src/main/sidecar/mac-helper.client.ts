@@ -6,7 +6,7 @@ export {
   JSON_RPC_PARSE_ERROR,
   JsonRpcHelperError,
   NativeSidecarClient as MacHelperClient,
-} from "@vellumai/native-sidecar/supervisor";
+} from "@mycadet/native-sidecar/supervisor";
 export type {
   JsonRpcErrorPayload,
   JsonRpcId,
@@ -14,4 +14,4 @@ export type {
   NativeSidecarClientOptions as MacHelperClientOptions,
   NativeSidecarState as MacHelperState,
   NativeSidecarStreamOptions as MacHelperStreamOptions,
-} from "@vellumai/native-sidecar/supervisor";
+} from "@mycadet/native-sidecar/supervisor";

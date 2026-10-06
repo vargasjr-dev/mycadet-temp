@@ -8,7 +8,7 @@
  * a Capacitor plugin and an ActivityKit activity; this one speaks to an
  * Electron BrowserWindow. They are two transports for one payload, which is
  * why {@link useLiveActivityMirror} can drive both from a single computed
- * snapshot and why the payload types live in `@vellumai/ipc-contract` rather
+ * snapshot and why the payload types live in `@mycadet/ipc-contract` rather
  * than being restated here.
  *
  * **Skew contract, same as its mobile sibling.** Every call no-ops off

@@ -1,4 +1,4 @@
-import type { MessageAudience } from "@vellumai/gateway-client";
+import type { MessageAudience } from "@mycadet/gateway-client";
 
 import { stripVellumLinks } from "../daemon/assistant-attachments.js";
 import type { RenderedHistoryContent } from "../daemon/handlers/shared.js";

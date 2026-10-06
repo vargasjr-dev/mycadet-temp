@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { APP_ICON_NAMES } from "@vellumai/app-icons";
+import { APP_ICON_NAMES } from "@mycadet/app-icons";
 import { Calculator, Coffee, House, Rocket } from "lucide-react";
 
 import { DEFAULT_APP_ICON, getAppIcon } from "@/utils/app-icon-registry";

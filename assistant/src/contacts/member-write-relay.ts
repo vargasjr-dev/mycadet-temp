@@ -10,7 +10,7 @@ import {
   CreateContactIpcResponseSchema,
   MarkChannelRevokedIpcResponseSchema,
   UpsertVerifiedChannelIpcResponseSchema,
-} from "@vellumai/gateway-client/gateway-ipc-contracts";
+} from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import { log } from "../daemon/handlers/shared.js";
 import { ipcCallPersistent } from "../ipc/gateway-client.js";

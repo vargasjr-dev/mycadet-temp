@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import { parseLockfile } from "@vellumai/local-mode/contract";
+import { parseLockfile } from "@mycadet/local-mode/contract";
 
 import * as localModeHost from "@/runtime/local-mode-host";
 
@@ -932,7 +932,7 @@ describe("assistant classification", () => {
 
   test("a legacy entry with no cloud normalizes to local at the parse seam", () => {
     // Entries that predate the `cloud` field are normalized to "local" by
-    // parseLockfile (see @vellumai/local-mode/contract), so by the time one
+    // parseLockfile (see @mycadet/local-mode/contract), so by the time one
     // reaches isLocalAssistant its cloud is already set.
     const { assistants } = parseLockfile({
       assistants: [{ assistantId: "old" }],

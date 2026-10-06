@@ -5,8 +5,8 @@ import {
   getVersionInfo,
   installAbout as installSharedAbout,
   openAboutWindow,
-} from "@vellumai/electron-desktop/about";
-import { getName, onNameChange } from "@vellumai/electron-desktop/identity";
+} from "@mycadet/electron-desktop/about";
+import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
 
 import { RENDERER_BASE_PROD, getDevRendererBase } from "./app-config";
 import { handle } from "./ipc";

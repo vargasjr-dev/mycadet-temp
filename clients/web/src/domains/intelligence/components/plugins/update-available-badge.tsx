@@ -10,7 +10,7 @@ import { ArrowUpCircle, Loader2 } from "lucide-react";
 import { createElement } from "react";
 
 import { useTranslation } from "@/i18n";
-import { Chip, Tag } from "@vellumai/design-library";
+import { Chip, Tag } from "@mycadet/design-library";
 
 interface UpdateAvailableBadgeProps {
   /**

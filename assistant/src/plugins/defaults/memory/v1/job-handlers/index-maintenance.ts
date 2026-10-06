@@ -1,7 +1,7 @@
 import {
   selectedBackendSupportsMultimodal,
   sweepOrphanedGraphNodePoints,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 import { and, eq, isNotNull, like, ne } from "drizzle-orm";
 
 import { messageMetadataIsAmbientSightKeep } from "../../../../../persistence/conversation-types.js";

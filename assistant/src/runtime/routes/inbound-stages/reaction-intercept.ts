@@ -23,12 +23,12 @@
  * channel-turn machinery (`buildReactionWakeTurn`); every other reaction
  * stays a passive transcript row and never drives a turn.
  */
-import type { SourceMetadata } from "@vellumai/gateway-client";
+import type { SourceMetadata } from "@mycadet/gateway-client";
 import {
   type InboundReactionPayload,
   resolveInboundEventKind,
-} from "@vellumai/gateway-client";
-import { pickReactionEmojiFields } from "@vellumai/service-contracts/reactions";
+} from "@mycadet/gateway-client";
+import { pickReactionEmojiFields } from "@mycadet/service-contracts/reactions";
 
 import type { ChannelId, InterfaceId } from "../../../channels/types.js";
 import { createApprovalCopyGenerator } from "../../../daemon/approval-generators.js";

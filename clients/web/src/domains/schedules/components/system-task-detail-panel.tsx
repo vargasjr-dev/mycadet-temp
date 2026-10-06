@@ -24,9 +24,9 @@ import {
   retrospectiveRunsGetInfiniteOptions,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Button } from "@mycadet/design-library";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 import type { ReactNode } from "react";
 

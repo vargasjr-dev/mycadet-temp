@@ -3,13 +3,13 @@ import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 import { QueryClient } from "@tanstack/react-query";
 
 import { organizationsBillingSummaryRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
-import * as toastModule from "@vellumai/design-library/components/toast";
+import * as toastModule from "@mycadet/design-library/components/toast";
 
 // Stub the toaster: no <Toaster /> is mounted here. Full toast surface:
 // `mock.module` is process-global in bun, so a partial shape would shadow
 // the other methods for later test files.
 const toastSuccessMock = mock((..._args: unknown[]) => undefined);
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...toastModule,
   toast: Object.assign((..._args: unknown[]) => {}, {
     success: toastSuccessMock,

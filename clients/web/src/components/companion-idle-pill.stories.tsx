@@ -7,7 +7,7 @@ import {
   COMPANION_BASE_AVATAR_IMAGE,
   COMPANION_BASE_MAX_PILL_WIDTH,
   type CompanionCharacter,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /**
  * A bench for the idle companion, not the idle companion.

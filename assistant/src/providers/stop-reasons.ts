@@ -5,7 +5,7 @@
  * finish-reason strings; {@link isMaxTokensStopReason} folds them into a single
  * "was this turn truncated at the token cap?" predicate.
  *
- * Kept dependency-free so it can be re-exported through `@vellumai/plugin-api`
+ * Kept dependency-free so it can be re-exported through `@mycadet/plugin-api`
  * without pulling the agent loop (its other caller) into the plugin API's
  * module graph.
  */

@@ -2,7 +2,7 @@
  * Message operations: history retrieval, polling, sending, and attachments.
  *
  * The daemon's history-row wire contract is the canonical `ConversationMessage`
- * schema from `@vellumai/assistant-api`, consumed here alongside content
+ * schema from `@mycadet/assistant-api`, consumed here alongside content
  * normalization helpers and the `postChatMessage` / `uploadChatAttachment` /
  * `deleteQueuedMessage` writes.
  */
@@ -14,7 +14,7 @@ import type {
   ConversationMessage,
   ConversationMessageToolCall,
   ConversationSubagentNotification,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import { parseAttachmentSummariesFromContent } from "@/domains/chat/utils/parse-attachment-summaries";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { DisplayMessage } from "@/domains/chat/types/types";

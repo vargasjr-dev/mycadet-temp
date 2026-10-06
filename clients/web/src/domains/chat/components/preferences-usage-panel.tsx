@@ -1,8 +1,8 @@
 import { Plus, Settings as SettingsIcon } from "lucide-react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { ProgressBar } from "@vellumai/design-library/components/progress-bar";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { ProgressBar } from "@mycadet/design-library/components/progress-bar";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { usePreferencesUsage } from "@/domains/chat/hooks/use-preferences-usage";
 import { useTranslation } from "@/i18n";

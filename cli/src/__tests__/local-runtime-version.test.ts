@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { isValidReleaseVersion } from "@vellumai/local-mode";
+import { isValidReleaseVersion } from "@mycadet/local-mode";
 
 import type { LocalInstanceResources } from "../lib/assistant-config.js";
 import { ensureLocalRuntime } from "../lib/local.js";

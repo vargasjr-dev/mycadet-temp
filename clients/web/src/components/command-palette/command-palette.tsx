@@ -2,7 +2,7 @@ import {
   Button,
   Typography,
   formatAcceleratorHint,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 import type { LucideIcon } from "lucide-react";
 import { Loader2, Search, X } from "lucide-react";
 import {

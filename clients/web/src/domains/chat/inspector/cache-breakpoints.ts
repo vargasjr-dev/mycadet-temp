@@ -21,7 +21,7 @@
  * presentation.
  */
 
-import type { LLMCallSummary } from "@vellumai/assistant-api";
+import type { LLMCallSummary } from "@mycadet/assistant-api";
 import { isRecord } from "@/utils/is-record";
 
 /** Where a segment sits in the provider's cache prefix order. */

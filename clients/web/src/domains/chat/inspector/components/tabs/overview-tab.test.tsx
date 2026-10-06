@@ -11,7 +11,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type {
   LatencyBreakdown,
   LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import { OverviewTab } from "./overview-tab";
 

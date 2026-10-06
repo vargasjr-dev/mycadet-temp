@@ -19,10 +19,10 @@ import type {
   PostModelCallContext,
   StopContext,
   ToolResultContent,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 // The classifier and the current-turn boundary are the real host helpers the
-// hook reaches through `@vellumai/plugin-api`; wire them into the mock so the
+// hook reaches through `@mycadet/plugin-api`; wire them into the mock so the
 // tests exercise the shipped behavior (broad rejection patterns, media scope)
 // rather than a stand-in.
 import { lastToolResultUserMessageIndex } from "../../../../context/outbound-sanitize.js";
@@ -45,7 +45,7 @@ const mockResolveMediaSourceData = (source: ImageContent["source"]) =>
     ? { data: source.data, media_type: source.media_type }
     : null;
 
-mock.module("@vellumai/plugin-api", () => ({
+mock.module("@mycadet/plugin-api", () => ({
   doesSupportVision: (arg: ModelProfileInfo | string) =>
     typeof arg === "string" ? false : visionProfiles.has(arg.key),
   getModelProfiles: () => mockProfiles,

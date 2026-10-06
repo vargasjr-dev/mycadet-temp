@@ -8,7 +8,7 @@ import {
   test,
 } from "bun:test";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
-import type { CompanionAnnotationStroke } from "@vellumai/ipc-contract";
+import type { CompanionAnnotationStroke } from "@mycadet/ipc-contract";
 
 const sent: {
   phase: string;

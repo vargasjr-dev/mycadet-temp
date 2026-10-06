@@ -11,7 +11,7 @@ import {
   ChannelDeliveryResultSchema,
   DELIVER_GATEWAY_REPLY_IPC_METHOD,
   type GatewayReplyRequest,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import { IpcHandlerError, ipcCallAssistant } from "../ipc/assistant-client.js";
 import { getLogger } from "../logger.js";

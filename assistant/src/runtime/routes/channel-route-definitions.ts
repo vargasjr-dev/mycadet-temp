@@ -1,7 +1,7 @@
 /**
  * Static ROUTES array for channel endpoints.
  */
-import { RuntimeInboundPayloadSchema } from "@vellumai/gateway-client";
+import { RuntimeInboundPayloadSchema } from "@mycadet/gateway-client";
 
 import { ACTOR_PRINCIPALS, GATEWAY_PRINCIPALS } from "../auth/route-policy.js";
 import {

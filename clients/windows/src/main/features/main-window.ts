@@ -4,17 +4,12 @@ import {
   type CapabilityModule,
   type DesktopCapabilityRegistry,
   type MainWindowController,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 
-import {
-  current,
-  ensureVisible,
-  installMainWindow,
-} from "../main-window";
+import { current, ensureVisible, installMainWindow } from "../main-window";
 
-export const MAIN_WINDOW_CONTROLLER = capabilityToken<
-  MainWindowController<BrowserWindow>
->("main-window");
+export const MAIN_WINDOW_CONTROLLER =
+  capabilityToken<MainWindowController<BrowserWindow>>("main-window");
 
 const feature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "main-window",

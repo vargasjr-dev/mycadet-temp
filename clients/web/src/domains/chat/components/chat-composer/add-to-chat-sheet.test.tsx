@@ -22,7 +22,7 @@ import { createElement, type ReactNode } from "react";
 const passthrough = ({ children, ...props }: Record<string, unknown>) =>
   createElement("div", props, children as ReactNode);
 
-mock.module("@vellumai/design-library", () => ({
+mock.module("@mycadet/design-library", () => ({
   BottomSheet: {
     Root: ({
       children,

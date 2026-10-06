@@ -1,7 +1,7 @@
 /**
  * Guards that `resolveOauthCallbackUrl` reaches plugins.
  *
- * The shim written into `<workspaceDir>/node_modules/@vellumai/plugin-api`
+ * The shim written into `<workspaceDir>/node_modules/@mycadet/plugin-api`
  * re-binds whatever `Object.keys()` finds on the plugin-api namespace, so an
  * export missing from `index.ts` is missing from every installed plugin with
  * no other signal than a plugin failing to import it.

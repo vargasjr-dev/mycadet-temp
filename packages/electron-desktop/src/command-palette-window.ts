@@ -6,7 +6,7 @@ import {
   COMMAND_PALETTE_OPEN,
   COMMAND_PALETTE_SELECT,
   type VellumCommand,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   createFloatingWindow,
@@ -29,9 +29,10 @@ export interface CommandPaletteWindowDependencies {
   handle: IpcHandle;
 }
 
-const configuration = createModuleConfiguration<CommandPaletteWindowDependencies>(
-  "Command palette window module",
-);
+const configuration =
+  createModuleConfiguration<CommandPaletteWindowDependencies>(
+    "Command palette window module",
+  );
 export const configureCommandPaletteWindow = configuration.configure;
 
 type PayloadCommandKind = Extract<
@@ -84,7 +85,10 @@ const payloadlessCommandKindSchema = z.enum([
 export const commandPaletteDispatchCommandSchema: z.ZodType<CommandPaletteDispatchCommand> =
   z.union([
     z.object({ kind: payloadlessCommandKindSchema }),
-    z.object({ kind: z.literal("openConversation"), conversationId: z.string() }),
+    z.object({
+      kind: z.literal("openConversation"),
+      conversationId: z.string(),
+    }),
     z.object({ kind: z.literal("selectAssistant"), assistantId: z.string() }),
     z.object({ kind: z.literal("retireAssistant"), assistantId: z.string() }),
     z.object({ kind: z.literal("quickInputSubmit"), message: z.string() }),

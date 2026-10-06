@@ -13,7 +13,7 @@
 import { Check } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 export function RowGlyph({ children }: { children: ReactNode }) {
   return (

@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { SecureKeyBackend } from "@vellumai/credential-storage";
+import type { SecureKeyBackend } from "@mycadet/credential-storage";
 
 import type { CesMigration } from "../migrations/types.js";
 
@@ -51,15 +51,25 @@ mock.module("node:fs", () => {
   // (no-explicit-any is already off for test files via eslint config.)
   type AnyFn = (...args: any[]) => any;
   proxy.existsSync = (...a: unknown[]) =>
-    useMocks ? existsSyncFn(a[0] as string) : (_realFs.existsSync as AnyFn)(...a);
+    useMocks
+      ? existsSyncFn(a[0] as string)
+      : (_realFs.existsSync as AnyFn)(...a);
   proxy.mkdirSync = (...a: unknown[]) =>
-    useMocks ? (mkdirSyncFn as AnyFn)(...a) : (_realFs.mkdirSync as AnyFn)(...a);
+    useMocks
+      ? (mkdirSyncFn as AnyFn)(...a)
+      : (_realFs.mkdirSync as AnyFn)(...a);
   proxy.readFileSync = (...a: unknown[]) =>
-    useMocks ? (readFileSyncFn as AnyFn)(...a) : (_realFs.readFileSync as AnyFn)(...a);
+    useMocks
+      ? (readFileSyncFn as AnyFn)(...a)
+      : (_realFs.readFileSync as AnyFn)(...a);
   proxy.writeFileSync = (...a: unknown[]) =>
-    useMocks ? (writeFileSyncFn as AnyFn)(...a) : (_realFs.writeFileSync as AnyFn)(...a);
+    useMocks
+      ? (writeFileSyncFn as AnyFn)(...a)
+      : (_realFs.writeFileSync as AnyFn)(...a);
   proxy.renameSync = (...a: unknown[]) =>
-    useMocks ? (renameSyncFn as AnyFn)(...a) : (_realFs.renameSync as AnyFn)(...a);
+    useMocks
+      ? (renameSyncFn as AnyFn)(...a)
+      : (_realFs.renameSync as AnyFn)(...a);
   return proxy;
 });
 
@@ -224,7 +234,9 @@ describe("runCesMigrations", () => {
 
     // Checkpoint writes: started m1, failed m1, started m2, completed m2 = 4
     expect(writeFileSyncFn).toHaveBeenCalledTimes(4);
-    const failedWrite = (writeFileSyncFn.mock.calls[1] as unknown[])[1] as string;
+    const failedWrite = (
+      writeFileSyncFn.mock.calls[1] as unknown[]
+    )[1] as string;
     const failedParsed = JSON.parse(failedWrite);
     expect(failedParsed.applied["001"].status).toBe("failed");
   });

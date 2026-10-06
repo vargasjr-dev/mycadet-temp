@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { isTrustCheckedScopeProfile } from "@vellumai/gateway-client";
+import { isTrustCheckedScopeProfile } from "@mycadet/gateway-client";
 
 import { isNarrowScopeProfile, resolveScopeProfile } from "../auth/scopes.js";
 import type { ScopeProfile } from "../auth/types.js";

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import type { CompanionSize, CompanionSizeAxis } from "@vellumai/ipc-contract";
-import type { Lockfile } from "@vellumai/local-mode/contract";
+import type { CompanionSize, CompanionSizeAxis } from "@mycadet/ipc-contract";
+import type { Lockfile } from "@mycadet/local-mode/contract";
 
 // Tray stub: records constructions, event listeners, and image swaps.
 type TrayCall = { event: string; handler: (...args: unknown[]) => void };

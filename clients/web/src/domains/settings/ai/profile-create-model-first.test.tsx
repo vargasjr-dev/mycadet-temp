@@ -29,7 +29,7 @@ import { createElement, type ReactNode } from "react";
 import {
   SEARCHABLE_SELECT_MENU_MIN_REACH,
   SEARCHABLE_SELECT_MENU_REACH,
-} from "@vellumai/design-library/components/searchable-select";
+} from "@mycadet/design-library/components/searchable-select";
 
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
@@ -43,7 +43,7 @@ import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 
 let createdConnection: ProviderConnection;
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {}, warning: () => {} },
   Toaster: () => null,
   ToastContent: () => null,
@@ -93,9 +93,8 @@ mock.module("@/domains/settings/ai/chatgpt-oauth-section", () => ({
     ),
 }));
 
-const { ProfileEditorModal } = await import(
-  "@/domains/settings/ai/profile-editor-modal"
-);
+const { ProfileEditorModal } =
+  await import("@/domains/settings/ai/profile-editor-modal");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -278,7 +277,9 @@ function selectModel(label: string): void {
 
 function candidateCards(): HTMLElement[] {
   return Array.from(
-    document.querySelectorAll<HTMLElement>('[data-testid="provider-candidate"]'),
+    document.querySelectorAll<HTMLElement>(
+      '[data-testid="provider-candidate"]',
+    ),
   );
 }
 
@@ -318,9 +319,8 @@ function selectedCandidateValue(): string | null {
 }
 
 function pickCandidate(value: string): void {
-  const radio = candidateCard(value).querySelector<HTMLElement>(
-    '[role="radio"]',
-  );
+  const radio =
+    candidateCard(value).querySelector<HTMLElement>('[role="radio"]');
   if (!radio) {
     throw new Error(`expected a radio in the "${value}" candidate`);
   }
@@ -725,9 +725,9 @@ describe("the provider step", () => {
       "anthropic::anthropic-work",
       "anthropic::anthropic-personal",
     ]);
-    expect(candidateCard("anthropic::anthropic-personal").textContent).toContain(
-      "Personal",
-    );
+    expect(
+      candidateCard("anthropic::anthropic-personal").textContent,
+    ).toContain("Personal");
   });
 });
 
@@ -906,7 +906,9 @@ describe("the ChatGPT subscription", () => {
 
 describe("the custom model id path", () => {
   test("saves the typed id through the chosen route", async () => {
-    const saveCalls = renderCreate([makeConnection("openrouter-key", "openrouter")]);
+    const saveCalls = renderCreate([
+      makeConnection("openrouter-key", "openrouter"),
+    ]);
 
     selectModel("Enter a custom model ID…");
     fireEvent.change(getInputByPlaceholder("provider/model-id"), {

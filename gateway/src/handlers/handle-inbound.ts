@@ -5,7 +5,7 @@ import {
   type SourceMetadata,
   type TrustVerdict,
   resolveInboundEventKind,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import type { GatewayConfig } from "../config.js";
 import { ContactStore } from "../db/contact-store.js";
 import { getLogger } from "../logger.js";

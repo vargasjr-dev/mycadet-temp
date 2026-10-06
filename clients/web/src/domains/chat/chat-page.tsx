@@ -25,7 +25,7 @@ import {
   type BootBlockedReason,
 } from "@/lib/telemetry/boot-telemetry";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { ActiveChatView } from "@/domains/chat/active-chat-view";
 import { CleanupScreen } from "@/domains/chat/components/cleanup-screen";
@@ -145,7 +145,9 @@ export function ChatPage() {
     }
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-[var(--content-secondary)]">{t("chatPage.connecting")}</p>
+        <p className="text-[var(--content-secondary)]">
+          {t("chatPage.connecting")}
+        </p>
       </div>
     );
   }
@@ -158,9 +160,13 @@ export function ChatPage() {
     // service; the button is just the impatient-user shortcut.
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-        <p className="text-[var(--content-secondary)]">{assistantState.message}</p>
+        <p className="text-[var(--content-secondary)]">
+          {assistantState.message}
+        </p>
         <Button variant="primary" onClick={retryAssistant}>
-          {assistantState.transient ? t("chatPage.retryNow") : t("chatPage.tryAgain")}
+          {assistantState.transient
+            ? t("chatPage.retryNow")
+            : t("chatPage.tryAgain")}
         </Button>
       </div>
     );

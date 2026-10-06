@@ -1,6 +1,6 @@
 import type { OutgoingHttpHeaders } from "node:http";
 
-import { normalizeHttpPublicBaseUrl } from "@vellumai/service-contracts/ingress";
+import { normalizeHttpPublicBaseUrl } from "@mycadet/service-contracts/ingress";
 
 import type { GatewayConfig } from "../config.js";
 import type { ConfigFileCache } from "../config-file-cache.js";

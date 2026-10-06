@@ -20,9 +20,9 @@ import { openUrl } from "@/runtime/browser";
 import { useIsNativeAndroid } from "@/runtime/platform-detection";
 import { useOrganizationStore } from "@/stores/organization-store";
 import { PACKAGE_PARAM, routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
-import { textLinkVariants } from "@vellumai/design-library/components/text-link";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { Button } from "@mycadet/design-library/components/button";
+import { textLinkVariants } from "@mycadet/design-library/components/text-link";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 /**
  * How far a checkout attempt has got.

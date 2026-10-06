@@ -38,7 +38,7 @@ not walked by the loader.
 
 ```
 echo/
-├── package.json               # Manifest (name + @vellumai/plugin-api range)
+├── package.json               # Manifest (name + @mycadet/plugin-api range)
 ├── README.md
 ├── hooks/
 │   ├── user-prompt-submit.ts  # default export = hook function
@@ -70,7 +70,7 @@ pick up changes.
 ### Option 2 — standalone copy
 
 A plain `cp -R` of this directory into `$VELLUM_WORKSPACE_DIR/plugins/echo/`
-works as-is. The hooks import their types from the public `@vellumai/plugin-api`
+works as-is. The hooks import their types from the public `@mycadet/plugin-api`
 specifier, which the daemon materializes as a workspace-level shim before it
 loads any plugin — so the copied directory resolves it without any path
 rewriting, in or out of a vellum-assistant checkout.

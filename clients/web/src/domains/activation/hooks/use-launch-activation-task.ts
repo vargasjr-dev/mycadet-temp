@@ -63,7 +63,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { activationProgressGetSetQueryData } from "@/generated/daemon/@tanstack/react-query.gen";
 import { activationTasksByTaskIdStartPost } from "@/generated/daemon/sdk.gen";

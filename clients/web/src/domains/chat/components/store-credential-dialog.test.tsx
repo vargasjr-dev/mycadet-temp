@@ -41,7 +41,7 @@ import {
   PRIVATE_KEY_LABEL,
   TOKEN_SHAPE_LABEL,
   type DetectedSecret,
-} from "@vellumai/service-contracts/secret-detection";
+} from "@mycadet/service-contracts/secret-detection";
 
 import { useComposerStore } from "@/domains/chat/composer-store";
 import type { StoreCredentialDialogProps } from "@/domains/chat/components/store-credential-dialog";
@@ -52,7 +52,7 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
 }));
 
 const toasts: Array<{ kind: "success" | "error"; message: string }> = [];
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     success: (message: string) => {
       toasts.push({ kind: "success", message });

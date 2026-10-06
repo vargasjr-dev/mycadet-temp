@@ -78,7 +78,7 @@ import { resetResponseArtifactAwards } from "@/domains/chat/transcript/resolve-r
 import { INITIAL_TURN_STATE, useTurnStore } from "@/domains/chat/turn-store";
 import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
-import type { ModeSessionDescriptor } from "@vellumai/assistant-api";
+import type { ModeSessionDescriptor } from "@mycadet/assistant-api";
 import type { SessionDisclosureState } from "@/domains/chat/transcript/use-session-disclosure-state";
 
 import {

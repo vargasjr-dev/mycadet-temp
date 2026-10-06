@@ -49,7 +49,7 @@ import {
   readCheckoutIntent,
   saveCheckoutIntent,
 } from "@/lib/billing/checkout-intent";
-import * as toastMod from "@vellumai/design-library/components/toast";
+import * as toastMod from "@mycadet/design-library/components/toast";
 
 import type { ResizeTakeoverContext } from "./billing-onboarding-modal";
 import * as proOnboardingUtils from "./utils";
@@ -76,7 +76,7 @@ mock.module("@/stores/organization-store", () => ({
 // Capture the escape toast so the exit-on-escape path can assert its message;
 // keep the real module's other methods intact.
 const toastInfoCalls: string[] = [];
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...toastMod,
   toast: {
     ...toastMod.toast,

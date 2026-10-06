@@ -43,7 +43,7 @@ const log = getLogger("actor-trust-resolver");
 
 /**
  * Trust classification for an inbound actor. Declared in
- * `@vellumai/gateway-client` and re-exported here for the resolver's
+ * `@mycadet/gateway-client` and re-exported here for the resolver's
  * consumers.
  */
 export type { TrustClass };

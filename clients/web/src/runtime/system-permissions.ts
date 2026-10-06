@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { VellumBridge } from "@vellumai/ipc-contract";
+import type { VellumBridge } from "@mycadet/ipc-contract";
 
 import {
   isElectron,
@@ -28,10 +28,7 @@ export const SYSTEM_PERMISSION_KINDS: SystemPermissionKind[] = [
 ];
 
 const SYSTEM_PERMISSION_SETTINGS_URLS: Readonly<
-  Record<
-    string,
-    { hostOS: "macos" | "windows"; kind: SystemPermissionKind }
-  >
+  Record<string, { hostOS: "macos" | "windows"; kind: SystemPermissionKind }>
 > = {
   "ms-settings:privacy-microphone": {
     hostOS: "windows",

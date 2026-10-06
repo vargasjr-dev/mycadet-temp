@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { TrustRulesModal } from "@/domains/settings/components/trust-rules/trust-rules-modal";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
 
 export function TrustRules() {
   const { t } = useTranslation("settings");

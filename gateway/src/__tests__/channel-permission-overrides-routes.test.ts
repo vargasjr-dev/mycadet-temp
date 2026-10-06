@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { initGatewayDb, resetGatewayDb } from "../db/connection.js";
-import type { ChannelPermissionCellRow } from "@vellumai/gateway-client";
+import type { ChannelPermissionCellRow } from "@mycadet/gateway-client";
 import { ChannelPermissionStore } from "../db/channel-permission-store.js";
 import {
   createChannelPermissionOverrideDeleteHandler,

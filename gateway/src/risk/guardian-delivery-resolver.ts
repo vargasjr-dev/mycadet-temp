@@ -8,7 +8,7 @@
  * Read-only — no writes, no assistant DB, no IPC.
  */
 
-import type { GuardianDelivery } from "@vellumai/gateway-client";
+import type { GuardianDelivery } from "@mycadet/gateway-client";
 import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { getGatewayDb } from "../db/connection.js";
@@ -51,7 +51,10 @@ export function resolveGuardianDelivery(
       verifiedAt: gwContactChannels.verifiedAt,
     })
     .from(gwContacts)
-    .innerJoin(gwContactChannels, eq(gwContactChannels.contactId, gwContacts.id))
+    .innerJoin(
+      gwContactChannels,
+      eq(gwContactChannels.contactId, gwContacts.id),
+    )
     .where(and(...filters))
     .orderBy(desc(gwContactChannels.verifiedAt))
     .all();

@@ -18,7 +18,7 @@ export const ACP_OAUTH_TOKEN_FIELD = "claude_oauth_token";
  * Refresh and expiry for {@link ACP_OAUTH_TOKEN_FIELD}, written by the Connect
  * Claude exchange that stored that access token. Expiry is epoch milliseconds,
  * matching `computeExpiresAt` and `isTokenExpired` in
- * `@vellumai/credential-storage`.
+ * `@mycadet/credential-storage`.
  *
  * {@link ACP_OAUTH_ACCESS_DIGEST_FIELD} is a digest of the access token those
  * fields were written with, so a later paste of a different access token cannot

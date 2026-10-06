@@ -14,7 +14,7 @@
  * `resolveSleepStageEyes` the app uses, so what renders here is what ships.
  */
 
-import { getCharacterComponents } from "@vellumai/avatar-catalog";
+import { getCharacterComponents } from "@mycadet/avatar-catalog";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, useState } from "react";
 

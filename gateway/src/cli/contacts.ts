@@ -5,7 +5,7 @@
  * The risk-ceiling write is `set_contact_threshold`. inherit maps to null.
  */
 
-import { ipcCall } from "@vellumai/gateway-client/ipc-client";
+import { ipcCall } from "@mycadet/gateway-client/ipc-client";
 
 import { resolveIpcSocketPath } from "../ipc/endpoint.js";
 import { getLogger } from "../logger.js";
@@ -95,8 +95,7 @@ export function parseContactsArgs(args: string[]): ParsedContactsCommand {
     if (threshold === "" || !isThresholdFlag(threshold)) {
       return {
         kind: "error",
-        message:
-          `Invalid --threshold "${threshold}". Must be one of: none, low, medium, high, inherit.`,
+        message: `Invalid --threshold "${threshold}". Must be one of: none, low, medium, high, inherit.`,
       };
     }
     return {

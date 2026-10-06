@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 
-import { Notice } from "@vellumai/design-library/components/notice";
+import { Notice } from "@mycadet/design-library/components/notice";
 
 import { PlatformLoginButton } from "@/components/platform-login-button";
 

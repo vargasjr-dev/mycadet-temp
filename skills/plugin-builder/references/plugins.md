@@ -62,7 +62,7 @@ A plugin must be fully self-contained: every byte of durable state it keeps live
 - **Close in `shutdown`.** Release storage handles so shutdown and in-place plugin redeploys never leak them.
 - **Purge in `conversation-deleted`.** Key per-conversation rows by conversation id and delete them when the hook fires, so data derived from a conversation does not outlive it.
 
-The assistant's own database is internal — `@vellumai/plugin-api` exposes no handle to it, and a plugin must not persist state elsewhere in the workspace. Keeping everything in `data/` is also what makes uninstall clean: removing the plugin directory removes all of its state.
+The assistant's own database is internal — `@mycadet/plugin-api` exposes no handle to it, and a plugin must not persist state elsewhere in the workspace. Keeping everything in `data/` is also what makes uninstall clean: removing the plugin directory removes all of its state.
 
 Each surface can also be dropped straight into the workspace at `/workspace/<surface>/<name>/` without wrapping it in a plugin. Workspace MCP servers live in `/workspace/mcp.json` (the same Agent Plugins document a plugin ships). A plugin is what lets you ship several surfaces together as one installable unit.
 
@@ -77,7 +77,7 @@ Every plugin has a `package.json`. The loader reads three fields and passes ever
   "name": "@you/my-plugin",
   "version": "0.0.1",
   "peerDependencies": {
-    "@vellumai/plugin-api": "^0.8.0"
+    "@mycadet/plugin-api": "^0.8.0"
   },
   "vellum": {}
 }
@@ -85,15 +85,15 @@ Every plugin has a `package.json`. The loader reads three fields and passes ever
 
 - **`name`** (required). Any npm-style name. The loader strips the scope (`@you/`) for the in-runtime plugin name, and duplicate names fail registration. The unscoped portion must be kebab-case (e.g. `my-plugin`, not `myPlugin` or `my_plugin`), matching the convention used for catalog entries and directory names.
 - **`version`**. Informational, and defaults to `0.0.0` when absent.
-- **`peerDependencies["@vellumai/plugin-api"]`**. A semver range checked against the running assistant. While plugins are in beta a mismatch is logged but does not block load. Once the install path stabilizes the mismatch will harden into a hard reject, so pin a real range.
+- **`peerDependencies["@mycadet/plugin-api"]`**. A semver range checked against the running assistant. While plugins are in beta a mismatch is logged but does not block load. Once the install path stabilizes the mismatch will harden into a hard reject, so pin a real range.
 - **`displayName`**, **`description`**, **`icon`**. Optional presentation for the channels list when the plugin declares ingress. `icon` is a Lucide name without the `lucide-` prefix. None of them gate load. See [channels.md](channels.md).
 - **`vellum`**. Reserved for future use.
 
 The marketplace catalog entry can point at a subdirectory of a repo using `source.path` in the catalog manifest. See `references/distribution.md` for the full `source.path` field and the catalog manifest schema.
 
-## The @vellumai/plugin-api surface
+## The @mycadet/plugin-api surface
 
-Plugins import everything they need from a single package, [`@vellumai/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api). It is the only supported contract: anything not exported from there is assistant-internal and can change without notice. Most of the surface is types (the contexts the host hands your code), with a small set of runtime handles that resolve to the assistant's live singletons.
+Plugins import everything they need from a single package, [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api). It is the only supported contract: anything not exported from there is assistant-internal and can change without notice. Most of the surface is types (the contexts the host hands your code), with a small set of runtime handles that resolve to the assistant's live singletons.
 
 The hook-related exports (context types, `HOOKS` constant, `HookFunction` signature) are documented in `references/hooks.md`. The tool-related exports (`ToolDefinition`, `ToolContext`, `ToolExecutionResult`, `RiskLevel`) are documented in `references/tools.md`. The remaining exports are covered below.
 

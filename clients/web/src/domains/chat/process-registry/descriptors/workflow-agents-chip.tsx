@@ -12,7 +12,7 @@
  * avatar-stack chip.
  */
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { SubagentAvatarChip } from "@/components/avatar/subagent-avatar-chip";
 import {

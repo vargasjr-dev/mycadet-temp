@@ -9,7 +9,7 @@
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { ActiveOverlayShell } from "@/domains/chat/components/active-overlay-shell";
 import { ChatPill } from "@/components/chat-pill";

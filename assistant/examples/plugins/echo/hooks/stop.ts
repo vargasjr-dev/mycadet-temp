@@ -7,7 +7,7 @@
  * Convention: the default export is the function the harness invokes.
  */
 
-import type { StopContext } from "@vellumai/plugin-api";
+import type { StopContext } from "@mycadet/plugin-api";
 
 import { emit } from "../src/emit.js";
 

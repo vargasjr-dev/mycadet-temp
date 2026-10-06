@@ -1,4 +1,4 @@
-# @vellumai/assistant-api
+# @mycadet/assistant-api
 
 Public API surface for consumers of the assistant runtime — web client, gateway,
 evals, future external clients. This directory is the **source of truth** for
@@ -6,7 +6,7 @@ the wire contracts the assistant exposes: schemas, types, and pure helpers.
 
 Internal assistant code imports the files in this directory via relative paths
 (e.g. `../../api/events/open-url.js`). External consumers import it as the
-workspace package `@vellumai/assistant-api`, a `workspace:*` symlink to this
+workspace package `@mycadet/assistant-api`, a `workspace:*` symlink to this
 directory, so an edit here reaches them immediately. The generated HTTP
 client is separate: it comes from `assistant/openapi.yaml`, regenerated with
 `cd assistant && bun run generate:openapi` and consumed by
@@ -81,7 +81,7 @@ Drop the per-event member, leaving the union to peel off legacy entries one
 at a time as each event migrates.
 
 Local handler modules (e.g. `document-comment-events.ts`) keep their handler
-functions but import the wire types directly from `@vellumai/assistant-api`.
+functions but import the wire types directly from `@mycadet/assistant-api`.
 Do **not** re-export the canonical types from intermediate modules — consumers
 import them straight from the canonical package.
 

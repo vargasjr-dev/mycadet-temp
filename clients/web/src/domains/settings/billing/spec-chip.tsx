@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 export interface SpecChipProps {
   icon: LucideIcon;

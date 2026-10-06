@@ -187,7 +187,7 @@ function parseStoredSlackInbound(
 function buildReplaySlackInbound(params: {
   sourceChannel: ChannelId;
   externalChatId: string | undefined;
-  sourceMetadata: import("@vellumai/gateway-client").SourceMetadata | undefined;
+  sourceMetadata: import("@mycadet/gateway-client").SourceMetadata | undefined;
   externalMessageId: string | undefined;
 }): SlackInboundMessageMetadata | undefined {
   if (params.sourceChannel !== "slack" || !params.externalChatId) {
@@ -237,7 +237,7 @@ function parseStoredChannelInbound(
 function buildReplayChannelInbound(params: {
   sourceChannel: ChannelId;
   externalChatId: string | undefined;
-  sourceMetadata: import("@vellumai/gateway-client").SourceMetadata | undefined;
+  sourceMetadata: import("@mycadet/gateway-client").SourceMetadata | undefined;
   externalMessageId: string | undefined;
   senderDisplayName: string | undefined;
   actorExternalId: string | undefined;
@@ -329,7 +329,7 @@ export async function sweepFailedEvents(
       parseInterfaceId(payload.sourceChannel) ??
       "web";
     const sourceMetadata = payload.sourceMetadata as
-      | import("@vellumai/gateway-client").SourceMetadata
+      | import("@mycadet/gateway-client").SourceMetadata
       | undefined;
     const assistantId =
       typeof payload.assistantId === "string" ? payload.assistantId : undefined;

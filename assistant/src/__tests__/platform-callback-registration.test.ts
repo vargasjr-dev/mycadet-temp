@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { RegisterWebhookRouteIpcParams } from "@vellumai/gateway-client";
+import type { RegisterWebhookRouteIpcParams } from "@mycadet/gateway-client";
 
 import { setIngressPublicBaseUrl } from "../config/env.js";
 import type { IpcRegisterWebhookRouteResult } from "../ipc/gateway-client.js";

@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { join, sep } from "node:path";
 import { Database } from "bun:sqlite";
 
-import { canonicalizePathThroughExistingParent } from "@vellumai/environments/test-path-guard";
+import { canonicalizePathThroughExistingParent } from "@mycadet/environments/test-path-guard";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import { getLogsDbPath } from "../util/logs-db-path.js";

@@ -26,7 +26,7 @@
 import {
   APP_MUTATION_TOOL_NAMES,
   REOPENABLE_DOCUMENT_MUTATION_TOOL_NAMES,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 

@@ -1,6 +1,6 @@
 /**
  * The app-builder skill lists the icon names a model may put in
- * `preview.icon`, and `@vellumai/app-icons` is what the executor accepts.
+ * `preview.icon`, and `@mycadet/app-icons` is what the executor accepts.
  * The skill is prose, so nothing types it against the package; this pins
  * the two lists to each other.
  */
@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { APP_ICON_NAMES } from "@vellumai/app-icons";
+import { APP_ICON_NAMES } from "@mycadet/app-icons";
 
 const SKILL_PATH = join(
   import.meta.dir,

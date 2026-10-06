@@ -13,7 +13,7 @@
  *
  * The full contexts (and {@link BaseHookContext}) are public plugin-API
  * surface: `plugin-api/types.ts` re-exports them, and plugin authors import
- * them from `@vellumai/plugin-api`. Adding fields is non-breaking; renaming /
+ * them from `@mycadet/plugin-api`. Adding fields is non-breaking; renaming /
  * removing is breaking and gated on a major bump.
  */
 

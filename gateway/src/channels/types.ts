@@ -1,4 +1,4 @@
-import type { ChannelId as CanonicalChannelId } from "@vellumai/service-contracts/channels";
+import type { ChannelId as CanonicalChannelId } from "@mycadet/service-contracts/channels";
 
 /**
  * Channels the gateway can ingress — a strict subset of the canonical

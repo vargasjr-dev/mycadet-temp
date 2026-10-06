@@ -19,17 +19,17 @@ import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { shouldRetryDaemonError } from "@/utils/daemon-errors";
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { Input } from "@vellumai/design-library/components/input";
-import { Modal } from "@vellumai/design-library/components/modal";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { Input } from "@mycadet/design-library/components/input";
+import { Modal } from "@mycadet/design-library/components/modal";
 import {
   SegmentControl,
   type SegmentControlItem,
-} from "@vellumai/design-library/components/segment-control";
-import { Tag } from "@vellumai/design-library/components/tag";
-import { toast } from "@vellumai/design-library/components/toast";
+} from "@mycadet/design-library/components/segment-control";
+import { Tag } from "@mycadet/design-library/components/tag";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import {
   credentialInUseConnections,
@@ -496,7 +496,9 @@ function CredentialsPageInner() {
       >
         <Modal.Content size="sm">
           <Modal.Header icon={Link2}>
-            <Modal.Title>{t("credentialsPage.oneTimeLinkModalTitle")}</Modal.Title>
+            <Modal.Title>
+              {t("credentialsPage.oneTimeLinkModalTitle")}
+            </Modal.Title>
             <Modal.Description>
               {generatedLink
                 ? t("credentialsPage.oneTimeLinkModalDescription", {

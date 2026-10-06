@@ -111,7 +111,7 @@ export default defineConfig(({ mode }) => {
       dedupe: ["react", "react-dom"],
     },
     optimizeDeps: {
-      // Deep `@vellumai/design-library/components/*` imports resolve to .tsx
+      // Deep `@mycadet/design-library/components/*` imports resolve to .tsx
       // source, which the dep optimizer won't auto-prebundle — those modules
       // are served raw. A bare import in a raw-served module is rewritten to
       // a prebundled chunk only when the specifier is already in the

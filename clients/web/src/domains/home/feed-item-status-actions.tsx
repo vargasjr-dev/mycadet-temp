@@ -5,8 +5,8 @@ import {
   type FeedItem,
   type FeedItemStatus,
   isPendingGuardianFeedItem,
-} from "@vellumai/assistant-api";
-import { Button } from "@vellumai/design-library";
+} from "@mycadet/assistant-api";
+import { Button } from "@mycadet/design-library";
 
 import { buildReadToggle } from "./read-toggle";
 

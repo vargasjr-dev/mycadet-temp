@@ -39,7 +39,7 @@ import type {
   SubscriptionResponse,
 } from "@/generated/api/types.gen";
 import * as runtimeBrowser from "@/runtime/browser";
-import * as toastModule from "@vellumai/design-library/components/toast";
+import * as toastModule from "@mycadet/design-library/components/toast";
 import { UPGRADE_CAPTION } from "@/domains/settings/billing/plans/package-switch-copy";
 import { PLAN_TIER_COPY } from "@/domains/settings/billing/plans/plans-copy";
 import {
@@ -115,7 +115,7 @@ mock.module("@/generated/api/sdk.gen", () => ({
 
 // Stub the toaster: the no_op change-package branch toasts, and no <Toaster />
 // is mounted in these tests.
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...toastModule,
   toast: Object.assign((..._args: unknown[]) => {}, {
     success: () => {},

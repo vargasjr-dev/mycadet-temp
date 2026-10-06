@@ -51,7 +51,7 @@ export function getLiveVoiceSessionManager(): LiveVoiceSessionManager {
       // `live-voice-session` is loaded lazily, on first session creation,
       // rather than statically imported. It drags in a large graph (subagent
       // manager, providers, persistence), and this module is reachable from
-      // `@vellumai/plugin-api` via the connection factory — a static edge
+      // `@mycadet/plugin-api` via the connection factory — a static edge
       // would pull that whole graph into every plugin-api consumer at
       // module-load time. `require` keeps the factory synchronous, so the
       // manager still claims its single-session slot without an await gap.

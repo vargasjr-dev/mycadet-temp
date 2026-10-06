@@ -12,7 +12,7 @@
 import { CheckCircle } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
-import { Button, Card, Input, Typography } from "@vellumai/design-library";
+import { Button, Card, Input, Typography } from "@mycadet/design-library";
 import { useTranslation } from "@/i18n";
 
 import type { PendingContactRecordRequestState } from "@/types/interaction-ui-types";

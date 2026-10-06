@@ -28,7 +28,7 @@ import {
 
 import * as sdkGen from "@/generated/api/sdk.gen";
 import type { CheckoutBonusClaimResponse } from "@/generated/api/types.gen";
-import * as toastModule from "@vellumai/design-library/components/toast";
+import * as toastModule from "@mycadet/design-library/components/toast";
 
 const GRANTED: CheckoutBonusClaimResponse = {
   status: "granted",
@@ -52,7 +52,7 @@ mock.module("@/generated/api/sdk.gen", () => ({
   },
 }));
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...toastModule,
   toast: {
     success: (message: string) => successToasts.push(message),

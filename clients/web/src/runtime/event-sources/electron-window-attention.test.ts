@@ -8,7 +8,7 @@
 
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
-import type { WindowAttentionPayload } from "@vellumai/ipc-contract";
+import type { WindowAttentionPayload } from "@mycadet/ipc-contract";
 
 import * as eventBus from "@/lib/event-bus";
 import { publishElectronWindowAttentionSource } from "@/runtime/event-sources/electron-window-attention";

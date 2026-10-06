@@ -9,7 +9,7 @@
  * them here, never per-component.
  */
 
-import { SIDE_MENU_TILE_SIZE } from "@vellumai/design-library";
+import { SIDE_MENU_TILE_SIZE } from "@mycadet/design-library";
 
 /** Horizontal row padding before the leading chip. */
 export const SIDEBAR_ROW_PADDING_X = 12;

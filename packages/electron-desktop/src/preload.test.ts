@@ -4,7 +4,7 @@ import type { IpcRenderer } from "electron";
 import type {
   DownloadDoneEvent,
   WindowAttentionPayload,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import {
   COMPANION_SET_UNPLACED_DICTATION_OFFER,
   NOTIFICATIONS_ACTION,
@@ -13,7 +13,7 @@ import {
   NOTIFICATIONS_RESET_IDENTITIES,
   NOTIFICATIONS_SHOW,
   WINDOW_ATTENTION,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   createBundleConfirmBridge,
@@ -40,7 +40,10 @@ test("sends recovery offers and clears over the companion IPC channel", () => {
 });
 
 test("creates the notification bridge with optional identity methods", async () => {
-  const handlers = new Map<string, (event: unknown, payload: unknown) => void>();
+  const handlers = new Map<
+    string,
+    (event: unknown, payload: unknown) => void
+  >();
   const invoke = mock((channel: string, _payload?: unknown) =>
     Promise.resolve(
       channel === NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER
@@ -49,10 +52,7 @@ test("creates the notification bridge with optional identity methods", async () 
     ),
   );
   const on = mock(
-    (
-      channel: string,
-      handler: (event: unknown, payload: unknown) => void,
-    ) => {
+    (channel: string, handler: (event: unknown, payload: unknown) => void) => {
       handlers.set(channel, handler);
     },
   );
@@ -96,14 +96,14 @@ test("creates the notification bridge with optional identity methods", async () 
   )?.publisherSessionId;
   expect(publisherSessionId).toBeString();
   expect(invoke).toHaveBeenCalledWith(NOTIFICATIONS_SHOW, showPayload);
-  expect(invoke).toHaveBeenCalledWith(
-    NOTIFICATIONS_PREPARE_IDENTITY,
-    { ...preparePayload, publisherSessionId },
-  );
-  expect(invoke).toHaveBeenCalledWith(
-    NOTIFICATIONS_RESET_IDENTITIES,
-    { ...resetPayload, publisherSessionId },
-  );
+  expect(invoke).toHaveBeenCalledWith(NOTIFICATIONS_PREPARE_IDENTITY, {
+    ...preparePayload,
+    publisherSessionId,
+  });
+  expect(invoke).toHaveBeenCalledWith(NOTIFICATIONS_RESET_IDENTITIES, {
+    ...resetPayload,
+    publisherSessionId,
+  });
 
   const received: unknown[] = [];
   const unsubscribe = bridge.onAction((event) => received.push(event));

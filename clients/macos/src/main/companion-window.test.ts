@@ -30,8 +30,8 @@ import {
   type CompanionSizeAxis,
   type CompanionSurfaceState,
   type VellumCommand,
-} from "@vellumai/ipc-contract";
-import { companionSizeSubmenus } from "@vellumai/electron-desktop/companion-menu";
+} from "@mycadet/ipc-contract";
+import { companionSizeSubmenus } from "@mycadet/electron-desktop/companion-menu";
 
 // The module under test reaches `main-window.ts` to hand Talk to the renderer
 // that owns the live-voice session, and that chain loads `electron-store`, a
@@ -140,7 +140,9 @@ const surface = {
   },
   once: (event: string, listener: () => void) => {
     const once = () => {
-      const index = surfaceListeners.findIndex((entry) => entry.listener === once);
+      const index = surfaceListeners.findIndex(
+        (entry) => entry.listener === once,
+      );
       surfaceListeners.splice(index, 1);
       listener();
     };
@@ -670,7 +672,7 @@ const openGlow = (options: {
 const zonesWindow = (): GlowWindow | null =>
   others.get("companion-dock-zones") ?? null;
 
-mock.module("@vellumai/electron-desktop/floating-window", () => ({
+mock.module("@mycadet/electron-desktop/floating-window", () => ({
   createFloatingWindow: (options: {
     kind: string;
     width: number;
@@ -693,7 +695,7 @@ mock.module("@vellumai/electron-desktop/floating-window", () => ({
       : (others.get(kind) ?? null),
 }));
 
-mock.module("@vellumai/electron-desktop/avatar", () => ({
+mock.module("@mycadet/electron-desktop/avatar", () => ({
   getAvatarPng: () => null,
   getCharacter: () => null,
   getAccentHex: () => null,
@@ -711,7 +713,7 @@ let flags: Record<string, boolean> = { "companion-surface": true };
 /** Main's `featureFlags` listeners, so a case can fire a targeting change. */
 const flagListeners: (() => void)[] = [];
 
-mock.module("@vellumai/electron-desktop/settings", () => ({
+mock.module("@mycadet/electron-desktop/settings", () => ({
   readSetting: () => flags,
   onSettingChange: (_key: string, listener: () => void) => {
     flagListeners.push(listener);
@@ -745,7 +747,7 @@ let storedDock: CompanionDock = "bottom";
  */
 let introSeen = Number.MAX_SAFE_INTEGER;
 
-mock.module("@vellumai/electron-desktop/window-state", () => ({
+mock.module("@mycadet/electron-desktop/window-state", () => ({
   readCompanionSize: (axis: CompanionSizeAxis) => sizes[axis],
   readCompanionHidden: () => companionHidden,
   writeCompanionSize: (axis: CompanionSizeAxis, size: CompanionSize) => {
@@ -4616,7 +4618,7 @@ describe("the Watch flag on the pushed state", () => {
 
 // The identity main holds, which is what opens the surface after a sign-in.
 // Imported after the mocks for the same reason the module under test is.
-const { setName } = await import("@vellumai/electron-desktop/identity");
+const { setName } = await import("@mycadet/electron-desktop/identity");
 
 describe("the surface while the app is in front", () => {
   test("steps off the screen when the app comes forward", () => {

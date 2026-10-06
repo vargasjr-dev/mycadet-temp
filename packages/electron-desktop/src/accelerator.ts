@@ -12,7 +12,7 @@
  * inputs).
  */
 
-import { ACCELERATOR_NAMED_KEYS } from "@vellumai/ipc-contract";
+import { ACCELERATOR_NAMED_KEYS } from "@mycadet/ipc-contract";
 
 const MODIFIERS = new Set(
   [

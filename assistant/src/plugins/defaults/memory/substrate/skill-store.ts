@@ -31,7 +31,7 @@
 // `listAlwaysCandidateSkillSlugs` primes that fallback, and the seeded snapshot
 // replaces it as soon as it lands.
 
-import { listCatalogSkills, listInstalledSkills } from "@vellumai/plugin-api";
+import { listCatalogSkills, listInstalledSkills } from "@mycadet/plugin-api";
 
 import { getConfig } from "../../../../config/loader.js";
 import { generateSparseEmbedding } from "../../../../persistence/embeddings/embedding-backend.js";

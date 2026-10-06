@@ -2,14 +2,11 @@ import { type Database } from "bun:sqlite";
 
 import { and, desc, eq, gt, ne, sql } from "drizzle-orm";
 
-import {
-  isBindingDemotion,
-  type RiskThreshold,
-} from "@vellumai/gateway-client";
+import { isBindingDemotion, type RiskThreshold } from "@mycadet/gateway-client";
 import {
   type AssistantContactMetadata,
   type ContactRead,
-} from "@vellumai/gateway-client/gateway-ipc-contracts";
+} from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import { type GatewayDb, getGatewayDb } from "./connection.js";
 import { parseContactAutoApproveThreshold } from "./contact-auto-approve-threshold.js";

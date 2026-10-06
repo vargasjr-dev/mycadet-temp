@@ -37,7 +37,7 @@ import {
   type CompanionSizeAxis,
   type VoiceActivityState,
   type WatchCaptureTarget,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /**
  * A session for the demo reel to draw.

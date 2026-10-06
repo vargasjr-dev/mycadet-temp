@@ -26,7 +26,7 @@
  * credential catalog so an empty cache is not reported as "not found".
  */
 
-import { credentialKey } from "@vellumai/credential-storage";
+import { credentialKey } from "@mycadet/credential-storage";
 
 import { getSecureKeyResultAsync } from "../security/secure-keys.js";
 import {
@@ -79,9 +79,7 @@ async function resolveCredentialRefLive(
 ): Promise<ResolvedRef | undefined> {
   const live = await listCredentialRecordsLive();
   if (live.unreachable) {
-    throw new CredentialResolutionError(
-      "Credential store is unreachable.",
-    );
+    throw new CredentialResolutionError("Credential store is unreachable.");
   }
   const record = findLiveRecord(live.records, ref);
   if (!record) {
@@ -128,9 +126,7 @@ export async function resolveCredential(ref: string): Promise<string> {
   );
   if (value == null || value.length === 0) {
     if (unreachable) {
-      throw new CredentialResolutionError(
-        "Credential store is unreachable.",
-      );
+      throw new CredentialResolutionError("Credential store is unreachable.");
     }
     throw new CredentialResolutionError(`Credential not found: ${ref}`);
   }

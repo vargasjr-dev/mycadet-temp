@@ -16,7 +16,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import type { CompactionTrailEvent } from "../../compaction-trail-fetch";
-import type { LLMRequestLogEntry } from "@vellumai/assistant-api";
+import type { LLMRequestLogEntry } from "@mycadet/assistant-api";
 
 interface HookState {
   data: { conversationId: string; events: CompactionTrailEvent[] } | undefined;
