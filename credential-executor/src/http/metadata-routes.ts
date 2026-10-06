@@ -12,7 +12,7 @@
 
 import { timingSafeEqual } from "node:crypto";
 
-import { CredentialRecordSchema } from "@vellumai/service-contracts/credential-rpc";
+import { CredentialRecordSchema } from "@mycadet/service-contracts/credential-rpc";
 
 import { getMetadataStore } from "../records/metadata-store.js";
 
@@ -185,7 +185,10 @@ export async function handleMetadataRoute(
       }
       if (result === "error") {
         return json(
-          { error: "Failed to delete credential metadata", account: rawAccount },
+          {
+            error: "Failed to delete credential metadata",
+            account: rawAccount,
+          },
           400,
         );
       }

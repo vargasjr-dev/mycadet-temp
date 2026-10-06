@@ -39,11 +39,11 @@ mock.module("@capacitor/core", () => ({
     addListener: addListenerMock,
   }),
 }));
-mock.module("@/lib/sentry/consent-gate", () => ({
+mock.module("@/lib/consent/consent-gate", () => ({
   diagnosticsConsentGranted: () => consent,
   diagnosticsReportingResolvedOff: () => reportingResolvedOff,
 }));
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 

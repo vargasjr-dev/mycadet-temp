@@ -4,7 +4,7 @@ import { OnboardingLayout } from "@/components/onboarding-layout";
 import { useGoogleCalendarConnect } from "@/domains/onboarding/hooks/use-google-calendar-connect";
 import { isElectron } from "@/runtime/is-electron";
 import { publicAsset } from "@/utils/public-asset";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 import { useTranslation } from "@/i18n";
 
 interface CheckinConnectScreenProps {

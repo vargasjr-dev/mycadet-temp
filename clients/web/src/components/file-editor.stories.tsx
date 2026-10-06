@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import {
   ContentActionBar,

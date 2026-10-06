@@ -7,7 +7,7 @@
  *
  * - `additive`: delay is the full window plus `ratio * random() * window`,
  *   so the window is a floor. Used by loops where a single client paces
- *   itself against its own server allocation (Slack Socket Mode, Velay).
+ *   itself against its own server allocation (Slack Socket Mode, Tunnel).
  * - `full`: delay is uniform over `[0, window)`, spreading retries across
  *   the whole window. Used where many instances recovering from one
  *   provider-side outage must not resynchronise (Discord).

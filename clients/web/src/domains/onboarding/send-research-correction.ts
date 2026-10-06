@@ -26,7 +26,7 @@
  */
 
 import { messagesPost } from "@/generated/daemon/sdk.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { buildSideConversationMessageBody } from "@/lib/side-conversation-message";
 import { archiveResearchConversation } from "@/domains/onboarding/archive-research-conversation";
 

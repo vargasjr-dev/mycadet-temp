@@ -377,7 +377,7 @@ mock.module("@/utils/routes", () => ({
   },
 }));
 
-mock.module("@vellumai/design-library/components/button", () => ({
+mock.module("@mycadet/design-library/components/button", () => ({
   Button: ({
     children,
     onClick,
@@ -399,7 +399,7 @@ mock.module("@vellumai/design-library/components/button", () => ({
   ),
 }));
 
-mock.module("@vellumai/design-library/components/confirm-dialog", () => ({
+mock.module("@mycadet/design-library/components/confirm-dialog", () => ({
   ConfirmDialog: ({
     open,
     message,
@@ -417,7 +417,7 @@ mock.module("@vellumai/design-library/components/confirm-dialog", () => ({
     ) : null,
 }));
 
-mock.module("@vellumai/design-library/components/menu", () => ({
+mock.module("@mycadet/design-library/components/menu", () => ({
   Menu: {
     Root: ({ children }: { children: ReactNode }) => <div>{children}</div>,
     Trigger: ({ children }: { children: ReactNode }) => <div>{children}</div>,

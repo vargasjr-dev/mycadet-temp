@@ -34,7 +34,7 @@ import {
 import { archiveResearchConversation } from "@/domains/onboarding/archive-research-conversation";
 import { invalidateConversationQueries } from "@/utils/conversation-cache";
 import type { PluginsSearchGetResponses } from "@/generated/daemon/types.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { buildSideConversationMessageBody } from "@/lib/side-conversation-message";
 import { latestAssistantText } from "@/utils/latest-assistant-text";
 import {

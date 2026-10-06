@@ -3,7 +3,7 @@ import type { MouseEventHandler } from "react";
 
 import { useTranslation } from "@/i18n";
 
-import { Button, cn } from "@vellumai/design-library";
+import { Button, cn } from "@mycadet/design-library";
 
 /** The tile's corner, worn by the box and by the picture it clips. */
 const TILE_RADIUS_CLASS = "rounded-[14px]";

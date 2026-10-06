@@ -7,7 +7,7 @@
 import { Check, Copy, Download, Pencil } from "lucide-react";
 import { useCallback, type ReactNode } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { useTranslation } from "@/i18n";

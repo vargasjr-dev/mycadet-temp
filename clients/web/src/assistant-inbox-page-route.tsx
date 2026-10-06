@@ -4,9 +4,9 @@ import { Navigate, useNavigate, useSearchParams } from "react-router";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Button } from "@vellumai/design-library";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { AssistantInboxPage } from "@/domains/assistant-inbox/components/assistant-inbox-page";
@@ -46,7 +46,7 @@ import {
   channelsReadinessRefreshPostMutation,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { usePendingDeepLinkStore } from "@/stores/pending-deep-link-store";
 import { extractErrorMessage } from "@/utils/api-errors";

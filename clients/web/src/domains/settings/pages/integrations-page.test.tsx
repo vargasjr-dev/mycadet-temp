@@ -207,7 +207,7 @@ mock.module("@/hooks/use-plugins-list", () => ({
     installedPlugins: seededPlugins,
   }),
 }));
-mock.module("@/lib/sentry/capture-error", () => ({ captureError: () => {} }));
+mock.module("@/lib/error-reporting/capture-error", () => ({ captureError: () => {} }));
 // A desktop shell hands the authorization URL to the OS browser, so the
 // attempt reaches its waiting phase without a popup jsdom cannot open.
 mock.module("@/runtime/is-electron", () => ({ isElectron: () => true }));

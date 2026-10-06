@@ -31,7 +31,7 @@ import { toolCallStatusWireFields } from "@/domains/chat/utils/message-test-help
 import type {
   ToolActivityMetadata,
   WebSearchResultItem,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 function makeResult(
   i: number,

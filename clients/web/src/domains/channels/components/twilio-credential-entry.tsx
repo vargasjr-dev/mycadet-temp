@@ -2,8 +2,8 @@ import { useState } from "react";
 
 import { useTranslation } from "@/i18n";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
 
 interface TwilioCredentialEntryProps {
   onSave?: (accountSid: string, authToken: string) => Promise<void>;

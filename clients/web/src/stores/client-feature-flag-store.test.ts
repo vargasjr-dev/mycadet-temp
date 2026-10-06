@@ -52,7 +52,7 @@ describe("settleWithoutServerValues", () => {
   });
 
   test("keeps a local override rather than the registry default", () => {
-    localStorage.setItem("vellum:ff:marketingPricingTakeover", "true");
+    localStorage.setItem("cadet:ff:marketingPricingTakeover", "true");
 
     useClientFeatureFlagStore.getState().settleWithoutServerValues(null);
 
@@ -116,7 +116,7 @@ describe("beginScope", () => {
   });
 
   test("keeps local overrides across a scope change", () => {
-    localStorage.setItem("vellum:ff:marketingPricingTakeover", "true");
+    localStorage.setItem("cadet:ff:marketingPricingTakeover", "true");
     useClientFeatureFlagStore.getState().beginScope("anonymous:org:none");
 
     useClientFeatureFlagStore

@@ -10,7 +10,7 @@ import {
   type PrepareNotificationIdentityPayload,
   type ResetNotificationIdentitiesPayload,
   type VerifiedNotificationNameProvenance,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 export const NOTIFICATION_IDENTITY_MEMORY_LIMIT = 32;
 
@@ -70,10 +70,7 @@ interface PublisherSourceState {
 
 const identities = new Map<string, PreparedNotificationIdentity>();
 const scopeGenerationGuards = new Map<string, ScopeGenerationGuard>();
-const identityGenerationGuards = new Map<
-  string,
-  IdentityGenerationGuard
->();
+const identityGenerationGuards = new Map<string, IdentityGenerationGuard>();
 const publisherSources = new Map<string, PublisherSourceState>();
 
 const identityKey = (
@@ -187,9 +184,7 @@ const activatePublisherSession = (
     return null;
   }
   existing.retiredSessionIds.add(existing.activeSessionId);
-  while (
-    existing.retiredSessionIds.size > RETIRED_PUBLISHER_SESSION_LIMIT
-  ) {
+  while (existing.retiredSessionIds.size > RETIRED_PUBLISHER_SESSION_LIMIT) {
     const oldest = existing.retiredSessionIds.values().next().value as
       | string
       | undefined;
@@ -295,10 +290,7 @@ const publisherTargetGeneration = (
       identityRevision: mapped.nativeRevision,
     };
   }
-  if (
-    !mapped &&
-    scope.identities.size >= IDENTITY_GENERATION_LIMIT
-  ) {
+  if (!mapped && scope.identities.size >= IDENTITY_GENERATION_LIMIT) {
     return null;
   }
   const nativeRevision = nextSafeGeneration(
@@ -414,8 +406,8 @@ const acceptScopeEpoch = (scopeId: string, scopeEpoch: number): boolean => {
   const update = updateScopeEpoch(scopeId, scopeEpoch);
   return Boolean(
     update &&
-      (update.state.sealedEpoch === undefined ||
-        scopeEpoch > update.state.sealedEpoch),
+    (update.state.sealedEpoch === undefined ||
+      scopeEpoch > update.state.sealedEpoch),
   );
 };
 
@@ -464,10 +456,7 @@ export const prepareNotificationIdentity = (
   if (!name && !avatar) {
     return false;
   }
-  const source = publisherState(
-    publisherSourceId,
-    payload.publisherSessionId,
-  );
+  const source = publisherState(publisherSourceId, payload.publisherSessionId);
   if (source === null) {
     return false;
   }
@@ -613,10 +602,7 @@ export const resetNotificationIdentities = (
     return false;
   }
 
-  const source = publisherState(
-    publisherSourceId,
-    payload.publisherSessionId,
-  );
+  const source = publisherState(publisherSourceId, payload.publisherSessionId);
   if (source === null) {
     return false;
   }

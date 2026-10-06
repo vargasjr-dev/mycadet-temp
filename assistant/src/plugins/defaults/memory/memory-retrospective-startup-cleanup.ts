@@ -39,7 +39,7 @@
 // The sweep is skipped entirely when `memory.retrospective.keepSupersededRuns`
 // is true — see the comment inside the function.
 
-import { deleteConversation } from "@vellumai/plugin-api";
+import { deleteConversation } from "@mycadet/plugin-api";
 import {
   and,
   eq,

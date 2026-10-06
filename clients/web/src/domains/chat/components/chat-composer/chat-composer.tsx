@@ -89,7 +89,7 @@ import { isPointerCoarse, usePointerCoarse } from "@/utils/pointer";
 import { routes } from "@/utils/routes";
 import { usePlatformGate } from "@/hooks/use-platform-gate";
 import { useTranslation } from "@/i18n";
-import { Button, cn, Notice, Popover } from "@vellumai/design-library";
+import { Button, cn, Notice, Popover } from "@mycadet/design-library";
 
 import {
   computeGhostSuffix,

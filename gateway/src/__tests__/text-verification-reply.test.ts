@@ -20,7 +20,7 @@ import {
 import {
   DELIVER_GATEWAY_REPLY_IPC_METHOD,
   hashVerificationSecret,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 let ipcCalls: { method: string; params?: Record<string, unknown> }[] = [];
 

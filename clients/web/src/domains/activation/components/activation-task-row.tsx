@@ -32,7 +32,7 @@ import {
   Input,
   ListRow,
   Typography,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 import { ConversationStarterChip } from "@/components/conversation-starter-chip";
 import { ExternalAnchor } from "@/components/external-anchor";

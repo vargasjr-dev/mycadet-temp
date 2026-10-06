@@ -23,7 +23,7 @@
  * running; nothing here reaches for a store.
  */
 
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

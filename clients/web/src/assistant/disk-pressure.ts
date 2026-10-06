@@ -1,7 +1,10 @@
-import type { DiskPressureStatus } from "@vellumai/assistant-api";
+import type { DiskPressureStatus } from "@mycadet/assistant-api";
 
 export type DiskPressureMonitorMode =
-  "inactive" | "warning" | "acknowledgement-required" | "cleanup";
+  | "inactive"
+  | "warning"
+  | "acknowledgement-required"
+  | "cleanup";
 
 export const DISK_PRESSURE_POLL_INTERVAL_MS = 60_000;
 

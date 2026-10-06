@@ -31,8 +31,8 @@ const SENT: EmailReference = {
 describe("formatEmailReference", () => {
   test("quotes every line and carries the header fields the assistant reads", () => {
     const lines = formatEmailReference(RECEIVED).split("\n");
-    expect(lines[0]).toBe("> [vellum:email-reference]");
-    expect(lines.at(-1)).toBe("> [/vellum:email-reference]");
+    expect(lines[0]).toBe("> [cadet:email-reference]");
+    expect(lines.at(-1)).toBe("> [/cadet:email-reference]");
     expect(lines.every((line) => line.startsWith("> "))).toBe(true);
     expect(lines).toContain("> message-id: msg_in_1");
     expect(lines).toContain("> direction: received");
@@ -100,7 +100,7 @@ describe("prependEmailReferences", () => {
     const result = prependEmailReferences("summarise these", [RECEIVED, SENT]);
     const first = result.indexOf("msg_in_1");
     const second = result.indexOf("msg_out_1");
-    expect(result.startsWith("> [vellum:email-reference]")).toBe(true);
+    expect(result.startsWith("> [cadet:email-reference]")).toBe(true);
     expect(first).toBeGreaterThan(-1);
     expect(second).toBeGreaterThan(first);
     expect(result.endsWith("\n\nsummarise these")).toBe(true);
@@ -146,7 +146,7 @@ describe("extractEmailReferences", () => {
   });
 
   test("an unclosed or id-less block stays in the text", () => {
-    const unclosed = "> [vellum:email-reference]\n> subject: x\n\nhello";
+    const unclosed = "> [cadet:email-reference]\n> subject: x\n\nhello";
     expect(extractEmailReferences(unclosed)).toEqual({
       emails: [],
       rest: unclosed,

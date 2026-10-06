@@ -17,7 +17,7 @@
  * Host-owned because both sides of the boundary consume it: the runtime
  * assembly (`daemon/conversation-runtime-assembly.ts`) quarantines the message
  * array and the lockstep Slack chronological transcript, and the empty-response
- * plugin's hooks reach the producer/sweep pieces via `@vellumai/plugin-api`
+ * plugin's hooks reach the producer/sweep pieces via `@mycadet/plugin-api`
  * re-exports.
  */
 

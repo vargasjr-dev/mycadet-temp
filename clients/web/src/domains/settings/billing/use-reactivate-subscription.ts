@@ -1,4 +1,4 @@
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { useSubscriptionAction } from "@/domains/settings/billing/use-subscription-action";
 import { useOrganizationsBillingSubscriptionReactivateCreateMutation } from "@/generated/api/@tanstack/react-query.gen";

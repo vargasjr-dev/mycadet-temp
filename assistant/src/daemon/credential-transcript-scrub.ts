@@ -31,7 +31,7 @@
 import {
   neutralizeRedactedSentinels,
   SENTINEL_REDACTION_VERSION,
-} from "@vellumai/service-contracts/redacted-credential";
+} from "@mycadet/service-contracts/redacted-credential";
 import { and, eq, gte, or, sql } from "drizzle-orm";
 
 import { updateMessageContent } from "../persistence/conversation-crud.js";
@@ -182,8 +182,7 @@ function escapeLikeLiteral(literal: string): string {
 
 function sweepDbMessages(targets: readonly string[]): number {
   // Module contract: callers can invoke this at any point in the daemon
-  // lifecycle, so readiness is checked rather than assumed (see
-  // assistant/CLAUDE.md § DB migration readiness gating).
+  // lifecycle, so DB migration readiness is checked rather than assumed.
   if (!getDbMigrationReadiness().ready) {
     log.warn(
       "DB migrations not ready; skipping credential transcript DB sweep",

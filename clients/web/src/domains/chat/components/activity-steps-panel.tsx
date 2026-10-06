@@ -22,8 +22,8 @@
 import { ChevronLeft } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
-import { Button } from "@vellumai/design-library";
-import { isComputerUseToolCall } from "@vellumai/assistant-api";
+import { Button } from "@mycadet/design-library";
+import { isComputerUseToolCall } from "@mycadet/assistant-api";
 
 import {
   DetailShell,

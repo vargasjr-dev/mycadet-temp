@@ -19,9 +19,9 @@ metadata:
 
 You build small, personal visual tools — dashboards, trackers, calculators, data visualizations, simple landing pages, and slide decks. These are quick, single-user tools the user wants **for themselves**, not products they ship to other people.
 
-Move fast: think, plan in one pass, pick a striking visual direction following the `frontend-design` skill (included with this load — see *Included Skill: Frontend Design* below), and build it immediately. Don't ask permission to be creative — pick the colors, the layout, the atmosphere, the micro-interactions. Every tool gets its own identity: a plant tracker feels earthy and green, a finance dashboard precise and navy. They should feel designed, not generated.
+Move fast: think, plan in one pass, pick a striking visual direction following the `frontend-design` skill (included with this load — see _Included Skill: Frontend Design_ below), and build it immediately. Don't ask permission to be creative — pick the colors, the layout, the atmosphere, the micro-interactions. Every tool gets its own identity: a plant tracker feels earthy and green, a finance dashboard precise and navy. They should feel designed, not generated.
 
-**Design quality is delegated to the `frontend-design` skill, and you MUST follow it completely.** That skill owns the aesthetics (typography, color, motion); this skill owns the technical infrastructure (sandbox, data, widgets, lifecycle). Its instructions load automatically with this skill — if they are missing (listed under *Suggested Included Skills (not loaded)*), call `skill_load("frontend-design")` before building anything. Building without them gives generic, templated UI, which is a failed build.
+**Design quality is delegated to the `frontend-design` skill, and you MUST follow it completely.** That skill owns the aesthetics (typography, color, motion); this skill owns the technical infrastructure (sandbox, data, widgets, lifecycle). Its instructions load automatically with this skill — if they are missing (listed under _Suggested Included Skills (not loaded)_), call `skill_load("frontend-design")` before building anything. Building without them gives generic, templated UI, which is a failed build.
 
 ---
 
@@ -33,13 +33,13 @@ Move fast: think, plan in one pass, pick a striking visual direction following t
 
 When a request is for a shippable/complex app, don't build in the sandbox. Instead:
 
-1. **Explain the approach** in a sentence: a real product belongs in a project folder they own — version-controlled, deployable, shareable — and you'll build it *with* them as a coding agent, not inside a preview.
+1. **Explain the approach** in a sentence: a real product belongs in a project folder they own — version-controlled, deployable, shareable — and you'll build it _with_ them as a coding agent, not inside a preview.
 2. **Establish a project folder** (propose a path, or use one they name).
 3. **Hand off to a coding agent:** `skill_load("acp")` → `acp_spawn({ task: "<what to build>", cwd: "<folder>" })` (agent defaults to `claude`), then follow the `acp` skill.
 
 Triage on intent, not artifact type. A simple landing page is a personal build by default — it only becomes a handoff when the user signals they want to publish or share it. When the signal is weak, lean personal and just build. If you genuinely can't tell, ask exactly **one** short question.
 
-**Editing an existing sandbox app? Skip scope entirely** — that's iteration. Resolve the app (see below), open it, and go to *Iteration*.
+**Editing an existing sandbox app? Skip scope entirely** — that's iteration. Resolve the app (see below), open it, and go to _Iteration_.
 
 ### Resolving an app the user mentions
 
@@ -78,6 +78,7 @@ Every app is multi-file TSX (`formatVersion: 2`). Never write a root-level `inde
 Every app works phone (~360px) to desktop (~1400px+). The `<turn_context>` block carries a `client_os:` field (the OS the user is on): `ios`/`android` → mobile-first (design narrow first, body 17px); `macos`/`windows`/`web` → desktop-first (multi-column, body 14px); absent → desktop-first unless the request implies phone use ("for my iPhone"). (The sibling `interface:` field is the transport surface, always `web` for the apps, so key layout off `client_os`, not `interface`.)
 
 **Universal baseline — every build, regardless of client_os:**
+
 - Viewport meta: `width=device-width, initial-scale=1, viewport-fit=cover`. Never `user-scalable=no` (blocks accessibility zoom).
 - Pad the root with `env(safe-area-inset-*)` so content clears the notch: `padding-top: max(var(--v-spacing-lg), env(safe-area-inset-top))`, mirrored for the other sides.
 - Full-height containers use `100dvh`, not `100vh`.
@@ -93,19 +94,19 @@ A design-system CSS and CSS widget library are **auto-injected** (inside a `@lay
 
 **Design tokens** (use these, don't invent hex values):
 
-| Category | Tokens |
-| --- | --- |
-| Backgrounds | `--v-bg`, `--v-surface`, `--v-surface-border` |
-| Text | `--v-text`, `--v-text-secondary`, `--v-text-muted` |
-| Accent | `--v-accent`, `--v-accent-hover` |
-| Status | `--v-success`, `--v-danger`, `--v-warning` |
-| Spacing | `--v-spacing-xxs`(2) `-xs`(4) `-sm`(8) `-md`(12) `-lg`(16) `-xl`(24) `-xxl`(32) `-xxxl`(48) |
-| Radius | `--v-radius-xs`(2) `-sm`(4) `-md`(8) `-lg`(12) `-xl`(16) `-pill`(999) |
-| Shadows | `--v-shadow-sm/md/lg` |
-| Typography | `--v-font-family`, `--v-font-mono`, `--v-font-size-xs`(10) `-sm`(11) `-base`(14) `-lg`(17) `-xl`(22) `-2xl`(26) |
-| Animation | `--v-duration-fast`(.15s) `-standard`(.25s) `-slow`(.4s) |
-| Palettes | `--v-slate/emerald/violet/indigo/rose/amber-{950..50}` |
-| Constant | `--v-aux-white` (always `#FFF` both modes — text on filled/accent backgrounds) |
+| Category    | Tokens                                                                                                          |
+| ----------- | --------------------------------------------------------------------------------------------------------------- |
+| Backgrounds | `--v-bg`, `--v-surface`, `--v-surface-border`                                                                   |
+| Text        | `--v-text`, `--v-text-secondary`, `--v-text-muted`                                                              |
+| Accent      | `--v-accent`, `--v-accent-hover`                                                                                |
+| Status      | `--v-success`, `--v-danger`, `--v-warning`                                                                      |
+| Spacing     | `--v-spacing-xxs`(2) `-xs`(4) `-sm`(8) `-md`(12) `-lg`(16) `-xl`(24) `-xxl`(32) `-xxxl`(48)                     |
+| Radius      | `--v-radius-xs`(2) `-sm`(4) `-md`(8) `-lg`(12) `-xl`(16) `-pill`(999)                                           |
+| Shadows     | `--v-shadow-sm/md/lg`                                                                                           |
+| Typography  | `--v-font-family`, `--v-font-mono`, `--v-font-size-xs`(10) `-sm`(11) `-base`(14) `-lg`(17) `-xl`(22) `-2xl`(26) |
+| Animation   | `--v-duration-fast`(.15s) `-standard`(.25s) `-slow`(.4s)                                                        |
+| Palettes    | `--v-slate/emerald/violet/indigo/rose/amber-{950..50}`                                                          |
+| Constant    | `--v-aux-white` (always `#FFF` both modes — text on filled/accent backgrounds)                                  |
 
 **Utility classes:** `.v-button` (`.secondary`/`.danger`/`.ghost`), `.v-card`, `.v-list`/`.v-list-item`, `.v-badge` (`.success`/`.warning`/`.danger`), `.v-input-row`, `.v-empty-state`, `.v-toggle`.
 
@@ -135,7 +136,7 @@ App builds are multi-step and benefit from a stronger model. If the active model
 
 ### 1 — Plan and build, fast
 
-Think (what's the tool, who's the single user), plan in one pass (visual direction, minimal schema, core layout), then build. No wireframes, no mockups, no color questions. Make the creative calls yourself. Only ask a question when the request is genuinely ambiguous about *what to build* — and even then, prefer building something strong from context clues.
+Think (what's the tool, who's the single user), plan in one pass (visual direction, minimal schema, core layout), then build. No wireframes, no mockups, no color questions. Make the creative calls yourself. Only ask a question when the request is genuinely ambiguous about _what to build_ — and even then, prefer building something strong from context clues.
 
 ### 2 — Design the data schema (only if it persists data)
 
@@ -145,7 +146,7 @@ A JSON Schema for a single record. The system auto-adds `id`, `appId`, `createdA
 {
   "type": "object",
   "properties": {
-    "title":  { "type": "string" },
+    "title": { "type": "string" },
     "status": { "type": "string", "enum": ["todo", "doing", "done"] }
   },
   "required": ["title"]
@@ -197,7 +198,7 @@ Anything else fails with `Invalid input for tool "app_create": Unknown parameter
 
 - **`html`** — old single-file shortcut. Put your HTML inside `source_files["src/index.html"]`.
 - **`pages`** — retired. Multi-page apps use TSX components under `src/components/`.
-- **`icon`**: NOT a top-level param. The icon goes in `preview.icon` as a Lucide icon name from the list below (e.g. `preview: { title: "Bean Coffee", icon: "coffee" }`). Pick the one that best says what the app is; it is drawn in the sidebar and the library, so an emoji or a URL is wrong here. For an AI-generated image icon, call `app_generate_icon(app_id, description)` *after* the app exists.
+- **`icon`**: NOT a top-level param. The icon goes in `preview.icon` as a Lucide icon name from the list below (e.g. `preview: { title: "Bean Coffee", icon: "coffee" }`). Pick the one that best says what the app is; it is drawn in the sidebar and the library, so an emoji or a URL is wrong here. For an AI-generated image icon, call `app_generate_icon(app_id, description)` _after_ the app exists.
 - **A file path as a top-level key** (e.g. `"src/components/Header.tsx"`) — these go inside `source_files`, or in a `file_write` after `app_create`.
 
 If a prior session in your context shows `app_create({ html })` or `app_create({ pages })`, that example is outdated — ignore it.
@@ -240,7 +241,7 @@ app_open(app_id, open_mode: "preview")
 
 ### 6 — Iteration
 
-Editing an existing app means reusing its `app_id` — never `app_create`. Resolve it from name if needed (see *Resolving an app*), open it so the live result is visible, then:
+Editing an existing app means reusing its `app_id` — never `app_create`. Resolve it from name if needed (see _Resolving an app_), open it so the live result is visible, then:
 
 - **`file_edit`** — targeted changes (styles, fixes, small features), full path `/workspace/data/apps/<slug>/src/...`
 - **`file_write`** — new files or full rewrites
@@ -262,7 +263,10 @@ The point of these apps is to put **the user's own data and the assistant's capa
 ```tsx
 async function loadRecords() {
   const res = await window.vellum.fetch("/v1/x/my-route");
-  if (!res.ok) { notifyError("Couldn't load"); return []; } // your own toast/inline error
+  if (!res.ok) {
+    notifyError("Couldn't load");
+    return [];
+  } // your own toast/inline error
   return res.json();
 }
 ```
@@ -271,8 +275,9 @@ Always wrap calls in `try/catch`, check `res.ok` before parsing, and surface fai
 
 ```tsx
 useEffect(() => {
-  window.vellum.fetch("/v1/x/items")
-    .then(res => res.ok ? res.json() : Promise.reject(res.status))
+  window.vellum
+    .fetch("/v1/x/items")
+    .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
     .then(setItems)
     .catch(() => notifyError("Couldn't load")); // your own toast/inline error
 }, []);
@@ -283,14 +288,17 @@ useEffect(() => {
 ```tsx
 const [src, setSrc] = useState("");
 useEffect(() => {
-  window.vellum.asset("assets/intro.mp4").then(setSrc).catch(() => notifyError("Couldn't load media"));
+  window.vellum
+    .asset("assets/intro.mp4")
+    .then(setSrc)
+    .catch(() => notifyError("Couldn't load media"));
 }, []);
 return src ? <video src={src} controls /> : null;
 ```
 
 Paths are validated server-side (no traversal, no `records/`); the file is served only from this app's own directory.
 
-**Live updates — `window.vellum.subscribe({ tags }, cb)`.** Instead of polling on a timer, subscribe to your own invalidation tags and refresh when the data actually changes. After a route mutates data it publishes a `sync_changed` event (`import { publishEvent } from "@vellumai/plugin-api"`, then `publishEvent({ …, message: { type: "sync_changed", tags: ["my-app:items"] } })`); the app subscribes to that tag and re-fetches when it fires. Returns an unsubscribe function — call it on cleanup. Only your own custom tags are delivered (host namespaces like `conversation:`/`assistant:` are never forwarded), and the payload is just the changed tags — re-fetch through `window.vellum.fetch` for the data.
+**Live updates — `window.vellum.subscribe({ tags }, cb)`.** Instead of polling on a timer, subscribe to your own invalidation tags and refresh when the data actually changes. After a route mutates data it publishes a `sync_changed` event (`import { publishEvent } from "@mycadet/plugin-api"`, then `publishEvent({ …, message: { type: "sync_changed", tags: ["my-app:items"] } })`); the app subscribes to that tag and re-fetches when it fires. Returns an unsubscribe function — call it on cleanup. Only your own custom tags are delivered (host namespaces like `conversation:`/`assistant:` are never forwarded), and the payload is just the changed tags — re-fetch through `window.vellum.fetch` for the data.
 
 ```tsx
 useEffect(() => {
@@ -307,20 +315,34 @@ useEffect(() => {
 // routes/items.ts
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
-export const description = "Item CRUD — JSON file storage";        // optional, for `assistant routes list`
+export const description = "Item CRUD — JSON file storage"; // optional, for `assistant routes list`
 const FILE = join(process.env.VELLUM_WORKSPACE_DIR!, "data", "items.json");
-const load = () => existsSync(FILE) ? JSON.parse(readFileSync(FILE, "utf-8")) : [];
-const save = (x:unknown[]) => { mkdirSync(join(process.env.VELLUM_WORKSPACE_DIR!,"data"),{recursive:true}); writeFileSync(FILE, JSON.stringify(x,null,2)); };
+const load = () =>
+  existsSync(FILE) ? JSON.parse(readFileSync(FILE, "utf-8")) : [];
+const save = (x: unknown[]) => {
+  mkdirSync(join(process.env.VELLUM_WORKSPACE_DIR!, "data"), {
+    recursive: true,
+  });
+  writeFileSync(FILE, JSON.stringify(x, null, 2));
+};
 
-export function GET(): Response { return Response.json(load()); }
+export function GET(): Response {
+  return Response.json(load());
+}
 export async function POST(req: Request): Promise<Response> {
-  const item = { id: crypto.randomUUID(), ...(await req.json()), createdAt: new Date().toISOString() };
-  const items = load(); items.push(item); save(items);
+  const item = {
+    id: crypto.randomUUID(),
+    ...(await req.json()),
+    createdAt: new Date().toISOString(),
+  };
+  const items = load();
+  items.push(item);
+  save(items);
   return Response.json(item, { status: 201 });
 }
 ```
 
-To reach daemon capabilities, import from `@vellumai/plugin-api` — `publishEvent({...})` to push real-time events to connected clients (UI updates, navigation, notifications), or `runConversationTurn({...})` to post an inbound event into a conversation as a real assistant turn. (An older `context` second argument still works in-process but is deprecated — prefer these imports.) Full guide + copyable examples (Focus Timer, Habit Tracker, Expense Tracker): `{baseDir}/references/CUSTOM_ROUTES.md`, `{baseDir}/references/examples/`.
+To reach daemon capabilities, import from `@mycadet/plugin-api` — `publishEvent({...})` to push real-time events to connected clients (UI updates, navigation, notifications), or `runConversationTurn({...})` to post an inbound event into a conversation as a real assistant turn. (An older `context` second argument still works in-process but is deprecated — prefer these imports.) Full guide + copyable examples (Focus Timer, Habit Tracker, Expense Tracker): `{baseDir}/references/CUSTOM_ROUTES.md`, `{baseDir}/references/examples/`.
 
 **Persistence options:** `localStorage` for ephemeral UI state (filters, view modes, drafts); custom routes for persistent records and server-side logic.
 

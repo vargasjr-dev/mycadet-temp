@@ -1,4 +1,4 @@
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { PROVIDER_DISPLAY_NAMES } from "@/assistant/llm-model-catalog";
 import type { TFunction } from "@/i18n";

@@ -35,7 +35,7 @@ export function HostingOptionsLocalHostingContent() {
               href="/docs/hosting-options"
               className="font-semibold text-emerald-700 underline hover:text-emerald-800"
             >
-              Vellum Cloud
+              Cadet Cloud
             </Link>
             . If you want local instead, this page is for you.
           </p>
@@ -242,7 +242,7 @@ export function HostingOptionsLocalHostingContent() {
             >
               Hosting options
             </Link>{" "}
-            for Vellum Cloud and User-Hosted Remote.
+            for Cadet Cloud and User-Hosted Remote.
           </p>
         </section>
 
@@ -260,7 +260,7 @@ export function HostingOptionsLocalHostingContent() {
             For most people using their primary computer, this means the assistant
             works great during the workday and whenever the computer is active.
             If you need always-on availability without buying dedicated
-            hardware, Vellum Cloud is the better fit.
+            hardware, Cadet Cloud is the better fit.
           </p>
         </section>
 

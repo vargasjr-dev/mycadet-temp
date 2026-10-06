@@ -29,7 +29,7 @@
 import { FolderPlus } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { ContextMenu } from "@vellumai/design-library";
+import { ContextMenu } from "@mycadet/design-library";
 
 import { isPointerCoarse } from "@/utils/pointer";
 import { useTranslation } from "@/i18n";

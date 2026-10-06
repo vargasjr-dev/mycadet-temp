@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import { type ReactNode, useCallback, useLayoutEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { Button, Typography } from "@vellumai/design-library";
+import { Button, Typography } from "@mycadet/design-library";
 
 import { RuntimeUpgradeBanner } from "@/components/runtime-upgrade-banner";
 import { StatusBanner } from "@/components/status-banner";

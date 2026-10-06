@@ -1,7 +1,7 @@
 import {
   buildSlackChannelLabelMap,
   buildSlackUserLabelMap,
-} from "@vellumai/slack-text";
+} from "@mycadet/slack-text";
 import { getLogger } from "../logger.js";
 import { fetchImpl } from "../fetch.js";
 import type { GatewayConfig } from "../config.js";

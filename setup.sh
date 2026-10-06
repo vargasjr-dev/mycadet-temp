@@ -68,7 +68,7 @@ info "Installing dependencies in scripts/"
 # Link local packages into meta so it resolves to local source
 # ---------------------------------------------------------------------------
 info "Linking local packages into meta/"
-(cd "${REPO_ROOT}/meta" && bun link @vellumai/cli @vellumai/assistant @vellumai/vellum-gateway @vellumai/credential-executor)
+(cd "${REPO_ROOT}/meta" && bun link @mycadet/cli @mycadet/assistant @mycadet/vellum-gateway @mycadet/credential-executor)
 
 # ---------------------------------------------------------------------------
 # Link the global `vellum` command to this repo's meta package

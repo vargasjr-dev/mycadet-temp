@@ -11,8 +11,8 @@ import { useTranslation } from "@/i18n";
 import type {
   LLMContextSection,
   LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
-import { Button, Card, Collapsible } from "@vellumai/design-library";
+} from "@mycadet/assistant-api";
+import { Button, Card, Collapsible } from "@mycadet/design-library";
 
 interface PromptTabProps {
   entry: LLMRequestLogEntry;

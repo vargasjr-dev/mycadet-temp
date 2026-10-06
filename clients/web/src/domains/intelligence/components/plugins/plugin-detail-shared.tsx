@@ -24,7 +24,7 @@ import type { PluginsByNameGetResponse } from "@/generated/daemon/types.gen";
 import { useTranslation } from "@/i18n";
 import { saveFile } from "@/runtime/native-file";
 import { cn } from "@/utils/misc";
-import { Button, ConfirmDialog, Toggle } from "@vellumai/design-library";
+import { Button, ConfirmDialog, Toggle } from "@mycadet/design-library";
 
 /**
  * The on-disk name for a plugin artifact: the URL path's basename.
@@ -379,10 +379,10 @@ export function PluginDetailActionError({
   const message = isInstallError
     ? PLUGIN_INSTALL_ERROR
     : isRemoveError
-    ? PLUGIN_REMOVE_ERROR
-    : isUpgradeError
-    ? PLUGIN_UPGRADE_ERROR
-    : null;
+      ? PLUGIN_REMOVE_ERROR
+      : isUpgradeError
+        ? PLUGIN_UPGRADE_ERROR
+        : null;
 
   if (!message) {
     return null;

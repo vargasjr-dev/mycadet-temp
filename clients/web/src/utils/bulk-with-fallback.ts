@@ -1,4 +1,4 @@
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { batchExecute } from "@/utils/batch-execute";
 
 /**
@@ -8,7 +8,7 @@ import { batchExecute } from "@/utils/batch-execute";
  * the daemon: if the bulk endpoint returns 404, falls back to calling
  * each item individually via `batchExecute` (bounded concurrency).
  *
- * On bulk error (non-404), rolls back all items and captures to Sentry.
+ * On bulk error (non-404), rolls back all items and reports the error.
  * On fallback per-item error, rolls back just that item and aborts the
  * batch.
  */

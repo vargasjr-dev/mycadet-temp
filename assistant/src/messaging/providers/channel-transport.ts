@@ -2,8 +2,8 @@ import type {
   ChannelDeliveryResult,
   ChannelReplyPayload,
   StreamOp,
-} from "@vellumai/gateway-client";
-import type { ReactionEmojiIdentity } from "@vellumai/service-contracts/reactions";
+} from "@mycadet/gateway-client";
+import type { ReactionEmojiIdentity } from "@mycadet/service-contracts/reactions";
 
 import type { AssistantActivityPhase } from "../../api/index.js";
 import type { ChannelId } from "../../channels/types.js";

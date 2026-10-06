@@ -28,7 +28,7 @@ Examples:
       ],
       helpText: `
 Reports the live status of the gateway's public tunnel — the outbound
-public-ingress transport (currently Velay).
+public-ingress transport (currently Tunnel).
 
 The tunnel is ONLY used to route inbound Twilio webhooks and live voice/audio
 WebSockets through to this assistant. It has nothing to do with platform

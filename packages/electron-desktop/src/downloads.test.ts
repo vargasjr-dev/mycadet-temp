@@ -5,7 +5,7 @@ import {
   DOWNLOADS_DONE_EVENT,
   DOWNLOADS_REVEAL,
   type DownloadDoneEvent,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import type { IpcHandle } from "./ipc";
 

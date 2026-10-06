@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Ban, CircleCheck, TriangleAlert } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { AvatarRenderer } from "@/components/avatar-renderer";
 import { ThreeDotIndicator } from "@/domains/chat/components/tool-progress-card/three-dot-indicator";

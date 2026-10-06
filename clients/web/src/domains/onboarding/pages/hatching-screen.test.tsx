@@ -200,12 +200,10 @@ const operationalStatusReadMock = mock(async () => {
   };
 });
 
-const hatchLocalAssistantMock = mock(
-  async (_species?: string, _remote?: string) => ({
-    ok: true as const,
-    assistantId: "local-1",
-  }),
-);
+const hatchLocalAssistantMock = mock(async (_remote?: string) => ({
+  ok: true as const,
+  assistantId: "local-1",
+}));
 
 const saveLockfileAssistantMock = mock(
   async (_entry: {
@@ -225,13 +223,10 @@ mock.module("react-router", () => ({
   useSearchParams: () => [searchParams],
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 
-mock.module("@sentry/react", () => ({
-  captureMessage: () => {},
-}));
 
 const stableQueryClient = {};
 mock.module("@tanstack/react-query", () => ({
@@ -426,7 +421,7 @@ mock.module("@/utils/routes", () => ({
   },
 }));
 
-mock.module("@vellumai/design-library/components/button", () => ({
+mock.module("@mycadet/design-library/components/button", () => ({
   Button: ({
     children,
     onClick,
@@ -436,7 +431,7 @@ mock.module("@vellumai/design-library/components/button", () => ({
   }) => <button onClick={onClick}>{children}</button>,
 }));
 
-mock.module("@vellumai/design-library/components/progress-bar", () => ({
+mock.module("@mycadet/design-library/components/progress-bar", () => ({
   ProgressBar: () => <div data-testid="progress-bar" />,
 }));
 
@@ -537,8 +532,8 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
 
   test("skip_research hands off to chat instead of the research funnel", async () => {
     const env = import.meta.env as Record<string, string | undefined>;
-    const previousEnv = env.VITE_SENTRY_ENVIRONMENT;
-    env.VITE_SENTRY_ENVIRONMENT = "staging";
+    const previousEnv = env.VITE_ENVIRONMENT;
+    env.VITE_ENVIRONMENT = "staging";
     searchParams = new URLSearchParams("skip_research=1");
     subscriptionPlanId = "base";
     onboardingData = { max_machine_tier: null, selected_storage_gib: null };
@@ -553,7 +548,7 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
         replace: true,
       });
     } finally {
-      env.VITE_SENTRY_ENVIRONMENT = previousEnv;
+      env.VITE_ENVIRONMENT = previousEnv;
     }
   });
 
@@ -1015,14 +1010,12 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
 
     // The rejection surfaces as a correctable error, not a completed hatch.
     await waitFor(
-      () =>
-        expect(
-          screen.getByText("Your API key didn't work"),
-        ).toBeTruthy(),
+      () => expect(screen.getByText("Your API key didn't work")).toBeTruthy(),
       { timeout: 5000 },
     );
-    expect(screen.getByText("API key is invalid or expired.", { exact: false }))
-      .toBeTruthy();
+    expect(
+      screen.getByText("API key is invalid or expired.", { exact: false }),
+    ).toBeTruthy();
     expect(navigateMock).not.toHaveBeenCalled();
     // A blind retry would re-apply nothing (the pending key was cleared), so
     // the primary action is the path back to the API-key screen instead.
@@ -1067,14 +1060,11 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     render(<HatchingScreen />);
 
     await waitFor(
-      () =>
-        expect(
-          screen.getByText("Your API key didn't work"),
-        ).toBeTruthy(),
+      () => expect(screen.getByText("Your API key didn't work")).toBeTruthy(),
       { timeout: 5000 },
     );
     expect(hatchLocalAssistantMock).toHaveBeenCalledTimes(1);
-    expect(hatchLocalAssistantMock.mock.calls[0]?.[1]).toBeUndefined();
+    expect(hatchLocalAssistantMock.mock.calls[0]?.[0]).toBeUndefined();
 
     // The user backs out to the hosting screen and picks Docker instead. The
     // held Local promise must not answer for the Docker choice.
@@ -1094,7 +1084,7 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
       { timeout: 5000 },
     );
     expect(hatchLocalAssistantMock).toHaveBeenCalledTimes(2);
-    expect(hatchLocalAssistantMock.mock.calls[1]?.[1]).toBe("docker");
+    expect(hatchLocalAssistantMock.mock.calls[1]?.[0]).toBe("docker");
   }, 15000);
 
   test("a local hatch keeps its gateway session", async () => {

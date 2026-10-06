@@ -15,7 +15,7 @@ import type {
   CardSummary,
 } from "@/domains/chat/process-registry/types";
 import { stopAcpRun } from "@/domains/chat/utils/acp-run-actions";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useViewerStore } from "@/stores/viewer-store";
 

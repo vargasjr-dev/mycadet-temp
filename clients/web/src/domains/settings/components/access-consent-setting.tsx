@@ -20,9 +20,9 @@ import {
 import { usePlatformAssistantId } from "@/hooks/use-platform-assistant-id";
 import { useTranslation } from "@/i18n";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { Button } from "@vellumai/design-library/components/button";
-import { toast } from "@vellumai/design-library/components/toast";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Button } from "@mycadet/design-library/components/button";
+import { toast } from "@mycadet/design-library/components/toast";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 // setTimeout caps at 2^31-1 ms; a week-long grant fits, but clamp anyway.
 const MAX_REFETCH_DELAY_MS = 2 ** 31 - 1;

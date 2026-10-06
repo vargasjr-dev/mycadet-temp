@@ -7,7 +7,7 @@
 
 import { readFileSync } from "node:fs";
 
-import { channelForBotProvider } from "@vellumai/service-contracts/channels";
+import { channelForBotProvider } from "@mycadet/service-contracts/channels";
 
 import {
   getConfig,

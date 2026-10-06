@@ -43,7 +43,7 @@ const initialLifecycleState = useAssistantLifecycleStore.getState();
 // does NOT fire a profile-create success toast itself — that toast belongs to
 // the surrounding surface (Settings via ProfileDetailPanel, composer via its
 // own quick-add), preventing a double-fire.
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     success: (message: string) => {
       toastSuccessCalls.push(message);

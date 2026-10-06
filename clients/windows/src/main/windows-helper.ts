@@ -1,7 +1,7 @@
 import { app } from "electron";
 import path from "node:path";
 
-import { NativeSidecarClient } from "@vellumai/native-sidecar/supervisor";
+import { NativeSidecarClient } from "@mycadet/native-sidecar/supervisor";
 
 import log from "./logger";
 

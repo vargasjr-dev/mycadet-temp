@@ -1,5 +1,5 @@
 /**
- * Consent-gated lifecycle for session replay, mirroring `sentry-control.ts`.
+ * Consent-gated lifecycle for session replay.
  *
  * Replay records the web DOM, so a single web-layer client covers every surface
  * (browser, Electron renderer, iOS WKWebView, Android WebView); there is no
@@ -10,7 +10,7 @@
  * mid-session revoke the provider is stopped best-effort; a hard reset takes
  * effect on the next reload (see the provider's `stop` contract).
  */
-import { diagnosticsConsentGranted } from "@/lib/sentry/consent-gate";
+import { diagnosticsConsentGranted } from "@/lib/consent/consent-gate";
 import type { SessionReplayNetworkConfig } from "@/lib/session-replay/network-sanitize";
 import {
   provider,
@@ -31,7 +31,7 @@ export interface SessionReplayConfig {
 }
 
 /**
- * Session replay is gated on the SAME composed consent as Sentry diagnostics
+ * Session replay is gated on the SAME composed diagnostics consent
  * (confirmed-live platform session AND the effective reporting gate). This thin
  * wrapper is the seam: if replay later needs its own consent, only this changes.
  */
@@ -109,7 +109,7 @@ export function syncSessionReplay(config: SessionReplayConfig): void {
  * Install listeners so the replay client re-applies the gate whenever an input
  * changes — the effective reporting gate (`device:diagnostics_reporting`) or a
  * platform-session transition — and re-identifies when the authenticated user
- * changes. Reuses the same signals Sentry watches, so platform-side revokes
+ * changes. Reuses the same signals the diagnostics gate watches, so platform-side revokes
  * picked up by `consent-refresh.ts` flow through here with no extra wiring.
  *
  * Returns a cleanup function that removes both listeners.

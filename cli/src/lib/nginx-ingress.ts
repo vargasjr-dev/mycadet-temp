@@ -16,7 +16,7 @@ import {
 import { networkInterfaces } from "node:os";
 import { join } from "node:path";
 
-import { cloudAssistantHubUrl } from "@vellumai/environments";
+import { cloudAssistantHubUrl } from "@mycadet/environments";
 
 import {
   getAssistantDisplayName,
@@ -152,7 +152,7 @@ export interface RemoteWebIngressOptions {
 
 /**
  * Cloud web SPA base URL for a build environment. The mapping lives in
- * `@vellumai/environments` (`cloudAssistantHubUrl`) and is shared with the
+ * `@mycadet/environments` (`cloudAssistantHubUrl`) and is shared with the
  * Capacitor shell's `server.url`, so the two consumers cannot drift.
  */
 export function cloudWebHubUrl(env: string | undefined): string {
@@ -1142,7 +1142,7 @@ export async function ensureTunnelEdge(opts: {
       throw new Error(
         "Unable to locate built web assets for the remote web edge. " +
           "Build the SPA (`cd clients/web && VITE_PLATFORM_MODE=false bun run build`) " +
-          "or install @vellumai/web so its packaged dist directory is available.",
+          "or install @mycadet/web so its packaged dist directory is available.",
       );
     case "unreachable":
       throw new Error(

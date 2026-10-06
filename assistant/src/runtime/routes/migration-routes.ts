@@ -20,7 +20,7 @@ import { createReadStream } from "node:fs";
 import { hostname } from "node:os";
 import { PassThrough, Readable } from "node:stream";
 
-import { GatewayDebugExportIpcResponseSchema } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import { GatewayDebugExportIpcResponseSchema } from "@mycadet/gateway-client/gateway-ipc-contracts";
 import { z } from "zod";
 
 import { invalidateConfigCache } from "../../config/loader.js";

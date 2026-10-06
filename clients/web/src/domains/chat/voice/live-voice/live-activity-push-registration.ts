@@ -45,7 +45,7 @@ import {
 } from "@/domains/chat/voice/live-voice/live-voice-store";
 import { fixedT } from "@/i18n";
 import { resolvePlatformAssistantId } from "@/lib/platform-assistant-id";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { resolveSignedApnsEnvironment } from "@/runtime/apns-environment";
 import { createStorageAccessor } from "@/utils/typed-storage";
 
@@ -121,7 +121,7 @@ function parseRegistration(raw: string): ActivityRegistration | null {
  */
 const persistedRegistration =
   createStorageAccessor<ActivityRegistration | null>({
-    key: "vellum:live_activity_registration",
+    key: "cadet:live_activity_registration",
     scope: "user",
     parse: parseRegistration,
     serialize: JSON.stringify,

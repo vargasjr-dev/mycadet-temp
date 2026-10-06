@@ -2,7 +2,7 @@ import {
   buildMessageExcerpt,
   hasLexicalTokens,
   searchMessageIdsLexical,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import { readSlackMetadataFromMessageMetadata } from "../../../../../messaging/providers/slack/message-metadata.js";
 import { AUTO_ANALYSIS_SOURCE } from "../../../../../persistence/auto-analysis-constants.js";

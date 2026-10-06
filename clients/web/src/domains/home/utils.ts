@@ -3,7 +3,7 @@ import {
   type FeedItemStatus,
   type FeedItemUpdate,
   isPendingGuardianFeedItem,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import { flattenSummary } from "./feed-preview";
 

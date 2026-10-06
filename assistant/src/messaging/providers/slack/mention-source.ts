@@ -23,7 +23,7 @@ import {
   extractSlackUserMentionIds,
   renderSlackTextForModel,
   sanitizeSlackLabel,
-} from "@vellumai/slack-text";
+} from "@mycadet/slack-text";
 
 export interface SlackMentionLabelMaps {
   /** Slack user id (`U…`/`W…`) to sanitized display label. */
@@ -76,7 +76,7 @@ const TEAM_ID_RE = /^[TE][A-Z0-9]{1,31}$/;
 
 /**
  * Sanitize a label for persistence: the shared renderer normalization from
- * `@vellumai/slack-text` (single source of truth, so persisted labels can
+ * `@mycadet/slack-text` (single source of truth, so persisted labels can
  * never drift from render-time semantics), plus the persistence-only
  * bounds this module owns: well-formedness rejection and a length cap.
  * Returns `undefined` when the input is malformed or nothing usable remains.

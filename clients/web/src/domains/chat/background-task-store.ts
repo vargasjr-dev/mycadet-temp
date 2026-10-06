@@ -18,7 +18,7 @@ import { create } from "zustand";
 import type {
   BackgroundToolCompletedEvent,
   BackgroundToolStartedEvent,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import { createSelectors } from "@/utils/create-selectors";
 import {
   isActiveBackgroundTaskStatus,

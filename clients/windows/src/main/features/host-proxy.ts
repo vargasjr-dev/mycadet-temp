@@ -8,23 +8,23 @@ import { app } from "electron";
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
-import { getDeviceId } from "@vellumai/electron-desktop/device-id";
-import { installHostProxyBridge } from "@vellumai/electron-desktop/host-proxy/router";
-import { LOCAL_MODE_CLI } from "@vellumai/electron-desktop/local-mode";
+} from "@mycadet/electron-desktop/capability-registry";
+import { getDeviceId } from "@mycadet/electron-desktop/device-id";
+import { installHostProxyBridge } from "@mycadet/electron-desktop/host-proxy/router";
+import { LOCAL_MODE_CLI } from "@mycadet/electron-desktop/local-mode";
 import {
   getWatchedLockfile,
   onLockfileChange,
-} from "@vellumai/electron-desktop/lockfile-watcher";
+} from "@mycadet/electron-desktop/lockfile-watcher";
 import {
   getSessionToken,
   onSessionTokenChange,
-} from "@vellumai/electron-desktop/session-token-store";
+} from "@mycadet/electron-desktop/session-token-store";
 import {
   getGuardianAccessToken,
   resolveConfigDir,
   resolveEnvironmentName,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 import { createWindowsHostProxyRuntime } from "../host-proxy-adapter";
 import log from "../logger";

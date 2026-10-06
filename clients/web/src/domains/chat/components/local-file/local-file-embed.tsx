@@ -12,8 +12,8 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
-import { toast } from "@vellumai/design-library";
-import { Skeleton } from "@vellumai/design-library/components/skeleton";
+import { toast } from "@mycadet/design-library";
+import { Skeleton } from "@mycadet/design-library/components/skeleton";
 
 import { LocalFileCard } from "@/components/local-file/local-file-card";
 import { localFileKindFromFilename } from "@/components/local-file/local-file-icon";

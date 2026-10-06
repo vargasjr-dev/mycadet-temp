@@ -1,3 +1,4 @@
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import { existsSync, unlinkSync } from "fs";
 import { join } from "path";
 
@@ -482,7 +483,7 @@ async function retireInner(): Promise<void> {
     await retireLocal(assistantId, entry);
   } else if (cloud === "custom") {
     await retireCustom(entry);
-  } else if (cloud === "vellum") {
+  } else if (isManagedCloud(cloud)) {
     await retireVellum(assistantId, entry.runtimeUrl);
   } else {
     console.error(`Error: Unknown cloud type '${cloud}'.`);

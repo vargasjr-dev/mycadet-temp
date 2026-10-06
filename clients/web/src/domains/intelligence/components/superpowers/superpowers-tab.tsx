@@ -37,15 +37,8 @@ import type {
   PluginFilter,
   PluginListItem,
 } from "@/lib/plugins/types";
-import {
-  SYSTEM_CATEGORY,
-  usePluginsList,
-} from "@/hooks/use-plugins-list";
-import {
-  filterByStatus,
-  matchesQuery,
-  shortSha,
-} from "@/lib/plugins/utils";
+import { SYSTEM_CATEGORY, usePluginsList } from "@/hooks/use-plugins-list";
+import { filterByStatus, matchesQuery, shortSha } from "@/lib/plugins/utils";
 import {
   isInstalledSkill,
   type SkillInfo,
@@ -82,14 +75,14 @@ import { useSupportsPluginsSurface } from "@/lib/backwards-compat/plugins-surfac
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { getLocalBool, setLocalBool } from "@/utils/local-settings";
 import { routes } from "@/utils/routes";
-import { Button, Card, ConfirmDialog, toast } from "@vellumai/design-library";
+import { Button, Card, ConfirmDialog, toast } from "@mycadet/design-library";
 
 interface SuperpowersTabProps {
   assistantId: string;
 }
 
 const SEARCH_DEBOUNCE_MS = 300;
-const TIP_STORAGE_KEY = "vellum:superpowers:tipDismissed";
+const TIP_STORAGE_KEY = "cadet:superpowers:tipDismissed";
 
 /** One merged, sortable row — a skill or a plugin. */
 type SuperpowerRow =
@@ -356,9 +349,7 @@ export function SuperpowersTab({ assistantId }: SuperpowersTabProps) {
   const installMutation = usePluginsInstallPostMutation({
     onMutate: (variables) => setInstallingName(variables.body.name),
     onSuccess: (_data, variables) =>
-      toast.success(
-        t("pluginToast.installed", { name: variables.body.name }),
-      ),
+      toast.success(t("pluginToast.installed", { name: variables.body.name })),
     onError: () => toast.error(PLUGIN_INSTALL_ERROR),
     onSettled: (_data, _error, variables) => {
       setInstallingName(null);
@@ -495,20 +486,24 @@ export function SuperpowersTab({ assistantId }: SuperpowersTabProps) {
   const rows = useMemo(
     () =>
       sortRows([
-        ...skills.map((skill): SuperpowerRow => ({
-          type: "skill",
-          key: `skill:${skill.id}`,
-          name: skill.name,
-          installed: isInstalledSkill(skill),
-          skill,
-        })),
-        ...visiblePluginItems.map((item): SuperpowerRow => ({
-          type: "plugin",
-          key: `plugin:${item.name}`,
-          name: item.name,
-          installed: item.status === "installed",
-          item,
-        })),
+        ...skills.map(
+          (skill): SuperpowerRow => ({
+            type: "skill",
+            key: `skill:${skill.id}`,
+            name: skill.name,
+            installed: isInstalledSkill(skill),
+            skill,
+          }),
+        ),
+        ...visiblePluginItems.map(
+          (item): SuperpowerRow => ({
+            type: "plugin",
+            key: `plugin:${item.name}`,
+            name: item.name,
+            installed: item.status === "installed",
+            item,
+          }),
+        ),
       ]),
     [skills, visiblePluginItems],
   );

@@ -10,7 +10,7 @@ import {
 } from "./render-text.js";
 import { slackUserActorFields, slackBotSenderInfo } from "./actor.js";
 import { extractSlackAttachments, extractSlackFileMap } from "./attachments.js";
-import type { ChannelConversationType } from "@vellumai/gateway-client";
+import type { ChannelConversationType } from "@mycadet/gateway-client";
 import type { GatewayConfig } from "../config.js";
 import { resolveAssistant, isRejection } from "../routing/resolve-assistant.js";
 import type { RouteResult } from "../routing/types.js";

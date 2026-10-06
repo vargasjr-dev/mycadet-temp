@@ -12,7 +12,7 @@ import { randomUUID } from "node:crypto";
 
 import { z } from "zod";
 
-import { generateInviteToken, hashInviteToken } from "@vellumai/gateway-client";
+import { generateInviteToken, hashInviteToken } from "@mycadet/gateway-client";
 import type { GatewayConfig } from "../config.js";
 import type { ConfigFileCache } from "../config-file-cache.js";
 import {
@@ -73,12 +73,12 @@ export type CreateCredentialRequestResult =
 export interface CreateCredentialRequestDeps {
   /**
    * Lazily resolve the bound platform assistant id. Only invoked for the
-   * Velay fallback, so a config-resolved (self-hosted/manual) URL never
+   * Tunnel fallback, so a config-resolved (self-hosted/manual) URL never
    * loads identity.
    */
   getPlatformAssistantId?: () => Promise<string | undefined>;
   /**
-   * Enable public ingress (if disabled) and start the Velay tunnel so the
+   * Enable public ingress (if disabled) and start the Tunnel tunnel so the
    * minted link is actually reachable. Wired by the gateway entrypoint, which
    * owns the tunnel client.
    */
@@ -131,7 +131,7 @@ export async function createCredentialRequest(
   }
 
   // All guards passed — the link WILL be minted, so now make ingress live:
-  // enable it if it was explicitly disabled AND start the Velay tunnel (on
+  // enable it if it was explicitly disabled AND start the Tunnel tunnel (on
   // platform the tunnel otherwise only starts for Twilio / live voice, so the
   const ttlMs = Math.min(
     params.ttlMs ?? DEFAULT_CREDENTIAL_REQUEST_TTL_MS,
@@ -151,7 +151,7 @@ export async function createCredentialRequest(
   });
 
   // The link row is persisted, so now make ingress live: enable it if it was
-  // explicitly disabled AND start the Velay tunnel (on platform the tunnel
+  // explicitly disabled AND start the Tunnel tunnel (on platform the tunnel
   // otherwise only starts for Twilio / live voice, so the config bit alone
   // would leave the link unreachable). Ordered after store.create so a failed
   // insert — and every earlier guard (no resolvable URL, rate limit, too many

@@ -16,7 +16,7 @@
  * Auth: Bearer token from a caller-supplied config.
  */
 
-import type { CredentialRecord } from "@vellumai/service-contracts/credential-rpc";
+import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -294,12 +294,7 @@ export function createCesHttpCredentialClient(
 
     async list(): Promise<CesCredentialListResult> {
       try {
-        const res = await cesRequest(
-          config,
-          logger,
-          "GET",
-          "/v1/credentials",
-        );
+        const res = await cesRequest(config, logger, "GET", "/v1/credentials");
         if (!res) return { accounts: [], unreachable: true };
         if (!res.ok) {
           logger.warn(
@@ -399,12 +394,7 @@ export function createCesHttpCredentialClient(
 
     async listRecords() {
       try {
-        const res = await cesRequest(
-          config,
-          logger,
-          "GET",
-          "/v1/metadata",
-        );
+        const res = await cesRequest(config, logger, "GET", "/v1/metadata");
         if (!res) {
           return { records: [], unreachable: true };
         }

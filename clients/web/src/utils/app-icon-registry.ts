@@ -1,5 +1,5 @@
 /**
- * App icon registry: the Lucide glyph for each name in `@vellumai/app-icons`,
+ * App icon registry: the Lucide glyph for each name in `@mycadet/app-icons`,
  * the list the assistant chooses from when it stores an icon on an app's
  * manifest. Typed against that list, so a name added to the package without
  * a glyph here fails the typecheck, and a glyph here the package does not
@@ -20,7 +20,7 @@ import {
   bridgeEmojiAppIcon,
   isAppIconName,
   type AppIconName,
-} from "@vellumai/app-icons";
+} from "@mycadet/app-icons";
 import { createElement } from "react";
 
 import {

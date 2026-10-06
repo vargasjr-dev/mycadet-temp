@@ -6,7 +6,7 @@
  * minted service token, and proxies the request to the daemon.
  */
 
-import { proxyForwardToResponse } from "@vellumai/assistant-client";
+import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 import { mintServiceToken } from "../../auth/token-exchange.js";
 import type { GatewayConfig } from "../../config.js";

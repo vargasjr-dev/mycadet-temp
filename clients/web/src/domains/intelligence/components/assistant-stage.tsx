@@ -18,7 +18,7 @@ import {
   useLayoutEffect,
   type ReactNode,
 } from "react";
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 
 import { EYES_VISIBLE_FRACTION } from "@/components/avatar/peeking-eyes";
 import { useElementSize, type StageSize } from "@/hooks/use-element-size";

@@ -19,7 +19,7 @@ import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import {
   credentialKey,
   StaticCredentialMetadataStore,
-} from "@vellumai/credential-storage";
+} from "@mycadet/credential-storage";
 
 const TEST_DIR = join(
   tmpdir(),

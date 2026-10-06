@@ -86,9 +86,9 @@ mock.module("@/domains/activation/hooks/use-launch-activation-task", () => ({
   }),
 }));
 
-const toastModule = await import("@vellumai/design-library/components/toast");
+const toastModule = await import("@mycadet/design-library/components/toast");
 const { toast: realToast } = toastModule;
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...toastModule,
   toast: {
     ...realToast,
@@ -130,7 +130,7 @@ afterAll(() => {
     ...launchModule,
     useLaunchActivationTask: realUseLaunchActivationTask,
   }));
-  mock.module("@vellumai/design-library/components/toast", () => ({
+  mock.module("@mycadet/design-library/components/toast", () => ({
     ...toastModule,
     toast: realToast,
   }));

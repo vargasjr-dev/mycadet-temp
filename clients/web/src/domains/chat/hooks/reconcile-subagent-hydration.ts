@@ -1,4 +1,4 @@
-import { SubagentStatusSchema } from "@vellumai/assistant-api";
+import { SubagentStatusSchema } from "@mycadet/assistant-api";
 
 import type { SubagentStore } from "@/domains/chat/subagent-store";
 import { shouldApplyStatus } from "@/utils/subagent-status";

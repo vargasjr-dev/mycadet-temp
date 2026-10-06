@@ -1,6 +1,6 @@
 import os from "node:os";
 
-import { SEEDS } from "@vellumai/environments";
+import { SEEDS } from "@mycadet/environments";
 
 import { resolveEnvironmentName } from "./environment";
 import {

@@ -27,7 +27,7 @@ import {
   hashVerificationSecret,
   VERIFICATION_SESSIONS_IPC_METHODS,
   type VerificationSessionWire,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 const RATE_LIMIT_MAX_ATTEMPTS = 5;

@@ -36,7 +36,7 @@ let deleteCalls: string[] = [];
 let deleteStatus = 200;
 let toastErrors: string[] = [];
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     success: () => {},
     error: (message: string) => {
@@ -47,7 +47,7 @@ mock.module("@vellumai/design-library/components/toast", () => ({
   ToastContent: () => null,
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 
@@ -80,12 +80,10 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   },
 }));
 
-const { ProvidersSection } = await import(
-  "@/domains/settings/ai/providers-section"
-);
-const { useAssistantIdentityStore } = await import(
-  "@/stores/assistant-identity-store"
-);
+const { ProvidersSection } =
+  await import("@/domains/settings/ai/providers-section");
+const { useAssistantIdentityStore } =
+  await import("@/stores/assistant-identity-store");
 
 // ---------------------------------------------------------------------------
 // Helpers

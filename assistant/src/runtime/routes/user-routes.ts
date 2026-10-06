@@ -15,7 +15,7 @@
  * over both HTTP and IPC.
  */
 
-import { PLUGIN_NOTICES_ROUTE_PREFIX } from "@vellumai/gateway-client";
+import { PLUGIN_NOTICES_ROUTE_PREFIX } from "@mycadet/gateway-client";
 
 import { ACTOR_PRINCIPALS, GATEWAY_PRINCIPALS } from "../auth/route-policy.js";
 import { httpError } from "../http-errors.js";

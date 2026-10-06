@@ -25,7 +25,7 @@ const linkClass =
   "font-semibold text-emerald-700 underline hover:text-emerald-800";
 
 const PLUGIN_API_URL =
-  "https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api";
+  "https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api";
 
 const HOOKS_PAGE_URL = "/docs/extensibility/hooks";
 const SKILLS_PAGE_URL = "/docs/extensibility/skills";
@@ -41,7 +41,7 @@ export function ExtensibilityOverviewContent() {
       <DocsContent
         title="Extensibility"
         breadcrumb="Docs / Extensibility"
-        subtitle="Build on top of Vellum with plugins. A plugin bundles hooks, tools, and more into a single installable package that extends what your assistant can do."
+        subtitle="Build on top of Cadet with plugins. A plugin bundles hooks, tools, and more into a single installable package that extends what your assistant can do."
       >
         <p className="mb-8 text-zinc-600 dark:text-zinc-400">
           This section covers how you can teach your Assistant to extend itself
@@ -66,7 +66,7 @@ export function ExtensibilityOverviewContent() {
             Plugins can also be discovered and managed from the Plugins tab in{" "}
             the app, or searched from the CLI with{" "}
             <code>assistant plugins search</code>. The catalog is a curated{" "}
-            allowlist that the Vellum team approves and curates.
+            allowlist that the Cadet team approves and curates.
           </p>
         </section>
 
@@ -206,7 +206,7 @@ export function ExtensibilityOverviewContent() {
             <strong>Plugins are for distribution</strong>: you intend to share
             the capability, publish to the marketplace, or install it across
             multiple assistants. The plugin manifest (<code>package.json</code>
-            ), the <code>@vellumai/plugin-api</code> peer dependency, and the
+            ), the <code>@cadetai/plugin-api</code> peer dependency, and the
             install flow exist to make a capability portable, versioned, and
             discoverable by others.
           </p>
@@ -230,7 +230,7 @@ export function ExtensibilityOverviewContent() {
             the main Assistant process. They can import all internal methods
             from the Assistant from the single public package,{" "}
             <Link href={PLUGIN_API_URL} className={linkClass}>
-              <code>@vellumai/plugin-api</code>
+              <code>@cadetai/plugin-api</code>
             </Link>
             , which is the only supported contract. Anything not exported from
             there is internal and can change without notice.
@@ -271,7 +271,7 @@ export function ExtensibilityOverviewContent() {
             Coming from another harness?
           </SectionHeading>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
-            Vellum&apos;s plugin model was designed to line up with the agent
+            Cadet&apos;s plugin model was designed to line up with the agent
             harnesses you may already use. The shared vocabulary is deliberate
             to be as portable as possible with the other entrants in the
             industry.

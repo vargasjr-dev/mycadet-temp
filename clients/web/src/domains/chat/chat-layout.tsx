@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation, useNavigate, useNavigationType } from "react-router";
-import { SIDE_MENU_TILE_SIZE } from "@vellumai/design-library";
+import { SIDE_MENU_TILE_SIZE } from "@mycadet/design-library";
 
 import { assistantStateCanServeChat } from "@/assistant/lifecycle";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
@@ -126,8 +126,8 @@ const CommandPalette = lazy(() =>
   })),
 );
 
-const SIDEBAR_COLLAPSED_STORAGE_KEY = "vellum:sidebar:collapsed";
-const SIDEBAR_WIDTH_STORAGE_KEY = "vellum:sidebar:width";
+const SIDEBAR_COLLAPSED_STORAGE_KEY = "cadet:sidebar:collapsed";
+const SIDEBAR_WIDTH_STORAGE_KEY = "cadet:sidebar:width";
 const DEFAULT_SIDEBAR_WIDTH = 230;
 const MIN_SIDEBAR_WIDTH = 220;
 const MAX_SIDEBAR_WIDTH = 400;

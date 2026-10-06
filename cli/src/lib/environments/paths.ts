@@ -1,7 +1,7 @@
 import { homedir } from "os";
 import { join } from "path";
 
-import type { EnvironmentDefinition, PortMap } from "@vellumai/environments";
+import type { EnvironmentDefinition, PortMap } from "@mycadet/environments";
 import {
   resolveAssistantsDir,
   resolveConfigDirPaths,
@@ -9,7 +9,7 @@ import {
   resolveLogDir,
   resolveRuntimeDir,
   type LocalPathOptions,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 const DEFAULT_PORTS: Readonly<PortMap> = {
   daemon: 7821,

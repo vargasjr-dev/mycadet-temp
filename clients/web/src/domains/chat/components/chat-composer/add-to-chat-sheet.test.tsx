@@ -22,7 +22,7 @@ import { createElement, type ReactNode } from "react";
 const passthrough = ({ children, ...props }: Record<string, unknown>) =>
   createElement("div", props, children as ReactNode);
 
-mock.module("@vellumai/design-library", () => ({
+mock.module("@mycadet/design-library", () => ({
   BottomSheet: {
     Root: ({
       children,
@@ -78,7 +78,7 @@ mock.module(
 );
 
 const captureErrorSpy = mock(() => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorSpy,
 }));
 
@@ -282,7 +282,7 @@ describe("AddToChatSheet: a pick that outlives its render", () => {
   });
 
   test("says nothing to a surface that has gone", async () => {
-    // The failure toast and the Sentry report both address a composer that is
+    // The failure toast and the error report both address a composer that is
     // still there. Reporting into a view the user has left is noise about work
     // they did not see fail.
     mockNativePickersAvailable = true;

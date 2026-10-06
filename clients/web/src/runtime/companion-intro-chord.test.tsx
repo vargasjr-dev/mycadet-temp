@@ -11,7 +11,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 
-import type { CompanionIntroCallControl } from "@vellumai/ipc-contract";
+import type { CompanionIntroCallControl } from "@mycadet/ipc-contract";
 
 mock.module("@/runtime/is-electron", () => ({
   isElectron: () => true,

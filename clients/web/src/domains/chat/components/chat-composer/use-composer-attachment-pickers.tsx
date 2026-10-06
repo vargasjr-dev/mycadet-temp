@@ -1,4 +1,4 @@
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 import { useCallback, useEffect, useRef } from "react";
 import { requestComposerFocus } from "@/domains/chat/composer-focus";
 import {
@@ -9,7 +9,7 @@ import {
   pickMediaNative,
   type PickOutcome,
 } from "@/domains/chat/components/chat-attachments/native-attachment-pickers";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAttachmentFilePicker } from "@/domains/chat/components/chat-attachments/use-attachment-file-picker";
 import { useTranslation } from "@/i18n";
 

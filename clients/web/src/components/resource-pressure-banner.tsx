@@ -1,7 +1,7 @@
 import { Activity } from "lucide-react";
 import { useState } from "react";
 
-import { Button, Checkbox, Notice } from "@vellumai/design-library";
+import { Button, Checkbox, Notice } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

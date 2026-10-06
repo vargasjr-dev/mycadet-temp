@@ -20,7 +20,7 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ElectronHostOS } from "@vellumai/ipc-contract";
+import type { ElectronHostOS } from "@mycadet/ipc-contract";
 import {
   cleanup,
   fireEvent,
@@ -44,7 +44,7 @@ const ASSISTANT_ID = "asst-test";
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => ASSISTANT_ID,
 }));
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {} },
   Toaster: () => null,
   ToastContent: () => null,
@@ -102,9 +102,8 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   },
 }));
 
-const { SpeechToTextCard } = await import(
-  "@/domains/settings/ai/speech-to-text-card"
-);
+const { SpeechToTextCard } =
+  await import("@/domains/settings/ai/speech-to-text-card");
 const { LS_STT_PROVIDER } = await import("@/utils/local-settings-keys");
 const { changeLocale } = await import("@/i18n");
 

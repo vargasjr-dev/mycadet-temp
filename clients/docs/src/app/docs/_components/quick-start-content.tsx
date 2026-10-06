@@ -33,7 +33,7 @@ function MigrationCallout() {
         There&apos;s a migration tool to bring over your data, memories, and settings in one pass.
       </p>
       <Link
-        href="https://www.vellum.ai/import"
+        href="https://www.mycadet.ai/import"
         className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 underline hover:text-emerald-800"
       >
         Migration tool
@@ -51,9 +51,9 @@ export function QuickStartContent() {
         breadcrumb="Docs / Getting Started / Quick Start"
       >
         <p className="mb-8 text-zinc-600">
-          You&apos;ve installed Vellum. Now what? This page walks
+          You&apos;ve installed Cadet. Now what? This page walks
           through how to actually start using your assistant after the
-          install completes, whether you signed up for Vellum Cloud or
+          install completes, whether you signed up for Cadet Cloud or
           set up a local install on your Mac.
         </p>
 
@@ -81,20 +81,20 @@ export function QuickStartContent() {
             Where to talk to it
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            On Vellum Cloud, your assistant is the same wherever you
+            On Cadet Cloud, your assistant is the same wherever you
             sign in, with the same memory and the same conversation
             history carried across:
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
               <strong>Web</strong>: open{" "}
-              <a href="https://vellum.ai" className={linkClass}>
-                vellum.ai
+              <a href="https://cadet.ai" className={linkClass}>
+                cadet.ai
               </a>{" "}
               in any browser. No install needed.
             </li>
             <li>
-              <strong>iPhone or iPad</strong>: install the Vellum
+              <strong>iPhone or iPad</strong>: install the Cadet
               Assistant app from the{" "}
               <a
                 href={routes.iosAppStore}

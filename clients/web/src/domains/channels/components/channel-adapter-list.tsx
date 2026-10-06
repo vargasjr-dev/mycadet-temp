@@ -2,9 +2,9 @@ import { Plug } from "lucide-react";
 
 import { useTranslation } from "@/i18n";
 
-import { Card } from "@vellumai/design-library/components/card";
-import { PanelItem } from "@vellumai/design-library/components/panel-item";
-import { Tag } from "@vellumai/design-library/components/tag";
+import { Card } from "@mycadet/design-library/components/card";
+import { PanelItem } from "@mycadet/design-library/components/panel-item";
+import { Tag } from "@mycadet/design-library/components/tag";
 
 import {
   ChannelIcon,

@@ -10,12 +10,12 @@ import { RestartAssistant } from "@/domains/settings/components/restart-assistan
 import { usePlatformGate } from "@/hooks/use-platform-gate";
 import { useTranslation } from "@/i18n";
 import { isVellumStaff } from "@/lib/auth/staff";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAuthStore } from "@/stores/auth-store";
 import { clearConsentForUser } from "@/lib/consent/consent-persistence";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { toast } from "@mycadet/design-library/components/toast";
 
 export function DebugControlsPanel() {
   const { t } = useTranslation("settings");

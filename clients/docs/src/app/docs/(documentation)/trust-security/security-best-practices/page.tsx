@@ -2,9 +2,9 @@ import { TrustSecurityBestPracticesContent } from "@/app/docs/_components/trust-
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Security Best Practices - Vellum Docs",
+  title: "Security Best Practices - Cadet Docs",
   description:
-    "Security best practices for Vellum — sharing information, reviewing files, permissions, and credentials.",
+    "Security best practices for Cadet — sharing information, reviewing files, permissions, and credentials.",
   path: "/docs/trust-security/security-best-practices",
 });
 

@@ -37,7 +37,7 @@ import {
   type DeleteCredentialResponse,
   type ListCredentialsResponse,
   type RpcEnvelope,
-} from "@vellumai/service-contracts/credential-rpc";
+} from "@mycadet/service-contracts/credential-rpc";
 
 import {
   CesRpcServer,

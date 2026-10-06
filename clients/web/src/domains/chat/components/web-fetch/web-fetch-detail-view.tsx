@@ -13,8 +13,8 @@
 
 import { useMemo } from "react";
 
-import type { WebFetchMetadata } from "@vellumai/assistant-api";
-import { CardRoot, Notice, Typography } from "@vellumai/design-library";
+import type { WebFetchMetadata } from "@mycadet/assistant-api";
+import { CardRoot, Notice, Typography } from "@mycadet/design-library";
 
 import { ExternalAnchor, isWebUrl } from "@/components/external-anchor";
 import { ChatMarkdownMessage } from "@/domains/chat/components/chat-markdown-message";

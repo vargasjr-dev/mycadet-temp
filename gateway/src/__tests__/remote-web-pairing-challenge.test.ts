@@ -58,7 +58,7 @@ describe("remote web pairing challenge", () => {
   });
 
   test("preserves path-prefixed public base URLs in the verification URI", async () => {
-    const publicBaseUrl = "https://velay.example.test/assistant-123/";
+    const publicBaseUrl = "https://tunnel.example.test/assistant-123/";
 
     const res = await handleCreateRemoteWebPairingChallenge(
       makeRequest({ publicBaseUrl }),
@@ -72,12 +72,12 @@ describe("remote web pairing challenge", () => {
       userCode: string;
     };
     expect(body.verificationUri).toBe(
-      "https://velay.example.test/assistant-123/assistant/pair",
+      "https://tunnel.example.test/assistant-123/assistant/pair",
     );
 
     const record = getRemoteWebPairingChallengeForTests(body.userCode);
     expect(record?.publicBaseUrl).toBe(
-      "https://velay.example.test/assistant-123",
+      "https://tunnel.example.test/assistant-123",
     );
   });
 

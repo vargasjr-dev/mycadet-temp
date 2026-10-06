@@ -9,7 +9,7 @@ import { Check, Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { PanelItem, type CustomPropertyStyle } from "@vellumai/design-library";
+import { PanelItem, type CustomPropertyStyle } from "@mycadet/design-library";
 
 import { ChatAvatar } from "@/components/avatar/chat-avatar";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";

@@ -1,3 +1,4 @@
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import { spawnSync } from "child_process";
 import { writeFileSync } from "fs";
 import { join } from "path";
@@ -1604,7 +1605,7 @@ export async function upgrade(): Promise<void> {
       return;
     }
 
-    if (cloud === "vellum") {
+    if (isManagedCloud(cloud)) {
       await upgradePlatform(entry, effectiveVersion, !noWait);
       return;
     }

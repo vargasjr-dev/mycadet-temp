@@ -110,7 +110,7 @@ const UP_NEXT: Item[] = [
   },
   {
     emoji: "\u{1FA7A}",
-    title: "Vellum Doctor",
+    title: "Cadet Doctor",
     description:
       "A built-in diagnostic that tells you what's broken and how to fix it — before you have to ask.",
   },
@@ -118,7 +118,7 @@ const UP_NEXT: Item[] = [
     emoji: "\u{1F4BB}",
     title: "Better CLI",
     description:
-      "Power-user shortcuts, scriptable commands, and a faster path for developers who want to drive Vellum from the terminal.",
+      "Power-user shortcuts, scriptable commands, and a faster path for developers who want to drive Cadet from the terminal.",
   },
   {
     emoji: "\u{1F4EC}",
@@ -272,7 +272,7 @@ const EXPLORING: Item[] = [
   },
   {
     emoji: "\u{26A1}",
-    title: "Use Vellum in any app",
+    title: "Use Cadet in any app",
     description:
       "Summon your assistant inside any app on your system — summarize a doc, reply to a message, translate a selection — without switching windows.",
   },
@@ -349,7 +349,7 @@ export function RoadmapContent() {
           What we&apos;re building next, grouped by how close it is to shipping.
         </p>
         <p className="mb-8 text-stone-600 dark:text-stone-400">
-          Vellum is moving fast. This page shows where things stand. We update
+          Cadet is moving fast. This page shows where things stand. We update
           it as priorities shift, so check back.
         </p>
 

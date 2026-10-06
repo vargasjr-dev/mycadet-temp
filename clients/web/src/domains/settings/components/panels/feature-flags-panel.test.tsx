@@ -45,7 +45,7 @@ mock.module("@/hooks/use-is-org-ready", () => ({
 // the panel pulls `cn` from the barrel index, which re-exports
 // `Toaster`/`ToastContent` from this module. Missing exports here surface as
 // parse-time "export not found" errors during barrel resolution, so stub them.
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { error: () => {}, success: () => {} },
   Toaster: () => null,
   ToastContent: () => null,
@@ -80,13 +80,13 @@ describe("FeatureFlagsPanel", () => {
     renderPanel();
 
     const toggle = screen.getByRole("switch", {
-      name: "Backward Releases is off",
+      name: "Rollback Enabled is off",
     });
     fireEvent.click(toggle);
 
     const request = patchMock.mock.calls[0]?.[0];
     expect(request).toMatchObject({
-      path: { assistant_id: "assistant-1", flag_key: "backward-releases" },
+      path: { assistant_id: "assistant-1", flag_key: "rollback-enabled" },
       body: { enabled: true },
       throwOnError: false,
     });

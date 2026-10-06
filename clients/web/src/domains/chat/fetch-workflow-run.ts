@@ -13,7 +13,7 @@
  * `workflow_started` event replays.
  */
 
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import { workflowsRunsByIdGet } from "@/generated/daemon/sdk.gen";
 import type { WorkflowsRunsByIdGetResponses } from "@/generated/daemon/types.gen";

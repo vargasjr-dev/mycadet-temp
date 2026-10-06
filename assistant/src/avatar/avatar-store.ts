@@ -29,7 +29,7 @@ import {
   AVATAR_IMAGE_FILENAME,
   AVATAR_MANIFEST_FILENAME,
   AVATAR_TRAITS_FILENAME,
-} from "@vellumai/avatar-manifest";
+} from "@mycadet/avatar-manifest";
 
 import { publishAvatarChanged } from "../runtime/sync/resource-sync-events.js";
 import { recordTelemetryEvent } from "../telemetry/telemetry-events-outbox.js";

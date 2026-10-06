@@ -13,7 +13,7 @@ import { Link } from "react-router";
 
 import { Trans } from "@/i18n";
 import { routes } from "@/utils/routes";
-import { textLinkVariants } from "@vellumai/design-library/components/text-link";
+import { textLinkVariants } from "@mycadet/design-library/components/text-link";
 
 export function ByoVoiceNote() {
   return (

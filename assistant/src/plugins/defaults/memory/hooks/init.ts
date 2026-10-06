@@ -12,7 +12,7 @@
  * steps contains its own failure.
  */
 
-import type { HookFunction, InitContext } from "@vellumai/plugin-api";
+import type { HookFunction, InitContext } from "@mycadet/plugin-api";
 
 import { getConfig } from "../../../../config/loader.js";
 import { registerMemoryPluginJobHandlers } from "../job-handler-registration.js";

@@ -10,7 +10,7 @@
 import { useId } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
-import { Button, ScrollShadow, Typography } from "@vellumai/design-library";
+import { Button, ScrollShadow, Typography } from "@mycadet/design-library";
 
 import { DETAIL_SHELL_BODY_INSET_PX } from "@/components/detail-shell";
 import { MidlineDot } from "@/components/midline-dot";

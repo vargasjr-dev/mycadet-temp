@@ -41,6 +41,7 @@ const EXPECTED_PROVIDERS = [
   "ramp",
   "readwise",
   "semrush",
+  "sentry",
   "stripe",
   "todoist",
   "typeform",
@@ -50,7 +51,7 @@ const EXPECTED_PROVIDERS = [
 ] as const;
 
 describe("bundled MCP marketplace inventory", () => {
-  test("ships the reviewed 37-provider inventory and every declared logo", () => {
+  test("ships the reviewed 38-provider inventory and every declared logo", () => {
     const raw = JSON.parse(
       readFileSync(join(REPO_ROOT, "plugins", "marketplace.json"), "utf8"),
     ) as unknown;
@@ -64,7 +65,7 @@ describe("bundled MCP marketplace inventory", () => {
     );
     expect(
       integrations.filter((entry) => entry.integration?.setup.mode === "oauth"),
-    ).toHaveLength(36);
+    ).toHaveLength(37);
     expect(
       integrations.filter(
         (entry) => entry.integration?.setup.mode === "manual",

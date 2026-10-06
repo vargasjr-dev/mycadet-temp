@@ -4,7 +4,7 @@ import {
   COMPANION_DICTATION_OFFER_MAX,
   type FnClaimant,
   type UnplacedDictationOffer,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { forwardUnplacedDictationOffer } from "@/runtime/companion-surface";
 import { isPopoutWindowLifetime } from "@/runtime/popout-window";

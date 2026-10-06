@@ -6,11 +6,11 @@
  * shape instead of the SDK's pre-schema `unknown` payload.
  */
 
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   WorkflowJournalResponseSchema,
   type WorkflowJournalResponse,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import { workflowsRunsByIdJournalGet } from "@/generated/daemon/sdk.gen";
 

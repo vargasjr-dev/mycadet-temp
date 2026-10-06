@@ -14,7 +14,7 @@ import { publishElectronWindowAttentionSource } from "@/runtime/event-sources/el
 import { __resetLifecycleEdgeForTests } from "@/runtime/event-sources/lifecycle-edge";
 import { subscribeToWindowAttention } from "@/runtime/window-attention";
 
-import type { WindowAttentionPayload } from "@vellumai/ipc-contract";
+import type { WindowAttentionPayload } from "@mycadet/ipc-contract";
 
 import { useSessionDurationClock } from "./use-session-duration-clock";
 
@@ -68,7 +68,8 @@ test("starts suspended when the document is initially hidden", () => {
 
 test("starts suspended when an Electron window is already minimized", () => {
   let sendWindowAttention:
-    ((payload: WindowAttentionPayload) => void) | undefined;
+    | ((payload: WindowAttentionPayload) => void)
+    | undefined;
   window.vellum = {
     platform: "electron",
     notifications: {
@@ -115,7 +116,8 @@ test.each([true, false])(
   "handles initial Electron visibility locally (enabled=%s)",
   (enabled) => {
     let sendWindowAttention:
-      ((payload: WindowAttentionPayload) => void) | undefined;
+      | ((payload: WindowAttentionPayload) => void)
+      | undefined;
     window.vellum = {
       platform: "electron",
       notifications: {

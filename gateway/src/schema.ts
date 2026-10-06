@@ -3,7 +3,7 @@ import {
   TWILIO_MEDIA_STREAM_WEBHOOK_PATH,
   TWILIO_STATUS_WEBHOOK_PATH,
   TWILIO_VOICE_WEBHOOK_PATH,
-} from "@vellumai/service-contracts/twilio-ingress";
+} from "@mycadet/service-contracts/twilio-ingress";
 
 export function buildSchema(): Record<string, unknown> {
   return {
@@ -190,16 +190,16 @@ export function buildSchema(): Record<string, unknown> {
           },
         },
       },
-      "/v1/velay/status": {
+      "/v1/tunnel/status": {
         get: {
-          summary: "Velay tunnel status",
+          summary: "Tunnel tunnel status",
           description:
-            "Returns the current state of the Velay tunnel connection: whether it is connected and its public URL when available. Returns { connected: false, publicUrl: null } when Velay is not configured (VELAY_BASE_URL not set).",
-          operationId: "velayStatus",
+            "Returns the current state of the Tunnel tunnel connection: whether it is connected and its public URL when available. Returns { connected: false, publicUrl: null } when Tunnel is not configured (TUNNEL_BASE_URL not set).",
+          operationId: "tunnelStatus",
           security: [{ BearerAuth: [] }],
           responses: {
             "200": {
-              description: "Velay tunnel status returned",
+              description: "Tunnel tunnel status returned",
               content: {
                 "application/json": {
                   schema: {

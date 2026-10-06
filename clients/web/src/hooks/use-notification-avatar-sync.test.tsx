@@ -7,9 +7,9 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
 
-import { getCharacterComponents } from "@vellumai/avatar-catalog";
-import { NOTIFICATION_AVATAR_MAX_LOCAL_BYTES } from "@vellumai/avatar-manifest/notification-avatar";
-import { NOTIFICATION_AVATAR_BASE64_MAX_CHARS } from "@vellumai/ipc-contract";
+import { getCharacterComponents } from "@mycadet/avatar-catalog";
+import { NOTIFICATION_AVATAR_MAX_LOCAL_BYTES } from "@mycadet/avatar-manifest/notification-avatar";
+import { NOTIFICATION_AVATAR_BASE64_MAX_CHARS } from "@mycadet/ipc-contract";
 
 import type {
   AvatarImageMeta,

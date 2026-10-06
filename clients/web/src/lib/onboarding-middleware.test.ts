@@ -155,7 +155,7 @@ describe("onboardingCompletedMiddleware", () => {
 
   test("allows the local research flow after hatch when onboarding is not complete", async () => {
     localStorage.setItem(
-      "vellum:local:lockfile",
+      "cadet:local:lockfile",
       JSON.stringify({
         assistants: [
           {

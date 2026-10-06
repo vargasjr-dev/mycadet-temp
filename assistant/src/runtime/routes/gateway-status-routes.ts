@@ -9,13 +9,13 @@
  *
  * The response is deliberately tunnel-agnostic: a single `tunnel` field holding
  * the active public URL, omitted entirely when a tunnel is up but has no URL.
- * This keeps the contract stable if the underlying transport (currently Velay)
+ * This keeps the contract stable if the underlying transport (currently Tunnel)
  * is ever swapped for another tunnel. If the gateway is not running (no IPC
  * answer), the handler errors instead of returning an empty result.
  */
 import { z } from "zod";
 
-import { ipcGetVelayStatus } from "../../ipc/gateway-client.js";
+import { ipcGetTunnelStatus } from "../../ipc/gateway-client.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { ServiceUnavailableError } from "./errors.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
@@ -34,7 +34,7 @@ type GatewayStatusResponse = z.infer<typeof GatewayStatusResponseSchema>;
 async function handleGatewayStatus(
   _args: RouteHandlerArgs,
 ): Promise<GatewayStatusResponse> {
-  const status = await ipcGetVelayStatus().catch(() => null);
+  const status = await ipcGetTunnelStatus().catch(() => null);
   // A null status means the gateway did not answer over IPC — i.e. it is not
   // running. That is a fatal condition for this command, not a "no tunnel"
   // state, so surface it as an error rather than an empty result.

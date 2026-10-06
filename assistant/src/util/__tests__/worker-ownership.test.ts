@@ -10,7 +10,7 @@ describe("isDaemonCommand", () => {
   test("source daemon: bun with the entry script as an argument", () => {
     expect(
       isDaemonCommand(
-        "bun run /app/runtime/0.11.7/node_modules/@vellumai/assistant/src/daemon/main.ts",
+        "bun run /app/runtime/0.11.7/node_modules/@mycadet/assistant/src/daemon/main.ts",
       ),
     ).toBe(true);
   });

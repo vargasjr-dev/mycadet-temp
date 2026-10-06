@@ -12,7 +12,7 @@
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { ChannelReplyPayload } from "@vellumai/gateway-client";
+import type { ChannelReplyPayload } from "@mycadet/gateway-client";
 
 // ---------------------------------------------------------------------------
 // Mock state

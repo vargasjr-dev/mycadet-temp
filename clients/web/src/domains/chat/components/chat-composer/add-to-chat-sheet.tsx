@@ -1,4 +1,4 @@
-import { BottomSheet } from "@vellumai/design-library";
+import { BottomSheet } from "@mycadet/design-library";
 import {
   Camera,
   File as FileIcon,

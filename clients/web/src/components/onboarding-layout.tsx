@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 
-import { PortalContainerProvider } from "@vellumai/design-library/utils/portal-container";
+import { PortalContainerProvider } from "@mycadet/design-library/utils/portal-container";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { isElectron } from "@/runtime/is-electron";
@@ -129,7 +129,10 @@ export function OnboardingLayout({
         <div className="flex min-h-0 flex-1">
           {content}
           <div className="relative w-[46%] lg:w-1/2">
-            <AvatarWave className="absolute inset-0" entrance={animateAvatarWaveIn} />
+            <AvatarWave
+              className="absolute inset-0"
+              entrance={animateAvatarWaveIn}
+            />
           </div>
         </div>
       ) : (

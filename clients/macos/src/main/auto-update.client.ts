@@ -3,7 +3,7 @@ import { autoUpdater } from "electron-updater";
 import {
   configureAutoUpdate,
   resolveUpdateFeedUrl,
-} from "@vellumai/electron-desktop/auto-update";
+} from "@mycadet/electron-desktop/auto-update";
 
 import { handle } from "./ipc";
 import log from "./logger";
@@ -28,4 +28,4 @@ export {
   installAutoUpdate,
   type UpdateState,
   type UpdateStatus,
-} from "@vellumai/electron-desktop/auto-update";
+} from "@mycadet/electron-desktop/auto-update";

@@ -11,7 +11,7 @@
  * withdrawal time, the same way the adapter resolved it to deliver.
  */
 
-import { isParkGuardianAction } from "@vellumai/service-contracts/guardian-requests";
+import { isParkGuardianAction } from "@mycadet/service-contracts/guardian-requests";
 
 import { resolveDecisionStatusWord } from "../../../runtime/channel-approval-types.js";
 import { getLogger } from "../../../util/logger.js";

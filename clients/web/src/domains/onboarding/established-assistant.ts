@@ -16,7 +16,7 @@
  */
 
 import { fetchAssistantIdentity } from "@/assistant/identity";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { hasAnyActiveConversation } from "@/utils/conversation-list-fetchers";
 
 export interface EstablishedAssistantCheck {

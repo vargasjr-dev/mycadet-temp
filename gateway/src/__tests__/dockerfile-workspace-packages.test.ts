@@ -5,7 +5,7 @@ import { describe, expect, test } from "bun:test";
 /**
  * The gateway image copies workspace package sources after `bun install`.
  * A declared `workspace:*` dependency that is not COPYed boots as
- * `Cannot find module '@vellumai/<name>'`.
+ * `Cannot find module '@mycadet/<name>'`.
  */
 describe("gateway Dockerfile workspace packages", () => {
   test("copies every workspace dependency into the image", () => {
@@ -23,11 +23,11 @@ describe("gateway Dockerfile workspace packages", () => {
       if (version !== "workspace:*") {
         continue;
       }
-      if (!name.startsWith("@vellumai/")) {
+      if (!name.startsWith("@mycadet/")) {
         missing.push(`${name} (unexpected workspace package)`);
         continue;
       }
-      const dir = `packages/${name.slice("@vellumai/".length)}`;
+      const dir = `packages/${name.slice("@mycadet/".length)}`;
       if (!dockerfile.includes(`COPY --chown=gateway:gateway ${dir} `)) {
         missing.push(dir);
       }

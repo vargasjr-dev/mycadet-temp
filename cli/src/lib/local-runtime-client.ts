@@ -1,3 +1,4 @@
+import { isManagedCloud } from "./managed-cloud.js";
 import type { AssistantEntry } from "./assistant-config.js";
 import {
   authHeaders,
@@ -45,7 +46,7 @@ function bearerHeaders(token: string): Record<string, string> {
 /**
  * Build the auth + content headers for a runtime migration request.
  *
- * - For `cloud === "vellum"` we go through the platform's wildcard runtime
+ * - For `isManagedCloud(cloud)` we go through the platform's wildcard runtime
  *   proxy, which authenticates user-session / vak_ tokens via DRF's default
  *   authentication classes — `authHeaders()` produces the right combination
  *   (`X-Session-Token` + `Vellum-Organization-Id`, or `Authorization: Bearer
@@ -56,7 +57,7 @@ async function migrationRequestHeaders(
   entry: Pick<AssistantEntry, "cloud" | "runtimeUrl">,
   token: string,
 ): Promise<Record<string, string>> {
-  if (entry.cloud === "vellum") {
+  if (isManagedCloud(entry.cloud)) {
     return {
       ...(await authHeaders(token, entry.runtimeUrl)),
       Accept: "application/json",
@@ -341,7 +342,7 @@ export async function localRuntimeIdentity(
     });
 
   let response = await doRequest();
-  if (response.status === 401 && entry.cloud === "vellum") {
+  if (response.status === 401 && isManagedCloud(entry.cloud)) {
     // `entry.runtimeUrl` is the platform host for vellum-cloud entries
     // (the wildcard runtime proxy lives there). Pass it as the cache key
     // platformUrl so we invalidate the same entry that authHeaders cached.

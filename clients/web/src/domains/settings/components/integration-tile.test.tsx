@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { HoverCapabilityOverride } from "@vellumai/design-library/utils/hover-capability";
+import { HoverCapabilityOverride } from "@mycadet/design-library/utils/hover-capability";
 
 import {
   GOOGLE_PROVIDER,

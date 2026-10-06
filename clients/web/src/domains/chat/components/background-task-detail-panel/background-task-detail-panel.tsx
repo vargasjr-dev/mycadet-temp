@@ -10,7 +10,7 @@
 
 import { useCallback, useState } from "react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { BackgroundTaskStatusBadge } from "@/domains/chat/components/background-task-status-badge";
 import { backgroundTaskGlyph } from "@/domains/chat/components/background-task-glyph";
@@ -23,7 +23,7 @@ import {
   backgroundTaskTitle,
   isActiveBackgroundTaskStatus,
 } from "@/utils/background-task-status";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useTranslation } from "@/i18n";
 
 export interface BackgroundTaskDetailPanelProps {

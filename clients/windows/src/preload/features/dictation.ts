@@ -3,7 +3,7 @@ import { ipcRenderer, type IpcRendererEvent } from "electron";
 import type {
   BridgeCapabilityRegistry,
   CapabilityModule,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 import {
   HELPER_DICTATION_FINALIZED_EVENT,
   HELPER_DICTATION_PARTIAL_EVENT,
@@ -22,7 +22,7 @@ import {
   type HotkeyEvent,
   type VoiceModeChordRegistrationResult,
   type VellumBridge,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 const subscribe =
   <T>(channel: string) =>
@@ -71,7 +71,7 @@ const dictation: CapabilityModule<BridgeCapabilityRegistry<VellumBridge>> = {
             pushAudio,
           ),
         pushAudioChunk: (chunk) => {
-          ipcRenderer.send("vellum:helper:dictation:audio", chunk);
+          ipcRenderer.send("cadet:helper:dictation:audio", chunk);
         },
         onPartial: subscribe<DictationPartialEvent>(
           HELPER_DICTATION_PARTIAL_EVENT,

@@ -420,7 +420,7 @@ mock.module("../access-request-wait.js", () => ({
 // Now import the module under test.
 // ---------------------------------------------------------------------------
 
-import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@vellumai/service-contracts/ingress";
+import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/ingress";
 
 import { revokeScopedApprovalGrantsForContext } from "../../approvals/scoped-approval-grants.js";
 import { CallController } from "../call-controller.js";

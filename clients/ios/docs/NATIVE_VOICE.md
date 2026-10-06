@@ -13,7 +13,7 @@ one owns the native contracts.
 ## What is native and what is not
 
 Nothing about the *conversation* is native. Mic capture (`getUserMedia` →
-AudioWorklet → PCM), the velay WebSocket, TTS playback, turn state, and every
+AudioWorklet → PCM), the tunnel WebSocket, TTS playback, turn state, and every
 user-facing string all live under
 `clients/web/src/domains/chat/voice/live-voice/`. The native side contributes
 exactly four things:
@@ -702,7 +702,7 @@ cancellation and AGC are engaged.
 
 It does **not** buy the *web* half. WebKit throttles and eventually suspends JS
 timers and main-thread work in a backgrounded web process. The AudioWorklet runs
-on the audio render thread, but the velay socket send happens on the main JS
+on the audio render thread, but the tunnel socket send happens on the main JS
 thread.
 
 **Whether a WKWebView voice session actually survives lock is empirically

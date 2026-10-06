@@ -4,7 +4,7 @@
  * Pair this machine with an assistant running elsewhere and register it
  * locally so `vellum client`/`message`/`events <name>` work against it. The
  * device-code exchange, the lockfile write, and the token write live in
- * `pairingStart`/`pairingPoll` (`@vellumai/local-mode`); this command owns the
+ * `pairingStart`/`pairingPoll` (`@mycadet/local-mode`); this command owns the
  * argv parsing, the polling cadence, and the output copy.
  */
 
@@ -15,8 +15,8 @@ import {
   pairingPoll,
   pairingStart,
   resolveConfigDir,
-} from "@vellumai/local-mode";
-import { isRetryablePairingReason } from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/local-mode";
+import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { extractFlag } from "../../lib/arg-utils.js";
 import { getLockfilePaths } from "../../lib/environments/paths.js";

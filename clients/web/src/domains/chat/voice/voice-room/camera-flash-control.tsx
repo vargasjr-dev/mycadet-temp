@@ -29,7 +29,7 @@
 
 import type { ComponentProps } from "react";
 
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 
 import type { FlashMode } from "@/stores/voice-prefs-store";
 

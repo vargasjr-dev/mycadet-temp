@@ -38,7 +38,7 @@ function configPayload() {
   };
 }
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     success: (message: string) => {
       toastSuccessCalls.push(message);

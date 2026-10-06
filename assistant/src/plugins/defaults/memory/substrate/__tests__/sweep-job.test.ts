@@ -38,7 +38,7 @@ import type {
   Provider,
   ProviderResponse,
   SendMessageOptions,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 // Provider stub. Each test sets `providerStub` to control the response;
 // `null` simulates "no configured provider".
@@ -49,11 +49,11 @@ const providerCalls: Array<{
 }> = [];
 
 // The sweep imports `getConfiguredProvider` plus the identity reads
-// (`getAssistantName`/`resolveUserName`) from `@vellumai/plugin-api`. Spread the
+// (`getAssistantName`/`resolveUserName`) from `@mycadet/plugin-api`. Spread the
 // real contract so the identity reads run (returning null on a missing
 // IDENTITY.md in the temp workspace); override only `getConfiguredProvider`.
-const realPluginApi = await import("@vellumai/plugin-api");
-mock.module("@vellumai/plugin-api", () => ({
+const realPluginApi = await import("@mycadet/plugin-api");
+mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,
   getConfiguredProvider: async () => providerStub,
 }));

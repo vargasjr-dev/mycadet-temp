@@ -8,8 +8,8 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import type { Conversation } from "@/types/conversation-types";
-import { Popover, SideMenu } from "@vellumai/design-library";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { Popover, SideMenu } from "@mycadet/design-library";
+import { cn } from "@mycadet/design-library/utils/cn";
 import { useTranslation } from "@/i18n";
 
 // ---------------------------------------------------------------------------

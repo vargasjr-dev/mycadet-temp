@@ -21,7 +21,7 @@
 
 import { resolve } from "node:path";
 
-import type { Message } from "@vellumai/plugin-api";
+import type { Message } from "@mycadet/plugin-api";
 
 import { isMemoryV1Active } from "../../../config/memory-v3-gate.js";
 import type { InjectionMatcher } from "../../../context/strip-injections.js";

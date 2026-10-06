@@ -29,7 +29,7 @@ import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
 
 // The settings-card barrel re-exports toast surfaces; stub them so barrel
 // resolution doesn't pull the real toast module during the static render.
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {} },
   Toaster: () => null,
   ToastContent: () => null,

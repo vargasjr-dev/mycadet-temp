@@ -10,7 +10,7 @@
  * sends it back to the top level.
  */
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { ChatInfoFileTile } from "@/domains/chat/components/chat-info-file-tile";
 import type { ConversationFileAsset } from "@/domains/chat/hooks/use-conversation-assets";

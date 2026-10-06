@@ -36,7 +36,7 @@ import type {
   CompanionAnnotationPhase,
   CompanionAnnotationStroke,
   WatchCaptureTarget,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1458,7 +1458,7 @@ export const useLiveVoiceStore = createSelectors(useLiveVoiceStoreBase);
  * React consumers never notice: they read through selectors and React batches
  * the burst into one render. Consumers that drive *the world* do, and for them
  * that phantom `idle` is destructive rather than cosmetic — on every hands-free
- * reconnect (a dropped velay socket, JARVIS-1255/1256) it tears down and
+ * reconnect (a dropped tunnel socket, JARVIS-1255/1256) it tears down and
  * immediately re-creates the `AVAudioSession`, possibly while backgrounded or
  * locked, and ends and restarts the Live Activity so the island visibly
  * disappears and comes back.

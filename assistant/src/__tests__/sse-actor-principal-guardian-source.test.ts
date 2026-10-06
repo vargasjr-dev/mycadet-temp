@@ -16,7 +16,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { GuardianDelivery } from "@vellumai/gateway-client";
+import type { GuardianDelivery } from "@mycadet/gateway-client";
 
 // ── Controllable IPC mock (drives the gateway-delivery cache) ────────────────
 
@@ -41,7 +41,7 @@ const gatewayVellumGuardian: GuardianDelivery = {
   channelType: "vellum",
   contactId: "contact-gw",
   principalId: "guardian-from-gateway",
-  address: "vellum:self",
+  address: "cadet:self",
   status: "active",
 };
 

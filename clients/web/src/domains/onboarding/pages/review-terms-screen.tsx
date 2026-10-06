@@ -31,7 +31,7 @@ import {
 import { sanitizeReturnTo } from "@/utils/return-to";
 import { useTranslation } from "@/i18n";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 export function ReviewTermsScreen() {
   const { t } = useTranslation("onboarding");

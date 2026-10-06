@@ -14,7 +14,7 @@ interface EnvironmentActions {
 type EnvironmentStore = EnvironmentConfig & EnvironmentActions;
 
 function getDefaultEnvironment(): EnvironmentConfig {
-  const env = import.meta.env.VITE_SENTRY_ENVIRONMENT;
+  const env = import.meta.env.VITE_ENVIRONMENT;
   const isNonProduction = !env || env !== "production";
 
   let emailRootDomain: string;

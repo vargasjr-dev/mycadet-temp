@@ -1,4 +1,3 @@
-
 import { useTranslation } from "@/i18n";
 /**
  * "Back to top" pill for the sidebar's conversation list.
@@ -21,7 +20,7 @@ import { useTranslation } from "@/i18n";
 
 import { ArrowUp } from "lucide-react";
 
-import { Button, cn } from "@vellumai/design-library";
+import { Button, cn } from "@mycadet/design-library";
 
 export interface SidebarBackToTopProps {
   visible: boolean;

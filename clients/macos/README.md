@@ -51,7 +51,7 @@ Configuration lives in `src/main/auto-update.ts`:
 - **Poll interval** — checks on launch, then every 4 hours.
 - **Manual trigger** — users can check via the `Vellum > Check for Updates…`
   menu item (packaged builds only), or the renderer can invoke
-  `vellum:update:check` / `vellum:update:install` over IPC.
+  `cadet:update:check` / `cadet:update:install` over IPC.
 
 Because the web UI is bundled locally, **web changes require an Electron
 release** to reach users. The update typically lands within hours (next
@@ -86,7 +86,7 @@ proxy) with a 1.5s timeout and picks one of two paths:
    [`concurrently`](https://github.com/open-cli-tools/concurrently) to
    run two children in parallel:
    - `dev:web` → `cd ../web && bun run dev -- --port 5173 --strictPort`.
-     Going through `clients/web`'s own `dev` script means we use *its*
+     Going through `clients/web`'s own `dev` script means we use _its_
      local Vite (8.x) and plugin tree, not whatever older Vite happens
      to live in `clients/macos/node_modules`. Pinning the port via the
      Vite CLI overrides `clients/web/.env` if `PORT` is set there.
@@ -138,7 +138,7 @@ whichever Swift channel you have around.
   Most items are role-based so they work without renderer IPC; the `File`
   items dispatch through the typed command bus in `src/main/commands.ts`,
   which broadcasts to the focused window's renderer via a single
-  `vellum:command` IPC channel (subscribed to by `useVellumCommands` in
+  `cadet:command` IPC channel (subscribed to by `useVellumCommands` in
   `clients/web/src/runtime/vellum-commands.ts`). Accelerators are read from
   `settings.hotkeys.<kind>` with defaults from `DEFAULT_ACCELERATORS`.
   `View > Toggle Developer Tools` is gated to dev builds only so the
@@ -146,9 +146,9 @@ whichever Swift channel you have around.
 
 - **Share Sheet** (`src/main/share.ts`). The renderer's `shareFile`
   (`clients/web/src/runtime/native-file.ts`) hands file bytes over the
-  `vellum:share:file` channel; the main process writes them to a temp file and
+  `cadet:share:file` channel; the main process writes them to a temp file and
   presents the native `NSSharingServicePicker` via Electron's `ShareMenu`.
-  Only the *share* intent routes here. A "Download" action goes through
+  Only the _share_ intent routes here. A "Download" action goes through
   `saveFile` and the download handler below, never this sheet. Two
   gotchas here were verified against the pinned `electron@42` source and types,
   **not** the published API docs (which are wrong):
@@ -169,7 +169,7 @@ whichever Swift channel you have around.
     deletes a file still in use, including one from a second Vellum build
     sharing at the same time.
 
-- **Downloads** (`@vellumai/electron-desktop`'s `downloads.ts`, shared with the
+- **Downloads** (`@mycadet/electron-desktop`'s `downloads.ts`, shared with the
   Windows shell). The counterpart intent to the Share Sheet. The renderer
   downloads the browser way (`saveFile` → an `<a download>` click), which
   Chromium raises as a `will-download` on the default session. Without a
@@ -177,9 +177,9 @@ whichever Swift channel you have around.
   for every download, so this picks the save path itself: `~/Downloads`,
   uniquified Finder-style (`report.pdf`, `report (1).pdf`) so a repeat download
   never clobbers an existing file. On each terminal state the originating
-  window is sent a `DownloadDoneEvent` (`vellum:downloads:done`), which the
+  window is sent a `DownloadDoneEvent` (`cadet:downloads:done`), which the
   renderer surfaces as a completion toast whose "Show in Finder" action calls
-  back over `vellum:downloads:reveal` with the event's opaque id. Main
+  back over `cadet:downloads:reveal` with the event's opaque id. Main
   resolves the id to the saved path itself, so the channel can only reveal
   files this handler saved. The Dock Downloads-stack still bounces via
   `app.dock.downloadFinished` on completion. `setSavePath` is only honored
@@ -200,7 +200,7 @@ exposes no intent API, so this is the only path to that layout.
 
 `src/main/notifier.ts` loads the addon (`process.dlopen`, inside a try/catch)
 and `src/main/native-notifications.ts` adapts it to the `create` /
-`isSupported` seams of `@vellumai/electron-desktop/notifications`. A checkout
+`isSupported` seams of `@mycadet/electron-desktop/notifications`. A checkout
 with no built addon reports unavailable and the app falls back to Electron's
 own notifications, and so does an addon that loads but answers
 `isSupported()` with false, which is what an unbundled run does because
@@ -400,7 +400,7 @@ The preload script exposes a typed `window.vellum` API to the renderer:
   drive the Vellum CLI as a subprocess; `readLockfile()`,
   `saveLockfileAssistant(assistant, activeAssistant?)`, and
   `replacePlatformAssistants(platformAssistants)` read and write the lockfile
-  on disk. Every method is a thin wrapper over [`@vellumai/local-mode`](../../packages/local-mode/),
+  on disk. Every method is a thin wrapper over [`@mycadet/local-mode`](../../packages/local-mode/),
   the shared host library that also backs the web app's dev-server middleware,
   so the spawn/parse and lockfile logic lives in one place. The renderer-side
   transport seam is [`clients/web/src/runtime/local-mode-host.ts`](../web/src/runtime/local-mode-host.ts),
@@ -460,11 +460,11 @@ live in TypeScript types.
 The existing companion coachmarks check and request only the access needed by
 their current lesson. Every permission step is skippable.
 
-| Lesson | Permission | Purpose |
-| --- | --- | --- |
-| Try a call | Microphone | Capture your voice during calls |
-| Voice key | Input Monitoring | Detect the global voice-key shortcut |
-| Share | Screen Recording | Share a screen or window through Vellum Helper |
+| Lesson     | Permission       | Purpose                                        |
+| ---------- | ---------------- | ---------------------------------------------- |
+| Try a call | Microphone       | Capture your voice during calls                |
+| Voice key  | Input Monitoring | Detect the global voice-key shortcut           |
+| Share      | Screen Recording | Share a screen or window through Vellum Helper |
 
 Microphone uses the native prompt. Input Monitoring and Screen Recording lift
 the coachmark's permission control into a guide beside System Settings. Drag

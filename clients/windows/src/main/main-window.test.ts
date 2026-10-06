@@ -5,7 +5,7 @@ import {
   MAIN_WINDOW_SET_ONBOARDING,
   MAIN_WINDOW_SET_TITLE_BAR_OVERLAY,
   type TitleBarOverlayTheme,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 interface WindowState {
   destroyed: boolean;
@@ -182,7 +182,7 @@ const writeTitleBarOverlayThemeMock = mock(
   (_theme: TitleBarOverlayTheme) => undefined,
 );
 
-mock.module("@vellumai/electron-desktop/window-state", () => ({
+mock.module("@mycadet/electron-desktop/window-state", () => ({
   restoreBounds: () => restoredBounds,
   track: trackMock,
   readOnboardingActive: () => false,
@@ -345,7 +345,7 @@ describe("Windows main window", () => {
     void ensureVisible();
     dispatchToMain({ kind: "openSettings" });
     expect(constructed[0]?.webContents.send).toHaveBeenCalledWith(
-      "vellum:command",
+      "cadet:command",
       { kind: "openSettings" },
     );
   });

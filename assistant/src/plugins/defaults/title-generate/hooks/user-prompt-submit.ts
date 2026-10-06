@@ -13,7 +13,7 @@
 import type {
   HookFunction,
   UserPromptSubmitContext,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import { getConversation } from "../../../../persistence/conversation-crud.js";
 import { queueGenerateConversationTitle } from "../../../../persistence/conversation-title-service.js";

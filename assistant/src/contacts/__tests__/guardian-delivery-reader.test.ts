@@ -10,7 +10,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { GuardianDelivery } from "@vellumai/gateway-client";
+import type { GuardianDelivery } from "@mycadet/gateway-client";
 
 // ── Controllable IPC mock ────────────────────────────────────────────────────
 

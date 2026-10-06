@@ -23,7 +23,7 @@
  * progress and drop it when the turn moves on, not a persistence guarantee.
  *
  * Canonical wire-contract source. Daemon code imports the type directly from
- * this file; external consumers import via `@vellumai/assistant-api`.
+ * this file; external consumers import via `@mycadet/assistant-api`.
  */
 
 import { z } from "zod";

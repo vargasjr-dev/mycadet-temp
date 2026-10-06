@@ -36,11 +36,11 @@ export function GettingStartedContent() {
               a phone. No install, no setup. The fastest way in. Connects to a cloud assistant.
             </li>
             <li>
-              <strong>For the iOS app:</strong> an iPhone or iPad and your Vellum account.
+              <strong>For the iOS app:</strong> an iPhone or iPad and your Cadet account.
               Connects to your cloud assistant.
             </li>
             <li>
-              <strong>For the Android app:</strong> Android 7.0 or later and your Vellum account.
+              <strong>For the Android app:</strong> Android 7.0 or later and your Cadet account.
               Connects to your cloud assistant.
             </li>
             <li>
@@ -76,13 +76,13 @@ export function GettingStartedContent() {
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
             The fastest way to meet your assistant. No install, no setup wizard, no config
-            files. Your assistant runs in Vellum Cloud and you reach it from your browser.
+            files. Your assistant runs in Cadet Cloud and you reach it from your browser.
           </p>
           <ol className="mb-4 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>
               Go to{" "}
               <a href={routes.signup} className="font-semibold text-emerald-700 underline hover:text-emerald-800">
-                vellum.ai/signup
+                cadet.ai/signup
               </a>{" "}
               and create your account.
             </li>
@@ -97,7 +97,7 @@ export function GettingStartedContent() {
             </li>
           </ol>
           <p className="mb-4 text-zinc-600">
-            Your assistant lives in Vellum Cloud, encrypted and isolated to your account,
+            Your assistant lives in Cadet Cloud, encrypted and isolated to your account,
             reachable from any browser. You can also connect the desktop app, mobile app, voice,
             and chat channels (Telegram, Slack, phone) to the same assistant.
           </p>
@@ -108,12 +108,12 @@ export function GettingStartedContent() {
             iOS app
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Install Vellum Assistant on your iPhone or iPad to use the same assistant,
+            Install Cadet Assistant on your iPhone or iPad to use the same assistant,
             conversations, memories, tools, and workspace you have on the web and Mac.
           </p>
           <ol className="mb-4 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>
-              Install Vellum Assistant from the{" "}
+              Install Cadet Assistant from the{" "}
               <a
                 href={routes.iosAppStore}
                 className="font-semibold text-emerald-700 underline hover:text-emerald-800"
@@ -122,7 +122,7 @@ export function GettingStartedContent() {
               </a>
               .
             </li>
-            <li>Open the app and sign in with your Vellum account.</li>
+            <li>Open the app and sign in with your Cadet account.</li>
             <li>Your cloud assistant appears automatically. Say hi.</li>
           </ol>
           <p className="mb-6 text-zinc-600">
@@ -136,13 +136,13 @@ export function GettingStartedContent() {
             Android app
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Install Vellum Assistant on your Android phone or tablet to use the same
+            Install Cadet Assistant on your Android phone or tablet to use the same
             assistant, conversations, memories, tools, and workspace you have on the web
             and Mac.
           </p>
           <ol className="mb-4 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>
-              Install Vellum Assistant from{" "}
+              Install Cadet Assistant from{" "}
               <a
                 href={routes.androidPlayStore}
                 className="font-semibold text-emerald-700 underline hover:text-emerald-800"
@@ -151,7 +151,7 @@ export function GettingStartedContent() {
               </a>
               .
             </li>
-            <li>Open the app and sign in with your Vellum account.</li>
+            <li>Open the app and sign in with your Cadet account.</li>
             <li>Your cloud assistant appears automatically. Say hi.</li>
           </ol>
           <p className="mb-6 text-zinc-600">
@@ -181,7 +181,7 @@ export function GettingStartedContent() {
           </p>
           <p className="mb-4 text-zinc-600">
             The Windows download is currently a <strong>dev build</strong>. It connects
-            to Vellum&apos;s development environment, so your production cloud assistant
+            to Cadet&apos;s development environment, so your production cloud assistant
             and its history will not appear there. The main download is x64; select
             Other downloads for ARM64.
           </p>
@@ -190,28 +190,28 @@ export function GettingStartedContent() {
               <a href={routes.signup} className="font-semibold text-emerald-700 underline hover:text-emerald-800">
                 Sign up
               </a>{" "}
-              for Vellum if you haven&apos;t already.
+              for Cadet if you haven&apos;t already.
             </li>
             <li>
               Download the macOS <code>.dmg</code> or Windows <code>.exe</code> from{" "}
               <a href={routes.downloads} className="font-semibold text-emerald-700 underline hover:text-emerald-800">
-                vellum.ai/downloads
+                cadet.ai/downloads
               </a>
               .
             </li>
             <li>
-              On macOS, open the <code>.dmg</code>, drag Vellum to Applications, and launch it.
-              On Windows, run the <code>.exe</code> installer and open Vellum from Start.
+              On macOS, open the <code>.dmg</code>, drag Cadet to Applications, and launch it.
+              On Windows, run the <code>.exe</code> installer and open Cadet from Start.
             </li>
             <li>
-              Sign in with your Vellum account. Production builds connect to your existing
+              Sign in with your Cadet account. Production builds connect to your existing
               cloud assistant; the Windows dev build connects to the development environment.
             </li>
           </ol>
           <p className="mb-6 text-zinc-600">
             The installers include everything needed to run the app. macOS downloads are signed
             and notarized; Windows downloads are Authenticode-signed. No terminal setup is
-            needed. On Windows, the app also installs the <code>vellum</code> CLI for your
+            needed. On Windows, the app also installs the <code>cadet</code> CLI for your
             user account. Open a new terminal after the first launch to use it. The same page
             also offers the{" "}
             <a href={routes.chromeWebStore} className="font-semibold text-emerald-700 underline hover:text-emerald-800">
@@ -268,9 +268,9 @@ export function GettingStartedContent() {
             Self-hosting
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Want to run Vellum entirely on your own machine or your own infrastructure? You can.
+            Want to run Cadet entirely on your own machine or your own infrastructure? You can.
             The runtime is open source and supports local-only mode (workspace at{" "}
-            <code>~/.vellum/workspace/</code>) as well as remote deployment to your own
+            <code>$VELLUM_WORKSPACE_DIR</code>) as well as remote deployment to your own
             GCP project or any Linux host.
           </p>
           <p className="mb-6 text-zinc-600">
@@ -288,14 +288,14 @@ export function GettingStartedContent() {
           </SectionHeading>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              <strong>Sign in with Vellum (default)</strong> — Authenticate with your Vellum
-              account for the managed experience. Your assistant runs in Vellum Cloud, billing
+              <strong>Sign in with Cadet (default)</strong> — Authenticate with your Cadet
+              account for the managed experience. Your assistant runs in Cadet Cloud, billing
               is handled through your account, no API keys to manage.
             </li>
             <li>
               <strong>Bring your own API key</strong> — Self-host the runtime and connect it to
               your own Anthropic API key. Useful if you want to run everything on your own
-              machine. Vellum manages your credentials separately from the assistant.
+              machine. Cadet manages your credentials separately from the assistant.
             </li>
           </ul>
         </section>
@@ -305,8 +305,8 @@ export function GettingStartedContent() {
             What gets installed
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            If you run the desktop app or self-host, Vellum creates one directory on your
-            machine. (Vellum Cloud users don&apos;t need to think about this. Your workspace
+            If you run the desktop app or self-host, Cadet creates one directory on your
+            machine. (Cadet Cloud users don&apos;t need to think about this. Your workspace
             lives in your encrypted cloud account and is available through the web app.)
           </p>
           <div className="mb-6 overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-950 p-4">
@@ -332,7 +332,7 @@ export function GettingStartedContent() {
           </p>
           <p className="mb-6 text-zinc-600">
             Session logs are stored in{" "}
-            <code>~/Library/Application Support/vellum-assistant/logs/</code>. The daemon binary
+            <code>~/Library/Application Support/cadet-assistant/logs/</code>. The daemon binary
             lives inside the <code>.app</code> bundle, not in <code>~/.vellum/</code>.
           </p>
         </section>
@@ -342,7 +342,7 @@ export function GettingStartedContent() {
             Permissions
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Vellum doesn&apos;t ask for all its permissions upfront. Instead, permissions are
+            Cadet doesn&apos;t ask for all its permissions upfront. Instead, permissions are
             requested only when they&apos;re actually needed:
           </p>
           <div className="mb-6 overflow-x-auto">
@@ -420,7 +420,7 @@ export function GettingStartedContent() {
             </table>
           </div>
           <p className="mb-4 text-zinc-600">
-            On Windows, open Settings &gt; Permissions &amp; Privacy in Vellum to check
+            On Windows, open Settings &gt; Permissions &amp; Privacy in Cadet to check
             microphone, screen capture, speech, and notification access. Use the settings
             link beside a permission to open the corresponding Windows settings page.
             Accessibility, Input Monitoring, and Automation permissions are macOS-only
@@ -440,7 +440,7 @@ export function GettingStartedContent() {
             Updates
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            Vellum checks for updates automatically in the background. When an update is
+            Cadet checks for updates automatically in the background. When an update is
             available, you&apos;ll see a green update button in the top right corner of the app. You can install
             immediately or defer until later. Updates are signed and verified before
             installation.
@@ -453,12 +453,12 @@ export function GettingStartedContent() {
             Definitions
           </SectionHeading>
           <p className="mb-6 text-zinc-600">
-            Key terms and concepts used throughout the Vellum Assistant ecosystem.
+            Key terms and concepts used throughout the Cadet Assistant ecosystem.
           </p>
           <dl className="space-y-4">
             <div className="rounded-xl border border-zinc-200 p-4 transition-colors hover:border-zinc-300">
               <dt className="mb-1 font-['DM_Sans',sans-serif] font-semibold text-zinc-900">
-                <a href="/docs/getting-started/what-is-vellum">Assistant</a>
+                <a href="/docs/getting-started/what-is-cadet">Assistant</a>
               </dt>
               <dd className="m-0 text-sm text-zinc-600">
                 An AI-powered agent configured to perform tasks on your behalf. Each assistant is

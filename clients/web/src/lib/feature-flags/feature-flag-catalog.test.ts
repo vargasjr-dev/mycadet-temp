@@ -189,7 +189,7 @@ describe("readEnvFlagOverrides", () => {
     (globalThis as Record<string, unknown>).window = {
       __VELLUM_FLAG_OVERRIDES__: {
         "self-intro-greeting": true,
-        "home-tab": "variant-a",
+        "velvet": "variant-a",
       },
     };
     resetEnvOverridesCache();
@@ -197,7 +197,7 @@ describe("readEnvFlagOverrides", () => {
     const overrides = readEnvFlagOverrides();
     expect(overrides).toEqual({
       "self-intro-greeting": true,
-      "home-tab": "variant-a",
+      "velvet": "variant-a",
     });
   });
 });
@@ -212,7 +212,7 @@ describe("getEnvFlagOverridesForScope", () => {
     (globalThis as Record<string, unknown>).window = {
       __VELLUM_FLAG_OVERRIDES__: {
         // client-only flag (boolean)
-        "home-tab": true,
+        "velvet": true,
         // assistant-only flag (boolean) — should be excluded from client scope
         "settings-developer-nav": true,
         // client-visible flag (string)
@@ -222,7 +222,7 @@ describe("getEnvFlagOverridesForScope", () => {
     resetEnvOverridesCache();
 
     const result = getEnvFlagOverridesForScope("client");
-    expect(result.bool).toEqual({ homeTab: true });
+    expect(result.bool).toEqual({ velvet: true });
     expect(result.str).toEqual({
       experimentActivationFlow20260603: "variant-a",
     });
@@ -277,14 +277,14 @@ describe("getEnvFlagOverridesForScope", () => {
   test("boolean flags keep case-insensitive env coercion", () => {
     (globalThis as Record<string, unknown>).window = undefined;
     for (const raw of ["on", "ON"]) {
-      process.env.VITE_VELLUM_FLAG_HOME_TAB = raw;
+      process.env.VITE_VELLUM_FLAG_VELVET = raw;
       try {
         resetEnvOverridesCache();
         const result = getEnvFlagOverridesForScope("client");
-        expect(result.bool.homeTab).toBe(true);
-        expect(result.str).not.toHaveProperty("homeTab");
+        expect(result.bool.velvet).toBe(true);
+        expect(result.str).not.toHaveProperty("velvet");
       } finally {
-        delete process.env.VITE_VELLUM_FLAG_HOME_TAB;
+        delete process.env.VITE_VELLUM_FLAG_VELVET;
       }
     }
   });

@@ -1,7 +1,7 @@
-import { Button } from "@vellumai/design-library/components/button";
-import { Select } from "@vellumai/design-library/components/select";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Select } from "@mycadet/design-library/components/select";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { profilePickerLabel } from "@/assistant/profile-pickers";
 import type { ProfileWithName } from "@/domains/settings/ai/utils";
@@ -244,7 +244,9 @@ export function BlockedDeleteModal({
               {t("manageProfilesBlockedDeleteModal.replacementLabel")}
             </label>
             <Select
-              aria-label={t("manageProfilesBlockedDeleteModal.replacementLabel")}
+              aria-label={t(
+                "manageProfilesBlockedDeleteModal.replacementLabel",
+              )}
               value={replacement}
               onChange={onReplacementChange}
               placeholder={t(
@@ -258,7 +260,9 @@ export function BlockedDeleteModal({
                   label: profilePickerLabel(p),
                   disabled: unusable,
                   tooltip: unusable
-                    ? t("manageProfilesBlockedDeleteModal.disabledTargetTooltip")
+                    ? t(
+                        "manageProfilesBlockedDeleteModal.disabledTargetTooltip",
+                      )
                     : undefined,
                 };
               })}

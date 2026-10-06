@@ -29,7 +29,7 @@ mock.module("@/domains/chat/api/interactions", () => ({
   getPendingInteractions: async () => ({}),
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 

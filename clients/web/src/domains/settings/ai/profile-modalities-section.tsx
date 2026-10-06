@@ -1,7 +1,6 @@
-
-import { Disclosure } from "@vellumai/design-library/components/disclosure";
-import { Toggle } from "@vellumai/design-library/components/toggle";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Disclosure } from "@mycadet/design-library/components/disclosure";
+import { Toggle } from "@mycadet/design-library/components/toggle";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import {
   INPUT_MODALITIES,

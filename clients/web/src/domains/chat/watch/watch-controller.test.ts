@@ -1,5 +1,5 @@
 import { LIVE_VOICE_AUDIO_FORMAT_PARAMS } from "@/domains/chat/voice/live-voice/protocol";
-import type { WatchCaptureTarget } from "@vellumai/ipc-contract";
+import type { WatchCaptureTarget } from "@mycadet/ipc-contract";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type {
@@ -41,7 +41,7 @@ mock.module("@/domains/chat/voice/live-voice/pcm-capture", () => ({
 }));
 
 /**
- * The velay token mint, stood in for so the managed path can be exercised
+ * The tunnel token mint, stood in for so the managed path can be exercised
  * without an HTTP round trip.
  *
  * Only the mint is replaced. Everything else in the connection module — both
@@ -55,7 +55,7 @@ const realConnection =
 /** Assistant ids the mint was called for, in order. */
 let mintCalls: string[] = [];
 /** Set to null to make the platform refuse the mint. */
-let mintedToken: string | null = "velay-token";
+let mintedToken: string | null = "tunnel-token";
 /** Held open by a test that needs a press to land mid-mint. */
 let mintGate: Promise<void> | null = null;
 
@@ -255,9 +255,9 @@ const toggle = ({
         await mintGate;
       }
       if (mintedToken === null) {
-        throw new realConnection.VelayWsTokenError(403, "mint refused");
+        throw new realConnection.TunnelWsTokenError(403, "mint refused");
       }
-      return realConnection.buildVelayWsUrl({
+      return realConnection.buildTunnelWsUrl({
         assistantId,
         routePath: "/v1/watch/stream",
         token: mintedToken,
@@ -343,7 +343,7 @@ beforeEach(() => {
   applyConnection();
   pcmSupported = true;
   mintCalls = [];
-  mintedToken = "velay-token";
+  mintedToken = "tunnel-token";
   mintGate = null;
   sockets = [];
   capture = createCaptureFake();
@@ -641,7 +641,7 @@ describe("counting the session's captures", () => {
  * The managed transport, which is the one most users are on.
  *
  * A managed assistant has no ingress of its own to dial, so the session goes
- * through velay with a minted token instead — the same route, reached the
+ * through tunnel with a minted token instead — the same route, reached the
  * other way. The gateway admits only the guardian on either path, so what
  * these cases pin is that the press reaches a socket at all, and that a start
  * which cannot get a token leaves nothing behind.
@@ -670,7 +670,7 @@ describe("a watch session on a managed assistant", () => {
     applyConnection();
   };
 
-  test("mints a velay token and dials velay with it", async () => {
+  test("mints a tunnel token and dials tunnel with it", async () => {
     managed();
 
     await startRunning();
@@ -678,11 +678,11 @@ describe("a watch session on a managed assistant", () => {
     expect(mintCalls).toEqual([ASSISTANT_ID]);
     const url = new URL(socket().url);
     expect(url.protocol).toBe("wss:");
-    expect(url.host).toBe("velay.vellum.ai");
-    // The `/<assistantId>` prefix is what selects the tunnel; velay strips it
+    expect(url.host).toBe("tunnel.mycadet.ai");
+    // The `/<assistantId>` prefix is what selects the tunnel; tunnel strips it
     // to recover the upstream path it matches its allowlist against.
     expect(url.pathname).toBe(`/${ASSISTANT_ID}/v1/watch/stream`);
-    expect(url.searchParams.get("token")).toBe("velay-token");
+    expect(url.searchParams.get("token")).toBe("tunnel-token");
     expect(url.searchParams.get("mimeType")).toBe("audio/pcm");
     expect(url.searchParams.get("sampleRate")).toBe("16000");
     expect(useWatchStore.getState().watching).toBe(true);
@@ -705,7 +705,7 @@ describe("a watch session on a managed assistant", () => {
 
     // A refused start that kept the slot would swallow the next press as a
     // stop, and the user would have to press twice to get anywhere.
-    mintedToken = "velay-token";
+    mintedToken = "tunnel-token";
     await startRunning();
 
     expect(useWatchStore.getState().watching).toBe(true);

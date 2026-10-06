@@ -29,7 +29,7 @@ import type {
   Message,
   Provider,
   ProviderResponse,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import { ensureMemoryV3SelectionsSchema } from "../../../../../persistence/migrations/338-move-memory-v3-selections-to-memory-db.js";
@@ -56,8 +56,8 @@ import {
 
 let providerStub: Provider | null = null;
 
-const realPluginApi = await import("@vellumai/plugin-api");
-mock.module("@vellumai/plugin-api", () => ({
+const realPluginApi = await import("@mycadet/plugin-api");
+mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,
   getConfiguredProvider: async () => providerStub,
 }));

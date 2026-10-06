@@ -18,7 +18,7 @@ interface DocsContentProps {
 
 /**
  * Auto-derive an eyebrow from a breadcrumb when the page doesn't pass one
- * explicitly. For "Docs / Getting Started / What is Vellum?" this returns
+ * explicitly. For "Docs / Getting Started / What is Cadet?" this returns
  * "Getting Started". For shallow paths like "Docs / Pricing" it returns null
  * and the breadcrumb is rendered instead.
  */

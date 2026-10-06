@@ -17,7 +17,7 @@ import type { SurfaceCompletionTone } from "@/domains/chat/types/types";
 import {
   isDenyingGuardianAction,
   isParkGuardianAction,
-} from "@vellumai/service-contracts/guardian-requests";
+} from "@mycadet/service-contracts/guardian-requests";
 
 /** Action segment of an `apr:<requestId>:<action>` guardian-decision id. */
 function guardianDecisionAction(actionId: string): string {

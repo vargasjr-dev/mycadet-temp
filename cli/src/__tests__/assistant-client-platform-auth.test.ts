@@ -39,7 +39,6 @@ function seedCloud(token?: string): void {
     name: "Credence",
     runtimeUrl: PLATFORM_URL,
     cloud: "vellum",
-    species: "vellum",
   });
   if (token) {
     savePlatformToken(token);

@@ -18,7 +18,7 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 import type { StreamHandlerContext } from "@/domains/chat/utils/stream-handlers/types";
-import type { OpenPanelEvent, OpenUrlEvent } from "@vellumai/assistant-api";
+import type { OpenPanelEvent, OpenUrlEvent } from "@mycadet/assistant-api";
 import { stubViewportAxes } from "@/hooks/viewport-axes.test-helper";
 import { stubBrowserAttention } from "@/runtime/window-attention.test-helper";
 import { createSseEventConsumer } from "@/domains/chat/streaming/sse-event-consumer";
@@ -359,10 +359,7 @@ describe("handleOpenUrl", () => {
     });
     const { ctx, setError, setNotice } = makeOpenUrlCtx();
 
-    handleOpenUrl(
-      makeOpenUrlEvent("ms-settings:privacy-microphone"),
-      ctx,
-    );
+    handleOpenUrl(makeOpenUrlEvent("ms-settings:privacy-microphone"), ctx);
 
     expect(setError).not.toHaveBeenCalled();
     expect(setNotice).not.toHaveBeenCalled();

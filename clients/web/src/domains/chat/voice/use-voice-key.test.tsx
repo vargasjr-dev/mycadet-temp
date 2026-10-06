@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
-import type { HotkeySelectionResult } from "@vellumai/ipc-contract";
+import type { HotkeySelectionResult } from "@mycadet/ipc-contract";
 
 import type { HotkeyEvent } from "@/runtime/hotkey";
 import type { VoiceKey } from "@/utils/voice-key";

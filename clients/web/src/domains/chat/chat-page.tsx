@@ -11,7 +11,6 @@
  * actually usable — not during setup, cleanup, or error states.
  */
 
-import * as Sentry from "@sentry/react";
 import { useCallback, useEffect, useRef } from "react";
 
 import { assistantStateCanServeChat } from "@/assistant/lifecycle";
@@ -26,7 +25,7 @@ import {
   type BootBlockedReason,
 } from "@/lib/telemetry/boot-telemetry";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { ActiveChatView } from "@/domains/chat/active-chat-view";
 import { CleanupScreen } from "@/domains/chat/components/cleanup-screen";
@@ -69,7 +68,7 @@ export function ChatPage() {
 
   // Watchdog: connecting has no natural failure surface, so a wedged auth
   // init or lifecycle probe would spin forever. Escalate to a retry screen
-  // after a bounded wait (and capture the episode to Sentry).
+  // after a bounded wait (and report the episode).
   const { connectingStuck, resetStuckConnecting } =
     useStuckConnecting(connectingReason);
   const retryStuckConnecting = useCallback(() => {
@@ -129,16 +128,6 @@ export function ChatPage() {
       return;
     }
     lastConnectingReasonRef.current = connectingReason;
-    Sentry.addBreadcrumb({
-      category: "chat.connecting",
-      level: "info",
-      message: "ChatPage rendered Connecting",
-      data: {
-        reason: connectingReason,
-        assistantStateKind: assistantState.kind,
-        hasAssistantId: assistantId != null,
-      },
-    });
   }, [connectingReason, assistantState.kind, assistantId]);
 
   if (connectingReason !== null) {
@@ -156,7 +145,9 @@ export function ChatPage() {
     }
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-[var(--content-secondary)]">{t("chatPage.connecting")}</p>
+        <p className="text-[var(--content-secondary)]">
+          {t("chatPage.connecting")}
+        </p>
       </div>
     );
   }
@@ -169,9 +160,13 @@ export function ChatPage() {
     // service; the button is just the impatient-user shortcut.
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-        <p className="text-[var(--content-secondary)]">{assistantState.message}</p>
+        <p className="text-[var(--content-secondary)]">
+          {assistantState.message}
+        </p>
         <Button variant="primary" onClick={retryAssistant}>
-          {assistantState.transient ? t("chatPage.retryNow") : t("chatPage.tryAgain")}
+          {assistantState.transient
+            ? t("chatPage.retryNow")
+            : t("chatPage.tryAgain")}
         </Button>
       </div>
     );

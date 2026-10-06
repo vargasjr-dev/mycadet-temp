@@ -1,4 +1,4 @@
-import { buildWsUpstreamUrl } from "@vellumai/assistant-client";
+import { buildWsUpstreamUrl } from "@mycadet/assistant-client";
 
 import {
   validateEdgeToken,
@@ -9,10 +9,10 @@ import { findVellumGuardian } from "../../auth/guardian-bootstrap.js";
 import { parseSub } from "../../auth/subject.js";
 import type { GatewayConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
-import { requestHasVelayBridgeAuth } from "../../velay/bridge-auth.js";
+import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
 import {
-  extractVelayAttestedContext,
-  acceptsVelayAttestation,
+  extractTunnelAttestedContext,
+  acceptsTunnelAttestation,
   requireBoundGuardian,
   requireManagedGuardian,
 } from "./guardian-pin.js";
@@ -22,7 +22,7 @@ const log = getLogger("live-voice-ws");
 // Cap buffered messages to prevent unbounded memory growth if upstream stalls
 const MAX_PENDING_MESSAGES = 100;
 
-// The velay attestation helpers and both guardian checks live in
+// The tunnel attestation helpers and both guardian checks live in
 // `guardian-pin.js`, shared with the watch stream so the two guardian-only
 // surfaces cannot drift into two ideas of who owns them.
 
@@ -103,48 +103,48 @@ async function checkLiveVoiceAuth(
     return {};
   }
 
-  // Velay path: velay validates the browser wsToken and injects X-Velay-*
+  // Tunnel path: tunnel validates the browser wsToken and injects X-Tunnel-*
   // context into the tunnel frame. Trust it only when this request also has
   // the process-local proof injected by the gateway's own loopback bridge. A
-  // direct request to a reachable gateway can spoof X-Velay-* names, but
+  // direct request to a reachable gateway can spoof X-Tunnel-* names, but
   // cannot know the bridge proof value. Taken by managed pods and by locally
-  // hosted gateways with a velay tunnel alike; the Twilio media socket has no
+  // hosted gateways with a tunnel alike; the Twilio media socket has no
   // such branch because it authenticates a gateway-minted relay token.
-  if (acceptsVelayAttestation(config)) {
-    const velayContext = extractVelayAttestedContext(req);
-    if (velayContext) {
-      if (requestHasVelayBridgeAuth(req)) {
+  if (acceptsTunnelAttestation(config)) {
+    const tunnelContext = extractTunnelAttestedContext(req);
+    if (tunnelContext) {
+      if (requestHasTunnelBridgeAuth(req)) {
         // Live voice is a guardian-only surface — the daemon stamps each voice
-        // turn with the guardian's trust context. The velay attestation proves
-        // the caller is *a* platform user who traversed velay, not that they
-        // are THIS assistant's guardian, so cross-check the velay user id
+        // turn with the guardian's trust context. The tunnel attestation proves
+        // the caller is *a* platform user who traversed tunnel, not that they
+        // are THIS assistant's guardian, so cross-check the tunnel user id
         // against the bound platform user id (the same guardian check the
         // edge-auth middleware applies to guardian routes under the managed
-        // bypass). Without it, any velay-authorized org user reaching this
+        // bypass). Without it, any tunnel-authorized org user reaching this
         // assistant would be stamped guardian downstream.
         const guardianError = await requireManagedGuardian(
-          velayContext.userId,
+          tunnelContext.userId,
           log,
         );
         if (guardianError) return { response: guardianError };
-        // Velay attests a platform user, not an actor principal, so the
+        // Tunnel attests a platform user, not an actor principal, so the
         // principal comes from the gateway's own binding rather than from
         // anything the request carried.
         const guardian = await findVellumGuardian();
         log.info(
           {
-            userId: velayContext.userId,
-            orgId: velayContext.orgId,
+            userId: tunnelContext.userId,
+            orgId: tunnelContext.orgId,
             guardianPrincipalId: guardian?.principalId,
           },
-          "Live voice WS: authenticated via velay-attested managed context",
+          "Live voice WS: authenticated via tunnel-attested managed context",
         );
         return { guardianPrincipalId: guardian?.principalId };
       }
-      log.warn("Live voice WS: ignoring velay context without bridge proof");
+      log.warn("Live voice WS: ignoring tunnel context without bridge proof");
     }
-    // No (or incomplete) velay attestation: fall through to the actor-JWT
-    // path below so a velay-reachable gateway still accepts a valid actor
+    // No (or incomplete) tunnel attestation: fall through to the actor-JWT
+    // path below so a tunnel-reachable gateway still accepts a valid actor
     // edge JWT.
   }
 

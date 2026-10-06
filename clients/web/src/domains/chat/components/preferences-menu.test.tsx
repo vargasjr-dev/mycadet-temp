@@ -26,7 +26,7 @@ import {
   screen,
 } from "@testing-library/react";
 
-import { SideMenu } from "@vellumai/design-library";
+import { SideMenu } from "@mycadet/design-library";
 
 import type { PreferencesUsage } from "@/domains/chat/hooks/use-preferences-usage";
 import { MIN_VERSION } from "@/lib/backwards-compat/use-supports-activation-progress";

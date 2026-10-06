@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { TunnelRecord } from "@vellumai/service-contracts/ingress";
+import type { TunnelRecord } from "@mycadet/service-contracts/ingress";
 
 import type { TunnelProbeResult } from "../../../inbound/tunnel-probe.js";
 import { ACTOR_PRINCIPALS } from "../../auth/route-policy.js";
@@ -20,7 +20,7 @@ let ingressConfig = {
   managedCallbacks: false,
   success: true,
 };
-let velayManaged = false;
+let tunnelManaged = false;
 let lastTunnel: TunnelRecord | null = null;
 let pairingTunnel: TunnelRecord | null = null;
 let recordedAssistantId: string | null = null;
@@ -35,7 +35,7 @@ const probeTunnelMock = mock(
 
 mock.module("../../../daemon/handlers/config-ingress.js", () => ({
   getIngressConfigResult: () => ingressConfig,
-  isVelayManagedIngress: () => velayManaged,
+  isTunnelManagedIngress: () => tunnelManaged,
   loadPairingTunnelRecord: () => pairingTunnel,
   // Mirrors the real selector: a pairing-only record wins over the last run.
   loadRestartTunnelRecord: () => pairingTunnel ?? lastTunnel,
@@ -65,7 +65,7 @@ describe("integrations_ingress_status route", () => {
       managedCallbacks: false,
       success: true,
     };
-    velayManaged = false;
+    tunnelManaged = false;
     lastTunnel = null;
     pairingTunnel = null;
     recordedAssistantId = null;
@@ -327,10 +327,10 @@ describe("integrations_ingress_status route", () => {
     expect(result).not.toHaveProperty("lastTunnel");
   });
 
-  test("reports unconfigured for a Velay-managed ingress with no URL", async () => {
+  test("reports unconfigured for a Tunnel-managed ingress with no URL", async () => {
     // The gateway clears the URL when its tunnel drops and reconnects on its
     // own, so there is no tunnel command to offer the user.
-    velayManaged = true;
+    tunnelManaged = true;
     ingressConfig = { ...ingressConfig, publicBaseUrl: "" };
     lastTunnel = { provider: "ngrok", publicBaseUrl: TUNNEL_URL };
 
@@ -338,11 +338,11 @@ describe("integrations_ingress_status route", () => {
     expect(probeTunnelMock).not.toHaveBeenCalled();
   });
 
-  test("reports a Velay-managed URL with no pairing tunnel as unconfigured", async () => {
-    // Velay's allowlist (`gateway/src/velay/allowed-paths.ts`) carries neither
+  test("reports a Tunnel-managed URL with no pairing tunnel as unconfigured", async () => {
+    // Tunnel's allowlist (`gateway/src/tunnel/allowed-paths.ts`) carries neither
     // `/healthz` nor the pairing surface, so the callback URL it owns could
     // only ever probe as dead. The card asks for a first tunnel instead.
-    velayManaged = true;
+    tunnelManaged = true;
     ingressConfig = { ...ingressConfig, publicBaseUrl: TUNNEL_URL };
     lastTunnel = { provider: "ngrok", publicBaseUrl: TUNNEL_URL };
 
@@ -438,11 +438,11 @@ describe("integrations_ingress_status route", () => {
     expect(result.publicBaseUrl).toBe(PAIRING_URL);
   });
 
-  test("prefers the pairing tunnel over a Velay-managed callback base", async () => {
-    // Velay owns the callback URL, not the tailnet address the user started
-    // for pairing, and the Velay URL exposes neither `/healthz` nor the
-    // pairing surface (`gateway/src/velay/allowed-paths.ts`).
-    velayManaged = true;
+  test("prefers the pairing tunnel over a Tunnel-managed callback base", async () => {
+    // Tunnel owns the callback URL, not the tailnet address the user started
+    // for pairing, and the Tunnel URL exposes neither `/healthz` nor the
+    // pairing surface (`gateway/src/tunnel/allowed-paths.ts`).
+    tunnelManaged = true;
     ingressConfig = { ...ingressConfig, publicBaseUrl: TUNNEL_URL };
     pairingTunnel = { provider: "tailscale", publicBaseUrl: PAIRING_URL };
 
@@ -454,10 +454,10 @@ describe("integrations_ingress_status route", () => {
     });
   });
 
-  test("probes a Velay-managed ingress only through its pairing tunnel", async () => {
-    // The pairing record is the one address on a Velay-managed workspace that
+  test("probes a Tunnel-managed ingress only through its pairing tunnel", async () => {
+    // The pairing record is the one address on a Tunnel-managed workspace that
     // a device can reach, so it is probed while the callback base is not.
-    velayManaged = true;
+    tunnelManaged = true;
     ingressConfig = { ...ingressConfig, publicBaseUrl: TUNNEL_URL };
     pairingTunnel = { provider: "tailscale", publicBaseUrl: PAIRING_URL };
     recordedAssistantId = "assistant-1";
@@ -473,10 +473,10 @@ describe("integrations_ingress_status route", () => {
     });
   });
 
-  test("names the pairing tunnel to restart on a Velay-managed ingress", async () => {
-    // The restart guidance Velay must never get is for its own ingress; the
+  test("names the pairing tunnel to restart on a Tunnel-managed ingress", async () => {
+    // The restart guidance Tunnel must never get is for its own ingress; the
     // pairing tunnel beside it is the user's to start again.
-    velayManaged = true;
+    tunnelManaged = true;
     ingressConfig = { ...ingressConfig, publicBaseUrl: TUNNEL_URL };
     pairingTunnel = { provider: "tailscale", publicBaseUrl: PAIRING_URL };
     probeResult = { kind: "unreachable", detail: "HTTP 502" };

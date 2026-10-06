@@ -28,7 +28,7 @@ describe("HelpFaqContent", () => {
   });
 
   test("describes Base as the free plan and points at Pricing", () => {
-    expect(html).toContain("Is Vellum free?");
+    expect(html).toContain("Is Cadet free?");
     expect(html).toContain("Base");
     expect(html).toContain("/docs/pricing");
   });

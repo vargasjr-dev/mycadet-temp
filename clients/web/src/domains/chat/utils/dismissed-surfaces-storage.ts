@@ -17,7 +17,7 @@ import { createRecordStorageAccessor } from "@/utils/typed-storage";
 const MAX_IDS_PER_CONVERSATION = 500;
 
 const storage = createRecordStorageAccessor<string[]>({
-  keyFn: (assistantId) => `vellum:dismissed-surfaces:${assistantId}`,
+  keyFn: (assistantId) => `cadet:dismissed-surfaces:${assistantId}`,
   scope: "user",
   parseValue: (value) => (isStringArray(value) ? value : null),
   fallback: {},

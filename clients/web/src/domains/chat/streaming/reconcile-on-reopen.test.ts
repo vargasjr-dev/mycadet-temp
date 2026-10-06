@@ -1,4 +1,10 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
+
+const consoleWarnMock = spyOn(console, "warn").mockImplementation(() => {});
+
+afterEach(() => {
+  consoleWarnMock.mockClear();
+});
 
 import type { ReconcileActiveConversationResult } from "@/domains/chat/hooks/use-message-reconciliation";
 
@@ -25,15 +31,6 @@ mock.module("@/lib/diagnostics", () => ({
   recordLifecycleDiagnostic: recordLifecycleDiagnosticMock,
   bucketMessagesAdded: bucketMessagesAddedMock,
   resolvePlatformTag: resolvePlatformTagMock,
-}));
-
-const addBreadcrumbMock = mock(() => {});
-const captureMessageMock = mock(() => {});
-const captureExceptionMock = mock(() => {});
-mock.module("@sentry/react", () => ({
-  addBreadcrumb: addBreadcrumbMock,
-  captureMessage: captureMessageMock,
-  captureException: captureExceptionMock,
 }));
 
 const { createReconcileOnReopen } =
@@ -76,9 +73,6 @@ beforeEach(() => {
   mockStreamEpoch = 0;
   recordDiagnosticMock.mockClear();
   recordLifecycleDiagnosticMock.mockClear();
-  addBreadcrumbMock.mockClear();
-  captureMessageMock.mockClear();
-  captureExceptionMock.mockClear();
 });
 
 describe("reconcile-on-reopen — gating", () => {
@@ -123,7 +117,7 @@ describe("reconcile-on-reopen — resume cause", () => {
     expect(startReconciliationLoop).toHaveBeenCalledWith(1);
   });
 
-  test("reconcile rejection: logs to Sentry, does NOT block the loop start, does not propagate", async () => {
+  test("reconcile rejection: logs, does NOT block the loop start, does not propagate", async () => {
     // Resume path is parallel-fire by design — the loop is the
     // primary catch-up mechanism, so a one-shot reconcile failure
     // shouldn't stop it from running. The catch just logs the
@@ -143,7 +137,7 @@ describe("reconcile-on-reopen — resume cause", () => {
     // Let the rejected promise settle so the .catch fires.
     await new Promise((r) => setTimeout(r, 0));
 
-    expect(captureExceptionMock).toHaveBeenCalledTimes(1);
+    expect(consoleWarnMock).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -206,10 +200,9 @@ describe("reconcile-on-reopen — transport recovery (watchdog / error)", () => 
 
     // Stale completion must NOT call startReconciliationLoop.
     expect(startReconciliationLoop).not.toHaveBeenCalled();
-    expect(captureMessageMock).not.toHaveBeenCalled();
   });
 
-  test("watchdog success records breadcrumb but not captureMessage", async () => {
+  test("watchdog success records the rescue diagnostic, not an error report", async () => {
     const reconcileActive = mock(async () =>
       makeReconcileResult({ messagesAdded: 2, changed: true }),
     );
@@ -219,8 +212,10 @@ describe("reconcile-on-reopen — transport recovery (watchdog / error)", () => 
     handler.handleSseOpened({ assistantId: "asst-1", cause: "watchdog" });
     await new Promise((r) => setTimeout(r, 0));
 
-    expect(addBreadcrumbMock).toHaveBeenCalled();
-    expect(captureMessageMock).not.toHaveBeenCalled();
+    expect(recordDiagnosticMock).toHaveBeenCalledWith(
+      "sse_post_watchdog_reconcile_result",
+      expect.objectContaining({ latencyMs: expect.any(Number) }),
+    );
   });
 
   test("error cause does NOT record the watchdog rescue diagnostics", async () => {
@@ -233,11 +228,10 @@ describe("reconcile-on-reopen — transport recovery (watchdog / error)", () => 
     handler.handleSseOpened({ assistantId: "asst-1", cause: "error" });
     await new Promise((r) => setTimeout(r, 0));
 
-    expect(addBreadcrumbMock).not.toHaveBeenCalled();
-    expect(captureMessageMock).not.toHaveBeenCalled();
+    expect(recordDiagnosticMock).not.toHaveBeenCalled();
   });
 
-  test("reconcile rejection: logs to Sentry, still starts the polling loop, does not propagate", async () => {
+  test("reconcile rejection: logs, still starts the polling loop, does not propagate", async () => {
     const reconcileActive = mock(async () => {
       throw new Error("daemon unreachable");
     });
@@ -249,7 +243,6 @@ describe("reconcile-on-reopen — transport recovery (watchdog / error)", () => 
 
     expect(reconcileActive).toHaveBeenCalledTimes(1);
     expect(startReconciliationLoop).toHaveBeenCalledWith(1);
-    expect(captureExceptionMock).toHaveBeenCalledTimes(1);
-    expect(captureMessageMock).not.toHaveBeenCalled();
+    expect(consoleWarnMock).toHaveBeenCalledTimes(1);
   });
 });

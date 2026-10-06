@@ -8,10 +8,10 @@ import {
   organizationsBillingSummaryRetrieveOptions,
 } from "@/generated/api/@tanstack/react-query.gen";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { toast } from "@vellumai/design-library/components/toast";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { toast } from "@mycadet/design-library/components/toast";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { formatUsdShort } from "@/utils/format-usd";
 
@@ -94,9 +94,7 @@ export function CheckoutBonusModal({
     >
       <Modal.Content size="sm" data-testid="checkout-bonus-modal">
         <Modal.Header icon={Gift}>
-          <Modal.Title>
-            {t("checkoutBonusModal.title", { amount })}
-          </Modal.Title>
+          <Modal.Title>{t("checkoutBonusModal.title", { amount })}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Typography

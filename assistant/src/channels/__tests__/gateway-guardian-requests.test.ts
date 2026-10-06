@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type {
   GuardianRequestDeliveryWire,
   GuardianRequestWire,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 type IpcCall = { method: string; params?: Record<string, unknown> };
 

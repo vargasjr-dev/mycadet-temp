@@ -96,7 +96,7 @@ describe("loadExternalPlugin — manifest", () => {
   test("identity is the directory name even when package.json name is scoped", async () => {
     const dir = freshPluginDir("scoped");
     writePackageJson(dir, {
-      name: "@vellumai/simple-memory",
+      name: "@mycadet/simple-memory",
       version: "0.1.0",
     });
 
@@ -245,7 +245,7 @@ describe("loadExternalPlugin — plugin-api peerDependency", () => {
     writePackageJson(dir, {
       name: "compat-ok",
       version: "0.1.0",
-      peerDependencies: { "@vellumai/plugin-api": "*" },
+      peerDependencies: { "@mycadet/plugin-api": "*" },
     });
 
     await loadExternalPlugin(dir);
@@ -263,7 +263,7 @@ describe("loadExternalPlugin — plugin-api peerDependency", () => {
       name: "compat-bad",
       version: "0.1.0",
       // A range that no real assistant version will satisfy.
-      peerDependencies: { "@vellumai/plugin-api": ">=999.0.0" },
+      peerDependencies: { "@mycadet/plugin-api": ">=999.0.0" },
     });
 
     await loadExternalPlugin(dir);
@@ -277,7 +277,7 @@ describe("loadExternalPlugin — plugin-api peerDependency", () => {
     writePackageJson(dir, {
       name: "compat-bogus",
       version: "0.1.0",
-      peerDependencies: { "@vellumai/plugin-api": "not-a-real-range" },
+      peerDependencies: { "@mycadet/plugin-api": "not-a-real-range" },
     });
 
     await loadExternalPlugin(dir);

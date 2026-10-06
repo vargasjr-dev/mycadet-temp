@@ -9,7 +9,7 @@ import type { DisplayMessage } from "@/domains/chat/types/types";
 import type {
   ModeSessionDescriptor,
   ModeSession,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 
 import {

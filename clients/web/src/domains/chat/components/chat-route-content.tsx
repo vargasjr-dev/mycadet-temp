@@ -109,11 +109,11 @@ import { ProviderBillingBanner } from "@/domains/chat/components/provider-billin
 import { SendErrorModal } from "@/domains/chat/components/send-error-modal";
 import { StoreCredentialDialog } from "@/domains/chat/components/store-credential-dialog";
 import { SuggestionDetailPanel } from "@/domains/chat/components/suggestion-detail-panel";
-import type { DetectedSecret } from "@vellumai/service-contracts/secret-detection";
+import type { DetectedSecret } from "@mycadet/service-contracts/secret-detection";
 import type { ThreadSuggestion } from "@/domains/chat/suggestions/types";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useTranslation } from "@/i18n";
-import { BottomSheet, Notice } from "@vellumai/design-library";
+import { BottomSheet, Notice } from "@mycadet/design-library";
 import { useEditMessage } from "@/domains/chat/hooks/use-edit-message";
 import { useOnboardingChoice } from "@/domains/chat/hooks/use-onboarding-choice";
 import { usePullRefresh } from "@/domains/chat/hooks/use-pull-refresh";
@@ -127,7 +127,7 @@ import {
   resolveDroppedDirectories,
   WEB_FOLDER_DROP_ERROR,
 } from "@/domains/chat/components/chat-attachments/handle-folder-drop";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import {
   getChatBillingBannerDecision,
@@ -1674,7 +1674,7 @@ export function ChatMainPanel({
     mainContent = (
       <AnimatedRightDrawer
         open={Boolean(selectedSuggestion)}
-        storageKey="vellum:suggestion-drawer-width"
+        storageKey="cadet:suggestion-drawer-width"
         left={chatBody}
         right={suggestionDetailPanel}
       />

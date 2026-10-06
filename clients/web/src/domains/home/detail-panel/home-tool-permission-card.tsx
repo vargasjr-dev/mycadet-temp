@@ -1,6 +1,6 @@
 import { useTranslation } from "@/i18n";
-import type { FeedItem } from "@vellumai/assistant-api";
-import { Typography } from "@vellumai/design-library";
+import type { FeedItem } from "@mycadet/assistant-api";
+import { Typography } from "@mycadet/design-library";
 
 type CredentialStatus =
   | "revoked"

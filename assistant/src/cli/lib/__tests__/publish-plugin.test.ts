@@ -34,7 +34,7 @@ function makePluginDir(
       description: "A test plugin",
       license: "MIT",
       homepage: "https://github.com/test/test-plugin",
-      peerDependencies: { "@vellumai/plugin-api": "^1.0.0" },
+      peerDependencies: { "@mycadet/plugin-api": "^1.0.0" },
       ...pkg,
     }),
   );
@@ -95,7 +95,7 @@ function makeGitPluginDir(): { dir: string; cleanup: () => void } {
 const validPkg: Partial<ParsedPackageJson> = {
   name: "test-plugin",
   version: "1.0.0",
-  peerDependencies: { "@vellumai/plugin-api": "^1.0.0" },
+  peerDependencies: { "@mycadet/plugin-api": "^1.0.0" },
   description: "A test plugin",
   license: "MIT",
   homepage: "https://github.com/test/test-plugin",
@@ -183,14 +183,14 @@ describe("validatePluginForPublish", () => {
     rmSync(dir, { recursive: true });
   });
 
-  it("fails when @vellumai/plugin-api peer dep is missing", () => {
+  it("fails when @mycadet/plugin-api peer dep is missing", () => {
     const dir = makePluginDir(tmpdir(), {
       ...validPkg,
       peerDependencies: {},
     });
     const result = validatePluginForPublish(dir);
     expect(result.valid).toBe(false);
-    expect(result.issues.some((i) => i.includes("@vellumai/plugin-api"))).toBe(
+    expect(result.issues.some((i) => i.includes("@mycadet/plugin-api"))).toBe(
       true,
     );
     rmSync(dir, { recursive: true });
@@ -232,7 +232,7 @@ describe("buildPublishPayload", () => {
         description: "Does cool stuff",
         license: "MIT",
         homepage: "https://github.com/me/my-plugin",
-        peerDependencies: { "@vellumai/plugin-api": "^1.0.0" },
+        peerDependencies: { "@mycadet/plugin-api": "^1.0.0" },
       },
       pluginDir: "/tmp/plugin",
     };
@@ -265,7 +265,7 @@ describe("buildPublishPayload", () => {
       packageJson: {
         name: "my-plugin",
         version: "1.0.0",
-        peerDependencies: { "@vellumai/plugin-api": "^1.0.0" },
+        peerDependencies: { "@mycadet/plugin-api": "^1.0.0" },
       },
       pluginDir: "/tmp/monorepo/packages/plugin",
     };
@@ -289,7 +289,7 @@ describe("buildPublishPayload", () => {
       packageJson: {
         name: "my-plugin",
         version: "1.0.0",
-        peerDependencies: { "@vellumai/plugin-api": "^1.0.0" },
+        peerDependencies: { "@mycadet/plugin-api": "^1.0.0" },
         repository: { url: "https://github.com/me/my-plugin.git" },
       },
       pluginDir: "/tmp/plugin",

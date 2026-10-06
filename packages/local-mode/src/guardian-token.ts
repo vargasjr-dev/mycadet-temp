@@ -5,7 +5,7 @@ import path from "node:path";
 import {
   isDnsIndependentLoopbackUrl,
   isLoopbackPublicUrl,
-} from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
 
 import { guardianTokenPath, resolveConfigDirPaths } from "./config";
 import type { CliInvocation } from "./util";
@@ -86,7 +86,7 @@ export function isConfidentialRefreshUrl(gatewayUrl: string): boolean {
 /**
  * Whether a URL's host is loopback, judged wide; false for unparseable URLs.
  * Delegates to the shared pairing predicate so this package's refusals and the
- * address checks in `@vellumai/service-contracts` judge a host by the same
+ * address checks in `@mycadet/service-contracts` judge a host by the same
  * rules. Callers refuse what this matches; a caller granting loopback a
  * privilege reads `isDnsIndependentLoopbackUrl` instead.
  */

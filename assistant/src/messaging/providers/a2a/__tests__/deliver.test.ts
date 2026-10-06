@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { ChannelReplyPayload } from "@vellumai/gateway-client";
+import type { ChannelReplyPayload } from "@mycadet/gateway-client";
 
 import type { A2ATask, Artifact } from "../../../../a2a/protocol-types.js";
 

@@ -14,7 +14,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type {
   LlmContextResponse,
   LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 interface FakeRequest {
   url: string;

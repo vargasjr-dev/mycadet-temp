@@ -9,9 +9,9 @@
  * onboarding-only keys that don't fit the boolean store shape
  * (`onboarding.selectedVersion`, `onboarding.lastUserId`).
  *
- * Storage keys are documented in `onboarding-store.ts`. The Sentry consent
- * gate reads `device:share_*` directly — that contract is preserved by the
- * per-key adapter.
+ * Storage keys are documented in `onboarding-store.ts`. The diagnostics
+ * consent gate reads `device:share_*` directly — that contract is preserved
+ * by the per-key adapter.
  */
 import { useCallback } from "react";
 
@@ -33,7 +33,7 @@ import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
  * hatching screen and forwarded to `hatchAssistant({ version })`. Empty
  * string / absent means "latest" (the normal managed default).
  */
-const KEY_SELECTED_VERSION = "vellum:onboarding:selectedVersion";
+const KEY_SELECTED_VERSION = "cadet:onboarding:selectedVersion";
 
 // ---------------------------------------------------------------------------
 // Public hooks — thin wrappers around the Zustand store

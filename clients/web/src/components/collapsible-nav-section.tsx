@@ -6,13 +6,13 @@ import {
   ContextMenu,
   CrossfadeStack,
   SideMenu,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 import {
   Collapsible,
   type CollapsibleItemProps,
   type CollapsibleRootProps,
-} from "@vellumai/design-library/components/collapsible";
-import { cn } from "@vellumai/design-library/utils/cn";
+} from "@mycadet/design-library/components/collapsible";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 import {
   SIDEBAR_CHIP_GAP_CLASSES,

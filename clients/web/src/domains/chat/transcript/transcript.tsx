@@ -13,7 +13,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { writeSelectionClipboard } from "@vellumai/design-library";
+import { writeSelectionClipboard } from "@mycadet/design-library";
 
 import { partitionLatestTurn } from "@/domains/chat/transcript/partition-latest-turn";
 import { resolveResponseArtifacts } from "@/domains/chat/transcript/resolve-response-artifacts";
@@ -35,7 +35,7 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { ConfirmationDecision } from "@/types/event-types";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { DisplayMessage } from "@/domains/chat/types/types";
-import type { ModeSessionDescriptor } from "@vellumai/assistant-api";
+import type { ModeSessionDescriptor } from "@mycadet/assistant-api";
 import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import {
   groupSessionItems,

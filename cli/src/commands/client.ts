@@ -1,3 +1,4 @@
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -11,11 +12,7 @@ import {
   saveAssistantEntry,
   type AssistantEntry,
 } from "../lib/assistant-config";
-import {
-  DAEMON_INTERNAL_ASSISTANT_ID,
-  GATEWAY_PORT,
-  type Species,
-} from "../lib/constants";
+import { DAEMON_INTERNAL_ASSISTANT_ID, GATEWAY_PORT } from "../lib/constants";
 import {
   loadGuardianToken,
   refreshGuardianToken,
@@ -60,7 +57,7 @@ import {
   resolveLockfilePaths,
   resolveConfigDir,
   type CliInvocation,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { parseFeatureFlagArgs, readAmbientFlagEnvVars } from "../lib/flag-args";
 import {
@@ -94,10 +91,9 @@ interface ParsedArgs {
   runtimeUrl: string;
   assistantId: string;
   assistantName?: string;
-  species: Species;
   /** "vellum" for platform-hosted assistants, undefined for local. */
   cloud?: string;
-  /** Platform session token (X-Session-Token), set when cloud === "vellum". */
+  /** Platform session token (X-Session-Token), set when isManagedCloud(cloud). */
   platformToken?: string;
   /** Guardian JWT (Authorization: Bearer), set for local assistants. */
   bearerToken?: string;
@@ -242,7 +238,6 @@ export function parseArgs(): ParsedArgs {
   let assistantId = entry?.assistantId || DAEMON_INTERNAL_ASSISTANT_ID;
   let assistantName = readAssistantName(entry);
   const cloud = entry?.cloud;
-  const species: Species = (entry?.species as Species) ?? "vellum";
 
   // Ephemeral auth: a handed-over token (e.g. from `vellum pair`) used for this
   // session only. Resolve it BEFORE the credential lookup below so an ephemeral
@@ -263,12 +258,12 @@ export function parseArgs(): ParsedArgs {
   // entirely when --token supplies the credential, so no saved creds are read.
   const platformToken = bearerTokenOverride
     ? undefined
-    : cloud === "vellum"
+    : isManagedCloud(cloud)
       ? (readPlatformToken() ?? undefined)
       : undefined;
   const bearerToken = bearerTokenOverride
     ? bearerTokenOverride
-    : cloud === "vellum"
+    : isManagedCloud(cloud)
       ? undefined
       : (loadGuardianToken(entry?.assistantId ?? "")?.accessToken ?? undefined);
 
@@ -311,7 +306,6 @@ export function parseArgs(): ParsedArgs {
     runtimeUrl: normalizeRuntimeUrl(runtimeUrl),
     assistantId,
     assistantName,
-    species,
     cloud,
     platformToken,
     bearerToken,
@@ -379,7 +373,7 @@ async function maybeHydratePlatformAssistantName(
   cloud: string | undefined,
   platformToken: string | undefined,
 ): Promise<string | undefined> {
-  if (cloud !== "vellum" || assistantName || !platformToken) {
+  if (!isManagedCloud(cloud) || assistantName || !platformToken) {
     return assistantName;
   }
 
@@ -605,16 +599,13 @@ async function handleLocalEndpoints(
   if (HATCH_PATTERN.test(pathname)) {
     if (req.method !== "POST") return new Response(null, { status: 405 });
 
-    let species = "vellum";
     let remote: string | undefined;
     const contentType = req.headers.get("content-type") ?? "";
     if (contentType.includes("json")) {
       try {
         const body = (await req.json()) as {
-          species?: string;
           remote?: string;
         };
-        if (body.species) species = body.species;
         if (body.remote) remote = body.remote;
       } catch {
         return Response.json(
@@ -634,11 +625,7 @@ async function handleLocalEndpoints(
       );
     }
 
-    const result = await runHatch(
-      invocation,
-      species,
-      remote ? { remote } : undefined,
-    );
+    const result = await runHatch(invocation, remote ? { remote } : undefined);
     if (result.ok) {
       return Response.json({ ok: true, assistantId: result.assistantId });
     }
@@ -1181,7 +1168,7 @@ const WEB_BACKGROUND_START_TIMEOUT_MS = 30_000;
  * URL printed here is the one the child binds. The child's stdout/stderr go to
  * `<xdg-log-dir>/client-web.log` — same detach idiom as the nginx/ngrok
  * spawns. Success is only reported once the child is accepting connections on
- * the port; an early child exit (e.g. missing @vellumai/web assets) or a
+ * the port; an early child exit (e.g. missing @mycadet/web assets) or a
  * startup timeout fails with a pointer at the log file.
  */
 async function spawnBackgroundWebInterface(
@@ -1207,7 +1194,7 @@ async function spawnBackgroundWebInterface(
   childArgs.push("--port", String(port));
 
   // Don't report success until the child is actually serving: watch for an
-  // early exit (e.g. missing @vellumai/web assets, port lost to the TOCTOU
+  // early exit (e.g. missing @mycadet/web assets, port lost to the TOCTOU
   // window) and poll the port until it accepts connections.
   const { child, logPath, ready, exitCode } = await relaunchDetached({
     args: childArgs,
@@ -1293,8 +1280,8 @@ async function runWebInterface(
   if (!distDir) {
     console.error(
       `${ANSI.bold}--interface web${ANSI.reset}: unable to locate ` +
-        `@vellumai/web assets.\n\n` +
-        `  npm/bunx install:   npm install @vellumai/web\n` +
+        `@mycadet/web assets.\n\n` +
+        `  npm/bunx install:   npm install @mycadet/web\n` +
         `  source checkout:    cd clients/web && VITE_PLATFORM_MODE=false bun run build`,
     );
     process.exit(1);
@@ -1546,7 +1533,7 @@ async function runViteDevServer(
  * Return a possibly-refreshed bearer token for the TUI's startup auth.
  *
  * Only a STORED guardian token is refreshable: platform session auth
- * (`cloud === "vellum"`) and ephemeral `--token` overrides (whose token won't
+ * (`isManagedCloud(cloud)`) and ephemeral `--token` overrides (whose token won't
  * match the store) are left untouched, as is a token that's still fresh. When
  * the stored token has passed its `refreshAfter` (or expiry) and a refresh
  * token is available, refresh once via the concurrency-safe refreshGuardianToken
@@ -1559,7 +1546,7 @@ export async function resolveFreshBearerToken(
   bearerToken: string | undefined,
   cloud: string | undefined,
 ): Promise<string | undefined> {
-  if (cloud === "vellum" || !bearerToken || !assistantId) return bearerToken;
+  if (isManagedCloud(cloud) || !bearerToken || !assistantId) return bearerToken;
 
   const stored = loadGuardianToken(assistantId);
   // Refresh only the stored token (an ephemeral --token won't match), and only
@@ -1590,7 +1577,6 @@ export async function client(): Promise<void> {
     runtimeUrl,
     assistantId,
     assistantName: parsedAssistantName,
-    species,
     cloud,
     platformToken,
     bearerToken,
@@ -1626,7 +1612,6 @@ export async function client(): Promise<void> {
   tuiLog.info("session start", {
     runtimeUrl,
     assistantId,
-    species,
     cloud,
     interfaceId,
   });
@@ -1641,7 +1626,7 @@ export async function client(): Promise<void> {
   // Build pre-constructed request headers merged from auth + client registration.
   // Spreading into every fetch site ensures consistency across REST and SSE endpoints.
   let auth: Record<string, string> | undefined;
-  if (cloud === "vellum" && platformToken) {
+  if (isManagedCloud(cloud) && platformToken) {
     const orgId = await fetchOrganizationId(platformToken).catch((err) => {
       tuiLog.warn("failed to fetch organization id", { err: String(err) });
       return undefined;
@@ -1676,7 +1661,6 @@ export async function client(): Promise<void> {
   const app = renderChatApp(
     runtimeUrl,
     assistantId,
-    species,
     () => {
       tuiLog.info("session end (user disconnect)");
       tuiLog.close();

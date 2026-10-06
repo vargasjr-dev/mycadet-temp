@@ -15,7 +15,7 @@ import {
 } from "@/generated/api/@tanstack/react-query.gen";
 import { t } from "@/i18n";
 import { routes } from "@/utils/routes";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 const POLL_INTERVAL_MS = 1000;
 const POLL_TIMEOUT_MS = 15000;
@@ -144,9 +144,12 @@ export function BillingPortalReturnHandler() {
         if (unmountedRef.current) {
           return;
         }
-        toast.info(t("settings:billingPortalReturnHandler.subscriptionUpdated"), {
-          id: TOAST_ID,
-        });
+        toast.info(
+          t("settings:billingPortalReturnHandler.subscriptionUpdated"),
+          {
+            id: TOAST_ID,
+          },
+        );
       } finally {
         if (!unmountedRef.current) {
           clearPortalReturnSnapshot();

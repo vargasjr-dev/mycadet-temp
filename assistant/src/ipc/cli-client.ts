@@ -11,7 +11,7 @@
 
 import { Socket } from "node:net";
 
-import { IpcFrameReader, writeMessage } from "@vellumai/ipc-server-utils";
+import { IpcFrameReader, writeMessage } from "@mycadet/ipc-server-utils";
 
 import { getLogger } from "../util/logger.js";
 import { getAssistantSocketPath } from "./socket-path.js";

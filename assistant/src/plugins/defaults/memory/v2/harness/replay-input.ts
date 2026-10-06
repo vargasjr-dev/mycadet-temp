@@ -20,7 +20,7 @@
  * anchor's timestamp and cut at the anchor row.
  */
 
-import type { ContentBlock } from "@vellumai/plugin-api";
+import type { ContentBlock } from "@mycadet/plugin-api";
 import { and, desc, eq, lte } from "drizzle-orm";
 
 import type { AssistantConfig } from "../../../../../config/types.js";

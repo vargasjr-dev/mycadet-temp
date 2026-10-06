@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AdmissionPolicySchema } from "@vellumai/gateway-client";
+import { AdmissionPolicySchema } from "@mycadet/gateway-client";
 
 import type { GatewayRouteDefinition } from "./types.js";
 
@@ -12,7 +12,7 @@ import type { GatewayRouteDefinition } from "./types.js";
  * `/v1/assistants/{assistant_id}/channel-admission-policy/...` routes
  * registered in `index.ts` alongside the flat paths documented here.
  * The policy enum comes from the shared contract in
- * `@vellumai/gateway-client` so gateway, clients, and spec share one source.
+ * `@mycadet/gateway-client` so gateway, clients, and spec share one source.
  *
  * The handlers live in `channel-admission-policy.ts`; that module imports
  * `SetChannelPolicyRequestSchema` so wire validation and the published spec

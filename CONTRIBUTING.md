@@ -1,10 +1,10 @@
 # Contributing
 
-Thank you for your interest in Vellum Assistant! We welcome contributions of all kinds — bug fixes, new features, documentation improvements, and more.
+Thank you for your interest in Cadet Assistant! We welcome contributions of all kinds — bug fixes, new features, documentation improvements, and more.
 
 ## Before You Start
 
-- **Bug reports and feature requests**: [Open an issue](https://github.com/vellum-ai/vellum-assistant/issues). Use the provided templates.
+- **Bug reports and feature requests**: [Open an issue](https://github.com/vargasjr-dev/mycadet/issues). Use the provided templates.
 - **Security vulnerabilities**: Report these privately. See [SECURITY.md](SECURITY.md).
 - **Questions and discussion**: Join us on the #contributors channel on [Discord](https://discord.com/channels/1471183263174234245/1503398277092081875).
 
@@ -13,15 +13,15 @@ Thank you for your interest in Vellum Assistant! We welcome contributions of all
 ### Getting Started
 
 ```bash
-git clone https://github.com/<your-username>/vellum-assistant.git
-cd vellum-assistant
-./setup.sh    # installs Bun (if needed), installs deps, links packages, registers the global vellum CLI
+git clone https://github.com/<your-username>/mycadet.git
+cd mycadet
+./setup.sh    # installs Bun (if needed), installs deps, links packages, registers the global cadet CLI
 ```
 
 Verify your setup:
 
 ```bash
-vellum --version
+cadet --version
 ```
 
 ### Running the Assistant Locally
@@ -29,10 +29,10 @@ vellum --version
 **CLI only:**
 
 ```bash
-vellum hatch   # first-time setup (only needed once)
-vellum wake    # start an existing assistant
-vellum client  # interact with your assistant through the terminal
-vellum sleep   # stop but do not remove an existing assistant
+cadet hatch   # first-time setup (only needed once)
+cadet wake    # start an existing assistant
+cadet client  # interact with your assistant through the terminal
+cadet sleep   # stop but do not remove an existing assistant
 ```
 
 ### Running Tests
@@ -65,13 +65,12 @@ bun run typecheck
 |---|---|
 | `assistant/` | Core assistant runtime — memory, tools, skills, scheduling, integrations |
 | `gateway/` | Public ingress — webhooks, API routes, OAuth callbacks |
-| `cli/` | The `vellum` CLI |
+| `cli/` | The `cadet` CLI |
 | `clients/` | End-user app surfaces (web, iOS, macOS/Electron) and the public docs site (`clients/docs/`) |
 | `credential-executor/` | Isolated credential execution service |
 | `packages/` | Shared internal packages |
 | `skills/` | Skill definitions |
 
-For deeper architectural context, see [ARCHITECTURE.md](ARCHITECTURE.md) and the domain-specific docs linked from it.
 
 ## Personalizing Your Assistant vs. Changing the Core
 
@@ -87,7 +86,7 @@ Adding or changing a **core tool** (anything under `assistant/src/tools/` regist
 - a bug fix, performance, security, or developer-experience improvement to existing behavior, or
 - there is pre-existing discussion on GitHub or Discord with the core team on why it will be broadly useful to most users.
 
-If you can build it as a skill in your own workspace, do that first. If you think a personal skill would genuinely benefit others, contribute it to [`skills/`](skills/) (see [`skills/AGENTS.md`](skills/AGENTS.md)) rather than adding a core tool. When in doubt, [open an issue](https://github.com/vellum-ai/vellum-assistant/issues) or ask on [Discord](https://vellum.ai/community) before writing new core capabilities.
+If you can build it as a skill in your own workspace, do that first. If you think a personal skill would genuinely benefit others, contribute it to [`skills/`](skills/) (see [`skills/AGENTS.md`](skills/AGENTS.md)) rather than adding a core tool. When in doubt, [open an issue](https://github.com/vargasjr-dev/mycadet/issues) or ask on [Discord](https://mycadet.ai/community) before writing new core capabilities.
 
 ## Submitting a Pull Request
 

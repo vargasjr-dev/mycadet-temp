@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { PanelItem } from "@vellumai/design-library";
+import { PanelItem } from "@mycadet/design-library";
 
 import type { EmojiEntry } from "@/domains/chat/components/chat-composer/emoji-catalog";
 
@@ -32,7 +32,8 @@ export function EmojiPickerPopup({
       return;
     }
     const selected = container.children[selectedIndex] as
-      HTMLElement | undefined;
+      | HTMLElement
+      | undefined;
     selected?.scrollIntoView({ block: "nearest" });
   }, [selectedIndex]);
 

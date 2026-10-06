@@ -2,20 +2,20 @@ import path from "node:path";
 
 import { app, nativeImage, shell, type NativeImage } from "electron";
 
-import { openAboutWindow } from "@vellumai/electron-desktop/about";
-import { acceleratorOption } from "@vellumai/electron-desktop/commands";
-import { getWatchedLockfile } from "@vellumai/electron-desktop/lockfile-watcher";
-import { configureStatusIconFallback } from "@vellumai/electron-desktop/status-icon";
+import { openAboutWindow } from "@mycadet/electron-desktop/about";
+import { acceleratorOption } from "@mycadet/electron-desktop/commands";
+import { getWatchedLockfile } from "@mycadet/electron-desktop/lockfile-watcher";
+import { configureStatusIconFallback } from "@mycadet/electron-desktop/status-icon";
 import {
   configureTrayModel,
   installTray,
   type TrayMenuIcon,
-} from "@vellumai/electron-desktop/tray-model";
-import { readOnboardingActive } from "@vellumai/electron-desktop/window-state";
+} from "@mycadet/electron-desktop/tray-model";
+import { readOnboardingActive } from "@mycadet/electron-desktop/window-state";
 import {
   DEFAULT_COMPANION_SIZE,
   type VellumCommand,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   MENU_ICON_CIRCLECHECK,
@@ -58,7 +58,7 @@ const dispatch = (command: VellumCommand): void => {
   if (!win || win.isDestroyed()) {
     return;
   }
-  const send = () => win.webContents.send("vellum:command", command);
+  const send = () => win.webContents.send("cadet:command", command);
   if (win.webContents.isLoading()) {
     win.webContents.once("did-finish-load", send);
   } else {

@@ -9,7 +9,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-import type { LlmContextResponse, MemoryV3Pool } from "@vellumai/assistant-api";
+import type { LlmContextResponse, MemoryV3Pool } from "@mycadet/assistant-api";
 
 import { MemoryTab } from "./memory-tab";
 

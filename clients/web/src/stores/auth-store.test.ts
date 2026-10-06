@@ -354,8 +354,7 @@ mock.module("@/runtime/widget-snapshot", () => ({
   retryPendingWidgetSnapshotClear: async () => true,
 }));
 
-const notificationAvatarRuntime =
-  await import("@/runtime/notification-avatar");
+const notificationAvatarRuntime = await import("@/runtime/notification-avatar");
 
 function seedNotificationIdentityMemory() {
   const identity = notificationAvatarRuntime.createNotificationIdentity(
@@ -411,7 +410,7 @@ mock.module("@/assistant/lifecycle-service", () => ({
   },
 }));
 
-// `@/assistant/api` transitively pulls in `@vellumai/assistant-api`
+// `@/assistant/api` transitively pulls in `@mycadet/assistant-api`
 // exports that are currently missing on main. Mock the call sites
 // `auth-store` actually uses; the real module load would crash
 // before any test runs.
@@ -462,7 +461,7 @@ beforeEach(() => {
   getSessionFailStatus = 401;
   getSessionGates = null;
   mockElectronSessionToken = null;
-  localStorage.removeItem("vellum:auth:userSnapshot");
+  localStorage.removeItem("cadet:auth:userSnapshot");
   localStorage.removeItem("device:share_diagnostics");
   localStorage.removeItem("device:diagnostics_reporting");
   mockIsGatewayAuth = false;
@@ -1292,8 +1291,8 @@ describe("auth store onboarding flag reconciliation", () => {
     // Empty server record, but the user has a current device-side diagnostics
     // ack and an opted-in preference. The chokepoint resolves the unknown
     // server value from the device preference, reopening a gate an earlier
-    // build left closed so a confirmed opted-in user isn't left with Sentry
-    // disabled.
+    // build left closed so a confirmed opted-in user isn't left with client
+    // diagnostics disabled.
     sessionUser = { id: "user-1", email: "user@example.com" };
     mockStoreShareDiagnostics = true;
     localStorage.setItem("device:share_diagnostics", "true");
@@ -2107,7 +2106,7 @@ describe("explicit logout supersedes an in-flight refresh", () => {
     expect(useAuthStore.getState().platformSession).toBe("absent");
     // The abandoned transition also carries `persistUserSnapshot`, which would
     // leave the departed account restorable on the next offline boot.
-    expect(localStorage.getItem("vellum:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
   });
 
   test("a refresh that starts midway through a logout is superseded too", async () => {
@@ -2275,7 +2274,7 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     // A rejected session must not install a platform user, persist a
     // restorable snapshot, or bootstrap the platform identity.
     expect(useAuthStore.getState().user?.kind).toBe("local");
-    expect(localStorage.getItem("vellum:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
     expect(bootstrapLocalAssistantPlatformIdentityMock).not.toHaveBeenCalled();
     // The evidence check short-circuits before the assistants call and sync.
     expect(listAssistantsMock).not.toHaveBeenCalled();
@@ -2288,7 +2287,7 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     // the rejection: restoreOfflineSession would otherwise resurrect the
     // rejected account as "present" on a later offline boot.
     localStorage.setItem(
-      "vellum:auth:userSnapshot",
+      "cadet:auth:userSnapshot",
       JSON.stringify({ id: "user-1", email: "user@example.com" }),
     );
     mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
@@ -2297,7 +2296,7 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     await whenPlatformSessionSettled();
 
     expect(useAuthStore.getState().platformSession).toBe("absent");
-    expect(localStorage.getItem("vellum:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
   });
 
   test("an assistants-list session rejection settles the session absent", async () => {
@@ -2348,10 +2347,7 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     mockOrgFetchOutcome = new Promise(() => {});
     const originalSetTimeout = globalThis.setTimeout;
     const setTimeoutSpy = spyOn(globalThis, "setTimeout");
-    setTimeoutSpy.mockImplementation(((
-      handler: () => void,
-      timeout?: number,
-    ) =>
+    setTimeoutSpy.mockImplementation(((handler: () => void, timeout?: number) =>
       originalSetTimeout(
         handler,
         timeout === 3_000 ? 0 : timeout,
@@ -2388,10 +2384,7 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     mockListAssistantsResult = { ok: false, status: 403, error: {} };
     const originalSetTimeout = globalThis.setTimeout;
     const setTimeoutSpy = spyOn(globalThis, "setTimeout");
-    setTimeoutSpy.mockImplementation(((
-      handler: () => void,
-      timeout?: number,
-    ) =>
+    setTimeoutSpy.mockImplementation(((handler: () => void, timeout?: number) =>
       originalSetTimeout(
         handler,
         timeout === 3_000 ? 0 : timeout,
@@ -2459,7 +2452,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     expect(useAuthStore.getState().platformSession).toBe("absent");
     expect(useAuthStore.getState().user?.kind).toBe("local");
     // No snapshot may be re-persisted for the rejected session.
-    expect(localStorage.getItem("vellum:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
     expect(syncPlatformAssistantsToLockfileMock).not.toHaveBeenCalled();
     // Nor may the rejected account's user-scoped consent state be installed.
     expect(fetchConsentMock).not.toHaveBeenCalled();
@@ -2499,7 +2492,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
 
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(localStorage.getItem("vellum:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
   });
 
   test("a resume refresh does not flip a probe-settled absent session back to present", async () => {
@@ -2517,7 +2510,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
 
     expect(useAuthStore.getState().platformSession).toBe("absent");
     expect(useAuthStore.getState().user?.kind).toBe("local");
-    expect(localStorage.getItem("vellum:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
   });
 
   test("a transport-failed sync on refresh keeps the platform confirmation", async () => {
@@ -2529,7 +2522,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
 
     expect(useAuthStore.getState().platformSession).toBe("present");
     expect(useAuthStore.getState().user?.kind).toBe("platform");
-    expect(localStorage.getItem("vellum:auth:userSnapshot")).not.toBeNull();
+    expect(localStorage.getItem("cadet:auth:userSnapshot")).not.toBeNull();
   });
 
   test("a non-rejection org failure on refresh keeps the platform confirmation", async () => {
@@ -2548,7 +2541,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     mockPlatformAssistants = [{ assistantId: "p1", cloud: "vellum" }];
     sessionUser = { id: "user-1", email: "user@example.com" };
     localStorage.setItem(
-      "vellum:auth:userSnapshot",
+      "cadet:auth:userSnapshot",
       JSON.stringify({ id: "user-1", email: "user@example.com" }),
     );
     mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
@@ -2558,7 +2551,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
     expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().platformSession).toBe("absent");
-    expect(localStorage.getItem("vellum:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
     expect(syncPlatformAssistantsToLockfileMock).not.toHaveBeenCalled();
     // Nor may the rejected account's user-scoped consent state be installed.
     expect(fetchConsentMock).not.toHaveBeenCalled();
@@ -2598,7 +2591,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     ).rejects.toThrow("Platform authentication required");
 
     expect(useAuthStore.getState().platformSession).not.toBe("present");
-    expect(localStorage.getItem("vellum:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
     // A failed connect leaves no side effects behind: the caller keeps its
     // current selection and consent state, not the rejected account's.
     expect(setSelectedAssistantMock).not.toHaveBeenCalled();
@@ -2929,7 +2922,7 @@ describe("paired selection in the gateway-auth session paths", () => {
 // invalidates the snapshot so a revoked session can't be resurrected.
 // ---------------------------------------------------------------------------
 
-const SNAPSHOT_KEY = "vellum:auth:userSnapshot";
+const SNAPSHOT_KEY = "cadet:auth:userSnapshot";
 
 function seedSnapshot(): void {
   localStorage.setItem(

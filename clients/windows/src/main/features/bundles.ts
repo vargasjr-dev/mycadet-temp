@@ -5,18 +5,18 @@ import {
   BUNDLES_DIR_NAME,
   bundleFileHandlerToken,
   configureBundlePlatform,
-} from "@vellumai/electron-desktop/bundle-platform";
+} from "@mycadet/electron-desktop/bundle-platform";
 import {
   handleBundleFile,
   installBundleFlow,
-} from "@vellumai/electron-desktop/bundle-flow";
-import { createBundleHostProvider } from "@vellumai/electron-desktop/bundle-host";
+} from "@mycadet/electron-desktop/bundle-flow";
+import { createBundleHostProvider } from "@mycadet/electron-desktop/bundle-host";
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
-import { onFileOpen } from "@vellumai/electron-desktop/file-open";
-import { LOCAL_MODE_CLI } from "@vellumai/electron-desktop/local-mode";
+} from "@mycadet/electron-desktop/capability-registry";
+import { onFileOpen } from "@mycadet/electron-desktop/file-open";
+import { LOCAL_MODE_CLI } from "@mycadet/electron-desktop/local-mode";
 
 import { getRendererBase } from "../app-config";
 import { handle, on } from "../ipc.client";

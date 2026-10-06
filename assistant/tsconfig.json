@@ -15,7 +15,7 @@
     "jsx": "react-jsx",
     "types": ["bun"],
     "paths": {
-      "@vellumai/plugin-api": ["./src/plugin-api/index.ts"]
+      "@mycadet/plugin-api": ["./src/plugin-api/index.ts"]
     }
   },
   "include": ["src/**/*", "src/**/*.tsx", "examples/**/*.ts"],

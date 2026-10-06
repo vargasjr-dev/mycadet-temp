@@ -4,7 +4,7 @@ import type {
   ConnectivityState,
   PowerEvent,
   VellumBridge,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import {
   CONNECTIVITY_GET,
   CONNECTIVITY_RETRY,
@@ -17,11 +17,11 @@ import {
   IDENTITY_NAME,
   POWER_EVENT,
   STATUS_CONNECTION,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import type {
   BridgeCapabilityRegistry,
   CapabilityModule,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 
 const presence: CapabilityModule<BridgeCapabilityRegistry<VellumBridge>> = {
   id: "presence",

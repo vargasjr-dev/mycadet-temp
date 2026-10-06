@@ -15,8 +15,8 @@ import { OnboardingEdgeCharacters } from "@/domains/onboarding/components/onboar
 import { OnboardingLayout } from "@/components/onboarding-layout";
 import { TagAutocompleteInput } from "@/domains/onboarding/components/onboarding-autocomplete";
 import { HOBBY_SUGGESTIONS } from "@/domains/onboarding/onboarding-suggestions";
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
 
 import {
   MOBILE_INPUT_NO_ZOOM,

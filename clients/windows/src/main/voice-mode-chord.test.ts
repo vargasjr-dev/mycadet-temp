@@ -78,12 +78,12 @@ test("restores the main window binding after a helper restart", async () => {
 
   helper.notificationListener!({ state: "down" });
   expect(mainSender.send).toHaveBeenCalledWith(
-    "vellum:helper:hotkey:event",
+    "cadet:helper:hotkey:event",
     { kind: "voiceModeChord", state: "down" },
   );
   helper.stateListener!({ status: "backing-off" });
   expect(mainSender.send).toHaveBeenLastCalledWith(
-    "vellum:helper:hotkey:registration",
+    "cadet:helper:hotkey:registration",
     false,
   );
 
@@ -95,7 +95,7 @@ test("restores the main window binding after a helper restart", async () => {
     params: { activator },
   });
   expect(mainSender.send).toHaveBeenLastCalledWith(
-    "vellum:helper:hotkey:registration",
+    "cadet:helper:hotkey:registration",
     true,
   );
 
@@ -115,7 +115,7 @@ test("restores the main window binding after a helper restart", async () => {
   await Promise.resolve();
 
   expect(mainSender.send).toHaveBeenLastCalledWith(
-    "vellum:helper:hotkey:registration",
+    "cadet:helper:hotkey:registration",
     false,
   );
 

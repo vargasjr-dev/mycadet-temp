@@ -3,7 +3,7 @@
 import { join } from "path";
 import { readFileSync } from "node:fs";
 
-import { resolveConfigDir } from "@vellumai/local-mode";
+import { resolveConfigDir } from "@mycadet/local-mode";
 
 import cliPkg from "../package.json";
 import { backup } from "./commands/backup";
@@ -258,7 +258,7 @@ async function main() {
   process.argv = [...process.argv.slice(0, 2), ...filteredArgs];
 
   if (commandName === "--version" || commandName === "-v") {
-    console.log(`@vellumai/cli v${cliPkg.version}`);
+    console.log(`@mycadet/cli v${cliPkg.version}`);
     process.exit(0);
   }
 

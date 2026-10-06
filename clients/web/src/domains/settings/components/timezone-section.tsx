@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { TimezonePicker } from "@/domains/settings/components/timezone-picker";
 import { client } from "@/generated/api/client.gen";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { getDeviceSetting, setDeviceSetting } from "@/utils/device-settings";
 

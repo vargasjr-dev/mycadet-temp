@@ -171,7 +171,10 @@ const listenOn =
   (event: string, handler: () => void): void => {
     into.set(event, [...(into.get(event) ?? []), handler]);
   };
-const announce = (from: Map<string, Array<() => void>>, event: string): void => {
+const announce = (
+  from: Map<string, Array<() => void>>,
+  event: string,
+): void => {
   for (const h of from.get(event) ?? []) h();
 };
 
@@ -204,15 +207,24 @@ let restoredBounds: {
   height: 800,
 };
 
-mock.module("@vellumai/electron-desktop/window-state", () => ({
+mock.module("@mycadet/electron-desktop/window-state", () => ({
   restoreBounds: () => restoredBounds,
   track: () => undefined,
   readOnboardingActive: () => onboardingActive,
   writeOnboardingActive: writeOnboardingActiveMock,
 }));
 
-const { __resetForTesting, current, dispatchToMain, ensureVisible, hide, installMainWindow, isVisibleAndFocused, setOnboarding, toggleVisibility } =
-  await import("./main-window");
+const {
+  __resetForTesting,
+  current,
+  dispatchToMain,
+  ensureVisible,
+  hide,
+  installMainWindow,
+  isVisibleAndFocused,
+  setOnboarding,
+  toggleVisibility,
+} = await import("./main-window");
 const { resolveAllowedOrigin } = await import("./app-origin");
 
 // The IPC wrapper rejects any sender whose frame origin isn't the
@@ -220,7 +232,9 @@ const { resolveAllowedOrigin } = await import("./app-origin");
 // allowed origin. Deriving it from the guard's own resolver keeps the
 // fake sender correct without hard-coding the dev or packaged origin.
 const { protocol: allowedProtocol, host: allowedHost } = resolveAllowedOrigin();
-const allowedEvent = { senderFrame: { origin: `${allowedProtocol}//${allowedHost}` } };
+const allowedEvent = {
+  senderFrame: { origin: `${allowedProtocol}//${allowedHost}` },
+};
 
 const reset = (): void => {
   // Force a fresh module-scope window between tests by emitting `closed`
@@ -470,9 +484,9 @@ describe("installMainWindow", () => {
     expect(constructed).toHaveLength(1);
   });
 
-  test("registers the vellum:mainWindow:ensureVisible IPC handler", () => {
+  test("registers the cadet:mainWindow:ensureVisible IPC handler", () => {
     installMainWindow();
-    expect(ipcHandlers.has("vellum:mainWindow:ensureVisible")).toBe(true);
+    expect(ipcHandlers.has("cadet:mainWindow:ensureVisible")).toBe(true);
   });
 
   test("the IPC handler routes through ensureVisible (recreating if destroyed, showing + focusing otherwise)", async () => {
@@ -487,8 +501,10 @@ describe("installMainWindow", () => {
     const showsBefore = win.stub.show.mock.calls.length;
     const focusBefore = win.stub.focus.mock.calls.length;
 
-    const handler = ipcHandlers.get("vellum:mainWindow:ensureVisible");
-    const promise = (handler as (event: unknown) => Promise<void>)(allowedEvent);
+    const handler = ipcHandlers.get("cadet:mainWindow:ensureVisible");
+    const promise = (handler as (event: unknown) => Promise<void>)(
+      allowedEvent,
+    );
     // ensureVisible on the existing-but-not-focused window returns
     // immediately (ALREADY_READY for the already-loaded window).
     await promise;
@@ -598,11 +614,11 @@ describe("onboarding window sizing", () => {
 
   test("installMainWindow registers the setOnboarding IPC handler routing through setOnboarding", async () => {
     installMainWindow();
-    expect(ipcHandlers.has("vellum:mainWindow:setOnboarding")).toBe(true);
+    expect(ipcHandlers.has("cadet:mainWindow:setOnboarding")).toBe(true);
     const win = constructed[0];
     if (!win) throw new Error("expected a window");
 
-    const handler = ipcHandlers.get("vellum:mainWindow:setOnboarding");
+    const handler = ipcHandlers.get("cadet:mainWindow:setOnboarding");
     await (handler as (event: unknown, active: boolean) => Promise<void>)(
       allowedEvent,
       true,
@@ -621,7 +637,10 @@ describe("onboarding window sizing", () => {
     if (!win) throw new Error("expected a window");
 
     // Inline title-bar layout: cluster centred in the ~44px header.
-    expect(win.stub.setWindowButtonPosition).toHaveBeenCalledWith({ x: 19, y: 15 });
+    expect(win.stub.setWindowButtonPosition).toHaveBeenCalledWith({
+      x: 19,
+      y: 15,
+    });
   });
 
   test("keeps the system-default traffic lights for a compact onboarding window", () => {
@@ -655,7 +674,10 @@ describe("onboarding window sizing", () => {
 
     setOnboarding(false);
 
-    expect(win.stub.setWindowButtonPosition).toHaveBeenCalledWith({ x: 19, y: 15 });
+    expect(win.stub.setWindowButtonPosition).toHaveBeenCalledWith({
+      x: 19,
+      y: 15,
+    });
   });
 
   test("re-asserting the current mode does not reposition the traffic lights", () => {
@@ -739,17 +761,16 @@ describe("fullscreen session restore", () => {
 });
 
 describe("dispatchToMain", () => {
-  test("sends `vellum:command` to the main window's webContents", () => {
+  test("sends `cadet:command` to the main window's webContents", () => {
     ensureVisible();
     const win = constructed[0];
     if (!win) throw new Error("expected a window");
 
     dispatchToMain({ kind: "newConversation" });
 
-    expect(win.stub.webContents.send).toHaveBeenCalledWith(
-      "vellum:command",
-      { kind: "newConversation" },
-    );
+    expect(win.stub.webContents.send).toHaveBeenCalledWith("cadet:command", {
+      kind: "newConversation",
+    });
   });
 
   test("no-ops when no main window exists", () => {
@@ -827,7 +848,7 @@ describe("close button", () => {
 
     dispatchToMain({ kind: "startVoice" });
 
-    expect(stub.webContents.send).toHaveBeenCalledWith("vellum:command", {
+    expect(stub.webContents.send).toHaveBeenCalledWith("cadet:command", {
       kind: "startVoice",
     });
   });

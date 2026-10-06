@@ -14,7 +14,7 @@ Every field on a tool definition is optional. The loader fills documented defaul
 
 ## Tool reference
 
-These are the fields a tool definition can set. Names and types come from `ToolDefinition` in [`@vellumai/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api).
+These are the fields a tool definition can set. Names and types come from `ToolDefinition` in [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api).
 
 | Field              | Type                                           | Default                | Description                                                                                                                                                                                                                 |
 | ------------------ | ---------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -107,9 +107,9 @@ All tools (built-in, plugin, workspace, and MCP) land in one shared catalog. Whe
 
 The model sees the full catalog regardless of source. Pick distinctive tool names to avoid collisions. The loader derives the name from the file basename, so namespacing with a prefix (for example `myplugin_search`) is the simplest way to stay clear.
 
-## @vellumai/plugin-api exports for tools
+## @mycadet/plugin-api exports for tools
 
-These are the tool-related exports from [`@vellumai/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api). The full field contracts are documented in the sections above.
+These are the tool-related exports from [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api). The full field contracts are documented in the sections above.
 
 | Export                | Kind | Purpose                                                                         |
 | --------------------- | ---- | ------------------------------------------------------------------------------- |
@@ -124,7 +124,7 @@ One tool per file, default-exported. The filename becomes the tool name, so an `
 
 ```ts
 // tools/example.ts
-import type { ToolContext, ToolExecutionResult } from "@vellumai/plugin-api";
+import type { ToolContext, ToolExecutionResult } from "@mycadet/plugin-api";
 
 export default {
   description:
@@ -155,4 +155,4 @@ export default {
 };
 ```
 
-Types come from [`@vellumai/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api), the only supported contract.
+Types come from [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api), the only supported contract.

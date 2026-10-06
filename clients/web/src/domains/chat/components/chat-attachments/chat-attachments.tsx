@@ -3,7 +3,7 @@ import type { FC, MouseEventHandler } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "@/i18n";
 
-import { Button, cn } from "@vellumai/design-library";
+import { Button, cn } from "@mycadet/design-library";
 
 import { AttachmentChip } from "@/domains/chat/components/chat-attachments/attachment-chip";
 import { AttachmentLoadingChip } from "@/domains/chat/components/chat-attachments/attachment-loading-chip";

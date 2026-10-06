@@ -10,7 +10,7 @@
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { DELIVERY_STATUS } from "@vellumai/gateway-client";
+import { DELIVERY_STATUS } from "@mycadet/gateway-client";
 
 import "./test-preload.js";
 

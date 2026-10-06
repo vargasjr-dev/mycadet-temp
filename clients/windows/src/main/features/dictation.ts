@@ -4,14 +4,14 @@ import { z } from "zod";
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 import {
   DICTATION_PUSH_SAMPLE_RATE,
   dictationPartialsHelperResultSchema,
   DictationOwnerRouter,
   requestDictationTranscription,
   toAudioBuffer,
-} from "@vellumai/electron-desktop/dictation-routing";
+} from "@mycadet/electron-desktop/dictation-routing";
 import {
   HELPER_DICTATION_FINALIZED_EVENT,
   HELPER_DICTATION_PARTIAL_EVENT,
@@ -24,11 +24,11 @@ import {
   HELPER_STATE_EVENT,
   type DictationPartialsResult,
   type HelperRestartResult,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import {
   type NativeSidecarClient,
   type NativeSidecarState,
-} from "@vellumai/native-sidecar/supervisor";
+} from "@mycadet/native-sidecar/supervisor";
 
 import { handle, on } from "../ipc.client";
 import log from "../logger";
@@ -36,7 +36,7 @@ import { getWindowsHelperClient } from "../windows-helper";
 
 /**
  * Windows native helper bridge for dictation partials, served over the
- * same `vellum:helper:*` channels as the macOS shell. The renderer owns
+ * same `cadet:helper:*` channels as the macOS shell. The renderer owns
  * the microphone and pushes 16 kHz mono Int16 PCM; the helper only runs
  * the recognizer, so no audio or transcript content is ever persisted.
  */
@@ -151,9 +151,7 @@ export const installDictation = (): void => {
     (event) => {
       // Length only; transcript content must never be logged.
       log.info(`[win-helper] dictation finalized chars=${event.text.length}`);
-      dictationOwners
-        .target()
-        ?.send(HELPER_DICTATION_FINALIZED_EVENT, event);
+      dictationOwners.target()?.send(HELPER_DICTATION_FINALIZED_EVENT, event);
     },
   );
   helper.onNotification(
@@ -164,24 +162,20 @@ export const installDictation = (): void => {
       owner?.send(HELPER_DICTATION_TRANSCRIBED_EVENT, { text: event.text });
     },
   );
-  helper.onNotification(
-    "dictation.error",
-    DICTATION_ERROR_SCHEMA,
-    (event) => {
-      log.warn(
-        `[win-helper] dictation error (onDevice=${event.onDevice ?? true}, retryServer=${event.willRetryServer ?? false}): ${event.message}`,
-      );
-      // The helper is restarting the session on the server path; the
-      // owner keeps streaming.
-      if (event.willRetryServer) {
-        return;
-      }
-      dictationOwners
-        .target()
-        ?.send(HELPER_DICTATION_FINALIZED_EVENT, { text: "" });
-      dictationOwners.clearStreaming();
-    },
-  );
+  helper.onNotification("dictation.error", DICTATION_ERROR_SCHEMA, (event) => {
+    log.warn(
+      `[win-helper] dictation error (onDevice=${event.onDevice ?? true}, retryServer=${event.willRetryServer ?? false}): ${event.message}`,
+    );
+    // The helper is restarting the session on the server path; the
+    // owner keeps streaming.
+    if (event.willRetryServer) {
+      return;
+    }
+    dictationOwners
+      .target()
+      ?.send(HELPER_DICTATION_FINALIZED_EVENT, { text: "" });
+    dictationOwners.clearStreaming();
+  });
   helper.onState(handleHelperState);
 
   handle(
@@ -226,7 +220,7 @@ export const installDictation = (): void => {
   );
   // Fire-and-forget PCM from the partials owner (no per-chunk round-trip).
   on(
-    "vellum:helper:dictation:audio",
+    "cadet:helper:dictation:audio",
     z.tuple([z.unknown()]),
     ([chunk], event) => {
       if (!dictationOwners.ownsPartials(event.sender)) {

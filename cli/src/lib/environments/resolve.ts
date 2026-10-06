@@ -1,12 +1,12 @@
 import { mkdirSync, unlinkSync, writeFileSync } from "fs";
 import { dirname } from "path";
 
-import { SEEDS, type EnvironmentDefinition } from "@vellumai/environments";
+import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
 import {
   defaultEnvironmentFilePath,
   defaultEnvironmentFilePaths,
   readDefaultEnvironment as readPersistedDefaultEnvironment,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 const DEFAULT_ENVIRONMENT_NAME = "production";
 

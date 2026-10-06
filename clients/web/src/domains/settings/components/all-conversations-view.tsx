@@ -24,17 +24,17 @@ import {
   conversationsByIdUnarchivePost,
 } from "@/generated/daemon/sdk.gen";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import type { Conversation } from "@/types/conversation-types";
 import { invalidateConversationQueries } from "@/utils/conversation-cache";
 import { useDisplayConversationTitle } from "@/utils/conversation-title";
-import { toast } from "@vellumai/design-library";
-import { Button } from "@vellumai/design-library/components/button";
+import { toast } from "@mycadet/design-library";
+import { Button } from "@mycadet/design-library/components/button";
 import {
   Select,
   type SelectOption,
-} from "@vellumai/design-library/components/select";
-import { Input } from "@vellumai/design-library/components/input";
+} from "@mycadet/design-library/components/select";
+import { Input } from "@mycadet/design-library/components/input";
 
 export interface AllConversationsViewProps {
   assistantId: string;

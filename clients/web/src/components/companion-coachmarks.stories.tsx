@@ -15,7 +15,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { CompanionCoachmarks } from "@/components/companion-coachmarks";
-import type { CompanionCoachmark } from "@vellumai/ipc-contract";
+import type { CompanionCoachmark } from "@mycadet/ipc-contract";
 
 /** The screens a mark has to stay found on, as the lab uses them. */
 const BACKDROPS = {

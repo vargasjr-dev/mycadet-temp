@@ -17,7 +17,7 @@ import "@/app/docs/docs-theme.css";
 
 export const metadata: Metadata = {
   description:
-    "Documentation for Vellum: learn how to build, configure, and deploy AI assistants with skills, channels, and more.",
+    "Documentation for Cadet: learn how to build, configure, and deploy AI assistants with skills, channels, and more.",
 };
 
 interface DocsLayoutProps {
@@ -37,10 +37,10 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
                 {/* Mobile: hamburger menu button */}
                 <DocsMobileMenuButton />
                 {/* Desktop: logo */}
-                <a href="https://www.vellum.ai" className="hidden md:flex items-center gap-2 no-underline">
+                <a href="https://www.mycadet.ai" className="hidden md:flex items-center gap-2 no-underline">
                   <Image
-                    src="/docs/vellum-logo.svg"
-                    alt="Vellum"
+                    src="/docs/cadet-logo.svg"
+                    alt="Cadet"
                     width={100}
                     height={24}
                     unoptimized
@@ -82,7 +82,7 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
                     Releases
                   </Link>
                   <a
-                    href="https://www.vellum.ai/skills"
+                    href="https://www.mycadet.ai/skills"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="docs-header-link text-sm font-medium no-underline"
@@ -90,7 +90,7 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
                     Skills
                   </a>
                   <a
-                    href="https://www.vellum.ai/plugins"
+                    href="https://www.mycadet.ai/plugins"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="docs-header-link text-sm font-medium no-underline"
@@ -98,7 +98,7 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
                     Plugins
                   </a>
                   <a
-                    href="https://www.vellum.ai/community"
+                    href="https://www.mycadet.ai/community"
                     className="docs-header-link text-sm font-medium no-underline"
                   >
                     Community

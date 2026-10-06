@@ -15,7 +15,7 @@ import type { AssistantEvent } from "@/types/event-types";
 import type {
   AnsweredQuestion,
   AssistantEventEnvelope,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 // ---------------------------------------------------------------------------
 // Helpers

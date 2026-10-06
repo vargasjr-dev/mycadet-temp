@@ -15,7 +15,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 
-import { embedAndUpsert } from "@vellumai/plugin-api";
+import { embedAndUpsert } from "@mycadet/plugin-api";
 
 import { withQdrantBreaker } from "../../../../../persistence/embeddings/qdrant-circuit-breaker.js";
 import { getQdrantClient } from "../../../../../persistence/embeddings/qdrant-client.js";

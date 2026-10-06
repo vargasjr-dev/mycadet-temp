@@ -13,7 +13,7 @@
 import { lazy, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
-import { Notice } from "@vellumai/design-library";
+import { Notice } from "@mycadet/design-library";
 import { AnimatedRightDrawer } from "@/domains/chat/components/animated-right-drawer";
 import { CHAT_INFO_DRAWER_WIDTH_PX } from "@/domains/chat/components/chat-info-drawer-width";
 import { ProgressStack } from "@/domains/chat/components/progress-stack";

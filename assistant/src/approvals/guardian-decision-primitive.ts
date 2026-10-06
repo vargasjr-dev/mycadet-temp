@@ -32,7 +32,7 @@
  *   - Scoped grant minting only on explicit approve for requests with tool metadata
  */
 
-import { isDenyingGuardianAction } from "@vellumai/service-contracts/guardian-requests";
+import { isDenyingGuardianAction } from "@mycadet/service-contracts/guardian-requests";
 
 import {
   decideGuardianRequest,

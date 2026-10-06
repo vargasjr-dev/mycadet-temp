@@ -4,21 +4,21 @@ import {
   createHostProxyClientHeaders,
   installHostProxyBridge as installSharedHostProxyBridge,
   type HostProxyRuntime,
-} from "@vellumai/electron-desktop/host-proxy/router";
-import { getDeviceId } from "@vellumai/electron-desktop/device-id";
+} from "@mycadet/electron-desktop/host-proxy/router";
+import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import {
   getGuardianAccessToken,
   resolveConfigDir,
   resolveEnvironmentName,
   type CliInvocation,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 import { app } from "electron";
 
-import { HostBrowserExecutor } from "@vellumai/electron-desktop/host-proxy/executors/host-browser-executor";
-import { hostFileExecutor } from "@vellumai/electron-desktop/host-proxy/executors/host-file-executor";
-import { hostTransferExecutor } from "@vellumai/electron-desktop/host-proxy/executors/host-transfer-executor";
-import { createHostUiSnapshotExecutor } from "@vellumai/electron-desktop/host-proxy/executors/host-ui-snapshot-executor";
+import { HostBrowserExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-browser-executor";
+import { hostFileExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-file-executor";
+import { hostTransferExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-transfer-executor";
+import { createHostUiSnapshotExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-ui-snapshot-executor";
 
 import { getDevRendererBase, RENDERER_BASE_PROD } from "./app-config";
 import { showCompanionCoachmarks } from "./companion-window";

@@ -228,7 +228,7 @@ export function DeveloperGuideWorkflowContent() {
           <p className="mb-4 text-zinc-600">
             Existing macOS installations auto-update via Sparkle&apos;s <code className="text-sm">appcast.xml</code> feed.
             New users download the latest DMG from the{" "}
-            <a href="https://github.com/vellum-ai/vellum-assistant/releases/latest" className="text-emerald-600 hover:text-emerald-500 dark:text-emerald-400">
+            <a href="https://github.com/vargasjr-dev/mycadet/releases/latest" className="text-emerald-600 hover:text-emerald-500 dark:text-emerald-400">
               public updates repo
             </a>.
           </p>

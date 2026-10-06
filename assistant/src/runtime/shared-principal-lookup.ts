@@ -22,7 +22,7 @@
  * fail closed and are retried on the next call.
  */
 
-import type { TrustClass } from "@vellumai/gateway-client";
+import type { TrustClass } from "@mycadet/gateway-client";
 
 import { readInboundTrust } from "../calls/inbound-trust-reader.js";
 import { getLogger } from "../util/logger.js";

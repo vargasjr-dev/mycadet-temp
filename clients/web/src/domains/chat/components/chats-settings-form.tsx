@@ -1,10 +1,10 @@
 import { useId, useState } from "react";
-import { Button } from "@vellumai/design-library/components/button";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Select } from "@vellumai/design-library/components/select";
-import { Toggle } from "@vellumai/design-library/components/toggle";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Select } from "@mycadet/design-library/components/select";
+import { Toggle } from "@mycadet/design-library/components/toggle";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import type { ConfigGetResponse } from "@/generated/daemon/types.gen";
 import { useTranslation } from "@/i18n";

@@ -1,7 +1,7 @@
 /**
  * Tests for the browser live-voice WebSocket client.
  *
- * `resolveLiveVoiceWsUrl` is mocked at module scope to compose the velay URL
+ * `resolveLiveVoiceWsUrl` is mocked at module scope to compose the tunnel URL
  * the client would dial, so no real HTTP/SDK call happens. The WebSocket is a
  * hand-rolled fake injected via the client's `webSocketFactory` option, so no
  * global patching is needed.
@@ -18,8 +18,8 @@ let mintResult: Promise<{ token: string; expiresAt: string }> = Promise.resolve(
 );
 
 // The client resolves its transport URL via `resolveLiveVoiceWsUrl`. Mock it to
-// the cloud (velay) path: await `mintResult` (so the mint-failure test still
-// exercises a rejected resolve) and compose the genuine velay URL the client
+// the cloud (tunnel) path: await `mintResult` (so the mint-failure test still
+// exercises a rejected resolve) and compose the genuine tunnel URL the client
 // would dial. The connection.ts routing/builders are unit-tested separately in
 // connection.test.ts.
 mock.module("@/domains/chat/voice/live-voice/connection", () => ({
@@ -32,7 +32,7 @@ mock.module("@/domains/chat/voice/live-voice/connection", () => ({
       conversationId?: string;
     }) => {
       const { token } = await mintResult;
-      const url = new URL(`wss://velay.vellum.ai/${assistantId}/v1/live-voice`);
+      const url = new URL(`wss://tunnel.mycadet.ai/${assistantId}/v1/live-voice`);
       url.searchParams.set("token", token);
       if (conversationId) {
         url.searchParams.set("conversationId", conversationId);
@@ -171,14 +171,14 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("connect", () => {
-  test("mints a token and opens the velay WS at the built URL", async () => {
+  test("mints a token and opens the tunnel WS at the built URL", async () => {
     const ws = await connectAndGetSocket(makeClient(), {
       assistantId: "assistant-1",
       conversationId: "conv-xyz",
     });
     const url = new URL(ws.url);
     expect(url.protocol).toBe("wss:");
-    expect(url.host).toBe("velay.vellum.ai");
+    expect(url.host).toBe("tunnel.mycadet.ai");
     expect(url.pathname).toBe("/assistant-1/v1/live-voice");
     expect(url.searchParams.get("token")).toBe("tok-abc");
     expect(url.searchParams.get("conversationId")).toBe("conv-xyz");
@@ -1275,7 +1275,7 @@ describe("teardown", () => {
       client.on("error", (e) => errors.push(e));
       client.on("closed", (info) => closes.push(info));
 
-      // velay closes a reconnect's socket before `ready` because its tunnel is
+      // tunnel closes a reconnect's socket before `ready` because its tunnel is
       // still re-registering. The controller must see the retryable code
       // (and keep its reconnect budget), not a connection-failed error.
       ws.emitClose(code, "assistant tunnel disconnected");
@@ -1296,7 +1296,7 @@ describe("teardown", () => {
     const closes: { code: number | null; reason: string }[] = [];
     client.on("closed", (info) => closes.push(info));
 
-    // velay drops its tunnel to the assistant → retryable 1013 close.
+    // tunnel drops its tunnel to the assistant → retryable 1013 close.
     ws.emitClose(1013, "assistant tunnel disconnected");
 
     expect(closes).toEqual([

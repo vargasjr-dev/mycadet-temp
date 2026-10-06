@@ -1,7 +1,7 @@
 import { Loader2, X } from "lucide-react";
 import type { FC, MouseEventHandler } from "react";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { middleTruncate } from "@/utils/attachment-utils";
 import { useTranslation } from "@/i18n";

@@ -1,6 +1,6 @@
 import type { ChildProcess } from "child_process";
 
-import { selectRestartTunnelRecord } from "@vellumai/service-contracts/ingress";
+import { selectRestartTunnelRecord } from "@mycadet/service-contracts/ingress";
 
 import {
   loadAllAssistants,

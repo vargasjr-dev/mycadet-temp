@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, test, expect, mock } from "bun:test";
-import { setVelayBridgeAuthHeader } from "../velay/bridge-auth.js";
+import { setTunnelBridgeAuthHeader } from "../tunnel/bridge-auth.js";
 import { getLogger } from "../logger.js";
 import {
   GUARDIAN_PRINCIPAL,
-  VELAY_USER_ID,
+  TUNNEL_USER_ID,
   makeConfig,
   mintEdgeToken,
   mintServiceEdgeToken,
@@ -21,7 +21,7 @@ mock.module("../auth/guardian-bootstrap.js", () => ({
 }));
 
 let mockReadCredential = mock(
-  async (_key: string): Promise<string | undefined> => VELAY_USER_ID,
+  async (_key: string): Promise<string | undefined> => TUNNEL_USER_ID,
 );
 mock.module("../platform-user-id.js", () => ({
   readStoredPlatformUserId: async () => ({
@@ -40,7 +40,7 @@ beforeEach(() => {
   mockFindVellumGuardian = mock(async () => ({
     principalId: GUARDIAN_PRINCIPAL,
   }));
-  mockReadCredential = mock(async (_key: string) => VELAY_USER_ID);
+  mockReadCredential = mock(async (_key: string) => TUNNEL_USER_ID);
 });
 
 afterEach(() => {
@@ -130,23 +130,23 @@ describe("authorizeGuardianStream: the actor token path", () => {
 });
 
 /**
- * The managed path, where velay validated the browser's token and injected the
+ * The managed path, where tunnel validated the browser's token and injected the
  * caller. The attestation proves the caller is *a* platform user who traversed
- * velay, not that they are this assistant's guardian, so it is cross-checked
+ * tunnel, not that they are this assistant's guardian, so it is cross-checked
  * against the stored `platform_user_id`.
  */
-describe("authorizeGuardianStream: the velay-attested managed path", () => {
-  const VELAY_ORG_ID = "22222222-2222-2222-2222-222222222222";
+describe("authorizeGuardianStream: the tunnel-attested managed path", () => {
+  const TUNNEL_ORG_ID = "22222222-2222-2222-2222-222222222222";
 
   const managedAuthorize = ({
-    userId = VELAY_USER_ID,
+    userId = TUNNEL_USER_ID,
     actor = "user",
-    orgId = VELAY_ORG_ID as string | null,
+    orgId = TUNNEL_ORG_ID as string | null,
     bridgeProof = true,
     token,
     managed = true,
     upgrade = true,
-    velayBaseUrl,
+    tunnelBaseUrl,
   }: {
     userId?: string;
     actor?: string;
@@ -155,7 +155,7 @@ describe("authorizeGuardianStream: the velay-attested managed path", () => {
     token?: string;
     managed?: boolean;
     upgrade?: boolean;
-    velayBaseUrl?: string;
+    tunnelBaseUrl?: string;
   }) => {
     if (managed) {
       process.env.IS_PLATFORM = "true";
@@ -163,22 +163,22 @@ describe("authorizeGuardianStream: the velay-attested managed path", () => {
       delete process.env.IS_PLATFORM;
     }
     const headers = new Headers({
-      "x-velay-user-id": userId,
-      "x-velay-actor": actor,
+      "x-tunnel-user-id": userId,
+      "x-tunnel-actor": actor,
     });
     if (upgrade) {
       headers.set("upgrade", "websocket");
     }
     if (orgId !== null) {
-      headers.set("x-velay-org-id", orgId);
+      headers.set("x-tunnel-org-id", orgId);
     }
     if (bridgeProof) {
-      setVelayBridgeAuthHeader(headers);
+      setTunnelBridgeAuthHeader(headers);
     }
     const query = token ? `?token=${token}` : "";
     return authorizeGuardianStream(
       new Request(`${STREAM_URL}${query}`, { headers }),
-      makeConfig({ velayBaseUrl }),
+      makeConfig({ tunnelBaseUrl }),
       log,
     );
   };
@@ -220,7 +220,7 @@ describe("authorizeGuardianStream: the velay-attested managed path", () => {
    * cannot know the process-local bridge proof, which is what says the request
    * really arrived through this gateway's own loopback bridge.
    */
-  test("ignores spoofed velay headers with no bridge proof", async () => {
+  test("ignores spoofed tunnel headers with no bridge proof", async () => {
     const res = await managedAuthorize({ bridgeProof: false });
 
     expect(res!.status).toBe(401);
@@ -246,34 +246,34 @@ describe("authorizeGuardianStream: the velay-attested managed path", () => {
     expect(res!.status).toBe(403);
   });
 
-  test("does not trust velay headers on a gateway with no velay tunnel", async () => {
+  test("does not trust tunnel headers on a gateway with no tunnel", async () => {
     const res = await managedAuthorize({ managed: false });
 
     expect(res!.status).toBe(401);
   });
 
-  test("admits the attested guardian through a locally hosted velay tunnel", async () => {
+  test("admits the attested guardian through a locally hosted tunnel", async () => {
     expect(
       await managedAuthorize({
         managed: false,
-        velayBaseUrl: "https://velay.example.test",
+        tunnelBaseUrl: "https://tunnel.example.test",
       }),
     ).toBeNull();
   });
 
-  test("refuses a different owner through a locally hosted velay tunnel", async () => {
+  test("refuses a different owner through a locally hosted tunnel", async () => {
     const res = await managedAuthorize({
       managed: false,
-      velayBaseUrl: "https://velay.example.test",
+      tunnelBaseUrl: "https://tunnel.example.test",
       userId: "99999999-9999-9999-9999-999999999999",
     });
     expect(res!.status).toBe(403);
   });
 
-  test("requires bridge proof through a locally hosted velay tunnel", async () => {
+  test("requires bridge proof through a locally hosted tunnel", async () => {
     const res = await managedAuthorize({
       managed: false,
-      velayBaseUrl: "https://velay.example.test",
+      tunnelBaseUrl: "https://tunnel.example.test",
       bridgeProof: false,
     });
     expect(res!.status).toBe(401);
@@ -283,7 +283,7 @@ describe("authorizeGuardianStream: the velay-attested managed path", () => {
    * The managed path skips the shared gate, so the upgrade header is checked
    * before it: a plain managed request must get 426, not a failed upgrade.
    */
-  test("answers 426 for a plain request even when velay attests the guardian", async () => {
+  test("answers 426 for a plain request even when tunnel attests the guardian", async () => {
     const res = await managedAuthorize({ upgrade: false });
 
     expect(res!.status).toBe(426);

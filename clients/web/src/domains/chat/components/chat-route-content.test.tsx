@@ -118,7 +118,8 @@ mock.module("motion/react", () => ({
           ...domProps,
           tag: String(tag),
           onAnimationComplete: props.onAnimationComplete as
-            (() => void) | undefined,
+            | (() => void)
+            | undefined,
         });
       },
     },
@@ -127,7 +128,7 @@ mock.module("motion/react", () => ({
   useReducedMotion: () => true,
 }));
 
-import { BottomSheet } from "@vellumai/design-library";
+import { BottomSheet } from "@mycadet/design-library";
 
 import { AnimatedRightDrawer } from "@/domains/chat/components/animated-right-drawer";
 import { SuggestionDetailPanel } from "@/domains/chat/components/suggestion-detail-panel";

@@ -21,7 +21,7 @@
 import { Square } from "lucide-react";
 
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 export interface DetailPanelStopButtonProps {
   onStop: () => void;

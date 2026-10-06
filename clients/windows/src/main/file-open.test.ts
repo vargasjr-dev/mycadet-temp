@@ -1,7 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import path from "node:path";
 
-import { FILE_OPEN_DRAIN, FILE_OPEN_EVENT } from "@vellumai/ipc-contract";
+import { FILE_OPEN_DRAIN, FILE_OPEN_EVENT } from "@mycadet/ipc-contract";
 
 type Listener = (...args: unknown[]) => unknown;
 
@@ -80,7 +80,12 @@ test("delivers canonical first-instance and second-instance file paths once", ()
   for (const listener of appListeners.get("second-instance") ?? []) {
     listener(
       {},
-      ["Vellum.exe", secondRelativePath, secondRelativePath, "archive.vellum.bak"],
+      [
+        "Vellum.exe",
+        secondRelativePath,
+        secondRelativePath,
+        "archive.vellum.bak",
+      ],
       secondWorkingDirectory,
     );
   }

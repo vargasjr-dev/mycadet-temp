@@ -28,7 +28,7 @@ import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { forceMobile } from "@/components/force-mobile-story-decorator";
 import { ChannelSourceLinkPill } from "@/domains/chat/components/channel-source-link-pill";

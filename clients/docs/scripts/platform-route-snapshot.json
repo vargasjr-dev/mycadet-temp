@@ -26,7 +26,7 @@
     "/docs/getting-started/installation",
     "/docs/getting-started/key-concepts",
     "/docs/getting-started/quick-start",
-    "/docs/getting-started/what-is-vellum",
+    "/docs/getting-started/what-is-cadet",
     "/docs/getting-started/your-first-skill",
     "/docs/glossary",
     "/docs/help",
@@ -91,6 +91,6 @@
     "/docs/trust-security/privacy-and-data",
     "/docs/trust-security/security-best-practices",
     "/docs/trust-security/the-permissions-model",
-    "/docs/vellum-terms-of-use"
+    "/docs/terms-of-use"
   ]
 }

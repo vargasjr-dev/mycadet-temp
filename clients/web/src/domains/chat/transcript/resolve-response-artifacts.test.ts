@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
-import type { ConversationContentBlock } from "@vellumai/assistant-api";
+import type { ConversationContentBlock } from "@mycadet/assistant-api";
 import type { TranscriptItem } from "@/domains/chat/transcript/types";
 
 import { resolveResponseArtifacts } from "@/domains/chat/transcript/resolve-response-artifacts";

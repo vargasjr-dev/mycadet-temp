@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import * as Sentry from "@sentry/react";
 
 import { useComposerStore } from "@/domains/chat/composer-store";
 import { useConversationStore } from "@/stores/conversation-store";
@@ -30,9 +29,9 @@ import { usePendingDeepLinkStore } from "@/stores/pending-deep-link-store";
  *   cold load (not typed), consume the pending message and set it. A deeplink
  *   is an explicit user action, so it wins over a restored draft — otherwise an
  *   incoming link would silently no-op behind leftover draft text.
- * - If the composer holds genuine in-progress typing, drop with a Sentry
- *   breadcrumb — refusing to overwrite is the conservative call until we have
- *   telemetry to justify a "queue or prompt" UX.
+ * - If the composer holds genuine in-progress typing, drop the link —
+ *   refusing to overwrite is the conservative call until we have telemetry
+ *   to justify a "queue or prompt" UX.
  * - Fires when `pendingComposerMessage` becomes non-null — the Zustand
  *   atomic selector re-renders this hook's host when that slice changes, so a
  *   deep link arriving WHILE `ChatPage` is already mounted is still picked up.
@@ -74,12 +73,6 @@ export function useDeepLinkConsumer(): void {
       restoredDraftConversationId !== null &&
       restoredDraftConversationId === activeConversationId;
     if (input.trim().length > 0 && !inputIsRestoredDraft) {
-      Sentry.addBreadcrumb({
-        category: "deeplink",
-        level: "info",
-        message:
-          "deeplink.send arrived but composer had unsaved text — drop, do not overwrite",
-      });
       return;
     }
     setInput(consumed);

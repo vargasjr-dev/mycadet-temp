@@ -2,12 +2,12 @@
  * Pino log serializers that scrub sensitive data (bearer tokens, API keys,
  * authorization headers) from logged values.
  *
- * API-key patterns are sourced from @vellumai/service-contracts/secret-detection,
+ * API-key patterns are sourced from @mycadet/service-contracts/secret-detection,
  * the shared source of truth across all packages. Adding a new integration's
  * key pattern there automatically reaches gateway logs - no copy to maintain.
  */
 
-import { REDACTION_PREFIX_PATTERNS } from "@vellumai/service-contracts/secret-detection";
+import { REDACTION_PREFIX_PATTERNS } from "@mycadet/service-contracts/secret-detection";
 
 // ---------------------------------------------------------------------------
 // Sensitive-value patterns
@@ -27,7 +27,7 @@ const SENSITIVE_HEADERS = new Set([
   "set-cookie",
   "x-api-key",
   "x-auth-token",
-  "x-vellum-velay-bridge-auth",
+  "x-vellum-tunnel-bridge-auth",
 ]);
 
 // ---------------------------------------------------------------------------

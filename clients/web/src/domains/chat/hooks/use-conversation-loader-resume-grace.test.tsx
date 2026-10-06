@@ -44,13 +44,13 @@ mock.module("react-router", () => ({
 }));
 
 let toastErrorMock = mock((_message: string) => {});
-mock.module("@vellumai/design-library", () => ({
+mock.module("@mycadet/design-library", () => ({
   toast: {
     error: (message: string) => toastErrorMock(message),
   },
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 

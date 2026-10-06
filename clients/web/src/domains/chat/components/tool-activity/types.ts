@@ -17,7 +17,7 @@
 import type {
   AnsweredQuestion,
   ToolActivityMetadata,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import type { ReactNode } from "react";
 
 import type { ToolDetailPayload } from "@/stores/viewer-store";

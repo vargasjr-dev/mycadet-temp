@@ -3,7 +3,7 @@
  * for the parts of a recall view that name them.
  */
 
-import type { RecallDepth, RecallSource } from "@vellumai/assistant-api";
+import type { RecallDepth, RecallSource } from "@mycadet/assistant-api";
 
 import { useTranslation } from "@/i18n";
 

@@ -21,14 +21,14 @@ import { randomBytes, randomUUID } from "node:crypto";
 import {
   CHALLENGE_TTL_MS,
   hashVerificationSecret,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import type {
   CreateInboundSessionIpcResponse,
   CreateOutboundSessionConditionalIpcResponse,
   CreateOutboundSessionConflict,
   CreateOutboundSessionIpcResponse,
   ValidateConsumeSessionIpcResponse,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import type { GuardianBindingGatewayWrites } from "../auth/guardian-bootstrap.js";
 import {

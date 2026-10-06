@@ -10,7 +10,7 @@
  * This module is side-effect free: importing it does not register any plugin.
  */
 
-import type { Message } from "@vellumai/plugin-api";
+import type { Message } from "@mycadet/plugin-api";
 
 import type { TrustClass } from "../../../runtime/actor-trust-resolver.js";
 import { PluginExecutionError } from "../../types.js";

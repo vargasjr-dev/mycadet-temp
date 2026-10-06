@@ -26,7 +26,7 @@ mock.module("electron", () => ({
 
 const installs = { count: 0 };
 const teardown = mock(() => undefined);
-mock.module("@vellumai/electron-desktop/window-attention", () => ({
+mock.module("@mycadet/electron-desktop/window-attention", () => ({
   installWindowAttention: () => {
     installs.count += 1;
     return teardown;

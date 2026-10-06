@@ -25,7 +25,7 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { posix } from "node:path";
 import { join, relative, resolve, sep } from "node:path";
 
-import { PLUGIN_NOTICES_ROUTE_PREFIX } from "@vellumai/gateway-client";
+import { PLUGIN_NOTICES_ROUTE_PREFIX } from "@mycadet/gateway-client";
 
 import {
   getDefaultPluginRouteRoots,

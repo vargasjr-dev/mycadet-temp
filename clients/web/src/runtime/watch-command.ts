@@ -9,8 +9,8 @@
  * capture starting.
  */
 
-import { WATCH_FLAG } from "@vellumai/ipc-contract";
-import type { WatchCaptureTarget } from "@vellumai/ipc-contract";
+import { WATCH_FLAG } from "@mycadet/ipc-contract";
+import type { WatchCaptureTarget } from "@mycadet/ipc-contract";
 
 import {
   isWatchSessionActive,

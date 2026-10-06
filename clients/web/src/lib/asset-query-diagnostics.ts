@@ -12,7 +12,7 @@ import { ApiError } from "@/utils/api-errors";
 import { isTransientNetworkError } from "@/utils/is-transient-network-error";
 
 const EVENT_PREFIX = "asset_query_";
-const SCOPE_STORAGE_KEY = "vellum:asset-diagnostics-scope:v1";
+const SCOPE_STORAGE_KEY = "cadet:asset-diagnostics-scope:v1";
 let activeScope: string | undefined;
 const FAILED_QUERIES = new WeakMap<QueryClient, WeakSet<Query>>();
 

@@ -12,19 +12,19 @@ import {
   dispatchToFocused,
   onHotkeyOverridesChange,
   type VellumCommand,
-} from "@vellumai/electron-desktop/commands";
-import { areChromeDevToolsEnabled } from "@vellumai/electron-desktop/devtools";
-import type { IpcHandle } from "@vellumai/electron-desktop/ipc";
+} from "@mycadet/electron-desktop/commands";
+import { areChromeDevToolsEnabled } from "@mycadet/electron-desktop/devtools";
+import type { IpcHandle } from "@mycadet/electron-desktop/ipc";
 import {
   onSettingChange,
   readSetting,
-} from "@vellumai/electron-desktop/settings";
-import { readOnboardingActive } from "@vellumai/electron-desktop/window-state";
+} from "@mycadet/electron-desktop/settings";
+import { readOnboardingActive } from "@mycadet/electron-desktop/window-state";
 import {
   MENU_POPUP,
   MENU_SET_PLATFORM_SESSION,
   MENU_TITLES,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { onOnboardingChange } from "./main-window";
 
@@ -184,16 +184,12 @@ export const installLinuxMenu = (options: LinuxMenuOptions): void => {
     Menu.setApplicationMenu(Menu.buildFromTemplate(buildLinuxMenu(options)));
   };
 
-  options.handle(
-    MENU_SET_PLATFORM_SESSION,
-    z.tuple([z.boolean()]),
-    ([has]) => {
-      if (hasPlatformSession !== has) {
-        hasPlatformSession = has;
-        apply();
-      }
-    },
-  );
+  options.handle(MENU_SET_PLATFORM_SESSION, z.tuple([z.boolean()]), ([has]) => {
+    if (hasPlatformSession !== has) {
+      hasPlatformSession = has;
+      apply();
+    }
+  });
   // The main window hides the native frame (`titleBarStyle: "hidden"`), which
   // hides the OS menu bar with it. The renderer draws the top-level titles in
   // its title bar (localizing them by id) and pops the real native submenus

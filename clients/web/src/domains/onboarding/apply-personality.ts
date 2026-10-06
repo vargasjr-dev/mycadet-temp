@@ -23,7 +23,7 @@
  * below is best-effort cleanup.
  *
  * Best-effort and fire-and-forget: a failure here must never block or surface
- * in the onboarding flow. Every error is swallowed (reported to Sentry).
+ * in the onboarding flow. Every error is swallowed (reported via captureError).
  */
 
 import {
@@ -40,7 +40,7 @@ import {
   messagesGet,
   messagesPost,
 } from "@/generated/daemon/sdk.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { buildSideConversationMessageBody } from "@/lib/side-conversation-message";
 import { latestAssistantText } from "@/utils/latest-assistant-text";
 

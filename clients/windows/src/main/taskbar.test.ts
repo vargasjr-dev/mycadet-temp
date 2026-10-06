@@ -12,7 +12,7 @@ mock.module("electron", () => ({
 }));
 
 let avatarListener: (() => void) | null = null;
-mock.module("@vellumai/electron-desktop/avatar", () => ({
+mock.module("@mycadet/electron-desktop/avatar", () => ({
   getAvatarPng: () => null,
   onAvatarChange: (listener: () => void) => {
     avatarListener = listener;
@@ -34,7 +34,7 @@ mock.module("./ipc.client", () => ({
 let status = "idle";
 let statusListener: (() => void) | null = null;
 const unsubscribe = mock(() => undefined);
-mock.module("@vellumai/electron-desktop/status", () => ({
+mock.module("@mycadet/electron-desktop/status", () => ({
   getStatus: () => status,
   onStatusChange: (listener: () => void) => {
     statusListener = listener;

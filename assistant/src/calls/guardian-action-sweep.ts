@@ -7,7 +7,7 @@
  * `resolveDeliverCallbackUrlForChannel` names for the channel.
  */
 
-import { DELIVERY_STATUS } from "@vellumai/gateway-client";
+import { DELIVERY_STATUS } from "@mycadet/gateway-client";
 
 import { resolveDeliverCallbackUrlForChannel } from "../approvals/guardian-channel-delivery.js";
 import { addMessage } from "../persistence/conversation-crud.js";

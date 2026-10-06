@@ -1,5 +1,5 @@
 import { t } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import {
   type MutableRefObject,
@@ -20,7 +20,7 @@ import {
   loadLastViewedConversationId,
   saveLastViewedConversationId,
 } from "@/utils/last-viewed-conversation-storage";
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { isNativeMobile } from "@/runtime/platform-detection";

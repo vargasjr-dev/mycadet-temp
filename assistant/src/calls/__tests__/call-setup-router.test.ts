@@ -26,7 +26,7 @@ import {
   test,
 } from "bun:test";
 
-import type { AdmissionPolicy, TrustVerdict } from "@vellumai/gateway-client";
+import type { AdmissionPolicy, TrustVerdict } from "@mycadet/gateway-client";
 
 import type { TrustClass } from "../../runtime/actor-trust-resolver.js";
 import type { SetupOutcome } from "../call-setup-router.js";

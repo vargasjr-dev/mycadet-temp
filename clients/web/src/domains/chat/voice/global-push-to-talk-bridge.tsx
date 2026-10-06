@@ -11,11 +11,11 @@ import {
   withdrawVoiceShortcutConfirmation,
 } from "@/domains/chat/voice/voice-shortcut-confirmation";
 
-import type { DictationContext } from "@vellumai/assistant-api";
+import type { DictationContext } from "@mycadet/assistant-api";
 import type {
   HotkeySelection,
   HotkeySelectionResult,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   VoiceInputButton,
@@ -66,7 +66,7 @@ import { isPopoutWindowLifetime } from "@/runtime/popout-window";
 import { useVellumCommands } from "@/runtime/vellum-commands";
 import { frontmostApp } from "@/runtime/running-apps";
 import { useConversationStore } from "@/stores/conversation-store";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 interface GlobalPushToTalkBridgeProps {
   assistantId: string | null;

@@ -14,7 +14,7 @@
  * it means "not a member", which the reader then treats as a miss.
  */
 
-import type { TrustVerdict } from "@vellumai/gateway-client";
+import type { TrustVerdict } from "@mycadet/gateway-client";
 
 import type { ChannelId } from "../channels/types.js";
 import type { ChannelPolicy, ChannelStatus } from "../contacts/types.js";

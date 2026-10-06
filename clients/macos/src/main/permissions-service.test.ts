@@ -127,11 +127,11 @@ let nativeShowError: Error | null = null;
 const nativePosts: NotifierRequest[] = [];
 const resolveNotificationAvatarPath = mock(() => "/tmp/avatar.png");
 
-mock.module("@vellumai/electron-desktop/notification-avatar-path", () => ({
+mock.module("@mycadet/electron-desktop/notification-avatar-path", () => ({
   resolveNotificationAvatarPath,
 }));
 
-mock.module("@vellumai/electron-desktop/notifications", () => ({
+mock.module("@mycadet/electron-desktop/notifications", () => ({
   isPreparedNotificationSenderCurrent: (identity: { scopeId: string }) =>
     preparedSenderCurrent && /^scope:v1:[a-f0-9]{64}$/.test(identity.scopeId),
 }));
@@ -322,7 +322,7 @@ describe("notification permission requests", () => {
   test("accepts old request calls and drops malformed presentation", async () => {
     installPermissionsService();
     const registration = handleRegistrations.find(
-      ({ channel }) => channel === "vellum:permissions:request",
+      ({ channel }) => channel === "cadet:permissions:request",
     );
     expect(registration).toBeDefined();
 
@@ -354,7 +354,7 @@ describe("notification permission requests", () => {
   test("degrades a raw-scope sender to a plain confirmation", async () => {
     installPermissionsService();
     const registration = handleRegistrations.find(
-      ({ channel }) => channel === "vellum:permissions:request",
+      ({ channel }) => channel === "cadet:permissions:request",
     );
     const avatarPng = Buffer.from("avatar-bytes");
     const args = registration!.schema.parse([

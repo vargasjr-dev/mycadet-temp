@@ -1,10 +1,10 @@
 /**
  * Managed Flux STT through the gateway's speech relay
- * (gateway -> velay -> Deepgram Flux; velay contact is gateway-only).
+ * (gateway -> tunnel -> Deepgram Flux; tunnel contact is gateway-only).
  *
  * Composes {@link DeepgramFluxRealtimeTranscriber} against the relay's
  * managed STT v2 endpoint with `contract=flux`, so Flux's own turn events
- * arrive verbatim. Without that opt-in velay translates them into the
+ * arrive verbatim. Without that opt-in tunnel translates them into the
  * released v1 Deepgram dialect, which drops `EagerEndOfTurn` and
  * `TurnResumed` entirely and leaves live voice with no provider turn end to
  * act on.
@@ -13,11 +13,11 @@
  * `VellumManagedRealtimeTranscriber` on the v1 path:
  *
  * - Dialing the gateway (`/v2/speech/stt/stream`, `?key=` carries a
- *   daemon-minted service token, no `model` param since velay derives and
+ *   daemon-minted service token, no `model` param since tunnel derives and
  *   prices the Flux model from `language`).
- * - Surfacing `velay_error` control frames as categorized SttErrors instead
+ * - Surfacing `tunnel_error` control frames as categorized SttErrors instead
  *   of generic socket failures.
- * - Transparent re-dial on velay's 30-minute session cap, so one live-voice
+ * - Transparent re-dial on tunnel's 30-minute session cap, so one live-voice
  *   session can outlive it.
  *
  * There is deliberately no `finalizeUtterance`: Flux commits turns itself,
@@ -33,15 +33,15 @@ import {
 import { getLogger } from "../../util/logger.js";
 import { DeepgramFluxRealtimeTranscriber } from "./deepgram-flux-realtime.js";
 import {
-  mapVelayError,
-  probeVelayRejection,
+  mapTunnelError,
+  probeTunnelRejection,
   type SpeechRelayConnection,
-  type VelayErrorInfo,
+  type TunnelErrorInfo,
 } from "./vellum-speech-relay-connection.js";
 
 const log = getLogger("vellum-managed-flux-realtime");
 
-/** Managed STT v2: velay resolves this to Deepgram's Flux `/v2/listen`. */
+/** Managed STT v2: tunnel resolves this to Deepgram's Flux `/v2/listen`. */
 const STT_STREAM_PATH = "/v2/speech/stt/stream";
 
 export interface VellumManagedFluxRealtimeOptions {
@@ -49,7 +49,7 @@ export interface VellumManagedFluxRealtimeOptions {
   sampleRate?: number;
   /**
    * BCP-47 language code (or `"multi"`), forwarded to the relay. This is
-   * how velay picks between `flux-general-en` and `flux-general-multi`, so
+   * how tunnel picks between `flux-general-en` and `flux-general-multi`, so
    * it is the only lever over the Flux model from this side.
    */
   language?: string;
@@ -66,13 +66,13 @@ export class VellumManagedFluxRealtimeTranscriber implements StreamingTranscribe
   /** The current relay session; null while re-dialing after a session cap. */
   private inner: DeepgramFluxRealtimeTranscriber | null = null;
   /**
-   * The most recent `velay_error` frame from the current session. Set just
-   * before velay closes the socket; consumed when the inner adapter turns
+   * The most recent `tunnel_error` frame from the current session. Set just
+   * before tunnel closes the socket; consumed when the inner adapter turns
    * that close into an error event.
    */
-  private pendingRelayError: VelayErrorInfo | null = null;
+  private pendingRelayError: TunnelErrorInfo | null = null;
   /**
-   * Set when the current session hit velay's duration cap: the swap to a
+   * Set when the current session hit tunnel's duration cap: the swap to a
    * fresh session is deferred to the capped session's `closed` event so its
    * close cleanup drains through first.
    */
@@ -103,7 +103,7 @@ export class VellumManagedFluxRealtimeTranscriber implements StreamingTranscribe
       if (this.stopping) {
         // stop() raced the initial dial: it saw no inner to tear down and
         // already emitted closed, so the freshly opened relay session must
-        // not be kept (a leaked session keeps velay metering).
+        // not be kept (a leaked session keeps tunnel metering).
         inner.stop();
         return;
       }
@@ -112,9 +112,9 @@ export class VellumManagedFluxRealtimeTranscriber implements StreamingTranscribe
       // A failed WebSocket upgrade exposes no HTTP details; replay the
       // request as a plain GET to recover the relay's {code, detail}
       // rejection.
-      const rejection = await probeVelayRejection(this.probeUrl());
+      const rejection = await probeTunnelRejection(this.probeUrl());
       if (rejection) {
-        const mapped = mapVelayError(rejection);
+        const mapped = mapTunnelError(rejection);
         throw new SttError(mapped.category, mapped.message, {
           userFacing: true,
         });
@@ -173,7 +173,7 @@ export class VellumManagedFluxRealtimeTranscriber implements StreamingTranscribe
   }
 
   private handleRelayFrame(frame: Record<string, unknown>): void {
-    if (frame.type !== "velay_error" || typeof frame.code !== "string") {
+    if (frame.type !== "tunnel_error" || typeof frame.code !== "string") {
       return;
     }
     this.pendingRelayError = {
@@ -182,7 +182,7 @@ export class VellumManagedFluxRealtimeTranscriber implements StreamingTranscribe
     };
     log.info(
       { code: frame.code, detail: frame.detail },
-      "Received velay_error frame on managed Flux relay",
+      "Received tunnel_error frame on managed Flux relay",
     );
   }
 
@@ -199,14 +199,14 @@ export class VellumManagedFluxRealtimeTranscriber implements StreamingTranscribe
     if (event.type === "error") {
       const relayError = this.pendingRelayError;
       if (relayError?.code === "session_duration_exceeded") {
-        // Velay's 30-minute cap, not a failure. Swallow the error but keep
+        // Tunnel's 30-minute cap, not a failure. Swallow the error but keep
         // the capped session current so its close cleanup drains first; the
         // re-dial happens on its `closed` event.
         this.redialOnClose = !this.stopping;
         return;
       }
       if (relayError) {
-        const mapped = mapVelayError(relayError);
+        const mapped = mapTunnelError(relayError);
         this.emit({
           type: "error",
           category: mapped.category,
@@ -246,7 +246,9 @@ export class VellumManagedFluxRealtimeTranscriber implements StreamingTranscribe
    * error and ends the stream.
    */
   private beginRedial(): void {
-    log.info("Managed Flux relay session hit velay's duration cap, re-dialing");
+    log.info(
+      "Managed Flux relay session hit tunnel's duration cap, re-dialing",
+    );
     this.inner = null;
     this.turnIndexOffset = this.latestTurnIndex + 1;
     void (async () => {
@@ -262,9 +264,9 @@ export class VellumManagedFluxRealtimeTranscriber implements StreamingTranscribe
         if (this.stopping) {
           return;
         }
-        const rejection = await probeVelayRejection(this.probeUrl());
+        const rejection = await probeTunnelRejection(this.probeUrl());
         if (rejection) {
-          const mapped = mapVelayError(rejection);
+          const mapped = mapTunnelError(rejection);
           this.emit({
             type: "error",
             category: mapped.category,

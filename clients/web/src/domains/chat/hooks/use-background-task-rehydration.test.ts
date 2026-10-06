@@ -42,7 +42,7 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   },
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 

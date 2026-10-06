@@ -24,12 +24,6 @@ mock.module("@/hooks/conversation-queries", () => ({
   }),
 }));
 
-const sentryBreadcrumbMock = mock((_args: unknown) => undefined);
-mock.module("@sentry/react", () => ({
-  addBreadcrumb: sentryBreadcrumbMock,
-  captureException: () => {},
-}));
-
 import { consumePendingComposerFocus } from "@/domains/chat/composer-focus";
 import { useComposerStore } from "@/domains/chat/composer-store";
 import {
@@ -84,7 +78,6 @@ function park(partial: {
 beforeEach(() => {
   __resetPendingDeepLinkForTesting();
   consumePendingComposerFocus();
-  sentryBreadcrumbMock.mockClear();
   listState = { conversations: [], isPending: true, isError: false };
   const composer = useComposerStore.getState();
   composer.setInput("");

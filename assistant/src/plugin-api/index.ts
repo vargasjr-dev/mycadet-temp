@@ -1,7 +1,7 @@
 /**
- * Public entry point for the `@vellumai/plugin-api` package.
+ * Public entry point for the `@mycadet/plugin-api` package.
  *
- * Plugin authors import from `"@vellumai/plugin-api"`; this file is what
+ * Plugin authors import from `"@mycadet/plugin-api"`; this file is what
  * their import lands on (directly via the published npm package, or via a
  * boot-time shim that re-exports from the assistant binary's embedded
  * bundle).
@@ -25,7 +25,7 @@
  * assistant's own instances: the host parks the loaded plugin-api namespace
  * on `globalThis` at boot, and the workspace-level shim re-binds each
  * runtime export from there — so a plugin's
- * `import { assistantEventHub } from "@vellumai/plugin-api"` lands on the
+ * `import { assistantEventHub } from "@mycadet/plugin-api"` lands on the
  * same singleton the assistant uses, even when the daemon is a
  * `bun --compile` binary where an absolute-path import would load a
  * disjoint module copy.

@@ -2,7 +2,7 @@ import { ArrowUp, ChevronDown, Loader2, Play } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import { DetailPanelStopButton } from "@/components/detail-panel-stop-button";
 import { ShareFeedbackModal } from "@/components/share-feedback-modal";
@@ -56,7 +56,7 @@ import {
 import type { AssistantsDoctorSessionsCreateData } from "@/generated/api/types.gen";
 import { usePlatformGate } from "@/hooks/use-platform-gate";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { ApiError, extractErrorMessage } from "@/utils/api-errors";
 import { useTranslation } from "@/i18n";
@@ -703,9 +703,7 @@ export function DoctorPanel() {
         <div className="rounded-lg border border-[var(--border-base)] bg-[var(--surface-base)] px-4 py-3 text-body-medium-lighter text-[var(--content-tertiary)]">
           <div className="flex items-center gap-2">
             <DoctorAvatar className="h-6 w-6 shrink-0" />
-            <span>
-              {t("doctorPanel.noAssistant")}
-            </span>
+            <span>{t("doctorPanel.noAssistant")}</span>
           </div>
         </div>
       ) : sessionStatus === "idle" ? (
@@ -837,7 +835,9 @@ export function DoctorPanel() {
                           }}
                         />
                       ))}
-                      <span className="sr-only">{t("doctorPanel.thinking")}</span>
+                      <span className="sr-only">
+                        {t("doctorPanel.thinking")}
+                      </span>
                     </div>
                   </div>
                 )}

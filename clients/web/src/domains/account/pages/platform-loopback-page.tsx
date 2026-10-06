@@ -10,8 +10,8 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useOrganizationStore } from "@/stores/organization-store";
 import { routes } from "@/utils/routes";
 
-const LOOPBACK_STATE_KEY = "vellum:loopback:state";
-const LOOPBACK_RETURN_TO_KEY = "vellum:loopback:returnTo";
+const LOOPBACK_STATE_KEY = "cadet:loopback:state";
+const LOOPBACK_RETURN_TO_KEY = "cadet:loopback:returnTo";
 
 /**
  * Receive the session token from the platform's CLI callback redirect.

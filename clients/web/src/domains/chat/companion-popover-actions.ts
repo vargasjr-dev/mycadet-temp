@@ -1,7 +1,7 @@
 import {
   COMPANION_VOICE_START_CONFIRMATION,
   type CompanionPopoverAnswer,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   closeCompanionPicker,
@@ -15,7 +15,7 @@ import { handleConfirmationSubmit } from "@/domains/chat/confirmation-actions";
 import { handleSecretSubmit } from "@/domains/chat/secret-actions";
 import { handleSurfaceAction } from "@/domains/chat/surface-actions";
 import { answerVoiceShortcutConfirmation } from "@/domains/chat/voice/voice-shortcut-confirmation";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { openSystemPermissionSettings } from "@/runtime/system-permissions";
 import { setPreferredInputDeviceId } from "@/utils/voice-input-device";
 

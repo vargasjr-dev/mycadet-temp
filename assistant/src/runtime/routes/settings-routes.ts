@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 
-import { normalizePublicBaseUrl } from "@vellumai/service-contracts/ingress";
+import { normalizePublicBaseUrl } from "@mycadet/service-contracts/ingress";
 import { z } from "zod";
 
 import {

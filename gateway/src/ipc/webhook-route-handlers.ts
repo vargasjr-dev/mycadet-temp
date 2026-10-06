@@ -2,12 +2,12 @@
  * IPC route definitions for the webhook ingress route registry.
  *
  * Lets the daemon claim, drop, and inspect the exact subpaths this assistant
- * answers from outside. Only registration is gated on `velay-webhooks`;
+ * answers from outside. Only registration is gated on `tunnel-webhooks`;
  * revocation and inspection stay available so an operator can always see and
  * remove what was claimed while the flag was on.
  *
  * The request and response shapes are the shared contract in
- * `@vellumai/gateway-client`, which the daemon reads the other end of.
+ * `@mycadet/gateway-client`, which the daemon reads the other end of.
  */
 
 import {
@@ -16,7 +16,7 @@ import {
   type RegisterWebhookRouteIpcResponse,
   UnregisterWebhookRouteIpcParamsSchema,
   type UnregisterWebhookRouteIpcResponse,
-} from "@vellumai/gateway-client/gateway-ipc-contracts";
+} from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import {
   listWebhookIngressRoutes,
@@ -25,7 +25,7 @@ import {
   unregisterWebhookIngressRoute,
 } from "../db/webhook-ingress-route-store.js";
 import { markPluginWebhookRoutesDirty } from "../channels/plugin-webhook-route-sync.js";
-import { PLUGIN_WEBHOOK_PATH_PREFIX } from "../velay/path-utils.js";
+import { PLUGIN_WEBHOOK_PATH_PREFIX } from "../tunnel/path-utils.js";
 import { isFeatureFlagEnabled } from "../feature-flag-resolver.js";
 import { ipcRoute, type IpcRoute } from "./server.js";
 
@@ -54,7 +54,7 @@ export function createWebhookRouteRoutes(): IpcRoute[] {
       method: "register_webhook_route",
       schema: RegisterWebhookRouteIpcParamsSchema,
       handler: (params): RegisterWebhookRouteIpcResponse => {
-        if (!isFeatureFlagEnabled("velay-webhooks")) {
+        if (!isFeatureFlagEnabled("tunnel-webhooks")) {
           return { disabled: true };
         }
         assertUnreservedRouteType(params.type);

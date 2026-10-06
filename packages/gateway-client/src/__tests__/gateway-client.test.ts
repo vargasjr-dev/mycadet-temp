@@ -1,5 +1,5 @@
 /**
- * Tests for @vellumai/gateway-client
+ * Tests for @mycadet/gateway-client
  *
  * Covers:
  * 1. Package independence — no imports from assistant/ or gateway/.
@@ -15,7 +15,11 @@ import { unlinkSync } from "node:fs";
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { ipcCall, IpcConnectError, PersistentIpcClient } from "../ipc-client.js";
+import {
+  ipcCall,
+  IpcConnectError,
+  PersistentIpcClient,
+} from "../ipc-client.js";
 import { ChannelDeliveryError, deliverChannelReply } from "../http-delivery.js";
 import type { Logger } from "../types.js";
 
@@ -385,9 +389,7 @@ describe("ipc-client", () => {
           const idx = buf.indexOf("\n");
           if (idx !== -1) {
             const req = JSON.parse(buf.slice(0, idx));
-            conn.write(
-              JSON.stringify({ id: req.id, result: "ready" }) + "\n",
-            );
+            conn.write(JSON.stringify({ id: req.id, result: "ready" }) + "\n");
           }
         });
       });

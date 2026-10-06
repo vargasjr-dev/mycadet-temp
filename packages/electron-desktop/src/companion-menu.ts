@@ -5,7 +5,7 @@ import {
   COMPANION_SIZES,
   type CompanionSize,
   type CompanionSizeAxis,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /**
  * Menu wording for each companion size.

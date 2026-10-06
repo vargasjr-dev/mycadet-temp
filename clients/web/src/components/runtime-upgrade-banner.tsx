@@ -32,9 +32,9 @@ import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { cn } from "@/utils/misc";
-import { Button } from "@vellumai/design-library/components/button";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { toast } from "@mycadet/design-library/components/toast";
 
 const PLATFORM_UPGRADE_POLL_INTERVAL_MS = 3_000;
 

@@ -2,7 +2,7 @@ import { DeveloperGuideWorkflowContent } from "@/app/docs/_components/developer-
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Development Workflow - Developer Guide - Vellum Docs",
+  title: "Development Workflow - Developer Guide - Cadet Docs",
   description:
     "Claude Code slash commands, parallel PR execution, automated review loops, and the release pipeline.",
   path: "/docs/developer-guide/development-workflow",

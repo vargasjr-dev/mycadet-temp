@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { usePluginsInstallPostMutation } from "@/generated/daemon/@tanstack/react-query.gen";
@@ -7,7 +7,7 @@ import { usePluginUninstall } from "@/hooks/use-plugin-actions";
 import { requiresTenantHost } from "@/hooks/use-tenant-host-requirement";
 import { useTranslation } from "@/i18n";
 import { invalidatePluginQueries } from "@/lib/invalidate-plugin-queries";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import type { ManagedConnectReport } from "../components/managed-connect-controller";
 import type { ConnectAttempt } from "../components/integration-connect-modal";
@@ -523,7 +523,9 @@ export function useIntegrationConnect({
     }
     setManagedReport(null);
     setManaged((current) =>
-      current ? { ...current, restartToken: current.restartToken + 1 } : current,
+      current
+        ? { ...current, restartToken: current.restartToken + 1 }
+        : current,
     );
   }, [authAttempt, authRetry, mcpAttempt]);
 

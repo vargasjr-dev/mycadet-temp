@@ -5,7 +5,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import { hashInviteToken } from "@vellumai/gateway-client";
+import { hashInviteToken } from "@mycadet/gateway-client";
 
 import { mintAndRecordDeviceBoundTokenPair } from "../auth/guardian-bootstrap.js";
 import { getGatewayDb } from "../db/connection.js";

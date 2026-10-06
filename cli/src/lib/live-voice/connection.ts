@@ -2,7 +2,7 @@
  * Resolving the live-voice WebSocket URL and the credential to open it with.
  *
  * Two transports, chosen by how the assistant is deployed. A cloud assistant
- * goes through velay with a minted WS token (see `./velay.ts`, which owns that
+ * goes through tunnel with a minted WS token (see `./tunnel.ts`, which owns that
  * path end to end). Everything below is the local and self-hosted one.
  *
  * The endpoint is the **gateway's** `/v1/live-voice`, not the runtime's. That
@@ -25,6 +25,7 @@
  * passes by construction, and there is nothing new to provision here.
  */
 
+import { isManagedCloud } from "../managed-cloud.js";
 import {
   formatAssistantLookupError,
   formatAssistantReference,
@@ -39,24 +40,24 @@ import {
   refreshGuardianToken,
 } from "../guardian-token.js";
 import {
-  buildVelayLiveVoiceUrl,
-  mintVelayWsToken,
-  VelayWsTokenError,
-} from "./velay.js";
+  buildTunnelLiveVoiceUrl,
+  mintTunnelWsToken,
+  TunnelWsTokenError,
+} from "./tunnel.js";
 
 /**
  * Where the credential goes on the upgrade.
  *
- * A gateway takes a guardian JWT in an `Authorization` header. velay takes a
+ * A gateway takes a guardian JWT in an `Authorization` header. tunnel takes a
  * minted WS token in the query string and reads no headers, so the two are not
- * interchangeable: sending the header form to velay authenticates nothing.
+ * interchangeable: sending the header form to tunnel authenticates nothing.
  */
 export type LiveVoiceTokenTransport = "header" | "query";
 
 export interface LiveVoiceConnection {
-  /** `ws(s)://…/v1/live-voice`, on the assistant's gateway or on velay. */
+  /** `ws(s)://…/v1/live-voice`, on the assistant's gateway or on tunnel. */
   readonly url: string;
-  /** Guardian access token, or a minted velay WS token. */
+  /** Guardian access token, or a minted tunnel WS token. */
   readonly token: string;
   /** How {@link token} reaches the server. */
   readonly tokenTransport: LiveVoiceTokenTransport;
@@ -88,10 +89,10 @@ export async function resolveLiveVoiceConnection(
     : resolveTargetAssistant();
 
   // Platform-cloud assistants are reached the other way round. Their gateway
-  // is behind velay, which authenticates nobody and forwards an attestation
+  // is behind tunnel, which authenticates nobody and forwards an attestation
   // the gateway trusts, so the credential is not the guardian JWT below but a
   // WS token minted from the platform session the CLI already holds.
-  if (entry.cloud === "vellum") {
+  if (isManagedCloud(entry.cloud)) {
     return await resolveCloudConnection(entry);
   }
 
@@ -156,20 +157,20 @@ async function resolveCloudConnection(
 
   let token: string;
   try {
-    token = await mintVelayWsToken({
+    token = await mintTunnelWsToken({
       platformUrl,
       assistantId: entry.assistantId,
       sessionToken,
     });
   } catch (err) {
-    if (err instanceof VelayWsTokenError) {
+    if (err instanceof TunnelWsTokenError) {
       throw new LiveVoiceConnectionError(err.message);
     }
     throw err;
   }
 
   return {
-    url: buildVelayLiveVoiceUrl({
+    url: buildTunnelLiveVoiceUrl({
       platformUrl,
       assistantId: entry.assistantId,
       token,

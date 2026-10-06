@@ -48,7 +48,7 @@ Routing is configured via workspace config. See `ARCHITECTURE.md` for details.
 
 Webhook registration is now handled automatically by the gateway. On startup, the gateway reconciles the Telegram webhook by registering it at `${ingress.publicBaseUrl}/webhooks/telegram` with the configured secret and allowed updates. This also runs whenever the credential watcher detects changes to the bot token or webhook secret (e.g., secret rotation). If the ingress URL changes (e.g., tunnel restart), the config file watcher detects the change and triggers webhook reconciliation directly — no daemon involvement or gateway restart is needed.
 
-A managed platform pod owns no ingress of its own, so with the `velay-webhooks` flag off it registers a Django-hosted callback route instead of using an ingress URL. With the flag on, a pod claims `/webhooks/telegram` in the webhook ingress route registry and registers its published Velay URL, keeping the Django callback route as the fallback; flipping the flag re-runs the reconcile in either direction. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full resolution order.
+A managed platform pod owns no ingress of its own, so with the `tunnel-webhooks` flag off it registers a Django-hosted callback route instead of using an ingress URL. With the flag on, a pod claims `/webhooks/telegram` in the webhook ingress route registry and registers its published Tunnel URL, keeping the Django callback route as the fallback; flipping the flag re-runs the reconcile in either direction. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full resolution order.
 
 For manual setup (or reference), register the webhook with Telegram using the `setWebhook` API method. Pass:
 
@@ -164,9 +164,9 @@ Control-plane routes are listed with their flat paths. Clients emit assistant-sc
 
 ### Webhook Ingress Route Registry
 
-Which of the `/webhooks/*` routes above an assistant actually answers through the Velay tunnel is a per-assistant allowlist, gated on the `velay-webhooks` feature flag. With the flag off the whole namespace is reachable, as it always was; with it on an assistant answers exactly the paths it has claimed.
+Which of the `/webhooks/*` routes above an assistant actually answers through the Tunnel tunnel is a per-assistant allowlist, gated on the `tunnel-webhooks` feature flag. With the flag off the whole namespace is reachable, as it always was; with it on an assistant answers exactly the paths it has claimed.
 
-Three layers admit a request, each narrower than the last: Velay drops anything matching none of the RE2 rules the gateway advertises on the tunnel upgrade, the gateway's Velay bridge re-checks the registry as the frame arrives, and the route itself runs its own authentication (Telegram's `secret_token`, Twilio's signature, a plugin webhook's token).
+Three layers admit a request, each narrower than the last: Tunnel drops anything matching none of the RE2 rules the gateway advertises on the tunnel upgrade, the gateway's Tunnel bridge re-checks the registry as the frame arrives, and the route itself runs its own authentication (Telegram's `secret_token`, Twilio's signature, a plugin webhook's token).
 
 Claims are rows in `webhook_ingress_routes` in `gateway.sqlite`, which lives in `GATEWAY_SECURITY_DIR` and therefore survives a pod restart. The daemon claims over IPC for plugin webhooks; the gateway claims in-process for Telegram and Twilio. A claim that is unavailable, because the flag is off, no tunnel URL is published, or the write failed, falls back to registering a Django-hosted callback route, which is also the flag-off path. A new claim triggers a debounced tunnel reconnect so the edge rules catch up, so a path is always claimed before its URL is given to a provider.
 
@@ -178,7 +178,7 @@ To receive external callbacks during local development, point a tunnel service a
 
 #### Test Gateway Source Changes Locally (No Release Needed)
 
-Use this flow when you are changing files under `gateway/` and need to validate immediately without publishing `@vellumai/vellum-gateway`.
+Use this flow when you are changing files under `gateway/` and need to validate immediately without publishing `@mycadet/vellum-gateway`.
 
 ```bash
 # Terminal 1: restart assistant runtime HTTP server
@@ -208,47 +208,47 @@ In local tunnel setups, updating `ingress.publicBaseUrl` in Settings is typicall
 
 The assistant runtime uses this URL to construct all webhook and OAuth callback URLs automatically.
 
-### Velay for Twilio Testing
+### Tunnel for Twilio Testing
 
-Velay is a managed ingress transport for assistant-hosted HTTP and WebSocket traffic. The gateway starts the Velay tunnel only after Twilio setup has been started in the workspace, or when existing Twilio config shows it was set up before. When Velay registration succeeds, the gateway writes the registered public assistant URL to `ingress.publicBaseUrl` and marks it with `ingress.publicBaseUrlManagedBy: "velay"`. Twilio URL builders use that public base URL for voice, status, and media-stream endpoints.
+Tunnel is a managed ingress transport for assistant-hosted HTTP and WebSocket traffic. The gateway starts the Tunnel tunnel only after Twilio setup has been started in the workspace, or when existing Twilio config shows it was set up before. When Tunnel registration succeeds, the gateway writes the registered public assistant URL to `ingress.publicBaseUrl` and marks it with `ingress.publicBaseUrlManagedBy: "tunnel"`. Twilio URL builders use that public base URL for voice, status, and media-stream endpoints.
 
-Use Velay when testing Twilio voice webhooks or Twilio WebSocket upgrades through the platform-managed tunnel:
+Use Tunnel when testing Twilio voice webhooks or Twilio WebSocket upgrades through the platform-managed tunnel:
 
-1. In `vellum-assistant-platform`, start the local Velay service:
-
-   ```bash
-   vel up velay
-   ```
-
-2. Ensure vembda injects the Velay endpoint into assistant gateway containers. For local Docker-hosted assistants, the gateway container must dial the Velay service running on the host:
+1. In `vellum-assistant-platform`, start the local Tunnel service:
 
    ```bash
-   VELAY_BASE_URL=http://host.docker.internal:8501
+   vel up tunnel
    ```
 
-   Hosted environments should use their environment's deployed Velay URL instead.
+2. Ensure vembda injects the Tunnel endpoint into assistant gateway containers. For local Docker-hosted assistants, the gateway container must dial the Tunnel service running on the host:
+
+   ```bash
+   TUNNEL_BASE_URL=http://host.docker.internal:8501
+   ```
+
+   Hosted environments should use their environment's deployed Tunnel URL instead.
 
 3. Start or complete Twilio setup in the workspace so the gateway is allowed to connect the tunnel.
-4. Re-hatch or restart the assistant so the gateway process receives `VELAY_BASE_URL`.
-5. Confirm the gateway logs include `Velay tunnel connected` followed by `Velay tunnel registered`. Registration publishes the returned Velay URL to `ingress.publicBaseUrl`.
+4. Re-hatch or restart the assistant so the gateway process receives `TUNNEL_BASE_URL`.
+5. Confirm the gateway logs include `Tunnel tunnel connected` followed by `Tunnel tunnel registered`. Registration publishes the returned Tunnel URL to `ingress.publicBaseUrl`.
 
-For an HTTP bridge smoke test, send a request to the registered Velay public URL and confirm it reaches the loopback gateway, for example:
+For an HTTP bridge smoke test, send a request to the registered Tunnel public URL and confirm it reaches the loopback gateway, for example:
 
 ```bash
-curl -i "$VELAY_PUBLIC_BASE_URL/<assistant-id>/healthz"
-curl -i "$VELAY_PUBLIC_BASE_URL/<assistant-id>/schema"
+curl -i "$TUNNEL_PUBLIC_BASE_URL/<assistant-id>/healthz"
+curl -i "$TUNNEL_PUBLIC_BASE_URL/<assistant-id>/schema"
 ```
 
-When testing a JSON webhook route under active development, POST a small JSON body through the same Velay public URL and confirm the gateway logs or handler response show the request reached the loopback listener.
+When testing a JSON webhook route under active development, POST a small JSON body through the same Tunnel public URL and confirm the gateway logs or handler response show the request reached the loopback listener.
 
-For a synthetic Twilio WebSocket smoke test, connect a local WebSocket client to the Velay public URL using one of the gateway Twilio WebSocket paths, such as:
+For a synthetic Twilio WebSocket smoke test, connect a local WebSocket client to the Tunnel public URL using one of the gateway Twilio WebSocket paths, such as:
 
 ```bash
 bun -e 'const ws = new WebSocket(process.argv[1]); ws.onopen = () => { console.log("open"); ws.close(); }; ws.onerror = (event) => console.error(event);' \
-  "wss://<velay-host>/<assistant-id>/webhooks/twilio/media-stream/session-123/<edge-token>"
+  "wss://<tunnel-host>/<assistant-id>/webhooks/twilio/media-stream/session-123/<edge-token>"
 ```
 
-For a real Twilio call, expose local Velay with a public HTTPS/WSS tunnel and configure the platform Velay service with that origin as `VELAY_PUBLIC_BASE_URL`. After the assistant re-registers, Twilio should fetch `/webhooks/twilio/voice` and open `/webhooks/twilio/media-stream/...` through the Velay URL. Use ngrok or another custom tunnel in `ingress.publicBaseUrl` only for local/self-hosted workflows that are not routed through Velay.
+For a real Twilio call, expose local Tunnel with a public HTTPS/WSS tunnel and configure the platform Tunnel service with that origin as `TUNNEL_PUBLIC_BASE_URL`. After the assistant re-registers, Twilio should fetch `/webhooks/twilio/voice` and open `/webhooks/twilio/media-stream/...` through the Tunnel URL. Use ngrok or another custom tunnel in `ingress.publicBaseUrl` only for local/self-hosted workflows that are not routed through Tunnel.
 
 ## Ingress Boundary Guarantees
 
@@ -381,12 +381,12 @@ See [`benchmarking/gateway/README.md`](../benchmarking/gateway/README.md) for lo
 
 ### Binary virtual desktop tunnel
 
-The gateway advertises `X-Vellum-Velay-Binary-WebSocket: 1` when registering.
-It uses binary tunnel messages only when Velay sends `binary_messages: true`
+The gateway advertises `X-Vellum-Tunnel-Binary-WebSocket: 1` when registering.
+It uses binary tunnel messages only when Tunnel sends `binary_messages: true`
 on a `/v1/desktop/stream` open frame. The envelope is byte `0x01`, 32 lowercase
 ASCII hex connection-ID bytes, then the unchanged payload (including empty
 payloads). Control and text messages remain JSON. Other routes and older relays
-retain JSON/base64 framing. Deploy Velay support before updating gateways;
+retain JSON/base64 framing. Deploy Tunnel support before updating gateways;
 older gateways can continue using the upgraded relay.
 
 Malformed tunnel messages retain the existing log-and-ignore behavior. Raw binary

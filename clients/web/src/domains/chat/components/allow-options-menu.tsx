@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-import { ActionMenu } from "@vellumai/design-library";
+import { ActionMenu } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

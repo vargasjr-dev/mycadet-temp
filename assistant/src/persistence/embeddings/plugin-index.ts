@@ -2,7 +2,7 @@
 // Plugin embeddings: compute-only primitives and a plugin-owned semantic index.
 // ---------------------------------------------------------------------------
 //
-// Host-side implementations behind the `@vellumai/plugin-api` embeddings
+// Host-side implementations behind the `@mycadet/plugin-api` embeddings
 // facade. They take the live workspace `config` and the calling plugin's
 // manifest name explicitly; the thin facade in `plugin-facade.ts` injects both
 // (`getConfig()` and `getCurrentPluginName()`) so plugins hold no config and

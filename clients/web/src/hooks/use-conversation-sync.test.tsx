@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-query";
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 import type { Conversation } from "@/types/conversation-types";
 import { groupsGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import {

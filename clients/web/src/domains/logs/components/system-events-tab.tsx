@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-import { Tag } from "@vellumai/design-library";
+import { Tag } from "@mycadet/design-library";
 
 import { assistantsSystemEventsListInfiniteOptions } from "@/generated/api/@tanstack/react-query.gen";
 import type {

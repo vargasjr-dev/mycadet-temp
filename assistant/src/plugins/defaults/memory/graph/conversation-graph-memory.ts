@@ -14,7 +14,7 @@ import type {
   ContentBlock,
   ImageContent,
   Message,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 import { and, desc, eq, inArray, ne, type SQL, sql } from "drizzle-orm";
 import { z } from "zod";
 

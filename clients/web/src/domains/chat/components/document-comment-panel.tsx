@@ -1,4 +1,4 @@
-import { Button, Tag, Typography } from "@vellumai/design-library";
+import { Button, Tag, Typography } from "@mycadet/design-library";
 import { MessageSquareQuote, Send, X } from "lucide-react";
 import {
   useCallback,

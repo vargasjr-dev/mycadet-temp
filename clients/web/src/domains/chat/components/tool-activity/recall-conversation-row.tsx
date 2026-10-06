@@ -6,7 +6,7 @@
  * the way every other switch does.
  */
 
-import { ListRow } from "@vellumai/design-library";
+import { ListRow } from "@mycadet/design-library";
 import { MessageSquare } from "lucide-react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router";

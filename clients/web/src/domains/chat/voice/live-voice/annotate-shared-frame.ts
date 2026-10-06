@@ -20,11 +20,11 @@
  * would put a drawing in the transcript in a colour the user never saw.
  */
 
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   COMPANION_ANNOTATION_STROKE,
   type CompanionAnnotationStroke,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /** Where a failure is filed, so the tag says which source it came from. */
 const ERROR_CONTEXT = "live-voice screen share: draw annotation onto frame";

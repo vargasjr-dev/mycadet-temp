@@ -721,7 +721,7 @@ describe("sanitizeDisplayMessages · repair dangling tool calls", () => {
 
 describe("sanitizeDisplayMessages · fail stale tool calls", () => {
   const STALE_PREFIX = "Tool call exceeded the execution timeout";
-  // Mirrors `DEFAULT_TOOL_EXECUTION_TIMEOUT_SEC` from @vellumai/assistant-api.
+  // Mirrors `DEFAULT_TOOL_EXECUTION_TIMEOUT_SEC` from @mycadet/assistant-api.
   // Hard-coded in the test so a regression that changes the wire-contract
   // default by accident shows up here too.
   const DEFAULT_TIMEOUT_MS = 120_000;

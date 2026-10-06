@@ -29,7 +29,9 @@ import { z } from "zod";
  *  - `local` — on-machine daemon
  *  - `docker` — local container
  *  - `apple-container` — macOS-app-managed container
- *  - `vellum` — platform-managed (uses the X-Session-Token auth path)
+ *  - `cloud` — platform-managed (uses the X-Session-Token auth path);
+ *    canonical since the Cadet rebrand
+ *  - `vellum` — legacy alias of `cloud`, still read from existing lockfiles
  *  - `gcp` / `aws` / `custom` — remote, SSH-managed
  *  - `paired` — a remote assistant paired from another machine
  */
@@ -37,6 +39,7 @@ export const KNOWN_CLOUDS = [
   "local",
   "docker",
   "apple-container",
+  "cloud",
   "vellum",
   "gcp",
   "aws",
@@ -74,6 +77,16 @@ export function resolveCloud(raw: {
   if (typeof raw.project === "string" && raw.project) return "gcp";
   if (typeof raw.sshUser === "string" && raw.sshUser) return "custom";
   return "local";
+}
+
+/**
+ * Whether a cloud value denotes the platform-managed topology. `cloud` is
+ * canonical; `vellum` is the legacy spelling kept for entries written before
+ * the rebrand. Every reader that used to compare `=== "vellum"` switches on
+ * this instead so both spellings dispatch identically.
+ */
+export function isManagedCloud(cloud: unknown): boolean {
+  return cloud === "cloud" || cloud === "vellum";
 }
 
 /**
@@ -177,7 +190,6 @@ export const LockfileAssistantSchema = z.object({
   name: z.string().optional(),
   cloud: z.string().optional(),
   runtimeUrl: z.string().optional(),
-  species: z.string().optional(),
   hatchedAt: z.string().optional(),
   /**
    * When this assistant finished first-run onboarding. Absent for entries that

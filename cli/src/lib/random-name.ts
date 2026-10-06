@@ -138,12 +138,9 @@ export function generateRandomSuffix(): string {
 
 /**
  * Generate an instance name for a new assistant. Uses the explicit name if
- * provided, otherwise produces `<species>-<adjective>-<noun>-<nanoid>`.
+ * provided, otherwise generates `<adjective>-<noun>-<nanoid>`.
  */
-export function generateInstanceName(
-  species: string,
-  explicitName?: string | null,
-): string {
+export function generateInstanceName(explicitName?: string | null): string {
   if (explicitName) return explicitName;
-  return `${species}-${generateRandomSuffix()}`;
+  return generateRandomSuffix();
 }

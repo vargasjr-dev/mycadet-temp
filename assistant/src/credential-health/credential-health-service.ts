@@ -23,7 +23,7 @@
  * heartbeat from misreporting a refreshable connection as `"revoked"`.
  */
 
-import { isTokenExpired } from "@vellumai/credential-storage";
+import { isTokenExpired } from "@mycadet/credential-storage";
 
 import type { Services } from "../config/schemas/services.js";
 import { getConnectionAccessTokenResult } from "../oauth/credential-token-resolver.js";

@@ -19,8 +19,8 @@ import {
   MISSING_VALUE,
 } from "@/domains/chat/inspector/inspector-formatters";
 import { useTranslation } from "@/i18n";
-import type { LLMCallSummary } from "@vellumai/assistant-api";
-import { Card, Notice, type NoticeTone } from "@vellumai/design-library";
+import type { LLMCallSummary } from "@mycadet/assistant-api";
+import { Card, Notice, type NoticeTone } from "@mycadet/design-library";
 type ChatTranslate = ReturnType<typeof useTranslation<"chat">>["t"];
 
 export interface CacheHealthCardProps {
@@ -116,10 +116,7 @@ interface CacheStatus {
   body: string;
 }
 
-function buildStatus(
-  breakdown: CacheBreakdown,
-  t: ChatTranslate,
-): CacheStatus {
+function buildStatus(breakdown: CacheBreakdown, t: ChatTranslate): CacheStatus {
   if (breakdown.readTokens === 0) {
     const reCreated =
       breakdown.hasCreationSignal && breakdown.createdTokens > 0

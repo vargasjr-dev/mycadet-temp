@@ -8,7 +8,7 @@
  */
 
 import { client } from "@/generated/api/client.gen";
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 import { parseAssistantEvent } from "@/lib/streaming/event-parser";
 import { normalizeSSEPayload } from "@/lib/streaming/sse-payload";
 import { toError } from "@/utils/to-error";
@@ -97,7 +97,7 @@ export interface EventStreamOptions {
   reconnectBaseDelayMs?: number;
   /**
    * Snapshot whether the caller-owned turn state machine is currently in
-   * a sending phase. When provided, the result is forwarded to Sentry on
+   * a sending phase. When provided, the result is recorded in diagnostics on
    * watchdog fires as the `wasTurnSending` tag and extra so the
    * `sse_watchdog_fired` event count can be split into
    * user-harming (`true`: a stall while the user is waiting for an
@@ -105,7 +105,7 @@ export interface EventStreamOptions {
    * stream after a turn completed). Without this split, the 100%
    * `messagesAddedBucket=0` fleet reading collapses both populations and
    * is uninterpretable for the Layer 2 / Layer 3 decision. Optional;
-   * defaults to omitting the tag entirely (Sentry treats absent tags as
+   * defaults to omitting the tag entirely (absent tags read as
    * `"<absent>"` in Discover grouping).
    *
    * Implementations should be cheap and synchronous — the callback fires

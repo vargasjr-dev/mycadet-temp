@@ -10,7 +10,7 @@ import {
   trimmedNonEmptyString,
   TUNNEL_PROVIDERS,
   type TunnelRecord,
-  velayHostForPlatformHost,
+  tunnelHostForPlatformHost,
 } from "../ingress.js";
 import {
   buildTwilioMediaStreamUrl,
@@ -19,27 +19,27 @@ import {
   resolveTwilioPublicBaseUrl,
 } from "../twilio-ingress.js";
 
-describe("velayHostForPlatformHost", () => {
-  test("maps the prod platform host to prod velay", () => {
-    expect(velayHostForPlatformHost("platform.vellum.ai")).toBe(
-      "velay.vellum.ai",
+describe("tunnelHostForPlatformHost", () => {
+  test("maps the prod platform host to the prod tunnel", () => {
+    expect(tunnelHostForPlatformHost("cloud.mycadet.ai")).toBe(
+      "tunnel.mycadet.ai",
     );
   });
 
-  test("maps env-prefixed platform hosts to their env velay", () => {
-    expect(velayHostForPlatformHost("staging-platform.vellum.ai")).toBe(
-      "velay-staging.vellum.ai",
+  test("maps env-prefixed platform hosts to their env tunnel", () => {
+    expect(tunnelHostForPlatformHost("staging-cloud.mycadet.ai")).toBe(
+      "tunnel-staging.mycadet.ai",
     );
-    expect(velayHostForPlatformHost("dev-platform.vellum.ai")).toBe(
-      "velay-dev.vellum.ai",
+    expect(tunnelHostForPlatformHost("dev-cloud.mycadet.ai")).toBe(
+      "tunnel-dev.mycadet.ai",
     );
   });
 
   test("returns null for hosts outside the deployment convention", () => {
-    expect(velayHostForPlatformHost("localhost")).toBeNull();
-    expect(velayHostForPlatformHost("platform.example.com")).toBeNull();
+    expect(tunnelHostForPlatformHost("localhost")).toBeNull();
+    expect(tunnelHostForPlatformHost("platform.example.com")).toBeNull();
     expect(
-      velayHostForPlatformHost("staging-platform.vellum.ai.evil.com"),
+      tunnelHostForPlatformHost("staging-cloud.mycadet.ai.evil.com"),
     ).toBeNull();
   });
 });

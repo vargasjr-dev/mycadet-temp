@@ -46,7 +46,7 @@ mock.module("@/utils/device-settings", () => ({
   watchDeviceSetting: () => () => {},
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 

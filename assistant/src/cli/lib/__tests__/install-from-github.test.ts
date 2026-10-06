@@ -886,13 +886,13 @@ describe("installPlugin — marketplace resolution", () => {
     );
 
     // THEN the materialized tree is a valid Vellum plugin: package.json `name`
-    // matches the directory and declares the @vellumai/plugin-api peer dep
+    // matches the directory and declares the @mycadet/plugin-api peer dep
     // (fixing both loader warnings), and the upstream installer name is gone
     const target = join(pluginsDir, "caveman");
     expect(result.commit).toBe("63a91ecadbf4c4719a4602a5abb00883f9966034");
     const pkg = JSON.parse(readFileSync(join(target, "package.json"), "utf-8"));
     expect(pkg.name).toBe("caveman");
-    expect(pkg.peerDependencies["@vellumai/plugin-api"]).toBeString();
+    expect(pkg.peerDependencies["@mycadet/plugin-api"]).toBeString();
     expect(pkg.scripts?.postinstall).toBeUndefined();
     // AND every other upstream manifest field is preserved verbatim — only
     // `name` and the peer dep are touched, so the installed plugin reports the
@@ -951,7 +951,7 @@ describe("installPlugin — marketplace resolution", () => {
     expect(result.commit).toBe(CAVEMAN_SHA);
     const pkg = JSON.parse(readFileSync(join(target, "package.json"), "utf-8"));
     expect(pkg.name).toBe("caveman");
-    expect(pkg.peerDependencies["@vellumai/plugin-api"]).toBeString();
+    expect(pkg.peerDependencies["@mycadet/plugin-api"]).toBeString();
     expect(pkg.scripts?.postinstall).toBeUndefined();
     const hook = readFileSync(
       join(target, "hooks", "pre-model-call.ts"),
@@ -1019,7 +1019,7 @@ describe("installPlugin — marketplace resolution", () => {
       readFileSync(join(pluginsDir, "caveman", "package.json"), "utf-8"),
     );
     expect(pkg.name).toBe("caveman");
-    expect(pkg.peerDependencies["@vellumai/plugin-api"]).toBeString();
+    expect(pkg.peerDependencies["@mycadet/plugin-api"]).toBeString();
   });
 
   test("falls back to the stub manifest when the upstream ships no package.json", async () => {
@@ -1052,7 +1052,7 @@ describe("installPlugin — marketplace resolution", () => {
       readFileSync(join(pluginsDir, "caveman", "package.json"), "utf-8"),
     );
     expect(pkg.name).toBe("caveman");
-    expect(pkg.peerDependencies["@vellumai/plugin-api"]).toBeString();
+    expect(pkg.peerDependencies["@mycadet/plugin-api"]).toBeString();
     expect(pkg.scripts?.postinstall).toBeUndefined();
   });
 
@@ -1572,7 +1572,7 @@ describe("installPlugin — direct (untrusted) install", () => {
     const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
     expect(pkg.name).toBe("bare-plugin");
     expect(pkg.version).toBe("0.0.0");
-    expect(pkg.peerDependencies["@vellumai/plugin-api"]).toBeDefined();
+    expect(pkg.peerDependencies["@mycadet/plugin-api"]).toBeDefined();
   });
 
   test("synthesizes a minimal package.json for a marketplace install with no upstream manifest", async () => {
@@ -1617,7 +1617,7 @@ describe("installPlugin — direct (untrusted) install", () => {
     const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
     expect(pkg.name).toBe("manifest-less");
     expect(pkg.version).toBe("0.0.0");
-    expect(pkg.peerDependencies["@vellumai/plugin-api"]).toBeDefined();
+    expect(pkg.peerDependencies["@mycadet/plugin-api"]).toBeDefined();
   });
 });
 

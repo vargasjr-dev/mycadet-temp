@@ -10,14 +10,14 @@
 import type { Database } from "bun:sqlite";
 import { and, count, desc, eq, gt, gte, inArray, sql } from "drizzle-orm";
 
-import { bindsSameIdentity, boundIdentity } from "@vellumai/gateway-client";
+import { bindsSameIdentity, boundIdentity } from "@mycadet/gateway-client";
 import type {
   IdentityBindingStatus,
   IdentityBoundSession,
   SessionStatus,
   VerificationPurpose,
   VerificationSessionWire,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import { getGatewayDb } from "./connection.js";
 import { channelVerificationSessions } from "./schema.js";
@@ -30,7 +30,7 @@ export type {
   IdentityBindingStatus,
   SessionStatus,
   VerificationPurpose,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 /** Session row as the store returns it — identical to the wire DTO. */
 export type VerificationSession = VerificationSessionWire;

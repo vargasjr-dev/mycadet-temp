@@ -45,7 +45,7 @@ import {
   REDACTED_SENTINEL_CLOSE,
   REDACTED_SENTINEL_OPEN,
   REDACTED_SENTINEL_TAG,
-} from "@vellumai/service-contracts/redacted-credential";
+} from "@mycadet/service-contracts/redacted-credential";
 
 import { revealedValuesSince } from "../runtime/reveal-success-registry.js";
 import { credentialKey } from "../security/credential-key.js";

@@ -81,7 +81,7 @@ export function YourFirstSkillContent() {
           </p>
           <p className="mb-6 text-zinc-600">
             For the full list, see the{" "}
-            <Link href="https://www.vellum.ai/skills" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
+            <Link href="https://www.mycadet.ai/skills" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
               Skills Reference
             </Link>.
           </p>
@@ -176,7 +176,7 @@ export function YourFirstSkillContent() {
             Step 4: Refine until reliable
           </h3>
           <p className="mb-4 text-zinc-600">
-            Your skill is saved as plain text files in <code>~/.vellum/workspace/skills/</code>. You
+            Your skill is saved as plain text files in <code>$VELLUM_WORKSPACE_DIR/skills/</code>. You
             can:
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
@@ -184,7 +184,7 @@ export function YourFirstSkillContent() {
             <li>Ask your agent to tweak it (&quot;Make the verdict column bold&quot;)</li>
             <li>Add reference docs, like a brand voice guide or a glossary</li>
             <li>Add a schedule so it runs automatically</li>
-            <li>Share it with other Vellum users</li>
+            <li>Share it with other Cadet users</li>
           </ul>
           <p className="mb-6 text-zinc-600">
             A reliable skill is one you trust enough to run without checking the output first. That
@@ -197,7 +197,7 @@ export function YourFirstSkillContent() {
         <p className="mb-0 text-zinc-600">
           <em>
             For documentation on every built-in skill, see the{" "}
-            <Link href="https://www.vellum.ai/skills" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
+            <Link href="https://www.mycadet.ai/skills" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
               Skills Reference
             </Link>. Or keep going to{" "}
             <a href="/docs/key-concepts" className="font-semibold text-emerald-700 underline hover:text-emerald-800">

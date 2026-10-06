@@ -6,7 +6,7 @@
  * runs only when that sender clears the channel admission floor.
  */
 
-import { meetsAdmissionFloor } from "@vellumai/gateway-client";
+import { meetsAdmissionFloor } from "@mycadet/gateway-client";
 
 import { readInboundTrust } from "../calls/inbound-trust-reader.js";
 import type { ChannelId } from "../channels/types.js";

@@ -15,7 +15,7 @@
 import type {
   LLMContextSection,
   LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 export interface SkillLoad {
   skill: string;

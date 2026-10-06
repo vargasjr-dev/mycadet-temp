@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { create } from "zustand";
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 import { makeEnvelope } from "@/assistant/sse-service.test-helper";
 
 // Registered before the bus is imported so the bus binds to the mock.
 const captureErrorMock = mock(() => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 

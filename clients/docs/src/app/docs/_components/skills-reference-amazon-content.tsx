@@ -37,7 +37,7 @@ export function SkillsReferenceAmazonContent() {
             with Amazon, so you&apos;ll need to sign in once:
           </p>
           <ol className="mb-4 list-decimal space-y-2 pl-6 text-zinc-600">
-            <li>Make sure Chrome is open with the Vellum extension connected</li>
+            <li>Make sure Chrome is open with the Cadet extension connected</li>
             <li>
               Say: <em>&ldquo;Order something from Amazon&rdquo;</em> &mdash; your assistant will
               check your session and prompt you to sign in if needed
@@ -58,7 +58,7 @@ export function SkillsReferenceAmazonContent() {
             Permissions
           </SectionHeading>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
-            <li>Requires the Vellum Chrome extension to be installed and connected</li>
+            <li>Requires the Cadet Chrome extension to be installed and connected</li>
             <li>Uses your existing Amazon account (no separate credentials stored)</li>
             <li>
               Each command runs on your host machine and will ask for permission before executing
@@ -219,7 +219,7 @@ export function SkillsReferenceAmazonContent() {
             </li>
             <li>
               <strong>Chrome extension must be connected.</strong> If commands fail with an
-              extension error, open Chrome, click the Vellum extension icon, and click Connect.
+              extension error, open Chrome, click the Cadet extension icon, and click Connect.
             </li>
             <li>
               <strong>Sessions expire.</strong> Amazon sessions don&apos;t last forever. If your

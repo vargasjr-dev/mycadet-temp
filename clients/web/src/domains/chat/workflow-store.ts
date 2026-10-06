@@ -25,7 +25,7 @@ import { isActiveStatus } from "@/utils/workflow-status";
 import type {
   WorkflowRunStatus,
   WorkflowJournalResponse,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import { fetchWorkflowJournal } from "./fetch-workflow-journal";
 import { fetchWorkflowRun } from "./fetch-workflow-run";
@@ -36,7 +36,10 @@ import { setToolUseAnchor } from "./store-helpers/by-tool-use-id-index";
 // ---------------------------------------------------------------------------
 
 export type WorkflowLeafStatus =
-  "running" | "completed" | "failed" | "cancelled";
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
 export interface WorkflowLeaf {
   seq: number;

@@ -16,7 +16,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { Fragment, useState } from "react";
 import { useNavigate } from "react-router";
 
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 
 import {
   completeSliderValues,

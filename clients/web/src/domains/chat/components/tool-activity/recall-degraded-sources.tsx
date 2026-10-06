@@ -3,8 +3,8 @@
  * its result. Renders nothing when every place was searched.
  */
 
-import type { RecallSearchedSource } from "@vellumai/assistant-api";
-import { Notice } from "@vellumai/design-library";
+import type { RecallSearchedSource } from "@mycadet/assistant-api";
+import { Notice } from "@mycadet/design-library";
 
 import { useRecallSourceLabel } from "@/domains/chat/components/tool-activity/recall-labels";
 import { useTranslation } from "@/i18n";

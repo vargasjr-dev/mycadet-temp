@@ -5,7 +5,7 @@
  * corresponding settings card to populate dropdowns, display credential
  * guides, and gate feature availability.
  */
-import type { ElectronHostOS } from "@vellumai/ipc-contract";
+import type { ElectronHostOS } from "@mycadet/ipc-contract";
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -45,7 +45,7 @@ export const TTS_PROVIDERS: readonly TTSProvider[] = [
     credentialsGuide: {
       description:
         "Connect this assistant to your Vellum account; managed speech uses that connection instead of a provider API key.",
-      url: "https://platform.vellum.ai/",
+      url: "https://cloud.mycadet.ai/",
       linkLabel: "Open Vellum Platform",
     },
   },

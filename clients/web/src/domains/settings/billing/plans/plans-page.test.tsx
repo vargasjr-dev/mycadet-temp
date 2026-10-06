@@ -35,7 +35,7 @@ import * as sdkGen from "@/generated/api/sdk.gen";
 import * as browserRuntime from "@/runtime/browser";
 import * as platformGateMod from "@/hooks/use-platform-gate";
 import * as platformDetection from "@/runtime/platform-detection";
-import * as toastMod from "@vellumai/design-library/components/toast";
+import * as toastMod from "@mycadet/design-library/components/toast";
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { BUNDLED_COMPONENTS } from "@/utils/avatar-bundled-components";
@@ -244,7 +244,7 @@ mock.module(
 // Capture success/info toasts so the switch and downgrade paths can assert
 // their confirmation messages; keep the real module's other methods (error,
 // etc.) intact.
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...toastMod,
   toast: {
     ...toastMod.toast,

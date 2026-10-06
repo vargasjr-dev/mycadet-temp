@@ -6,7 +6,7 @@
  * - `device:` — device-scoped, preserved across sessions
  *
  * This function removes every `vellum:` key while leaving `device:`
- * keys and third-party keys (analytics SDKs, Sentry, etc.) untouched.
+ * keys and third-party keys (analytics SDKs, etc.) untouched.
  * sessionStorage is cleared entirely — all keys are session-scoped.
  *
  * Legacy prefixes are also swept as a safety net: if the startup

@@ -1,5 +1,5 @@
 {
-  "name": "@vellumai/ipc-contract",
+  "name": "@mycadet/ipc-contract",
   "version": "0.0.1",
   "private": true,
   "license": "MIT",
@@ -12,8 +12,8 @@
     "test": "bun test src/"
   },
   "dependencies": {
-    "@vellumai/avatar-manifest": "workspace:*",
-    "@vellumai/service-contracts": "workspace:*"
+    "@mycadet/avatar-manifest": "workspace:*",
+    "@mycadet/service-contracts": "workspace:*"
   },
   "peerDependencies": {
     "zod": ">=4.0.0"

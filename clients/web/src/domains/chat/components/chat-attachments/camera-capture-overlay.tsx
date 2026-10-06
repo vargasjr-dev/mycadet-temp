@@ -57,7 +57,7 @@
  */
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 import { SwitchCamera, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -91,8 +91,15 @@ export function CameraCaptureOverlay({
   const { t } = useTranslation("chat");
   const surfaceRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { captureFrame, error, flipCamera, flipping, native, open, openCamera } =
-    useVoiceCamera(videoRef);
+  const {
+    captureFrame,
+    error,
+    flipCamera,
+    flipping,
+    native,
+    open,
+    openCamera,
+  } = useVoiceCamera(videoRef);
   const [capturing, setCapturing] = useState(false);
 
   // Read while rendering, which is the last moment it is still true: the focus

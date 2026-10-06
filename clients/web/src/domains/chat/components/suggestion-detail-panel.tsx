@@ -1,4 +1,4 @@
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { CheckCircle2, Play, Puzzle, X } from "lucide-react";
 
 import { SuggestionIcon } from "@/domains/chat/suggestions/suggestion-icon";

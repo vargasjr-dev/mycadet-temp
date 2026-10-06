@@ -112,7 +112,7 @@ mock.module("@/domains/settings/components/debug-bundle-export", () => ({
   ),
 }));
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {} },
 }));
 

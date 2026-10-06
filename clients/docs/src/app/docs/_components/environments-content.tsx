@@ -10,7 +10,7 @@ import { TableOfContents } from "@/app/docs/_components/table-of-contents";
 const TOC_ITEMS = [
   { id: "overview", label: "Overview", level: 2 },
   { id: "architecture", label: "Architecture", level: 2 },
-  { id: "vellum-cloud", label: "Vellum Cloud", level: 2 },
+  { id: "cadet-cloud", label: "Cadet Cloud", level: 2 },
   { id: "local", label: "Local", level: 2 },
   { id: "user-hosted", label: "User Hosted", level: 2 },
   { id: "gcp", label: "GCP", level: 3 },
@@ -28,7 +28,7 @@ export function EnvironmentsContent() {
           </SectionHeading>
           <p className="mb-6 text-stone-600 dark:text-stone-400">
             An environment determines where your assistant runs. By default,
-            assistants run in <strong>Vellum Cloud</strong>, our managed
+            assistants run in <strong>Cadet Cloud</strong>, our managed
             platform, so you can sign up and go without managing any
             infrastructure. If you&apos;d rather host the runtime yourself, you
             can run it locally on your Mac or deploy it to your own GCP project
@@ -45,7 +45,7 @@ export function EnvironmentsContent() {
           </p>
           <div className="mb-6 overflow-x-auto">
             <pre className="font-[family-name:var(--font-dm-mono)] text-sm">
-<code>{`vellum hatch --remote <local | docker | vellum>`}</code>
+<code>{`cadet hatch --remote <local | docker | cloud>`}</code>
             </pre>
           </div>
         </section>
@@ -70,19 +70,19 @@ export function EnvironmentsContent() {
           </div>
         </section>
 
-        <section id="vellum-cloud" className="mt-12">
-          <SectionHeading id="vellum-cloud" level={2}>
-            Vellum Cloud (recommended)
+        <section id="cadet-cloud" className="mt-12">
+          <SectionHeading id="cadet-cloud" level={2}>
+            Cadet Cloud (recommended)
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            Run your assistant on Vellum&apos;s managed platform. No cloud
+            Run your assistant on Cadet&apos;s managed platform. No cloud
             accounts or server management required, just sign up and go.
           </p>
           <p className="mb-6 text-stone-600 dark:text-stone-400">
-            Vellum handles provisioning, upgrades, scaling, and infrastructure
+            Cadet handles provisioning, upgrades, scaling, and infrastructure
             so you can focus on using your assistant. Managed assistants use
             Anthropic (Claude) as the default provider, billing is handled
-            through your Vellum account, and your workspace is encrypted and
+            through your Cadet account, and your workspace is encrypted and
             isolated to you.
           </p>
           <dl className="mb-6 space-y-3">
@@ -102,7 +102,7 @@ export function EnvironmentsContent() {
               </dt>
               <dd className="m-0 text-sm text-stone-600 dark:text-stone-400">
                 No direct access to local files or tools on your machine without
-                the desktop app. Provider selection is managed by Vellum.
+                the desktop app. Provider selection is managed by Cadet.
               </dd>
             </div>
           </dl>
@@ -119,7 +119,7 @@ export function EnvironmentsContent() {
           </p>
           <div className="mb-4 overflow-x-auto">
             <pre className="font-[family-name:var(--font-dm-mono)] text-sm">
-<code>{`vellum hatch`}</code>
+<code>{`cadet hatch`}</code>
             </pre>
           </div>
           <p className="mb-6 text-stone-600 dark:text-stone-400">
@@ -157,7 +157,7 @@ export function EnvironmentsContent() {
             you need the assistant to stay running independently of your local
             machine, when you need more compute resources, or when you have
             specific compliance requirements. You create the machine, install
-            Vellum on it, and hatch there.
+            Cadet on it, and hatch there.
           </p>
 
           <div id="gcp" className="mb-8">
@@ -170,7 +170,7 @@ export function EnvironmentsContent() {
               <Link href="/docs/hosting-options/gcp" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
                 GCP
               </Link>{" "}
-              walks through provisioning the VM, installing Vellum, and reaching
+              walks through provisioning the VM, installing Cadet, and reaching
               the assistant from your other devices.
             </p>
           </div>
@@ -180,9 +180,9 @@ export function EnvironmentsContent() {
               Custom
             </SectionHeading>
             <p className="mb-4 text-stone-600 dark:text-stone-400">
-              Any machine you can SSH into. Install Vellum on it and run{" "}
+              Any machine you can SSH into. Install Cadet on it and run{" "}
               <code className="rounded bg-stone-100 px-1.5 py-0.5 font-[family-name:var(--font-dm-mono)] text-sm dark:bg-moss-700">
-                vellum hatch
+                cadet hatch
               </code>{" "}
               there, the same as on a cloud VM.
             </p>
@@ -216,12 +216,12 @@ export function EnvironmentsContent() {
               <tbody className="[&>tr:nth-child(even)]:bg-zinc-50">
                 <tr>
                   <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                    Vellum Cloud
+                    Cadet Cloud
                   </td>
                   <td className="py-3 pr-4">
                     Most users. Zero-ops managed hosting, always-on, accessible from anywhere.
                   </td>
-                  <td className="py-3">Vellum account</td>
+                  <td className="py-3">Cadet account</td>
                 </tr>
                 <tr>
                   <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
@@ -230,7 +230,7 @@ export function EnvironmentsContent() {
                   <td className="py-3 pr-4">
                     Personal use, development, testing, privacy-sensitive workflows
                   </td>
-                  <td className="py-3">Desktop app, vellum CLI</td>
+                  <td className="py-3">Desktop app, cadet CLI</td>
                 </tr>
                 <tr>
                   <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">

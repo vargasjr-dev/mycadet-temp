@@ -12,7 +12,7 @@ import {
   type VoiceModeActivator,
 } from "@/utils/voice-mode-activation";
 import { type PTTModifier, eventActivatesPTT } from "@/utils/ptt-activator";
-import type { VoiceModeChord } from "@vellumai/ipc-contract";
+import type { VoiceModeChord } from "@mycadet/ipc-contract";
 import { type HotkeyEvent, subscribeToHotkeyEvents } from "@/runtime/hotkey";
 import { watchSetting } from "@/utils/local-settings";
 

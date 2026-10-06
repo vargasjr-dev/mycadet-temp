@@ -11,7 +11,7 @@ import { describe, it, expect } from "bun:test";
 
 import { handleCredentialRoute } from "../credential-routes.js";
 import type { CredentialRouteDeps } from "../credential-routes.js";
-import type { SecureKeyBackend } from "@vellumai/credential-storage";
+import type { SecureKeyBackend } from "@mycadet/credential-storage";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -145,10 +145,7 @@ describe("POST /v1/credentials/bulk", () => {
 
   it("returns 400 when credentials field is missing", async () => {
     const deps = makeDeps();
-    const res = await handleCredentialRoute(
-      makeRequest({ body: {} }),
-      deps,
-    );
+    const res = await handleCredentialRoute(makeRequest({ body: {} }), deps);
 
     expect(res).not.toBeNull();
     expect(res!.status).toBe(400);

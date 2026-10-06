@@ -1,5 +1,5 @@
 import { Capacitor } from "@capacitor/core";
-import type { ElectronHostOS } from "@vellumai/ipc-contract";
+import type { ElectronHostOS } from "@mycadet/ipc-contract";
 import { useSyncExternalStore } from "react";
 
 import {

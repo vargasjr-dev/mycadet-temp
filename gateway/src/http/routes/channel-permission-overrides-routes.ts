@@ -5,7 +5,7 @@ import {
   ChannelPermissionScopeSchema,
   ResolveChannelPermissionRequestSchema,
   RiskThresholdSchema,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import type { GatewayRouteDefinition } from "./types.js";
 
@@ -18,7 +18,7 @@ import type { GatewayRouteDefinition } from "./types.js";
  * `/v1/assistants/{assistant_id}/channel-permission-overrides/...` routes
  * registered in `index.ts` alongside the flat paths documented here.
  * The cell/selector schemas come from the shared contract in
- * `@vellumai/gateway-client` so gateway, daemon IPC, clients, and spec share
+ * `@mycadet/gateway-client` so gateway, daemon IPC, clients, and spec share
  * one source — the HTTP surface mirrors the IPC surface
  * (`gateway/src/ipc/channel-permission-handlers.ts`) operation for
  * operation, including a read-only resolve so configuration clients can

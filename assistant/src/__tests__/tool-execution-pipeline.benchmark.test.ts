@@ -84,7 +84,7 @@ mock.module("../skills/version-hash.js", () => ({
 // In CI there's no gateway, so we return a sensible default.
 mock.module("../ipc/gateway-client.js", () => ({
   ipcClassifyRisk: async (): Promise<
-    import("@vellumai/gateway-client").ClassifyRiskIpcResponse
+    import("@mycadet/gateway-client").ClassifyRiskIpcResponse
   > => ({
     risk: "low",
     reason: "mock",

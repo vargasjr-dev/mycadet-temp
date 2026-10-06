@@ -29,7 +29,7 @@ describe("formatChannelReference", () => {
   test("emits every coordinate the assistant needs, one per line", () => {
     expect(formatChannelReference(FULL)).toBe(
       [
-        "> [vellum:channel-reference]",
+        "> [cadet:channel-reference]",
         "> channel: slack",
         "> conversation: C0123",
         "> conversation-name: general",
@@ -40,7 +40,7 @@ describe("formatChannelReference", () => {
         "> source: https://example.com/archives/C0123/p1712345678000200",
         "> text:",
         ">   can you look at the deploy?",
-        "> [/vellum:channel-reference]",
+        "> [/cadet:channel-reference]",
       ].join("\n"),
     );
   });
@@ -95,7 +95,7 @@ describe("prependChannelReference", () => {
   test("leads with the reference and follows with the user's remark", () => {
     const result = prependChannelReference("what should I do?", FULL);
 
-    expect(result.startsWith("> [vellum:channel-reference]")).toBe(true);
+    expect(result.startsWith("> [cadet:channel-reference]")).toBe(true);
     expect(result.endsWith("\n\nwhat should I do?")).toBe(true);
   });
 

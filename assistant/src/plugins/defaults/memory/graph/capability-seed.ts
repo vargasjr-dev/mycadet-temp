@@ -5,7 +5,7 @@
 // semantic retrieval.
 // ---------------------------------------------------------------------------
 
-import { CLI_COMMAND_HELP, safeStringSlice } from "@vellumai/plugin-api";
+import { CLI_COMMAND_HELP, safeStringSlice } from "@mycadet/plugin-api";
 import { and, eq, like, sql } from "drizzle-orm";
 
 import { isAssistantFeatureFlagEnabled } from "../../../../config/assistant-feature-flags.js";

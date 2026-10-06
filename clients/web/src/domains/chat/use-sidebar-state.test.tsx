@@ -69,7 +69,7 @@ function sectionFor(
  * this - no store priming, and no commit in between.
  */
 function seedGroupedView(assistantId = "asst-1"): void {
-  localStorage.setItem(`vellum:sidebar-view-mode:${assistantId}`, "grouped");
+  localStorage.setItem(`cadet:sidebar-view-mode:${assistantId}`, "grouped");
 }
 
 describe("useSidebarState grouping", () => {
@@ -740,7 +740,7 @@ describe("useSidebarState assistant-initiated section", () => {
     // order is genuinely being read — otherwise the assertion below would
     // hold for the default order too and prove nothing.
     localStorage.setItem(
-      "vellum:sidebar-section-order:asst-1",
+      "cadet:sidebar-section-order:asst-1",
       JSON.stringify(["assistant", "recents", "pinned"]),
     );
     sidebarSectionsImpl = [

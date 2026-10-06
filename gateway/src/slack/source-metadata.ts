@@ -1,4 +1,4 @@
-import type { SourceMetadata } from "@vellumai/gateway-client";
+import type { SourceMetadata } from "@mycadet/gateway-client";
 
 import { eventRefersToAnotherMessage } from "../channels/inbound-event.js";
 import type { NormalizedSlackEvent } from "./message-schemas.js";

@@ -77,7 +77,7 @@ export const CSP_POLICY = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://${WILDCARD_HOST} https://js.stripe.com https://*.js.stripe.com`,
   "style-src 'self' 'unsafe-inline'",
-  `connect-src 'self' blob: data: https://${WILDCARD_HOST} wss://${WILDCARD_HOST} https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://api.elevenlabs.io https://api.deepgram.com https://storage.googleapis.com https://*.storage.googleapis.com https://api.stripe.com https://link.com https://*.link.com ws://localhost:* ws://127.0.0.1:*`,
+  `connect-src 'self' blob: data: https://${WILDCARD_HOST} wss://${WILDCARD_HOST} https://api.elevenlabs.io https://api.deepgram.com https://storage.googleapis.com https://*.storage.googleapis.com https://api.stripe.com https://link.com https://*.link.com ws://localhost:* ws://127.0.0.1:*`,
   "frame-src 'self' https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://link.com https://*.link.com",
   "img-src 'self' https: data: blob:",
   // Hosted voice-preview samples: ElevenLabs premades live in the

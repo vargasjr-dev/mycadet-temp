@@ -38,7 +38,7 @@ const DEVICE_SETTINGS = {
   theme: { key: "device:theme" },
   shareAnalytics: { key: "device:share_analytics" },
   shareDiagnostics: { key: "device:share_diagnostics" },
-  // Effective Sentry reporting gate: tracks the saved diagnostics preference
+  // Effective diagnostics reporting gate: tracks the saved preference
   // with opt-out semantics, closing only for an explicit opt-out; absent reads
   // open once consent has hydrated. Decoupled from `shareDiagnostics` (the
   // saved preference) so consent-resolution paths can write it independently.
@@ -88,7 +88,7 @@ export function getDeviceSetting(
   }
 }
 
-/** Write a device-scoped setting. Fires the `vellum:pref-changed` event for same-tab observers. */
+/** Write a device-scoped setting. Fires the `cadet:pref-changed` event for same-tab observers. */
 export function setDeviceSetting(name: DeviceSettingName, value: string): void {
   setLocalSetting(DEVICE_SETTINGS[name].key, value);
 }

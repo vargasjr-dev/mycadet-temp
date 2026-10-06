@@ -10,14 +10,14 @@ import {
 } from "react";
 import { Link, Navigate, useSearchParams } from "react-router";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { textLinkVariants } from "@vellumai/design-library/components/text-link";
-import { cn } from "@vellumai/design-library/utils/cn";
-import { Select } from "@vellumai/design-library/components/select";
-import { SegmentControl } from "@vellumai/design-library/components/segment-control";
-import { Slider } from "@vellumai/design-library/components/slider";
-import { ShortcutKeys } from "@vellumai/design-library/components/shortcut-keys";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Button } from "@mycadet/design-library/components/button";
+import { textLinkVariants } from "@mycadet/design-library/components/text-link";
+import { cn } from "@mycadet/design-library/utils/cn";
+import { Select } from "@mycadet/design-library/components/select";
+import { SegmentControl } from "@mycadet/design-library/components/segment-control";
+import { Slider } from "@mycadet/design-library/components/slider";
+import { ShortcutKeys } from "@mycadet/design-library/components/shortcut-keys";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 import { ActivationKeyOption } from "@/domains/settings/pages/activation-key-option";
 import { ListeningLanguageCard } from "@/domains/settings/pages/listening-language-card";
@@ -206,7 +206,10 @@ function CaptionsCard() {
       <div className="flex flex-col gap-2">
         <VoiceTranscriptToggles showDescription />
         <p className={`${labelClasses} pt-1`}>
-          {t("voicePage.captionsRecommendation", VOICE_TRANSCRIPT_RECOMMENDATION)}
+          {t(
+            "voicePage.captionsRecommendation",
+            VOICE_TRANSCRIPT_RECOMMENDATION,
+          )}
         </p>
       </div>
     </DetailCard>

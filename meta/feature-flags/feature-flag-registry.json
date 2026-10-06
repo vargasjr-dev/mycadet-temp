@@ -22,14 +22,6 @@
       ]
     },
     {
-      "id": "user-hosted-enabled",
-      "scope": "client",
-      "key": "user-hosted-enabled",
-      "label": "User Hosted Enabled",
-      "description": "Enable user-hosted onboarding flow",
-      "defaultEnabled": false
-    },
-    {
       "id": "vision-mode",
       "scope": "client",
       "key": "vision-mode",
@@ -67,14 +59,6 @@
       ]
     },
     {
-      "id": "local-docker-enabled",
-      "scope": "client",
-      "key": "local-docker-enabled",
-      "label": "Local Docker Mode",
-      "description": "When enabled, the Local hosting option uses Docker under the hood for sandboxed execution, hiding the separate Docker card",
-      "defaultEnabled": false
-    },
-    {
       "id": "a2a-channel",
       "scope": "assistant",
       "key": "a2a-channel",
@@ -107,14 +91,6 @@
       "defaultEnabled": false
     },
     {
-      "id": "settings-embedding-provider",
-      "scope": "assistant",
-      "key": "settings-embedding-provider",
-      "label": "Embedding Provider Settings",
-      "description": "Show the Embedding service card in Models & Services settings",
-      "defaultEnabled": false
-    },
-    {
       "id": "multi-platform-assistant",
       "scope": "client",
       "key": "multi-platform-assistant",
@@ -139,14 +115,6 @@
       "defaultEnabled": false
     },
     {
-      "id": "expand-completed-steps",
-      "scope": "client",
-      "key": "expand-completed-steps",
-      "label": "Expand Completed Steps",
-      "description": "Auto-expand completed tool call step groups instead of showing them collapsed",
-      "defaultEnabled": false
-    },
-    {
       "id": "quiet-turn-activity",
       "scope": "client",
       "key": "quiet-turn-activity",
@@ -160,14 +128,6 @@
       "key": "inline-assistant-intermediates",
       "label": "Inline Assistant Intermediates",
       "description": "Render a completed response's intermediate activity inline at full size instead of collapsing it behind the Earlier activity disclosure",
-      "defaultEnabled": false
-    },
-    {
-      "id": "backward-releases",
-      "scope": "assistant",
-      "key": "backward-releases",
-      "label": "Backward Releases",
-      "description": "Show older versions in the version picker, allowing rollback to previous releases",
       "defaultEnabled": false
     },
     {
@@ -200,22 +160,6 @@
       "key": "internal-thread-actions",
       "label": "Internal Thread Actions",
       "description": "Show the internal thread affordances: 'Fork from here' and 'Summarize up to here' on messages, 'Fork Conversation', 'Analyze Conversation', and 'Copy conversation ID' in the thread menu, plus the LLM inspector surfaces. The flag is the sole gate: any session that enables it gets the affordances, including local sessions with no platform identity.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "home-tab",
-      "scope": "client",
-      "key": "home-tab",
-      "label": "Home Tab",
-      "description": "Replace the knowledge graph top-level tab with a new Home page showing relationship progression, facts, and capability tiers",
-      "defaultEnabled": false
-    },
-    {
-      "id": "scroll-debug-overlay",
-      "scope": "client",
-      "key": "scroll-debug-overlay",
-      "label": "Scroll Debug Overlay",
-      "description": "Show a live HUD in the top-right of the conversation with scroll geometry, velocity, update rate, and anchor-preserver activity. Developer diagnostic for investigating scroll jank.",
       "defaultEnabled": false
     },
     {
@@ -256,14 +200,6 @@
       "key": "chat-pull-to-refresh-enabled",
       "label": "Chat Pull to Refresh",
       "description": "Enable pull-to-refresh gesture in the chat view.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "centralized-assistant-status",
-      "scope": "client",
-      "key": "centralized-assistant-status",
-      "label": "Centralized Assistant Status",
-      "description": "Enable client polling of the centralized assistant operational status endpoint.",
       "defaultEnabled": false
     },
     {
@@ -523,11 +459,11 @@
       "defaultEnabled": false
     },
     {
-      "id": "velay-webhooks",
+      "id": "tunnel-webhooks",
       "scope": "assistant",
-      "key": "velay-webhooks",
-      "label": "Velay Webhooks",
-      "description": "Platform pods resolve webhook callback URLs from the Velay-published ingress URL instead of registering platform callback routes. Falls back to platform callback registration while no tunnel URL is published.",
+      "key": "tunnel-webhooks",
+      "label": "Tunnel Webhooks",
+      "description": "Platform pods resolve webhook callback URLs from the Tunnel-published ingress URL instead of registering platform callback routes. Falls back to platform callback registration while no tunnel URL is published.",
       "defaultEnabled": false
     },
     {

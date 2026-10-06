@@ -6,13 +6,13 @@
 // 2. Per-turn injection — lightweight embedding search for new memories
 // ---------------------------------------------------------------------------
 
-import type { ContentBlock, ImageContent } from "@vellumai/plugin-api";
+import type { ContentBlock, ImageContent } from "@mycadet/plugin-api";
 import {
   getConfiguredProvider,
   resolveMediaSourceData,
   safeStringSlice,
-} from "@vellumai/plugin-api";
-import { selectedBackendSupportsMultimodal } from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
+import { selectedBackendSupportsMultimodal } from "@mycadet/plugin-api";
 
 import { usesConceptPageMemory } from "../../../../../config/memory-v3-gate.js";
 import type { AssistantConfig } from "../../../../../config/types.js";

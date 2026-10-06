@@ -88,7 +88,7 @@ function writePluginDir(
       {
         name,
         version: "1.0.0",
-        peerDependencies: { "@vellumai/plugin-api": "*" },
+        peerDependencies: { "@mycadet/plugin-api": "*" },
         credentialKeyPatterns,
       },
       null,

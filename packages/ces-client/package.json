@@ -1,5 +1,5 @@
 {
-  "name": "@vellumai/ces-client",
+  "name": "@mycadet/ces-client",
   "version": "0.0.1",
   "private": true,
   "license": "MIT",
@@ -16,7 +16,7 @@
     "test": "bun test src/"
   },
   "dependencies": {
-    "@vellumai/service-contracts": "workspace:*"
+    "@mycadet/service-contracts": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "1.2.4",

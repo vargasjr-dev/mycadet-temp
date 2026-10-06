@@ -111,7 +111,7 @@ export function getRouterBasename(): string | undefined {
 }
 
 // Route tree — no basename in normal app modes; remote-gateway mode adds the
-// public path prefix as the router basename so Velay-style URLs such as
+// public path prefix as the router basename so Tunnel-style URLs such as
 // `/assistant-123/assistant/pair` match the same `/assistant/*` route tree.
 // To view the full hierarchy at a glance:
 //   grep -n 'path:' clients/web/src/routes.tsx

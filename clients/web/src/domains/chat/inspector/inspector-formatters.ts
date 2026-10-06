@@ -5,7 +5,7 @@
  * stay visually identical.
  */
 
-import type { LLMCallSummary } from "@vellumai/assistant-api";
+import type { LLMCallSummary } from "@mycadet/assistant-api";
 
 /**
  * Shared sentinel string used wherever a normalized field is absent.

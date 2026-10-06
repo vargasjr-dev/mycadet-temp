@@ -24,8 +24,7 @@
  * the real implementation in `sse-service.test.ts`).
  */
 
-import * as Sentry from "@sentry/react";
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 import { lifecycleService } from "@/assistant/lifecycle-service";
 import {
@@ -262,11 +261,6 @@ export const sseService: SseService = {
         assistantId,
         enqueueEnvelope,
         (err) => {
-          Sentry.addBreadcrumb({
-            category: "event_bus.sse",
-            level: "warning",
-            message: err.message,
-          });
           if (!isLiveStream()) {
             return;
           }

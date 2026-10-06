@@ -8,7 +8,7 @@ import {
   setPreviewRequested,
 } from "@/lib/preview-channel";
 import { useAuthStore } from "@/stores/auth-store";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 /**
  * Staff-only switch between the stable and preview builds of this app. It

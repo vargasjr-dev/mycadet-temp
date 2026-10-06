@@ -1,7 +1,7 @@
 import type { WebContents } from "electron";
 import { z } from "zod";
 
-import type { DictationTranscribeResult } from "@vellumai/ipc-contract";
+import type { DictationTranscribeResult } from "@mycadet/ipc-contract";
 
 export const dictationPartialsHelperResultSchema = z.object({
   enabled: z.boolean(),

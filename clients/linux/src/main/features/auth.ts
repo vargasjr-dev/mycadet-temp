@@ -3,22 +3,22 @@ import { app, session, shell, type Event } from "electron";
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
-import { resolveAuthCallbackScheme } from "@vellumai/electron-desktop/deep-links";
+} from "@mycadet/electron-desktop/capability-registry";
+import { resolveAuthCallbackScheme } from "@mycadet/electron-desktop/deep-links";
 import {
   configureNativeAuth,
   installNativeAuth,
-} from "@vellumai/electron-desktop/native-auth";
+} from "@mycadet/electron-desktop/native-auth";
 import {
   clearSessionToken,
   getSessionToken,
   saveSessionToken,
   setSessionTokenLogger,
-} from "@vellumai/electron-desktop/session-token-store";
+} from "@mycadet/electron-desktop/session-token-store";
 import {
   resolveEnvironmentName,
   resolveLocalConfigFromEnv,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 import { startLinuxAuthCallback } from "../auth-callback";
 import { handle, handleSync } from "../ipc.client";

@@ -12,7 +12,7 @@ import {
   Input,
   Menu,
   PortalContainerProvider,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 import {
   Bold,
   ChevronDown,

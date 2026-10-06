@@ -25,9 +25,9 @@ export function HostingOptionsCloudHostingContent() {
         breadcrumb="Docs / Hosting options / Cloud hosting"
       >
         <p className="mb-4 text-stone-600 dark:text-stone-400">
-          Vellum Cloud is the hosted, always-on home for your assistant.
+          Cadet Cloud is the hosted, always-on home for your assistant.
           You sign in, your assistant runs in its own sandboxed environment
-          on Vellum&apos;s infrastructure, and you reach it from web,
+          on Cadet&apos;s infrastructure, and you reach it from web,
           desktop, voice, and chat channels. No servers to manage, no
           ports to open, no laptop you have to keep awake.
         </p>
@@ -52,7 +52,7 @@ export function HostingOptionsCloudHostingContent() {
               cannot read other users&apos; data or infrastructure.
             </li>
             <li>
-              <strong>Managed model access.</strong> Vellum-managed API keys
+              <strong>Managed model access.</strong> Cadet-managed API keys
               for the default model (Anthropic Claude) are included, so you
               don&apos;t have to bring your own to get started.
             </li>
@@ -75,12 +75,12 @@ export function HostingOptionsCloudHostingContent() {
             What&apos;s included
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            A Vellum Cloud assistant ships with the full feature surface
+            A Cadet Cloud assistant ships with the full feature surface
             out of the box:
           </p>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-stone-600 dark:text-stone-400">
             <li>
-              The default Anthropic Claude model on Vellum&apos;s
+              The default Anthropic Claude model on Cadet&apos;s
               credentials. You can{" "}
               <Link
                 href="/docs/key-concepts/the-workspace"
@@ -141,7 +141,7 @@ export function HostingOptionsCloudHostingContent() {
             How it works
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            When you create an assistant on Vellum Cloud, three things
+            When you create an assistant on Cadet Cloud, three things
             happen:
           </p>
           <ol className="mb-4 list-decimal space-y-2 pl-6 text-stone-600 dark:text-stone-400">
@@ -167,7 +167,7 @@ export function HostingOptionsCloudHostingContent() {
             </li>
           </ol>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
-            Same architectural shape as the local install, with Vellum
+            Same architectural shape as the local install, with Cadet
             running the boxes.
           </p>
         </section>
@@ -177,14 +177,14 @@ export function HostingOptionsCloudHostingContent() {
             Privacy and data
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            Your data lives in your private, encrypted Vellum Cloud
+            Your data lives in your private, encrypted Cadet Cloud
             account. Workspace files, conversations, memories, skills,
             credentials, and trust rules are scoped to your account and
             isolated from every other user.
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-stone-600 dark:text-stone-400">
             <li>
-              Vellum staff access to your account is restricted to
+              Cadet staff access to your account is restricted to
               operational purposes (incident response, abuse prevention)
               and is logged.
             </li>
@@ -197,7 +197,7 @@ export function HostingOptionsCloudHostingContent() {
             </li>
             <li>
               The Share Feedback button is the only path that explicitly
-              sends conversation logs to Vellum, and only when you click
+              sends conversation logs to Cadet, and only when you click
               it.
             </li>
           </ul>
@@ -268,16 +268,16 @@ export function HostingOptionsCloudHostingContent() {
             <li>
               <strong>Web app.</strong> Sign in at{" "}
               <Link
-                href="https://vellum.ai"
+                href="https://cadet.ai"
                 className="font-semibold text-emerald-700 underline hover:text-emerald-800"
               >
-                vellum.ai
+                cadet.ai
               </Link>{" "}
               from any browser. Full chat, voice, approvals, and
               workspace browsing. No install required.
             </li>
             <li>
-              <strong>Desktop app.</strong> Install the Vellum desktop
+              <strong>Desktop app.</strong> Install the Cadet desktop
               app on your Mac, sign in to the same account, and you get
               the same assistant plus the host_* and computer-use tools
               that need direct access to your machine.
@@ -306,7 +306,7 @@ export function HostingOptionsCloudHostingContent() {
           <ul className="mb-4 list-disc space-y-2 pl-6 text-stone-600 dark:text-stone-400">
             <li>You want your assistant available 24/7, not just when your laptop is open.</li>
             <li>You want to use voice, phone, Telegram, Slack, or email channels reliably.</li>
-            <li>You want Vellum to handle infrastructure, uptime, and updates.</li>
+            <li>You want Cadet to handle infrastructure, uptime, and updates.</li>
             <li>You want to reach your assistant from multiple devices.</li>
             <li>You don&apos;t have a strict requirement to keep all data on hardware you control.</li>
           </ul>
@@ -338,10 +338,10 @@ export function HostingOptionsCloudHostingContent() {
             <li>
               Sign in at{" "}
               <Link
-                href="https://vellum.ai"
+                href="https://cadet.ai"
                 className="font-semibold text-emerald-700 underline hover:text-emerald-800"
               >
-                vellum.ai
+                cadet.ai
               </Link>
               . Your cloud assistant is provisioned automatically.
             </li>
@@ -352,7 +352,7 @@ export function HostingOptionsCloudHostingContent() {
             <li>
               Optional: install the{" "}
               <Link
-                href="https://www.vellum.ai/downloads"
+                href="https://www.mycadet.ai/downloads"
                 className="font-semibold text-emerald-700 underline hover:text-emerald-800"
               >
                 desktop app

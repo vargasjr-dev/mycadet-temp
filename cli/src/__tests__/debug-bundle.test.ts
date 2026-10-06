@@ -71,7 +71,6 @@ const LOCAL_ENTRY = {
   assistantId: "local-asst-1",
   runtimeUrl: "http://127.0.0.1:7821",
   cloud: "local",
-  species: "local",
   hatchedAt: new Date().toISOString(),
   platformAssistantId: "11111111-2222-3333-4444-555555555555",
   platformBaseUrl: "https://platform.vellum.ai",

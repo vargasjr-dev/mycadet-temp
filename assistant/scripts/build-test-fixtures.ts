@@ -43,7 +43,7 @@ async function buildMigratedFixture(outWorkspaceDir: string): Promise<void> {
   const buildWorkspace = join(buildRoot, "workspace");
   mkdirSync(buildWorkspace);
   process.env.VELLUM_WORKSPACE_DIR = buildWorkspace;
-  process.env.VELLUM_PLATFORM_URL ??= "https://test-platform.vellum.ai";
+  process.env.VELLUM_PLATFORM_URL ??= "https://test-cloud.mycadet.ai";
   // Match the preload's env hygiene so migrations never route through a live
   // credential store while building the fixture.
   delete process.env.IS_CONTAINERIZED;

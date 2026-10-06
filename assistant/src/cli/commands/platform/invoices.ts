@@ -1,4 +1,4 @@
-import { stripeScaleDigits } from "@vellumai/service-contracts/stripe-currency";
+import { stripeScaleDigits } from "@mycadet/service-contracts/stripe-currency";
 import type { Command } from "commander";
 
 import { cliIpcCall, exitFromIpcResult } from "../../../ipc/cli-client.js";
@@ -28,7 +28,7 @@ interface PlatformInvoicesListResult {
  * Render a Stripe minor-unit amount as major units, e.g. "USD 12.34". The
  * display fraction digits are forced to match stripeScaleDigits so Intl's
  * ISO metadata cannot apply a different scale (see the currency sets in
- * @vellumai/service-contracts/stripe-currency). Unknown currency codes fall
+ * @mycadet/service-contracts/stripe-currency). Unknown currency codes fall
  * back to the raw minor-unit amount.
  */
 function formatInvoiceAmount(

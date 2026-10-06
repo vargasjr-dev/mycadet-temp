@@ -35,15 +35,15 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useLlmConfigPatch } from "@/domains/settings/ai/use-llm-config-patch";
 import { useSupportsCompleteProfileSnapshots } from "@/lib/backwards-compat/complete-profile-snapshots";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useTranslation } from "@/i18n";
 import { SectionLabel } from "@/components/detail-primitives";
 import { DetailShell, DetailShellLoading } from "@/components/detail-shell";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Button } from "@vellumai/design-library/components/button";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { Input } from "@vellumai/design-library/components/input";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Button } from "@mycadet/design-library/components/button";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { Input } from "@mycadet/design-library/components/input";
+import { toast } from "@mycadet/design-library/components/toast";
 
 export interface OverridesDetailPanelProps {
   assistantId: string;
@@ -254,7 +254,10 @@ export function OverridesDetailPanel({
       );
       return [
         ...visible.map((p) => toProfileOption(p, callSiteDispatchOptions)),
-        { value: CUSTOM_SENTINEL, label: t("overridesDetailPanel.customProfileOption") },
+        {
+          value: CUSTOM_SENTINEL,
+          label: t("overridesDetailPanel.customProfileOption"),
+        },
       ];
     },
     [orderedProfiles, toProfileOption, callSiteDispatchOptions, t],
@@ -292,7 +295,10 @@ export function OverridesDetailPanel({
     );
     if (unknownSites.length > 0) {
       groups.push({
-        domain: { id: "other", displayName: t("overridesDetailPanel.otherDomain") },
+        domain: {
+          id: "other",
+          displayName: t("overridesDetailPanel.otherDomain"),
+        },
         sites: unknownSites,
       });
     }
@@ -428,91 +434,96 @@ export function OverridesDetailPanel({
       footer={footer}
     >
       <div className="flex flex-col gap-5">
-      <p className="text-body-medium-lighter text-[var(--content-tertiary)]">
-        {t("overridesDetailPanel.description")}
-      </p>
+        <p className="text-body-medium-lighter text-[var(--content-tertiary)]">
+          {t("overridesDetailPanel.description")}
+        </p>
 
-      <div className="flex flex-col gap-5">
-        {/* Search + bulk change. The swap acts on persisted overrides, so it
+        <div className="flex flex-col gap-5">
+          {/* Search + bulk change. The swap acts on persisted overrides, so it
             stays disabled while the editor holds unsaved drafts: applying it
             under a dirty draft would show stale rows and let a later Save
             silently undo the swap. */}
-        <div className="flex items-center gap-2">
-          <div className="min-w-0 flex-1">
-            <Input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("overridesDetailPanel.searchPlaceholder")}
-              leftIcon={<Search className="h-4 w-4" />}
-              fullWidth
-            />
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <Input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("overridesDetailPanel.searchPlaceholder")}
+                leftIcon={<Search className="h-4 w-4" />}
+                fullWidth
+              />
+            </div>
+            <Button
+              variant="outlined"
+              onClick={() => setShowBulkSwap(true)}
+              disabled={
+                !isSeeded ||
+                saving ||
+                hasUnsavedDrafts ||
+                !hasBulkSwapCandidates
+              }
+              title={
+                hasUnsavedDrafts
+                  ? t("overridesDetailPanel.bulkChangeUnsavedTitle")
+                  : !hasBulkSwapCandidates
+                    ? t("overridesDetailPanel.bulkChangeNoCandidatesTitle")
+                    : undefined
+              }
+            >
+              {t("overridesDetailPanel.bulkChange")}
+            </Button>
           </div>
-          <Button
-            variant="outlined"
-            onClick={() => setShowBulkSwap(true)}
-            disabled={
-              !isSeeded || saving || hasUnsavedDrafts || !hasBulkSwapCandidates
-            }
-            title={
-              hasUnsavedDrafts
-                ? t("overridesDetailPanel.bulkChangeUnsavedTitle")
-                : !hasBulkSwapCandidates
-                  ? t("overridesDetailPanel.bulkChangeNoCandidatesTitle")
-                  : undefined
-            }
-          >
-            {t("overridesDetailPanel.bulkChange")}
-          </Button>
-        </div>
 
-        {/* Advisor: a top-level selection, not a catalog call site, so it
+          {/* Advisor: a top-level selection, not a catalog call site, so it
             renders off `daemonConfig` alone and stays put if the call-site
             catalog fails to load. */}
-        {daemonConfigLoaded && advisorMatchesSearch && (
-          <div>
-            <SectionLabel>{t("overridesDetailPanel.advisorSection")}</SectionLabel>
-            <AdvisorProfileRow
-              value={advisorProfile}
-              profileOptions={advisorOptions}
-              disabled={saving}
-              onChange={setAdvisor}
+          {daemonConfigLoaded && advisorMatchesSearch && (
+            <div>
+              <SectionLabel>
+                {t("overridesDetailPanel.advisorSection")}
+              </SectionLabel>
+              <AdvisorProfileRow
+                value={advisorProfile}
+                profileOptions={advisorOptions}
+                disabled={saving}
+                onChange={setAdvisor}
+              />
+            </div>
+          )}
+
+          {/* Loading */}
+          {isLoading && <DetailShellLoading placement="panel" />}
+
+          {/* Error */}
+          {isError && (
+            <Notice
+              tone="error"
+              title={t("overridesDetailPanel.loadErrorTitle")}
+              actions={
+                <Button variant="outlined" onClick={() => void refetch()}>
+                  {t("overridesDetailPanel.retry")}
+                </Button>
+              }
+            >
+              {t("overridesDetailPanel.loadErrorHint")}
+            </Notice>
+          )}
+
+          {/* Call site list grouped by domain */}
+          {!isLoading && !isError && catalog && (
+            <OverridesCallSiteList
+              groups={groupedCallSites}
+              drafts={drafts}
+              buildProfileOptionsForRow={buildProfileOptionsForRow}
+              profileLabelFor={profileLabelFor}
+              advisorMatchesSearch={advisorMatchesSearch}
+              connections={connectionsData?.connections}
+              onDraftChange={setDraft}
+              onToggle={handleToggle}
             />
-          </div>
-        )}
-
-        {/* Loading */}
-        {isLoading && <DetailShellLoading placement="panel" />}
-
-        {/* Error */}
-        {isError && (
-          <Notice
-            tone="error"
-            title={t("overridesDetailPanel.loadErrorTitle")}
-            actions={
-              <Button variant="outlined" onClick={() => void refetch()}>
-                {t("overridesDetailPanel.retry")}
-              </Button>
-            }
-          >
-            {t("overridesDetailPanel.loadErrorHint")}
-          </Notice>
-        )}
-
-        {/* Call site list grouped by domain */}
-        {!isLoading && !isError && catalog && (
-          <OverridesCallSiteList
-            groups={groupedCallSites}
-            drafts={drafts}
-            buildProfileOptionsForRow={buildProfileOptionsForRow}
-            profileLabelFor={profileLabelFor}
-            advisorMatchesSearch={advisorMatchesSearch}
-            connections={connectionsData?.connections}
-            onDraftChange={setDraft}
-            onToggle={handleToggle}
-          />
-        )}
-      </div>
+          )}
+        </div>
       </div>
 
       {/* Mounted per open so source/target/selection state resets. Clears

@@ -16,10 +16,10 @@ import {
 } from "@/lib/feature-flags/feature-flag-catalog";
 import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
-import { cn } from "@vellumai/design-library";
-import { Select } from "@vellumai/design-library/components/select";
-import { Tag, type TagTone } from "@vellumai/design-library/components/tag";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { cn } from "@mycadet/design-library";
+import { Select } from "@mycadet/design-library/components/select";
+import { Tag, type TagTone } from "@mycadet/design-library/components/tag";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 interface FlagDefinitionResponse {
   key: string;

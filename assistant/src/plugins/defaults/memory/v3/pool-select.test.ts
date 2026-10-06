@@ -10,7 +10,7 @@
  *     empty pool → [].
  *
  * `mock.module` is process-global and leaks into sibling files in a directory
- * run, so the `@vellumai/plugin-api` stub DELEGATES to the real
+ * run, so the `@mycadet/plugin-api` stub DELEGATES to the real
  * `getConfiguredProvider` unless this test is actively running
  * (`selectMockActive`) — mirrors `prune.test.ts` / `ever-injected-store.test.ts`.
  */
@@ -21,11 +21,11 @@ import type {
   ContentBlock,
   Provider,
   ProviderResponse,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import type { MemoryRoutingTurn, Slug } from "./types.js";
 
-const realPluginApi = await import("@vellumai/plugin-api");
+const realPluginApi = await import("@mycadet/plugin-api");
 
 let selectMockActive = false;
 let sendMessageImpl: (() => Promise<ProviderResponse>) | null = null;
@@ -44,7 +44,7 @@ const mockProvider = {
   },
 } as unknown as Provider;
 
-mock.module("@vellumai/plugin-api", () => ({
+mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,
   getConfiguredProvider: (
     ...args: Parameters<typeof realPluginApi.getConfiguredProvider>

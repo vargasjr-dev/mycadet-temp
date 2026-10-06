@@ -40,7 +40,7 @@ mock.module("@/generated/api/client.gen", () => ({
   client: { patch: patchMock },
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 

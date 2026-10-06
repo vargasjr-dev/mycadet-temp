@@ -1,5 +1,5 @@
 {
-  "name": "@vellumai/local-mode",
+  "name": "@mycadet/local-mode",
   "version": "0.0.1",
   "private": true,
   "license": "MIT",
@@ -14,9 +14,9 @@
     "test": "bun test src/"
   },
   "dependencies": {
-    "@vellumai/avatar-manifest": "workspace:*",
-    "@vellumai/environments": "workspace:*",
-    "@vellumai/service-contracts": "workspace:*",
+    "@mycadet/avatar-manifest": "workspace:*",
+    "@mycadet/environments": "workspace:*",
+    "@mycadet/service-contracts": "workspace:*",
     "nanoid": "5.1.7",
     "zod": "4.3.6"
   },

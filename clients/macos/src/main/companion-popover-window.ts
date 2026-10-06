@@ -5,11 +5,11 @@ import {
   COMPANION_POPOVER_MAX_HEIGHT,
   COMPANION_POPOVER_MAX_WIDTH,
   type CompanionPopover,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import {
   createFloatingWindow,
   getFloatingWindow,
-} from "@vellumai/electron-desktop/floating-window";
+} from "@mycadet/electron-desktop/floating-window";
 
 /**
  * The popover beside the companion: what the assistant needs the user to see

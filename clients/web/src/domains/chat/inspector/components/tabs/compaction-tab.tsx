@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-import { Button, Card } from "@vellumai/design-library";
+import { Button, Card } from "@mycadet/design-library";
 
 import { useCompactionTrail } from "@/domains/chat/inspector/compaction-trail-api";
 import type { CompactionTrailEvent } from "@/domains/chat/inspector/compaction-trail-fetch";
@@ -18,7 +18,7 @@ import {
   MISSING_VALUE,
 } from "@/domains/chat/inspector/inspector-formatters";
 import { t, useTranslation } from "@/i18n";
-import type { LLMRequestLogEntry } from "@vellumai/assistant-api";
+import type { LLMRequestLogEntry } from "@mycadet/assistant-api";
 
 /**
  * Compaction tab — the compaction(s) attributed to the **selected LLM

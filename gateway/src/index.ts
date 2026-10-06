@@ -8,7 +8,7 @@ import {
   TWILIO_MEDIA_STREAM_WEBHOOK_PATH,
   TWILIO_STATUS_WEBHOOK_PATH,
   TWILIO_VOICE_WEBHOOK_PATH,
-} from "@vellumai/service-contracts/twilio-ingress";
+} from "@mycadet/service-contracts/twilio-ingress";
 
 import { AuthRateLimiter } from "./auth-rate-limiter.js";
 import {
@@ -125,7 +125,7 @@ import { createOAuthProvidersProxyHandler } from "./http/routes/oauth-providers-
 import { createChannelReadinessProxyHandler } from "./http/routes/channel-readiness-proxy.js";
 import { createPlatformPushProxyHandler } from "./http/routes/platform-push-proxy.js";
 import { createPsHandler } from "./http/routes/ps.js";
-import { createVelayStatusHandler } from "./http/routes/velay-status.js";
+import { createTunnelStatusHandler } from "./http/routes/tunnel-status.js";
 import { createRuntimeHealthProxyHandler } from "./http/routes/runtime-health-proxy.js";
 import { createUpgradeBroadcastProxyHandler } from "./http/routes/upgrade-broadcast-proxy.js";
 import {
@@ -242,7 +242,7 @@ import { registerEmailCallbackRoute } from "./email/register-callback.js";
 import { hasTwilioSetupStarted } from "./twilio/setup-state.js";
 import { syncConfiguredTwilioPhoneNumberWebhooks } from "./twilio/webhook-sync.js";
 import {
-  isOnlyVelayPublicBaseUrlChange,
+  isOnlyTunnelPublicBaseUrlChange,
   shouldSyncTwilioPhoneWebhooksAfterConfigChange,
 } from "./twilio/webhook-sync-trigger.js";
 import { GatewayIpcServer } from "./ipc/server.js";
@@ -264,7 +264,7 @@ import { thresholdRoutes } from "./ipc/threshold-handlers.js";
 import { trustRulesRoutes } from "./ipc/trust-rules-handlers.js";
 
 import { riskClassificationRoutes } from "./ipc/risk-classification-handlers.js";
-import { createVelayRoutes } from "./ipc/velay-handlers.js";
+import { createTunnelRoutes } from "./ipc/tunnel-handlers.js";
 import { createWebhookRouteRoutes } from "./ipc/webhook-route-handlers.js";
 import { refreshRouteSchema } from "./ipc/route-schema-cache.js";
 import { initGatewayDb } from "./db/connection.js";
@@ -273,9 +273,9 @@ import { onWebhookIngressRoutesChanged } from "./db/webhook-ingress-route-store.
 import { runPostAssistantReady } from "./post-assistant-ready.js";
 import {
   clearManagedPublicBaseUrl,
-  createVelayTunnelClient,
+  createTunnelClient,
   enablePublicIngress,
-} from "./velay/client.js";
+} from "./tunnel/client.js";
 import { VERSION_HEADER_NAME, VERSION_HEADER_VALUE } from "./version.js";
 
 const log = getLogger("main");
@@ -447,18 +447,18 @@ async function main() {
   bindPlatformIdentityCredentialCache(credentialCache);
   void ensurePlatformIdentityIds();
   const configFileCache = new ConfigFileCache();
-  const velayTunnelClient = createVelayTunnelClient(config, {
+  const tunnelClient = createTunnelClient(config, {
     credentials: credentialCache,
     configFile: configFileCache,
   });
-  // Velay only sees a webhook route on the next tunnel connect, so a registry
+  // Tunnel only sees a webhook route on the next tunnel connect, so a registry
   // write asks for one. With the flag off the advertised rules are a constant,
   // so a write changes nothing worth reconnecting for; registry maintenance
   // must never touch the tunnel in that state. A flag flip re-advertises via
   // the flag-change handler, which picks up any rows written while off.
   onWebhookIngressRoutesChanged(() => {
-    if (isFeatureFlagEnabled("velay-webhooks")) {
-      velayTunnelClient?.requestRulesRefresh("webhook-routes-changed");
+    if (isFeatureFlagEnabled("tunnel-webhooks")) {
+      tunnelClient?.requestRulesRefresh("webhook-routes-changed");
     }
   });
 
@@ -469,70 +469,70 @@ async function main() {
   let telegramReady = false;
   let whatsappReady = false;
   let vellumReady = false;
-  let velayStartRequested = false;
+  let tunnelStartRequested = false;
 
-  function maybeStartVelayTunnelForTwilio(
+  function maybeStartTunnelTunnelForTwilio(
     reason: string,
     twilioCredentials?: Record<string, string> | null,
   ): boolean {
-    if (velayStartRequested || !velayTunnelClient) {
-      return velayStartRequested;
+    if (tunnelStartRequested || !tunnelClient) {
+      return tunnelStartRequested;
     }
     if (!hasTwilioSetupStarted(configFileCache, twilioCredentials)) {
       return false;
     }
 
-    velayStartRequested = true;
-    log.info({ reason }, "Starting Velay tunnel after Twilio setup detected");
-    velayTunnelClient.start();
+    tunnelStartRequested = true;
+    log.info({ reason }, "Starting Tunnel tunnel after Twilio setup detected");
+    tunnelClient.start();
     return true;
   }
 
   /**
-   * Start the Velay tunnel for web live voice.
+   * Start the Tunnel tunnel for web live voice.
    *
-   * Velay is the browser's ingress for the live-voice WebSocket, but the tunnel
+   * Tunnel is the browser's ingress for the live-voice WebSocket, but the tunnel
    * was historically only started for Twilio (see
-   * {@link maybeStartVelayTunnelForTwilio}). Without this, an assistant with no
-   * Twilio setup never registers a Velay tunnel, so the browser's
+   * {@link maybeStartTunnelTunnelForTwilio}). Without this, an assistant with no
+   * Twilio setup never registers a Tunnel tunnel, so the browser's
    * `/v1/live-voice` upgrade fails with "assistant tunnel is not connected".
    * Live voice is available to every assistant, so this runs unconditionally at
-   * startup. Shares the `velayStartRequested` latch with the Twilio path — one
-   * tunnel serves both — and `velayTunnelClient.start()` is idempotent.
+   * startup. Shares the `tunnelStartRequested` latch with the Twilio path — one
+   * tunnel serves both — and `tunnelClient.start()` is idempotent.
    */
-  function startVelayTunnelForLiveVoice(reason: string): boolean {
-    if (velayStartRequested || !velayTunnelClient) {
-      return velayStartRequested;
+  function startTunnelTunnelForLiveVoice(reason: string): boolean {
+    if (tunnelStartRequested || !tunnelClient) {
+      return tunnelStartRequested;
     }
 
-    velayStartRequested = true;
-    log.info({ reason }, "Starting Velay tunnel for live voice");
-    velayTunnelClient.start();
+    tunnelStartRequested = true;
+    log.info({ reason }, "Starting Tunnel tunnel for live voice");
+    tunnelClient.start();
     return true;
   }
 
   /**
-   * Start the Velay tunnel when a credential link is minted. Unlike the Twilio
+   * Start the Tunnel tunnel when a credential link is minted. Unlike the Twilio
    * and live-voice paths this has no precondition: creating a one-time
    * credential link is itself the request to expose public ingress, and the
    * tunnel is the browser's route to the credential-entry page. Shares the
-   * `velayStartRequested` latch — one tunnel serves every ingress consumer —
-   * and `velayTunnelClient.start()` is idempotent.
+   * `tunnelStartRequested` latch — one tunnel serves every ingress consumer —
+   * and `tunnelClient.start()` is idempotent.
    */
-  function maybeStartVelayTunnelForCredentialLink(reason: string): boolean {
-    if (velayStartRequested || !velayTunnelClient) {
-      return velayStartRequested;
+  function maybeStartTunnelTunnelForCredentialLink(reason: string): boolean {
+    if (tunnelStartRequested || !tunnelClient) {
+      return tunnelStartRequested;
     }
-    velayStartRequested = true;
-    log.info({ reason }, "Starting Velay tunnel after credential link minted");
-    velayTunnelClient.start();
+    tunnelStartRequested = true;
+    log.info({ reason }, "Starting Tunnel tunnel after credential link minted");
+    tunnelClient.start();
     return true;
   }
 
   /**
    * Make public ingress live for a freshly minted credential link: enable it
    * when explicitly disabled (only an explicit `false` — a default `undefined`
-   * already means enabled on platform) and start the Velay tunnel so the link
+   * already means enabled on platform) and start the Tunnel tunnel so the link
    * is actually reachable.
    */
   async function ensurePublicIngressLiveForCredentialLink(): Promise<void> {
@@ -543,10 +543,10 @@ async function main() {
       await enablePublicIngress(configFileCache);
       log.info("Auto-enabled public ingress for credential link creation");
     }
-    maybeStartVelayTunnelForCredentialLink("credential link minted");
+    maybeStartTunnelTunnelForCredentialLink("credential link minted");
   }
 
-  async function readTwilioCredentialsForVelayStartup(): Promise<Record<
+  async function readTwilioCredentialsForTunnelStartup(): Promise<Record<
     string,
     string
   > | null> {
@@ -562,7 +562,7 @@ async function main() {
     } catch (err) {
       log.warn(
         { err },
-        "Failed to read Twilio credentials before Velay startup gate",
+        "Failed to read Twilio credentials before Tunnel startup gate",
       );
       return null;
     }
@@ -670,7 +670,7 @@ async function main() {
   const channelReadinessProxy = createChannelReadinessProxyHandler(config);
   const platformPushProxy = createPlatformPushProxyHandler(credentialCache);
   const psHandler = createPsHandler(config);
-  const velayStatusHandler = createVelayStatusHandler(velayTunnelClient);
+  const tunnelStatusHandler = createTunnelStatusHandler(tunnelClient);
   const runtimeHealthProxy = createRuntimeHealthProxyHandler(config);
   const upgradeBroadcastProxy = createUpgradeBroadcastProxyHandler(config);
   const migrationExportProxy = createMigrationExportProxyHandler(config);
@@ -888,21 +888,21 @@ async function main() {
       handler: () => psHandler.handlePs(),
     },
 
-    // ── Velay tunnel status ──
+    // ── Tunnel tunnel status ──
     {
-      path: "/v1/velay/status",
+      path: "/v1/tunnel/status",
       method: "GET",
       auth: "edge",
-      handler: () => velayStatusHandler.handleVelayStatus(),
+      handler: () => tunnelStatusHandler.handleTunnelStatus(),
     },
-    // Assistant-scoped mirror: self-hosted clients emit /v1/assistants/<id>/velay/status
+    // Assistant-scoped mirror: self-hosted clients emit /v1/assistants/<id>/tunnel/status
     // and rewriteForSelfHostedIngress preserves that path, so a flat-only route
     // would fall through to the runtime proxy and 404. The assistant id is discarded.
     {
-      path: /^\/v1\/assistants\/[^/]+\/velay\/status\/?$/,
+      path: /^\/v1\/assistants\/[^/]+\/tunnel\/status\/?$/,
       method: "GET",
       auth: "edge-scoped",
-      handler: () => velayStatusHandler.handleVelayStatus(),
+      handler: () => tunnelStatusHandler.handleTunnelStatus(),
     },
 
     // ── Brain graph ──
@@ -1051,7 +1051,7 @@ async function main() {
     // Unauthenticated by design: the single-use token in the request BODY is
     // the credential to act. Invalid tokens count as auth failures.
     // The entry page is a static self-contained HTML shell (no token
-    // server-side — it rides the URL fragment); Velay-tunneled deployments
+    // server-side — it rides the URL fragment); Tunnel-tunneled deployments
     // have no SPA server behind the tunnel, so the gateway serves it.
     {
       path: "/assistant/credentials/enter",
@@ -2320,8 +2320,8 @@ async function main() {
     }
 
     // Reachable both ways: directly on a self-hosted ingress with an actor
-    // edge JWT, and through the velay tunnel on a managed assistant, which is
-    // why it is in `VELAY_ALLOWED_PATHS`. The handler authorizes each shape on
+    // edge JWT, and through the tunnel on a managed assistant, which is
+    // why it is in `TUNNEL_ALLOWED_PATHS`. The handler authorizes each shape on
     // its own terms and admits only the guardian either way. A paired
     // assistant has no transport at all and never reaches here.
     if (url.pathname === "/v1/watch/stream") {
@@ -2347,8 +2347,8 @@ async function main() {
       return undefined as unknown as Response;
     }
 
-    // Managed-speech relay: daemon-only egress to velay. NOT in
-    // VELAY_ALLOWED_PATHS — velay's inbound tunnel must never reach it.
+    // Managed-speech relay: daemon-only egress to tunnel. NOT in
+    // TUNNEL_ALLOWED_PATHS — tunnel's inbound tunnel must never reach it.
     if (url.pathname === "/v1/speech/stt/stream") {
       const upgradeResult = await handleSpeechRelaySttWs(req, server);
       if (upgradeResult !== undefined) return upgradeResult;
@@ -2935,7 +2935,10 @@ async function main() {
     }
 
     if (changed.has("twilio")) {
-      maybeStartVelayTunnelForTwilio("twilio credentials changed", twilioCreds);
+      maybeStartTunnelTunnelForTwilio(
+        "twilio credentials changed",
+        twilioCreds,
+      );
       syncConfiguredTwilioPhoneNumberWebhooks({
         credentials: credentialCache,
         configFile: configFileCache,
@@ -2949,7 +2952,7 @@ async function main() {
     // Fires on initial credential load and whenever vellum credentials change
     // (key rotation, late provisioning).
     if (changed.has("vellum")) {
-      velayTunnelClient?.refreshCredentials("vellum credentials changed");
+      tunnelClient?.refreshCredentials("vellum credentials changed");
       registerEmailCallbackRoute({
         credentials: credentialCache,
         configFile: configFileCache,
@@ -2992,19 +2995,20 @@ async function main() {
     }
   });
 
-  const twilioStartupCredentials = await readTwilioCredentialsForVelayStartup();
-  if (velayTunnelClient) {
+  const twilioStartupCredentials =
+    await readTwilioCredentialsForTunnelStartup();
+  if (tunnelClient) {
     await clearManagedPublicBaseUrl(configFileCache).catch((err) => {
-      log.error({ err }, "Failed to clear stale Velay public URL");
+      log.error({ err }, "Failed to clear stale Tunnel public URL");
     });
   }
-  maybeStartVelayTunnelForTwilio("startup", twilioStartupCredentials);
-  // Velay is also the browser's ingress for web live voice, so bring the tunnel
+  maybeStartTunnelTunnelForTwilio("startup", twilioStartupCredentials);
+  // Tunnel is also the browser's ingress for web live voice, so bring the tunnel
   // up at startup for every assistant (not just for Twilio).
-  startVelayTunnelForLiveVoice("startup");
+  startTunnelTunnelForLiveVoice("startup");
 
   // The credential watcher callback handles credential-backed startup side
-  // effects during the initial poll. Stale Velay-owned ingress is already
+  // effects during the initial poll. Stale Tunnel-owned ingress is already
   // cleared before those side effects can register external callbacks.
   await credentialWatcher.start();
 
@@ -3013,13 +3017,15 @@ async function main() {
     configFileCache.invalidate();
 
     // Side effect: reconcile Telegram webhook when ingress URL changes
-    const onlyVelayPublicBaseUrlChanged = isOnlyVelayPublicBaseUrlChange(event);
-    // A Velay-only publicBaseUrl change is the tunnel registering. While
-    // `velay-webhooks` is on that URL is what Telegram must be pointed at, so
+    const onlyTunnelPublicBaseUrlChanged =
+      isOnlyTunnelPublicBaseUrlChange(event);
+    // A Tunnel-only publicBaseUrl change is the tunnel registering. While
+    // `tunnel-webhooks` is on that URL is what Telegram must be pointed at, so
     // the suppression that keeps a tunnel address out of provider config is
     // exactly what has to lift.
     const telegramSuppressed =
-      onlyVelayPublicBaseUrlChanged && !isFeatureFlagEnabled("velay-webhooks");
+      onlyTunnelPublicBaseUrlChanged &&
+      !isFeatureFlagEnabled("tunnel-webhooks");
 
     if (
       event.changedKeys.has("ingress") &&
@@ -3044,7 +3050,7 @@ async function main() {
     }
 
     if (event.changedKeys.has("twilio")) {
-      maybeStartVelayTunnelForTwilio("twilio config changed");
+      maybeStartTunnelTunnelForTwilio("twilio config changed");
     }
 
     if (event.changedKeys.has("slack")) {
@@ -3060,7 +3066,7 @@ async function main() {
     // the platform callback route points at the new self-hosted URL.
     if (
       event.changedKeys.has("ingress") &&
-      !onlyVelayPublicBaseUrlChanged &&
+      !onlyTunnelPublicBaseUrlChanged &&
       vellumReady
     ) {
       registerEmailCallbackRoute({
@@ -3098,7 +3104,7 @@ async function main() {
       discord: () => discordGatewayClient,
     }),
     ...trustRulesRoutes,
-    ...createVelayRoutes(velayTunnelClient),
+    ...createTunnelRoutes(tunnelClient),
     ...createWebhookRouteRoutes(),
     ...createCredentialRequestIpcRoutes(
       config,
@@ -3115,15 +3121,15 @@ async function main() {
     assistantRuntimeBaseUrl: config.assistantRuntimeBaseUrl,
   });
 
-  let velayWebhooksEnabled = isFeatureFlagEnabled("velay-webhooks");
+  let tunnelWebhooksEnabled = isFeatureFlagEnabled("tunnel-webhooks");
   emitFlagChanged = () => {
     ipcServer.emit("feature_flags_changed");
     // The flag decides the shape of the advertised rules, so flipping it has
     // to re-advertise rather than wait out the periodic tunnel refresh.
-    const enabled = isFeatureFlagEnabled("velay-webhooks");
-    if (enabled !== velayWebhooksEnabled) {
-      velayWebhooksEnabled = enabled;
-      velayTunnelClient?.requestRulesRefresh("velay-webhooks-flag-changed");
+    const enabled = isFeatureFlagEnabled("tunnel-webhooks");
+    if (enabled !== tunnelWebhooksEnabled) {
+      tunnelWebhooksEnabled = enabled;
+      tunnelClient?.requestRulesRefresh("tunnel-webhooks-flag-changed");
       // The flag also decides which address a pod hands Telegram, and nothing
       // else re-runs the reconcile when it moves. One call covers a flip in
       // either direction because the resolver reads the new value.
@@ -3131,7 +3137,7 @@ async function main() {
         reconcileTelegramWebhook(telegramCaches).catch((err) => {
           log.error(
             { err },
-            "Failed to reconcile Telegram webhook after velay-webhooks flag change",
+            "Failed to reconcile Telegram webhook after tunnel-webhooks flag change",
           );
         });
       }
@@ -3205,8 +3211,8 @@ async function main() {
     remoteFeatureFlagSync.stop();
     // Stop the timer and flush any buffered auth-fallback counts before exit.
     shutdownTasks.push(authFallbackReporter.stop());
-    const velayStop = velayTunnelClient?.stop();
-    if (velayStop) shutdownTasks.push(velayStop);
+    const tunnelStop = tunnelClient?.stop();
+    if (tunnelStop) shutdownTasks.push(tunnelStop);
     ipcServer.stop();
     telegramDedupCache.stopCleanup();
     whatsappDedupCache.stopCleanup();

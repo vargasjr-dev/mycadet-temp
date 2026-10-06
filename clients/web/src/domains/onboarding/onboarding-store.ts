@@ -146,8 +146,8 @@ const useOnboardingStoreBase = create<OnboardingStore>()((set) => ({
   setShareDiagnostics: (value) => {
     set({ shareDiagnostics: value });
     // Writes only the saved preference. The effective reporting gate
-    // (`device:diagnostics_reporting`) — which actually drives the Sentry
-    // clients via the `sentry-control.ts` watcher — is written solely by the
+    // (`device:diagnostics_reporting`) — which actually drives client
+    // diagnostics via the cross-tab watcher — is written solely by the
     // consent chokepoints in `lib/consent/diagnostics-consent.ts`.
     persistShareChoice(KEY_SHARE_DIAGNOSTICS, value);
   },

@@ -2,12 +2,12 @@ import { useState } from "react";
 
 import { ChevronDown } from "lucide-react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Collapsible } from "@vellumai/design-library/components/collapsible";
-import { Input } from "@vellumai/design-library/components/input";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { cn } from "@vellumai/design-library/utils/cn";
-import type { TunnelProviderName } from "@vellumai/service-contracts/ingress";
+import { Button } from "@mycadet/design-library/components/button";
+import { Collapsible } from "@mycadet/design-library/components/collapsible";
+import { Input } from "@mycadet/design-library/components/input";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { cn } from "@mycadet/design-library/utils/cn";
+import type { TunnelProviderName } from "@mycadet/service-contracts/ingress";
 
 import { DetailCard } from "@/components/detail-card";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";

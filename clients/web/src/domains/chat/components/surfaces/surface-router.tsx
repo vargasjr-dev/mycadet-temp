@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle, XCircle } from "lucide-react";
-import * as Sentry from "@sentry/react";
+
+import { ErrorBoundary } from "@/components/error-boundary";
 
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import { INHERENTLY_INTERACTIVE_SURFACE_TYPES } from "@/domains/chat/types/types";
@@ -235,12 +236,8 @@ export function SurfaceRouter(props: SurfaceRouterProps) {
   const { surface } = props;
   const { t } = useTranslation("chat");
   return (
-    <Sentry.ErrorBoundary
+    <ErrorBoundary
       key={surface.surfaceId}
-      beforeCapture={(scope) => {
-        scope.setTag("boundary", "chat-surface");
-        scope.setTag("surfaceType", surface.surfaceType ?? "unknown");
-      }}
       fallback={
         <div
           role="alert"
@@ -254,6 +251,6 @@ export function SurfaceRouter(props: SurfaceRouterProps) {
       }
     >
       <SurfaceRouterInner {...props} />
-    </Sentry.ErrorBoundary>
+    </ErrorBoundary>
   );
 }

@@ -62,7 +62,7 @@ import type { CSSProperties } from "react";
 
 import { Mic, MicOff, Volume2, VolumeX, X } from "lucide-react";
 
-import { Button, cn } from "@vellumai/design-library";
+import { Button, cn } from "@mycadet/design-library";
 
 import {
   isLiveVoiceMicLive,

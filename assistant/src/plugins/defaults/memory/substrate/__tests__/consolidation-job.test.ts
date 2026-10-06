@@ -102,8 +102,8 @@ const FILED_ONE_PAGE: RunMessage[] = [
 ];
 let runMessages: RunMessage[] = FILED_ONE_PAGE;
 let messagesRequestedFor: string[] = [];
-const realPluginApi = await import("@vellumai/plugin-api");
-mock.module("@vellumai/plugin-api", () => ({
+const realPluginApi = await import("@mycadet/plugin-api");
+mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,
   getMessages: async (conversationId: string) => {
     messagesRequestedFor.push(conversationId);

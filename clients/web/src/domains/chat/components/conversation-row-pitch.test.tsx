@@ -18,7 +18,7 @@ import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
 import { createElement, type ReactNode } from "react";
 import { cleanup, render } from "@testing-library/react";
 
-mock.module("@vellumai/design-library", () => ({
+mock.module("@mycadet/design-library", () => ({
   PanelItem: ({
     label,
     trailingAction,

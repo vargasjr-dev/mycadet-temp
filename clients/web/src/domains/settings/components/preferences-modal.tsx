@@ -13,8 +13,8 @@ import {
   showContextWindowIndicator,
 } from "@/utils/composer-settings";
 import { isPointerCoarse } from "@/utils/pointer";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 /**
  * Preferences section for composer behavior: the Enter-key mode (at parity

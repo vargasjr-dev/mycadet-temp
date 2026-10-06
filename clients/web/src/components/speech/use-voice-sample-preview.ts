@@ -12,7 +12,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { t } from "@/i18n";
 import { type ManagedVoiceOption } from "@/lib/tts/use-managed-voices";

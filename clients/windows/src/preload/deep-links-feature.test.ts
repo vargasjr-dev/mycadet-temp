@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 
-import type { VellumBridge } from "@vellumai/ipc-contract";
+import type { VellumBridge } from "@mycadet/ipc-contract";
 
 const invoke = mock(() => Promise.resolve());
 const on = mock(() => undefined);
@@ -12,7 +12,7 @@ mock.module("electron", () => ({
 }));
 
 const { BridgeCapabilityRegistry } =
-  await import("@vellumai/electron-desktop/capability-registry");
+  await import("@mycadet/electron-desktop/capability-registry");
 const { default: deepLinksFeature } = await import("./features/deep-links");
 
 beforeEach(() => {
@@ -33,10 +33,10 @@ test("contributes deep-link delivery and launch-at-login IPC", async () => {
   await bridge.launchAtLogin?.get();
   await bridge.launchAtLogin?.set(true);
 
-  expect(invoke).toHaveBeenCalledWith("vellum:deepLinks:drain");
-  expect(send).toHaveBeenCalledWith("vellum:deepLinks:subscribe");
-  expect(invoke).toHaveBeenCalledWith("vellum:launchAtLogin:get");
-  expect(invoke).toHaveBeenCalledWith("vellum:launchAtLogin:set", true);
+  expect(invoke).toHaveBeenCalledWith("cadet:deepLinks:drain");
+  expect(send).toHaveBeenCalledWith("cadet:deepLinks:subscribe");
+  expect(invoke).toHaveBeenCalledWith("cadet:launchAtLogin:get");
+  expect(invoke).toHaveBeenCalledWith("cadet:launchAtLogin:set", true);
 
   const calls = on.mock.calls as unknown as Array<
     [string, (event: unknown, link: { kind: "send"; message: string }) => void]
@@ -50,8 +50,8 @@ test("contributes deep-link delivery and launch-at-login IPC", async () => {
 
   unsubscribe?.();
   expect(off).toHaveBeenCalledWith(
-    "vellum:deepLinks:event",
+    "cadet:deepLinks:event",
     expect.any(Function),
   );
-  expect(send).toHaveBeenCalledWith("vellum:deepLinks:unsubscribe");
+  expect(send).toHaveBeenCalledWith("cadet:deepLinks:unsubscribe");
 });

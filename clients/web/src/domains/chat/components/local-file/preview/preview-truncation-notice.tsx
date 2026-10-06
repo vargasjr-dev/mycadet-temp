@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 interface PreviewTruncationNoticeProps {
   /** The already-translated sentence naming how much of the file is shown. */

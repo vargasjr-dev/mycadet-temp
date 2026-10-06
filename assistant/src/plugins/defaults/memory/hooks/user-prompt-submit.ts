@@ -34,11 +34,11 @@
 import type {
   HookFunction,
   UserPromptSubmitContext,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 import {
   updateMessageMetadata,
   VOICE_ESCALATION_CONTINUATION_MESSAGE_KIND,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import type { MemoryRecalledEvent } from "../../../../api/events/memory-recalled.js";
 import { getConfig } from "../../../../config/loader.js";

@@ -17,7 +17,7 @@
 import {
   buildTwilioMediaStreamUrl,
   TWILIO_PUBLIC_BASE_URL_PLACEHOLDER,
-} from "@vellumai/service-contracts/twilio-ingress";
+} from "@mycadet/service-contracts/twilio-ingress";
 
 import {
   BadRequestError,

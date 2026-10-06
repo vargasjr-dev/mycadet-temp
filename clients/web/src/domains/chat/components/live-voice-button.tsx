@@ -29,7 +29,7 @@ import {
   MOBILE_GLYPH_CLASS,
   preventPressFocusTransfer,
 } from "@/domains/chat/components/chat-composer/composer-mobile-chrome";
-import { Button, Tooltip } from "@vellumai/design-library";
+import { Button, Tooltip } from "@mycadet/design-library";
 
 interface LiveVoiceButtonProps {
   /**

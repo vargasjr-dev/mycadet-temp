@@ -10,7 +10,7 @@
  * than flagged inside `ROUTES`.
  */
 
-import { InviteRedemptionOutcomeSchema } from "@vellumai/gateway-client";
+import { InviteRedemptionOutcomeSchema } from "@mycadet/gateway-client";
 import { z } from "zod";
 
 import { upsertContactChannel } from "../../contacts/contacts-write.js";

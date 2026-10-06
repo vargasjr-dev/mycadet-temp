@@ -4,8 +4,8 @@ import type { LlmLogPayload } from "@/domains/chat/inspector/inspector-payload-a
 import type {
   LLMContextSection,
   LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
-import type { LlmContextResponse } from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
+import type { LlmContextResponse } from "@mycadet/assistant-api";
 
 export interface InspectorExportFile {
   path: string;

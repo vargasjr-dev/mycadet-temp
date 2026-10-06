@@ -8,9 +8,9 @@
  * **Storage model:**
  *
  * - The persist middleware serialises the whole nudge slice into a
- *   single localStorage key, `vellum:nudge-prefs`.
+ *   single localStorage key, `cadet:nudge-prefs`.
  * - Cross-tab updates: the persist middleware doesn't sync across tabs
- *   on its own. We listen for `storage` events on `vellum:nudge-prefs`
+ *   on its own. We listen for `storage` events on `cadet:nudge-prefs`
  *   and call `persist.rehydrate()` to pull in the other tab's write.
  *
  * Reference:
@@ -75,7 +75,7 @@ const INITIAL_STATE: NudgeState = {
 // Store
 // ---------------------------------------------------------------------------
 
-const NUDGE_STORE_KEY = "vellum:nudge-prefs";
+const NUDGE_STORE_KEY = "cadet:nudge-prefs";
 
 const useNudgeStoreBase = create<NudgeStore>()(
   persist(

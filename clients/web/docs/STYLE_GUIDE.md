@@ -74,7 +74,7 @@ src/
   hooks/                     # cross-domain shared hooks
   utils/                     # cross-domain shared utilities (pure functions)
   types/                     # cross-domain shared types
-  lib/                       # configured third-party wrappers (API client, Sentry, CSRF)
+  lib/                       # configured third-party wrappers (API client, CSRF)
     streaming/               #   SSE transport, event parsing, debug tracking
     diagnostics.ts            #   session diagnostics ring buffer
   runtime/                   # framework adapters, platform bridges
@@ -99,7 +99,7 @@ one domain, it belongs inside `domains/<name>/`.
 Reusable, domain-agnostic UI components live in `components/` for
 cross-domain shared UI. The design system (Button, Card, Modal, etc.)
 lives in `packages/design-library/` and is imported as
-`@vellumai/design-library`. Components in `components/` must not import
+`@mycadet/design-library`. Components in `components/` must not import
 domain state or feature hooks.
 
 Domain-specific compositions of design library components (e.g. a
@@ -116,24 +116,24 @@ a primitive for the job; `local/prefer-design-library-controls` reports
 them in enrolled areas (see `designLibraryEnforcedPaths` in
 `eslint.config.mjs`).
 
-| The control is | Use | Notes |
-| --- | --- | --- |
-| An action with a label | `Button` | `variant`: `primary`, `outlined`, `ghost`, `danger*`. `size`: `compact` 24px, `regular` 32px, `large` 44px. |
-| An action shown as a glyph | `Button iconOnly={<Icon />}` | Give it `aria-label` or `tooltip`. `expandOnMobile={false}` keeps a compact inline size on touch. |
-| An action that is in flight | `Button loading` | Never a `Loader2` in `leftIcon`. |
-| An action styled like a link (Skip, Retry, Show more) | `Button variant="link"` | A real button, announced as one. |
-| A link in running text that navigates | `TextLink` | `tone="quiet"` for footnotes and legal lines. `asChild` around a router `Link`. |
-| A link that leaves the app | `ExternalAnchor` | Carries the native-shell click handler. `tone` applies the `TextLink` look; `glyph={false}` drops the trailing icon. |
-| A round or fully rounded button | `Button shape="pill"` | |
-| A clickable tag | `Chip` | `Tag` is a span; `Chip` is its button sibling. `asChild` for a Popover or Menu trigger. |
-| A toggle or filter pill | `FilterChip` | `selected` is `aria-pressed`. |
-| A row in a list that opens something | `ListRow`, or `PanelItem` in a sidebar or menu | `ListRow href` + `onClick` routes client-side the way `SideMenu.Item` does. |
-| A row in a menu or popover | `Menu.Item` | |
-| One of a mutually exclusive set of tabs | `Tabs` or `SegmentControl` | |
-| A selectable tile or option row | `OptionCard` in an `OptionCardGroup` | `selectionMode` picks radio or checkbox semantics and the mark. |
-| A clickable card | `Card interactive asChild` around a button or `Link` | |
-| Show or hide one region | `Disclosure` | `Collapsible` is for a list of sections. |
-| A control the library cannot express (a swatch, a drag handle, a canvas hit area) | A raw element, with `type="button"`, an accessible name, and `keyboard-focus:ring-2 keyboard-focus:ring-[var(--ring)]` | Add `eslint-disable-next-line local/prefer-design-library-controls` with the reason, so the exception is greppable. |
+| The control is                                                                    | Use                                                                                                                    | Notes                                                                                                                |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| An action with a label                                                            | `Button`                                                                                                               | `variant`: `primary`, `outlined`, `ghost`, `danger*`. `size`: `compact` 24px, `regular` 32px, `large` 44px.          |
+| An action shown as a glyph                                                        | `Button iconOnly={<Icon />}`                                                                                           | Give it `aria-label` or `tooltip`. `expandOnMobile={false}` keeps a compact inline size on touch.                    |
+| An action that is in flight                                                       | `Button loading`                                                                                                       | Never a `Loader2` in `leftIcon`.                                                                                     |
+| An action styled like a link (Skip, Retry, Show more)                             | `Button variant="link"`                                                                                                | A real button, announced as one.                                                                                     |
+| A link in running text that navigates                                             | `TextLink`                                                                                                             | `tone="quiet"` for footnotes and legal lines. `asChild` around a router `Link`.                                      |
+| A link that leaves the app                                                        | `ExternalAnchor`                                                                                                       | Carries the native-shell click handler. `tone` applies the `TextLink` look; `glyph={false}` drops the trailing icon. |
+| A round or fully rounded button                                                   | `Button shape="pill"`                                                                                                  |                                                                                                                      |
+| A clickable tag                                                                   | `Chip`                                                                                                                 | `Tag` is a span; `Chip` is its button sibling. `asChild` for a Popover or Menu trigger.                              |
+| A toggle or filter pill                                                           | `FilterChip`                                                                                                           | `selected` is `aria-pressed`.                                                                                        |
+| A row in a list that opens something                                              | `ListRow`, or `PanelItem` in a sidebar or menu                                                                         | `ListRow href` + `onClick` routes client-side the way `SideMenu.Item` does.                                          |
+| A row in a menu or popover                                                        | `Menu.Item`                                                                                                            |                                                                                                                      |
+| One of a mutually exclusive set of tabs                                           | `Tabs` or `SegmentControl`                                                                                             |                                                                                                                      |
+| A selectable tile or option row                                                   | `OptionCard` in an `OptionCardGroup`                                                                                   | `selectionMode` picks radio or checkbox semantics and the mark.                                                      |
+| A clickable card                                                                  | `Card interactive asChild` around a button or `Link`                                                                   |                                                                                                                      |
+| Show or hide one region                                                           | `Disclosure`                                                                                                           | `Collapsible` is for a list of sections.                                                                             |
+| A control the library cannot express (a swatch, a drag handle, a canvas hit area) | A raw element, with `type="button"`, an accessible name, and `keyboard-focus:ring-2 keyboard-focus:ring-[var(--ring)]` | Add `eslint-disable-next-line local/prefer-design-library-controls` with the reason, so the exception is greppable.  |
 
 ---
 
@@ -162,14 +162,14 @@ Reference: [Vite — resolve.alias](https://vite.dev/config/shared-options.html#
 
 Group imports in this order, separated by blank lines:
 
-1. **External packages** (`react`, `react-router`, `@vellumai/design-library`, etc.)
+1. **External packages** (`react`, `react-router`, `@mycadet/design-library`, etc.)
 2. **Alias imports** (`@/domains/...`, `@/components/...`, `@/lib/...`)
 3. **Relative imports** (`./`, `../`)
 
 ```ts
 import { useCallback, useMemo } from "react";
 import { useParams } from "react-router";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { useMessageStore } from "@/domains/messages/message-store";
 
@@ -185,11 +185,18 @@ the `React.TypeName` namespace pattern.
 
 ```ts
 // Good
-import { type ReactNode, type Dispatch, type SetStateAction, useCallback } from "react";
+import {
+  type ReactNode,
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+} from "react";
 
 // Avoid
 import React from "react";
-function Foo(): React.ReactNode { /* ... */ }
+function Foo(): React.ReactNode {
+  /* ... */
+}
 ```
 
 Reference: [React — TypeScript](https://react.dev/learn/typescript)
@@ -376,10 +383,15 @@ Never use `as` to narrow a [discriminated union](https://www.typescriptlang.org/
 
 ```ts
 // Bad — bypasses exhaustiveness checking
-const step = cardData.steps[0] as Extract<ToolCallCardStep, { kind: "web_search" }>;
+const step = cardData.steps[0] as Extract<
+  ToolCallCardStep,
+  { kind: "web_search" }
+>;
 
 // Good — compiler enforces handling of every variant
-if (step.kind === "web_search") { /* step is narrowed */ }
+if (step.kind === "web_search") {
+  /* step is narrowed */
+}
 
 // Good — type predicate for array operations
 const webStep = steps.find(
@@ -402,10 +414,14 @@ consistent import names across the codebase.
 
 ```ts
 // Good
-export function ChatBody(props: ChatBodyProps) { /* ... */ }
+export function ChatBody(props: ChatBodyProps) {
+  /* ... */
+}
 
 // Avoid
-export default function ChatBody(props: ChatBodyProps) { /* ... */ }
+export default function ChatBody(props: ChatBodyProps) {
+  /* ... */
+}
 ```
 
 Reference: [typescript-eslint — no-default-export](https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-default-export.md)
@@ -418,10 +434,14 @@ DevTools.
 
 ```ts
 // Good
-export function ConversationDetail() { /* ... */ }
+export function ConversationDetail() {
+  /* ... */
+}
 
 // Avoid
-export const ConversationDetail = () => { /* ... */ };
+export const ConversationDetail = () => {
+  /* ... */
+};
 ```
 
 ### Props interfaces are named `{Component}Props`
@@ -432,7 +452,9 @@ interface ChatBodyProps {
   onSubmit: (content: string) => void;
 }
 
-export function ChatBody({ messages, onSubmit }: ChatBodyProps) { /* ... */ }
+export function ChatBody({ messages, onSubmit }: ChatBodyProps) {
+  /* ... */
+}
 ```
 
 ### One component per file
@@ -499,7 +521,11 @@ const Status = { IDLE: "idle", LOADING: "loading", ERROR: "error" } as const;
 type Status = (typeof Status)[keyof typeof Status];
 
 // Avoid
-enum Status { IDLE, LOADING, ERROR }
+enum Status {
+  IDLE,
+  LOADING,
+  ERROR,
+}
 ```
 
 Reference: [TypeScript — Enums are considered harmful](https://www.youtube.com/watch?v=jjMbPt_H3RQ)
@@ -520,13 +546,15 @@ explaining its purpose and any important constraints.
  *
  * Must be called within a ChatProvider context.
  */
-export function useSendMessage() { /* ... */ }
+export function useSendMessage() {
+  /* ... */
+}
 ```
 
 ### No redundant comments
 
 Do not add comments that restate the code. Rely on clear naming.
-Comments should explain *why*, not *what*.
+Comments should explain _why_, not _what_.
 
 ```ts
 // Avoid
@@ -599,7 +627,7 @@ and type parameters. This produces cleaner diffs.
 const props = {
   messages,
   turnState,
-  onSubmit,  // trailing comma
+  onSubmit, // trailing comma
 };
 ```
 

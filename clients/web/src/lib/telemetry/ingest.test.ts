@@ -37,8 +37,8 @@ mock.module("@/generated/api/sdk.gen", () => ({
   ...actualSdk,
   telemetryIngestCreate: telemetryIngestCreateMock,
 }));
-const actualCapture = await import("@/lib/sentry/capture-error");
-mock.module("@/lib/sentry/capture-error", () => ({
+const actualCapture = await import("@/lib/error-reporting/capture-error");
+mock.module("@/lib/error-reporting/capture-error", () => ({
   ...actualCapture,
   captureError: captureErrorMock,
 }));

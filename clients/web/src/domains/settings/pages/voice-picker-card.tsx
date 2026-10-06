@@ -15,8 +15,8 @@
 
 import { useState } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Skeleton } from "@vellumai/design-library/components/skeleton";
+import { Button } from "@mycadet/design-library/components/button";
+import { Skeleton } from "@mycadet/design-library/components/skeleton";
 
 import { DetailCard } from "@/components/detail-card";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";

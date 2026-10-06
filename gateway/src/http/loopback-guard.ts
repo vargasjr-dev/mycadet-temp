@@ -10,7 +10,7 @@
 
 import { getLogger } from "../logger.js";
 import { isLoopbackAddress } from "../util/is-loopback-address.js";
-import { VELAY_FORWARDED_HEADER } from "../velay/bridge-utils.js";
+import { TUNNEL_FORWARDED_HEADER } from "../tunnel/bridge-utils.js";
 import { requestArrivedViaEdgeProxy } from "./edge-forwarded-header.js";
 
 const log = getLogger("loopback-guard");
@@ -75,7 +75,7 @@ function auditDeny(
  * Enforce that a request originates from the local machine. Returns a 403
  * `Response` if any check fails, or `null` if the request is loopback-local.
  *
- * Rejects, in order: Velay-bridged requests, requests forwarded by the
+ * Rejects, in order: Tunnel-bridged requests, requests forwarded by the
  * self-hosted nginx edge, non-loopback peer IPs, non-loopback `Host` headers,
  * and any request carrying `X-Forwarded-For`.
  */
@@ -84,10 +84,10 @@ export function enforceLoopbackOnly(
   clientIp: string,
   auditTag = "loopback",
 ): Response | null {
-  // The Velay bridge injects this header on every forwarded request; a Velay
+  // The Tunnel bridge injects this header on every forwarded request; a Tunnel
   // client cannot strip it.
-  if (req.headers.get(VELAY_FORWARDED_HEADER)) {
-    auditDeny(req, clientIp, auditTag, "velay_bridged");
+  if (req.headers.get(TUNNEL_FORWARDED_HEADER)) {
+    auditDeny(req, clientIp, auditTag, "tunnel_bridged");
     return errorResponse("FORBIDDEN", "endpoint is local-only", 403);
   }
 

@@ -1,6 +1,6 @@
 import { type ComponentPropsWithoutRef, forwardRef, useState } from "react";
 
-import { cn } from "@vellumai/design-library/utils/cn";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 import {
   ACTION_WIDTH_PX,

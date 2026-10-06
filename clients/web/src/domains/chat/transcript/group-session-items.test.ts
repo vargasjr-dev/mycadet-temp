@@ -3,7 +3,7 @@ import type {
   ModeSession,
   ModeSessionMode,
   ModeSessionSummary,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import type {

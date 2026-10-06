@@ -1,5 +1,4 @@
 import { useLayoutEffect, useRef } from "react";
-import * as Sentry from "@sentry/react";
 import { useLocation, useNavigate } from "react-router";
 
 import { useQueryClient } from "@tanstack/react-query";
@@ -84,7 +83,7 @@ import { conversationIdForPath, routes } from "@/utils/routes";
  *   item when the command URL never arrived), then park a send for
  *   `useShareInboxSend` and land on a new draft or the chosen thread.
  *   Inbox existence is the send-authorization.
- * - `deeplink.unknown` → Sentry breadcrumb.
+ * - `deeplink.unknown` → ignored (logged by the bus subscriber).
  *
  * ## Deep-link text: proven provenance sends, anything else pre-fills
  *
@@ -465,12 +464,5 @@ export function useGlobalDeepLinkConsumer(): void {
     })();
   });
 
-  useBusSubscription("deeplink.unknown", ({ url }) => {
-    Sentry.addBreadcrumb({
-      category: "deeplink",
-      level: "info",
-      message: "deeplink.unknown",
-      data: { url },
-    });
-  });
+
 }

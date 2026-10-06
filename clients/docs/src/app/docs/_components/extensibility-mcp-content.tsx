@@ -60,7 +60,7 @@ export function ExtensibilityMcpContent() {
         <p className="mb-8 text-zinc-600 dark:text-zinc-400">
           This is a declaration, not a TypeScript surface: there is no{" "}
           <code>mcp/</code> directory and nothing to import from{" "}
-          <code>@vellumai/plugin-api</code>. The file follows the{" "}
+          <code>@cadetai/plugin-api</code>. The file follows the{" "}
           <Link href={AGENT_PLUGINS_URL} className={linkClass}>
             Agent Plugins 1.0.0
           </Link>{" "}

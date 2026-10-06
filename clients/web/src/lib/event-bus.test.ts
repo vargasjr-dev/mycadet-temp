@@ -1,16 +1,15 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 // Registered before the bus is imported so the bus binds to the mock.
 const captureErrorMock = mock(() => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 
-const { __resetForTesting, publish, subscribe } = await import(
-  "@/lib/event-bus"
-);
+const { __resetForTesting, publish, subscribe } =
+  await import("@/lib/event-bus");
 
 function avatarEnvelope(): AssistantEventEnvelope {
   return {

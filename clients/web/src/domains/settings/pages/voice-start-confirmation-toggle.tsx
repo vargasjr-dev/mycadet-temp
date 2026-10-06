@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 import { useTranslation } from "@/i18n";
 import {

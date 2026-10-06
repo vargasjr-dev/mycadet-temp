@@ -131,7 +131,7 @@ export function setLocalNumber(key: string, value: number): void {
 
 // ---------------------------------------------------------------------------
 // Change watcher — listens for both cross-tab (storage) and same-tab
-// (vellum:pref-changed) events for a specific key.
+// (cadet:pref-changed) events for a specific key.
 // ---------------------------------------------------------------------------
 
 interface PrefChangedDetail {
@@ -166,10 +166,10 @@ export function watchSetting(key: string, callback: () => void): () => void {
 // Same-tab notification
 // ---------------------------------------------------------------------------
 
-const PREF_CHANGED_EVENT = "vellum:pref-changed";
+const PREF_CHANGED_EVENT = "cadet:pref-changed";
 
 // `localStorage.setItem` fires the native `storage` event in *other* tabs
-// only. Same-tab observers (e.g. the Sentry gate that toggles crash
+// only. Same-tab observers (e.g. the diagnostics gate that toggles client
 // reporting when the user flips Share Diagnostics on `/onboarding/privacy`
 // or `/settings/privacy`) need a synthetic signal. A single custom event
 // covers every key; listeners filter on `detail.key`.

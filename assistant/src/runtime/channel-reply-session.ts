@@ -1,4 +1,4 @@
-import type { StreamPlan } from "@vellumai/gateway-client";
+import type { StreamPlan } from "@mycadet/gateway-client";
 
 import type {
   AssistantEvent,

@@ -6,7 +6,7 @@
 import { createKeyedStorageAccessor } from "@/utils/typed-storage";
 
 const storage = createKeyedStorageAccessor<string | null>({
-  keyFn: (assistantId) => `vellum:lastViewedConversation:${assistantId}`,
+  keyFn: (assistantId) => `cadet:lastViewedConversation:${assistantId}`,
   scope: "user",
   parse: (raw) => (raw.length > 0 ? raw : null),
   serialize: (v) => v ?? "",

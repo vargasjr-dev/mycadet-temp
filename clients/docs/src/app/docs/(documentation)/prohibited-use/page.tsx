@@ -3,9 +3,9 @@ import { createMetadata } from "@/lib/metadata";
 import { routes } from "@/lib/routes";
 
 export const metadata = createMetadata({
-  title: "Prohibited Use Policy - Vellum",
+  title: "Prohibited Use Policy - Cadet",
   description:
-    "Vellum's prohibited use policy — ensuring the Services are used safely, ethically, and in accordance with all applicable laws and regulations.",
+    "Cadet's prohibited use policy — ensuring the Services are used safely, ethically, and in accordance with all applicable laws and regulations.",
   path: routes.docs.legal.prohibitedUse,
 });
 

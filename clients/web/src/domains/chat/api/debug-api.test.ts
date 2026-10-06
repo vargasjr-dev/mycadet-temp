@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 import { eventsDebugApi } from "@/domains/chat/api/debug-api";
 import { __resetForTesting, publish } from "@/lib/event-bus";
@@ -13,7 +13,11 @@ function makeEnvelope(): AssistantEventEnvelope {
   return {
     id: "evt-1",
     emittedAt: new Date().toISOString(),
-    message: { type: "conversation_title_updated", conversationId: "conv-1", title: "Test" },
+    message: {
+      type: "conversation_title_updated",
+      conversationId: "conv-1",
+      title: "Test",
+    },
   };
 }
 

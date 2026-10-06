@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useRef, useState } from "react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import {
   AssetActionsSlot,

@@ -15,9 +15,9 @@
 import { useState } from "react";
 import { Ban } from "lucide-react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Popover } from "@vellumai/design-library/components/popover";
-import { Tag } from "@vellumai/design-library/components/tag";
+import { Button } from "@mycadet/design-library/components/button";
+import { Popover } from "@mycadet/design-library/components/popover";
+import { Tag } from "@mycadet/design-library/components/tag";
 
 import { ExternalAnchor } from "@/components/external-anchor";
 import {
@@ -145,7 +145,11 @@ function ClaimRow({
               variant="ghost"
               size="compact"
               expandOnMobile={false}
-              aria-label={removed ? t("researchFactsCard.editRemovalAria") : t("researchFactsCard.removeAria")}
+              aria-label={
+                removed
+                  ? t("researchFactsCard.editRemovalAria")
+                  : t("researchFactsCard.removeAria")
+              }
               onClick={(e) => e.stopPropagation()}
               data-reveal=""
               className="ml-auto shrink-0"

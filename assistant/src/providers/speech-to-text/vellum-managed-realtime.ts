@@ -1,6 +1,6 @@
 /**
  * Managed realtime STT through the gateway's speech relay
- * (gateway → velay → Deepgram; velay contact is gateway-only).
+ * (gateway → tunnel → Deepgram; tunnel contact is gateway-only).
  *
  * Composes {@link DeepgramRealtimeTranscriber} — both relay legs speak
  * Deepgram's live wire protocol verbatim, so all frame handling (Results
@@ -10,12 +10,12 @@
  * - Dialing the gateway (`/v1/speech/stt/stream`, `?key=` carries a
  *   daemon-minted service token, no `model` param — the model is pinned
  *   server-side).
- * - Surfacing `velay_error` control frames (velay's own, or synthesized
+ * - Surfacing `tunnel_error` control frames (tunnel's own, or synthesized
  *   by the gateway for upstream failures) as categorized SttErrors
  *   instead of generic socket failures.
- * - Transparent re-dial on velay's 30-minute session cap: live-voice
+ * - Transparent re-dial on tunnel's 30-minute session cap: live-voice
  *   reuses ONE streaming transcriber across utterance cycles (#37662), so
- *   a normal conversation can outlive the cap. Velay settles the in-flight
+ *   a normal conversation can outlive the cap. Tunnel settles the in-flight
  *   utterance (trailing finals arrive before the close), then this wrapper
  *   opens a fresh relay session and continues without surfacing an error.
  */
@@ -28,10 +28,10 @@ import {
 import { getLogger } from "../../util/logger.js";
 import { DeepgramRealtimeTranscriber } from "./deepgram-realtime.js";
 import {
-  mapVelayError,
-  probeVelayRejection,
+  mapTunnelError,
+  probeTunnelRejection,
   type SpeechRelayConnection,
-  type VelayErrorInfo,
+  type TunnelErrorInfo,
 } from "./vellum-speech-relay-connection.js";
 
 const log = getLogger("vellum-managed-realtime");
@@ -45,7 +45,7 @@ export interface VellumManagedRealtimeOptions {
   language?: string;
   /**
    * Emit `final` events only at utterance boundaries (telephony mode).
-   * Note: velay's param allowlist has no `utterance_end_ms`, so boundaries
+   * Note: tunnel's param allowlist has no `utterance_end_ms`, so boundaries
    * come from Deepgram's endpointing (`speech_final`) alone.
    */
   utteranceBoundaryFinals?: boolean;
@@ -62,13 +62,13 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
   /** The current relay session; null while re-dialing after a session cap. */
   private inner: DeepgramRealtimeTranscriber | null = null;
   /**
-   * The most recent `velay_error` frame from the current session. Set just
-   * before velay closes the socket; consumed when the inner adapter turns
+   * The most recent `tunnel_error` frame from the current session. Set just
+   * before tunnel closes the socket; consumed when the inner adapter turns
    * that close into an error event.
    */
-  private pendingRelayError: VelayErrorInfo | null = null;
+  private pendingRelayError: TunnelErrorInfo | null = null;
   /**
-   * Set when the current session hit velay's duration cap: the swap to a
+   * Set when the current session hit tunnel's duration cap: the swap to a
    * fresh session is deferred to the capped session's `closed` event so
    * its close cleanup (withheld finals, outstanding finalizes) drains
    * through first.
@@ -95,7 +95,7 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
       if (this.stopping) {
         // stop() raced the initial dial: it saw no inner to tear down and
         // already emitted closed, so the freshly opened relay session must
-        // not be kept (a leaked session keeps velay metering).
+        // not be kept (a leaked session keeps tunnel metering).
         inner.stop();
         return;
       }
@@ -104,14 +104,14 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
       // A failed WebSocket upgrade exposes no HTTP details; replay the
       // request as a plain GET to recover the relay's {code, detail}
       // rejection (the gateway replays its whole gate on non-upgrade
-      // requests, including velay's own).
-      const rejection = await probeVelayRejection(this.probeUrl());
+      // requests, including tunnel's own).
+      const rejection = await probeTunnelRejection(this.probeUrl());
       if (rejection) {
         // Typed so the stream session preserves the mapped category —
         // an auth/setup failure must not surface as a provider outage.
         // `userFacing` keeps the mapped remediation (reconnect, top up
         // credits) from being rewritten to BYOK "check your API key" copy.
-        const mapped = mapVelayError(rejection);
+        const mapped = mapTunnelError(rejection);
         throw new SttError(mapped.category, mapped.message, {
           userFacing: true,
         });
@@ -181,7 +181,7 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
   }
 
   private handleRelayFrame(frame: Record<string, unknown>): void {
-    if (frame.type !== "velay_error" || typeof frame.code !== "string") {
+    if (frame.type !== "tunnel_error" || typeof frame.code !== "string") {
       return;
     }
     this.pendingRelayError = {
@@ -190,7 +190,7 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
     };
     log.info(
       { code: frame.code, detail: frame.detail },
-      "Received velay_error frame on managed STT relay",
+      "Received tunnel_error frame on managed STT relay",
     );
   }
 
@@ -207,7 +207,7 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
     if (event.type === "error") {
       const relayError = this.pendingRelayError;
       if (relayError?.code === "session_duration_exceeded") {
-        // Velay's 30-minute cap, not a failure. Swallow the error but keep
+        // Tunnel's 30-minute cap, not a failure. Swallow the error but keep
         // the capped session current: its close cleanup still flushes
         // withheld boundary finals and settles outstanding finalizes, and
         // those events must drain before the swap. The re-dial happens on
@@ -216,7 +216,7 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
         return;
       }
       if (relayError) {
-        const mapped = mapVelayError(relayError);
+        const mapped = mapTunnelError(relayError);
         this.emit({
           type: "error",
           category: mapped.category,
@@ -247,7 +247,9 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
    * a real error and ends the stream.
    */
   private beginRedial(): void {
-    log.info("Managed STT relay session hit velay's duration cap — re-dialing");
+    log.info(
+      "Managed STT relay session hit tunnel's duration cap — re-dialing",
+    );
     this.inner = null;
     void (async () => {
       try {
@@ -266,9 +268,9 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
         // {code, detail} — mid-call credit exhaustion or a revoked
         // connection must surface with its mapped message, not a generic
         // transport error.
-        const rejection = await probeVelayRejection(this.probeUrl());
+        const rejection = await probeTunnelRejection(this.probeUrl());
         if (rejection) {
-          const mapped = mapVelayError(rejection);
+          const mapped = mapTunnelError(rejection);
           this.emit({
             type: "error",
             category: mapped.category,

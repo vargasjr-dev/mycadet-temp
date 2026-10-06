@@ -44,7 +44,7 @@
 
 import { create } from "zustand";
 
-import type { WatchRetroCompletedEvent } from "@vellumai/assistant-api";
+import type { WatchRetroCompletedEvent } from "@mycadet/assistant-api";
 
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 

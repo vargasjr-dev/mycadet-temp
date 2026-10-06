@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type { NotificationCreateOptions } from "@vellumai/electron-desktop/notifications";
+import type { NotificationCreateOptions } from "@mycadet/electron-desktop/notifications";
 
 import type {
   NotifierCategory,
@@ -93,7 +93,7 @@ mock.module("./notifier", () => ({
 }));
 
 const { CATEGORY_ACTIONS, NOTIFICATION_CATEGORIES } =
-  await import("@vellumai/electron-desktop/notifications");
+  await import("@mycadet/electron-desktop/notifications");
 const {
   createNativeNotificationFactory,
   registerNativeNotificationCategories,

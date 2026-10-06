@@ -58,7 +58,7 @@ mock.module("@/assistant/switch-service", () => ({
 const captureErrorMock = mock(
   (_error: unknown, _context?: Record<string, unknown>) => {},
 );
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 

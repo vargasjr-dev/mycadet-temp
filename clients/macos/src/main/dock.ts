@@ -1,16 +1,16 @@
 import path from "node:path";
 
-import { getLockfileData, resolveLockfilePaths } from "@vellumai/local-mode";
+import { getLockfileData, resolveLockfilePaths } from "@mycadet/local-mode";
 import { app, nativeImage, type NativeImage } from "electron";
 import { z } from "zod";
 
-import { onAvatarChange } from "@vellumai/electron-desktop/avatar";
-import { avatarBitmap } from "@vellumai/electron-desktop/avatar-image";
+import { onAvatarChange } from "@mycadet/electron-desktop/avatar";
+import { avatarBitmap } from "@mycadet/electron-desktop/avatar-image";
 import {
   applyAlphaMask,
   compositeCentered,
   roundedRectCoverage,
-} from "@vellumai/electron-desktop/image-mask";
+} from "@mycadet/electron-desktop/image-mask";
 import { on } from "./ipc";
 import {
   current as currentMainWindow,
@@ -28,7 +28,7 @@ import {
  * The Dock icon is the assistant avatar clipped to a rounded square
  * ("squircle"), inset with ~10% padding inside a 512px canvas to match the
  * macOS icon grid. The renderer publishes the avatar over
- * `vellum:icon:setAvatar`; this module masks and applies it via
+ * `cadet:icon:setAvatar`; this module masks and applies it via
  * `app.dock.setIcon`. With no avatar the bundled app icon shows through
  * naturally.
  *
@@ -271,7 +271,7 @@ export const installDock = (): void => {
   // Renderer publishes the unread count whenever it changes. The schema
   // guarantees a finite number (`z.number()` rejects NaN/Infinity), so
   // the only remaining clamp is to a non-negative integer for display.
-  on("vellum:dock:setBadge", z.tuple([z.number()]), ([count]) => {
+  on("cadet:dock:setBadge", z.tuple([z.number()]), ([count]) => {
     state.badgeCount = Math.max(0, Math.floor(count));
     applyBadge();
   });

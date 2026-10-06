@@ -26,7 +26,7 @@ import { useIsCompactWidth } from "@/hooks/use-compact-width";
 import { useOptionHotkeys } from "@/hooks/use-option-hotkeys";
 import type { QuestionEntry } from "@/types/interaction-ui-types";
 import { usePointerCoarse } from "@/utils/pointer";
-import { Button, Card, cn, Typography } from "@vellumai/design-library";
+import { Button, Card, cn, Typography } from "@mycadet/design-library";
 
 /** Stable no-op for the hotkeys the minimized card has nothing to act on. */
 const NOOP = () => {};

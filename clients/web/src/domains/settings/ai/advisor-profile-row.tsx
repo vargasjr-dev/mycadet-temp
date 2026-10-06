@@ -1,4 +1,4 @@
-import { Select } from "@vellumai/design-library/components/select";
+import { Select } from "@mycadet/design-library/components/select";
 
 import { useTranslation } from "@/i18n";
 

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { Button, Notice } from "@vellumai/design-library";
+import { Button, Notice } from "@mycadet/design-library";
 import { channelverificationsessionsStatusGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useTranslation } from "@/i18n";
 import type { BotSetupChannel } from "@/types/channel-types";

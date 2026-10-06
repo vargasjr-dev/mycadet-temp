@@ -3,8 +3,8 @@ import {
   type InboundEventKind,
   type InboundReactionPayload,
   resolveInboundEventKind,
-} from "@vellumai/gateway-client";
-import type { ChannelConversationType } from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
+import type { ChannelConversationType } from "@mycadet/gateway-client";
 import type { ChannelId } from "./types.js";
 
 /**

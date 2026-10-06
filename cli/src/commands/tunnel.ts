@@ -1,10 +1,11 @@
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import { readFileSync } from "node:fs";
 import { join } from "path";
 
 import {
   TUNNEL_PROVIDERS,
   type TunnelProviderName,
-} from "@vellumai/service-contracts/ingress";
+} from "@mycadet/service-contracts/ingress";
 
 import {
   formatAssistantReference,
@@ -283,7 +284,7 @@ function toLocalTunnelTarget(entry: AssistantEntry): LocalTunnelTarget | null {
 
 function describeUntunnelableEntry(entry: AssistantEntry): string {
   const reference = formatAssistantReference(entry);
-  return entry.cloud === "vellum"
+  return isManagedCloud(entry.cloud)
     ? `Assistant '${reference}' runs on Vellum Cloud and needs no tunnel.`
     : `Assistant '${reference}' has no locally managed runtime to tunnel.`;
 }

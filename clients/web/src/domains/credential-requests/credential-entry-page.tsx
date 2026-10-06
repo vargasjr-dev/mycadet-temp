@@ -6,9 +6,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { Input } from "@vellumai/design-library/components/input";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { Input } from "@mycadet/design-library/components/input";
 
 import {
   credentialExpiryToEpochMs,

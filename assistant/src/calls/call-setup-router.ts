@@ -11,7 +11,7 @@
  * aborts.
  */
 
-import type { AdmissionPolicy, TrustVerdict } from "@vellumai/gateway-client";
+import type { AdmissionPolicy, TrustVerdict } from "@mycadet/gateway-client";
 
 import { getPendingSession } from "../channels/gateway-verification-sessions.js";
 import { getConfig } from "../config/loader.js";

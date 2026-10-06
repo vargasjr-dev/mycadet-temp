@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import type { ResolvedSkillEntry } from "@vellumai/plugin-api";
+import type { ResolvedSkillEntry } from "@mycadet/plugin-api";
 
 import type { AssistantConfig } from "../../../../../config/types.js";
 import { EmbeddingBackendUnavailableError } from "../../../../../persistence/embeddings/embedding-backend.js";

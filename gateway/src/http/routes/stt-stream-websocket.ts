@@ -9,11 +9,11 @@
  * the binding, and dictation takes any valid actor, which is why that pin is a
  * route opt-in rather than part of the shared gate.
  *
- * A managed assistant is reached through velay, which validates the browser's
+ * A managed assistant is reached through tunnel, which validates the browser's
  * own token and attests the caller to the bridge; there is no edge JWT on that
- * path to validate. So a velay-attested caller with the bridge proof is
+ * path to validate. So a tunnel-attested caller with the bridge proof is
  * admitted here the way live voice and watch admit one, minus their guardian
- * check: velay only mints a token for a user with access to this assistant,
+ * check: tunnel only mints a token for a user with access to this assistant,
  * which is the same standing an actor token proves.
  *
  * The rest of what is this route's own is the query it accepts and carries
@@ -26,12 +26,12 @@ import {
   type RuntimeAudioStreamState,
 } from "./runtime-audio-stream.js";
 import {
-  acceptsVelayAttestation,
-  extractVelayAttestedContext,
+  acceptsTunnelAttestation,
+  extractTunnelAttestedContext,
 } from "./guardian-pin.js";
 import type { GatewayConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
-import { requestHasVelayBridgeAuth } from "../../velay/bridge-auth.js";
+import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
 
 const log = getLogger("stt-stream-ws");
 
@@ -72,23 +72,23 @@ export function createSttStreamWebsocketHandler(config: GatewayConfig) {
     // watch stream's `guardian-pin` check is exactly what this route does not
     // want.
     //
-    // The velay path first, as live voice and watch take it. A direct
-    // request to a reachable gateway can spoof the X-Velay-* names but cannot
+    // The tunnel path first, as live voice and watch take it. A direct
+    // request to a reachable gateway can spoof the X-Tunnel-* names but cannot
     // know the bridge proof, and an attestation without the proof falls
     // through to the token gate rather than being trusted.
     let managedCaller = false;
-    if (acceptsVelayAttestation(config) && config.runtimeProxyRequireAuth) {
-      const velayContext = extractVelayAttestedContext(req);
-      if (velayContext) {
-        if (requestHasVelayBridgeAuth(req)) {
+    if (acceptsTunnelAttestation(config) && config.runtimeProxyRequireAuth) {
+      const tunnelContext = extractTunnelAttestedContext(req);
+      if (tunnelContext) {
+        if (requestHasTunnelBridgeAuth(req)) {
           log.info(
-            { userId: velayContext.userId, orgId: velayContext.orgId },
-            "STT stream WS: authenticated via velay-attested managed context",
+            { userId: tunnelContext.userId, orgId: tunnelContext.orgId },
+            "STT stream WS: authenticated via tunnel-attested managed context",
           );
           managedCaller = true;
         } else {
           log.warn(
-            "STT stream WS: ignoring velay context without bridge proof",
+            "STT stream WS: ignoring tunnel context without bridge proof",
           );
         }
       }

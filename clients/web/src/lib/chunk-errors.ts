@@ -10,7 +10,7 @@
  *   - Render a smaller "section couldn't load, reload" UI instead of
  *     the full-page "Something went wrong" treatment used for genuine
  *     render failures.
- *   - Tag Sentry events so chunk-fetch noise is sliceable.
+ *   - Tag error reports so chunk-fetch noise is sliceable.
  *
  * Single source of truth for the predicate so route-level and
  * component-level boundaries agree.

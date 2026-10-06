@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, renderHook } from "@testing-library/react";
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 import { __resetForTesting, publish } from "@/lib/event-bus";
 import { resetReconnectCursor } from "@/lib/streaming/reconnect-cursor";
 import { __resetLocalSeqForTesting } from "@/lib/streaming/local-seq";
@@ -215,7 +215,7 @@ describe("useEventStream — sse.opened reconcile triggers", () => {
       cause: "watchdog",
     });
     await new Promise((resolve) => setTimeout(resolve, 0));
-    // Watchdog used to double-fetch (non-fresh path AND the Sentry-
+    // Watchdog used to double-fetch (non-fresh path AND the watchdog-
     // instrumented path each fired their own reconcile). After the
     // restructure they share a single reconcile.
     expect(reconcile).toHaveBeenCalledTimes(1);

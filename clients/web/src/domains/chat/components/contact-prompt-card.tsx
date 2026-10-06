@@ -7,7 +7,7 @@ import {
   Checkbox,
   Input,
   Typography,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 import { useTranslation } from "@/i18n";
 
 import type { PendingContactRequestState } from "@/types/interaction-ui-types";

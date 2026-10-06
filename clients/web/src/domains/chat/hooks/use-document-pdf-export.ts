@@ -1,8 +1,8 @@
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 import { useCallback, type RefObject } from "react";
 
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import { downloadDocumentPdf } from "../api/surfaces";
 import type { DocumentViewerContainerHandle } from "../components/document-viewer-container";

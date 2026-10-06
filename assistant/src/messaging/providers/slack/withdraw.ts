@@ -15,7 +15,7 @@
  * back to editing the message down to a status-only block — still an edit.
  */
 
-import { isParkGuardianAction } from "@vellumai/service-contracts/guardian-requests";
+import { isParkGuardianAction } from "@mycadet/service-contracts/guardian-requests";
 
 import { resolveDecisionStatusWord } from "../../../runtime/channel-approval-types.js";
 import { getLogger } from "../../../util/logger.js";
@@ -36,7 +36,7 @@ const log = getLogger("slack-withdraw");
  * between the writer and the stripper.
  */
 export const APPROVAL_INSTRUCTION_BLOCK_ID_PREFIX =
-  "vellum:approval-instructions";
+  "cadet:approval-instructions";
 
 const STATUS_GLYPH: Record<string, string> = {
   approved: ":white_check_mark:",

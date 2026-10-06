@@ -76,8 +76,8 @@ describe("installAvatarIpc", () => {
     installAvatarIpc();
     installAvatarIpc();
     expect(registrations.map((r) => r.channel)).toEqual([
-      "vellum:icon:setAvatar",
-      "vellum:icon:setCharacter",
+      "cadet:icon:setAvatar",
+      "cadet:icon:setCharacter",
     ]);
   });
 

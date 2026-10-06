@@ -12,7 +12,7 @@ import {
   test,
 } from "bun:test";
 
-import { resolveIpcEndpoint } from "@vellumai/ipc-server-utils";
+import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 
 // ---------------------------------------------------------------------------
 // Mock logger (no-op — compatible with other test files' identical mock)

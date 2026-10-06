@@ -14,12 +14,12 @@
 
 import { Check, CornerUpLeft } from "lucide-react";
 
-import { Button, Typography } from "@vellumai/design-library";
+import { Button, Typography } from "@mycadet/design-library";
 import {
   quoteBlockquoteAccentClassName,
   quoteBlockquoteClassName,
   quoteBlockquoteContentClassName,
-} from "@vellumai/design-library/components/markdown-message";
+} from "@mycadet/design-library/components/markdown-message";
 
 import {
   channelTimestampToIso,

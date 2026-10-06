@@ -1,0 +1,287 @@
+import { Buffer } from "node:buffer";
+import type { OutgoingHttpHeaders } from "node:http";
+import { buildUpstreamUrl, stripHopByHop } from "@mycadet/assistant-client";
+
+import { hasWebhookIngressRoute } from "../db/webhook-ingress-route-store.js";
+import { isFeatureFlagEnabled } from "../feature-flag-resolver.js";
+import { isSafeOriginRelativePath, WEBHOOK_PATH_PREFIX } from "./path-utils.js";
+import type { TunnelHeaders } from "./protocol.js";
+
+const MAX_WEBSOCKET_CLOSE_REASON_BYTES = 123;
+
+/**
+ * Tunnel admission is decided across three layers. The webhook ingress route
+ * registry is authoritative for `/webhooks/*` once the `tunnel-webhooks` flag is
+ * on, so an assistant that registers nothing accepts nothing. The static
+ * prefixes and exact paths below are authoritative for every other route, and
+ * they still carry `/webhooks/twilio/` so Twilio keeps working until it
+ * registers its own routes. The rules in `allowed-paths.ts` are the coarse
+ * outer filter Tunnel applies platform-side and never widen what this bridge
+ * admits.
+ */
+const TUNNEL_ALLOWED_HTTP_PATH_PREFIXES = [
+  "/webhooks/twilio/",
+  "/v1/audio/",
+] as const;
+/** Exact-match HTTP paths (no trailing segments). */
+const TUNNEL_ALLOWED_HTTP_EXACT_PATHS = [
+  "/assistant/credentials/enter",
+  "/oauth/client-metadata.json",
+  "/v1/credential-requests/peek",
+  "/v1/credential-requests/submit",
+] as const;
+/**
+ * Exported so `allowed-paths.test.ts` can check this list against the
+ * registration allowlist it has to agree with. See the guard there for why the
+ * two are checked rather than trusted.
+ */
+export const TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS = [
+  "/v1/live-voice",
+  "/v1/stt/stream",
+  "/v1/watch/stream",
+  "/v1/desktop/stream",
+] as const;
+
+/**
+ * Injected unconditionally by the HTTP bridge on every request forwarded to
+ * the gateway's loopback listener. Loopback-only routes (guardian init, pair,
+ * etc.) use this as a secondary "Tunnel-origin" guard: if the header is present
+ * the request arrived via the tunnel bridge and must be rejected regardless of
+ * the peer IP. The bridge overwrites any client-supplied value so it cannot be
+ * spoofed by stripping or omitting the header on the Tunnel side.
+ */
+export const TUNNEL_FORWARDED_HEADER = "x-tunnel-forwarded" as const;
+
+export function isAllowedTunnelHttpPath(path: string): boolean {
+  if (
+    path.startsWith(WEBHOOK_PATH_PREFIX) &&
+    isFeatureFlagEnabled("tunnel-webhooks") &&
+    hasWebhookIngressRoute(path)
+  ) {
+    return true;
+  }
+  return (
+    TUNNEL_ALLOWED_HTTP_PATH_PREFIXES.some((prefix) =>
+      path.startsWith(prefix),
+    ) ||
+    TUNNEL_ALLOWED_HTTP_EXACT_PATHS.includes(
+      path as (typeof TUNNEL_ALLOWED_HTTP_EXACT_PATHS)[number],
+    )
+  );
+}
+
+/** A registered webhook route admits a WebSocket upgrade on that same path. */
+export function isAllowedTunnelWebSocketPath(path: string): boolean {
+  return (
+    isAllowedTunnelHttpPath(path) ||
+    TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS.includes(
+      path as (typeof TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS)[number],
+    )
+  );
+}
+
+export function formatRawQuery(rawQuery: string | undefined): string {
+  if (!rawQuery) return "";
+  return `?${rawQuery.replace(/^\?/, "")}`;
+}
+
+export function buildLoopbackHttpUrl(
+  gatewayLoopbackBaseUrl: string,
+  path: string,
+  rawQuery?: string,
+): string | undefined {
+  if (!isSafeOriginRelativePath(path) || !isAllowedTunnelHttpPath(path)) {
+    return undefined;
+  }
+  return buildUpstreamUrl(
+    gatewayLoopbackBaseUrl,
+    path,
+    formatRawQuery(rawQuery),
+  );
+}
+
+export function buildLoopbackWebSocketUrl(
+  gatewayLoopbackBaseUrl: string,
+  path: string,
+  rawQuery?: string,
+): string | undefined {
+  if (!isSafeOriginRelativePath(path) || !isAllowedTunnelWebSocketPath(path)) {
+    return undefined;
+  }
+
+  const httpUrl = buildUpstreamUrl(
+    gatewayLoopbackBaseUrl,
+    path,
+    formatRawQuery(rawQuery),
+  );
+
+  try {
+    const url = new URL(httpUrl);
+    if (url.protocol === "http:") url.protocol = "ws:";
+    if (url.protocol === "https:") url.protocol = "wss:";
+    if (url.protocol !== "ws:" && url.protocol !== "wss:") return undefined;
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
+
+export function headersToWeb(headers: TunnelHeaders): Headers {
+  const webHeaders = new Headers();
+  for (const [name, values] of Object.entries(headers)) {
+    for (const value of values) {
+      webHeaders.append(name, value);
+    }
+  }
+  return webHeaders;
+}
+
+export function headersToTunnel(headers: Headers): TunnelHeaders {
+  const tunnelHeaders: TunnelHeaders = {};
+  for (const [name, value] of headers.entries()) {
+    tunnelHeaders[name] ??= [];
+    tunnelHeaders[name].push(value);
+  }
+  return tunnelHeaders;
+}
+
+export function headersFromTunnel(headers: TunnelHeaders): Headers {
+  return stripHopByHop(headersToWeb(headers));
+}
+
+export function websocketHeadersFromTunnel(
+  headers: TunnelHeaders,
+): OutgoingHttpHeaders {
+  const cleaned = headersFromTunnel(headers);
+  const outgoing: OutgoingHttpHeaders = {};
+
+  for (const [name, value] of cleaned.entries()) {
+    if (name.startsWith("sec-websocket-")) continue;
+    outgoing[name] = value;
+  }
+  return outgoing;
+}
+
+export function isBase64(value: string): boolean {
+  return /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(
+    value,
+  );
+}
+
+export function decodeBase64Bytes(value: string): Uint8Array | undefined {
+  if (!isBase64(value)) return undefined;
+  return new Uint8Array(Buffer.from(value, "base64"));
+}
+
+export function decodeOptionalBase64ArrayBuffer(
+  value: string | undefined,
+): { ok: true; value?: ArrayBuffer } | { ok: false } {
+  if (!value) return { ok: true };
+
+  const bytes = decodeBase64Bytes(value);
+  if (bytes === undefined) return { ok: false };
+  return { ok: true, value: bytesToArrayBuffer(bytes) };
+}
+
+export function encodeBase64(value: string | ArrayBuffer | Uint8Array): string {
+  if (typeof value === "string") return Buffer.from(value).toString("base64");
+  if (value instanceof ArrayBuffer) {
+    return Buffer.from(value).toString("base64");
+  }
+  return Buffer.from(value).toString("base64");
+}
+
+export async function binaryLikeToBytes(data: unknown): Promise<Uint8Array> {
+  if (data instanceof ArrayBuffer) return new Uint8Array(data);
+  if (ArrayBuffer.isView(data)) {
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  }
+  if (data instanceof Blob) return new Uint8Array(await data.arrayBuffer());
+  return Buffer.from(String(data));
+}
+
+export function closeWebSocket(
+  ws: WebSocket,
+  code?: number,
+  reason?: string,
+): void {
+  if (
+    ws.readyState !== WebSocket.OPEN &&
+    ws.readyState !== WebSocket.CONNECTING
+  ) {
+    return;
+  }
+
+  const closeArgs = sanitizeWebSocketCloseArgs(code, reason);
+  try {
+    if (!closeArgs) {
+      ws.close();
+      return;
+    }
+    ws.close(closeArgs.code, closeArgs.reason);
+  } catch {
+    try {
+      ws.close();
+    } catch {
+      // The socket is already closing or the runtime rejected the close call.
+    }
+  }
+}
+
+export function sanitizeWebSocketCloseArgs(
+  code?: number,
+  reason?: string,
+): { code: number; reason?: string } | undefined {
+  const safeCode = toSafeWebSocketCloseCode(code);
+  if (safeCode === undefined) return undefined;
+
+  const sanitizedReason =
+    typeof reason === "string" ? truncateCloseReason(reason) : undefined;
+  return sanitizedReason === undefined
+    ? { code: safeCode }
+    : { code: safeCode, reason: sanitizedReason };
+}
+
+function toSafeWebSocketCloseCode(
+  code: number | undefined,
+): number | undefined {
+  if (typeof code !== "number" || !Number.isInteger(code)) return undefined;
+  if (code === 1000) return code;
+  if (code >= 3000 && code <= 4999) return code;
+  // WebSocket close events can report these RFC 6455 codes, but the
+  // JavaScript close() API only portably accepts 1000 or 3000-4999.
+  if (isRemappableProtocolCloseCode(code)) return 3000 + code;
+  return undefined;
+}
+
+function isRemappableProtocolCloseCode(code: number): boolean {
+  return (
+    code === 1001 ||
+    code === 1002 ||
+    code === 1003 ||
+    (code >= 1007 && code <= 1014)
+  );
+}
+
+function truncateCloseReason(reason: string): string {
+  const encoder = new TextEncoder();
+  if (encoder.encode(reason).byteLength <= MAX_WEBSOCKET_CLOSE_REASON_BYTES) {
+    return reason;
+  }
+
+  let truncated = "";
+  let byteLength = 0;
+  for (const character of reason) {
+    const characterLength = encoder.encode(character).byteLength;
+    if (byteLength + characterLength > MAX_WEBSOCKET_CLOSE_REASON_BYTES) break;
+    truncated += character;
+    byteLength += characterLength;
+  }
+  return truncated;
+}
+
+function bytesToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer as ArrayBuffer;
+}

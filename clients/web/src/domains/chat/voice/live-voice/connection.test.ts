@@ -2,13 +2,13 @@
  * Tests for the live-voice WS connection + token-exchange client.
  *
  * Two surfaces under test:
- *   - `mintVelayWsToken` — must POST `/v1/auth/live-voice-token/` through
+ *   - `mintTunnelWsToken` — must POST `/v1/auth/live-voice-token/` through
  *     the credentialed platform `client` (which attaches session cookie +
  *     CSRF + org header via the interceptor). We spy on `client.post` rather
  *     than `mock.module`-ing the whole SDK, matching the pattern in
  *     `domains/chat/inspector/compaction-trail-fetch.test.ts`.
- *   - `buildVelayWsUrl` / `buildSelfHostedGatewayWsUrl` and the resolvers on
- *     top of them: the cloud velay URL carries the `assistantId` in the path,
+ *   - `buildTunnelWsUrl` / `buildSelfHostedGatewayWsUrl` and the resolvers on
+ *     top of them: the cloud tunnel URL carries the `assistantId` in the path,
  *     a URL-encoded `?token=`, and the `wss` scheme; the self-hosted URL
  *     follows the ingress and bypasses the HTTP-only local proxy.
  */
@@ -20,18 +20,18 @@ import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 
 import {
   buildSelfHostedGatewayWsUrl,
-  buildVelayWsUrl,
-  getVelayWsScheme,
+  buildTunnelWsUrl,
+  getTunnelWsScheme,
   isPairedGatewayIngress,
-  VelayWsTokenError,
-  mintVelayWsToken,
+  TunnelWsTokenError,
+  mintTunnelWsToken,
   PairedVoiceUnavailableError,
   resolveGatewayWsUrl,
   resolveLiveVoiceWsUrl,
 } from "./connection";
 
 // ---------------------------------------------------------------------------
-// mintVelayWsToken
+// mintTunnelWsToken
 // ---------------------------------------------------------------------------
 
 type CapturedPostOptions = {
@@ -64,9 +64,9 @@ afterEach(() => {
   window.__VELLUM_CONFIG__ = undefined;
 });
 
-describe("mintVelayWsToken", () => {
+describe("mintTunnelWsToken", () => {
   test("POSTs the documented mint endpoint with the assistantId body", async () => {
-    await mintVelayWsToken("assistant-1");
+    await mintTunnelWsToken("assistant-1");
 
     expect(captured).not.toBeNull();
     expect(captured!.url).toBe("/v1/auth/live-voice-token/");
@@ -74,14 +74,14 @@ describe("mintVelayWsToken", () => {
   });
 
   test("returns { token, expiresAt } from the response", async () => {
-    const result = await mintVelayWsToken("assistant-1");
+    const result = await mintTunnelWsToken("assistant-1");
     expect(result).toEqual({
       token: "tok-abc",
       expiresAt: "2026-06-01T00:05:00Z",
     });
   });
 
-  test("throws VelayWsTokenError with the HTTP status on non-OK", async () => {
+  test("throws TunnelWsTokenError with the HTTP status on non-OK", async () => {
     nextPostResult = {
       data: null,
       error: { detail: "forbidden" },
@@ -89,15 +89,15 @@ describe("mintVelayWsToken", () => {
     };
 
     try {
-      await mintVelayWsToken("assistant-1");
-      throw new Error("expected mintVelayWsToken to throw");
+      await mintTunnelWsToken("assistant-1");
+      throw new Error("expected mintTunnelWsToken to throw");
     } catch (err) {
-      expect(err).toBeInstanceOf(VelayWsTokenError);
-      expect((err as VelayWsTokenError).status).toBe(403);
+      expect(err).toBeInstanceOf(TunnelWsTokenError);
+      expect((err as TunnelWsTokenError).status).toBe(403);
     }
   });
 
-  test("throws VelayWsTokenError(0) when the body is malformed", async () => {
+  test("throws TunnelWsTokenError(0) when the body is malformed", async () => {
     nextPostResult = {
       data: { token: "tok-abc" }, // missing expiresAt
       error: null,
@@ -105,64 +105,64 @@ describe("mintVelayWsToken", () => {
     };
 
     try {
-      await mintVelayWsToken("assistant-1");
-      throw new Error("expected mintVelayWsToken to throw");
+      await mintTunnelWsToken("assistant-1");
+      throw new Error("expected mintTunnelWsToken to throw");
     } catch (err) {
-      expect(err).toBeInstanceOf(VelayWsTokenError);
-      expect((err as VelayWsTokenError).status).toBe(0);
+      expect(err).toBeInstanceOf(TunnelWsTokenError);
+      expect((err as TunnelWsTokenError).status).toBe(0);
     }
   });
 });
 
 // ---------------------------------------------------------------------------
-// buildVelayWsUrl
+// buildTunnelWsUrl
 // ---------------------------------------------------------------------------
 
-describe("buildVelayWsUrl", () => {
+describe("buildTunnelWsUrl", () => {
   const args = { assistantId: "assistant-1", routePath: "/v1/live-voice" };
 
   test("URL-encodes tokens containing reserved characters", () => {
     const token = "a/b+c=d e";
-    const raw = buildVelayWsUrl({ ...args, token });
+    const raw = buildTunnelWsUrl({ ...args, token });
     // The encoded form must round-trip back to the original token.
     expect(new URL(raw).searchParams.get("token")).toBe(token);
     // And the raw string must not carry the unencoded reserved chars.
     expect(raw).not.toContain("token=a/b+c=d e");
   });
 
-  test("derives the velay host from the injected platform URL (Electron shell)", () => {
+  test("derives the tunnel host from the injected platform URL (Electron shell)", () => {
     window.__VELLUM_CONFIG__ = {
       platformUrl: "https://staging-platform.vellum.ai",
     };
-    const url = new URL(buildVelayWsUrl({ ...args, token: "tok-abc" }));
+    const url = new URL(buildTunnelWsUrl({ ...args, token: "tok-abc" }));
     expect(url.protocol).toBe("wss:");
-    expect(url.host).toBe("velay-staging.vellum.ai");
+    expect(url.host).toBe("tunnel-staging.mycadet.ai");
   });
 
-  test("falls back to the prod velay host for an off-convention platform URL", () => {
+  test("falls back to the prod tunnel host for an off-convention platform URL", () => {
     window.__VELLUM_CONFIG__ = { platformUrl: "http://localhost:8000" };
-    const url = new URL(buildVelayWsUrl({ ...args, token: "tok-abc" }));
-    expect(url.host).toBe("velay.vellum.ai");
+    const url = new URL(buildTunnelWsUrl({ ...args, token: "tok-abc" }));
+    expect(url.host).toBe("tunnel.mycadet.ai");
   });
 });
 
 // ---------------------------------------------------------------------------
-// getVelayWsScheme — TLS for prod, plain ws for the local loopback velay
+// getTunnelWsScheme — TLS for prod, plain ws for the local loopback tunnel
 // ---------------------------------------------------------------------------
 
-describe("getVelayWsScheme", () => {
-  test("uses wss for the production velay host", () => {
-    expect(getVelayWsScheme("velay.vellum.ai")).toBe("wss");
+describe("getTunnelWsScheme", () => {
+  test("uses wss for the production tunnel host", () => {
+    expect(getTunnelWsScheme("tunnel.mycadet.ai")).toBe("wss");
   });
 
-  test("uses ws for loopback hosts (local vel up velay)", () => {
-    expect(getVelayWsScheme("localhost:8501")).toBe("ws");
-    expect(getVelayWsScheme("127.0.0.1:8501")).toBe("ws");
-    expect(getVelayWsScheme("[::1]:8501")).toBe("ws");
+  test("uses ws for loopback hosts (local vel up tunnel)", () => {
+    expect(getTunnelWsScheme("localhost:8501")).toBe("ws");
+    expect(getTunnelWsScheme("127.0.0.1:8501")).toBe("ws");
+    expect(getTunnelWsScheme("[::1]:8501")).toBe("ws");
   });
 
   test("uses wss for a non-loopback host without a scheme", () => {
-    expect(getVelayWsScheme("velay.staging.vellum.ai")).toBe("wss");
+    expect(getTunnelWsScheme("tunnel.staging.vellum.ai")).toBe("wss");
   });
 });
 
@@ -269,15 +269,15 @@ describe("resolveGatewayWsUrl", () => {
     expect(captured).toBeNull();
   });
 
-  test("managed: mints a velay token and dials velay with it, params included", async () => {
+  test("managed: mints a tunnel token and dials tunnel with it, params included", async () => {
     const url = new URL(
       await resolveGatewayWsUrl({ ...args, params: { sampleRate: "16000" } }),
     );
 
     expect(captured?.body).toEqual({ assistantId: "asst-1" });
     expect(url.protocol).toBe("wss:");
-    expect(url.host).toBe("velay.vellum.ai");
-    // The `/<assistantId>` prefix selects the tunnel; velay strips it to
+    expect(url.host).toBe("tunnel.mycadet.ai");
+    // The `/<assistantId>` prefix selects the tunnel; tunnel strips it to
     // recover the upstream path it matches its allowlist against.
     expect(url.pathname).toBe("/asst-1/v1/desktop/stream");
     expect(url.searchParams.get("token")).toBe("tok-abc");
@@ -290,17 +290,17 @@ describe("resolveGatewayWsUrl", () => {
 // ---------------------------------------------------------------------------
 
 describe("resolveLiveVoiceWsUrl", () => {
-  test("cloud path: mints a velay token and builds the velay URL", async () => {
+  test("cloud path: mints a tunnel token and builds the tunnel URL", async () => {
     // GIVEN no self-hosted ingress (default)
     const raw = await resolveLiveVoiceWsUrl({
       assistantId: "assistant-1",
       conversationId: "conv-xyz",
     });
 
-    // THEN it mints and dials velay with the assistantId path prefix
+    // THEN it mints and dials tunnel with the assistantId path prefix
     expect(captured?.url).toBe("/v1/auth/live-voice-token/");
     const url = new URL(raw);
-    expect(url.host).toBe("velay.vellum.ai");
+    expect(url.host).toBe("tunnel.mycadet.ai");
     expect(url.pathname).toBe("/assistant-1/v1/live-voice");
     expect(url.searchParams.get("token")).toBe("tok-abc");
     expect(url.searchParams.get("conversationId")).toBe("conv-xyz");
@@ -328,7 +328,7 @@ describe("resolveLiveVoiceWsUrl", () => {
       conversationId: "conv-xyz",
     });
 
-    // THEN no velay token is minted...
+    // THEN no tunnel token is minted...
     expect(captured).toBeNull();
     // ...and the URL targets the gateway with the actor token
     const url = new URL(raw);
@@ -345,7 +345,7 @@ describe("resolveLiveVoiceWsUrl", () => {
 
     await expect(
       resolveLiveVoiceWsUrl({ assistantId: "assistant-1" }),
-    ).rejects.toBeInstanceOf(VelayWsTokenError);
+    ).rejects.toBeInstanceOf(TunnelWsTokenError);
     expect(captured).toBeNull();
   });
 
@@ -358,7 +358,7 @@ describe("resolveLiveVoiceWsUrl", () => {
     });
 
     // THEN the resolve fails typed with the user-facing reason live-voice
-    // surfaces via Error.message, and no velay token is minted
+    // surfaces via Error.message, and no tunnel token is minted
     await expect(
       resolveLiveVoiceWsUrl({ assistantId: "assistant-1" }),
     ).rejects.toThrow("Voice isn't available for paired assistants yet.");

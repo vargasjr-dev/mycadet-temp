@@ -8,10 +8,7 @@
 
 import { existsSync } from "node:fs";
 
-import {
-  isNamedPipePath,
-  resolveIpcEndpoint,
-} from "@vellumai/ipc-server-utils";
+import { isNamedPipePath, resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 
 import { getLogger } from "../util/logger.js";
 

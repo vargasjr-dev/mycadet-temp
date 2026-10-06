@@ -16,7 +16,7 @@
 
 import type { ReactNode } from "react";
 
-import { cn, Typography } from "@vellumai/design-library";
+import { cn, Typography } from "@mycadet/design-library";
 
 import { ChatPill } from "@/components/chat-pill";
 import { MidlineDot } from "@/components/midline-dot";

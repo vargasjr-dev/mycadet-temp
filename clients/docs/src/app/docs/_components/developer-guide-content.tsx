@@ -42,7 +42,7 @@ export function DeveloperGuideContent() {
   return (
     <DocsContent title="Developer Guide" breadcrumb="Docs / Developer Guide">
       <p className="mb-8 text-zinc-600">
-        Technical reference for contributors and developers working on the Vellum Assistant platform.
+        Technical reference for contributors and developers working on the Cadet Assistant platform.
         These docs cover architecture, security internals, the API surface, and the agent-driven development workflow.
       </p>
 

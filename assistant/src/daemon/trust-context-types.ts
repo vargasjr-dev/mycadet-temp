@@ -4,7 +4,7 @@
  * turn needs. Kept in a leaf module so the many consumers of this shape don't
  * pull in the trust-resolution machinery in `trust-context.ts`.
  */
-import type { ChannelConversationType } from "@vellumai/gateway-client";
+import type { ChannelConversationType } from "@mycadet/gateway-client";
 
 import type { ChannelId } from "../channels/types.js";
 import type { TrustClass } from "../runtime/trust-class.js";

@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { NOTIFICATION_AVATAR_MAX_BYTES } from "@vellumai/avatar-manifest/notification-avatar";
+import { NOTIFICATION_AVATAR_MAX_BYTES } from "@mycadet/avatar-manifest/notification-avatar";
 import sharp from "sharp";
 
 import {

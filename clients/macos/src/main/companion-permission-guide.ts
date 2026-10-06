@@ -27,13 +27,13 @@ import {
   type DraggablePermissionKind,
   type PermissionGuideState,
   type PermissionSourceRect,
-} from "@vellumai/ipc-contract";
-import { createFloatingWindow } from "@vellumai/electron-desktop/floating-window";
+} from "@mycadet/ipc-contract";
+import { createFloatingWindow } from "@mycadet/electron-desktop/floating-window";
 import {
   getAccentHex,
   getAvatarPng,
   onAvatarChange,
-} from "@vellumai/electron-desktop/avatar";
+} from "@mycadet/electron-desktop/avatar";
 
 import { defaultCaptureSourceDeps } from "./companion-capture-sources";
 import { handle, on } from "./ipc";

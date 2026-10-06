@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
-import type { AvatarState } from "@vellumai/avatar-manifest";
+import type { AvatarState } from "@mycadet/avatar-manifest";
 
 import { isTemplateContent } from "../prompts/template-detection.js";
 import { getLogger } from "../util/logger.js";

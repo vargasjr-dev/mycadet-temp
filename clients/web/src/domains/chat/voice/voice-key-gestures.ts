@@ -1,4 +1,4 @@
-import type { ModifierHoldUpReason } from "@vellumai/ipc-contract";
+import type { ModifierHoldUpReason } from "@mycadet/ipc-contract";
 
 /**
  * How long the key is held before the microphone opens.

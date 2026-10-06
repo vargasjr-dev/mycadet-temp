@@ -52,7 +52,7 @@ import { sectionIcon } from "@/domains/chat/utils/sidebar-section-icon";
 import { useShowsHoverAffordance } from "@/hooks/use-hover-affordance";
 import type { Conversation } from "@/types/conversation-types";
 import { routes } from "@/utils/routes";
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 
 /**
  * The assistant section shows at most five realizations before scrolling

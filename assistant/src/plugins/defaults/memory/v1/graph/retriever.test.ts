@@ -69,8 +69,8 @@ mock.module("./graph-search.js", () => ({
 // Returning `null` from getConfiguredProvider causes rerankAndDedup and
 // dedupCrossCategory to fall back to the candidate list without calling an
 // LLM, keeping these tests fully offline.
-const realPluginApi = await import("@vellumai/plugin-api");
-mock.module("@vellumai/plugin-api", () => ({
+const realPluginApi = await import("@mycadet/plugin-api");
+mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,
   getConfiguredProvider: async () => null,
 }));

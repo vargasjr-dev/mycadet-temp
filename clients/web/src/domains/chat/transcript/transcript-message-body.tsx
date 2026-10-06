@@ -1,8 +1,8 @@
 import {
   isNoResponseOnlyText,
   isPotentialNoResponsePrefix,
-} from "@vellumai/service-contracts/no-response";
-import { isComputerUseToolCall } from "@vellumai/assistant-api";
+} from "@mycadet/service-contracts/no-response";
+import { isComputerUseToolCall } from "@mycadet/assistant-api";
 import {
   Fragment,
   type MouseEvent as ReactMouseEvent,
@@ -19,7 +19,7 @@ import { MessageEmailReferences } from "@/domains/chat/components/chat-attachmen
 import { extractEmailReferences } from "@/domains/chat/email-reference";
 import { CameraFrameGrid } from "@/domains/chat/components/chat-attachments/camera-frame-grid";
 import { getMessageRenderKind } from "@/domains/chat/transcript/message-render-kind";
-import { resolveAttachmentFilename } from "@vellumai/service-contracts/attachment-naming";
+import { resolveAttachmentFilename } from "@mycadet/service-contracts/attachment-naming";
 
 import { downloadAttachment } from "@/domains/chat/components/chat-attachments/download-attachment";
 import { MessageAttachments } from "@/domains/chat/components/chat-attachments/message-attachments";
@@ -35,7 +35,7 @@ import {
   VellumFileActionModal,
   type VellumFileActionTarget,
 } from "@/domains/chat/components/vellum-file-action-modal";
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 import { MessageHoverActions } from "@/domains/chat/components/message-hover-actions/message-hover-actions";
 import { MessageLongPressActions } from "@/domains/chat/components/message-hover-actions/message-long-press-actions";
 import { SubagentSpawnGroup } from "@/domains/chat/components/subagent-inline-progress-card/subagent-spawn-group";
@@ -86,7 +86,7 @@ import { useTranslation } from "@/i18n";
 import { useSupportsRedactedCredentialChips } from "@/lib/backwards-compat/use-supports-redacted-credential-chips";
 import { stopAcpRun } from "@/domains/chat/utils/acp-run-actions";
 import { stopBackgroundTask } from "@/domains/chat/utils/background-task-actions";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { getExternalLinkUrl } from "@/domains/chat/types/types";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import { wireSurfaceToDisplay } from "@/domains/chat/utils/map-runtime-message";
@@ -103,7 +103,7 @@ import { useInteractionStore } from "@/domains/chat/interaction-store";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
-import type { ConversationMessageSurface } from "@vellumai/assistant-api";
+import type { ConversationMessageSurface } from "@mycadet/assistant-api";
 import {
   computeCardBackedWorkflowRunIds,
   extractBgIdFromResult,

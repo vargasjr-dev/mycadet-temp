@@ -6,6 +6,7 @@ import {
   resolveCloud,
   type Lockfile,
 } from "./lockfile-contract";
+import { isManagedCloud } from "./lockfile-contract";
 import { withLockfileLock } from "./lockfile-lock";
 import { stripSensitiveFields } from "./util";
 
@@ -371,7 +372,7 @@ export function replacePlatformAssistants(
       (assistant) =>
         typeof assistant?.assistantId !== "string" ||
         assistant.assistantId === "" ||
-        resolveCloud(assistant) !== "vellum" ||
+        !isManagedCloud(resolveCloud(assistant)) ||
         assistant.paired === true,
     )
   ) {
@@ -390,7 +391,7 @@ export function replacePlatformAssistants(
     const syncedIds = new Set(platformAssistants.map((a) => a.assistantId));
     // Org-scoped sync preserves other orgs' platform entries; no org full-replaces.
     const preserved = existing.filter((a: Record<string, unknown>) => {
-      if (a?.cloud !== "vellum") return true;
+      if (!isManagedCloud(a?.cloud)) return true;
       if (syncedIds.has(a.assistantId)) return false;
       return organizationId != null && a.organizationId !== organizationId;
     });

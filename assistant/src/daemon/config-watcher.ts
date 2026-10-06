@@ -15,7 +15,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
-import { AVATAR_IMAGE_FILENAME } from "@vellumai/avatar-manifest";
+import { AVATAR_IMAGE_FILENAME } from "@mycadet/avatar-manifest";
 
 import { getConfig, invalidateConfigCache } from "../config/loader.js";
 import type { MemoryCleanupConfig } from "../config/schemas/memory-lifecycle.js";

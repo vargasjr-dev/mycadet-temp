@@ -14,9 +14,9 @@ import {
   showNotificationPayloadSchema,
   type NotificationIdentity,
   type NotificationSender,
-} from "@vellumai/ipc-contract";
-import { resolveNotificationAvatarPath } from "@vellumai/electron-desktop/notification-avatar-path";
-import { isPreparedNotificationSenderCurrent } from "@vellumai/electron-desktop/notifications";
+} from "@mycadet/ipc-contract";
+import { resolveNotificationAvatarPath } from "@mycadet/electron-desktop/notification-avatar-path";
+import { isPreparedNotificationSenderCurrent } from "@mycadet/electron-desktop/notifications";
 
 import { runAppleScript } from "./appleScriptExecutor";
 import {
@@ -300,7 +300,10 @@ export class PermissionsService {
   private lastStateJson: string | null = null;
 
   private helperRequests = new Set<PermissionKind>();
-  private pollTimers = new Map<PermissionKind, ReturnType<typeof setInterval>>();
+  private pollTimers = new Map<
+    PermissionKind,
+    ReturnType<typeof setInterval>
+  >();
   private automationStatus: PermissionStatus = "unknown";
   private notificationStatus: PermissionStatus = initialNotificationStatus();
 
@@ -566,7 +569,7 @@ export class PermissionsService {
     if (stateJson === this.lastStateJson) return;
     this.lastStateJson = stateJson;
     for (const webContents of allWindowsWebContents()) {
-      webContents.send("vellum:permissions:state", state);
+      webContents.send("cadet:permissions:state", state);
     }
   }
 }
@@ -584,11 +587,11 @@ export const installPermissionsService = (): PermissionsService => {
   const service = new PermissionsService();
   installedService = service;
 
-  handle("vellum:permissions:getState", z.tuple([]), (_args, event) =>
+  handle("cadet:permissions:getState", z.tuple([]), (_args, event) =>
     service.refresh(event.sender),
   );
   handle(
-    "vellum:permissions:request",
+    "cadet:permissions:request",
     z.tuple([
       permissionKindSchema,
       permissionNotificationPresentationSchema.optional(),
@@ -597,11 +600,11 @@ export const installPermissionsService = (): PermissionsService => {
       service.request(kind, event.sender, presentation),
   );
   handle(
-    "vellum:permissions:openSettings",
+    "cadet:permissions:openSettings",
     z.tuple([permissionKindSchema]),
     ([kind], event) => service.openSettings(kind, event.sender),
   );
-  handle("vellum:permissions:quitAndReopen", z.tuple([]), () => {
+  handle("cadet:permissions:quitAndReopen", z.tuple([]), () => {
     service.quitAndReopen();
   });
 

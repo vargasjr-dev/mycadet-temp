@@ -18,7 +18,7 @@ mock.module("@/hooks/use-theme-preference", () => ({
 }));
 
 // Minimal SegmentControl harness: render one button per item exposing onChange.
-mock.module("@vellumai/design-library/components/segment-control", () => ({
+mock.module("@mycadet/design-library/components/segment-control", () => ({
   SegmentControl: ({
     items,
     onChange,

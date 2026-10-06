@@ -3,7 +3,7 @@
  * is pending, reading state from interaction-store directly.
  */
 
-import { Button, Notice } from "@vellumai/design-library";
+import { Button, Notice } from "@mycadet/design-library";
 import { useTranslation } from "@/i18n";
 
 import {

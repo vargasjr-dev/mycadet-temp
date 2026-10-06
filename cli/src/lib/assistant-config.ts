@@ -10,13 +10,13 @@ import {
 import { homedir } from "os";
 import { dirname, join } from "path";
 
-import { SEEDS, type EnvironmentDefinition } from "@vellumai/environments";
-import { withLockfileLock } from "@vellumai/local-mode";
+import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
+import { withLockfileLock } from "@mycadet/local-mode";
 import {
   resolveCloud,
   type LocalAssistantResources,
   type LockfileAssistant,
-} from "@vellumai/local-mode/contract";
+} from "@mycadet/local-mode/contract";
 
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "./constants.js";
 import { crossEnvironmentAssistantHint } from "./environments/detect.js";
@@ -702,7 +702,7 @@ export async function allocateLocalResources(
 
   // Env-aware bases: non-prod envs sit in their own 1000-port window so
   // running prod and staging assistants side-by-side doesn't collide. See
-  // the `@vellumai/environments` `portBlock` layout.
+  // the `@mycadet/environments` `portBlock` layout.
   const basePorts = getDefaultPorts(env);
   const daemonPort = await findAvailablePort(basePorts.daemon, reservedPorts);
   const gatewayPort = await findAvailablePort(basePorts.gateway, [

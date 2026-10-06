@@ -8,10 +8,10 @@ import {
   Loader2,
 } from "lucide-react";
 
-import { CardSurfaceDataSchema } from "@vellumai/assistant-api";
+import { CardSurfaceDataSchema } from "@mycadet/assistant-api";
 import type { Surface } from "@/domains/chat/types/types";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { MidlineDot } from "@/components/midline-dot";
 import { LazyBoundary } from "@/components/lazy-boundary";
 import { ChatMarkdownMessage } from "@/domains/chat/components/chat-markdown-message";

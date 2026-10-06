@@ -17,7 +17,7 @@ export const setSessionTokenLogger = (value: SessionTokenLogger): void => {
 // In-memory fallback for when safeStorage is unavailable (unsigned
 // local builds). Populated by saveSessionToken, cleared by
 // clearSessionToken. The renderer reads it via the synchronous
-// vellum:auth:getSessionToken IPC handler, so the token never leaves
+// cadet:auth:getSessionToken IPC handler, so the token never leaves
 // the main process.
 let inMemoryToken: string | null = null;
 

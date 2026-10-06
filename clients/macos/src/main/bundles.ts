@@ -4,12 +4,12 @@ import path from "node:path";
 import {
   BUNDLES_DIR_NAME,
   configureBundlePlatform,
-} from "@vellumai/electron-desktop/bundle-platform";
+} from "@mycadet/electron-desktop/bundle-platform";
 import {
   handleBundleFile,
   installBundleFlow,
-} from "@vellumai/electron-desktop/bundle-flow";
-import { createBundleHostProvider } from "@vellumai/electron-desktop/bundle-host";
+} from "@mycadet/electron-desktop/bundle-flow";
+import { createBundleHostProvider } from "@mycadet/electron-desktop/bundle-host";
 
 import { RENDERER_BASE_PROD, getDevRendererBase } from "./app-config";
 import { handle, on } from "./ipc";

@@ -9,7 +9,7 @@
 // high-significance nodes to re-evaluate arc assignments.
 // ---------------------------------------------------------------------------
 
-import { getConfiguredProvider } from "@vellumai/plugin-api";
+import { getConfiguredProvider } from "@mycadet/plugin-api";
 
 import type { AssistantConfig } from "../../../../../config/types.js";
 import { queryNodes, updateNode } from "../../graph/store.js";

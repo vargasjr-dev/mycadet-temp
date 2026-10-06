@@ -7,9 +7,9 @@ import { DetailCard } from "@/components/detail-card";
 import { assistantsListOptions } from "@/generated/api/@tanstack/react-query.gen";
 import type { Assistant } from "@/generated/api/types.gen";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Tag } from "@vellumai/design-library/components/tag";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { Tag } from "@mycadet/design-library/components/tag";
+import { toast } from "@mycadet/design-library/components/toast";
 
 const PLATFORM_LIST_OPTIONS = assistantsListOptions({
   query: { hosting: "platform" },

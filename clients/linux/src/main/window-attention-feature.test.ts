@@ -16,7 +16,7 @@ mock.module("electron", () => ({
 
 const installs = { count: 0 };
 const teardown = mock(() => undefined);
-mock.module("@vellumai/electron-desktop/window-attention", () => ({
+mock.module("@mycadet/electron-desktop/window-attention", () => ({
   installWindowAttention: () => {
     installs.count += 1;
     return teardown;
@@ -26,7 +26,7 @@ mock.module("@vellumai/electron-desktop/window-attention", () => ({
 const { default: windowAttentionFeature } =
   await import("./features/window-attention");
 const { DesktopCapabilityRegistry } =
-  await import("@vellumai/electron-desktop/capability-registry");
+  await import("@mycadet/electron-desktop/capability-registry");
 
 beforeEach(() => {
   quitListeners.length = 0;

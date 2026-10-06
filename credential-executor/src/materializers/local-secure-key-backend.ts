@@ -55,7 +55,7 @@ import { dirname, join } from "node:path";
 import type {
   SecureKeyBackend,
   SecureKeyDeleteResult,
-} from "@vellumai/credential-storage";
+} from "@mycadet/credential-storage";
 
 // ---------------------------------------------------------------------------
 // Constants (must match assistant/src/security/encrypted-store.ts)

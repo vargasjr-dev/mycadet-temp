@@ -23,7 +23,7 @@ mock.module("@/hooks/use-touch-mobile", () => ({
 const passthrough = ({ children, ...props }: Record<string, unknown>) =>
   createElement("div", props, children as ReactNode);
 
-mock.module("@vellumai/design-library/components/bottom-sheet", () => ({
+mock.module("@mycadet/design-library/components/bottom-sheet", () => ({
   BottomSheet: {
     Root: passthrough,
     Trigger: ({ children }: Record<string, unknown>) =>
@@ -40,7 +40,7 @@ mock.module("@vellumai/design-library/components/bottom-sheet", () => ({
   },
 }));
 
-mock.module("@vellumai/design-library/components/menu", () => ({
+mock.module("@mycadet/design-library/components/menu", () => ({
   Menu: {
     Root: passthrough,
     Trigger: ({ children }: Record<string, unknown>) =>
@@ -65,7 +65,7 @@ mock.module("@vellumai/design-library/components/menu", () => ({
   },
 }));
 
-mock.module("@vellumai/design-library/components/button", () => ({
+mock.module("@mycadet/design-library/components/button", () => ({
   Button: ({
     children,
     role,
@@ -82,7 +82,7 @@ mock.module("@vellumai/design-library/components/button", () => ({
     ),
 }));
 
-mock.module("@vellumai/design-library/components/panel-item", () => ({
+mock.module("@mycadet/design-library/components/panel-item", () => ({
   PanelItem: ({ label, onSelect }: Record<string, unknown>) =>
     createElement(
       "button",

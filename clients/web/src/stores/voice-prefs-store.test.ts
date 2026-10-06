@@ -8,7 +8,7 @@ import {
   useVoicePrefsStore,
 } from "@/stores/voice-prefs-store";
 
-const VOICE_PREFS_STORE_KEY = "vellum:voice-prefs";
+const VOICE_PREFS_STORE_KEY = "cadet:voice-prefs";
 
 beforeEach(() => {
   localStorage.removeItem(VOICE_PREFS_STORE_KEY);
@@ -70,7 +70,7 @@ describe("useVoicePrefsStore — voice-mode preferences", () => {
     expect(useVoicePrefsStore.getState().showUserTranscript).toBe(true);
   });
 
-  test("persists to the vellum:voice-prefs localStorage key", () => {
+  test("persists to the cadet:voice-prefs localStorage key", () => {
     useVoicePrefsStore.getState().setShowUserTranscript(true);
     useVoicePrefsStore.getState().setShowAssistantTranscript(true);
     useVoicePrefsStore.getState().markFirstRunSeen();

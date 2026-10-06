@@ -29,8 +29,8 @@
  * Reference: {@link https://zustand.docs.pmnd.rs/}
  */
 
-import type { AnsweredQuestion } from "@vellumai/assistant-api";
-import { captureError } from "@/lib/sentry/capture-error";
+import type { AnsweredQuestion } from "@mycadet/assistant-api";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { create } from "zustand";
 
 import {
@@ -51,7 +51,7 @@ import { useUnseenDocumentChangesStore } from "@/domains/chat/unseen-document-ch
 import type {
   ToolActivityMetadata,
   WebSearchResultItem,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import { createSelectors } from "@/utils/create-selectors";
 import { isAppMainView } from "@/stores/pane-state";
 
@@ -83,17 +83,16 @@ type OverlayView =
  * The daemon returns app-load failures as a structured error envelope
  * (`{ error: { code: "NOT_FOUND", message } }`) when the app reference
  * has been deleted server-side — that's the shape produced by
- * `httpError(...)` in `assistant/src/runtime/http-errors.ts` and the
- * shape recorded in Sentry breadcrumbs for this issue. The HeyAPI
+ * `httpError(...)` in `assistant/src/runtime/http-errors.ts`. The HeyAPI
  * client's `throwOnError: true` then throws that envelope as the catch
  * value. Treat it as an expected condition — the UI falls back to chat
- * — rather than a Sentry-worthy crash.
+ * — rather than a crash.
  *
  * **Narrow to the app-missing case via the message.** A bare `code:
  * "NOT_FOUND"` match would also swallow route-mismatch / version-skew
  * 404s (the daemon's catch-all returns `{ error: { code: "NOT_FOUND",
  * message: "Not found" } }`), and *those* are real telemetry we want
- * Sentry to see. The app-open handlers throw `NotFoundError("App not
+ * surfaced. The app-open handlers throw `NotFoundError("App not
  * found")` or `NotFoundError("App not found: ${appId}")` (see
  * `assistant/src/runtime/routes/app-routes.ts` and `app-management-routes.ts`),
  * so a `startsWith("App not found")` check matches the deleted-app case
@@ -108,10 +107,10 @@ type OverlayView =
  *
  * If a future HeyAPI upgrade wraps errors in an `Error` instance with the
  * body on a `.data` (or similar) property, this check silently stops
- * matching and NOT_FOUND noise comes back to Sentry — graceful degradation,
+ * matching and NOT_FOUND noise comes back — graceful degradation,
  * not a crash. The accompanying test will still pass (it tests our helper's
- * contract, not HeyAPI's). The signal to update is the Sentry issue
- * reopening, at which point this function and its test get adjusted to the
+ * contract, not HeyAPI's). The signal to update is the contract test
+ * failing, at which point this function and its test get adjusted to the
  * new envelope shape.
  */
 export function isAppNotFoundError(err: unknown): boolean {
@@ -1012,8 +1011,8 @@ const useViewerStoreBase = create<ViewerStore>()((set, get) => ({
         }
         set({ appLoad: null });
         // 404s here are an expected condition (app was deleted on the
-        // server but the client still has a reference). Skip the Sentry
-        // capture for those, since the daemon already returns a structured
+        // server but the client still has a reference). Skip the report
+        // for those, since the daemon already returns a structured
         // `{ code: "NOT_FOUND", message }` body, and let the UI fall back to
         // chat as below. Unexpected failures still report.
         if (!isAppNotFoundError(err)) {

@@ -49,21 +49,18 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/web
+        run: bun install --frozen-lockfile --filter=@mycadet/web
 
       - name: Generate API clients
         run: bun run openapi-ts
 
       # Build per environment so the bundle bakes in this environment's public
       # config — the Stripe publishable key differs per env (pk_test_ vs pk_live_)
-      # and the Sentry environment tag must match. Sources, per the GitHub config:
-      #   - VITE_SENTRY_DSN          repo-level variable (same for every env)
-      #   - VITE_SENTRY_DSN_ANDROID  per-environment secret baked into the SPA
-      #                              for Android WebView reporting
-      #   - VITE_SENTRY_ENVIRONMENT  per-environment variable (resolves via the
+      # and the environment tag must match. Sources, per the GitHub config:
+      #   - VITE_ENVIRONMENT  per-environment variable (resolves via the
       #                              job's `environment:`)
       #   - VITE_SESSION_REPLAY_APP_ID  repo-level variable; one ID across all
       #                              surfaces (web/Electron/iOS). Unset disables
@@ -74,43 +71,28 @@ jobs:
       #                              Unset keeps Android promotion disabled.
       #   - VITE_STRIPE_PUBLISHABLE_KEY  per-environment secret; publishable keys
       #                              are public, so embedding them is expected
-      #   - VITE_VELAY_HOST          per-environment variable: the live-voice
-      #                              velay host (no scheme), e.g.
-      #                              `velay-dev.vellum.ai` on nonprod. Unset in
+      #   - VITE_TUNNEL_HOST          per-environment variable: the live-voice
+      #                              tunnel host (no scheme), e.g.
+      #                              `tunnel-dev.vellum.ai` on nonprod. Unset in
       #                              prod, where the client defaults to
-      #                              `velay.vellum.ai`. Must match the velay the
+      #                              `tunnel.vellum.ai`. Must match the tunnel the
       #                              environment's assistant gateways tunnel to,
       #                              or the live-voice WS upgrade 503s "offline".
       #   - VITE_APP_VERSION         commit SHA baked into the browser bundle
-      #                              for Sentry event release tagging.
+      #                              for release tagging.
       #   - VITE_CHANNEL             publish channel baked into the bundle.
-      #   - SENTRY_UPLOAD_SOURCE_MAPS  deploy-only opt-in for source-map upload
-      #                              and Sentry release side effects.
-      #   - SENTRY_AUTH_TOKEN        repo-level secret; unprefixed, so Vite never
-      #                              inlines it — it only authenticates the
-      #                              build-time source-map upload and is not
-      #                              emitted into dist/.
       # The API base URL is not baked in: in the browser the client uses
       # same-origin paths, so each bucket's origin reaches its own backend.
       - name: Build
         env:
           VITE_PLATFORM_MODE: "true"
-          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
-          # Baked into the deployed SPA so the iOS webview (which loads this
-          # bundle via `server.url`) reports to the vellum-assistant-ios project.
-          VITE_SENTRY_DSN_IOS: ${{ secrets.SENTRY_DSN_IOS }}
-          # Baked into the deployed SPA so the Android webview (which loads this
-          # bundle via `server.url`) reports to the vellum-assistant-android project.
-          VITE_SENTRY_DSN_ANDROID: ${{ secrets.SENTRY_DSN_ANDROID }}
-          VITE_SENTRY_ENVIRONMENT: ${{ vars.VITE_SENTRY_ENVIRONMENT }}
+          VITE_ENVIRONMENT: ${{ vars.VITE_ENVIRONMENT }}
           VITE_SESSION_REPLAY_APP_ID: ${{ vars.VITE_SESSION_REPLAY_APP_ID }}
           VITE_ANDROID_PLAY_STORE_URL: ${{ vars.VITE_ANDROID_PLAY_STORE_URL }}
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
-          VITE_VELAY_HOST: ${{ vars.VITE_VELAY_HOST }}
+          VITE_TUNNEL_HOST: ${{ vars.VITE_TUNNEL_HOST }}
           VITE_APP_VERSION: ${{ github.sha }}
           VITE_CHANNEL: ${{ inputs.channel }}
-          SENTRY_UPLOAD_SOURCE_MAPS: "true"
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: bun run build
 
       # `path` is resolved from the workspace root and is NOT affected by the

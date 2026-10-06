@@ -54,7 +54,7 @@ mock.module("../contacts/guardian-delivery-reader.js", () => ({
     list.find((g) => g.channelType === channelType && g.status === "active"),
 }));
 
-import type { TrustVerdict } from "@vellumai/gateway-client";
+import type { TrustVerdict } from "@mycadet/gateway-client";
 
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";

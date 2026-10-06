@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { FileWarning } from "lucide-react";
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

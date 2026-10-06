@@ -9,12 +9,12 @@
  * of that: it also drops the row from the lazily-loaded Background section.
  *
  * Best-effort: a failure here must never block or surface in the flow. Every
- * error is swallowed (reported to Sentry) and never rethrown, mirroring
+ * error is swallowed (reported via captureError) and never rethrown, mirroring
  * `checkin-scheduler.ts`.
  */
 
 import { conversationsByIdArchivePost } from "@/generated/daemon/sdk.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 /**
  * Archive the research-onboarding side conversation. Best-effort and

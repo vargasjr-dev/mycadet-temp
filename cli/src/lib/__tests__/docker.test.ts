@@ -161,28 +161,28 @@ describe("resolveDockerProviderCredentialSetupAction", () => {
 });
 
 describe("buildServiceRunArgs — gateway", () => {
-  const savedVelayBaseUrl = process.env.VELAY_BASE_URL;
+  const savedTunnelBaseUrl = process.env.TUNNEL_BASE_URL;
 
   beforeEach(() => {
-    delete process.env.VELAY_BASE_URL;
+    delete process.env.TUNNEL_BASE_URL;
   });
 
   afterEach(() => {
-    if (savedVelayBaseUrl === undefined) delete process.env.VELAY_BASE_URL;
-    else process.env.VELAY_BASE_URL = savedVelayBaseUrl;
+    if (savedTunnelBaseUrl === undefined) delete process.env.TUNNEL_BASE_URL;
+    else process.env.TUNNEL_BASE_URL = savedTunnelBaseUrl;
   });
 
-  test("passes VELAY_BASE_URL into the gateway container when set", () => {
-    process.env.VELAY_BASE_URL = "http://host.docker.internal:8501";
+  test("passes TUNNEL_BASE_URL into the gateway container when set", () => {
+    process.env.TUNNEL_BASE_URL = "http://host.docker.internal:8501";
 
     expect(buildGatewayArgs()).toContain(
-      "VELAY_BASE_URL=http://host.docker.internal:8501",
+      "TUNNEL_BASE_URL=http://host.docker.internal:8501",
     );
   });
 
-  test("omits VELAY_BASE_URL from gateway args when unset", () => {
+  test("omits TUNNEL_BASE_URL from gateway args when unset", () => {
     expect(
-      buildGatewayArgs().some((arg) => arg.startsWith("VELAY_BASE_URL=")),
+      buildGatewayArgs().some((arg) => arg.startsWith("TUNNEL_BASE_URL=")),
     ).toBe(false);
   });
 

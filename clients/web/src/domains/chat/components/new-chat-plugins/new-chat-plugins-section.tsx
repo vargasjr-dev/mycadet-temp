@@ -3,7 +3,7 @@ import { useTranslation } from "@/i18n";
 
 import { Plug } from "lucide-react";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { NewChatPluginsPicker } from "./new-chat-plugins-picker";
 import { useNewChatPlugins } from "./use-new-chat-plugins";

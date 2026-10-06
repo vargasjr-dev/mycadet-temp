@@ -16,7 +16,7 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 
-import type { CredentialRecord } from "@vellumai/service-contracts/credential-rpc";
+import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 
 import { getCesDataRoot } from "../paths.js";
 

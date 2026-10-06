@@ -7,13 +7,13 @@
  * and multiple domains subscribe to these events.
  *
  * Every wire event is covered by `APIAssistantEvent` (the inferred union
- * from `@vellumai/assistant-api`); each new schema added there appears in
+ * from `@mycadet/assistant-api`); each new schema added there appears in
  * `AssistantEvent` automatically. `UnknownEvent` is the client-only
  * fallback the parser emits for any payload the canonical union doesn't
  * recognise.
  */
 
-import type { AssistantEvent as APIAssistantEvent } from "@vellumai/assistant-api";
+import type { AssistantEvent as APIAssistantEvent } from "@mycadet/assistant-api";
 
 // ---------------------------------------------------------------------------
 // SSE event interfaces
@@ -40,7 +40,10 @@ export interface UnknownEvent {
  * incorrectly clear processing indicators.
  */
 export type UserFacingInteractionKind =
-  "confirmation" | "secret" | "question" | "acp_confirmation";
+  | "confirmation"
+  | "secret"
+  | "question"
+  | "acp_confirmation";
 
 export type HostProxyInteractionKind =
   | "host_bash"
@@ -51,7 +54,8 @@ export type HostProxyInteractionKind =
   | "host_transfer";
 
 export type InteractionKind =
-  UserFacingInteractionKind | HostProxyInteractionKind;
+  | UserFacingInteractionKind
+  | HostProxyInteractionKind;
 
 /**
  * Allowlist of interaction kinds that signal the daemon has handed control
@@ -74,7 +78,7 @@ export const USER_FACING_INTERACTION_KINDS: ReadonlySet<string> =
 /**
  * Every event the chat SSE stream might emit. All wire events are
  * covered by `APIAssistantEvent` (the inferred union from
- * `@vellumai/assistant-api`); each new schema added there appears here
+ * `@mycadet/assistant-api`); each new schema added there appears here
  * automatically. `UnknownEvent` is the client-only fallback for any
  * payload the canonical union doesn't recognise.
  */

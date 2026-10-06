@@ -18,7 +18,7 @@
 
 import type { ReactNode } from "react";
 
-import { Card, Skeleton } from "@vellumai/design-library";
+import { Card, Skeleton } from "@mycadet/design-library";
 
 import { PageShell } from "@/components/page-shell";
 import { useTranslation } from "@/i18n";

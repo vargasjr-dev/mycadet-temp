@@ -2,7 +2,7 @@ import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
-import { Card } from "@vellumai/design-library";
+import { Card } from "@mycadet/design-library";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { Trans, t, useTranslation } from "@/i18n";
@@ -45,7 +45,9 @@ export function MemoryRouterPlaygroundPage(): ReactNode {
 
   if (authLoading) {
     return (
-      <CenteredMessage>{t("memoryRouterPlaygroundPage.loading")}</CenteredMessage>
+      <CenteredMessage>
+        {t("memoryRouterPlaygroundPage.loading")}
+      </CenteredMessage>
     );
   }
   if (!canInspect || !flagEnabled) {
@@ -448,7 +450,9 @@ function ConversationContextSection({
                 rows={3}
                 placeholder={
                   index === 0 && pairs.length === 1
-                    ? t("memoryRouterPlaygroundPage.firstTurnAssistantPlaceholder")
+                    ? t(
+                        "memoryRouterPlaygroundPage.firstTurnAssistantPlaceholder",
+                      )
                     : t("memoryRouterPlaygroundPage.assistantReplyPlaceholder")
                 }
               />
@@ -610,9 +614,7 @@ function PaneConfigForm({
               background: canRun
                 ? "var(--system-positive-strong)"
                 : "var(--surface-overlay)",
-              color: canRun
-                ? "var(--aux-white)"
-                : "var(--content-disabled)",
+              color: canRun ? "var(--aux-white)" : "var(--content-disabled)",
               border: "none",
               cursor: canRun ? "pointer" : "not-allowed",
             }}
@@ -834,9 +836,7 @@ function RunBothButton({
       className="rounded-md px-4 py-2 text-body-medium-default transition-colors"
       style={{
         background: disabled ? "var(--surface-overlay)" : "var(--primary-base)",
-        color: disabled
-          ? "var(--content-disabled)"
-          : "var(--content-inset)",
+        color: disabled ? "var(--content-disabled)" : "var(--content-inset)",
         border: "none",
         cursor: disabled ? "not-allowed" : "pointer",
       }}
@@ -1204,9 +1204,7 @@ function ConfigCard({
       result.overrides as Record<string, number | null | undefined>
     )[key];
     const effStr =
-      eff === null
-        ? t("memoryRouterPlaygroundPage.nullValue")
-        : String(eff);
+      eff === null ? t("memoryRouterPlaygroundPage.nullValue") : String(eff);
     const suffix =
       overrideValue !== undefined
         ? t("memoryRouterPlaygroundPage.overrideSuffix")

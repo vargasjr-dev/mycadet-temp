@@ -74,12 +74,12 @@ import {
   type VellumCommand,
   type VoiceActivityState,
   type WatchCaptureTarget,
-} from "@vellumai/ipc-contract";
-import { companionSizeSubmenus } from "@vellumai/electron-desktop/companion-menu";
+} from "@mycadet/ipc-contract";
+import { companionSizeSubmenus } from "@mycadet/electron-desktop/companion-menu";
 import {
   onSettingChange,
   readSetting,
-} from "@vellumai/electron-desktop/settings";
+} from "@mycadet/electron-desktop/settings";
 import {
   clearCompanionIntroSeen,
   readCompanionCallDock,
@@ -90,22 +90,22 @@ import {
   writeCompanionIntroSeen,
   writeCompanionSize,
   writeCompanionHidden,
-} from "@vellumai/electron-desktop/window-state";
+} from "@mycadet/electron-desktop/window-state";
 
 import {
   getAccentHex,
   getAvatarPng,
   getCharacter,
   onAvatarChange,
-} from "@vellumai/electron-desktop/avatar";
+} from "@mycadet/electron-desktop/avatar";
 import {
   getName as getAssistantName,
   onNameChange,
-} from "@vellumai/electron-desktop/identity";
+} from "@mycadet/electron-desktop/identity";
 import {
   createFloatingWindow,
   getFloatingWindow,
-} from "@vellumai/electron-desktop/floating-window";
+} from "@mycadet/electron-desktop/floating-window";
 import {
   captureSourceThumbnail,
   captureTargetFrame,
@@ -694,7 +694,7 @@ const reportIntro = (
     holdIntroReport(report);
     return;
   }
-  win.webContents.send("vellum:companion:introReport", report);
+  win.webContents.send("cadet:companion:introReport", report);
 };
 
 /**
@@ -711,7 +711,7 @@ const setIntroScrim = (on: boolean): void => {
   if (win === null || win.isDestroyed()) {
     return;
   }
-  win.webContents.send("vellum:companion:introStage", on);
+  win.webContents.send("cadet:companion:introStage", on);
 };
 
 /** Tell the app whether it should announce the tour before the run begins. */
@@ -724,7 +724,7 @@ const setIntroAnnouncement = (open: boolean): void => {
   if (win === null || win.isDestroyed()) {
     return;
   }
-  win.webContents.send("vellum:companion:introAnnouncement", open);
+  win.webContents.send("cadet:companion:introAnnouncement", open);
 };
 
 /**
@@ -779,7 +779,7 @@ const setIntroBeat = (next: CompanionIntroBeat | null): void => {
   if (win === null || win.isDestroyed()) {
     return;
   }
-  win.webContents.send("vellum:companion:introChord", control);
+  win.webContents.send("cadet:companion:introChord", control);
 };
 
 /**
@@ -1622,7 +1622,7 @@ const pushState = (): void => {
   ]) {
     const win = getFloatingWindow(kind);
     if (win) {
-      win.webContents.send("vellum:companion:state", state);
+      win.webContents.send("cadet:companion:state", state);
     }
   }
   syncPopover();
@@ -3634,7 +3634,7 @@ export const installCompanionWindow = (): void => {
   }
   installed = true;
 
-  on("vellum:companion:setInteractive", z.tuple([z.boolean()]), ([next]) => {
+  on("cadet:companion:setInteractive", z.tuple([z.boolean()]), ([next]) => {
     setInteractive(next);
   });
 
@@ -3649,7 +3649,7 @@ export const installCompanionWindow = (): void => {
   // jump, and unclamped that jump puts the surface somewhere the user cannot
   // reach it. See `placeCanvas`.
   on(
-    "vellum:companion:moveBy",
+    "cadet:companion:moveBy",
     z.tuple([z.number(), z.number()]),
     ([dx, dy]) => {
       const win = getFloatingWindow(COMPANION_KIND);
@@ -3687,7 +3687,7 @@ export const installCompanionWindow = (): void => {
   // The hand letting go. Sent after every press, and what it settles is
   // main's to know: a drag during a call docks the bar to the edge it was
   // heading for, and every other release has nothing to do.
-  on("vellum:companion:release", z.tuple([]), () => {
+  on("cadet:companion:release", z.tuple([]), () => {
     dockDragTravel = 0;
     if (docking === null) {
       return;
@@ -3705,7 +3705,7 @@ export const installCompanionWindow = (): void => {
    * window and no other, and the press arrives while the user is working in
    * some other app entirely, so "focused" would name the wrong target.
    */
-  on("vellum:companion:startVoice", z.tuple([]), () => {
+  on("cadet:companion:startVoice", z.tuple([]), () => {
     if (introAnnouncement || intro !== null) {
       return;
     }
@@ -3732,7 +3732,7 @@ export const installCompanionWindow = (): void => {
    * forward would cover the very thing the session exists to watch.
    */
   on(
-    "vellum:companion:toggleWatch",
+    "cadet:companion:toggleWatch",
     // An empty tuple is a press with no pick: the stop edge, or a start from
     // a surface with no picker. Two shapes rather than an optional element,
     // so a press sent with no argument at all parses as exactly that.
@@ -3769,7 +3769,7 @@ export const installCompanionWindow = (): void => {
    * on demand: the desktop changes under every push, and the list is only
    * worth anything at the moment it is drawn.
    */
-  handle("vellum:companion:listCaptureSources", z.tuple([]), async () => {
+  handle("cadet:companion:listCaptureSources", z.tuple([]), async () => {
     // A picker opening again is the user starting over: whatever pick was
     // still resolving belonged to the choice they just left.
     pickGeneration += 1;
@@ -3794,7 +3794,7 @@ export const installCompanionWindow = (): void => {
    * choice the user has left.
    */
   on(
-    "vellum:companion:setScreenShare",
+    "cadet:companion:setScreenShare",
     z.union([z.tuple([]), z.tuple([companionCapturePickSchema])]),
     ([pick]) => {
       if (pick === undefined) {
@@ -3841,7 +3841,7 @@ export const installCompanionWindow = (): void => {
    * remembered ({@link framesTheShare}), so the mode can never be armed
    * ahead of a share and take a display's clicks the moment one starts.
    */
-  on("vellum:companion:setAnnotating", z.tuple([z.boolean()]), ([next]) => {
+  on("cadet:companion:setAnnotating", z.tuple([z.boolean()]), ([next]) => {
     setAnnotating(next);
   });
 
@@ -3858,7 +3858,7 @@ export const installCompanionWindow = (): void => {
    * ({@link canAnnotate}), and refused the same way: nothing changes, and the
    * next push says the mode is off, which is what the desktop is doing.
    */
-  on("vellum:companion:toggleAnnotating", z.tuple([]), () => {
+  on("cadet:companion:toggleAnnotating", z.tuple([]), () => {
     setAnnotating(!annotating);
   });
 
@@ -3867,7 +3867,7 @@ export const installCompanionWindow = (): void => {
    * the share goes on. The frame's drawing layer drops its ink off the count
    * this steps on the pushed state.
    */
-  on("vellum:companion:clearMarks", z.tuple([]), () => {
+  on("cadet:companion:clearMarks", z.tuple([]), () => {
     clearMarks();
   });
 
@@ -3877,7 +3877,7 @@ export const installCompanionWindow = (): void => {
    * that crossed a share ending is still the user's choice for the next one.
    */
   on(
-    "vellum:companion:setAnnotationTool",
+    "cadet:companion:setAnnotationTool",
     z.tuple([companionAnnotationToolSchema]),
     ([tool]) => {
       setAnnotationTool(tool);
@@ -3894,7 +3894,7 @@ export const installCompanionWindow = (): void => {
    * reaches the app underneath, and on the first forwarded move it takes the
    * mouse back. See {@link frameScrolling}.
    */
-  on("vellum:companion:setFrameScrolling", z.tuple([z.boolean()]), ([next]) => {
+  on("cadet:companion:setFrameScrolling", z.tuple([z.boolean()]), ([next]) => {
     setFrameScrolling(next);
   });
 
@@ -3903,7 +3903,7 @@ export const installCompanionWindow = (): void => {
    * only from the window waiting on it, so another page cannot show the frame
    * early.
    */
-  on("vellum:companion:frameDrawn", z.tuple([]), (_args, event) => {
+  on("cadet:companion:frameDrawn", z.tuple([]), (_args, event) => {
     const frame = frameAwaitingDraw;
     if (
       frame !== null &&
@@ -3937,7 +3937,7 @@ export const installCompanionWindow = (): void => {
    * sense of.
    */
   on(
-    "vellum:companion:annotateShare",
+    "cadet:companion:annotateShare",
     z.tuple([
       companionAnnotationPhaseSchema,
       z
@@ -3967,7 +3967,7 @@ export const installCompanionWindow = (): void => {
    * error, since one missed frame is not something the call should notice.
    */
   handle(
-    "vellum:companion:captureScreen",
+    "cadet:companion:captureScreen",
     z.tuple([watchCaptureTargetSchema]),
     ([target]) =>
       // A refusal for want of the grant is the one miss the user must hear
@@ -3987,7 +3987,7 @@ export const installCompanionWindow = (): void => {
    * {@link showCompanionCoachmarks} reports.
    */
   handle(
-    "vellum:companion:shareTargets",
+    "cadet:companion:shareTargets",
     z.tuple([watchCaptureTargetSchema]),
     ([target]) => readShareTargets(target),
   );
@@ -4009,7 +4009,7 @@ export const installCompanionWindow = (): void => {
    * told rather than settled here.
    */
   on(
-    "vellum:companion:sharedFrame",
+    "cadet:companion:sharedFrame",
     z.tuple([watchCaptureTargetSchema]),
     ([target]) => {
       capturedTarget = target;
@@ -4023,7 +4023,7 @@ export const installCompanionWindow = (): void => {
    * reached once per tile and knows nothing of the others.
    */
   handle(
-    "vellum:companion:captureSourceThumbnail",
+    "cadet:companion:captureSourceThumbnail",
     z.tuple([watchCaptureTargetSchema]),
     ([target]) => captureSourceThumbnail(target),
   );
@@ -4039,7 +4039,7 @@ export const installCompanionWindow = (): void => {
    * renderer that ran the retrospective, and the answer has to reach it either
    * way or it will ask again on its next push.
    */
-  on("vellum:companion:answerWatchRetro", z.tuple([z.boolean()]), ([open]) => {
+  on("cadet:companion:answerWatchRetro", z.tuple([z.boolean()]), ([open]) => {
     if (!open) {
       void dispatchWithoutRaising({ kind: "answerWatchRetro", open: false });
       return;
@@ -4085,7 +4085,7 @@ export const installCompanionWindow = (): void => {
    * has the same gap to guard against.
    */
   on(
-    "vellum:companion:answerDictationOffer",
+    "cadet:companion:answerDictationOffer",
     z.tuple([z.enum(["use", "quit", "copy", "dismiss"]), z.string()]),
     ([answer, offerId]) => {
       const offered = context.dictationOffer;
@@ -4110,7 +4110,7 @@ export const installCompanionWindow = (): void => {
    * still travels so the window stops offering a surface the user went to.
    */
   on(
-    "vellum:companion:answerPopover",
+    "cadet:companion:answerPopover",
     z.tuple([companionPopoverAnswerSchema, z.string()]),
     ([answer, popoverId]) => {
       // Against what is shown, so a second press on an answer already on
@@ -4150,7 +4150,7 @@ export const installCompanionWindow = (): void => {
   );
 
   on(
-    "vellum:companion:setPopoverSize",
+    "cadet:companion:setPopoverSize",
     z.tuple([z.string(), z.number().finite(), z.number().finite()]),
     ([popoverId, width, height]) => {
       const popover = currentPopover();
@@ -4169,7 +4169,7 @@ export const installCompanionWindow = (): void => {
    * hold it.
    */
   on(
-    "vellum:companion:setAttachedPopoverHeight",
+    "cadet:companion:setAttachedPopoverHeight",
     z.tuple([z.string(), z.number().finite().nonnegative().max(4000)]),
     ([popoverId, height]) => {
       const popover = currentPopover();
@@ -4192,7 +4192,7 @@ export const installCompanionWindow = (): void => {
    * longer standing is dropped.
    */
   on(
-    "vellum:companion:setPopoverView",
+    "cadet:companion:setPopoverView",
     z.tuple([z.string(), z.enum(["row", "expanded", "deferred"])]),
     ([popoverId, view]) => {
       const popover = currentPopover();
@@ -4210,7 +4210,7 @@ export const installCompanionWindow = (): void => {
    * or a voice is something the user does without leaving their work.
    */
   on(
-    "vellum:companion:togglePicker",
+    "cadet:companion:togglePicker",
     z.tuple([companionPickerSchema]),
     ([picker]) => {
       void dispatchWithoutRaising({ kind: "toggleCompanionPicker", picker });
@@ -4224,7 +4224,7 @@ export const installCompanionWindow = (): void => {
    * any other scheme hands the press to whatever claims it: `file:` opens
    * anything readable on disk.
    */
-  on("vellum:companion:openLink", z.tuple([z.string().max(4096)]), ([url]) => {
+  on("cadet:companion:openLink", z.tuple([z.string().max(4096)]), ([url]) => {
     let parsed: URL;
     try {
       parsed = new URL(url);
@@ -4244,7 +4244,7 @@ export const installCompanionWindow = (): void => {
    * to draw it beside. The app's window asks before bringing itself forward
    * for an approval.
    */
-  handle("vellum:companion:takesPrompts", z.tuple([]), () => {
+  handle("cadet:companion:takesPrompts", z.tuple([]), () => {
     return popoverAnchor() !== null;
   });
 
@@ -4261,7 +4261,7 @@ export const installCompanionWindow = (): void => {
    * facts would produce.
    */
   on(
-    "vellum:companion:setContext",
+    "cadet:companion:setContext",
     z.tuple([companionContextSchema]),
     ([next]) => {
       const wasAsking = askingVoiceStart();
@@ -4300,7 +4300,7 @@ export const installCompanionWindow = (): void => {
    */
   // The app answers the announcement before any introduction beat exists.
   on(
-    "vellum:companion:answerIntroAnnouncement",
+    "cadet:companion:answerIntroAnnouncement",
     z.tuple([z.enum(COMPANION_INTRO_ANNOUNCEMENT_ACTIONS)]),
     ([action]) => {
       if (action === "start") {
@@ -4314,7 +4314,7 @@ export const installCompanionWindow = (): void => {
   // Main resolves introduction presses rather than taking a beat from the
   // renderer, so a stale press cannot jump the run backwards.
   on(
-    "vellum:companion:advanceIntro",
+    "cadet:companion:advanceIntro",
     z.tuple([z.enum(COMPANION_INTRO_ACTIONS)]),
     ([action]) => {
       if (intro === null) {
@@ -4389,7 +4389,7 @@ export const installCompanionWindow = (): void => {
     },
   );
 
-  on("vellum:companion:contextMenu", z.tuple([]), () => {
+  on("cadet:companion:contextMenu", z.tuple([]), () => {
     const win = getFloatingWindow(COMPANION_KIND);
     if (!win || win.isDestroyed()) {
       return;
@@ -4413,7 +4413,7 @@ export const installCompanionWindow = (): void => {
     menu.popup({ window: win });
   });
 
-  on("vellum:companion:activate", z.tuple([]), openVellum);
+  on("cadet:companion:activate", z.tuple([]), openVellum);
 
   // -------------------------------------------------------------------------
   // The running session
@@ -4425,7 +4425,7 @@ export const installCompanionWindow = (): void => {
   // -------------------------------------------------------------------------
 
   on(
-    "vellum:voiceActivity:start",
+    "cadet:voiceActivity:start",
     z.tuple([voiceActivityStartSchema]),
     ([start], event) => {
       // Taken whole, redundant or not. The mirror re-syncs on mount and the
@@ -4450,7 +4450,7 @@ export const installCompanionWindow = (): void => {
   );
 
   on(
-    "vellum:voiceActivity:update",
+    "cadet:voiceActivity:update",
     z.tuple([voiceActivityContentSchema]),
     ([content]) => {
       const next = callOnUpdate(call, content);
@@ -4462,7 +4462,7 @@ export const installCompanionWindow = (): void => {
     },
   );
 
-  on("vellum:voiceActivity:end", z.tuple([]), () => {
+  on("cadet:voiceActivity:end", z.tuple([]), () => {
     // With no session running this is the window asked for one saying no: a
     // first-run card to answer, an assistant with no voice, a request spent
     // some other way. Each has shown the user something else, so the dial ends
@@ -4486,7 +4486,7 @@ export const installCompanionWindow = (): void => {
    * is excluded because it is the sender.
    */
   on(
-    "vellum:voiceActivity:control",
+    "cadet:voiceActivity:control",
     z.tuple([voiceActivityControlSchema]),
     ([control]) => {
       // The end control on a dial is the user changing their mind. The pill
@@ -4510,7 +4510,7 @@ export const installCompanionWindow = (): void => {
         ) {
           continue;
         }
-        win.webContents.send("vellum:voiceActivity:controlEvent", control);
+        win.webContents.send("cadet:voiceActivity:controlEvent", control);
       }
     },
   );
@@ -4637,12 +4637,12 @@ export const installCompanionWindow = (): void => {
 
   // The route loads lazily after the window is created, so a state pushed
   // before its subscription registers is dropped. It pulls this once mounted.
-  handle("vellum:companion:getState", z.tuple([]), () => currentState());
+  handle("cadet:companion:getState", z.tuple([]), () => currentState());
 
   // A due run waits in the app until the user accepts or skips its
   // announcement. Pulled on mount because the push may predate the renderer.
   handle(
-    "vellum:companion:getIntroAnnouncement",
+    "cadet:companion:getIntroAnnouncement",
     z.tuple([]),
     () => introAnnouncement,
   );
@@ -4653,13 +4653,13 @@ export const installCompanionWindow = (): void => {
   // pulls this on mount, and what it pulls is the dimming rather than the
   // staging: a window that mounts while the surface is flying home is owed
   // "not dimmed", because it is not.
-  handle("vellum:companion:getIntroStage", z.tuple([]), () => introScrim);
+  handle("cadet:companion:getIntroStage", z.tuple([]), () => introScrim);
 
   // Which chord the run is asking for, pulled by the app's window on mount for
   // the reason the staging is pulled: that window reloads, and a push made
   // while it was away is gone. Read off the beat rather than off what was last
   // pushed, since the beat is the fact and the push is only how it travelled.
-  handle("vellum:companion:getIntroChord", z.tuple([]), () =>
+  handle("cadet:companion:getIntroChord", z.tuple([]), () =>
     introChordFor(intro),
   );
 
@@ -4667,7 +4667,7 @@ export const installCompanionWindow = (): void => {
   // window makes once it is listening. Taken rather than read: a report handed
   // over twice is a funnel row counted twice, and the window that asked is the
   // one that is now subscribed for the rest, which is what arms pushing.
-  handle("vellum:companion:takeIntroReports", z.tuple([]), (_args, event) => {
+  handle("cadet:companion:takeIntroReports", z.tuple([]), (_args, event) => {
     armIntroReports(event.sender);
     return introReports.splice(0, introReports.length);
   });

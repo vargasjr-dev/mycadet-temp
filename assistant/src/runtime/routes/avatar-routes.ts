@@ -1,15 +1,15 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { getCharacterComponents } from "@vellumai/avatar-catalog";
+import { getCharacterComponents } from "@mycadet/avatar-catalog";
 import {
   AVATAR_TRAITS_FILENAME,
   normalizeAvatarAccentHex,
-} from "@vellumai/avatar-manifest";
+} from "@mycadet/avatar-manifest";
 import {
   CLIENT_METADATA_HEADERS,
   sanitizeClientMetadataValue,
-} from "@vellumai/service-contracts/client-metadata";
+} from "@mycadet/service-contracts/client-metadata";
 import { z } from "zod";
 
 import { backfillAccent } from "../../avatar/accent-backfill.js";

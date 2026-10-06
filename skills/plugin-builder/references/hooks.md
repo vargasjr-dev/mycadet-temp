@@ -101,7 +101,7 @@ These are the lifecycle hooks. The full set of wired hook names lives in the [`H
 
 **Context:** `PostModelCallContext`
 **When:** At every model-call outcome: a finalized assistant message, or a provider rejection. Fires once per model call, before a finalized reply is persisted and streamed.
-**Use it to:** Transform the reply's text blocks (leave tool_use intact), and own the continue decision. On a degenerate no-tool reply or a recoverable rejection, repair the history and set decision to continue to re-query the model. Use `isMaxTokensStopReason()` from `@vellumai/plugin-api` on `ctx.stopReason` to detect truncated replies that may need continuation.
+**Use it to:** Transform the reply's text blocks (leave tool_use intact), and own the continue decision. On a degenerate no-tool reply or a recoverable rejection, repair the history and set decision to continue to re-query the model. Use `isMaxTokensStopReason()` from `@mycadet/plugin-api` on `ctx.stopReason` to detect truncated replies that may need continuation.
 **Example:** [advisor](https://github.com/vellum-ai/vellum-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/post-model-call.ts)
 
 | Field            | Type                    | Access    | Description                                                                                                                                                                                                                                                       |
@@ -199,9 +199,9 @@ When multiple plugins define the same hook, they execute in a fixed order so the
 
 Within a single plugin, hooks for the same name are not duplicated: each plugin contributes at most one hook per boundary. The chain is linear: the output of hook N is the input of hook N+1, and the final output is what the Assistant acts on.
 
-## @vellumai/plugin-api exports for hooks
+## @mycadet/plugin-api exports for hooks
 
-These are the hook-related exports from [`@vellumai/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api). Each context type's full field contract is documented in the hook sections above.
+These are the hook-related exports from [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api). Each context type's full field contract is documented in the hook sections above.
 
 | Export                              | Kind  | Purpose                                                                                                                                                                                                                  |
 | ----------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -238,7 +238,7 @@ One hook per file, default-exported. The filename becomes the hook key, so a `pr
 
 ```ts
 // hooks/pre-model-call.ts
-import type { PreModelCallContext } from "@vellumai/plugin-api";
+import type { PreModelCallContext } from "@mycadet/plugin-api";
 
 export default async function preModelCall(
   ctx: PreModelCallContext,
@@ -251,4 +251,4 @@ export default async function preModelCall(
 }
 ```
 
-Context types and constants come from [`@vellumai/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api), the only supported contract.
+Context types and constants come from [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api), the only supported contract.

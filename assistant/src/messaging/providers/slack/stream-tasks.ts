@@ -6,7 +6,7 @@
  * statuses differently. The core sends the plan; what it becomes is here.
  */
 
-import type { SlackStreamTask, StreamPlanStep } from "@vellumai/gateway-client";
+import type { SlackStreamTask, StreamPlanStep } from "@mycadet/gateway-client";
 
 const TASK_PROGRESS_STATUS_TO_SLACK: Record<
   StreamPlanStep["status"],

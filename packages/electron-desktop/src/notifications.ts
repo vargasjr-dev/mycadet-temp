@@ -22,7 +22,7 @@ import {
   resolveNotificationDeliveryKey,
   resetNotificationIdentitiesPayloadSchema,
   showNotificationPayloadSchema,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import type { IpcHandle } from "./ipc";
 import {
@@ -52,9 +52,9 @@ import {
  *
  * The renderer drives notifications through two IPC surfaces:
  *
- *   - `vellum:notifications:show` (invoke) — renderer asks main to
+ *   - `cadet:notifications:show` (invoke) — renderer asks main to
  *     post a notification; resolves with `{ success, errorMessage? }`.
- *   - `vellum:notifications:action` (send to renderer) — main
+ *   - `cadet:notifications:action` (send to renderer) — main
  *     broadcasts click/action events so the renderer can navigate,
  *     approve/reject tool calls, etc.
  *
@@ -367,9 +367,7 @@ const boundedSenderName = (value: string | undefined): string | null => {
   if (!trimmed) {
     return null;
   }
-  return trimmed
-    .slice(0, NOTIFICATION_SENDER_NAME_MAX_CHARS)
-    .trimEnd();
+  return trimmed.slice(0, NOTIFICATION_SENDER_NAME_MAX_CHARS).trimEnd();
 };
 
 const decodeVerifiedAvatar = (
@@ -605,9 +603,10 @@ const showNotification = (payload: ShowPayload): Promise<ShowResult> => {
 let pruneTimer: NodeJS.Timeout | null = null;
 let publisherSourcesWithCleanup = new WeakSet<object>();
 
-const identityPublisherSource = (
-  sender: { id: number; once(event: "destroyed", callback: () => void): void },
-): string => {
+const identityPublisherSource = (sender: {
+  id: number;
+  once(event: "destroyed", callback: () => void): void;
+}): string => {
   const sourceId = `webcontents:${sender.id}`;
   if (!publisherSourcesWithCleanup.has(sender)) {
     publisherSourcesWithCleanup.add(sender);
@@ -649,10 +648,8 @@ export const installNotifications = (): void => {
       );
     },
   );
-  ipc.handle(
-    NOTIFICATIONS_SHOW,
-    showPayloadSchema,
-    ([payload]) => showNotification(payload),
+  ipc.handle(NOTIFICATIONS_SHOW, showPayloadSchema, ([payload]) =>
+    showNotification(payload),
   );
 
   pruneTimer = setInterval(pruneStaleEntries, PRUNE_INTERVAL_MS);

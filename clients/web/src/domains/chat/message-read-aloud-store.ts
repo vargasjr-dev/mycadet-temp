@@ -1,4 +1,4 @@
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 import { create } from "zustand";
 
 import { synthesizeMessagePlayback } from "@/domains/chat/message-read-aloud-tts";
@@ -165,10 +165,7 @@ function speakWithWebSpeech(text: string, generation: number): boolean {
   }
 }
 
-async function playBlob(
-  blob: Blob,
-  generation: number,
-): Promise<boolean> {
+async function playBlob(blob: Blob, generation: number): Promise<boolean> {
   if (typeof URL.createObjectURL !== "function") {
     return false;
   }

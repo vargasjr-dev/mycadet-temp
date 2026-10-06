@@ -64,10 +64,10 @@ export function useDiskPressureBannerVisibility(
   assistantId: string | null,
 ): DiskPressureBannerVisibility {
   const dismissedKey = assistantId
-    ? `vellum:diskPressureDismissed:${assistantId}`
+    ? `cadet:diskPressureDismissed:${assistantId}`
     : null;
   const suppressedKey = assistantId
-    ? `vellum:diskPressureSuppressed:${assistantId}`
+    ? `cadet:diskPressureSuppressed:${assistantId}`
     : null;
 
   const [warningDismissed, setWarningDismissed] = useState(() =>

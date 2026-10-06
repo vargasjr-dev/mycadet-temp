@@ -60,7 +60,7 @@ export function WebSearchContent() {
           </p>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
             You control which provider runs that search and how it&apos;s
-            billed. Vellum&apos;s managed search works out of the box on your
+            billed. Cadet&apos;s managed search works out of the box on your
             platform account, your inference provider&apos;s native search can
             handle it in-model, or you can connect your own API key for a
             dedicated search engine like Perplexity, Brave Search, Tavily, or
@@ -77,7 +77,7 @@ export function WebSearchContent() {
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
             Six providers ship with every workspace. Managed providers need no
-            API key and bill through your Vellum account; BYOK providers call
+            API key and bill through your Cadet account; BYOK providers call
             the vendor directly with a key you connect and bill you there.
           </p>
           <div className="overflow-x-auto">
@@ -98,12 +98,12 @@ export function WebSearchContent() {
               <tbody className="[&>tr:nth-child(even)]:bg-zinc-50 dark:[&>tr:nth-child(even)]:bg-moss-900/30">
                 <tr>
                   <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                    Vellum
+                    Cadet
                   </td>
                   <td className="py-3 pr-4"><KindBadge kind="Managed" /></td>
                   <td className="py-3">
-                    Searches run through Vellum&apos;s managed search service.
-                    No setup, no API key. Metered from your Vellum account
+                    Searches run through Cadet&apos;s managed search service.
+                    No setup, no API key. Metered from your Cadet account
                     balance.
                   </td>
                 </tr>
@@ -116,7 +116,7 @@ export function WebSearchContent() {
                     Hands the search to the inference provider, so quality and
                     freshness follow whichever LLM you have selected. When the
                     selected model has no native search, the assistant falls
-                    back to any connected search key, then to Vellum&apos;s
+                    back to any connected search key, then to Cadet&apos;s
                     managed search.
                   </td>
                 </tr>
@@ -266,7 +266,7 @@ export function WebSearchContent() {
                     Dimension
                   </th>
                   <th className="pb-3 pr-4 text-left font-sans font-semibold text-stone-900 dark:text-stone-100">
-                    Vellum
+                    Cadet
                   </th>
                   <th className="pb-3 pr-4 text-left font-sans font-semibold text-stone-900 dark:text-stone-100">
                     Provider Native
@@ -297,8 +297,8 @@ export function WebSearchContent() {
                 </tr>
                 <tr>
                   <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">Billing</td>
-                  <td className="py-3 pr-4">Vellum credits, metered per search</td>
-                  <td className="py-3 pr-4">Bundled with inference (Vellum credits)</td>
+                  <td className="py-3 pr-4">Cadet credits, metered per search</td>
+                  <td className="py-3 pr-4">Bundled with inference (Cadet credits)</td>
                   <td className="py-3 pr-4">Direct to Perplexity</td>
                   <td className="py-3 pr-4">Direct to Brave</td>
                   <td className="py-3 pr-4">Direct to Tavily</td>
@@ -315,7 +315,7 @@ export function WebSearchContent() {
                 </tr>
                 <tr>
                   <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">Index source</td>
-                  <td className="py-3 pr-4">Vellum&apos;s managed search service</td>
+                  <td className="py-3 pr-4">Cadet&apos;s managed search service</td>
                   <td className="py-3 pr-4">Whatever the LLM provider uses</td>
                   <td className="py-3 pr-4">Aggregates multiple search engines</td>
                   <td className="py-3 pr-4">Independent crawl, not Google or Bing</td>
@@ -333,7 +333,7 @@ export function WebSearchContent() {
                 </tr>
                 <tr>
                   <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">Privacy</td>
-                  <td className="py-3 pr-4">Processed by Vellum&apos;s search infrastructure</td>
+                  <td className="py-3 pr-4">Processed by Cadet&apos;s search infrastructure</td>
                   <td className="py-3 pr-4">Subject to LLM provider terms</td>
                   <td className="py-3 pr-4">Standard SaaS</td>
                   <td className="py-3 pr-4">No query tracking</td>
@@ -362,7 +362,7 @@ export function WebSearchContent() {
             </table>
           </div>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
-            If you&apos;re unsure, start on Vellum or Provider Native and
+            If you&apos;re unsure, start on Cadet or Provider Native and
             switch only when you hit a concrete reason to.
           </p>
         </section>
@@ -380,7 +380,7 @@ export function WebSearchContent() {
           </p>
           <ol className="mb-4 list-decimal space-y-2 pl-6 text-stone-600 dark:text-stone-400 marker:text-stone-400 dark:marker:text-stone-500">
             <li>
-              Choose a <strong>provider</strong> from the dropdown. Vellum and
+              Choose a <strong>provider</strong> from the dropdown. Cadet and
               Provider Native need no further setup.
             </li>
             <li>
@@ -413,12 +413,12 @@ export function WebSearchContent() {
             Fallback behavior
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            On <strong>Vellum</strong>, there is no fallback: search errors
+            On <strong>Cadet</strong>, there is no fallback: search errors
             (including an exhausted account balance) surface directly so your
             searches are never silently rerouted to a key you pay for
             elsewhere. On <strong>Provider Native</strong>, the model&apos;s
             own hosted search runs first, then any connected search keys, then
-            Vellum&apos;s managed search. On a <strong>BYOK provider</strong>,
+            Cadet&apos;s managed search. On a <strong>BYOK provider</strong>,
             your assistant tries the provider you selected first; if it has no
             key configured or its request fails with a retryable error, the
             daemon walks the fallback chain in this order:
@@ -446,23 +446,23 @@ export function WebSearchContent() {
             Billing
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            Web search is one of four chargeable categories in the Vellum
+            Web search is one of four chargeable categories in the Cadet
             platform, alongside LLM inference, image generation, and paid
             third-party APIs.
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-stone-600 dark:text-stone-400 marker:text-stone-400 dark:marker:text-stone-500">
             <li>
-              On <strong>Vellum</strong>, each search is metered from your
-              Vellum account balance.
+              On <strong>Cadet</strong>, each search is metered from your
+              Cadet account balance.
             </li>
             <li>
               On <strong>Provider Native</strong>, search cost is bundled into
-              the inference call that triggered it. You pay Vellum credits the
+              the inference call that triggered it. You pay Cadet credits the
               same way you pay for any other LLM request.
             </li>
             <li>
               On a <strong>BYOK provider</strong>, the search vendor bills you
-              directly under your account with them. Vellum doesn&apos;t mark
+              directly under your account with them. Cadet doesn&apos;t mark
               up or proxy these requests.
             </li>
           </ul>

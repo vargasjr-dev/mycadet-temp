@@ -11,7 +11,7 @@
  *   sourced from the guardian contact's channel record.
  */
 
-import type { GuardianDelivery } from "@vellumai/gateway-client";
+import type { GuardianDelivery } from "@mycadet/gateway-client";
 
 import { isNotificationDeliverable } from "../channels/config.js";
 import type { ChannelId } from "../channels/types.js";

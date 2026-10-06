@@ -18,7 +18,7 @@ import {
   RefreshFeedbackPill,
   type RefreshFeedback,
 } from "@/domains/chat/refresh-feedback-pill";
-import { Notice, type NoticeTone } from "@vellumai/design-library";
+import { Notice, type NoticeTone } from "@mycadet/design-library";
 import { useTranslation } from "@/i18n";
 
 /**

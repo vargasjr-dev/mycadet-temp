@@ -53,7 +53,7 @@ let mockLockfileData: { ok: boolean; data?: LockfileData } = {
   ok: true,
   data: { assistants: [], activeAssistant: null },
 };
-mock.module("@vellumai/local-mode", () => ({
+mock.module("@mycadet/local-mode", () => ({
   getLockfileData: () => mockLockfileData,
 }));
 
@@ -73,7 +73,10 @@ beforeEach(() => {
   fetchCalls = [];
   fetchHeaders = [];
   fetchBehavior = "ok";
-  mockLockfileData = { ok: true, data: { assistants: [], activeAssistant: null } };
+  mockLockfileData = {
+    ok: true,
+    data: { assistants: [], activeAssistant: null },
+  };
 });
 
 // ---------------------------------------------------------------------------

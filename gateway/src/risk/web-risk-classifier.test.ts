@@ -125,7 +125,7 @@ describe("network_request", () => {
 
 // -- Allowlist options --------------------------------------------------------
 // The ladder a saved trust rule is built from, canonicalized through
-// `@vellumai/service-contracts/url-normalization` so the saved pattern has one
+// `@mycadet/service-contracts/url-normalization` so the saved pattern has one
 // spelling rather than whichever the model wrote. Rule lookup is a raw
 // exact-string match, so it does not fold those spellings together.
 

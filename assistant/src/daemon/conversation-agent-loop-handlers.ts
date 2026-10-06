@@ -6,7 +6,7 @@
  * testable while keeping shared mutable state bundled in EventHandlerState.
  */
 
-import { SENTINEL_REDACTION_VERSION } from "@vellumai/service-contracts/redacted-credential";
+import { SENTINEL_REDACTION_VERSION } from "@mycadet/service-contracts/redacted-credential";
 import type pino from "pino";
 import { v4 as uuid } from "uuid";
 

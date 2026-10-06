@@ -13,7 +13,7 @@
 
 import { useEffect, useState } from "react";
 
-import type { CompanionIntroCallControl } from "@vellumai/ipc-contract";
+import type { CompanionIntroCallControl } from "@mycadet/ipc-contract";
 
 import { isElectron } from "@/runtime/is-electron";
 import { isPopoutWindowLifetime } from "@/runtime/popout-window";

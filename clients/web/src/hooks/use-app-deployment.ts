@@ -23,7 +23,7 @@ import {
 import { t } from "@/i18n";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { useDeployStore } from "@/stores/deploy-store";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 export interface AppDeployment {
   /** Live URL of the active deployment, or `null` when nothing is published. */

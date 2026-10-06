@@ -27,22 +27,8 @@ mock.module("@/runtime/deep-links", () => ({
   subscribeToDeepLinks: subscribeToDeepLinksMock,
 }));
 
-const captureExceptionMock = mock(() => {});
-// Full Sentry surface — `mock.module` is process-global in bun, so a
-// partial shape would shadow `addBreadcrumb` (used by other modules
-// transitively loaded in this run) for every later test file. Both
-// methods are kept here so the mock can satisfy any consumer that
-// happens to load Sentry through our module under test.
-mock.module("@sentry/browser", () => ({
-  captureException: captureExceptionMock,
-  addBreadcrumb: () => {},
-  setContext: () => {},
-}));
-mock.module("@sentry/react", () => ({
-  captureException: captureExceptionMock,
-  addBreadcrumb: () => {},
-  setContext: () => {},
-}));
+const consoleWarnMock = mock(() => {});
+console.warn = consoleWarnMock as typeof console.warn;
 
 import * as eventBus from "@/lib/event-bus";
 import {
@@ -65,7 +51,6 @@ beforeEach(() => {
   subscribeToDeepLinksMock.mockClear();
   drainPendingDeepLinksMock.mockClear();
   unsubscribeMock.mockClear();
-  captureExceptionMock.mockClear();
   publishSpy.mockClear();
   __resetConnectDialogForTesting();
 });
@@ -147,18 +132,18 @@ describe("publishElectronDeepLinksSource", () => {
     ]);
   });
 
-  test("reports a drain failure to Sentry instead of propagating", async () => {
+  test("reports a drain failure instead of propagating", async () => {
     drainError = new Error("ipc transport failed");
 
     publishElectronDeepLinksSource();
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(captureExceptionMock).toHaveBeenCalledTimes(1);
-    expect(captureExceptionMock).toHaveBeenCalledWith(drainError, {
-      level: "warning",
-      tags: { context: "deep_link_drain" },
-    });
+    expect(consoleWarnMock).toHaveBeenCalledWith(
+      "[deep_link_drain]",
+      drainError,
+      "",
+    );
   });
 
   test("latches the drain-settled flag only after the backlog has published", async () => {

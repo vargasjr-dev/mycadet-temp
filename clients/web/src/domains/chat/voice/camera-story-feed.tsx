@@ -16,7 +16,7 @@
 import type { Decorator } from "@storybook/react-vite";
 import type { CSSProperties, ReactNode } from "react";
 
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 
 import { CameraShutter, type CameraShutterProps } from "./camera-shutter";
 import {

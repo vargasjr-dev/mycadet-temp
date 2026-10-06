@@ -3,9 +3,9 @@ import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { userEvent, within } from "storybook/test";
 
-import { Card } from "@vellumai/design-library/components/card";
-import { Collapsible } from "@vellumai/design-library/components/collapsible";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Card } from "@mycadet/design-library/components/card";
+import { Collapsible } from "@mycadet/design-library/components/collapsible";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import type { SlackChannel } from "@/domains/channels/slack-channels-query";
 import type { ChannelDefaultBucket } from "@/domains/channels/slack-channel-overrides";

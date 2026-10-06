@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { Inbox, Send } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";

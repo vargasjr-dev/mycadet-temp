@@ -12,7 +12,7 @@
  * only way out of here toward the channel is the source link in the header.
  */
 
-import { Button, Tag, Typography } from "@vellumai/design-library";
+import { Button, Tag, Typography } from "@mycadet/design-library";
 import { ExternalLink } from "lucide-react";
 
 import { channelReportsMessageProvenance } from "@/domains/chat/channel-sidecar/channel-message-provenance";
@@ -105,36 +105,38 @@ export function ChannelTranscriptPanelView({
       onClose={onClose}
     >
       <div className="flex flex-col gap-5">
-      <Typography
-        as="p"
-        variant="body-small-lighter"
-        className="text-[var(--content-tertiary)]"
-      >
-        {t("channelTranscriptPanel.readOnlyNote", { channel: channelLabel })}
-      </Typography>
+        <Typography
+          as="p"
+          variant="body-small-lighter"
+          className="text-[var(--content-tertiary)]"
+        >
+          {t("channelTranscriptPanel.readOnlyNote", { channel: channelLabel })}
+        </Typography>
 
-      {entries.length === 0 ? (
-        <DetailShellNotice placement="panel">
-          {channelReportsMessageProvenance(sidecarRef.channelId)
-            ? t("channelTranscriptPanel.emptyThread", { channel: channelLabel })
-            : t("channelTranscriptPanel.emptyNoMessageDetail", {
-                channel: channelLabel,
-              })}
-        </DetailShellNotice>
-      ) : (
-        <div className="flex flex-col gap-1">
-          {entries.map((entry) => (
-            <ChannelTranscriptEntryRow
-              key={entry.id}
-              entry={entry}
-              channelLabel={channelLabel}
-              assistantName={assistantName}
-              isReferenced={referencedEntryId === entry.id}
-              onToggleReference={onToggleReference}
-            />
-          ))}
-        </div>
-      )}
+        {entries.length === 0 ? (
+          <DetailShellNotice placement="panel">
+            {channelReportsMessageProvenance(sidecarRef.channelId)
+              ? t("channelTranscriptPanel.emptyThread", {
+                  channel: channelLabel,
+                })
+              : t("channelTranscriptPanel.emptyNoMessageDetail", {
+                  channel: channelLabel,
+                })}
+          </DetailShellNotice>
+        ) : (
+          <div className="flex flex-col gap-1">
+            {entries.map((entry) => (
+              <ChannelTranscriptEntryRow
+                key={entry.id}
+                entry={entry}
+                channelLabel={channelLabel}
+                assistantName={assistantName}
+                isReferenced={referencedEntryId === entry.id}
+                onToggleReference={onToggleReference}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </DetailShell>
   );

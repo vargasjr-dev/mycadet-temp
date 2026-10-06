@@ -4,10 +4,10 @@ import type { ReactNode } from "react";
 import { PageEmptyState } from "@/components/page-empty-state";
 import { useTranslation } from "@/i18n";
 import { ScheduleRow } from "@/domains/schedules/components/schedule-row";
-import { Button } from "@vellumai/design-library";
-import { Collapsible } from "@vellumai/design-library/components/collapsible";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Skeleton } from "@vellumai/design-library/components/skeleton";
+import { Button } from "@mycadet/design-library";
+import { Collapsible } from "@mycadet/design-library/components/collapsible";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Skeleton } from "@mycadet/design-library/components/skeleton";
 
 import type { Schedule } from "@/domains/settings/types/schedules";
 import type { ScheduleRowUsage } from "@/domains/settings/utils/schedule-formatters";

@@ -13,6 +13,7 @@
  * "Platform: …" status without ever entering the platform fetch path.
  */
 
+import { isManagedCloud } from "./managed-cloud.js";
 import {
   loadAllAssistants,
   removeAssistantEntry,
@@ -109,8 +110,8 @@ export async function syncCloudAssistants(
   const platformIds = new Set(platformAssistants.map((a) => a.id));
 
   // Add new platform assistants not yet in the lockfile
-  const existingCloudEntries = loadAllAssistants().filter(
-    (a) => a.cloud === "vellum",
+  const existingCloudEntries = loadAllAssistants().filter((a) =>
+    isManagedCloud(a.cloud),
   );
   const existingCloudById = new Map(
     existingCloudEntries.map((a) => [a.assistantId, a]),
@@ -132,8 +133,7 @@ export async function syncCloudAssistants(
         assistantId: pa.id,
         ...nameFields,
         runtimeUrl: getPlatformUrl(),
-        cloud: "vellum",
-        species: "vellum",
+        cloud: "cloud",
         hatchedAt: new Date().toISOString(),
       });
       added++;

@@ -4,7 +4,7 @@ import {
 } from "@/components/channel-avatar-download";
 import { Check, ClipboardCopy, ExternalLink } from "lucide-react";
 
-import { Button, Typography } from "@vellumai/design-library";
+import { Button, Typography } from "@mycadet/design-library";
 import { SetupStepList } from "@/components/setup-step-list";
 import { Trans, useTranslation } from "@/i18n";
 

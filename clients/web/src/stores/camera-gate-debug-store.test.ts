@@ -30,7 +30,7 @@ import {
 } from "@/stores/camera-gate-debug-store";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 
-const STORAGE_KEY = "vellum:debug:cameraGateHud";
+const STORAGE_KEY = "cadet:debug:cameraGateHud";
 
 const initialState = useCameraGateDebugStore.getState();
 

@@ -1,5 +1,5 @@
 import { HomeMarkdownContent } from "./home-markdown-content";
-import type { FeedItem } from "@vellumai/assistant-api";
+import type { FeedItem } from "@mycadet/assistant-api";
 
 export interface HomeGenericDetailProps {
   item: FeedItem;

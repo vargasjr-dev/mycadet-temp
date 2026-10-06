@@ -24,7 +24,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { MutableRefObject } from "react";
 
-import * as assistantApi from "@vellumai/assistant-api";
+import * as assistantApi from "@mycadet/assistant-api";
 import type { MessagesGetResponse } from "@/generated/daemon/types.gen";
 import {
   type ChatDebugEventsApi,
@@ -384,7 +384,7 @@ export interface ChatDebugApi {
    * `getDiagnostics("reconciliation_applied")`.
    *
    * Reads the sessionStorage-backed ring from `@/lib/diagnostics`
-   * (`vellum:chat-diagnostics:v1`, capped at 200 entries). Synchronous
+   * (`cadet:chat-diagnostics:v1`, capped at 200 entries). Synchronous
    * and side-effect-free; returns defensive copies.
    */
   getDiagnostics(kindPrefix?: string): DiagnosticsEvent[];
@@ -392,7 +392,7 @@ export interface ChatDebugApi {
    * Return the durable lifecycle diagnostics ring — stream open / close /
    * reconnect / watchdog, tab visibility, network, power transitions —
    * newest last. Optionally filter by kind prefix. Kept in a separate
-   * buffer (`vellum:chat-diagnostics-lifecycle:v1`) so high-volume
+   * buffer (`cadet:chat-diagnostics-lifecycle:v1`) so high-volume
    * per-delta events never flush the connection timeline.
    *
    * Synchronous and side-effect-free; returns defensive copies.
@@ -948,7 +948,7 @@ declare global {
  *     {@link eventsDebugApi}. Stable singleton; same surface every call.
  *   - `chat` — the per-page chat introspection API built from React refs.
  *     Component-scoped; rebuilt on each mount.
- *   - `api` — the full `@vellumai/assistant-api` namespace, so a developer
+ *   - `api` — the full `@mycadet/assistant-api` namespace, so a developer
  *     can pull canonical SSE schemas (`RelationshipStateUpdatedEventSchema`, …)
  *     out of the shipped bundle from the console.
  *   - `flags`: dev-toggleable feature flags (`impersonateVersion`,

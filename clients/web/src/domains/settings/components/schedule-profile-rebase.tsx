@@ -5,9 +5,9 @@ import { reassignScheduleInferenceProfile } from "@/domains/settings/api/schedul
 import { canScheduleStillRun } from "@/utils/schedules";
 import { useCallSiteDefaultProfile } from "@/hooks/use-call-site-default-profile";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { toast } from "@vellumai/design-library/components/toast";
+import { captureError } from "@/lib/error-reporting/capture-error";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import type { Schedule } from "@/domains/settings/types/schedules";
 

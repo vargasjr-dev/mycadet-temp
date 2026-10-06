@@ -2,8 +2,8 @@ import {
   buildMcpOAuthCallbackUrl,
   buildMcpOAuthClientMetadata,
   buildMcpOAuthClientMetadataUrl,
-} from "@vellumai/service-contracts/mcp-oauth";
-import { normalizeHttpPublicBaseUrlWithoutTrailingSlash } from "@vellumai/service-contracts/ingress";
+} from "@mycadet/service-contracts/mcp-oauth";
+import { normalizeHttpPublicBaseUrlWithoutTrailingSlash } from "@mycadet/service-contracts/ingress";
 
 import type { ConfigFileCache } from "../../config-file-cache.js";
 

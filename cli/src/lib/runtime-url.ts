@@ -1,3 +1,4 @@
+import { isManagedCloud } from "./managed-cloud.js";
 import { hostname } from "node:os";
 
 import { getLocalLanIPv4 } from "./local";
@@ -26,7 +27,7 @@ export function resolveRuntimeMigrationUrl(
   entry: Pick<AssistantEntry, "cloud" | "runtimeUrl" | "assistantId">,
   subpath: string,
 ): string {
-  if (entry.cloud === "vellum") {
+  if (isManagedCloud(entry.cloud)) {
     return `${entry.runtimeUrl}/v1/assistants/${entry.assistantId}/migrations/${subpath}`;
   }
   return `${entry.runtimeUrl}/v1/migrations/${subpath}`;
@@ -48,7 +49,7 @@ export function resolveRuntimeUrl(
   entry: Pick<AssistantEntry, "cloud" | "runtimeUrl" | "assistantId">,
   subpath: string,
 ): string {
-  if (entry.cloud === "vellum") {
+  if (isManagedCloud(entry.cloud)) {
     return `${entry.runtimeUrl}/v1/assistants/${entry.assistantId}/${subpath}`;
   }
   return `${entry.runtimeUrl}/v1/${subpath}`;

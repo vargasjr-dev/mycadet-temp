@@ -7,7 +7,7 @@
  * approval, so a route that is not yet servable is indistinguishable from
  * one that was never declared.
  *
- * Requests arrive from the public internet through the Velay tunnel, so
+ * Requests arrive from the public internet through the Tunnel tunnel, so
  * approval alone would only decide which paths exist, not who may call them.
  * Every request is therefore signature-checked before it is forwarded, and
  * a route whose secret is missing is refused rather than served unsigned.
@@ -33,7 +33,7 @@ import {
   meetsAdmissionFloor,
   PLUGIN_ADMISSION_DENIED_NOTICE_PATH,
   PluginAdmissionDeniedNoticeSchema,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import {
   findDeclaredRoute,
@@ -69,7 +69,7 @@ import {
 import { getLogger } from "../../logger.js";
 import { readLimitedBodyBytes } from "../read-limited-body.js";
 import { verifyVellumSignature } from "../vellum-signature.js";
-import { proxyForwardToResponse } from "@vellumai/assistant-client";
+import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 const log = getLogger("plugin-webhook");
 
@@ -244,7 +244,10 @@ async function notifyPluginAdmissionDenied(opts: {
     );
     const response = await proxyForwardToResponse(noticeReq, {
       baseUrl: forward.config.assistantRuntimeBaseUrl,
-      path: pluginRouteUpstreamPath(plugin, PLUGIN_ADMISSION_DENIED_NOTICE_PATH),
+      path: pluginRouteUpstreamPath(
+        plugin,
+        PLUGIN_ADMISSION_DENIED_NOTICE_PATH,
+      ),
       serviceToken: mintServiceToken(),
       timeoutMs: forward.config.runtimeTimeoutMs,
       fetchImpl: forward.fetchImpl,
@@ -480,9 +483,7 @@ async function deliverGatedInbound(opts: {
   const { config, plugin, routePath, req, body } = forward;
 
   let parsed: unknown;
-  const contentType = (
-    req.headers.get("content-type") ?? ""
-  ).toLowerCase();
+  const contentType = (req.headers.get("content-type") ?? "").toLowerCase();
   if (contentType.includes("application/x-www-form-urlencoded")) {
     // A form-encoded delivery (Twilio's webhooks are always this shape).
     // Parsed into a flat record so the inbound declaration's field paths can

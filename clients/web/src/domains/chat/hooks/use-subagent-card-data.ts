@@ -39,7 +39,7 @@ import {
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useSubagentSteps } from "@/domains/chat/subagent-step-projection";
 import { canAddressSubagentDetail } from "@/domains/chat/store-helpers/subagent-detail-addressability";
-import type { SubagentStatus } from "@vellumai/assistant-api";
+import type { SubagentStatus } from "@mycadet/assistant-api";
 import { isActiveStatus } from "@/utils/subagent-status";
 import { deriveStepLabelFromName } from "@/domains/chat/components/tool-progress-card/derive-step-label";
 import { titleCaseToolName } from "@/domains/chat/components/tool-call-chip/utils";

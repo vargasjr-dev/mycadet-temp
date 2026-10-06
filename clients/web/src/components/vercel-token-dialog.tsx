@@ -9,7 +9,7 @@ import {
   Modal,
   toast,
   Typography,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 export interface VercelTokenDialogProps {
   open: boolean;
@@ -47,9 +47,7 @@ export function VercelTokenDialog({
       onTokenSaved();
     } catch (err) {
       const message =
-        err instanceof Error
-          ? err.message
-          : t("vercelTokenDialog.saveFailed");
+        err instanceof Error ? err.message : t("vercelTokenDialog.saveFailed");
       setError(message);
       toast.error(message);
     } finally {

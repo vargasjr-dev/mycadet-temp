@@ -1,6 +1,6 @@
 import { UpdateWindowPolicy } from "@/domains/settings/components/update-window-policy";
 import { useTranslation } from "@/i18n";
-import { Modal } from "@vellumai/design-library/components/modal";
+import { Modal } from "@mycadet/design-library/components/modal";
 
 export interface UpdateWindowModalProps {
   assistantId: string;

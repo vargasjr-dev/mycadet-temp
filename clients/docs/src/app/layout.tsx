@@ -16,14 +16,14 @@ export const metadata: Metadata = {
 /* Pre-hydration theme bootstrap. Mirrors the key precedence of the assistant
  * SPA's inline shell-init script in clients/web/index.html (`device:theme`
  * first, then the
- * shared `vellum_theme` key, then system preference; platform-only "velvet"
- * counts as dark) since both apps share the www.vellum.ai origin. Stamps
+ * shared `cadet_theme` key, then system preference; platform-only "velvet"
+ * counts as dark) since both apps share the www.mycadet.ai origin. Stamps
  * BOTH `.dark` (docs-theme.css) and `data-theme` (design-library tokens) to
  * avoid a light-mode flash for dark users. */
 const themeInitScript = `
 (function() {
   try {
-    var theme = localStorage.getItem('device:theme') || localStorage.getItem('vellum_theme') || 'system';
+    var theme = localStorage.getItem('device:theme') || localStorage.getItem('cadet_theme') || 'system';
     var isDark = theme === 'velvet' || theme === 'dark' || (theme === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.classList.toggle('dark', isDark);
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');

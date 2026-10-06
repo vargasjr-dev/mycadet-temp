@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { DiskPressureStatus } from "@vellumai/assistant-api";
+import type { DiskPressureStatus } from "@mycadet/assistant-api";
 
 import {
   acknowledgeAssistantDiskPressure,

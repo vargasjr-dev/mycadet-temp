@@ -9,7 +9,7 @@
  * literal.
  *
  * Type-only imports keep this helper out of the runtime import graph, per the
- * test-machinery isolation rules in `assistant/CLAUDE.md`.
+ * test-machinery isolation rules the other helpers in this directory follow.
  */
 
 import type { TrustContext } from "../../daemon/trust-context-types.js";

@@ -1,5 +1,5 @@
 import { telemetryIngestCreate } from "@/generated/api/sdk.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import { getClientId } from "./client-identity";
 import {
@@ -41,7 +41,8 @@ const EXPECTED_DROP_REASONS = new Set(["analytics_opt_out"]);
  * A *contract* failure is not swallowed. The endpoint answers 200 for a batch
  * it accepts and then discards, reporting the per-reason counts in `dropped`,
  * so an accepted-but-dropped batch is invisible unless the response body is
- * read. Unexpected rejections and drops are therefore reported to Sentry, in
+ * read. Unexpected rejections and drops are therefore reported through
+ * `captureError`, in
  * every build, once per condition per page load.
  *
  * Consent is NOT gated here, each caller applies its own opt-out check before

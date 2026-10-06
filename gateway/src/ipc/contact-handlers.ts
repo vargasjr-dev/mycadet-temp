@@ -20,7 +20,7 @@ import {
   UpdateContactChannelIpcParamsSchema,
   UpsertVerifiedChannelIpcParamsSchema,
   UpsertVerifiedChannelIpcResponseSchema,
-} from "@vellumai/gateway-client/gateway-ipc-contracts";
+} from "@mycadet/gateway-client/gateway-ipc-contracts";
 import { z } from "zod";
 
 import { ContactStore } from "../db/contact-store.js";

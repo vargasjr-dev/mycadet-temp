@@ -3,11 +3,13 @@ import { useState } from "react";
 
 import { formatDiskPressureUsage } from "@/assistant/disk-pressure";
 import { useTranslation } from "@/i18n";
-import type { DiskPressureStatus } from "@vellumai/assistant-api";
-import { Button, Checkbox, Modal, Notice } from "@vellumai/design-library";
+import type { DiskPressureStatus } from "@mycadet/assistant-api";
+import { Button, Checkbox, Modal, Notice } from "@mycadet/design-library";
 
 export type DiskPressureBannerMode =
-  "warning" | "acknowledgement-required" | "cleanup";
+  | "warning"
+  | "acknowledgement-required"
+  | "cleanup";
 
 export interface DiskPressureBannerProps {
   status: DiskPressureStatus;

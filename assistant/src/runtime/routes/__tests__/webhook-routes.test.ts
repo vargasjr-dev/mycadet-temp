@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { InternalError, UnprocessableEntityError } from "../errors.js";
 
 let isPlatform = false;
-let velayWebhooksEnabled = false;
+let tunnelWebhooksEnabled = false;
 let config: Record<string, unknown> = {};
 let platformContextEnabled = false;
 let registerCallbackRouteError: Error | undefined;
@@ -43,10 +43,11 @@ mock.module("../../../config/loader.js", () => ({
   getConfig: () => config,
 }));
 
-const actualVelayGate = await import("../../../inbound/velay-webhooks-gate.js");
-mock.module("../../../inbound/velay-webhooks-gate.js", () => ({
-  ...actualVelayGate,
-  isVelayWebhooksEnabled: () => velayWebhooksEnabled,
+const actualTunnelGate =
+  await import("../../../inbound/tunnel-webhooks-gate.js");
+mock.module("../../../inbound/tunnel-webhooks-gate.js", () => ({
+  ...actualTunnelGate,
+  isTunnelWebhooksEnabled: () => tunnelWebhooksEnabled,
 }));
 
 mock.module("../../../inbound/platform-callback-registration.js", () => ({
@@ -74,7 +75,7 @@ const register = (body: Record<string, unknown>) =>
 describe("webhooks_register callback URL resolution", () => {
   beforeEach(() => {
     isPlatform = false;
-    velayWebhooksEnabled = false;
+    tunnelWebhooksEnabled = false;
     config = {};
     platformContextEnabled = false;
     registerCallbackRouteError = undefined;
@@ -114,16 +115,16 @@ describe("webhooks_register callback URL resolution", () => {
     );
   });
 
-  test("velay-webhooks on: a pod claims the subpath and uses the published URL", async () => {
+  test("tunnel-webhooks on: a pod claims the subpath and uses the published URL", async () => {
     isPlatform = true;
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     platformContextEnabled = true;
     config = {
-      ingress: { publicBaseUrl: "https://velay.vellum.ai/assistant-123" },
+      ingress: { publicBaseUrl: "https://tunnel.mycadet.ai/assistant-123" },
     };
 
     expect(await register({ type: "telegram", source: "@my_bot" })).toEqual({
-      callbackUrl: "https://velay.vellum.ai/assistant-123/webhooks/telegram",
+      callbackUrl: "https://tunnel.mycadet.ai/assistant-123/webhooks/telegram",
       type: "telegram",
       path: "webhooks/telegram",
       mode: "self-hosted",
@@ -136,13 +137,13 @@ describe("webhooks_register callback URL resolution", () => {
     expect(registerCallbackRouteMock).not.toHaveBeenCalled();
   });
 
-  test("velay-webhooks on: a refused claim falls back to the platform", async () => {
+  test("tunnel-webhooks on: a refused claim falls back to the platform", async () => {
     isPlatform = true;
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     platformContextEnabled = true;
     localWebhookRouteRegistered = false;
     config = {
-      ingress: { publicBaseUrl: "https://velay.vellum.ai/assistant-123" },
+      ingress: { publicBaseUrl: "https://tunnel.mycadet.ai/assistant-123" },
     };
 
     expect(await register({ type: "telegram" })).toMatchObject({
@@ -152,9 +153,9 @@ describe("webhooks_register callback URL resolution", () => {
     expect(registerLocalWebhookRouteMock).toHaveBeenCalled();
   });
 
-  test("velay-webhooks on: a pod with no published URL still registers with the platform", async () => {
+  test("tunnel-webhooks on: a pod with no published URL still registers with the platform", async () => {
     isPlatform = true;
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     platformContextEnabled = true;
 
     expect(await register({ type: "telegram" })).toMatchObject({
@@ -164,9 +165,9 @@ describe("webhooks_register callback URL resolution", () => {
     expect(registerLocalWebhookRouteMock).not.toHaveBeenCalled();
   });
 
-  test("velay-webhooks on: a pod with ingress disabled falls back to the platform", async () => {
+  test("tunnel-webhooks on: a pod with ingress disabled falls back to the platform", async () => {
     isPlatform = true;
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     platformContextEnabled = true;
     config = { ingress: { enabled: false } };
 
@@ -209,21 +210,21 @@ describe("webhooks_register callback URL resolution", () => {
     expect(registerLocalWebhookRouteMock).not.toHaveBeenCalled();
   });
 
-  // The gateway publishes the Velay tunnel URL into ingress.publicBaseUrl, so
+  // The gateway publishes the Tunnel tunnel URL into ingress.publicBaseUrl, so
   // a tunneled platform-connected assistant already resolves to a stable
   // platform-owned URL through the ingress tier.
-  test("a Velay-managed publicBaseUrl resolves through the ingress tier", async () => {
+  test("a Tunnel-managed publicBaseUrl resolves through the ingress tier", async () => {
     platformContextEnabled = true;
     config = {
       ingress: {
-        publicBaseUrl: "https://velay.vellum.ai/assistant-123",
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrl: "https://tunnel.mycadet.ai/assistant-123",
+        publicBaseUrlManagedBy: "tunnel",
       },
     };
 
     expect(await register({ type: "twilio_voice" })).toEqual({
       callbackUrl:
-        "https://velay.vellum.ai/assistant-123/webhooks/twilio/voice",
+        "https://tunnel.mycadet.ai/assistant-123/webhooks/twilio/voice",
       type: "twilio_voice",
       path: "webhooks/twilio/voice",
       mode: "self-hosted",

@@ -28,7 +28,7 @@ const invocation: CliInvocation = { command: "bun", baseArgs: ["run", "cli"] };
 
 describe("runHatch", () => {
   test("spawns the CLI and parses the assistant id from stdout", async () => {
-    const pending = runHatch(invocation, "vellum");
+    const pending = runHatch(invocation);
     lastChild.stdout.emit(
       "data",
       Buffer.from("Hatching local assistant: asst-42\n"),
@@ -36,11 +36,11 @@ describe("runHatch", () => {
     lastChild.emit("close", 0);
 
     expect(await pending).toEqual({ ok: true, assistantId: "asst-42" });
-    expect(spawnArgs[0]).toEqual(["bun", ["run", "cli", "hatch", "vellum"]]);
+    expect(spawnArgs[0]).toEqual(["bun", ["run", "cli", "hatch"]]);
   });
 
   test("parses the assistant id from a Docker hatch banner", async () => {
-    const pending = runHatch(invocation, "vellum", { remote: "docker" });
+    const pending = runHatch(invocation, { remote: "docker" });
     lastChild.stdout.emit(
       "data",
       Buffer.from("🥚 Hatching Docker assistant: asst-docker\n"),
@@ -50,12 +50,12 @@ describe("runHatch", () => {
     expect(await pending).toEqual({ ok: true, assistantId: "asst-docker" });
     expect(spawnArgs[0]).toEqual([
       "bun",
-      ["run", "cli", "hatch", "vellum", "--remote", "docker"],
+      ["run", "cli", "hatch", "--remote", "docker"],
     ]);
   });
 
   test("a non-zero exit resolves to a failure carrying the CLI's output", async () => {
-    const pending = runHatch(invocation, "vellum");
+    const pending = runHatch(invocation);
     lastChild.stderr.emit("data", Buffer.from("daemon already running"));
     lastChild.emit("close", 1);
 
@@ -67,7 +67,7 @@ describe("runHatch", () => {
   });
 
   test("a non-zero exit with no output carries a descriptive fallback error", async () => {
-    const pending = runHatch(invocation, "vellum");
+    const pending = runHatch(invocation);
     lastChild.emit("close", 1);
 
     const result = await pending;
@@ -78,7 +78,7 @@ describe("runHatch", () => {
   });
 
   test("a zero exit whose stdout has no parseable id fails instead of returning a blank id", async () => {
-    const pending = runHatch(invocation, "vellum");
+    const pending = runHatch(invocation);
     lastChild.stdout.emit("data", Buffer.from("done, but no id line\n"));
     lastChild.emit("close", 0);
 
@@ -90,7 +90,7 @@ describe("runHatch", () => {
   });
 
   test("a spawn failure resolves to a failure rather than rejecting", async () => {
-    const pending = runHatch(invocation, "vellum");
+    const pending = runHatch(invocation);
     lastChild.emit("error", new Error("ENOENT"));
 
     const result = await pending;

@@ -13,7 +13,7 @@ const TOC_ITEMS = [
   { id: "preserved-entries", label: "Preserved entries", level: 3 },
   { id: "state-is-plugin-owned", label: "State is plugin-owned", level: 3 },
   { id: "the-manifest", label: "The manifest", level: 2 },
-  { id: "the-plugin-api", label: "The @vellumai/plugin-api surface", level: 2 },
+  { id: "the-plugin-api", label: "The @cadetai/plugin-api surface", level: 2 },
   {
     id: "surfaces-not-yet-in-plugins",
     label: "Surfaces not yet in plugins",
@@ -30,7 +30,7 @@ const linkClass =
   "font-semibold text-emerald-700 underline hover:text-emerald-800";
 
 const PLUGIN_API_URL =
-  "https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api";
+  "https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api";
 
 const HOOKS_PAGE_URL = "/docs/extensibility/hooks";
 const TOOLS_PAGE_URL = "/docs/extensibility/tools";
@@ -605,7 +605,7 @@ export function ExtensibilityPluginsContent() {
             </ul>
             <p className="mb-0 text-zinc-600 dark:text-zinc-400">
               The assistant&apos;s own database is internal:{" "}
-              <code>@vellumai/plugin-api</code> exposes no handle to it, and a
+              <code>@cadetai/plugin-api</code> exposes no handle to it, and a
               plugin must not persist state elsewhere in the workspace.
               Keeping everything in <code>data/</code> is also what makes
               uninstall clean: removing the plugin directory removes all of
@@ -628,9 +628,9 @@ export function ExtensibilityPluginsContent() {
   "name": "@you/my-plugin",
   "version": "0.0.1",
   "peerDependencies": {
-    "@vellumai/plugin-api": "^0.8.0"
+    "@cadetai/plugin-api": "^0.8.0"
   },
-  "vellum": {}
+  "cadet": {}
 }`}</code>
           </pre>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600 dark:text-zinc-400">
@@ -656,7 +656,7 @@ export function ExtensibilityPluginsContent() {
             </li>
             <li>
               <strong className="text-zinc-900 dark:text-zinc-100">
-                <code>peerDependencies[&quot;@vellumai/plugin-api&quot;]</code>
+                <code>peerDependencies[&quot;@cadetai/plugin-api&quot;]</code>
               </strong>
               . A semver range checked against the running assistant. While
               plugins are in beta a mismatch is logged but does not block load.
@@ -685,7 +685,7 @@ export function ExtensibilityPluginsContent() {
             </li>
             <li>
               <strong className="text-zinc-900 dark:text-zinc-100">
-                <code>vellum</code>
+                <code>cadet</code>
               </strong>
               . Reserved for future use.
             </li>
@@ -703,12 +703,12 @@ export function ExtensibilityPluginsContent() {
 
         <section id="the-plugin-api" className="mt-12">
           <SectionHeading id="the-plugin-api" level={2}>
-            The @vellumai/plugin-api surface
+            The @cadetai/plugin-api surface
           </SectionHeading>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
             Plugins import everything they need from a single package,{" "}
             <Link href={PLUGIN_API_URL} className={linkClass}>
-              <code>@vellumai/plugin-api</code>
+              <code>@cadetai/plugin-api</code>
             </Link>
             . It is the only supported contract: anything not exported from
             there is assistant-internal and can change without notice. Most of
@@ -870,7 +870,7 @@ export function ExtensibilityPluginsContent() {
             version, or install across assistants, rather than extend only your
             own. The plugin is the distribution unit: its{" "}
             <code>package.json</code> manifest, the{" "}
-            <code>@vellumai/plugin-api</code> peer dependency, and the install
+            <code>@cadetai/plugin-api</code> peer dependency, and the install
             flow exist to make hooks, tools, skills, MCP servers, routes,
             channels, and apps portable and discoverable.
           </p>

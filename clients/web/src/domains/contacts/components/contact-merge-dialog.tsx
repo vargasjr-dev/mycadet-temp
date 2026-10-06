@@ -1,11 +1,11 @@
 import { ArrowLeft, GitMerge, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { PanelItem } from "@vellumai/design-library/components/panel-item";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { PanelItem } from "@mycadet/design-library/components/panel-item";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { channelTypeLabel } from "@/domains/contacts/channel-type-labels";
 import type { ContactPayload } from "@/domains/contacts/types";
@@ -130,7 +130,9 @@ function ContactMergeDialogInner({
                 onClick={() => onMerge(donor.id)}
                 disabled={pending}
               >
-                {pending ? t("actions.merging") : t("contactMergeDialog.confirm")}
+                {pending
+                  ? t("actions.merging")
+                  : t("contactMergeDialog.confirm")}
               </Button>
             </>
           ) : (

@@ -7,7 +7,7 @@
  * signals the worker directly; the stop is idempotent.
  */
 
-import type { HookFunction, ShutdownContext } from "@vellumai/plugin-api";
+import type { HookFunction, ShutdownContext } from "@mycadet/plugin-api";
 
 import { stopWorkspaceSkillMdMtimePoll } from "../skill-md-mtime-poll.js";
 import { stopMemoryWorkerProcess } from "../worker-control.js";

@@ -27,7 +27,7 @@ import { join } from "node:path";
 import type {
   SecureKeyBackend,
   SecureKeyDeleteResult,
-} from "@vellumai/credential-storage";
+} from "@mycadet/credential-storage";
 
 import { getIsContainerized } from "../config/env-registry.js";
 import {
@@ -60,7 +60,7 @@ import { ACP_OAUTH_TOKEN_FIELD, ACP_SERVICE } from "../acp/acp-credentials.js";
 
 /**
  * Re-export shared-package secure-key abstractions so downstream consumers
- * can import from this module without a direct @vellumai/credential-storage
+ * can import from this module without a direct @mycadet/credential-storage
  * dependency.
  */
 export type { SecureKeyBackend, SecureKeyDeleteResult };
@@ -160,9 +160,8 @@ async function attachCredentialRecordBackend(
   client: CesClient | undefined,
 ): Promise<void> {
   const { CesRpcRecordBackend } = await import("./ces-rpc-record-backend.js");
-  const { setCredentialRecordBackend } = await import(
-    "../tools/credentials/metadata-store.js"
-  );
+  const { setCredentialRecordBackend } =
+    await import("../tools/credentials/metadata-store.js");
   if (!client) {
     setCredentialRecordBackend(undefined);
     return;

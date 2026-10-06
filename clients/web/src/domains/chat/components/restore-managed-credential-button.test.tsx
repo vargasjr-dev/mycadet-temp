@@ -9,7 +9,7 @@ import {
 import { MemoryRouter } from "react-router";
 
 import * as identity from "@/lib/local-platform-identity";
-import * as actualToast from "@vellumai/design-library/components/toast";
+import * as actualToast from "@mycadet/design-library/components/toast";
 
 import type { PlatformGateState } from "@/hooks/use-platform-gate";
 
@@ -39,12 +39,12 @@ mock.module("@/lib/local-platform-identity", () => ({
 
 // The design-library barrel re-exports this module in full, so the stub keeps
 // its other exports and replaces only the notifier.
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...actualToast,
   toast: { success: toastSuccess, error: toastError },
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 

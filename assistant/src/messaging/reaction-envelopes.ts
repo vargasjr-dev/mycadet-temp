@@ -11,7 +11,7 @@
 import {
   pickReactionEmojiFields,
   type ReactionEmojiFields,
-} from "@vellumai/service-contracts/reactions";
+} from "@mycadet/service-contracts/reactions";
 
 import type { ChannelId } from "../channels/types.js";
 import type { ProviderMessageMetadata } from "./provider-message-metadata.js";

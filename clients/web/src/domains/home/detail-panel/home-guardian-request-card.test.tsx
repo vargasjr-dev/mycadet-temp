@@ -16,7 +16,7 @@ import {
   GUARDIAN_TERMINAL_REASON_SUPERSEDED,
   type FeedItem,
   type FeedItemGuardianRequest,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import { feedItem } from "../feed-test-fixtures";
 

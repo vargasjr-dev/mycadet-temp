@@ -9,7 +9,7 @@ import {
 } from "react";
 import { Box, render as inkRender, Text, useInput, useStdout } from "ink";
 
-import { SPECIES_CONFIG, type Species } from "../lib/constants";
+import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
 import { lookupAssistantByIdentifier } from "../lib/assistant-config";
 import { checkHealth } from "../lib/health-check";
 import {
@@ -610,7 +610,6 @@ type ConnectionState = "connecting" | "connected" | "error";
 function ConnectionScreen({
   state,
   errorMessage,
-  species,
   terminalRows,
   terminalColumns,
   onRetry,
@@ -618,7 +617,6 @@ function ConnectionScreen({
 }: {
   state: ConnectionState;
   errorMessage?: string;
-  species: Species;
   terminalRows: number;
   terminalColumns: number;
   onRetry: () => void;
@@ -643,8 +641,7 @@ function ConnectionScreen({
     }
   });
 
-  const config = SPECIES_CONFIG[species];
-  const title = `Vellum ${config.hatchedEmoji} ${species}`;
+  const title = `Vellum ${HATCHED_EMOJI}`;
   const width = Math.min(terminalColumns, MAX_TOTAL_WIDTH);
 
   return (
@@ -688,7 +685,6 @@ interface DefaultMainScreenProps {
   runtimeUrl: string;
   assistantId: string;
   assistantName?: string;
-  species: Species;
   healthStatus?: string;
 }
 
@@ -699,18 +695,16 @@ interface StyledLine {
 
 function CompactHeader({
   assistantName,
-  species,
   healthStatus,
   totalWidth,
 }: {
   assistantName?: string;
-  species: Species;
   healthStatus?: string;
   totalWidth: number;
 }): ReactElement {
-  const accentColor = species === "openclaw" ? "red" : "magenta";
+  const accentColor = "magenta";
   const status = healthStatus ?? "checking...";
-  const identity = assistantName?.trim() || species;
+  const identity = assistantName?.trim() || "assistant";
   const compactIdentity =
     identity.length > 18 ? `${identity.slice(0, 15)}...` : identity;
   const label = ` ${compactIdentity} ${statusEmoji(status)} `;
@@ -736,13 +730,11 @@ function DefaultMainScreen({
   runtimeUrl,
   assistantId,
   assistantName,
-  species,
   healthStatus,
 }: DefaultMainScreenProps): ReactElement {
   const cwd = process.cwd();
   const dirName = basename(cwd);
-  const config = SPECIES_CONFIG[species];
-  const accentColor = species === "openclaw" ? "red" : "magenta";
+  const accentColor = "magenta";
   const caps = getTerminalCapabilities();
   const headerPrefix = caps.unicodeSupported
     ? HEADER_PREFIX_UNICODE
@@ -758,14 +750,13 @@ function DefaultMainScreen({
     return (
       <CompactHeader
         assistantName={assistantName}
-        species={species}
         healthStatus={healthStatus}
         totalWidth={totalWidth}
       />
     );
   }
 
-  const art = config.art;
+  const art = HATCH_ART;
   const rightPanelWidth = Math.max(1, totalWidth - LEFT_PANEL_WIDTH);
 
   const leftLines: StyledLine[] = [
@@ -789,11 +780,6 @@ function DefaultMainScreen({
     { text: " ", style: "normal" },
     { text: "Assistant ID", style: "heading" },
     { text: assistantId, style: "dim" },
-    { text: "Species", style: "heading" },
-    {
-      text: `${unicodeOrFallback(config.hatchedEmoji, `[${species}]`)} ${species}`,
-      style: "dim",
-    },
     { text: "Status", style: "heading" },
     { text: withStatusEmoji(healthStatus ?? "checking..."), style: "dim" },
   ];
@@ -881,19 +867,17 @@ const SCROLL_STEP = 5;
 export function render(
   runtimeUrl: string,
   assistantId: string,
-  species: Species,
   assistantName?: string,
 ): number {
   const terminalColumns = process.stdout.columns || DEFAULT_TERMINAL_COLUMNS;
   const isCompact = terminalColumns < COMPACT_THRESHOLD;
-  const headerHeight = calculateHeaderHeight(species, terminalColumns);
+  const headerHeight = calculateHeaderHeight(terminalColumns);
 
   const { unmount } = inkRender(
     <DefaultMainScreen
       runtimeUrl={runtimeUrl}
       assistantId={assistantId}
       assistantName={assistantName}
-      species={species}
     />,
     { exitOnCtrlC: false },
   );
@@ -1112,7 +1096,6 @@ interface ChatAppProps {
   runtimeUrl: string;
   assistantId: string;
   assistantName?: string;
-  species: Species;
   /** Pre-built auth headers (e.g. { Authorization: "Bearer ..." } for local,
    *  { "X-Session-Token": "...", "Vellum-Organization-Id": "..." } for platform). */
   auth?: Record<string, string>;
@@ -1124,7 +1107,6 @@ function ChatApp({
   runtimeUrl,
   assistantId,
   assistantName,
-  species,
   auth,
   onExit,
   handleRef,
@@ -1162,7 +1144,7 @@ function ChatApp({
   const { stdout } = useStdout();
   const terminalRows = stdout.rows || DEFAULT_TERMINAL_ROWS;
   const terminalColumns = stdout.columns || DEFAULT_TERMINAL_COLUMNS;
-  const headerHeight = calculateHeaderHeight(species, terminalColumns);
+  const headerHeight = calculateHeaderHeight(terminalColumns);
 
   const isCompact = terminalColumns < COMPACT_THRESHOLD;
   const compactInputAreaHeight = 1; // input row only, no separators
@@ -2042,7 +2024,6 @@ function ChatApp({
       <ConnectionScreen
         state={connectionState}
         errorMessage={connectionError}
-        species={species}
         terminalRows={terminalRows}
         terminalColumns={terminalColumns}
         onRetry={retryConnection}
@@ -2057,7 +2038,6 @@ function ChatApp({
         runtimeUrl={runtimeUrl}
         assistantId={assistantId}
         assistantName={assistantName}
-        species={species}
         healthStatus={healthStatus}
       />
 
@@ -2174,7 +2154,6 @@ export interface ChatAppInstance {
 export function renderChatApp(
   runtimeUrl: string,
   assistantId: string,
-  species: Species,
   onExit: () => void,
   options?: {
     auth?: Record<string, string>;
@@ -2188,7 +2167,6 @@ export function renderChatApp(
       runtimeUrl={runtimeUrl}
       assistantId={assistantId}
       assistantName={options?.assistantName}
-      species={species}
       auth={options?.auth}
       onExit={onExit}
       handleRef={(h) => {

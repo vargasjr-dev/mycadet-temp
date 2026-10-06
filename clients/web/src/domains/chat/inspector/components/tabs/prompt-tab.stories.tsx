@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { createStoryQueryClient } from "@/lib/story-query-cache";
 
-import type { LLMRequestLogEntry } from "@vellumai/assistant-api";
+import type { LLMRequestLogEntry } from "@mycadet/assistant-api";
 
 import { PromptTab } from "./prompt-tab";
 

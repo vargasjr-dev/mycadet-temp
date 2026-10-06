@@ -1,7 +1,7 @@
 import {
   isChannelConversationType,
   type ChannelConversationType,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 /**
  * A plugin's reply to a verified webhook delivery, read as an inbound message.
  *

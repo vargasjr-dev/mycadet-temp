@@ -1,8 +1,8 @@
 import { useState } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
+import { Typography } from "@mycadet/design-library/components/typography";
 import { Loader2 } from "lucide-react";
 
 import {

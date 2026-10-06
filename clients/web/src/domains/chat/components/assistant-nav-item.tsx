@@ -43,7 +43,7 @@ import {
   SIDE_MENU_TILE_SIZE,
   Tooltip,
   type CustomPropertyStyle,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 import { SidebarDiscButton } from "@/domains/chat/components/sidebar-disc-button";
 import {

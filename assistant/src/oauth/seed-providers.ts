@@ -1,4 +1,4 @@
-import type { IntegrationCategory } from "@vellumai/service-contracts/integration-categories";
+import type { IntegrationCategory } from "@mycadet/service-contracts/integration-categories";
 
 import type { AvailableScopes } from "./connect-types.js";
 import { migrateProviderBaseUrl, seedProviders } from "./oauth-store.js";

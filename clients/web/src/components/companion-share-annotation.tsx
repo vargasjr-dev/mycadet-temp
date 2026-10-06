@@ -60,7 +60,7 @@ import {
   COMPANION_ANNOTATION_MIN_STEP,
   COMPANION_ANNOTATION_STROKE,
   type CompanionAnnotationTool,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /**
  * How long a finished mark stays at full strength before it starts to go, and

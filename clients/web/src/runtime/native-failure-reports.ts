@@ -7,8 +7,8 @@ import {
 import {
   diagnosticsConsentGranted,
   diagnosticsReportingResolvedOff,
-} from "@/lib/sentry/consent-gate";
-import { captureError } from "@/lib/sentry/capture-error";
+} from "@/lib/consent/consent-gate";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { isNativeAndroid } from "@/runtime/platform-detection";
 
 interface NativeFailureReport {

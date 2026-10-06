@@ -22,7 +22,7 @@ import {
 import { getDeviceSetting, setDeviceSetting } from "@/utils/device-settings";
 import { savePreferenceToggle } from "@/lib/consent/consent-persistence";
 import { legalUrl, routes } from "@/utils/routes";
-import { Select } from "@vellumai/design-library/components/select";
+import { Select } from "@mycadet/design-library/components/select";
 
 const RETENTION_OPTIONS = [
   { value: "dontRetain", labelKey: "privacyPage.retentionDontRetain" },
@@ -47,9 +47,9 @@ export function PrivacyPage() {
   // The standard gate, matching `AccessConsentSetting`, so the divider
   // shows exactly when that row does.
   const platformGate = usePlatformGate();
-  // The Share toggles control telemetry (browser Sentry, daemon analytics) that
-  // only runs with a probe-confirmed live platform session, so gate both the
-  // visibility and the consent write on it — matching `sentry-control.ts`. A
+  // The Share toggles control telemetry (client diagnostics, daemon analytics)
+  // that only runs with a probe-confirmed live platform session, so gate both
+  // the visibility and the consent write on it. A
   // believed offline restore (LUM-2412) is not live, so the toggles hide and a
   // flip can't stamp version-currency offline.
   const hasPlatformSession = useHasConfirmedPlatformSession();

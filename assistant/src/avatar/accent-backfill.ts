@@ -6,7 +6,7 @@
  * state route, the platform sync) can repair the accent without reaching the
  * store's client and platform fan-out.
  */
-import type { AvatarAccent } from "@vellumai/avatar-manifest";
+import type { AvatarAccent } from "@mycadet/avatar-manifest";
 
 import { getLogger } from "../util/logger.js";
 import { getAvatarImagePath } from "../util/platform.js";

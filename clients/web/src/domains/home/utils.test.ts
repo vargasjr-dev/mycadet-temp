@@ -4,7 +4,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import type { FeedItem, FeedItemUpdate } from "@vellumai/assistant-api";
+import type { FeedItem, FeedItemUpdate } from "@mycadet/assistant-api";
 
 import {
   clearAllArgs,

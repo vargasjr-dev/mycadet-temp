@@ -2,7 +2,7 @@
  * IPC route definitions for gateway-owned trust rules.
  */
 
-import { TrustRulesListIpcParamsSchema } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import { TrustRulesListIpcParamsSchema } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import { listTrustRules } from "../http/routes/trust-rules.js";
 import type { IpcRoute } from "./server.js";

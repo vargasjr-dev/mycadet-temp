@@ -36,9 +36,9 @@ import { useTranslation } from "@/i18n";
 import { useAndroidBillingHandoff } from "@/lib/billing/android-billing-handoff";
 import { useAuthStore } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { Button } from "@mycadet/design-library/components/button";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 /**
  * Our own terms sentence waits on legal sign-off; while this is false Stripe's

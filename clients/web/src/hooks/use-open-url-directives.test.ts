@@ -8,7 +8,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 import { stubBrowserAttention } from "@/runtime/window-attention.test-helper";
 
 let isNativePlatformMock = false;
@@ -29,7 +29,7 @@ mock.module("@/runtime/browser", () => ({
 const toastWarningMock = mock(
   (_message: string, _options?: Record<string, unknown>) => "toast-1",
 );
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: Object.assign(
     mock(() => "toast-0"),
     {

@@ -18,8 +18,8 @@ import type { LucideIcon } from "lucide-react";
 import { Loader2, X } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { Button, cn, Typography } from "@vellumai/design-library";
-import type { TypographyProps } from "@vellumai/design-library";
+import { Button, cn, Typography } from "@mycadet/design-library";
+import type { TypographyProps } from "@mycadet/design-library";
 
 import { MidlineDot } from "@/components/midline-dot";
 import { useTranslation } from "@/i18n";

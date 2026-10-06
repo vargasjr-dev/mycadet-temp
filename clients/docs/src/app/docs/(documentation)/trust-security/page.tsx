@@ -2,9 +2,9 @@ import { TrustSecurityContent } from "@/app/docs/_components/trust-security-cont
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Trust & Security - Vellum Docs",
+  title: "Trust & Security - Cadet Docs",
   description:
-    "Vellum trust and security — privacy, data handling, permissions, and deployment best practices.",
+    "Cadet trust and security — privacy, data handling, permissions, and deployment best practices.",
   path: "/docs/trust-security",
 });
 

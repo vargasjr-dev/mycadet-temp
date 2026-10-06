@@ -76,7 +76,7 @@ mock.module("./main-window", () => ({
 
 // Full `./settings` surface so this mock — which leaks into co-run test files
 // via the global module registry — doesn't break sibling modules.
-mock.module("@vellumai/electron-desktop/settings", () => ({
+mock.module("@mycadet/electron-desktop/settings", () => ({
   readSetting: () => null,
   writeSetting: () => {},
   onSettingChange: () => () => {},
@@ -84,7 +84,7 @@ mock.module("@vellumai/electron-desktop/settings", () => ({
 
 let companionHidden = false;
 let companionHiddenListener: ((hidden: boolean) => void) | null = null;
-mock.module("@vellumai/electron-desktop/window-state", () => ({
+mock.module("@mycadet/electron-desktop/window-state", () => ({
   readOnboardingActive: () => false,
   readCompanionHidden: () => companionHidden,
   onCompanionHiddenChange: (callback: (hidden: boolean) => void) => {
@@ -130,9 +130,8 @@ mock.module("./cli-path-flow", () => ({
   isCliPathFlowInFlight: isCliPathFlowInFlightMock,
 }));
 
-const { installApplicationMenu, refreshCliPathMenuState } = await import(
-  "./menu"
-);
+const { installApplicationMenu, refreshCliPathMenuState } =
+  await import("./menu");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -215,7 +214,11 @@ describe("CLI path menu items", () => {
   });
 
   test("shows Uninstall when installed, without the shadowed indicator", async () => {
-    await setStateAndRefresh({ kind: "installed", inPath: true, runtimeReady: true });
+    await setStateAndRefresh({
+      kind: "installed",
+      inPath: true,
+      runtimeReady: true,
+    });
     expect(appMenuLabels()).toContain(UNINSTALL_LABEL);
     expect(appMenuLabels()).not.toContain(INSTALL_LABEL);
     expect(appMenuLabels()).not.toContain(REPAIR_LABEL);
@@ -296,7 +299,11 @@ describe("CLI path menu items", () => {
   });
 
   test("clicking Uninstall runs the flow, then refreshes state and rebuilds", async () => {
-    await setStateAndRefresh({ kind: "installed", inPath: true, runtimeReady: true });
+    await setStateAndRefresh({
+      kind: "installed",
+      inPath: true,
+      runtimeReady: true,
+    });
     getCliPathInstallStateMock.mockClear();
     const buildsBefore = buildFromTemplateMock.mock.calls.length;
 
@@ -348,7 +355,11 @@ describe("app submenu separators", () => {
     );
 
   test("no adjacent separators when CLI items are present", async () => {
-    await setStateAndRefresh({ kind: "installed", inPath: true, runtimeReady: true });
+    await setStateAndRefresh({
+      kind: "installed",
+      inPath: true,
+      runtimeReady: true,
+    });
     expect(hasAdjacentSeparators(appSubmenu())).toBe(false);
   });
 
@@ -370,7 +381,11 @@ describe("CLI path menu items in unpackaged builds", () => {
   });
 
   test("hides Uninstall even when a prior detection found an install", async () => {
-    await setStateAndRefresh({ kind: "installed", inPath: true, runtimeReady: true });
+    await setStateAndRefresh({
+      kind: "installed",
+      inPath: true,
+      runtimeReady: true,
+    });
     expect(appMenuLabels()).toContain(UNINSTALL_LABEL);
 
     electronApp.isPackaged = false;

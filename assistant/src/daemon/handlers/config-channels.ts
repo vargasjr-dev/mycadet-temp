@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto";
 
-import type { GuardianDelivery } from "@vellumai/gateway-client";
-import { hashVerificationSecret } from "@vellumai/gateway-client";
-import { MarkChannelRevokedIpcResponseSchema } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import type { GuardianDelivery } from "@mycadet/gateway-client";
+import { hashVerificationSecret } from "@mycadet/gateway-client";
+import { MarkChannelRevokedIpcResponseSchema } from "@mycadet/gateway-client/gateway-ipc-contracts";
 import { z } from "zod";
 
 import { startVerificationCall } from "../../calls/call-domain.js";

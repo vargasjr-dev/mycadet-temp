@@ -24,9 +24,9 @@ import {
 import type {
   KeyboardModifier,
   SystemPermissionStatus,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import { DetailCard } from "@/components/detail-card";
 import { ActivationKeyOption } from "@/domains/settings/pages/activation-key-option";

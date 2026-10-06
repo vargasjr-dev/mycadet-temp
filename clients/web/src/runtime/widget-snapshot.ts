@@ -33,7 +33,7 @@ import {
  * settings; a read or write that fails leaves it absent, which reads as "no
  * known producer" and preserves the last-known-good snapshot.
  */
-const SNAPSHOT_ASSISTANT_ID_KEY = "vellum:widgetSnapshotAssistantId";
+const SNAPSHOT_ASSISTANT_ID_KEY = "cadet:widgetSnapshotAssistantId";
 
 /** The assistant that wrote the snapshot in the App Group, if it is known. */
 export function readWidgetSnapshotAssistantId(): string | null {
@@ -56,7 +56,7 @@ export function readWidgetSnapshotAssistantId(): string | null {
  * refuses the write leaves the marker absent, which reads as "nothing owed" and
  * falls back to the producer-id machinery, one belt for the other's braces.
  */
-const PENDING_CLEAR_KEY = "vellum:widgetSnapshotPendingClear";
+const PENDING_CLEAR_KEY = "cadet:widgetSnapshotPendingClear";
 
 function hasPendingClear(): boolean {
   return getLocalSetting(PENDING_CLEAR_KEY, "") !== "";

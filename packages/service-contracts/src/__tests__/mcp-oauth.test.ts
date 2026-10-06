@@ -11,16 +11,16 @@ describe("MCP OAuth client metadata", () => {
     expect(
       buildMcpOAuthClientMetadata({
         clientId:
-          "https://velay.example/assistant-123/oauth/client-metadata.json",
+          "https://tunnel.example/assistant-123/oauth/client-metadata.json",
         redirectUris: [
-          "https://velay.example/assistant-123/webhooks/oauth/callback",
+          "https://tunnel.example/assistant-123/webhooks/oauth/callback",
         ],
       }),
     ).toEqual({
       client_id:
-        "https://velay.example/assistant-123/oauth/client-metadata.json",
+        "https://tunnel.example/assistant-123/oauth/client-metadata.json",
       redirect_uris: [
-        "https://velay.example/assistant-123/webhooks/oauth/callback",
+        "https://tunnel.example/assistant-123/webhooks/oauth/callback",
       ],
       token_endpoint_auth_method: "none",
       grant_types: ["authorization_code", "refresh_token"],
@@ -31,23 +31,23 @@ describe("MCP OAuth client metadata", () => {
   });
 
   test("builds callback and metadata URLs from one normalized base", () => {
-    const baseUrl = "https://velay.example/assistant-123///";
+    const baseUrl = "https://tunnel.example/assistant-123///";
     expect(buildMcpOAuthCallbackUrl(baseUrl)).toBe(
-      "https://velay.example/assistant-123/webhooks/oauth/callback",
+      "https://tunnel.example/assistant-123/webhooks/oauth/callback",
     );
     expect(buildMcpOAuthClientMetadataUrl(baseUrl)).toBe(
-      "https://velay.example/assistant-123/oauth/client-metadata.json",
+      "https://tunnel.example/assistant-123/oauth/client-metadata.json",
     );
   });
 
   test("canonicalizes equivalent public base URL spellings", () => {
-    const baseUrl = " https://VELAY.EXAMPLE:443/a/../assistant-123/// ";
+    const baseUrl = " https://TUNNEL.EXAMPLE:443/a/../assistant-123/// ";
 
     expect(buildMcpOAuthCallbackUrl(baseUrl)).toBe(
-      "https://velay.example/assistant-123/webhooks/oauth/callback",
+      "https://tunnel.example/assistant-123/webhooks/oauth/callback",
     );
     expect(buildMcpOAuthClientMetadataUrl(baseUrl)).toBe(
-      "https://velay.example/assistant-123/oauth/client-metadata.json",
+      "https://tunnel.example/assistant-123/oauth/client-metadata.json",
     );
   });
 });

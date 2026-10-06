@@ -18,7 +18,7 @@
  * (ring-evicted) tails degrade to today's snapshot-only recovery.
  */
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 import { eventsTailGet } from "@/generated/daemon/sdk.gen";
 import { supportsEventsTail } from "@/lib/backwards-compat/events-tail";

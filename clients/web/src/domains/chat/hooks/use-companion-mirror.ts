@@ -54,12 +54,12 @@ import {
   useCompanionPopoverStore,
 } from "@/domains/chat/companion-popover";
 import { useInteractionStore } from "@/domains/chat/interaction-store";
-import { COMPANION_DICTATION_TAIL } from "@vellumai/ipc-contract";
+import { COMPANION_DICTATION_TAIL } from "@mycadet/ipc-contract";
 import type {
   CompanionContext,
   CompanionDictating,
   CompanionDictationOffer,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /**
  * Whether a turn is in flight, from the press until the response is done.

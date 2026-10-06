@@ -29,8 +29,8 @@ import {
 import { configPatch } from "@/generated/daemon/sdk.gen";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { toast } from "@mycadet/design-library/components/toast";
 
 /** A `services.stt.roles.<role>` entry: a provider and optional family. */
 interface SttRoleSelection {

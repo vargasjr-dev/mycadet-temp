@@ -1,4 +1,11 @@
-import { afterAll, afterEach, beforeEach, describe, expect, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "bun:test";
 import { existsSync, mkdtempSync, rmSync, unlinkSync } from "node:fs";
 import { type Socket } from "node:net";
 import { tmpdir } from "node:os";
@@ -11,7 +18,7 @@ import { connectClient, sendRequest } from "./helpers/ipc-newline-client.js";
 
 // Integration tests for GatewayIpcServer's watchdog wiring. The watchdog's
 // own unit tests (race guards, timer error handling, etc.) live in
-// `@vellumai/ipc-server-utils`. These tests verify that the gateway server
+// `@mycadet/ipc-server-utils`. These tests verify that the gateway server
 // correctly wires the watchdog into its own lifecycle and legacy-server
 // bookkeeping.
 

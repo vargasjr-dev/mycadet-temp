@@ -149,12 +149,12 @@ describe("sensitive header redaction", () => {
     });
   });
 
-  test("redacts x-vellum-velay-bridge-auth header", () => {
+  test("redacts x-vellum-tunnel-bridge-auth header", () => {
     const out = reqSerializer({
-      headers: { "x-vellum-velay-bridge-auth": "bridge-secret-123" },
+      headers: { "x-vellum-tunnel-bridge-auth": "bridge-secret-123" },
     });
     expect((out as Record<string, unknown>).headers).toEqual({
-      "x-vellum-velay-bridge-auth": "[REDACTED]",
+      "x-vellum-tunnel-bridge-auth": "[REDACTED]",
     });
   });
 

@@ -3,39 +3,39 @@ import { app, net, Notification, protocol, session, shell } from "electron";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 
-import { installCsp } from "@vellumai/electron-desktop/csp";
-import { installCommandPaletteWindow } from "@vellumai/electron-desktop/command-palette-window";
-import { getDeviceId } from "@vellumai/electron-desktop/device-id";
-import { installDictationOverlay } from "@vellumai/electron-desktop/dictation-overlay-window";
+import { installCsp } from "@mycadet/electron-desktop/csp";
+import { installCommandPaletteWindow } from "@mycadet/electron-desktop/command-palette-window";
+import { getDeviceId } from "@mycadet/electron-desktop/device-id";
+import { installDictationOverlay } from "@mycadet/electron-desktop/dictation-overlay-window";
 import {
   forwardGatewayRequest,
   forwardPairedGatewayRequest,
   type GatewayForwardFetcher,
-} from "@vellumai/electron-desktop/gateway-forward";
-import { installPermissionHandler } from "@vellumai/electron-desktop/permissions";
-import { installPairedGatewayRequestGuard } from "@vellumai/electron-desktop/paired-gateway-request-guard";
+} from "@mycadet/electron-desktop/gateway-forward";
+import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
+import { installPairedGatewayRequestGuard } from "@mycadet/electron-desktop/paired-gateway-request-guard";
 import {
   executePlatformForwardPlan,
   planPlatformForward,
-} from "@vellumai/electron-desktop/platform-forward";
-import { installPopoutWindows } from "@vellumai/electron-desktop/popout-window";
-import { installQuickInput } from "@vellumai/electron-desktop/quick-input-window";
-import { planAppProtocolAssetRequest } from "@vellumai/electron-utils/app-protocol";
+} from "@mycadet/electron-desktop/platform-forward";
+import { installPopoutWindows } from "@mycadet/electron-desktop/popout-window";
+import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window";
+import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
   pairedGatewayTargetsFromLockfile,
   readAllowedGatewayPorts,
   readPairedGatewayTargets,
   resolveLocalConfigFromEnv,
   resolveLockfilePaths,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 import { installAbout, openAboutWindow } from "./about.client";
 import { installAutoUpdate } from "./auto-update.client";
 import {
   BUNDLES_DIR_NAME,
   VELLUMAPP_PROTOCOL,
-} from "@vellumai/electron-desktop/bundle-platform";
-import { registerVellumAppProtocol } from "@vellumai/electron-desktop/vellumapp-protocol";
+} from "@mycadet/electron-desktop/bundle-platform";
+import { registerVellumAppProtocol } from "@mycadet/electron-desktop/vellumapp-protocol";
 import { APP_HOST, APP_PROTOCOL } from "./app-config";
 import { resolveAllowedOrigin } from "./app-origin";
 import { writeCliLocator } from "./cli-installer";
@@ -49,30 +49,26 @@ import {
   installFileOpen,
   onFileOpen,
 } from "./file-open.client";
-import { installAvatarIpc } from "@vellumai/electron-desktop/avatar";
-import { installConnectivityProbe } from "@vellumai/electron-desktop/connectivity-probe";
-import { installDownloads } from "@vellumai/electron-desktop/downloads";
-import { installIdentityIpc } from "@vellumai/electron-desktop/identity";
+import { installAvatarIpc } from "@mycadet/electron-desktop/avatar";
+import { installConnectivityProbe } from "@mycadet/electron-desktop/connectivity-probe";
+import { installDownloads } from "@mycadet/electron-desktop/downloads";
+import { installIdentityIpc } from "@mycadet/electron-desktop/identity";
 import {
   configureNotifications,
   installNotifications,
-} from "@vellumai/electron-desktop/notifications";
-import { installPowerEvents } from "@vellumai/electron-desktop/power-events";
-import { configurePresenceRuntime } from "@vellumai/electron-desktop/presence-runtime";
+} from "@mycadet/electron-desktop/notifications";
+import { installPowerEvents } from "@mycadet/electron-desktop/power-events";
+import { configurePresenceRuntime } from "@mycadet/electron-desktop/presence-runtime";
 import {
   installConnectivityIpc,
   installStatusIpc,
-} from "@vellumai/electron-desktop/status";
+} from "@mycadet/electron-desktop/status";
 import "./auxiliary-windows.client";
 import { installDock } from "./dock";
 import { installShare } from "./share";
 import { installWindowAttentionFeature } from "./window-attention";
+import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
 import {
-  installEscapeMonitor,
-  setDictationRecording,
-} from "./escape-monitor";
-import {
-  initSentryMain,
   installDiagnosticsIpc,
   installFeatureFlagsIpc,
   installFeedbackIpc,
@@ -80,8 +76,8 @@ import {
 import { installGlobalShortcuts } from "./global-shortcuts.client";
 import { installHotkeyHelper } from "./hotkey-helper";
 import { installHotkeysIpc } from "./hotkeys.client";
-import { installImageContextMenu } from "@vellumai/electron-desktop/image-context-menu";
-import { installTextContextMenu } from "@vellumai/electron-desktop/text-context-menu";
+import { installImageContextMenu } from "@mycadet/electron-desktop/image-context-menu";
+import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
 import {
   getPairedGuardianAccessToken,
   installLocalMode,
@@ -125,7 +121,7 @@ import { installTextInsertionIpc } from "./textInsertion";
 import { installTray } from "./tray.client";
 import { installWebContentsSecurity } from "./windows";
 
-// Dev-only: override the workspace `name` (`@vellumai/macos`) so the
+// Dev-only: override the workspace `name` (`@mycadet/macos`) so the
 // menu bar's first submenu reads "Vellum Electron", and — more
 // importantly — so `app.getPath("userData")` resolves to
 // `~/Library/Application Support/Vellum Electron/`, cleanly separate
@@ -178,7 +174,7 @@ if (isDev) {
   app.commandLine.appendSwitch("use-mock-keychain");
 }
 
-// Packaged builds all share the same package.json `name` (`@vellumai/macos`),
+// Packaged builds all share the same package.json `name` (`@mycadet/macos`),
 // so Electron resolves `app.getPath("userData")` to the same directory for
 // every environment. This causes `requestSingleInstanceLock()` collisions
 // when multiple environment builds (dev, staging, production) run side-by-side.
@@ -195,8 +191,6 @@ if (app.isPackaged) {
     app.setPath("userData", `${base}-${env}`);
   }
 }
-
-initSentryMain();
 
 // Single-instance lock: relaunches focus the existing window instead of
 // spawning a parallel main process. The second-instance handler fires on the
@@ -333,7 +327,7 @@ const gatewayForwardFetcher: GatewayForwardFetcher = (url, init) =>
   net.fetch(url, init);
 
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
-handleSync("vellum:config:get", () => ({
+handleSync("cadet:config:get", () => ({
   webUrl: resolvedConfig.webUrl,
   platformUrl: resolvedConfig.platformUrl,
   disablePlatform:

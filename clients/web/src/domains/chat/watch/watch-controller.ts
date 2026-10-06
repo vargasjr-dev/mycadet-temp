@@ -68,7 +68,7 @@
  * chooses by deployment kind the way `resolveLiveVoiceWsUrl` does: a
  * self-hosted assistant is dialled straight at the user's gateway ingress with
  * the actor edge JWT in `?token=` (browser WebSockets cannot set an
- * `Authorization` header), and a managed one is dialled through velay with a
+ * `Authorization` header), and a managed one is dialled through tunnel with a
  * short-lived minted token. See `live-voice/connection.ts` for the whole rule
  * set, including the local `/assistant/__gateway/<port>` bypass.
  *
@@ -92,7 +92,7 @@ import { supportsWatchCaptureTarget } from "@/lib/backwards-compat/watch-capture
 import { supportsWatchRetroCompletion } from "@/lib/backwards-compat/watch-retro-completion";
 import { resolveSupportsWatchSessions } from "@/lib/backwards-compat/watch-sessions";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import type { WatchCaptureTarget } from "@vellumai/ipc-contract";
+import type { WatchCaptureTarget } from "@mycadet/ipc-contract";
 
 /**
  * What a watch session looks like from outside: whether one is running, and
@@ -873,7 +873,7 @@ export async function toggleWatch(
   /**
    * The transport, resolved last and while the attempt still holds the slot.
    *
-   * On a managed assistant this mints a single-use velay token, which is a
+   * On a managed assistant this mints a single-use tunnel token, which is a
    * round trip to the platform and the one genuinely new wait on this path.
    * It is deliberately the last thing before the dial: the token lives 60
    * seconds, and resolving it ahead of the drain wait above would spend part

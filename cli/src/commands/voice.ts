@@ -133,7 +133,7 @@ export interface SessionDeps {
    * this cannot be approximated by piping a line into the interactive prompt:
    * stdin reaches EOF the instant the line is read, readline closes, and the
    * session is torn down while the turn is still in flight. That race is
-   * winnable on a fast local assistant and reliably lost over velay.
+   * winnable on a fast local assistant and reliably lost over tunnel.
    */
   sayText?: string;
 }

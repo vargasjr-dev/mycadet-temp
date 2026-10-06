@@ -15,7 +15,7 @@
 
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { PostCompactContext } from "@vellumai/plugin-api";
+import type { PostCompactContext } from "@mycadet/plugin-api";
 
 import type { Message } from "../../../../../providers/types.js";
 

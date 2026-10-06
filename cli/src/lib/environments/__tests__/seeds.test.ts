@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { SEEDS } from "@vellumai/environments";
+import { SEEDS } from "@mycadet/environments";
 
 import { getDefaultPorts } from "../paths.js";
 

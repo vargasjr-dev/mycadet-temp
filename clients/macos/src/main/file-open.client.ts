@@ -4,7 +4,7 @@ import {
   hasPendingFiles,
   installFileOpen,
   onFileOpen,
-} from "@vellumai/electron-desktop/file-open";
+} from "@mycadet/electron-desktop/file-open";
 
 import { handle, on } from "./ipc";
 import { ensureVisible } from "./main-window";

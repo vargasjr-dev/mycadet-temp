@@ -1,6 +1,6 @@
 /**
  * The notification payload's boundary behaviour. `handle()` in
- * `@vellumai/electron-desktop` parses this payload and a throw rejects the
+ * `@mycadet/electron-desktop` parses this payload and a throw rejects the
  * renderer's `invoke`, so what the schema does with a bad `sender` decides
  * whether the user sees a plain banner or none at all.
  */

@@ -4,14 +4,14 @@
  * The snapshot exists so a feedback report carries the exact client
  * debug-flag state, since the flags are localStorage-only overrides with no
  * server record. These tests pin that both the resolved effective values and
- * the raw `vellum:debug:*` overrides are captured, including the default case
+ * the raw `cadet:debug:*` overrides are captured, including the default case
  * where no override is set.
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { buildDebugFlagSnapshot } from "@/lib/feature-flags/debug-flag-snapshot";
 
-const IMPERSONATE_KEY = "vellum:debug:impersonateAssistantVersion";
+const IMPERSONATE_KEY = "cadet:debug:impersonateAssistantVersion";
 
 function clearDebugKeys(): void {
   window.localStorage.removeItem(IMPERSONATE_KEY);
@@ -49,21 +49,21 @@ describe("debug-flag-snapshot", () => {
     });
   });
 
-  test("scans the vellum:debug:* namespace generically", () => {
+  test("scans the cadet:debug:* namespace generically", () => {
     // GIVEN a debug override the snapshot has no dedicated accessor for, plus
     // an unrelated key outside the debug namespace
-    window.localStorage.setItem("vellum:debug:futureFlag", "experimental");
-    window.localStorage.setItem("vellum:sidebar:collapsed", "true");
+    window.localStorage.setItem("cadet:debug:futureFlag", "experimental");
+    window.localStorage.setItem("cadet:sidebar:collapsed", "true");
 
     // WHEN a snapshot is built
     const snapshot = buildDebugFlagSnapshot();
 
     // THEN the unknown debug flag is captured without any code change...
-    expect(snapshot.overrides["vellum:debug:futureFlag"]).toBe("experimental");
+    expect(snapshot.overrides["cadet:debug:futureFlag"]).toBe("experimental");
     // ...and keys outside the debug namespace are excluded
-    expect(snapshot.overrides["vellum:sidebar:collapsed"]).toBeUndefined();
+    expect(snapshot.overrides["cadet:sidebar:collapsed"]).toBeUndefined();
 
-    window.localStorage.removeItem("vellum:debug:futureFlag");
-    window.localStorage.removeItem("vellum:sidebar:collapsed");
+    window.localStorage.removeItem("cadet:debug:futureFlag");
+    window.localStorage.removeItem("cadet:sidebar:collapsed");
   });
 });

@@ -9,7 +9,7 @@
  * lockstep, applied to whole-message lifecycle/repair transforms.
  */
 
-import type { ConversationContentBlock } from "@vellumai/assistant-api";
+import type { ConversationContentBlock } from "@mycadet/assistant-api";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 

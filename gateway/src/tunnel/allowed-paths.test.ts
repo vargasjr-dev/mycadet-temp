@@ -1,0 +1,272 @@
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+
+let tunnelWebhooksEnabled = false;
+
+mock.module("../feature-flag-resolver.js", () => ({
+  isFeatureFlagEnabled: (flag: string) =>
+    flag === "tunnel-webhooks" ? tunnelWebhooksEnabled : false,
+}));
+
+const {
+  TUNNEL_ALLOWED_PATHS,
+  TUNNEL_ALLOWED_PATHS_HEADER,
+  TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
+  TUNNEL_STATIC_ALLOWED_PATHS,
+  buildTunnelAllowedPathsHeaderValue,
+} = await import("./allowed-paths.js");
+// Imported after the mock is installed, and dynamically for the same reason the
+// module above is, so the bridge reads the same flag resolver these tests drive.
+const { isAllowedTunnelWebSocketPath, TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS } =
+  await import("./bridge-utils.js");
+
+function decode(headerValue: string): string[] {
+  return JSON.parse(headerValue) as string[];
+}
+
+beforeEach(() => {
+  tunnelWebhooksEnabled = false;
+});
+
+describe("TUNNEL_ALLOWED_PATHS", () => {
+  it("matches the platform-side header name (must stay in sync with vellum-assistant-platform RegistrationAllowedPathsHeader)", () => {
+    expect(TUNNEL_ALLOWED_PATHS_HEADER).toBe("X-Vellum-Tunnel-Allowed-Paths");
+  });
+
+  it("encodes the regex list as a JSON array string for direct use as the header value", () => {
+    expect(TUNNEL_ALLOWED_PATHS_HEADER_VALUE).toBe(
+      JSON.stringify(TUNNEL_ALLOWED_PATHS),
+    );
+    const decoded = JSON.parse(TUNNEL_ALLOWED_PATHS_HEADER_VALUE) as unknown;
+    expect(Array.isArray(decoded)).toBe(true);
+    expect(decoded).toEqual([...TUNNEL_ALLOWED_PATHS]);
+  });
+
+  it("contains only RE2-portable regex patterns (no JS-specific lookaround / backreferences) that compile in JavaScript too", () => {
+    // We can't run Go RE2 here, but every pattern below is plain anchored
+    // prefix/exact matching that's a strict subset of both engines.
+    tunnelWebhooksEnabled = true;
+    const patterns = [
+      ...TUNNEL_ALLOWED_PATHS,
+      ...decode(
+        buildTunnelAllowedPathsHeaderValue(() => [
+          "/webhooks/plugins/example/realtime",
+          "/webhooks/plugins/ex.am+ple/(realtime)",
+        ]),
+      ),
+    ];
+    for (const pattern of patterns) {
+      expect(() => new RegExp(pattern)).not.toThrow();
+      // RE2-incompatible features that should never appear: lookahead,
+      // lookbehind, backreferences. A simple guard is enough — the platform
+      // side will reject anything Go's regexp.Compile can't parse.
+      expect(pattern).not.toMatch(/\(\?[=!<]/); // lookaround
+      expect(pattern).not.toMatch(/\\[1-9]/); // backreferences
+    }
+  });
+
+  it("matches the gateway public-surface route shapes", () => {
+    // Allowlist coverage check — if you add a public route in
+    // `gateway/src/index.ts` that needs to be reachable through the Tunnel
+    // tunnel, add a matching regex to TUNNEL_ALLOWED_PATHS and a sample here.
+    const samples = {
+      "/webhooks/telegram": true,
+      "/webhooks/twilio/voice": true,
+      "/webhooks/twilio/status": true,
+      "/webhooks/twilio/voice-verify": true,
+      "/webhooks/whatsapp": true,
+      "/webhooks/email": true,
+      "/webhooks/resend": true,
+      "/webhooks/mailgun": true,
+      "/webhooks/oauth/callback": true,
+      // Plugin-declared webhooks ride the existing `^/webhooks/` entry. Which
+      // of them the gateway actually serves is decided by the approval gate,
+      // not by Tunnel — the tunnel just stops treating the prefix as private.
+      "/webhooks/plugins/example/realtime": true,
+      "/v1/audio/some-uuid.mp3": true,
+      "/v1/live-voice": true,
+      "/v1/stt/stream": true,
+      // Watch sessions on a managed assistant ride the tunnel, the same shape
+      // as live voice: tunnel validates the browser's minted token on this path
+      // and injects the attested caller, and the gateway's handler admits only
+      // the guardian on it. Self-hosted assistants bypass tunnel entirely.
+      "/v1/watch/stream": true,
+      // The assistant desktop rides the tunnel the same way: a guardian-only RFB
+      // byte pipe the web client dials with a tunnel-minted token.
+      "/v1/desktop/stream": true,
+      "/assistant/credentials/enter": true,
+      "/v1/credential-requests/peek": true,
+      "/v1/credential-requests/submit": true,
+      "/oauth/client-metadata.json": true,
+      // Negative samples — paths that must NOT be tunnel-public.
+      "/v1/credential-requests": false,
+      "/v1/credential-requests/other": false,
+      "/assistant/credentials": false,
+      "/assistant/settings/credentials": false,
+      "/oauth/client-metadata": false,
+      "/v1/contacts/abc": false,
+      "/v1/health": false,
+      "/v1/pair": false,
+      "/v1/guardian/init": false,
+      "/internal/admin": false,
+      "/secret": false,
+      "": false,
+    };
+    const compiled = TUNNEL_ALLOWED_PATHS.map((p) => new RegExp(p));
+    for (const [path, expected] of Object.entries(samples)) {
+      const matched = compiled.some((re) => re.test(path));
+      expect({ path, matched }).toEqual({ path, matched: expected });
+    }
+  });
+});
+
+/**
+ * The two allowlists a tunnelled WebSocket has to clear, checked against each
+ * other.
+ *
+ * `TUNNEL_ALLOWED_PATHS` is declared to tunnel at registration and enforced
+ * platform-side; `TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS` in `bridge-utils.ts` is
+ * the local second layer, enforced when the bridge dials the gateway's own
+ * loopback listener. A route needs both, and their comments have always said
+ * to keep them in sync, but nothing checked it.
+ *
+ * That gap is not theoretical: `/v1/watch/stream` was added to the
+ * registration list alone, and every managed watch session died at the bridge.
+ * The bridge answers a path it does not recognize with a `websocket_open_error`
+ * frame and no log, tunnel reports it as an opaque `tunnel_error`, and the
+ * gateway records nothing at all — so the one place the omission could have
+ * been noticed was a test like this one.
+ */
+describe("the registration allowlist and the bridge's WebSocket allowlist", () => {
+  const compiled = () => TUNNEL_ALLOWED_PATHS.map((p) => new RegExp(p));
+
+  /**
+   * Every tunnelled WebSocket route, curated rather than derived.
+   *
+   * There is no single source to derive it from: the registration list is
+   * RE2 regex strings tunnel compiles platform-side, and the bridge's is exact
+   * paths sharing a predicate with the HTTP prefixes. Nothing in either
+   * records which entries are WebSocket routes, so that fact lives here.
+   *
+   * Which leaves one hole this file cannot close by itself: a new WebSocket
+   * route added to both allowlists but not to this list is simply unchecked.
+   * If you are adding one, add it here too.
+   */
+  const WEBSOCKET_ROUTES = [
+    "/v1/live-voice",
+    "/v1/stt/stream",
+    "/v1/watch/stream",
+    "/v1/desktop/stream",
+  ];
+
+  it("admits every tunnelled WebSocket route at both layers", () => {
+    for (const path of WEBSOCKET_ROUTES) {
+      expect({
+        path,
+        registration: compiled().some((re) => re.test(path)),
+        bridge: isAllowedTunnelWebSocketPath(path),
+      }).toEqual({ path, registration: true, bridge: true });
+    }
+  });
+
+  it("admits nothing at the bridge that tunnel would refuse anyway", () => {
+    // Derived from the bridge's own list rather than curated, so this half
+    // needs no maintenance. The reverse omission is quieter than the one
+    // above: the bridge would dial happily and tunnel would 404 the upgrade
+    // before the frame ever reached it.
+    for (const path of TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS) {
+      expect({
+        path,
+        registration: compiled().some((re) => re.test(path)),
+      }).toEqual({ path, registration: true });
+    }
+  });
+
+  it("admits no near miss of a tunnelled route at either layer", () => {
+    for (const path of [
+      "/v1/watch",
+      "/v1/watch/stream/extra",
+      "/v1/desktop",
+      "/v1/desktop/stream/extra",
+      "/v1/speech",
+    ]) {
+      expect({
+        path,
+        registration: compiled().some((re) => re.test(path)),
+        bridge: isAllowedTunnelWebSocketPath(path),
+      }).toEqual({ path, registration: false, bridge: false });
+    }
+  });
+});
+
+describe("buildTunnelAllowedPathsHeaderValue", () => {
+  it("advertises the legacy list verbatim while the flag is off", () => {
+    expect(buildTunnelAllowedPathsHeaderValue(() => [])).toBe(
+      TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
+    );
+    expect(
+      buildTunnelAllowedPathsHeaderValue(() => ["/webhooks/telegram"]),
+    ).toBe(TUNNEL_ALLOWED_PATHS_HEADER_VALUE);
+  });
+
+  it("does not read the registry while the flag is off", () => {
+    let reads = 0;
+    const read = () => {
+      reads++;
+      return ["/webhooks/telegram"];
+    };
+
+    expect(buildTunnelAllowedPathsHeaderValue(read)).toBe(
+      TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
+    );
+    expect(reads).toBe(0);
+
+    tunnelWebhooksEnabled = true;
+    buildTunnelAllowedPathsHeaderValue(read);
+    expect(reads).toBe(1);
+  });
+
+  it("drops the webhook wildcard for the statics plus one exact rule per registered path", () => {
+    tunnelWebhooksEnabled = true;
+
+    const rules = decode(
+      buildTunnelAllowedPathsHeaderValue(() => [
+        "/webhooks/telegram",
+        "/webhooks/plugins/example/realtime",
+      ]),
+    );
+
+    expect(rules).toEqual([
+      ...TUNNEL_STATIC_ALLOWED_PATHS,
+      "^/webhooks/telegram$",
+      "^/webhooks/plugins/example/realtime$",
+    ]);
+    expect(rules).not.toContain("^/webhooks/");
+    // The Twilio subtree keeps its prefix rule because its paths carry call
+    // state the registry cannot hold.
+    expect(rules).toContain("^/webhooks/twilio/");
+  });
+
+  it("advertises only the statics when nothing is registered", () => {
+    tunnelWebhooksEnabled = true;
+
+    expect(decode(buildTunnelAllowedPathsHeaderValue(() => []))).toEqual([
+      ...TUNNEL_STATIC_ALLOWED_PATHS,
+    ]);
+  });
+
+  it("escapes regex metacharacters so a generated rule matches only its own path", () => {
+    tunnelWebhooksEnabled = true;
+    const path = "/webhooks/plugins/a.b+c*d?e|f(g)h[i]j{k}^l$m\\n";
+
+    const rules = decode(buildTunnelAllowedPathsHeaderValue(() => [path]));
+    const generated = rules[rules.length - 1];
+    const compiled = new RegExp(generated);
+
+    expect(compiled.test(path)).toBe(true);
+    expect(compiled.test("/webhooks/plugins/aXbXcXdXeXfXgXhXiXjXkXlXmXn")).toBe(
+      false,
+    );
+    expect(compiled.test(`${path}/extra`)).toBe(false);
+    expect(compiled.test(`/prefix${path}`)).toBe(false);
+  });
+});

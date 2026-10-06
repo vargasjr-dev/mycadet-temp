@@ -2,7 +2,7 @@ import { HostingOptionsPairADeviceContent } from "@/app/docs/_components/hosting
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Pair a device - Vellum Docs",
+  title: "Pair a device - Cadet Docs",
   description:
     "Reach a self-hosted assistant from your phone, tablet, or another computer: open a tunnel, pair a device, and revoke access when you're done.",
   path: "/docs/hosting-options/pair-a-device",

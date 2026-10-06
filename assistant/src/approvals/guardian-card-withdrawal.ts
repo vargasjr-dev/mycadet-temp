@@ -22,7 +22,7 @@
  * Every surface is attempted independently; one failure never blocks the rest.
  */
 
-import { DELIVERY_STATUS } from "@vellumai/gateway-client";
+import { DELIVERY_STATUS } from "@mycadet/gateway-client";
 
 import {
   type GuardianRequestDeliveryWire,

@@ -26,7 +26,7 @@
 
 import type { Logger } from "pino";
 
-import { buildWsUpstreamUrl } from "@vellumai/assistant-client";
+import { buildWsUpstreamUrl } from "@mycadet/assistant-client";
 
 import {
   validateEdgeToken,

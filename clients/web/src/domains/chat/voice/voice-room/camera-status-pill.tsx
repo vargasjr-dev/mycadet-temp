@@ -40,7 +40,7 @@
  * whole state matrix is reachable from props.
  */
 
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 import { useReducedMotion } from "motion/react";
 
 import { useTranslation } from "@/i18n";

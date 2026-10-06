@@ -129,7 +129,7 @@ const TypographyMock = ({ children, ...rest }: Record<string, unknown>) =>
 // `mock.module` replaces the module process-wide, so the stub also carries
 // the `toast` export other modules pull from this entry point. Without it,
 // any test file loaded after this one fails to resolve it.
-mock.module("@vellumai/design-library", () => ({
+mock.module("@mycadet/design-library", () => ({
   Menu: MenuMock,
   BottomSheet: BottomSheetMock,
   PanelItem: PanelItemMock,
@@ -222,7 +222,12 @@ describe("AppNavBar desktop edit affordance", () => {
   test("swaps to an expand icon while the chat panel is open", () => {
     const onEdit = mock(() => {});
     render(
-      <AppNavBar appName="My App" onClose={() => {}} onEdit={onEdit} isEditing />,
+      <AppNavBar
+        appName="My App"
+        onClose={() => {}}
+        onEdit={onEdit}
+        isEditing
+      />,
     );
 
     expect(document.body.textContent).not.toContain("Close chat");

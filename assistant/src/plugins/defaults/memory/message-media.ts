@@ -1,7 +1,4 @@
-import {
-  type ContentBlock,
-  resolveMediaSourceData,
-} from "@vellumai/plugin-api";
+import { type ContentBlock, resolveMediaSourceData } from "@mycadet/plugin-api";
 
 /**
  * Media-block extraction over stored message content (a JSON content-block

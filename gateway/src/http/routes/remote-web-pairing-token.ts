@@ -1,8 +1,8 @@
 import type {
   RemoteWebPairingTokenApprovedResponse,
   RemoteWebPairingTokenPendingResponse,
-} from "@vellumai/service-contracts/remote-web-pairing";
-import { resolveRemoteWebPairingPlatform } from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
+import { resolveRemoteWebPairingPlatform } from "@mycadet/service-contracts/remote-web-pairing";
 
 import type { RefreshableTokenPair } from "../../auth/guardian-bootstrap.js";
 import {

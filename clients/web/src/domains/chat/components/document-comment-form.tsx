@@ -1,4 +1,4 @@
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { Send } from "lucide-react";
 import {
   useCallback,
@@ -83,7 +83,9 @@ export function DocumentCommentForm({
           leftIcon={<Send />}
           disabled={!canSubmit}
         >
-          {submitting ? t("documentCommentForm.sending") : t("documentCommentForm.send")}
+          {submitting
+            ? t("documentCommentForm.sending")
+            : t("documentCommentForm.send")}
         </Button>
       </div>
     </form>

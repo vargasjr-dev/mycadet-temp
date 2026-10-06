@@ -59,7 +59,7 @@ mock.module("@/stores/remembered-origins-store", () => ({
   },
 }));
 
-mock.module("@vellumai/design-library/components/button", () => ({
+mock.module("@mycadet/design-library/components/button", () => ({
   Button: ({
     children,
     onClick,
@@ -75,14 +75,14 @@ mock.module("@vellumai/design-library/components/button", () => ({
   ),
 }));
 
-mock.module("@vellumai/design-library/components/input", () => ({
+mock.module("@mycadet/design-library/components/input", () => ({
   Input: ({
     fullWidth: _fullWidth,
     ...props
   }: ComponentProps<"input"> & { fullWidth?: boolean }) => <input {...props} />,
 }));
 
-mock.module("@vellumai/design-library/components/modal", () => ({
+mock.module("@mycadet/design-library/components/modal", () => ({
   Modal: {
     Root: ({ open, children }: { open: boolean; children: ReactNode }) =>
       open ? <div>{children}</div> : null,

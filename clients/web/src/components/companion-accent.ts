@@ -19,11 +19,11 @@
  * two lights the same colour.
  */
 
-import { accentHexForColorId } from "@vellumai/avatar-catalog/colors";
+import { accentHexForColorId } from "@mycadet/avatar-catalog/colors";
 import type {
   CompanionCharacter,
   VoiceActivityState,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /**
  * The accent to draw in when none of the three sources resolves one.

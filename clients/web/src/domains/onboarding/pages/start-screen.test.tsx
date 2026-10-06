@@ -13,7 +13,7 @@ mock.module("react-router", () => ({
 mock.module("@/components/onboarding-layout", () => ({
   OnboardingLayout: ({ children }: { children: React.ReactNode }) => children,
 }));
-mock.module("@vellumai/design-library/components/button", () => ({
+mock.module("@mycadet/design-library/components/button", () => ({
   Button: ({
     children,
     onClick,

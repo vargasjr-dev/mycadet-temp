@@ -293,7 +293,7 @@ describe("VoiceSections microphone picker", () => {
   });
 
   test("choosing System Default clears the saved device", async () => {
-    localStorage.setItem("vellum:voice:inputDeviceId", "mic-b");
+    localStorage.setItem("cadet:voice:inputDeviceId", "mic-b");
     stubDevices(MICS);
     renderPage();
     await waitFor(() => expect(micTrigger().textContent).toContain("USB Mic"));
@@ -304,7 +304,7 @@ describe("VoiceSections microphone picker", () => {
     ).find((o) => o.textContent?.trim() === "System Default");
     fireEvent.click(systemDefault!);
 
-    expect(localStorage.getItem("vellum:voice:inputDeviceId")).toBe(null);
+    expect(localStorage.getItem("cadet:voice:inputDeviceId")).toBe(null);
   });
 
   test("a saved device is not called disconnected before permission is granted", async () => {
@@ -312,7 +312,7 @@ describe("VoiceSections microphone picker", () => {
     // enumerated list is empty for a reason that says nothing about whether
     // the saved device is plugged in. Claiming it is disconnected there tells
     // the user their working microphone is missing.
-    localStorage.setItem("vellum:voice:inputDeviceId", "mic-b");
+    localStorage.setItem("cadet:voice:inputDeviceId", "mic-b");
     stubDevices([
       { deviceId: "", kind: "audioinput", label: "" },
       { deviceId: "", kind: "audioinput", label: "" },
@@ -329,14 +329,14 @@ describe("VoiceSections microphone picker", () => {
     // Showing System Default here would claim a preference the user does not
     // have, and would make choosing System Default a no-op that cannot clear
     // it. Capture already falls back, so the saved value is kept.
-    localStorage.setItem("vellum:voice:inputDeviceId", "mic-gone");
+    localStorage.setItem("cadet:voice:inputDeviceId", "mic-gone");
     stubDevices(MICS);
     renderPage();
 
     await waitFor(() =>
       expect(micTrigger().textContent).toContain("not connected"),
     );
-    expect(localStorage.getItem("vellum:voice:inputDeviceId")).toBe("mic-gone");
+    expect(localStorage.getItem("cadet:voice:inputDeviceId")).toBe("mic-gone");
   });
 });
 
@@ -361,7 +361,7 @@ describe("VoiceSections voice mode shortcut", () => {
 
   function storedBinding() {
     return JSON.parse(
-      localStorage.getItem("vellum:voice:voiceModeActivation") ?? "null",
+      localStorage.getItem("cadet:voice:voiceModeActivation") ?? "null",
     );
   }
 

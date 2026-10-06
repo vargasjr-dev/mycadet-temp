@@ -16,7 +16,7 @@
 
 import { z } from "zod";
 
-import { hashInviteToken } from "@vellumai/gateway-client";
+import { hashInviteToken } from "@mycadet/gateway-client";
 import {
   type CredentialRequestRow,
   CredentialRequestStore,

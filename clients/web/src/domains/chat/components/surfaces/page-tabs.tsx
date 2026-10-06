@@ -1,8 +1,8 @@
-import { Stepper } from "@vellumai/design-library";
+import { Stepper } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 
-import type { FormPage } from "@vellumai/assistant-api";
+import type { FormPage } from "@mycadet/assistant-api";
 
 interface PageTabsProps {
   current: number;

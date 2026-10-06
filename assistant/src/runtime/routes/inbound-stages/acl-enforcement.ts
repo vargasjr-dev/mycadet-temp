@@ -11,7 +11,7 @@ import {
   type AdmissionPolicy,
   type SourceMetadata,
   type TrustVerdict,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import type { VerificationSessionWire } from "../../../channels/gateway-verification-sessions.js";
 import {

@@ -21,9 +21,9 @@ import { joinDiscord } from "@/hooks/use-discord-nudge";
 import { GITHUB_REPO_URL, useGitHubNudgeState } from "@/hooks/use-github-nudge";
 import { useTranslation } from "@/i18n";
 import { VELLUM_COMMUNITY_URL } from "@/utils/external-urls";
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { Tag } from "@vellumai/design-library/components/tag";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { Tag } from "@mycadet/design-library/components/tag";
 
 type SettingsTranslate = ReturnType<typeof useTranslation<"settings">>["t"];
 

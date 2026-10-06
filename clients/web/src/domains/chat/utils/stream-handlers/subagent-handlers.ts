@@ -3,7 +3,7 @@ import {
   type SubagentSpawnedEvent,
   type SubagentStatusChangedEvent,
   UsageProgressEventSchema,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import {
   requestSubagentReconcile,

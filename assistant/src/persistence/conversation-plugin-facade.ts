@@ -18,7 +18,7 @@ import type { ConversationType } from "./conversation-types.js";
  * The store modules are loaded via dynamic `import()` inside each wrapper —
  * they carry the DB/drizzle import graph and are among the most
  * partial-mocked modules in the test suite, so importing this module (which
- * every `@vellumai/plugin-api` consumer does transitively) must not force
+ * every `@mycadet/plugin-api` consumer does transitively) must not force
  * their named exports to resolve at instantiation. All type imports above are
  * erased at compile time. Async for that reason, including the wrappers whose
  * underlying functions are synchronous.

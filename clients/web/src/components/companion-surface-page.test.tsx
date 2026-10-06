@@ -19,7 +19,7 @@ import {
 import {
   COMPANION_INTRO_BEATS,
   type CompanionSurfaceState,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 const moveByMock = mock((_dx: number, _dy: number) => undefined);
 const releaseMock = mock(() => undefined);

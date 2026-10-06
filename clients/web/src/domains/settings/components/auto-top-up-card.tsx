@@ -13,10 +13,10 @@ import {
   organizationsBillingSummaryRetrieveQueryKey,
 } from "@/generated/api/@tanstack/react-query.gen";
 import type { AutoTopUpConfigResponse } from "@/generated/api/types.gen";
-import { Button } from "@vellumai/design-library/components/button";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Toggle } from "@vellumai/design-library/components/toggle";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Toggle } from "@mycadet/design-library/components/toggle";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { formatUsdShort } from "@/utils/format-usd";
 import { AutoTopUpDailyLimitModal } from "@/domains/settings/components/auto-top-up-daily-limit-modal";

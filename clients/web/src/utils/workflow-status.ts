@@ -4,7 +4,7 @@
  * Shared by workflow-detail-panel and workflow-status-badge.
  */
 
-import type { WorkflowRunStatus } from "@vellumai/assistant-api";
+import type { WorkflowRunStatus } from "@mycadet/assistant-api";
 
 /** Whether the workflow run is in an active (non-terminal) state. */
 export function isActiveStatus(status: WorkflowRunStatus): boolean {

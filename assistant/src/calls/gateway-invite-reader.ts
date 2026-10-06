@@ -25,7 +25,7 @@ import {
   INVITES_IPC_METHODS,
   type RedeemVoiceInviteIpcResponse,
   RedeemVoiceInviteIpcResponseSchema,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import { ipcCall } from "../ipc/gateway-client.js";
 

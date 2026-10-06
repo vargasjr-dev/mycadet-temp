@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 
 import { ArrowLeft, Coins, Loader2, Target } from "lucide-react";
 
-import { Card } from "@vellumai/design-library/components/card";
+import { Card } from "@mycadet/design-library/components/card";
 import {
   SegmentControl,
   type SegmentControlItem,
-} from "@vellumai/design-library/components/segment-control";
-import { StatSquare } from "@vellumai/design-library/components/stat-square";
-import { Typography } from "@vellumai/design-library/components/typography";
+} from "@mycadet/design-library/components/segment-control";
+import { StatSquare } from "@mycadet/design-library/components/stat-square";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import {
   DEFAULT_PRESET_DAYS,

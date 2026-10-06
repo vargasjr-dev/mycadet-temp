@@ -5,17 +5,17 @@
  * Invite token/code redemption is intercepted at gateway ingress before
  * messages reach this handler.
  */
-import type { SourceMetadata } from "@vellumai/gateway-client";
+import type { SourceMetadata } from "@mycadet/gateway-client";
 import {
   resolveInboundEventKind,
   resolveInboundReactionPayload,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import {
   ADMISSION_POLICY_DEFAULT,
   type AdmissionPolicy,
   isAdmissionPolicy,
   isAdmissionPolicyExemptChannel,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import {
   attachmentsToContentBlocks,

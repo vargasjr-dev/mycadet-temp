@@ -12,7 +12,7 @@ import {
   type DictationOverlayHitRegion,
   type DictationOverlayMessage,
   type DictationOverlayState,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   createFloatingWindow,
@@ -32,7 +32,7 @@ import { createModuleConfiguration } from "./module-configuration";
  *
  * The renderer that owns the recording session (the chat composer in the
  * main window) publishes lifecycle messages over
- * `vellum:dictationOverlay:setState`; main owns the window and forwards the
+ * `cadet:dictationOverlay:setState`; main owns the window and forwards the
  * state to the overlay's own renderer route (`/dictation-overlay` in
  * `clients/web/`, same standalone pattern as Quick Input).
  *
@@ -280,7 +280,7 @@ export const createCursorHoverPoller = (
 // Latest state forwarded to the overlay renderer. The overlay route loads
 // lazily after the window is created, so pushes sent before its `onState`
 // subscription registers are dropped by Electron — the route pulls this via
-// `vellum:dictationOverlay:getState` once subscribed to catch up.
+// `cadet:dictationOverlay:getState` once subscribed to catch up.
 let latestState: DictationOverlayState | null = null;
 
 const sendState = (state: DictationOverlayState): void => {

@@ -1,4 +1,4 @@
-import { GetContactIpcResponseSchema } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import { GetContactIpcResponseSchema } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import { ipcCallPersistent } from "../ipc/gateway-client.js";
 import { getLogger } from "../util/logger.js";

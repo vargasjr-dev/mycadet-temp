@@ -19,7 +19,7 @@
  * concept pages or seeded skill entries change.
  */
 
-import { safeStringSlice } from "@vellumai/plugin-api";
+import { safeStringSlice } from "@mycadet/plugin-api";
 
 import { getLogger } from "../logging.js";
 import {

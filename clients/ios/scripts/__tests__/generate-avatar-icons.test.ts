@@ -8,8 +8,8 @@
  *
  * Rasterizing the icons needs the native `@resvg/resvg-js` binding, so the
  * assistant package's dependencies have to be installed first
- * (`bun install --filter=@vellumai/assistant`). CI installs it alongside
- * `@vellumai/web` before running this file.
+ * (`bun install --filter=@mycadet/assistant`). CI installs it alongside
+ * `@mycadet/web` before running this file.
  */
 
 import { afterAll, describe, expect, test } from "bun:test";

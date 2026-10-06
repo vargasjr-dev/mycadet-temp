@@ -1,4 +1,4 @@
-import type { DictationOfferAnswer } from "@vellumai/ipc-contract";
+import type { DictationOfferAnswer } from "@mycadet/ipc-contract";
 
 import {
   clearDictationOffer,

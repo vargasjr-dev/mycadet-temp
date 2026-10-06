@@ -2,7 +2,7 @@
  * Who a reply should be visible to, decided once for every producer.
  */
 
-import type { MessageAudience } from "@vellumai/gateway-client";
+import type { MessageAudience } from "@mycadet/gateway-client";
 
 import { isSlackDmConversation } from "../messaging/providers/slack/message-metadata.js";
 

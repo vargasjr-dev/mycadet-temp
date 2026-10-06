@@ -8,7 +8,7 @@ import {
   mock,
   test,
 } from "bun:test";
-import type { CompanionIntroBeat } from "@vellumai/ipc-contract";
+import type { CompanionIntroBeat } from "@mycadet/ipc-contract";
 import type {
   SystemPermissionKind,
   SystemPermissionsState,
@@ -48,7 +48,9 @@ let setupSupported = false;
 const cancelGuide = mock(() => undefined);
 const beginGuide = mock(async (kind: SystemPermissionKind) => current[kind]);
 const foreground = mock(async () => undefined);
-const frontmost = mock(async (): Promise<string | null> => "com.example.vellum");
+const frontmost = mock(
+  async (): Promise<string | null> => "com.example.vellum",
+);
 mock.module("@/runtime/running-apps", () => ({
   frontmostApp: frontmost,
 }));
@@ -61,7 +63,7 @@ mock.module("@/runtime/permission-setup", () => ({
   cancelPermissionGuide: cancelGuide,
 }));
 const reportError = mock(() => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: reportError,
 }));
 mock.module("@/runtime/system-permissions", () => ({

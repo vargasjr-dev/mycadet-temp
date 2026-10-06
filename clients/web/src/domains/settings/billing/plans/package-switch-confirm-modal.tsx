@@ -12,9 +12,9 @@ import { packageSwitchCopy } from "@/domains/settings/billing/plans/package-swit
 import { getPlanTierCopy } from "@/domains/settings/billing/plans/plans-copy";
 import { formatMonthly } from "@/domains/settings/components/tier-pricing";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 export interface PackageSwitchConfirmModalProps {
   open: boolean;

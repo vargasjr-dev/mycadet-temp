@@ -10,7 +10,7 @@ import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { CacheHealthCard } from "./cache-health-card";
-import type { LLMCallSummary } from "@vellumai/assistant-api";
+import type { LLMCallSummary } from "@mycadet/assistant-api";
 
 function summary(overrides: Partial<LLMCallSummary>): LLMCallSummary {
   return { provider: "anthropic", ...overrides };

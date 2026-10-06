@@ -288,7 +288,7 @@ export function createChannelIngressApproveHandler(
 
     try {
       const row = approvePluginIngress({ plugin: source, digest });
-      // Velay forwards a webhook path only once this assistant has claimed it,
+      // Tunnel forwards a webhook path only once this assistant has claimed it,
       // so the claim is part of the grant: a failure here is reported as one,
       // rather than left as an approval that reaches nothing. Reconciling the
       // whole set rather than this source's paths costs one more declaration

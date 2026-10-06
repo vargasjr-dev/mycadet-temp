@@ -2,8 +2,8 @@ import {
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
-} from "@vellumai/local-mode/contract";
-import { isRetryablePairingReason } from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/local-mode/contract";
+import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
 import { isPublicBaseUrlRejection } from "@/utils/pairing-address";
@@ -80,7 +80,7 @@ const setCachedLockfile = (data: Lockfile, committed = true): void =>
 
 const EMPTY_LOCKFILE: Lockfile = { assistants: [], activeAssistant: null };
 
-const LOCKFILE_STORAGE_KEY = "vellum:local:lockfile";
+const LOCKFILE_STORAGE_KEY = "cadet:local:lockfile";
 
 export { getPlatformRuntimeUrl };
 
@@ -661,7 +661,7 @@ export function hasAssistants(): boolean {
  * the web client manages none of those through its lifecycle flows. Docker
  * instances ARE still reachable over the local gateway proxy — that broader,
  * connect-only set is {@link isLocalGatewayAssistant}. See the `KNOWN_CLOUDS`
- * taxonomy in `@vellumai/local-mode/contract`.
+ * taxonomy in `@mycadet/local-mode/contract`.
  */
 export function isLocalAssistant(a: LockfileAssistant): boolean {
   return a.cloud === "local";
@@ -694,7 +694,7 @@ export function isPlatformAssistant(a: LockfileAssistant): boolean {
  * (`cloud === "paired"`): reached directly at its own `runtimeUrl` with the
  * stored guardian access token as the bearer. Not local (no lifecycle flows,
  * wake/retire refuse it) and not platform (no platform session involved).
- * See the `KNOWN_CLOUDS` taxonomy in `@vellumai/local-mode/contract`.
+ * See the `KNOWN_CLOUDS` taxonomy in `@mycadet/local-mode/contract`.
  */
 export function isPairedAssistant(a: { cloud?: string }): boolean {
   return a.cloud === "paired";

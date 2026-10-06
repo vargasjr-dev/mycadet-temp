@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
 
 import { useTranslation } from "@/i18n";
 import { DetailCard } from "@/components/detail-card";

@@ -1,12 +1,12 @@
 import {
   PERMISSION_GUIDE_MIN_HEIGHT,
   PERMISSION_GUIDE_MAX_HEIGHT,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import { useLayoutEffect, useRef, useState } from "react";
 import { ArrowUp, ChevronLeft, GripVertical } from "lucide-react";
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { scopedAvatarAccentVars } from "@/hooks/use-avatar-accent-var";

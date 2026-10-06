@@ -1,17 +1,17 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
-import { Radio, RadioGroup } from "@vellumai/design-library/components/radio";
-import { ScrollShadow } from "@vellumai/design-library/components/scroll-shadow";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
+import { Radio, RadioGroup } from "@mycadet/design-library/components/radio";
+import { ScrollShadow } from "@mycadet/design-library/components/scroll-shadow";
 import {
   SearchableSelect,
   SEARCHABLE_SELECT_MENU_MIN_REACH,
   SEARCHABLE_SELECT_MENU_REACH,
   type SearchableSelectOption,
-} from "@vellumai/design-library/components/searchable-select";
-import { Tag } from "@vellumai/design-library/components/tag";
-import { Typography } from "@vellumai/design-library/components/typography";
+} from "@mycadet/design-library/components/searchable-select";
+import { Tag } from "@mycadet/design-library/components/tag";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { PROVIDER_DISPLAY_NAMES } from "@/assistant/llm-model-catalog";
 import { ChatgptOAuthSection } from "@/domains/settings/ai/chatgpt-oauth-section";
@@ -442,9 +442,7 @@ export function ProfileCreateModelFirst({
               onChange={(event) =>
                 handleCustomModelIdChange(event.target.value)
               }
-              placeholder={t(
-                "profileCreateModelFirst.customModelPlaceholder",
-              )}
+              placeholder={t("profileCreateModelFirst.customModelPlaceholder")}
               aria-label={t("profileCreateModelFirst.customModelAriaLabel")}
               fullWidth
               autoFocus

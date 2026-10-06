@@ -66,10 +66,10 @@ describe("installHotkeysIpc with an exclusion", () => {
   test("a shell that excludes a command offers no row and takes no override", () => {
     installHotkeysIpc({ ...ipc, exclude: ["toggleVoice"] });
 
-    const catalog = invoke("vellum:hotkeys:get", []) as Array<{ key: string }>;
+    const catalog = invoke("cadet:hotkeys:get", []) as Array<{ key: string }>;
     expect(catalog.map((c) => c.key)).not.toContain("toggleVoice");
     expect(() =>
-      invoke("vellum:hotkeys:set", ["toggleVoice", "CmdOrCtrl+Shift+T"]),
+      invoke("cadet:hotkeys:set", ["toggleVoice", "CmdOrCtrl+Shift+T"]),
     ).toThrow("Unknown hotkey command: toggleVoice");
     expect(hotkeys).toEqual({});
   });
@@ -127,14 +127,14 @@ describe("resolveHotkeyCatalog", () => {
   });
 });
 
-describe("vellum:hotkeys:set", () => {
+describe("cadet:hotkeys:set", () => {
   beforeEach(() => {
     installHotkeysIpc(ipc);
   });
 
   test("persists a valid accelerator, merging into existing overrides", () => {
     hotkeys = { popOut: "CmdOrCtrl+Shift+O" };
-    invoke("vellum:hotkeys:set", ["newConversation", "CmdOrCtrl+Alt+T"]);
+    invoke("cadet:hotkeys:set", ["newConversation", "CmdOrCtrl+Alt+T"]);
     expect(hotkeys).toEqual({
       popOut: "CmdOrCtrl+Shift+O",
       newConversation: "CmdOrCtrl+Alt+T",
@@ -142,7 +142,7 @@ describe("vellum:hotkeys:set", () => {
   });
 
   test("stores an empty string to disable a binding", () => {
-    invoke("vellum:hotkeys:set", ["globalHotkey", ""]);
+    invoke("cadet:hotkeys:set", ["globalHotkey", ""]);
     expect(hotkeys).toEqual({ globalHotkey: "" });
   });
 
@@ -151,20 +151,20 @@ describe("vellum:hotkeys:set", () => {
       newConversation: "CmdOrCtrl+Alt+T",
       popOut: "CmdOrCtrl+Shift+O",
     };
-    invoke("vellum:hotkeys:set", ["newConversation", null]);
+    invoke("cadet:hotkeys:set", ["newConversation", null]);
     expect(hotkeys).toEqual({ popOut: "CmdOrCtrl+Shift+O" });
   });
 
   test("rejects an invalid accelerator without writing", () => {
     expect(() =>
-      invoke("vellum:hotkeys:set", ["newConversation", "NotAModifier+Q+Z"]),
+      invoke("cadet:hotkeys:set", ["newConversation", "NotAModifier+Q+Z"]),
     ).toThrow(/invalid accelerator/i);
     expect(hotkeys).toEqual({});
   });
 
   test("rejects an unknown command key without writing", () => {
     expect(() =>
-      invoke("vellum:hotkeys:set", ["openSettings", "CmdOrCtrl+,"]),
+      invoke("cadet:hotkeys:set", ["openSettings", "CmdOrCtrl+,"]),
     ).toThrow(/unknown hotkey command/i);
     expect(hotkeys).toEqual({});
   });

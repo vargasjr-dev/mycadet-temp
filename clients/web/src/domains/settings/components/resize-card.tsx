@@ -23,14 +23,14 @@ import {
 } from "@/lib/billing/machine-sizes";
 import { Trans, useTranslation } from "@/i18n";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
-import { textLinkVariants } from "@vellumai/design-library/components/text-link";
-import { cn } from "@vellumai/design-library/utils/cn";
-import { Select } from "@vellumai/design-library/components/select";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Tag } from "@vellumai/design-library/components/tag";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { textLinkVariants } from "@mycadet/design-library/components/text-link";
+import { cn } from "@mycadet/design-library/utils/cn";
+import { Select } from "@mycadet/design-library/components/select";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Tag } from "@mycadet/design-library/components/tag";
+import { toast } from "@mycadet/design-library/components/toast";
 
 export interface ResizeCardProps {
   assistant: Assistant;
@@ -129,12 +129,7 @@ export function ResizeCard({
       }
     },
     onError: (error) => {
-      setResizeError(
-        extractResizeError(
-          error,
-          t("resizeCard.resizeFailed"),
-        ),
-      );
+      setResizeError(extractResizeError(error, t("resizeCard.resizeFailed")));
     },
   });
 
@@ -145,9 +140,7 @@ export function ResizeCard({
         title={t("resizeCard.title")}
         subtitle={t("resizeCard.subtitle")}
       >
-        <Notice tone="error">
-          {t("resizeCard.subscriptionLoadError")}
-        </Notice>
+        <Notice tone="error">{t("resizeCard.subscriptionLoadError")}</Notice>
       </DetailCard>
     );
   }
@@ -442,9 +435,7 @@ export function ResizeCard({
           <Modal.Body>
             <div className="flex flex-col gap-3">
               {allowedSizes.length === 0 ? (
-                <Notice tone="warning">
-                  {t("resizeCard.noMachineTier")}
-                </Notice>
+                <Notice tone="warning">{t("resizeCard.noMachineTier")}</Notice>
               ) : (
                 <div className="flex flex-col gap-1.5">
                   <span className="text-label-medium-default text-[var(--content-secondary)]">
@@ -538,9 +529,7 @@ export function ResizeCard({
                   });
                 }}
               >
-                {resizeError
-                  ? t("resizeCard.retry")
-                  : t("resizeCard.apply")}
+                {resizeError ? t("resizeCard.retry") : t("resizeCard.apply")}
               </Button>
             </div>
           </Modal.Footer>

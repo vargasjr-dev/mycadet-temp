@@ -1,7 +1,7 @@
 import { expect, mock, test } from "bun:test";
 
-import type { HostProxyPoster } from "@vellumai/electron-desktop/host-proxy/poster";
-import type { HostProxySseMessage } from "@vellumai/electron-desktop/host-proxy/sse";
+import type { HostProxyPoster } from "@mycadet/electron-desktop/host-proxy/poster";
+import type { HostProxySseMessage } from "@mycadet/electron-desktop/host-proxy/sse";
 
 // Keep electron-log's file backend out of the test process.
 mock.module("./logger", () => ({
@@ -14,7 +14,7 @@ mock.module("./logger", () => ({
 }));
 
 const { DesktopCapabilityRegistry } =
-  await import("@vellumai/electron-desktop/capability-registry");
+  await import("@mycadet/electron-desktop/capability-registry");
 const {
   COMPUTER_USE_ACTION_EXECUTORS,
   createWindowsHostCuExecutor,

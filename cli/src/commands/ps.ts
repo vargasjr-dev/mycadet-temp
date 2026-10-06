@@ -1,3 +1,4 @@
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import { join } from "path";
 
 import {
@@ -396,7 +397,7 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
     return;
   }
 
-  if (cloud === "vellum") {
+  if (isManagedCloud(cloud)) {
     console.log(`  Platform ID: ${entry.assistantId}\n`);
 
     const psData = await fetchManagedPs(entry.runtimeUrl, entry.assistantId);
@@ -538,7 +539,7 @@ async function getAssistantListHealth(
       : { status: "unknown", detail: "no runtime URL" };
   }
 
-  if (entry.cloud === "vellum") {
+  if (isManagedCloud(entry.cloud)) {
     return checkManagedHealth(entry.runtimeUrl, entry.assistantId);
   }
 
@@ -555,7 +556,6 @@ function formatAssistantListRow(
   infoParts.push(`id: ${entry.assistantId}`);
   if (entry.runtimeUrl) infoParts.push(entry.runtimeUrl);
   if (entry.cloud) infoParts.push(`cloud: ${entry.cloud}`);
-  if (entry.species) infoParts.push(`species: ${entry.species}`);
   if (health.detail) infoParts.push(health.detail);
 
   const prefix = entry.assistantId === activeAssistantId ? "* " : "  ";

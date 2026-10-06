@@ -16,7 +16,7 @@
  *     etc.); those are retired by this package.
  */
 
-import { NOTIFICATION_AVATAR_MAX_LOCAL_BYTES } from "@vellumai/avatar-manifest/notification-avatar";
+import { NOTIFICATION_AVATAR_MAX_LOCAL_BYTES } from "@mycadet/avatar-manifest/notification-avatar";
 
 // ---------------------------------------------------------------------------
 // Commands
@@ -24,7 +24,7 @@ import { NOTIFICATION_AVATAR_MAX_LOCAL_BYTES } from "@vellumai/avatar-manifest/n
 
 /**
  * Discriminated union of every app command. Main dispatches these to the
- * focused renderer window via `vellum:command` IPC; the renderer routes
+ * focused renderer window via `cadet:command` IPC; the renderer routes
  * them through the event bus.
  */
 /**
@@ -1091,16 +1091,16 @@ export interface AppVersionInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Lockfile (bridge-facing subset of @vellumai/local-mode/contract)
+// Lockfile (bridge-facing subset of @mycadet/local-mode/contract)
 // ---------------------------------------------------------------------------
 
 /**
  * Shape of the lockfile as returned across the Electron bridge.
  *
  * Matches the canonical `Lockfile` / `LockfileWriteResult` types in
- * `@vellumai/local-mode/contract`. Declared here so the contract package
+ * `@mycadet/local-mode/contract`. Declared here so the contract package
  * has no `file:` dependency on local-mode (which carries a transitive
- * `file:` chain to `@vellumai/environments` that breaks lockfile
+ * `file:` chain to `@mycadet/environments` that breaks lockfile
  * resolution in consumer packages).
  */
 
@@ -1117,7 +1117,6 @@ export interface LockfileAssistant {
   name?: string;
   cloud?: string;
   runtimeUrl?: string;
-  species?: string;
   hatchedAt?: string;
   onboardedAt?: string;
   organizationId?: string;
@@ -3109,7 +3108,7 @@ export interface CompanionSurfaceState {
    * The assistant's avatar as a base64 PNG, or `undefined` when there is none.
    *
    * Reuses the cache main already keeps for the Dock and Tray icons, which the
-   * renderer publishes over `vellum:icon:setAvatar`. One avatar feeds every
+   * renderer publishes over `cadet:icon:setAvatar`. One avatar feeds every
    * surface, so the companion cannot drift from the icon in the Dock beside it.
    */
   avatarBase64?: string;

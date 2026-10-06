@@ -1,4 +1,4 @@
-import { Tag, type TagTone } from "@vellumai/design-library/components/tag";
+import { Tag, type TagTone } from "@mycadet/design-library/components/tag";
 
 export type ContactRole = string | null | undefined;
 

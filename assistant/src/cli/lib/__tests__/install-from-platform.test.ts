@@ -232,7 +232,7 @@ describe("installPluginFromPlatform — success", () => {
     const pkg = JSON.parse(readFileSync(join(target, "package.json"), "utf-8"));
     expect(pkg.name).toBe("openseo");
     expect(pkg.version).toBe("0.0.0");
-    expect(pkg.peerDependencies["@vellumai/plugin-api"]).toBeDefined();
+    expect(pkg.peerDependencies["@mycadet/plugin-api"]).toBeDefined();
   });
 
   test("synthesizes package.json beside a foreign plugin.json", async () => {
@@ -310,7 +310,7 @@ describe("installPluginFromPlatform — success", () => {
           content: JSON.stringify({
             name: "reading-pal",
             version: "1.2.3",
-            peerDependencies: { "@vellumai/plugin-api": ">=0.8.0" },
+            peerDependencies: { "@mycadet/plugin-api": ">=0.8.0" },
           }),
         },
         { name: "README.md", content: "# reading pal" },

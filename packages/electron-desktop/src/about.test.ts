@@ -151,8 +151,8 @@ describe("installAbout", () => {
     installAbout(aboutIpc);
 
     const channels = ipcHandleMock.mock.calls.map((c) => c[0]);
-    expect(channels).toContain("vellum:app:versionInfo");
-    expect(channels).toContain("vellum:app:openWebsite");
+    expect(channels).toContain("cadet:app:versionInfo");
+    expect(channels).toContain("cadet:app:openWebsite");
     expect(ipcHandleMock).toHaveBeenCalledTimes(2);
 
     expect(setAboutPanelOptionsMock).toHaveBeenCalledTimes(1);

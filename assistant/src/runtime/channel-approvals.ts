@@ -9,7 +9,7 @@
  *   3. Consume user decisions and apply them to the underlying session
  */
 
-import { isDenyingGuardianAction } from "@vellumai/service-contracts/guardian-requests";
+import { isDenyingGuardianAction } from "@mycadet/service-contracts/guardian-requests";
 
 import { findConversation } from "../daemon/conversation-registry.js";
 import type { UserDecision } from "../permissions/types.js";

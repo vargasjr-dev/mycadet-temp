@@ -20,8 +20,7 @@
  * `__resetForTesting`.
  */
 
-import * as Sentry from "@sentry/react";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import type { QueryClient } from "@tanstack/react-query";
 
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
@@ -559,9 +558,8 @@ class AssistantLifecycleService {
     }
     this.initializingTimeout = setTimeout(() => {
       this.generation++;
-      Sentry.captureMessage("Assistant stuck in initializing state", {
-        level: "warning",
-        extra: { timeoutMs: INITIALIZING_TIMEOUT_MS },
+      console.warn("Assistant stuck in initializing state", {
+        timeoutMs: INITIALIZING_TIMEOUT_MS,
       });
       this.transition(buildInitializingTimeoutError());
     }, INITIALIZING_TIMEOUT_MS);

@@ -66,7 +66,7 @@ mock.module("@/stores/resolved-assistants-store", () => ({
 }));
 
 const captureErrorMock = mock((_error: unknown, _opts: unknown) => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 

@@ -1,7 +1,4 @@
-import {
-  type ContentBlock,
-  type Message,
-} from "@vellumai/plugin-api";
+import { type ContentBlock, type Message } from "@mycadet/plugin-api";
 
 import {
   type ConversationSurfaceSnapshot,

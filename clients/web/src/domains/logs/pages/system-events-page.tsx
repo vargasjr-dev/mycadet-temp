@@ -8,7 +8,7 @@ import {
   usePlatformGate,
 } from "@/hooks/use-platform-gate";
 import { routes } from "@/utils/routes";
-import { Notice } from "@vellumai/design-library/components/notice";
+import { Notice } from "@mycadet/design-library/components/notice";
 
 import { useTranslation } from "@/i18n";
 

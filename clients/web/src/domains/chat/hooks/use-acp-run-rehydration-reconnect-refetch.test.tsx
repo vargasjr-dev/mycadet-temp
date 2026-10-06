@@ -36,7 +36,7 @@ mock.module("@/generated/daemon/client.gen", () => ({
     },
   },
 }));
-mock.module("@/lib/sentry/capture-error", () => ({ captureError: () => {} }));
+mock.module("@/lib/error-reporting/capture-error", () => ({ captureError: () => {} }));
 
 const { useAcpRunRehydration, __resetAcpSnapshotGenerationsForTests } =
   await import("@/domains/chat/hooks/use-acp-run-rehydration");

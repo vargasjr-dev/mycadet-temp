@@ -12,8 +12,8 @@ mock.module("../../../runtime/auth/token-service.js", () => ({
 }));
 
 import {
-  mapVelayError,
-  probeVelayRejection,
+  mapTunnelError,
+  probeTunnelRejection,
   resolveSpeechRelayConnection,
 } from "../vellum-speech-relay-connection.js";
 
@@ -52,42 +52,42 @@ describe("resolveSpeechRelayConnection", () => {
   });
 });
 
-describe("mapVelayError", () => {
+describe("mapTunnelError", () => {
   test("maps the relay contract's codes onto categories", () => {
-    expect(mapVelayError({ code: "invalid_key" })).toMatchObject({
+    expect(mapTunnelError({ code: "invalid_key" })).toMatchObject({
       category: "auth",
-      message: expect.stringContaining("VELAY_BASE_URL"),
+      message: expect.stringContaining("TUNNEL_BASE_URL"),
     });
     expect(
-      mapVelayError({ code: "missing_platform_connection" }),
+      mapTunnelError({ code: "missing_platform_connection" }),
     ).toMatchObject({
       category: "auth",
       message: expect.stringContaining("platform connect"),
     });
-    expect(mapVelayError({ code: "invalid_token" })).toMatchObject({
+    expect(mapTunnelError({ code: "invalid_token" })).toMatchObject({
       category: "auth",
       message: expect.stringContaining("restart the assistant"),
     });
-    expect(mapVelayError({ code: "insufficient_balance" })).toMatchObject({
+    expect(mapTunnelError({ code: "insufficient_balance" })).toMatchObject({
       category: "provider-error",
       message: expect.stringContaining("credits"),
     });
-    expect(mapVelayError({ code: "provider_unreachable" }).category).toBe(
+    expect(mapTunnelError({ code: "provider_unreachable" }).category).toBe(
       "provider-error",
     );
-    expect(mapVelayError({ code: "upstream_error" }).category).toBe(
+    expect(mapTunnelError({ code: "upstream_error" }).category).toBe(
       "provider-error",
     );
-    expect(mapVelayError({ code: "novel_code", detail: "what" })).toMatchObject(
-      {
-        category: "provider-error",
-        message: expect.stringContaining("novel_code"),
-      },
-    );
+    expect(
+      mapTunnelError({ code: "novel_code", detail: "what" }),
+    ).toMatchObject({
+      category: "provider-error",
+      message: expect.stringContaining("novel_code"),
+    });
   });
 });
 
-describe("probeVelayRejection", () => {
+describe("probeTunnelRejection", () => {
   const originalFetch = globalThis.fetch;
 
   afterEach(() => {
@@ -100,7 +100,7 @@ describe("probeVelayRejection", () => {
         status: 401,
       })) as unknown as typeof fetch;
 
-    expect(await probeVelayRejection("http://gateway.test/x")).toEqual({
+    expect(await probeTunnelRejection("http://gateway.test/x")).toEqual({
       code: "invalid_key",
       detail: "nope",
     });
@@ -113,7 +113,7 @@ describe("probeVelayRejection", () => {
         { status: 426 },
       )) as unknown as typeof fetch;
 
-    expect(await probeVelayRejection("http://gateway.test/x")).toBeNull();
+    expect(await probeTunnelRejection("http://gateway.test/x")).toBeNull();
   });
 
   test("returns null when the probe itself fails", async () => {
@@ -121,6 +121,6 @@ describe("probeVelayRejection", () => {
       throw new Error("refused");
     }) as unknown as typeof fetch;
 
-    expect(await probeVelayRejection("http://gateway.test/x")).toBeNull();
+    expect(await probeTunnelRejection("http://gateway.test/x")).toBeNull();
   });
 });

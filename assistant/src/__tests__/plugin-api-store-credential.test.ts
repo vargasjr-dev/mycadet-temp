@@ -12,7 +12,7 @@ import {
   test,
 } from "bun:test";
 
-import { credentialKey } from "@vellumai/credential-storage";
+import { credentialKey } from "@mycadet/credential-storage";
 import { eq } from "drizzle-orm";
 
 import * as conversationStore from "../daemon/conversation-store.js";

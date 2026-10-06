@@ -25,7 +25,7 @@ import {
   type GuardianRequestStatus,
   type GuardianRequestWire,
   isGuardianRequestExpired,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import { getGatewayDb } from "./connection.js";
 import { guardianRequestDeliveries, guardianRequests } from "./schema.js";

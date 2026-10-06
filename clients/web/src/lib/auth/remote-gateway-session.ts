@@ -4,7 +4,7 @@ import type {
   RemoteWebPairingTokenApprovedResponse,
   RemoteWebPairingTokenPendingResponse,
   RemoteWebPairingTokenRequest,
-} from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
 
 import {
   getGatewayToken,
@@ -15,14 +15,14 @@ import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 export {
   parseRemoteWebPairingParams,
   type RemoteWebPairingParams,
-} from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
 
 const PAIRING_TOKEN_PATH = "/v1/remote-web/pairing-token";
 const PAIRING_CHALLENGE_PATH = "/v1/remote-web/pairing-challenge";
 const GUARDIAN_REFRESH_PATH = "/v1/guardian/refresh";
 const DEFAULT_POLL_INTERVAL_SECONDS = 5;
 const REFRESH_EARLY_MS = 5_000;
-const REFRESH_LOCK_KEY = "vellum:remote-gateway:refresh-lock";
+const REFRESH_LOCK_KEY = "cadet:remote-gateway:refresh-lock";
 const REFRESH_LOCK_NAME = "vellum-remote-gateway-refresh";
 const REFRESH_LOCK_TTL_MS = 20_000;
 const REFRESH_LOCK_WAIT_MS = 20_000;

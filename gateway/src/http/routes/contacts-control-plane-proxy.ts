@@ -9,7 +9,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import { proxyForward } from "@vellumai/assistant-client";
+import { proxyForward } from "@mycadet/assistant-client";
 import {
   generateInviteCode,
   generateInviteToken,
@@ -18,7 +18,7 @@ import {
   isRiskThreshold,
   isValidE164,
   type RiskThreshold,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import { eq } from "drizzle-orm";
 
 import { mintServiceToken } from "../../auth/token-exchange.js";

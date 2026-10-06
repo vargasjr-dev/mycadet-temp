@@ -13,7 +13,7 @@ import { connect } from "node:net";
 import {
   isNamedPipePath,
   removeIpcEndpointFile,
-} from "@vellumai/ipc-server-utils";
+} from "@mycadet/ipc-server-utils";
 
 import { makeAddrInUseError } from "../daemon/startup-error.js";
 

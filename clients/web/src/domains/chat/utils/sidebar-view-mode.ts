@@ -26,7 +26,7 @@ function parseViewMode(raw: string): SidebarViewMode | null {
 }
 
 const viewModeStorage = createKeyedStorageAccessor<SidebarViewMode>({
-  keyFn: (assistantId) => `vellum:sidebar-view-mode:${assistantId}`,
+  keyFn: (assistantId) => `cadet:sidebar-view-mode:${assistantId}`,
   scope: "user",
   parse: parseViewMode,
   serialize: (mode) => mode,

@@ -31,7 +31,7 @@ import { TimezoneSection } from "@/domains/settings/components/timezone-section"
 import { UpdateWindowModal } from "@/domains/settings/components/update-window-modal";
 import { TwoFactorSection } from "@/domains/settings/security/two-factor-section";
 import { TeleportCard } from "@/domains/settings/teleport/teleport-card";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import {
   useActiveAssistantIsPlatformHosted,

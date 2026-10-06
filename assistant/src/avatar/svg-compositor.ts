@@ -1,4 +1,4 @@
-import { getCharacterComponents } from "@vellumai/avatar-catalog";
+import { getCharacterComponents } from "@mycadet/avatar-catalog";
 
 /**
  * Compose a complete SVG document from a body shape, eye style, and color.

@@ -3,7 +3,7 @@
  *
  * The route runs a background conversation turn and asks the assistant to write
  * `{ subject, body }` JSON to an injected file path under the plugin's data
- * directory, then reads it back. These tests mock `@vellumai/plugin-api` to
+ * directory, then reads it back. These tests mock `@mycadet/plugin-api` to
  * supply both a temp `getWorkspaceDir` (so the data dir is a throwaway temp
  * location) and a `runConversationTurn` that plays the assistant's part —
  * extracting the injected path from the prompt and writing (or not writing) a
@@ -25,7 +25,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { RunConversationTurnOptions } from "@vellumai/plugin-api";
+import type { RunConversationTurnOptions } from "@mycadet/plugin-api";
 
 // ---------------------------------------------------------------------------
 // Mock — supplies every named export reengage.ts imports from the plugin API:
@@ -67,7 +67,7 @@ function extractInjectedPath(prompt: string): string {
   return match[1];
 }
 
-mock.module("@vellumai/plugin-api", () => ({
+mock.module("@mycadet/plugin-api", () => ({
   getWorkspaceDir: () => workspaceDir,
   runConversationTurn: async (options: RunConversationTurnOptions) => {
     lastOptions = options;

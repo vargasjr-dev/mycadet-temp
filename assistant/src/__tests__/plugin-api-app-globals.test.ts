@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 
 /**
  * Guards the app-side ambient global (`window.vellum`) that
- * `@vellumai/plugin-api` ships so plugin apps don't hand-declare it.
+ * `@mycadet/plugin-api` ships so plugin apps don't hand-declare it.
  *
  * Two things must hold: the declaration augments `Window` with the bridge's
  * `fetch` (the only member exposed for now), and the publish build actually

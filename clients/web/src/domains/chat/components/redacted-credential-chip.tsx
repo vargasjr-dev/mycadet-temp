@@ -29,7 +29,7 @@ import { credentialsRevealPost } from "@/generated/daemon/sdk.gen";
 import { useTranslation } from "@/i18n";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 const COPIED_FEEDBACK_MS = 1500;
 

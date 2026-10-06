@@ -34,7 +34,7 @@
  * to allow for incremental migration and independent testability.
  */
 
-import { isGuardianRequestExpired } from "@vellumai/gateway-client";
+import { isGuardianRequestExpired } from "@mycadet/gateway-client";
 
 import {
   applyGuardianDecision,

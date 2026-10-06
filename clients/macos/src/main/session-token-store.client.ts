@@ -5,7 +5,7 @@ import {
   onSessionTokenChange,
   saveSessionToken,
   setSessionTokenLogger,
-} from "@vellumai/electron-desktop/session-token-store";
+} from "@mycadet/electron-desktop/session-token-store";
 
 import log from "./logger";
 

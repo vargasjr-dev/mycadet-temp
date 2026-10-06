@@ -40,7 +40,7 @@
 import { Database } from "bun:sqlite";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { ContentBlock, Message } from "@vellumai/plugin-api";
+import type { ContentBlock, Message } from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import * as schema from "../../../../persistence/schema/index.js";

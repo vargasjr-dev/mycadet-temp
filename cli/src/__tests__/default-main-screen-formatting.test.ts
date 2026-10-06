@@ -152,15 +152,14 @@ describe("estimateItemHeight", () => {
 
 describe("calculateHeaderHeight", () => {
   test("uses one row in compact terminals", () => {
-    expect(calculateHeaderHeight("vellum", 59)).toBe(1);
+    expect(calculateHeaderHeight(59)).toBe(1);
   });
 
   test("uses the larger of the art and right-panel layouts", () => {
-    expect(calculateHeaderHeight("vellum", 60)).toBe(16);
-    expect(calculateHeaderHeight("openclaw", 80)).toBe(19);
+    expect(calculateHeaderHeight(80)).toBe(16);
   });
 
   test("defaults to the standard terminal width", () => {
-    expect(calculateHeaderHeight("vellum")).toBe(16);
+    expect(calculateHeaderHeight()).toBe(16);
   });
 });

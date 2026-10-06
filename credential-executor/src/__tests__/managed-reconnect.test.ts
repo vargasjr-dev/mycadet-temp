@@ -17,11 +17,11 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { resolveIpcEndpoint } from "@vellumai/ipc-server-utils";
+import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 import {
   CES_PROTOCOL_VERSION,
   type HandshakeAck,
-} from "@vellumai/service-contracts/credential-rpc";
+} from "@mycadet/service-contracts/credential-rpc";
 
 import type { Subprocess } from "bun";
 
@@ -70,7 +70,10 @@ async function readyzRpcConnected(port: number): Promise<boolean> {
 }
 
 /** Wait until the socket path exists (CES has bound the bootstrap socket). */
-async function waitForSocket(socketPath: string, timeoutMs = 10_000): Promise<void> {
+async function waitForSocket(
+  socketPath: string,
+  timeoutMs = 10_000,
+): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (existsSync(socketPath)) return;

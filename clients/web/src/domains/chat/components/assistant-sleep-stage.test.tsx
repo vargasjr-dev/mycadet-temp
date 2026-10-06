@@ -20,7 +20,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 
-import { getCharacterComponents } from "@vellumai/avatar-catalog";
+import { getCharacterComponents } from "@mycadet/avatar-catalog";
 
 import type { AssistantSleepPhase } from "@/components/status-banner";
 

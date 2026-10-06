@@ -2,9 +2,9 @@ import { Cable } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
-import { Modal } from "@vellumai/design-library/components/modal";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
+import { Modal } from "@mycadet/design-library/components/modal";
 
 type TransportType = "stdio" | "sse" | "streamable-http";
 type AuthType = "none" | "bearer" | "api-key" | "oauth";

@@ -14,7 +14,7 @@
 
 import { randomBytes } from "node:crypto";
 
-import { hashVerificationSecret } from "@vellumai/gateway-client";
+import { hashVerificationSecret } from "@mycadet/gateway-client";
 
 import { startVerificationCall } from "../calls/call-domain.js";
 import {

@@ -1,7 +1,7 @@
 import {
   pickReactionEmojiFields,
   ReactionEmojiFieldsSchema,
-} from "@vellumai/service-contracts/reactions";
+} from "@mycadet/service-contracts/reactions";
 import { z } from "zod";
 
 import { safeParseRecord } from "../../../util/json.js";

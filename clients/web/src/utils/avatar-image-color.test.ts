@@ -2,7 +2,7 @@
  * The room's treatment of an uploaded avatar's accent. The canvas half
  * (`sampleAvatarAccentHex`) is not exercised here, because no test environment
  * decodes an image, and the colour it samples is `dominantAccentHex`, tested
- * in `@vellumai/avatar-manifest`.
+ * in `@mycadet/avatar-manifest`.
  */
 
 import { describe, expect, test } from "bun:test";

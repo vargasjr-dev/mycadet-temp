@@ -22,7 +22,7 @@
  *      system prompt of the user-facing model call so terse mode is always on.
  *
  * The installer owns the plugin's `package.json`: it preserves the upstream
- * manifest and mutates only `name` and the `@vellumai/plugin-api` peer
+ * manifest and mutates only `name` and the `@mycadet/plugin-api` peer
  * dependency, so this adapter never touches it.
  *
  * Runs with the staged install directory as its working directory. Any missing

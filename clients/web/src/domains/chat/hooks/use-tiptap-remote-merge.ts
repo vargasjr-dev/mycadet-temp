@@ -1,5 +1,5 @@
 import type { Editor, EditorEvents } from "@tiptap/core";
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 import { useLayoutEffect, useRef } from "react";
 
 import { getEditorMarkdown } from "@/domains/chat/components/tiptap-editor-extensions";
@@ -9,7 +9,7 @@ import {
   serializeEditorDoc,
 } from "@/domains/chat/utils/tiptap-remote-merge";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 interface UseTiptapRemoteMergeOptions {
   editor: Editor | null;

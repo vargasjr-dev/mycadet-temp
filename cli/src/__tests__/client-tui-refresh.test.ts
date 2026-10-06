@@ -30,7 +30,6 @@ function seedEntry(cloud: string): void {
     runtimeUrl: RUNTIME,
     cloud,
     paired: cloud === "paired",
-    species: "vellum",
   });
 }
 

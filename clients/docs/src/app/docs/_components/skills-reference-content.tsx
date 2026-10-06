@@ -30,9 +30,8 @@ const SKILL_PAGES = [
   { title: "Weather", href: "/docs/skills-reference/weather", description: "Current conditions and multi-day forecasts for any location." },
   { title: "Amazon", href: "/docs/skills-reference/amazon", description: "Search, browse, and shop on Amazon and Amazon Fresh." },
   { title: "DoorDash", href: "/docs/skills-reference/doordash", description: "Order food, groceries, and convenience items from DoorDash." },
-  { title: "Email (Agent Mail)", href: "/docs/skills-reference/email-agentmail", description: "Give your assistant its own email address to send and receive mail." },
   { title: "Skill Management", href: "/docs/skills-reference/skill-management", description: "Create and delete custom managed skills to extend your assistant." },
-  { title: "ChatGPT Import", href: "/docs/skills-reference/chatgpt-import", description: "Import your ChatGPT conversation history into Vellum." },
+  { title: "ChatGPT Import", href: "/docs/skills-reference/chatgpt-import", description: "Import your ChatGPT conversation history into Cadet." },
   { title: "ACP", href: "/docs/skills-reference/acp", description: "Delegate development tasks through the Agent Client Protocol." },
 ];
 

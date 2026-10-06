@@ -4,7 +4,7 @@ import { join } from "node:path";
 import {
   GATEWAY_LOG_LEVEL_NAMES,
   type GatewayLogLevelName,
-} from "@vellumai/gateway-client/gateway-ipc-contracts";
+} from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import type { GatewayConfig } from "../../config.js";
 import {

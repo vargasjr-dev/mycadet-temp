@@ -1,7 +1,7 @@
 import { Loader2 } from "lucide-react";
 import type { FC, MouseEvent } from "react";
 import { useCallback, useMemo } from "react";
-import { resolveComputerUseToolName } from "@vellumai/assistant-api";
+import { resolveComputerUseToolName } from "@mycadet/assistant-api";
 
 import { AttachmentDownloadOverlay } from "@/domains/chat/components/chat-attachments/attachment-download-overlay";
 import { AttachmentPreviewBox } from "@/domains/chat/components/chat-attachments/attachment-preview-box";

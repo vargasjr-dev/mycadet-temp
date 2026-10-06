@@ -26,7 +26,7 @@ import { useEffect, useRef } from "react";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 
 import { client as daemonClient } from "@/generated/daemon/client.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   useAcpRunStore,
   type AcpModelOption,

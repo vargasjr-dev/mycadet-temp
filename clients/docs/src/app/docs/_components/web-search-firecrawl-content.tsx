@@ -18,7 +18,7 @@ export function WebSearchFirecrawlContent() {
       <DocsContent
         title="Firecrawl"
         breadcrumb="Docs / Key Concepts / Web Search / Firecrawl"
-        subtitle="Web search and full-page scraping in one provider. Use Firecrawl in your Vellum assistant for clean, relevance-ranked results and markdown extraction from pages the built-in fetcher cannot read."
+        subtitle="Web search and full-page scraping in one provider. Use Firecrawl in your Cadet assistant for clean, relevance-ranked results and markdown extraction from pages the built-in fetcher cannot read."
       >
         <section id="what-it-does">
           <SectionHeading id="what-it-does" level={2}>
@@ -33,7 +33,7 @@ export function WebSearchFirecrawlContent() {
           </p>
           <p className="mb-0 text-zinc-600 dark:text-zinc-400">
             One Firecrawl key powers both paths. Set it as your web search provider, your web
-            fetch provider, or both. When configured, Vellum routes the matching calls through
+            fetch provider, or both. When configured, Cadet routes the matching calls through
             Firecrawl and feeds the results back to your assistant in context, where the model
             can read snippets, open sources, or synthesize an answer.
           </p>
@@ -45,7 +45,7 @@ export function WebSearchFirecrawlContent() {
           </SectionHeading>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600 dark:text-zinc-400">
             <li>
-              A running Vellum assistant. Cloud, self-hosted, or the desktop apps all work.
+              A running Cadet assistant. Cloud, self-hosted, or the desktop apps all work.
             </li>
             <li>
               A Firecrawl API key. Create one at{" "}
@@ -77,7 +77,7 @@ export function WebSearchFirecrawlContent() {
           <ol className="mb-6 list-decimal space-y-3 pl-6 text-zinc-600 dark:text-zinc-400">
             <li>
               <strong>Open assistant settings.</strong>{" "}
-              In Vellum, head to{" "}
+              In Cadet, head to{" "}
               <span className="font-medium text-zinc-900 dark:text-zinc-100">
                 Settings &rarr; Models &amp; Services
               </span>
@@ -89,12 +89,12 @@ export function WebSearchFirecrawlContent() {
               choose <span className="font-medium text-zinc-900 dark:text-zinc-100">Firecrawl</span> as the provider and
               paste your API key. To use Firecrawl for single-page retrieval too, select it under
               the <span className="font-medium text-zinc-900 dark:text-zinc-100">Web Fetch</span> section as well.
-              Vellum stores the key in your local secure store and never writes it to disk in plaintext.
+              Cadet stores the key in your local secure store and never writes it to disk in plaintext.
             </li>
             <li>
               <strong>Try it.</strong>{" "}
               Start a new conversation and ask a question that needs fresh information, or point the
-              assistant at a JavaScript-heavy page. Vellum calls Firecrawl under the hood and feeds
+              assistant at a JavaScript-heavy page. Cadet calls Firecrawl under the hood and feeds
               the results back to the model in context.
             </li>
           </ol>
@@ -150,7 +150,7 @@ assistant config set services.web-fetch.provider firecrawl`}
             <li>
               <strong>Billing.</strong>{" "}
               Firecrawl usage is billed directly by Firecrawl under the account that owns the key,
-              separately from Vellum credits.
+              separately from Cadet credits.
             </li>
             <li>
               <strong>Privacy.</strong>{" "}
@@ -198,7 +198,7 @@ assistant config set services.web-fetch.provider firecrawl`}
                 href="/docs/key-concepts/web-search"
                 className="text-emerald-700 underline hover:text-emerald-800"
               >
-                Vellum Web Search reference
+                Cadet Web Search reference
               </Link>
             </li>
           </ul>

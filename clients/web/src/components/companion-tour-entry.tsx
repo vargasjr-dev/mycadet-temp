@@ -8,8 +8,8 @@ import {
 } from "lucide-react";
 import { useRef, type ReactNode } from "react";
 
-import { Button, Modal } from "@vellumai/design-library";
-import { companionBoxFor } from "@vellumai/ipc-contract";
+import { Button, Modal } from "@mycadet/design-library";
+import { companionBoxFor } from "@mycadet/ipc-contract";
 
 import { introDemoCall } from "@/components/companion-intro";
 import { CompanionSurface } from "@/components/companion-surface";

@@ -10,7 +10,7 @@
 
 import { Plug } from "lucide-react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { MachineText } from "@/components/detail-primitives";
 import { ToolInputParameters } from "@/domains/chat/components/tool-activity/tool-input-parameters";

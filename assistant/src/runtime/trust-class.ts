@@ -1,7 +1,7 @@
 /**
  * The daemon's reading of an inbound actor's trust class. The vocabulary
  * itself ({@link TrustClass}, `TrustClassSchema`) belongs to the gateway,
- * which classifies every actor; it lives in `@vellumai/gateway-client`
+ * which classifies every actor; it lives in `@mycadet/gateway-client`
  * (`trust-verdict-contract.ts`) and is re-exported here, never redeclared.
  * This module holds what the daemon derives from a class:
  *
@@ -20,7 +20,7 @@
  *   actors are fail-closed with no escalation path.
  */
 
-import type { TrustClass } from "@vellumai/gateway-client";
+import type { TrustClass } from "@mycadet/gateway-client";
 
 export type { TrustClass };
 

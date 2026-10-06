@@ -183,7 +183,7 @@ describe("installStatusIpc", () => {
     installStatusIpc();
     installStatusIpc();
     expect(registrations).toHaveLength(1);
-    expect(registrations[0]?.channel).toBe("vellum:status:connection");
+    expect(registrations[0]?.channel).toBe("cadet:status:connection");
   });
 
   test("the schema accepts every known status and rejects anything else", () => {
@@ -244,7 +244,7 @@ describe("connectivity state machine", () => {
   test("broadcasts to all BrowserWindows on change", () => {
     setDeviceOnline(false);
     const msg = sentMessages.find(
-      (m) => m.channel === "vellum:connectivity:state",
+      (m) => m.channel === "cadet:connectivity:state",
     );
     expect(msg).toBeDefined();
     expect(msg!.payload).toBe("device-offline");
@@ -274,18 +274,18 @@ describe("installConnectivityIpc", () => {
     installConnectivityIpc();
     const channels = registrations.map((r) => r.channel);
     expect(
-      channels.filter((c) => c === "vellum:connectivity:device"),
+      channels.filter((c) => c === "cadet:connectivity:device"),
     ).toHaveLength(1);
     const handled = handleRegistrations.map((r) => r.channel);
     expect(
-      handled.filter((c) => c === "vellum:connectivity:retry"),
+      handled.filter((c) => c === "cadet:connectivity:retry"),
     ).toHaveLength(1);
   });
 
   test("device channel drives deviceOnline signal", () => {
     installConnectivityIpc();
     const deviceReg = registrations.find(
-      (r) => r.channel === "vellum:connectivity:device",
+      (r) => r.channel === "cadet:connectivity:device",
     )!;
     deviceReg.fn([false]);
     expect(getConnectivity()).toBe("device-offline");
@@ -297,7 +297,7 @@ describe("installConnectivityIpc", () => {
     const onRetry = mock(() => Promise.resolve());
     installConnectivityIpc(onRetry);
     const retryReg = handleRegistrations.find(
-      (r) => r.channel === "vellum:connectivity:retry",
+      (r) => r.channel === "cadet:connectivity:retry",
     )!;
     setBackendReachable(false);
     expect(await retryReg.fn([])).toBe("backend-unreachable");
@@ -307,14 +307,14 @@ describe("installConnectivityIpc", () => {
   test("retry rebroadcasts the current state even when unchanged", async () => {
     installConnectivityIpc();
     const retryReg = handleRegistrations.find(
-      (r) => r.channel === "vellum:connectivity:retry",
+      (r) => r.channel === "cadet:connectivity:retry",
     )!;
     // State is "online" and never transitions, so the change-gated broadcast
     // in setConnectivity stays silent — a desynced renderer depends on this
     // unconditional resend to recover.
     expect(await retryReg.fn([])).toBe("online");
     const msgs = sentMessages.filter(
-      (m) => m.channel === "vellum:connectivity:state",
+      (m) => m.channel === "cadet:connectivity:state",
     );
     expect(msgs.map((m) => m.payload)).toEqual(["online"]);
   });
@@ -322,7 +322,7 @@ describe("installConnectivityIpc", () => {
   test("registers the get channel for current state queries", () => {
     installConnectivityIpc();
     const getReg = handleRegistrations.find(
-      (r) => r.channel === "vellum:connectivity:get",
+      (r) => r.channel === "cadet:connectivity:get",
     );
     expect(getReg).toBeDefined();
   });
@@ -330,7 +330,7 @@ describe("installConnectivityIpc", () => {
   test("get channel returns the current connectivity state", () => {
     installConnectivityIpc();
     const getReg = handleRegistrations.find(
-      (r) => r.channel === "vellum:connectivity:get",
+      (r) => r.channel === "cadet:connectivity:get",
     )!;
     expect(getReg.fn([])).toBe("online");
     setDeviceOnline(false);

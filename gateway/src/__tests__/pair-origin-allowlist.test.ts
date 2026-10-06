@@ -24,7 +24,7 @@ const { resolveExtensionOrigin, corsHeaders, extensionCorsHeaders } =
 const { KNOWN_EXTENSION_ORIGINS } =
   await import("../chrome-extension-origins.js");
 const { CLIENT_METADATA_HEADERS } =
-  await import("@vellumai/service-contracts/client-metadata");
+  await import("@mycadet/service-contracts/client-metadata");
 
 // Simulate a loopback peer IP as supplied by the gateway server to the handler.
 const LOOPBACK_IP = "127.0.0.1";

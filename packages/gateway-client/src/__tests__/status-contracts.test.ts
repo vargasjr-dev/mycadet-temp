@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   FeatureFlagsIpcResponseSchema,
-  VelayStatusIpcResponseSchema,
+  TunnelStatusIpcResponseSchema,
 } from "../gateway-ipc-contracts.js";
 
 describe("gateway status IPC contracts", () => {
@@ -22,18 +22,18 @@ describe("gateway status IPC contracts", () => {
     expect(FeatureFlagsIpcResponseSchema.safeParse(null).success).toBe(false);
   });
 
-  test("normalizes a malformed Velay public URL to null", () => {
+  test("normalizes a malformed Tunnel public URL to null", () => {
     expect(
-      VelayStatusIpcResponseSchema.parse({
+      TunnelStatusIpcResponseSchema.parse({
         connected: false,
         publicUrl: 42,
       }),
     ).toEqual({ connected: false, publicUrl: null });
   });
 
-  test("requires a boolean Velay connection state", () => {
+  test("requires a boolean Tunnel connection state", () => {
     expect(
-      VelayStatusIpcResponseSchema.safeParse({ connected: "yes" }).success,
+      TunnelStatusIpcResponseSchema.safeParse({ connected: "yes" }).success,
     ).toBe(false);
   });
 });

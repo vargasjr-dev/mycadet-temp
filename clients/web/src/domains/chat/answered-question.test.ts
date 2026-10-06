@@ -7,7 +7,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import type { AnsweredQuestion } from "@vellumai/assistant-api";
+import type { AnsweredQuestion } from "@mycadet/assistant-api";
 
 import {
   hasRenderableAnswer,

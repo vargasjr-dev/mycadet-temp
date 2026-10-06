@@ -32,8 +32,8 @@ import {
   setDeviceBool,
   watchDeviceSetting,
 } from "@/utils/device-settings";
-import { Toggle } from "@vellumai/design-library/components/toggle";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { Toggle } from "@mycadet/design-library/components/toggle";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 type LocalPermissionRowId = "notificationBadges";
 type PermissionRowId = SystemPermissionKind | LocalPermissionRowId;

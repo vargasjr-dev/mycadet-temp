@@ -213,7 +213,7 @@ describe("plugin facade", () => {
     recordConversationToolSurface("conv-1", SURFACE);
 
     expect(await getRecordedConversationToolSurface("conv-1")).toEqual(SURFACE);
-    // The array shape the public `@vellumai/plugin-api` accessor returns.
+    // The array shape the public `@mycadet/plugin-api` accessor returns.
     expect(await getConversationToolSurfaceViaPluginApi("conv-1")).toEqual(
       TOOLS,
     );

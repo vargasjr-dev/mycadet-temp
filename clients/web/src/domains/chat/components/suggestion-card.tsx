@@ -1,4 +1,4 @@
-import { Card } from "@vellumai/design-library";
+import { Card } from "@mycadet/design-library";
 import { ArrowRight } from "lucide-react";
 
 import { useTranslation } from "@/i18n";

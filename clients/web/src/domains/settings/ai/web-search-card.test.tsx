@@ -26,7 +26,7 @@ const ASSISTANT_ID = "asst-test";
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => ASSISTANT_ID,
 }));
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {} },
   Toaster: () => null,
   ToastContent: () => null,

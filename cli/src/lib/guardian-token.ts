@@ -16,14 +16,14 @@ import {
 import { hostname, platform } from "os";
 import { dirname, join } from "path";
 
-import { SEEDS } from "@vellumai/environments";
+import { SEEDS } from "@mycadet/environments";
 import {
   guardianTokenPath,
   isConfidentialRefreshUrl,
   resolveConfigDir,
   saveGuardianToken as writeGuardianToken,
   type GuardianTokenData,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 import { getConfigDir, getConfigDirs } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
@@ -34,7 +34,7 @@ const DEVICE_ID_SALT = "vellum-assistant-host-id";
 export type { GuardianTokenData };
 
 function getGuardianTokenPath(assistantId: string): string {
-  // Resolve via the shared @vellumai/local-mode resolver — the same one every
+  // Resolve via the shared @mycadet/local-mode resolver — the same one every
   // host-seam reader (`getGuardianAccessToken`) uses — so the token is always
   // written where it's read. Must stay in lockstep with `getConfigDir(
   // getCurrentEnvironment())`; the parity test in guardian-token.test.ts guards
@@ -174,7 +174,7 @@ export function saveGuardianToken(
   assistantId: string,
   data: GuardianTokenData,
 ): void {
-  // Delegates to the shared @vellumai/local-mode writer (0700 dir, 0600 file)
+  // Delegates to the shared @mycadet/local-mode writer (0700 dir, 0600 file)
   // with the same env-resolved config dir the path resolver above uses.
   writeGuardianToken(resolveConfigDir(process.env), assistantId, data);
 }

@@ -10,14 +10,14 @@ import {
   isPendingGuardianFeedItem,
   type FeedItem,
   type FeedItemStatus,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import {
   Button,
   cn,
   CrossfadeStack,
   Typography,
-} from "@vellumai/design-library";
-import type { GuardianDecisionActionId } from "@vellumai/service-contracts/guardian-requests";
+} from "@mycadet/design-library";
+import type { GuardianDecisionActionId } from "@mycadet/service-contracts/guardian-requests";
 
 import { flattenSummary, resolvePreview } from "./feed-preview";
 import {

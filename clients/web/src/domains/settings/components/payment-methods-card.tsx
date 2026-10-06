@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { Notice } from "@vellumai/design-library/components/notice";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { Notice } from "@mycadet/design-library/components/notice";
 
 import { AutoTopUpPaymentMethodModal } from "@/domains/settings/components/auto-top-up-payment-method-modal";
 import { BillingSectionHeader } from "@/domains/settings/components/billing-section-header";

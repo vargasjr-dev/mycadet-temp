@@ -1,5 +1,5 @@
-import type { StreamPlan, StreamPlanStep } from "@vellumai/gateway-client";
-import { ChannelDeliveryError } from "@vellumai/gateway-client/http-delivery";
+import type { StreamPlan, StreamPlanStep } from "@mycadet/gateway-client";
+import { ChannelDeliveryError } from "@mycadet/gateway-client/http-delivery";
 
 import { getLogger } from "../../../util/logger.js";
 import { directDeliveryContext } from "../callback-routing.js";

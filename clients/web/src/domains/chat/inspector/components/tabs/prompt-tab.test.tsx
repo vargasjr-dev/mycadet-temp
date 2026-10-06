@@ -16,7 +16,7 @@ import { PromptTab } from "./prompt-tab";
 import type {
   LLMContextSection,
   LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 function makeEntry(sections: LLMContextSection[]): LLMRequestLogEntry {
   return {

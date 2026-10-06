@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 import { existsSync, mkdirSync, renameSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, sep } from "node:path";
-import { canonicalizePathThroughExistingParent } from "@vellumai/environments/test-path-guard";
+import { canonicalizePathThroughExistingParent } from "@mycadet/environments/test-path-guard";
 
 import { getGatewaySecurityDir, getLegacyRootDir } from "../paths.js";
 import * as schema from "./schema.js";

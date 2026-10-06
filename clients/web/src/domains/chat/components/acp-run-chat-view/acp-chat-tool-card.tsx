@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { Tag, Typography, type TagTone } from "@vellumai/design-library";
+import { Tag, Typography, type TagTone } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

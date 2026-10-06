@@ -1,4 +1,4 @@
-import type { ConversationMessage } from "@vellumai/assistant-api";
+import type { ConversationMessage } from "@mycadet/assistant-api";
 
 /**
  * Latest assistant reply text from a messages list (joined text blocks).

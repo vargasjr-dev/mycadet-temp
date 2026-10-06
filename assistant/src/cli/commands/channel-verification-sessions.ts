@@ -6,7 +6,7 @@ import {
   CHANNEL_IDS,
   type ChannelId,
   isChannelId,
-} from "@vellumai/service-contracts/channels";
+} from "@mycadet/service-contracts/channels";
 import type { Command } from "commander";
 
 import { cliIpcCall, exitFromIpcResult } from "../../ipc/cli-client.js";

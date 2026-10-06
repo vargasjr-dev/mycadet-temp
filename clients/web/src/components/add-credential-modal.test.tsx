@@ -34,7 +34,7 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
 }));
 
 const toasts: Array<{ kind: "success" | "error"; message: string }> = [];
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     success: (message: string) => {
       toasts.push({ kind: "success", message });

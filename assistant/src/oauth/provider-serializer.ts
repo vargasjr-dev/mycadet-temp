@@ -18,8 +18,8 @@ import type { OAuthProviderRow } from "./oauth-store.js";
 export type SerializedProvider = ReturnType<typeof serializeProvider> &
   Record<string, unknown>;
 
-import { isChannelBotProvider } from "@vellumai/service-contracts/channels";
-import type { IntegrationCategory } from "@vellumai/service-contracts/integration-categories";
+import { isChannelBotProvider } from "@mycadet/service-contracts/channels";
+import type { IntegrationCategory } from "@mycadet/service-contracts/integration-categories";
 
 import { PROVIDER_SEED_DATA } from "./seed-providers.js";
 

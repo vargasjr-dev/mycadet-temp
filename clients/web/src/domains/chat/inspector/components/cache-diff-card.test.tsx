@@ -23,7 +23,7 @@ import { CacheDiffCard } from "./cache-diff-card";
 import type {
   LLMContextSection,
   LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false }, mutations: { retry: false } },

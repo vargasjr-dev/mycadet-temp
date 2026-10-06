@@ -6,8 +6,8 @@
  * Two paths:
  * - Batch `synthesize` (read-aloud, mp3 surfaces) via the Django endpoint.
  * - Streaming `synthesizeStream` (live voice, telephony PCM) via the
- *   gateway's speech relay (gateway → velay → Deepgram; velay contact is
- *   gateway-only — the daemon holds no velay address and no speech
+ *   gateway's speech relay (gateway → tunnel → Deepgram; tunnel contact is
+ *   gateway-only — the daemon holds no tunnel address and no speech
  *   credential).
  *
  * `allowNativeFallback: false` means synthesis failures propagate to the
@@ -22,8 +22,8 @@ import {
   type ManagedSpeechTtsFormat,
 } from "../../platform/managed-speech.js";
 import {
-  mapVelayError,
-  probeVelayRejection,
+  mapTunnelError,
+  probeTunnelRejection,
   resolveSpeechRelayConnection,
 } from "../../providers/speech-to-text/vellum-speech-relay-connection.js";
 import { getLogger } from "../../util/logger.js";
@@ -155,7 +155,7 @@ async function performStreamingSynthesis(
       makeEmptyError: () =>
         new Error("Managed streaming TTS returned no audio"),
       makeRelayError: (code, detail) =>
-        new Error(mapVelayError({ code, detail }).message),
+        new Error(mapTunnelError({ code, detail }).message),
     });
     return {
       audio,
@@ -166,7 +166,7 @@ async function performStreamingSynthesis(
       throw err;
     }
     // A rejected upgrade hides the relay's {code, detail}; replay the gate
-    // as a plain GET (the gateway probes velay's own gate too) so auth and
+    // as a plain GET (the gateway probes tunnel's own gate too) so auth and
     // balance failures surface with their mapped messages. The probe must
     // carry the same voice model — a model-specific rejection (e.g.
     // missing_price) only reproduces when the probe asks for that model.
@@ -176,11 +176,11 @@ async function performStreamingSynthesis(
     if (voice) {
       probeParams.set("model", voice);
     }
-    const rejection = await probeVelayRejection(
+    const rejection = await probeTunnelRejection(
       `${connection.httpBaseUrl}${TTS_STREAM_PATH}?${probeParams.toString()}`,
     );
     if (rejection) {
-      throw new Error(mapVelayError(rejection).message);
+      throw new Error(mapTunnelError(rejection).message);
     }
     throw err;
   }
@@ -222,7 +222,7 @@ export const vellumTtsProviderDefinition: TtsProviderDefinition = {
   credentialsGuide: {
     description:
       "Connect this assistant to your Vellum account; managed speech uses that connection instead of a provider API key.",
-    url: "https://platform.vellum.ai/",
+    url: "https://cloud.mycadet.ai/",
     linkLabel: "Open Vellum Platform",
   },
   callMode: "synthesized-play",

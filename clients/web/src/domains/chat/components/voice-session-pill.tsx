@@ -56,7 +56,7 @@ import type { CSSProperties } from "react";
 
 import { Mic, MicOff, TriangleAlert, Volume2, VolumeX, X } from "lucide-react";
 
-import { Button, Tag, cn } from "@vellumai/design-library";
+import { Button, Tag, cn } from "@mycadet/design-library";
 
 import {
   isLiveVoiceMicLive,
@@ -253,9 +253,17 @@ export function VoiceSessionPill({
         // touch chrome.
         expandOnMobile={isRow}
         onClick={onToggleMute}
-        aria-label={muted ? t("voiceSessionPill.unmuteMic") : t("voiceSessionPill.muteMic")}
+        aria-label={
+          muted
+            ? t("voiceSessionPill.unmuteMic")
+            : t("voiceSessionPill.muteMic")
+        }
         aria-pressed={muted}
-        tooltip={muted ? t("voiceSessionPill.unmuteMic") : t("voiceSessionPill.muteMic")}
+        tooltip={
+          muted
+            ? t("voiceSessionPill.unmuteMic")
+            : t("voiceSessionPill.muteMic")
+        }
         className={cn("relative", VOICE_SURFACE_CONTROL_CLASS)}
         style={muted ? mutedInk : undefined}
       />
@@ -295,9 +303,17 @@ export function VoiceSessionPill({
             )
           }
           expandOnMobile={isRow}
-          aria-label={outputMuted ? t("voiceSessionPill.unmuteAssistant") : t("voiceSessionPill.muteAssistant")}
+          aria-label={
+            outputMuted
+              ? t("voiceSessionPill.unmuteAssistant")
+              : t("voiceSessionPill.muteAssistant")
+          }
           aria-pressed={outputMuted}
-          tooltip={outputMuted ? t("voiceSessionPill.unmuteAssistant") : t("voiceSessionPill.muteAssistant")}
+          tooltip={
+            outputMuted
+              ? t("voiceSessionPill.unmuteAssistant")
+              : t("voiceSessionPill.muteAssistant")
+          }
           onClick={onToggleOutputMute}
           className={cn("relative", VOICE_SURFACE_CONTROL_CLASS)}
           style={outputMuted ? mutedInk : undefined}

@@ -36,14 +36,14 @@ mock.module("electron", () => ({
 let featureFlags: Record<string, boolean> = {};
 let onboardingActive = false;
 let chromeDevTools = false;
-mock.module("@vellumai/electron-desktop/settings", () => ({
+mock.module("@mycadet/electron-desktop/settings", () => ({
   readSetting: () => featureFlags,
   onSettingChange: () => () => undefined,
 }));
-mock.module("@vellumai/electron-desktop/window-state", () => ({
+mock.module("@mycadet/electron-desktop/window-state", () => ({
   readOnboardingActive: () => onboardingActive,
 }));
-mock.module("@vellumai/electron-desktop/devtools", () => ({
+mock.module("@mycadet/electron-desktop/devtools", () => ({
   areChromeDevToolsEnabled: () => chromeDevTools,
 }));
 mock.module("./main-window", () => ({
@@ -113,7 +113,7 @@ describe("buildLinuxMenu", () => {
       (entry) => entry.label === "New Conversation",
     );
     (item?.click as (() => void) | undefined)?.();
-    expect(sent).toEqual([["vellum:command", { kind: "newConversation" }]]);
+    expect(sent).toEqual([["cadet:command", { kind: "newConversation" }]]);
   });
 });
 
@@ -128,7 +128,7 @@ describe("installLinuxMenu", () => {
   });
 
   test("reports the top-level menu ids and labels", () => {
-    const titles = handlers.get("vellum:menu:titles")?.([], {});
+    const titles = handlers.get("cadet:menu:titles")?.([], {});
     expect(titles).toEqual([
       { id: "file", label: "File" },
       { id: "edit", label: "Edit" },
@@ -139,7 +139,7 @@ describe("installLinuxMenu", () => {
   });
 
   test("pops the requested submenu at zoom-scaled coordinates", async () => {
-    await handlers.get("vellum:menu:popup")?.(["edit", 100, 44], {
+    await handlers.get("cadet:menu:popup")?.(["edit", 100, 44], {
       sender: { getZoomFactor: () => 1.25 },
     });
     expect(popups).toHaveLength(1);
@@ -151,7 +151,7 @@ describe("installLinuxMenu", () => {
   });
 
   test("ignores popups for unknown ids", async () => {
-    await handlers.get("vellum:menu:popup")?.(["nope", 0, 0], {
+    await handlers.get("cadet:menu:popup")?.(["nope", 0, 0], {
       sender: { getZoomFactor: () => 1 },
     });
     expect(popups).toHaveLength(1);

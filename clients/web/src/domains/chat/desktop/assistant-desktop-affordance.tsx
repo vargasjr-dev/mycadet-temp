@@ -1,4 +1,4 @@
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { Monitor } from "lucide-react";
 
 import { useAssistantName } from "@/hooks/use-assistant-name";

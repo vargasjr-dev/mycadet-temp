@@ -27,10 +27,10 @@ import {
   type CompanionPopover,
   type CompanionPopoverAction,
   type CompanionPopoverPermission,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { PendingConfirmationState } from "@/domains/chat/types";
-import { CardSurfaceDataSchema } from "@vellumai/assistant-api";
+import { CardSurfaceDataSchema } from "@mycadet/assistant-api";
 
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { useInteractionStore } from "@/domains/chat/interaction-store";
@@ -233,14 +233,18 @@ function popoverForPicker(): CompanionPopover | undefined {
     return {
       kind: "voices",
       id: COMPANION_PICKER_VOICES,
-      groups: voices.groups.slice(0, COMPANION_PICKER_OPTIONS_MAX).map((group) => ({
-        accent: bounded(group.accent, 120),
-        voices: group.voices.slice(0, COMPANION_PICKER_OPTIONS_MAX).map((voice) => ({
-          ...voice,
-          label: bounded(voice.label, 200),
-          sampleUrl: voice.sampleUrl.length > 2048 ? "" : voice.sampleUrl,
+      groups: voices.groups
+        .slice(0, COMPANION_PICKER_OPTIONS_MAX)
+        .map((group) => ({
+          accent: bounded(group.accent, 120),
+          voices: group.voices
+            .slice(0, COMPANION_PICKER_OPTIONS_MAX)
+            .map((voice) => ({
+              ...voice,
+              label: bounded(voice.label, 200),
+              sampleUrl: voice.sampleUrl.length > 2048 ? "" : voice.sampleUrl,
+            })),
         })),
-      })),
       selected: voices.selected,
     };
   }

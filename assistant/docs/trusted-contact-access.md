@@ -232,7 +232,7 @@ sequenceDiagram
 
 ### Verification code expires
 
-- Verification sessions have a 10-minute TTL (`CHALLENGE_TTL_MS`, shared via `@vellumai/gateway-client`).
+- Verification sessions have a 10-minute TTL (`CHALLENGE_TTL_MS`, shared via `@mycadet/gateway-client`).
 - After expiry, the gateway's `findPendingSessionByHash()` filters by `expiresAt > now`, so the code silently becomes invalid.
 - The requester receives the generic "code is invalid or has expired" message.
 - The guardian can re-initiate the flow by approving again, which creates a new session (auto-revoking any prior live sessions on the channel).

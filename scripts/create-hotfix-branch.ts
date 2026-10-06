@@ -84,10 +84,10 @@ for (const pkg of packages) {
 const metaPkgPath = "meta/package.json";
 const metaPkg = readJson(metaPkgPath);
 const deps = metaPkg.dependencies as Record<string, string>;
-deps["@vellumai/assistant"] = versionStr;
-deps["@vellumai/cli"] = versionStr;
-deps["@vellumai/credential-executor"] = versionStr;
-deps["@vellumai/vellum-gateway"] = versionStr;
+deps["@mycadet/assistant"] = versionStr;
+deps["@mycadet/cli"] = versionStr;
+deps["@mycadet/credential-executor"] = versionStr;
+deps["@mycadet/vellum-gateway"] = versionStr;
 writeJson(metaPkgPath, metaPkg);
 console.log(`  Bumped meta dependencies to ${versionStr}`);
 
@@ -100,5 +100,5 @@ git(`push origin ${branchName}`);
 console.log(`Pushed ${branchName} to origin`);
 
 console.log(
-  `\nDone! Branch ${branchName} is ready for cherry-picking hotfix commits.`
+  `\nDone! Branch ${branchName} is ready for cherry-picking hotfix commits.`,
 );

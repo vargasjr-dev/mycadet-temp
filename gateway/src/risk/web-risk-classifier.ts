@@ -9,7 +9,7 @@
  * - network_request: always Medium (proxied credentials)
  */
 
-import { normalizeWebUrl } from "@vellumai/service-contracts/url-normalization";
+import { normalizeWebUrl } from "@mycadet/service-contracts/url-normalization";
 
 import type {
   AllowlistOption,
@@ -52,7 +52,7 @@ function friendlyHostname(url: URL): string {
  * is not also done to the lookup key produces a rule that cannot fire.
  *
  * The URL is normalized through the shared canonicalizer
- * (`@vellumai/service-contracts/url-normalization`), so the saved pattern has
+ * (`@mycadet/service-contracts/url-normalization`), so the saved pattern has
  * one spelling rather than whichever the model wrote. Lookup does not
  * normalize, so a saved rule matches only an invocation already written in
  * canonical form.

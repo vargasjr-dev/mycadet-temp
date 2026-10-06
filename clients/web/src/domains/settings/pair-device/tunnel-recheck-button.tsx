@@ -1,4 +1,4 @@
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 import { RefreshCw } from "lucide-react";
 
 import { useTranslation } from "@/i18n";

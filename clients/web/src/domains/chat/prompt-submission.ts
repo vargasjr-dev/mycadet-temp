@@ -21,7 +21,7 @@
  */
 
 import { type ParseKeys, t } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import type { SubmitSecretResponseResult } from "@/domains/chat/api/interactions";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
@@ -97,7 +97,7 @@ export function stillOwnsSubmission(
  * The message is a catalog key rather than a string, so what reaches the banner
  * is copy written for this surface in the reader's language. An assistant's own
  * rejection text describes a request the client built and cannot be passed
- * here: it belongs in Sentry, where it names the mismatch.
+ * here: it belongs in the error report, which names the mismatch.
  */
 export function reportSubmissionFailure(
   kind: PromptKind,

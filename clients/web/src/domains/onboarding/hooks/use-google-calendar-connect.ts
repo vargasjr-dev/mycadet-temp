@@ -12,7 +12,7 @@
  * scope set and a callback carrying the scopes actually granted.
  */
 
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 import { useEffect, useRef } from "react";
 
 import { useManagedOAuthConnect } from "@/hooks/use-managed-oauth-connect";

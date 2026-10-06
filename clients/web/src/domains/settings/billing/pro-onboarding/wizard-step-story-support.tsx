@@ -6,7 +6,7 @@
  * Not a `.stories.tsx` file, so Storybook does not index it.
  */
 import type { ReactNode } from "react";
-import { Modal } from "@vellumai/design-library/components/modal";
+import { Modal } from "@mycadet/design-library/components/modal";
 
 import type { Assistant } from "@/generated/api/types.gen";
 

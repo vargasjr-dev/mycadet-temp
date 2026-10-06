@@ -58,7 +58,7 @@ import type {
   HookFunction,
   Message,
   PostToolUseContext,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 /**
  * Canonical long-dig notice. Module-level constant so tests and wrapping

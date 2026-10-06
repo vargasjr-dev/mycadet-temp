@@ -5,7 +5,7 @@
  * routes. The gateway owns the `channel_verification_sessions` table and
  * mints all secrets; the daemon relays lifecycle operations here and keeps
  * message composition and channel delivery. Responses are validated against
- * the shared contract schemas in `@vellumai/gateway-client` — the same
+ * the shared contract schemas in `@mycadet/gateway-client` — the same
  * schemas the gateway routes are pinned to.
  *
  * Error posture (fail-closed — there is no local fallback):
@@ -33,13 +33,13 @@ import {
   VERIFICATION_SESSIONS_IPC_METHODS,
   type VerificationSessionsIpcMethod,
   type VerificationSessionWire,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import type { ZodType } from "zod";
 
 import { ipcCallPersistentValidated } from "../ipc/gateway-validated-call.js";
 import { composeApprovalMessage } from "../runtime/approval-message-composer.js";
 
-export type { VerificationSessionWire } from "@vellumai/gateway-client";
+export type { VerificationSessionWire } from "@mycadet/gateway-client";
 
 export interface CreateVerificationSessionResult {
   challengeId: string;

@@ -5,7 +5,7 @@ import type {
   TitleBarOverlayTheme,
   VellumBridge,
   VellumCommand,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 export const WINDOWS_CORE_CAPABILITIES = [
   "platform",
@@ -39,32 +39,32 @@ export const createWindowsCoreBridge = (
   hostOS: "windows",
   app: {
     versionInfo: (): Promise<AppVersionInfo> =>
-      ipcRenderer.invoke("vellum:app:versionInfo") as Promise<AppVersionInfo>,
+      ipcRenderer.invoke("cadet:app:versionInfo") as Promise<AppVersionInfo>,
     openWebsite: (): Promise<void> =>
-      ipcRenderer.invoke("vellum:app:openWebsite") as Promise<void>,
+      ipcRenderer.invoke("cadet:app:openWebsite") as Promise<void>,
   },
   commands: {
     on: (callback) => {
       const handler = (_event: IpcRendererEvent, command: VellumCommand) => {
         callback(command);
       };
-      ipcRenderer.on("vellum:command", handler);
+      ipcRenderer.on("cadet:command", handler);
       return () => {
-        ipcRenderer.off("vellum:command", handler);
+        ipcRenderer.off("cadet:command", handler);
       };
     },
   },
   mainWindow: {
     ensureVisible: (): Promise<void> =>
-      ipcRenderer.invoke("vellum:mainWindow:ensureVisible") as Promise<void>,
+      ipcRenderer.invoke("cadet:mainWindow:ensureVisible") as Promise<void>,
     setOnboarding: (active: boolean): Promise<void> =>
       ipcRenderer.invoke(
-        "vellum:mainWindow:setOnboarding",
+        "cadet:mainWindow:setOnboarding",
         active,
       ) as Promise<void>,
     setTitleBarOverlay: (theme: TitleBarOverlayTheme): Promise<void> =>
       ipcRenderer.invoke(
-        "vellum:mainWindow:setTitleBarOverlay",
+        "cadet:mainWindow:setTitleBarOverlay",
         theme,
       ) as Promise<void>,
   },

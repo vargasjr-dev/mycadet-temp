@@ -22,7 +22,7 @@
 import { useEffect } from "react";
 
 import { backgroundtoolsGet } from "@/generated/daemon/sdk.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   useBackgroundTaskStore,
   type BackgroundTaskEntry,

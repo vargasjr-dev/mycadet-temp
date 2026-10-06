@@ -9,8 +9,8 @@
  * wire; the consumer re-joins them locally by contactId.
  */
 
-import type { TrustVerdict } from "@vellumai/gateway-client";
-import { isTrustClass } from "@vellumai/gateway-client";
+import type { TrustVerdict } from "@mycadet/gateway-client";
+import { isTrustClass } from "@mycadet/gateway-client";
 
 import type { ChannelId } from "../channels/types.js";
 import { channelStatusToMemberStatus } from "../contacts/member-status.js";

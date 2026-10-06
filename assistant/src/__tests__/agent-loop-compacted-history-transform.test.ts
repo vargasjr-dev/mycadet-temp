@@ -11,7 +11,7 @@
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { PostCompactContext } from "@vellumai/plugin-api";
+import type { PostCompactContext } from "@mycadet/plugin-api";
 
 import { AgentLoop } from "../agent/loop.js";
 import type { ContextWindowConfig } from "../config/types.js";

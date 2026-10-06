@@ -5,7 +5,7 @@
  * The memory worker's startup orphan sweep runs in a separate process that can
  * race ahead of the daemon's async migrations. Its per-orphan delete clears
  * `llm_request_logs` (logs DB) and pending `telemetry_events` (telemetry DB),
- * and reaches `@vellumai/plugin-api.deleteConversation`, which routes to
+ * and reaches `@mycadet/plugin-api.deleteConversation`, which routes to
  * `deleteConversationGently`. So BOTH delete variants are exercised here: the
  * synchronous `deleteConversation` (used by the HTTP route) and the off-loop
  * `deleteConversationGently` (used by the sweep).

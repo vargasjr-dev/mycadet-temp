@@ -12,7 +12,7 @@
  * itself once its output has drained is observed rather than fatal.
  * The caller passes its own (possibly mock-backed) registration function, so
  * this helper imports nothing from `src/` beyond what any test file may
- * import itself (see the test-machinery isolation rules in assistant/CLAUDE.md).
+ * import itself (the test-machinery isolation rule).
  */
 
 import { Command } from "commander";

@@ -643,9 +643,9 @@ export function SchedulingContent() {
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
             Scheduled tasks run as long as the assistant process is running.
-            On Vellum Cloud (the default), the assistant runs 24/7, so
+            On Cadet Cloud (the default), the assistant runs 24/7, so
             schedules, watchers, and heartbeats fire reliably regardless of
-            whether your desktop is on. For self-hosted installs, the Vellum
+            whether your desktop is on. For self-hosted installs, the Cadet
             daemon on your machine needs to be active.
           </p>
           <p className="mb-4 text-zinc-600">

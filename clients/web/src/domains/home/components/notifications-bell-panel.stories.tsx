@@ -20,8 +20,8 @@ import { NotificationsBellPanel } from "@/domains/home/components/notifications-
 import { feedItem } from "@/domains/home/feed-test-fixtures";
 import { clearAllArgs, markAllReadArgs } from "@/domains/home/utils";
 import { useTranslation } from "@/i18n";
-import type { FeedItem } from "@vellumai/assistant-api";
-import { Typography } from "@vellumai/design-library";
+import type { FeedItem } from "@mycadet/assistant-api";
+import { Typography } from "@mycadet/design-library";
 
 import { PANEL_LIST_CONTENT_HEIGHT } from "./notifications-bell";
 

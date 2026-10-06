@@ -2,7 +2,7 @@ import {
   type WatchRetroQuestion,
   type WatchRetroSurfaceData,
   WatchRetroSurfaceDataSchema,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import {
   Button,
   Card,
@@ -14,7 +14,7 @@ import {
   type StepperStep,
   Tag,
   Typography,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 import {
   ChevronLeft,
   ChevronRight,

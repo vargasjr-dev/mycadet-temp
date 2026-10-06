@@ -1,7 +1,7 @@
 /**
  * Gateway-served one-time credential entry page.
  *
- * Velay-tunneled deployments have no SPA server behind the tunnel (Velay only
+ * Tunnel-tunneled deployments have no SPA server behind the tunnel (Tunnel only
  * proxies allowlisted paths to the gateway, and the gateway serves no web
  * bundle), so the React entry page in `clients/web` is unreachable there.
  * This route serves a SELF-CONTAINED static page instead — inline CSS/JS, no

@@ -3,8 +3,8 @@ import {
   resolveTwilioPublicBaseUrl,
   TWILIO_STATUS_WEBHOOK_PATH,
   TWILIO_VOICE_WEBHOOK_PATH,
-} from "@vellumai/service-contracts/twilio-ingress";
-import { updatePhoneNumberWebhooks } from "@vellumai/twilio-client";
+} from "@mycadet/service-contracts/twilio-ingress";
+import { updatePhoneNumberWebhooks } from "@mycadet/twilio-client";
 
 import type { ConfigFileCache } from "../config-file-cache.js";
 import type { CredentialCache } from "../credential-cache.js";
@@ -49,7 +49,7 @@ function resolveEffectiveTwilioBaseUrl(
  * that fails is logged and the sync continues.
  */
 function claimTwilioWebhookIngressRoutes(phoneNumber: string): void {
-  if (!isFeatureFlagEnabled("velay-webhooks")) {
+  if (!isFeatureFlagEnabled("tunnel-webhooks")) {
     return;
   }
   for (const claim of TWILIO_WEBHOOK_CLAIMS) {

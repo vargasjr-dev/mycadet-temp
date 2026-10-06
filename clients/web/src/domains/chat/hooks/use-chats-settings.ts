@@ -13,7 +13,7 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useAssistantCapabilityQuery } from "@/hooks/use-assistant-capability";
 import { getOrgHeaderReadiness, useIsOrgReady } from "@/hooks/use-is-org-ready";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 
 interface UseChatsSettingsOptions {

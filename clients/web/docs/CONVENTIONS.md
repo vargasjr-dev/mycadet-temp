@@ -153,12 +153,11 @@ predicate used by both the boundary and `LazyBoundary`
 non-route lazy components (modals, inline lazy widgets) use
 `LazyBoundary` directly.
 
-`RouterProvider.onError` in `main.tsx` is the single Sentry capture
-point for router errors — it tags each event with
-`boundary: "lazy-route"` for chunk failures and
-`boundary: "route-render"` for everything else, so the two are
-sliceable in Sentry. Component-level `LazyBoundary` tags its captures
-analogously (`"lazy-component"` / `"component-render"`).
+`RouterProvider.onError` in `main.tsx` is the single report point
+for router errors — it tags each report with `boundary: "lazy-route"`
+for chunk failures and `boundary: "route-render"` for everything else.
+`LazyBoundary` catches component-level render errors with the same
+fallback treatment.
 
 References:
 - [React Router — Route Object (`Component`)](https://reactrouter.com/start/data/route-object#component)
@@ -188,20 +187,20 @@ nothing to catch if the lookup does not throw.
 
 For errors caught in `try/catch` blocks, `onError` callbacks, and other
 imperative code paths (as opposed to errors caught by error boundaries),
-use `captureError()` from `lib/sentry/capture-error.ts`:
+use `captureError()` from `lib/error-reporting`:
 
 ```ts
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting";
 
 captureError(err, { context: "my_operation" });
-// With additional indexed Sentry tags:
+// With additional indexed tags:
 captureError(err, { context: "my_operation", tags: { cause, platform } });
 ```
 
 `captureError` handles: transient network-error filtering (via
-`isTransientNetworkError` in `utils/`), `console.error` logging, and
-Sentry capture with structured tags. `context` is always added as a tag;
-pass additional indexed tags via `tags` and unindexed metadata via `extra`.
+`isTransientNetworkError` in `utils/`) and `console.error` logging with
+structured context. `context` always prefixes the log; pass additional
+indexed tags via `tags` and unindexed metadata via `extra`.
 Toast/UI display stays at the call site — `captureError` never shows
 user-facing UI.
 
@@ -210,45 +209,37 @@ optimistically and have natural retry surfaces like SSE reconnect or
 navigation), pass `bestEffort: true`. This additionally filters expected
 daemon transient errors (503 startup, 502 bad-gateway, 401 auth-race,
 400 org-header-not-ready) while still reporting unexpected errors (500,
-data-integrity, programming errors) to Sentry:
+data-integrity, programming errors):
 
 ```ts
 captureError(err, { context: "useActiveConversation.refreshRow", bestEffort: true });
 ```
 
-**Do not use bare `Sentry.captureException`.** The only exceptions are
-framework-level integration points that need raw Sentry scope
-manipulation: `RouteErrorBoundary`, `RouterProvider.onError`, and
-`LazyBoundary`.
+**Do not `console.error` raw from feature code** — route it through
+`captureError` so the filtering and context conventions hold.
 
-### Sentry telemetry: when to use what
+### Diagnostics: when to use what
 
-| Tool | Creates Sentry issue? | Use when |
-|------|-----------------------|----------|
-| `captureError(err, opts)` | Yes | Catching a real error that indicates a bug or degraded UX. |
-| `Sentry.captureMessage(msg)` | Yes | A non-error event where **every occurrence is individually actionable** (e.g., silent SSE event loss that left a user's turn stuck). |
-| `Sentry.addBreadcrumb(...)` | No — attaches to the next error event | Recording context that's useful for debugging nearby errors but isn't actionable on its own (e.g., watchdog fired, reconnect attempted). |
-| `recordDiagnostic` / `recordLifecycleDiagnostic` | No | Local diagnostics ring shipped via support bundles. |
+| Tool | Use when |
+|------|----------|
+| `captureError(err, opts)` | Catching a real error that indicates a bug or degraded UX. |
+| `console.warn(msg, detail)` | A warning-grade condition worth surfacing in the console but not an error. |
+| `recordDiagnostic` / `recordLifecycleDiagnostic` | Observability data for the local diagnostics ring shipped via support bundles. |
 
-**Default to breadcrumb.** A `captureMessage` call that fires on normal
-operation (e.g., every iOS background/foreground cycle, every legacy URL
-redirect) creates a Sentry issue that never closes — it's noise that
-obscures real errors. If the event isn't individually actionable, use a
-breadcrumb so it attaches as context to real errors instead.
+**Don't spam warnings.** A `console.warn` that fires on normal operation
+(e.g., every iOS background/foreground cycle, every legacy URL redirect)
+is noise that obscures real failures. If a condition isn't individually
+actionable, leave it out or record it as a diagnostic instead.
 
-Reserve `captureMessage` for events where you'd page someone or open a
-ticket if the count spiked — e.g., SSE terminal-event loss
+Reserve warnings for events where you'd page someone or open a ticket if
+the count spiked — e.g., SSE terminal-event loss
 (`sse_poll_reconciled_rescue`), where every occurrence means a user saw a
 stuck turn.
-
-References:
-- [Sentry — Breadcrumbs](https://docs.sentry.io/platforms/javascript/enriching-events/breadcrumbs/)
-- [Sentry — `captureMessage`](https://docs.sentry.io/platforms/javascript/usage/#capturing-messages)
 
 **No bare `catch` blocks that discard errors.** Every `catch` must
 either report the error (toast + `captureError`) or re-throw it. A
 `catch { return; }` that silently swallows failures is a bug — the user
-gets no feedback and Sentry gets no telemetry. When a multi-step async
+gets no feedback and nothing is logged. When a multi-step async
 function has per-step error handling, the outer catch may be silent only
 if every inner step already reports its own errors before re-throwing.
 
@@ -306,7 +297,7 @@ src/
     event-types.ts
     conversation-types.ts
   lib/                             # third-party integrations & infrastructure
-    sentry/                        #   Sentry error reporting (init, consent control)
+    error-reporting/               #   captureError console reporter
     auth/                          #   allauth client, CSRF, auth middleware
     feature-flags/                 #   feature flag provider
     sync/                          #   server state sync (query-tag keys, sync types)
@@ -501,7 +492,7 @@ owns it.
 | `hooks/` | Cross-domain React hooks | `use-is-mobile.ts`, `use-visible-viewport.ts`, `use-feature-flag-bus-sync.ts` |
 | `utils/` | Pure utility functions (no side effects, no third-party SDKs) | `format-date.ts`, `semver.ts`, `to-error.ts`, `create-selectors.ts` |
 | `types/` | Cross-domain shared type definitions with no clear owning module. Types consumed by a single module live with that module. Types produced by a module live in the module that produces them — consumers use `import type`. | `window.d.ts`, `event-types.ts`, `conversation-types.ts` |
-| `lib/` | Third-party SDK wrappers and app-internal infrastructure (registries, transports, interceptors). Side effects, module-level state, or lifecycle ownership. See [`lib/` vs `utils/`](#lib-vs-utils--where-does-my-code-go) below. | `sentry/` (error reporting), `auth/` (allauth + CSRF), `feature-flags/` (catalog + registry), `sync/` (state sync), `streaming/` (SSE transport), `event-bus.ts` (pub/sub registry), `diagnostics.ts` (session ring buffer), `api-interceptors.ts` (HeyAPI) |
+| `lib/` | Third-party SDK wrappers and app-internal infrastructure (registries, transports, interceptors). Side effects, module-level state, or lifecycle ownership. See [`lib/` vs `utils/`](#lib-vs-utils--where-does-my-code-go) below. | `error-reporting/` (captureError), `auth/` (allauth + CSRF), `feature-flags/` (catalog + registry), `sync/` (state sync), `streaming/` (SSE transport), `event-bus.ts` (pub/sub registry), `diagnostics.ts` (session ring buffer), `api-interceptors.ts` (HeyAPI) |
 | `runtime/` | Framework adapters and native platform bridges | `native-auth.ts`, `native-deep-link.ts`, `platform-detection.ts`, `event-sources/` |
 | `components/` | Cross-domain shared UI | `error-boundary.tsx`, `sign-in-gate.tsx`, `providers.tsx` |
 
@@ -513,9 +504,9 @@ owns it.
 |---|---|---|
 | **Purpose** | Infrastructure with side effects or lifecycle — third-party SDK wrappers AND app-internal primitives (registries, transports, interceptors, middlewares) | Pure helper functions with no side effects |
 | **Side effects?** | Yes — module-level state, listener registration, SDK init, interceptors, or pub/sub registries | No — pure input→output, no global state, no I/O |
-| **Third-party SDK dependency?** | Optional — third-party wrappers (`@sentry/react`, `@heyapi/client-fetch`) AND first-party infrastructure (`event-bus.ts`, `chunk-errors.ts`, `local-mode.ts`) both belong here | No — only standard library / language utilities |
-| **Subdirectories?** | When a single integration warrants multiple files (`lib/sentry/`, `lib/auth/`, `lib/sync/`); single-file infrastructure stays at the `lib/` top level (`lib/diagnostics.ts`, `lib/event-bus.ts`) | Flat — individual utility files at the top level |
-| **Examples** | `lib/sentry/sentry-init.ts`, `lib/auth/allauth-client.ts`, `lib/api-interceptors.ts`, `lib/event-bus.ts`, `lib/diagnostics.ts`, `lib/chunk-errors.ts` | `utils/format-date.ts`, `utils/semver.ts`, `utils/to-error.ts` |
+| **Third-party SDK dependency?** | Optional — third-party wrappers (`@heyapi/client-fetch`) AND first-party infrastructure (`event-bus.ts`, `chunk-errors.ts`, `local-mode.ts`) both belong here | No — only standard library / language utilities |
+| **Subdirectories?** | When a single integration warrants multiple files (`lib/error-reporting/`, `lib/auth/`, `lib/sync/`); single-file infrastructure stays at the `lib/` top level (`lib/diagnostics.ts`, `lib/event-bus.ts`) | Flat — individual utility files at the top level |
+| **Examples** | `lib/error-reporting/capture-error.ts`, `lib/auth/allauth-client.ts`, `lib/api-interceptors.ts`, `lib/event-bus.ts`, `lib/diagnostics.ts`, `lib/chunk-errors.ts` | `utils/format-date.ts`, `utils/semver.ts`, `utils/to-error.ts` |
 
 If the code holds state at module scope, registers global listeners,
 configures an SDK, manages a session, or runs at startup, it belongs
@@ -528,7 +519,7 @@ Reference: [Bulletproof React — `lib/` directory](https://github.com/alan2207/
 
 Both contain infrastructure code, but they serve different purposes:
 
-- **`lib/`** — third-party SDK wrappers (Sentry, HeyAPI, allauth) *and* app-internal infrastructure (event bus, diagnostics buffer, chunk-error recovery). The common thread: side effects, module-level state, or lifecycle ownership.
+- **`lib/`** — third-party SDK wrappers (HeyAPI, allauth) *and* app-internal infrastructure (event bus, diagnostics buffer, chunk-error recovery). The common thread: side effects, module-level state, or lifecycle ownership.
 - **`runtime/`** — adapts the app to its *host environment* (Capacitor native bridges, route adapters, platform detection). These handle differences between web, iOS, and macOS without third-party SDK dependencies.
 
 If the code bridges to the native platform / framework runtime →
@@ -742,7 +733,7 @@ attributes whose props changed, and a changing prop would clobber the
 imperative write.
 
 Reference: `lib/commit-pressure.ts` — the probe that measures this
-traffic and attaches it to error-185 Sentry events.
+traffic and attaches it to error-185 boot-telemetry events.
 
 ### Don't measure an element to give back the space you took from it
 
@@ -942,7 +933,7 @@ second copy of React and white-screens the app. See
 [`clients/web/AGENTS.md`](../AGENTS.md) for the full constraint.
 
 ```ts
-import { Button, Typography } from "@vellumai/design-library";
+import { Button, Typography } from "@mycadet/design-library";
 ```
 
 Design system components accept props and render UI. They must not
@@ -974,7 +965,7 @@ usage).
 
 ```ts
 // Domain wrapper — lives in domains/chat/components/chat-markdown-message.tsx
-import { MarkdownMessage } from "@vellumai/design-library";
+import { MarkdownMessage } from "@mycadet/design-library";
 
 // OAuthAwareLink defined in the same file (or extracted to a lib file)
 export function ChatMarkdownMessage(props: ChatMarkdownMessageProps) {
@@ -1130,7 +1121,7 @@ from the wire the moment the schema changes.
 
 `src/generated/` covers what the HTTP routes carry. A wire shape no route
 declares, such as a conversation stream event and the shapes nested in it,
-comes from `@vellumai/assistant-api` instead: the zod schemas in
+comes from `@mycadet/assistant-api` instead: the zod schemas in
 `assistant/src/api`, served to the web as source (see `AGENTS.md`). The two
 share one origin, since a route whose `responseBody` embeds one of those
 schemas reaches `src/generated/` through the OpenAPI spec. Import the value
@@ -1141,7 +1132,7 @@ client: add or correct the route's `responseBody` (the daemon routes in
 `assistant/src/runtime/routes/*` declare zod `responseBody` schemas that
 drive the OpenAPI spec) and regenerate — do **not** paper over it with a
 hand-rolled type. A missing response-body schema is the usual reason a
-type isn't generated. For a shape from `@vellumai/assistant-api`, the fix
+type isn't generated. For a shape from `@mycadet/assistant-api`, the fix
 is its schema in `assistant/src/api`.
 
 ```ts

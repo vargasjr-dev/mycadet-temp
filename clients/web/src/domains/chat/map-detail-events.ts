@@ -6,7 +6,7 @@
  * so the timeline stays compact and readable.
  */
 
-import type { SubagentDetailEvent } from "@vellumai/assistant-api";
+import type { SubagentDetailEvent } from "@mycadet/assistant-api";
 
 import type { SubagentTimelineEvent } from "@/domains/chat/subagent-store";
 

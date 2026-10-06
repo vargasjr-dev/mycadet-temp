@@ -26,7 +26,7 @@ import {
  */
 export type VoiceModeActivator = PTTActivator;
 
-export const LS_VOICE_MODE_ACTIVATION_KEY = "vellum:voice:voiceModeActivation";
+export const LS_VOICE_MODE_ACTIVATION_KEY = "cadet:voice:voiceModeActivation";
 
 /**
  * The default binding off a Mac desktop host: Cmd+Shift+V on macOS,

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ConversationMessage } from "@vellumai/assistant-api";
+import type { ConversationMessage } from "@mycadet/assistant-api";
 import { mapRuntimeToDisplayMessage } from "@/domains/chat/utils/map-runtime-message";
 
 import {

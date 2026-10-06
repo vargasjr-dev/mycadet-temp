@@ -1,3 +1,4 @@
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import {
   findAssistantByName,
   getActiveAssistant,
@@ -223,7 +224,7 @@ export async function rollback(): Promise<void> {
   }
 
   // ---------- Managed (Vellum platform) rollback ----------
-  if (cloud === "vellum") {
+  if (isManagedCloud(cloud)) {
     await rollbackPlatformViaEndpoint(entry, version ?? undefined);
     return;
   }

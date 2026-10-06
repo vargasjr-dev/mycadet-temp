@@ -60,7 +60,7 @@ describe("getBuilderManagedEnvKeys", () => {
       a.name.localeCompare(b.name),
     );
     expect(sorted).toEqual([
-      { name: "VELAY_BASE_URL", hostVar: "VELAY_BASE_URL" },
+      { name: "TUNNEL_BASE_URL", hostVar: "TUNNEL_BASE_URL" },
       { name: "VELLUM_ENVIRONMENT", hostVar: "VELLUM_ENVIRONMENT" },
       { name: "VELLUM_PLATFORM_URL", hostVar: "VELLUM_PLATFORM_URL" },
     ]);

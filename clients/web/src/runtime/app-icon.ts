@@ -18,7 +18,7 @@
 
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { isNativeMobile } from "@/runtime/platform-detection";
 
 export interface AppIconState {

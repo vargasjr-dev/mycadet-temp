@@ -19,7 +19,7 @@
  */
 
 import type { ClientOs } from "@/runtime/platform-detection";
-import type { ShareTargetSnapshot } from "@vellumai/ipc-contract";
+import type { ShareTargetSnapshot } from "@mycadet/ipc-contract";
 
 // ---------------------------------------------------------------------------
 // Client frames (text/JSON control frames; audio goes over binary frames)
@@ -84,7 +84,11 @@ export type LiveVoiceTurnDetectionMode = "manual" | "server_vad";
  * unknown downstream rather than failing the session.
  */
 export type LiveVoiceEntry =
-  "composer" | "companion" | "voice_key" | "voice_key_ask" | "deep_link";
+  | "composer"
+  | "companion"
+  | "voice_key"
+  | "voice_key_ask"
+  | "deep_link";
 
 export interface LiveVoiceClientStartFrame {
   readonly type: "start";
@@ -154,7 +158,11 @@ export interface LiveVoiceClientStartFrame {
 
 /** A session control this client carries out on the assistant's behalf. */
 export type LiveVoiceSessionControl =
-  "end" | "mute" | "look_screen" | "look_camera" | "look_stop";
+  | "end"
+  | "mute"
+  | "look_screen"
+  | "look_camera"
+  | "look_stop";
 
 export interface LiveVoiceClientPttReleaseFrame {
   readonly type: "ptt_release";

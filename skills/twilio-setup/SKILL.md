@@ -55,7 +55,7 @@ Follow the steps below in order to fully configure Twilio in preparation to make
 
 ## Step 1: Check Current Configuration
 
-Mark setup as started before doing any read-only checks. This lets a managed gateway begin opening the Velay tunnel WebSocket immediately, so the public Twilio HTTP and WebSocket routes are warming up while the user finishes entering credentials and selecting a phone number:
+Mark setup as started before doing any read-only checks. This lets a managed gateway begin opening the Tunnel tunnel WebSocket immediately, so the public Twilio HTTP and WebSocket routes are warming up while the user finishes entering credentials and selecting a phone number:
 
 ```bash
 assistant config set twilio.setupStarted true
@@ -63,7 +63,7 @@ assistant platform status --json
 assistant gateway status --json
 ```
 
-If `assistant platform status --json` reports an available platform assistant but `assistant gateway status --json` returns `{}` (no `tunnel` URL yet), continue with setup and check status again before configuring webhooks. Do not treat this as an ngrok setup problem unless the assistant is local/self-hosted without Velay.
+If `assistant platform status --json` reports an available platform assistant but `assistant gateway status --json` returns `{}` (no `tunnel` URL yet), continue with setup and check status again before configuring webhooks. Do not treat this as an ngrok setup problem unless the assistant is local/self-hosted without Tunnel.
 
 Refer to "Checking Current Configuration" above to see the current state of the user's Twilio setup. If Twilio appears to be fully configured, offer to show status or reconfigure. If they are asking about inbound access or an unexpected first greeting, go to "Channel Trust Floors" and the matching Troubleshooting section. Otherwise, continue to the missing steps below.
 
@@ -178,9 +178,9 @@ assistant platform status --json
 assistant gateway status --json
 ```
 
-If `assistant platform status --json` reports an available platform assistant and `assistant gateway status --json` reports a `tunnel` URL (a `{ "tunnel": "..." }` object), do not load `public-ingress` or install ngrok. Use the managed Velay route for the WebSocket leg. If it returns `{}`, restart or re-hatch the assistant/gateway and check gateway logs for `Velay tunnel registered`; do not treat that as an ngrok setup problem.
+If `assistant platform status --json` reports an available platform assistant and `assistant gateway status --json` reports a `tunnel` URL (a `{ "tunnel": "..." }` object), do not load `public-ingress` or install ngrok. Use the managed Tunnel route for the WebSocket leg. If it returns `{}`, restart or re-hatch the assistant/gateway and check gateway logs for `Tunnel tunnel registered`; do not treat that as an ngrok setup problem.
 
-For local/self-hosted assistants without Velay, load the `public-ingress` skill to determine whether `ingress.publicBaseUrl` is configured and walk the user through setting one up if not.
+For local/self-hosted assistants without Tunnel, load the `public-ingress` skill to determine whether `ingress.publicBaseUrl` is configured and walk the user through setting one up if not.
 
 ### Configure Twilio Webhooks
 

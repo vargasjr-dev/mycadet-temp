@@ -28,7 +28,7 @@ import type * as AvatarApi from "@/assistant/avatar-api";
 import type { Assistant } from "@/generated/api";
 import { publish } from "@/lib/event-bus";
 import type * as AvatarLastSeenCache from "@/lib/avatar-last-seen-cache";
-import type { LocalReadAssistantAvatarResult } from "@vellumai/ipc-contract";
+import type { LocalReadAssistantAvatarResult } from "@mycadet/ipc-contract";
 import type * as LocalModeHost from "@/runtime/local-mode-host";
 import type { ResolvedAssistant } from "@/stores/resolved-assistants-store";
 import type {
@@ -77,10 +77,13 @@ const readAssistantAvatarHost = mock(
     avatar: null,
   }),
 );
-mock.module("@/runtime/local-mode-host", (): Partial<typeof LocalModeHost> => ({
-  canReadAvatarFromLocalHost: () => hostAvailable,
-  readAssistantAvatarHost,
-}));
+mock.module(
+  "@/runtime/local-mode-host",
+  (): Partial<typeof LocalModeHost> => ({
+    canReadAvatarFromLocalHost: () => hostAvailable,
+    readAssistantAvatarHost,
+  }),
+);
 
 const traits: CharacterTraits = {
   bodyShape: "brontosaurus",
@@ -635,9 +638,9 @@ describe("useChooserRowAvatar", () => {
 
       expect(
         queryClient
-          .getQueryData<Map<string, string>>(
-            platformAvatarUrlsQueryKey("user-1", "org-1"),
-          )
+          .getQueryData<
+            Map<string, string>
+          >(platformAvatarUrlsQueryKey("user-1", "org-1"))
           ?.has("uuid-other"),
       ).toBe(false);
       await waitFor(() => {
@@ -678,9 +681,9 @@ describe("useChooserRowAvatar", () => {
 
       expect(
         queryClient
-          .getQueryData<Map<string, string>>(
-            platformAvatarUrlsQueryKey("user-1", "org-1"),
-          )
+          .getQueryData<
+            Map<string, string>
+          >(platformAvatarUrlsQueryKey("user-1", "org-1"))
           ?.has("other"),
       ).toBe(false);
       await waitFor(() => {

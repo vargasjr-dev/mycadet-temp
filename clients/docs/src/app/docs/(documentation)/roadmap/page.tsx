@@ -2,9 +2,9 @@ import { RoadmapContent } from "@/app/docs/_components/roadmap-content";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Roadmap - Vellum Docs",
+  title: "Roadmap - Cadet Docs",
   description:
-    "What's coming to Vellum — shipping soon, up next, on the horizon, and what we're exploring.",
+    "What's coming to Cadet — shipping soon, up next, on the horizon, and what we're exploring.",
   path: "/docs/roadmap",
 });
 

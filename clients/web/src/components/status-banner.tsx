@@ -20,8 +20,8 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router";
-import { Button } from "@vellumai/design-library/components/button";
-import { type NoticeTone } from "@vellumai/design-library/components/notice";
+import { Button } from "@mycadet/design-library/components/button";
+import { type NoticeTone } from "@mycadet/design-library/components/notice";
 
 import {
   type LocalAssistantHealth,
@@ -40,7 +40,7 @@ import { useConnectivityState } from "@/hooks/use-connectivity-state";
 import { useNetworkStatus } from "@/hooks/use-network-status";
 import { useResumeGrace } from "@/hooks/use-resume-grace";
 import { isCliWakeableAssistant } from "@/lib/local-mode";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { isElectron } from "@/runtime/is-electron";
 import {
   isLocalModeHostAvailable,

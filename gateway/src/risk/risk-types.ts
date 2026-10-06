@@ -19,7 +19,7 @@ import type {
   RiskLevelValue,
   RiskMatchType,
   RiskPatternScopeOption,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 export enum RiskLevel {
   Low = "low",

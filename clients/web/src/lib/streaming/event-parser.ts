@@ -4,7 +4,7 @@
  * Exports `parseAssistantEvent`, which takes a raw SSE payload and
  * returns a typed `AssistantEventEnvelope`. The primary path validates
  * the full envelope (metadata + inner message) against
- * `AssistantEventEnvelopeSchema` from `@vellumai/assistant-api`.
+ * `AssistantEventEnvelopeSchema` from `@mycadet/assistant-api`.
  * Payloads that don't match (unknown event types, legacy flat shapes)
  * are wrapped in an envelope with an `UnknownEvent` message so callers
  * can safely ignore them without crashing.
@@ -15,7 +15,7 @@ import {
   AssistantEventEnvelopeSchema,
   AssistantEventSchema,
   type AssistantEventEnvelope,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import { unknownEvent } from "@/lib/streaming/parse-helpers";
 import { unwrapMessageEnvelope } from "@/lib/streaming/sse-payload";
 

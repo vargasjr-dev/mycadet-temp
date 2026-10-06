@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import { parseLockfile } from "@vellumai/local-mode/contract";
+import { parseLockfile } from "@mycadet/local-mode/contract";
 
 import * as localModeHost from "@/runtime/local-mode-host";
 
@@ -134,7 +134,7 @@ import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useLockfileStore } from "@/stores/lockfile-store";
 
-const LOCKFILE_STORAGE_KEY = "vellum:local:lockfile";
+const LOCKFILE_STORAGE_KEY = "cadet:local:lockfile";
 const realFetch = globalThis.fetch;
 
 function setSelected(id: string): void {
@@ -932,7 +932,7 @@ describe("assistant classification", () => {
 
   test("a legacy entry with no cloud normalizes to local at the parse seam", () => {
     // Entries that predate the `cloud` field are normalized to "local" by
-    // parseLockfile (see @vellumai/local-mode/contract), so by the time one
+    // parseLockfile (see @mycadet/local-mode/contract), so by the time one
     // reaches isLocalAssistant its cloud is already set.
     const { assistants } = parseLockfile({
       assistants: [{ assistantId: "old" }],
@@ -1265,8 +1265,8 @@ describe("primeLocalGatewayConnection", () => {
     );
     expect(getSelfHostedActorToken()).toBeNull();
     expect(isGatewayAuthMode()).toBe(true);
-    expect(localStorage.getItem("vellum:gw:token")).toBeNull();
-    expect(localStorage.getItem("vellum:gw:tokenSource")).toBeNull();
+    expect(localStorage.getItem("cadet:gw:token")).toBeNull();
+    expect(localStorage.getItem("cadet:gw:tokenSource")).toBeNull();
   });
 
   test("paired re-prime keeps the connection live while the readiness probe is in flight", async () => {

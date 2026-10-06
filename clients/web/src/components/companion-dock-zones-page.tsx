@@ -35,7 +35,7 @@ import {
   COMPANION_DOCKS,
   type CompanionDock,
   type CompanionSurfaceState,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 /**
  * How far in from the display's edge a zone reaches, in points.

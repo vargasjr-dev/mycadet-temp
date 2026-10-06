@@ -14,7 +14,7 @@ import { useCallback, useRef, useState } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { configGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import { configPatch } from "@/generated/daemon/sdk.gen";

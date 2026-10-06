@@ -19,14 +19,12 @@
 import type { LucideIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 
-import {
-  cn,
-  Tooltip,
-  type CustomPropertyStyle,
-} from "@vellumai/design-library";
+import { cn, Tooltip, type CustomPropertyStyle } from "@mycadet/design-library";
 
-export interface SidebarIconTileProps
-  extends Omit<ComponentProps<"button">, "style" | "children" | "onClick"> {
+export interface SidebarIconTileProps extends Omit<
+  ComponentProps<"button">,
+  "style" | "children" | "onClick"
+> {
   icon: LucideIcon;
   /** The accessible name. */
   label: string;

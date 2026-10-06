@@ -7,7 +7,7 @@ import {
   useActiveAssistantLifecycleIsLoading,
   usePlatformGate,
 } from "@/hooks/use-platform-gate";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { useTranslation } from "@/i18n";
 
 interface MaintenanceModeBannerProps {

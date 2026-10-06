@@ -15,7 +15,7 @@
 
 import { createHash } from "node:crypto";
 
-import type { DeviceRecord } from "@vellumai/local-mode";
+import type { DeviceRecord } from "@mycadet/local-mode";
 
 import {
   type AssistantEntry,

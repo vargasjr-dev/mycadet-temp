@@ -8,12 +8,12 @@ describe("buildLlmsText", () => {
       {
         route: "/docs/pricing",
         title: "Pricing",
-        description: "Vellum pricing",
+        description: "Cadet pricing",
       },
       {
         route: "/docs/getting-started",
         title: "Getting Started",
-        description: "Install Vellum",
+        description: "Install Cadet",
       },
     ]);
 
@@ -21,24 +21,24 @@ describe("buildLlmsText", () => {
       .split("\n")
       .filter((line) => line.startsWith("- "));
     expect(bullets).toEqual([
-      "- [Getting Started](https://www.vellum.ai/docs/getting-started.md): Install Vellum",
-      "- [Pricing](https://www.vellum.ai/docs/pricing.md): Vellum pricing",
+      "- [Getting Started](https://www.mycadet.ai/docs/getting-started.md): Install Cadet",
+      "- [Pricing](https://www.mycadet.ai/docs/pricing.md): Cadet pricing",
     ]);
   });
 
   test("maps the docs index route to index.md and omits empty descriptions", () => {
     const text = buildLlmsText([
-      { route: "/docs", title: "Vellum Docs", description: "" },
+      { route: "/docs", title: "Cadet Docs", description: "" },
     ]);
 
-    expect(text).toContain("- [Vellum Docs](https://www.vellum.ai/docs/index.md)");
+    expect(text).toContain("- [Cadet Docs](https://www.mycadet.ai/docs/index.md)");
     expect(text).not.toContain("index.md):");
   });
 
   test("starts with the header and ends with a single trailing newline", () => {
     const text = buildLlmsText([]);
 
-    expect(text.startsWith("# Vellum Docs\n")).toBe(true);
+    expect(text.startsWith("# Cadet Docs\n")).toBe(true);
     expect(text.endsWith("\n")).toBe(true);
     expect(text.endsWith("\n\n")).toBe(false);
   });

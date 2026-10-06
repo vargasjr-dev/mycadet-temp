@@ -150,7 +150,7 @@ const { getMacHelperAppPath, getMacHelperPath } =
 const CTRL_OPTION = { kind: "modifierOnly", modifiers: ["control", "option"] };
 
 const invokeSetModifierHoldFrom = (hold: unknown, sender: FakeWebContents) =>
-  handlers["vellum:helper:hotkey:setModifierHold"](
+  handlers["cadet:helper:hotkey:setModifierHold"](
     { sender },
     hold,
   ) as Promise<unknown>;
@@ -186,7 +186,7 @@ const OPTION_CHORDS = {
 };
 
 const invokeSetChords = (binding: unknown, sender: FakeWebContents) =>
-  handlers["vellum:helper:hotkey:setChords"](
+  handlers["cadet:helper:hotkey:setChords"](
     { sender },
     binding,
   ) as Promise<unknown>;
@@ -219,18 +219,18 @@ const emitChord = (key: string): void => {
 };
 
 const invokeReadFrontSelection = () =>
-  handlers["vellum:helper:hotkey:readFrontSelection"]({
+  handlers["cadet:helper:hotkey:readFrontSelection"]({
     sender: defaultSender,
   }) as Promise<unknown>;
 
 const invokePing = () =>
-  handlers["vellum:helper:ping"]({ sender: defaultSender }) as Promise<unknown>;
+  handlers["cadet:helper:ping"]({ sender: defaultSender }) as Promise<unknown>;
 
 const invokeGetState = () =>
-  handlers["vellum:helper:state:get"]({ sender: defaultSender }) as unknown;
+  handlers["cadet:helper:state:get"]({ sender: defaultSender }) as unknown;
 
 const invokeRestart = () =>
-  handlers["vellum:helper:restart"]({ sender: defaultSender }) as unknown;
+  handlers["cadet:helper:restart"]({ sender: defaultSender }) as unknown;
 
 const wait = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -367,11 +367,11 @@ describe("permission request launchers", () => {
 describe("installHotkeyHelper", () => {
   test("registers the helper IPC handlers", () => {
     installHotkeyHelper();
-    expect(handlers["vellum:helper:ping"]).toBeDefined();
-    expect(handlers["vellum:helper:state:get"]).toBeDefined();
-    expect(handlers["vellum:helper:restart"]).toBeDefined();
-    expect(handlers["vellum:helper:hotkey:setModifierHold"]).toBeDefined();
-    expect(handlers["vellum:helper:hotkey:readFrontSelection"]).toBeDefined();
+    expect(handlers["cadet:helper:ping"]).toBeDefined();
+    expect(handlers["cadet:helper:state:get"]).toBeDefined();
+    expect(handlers["cadet:helper:restart"]).toBeDefined();
+    expect(handlers["cadet:helper:hotkey:setModifierHold"]).toBeDefined();
+    expect(handlers["cadet:helper:hotkey:readFrontSelection"]).toBeDefined();
   });
 
   test("pings the helper process", async () => {
@@ -569,7 +569,7 @@ describe("installHotkeyHelper", () => {
     );
 
     expect(defaultSender.send).toHaveBeenCalledWith(
-      "vellum:helper:hotkey:event",
+      "cadet:helper:hotkey:event",
       { kind: "modifierHold", state: "down" },
     );
   });
@@ -611,11 +611,11 @@ describe("installHotkeyHelper", () => {
 
     const chord = { kind: "chord", state: "down", key: "s" };
     expect(owner.send).toHaveBeenCalledWith(
-      "vellum:helper:hotkey:event",
+      "cadet:helper:hotkey:event",
       chord,
     );
     expect(focused.send).not.toHaveBeenCalledWith(
-      "vellum:helper:hotkey:event",
+      "cadet:helper:hotkey:event",
       chord,
     );
   });
@@ -669,7 +669,7 @@ describe("installHotkeyHelper", () => {
     );
 
     expect(defaultSender.send).toHaveBeenCalledWith(
-      "vellum:helper:hotkey:event",
+      "cadet:helper:hotkey:event",
       { kind: "modifierHold", state: "up", reason: "chord" },
     );
   });
@@ -879,7 +879,7 @@ describe("installHotkeyHelper", () => {
   test("asks the helper which of the named apps are running", async () => {
     installHotkeyHelper();
 
-    const pending = handlers["vellum:helper:apps:running"](
+    const pending = handlers["cadet:helper:apps:running"](
       { sender: defaultSender },
       ["com.electron.wispr-flow", "com.example.other"],
     ) as Promise<unknown>;
@@ -901,7 +901,7 @@ describe("installHotkeyHelper", () => {
   test("reads a helper that cannot say as no apps running", async () => {
     installHotkeyHelper();
 
-    const pending = handlers["vellum:helper:apps:running"](
+    const pending = handlers["cadet:helper:apps:running"](
       { sender: defaultSender },
       ["com.electron.wispr-flow"],
     ) as Promise<unknown>;
@@ -919,14 +919,14 @@ describe("installHotkeyHelper", () => {
     installHotkeyHelper();
 
     expect(
-      await (handlers["vellum:helper:apps:quit"](
+      await (handlers["cadet:helper:apps:quit"](
         { sender: defaultSender },
         "com.example.editor",
       ) as Promise<unknown>),
     ).toBe(false);
     expect(lastChild).toBeNull();
     expect(
-      await (handlers["vellum:helper:apps:running"]({ sender: defaultSender }, [
+      await (handlers["cadet:helper:apps:running"]({ sender: defaultSender }, [
         "com.example.editor",
       ]) as Promise<unknown>),
     ).toEqual([]);
@@ -936,7 +936,7 @@ describe("installHotkeyHelper", () => {
   test("reads the application in front from the helper", async () => {
     installHotkeyHelper();
 
-    const pending = handlers["vellum:helper:apps:frontmost"]({
+    const pending = handlers["cadet:helper:apps:frontmost"]({
       sender: defaultSender,
     }) as Promise<unknown>;
     expect(lastChild?.stdin.writes[0]).toContain('"method":"apps.frontmost"');
@@ -964,7 +964,7 @@ describe("installHotkeyHelper", () => {
       Buffer.from('{"jsonrpc":"2.0","method":"input.activity"}\n'),
     );
     expect(defaultSender.send).not.toHaveBeenCalledWith(
-      "vellum:helper:input:activity",
+      "cadet:helper:input:activity",
     );
 
     setPointerOnCompanion(false);
@@ -973,7 +973,7 @@ describe("installHotkeyHelper", () => {
       Buffer.from('{"jsonrpc":"2.0","method":"input.activity"}\n'),
     );
     expect(defaultSender.send).toHaveBeenCalledWith(
-      "vellum:helper:input:activity",
+      "cadet:helper:input:activity",
     );
   });
 
@@ -986,7 +986,7 @@ describe("installHotkeyHelper", () => {
     installHotkeyHelper();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
-    const watch = handlers["vellum:helper:input:setActivityWatch"](
+    const watch = handlers["cadet:helper:input:setActivityWatch"](
       { sender: defaultSender },
       true,
     ) as Promise<unknown>;
@@ -1092,7 +1092,7 @@ describe("installHotkeyHelper", () => {
     installHotkeyHelper();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
-    const pending = handlers["vellum:helper:input:setActivityWatch"](
+    const pending = handlers["cadet:helper:input:setActivityWatch"](
       { sender: defaultSender },
       true,
     ) as Promise<unknown>;
@@ -1107,14 +1107,14 @@ describe("installHotkeyHelper", () => {
       Buffer.from('{"jsonrpc":"2.0","method":"input.activity"}\n'),
     );
     expect(defaultSender.send).toHaveBeenCalledWith(
-      "vellum:helper:input:activity",
+      "cadet:helper:input:activity",
     );
   });
 
   test("asks the helper to quit an app and reports whether it was asked", async () => {
     installHotkeyHelper();
 
-    const pending = handlers["vellum:helper:apps:quit"](
+    const pending = handlers["cadet:helper:apps:quit"](
       { sender: defaultSender },
       "com.electron.wispr-flow",
     ) as Promise<unknown>;
@@ -1150,7 +1150,7 @@ describe("installHotkeyHelper", () => {
     await wait(5);
 
     expect(defaultSender.send).toHaveBeenLastCalledWith(
-      "vellum:helper:hotkey:event",
+      "cadet:helper:hotkey:event",
       { kind: "modifierHold", state: "up", reason: "cancelled" },
     );
   });
@@ -1169,7 +1169,7 @@ describe("installHotkeyHelper", () => {
         '{"jsonrpc":"2.0","method":"hotkey.event","params":{"kind":"modifierHold","state":"down"}}\n',
       ),
     );
-    expect(second.send).toHaveBeenCalledWith("vellum:helper:hotkey:event", {
+    expect(second.send).toHaveBeenCalledWith("cadet:helper:hotkey:event", {
       kind: "modifierHold",
       state: "down",
     });

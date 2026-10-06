@@ -8,7 +8,7 @@
  */
 
 import { ArrowRight } from "lucide-react";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import { OnboardingTopBar } from "@/domains/onboarding/components/onboarding-top-bar";
 import {

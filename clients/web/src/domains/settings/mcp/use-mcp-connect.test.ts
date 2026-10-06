@@ -100,7 +100,7 @@ mock.module("@/runtime/is-electron", () => ({
 }));
 
 const captureErrorMock = mock((_error: unknown, _options: unknown) => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 

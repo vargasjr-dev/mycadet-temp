@@ -1091,7 +1091,7 @@ export function loadConfig(): AssistantConfig {
           fileConfig = parsed;
         }
       } catch (err) {
-        // The daemon must never block startup (assistant/CLAUDE.md). A config
+        // The daemon must never block startup. A config
         // file that fails JSON.parse — truncated during a mid-write crash, or
         // hand-edited to invalid JSON — is quarantined so the content is
         // preserved for debug, and startup proceeds with the same default-

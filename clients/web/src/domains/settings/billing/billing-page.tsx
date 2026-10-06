@@ -32,9 +32,9 @@ import {
 } from "@/hooks/use-platform-gate";
 import { useIsPlatformSessionSettled } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Tabs } from "@vellumai/design-library/components/tabs";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Tabs } from "@mycadet/design-library/components/tabs";
+import { toast } from "@mycadet/design-library/components/toast";
 
 /**
  * Handles the `billing_status` query parameter that Stripe redirects back with

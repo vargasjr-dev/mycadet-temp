@@ -1,6 +1,5 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
 
-import * as Sentry from "@sentry/react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -32,7 +31,7 @@ import {
   fetchConversationMessages,
   RECONCILE_LATEST_PAGE_LIMIT,
 } from "@/domains/chat/api/messages";
-import type { ConversationMessage } from "@vellumai/assistant-api";
+import type { ConversationMessage } from "@mycadet/assistant-api";
 import { useConversationStore } from "@/stores/conversation-store";
 import { endTurn } from "@/domains/chat/turn-coordinator";
 
@@ -46,7 +45,7 @@ interface UseMessageReconciliationArgs {
 
 /**
  * Which recovery channel asked for the reconcile. Carried onto the
- * `sse_poll_reconciled_rescue` Sentry event so the fleet-wide signal says
+ * `sse_poll_reconciled_rescue` diagnostic so the fleet-wide signal says
  * WHICH channel is doing the rescuing, not just that a rescue happened:
  *
  * - `"seq_gap"`: the SSE consumer proved an out-of-ring seq gap.
@@ -168,8 +167,8 @@ export function useMessageReconciliation({
       // length diff: the server snapshot is the latest page only, while the
       // local view spans every loaded page, so a length subtraction would go
       // negative once older history is paged in. Counting unmatched ids stays
-      // correct under that windowing (this feeds diagnostics / the Sentry
-      // rescue breadcrumb, not control flow).
+      // correct under that windowing (this feeds diagnostics, not control
+      // flow).
       const localIds = new Set<string>();
       for (const m of localView) {
         if (m.id) {
@@ -345,33 +344,23 @@ export function useMessageReconciliation({
         // reports assistant progress that the client never observed
         // via SSE, meaning a terminal event (`message_complete`
         // and/or `assistant_activity_state(idle)`) was lost in
-        // flight. Mirror to Sentry for fleet-wide aggregation;
-        // sessionStorage diagnostics alone ship only via user
-        // support bundles, biasing the sample toward broken-and-
-        // noisy cases. See
-        // https://docs.sentry.io/platforms/javascript/enriching-events/breadcrumbs/
+        // flight. Mirror to the durable diagnostics for fleet-wide
+        // aggregation; sessionStorage alone ships only via user support
+        // bundles, biasing the sample toward broken-and-noisy cases.
         // Turn age at rescue time, from the send stamp the turn id embeds.
         // An upper bound on how long the user waited: it includes however
         // long the turn legitimately ran before its terminal event was lost.
         const turnStartMs = turnStartMsFromId(snapshotTurnId);
         const turnAgeMs =
           turnStartMs === null ? null : Date.now() - turnStartMs;
-        Sentry.addBreadcrumb({
-          category: "sse.terminal",
-          level: "warning",
-          message: "poll_reconciled_rescue",
-          data: { messagesAdded, turnId: snapshotTurnId, trigger },
-        });
-        Sentry.captureMessage("sse_poll_reconciled_rescue", {
-          level: "warning",
-          tags: {
-            context: "sse_terminal",
-            platform: resolvePlatformTag(),
-            messagesAddedBucket: bucketMessagesAdded(messagesAdded),
-            trigger,
-            turnAgeBucket: bucketTurnAge(turnAgeMs),
-          },
-          extra: { messagesAdded, turnId: snapshotTurnId, turnAgeMs },
+        recordDiagnostic("sse_poll_reconciled_rescue", {
+          platform: resolvePlatformTag(),
+          messagesAdded,
+          messagesAddedBucket: bucketMessagesAdded(messagesAdded),
+          trigger,
+          turnId: snapshotTurnId,
+          turnAgeMs,
+          turnAgeBucket: bucketTurnAge(turnAgeMs),
         });
       }
 

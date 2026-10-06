@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useParams } from "react-router";
 import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
   sameDocumentTarget,

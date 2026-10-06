@@ -4,7 +4,7 @@
  * Connects to the assistant's Unix domain socket (assistant.sock) to make
  * one-shot JSON-RPC calls from the gateway to the assistant daemon.
  *
- * Protocol: the daemon's length-prefixed framing (`@vellumai/ipc-server-utils`),
+ * Protocol: the daemon's length-prefixed framing (`@mycadet/ipc-server-utils`),
  * the same one the CLI and route-host clients speak:
  * - Request:  `{ "id": string, "method": string, "params"?: object }`
  * - Response: `{ "id": string, "result"?: unknown, "error"?: string }`
@@ -14,14 +14,14 @@
  * cannot send raw request bodies and never receives binary responses — the
  * daemon drops them on the way out.
  *
- * This reverse client stays inline because @vellumai/gateway-client models
+ * This reverse client stays inline because @mycadet/gateway-client models
  * assistant-to-gateway calls; this path calls the assistant from the gateway.
  */
 
 import { connect, type Socket } from "node:net";
 
-import { IpcFrameReader, writeMessage } from "@vellumai/ipc-server-utils";
-import type { IpcEnvelope } from "@vellumai/ipc-server-utils";
+import { IpcFrameReader, writeMessage } from "@mycadet/ipc-server-utils";
+import type { IpcEnvelope } from "@mycadet/ipc-server-utils";
 
 import type { ScopeOption, DirectoryScopeOption } from "../risk/risk-types.js";
 import { resolveIpcSocketPath } from "./endpoint.js";

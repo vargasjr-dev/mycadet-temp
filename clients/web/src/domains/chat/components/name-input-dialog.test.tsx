@@ -2,7 +2,7 @@
  * Tests for `NameInputDialog` — the shared name entry/edit dialog used for
  * conversation rename and group create/rename.
  *
- * The component is a thin composition over `@vellumai/design-library`'s
+ * The component is a thin composition over `@mycadet/design-library`'s
  * `Modal` primitive (Radix Dialog under the hood). We mount it via
  * `@testing-library/react` (backed by happy-dom — see
  * `clients/web/test-setup.ts`) and exercise the user-facing behaviors that

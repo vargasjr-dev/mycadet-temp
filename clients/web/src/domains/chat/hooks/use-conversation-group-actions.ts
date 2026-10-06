@@ -1,4 +1,4 @@
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 

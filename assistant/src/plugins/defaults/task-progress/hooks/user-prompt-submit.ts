@@ -1,13 +1,11 @@
 import {
   type HookFunction,
   type UserPromptSubmitContext,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import { applyTaskProgressContext } from "../src/apply-task-progress-context.js";
 
-const userPromptSubmit: HookFunction<UserPromptSubmitContext> = async (
-  ctx,
-) => {
+const userPromptSubmit: HookFunction<UserPromptSubmitContext> = async (ctx) => {
   try {
     ctx.latestMessages = applyTaskProgressContext(
       ctx.conversationId,

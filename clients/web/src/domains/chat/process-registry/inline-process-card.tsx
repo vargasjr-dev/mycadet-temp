@@ -9,7 +9,7 @@
 import { Square } from "lucide-react";
 import { useCallback, type MouseEvent, type ReactNode } from "react";
 
-import { Button, Typography } from "@vellumai/design-library";
+import { Button, Typography } from "@mycadet/design-library";
 
 import { HeaderStepCarousel } from "@/domains/chat/components/tool-progress-card/header-step-carousel";
 import { InlineCardStatusIcon } from "@/domains/chat/process-registry/inline-card-status-icon";
@@ -87,7 +87,9 @@ export function InlineProcessCard({
         <button
           type="button"
           aria-label={openAriaLabel}
-          onClick={(event) => openDetailSheetFromTrigger(event, () => onOpen?.())}
+          onClick={(event) =>
+            openDetailSheetFromTrigger(event, () => onOpen?.())
+          }
           className="flex min-w-0 flex-1 cursor-pointer items-center gap-1 text-left"
         >
           {leadingCluster}

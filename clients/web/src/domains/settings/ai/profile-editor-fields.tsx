@@ -1,10 +1,10 @@
 import { useMemo, useState, type ReactNode } from "react";
 
-import { Disclosure } from "@vellumai/design-library/components/disclosure";
-import { Select } from "@vellumai/design-library/components/select";
-import { Input, Textarea } from "@vellumai/design-library/components/input";
-import { Toggle } from "@vellumai/design-library/components/toggle";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Disclosure } from "@mycadet/design-library/components/disclosure";
+import { Select } from "@mycadet/design-library/components/select";
+import { Input, Textarea } from "@mycadet/design-library/components/input";
+import { Toggle } from "@mycadet/design-library/components/toggle";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { PROVIDER_DISPLAY_NAMES } from "@/assistant/llm-model-catalog";
 import { OPENAI_COMPATIBLE_PROVIDER } from "@/domains/settings/ai/constants";
@@ -137,9 +137,7 @@ export function ProfileEditorFields({
           i18nKey="profileEditorFields.descriptionLabel"
           ns="settings"
           components={{
-            optional: (
-              <span className="text-[var(--content-disabled)]" />
-            ),
+            optional: <span className="text-[var(--content-disabled)]" />,
           }}
         />
       }

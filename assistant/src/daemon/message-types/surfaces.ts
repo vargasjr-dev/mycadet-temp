@@ -25,7 +25,7 @@ import type {
   WorkResultSurfaceData,
 } from "../../api/surfaces.js";
 
-// Surface `data` shapes are wire payloads owned by `@vellumai/assistant-api`
+// Surface `data` shapes are wire payloads owned by `@mycadet/assistant-api`
 // (`api/surfaces.ts`) — one canonical Zod schema per surface type, with the
 // types inferred from the schemas. Re-exported so the daemon's surface
 // protocol barrel (`message-protocol.ts`) keeps surfacing them to daemon

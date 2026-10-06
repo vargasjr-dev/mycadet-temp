@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { t } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
 import { publicBaseUrlRejectionMessage } from "@/utils/pairing-address";
 
@@ -13,7 +13,7 @@ import {
 import { resolvePublicBaseUrl } from "./pair-device-url";
 
 /** localStorage key for the last public URL that successfully minted a code. */
-const PUBLIC_BASE_URL_STORAGE_KEY = "vellum:pair-device:public-base-url";
+const PUBLIC_BASE_URL_STORAGE_KEY = "cadet:pair-device:public-base-url";
 
 /** Where the URL field's initial value came from. */
 export type PairDevicePrefillSource = "tunnel" | "stored" | "none";

@@ -22,7 +22,7 @@ import type { AssistantEvent } from "@/types/event-types";
 import type {
   AssistantEventEnvelope,
   ConversationMessage,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 describe("shouldQueueSend", () => {
   test("a send into a busy turn does not queue when the flag is on", () => {

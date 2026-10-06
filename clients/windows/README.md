@@ -13,7 +13,7 @@ bundled `resources/cli-runtime/web-dist` over a privileged `app://` protocol.
   enforcement, CSP, a permission allowlist, and sandboxed `vellumapp://`
   serving) and then composes `src/main/features/*`.
 - `src/main/features/*` and `src/preload/features/*` are capability modules
-  installed through the registries in `@vellumai/electron-desktop`. Every
+  installed through the registries in `@mycadet/electron-desktop`. Every
   `.ts` file in those directories is picked up automatically; a new capability
   is a new file, never an edit to `index.ts`.
 - `src/preload/core-capabilities.ts` is the always-present core of

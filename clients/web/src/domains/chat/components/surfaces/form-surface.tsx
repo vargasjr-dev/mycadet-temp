@@ -3,18 +3,12 @@ import {
   type FormPage,
   type FormSurfaceData,
   FormSurfaceDataSchema,
-} from "@vellumai/assistant-api";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Lock,
-  Send,
-  Shield,
-} from "lucide-react";
+} from "@mycadet/assistant-api";
+import { ChevronLeft, ChevronRight, Lock, Send, Shield } from "lucide-react";
 import { type FormEvent, useCallback, useMemo, useState } from "react";
 
 import type { Surface } from "@/domains/chat/types/types";
-import { Button, Toggle } from "@vellumai/design-library";
+import { Button, Toggle } from "@mycadet/design-library";
 
 import { ChatMarkdownMessage } from "@/domains/chat/components/chat-markdown-message";
 import { PageProgress } from "@/domains/chat/components/surfaces/page-progress";
@@ -111,7 +105,9 @@ function FormFieldInput({
           onChange={(e) => onChange(field.id, e.target.value)}
           className={cn(inputClasses, errorClasses)}
         >
-          <option value="">{field.placeholder || t("formSurface.selectPlaceholder")}</option>
+          <option value="">
+            {field.placeholder || t("formSurface.selectPlaceholder")}
+          </option>
           {(field.options ?? []).map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}

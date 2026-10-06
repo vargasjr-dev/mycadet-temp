@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { CircleAlert, Ellipsis } from "lucide-react";
-import { cn, Typography } from "@vellumai/design-library";
+import { cn, Typography } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

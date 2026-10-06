@@ -85,14 +85,14 @@ mock.module("../vellum-managed.js", () => ({
 
 const vellumStreamCtorCalls: Array<{ connection: unknown; options: unknown }> =
   [];
-let mockVelayConnection: {
+let mockTunnelConnection: {
   wsBaseUrl: string;
   httpBaseUrl: string;
   mintServiceToken: () => string;
 } | null = null;
 
 mock.module("../vellum-speech-relay-connection.js", () => ({
-  resolveSpeechRelayConnection: async () => mockVelayConnection,
+  resolveSpeechRelayConnection: async () => mockTunnelConnection,
 }));
 
 mock.module("../vellum-managed-realtime.js", () => ({
@@ -1129,7 +1129,7 @@ describe("vellum-flux managed resolution", () => {
   beforeEach(() => {
     mockVellumAvailable = false;
     mockProviderKeys = {};
-    mockVelayConnection = {
+    mockTunnelConnection = {
       wsBaseUrl: "ws://gateway.test",
       httpBaseUrl: "http://gateway.test",
       mintServiceToken: () => "vk-test",
@@ -1148,7 +1148,7 @@ describe("vellum-flux managed resolution", () => {
     expect(transcriber?.providerId).toBe("vellum-flux");
     expect(vellumFluxStreamCtorCalls).toEqual([
       {
-        connection: mockVelayConnection,
+        connection: mockTunnelConnection,
         // The relay picks flux-general-en vs flux-general-multi from the
         // language, so forwarding it is the only lever over the model.
         options: { sampleRate: 16000, language: "es" },
@@ -1213,7 +1213,7 @@ describe("vellum managed resolution", () => {
   beforeEach(() => {
     mockVellumAvailable = false;
     mockProviderKeys = {};
-    mockVelayConnection = null;
+    mockTunnelConnection = null;
     vellumStreamCtorCalls.length = 0;
   });
 
@@ -1245,9 +1245,9 @@ describe("vellum managed resolution", () => {
     }
   });
 
-  test("streaming resolver constructs the vellum adapter with the velay connection and sample rate", async () => {
+  test("streaming resolver constructs the vellum adapter with the tunnel connection and sample rate", async () => {
     mockVellumAvailable = true;
-    mockVelayConnection = {
+    mockTunnelConnection = {
       wsBaseUrl: "ws://gateway.test",
       httpBaseUrl: "http://gateway.test",
       mintServiceToken: () => "vk-test",
@@ -1260,7 +1260,7 @@ describe("vellum managed resolution", () => {
     expect(transcriber?.providerId).toBe("vellum");
     expect(vellumStreamCtorCalls).toEqual([
       {
-        connection: mockVelayConnection,
+        connection: mockTunnelConnection,
         // No language is configured here, so the managed default rides along
         // with the connection plumbing this test is about.
         options: { sampleRate: 24000, language: "multi" },
@@ -1270,7 +1270,7 @@ describe("vellum managed resolution", () => {
 
   test("streaming resolver returns null when the platform connection is unavailable", async () => {
     mockVellumAvailable = false;
-    mockVelayConnection = {
+    mockTunnelConnection = {
       wsBaseUrl: "ws://gateway.test",
       httpBaseUrl: "http://gateway.test",
       mintServiceToken: () => "vk-test",
@@ -1281,9 +1281,9 @@ describe("vellum managed resolution", () => {
     expect(vellumStreamCtorCalls).toHaveLength(0);
   });
 
-  test("streaming resolver returns null when the velay connection is missing", async () => {
+  test("streaming resolver returns null when the tunnel connection is missing", async () => {
     mockVellumAvailable = true;
-    mockVelayConnection = null;
+    mockTunnelConnection = null;
     applyConfig({ provider: "vellum" });
 
     expect(await resolveStreamingTranscriber({ sampleRate: 16000 })).toBeNull();
@@ -1308,7 +1308,7 @@ describe("vellum managed resolution", () => {
 describe("resolveStreamingTranscriber language plumbing", () => {
   beforeEach(() => {
     mockVellumAvailable = false;
-    mockVelayConnection = null;
+    mockTunnelConnection = null;
     mockProviderKeys = {};
     deepgramCtorCalls.length = 0;
     geminiCtorCalls.length = 0;
@@ -1318,11 +1318,11 @@ describe("resolveStreamingTranscriber language plumbing", () => {
   });
 
   test("managed sessions forward services.stt.language to the relay adapter", async () => {
-    // The managed path is why this plumbing exists: velay allowlists
+    // The managed path is why this plumbing exists: tunnel allowlists
     // `language` and pins nova-3, so "multi" reaches Deepgram's
     // code-switching mode without any platform-side change.
     mockVellumAvailable = true;
-    mockVelayConnection = {
+    mockTunnelConnection = {
       wsBaseUrl: "ws://gateway.test",
       httpBaseUrl: "http://gateway.test",
       mintServiceToken: () => "vk-test",
@@ -1333,7 +1333,7 @@ describe("resolveStreamingTranscriber language plumbing", () => {
 
     expect(vellumStreamCtorCalls).toEqual([
       {
-        connection: mockVelayConnection,
+        connection: mockTunnelConnection,
         options: { sampleRate: 24000, language: "multi" },
       },
     ]);
@@ -1418,7 +1418,7 @@ describe("resolveStreamingTranscriber language plumbing", () => {
     // The relay dials Deepgram server-side, so it inherits the same English
     // default and needs the same fill-in.
     mockVellumAvailable = true;
-    mockVelayConnection = {
+    mockTunnelConnection = {
       wsBaseUrl: "ws://gateway.test",
       httpBaseUrl: "http://gateway.test",
       mintServiceToken: () => "vk-test",
@@ -1429,7 +1429,7 @@ describe("resolveStreamingTranscriber language plumbing", () => {
 
     expect(vellumStreamCtorCalls).toEqual([
       {
-        connection: mockVelayConnection,
+        connection: mockTunnelConnection,
         options: { sampleRate: 24000, language: "multi" },
       },
     ]);
@@ -1633,7 +1633,7 @@ describe("streaming capability matches the streaming factory", () => {
     // than a stored API key, and both dial through the same relay.
     const managed = id === "vellum" || id === "vellum-flux";
     mockVellumAvailable = managed;
-    mockVelayConnection = managed
+    mockTunnelConnection = managed
       ? {
           wsBaseUrl: "ws://gateway.test",
           httpBaseUrl: "http://gateway.test",
@@ -1646,7 +1646,7 @@ describe("streaming capability matches the streaming factory", () => {
 
   beforeEach(() => {
     mockVellumAvailable = false;
-    mockVelayConnection = null;
+    mockTunnelConnection = null;
     mockProviderKeys = {};
     loggerWarnings.length = 0;
   });
@@ -1673,7 +1673,7 @@ describe("streaming capability matches the streaming factory", () => {
   test("every advertised provider reports missing credentials AND builds nothing without them", async () => {
     for (const id of advertisedStreamingProviders()) {
       mockVellumAvailable = false;
-      mockVelayConnection = null;
+      mockTunnelConnection = null;
       mockProviderKeys = {};
       applyConfig({ provider: id });
 
@@ -1691,7 +1691,7 @@ describe("streaming capability matches the streaming factory", () => {
 describe("deepgram-flux streaming resolution", () => {
   beforeEach(() => {
     mockVellumAvailable = false;
-    mockVelayConnection = null;
+    mockTunnelConnection = null;
     mockProviderKeys = {};
     loggerWarnings.length = 0;
   });
@@ -1777,7 +1777,7 @@ describe("deepgram-flux streaming resolution", () => {
 describe("deepgram-flux batch resolution", () => {
   beforeEach(() => {
     mockVellumAvailable = false;
-    mockVelayConnection = null;
+    mockTunnelConnection = null;
     mockProviderKeys = {};
     loggerWarnings.length = 0;
   });
@@ -1889,7 +1889,7 @@ describe("the multilingual default reaches configs with no stt block", () => {
 describe("services.stt.roles selection", () => {
   beforeEach(() => {
     mockVellumAvailable = false;
-    mockVelayConnection = null;
+    mockTunnelConnection = null;
     mockProviderKeys = { deepgram: "dg-key", openai: "oai-key" };
     deepgramCtorCalls.length = 0;
     whisperCtorCalls.length = 0;

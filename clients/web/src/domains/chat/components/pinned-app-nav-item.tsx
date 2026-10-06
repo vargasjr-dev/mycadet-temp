@@ -18,8 +18,8 @@ import {
   DEFAULT_APP_ICON,
   getAppIcon,
 } from "@/utils/app-icon-registry";
-import { cn, ContextMenu, PanelItem, SideMenu } from "@vellumai/design-library";
-import { Button } from "@vellumai/design-library/components/button";
+import { cn, ContextMenu, PanelItem, SideMenu } from "@mycadet/design-library";
+import { Button } from "@mycadet/design-library/components/button";
 
 export interface PinnedAppNavItemProps {
   app: PinnedAppView;

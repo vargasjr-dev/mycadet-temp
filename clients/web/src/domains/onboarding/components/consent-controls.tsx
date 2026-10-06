@@ -3,8 +3,8 @@ import type { CSSProperties } from "react";
 import { ExternalAnchor } from "@/components/external-anchor";
 import { SettingRow } from "@/components/setting-row";
 import { legalUrl, routes } from "@/utils/routes";
-import { Card } from "@vellumai/design-library/components/card";
-import { Checkbox } from "@vellumai/design-library/components/checkbox";
+import { Card } from "@mycadet/design-library/components/card";
+import { Checkbox } from "@mycadet/design-library/components/checkbox";
 import { Trans, useTranslation } from "@/i18n";
 
 /**

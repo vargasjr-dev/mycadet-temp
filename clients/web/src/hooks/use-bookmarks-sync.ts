@@ -8,7 +8,7 @@
  *
  * The discriminant is read as a plain string: the bus envelope's `message` is
  * generically typed, so this consumer matches on the raw `type` field rather
- * than narrowing the `@vellumai/assistant-api` event union.
+ * than narrowing the `@mycadet/assistant-api` event union.
  *
  * References:
  * - EVENT_BUS.md — bus subscription contract

@@ -1,7 +1,7 @@
 /**
  * Ambient declaration of the `window.vellum` bridge exposed by the Electron
  * preload script (see `clients/macos/src/preload/index.ts`). Types are imported
- * from `@vellumai/ipc-contract` — the single source of truth for IPC payload
+ * from `@mycadet/ipc-contract` — the single source of truth for IPC payload
  * shapes shared by main, preload, and renderer.
  *
  * Feature code in `clients/web/` should NOT call `window.vellum.*` directly.
@@ -15,7 +15,7 @@
 import type {
   Lockfile,
   LockfileWriteResult,
-} from "@vellumai/local-mode/contract";
+} from "@mycadet/local-mode/contract";
 import type {
   AppVersionInfo,
   AssistantStatus,
@@ -94,7 +94,7 @@ import type {
   VoiceActivityState,
   WatchCaptureTarget,
   WindowAttentionPayload,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 export type {
   AppVersionInfo,
@@ -256,10 +256,7 @@ declare global {
         popup?(id: string, x: number, y: number): Promise<void>;
       };
       localMode: {
-        hatch(
-          species: string,
-          remote?: string,
-        ): Promise<{
+        hatch(remote?: string): Promise<{
           ok: boolean;
           assistantId?: string;
           error?: string;

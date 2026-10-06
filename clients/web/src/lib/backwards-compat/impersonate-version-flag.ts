@@ -34,7 +34,7 @@ import {
   removeLocalSetting,
 } from "@/utils/local-settings";
 
-const STORAGE_KEY = "vellum:debug:impersonateAssistantVersion";
+const STORAGE_KEY = "cadet:debug:impersonateAssistantVersion";
 
 /**
  * Read the impersonated version synchronously. Safe to call at any

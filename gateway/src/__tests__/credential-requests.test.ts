@@ -20,7 +20,7 @@ import {
 
 import "./test-preload.js";
 
-import { generateInviteToken, hashInviteToken } from "@vellumai/gateway-client";
+import { generateInviteToken, hashInviteToken } from "@mycadet/gateway-client";
 
 // Mock the daemon IPC client before importing the handlers under test.
 let ipcCalls: Array<{ method: string; params: unknown }> = [];
@@ -69,8 +69,8 @@ const fakeConfigFile = (publicBaseUrl?: string) =>
       field === "publicBaseUrl" ? publicBaseUrl : undefined,
   }) as unknown as ConfigFileCache;
 
-const fakeGatewayConfig = (velayBaseUrl?: string) =>
-  ({ velayBaseUrl }) as unknown as import("../config.js").GatewayConfig;
+const fakeGatewayConfig = (tunnelBaseUrl?: string) =>
+  ({ tunnelBaseUrl }) as unknown as import("../config.js").GatewayConfig;
 
 function mintRow(params?: { expiresAt?: number; purpose?: string }) {
   const token = generateInviteToken();
@@ -121,7 +121,7 @@ describe("credential-request mint (IPC)", () => {
   test("makes public ingress live on the successful mint path", async () => {
     const ensurePublicIngressLive = mock(async () => {});
     const result = await createCredentialRequest(
-      fakeGatewayConfig("https://velay-dev.vellum.ai"),
+      fakeGatewayConfig("https://tunnel-dev.mycadet.ai"),
       fakeConfigFile(undefined),
       { service: "github", field: "api_token" },
       {
@@ -135,7 +135,7 @@ describe("credential-request mint (IPC)", () => {
   });
 
   test("does not enable public ingress when the mint is rejected", async () => {
-    // No config URL and no velay fallback → no_public_base_url. Public ingress
+    // No config URL and no tunnel fallback → no_public_base_url. Public ingress
     // must NOT be flipped on as a side effect of a failed mint.
     const ensurePublicIngressLive = mock(async () => {});
     const result = await createCredentialRequest(
@@ -152,7 +152,7 @@ describe("credential-request mint (IPC)", () => {
   test("does not read the platform assistant id when the config URL resolves", async () => {
     const getPlatformAssistantId = mock(async () => "assistant-123");
     const result = await createCredentialRequest(
-      fakeGatewayConfig("https://velay-dev.vellum.ai"),
+      fakeGatewayConfig("https://tunnel-dev.mycadet.ai"),
       fakeConfigFile("https://assistant.example.com"),
       { service: "github", field: "api_token" },
       { getPlatformAssistantId },
@@ -161,11 +161,11 @@ describe("credential-request mint (IPC)", () => {
     expect(getPlatformAssistantId).not.toHaveBeenCalled();
   });
 
-  test("falls back to VELAY_BASE_URL + platform assistant id when the config URL is empty", async () => {
-    // ingress.publicBaseUrl is Velay-managed and cleared on tunnel flaps, so
-    // the mint must still resolve a URL from velayBaseUrl + the assistant id.
+  test("falls back to TUNNEL_BASE_URL + platform assistant id when the config URL is empty", async () => {
+    // ingress.publicBaseUrl is Tunnel-managed and cleared on tunnel flaps, so
+    // the mint must still resolve a URL from tunnelBaseUrl + the assistant id.
     const result = await createCredentialRequest(
-      fakeGatewayConfig("https://velay-dev.vellum.ai"),
+      fakeGatewayConfig("https://tunnel-dev.mycadet.ai"),
       fakeConfigFile(undefined),
       { service: "github", field: "api_token" },
       { getPlatformAssistantId: async () => "assistant-123" },
@@ -173,11 +173,11 @@ describe("credential-request mint (IPC)", () => {
 
     if (!result.ok) throw new Error(`mint failed: ${result.error}`);
     expect(result.url).toBe(
-      `https://velay-dev.vellum.ai/assistant-123/assistant/credentials/enter#token=${encodeURIComponent(result.token)}`,
+      `https://tunnel-dev.mycadet.ai/assistant-123/assistant/credentials/enter#token=${encodeURIComponent(result.token)}`,
     );
   });
 
-  test("refuses to mint when neither the config URL nor the velay fallback resolve", async () => {
+  test("refuses to mint when neither the config URL nor the tunnel fallback resolve", async () => {
     const result = await createCredentialRequest(
       fakeGatewayConfig(),
       fakeConfigFile(undefined),

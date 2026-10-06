@@ -1,7 +1,7 @@
 import { Check, X } from "lucide-react";
 import { useEffect, useState, type CSSProperties } from "react";
 
-import type { VoiceActivityWork } from "@vellumai/ipc-contract";
+import type { VoiceActivityWork } from "@mycadet/ipc-contract";
 
 import { useTranslation } from "@/i18n";
 

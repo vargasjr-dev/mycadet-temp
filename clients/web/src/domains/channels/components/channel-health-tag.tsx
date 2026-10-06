@@ -1,4 +1,4 @@
-import { Tag } from "@vellumai/design-library/components/tag";
+import { Tag } from "@mycadet/design-library/components/tag";
 
 import type { AssistantChannelState } from "@/types/channel-types";
 import { useChannelHealthBadge } from "@/utils/channel-presentation";

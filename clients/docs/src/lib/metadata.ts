@@ -5,7 +5,6 @@ import { WWW_DOMAIN } from "@/lib/domains";
 
 export const SITE_URL = `https://${WWW_DOMAIN}`;
 const DEFAULT_OG_IMAGE = `${SITE_URL}/docs/og.png`;
-const TWITTER_HANDLE = "@vellum_ai";
 
 // The OG image is a static 1200x630 PNG served from public/. Declaring
 // dimensions on the meta tags helps unfurlers (especially LinkedIn) render
@@ -18,6 +17,8 @@ interface CreateMetadataOptions {
   description: string;
   path: string;
 }
+
+const TWITTER_HANDLE = "@mycadet_ai";
 
 export function createMetadata({
   title,
@@ -41,7 +42,7 @@ export function createMetadata({
       title,
       description,
       url,
-      siteName: "Vellum",
+      siteName: "Cadet",
       type: "website",
       locale: "en_US",
       images: [

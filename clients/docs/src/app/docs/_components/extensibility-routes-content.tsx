@@ -31,7 +31,7 @@ const APPS_PAGE_URL = "/docs/extensibility/apps";
 const CHANNELS_PAGE_URL = "/docs/extensibility/channels";
 
 const PLUGIN_API_URL =
-  "https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api";
+  "https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api";
 
 type PathRow = { file: string; served: string };
 
@@ -186,7 +186,7 @@ export async function POST(request: Request): Promise<Response> {
           <p className="mb-0 text-zinc-600 dark:text-zinc-400">
             A handler may also reach other Assistant capabilities through its{" "}
             <Link href={PLUGIN_API_URL} className={linkClass}>
-              <code>@vellumai/plugin-api</code>
+              <code>@cadetai/plugin-api</code>
             </Link>{" "}
             imports, the same as any other surface.
           </p>
@@ -236,13 +236,13 @@ export async function GET(request: Request): Promise<Response> {
               app
             </Link>{" "}
             that backs its data with the plugin&apos;s own routes must reach
-            them through the <code>window.vellum.fetch</code> bridge —{" "}
+            them through the <code>window.cadet.fetch</code> bridge —{" "}
             <strong>
               never the global <code>fetch</code>
             </strong>
             . An app runs in a sandboxed origin, so a raw <code>fetch</code>{" "}
             carries no gateway URL and no auth headers and the request fails;{" "}
-            <code>window.vellum.fetch</code> injects both and routes the call to
+            <code>window.cadet.fetch</code> injects both and routes the call to
             the Assistant runtime.
           </p>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
@@ -253,7 +253,7 @@ export async function GET(request: Request): Promise<Response> {
           </p>
           <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
             <code>{`// inside apps/<app>/src — calling this plugin's own status route
-const res = await window.vellum.fetch("/x/plugins/my-plugin/status");
+const res = await window.cadet.fetch("/x/plugins/my-plugin/status");
 if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
 const data = await res.json();`}</code>
           </pre>
@@ -264,7 +264,7 @@ const data = await res.json();`}</code>
             <Link href={CHANNELS_PAGE_URL} className={linkClass}>
               plugin ingress
             </Link>{" "}
-            instead; the <code>window.vellum.fetch</code> rule is specific to an
+            instead; the <code>window.cadet.fetch</code> rule is specific to an
             app frontend&apos;s sandboxed origin.
           </p>
         </section>

@@ -27,7 +27,7 @@ import {
   OptionCard,
   OptionCardGroup,
   Textarea,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 
 export interface OnboardingChoiceCardProps {
   onSelectSpecific: () => void;

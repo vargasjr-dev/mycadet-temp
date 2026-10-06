@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type {
   NotificationIdentity,
   PrepareNotificationIdentityPayload,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   __clearNotificationIdentitySnapshotsForTests,
@@ -422,16 +422,10 @@ describe("notification identities", () => {
     publishPreparedNotificationIdentity(publication, { avatar: AVATAR });
 
     expect(
-      resetPreparedNotificationIdentityByKey(
-        owner.scopeId,
-        owner.assistantId,
-      ),
+      resetPreparedNotificationIdentityByKey(owner.scopeId, owner.assistantId),
     ).toBe(true);
     expect(
-      resetPreparedNotificationIdentityByKey(
-        owner.scopeId,
-        owner.assistantId,
-      ),
+      resetPreparedNotificationIdentityByKey(owner.scopeId, owner.assistantId),
     ).toBe(true);
     expect(
       publishPreparedNotificationIdentity(publication, { avatar: AVATAR }),

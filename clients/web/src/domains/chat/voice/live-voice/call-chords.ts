@@ -15,7 +15,7 @@
  * does.
  */
 
-import type { ChordBinding } from "@vellumai/ipc-contract";
+import type { ChordBinding } from "@mycadet/ipc-contract";
 
 import {
   CALL_DRAW_KEY,

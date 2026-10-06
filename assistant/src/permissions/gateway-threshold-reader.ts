@@ -10,7 +10,7 @@
 import type {
   ResolveChannelPermissionRequest,
   ResolvedChannelPermission,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import { ipcCall } from "../ipc/gateway-client.js";
 import { getLogger } from "../util/logger.js";

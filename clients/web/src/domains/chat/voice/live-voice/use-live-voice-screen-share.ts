@@ -97,14 +97,14 @@ import {
 } from "@/lib/camera/frame-gate";
 import { createFrameGridProducer } from "@/lib/camera/frame-sampler";
 import { stillFrameGrid } from "@/lib/camera/still-frame-grid";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   captureCompanionScreen,
   readCompanionShareTargets,
   reportCompanionSharedFrame,
 } from "@/runtime/companion-surface";
 import { decodeBase64Payload } from "@/utils/base64";
-import type { CompanionAnnotationStroke } from "@vellumai/ipc-contract";
+import type { CompanionAnnotationStroke } from "@mycadet/ipc-contract";
 
 /** Where a failure is filed, so the tag says which source it came from. */
 const ERROR_CONTEXT = "live-voice screen share: capture/upload frame";

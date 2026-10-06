@@ -1,11 +1,11 @@
 /**
- * Smoke tests for the workspace-level `@vellumai/plugin-api` shim.
+ * Smoke tests for the workspace-level `@mycadet/plugin-api` shim.
  *
- *   - shim files are materialized at `<workspaceDir>/node_modules/@vellumai/plugin-api/`
+ *   - shim files are materialized at `<workspaceDir>/node_modules/@mycadet/plugin-api/`
  *   - the shim's index.js re-binds each runtime export from globalThis
  *   - the shim is idempotent across re-runs
  *   - a fake plugin in `<workspaceDir>/plugins/<name>/` can resolve the
- *     bare `@vellumai/plugin-api` specifier via Node-style walk-up,
+ *     bare `@mycadet/plugin-api` specifier via Node-style walk-up,
  *     proving the end-to-end import path works for real user plugins
  *
  * As plugin-api's runtime surface grows in follow-up PRs, the shim's
@@ -32,7 +32,7 @@ import {
   pluginApiFallbackEntry,
 } from "../plugins/ensure-plugin-api-shim.js";
 
-const SHIM_REL_PATH = "node_modules/@vellumai/plugin-api";
+const SHIM_REL_PATH = "node_modules/@mycadet/plugin-api";
 
 describe("buildShimSource", () => {
   test("emits a globalThis trampoline with a direct-import fallback + one binding per export", () => {
@@ -68,7 +68,7 @@ describe("buildShimSource", () => {
 });
 
 describe("ensurePluginApiShim", () => {
-  test("creates a resolvable @vellumai/plugin-api package under workspaceDir", async () => {
+  test("creates a resolvable @mycadet/plugin-api package under workspaceDir", async () => {
     const workspaceDir = await mkdtemp(join(tmpdir(), "plugin-api-shim-"));
     await ensurePluginApiShim({ workspaceDir });
 
@@ -79,7 +79,7 @@ describe("ensurePluginApiShim", () => {
     const pkg = JSON.parse(
       await readFile(join(shimDir, "package.json"), "utf8"),
     );
-    expect(pkg.name).toBe("@vellumai/plugin-api");
+    expect(pkg.name).toBe("@mycadet/plugin-api");
     expect(pkg.type).toBe("module");
     expect(pkg.main).toBe("./index.js");
     expect(typeof pkg.version).toBe("string");
@@ -130,7 +130,7 @@ describe("ensurePluginApiShim", () => {
     const probe = join(pluginDir, "probe.js");
     await writeFile(
       probe,
-      `import * as api from "@vellumai/plugin-api";\n` +
+      `import * as api from "@mycadet/plugin-api";\n` +
         `console.log(JSON.stringify({\n` +
         `  hasOpen: typeof api.openTranscriptionSession === "function",\n` +
         `}));\n`,
@@ -150,7 +150,7 @@ describe("ensurePluginApiShim", () => {
     expect(JSON.parse(lastLine)).toEqual({ hasOpen: true });
   });
 
-  test("a fake user plugin can resolve @vellumai/plugin-api via Node-style walk-up", async () => {
+  test("a fake user plugin can resolve @mycadet/plugin-api via Node-style walk-up", async () => {
     const workspaceDir = await mkdtemp(join(tmpdir(), "plugin-api-shim-"));
     await ensurePluginApiShim({ workspaceDir });
 
@@ -158,11 +158,11 @@ describe("ensurePluginApiShim", () => {
     await mkdir(pluginDir, { recursive: true });
     await writeFile(
       join(pluginDir, "probe.js"),
-      `import * as api from "@vellumai/plugin-api";\nexport { api };\n`,
+      `import * as api from "@mycadet/plugin-api";\nexport { api };\n`,
     );
 
     // Resolution walks up: plugins/fake-plugin → plugins → workspaceDir
-    // → workspaceDir/node_modules/@vellumai/plugin-api → shim → globalThis
+    // → workspaceDir/node_modules/@mycadet/plugin-api → shim → globalThis
     // → plugin-api namespace. If any link in that chain is broken, this
     // import throws.
     const mod: { api: Record<string, unknown> } = await import(

@@ -8,7 +8,7 @@ import {
   pluginsByNameEnablePost,
 } from "@/generated/daemon/sdk.gen";
 import type { PluginsGetResponse } from "@/generated/daemon/types.gen";
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 
 interface TogglePluginVariables {
   name: string;
@@ -102,6 +102,8 @@ export function usePluginToggle(assistantId: string): UsePluginToggleResult {
 
   return {
     toggle,
-    togglingName: mutation.isPending ? mutation.variables?.name ?? null : null,
+    togglingName: mutation.isPending
+      ? (mutation.variables?.name ?? null)
+      : null,
   };
 }

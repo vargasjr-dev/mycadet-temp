@@ -1,6 +1,6 @@
-import { Button } from "@vellumai/design-library/components/button";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { Button } from "@mycadet/design-library/components/button";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 import { useTranslation } from "@/i18n";
 

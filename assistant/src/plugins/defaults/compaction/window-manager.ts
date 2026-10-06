@@ -19,7 +19,7 @@ import type {
   LLMCallSite,
   Message,
   Provider,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import { getConfig } from "../../../config/loader.js";
 import type { CompactionConfig } from "../../../config/schemas/compaction.js";

@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
-import { SegmentControl } from "@vellumai/design-library/components/segment-control";
-import { Slider } from "@vellumai/design-library/components/slider";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
+import { SegmentControl } from "@mycadet/design-library/components/segment-control";
+import { Slider } from "@mycadet/design-library/components/slider";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 import {
   DEFAULT_CONTEXT_WINDOW_BUDGET_TOKENS,

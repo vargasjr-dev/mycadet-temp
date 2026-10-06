@@ -30,7 +30,7 @@ import type {
   Provider,
   ProviderResponse,
   SendMessageOptions,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import type { ToolDefinition } from "../../llm-helpers.js";
 
@@ -109,14 +109,14 @@ interface ProviderCall {
 const providerCalls: ProviderCall[] = [];
 
 // The router imports `getConfiguredProvider` plus the identity reads
-// (`getAssistantName`/`resolveUserName`) from `@vellumai/plugin-api`. Spread the
+// (`getAssistantName`/`resolveUserName`) from `@mycadet/plugin-api`. Spread the
 // real contract so the identity reads run for real — they return null on a
 // missing IDENTITY.md / users/default.md in the temp workspace, so the router
 // uses neutral labels we don't assert on — and override only
 // `getConfiguredProvider` with the per-test stub. The pure `extractToolUse`
 // helper runs for real from the plugin's `llm-helpers`.
-const realPluginApi = await import("@vellumai/plugin-api");
-mock.module("@vellumai/plugin-api", () => ({
+const realPluginApi = await import("@mycadet/plugin-api");
+mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,
   getConfiguredProvider: async () => providerStub,
 }));

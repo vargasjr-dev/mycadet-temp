@@ -12,7 +12,7 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 
 import { useActiveSubagentIds } from "@/domains/chat/hooks/use-active-subagent-ids";
 import { useSubagentStore } from "@/domains/chat/subagent-store";
-import type { SubagentStatus } from "@vellumai/assistant-api";
+import type { SubagentStatus } from "@mycadet/assistant-api";
 
 afterEach(() => {
   cleanup();

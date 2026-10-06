@@ -49,7 +49,7 @@ describe("clearUserScopedStorage", () => {
   });
 
   test("clears sessionStorage entirely", () => {
-    sessionStorage.setItem("vellum:edit-chat:asst-1:app-1", "conv-xyz");
+    sessionStorage.setItem("cadet:edit-chat:asst-1:app-1", "conv-xyz");
     sessionStorage.setItem("arbitrary-session-key", "data");
 
     clearUserScopedStorage();
@@ -139,7 +139,7 @@ describe("clearUserScopedStorage", () => {
     useComposerStore.getState().loadAssistantDrafts("assistant-1");
     useComposerStore.getState().restoreDraftIfEmpty("conv-1");
     expect(useComposerStore.getState().input).toBe("");
-    expect(localStorage.getItem("vellum:chatDrafts:assistant-1")).toBeNull();
+    expect(localStorage.getItem("cadet:chatDrafts:assistant-1")).toBeNull();
     expect(useTurnStore.getState().phase).toBe("idle");
     expect(useInteractionStore.getState().pendingAcpConnect).toBeNull();
     expect(useConversationStore.getState().pendingDraftProfiles.size).toBe(0);
@@ -147,35 +147,35 @@ describe("clearUserScopedStorage", () => {
   });
 
   test("removes all vellum: prefixed keys from localStorage", () => {
-    localStorage.setItem("vellum:pinnedApps", "[]");
-    localStorage.setItem("vellum:lastViewedConversation:asst-1", "conv-1");
-    localStorage.setItem("vellum:sidebar-open-categories:asst-1", "{}");
-    localStorage.setItem("vellum:sidebar-open-custom-groups:asst-1", "{}");
-    localStorage.setItem("vellum:selectedAssistantId", "asst-1");
-    localStorage.setItem("vellum:nudge-prefs", "{}");
-    localStorage.setItem("vellum:chatDrafts:asst-1", '{"text":"hi"}');
-    localStorage.setItem("vellum:ctxwindow:asst-1", "4096");
-    localStorage.setItem("vellum:dismissed-surfaces:asst-1", "[]");
-    localStorage.setItem("vellum:ff:some-flag", "true");
-    localStorage.setItem("vellum:onboarding:tosAccepted", "true");
-    localStorage.setItem("vellum:onboarding:aiDataConsent", "true");
-    localStorage.setItem("vellum:onboarding:completed", "true");
-    localStorage.setItem("vellum:onboarding:selectedVersion", "v1.0");
-    localStorage.setItem("vellum:integrations:bannerDismissed", "true");
-    localStorage.setItem("vellum:voice:activationKey", "Space");
+    localStorage.setItem("cadet:pinnedApps", "[]");
+    localStorage.setItem("cadet:lastViewedConversation:asst-1", "conv-1");
+    localStorage.setItem("cadet:sidebar-open-categories:asst-1", "{}");
+    localStorage.setItem("cadet:sidebar-open-custom-groups:asst-1", "{}");
+    localStorage.setItem("cadet:selectedAssistantId", "asst-1");
+    localStorage.setItem("cadet:nudge-prefs", "{}");
+    localStorage.setItem("cadet:chatDrafts:asst-1", '{"text":"hi"}');
+    localStorage.setItem("cadet:ctxwindow:asst-1", "4096");
+    localStorage.setItem("cadet:dismissed-surfaces:asst-1", "[]");
+    localStorage.setItem("cadet:ff:some-flag", "true");
+    localStorage.setItem("cadet:onboarding:tosAccepted", "true");
+    localStorage.setItem("cadet:onboarding:aiDataConsent", "true");
+    localStorage.setItem("cadet:onboarding:completed", "true");
+    localStorage.setItem("cadet:onboarding:selectedVersion", "v1.0");
+    localStorage.setItem("cadet:integrations:bannerDismissed", "true");
+    localStorage.setItem("cadet:voice:activationKey", "Space");
     // eslint-disable-next-line no-restricted-syntax -- test: verifying cleanup of user-scoped storage keys
-    localStorage.setItem("vellum:voice:ttsApiKey:openai", "test-value");
+    localStorage.setItem("cadet:voice:ttsApiKey:openai", "test-value");
     // eslint-disable-next-line no-restricted-syntax -- test: verifying cleanup of user-scoped storage keys
-    localStorage.setItem("vellum:voice:sttApiKey:openai", "test-value");
+    localStorage.setItem("cadet:voice:sttApiKey:openai", "test-value");
     // eslint-disable-next-line no-restricted-syntax -- test: verifying cleanup of user-scoped storage keys
-    localStorage.setItem("vellum:gw:token", "jwt-token");
-    localStorage.setItem("vellum:local:lockfile", "{}");
-    localStorage.setItem("vellum:ai:imageGenMode", "enabled");
-    localStorage.setItem("vellum:debug:impersonateAssistantVersion", "0.8.6");
-    localStorage.setItem("vellum:sidebar:collapsed", "true");
-    localStorage.setItem("vellum:sidebar:width", "300");
-    localStorage.setItem("vellum:diskPressureDismissed:asst-1", "true");
-    localStorage.setItem("vellum:skills:tipDismissed", "true");
+    localStorage.setItem("cadet:gw:token", "jwt-token");
+    localStorage.setItem("cadet:local:lockfile", "{}");
+    localStorage.setItem("cadet:ai:imageGenMode", "enabled");
+    localStorage.setItem("cadet:debug:impersonateAssistantVersion", "0.8.6");
+    localStorage.setItem("cadet:sidebar:collapsed", "true");
+    localStorage.setItem("cadet:sidebar:width", "300");
+    localStorage.setItem("cadet:diskPressureDismissed:asst-1", "true");
+    localStorage.setItem("cadet:skills:tipDismissed", "true");
 
     clearUserScopedStorage();
 
@@ -209,8 +209,8 @@ describe("clearUserScopedStorage", () => {
   });
 
   test("automatically clears future vellum: keys without needing explicit registration", () => {
-    localStorage.setItem("vellum:some-future-feature:asst-1", "data");
-    localStorage.setItem("vellum:another-feature", "value");
+    localStorage.setItem("cadet:some-future-feature:asst-1", "data");
+    localStorage.setItem("cadet:another-feature", "value");
 
     clearUserScopedStorage();
 
@@ -242,9 +242,9 @@ describe("clearUserScopedStorage", () => {
   test("removes vellum: keys while preserving device: and third-party keys", () => {
     localStorage.setItem("device:theme", "dark");
     localStorage.setItem("device:share_analytics", "true");
-    localStorage.setItem("vellum:pinnedApps", "[]");
-    localStorage.setItem("vellum:ff:my-flag", "true");
-    localStorage.setItem("vellum:onboarding:completed", "true");
+    localStorage.setItem("cadet:pinnedApps", "[]");
+    localStorage.setItem("cadet:ff:my-flag", "true");
+    localStorage.setItem("cadet:onboarding:completed", "true");
     localStorage.setItem("_ga", "GA1.2.123456");
 
     clearUserScopedStorage();
@@ -252,9 +252,9 @@ describe("clearUserScopedStorage", () => {
     expect(localStorage.getItem("device:theme")).toBe("dark");
     expect(localStorage.getItem("device:share_analytics")).toBe("true");
     expect(localStorage.getItem("_ga")).toBe("GA1.2.123456");
-    expect(localStorage.getItem("vellum:pinnedApps")).toBeNull();
-    expect(localStorage.getItem("vellum:ff:my-flag")).toBeNull();
-    expect(localStorage.getItem("vellum:onboarding:completed")).toBeNull();
+    expect(localStorage.getItem("cadet:pinnedApps")).toBeNull();
+    expect(localStorage.getItem("cadet:ff:my-flag")).toBeNull();
+    expect(localStorage.getItem("cadet:onboarding:completed")).toBeNull();
   });
 
   test("preserves active app. nudge keys on logout", () => {

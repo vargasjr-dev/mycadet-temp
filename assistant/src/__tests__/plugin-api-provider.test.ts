@@ -1,5 +1,5 @@
 /**
- * `getConfiguredProvider` is part of the public `@vellumai/plugin-api` runtime
+ * `getConfiguredProvider` is part of the public `@mycadet/plugin-api` runtime
  * surface, so a user-installable plugin can run inference through the
  * workspace's configured profiles/credentials (managed-proxy or BYOK) without
  * supplying its own API key.

@@ -19,7 +19,7 @@
  * Transport follows `live-voice/connection.ts` and the watch stream. A
  * self-hosted assistant is dialled straight at its gateway ingress with the
  * actor edge JWT in `?token=` (browser WebSockets can't set an `Authorization`
- * header); a managed one is reached through the platform's velay ingress with
+ * header); a managed one is reached through the platform's tunnel ingress with
  * a minted short-lived token. The mint is a round trip, so the socket is
  * resolved asynchronously and audio captured meanwhile is held until it opens,
  * which is what keeps the opening words of a dictation that begins the
@@ -40,11 +40,11 @@ import {
 } from "@/domains/chat/voice/live-voice/pcm-capture";
 import {
   buildSelfHostedGatewayWsUrl,
-  buildVelayWsUrl,
+  buildTunnelWsUrl,
   isPairedGatewayIngress,
-  mintVelayWsToken,
+  mintTunnelWsToken,
   PairedVoiceUnavailableError,
-  VelayWsTokenError,
+  TunnelWsTokenError,
 } from "@/domains/chat/voice/live-voice/connection";
 import { LIVE_VOICE_AUDIO_FORMAT_PARAMS } from "@/domains/chat/voice/live-voice/protocol";
 import {
@@ -70,7 +70,7 @@ export interface DictationStreamHandle {
 }
 
 export interface StartDictationStreamArgs {
-  /** Whose assistant the session is for, which is what a velay token is minted against. */
+  /** Whose assistant the session is for, which is what a tunnel token is minted against. */
   assistantId: string;
   /**
    * Receives the running transcript (committed finals + current interim)
@@ -103,7 +103,7 @@ export async function resolveDictationStreamWsUrl(
     }
     const token = getSelfHostedActorToken();
     if (!token) {
-      throw new VelayWsTokenError(
+      throw new TunnelWsTokenError(
         0,
         "Self-hosted dictation has no actor token yet; the gateway isn't ready.",
       );
@@ -111,8 +111,8 @@ export async function resolveDictationStreamWsUrl(
     return buildSttStreamWsUrl({ ingressUrl, token });
   }
 
-  const { token } = await mintVelayWsToken(assistantId);
-  return buildVelayWsUrl({
+  const { token } = await mintTunnelWsToken(assistantId);
+  return buildTunnelWsUrl({
     assistantId,
     routePath: STT_STREAM_ROUTE,
     token,
@@ -372,7 +372,7 @@ export function startDictationStream(
       }
       // Which way in, and how long the token took, without the token.
       console.info(
-        `dictation-stream: dialling ${new URL(url).host} (${getSelfHostedIngressUrl() ? "self-hosted" : "velay"}) after ${Date.now() - startedAt}ms`,
+        `dictation-stream: dialling ${new URL(url).host} (${getSelfHostedIngressUrl() ? "self-hosted" : "tunnel"}) after ${Date.now() - startedAt}ms`,
       );
       try {
         attach(webSocketFactory(url));

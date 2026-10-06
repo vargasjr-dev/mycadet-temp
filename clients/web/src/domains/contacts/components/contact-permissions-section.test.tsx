@@ -4,7 +4,7 @@ import { createElement } from "react";
 
 import type { ContactPayload } from "@/domains/contacts/types";
 
-mock.module("@vellumai/design-library/components/select", () => ({
+mock.module("@mycadet/design-library/components/select", () => ({
   Select: ({
     value,
     onChange,
@@ -43,13 +43,10 @@ mock.module("@vellumai/design-library/components/select", () => ({
     ),
 }));
 
-const { canEditContactPermissions, ContactPermissionsSection } = await import(
-  "./contact-permissions-section"
-);
+const { canEditContactPermissions, ContactPermissionsSection } =
+  await import("./contact-permissions-section");
 
-function contact(
-  patch: Partial<ContactPayload> = {},
-): ContactPayload {
+function contact(patch: Partial<ContactPayload> = {}): ContactPayload {
   return {
     id: "c-alice",
     role: "contact",
@@ -68,9 +65,9 @@ afterEach(cleanup);
 describe("canEditContactPermissions", () => {
   test("allows regular human contacts", () => {
     expect(canEditContactPermissions(contact())).toBe(true);
-    expect(
-      canEditContactPermissions(contact({ contactType: undefined })),
-    ).toBe(true);
+    expect(canEditContactPermissions(contact({ contactType: undefined }))).toBe(
+      true,
+    );
   });
 
   test("hides the guardian and assistant contacts", () => {
@@ -105,7 +102,8 @@ describe("ContactPermissionsSection", () => {
     rerender(
       <ContactPermissionsSection
         contact={contact({
-          autoApproveThreshold: "full" as ContactPayload["autoApproveThreshold"],
+          autoApproveThreshold:
+            "full" as ContactPayload["autoApproveThreshold"],
         })}
         onAutoApproveThresholdChange={() => {}}
       />,

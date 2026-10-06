@@ -18,7 +18,7 @@
  * stateless and means a mid-run array rewrite (compaction) can't invalidate it.
  */
 
-import type { HookFunction, Message, StopContext } from "@vellumai/plugin-api";
+import type { HookFunction, Message, StopContext } from "@mycadet/plugin-api";
 
 import { getConfig } from "../../../../config/loader.js";
 import { getConversation } from "../../../../persistence/conversation-crud.js";

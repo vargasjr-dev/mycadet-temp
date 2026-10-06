@@ -93,7 +93,7 @@ mock.module("@/domains/chat/process-registry/inline-process-card-row", () => ({
 // Subjects under test — imported AFTER mocks are registered.
 // ---------------------------------------------------------------------------
 
-import type { ConversationContentBlock } from "@vellumai/assistant-api";
+import type { ConversationContentBlock } from "@mycadet/assistant-api";
 
 import { Transcript } from "@/domains/chat/transcript/transcript";
 import { useSubagentStore } from "@/domains/chat/subagent-store";

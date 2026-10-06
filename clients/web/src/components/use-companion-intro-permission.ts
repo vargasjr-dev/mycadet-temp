@@ -3,14 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import type {
   CompanionIntroBeat,
   PermissionSourceRect,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import {
   beginPermissionGuide,
   cancelPermissionGuide,
   supportsPermissionSetup,
 } from "@/runtime/permission-setup";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { ensureMainWindowVisible } from "@/runtime/main-window";
 import { frontmostApp } from "@/runtime/running-apps";
 import {
@@ -23,7 +23,9 @@ import {
 } from "@/runtime/system-permissions";
 
 export type CompanionIntroPermissionKind =
-  "microphone" | "inputMonitoring" | "screen";
+  | "microphone"
+  | "inputMonitoring"
+  | "screen";
 type CompanionIntroPermissionState =
   | { phase: "checking" | "requesting" | "error" }
   | { phase: "known"; item: SystemPermissionStateItem };
@@ -110,7 +112,9 @@ export function useCompanionIntroPermission(
         cancelPermissionGuide();
         await ensureMainWindowVisible();
       } catch (error) {
-        captureError(error, { context: "companionIntro.resumeAfterPermission" });
+        captureError(error, {
+          context: "companionIntro.resumeAfterPermission",
+        });
       } finally {
         checkingReturn = false;
       }

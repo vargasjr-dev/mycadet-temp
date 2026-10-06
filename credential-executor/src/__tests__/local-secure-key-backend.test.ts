@@ -20,8 +20,8 @@ import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-import { CesRpcMethod } from "@vellumai/service-contracts/credential-rpc";
-import type { SecureKeyBackend } from "@vellumai/credential-storage";
+import { CesRpcMethod } from "@mycadet/service-contracts/credential-rpc";
+import type { SecureKeyBackend } from "@mycadet/credential-storage";
 
 import {
   createLocalSecureKeyBackend,

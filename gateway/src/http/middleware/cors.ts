@@ -1,4 +1,4 @@
-import { CLIENT_METADATA_HEADERS } from "@vellumai/service-contracts/client-metadata";
+import { CLIENT_METADATA_HEADERS } from "@mycadet/service-contracts/client-metadata";
 
 import { KNOWN_EXTENSION_ORIGINS } from "../../chrome-extension-origins.js";
 import { getLogger } from "../../logger.js";
@@ -41,7 +41,7 @@ const ALLOWED_HEADERS = [
   "X-Session-Token",
   "Vellum-Organization-Id",
   "X-Trace-Id",
-    "X-Vellum-Client-Id",
+  "X-Vellum-Client-Id",
   "X-Vellum-Interface-Id",
   "X-Vellum-Client-Version",
   "X-Vellum-Sse-Watchdog",

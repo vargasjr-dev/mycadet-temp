@@ -57,13 +57,13 @@ mock.module("./main-window", () => ({
 }));
 // The shared module imports `electron.Notification`, which does not exist
 // outside an Electron runtime.
-mock.module("@vellumai/electron-desktop/notifications", () => ({
+mock.module("@mycadet/electron-desktop/notifications", () => ({
   configureNotifications: () => undefined,
   installNotifications: () => undefined,
 }));
 const windowAttentionInstalls = { count: 0 };
 const teardownWindowAttention = mock(() => undefined);
-mock.module("@vellumai/electron-desktop/window-attention", () => ({
+mock.module("@mycadet/electron-desktop/window-attention", () => ({
   installWindowAttention: () => {
     windowAttentionInstalls.count += 1;
     return teardownWindowAttention;
@@ -99,7 +99,7 @@ class FakeSidecarClient {
     return Promise.resolve({ success: true });
   }
 }
-mock.module("@vellumai/native-sidecar/supervisor", () => ({
+mock.module("@mycadet/native-sidecar/supervisor", () => ({
   NativeSidecarClient: FakeSidecarClient,
 }));
 
@@ -109,7 +109,7 @@ const { default: windowAttentionFeature } =
 const { default: shareFeature, sanitizeFilename } =
   await import("./features/share");
 const { DesktopCapabilityRegistry } =
-  await import("@vellumai/electron-desktop/capability-registry");
+  await import("@mycadet/electron-desktop/capability-registry");
 
 beforeEach(() => {
   handleRegistrations.length = 0;
@@ -285,7 +285,7 @@ describe("share feature", () => {
   const installShare = (): HandleRegistration => {
     shareFeature.install(new DesktopCapabilityRegistry());
     const registration = handleRegistrations.find(
-      (candidate) => candidate.channel === "vellum:share:file",
+      (candidate) => candidate.channel === "cadet:share:file",
     );
     if (!registration) throw new Error("share handler was not registered");
     return registration;

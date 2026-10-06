@@ -16,7 +16,7 @@
  * `channel_permission_overrides` matrix (one cell per non-guardian
  * contact-type; see {@link CHANNEL_TIER_CONTACT_TYPES}).
  */
-import type { TagTone } from "@vellumai/design-library/components/tag";
+import type { TagTone } from "@mycadet/design-library/components/tag";
 
 import {
   presetFromThreshold,

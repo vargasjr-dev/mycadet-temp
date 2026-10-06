@@ -1,4 +1,4 @@
-import type { ModeSession, ModeSessionSummary } from "@vellumai/assistant-api";
+import type { ModeSession, ModeSessionSummary } from "@mycadet/assistant-api";
 
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import type {

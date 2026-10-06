@@ -1,4 +1,4 @@
-import { SPECIES_CONFIG, type Species } from "./constants.js";
+import { HATCH_ART } from "./constants.js";
 
 export const LEFT_PANEL_WIDTH = 36;
 export const DEFAULT_TERMINAL_COLUMNS = 80;
@@ -251,13 +251,12 @@ export function estimateItemHeight(
 }
 
 export function calculateHeaderHeight(
-  species: Species,
   terminalColumns = DEFAULT_TERMINAL_COLUMNS,
 ): number {
   if (terminalColumns < COMPACT_THRESHOLD) {
     return COMPACT_HEADER_HEIGHT;
   }
-  const artLength = SPECIES_CONFIG[species].art.length;
+  const artLength = HATCH_ART.length;
   const leftLineCount = LEFT_HEADER_LINES + artLength + LEFT_FOOTER_LINES;
   const maxLines = Math.max(leftLineCount, RIGHT_PANEL_LINE_COUNT);
   return maxLines + HEADER_CHROME_LINES;

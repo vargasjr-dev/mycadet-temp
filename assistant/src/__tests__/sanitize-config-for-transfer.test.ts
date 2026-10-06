@@ -8,7 +8,7 @@ describe("sanitizeConfigForTransfer", () => {
       ingress: {
         publicBaseUrl: "https://example.com",
         enabled: true,
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrlManagedBy: "tunnel",
         webhook: { path: "/hook" },
       },
       daemon: { port: 3000, logLevel: "debug" },
@@ -137,12 +137,12 @@ describe("sanitizeConfigForTransfer", () => {
     expect(result.skills.load.builtIn).toBe(true);
   });
 
-  test("strips Velay-managed ingress state during transfer", () => {
+  test("strips Tunnel-managed ingress state during transfer", () => {
     const input = {
       ingress: {
-        publicBaseUrl: "https://velay-public.example.test",
+        publicBaseUrl: "https://tunnel-public.example.test",
         enabled: true,
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrlManagedBy: "tunnel",
         webhook: { path: "/webhook" },
       },
     };
@@ -186,9 +186,9 @@ describe("sanitizeConfigForTransfer", () => {
   test("preserves nested ingress fields other than environment-specific URL state", () => {
     const input = {
       ingress: {
-        publicBaseUrl: "https://velay-public.example.test",
+        publicBaseUrl: "https://tunnel-public.example.test",
         enabled: false,
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrlManagedBy: "tunnel",
         webhook: { path: "/webhook", secret: "abc" },
         rateLimit: { max: 50, window: 60 },
       },

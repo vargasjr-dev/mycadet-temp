@@ -11,7 +11,7 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 
 import { useActiveWorkflowRunIds } from "@/domains/chat/hooks/use-active-workflow-run-ids";
 import { useWorkflowStore } from "@/domains/chat/workflow-store";
-import type { WorkflowRunStatus } from "@vellumai/assistant-api";
+import type { WorkflowRunStatus } from "@mycadet/assistant-api";
 
 afterEach(() => {
   cleanup();

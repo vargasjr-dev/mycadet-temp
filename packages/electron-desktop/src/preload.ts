@@ -9,7 +9,7 @@ import type {
   UpdateState,
   VellumBridge,
   WindowAttentionPayload,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import {
   PERMISSION_GUIDE_CANCEL,
   PERMISSION_SETUP_BEGIN,
@@ -28,7 +28,7 @@ import {
   NOTIFICATIONS_RESET_IDENTITIES,
   NOTIFICATIONS_SHOW,
   WINDOW_ATTENTION,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 type RendererIpc = Pick<IpcRenderer, "invoke" | "off" | "on" | "send">;
 
@@ -100,16 +100,16 @@ const subscribeWithReplay = <Payload>(
 export const createDeepLinksBridge = (
   ipc: RendererIpc,
 ): VellumBridge["deepLinks"] => ({
-  drain: () => ipc.invoke("vellum:deepLinks:drain") as Promise<DeepLink[]>,
+  drain: () => ipc.invoke("cadet:deepLinks:drain") as Promise<DeepLink[]>,
   onLink: (callback) => {
     const handler = (_event: IpcRendererEvent, link: DeepLink): void => {
       callback(link);
     };
-    ipc.on("vellum:deepLinks:event", handler);
-    ipc.send("vellum:deepLinks:subscribe");
+    ipc.on("cadet:deepLinks:event", handler);
+    ipc.send("cadet:deepLinks:subscribe");
     return () => {
-      ipc.off("vellum:deepLinks:event", handler);
-      ipc.send("vellum:deepLinks:unsubscribe");
+      ipc.off("cadet:deepLinks:event", handler);
+      ipc.send("cadet:deepLinks:unsubscribe");
     };
   },
 });
@@ -117,19 +117,19 @@ export const createDeepLinksBridge = (
 export const createLaunchAtLoginBridge = (
   ipc: RendererIpc,
 ): VellumBridge["launchAtLogin"] => ({
-  get: () => ipc.invoke("vellum:launchAtLogin:get") as Promise<boolean>,
+  get: () => ipc.invoke("cadet:launchAtLogin:get") as Promise<boolean>,
   set: (enabled) =>
-    ipc.invoke("vellum:launchAtLogin:set", enabled) as Promise<void>,
+    ipc.invoke("cadet:launchAtLogin:set", enabled) as Promise<void>,
 });
 
 /** Renderer side of `installHotkeysIpc`. */
 export const createHotkeysBridge = (
   ipc: RendererIpc,
 ): VellumBridge["hotkeys"] => ({
-  get: () => ipc.invoke("vellum:hotkeys:get") as Promise<ResolvedHotkey[]>,
+  get: () => ipc.invoke("cadet:hotkeys:get") as Promise<ResolvedHotkey[]>,
   set: (key, accelerator) =>
-    ipc.invoke("vellum:hotkeys:set", key, accelerator) as Promise<void>,
-  onChange: subscribe<ResolvedHotkey[]>(ipc, "vellum:hotkeys:changed"),
+    ipc.invoke("cadet:hotkeys:set", key, accelerator) as Promise<void>,
+  onChange: subscribe<ResolvedHotkey[]>(ipc, "cadet:hotkeys:changed"),
 });
 
 /** Renderer side of `installBundleConfirmation`. */
@@ -138,10 +138,10 @@ export const createBundleConfirmBridge = (
 ): VellumBridge["bundleConfirm"] => ({
   getData: () =>
     ipc.invoke(
-      "vellum:bundleConfirm:getData",
+      "cadet:bundleConfirm:getData",
     ) as Promise<BundleScanData | null>,
   respond: (accepted) => {
-    ipc.send("vellum:bundleConfirm:respond", accepted);
+    ipc.send("cadet:bundleConfirm:respond", accepted);
   },
 });
 
@@ -157,10 +157,10 @@ export const createDownloadsBridge = (
 export const createUpdateBridge = (
   ipc: RendererIpc,
 ): VellumBridge["update"] => ({
-  getState: () => ipc.invoke("vellum:update:getState") as Promise<UpdateState>,
-  check: () => ipc.invoke("vellum:update:check") as Promise<void>,
-  install: () => ipc.invoke("vellum:update:install") as Promise<void>,
-  onState: subscribe<UpdateState>(ipc, "vellum:update:state"),
+  getState: () => ipc.invoke("cadet:update:getState") as Promise<UpdateState>,
+  check: () => ipc.invoke("cadet:update:check") as Promise<void>,
+  install: () => ipc.invoke("cadet:update:install") as Promise<void>,
+  onState: subscribe<UpdateState>(ipc, "cadet:update:state"),
 });
 
 /** Renderer side of the notification presenter and identity-memory IPC. */

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import { Select } from "@vellumai/design-library/components/select";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Select } from "@mycadet/design-library/components/select";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 import { useTranslation } from "@/i18n";
 
@@ -47,7 +47,8 @@ interface ProfileOption {
 }
 
 type PickableProvider =
-  (typeof INFERENCE_PROVIDERS)[number] | typeof CHATGPT_CONNECTION_PROVIDER;
+  | (typeof INFERENCE_PROVIDERS)[number]
+  | typeof CHATGPT_CONNECTION_PROVIDER;
 
 export interface CallSiteOverrideRowProps {
   id: string;

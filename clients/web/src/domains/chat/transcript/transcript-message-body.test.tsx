@@ -118,7 +118,7 @@ mock.module("@/domains/chat/utils/background-task-actions", () => ({
 // action wiring without pulling in Radix's portal and focus machinery. The
 // library Button stays real: the hover actions and the attachment download
 // control are Buttons, and the tests find them by their name and title.
-mock.module("@vellumai/design-library/components/modal", () => {
+mock.module("@mycadet/design-library/components/modal", () => {
   const passthrough =
     (slot: string) =>
     ({ children }: { children?: ReactNode }) => (
@@ -333,7 +333,7 @@ mock.module("@/runtime/native-file", () => ({
 }));
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ConversationContentBlock } from "@vellumai/assistant-api";
+import type { ConversationContentBlock } from "@mycadet/assistant-api";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { DisplayMessage, Surface } from "@/domains/chat/types/types";
 import type { ResponseArtifact } from "@/domains/chat/transcript/response-artifacts";

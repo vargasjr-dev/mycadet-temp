@@ -8,10 +8,10 @@
  * - Safari (older): `TypeError: Load failed`
  * - Firefox: `TypeError: NetworkError when attempting to fetch resource`
  *
- * Middleware that wraps `window.fetch` (e.g. the Sentry SDK's fetch
+ * Middleware that wraps `window.fetch` (e.g. an SDK's fetch
  * instrumentation) may append a hostname suffix to the message before
  * application code sees it — e.g. `"Failed to fetch (example.com)"`.
- * We configure the Sentry SDK to avoid this (`enhanceFetchErrorMessages:
+ * Clients configure their fetch wrappers to avoid this (`enhanceFetchErrorMessages:
  * 'report-only'`), but as defense-in-depth the detection here tolerates
  * an optional trailing `(hostname)` suffix.
  *

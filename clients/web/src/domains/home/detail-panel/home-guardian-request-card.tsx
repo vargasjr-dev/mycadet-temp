@@ -16,13 +16,13 @@ import {
   type FeedItem,
   type FeedItemGuardianRequest,
   GUARDIAN_TERMINAL_REASON_SUPERSEDED,
-} from "@vellumai/assistant-api";
-import { Button, Tag, Typography } from "@vellumai/design-library";
-import type { TagTone } from "@vellumai/design-library/components/tag";
+} from "@mycadet/assistant-api";
+import { Button, Tag, Typography } from "@mycadet/design-library";
+import type { TagTone } from "@mycadet/design-library/components/tag";
 import {
   type GuardianDecisionActionId,
   isDenyingGuardianAction,
-} from "@vellumai/service-contracts/guardian-requests";
+} from "@mycadet/service-contracts/guardian-requests";
 
 import {
   isCommittedDecision,

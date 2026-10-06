@@ -14,7 +14,7 @@ import { Link } from "react-router";
 import { SidebarSectionEmptyState } from "@/domains/chat/components/sidebar-section-empty-state";
 import { useTranslation } from "@/i18n";
 import { useSidebarDoneEnabled } from "@/utils/done-labels";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 export function ChatsSectionEmptyState({
   viewAllHref,

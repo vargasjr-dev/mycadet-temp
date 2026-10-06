@@ -62,7 +62,7 @@ mock.module("@/hooks/connect-claude-api", () => ({
   isClaudeConnected: async () => alreadyConnected,
 }));
 
-mock.module("@vellumai/design-library/components/button", () => ({
+mock.module("@mycadet/design-library/components/button", () => ({
   Button: ({
     children,
     size: _size,
@@ -79,13 +79,13 @@ mock.module("@vellumai/design-library/components/button", () => ({
   }) => <button {...props}>{children}</button>,
 }));
 
-mock.module("@vellumai/design-library/components/input", () => ({
+mock.module("@mycadet/design-library/components/input", () => ({
   Input: ({ fullWidth: _fullWidth, ...props }: { fullWidth?: boolean }) => (
     <input {...props} />
   ),
 }));
 
-mock.module("@vellumai/design-library/components/typography", () => ({
+mock.module("@mycadet/design-library/components/typography", () => ({
   Typography: ({ children }: { children?: ReactNode }) => (
     <span>{children}</span>
   ),

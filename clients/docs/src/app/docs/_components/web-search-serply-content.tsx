@@ -18,7 +18,7 @@ export function WebSearchSerplyContent() {
       <DocsContent
         title="Serply"
         breadcrumb="Docs / Key Concepts / Web Search / Serply"
-        subtitle="Google search results as JSON. Use Serply in your Vellum assistant when you want the same organic results a person would see in Google, with a title, link, and snippet for each."
+        subtitle="Google search results as JSON. Use Serply in your Cadet assistant when you want the same organic results a person would see in Google, with a title, link, and snippet for each."
       >
         <section id="what-it-does">
           <SectionHeading id="what-it-does" level={2}>
@@ -33,7 +33,7 @@ export function WebSearchSerplyContent() {
             changed pages closely.
           </p>
           <p className="mb-0 text-zinc-600 dark:text-zinc-400">
-            When configured, Vellum sends web search calls to Serply and feeds
+            When configured, Cadet sends web search calls to Serply and feeds
             the results back to your assistant in context. The model can cite
             the snippets, open a source with web fetch, or synthesize an answer
             across several results.
@@ -46,7 +46,7 @@ export function WebSearchSerplyContent() {
           </SectionHeading>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600 dark:text-zinc-400">
             <li>
-              A running Vellum assistant. Cloud, self-hosted, or the desktop
+              A running Cadet assistant. Cloud, self-hosted, or the desktop
               apps all work.
             </li>
             <li>
@@ -75,7 +75,7 @@ export function WebSearchSerplyContent() {
           </p>
           <ol className="mb-6 list-decimal space-y-3 pl-6 text-zinc-600 dark:text-zinc-400">
             <li>
-              <strong>Open assistant settings.</strong> In Vellum, head to{" "}
+              <strong>Open assistant settings.</strong> In Cadet, head to{" "}
               <span className="font-medium text-zinc-900 dark:text-zinc-100">
                 Settings &rarr; Models &amp; Services
               </span>
@@ -90,12 +90,12 @@ export function WebSearchSerplyContent() {
               <span className="font-medium text-zinc-900 dark:text-zinc-100">
                 Serply
               </span>{" "}
-              as the provider and paste your API key. Vellum stores the key in
+              as the provider and paste your API key. Cadet stores the key in
               your local secure store and never writes it to disk in plaintext.
             </li>
             <li>
               <strong>Try it.</strong> Start a new conversation and ask a
-              question that needs fresh or hard-to-find information. Vellum
+              question that needs fresh or hard-to-find information. Cadet
               calls Serply under the hood and feeds the Google results back to
               the model in context.
             </li>
@@ -135,14 +135,14 @@ assistant config set services.web-search.provider serply`}
             </li>
             <li>
               <strong>Result counts cap at ten.</strong> Serply returns one page
-              of Google results per call, up to ten organic entries. Vellum
+              of Google results per call, up to ten organic entries. Cadet
               requests at most ten and trims to the count the assistant asked
               for.
             </li>
             <li>
               <strong>Recency filters use Google&apos;s time filter.</strong>{" "}
               When the assistant asks for results from the past day, week,
-              month, or year, Vellum passes that window to Serply as
+              month, or year, Cadet passes that window to Serply as
               Google&apos;s time filter, so filtered searches behave the same as
               choosing a time range under Google&apos;s Tools menu.
             </li>
@@ -162,7 +162,7 @@ assistant config set services.web-search.provider serply`}
             <li>
               <strong>Billing.</strong> Serply usage is billed per request
               directly by Serply under the account that owns the key, separately
-              from Vellum credits. Credits are prepaid and do not expire, and
+              from Cadet credits. Credits are prepaid and do not expire, and
               repeated identical requests served from Serply&apos;s cache are
               free.
             </li>
@@ -212,7 +212,7 @@ assistant config set services.web-search.provider serply`}
                 href="/docs/key-concepts/web-search"
                 className="text-emerald-700 underline hover:text-emerald-800"
               >
-                Vellum Web Search reference
+                Cadet Web Search reference
               </Link>
             </li>
           </ul>

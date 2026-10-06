@@ -40,7 +40,7 @@ mock.module("./ipc", () => ({
     handleRegistrations.push({ channel, schema, fn });
   },
 }));
-mock.module("@vellumai/electron-desktop/avatar", () => ({
+mock.module("@mycadet/electron-desktop/avatar", () => ({
   onAvatarChange: () => () => undefined,
 }));
 
@@ -59,11 +59,11 @@ mock.module("./session-token-store.client", () => ({
   },
 }));
 
-// Mock @vellumai/local-mode so the dock's lockfile-based local-assistant
+// Mock @mycadet/local-mode so the dock's lockfile-based local-assistant
 // check works without a real filesystem. Controls whether the dock sees
 // active local assistants (gateway-only auth, no platform token).
 let mockLockfileAssistants: Array<Record<string, unknown>> = [];
-mock.module("@vellumai/local-mode", () => ({
+mock.module("@mycadet/local-mode", () => ({
   resolveLockfilePaths: () => ["/fake/.vellum.lock.json"],
   getLockfileData: () => ({
     ok: true as const,
@@ -72,7 +72,7 @@ mock.module("@vellumai/local-mode", () => ({
 }));
 
 const avatarBitmapMock = mock((_size: number): Buffer | null => null);
-mock.module("@vellumai/electron-desktop/avatar-image", () => ({
+mock.module("@mycadet/electron-desktop/avatar-image", () => ({
   avatarBitmap: avatarBitmapMock,
 }));
 
@@ -301,7 +301,7 @@ describe("installDock IPC registration", () => {
     expect(handleRegistrations).toHaveLength(0);
 
     const channels = onRegistrations.map((r) => r.channel);
-    expect(channels.filter((c) => c === "vellum:dock:setBadge")).toHaveLength(
+    expect(channels.filter((c) => c === "cadet:dock:setBadge")).toHaveLength(
       1,
     );
   });
@@ -309,7 +309,7 @@ describe("installDock IPC registration", () => {
   test("the setBadge schema accepts a single number and rejects anything else", () => {
     // GIVEN the setBadge IPC registration
     const schema = onRegistrations.find(
-      (r) => r.channel === "vellum:dock:setBadge",
+      (r) => r.channel === "cadet:dock:setBadge",
     )!.schema;
 
     // WHEN we parse valid and invalid payloads
@@ -324,7 +324,7 @@ describe("installDock IPC registration", () => {
   test("a published badge count is formatted onto the Dock", () => {
     // GIVEN the setBadge IPC handler
     const fn = onRegistrations.find(
-      (r) => r.channel === "vellum:dock:setBadge",
+      (r) => r.channel === "cadet:dock:setBadge",
     )!.fn;
     setBadgeMock.mockClear();
 
@@ -364,7 +364,7 @@ describe("session-token-driven signed-in state", () => {
 
     // AND there is a badge count
     const badgeFn = onRegistrations.find(
-      (r) => r.channel === "vellum:dock:setBadge",
+      (r) => r.channel === "cadet:dock:setBadge",
     )!.fn;
     badgeFn([5]);
     setBadgeMock.mockClear();
@@ -385,7 +385,7 @@ describe("session-token-driven signed-in state", () => {
 
     // AND there is a badge count
     const badgeFn = onRegistrations.find(
-      (r) => r.channel === "vellum:dock:setBadge",
+      (r) => r.channel === "cadet:dock:setBadge",
     )!.fn;
     badgeFn([3]);
     setBadgeMock.mockClear();

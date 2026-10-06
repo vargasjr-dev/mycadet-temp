@@ -20,7 +20,7 @@ import {
   type AdmissionPolicy,
   ResolveInboundTrustResponseSchema,
   type TrustVerdict,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import type { ChannelId } from "../channels/types.js";
 import { ipcCall } from "../ipc/gateway-client.js";

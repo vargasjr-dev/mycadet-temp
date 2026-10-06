@@ -20,8 +20,8 @@
 import { existsSync, unlinkSync } from "node:fs";
 import { connect, type Socket } from "node:net";
 
-import type { IpcEnvelope } from "@vellumai/ipc-server-utils";
-import { IpcFrameReader, writeMessage } from "@vellumai/ipc-server-utils";
+import type { IpcEnvelope } from "@mycadet/ipc-server-utils";
+import { IpcFrameReader, writeMessage } from "@mycadet/ipc-server-utils";
 
 import { getLogger } from "../util/logger.js";
 import { getProcPidPath, getProcSocketPath } from "../util/platform.js";

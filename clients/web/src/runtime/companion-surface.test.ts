@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { CompanionContext } from "@vellumai/ipc-contract";
+import type { CompanionContext } from "@mycadet/ipc-contract";
 
 mock.module("@/runtime/is-electron", () => ({
   isElectron: () => true,

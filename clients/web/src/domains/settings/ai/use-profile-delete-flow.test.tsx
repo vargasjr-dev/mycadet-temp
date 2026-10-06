@@ -55,7 +55,7 @@ function configPayload(): ConfigGetResponse {
   } as ConfigGetResponse;
 }
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {} },
   Toaster: () => null,
   ToastContent: () => null,
@@ -108,15 +108,12 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   },
 }));
 
-const { configGetQueryKey } = await import(
-  "@/generated/daemon/@tanstack/react-query.gen"
-);
-const { ProfilesSection } = await import(
-  "@/domains/settings/ai/profiles-section"
-);
-const { useAssistantIdentityStore } = await import(
-  "@/stores/assistant-identity-store"
-);
+const { configGetQueryKey } =
+  await import("@/generated/daemon/@tanstack/react-query.gen");
+const { ProfilesSection } =
+  await import("@/domains/settings/ai/profiles-section");
+const { useAssistantIdentityStore } =
+  await import("@/stores/assistant-identity-store");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -233,9 +230,7 @@ function confirmButton(): HTMLButtonElement {
 }
 
 beforeEach(() => {
-  useAssistantIdentityStore
-    .getState()
-    .setIdentity("Test", "0.12.0", "asst-1");
+  useAssistantIdentityStore.getState().setIdentity("Test", "0.12.0", "asst-1");
   configPatchBodies = [];
   reassignBodies = [];
   reassignFails = false;
@@ -619,4 +614,3 @@ describe("profile delete flow - reassign then delete", () => {
     expect(document.body.textContent).toContain("Choose a Replacement Profile");
   });
 });
-

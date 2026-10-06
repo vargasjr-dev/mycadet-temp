@@ -30,7 +30,7 @@ import { makeCtx } from "@/domains/chat/utils/stream-handlers/test-helpers";
 import { clearUserScopedOverrides } from "@/utils/typed-storage";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import type { AssistantEvent } from "@/types/event-types";
-import type { ToolResultEvent } from "@vellumai/assistant-api";
+import type { ToolResultEvent } from "@mycadet/assistant-api";
 
 const MISSING_TOKEN = "acp_claude_oauth_missing";
 

@@ -9,7 +9,7 @@
  */
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { GuardianDelivery } from "@vellumai/gateway-client";
+import type { GuardianDelivery } from "@mycadet/gateway-client";
 
 let cachedResult: GuardianDelivery[] | null = null;
 let freshResult: GuardianDelivery[] | null = null;

@@ -9,7 +9,7 @@
 import { join } from "node:path";
 import { homedir, userInfo } from "node:os";
 
-import { assertTestPathIsEphemeral } from "@vellumai/environments/test-path-guard";
+import { assertTestPathIsEphemeral } from "@mycadet/environments/test-path-guard";
 
 function safeUserInfoHomedir(): string {
   try {
@@ -47,7 +47,7 @@ let warnedSecurityDir = false;
 // In test processes both resolvers below must stay under os.tmpdir():
 // gateway code exercised by a test would otherwise read and write live state
 // (the gateway DB, the actor-token signing key, the backup key). The guard is
-// shared with the assistant in @vellumai/environments/test-path-guard; the
+// shared with the assistant in @mycadet/environments/test-path-guard; the
 // escape hatches are the same variables the DB-open guard in db/connection.ts
 // honors.
 

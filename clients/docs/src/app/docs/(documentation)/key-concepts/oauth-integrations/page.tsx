@@ -2,9 +2,9 @@ import { OauthIntegrationsContent } from "@/app/docs/_components/oauth-integrati
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "OAuth Integrations - Vellum Docs",
+  title: "OAuth Integrations - Cadet Docs",
   description:
-    "How Vellum connects to third-party services via OAuth2: supported services, how the credential vault works, security model, and troubleshooting.",
+    "How Cadet connects to third-party services via OAuth2: supported services, how the credential vault works, security model, and troubleshooting.",
   path: "/docs/key-concepts/oauth-integrations",
 });
 

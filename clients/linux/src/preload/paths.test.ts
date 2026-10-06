@@ -1,13 +1,13 @@
 import { expect, mock, test } from "bun:test";
 
-import { BridgeCapabilityRegistry } from "@vellumai/electron-desktop/capability-registry";
+import { BridgeCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   FILE_OPEN_DRAIN,
   FILE_OPEN_EVENT,
   FILE_OPEN_SUBSCRIBE,
   FILE_OPEN_UNSUBSCRIBE,
   type VellumBridge,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 type Listener = (...args: unknown[]) => void;
 

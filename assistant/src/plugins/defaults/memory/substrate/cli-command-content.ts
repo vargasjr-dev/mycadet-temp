@@ -15,7 +15,7 @@
  * help itself via `--help` when it needs it.
  */
 
-import type { CLI_COMMAND_HELP } from "@vellumai/plugin-api";
+import type { CLI_COMMAND_HELP } from "@mycadet/plugin-api";
 
 /** Element type of the plugin-api's declarative CLI help constant. */
 type CliCommandHelp = (typeof CLI_COMMAND_HELP)[number];

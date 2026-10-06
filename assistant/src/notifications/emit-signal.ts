@@ -9,7 +9,7 @@
  * propagated unless `throwOnError` is enabled.
  */
 
-import type { GuardianDelivery } from "@vellumai/gateway-client";
+import type { GuardianDelivery } from "@mycadet/gateway-client";
 import { v4 as uuid } from "uuid";
 
 import { getDeliverableChannels } from "../channels/config.js";

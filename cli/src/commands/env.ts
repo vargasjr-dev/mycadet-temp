@@ -1,4 +1,4 @@
-import { SEEDS } from "@vellumai/environments";
+import { SEEDS } from "@mycadet/environments";
 import {
   clearDefaultEnvironment,
   readDefaultEnvironment,

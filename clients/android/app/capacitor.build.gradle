@@ -21,7 +21,6 @@ dependencies {
     implementation project(':capacitor-push-notifications')
     implementation project(':capacitor-share')
     implementation project(':capawesome-capacitor-file-picker')
-    implementation project(':sentry-capacitor')
     implementation project(':capacitor-plugin-safe-area')
 
 }

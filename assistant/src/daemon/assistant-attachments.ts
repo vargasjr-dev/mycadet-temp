@@ -87,11 +87,11 @@ export function estimateBase64Bytes(
 
 // The stored-filename rule is a contract with the web client (which resolves
 // clicked vellum:// links back to attachments by filename), so it lives in
-// @vellumai/service-contracts. Re-exported here for the daemon's callers.
+// @mycadet/service-contracts. Re-exported here for the daemon's callers.
 import {
   inferMimeType,
   resolveAttachmentFilename,
-} from "@vellumai/service-contracts/attachment-naming";
+} from "@mycadet/service-contracts/attachment-naming";
 
 export { inferMimeType, resolveAttachmentFilename };
 

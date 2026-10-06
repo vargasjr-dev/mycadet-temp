@@ -1,7 +1,7 @@
 /**
  * Deprecated `/x/*` route context — a telemetry-emitting compatibility shim.
  *
- * Route handlers now reach daemon capabilities through `@vellumai/plugin-api`
+ * Route handlers now reach daemon capabilities through `@mycadet/plugin-api`
  * (`publishEvent`, `runConversationTurn`), which work identically in-process and
  * in the route-host subprocess. Installed route files written against the older
  * `(request, context)` signature keep working: each `context` field delegates
@@ -26,17 +26,17 @@ import { recordWatchdogEvent } from "../../telemetry/watchdog-events-store.js";
 
 /**
  * The deprecated second argument passed to `/x/*` route handlers. Every member
- * is a thin shim over `@vellumai/plugin-api`; prefer importing from there
+ * is a thin shim over `@mycadet/plugin-api`; prefer importing from there
  * directly in new handlers.
  */
 export interface UserRouteContext {
   /**
-   * @deprecated Import `publishEvent` from `@vellumai/plugin-api` instead.
+   * @deprecated Import `publishEvent` from `@mycadet/plugin-api` instead.
    * `publish` forwards to it verbatim.
    */
   readonly assistantEventHub: { publish: typeof publishEvent };
   /**
-   * @deprecated Import `runConversationTurn` from `@vellumai/plugin-api`
+   * @deprecated Import `runConversationTurn` from `@mycadet/plugin-api`
    * instead. `postMessage` runs a turn with the text as a single content block.
    */
   readonly conversations: {

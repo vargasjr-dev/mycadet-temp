@@ -69,7 +69,7 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   }),
 }));
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     success: (message: string) => successToasts.push(message),
     error: (message: string) => errorToasts.push(message),

@@ -15,7 +15,7 @@ import type { SidebarSection } from "@/domains/chat/use-sidebar-state";
 import { SidebarDiscButton } from "@/domains/chat/components/sidebar-disc-button";
 import { useTranslation } from "@/i18n";
 import type { Conversation } from "@/types/conversation-types";
-import { SIDE_MENU_TILE_SIZE, Tooltip } from "@vellumai/design-library";
+import { SIDE_MENU_TILE_SIZE, Tooltip } from "@mycadet/design-library";
 
 /**
  * The section's activity, read from the rows its card would show. While

@@ -11,7 +11,7 @@
 
 import { existsSync, readFileSync, rmSync } from "node:fs";
 
-import type { Message } from "@vellumai/plugin-api";
+import type { Message } from "@mycadet/plugin-api";
 
 import { getConfig } from "../../../config/loader.js";
 import type { InjectionMatcher } from "../../../context/strip-injections.js";

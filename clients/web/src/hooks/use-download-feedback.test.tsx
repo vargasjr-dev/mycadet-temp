@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, renderHook } from "@testing-library/react";
 
-import * as toastModule from "@vellumai/design-library/components/toast";
+import * as toastModule from "@mycadet/design-library/components/toast";
 
 interface ToastCall {
   kind: "info" | "success" | "error";
@@ -9,7 +9,7 @@ interface ToastCall {
   options?: toastModule.ToastOptions;
 }
 const toastCalls: ToastCall[] = [];
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...toastModule,
   toast: Object.assign((..._args: unknown[]) => {}, {
     info: (message: string, options?: toastModule.ToastOptions) => {

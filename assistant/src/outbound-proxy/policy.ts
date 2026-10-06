@@ -7,7 +7,7 @@ import type {
   CredentialInjectionTemplate,
   PolicyDecision,
   RequestTargetContext,
-} from "@vellumai/egress-proxy";
+} from "@mycadet/egress-proxy";
 
 import {
   compareMatchSpecificity,

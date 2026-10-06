@@ -15,7 +15,7 @@
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { PostCompactContext } from "@vellumai/plugin-api";
+import type { PostCompactContext } from "@mycadet/plugin-api";
 
 import type {
   AgentEvent,

@@ -41,7 +41,7 @@
  * - Media stream `stop` event / WebSocket close -> finalize call.
  */
 
-import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@vellumai/service-contracts/ingress";
+import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/ingress";
 import type { ServerWebSocket } from "bun";
 
 import { revokeScopedApprovalGrantsForContext } from "../approvals/scoped-approval-grants.js";

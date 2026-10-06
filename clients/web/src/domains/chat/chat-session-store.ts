@@ -54,7 +54,7 @@ import {
   abandonSwitchMeasurement,
   noteConversationSwitchStarted,
 } from "@/lib/telemetry/switch-telemetry";
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 // ---------------------------------------------------------------------------
 // State

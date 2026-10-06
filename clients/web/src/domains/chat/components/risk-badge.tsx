@@ -1,6 +1,6 @@
 import type { MouseEvent } from "react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 import { getRiskBadgeWeakStyle } from "@/domains/chat/utils/risk";
 import { cn } from "@/utils/misc";

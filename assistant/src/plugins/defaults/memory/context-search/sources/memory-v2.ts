@@ -26,7 +26,7 @@
 import { readdir, readFile, realpath, stat } from "node:fs/promises";
 import { extname, join } from "node:path";
 
-import { safeStringSlice } from "@vellumai/plugin-api";
+import { safeStringSlice } from "@mycadet/plugin-api";
 
 import { embedWithRetry } from "../../../../../persistence/embeddings/embed.js";
 import { getLogger } from "../../logging.js";

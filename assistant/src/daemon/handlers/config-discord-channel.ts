@@ -9,7 +9,7 @@
  * it goes, so there is no webhook to register and no restart to arrange.
  */
 
-import { CHANNEL_BOT_PROVIDER } from "@vellumai/service-contracts/channels";
+import { CHANNEL_BOT_PROVIDER } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
 import {

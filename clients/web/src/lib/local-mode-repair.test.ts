@@ -74,7 +74,7 @@ function selectLocalAssistant(): void {
     activeAssistant: "local-a",
   };
   useLockfileStore.setState({ lockfile });
-  localStorage.setItem("vellum:local:selected-assistant", "local-a");
+  localStorage.setItem("cadet:local:selected-assistant", "local-a");
 }
 
 beforeEach(() => {
@@ -223,7 +223,7 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
     useLockfileStore.setState({
       lockfile: { assistants: [paired], activeAssistant: "paired-a" },
     });
-    localStorage.setItem("vellum:local:selected-assistant", "paired-a");
+    localStorage.setItem("cadet:local:selected-assistant", "paired-a");
     const realFetch = globalThis.fetch;
     globalThis.fetch = mock(
       async () => new Response("token gone", { status: 404 }),

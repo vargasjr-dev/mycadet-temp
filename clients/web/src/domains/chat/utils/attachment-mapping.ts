@@ -1,6 +1,6 @@
 import type { DisplayAttachment } from "@/types/attachment-types";
 import { deriveDisplayUrls } from "@/utils/attachment-urls";
-import type { ConversationMessageAttachment } from "@vellumai/assistant-api";
+import type { ConversationMessageAttachment } from "@mycadet/assistant-api";
 
 /**
  * Convert daemon-provided structured attachment metadata into DisplayAttachment

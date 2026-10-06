@@ -577,8 +577,8 @@ describe("persistDiagnosticsAck + restoreConsentForUser round-trip", () => {
     // attests — so it migrates as current; the unversioned privacy consent
     // predates the current privacy version, so it must NOT be promoted as
     // current.
-    localStorage.setItem("vellum:onboarding:tosAccepted", "true");
-    localStorage.setItem("vellum:onboarding:aiDataConsent", "true");
+    localStorage.setItem("cadet:onboarding:tosAccepted", "true");
+    localStorage.setItem("cadet:onboarding:aiDataConsent", "true");
 
     const r = restoreConsentForUser("user-1");
 

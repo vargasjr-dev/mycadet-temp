@@ -42,7 +42,6 @@ function seedPaired(refreshToken: string, opts?: { due?: boolean }): void {
     runtimeUrl: RUNTIME,
     cloud: "paired",
     paired: true,
-    species: "vellum",
   });
   saveGuardianToken("px", {
     guardianPrincipalId: "imported",

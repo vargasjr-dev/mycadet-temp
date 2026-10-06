@@ -5,7 +5,7 @@ import {
   QUICK_INPUT_DISMISS,
   QUICK_INPUT_SUBMIT,
   type VellumCommand,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import type { IpcHandle } from "./ipc";
 import { createModuleConfiguration } from "./module-configuration";
@@ -55,9 +55,7 @@ const quickInputPosition = (): { x: number; y: number } => {
   return {
     x: Math.round(workArea.x + (workArea.width - PANEL_WIDTH) / 2),
     y: Math.round(
-      workArea.y +
-        (workArea.height - PANEL_HEIGHT) / 2 -
-        workArea.height * 0.1,
+      workArea.y + (workArea.height - PANEL_HEIGHT) / 2 - workArea.height * 0.1,
     ),
   };
 };
@@ -134,22 +132,19 @@ export const installQuickInput = (): void => {
     return;
   }
   installed = true;
-  const { dispatchToMain, ensureMainWindowVisible, handle } = configuration.get();
+  const { dispatchToMain, ensureMainWindowVisible, handle } =
+    configuration.get();
 
-  handle(
-    QUICK_INPUT_SUBMIT,
-    z.tuple([z.string()]),
-    async ([message]) => {
-      if (quickInputWindow && !quickInputWindow.isDestroyed()) {
-        quickInputWindow.close();
-      }
+  handle(QUICK_INPUT_SUBMIT, z.tuple([z.string()]), async ([message]) => {
+    if (quickInputWindow && !quickInputWindow.isDestroyed()) {
+      quickInputWindow.close();
+    }
 
-      await ensureMainWindowVisible();
+    await ensureMainWindowVisible();
 
-      const command: VellumCommand = { kind: "quickInputSubmit", message };
-      dispatchToMain(command);
-    },
-  );
+    const command: VellumCommand = { kind: "quickInputSubmit", message };
+    dispatchToMain(command);
+  });
 
   handle(QUICK_INPUT_DISMISS, z.tuple([]), () => {
     if (quickInputWindow && !quickInputWindow.isDestroyed()) {

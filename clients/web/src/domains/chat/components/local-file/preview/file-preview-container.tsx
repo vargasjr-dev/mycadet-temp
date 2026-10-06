@@ -16,7 +16,7 @@ import { lazy, useCallback, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, X } from "lucide-react";
 
-import { Button, toast, Typography } from "@vellumai/design-library";
+import { Button, toast, Typography } from "@mycadet/design-library";
 
 import { LazyBoundary } from "@/components/lazy-boundary";
 import { formatAttachmentSize } from "@/utils/attachment-utils";

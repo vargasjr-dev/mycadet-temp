@@ -17,7 +17,7 @@
 import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { AssistantSideMenu } from "@/domains/chat/components/assistant-side-menu";

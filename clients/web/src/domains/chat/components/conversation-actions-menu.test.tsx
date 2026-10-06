@@ -76,7 +76,7 @@ const mockSubTrigger = ({
 const mockTrigger = ({ children }: Record<string, unknown>) =>
   createElement("div", { "data-testid": "trigger" }, children as ReactNode);
 
-mock.module("@vellumai/design-library", () => {
+mock.module("@mycadet/design-library", () => {
   const MenuMock = {
     Root: passthrough,
     Trigger: mockTrigger,
@@ -143,7 +143,7 @@ import {
   renderConversationMenuItemsAsPanelItems,
   type ConversationMenuPrimitive,
 } from "@/domains/chat/components/conversation-actions-menu";
-import { Menu } from "@vellumai/design-library";
+import { Menu } from "@mycadet/design-library";
 
 beforeEach(() => {
   mockIsTouchMobile = false;

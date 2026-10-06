@@ -1,9 +1,9 @@
 import { Info, Plug } from "lucide-react";
 import { useNavigate } from "react-router";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Tag } from "@vellumai/design-library/components/tag";
-import { Tooltip } from "@vellumai/design-library/components/tooltip";
+import { Button } from "@mycadet/design-library/components/button";
+import { Tag } from "@mycadet/design-library/components/tag";
+import { Tooltip } from "@mycadet/design-library/components/tooltip";
 
 import { ChannelTrustFloorSection } from "@/domains/channels/components/channel-trust-floor-section";
 import {

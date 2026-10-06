@@ -21,7 +21,7 @@ import {
   doesSupportVision,
   type HookFunction,
   type PostToolUseContext,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import { captionImageBlocks } from "../src/caption-blocks.js";
 import { findVisionProfile } from "../src/vision-caption.js";

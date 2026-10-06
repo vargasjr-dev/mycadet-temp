@@ -20,7 +20,7 @@ import { t } from "@/i18n";
 import { createSelectors } from "@/utils/create-selectors";
 import { publishApp } from "@/utils/publish-app";
 import { shareAppWithToast } from "@/utils/share-app-with-toast";
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 
 // ---------------------------------------------------------------------------
 // Types

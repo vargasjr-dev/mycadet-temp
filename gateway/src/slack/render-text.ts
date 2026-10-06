@@ -1,4 +1,4 @@
-import { renderSlackTextForModel } from "@vellumai/slack-text";
+import { renderSlackTextForModel } from "@mycadet/slack-text";
 
 export type SlackTextRenderContext = {
   userLabels?: Record<string, string>;

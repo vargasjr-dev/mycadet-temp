@@ -11,7 +11,7 @@
 
 import { useState } from "react";
 
-import { Popover } from "@vellumai/design-library/components/popover";
+import { Popover } from "@mycadet/design-library/components/popover";
 
 import { SelectTriggerRow } from "@/components/speech/select-trigger-row";
 import { useManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";

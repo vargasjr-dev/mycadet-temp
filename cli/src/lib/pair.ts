@@ -8,7 +8,7 @@
  * actually asked.
  */
 
-import { REMOTE_WEB_PAIRING_CODE_TTL_MS } from "@vellumai/service-contracts/remote-web-pairing";
+import { REMOTE_WEB_PAIRING_CODE_TTL_MS } from "@mycadet/service-contracts/remote-web-pairing";
 
 const CODE_TTL_MINUTES = Math.round(REMOTE_WEB_PAIRING_CODE_TTL_MS / 60_000);
 

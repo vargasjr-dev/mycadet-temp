@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 
 import type { UseDiskPressureMonitorResult } from "@/assistant/use-disk-pressure-monitor";
-import type { DiskPressureStatus } from "@vellumai/assistant-api";
+import type { DiskPressureStatus } from "@mycadet/assistant-api";
 
 let nativeAndroid = false;
 
@@ -162,7 +162,7 @@ describe("DiskPressureBannerSlot", () => {
   });
 
   test("a stored permanent suppress frees the slot from the first render", () => {
-    localStorage.setItem("vellum:diskPressureSuppressed:assistant-1", "true");
+    localStorage.setItem("cadet:diskPressureSuppressed:assistant-1", "true");
 
     render(<PrecedenceHarness monitor={diskPressure} />);
 
@@ -171,8 +171,8 @@ describe("DiskPressureBannerSlot", () => {
   });
 
   test("acknowledgement-required ignores dismiss flags and keeps precedence", () => {
-    localStorage.setItem("vellum:diskPressureDismissed:assistant-1", "true");
-    localStorage.setItem("vellum:diskPressureSuppressed:assistant-1", "true");
+    localStorage.setItem("cadet:diskPressureDismissed:assistant-1", "true");
+    localStorage.setItem("cadet:diskPressureSuppressed:assistant-1", "true");
 
     render(<PrecedenceHarness monitor={acknowledgementRequired} />);
 

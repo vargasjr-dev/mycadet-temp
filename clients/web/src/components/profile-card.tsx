@@ -27,11 +27,11 @@ import type { Assistant } from "@/generated/api/types.gen";
 import { useAuthStore } from "@/stores/auth-store";
 import { Trans, useTranslation } from "@/i18n";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
-import { Skeleton } from "@vellumai/design-library/components/skeleton";
-import { textLinkVariants } from "@vellumai/design-library/components/text-link";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
+import { Skeleton } from "@mycadet/design-library/components/skeleton";
+import { textLinkVariants } from "@mycadet/design-library/components/text-link";
+import { toast } from "@mycadet/design-library/components/toast";
 
 // Debounce window before firing the availability check. Tight enough that
 // feedback feels live as the user types; loose enough that fast typers

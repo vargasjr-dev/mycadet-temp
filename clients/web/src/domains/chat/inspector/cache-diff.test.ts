@@ -15,7 +15,7 @@ import {
   diffLines,
   type CacheDiffLine,
 } from "./cache-diff";
-import type { LLMContextSection } from "@vellumai/assistant-api";
+import type { LLMContextSection } from "@mycadet/assistant-api";
 
 function system(text: string): LLMContextSection {
   return { kind: "system", label: "System", text };

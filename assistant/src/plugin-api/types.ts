@@ -1,11 +1,11 @@
 /**
  * Public plugin-API types — the canonical contract for
- * `@vellumai/plugin-api`. Adding fields is non-breaking; renaming /
+ * `@mycadet/plugin-api`. Adding fields is non-breaking; renaming /
  * removing is breaking and gated on a major bump.
  *
  * The chain-hook context shapes (and the {@link BaseHookContext} they share)
  * are defined in `assistant/src/hooks/types.ts` and re-exported here, so
- * plugin authors keep importing everything from `@vellumai/plugin-api`.
+ * plugin authors keep importing everything from `@mycadet/plugin-api`.
  */
 
 import type { PluginLogger } from "../hooks/types.js";
@@ -94,7 +94,7 @@ export interface InitContext {
   /**
    * Assistant semver. Plugins can compare against this for defensive
    * runtime checks — but the canonical compat contract is the host
-   * version against the plugin's `peerDependencies["@vellumai/plugin-api"]`
+   * version against the plugin's `peerDependencies["@mycadet/plugin-api"]`
    * semver range, enforced at load time by the external-plugin loader.
    */
   assistantVersion: string;

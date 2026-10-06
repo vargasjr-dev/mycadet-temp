@@ -2,9 +2,9 @@ import { SkillsReferenceContactsContent } from "@/app/docs/_components/skills-re
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Contacts - Vellum Docs",
+  title: "Contacts - Cadet Docs",
   description:
-    "Contacts skill for Vellum — manage contacts, communication channels, access control, and invite links.",
+    "Contacts skill for Cadet — manage contacts, communication channels, access control, and invite links.",
   path: "/docs/skills-reference/contacts",
 });
 

@@ -1,8 +1,8 @@
 import { Check, Copy } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Notice } from "@vellumai/design-library/components/notice";
+import { Button } from "@mycadet/design-library/components/button";
+import { Notice } from "@mycadet/design-library/components/notice";
 
 import { useTranslation, type TFunction } from "@/i18n";
 import { formatCountdown } from "@/utils/format-countdown";

@@ -8,7 +8,7 @@ import {
   INGRESS_PAIRING_TUNNEL_KEY,
   type TunnelProviderName,
   type TunnelRecord,
-} from "@vellumai/service-contracts/ingress";
+} from "@mycadet/service-contracts/ingress";
 
 import {
   lookupAssistantByIdentifier,

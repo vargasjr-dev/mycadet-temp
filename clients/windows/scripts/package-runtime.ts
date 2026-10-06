@@ -263,7 +263,7 @@ const cliVersionCheck = spawnSync(packagedCli, ["--version"], {
   encoding: "utf8",
   windowsHide: true,
 });
-const expectedCliVersion = `@vellumai/cli v${cliVersion}`;
+const expectedCliVersion = `@mycadet/cli v${cliVersion}`;
 const cliVersionOutput = cliVersionCheck.stdout?.trim() ?? "";
 const cliVersionErrorOutput = cliVersionCheck.stderr?.trim() ?? "";
 if (cliVersionCheck.status !== 0 || cliVersionOutput !== expectedCliVersion) {

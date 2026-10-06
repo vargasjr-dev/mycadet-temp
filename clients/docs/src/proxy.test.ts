@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 
 import { config, proxy } from "@/proxy";
 
-const VID_COOKIE_NAME = "vellum_vid";
+const VID_COOKIE_NAME = "cadet_vid";
 
 const BROWSER_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
@@ -24,7 +24,7 @@ afterEach(() => {
 function request(
   url: string,
   {
-    host = "www.vellum.ai",
+    host = "www.mycadet.ai",
     cookie,
     referrer,
     userAgent = BROWSER_UA,
@@ -78,7 +78,7 @@ function pageViewLogs(): Array<Record<string, string>> {
 
 describe("docs proxy page_view logging", () => {
   test("hitting /docs emits exactly one page_view line with a vid", () => {
-    proxy(request("https://www.vellum.ai/docs"));
+    proxy(request("https://www.mycadet.ai/docs"));
 
     const logs = pageViewLogs();
     expect(logs).toHaveLength(1);
@@ -87,7 +87,7 @@ describe("docs proxy page_view logging", () => {
   });
 
   test("nested docs pages are logged", () => {
-    proxy(request("https://www.vellum.ai/docs/quickstart"));
+    proxy(request("https://www.mycadet.ai/docs/quickstart"));
 
     expect(pageViewLogs()[0]?.path).toBe("/docs/quickstart");
   });
@@ -103,14 +103,14 @@ describe("docs proxy page_view logging", () => {
     ["/docs/images/hero.webp", "static asset"],
     ["/pricing", "non-docs path"],
   ])("%s (%s) is not logged as a page view", (path) => {
-    proxy(request(`https://www.vellum.ai${path}`));
+    proxy(request(`https://www.mycadet.ai${path}`));
 
     expect(pageViewLogs()).toHaveLength(0);
   });
 
   test("bot user agents are not logged", () => {
     proxy(
-      request("https://www.vellum.ai/docs", {
+      request("https://www.mycadet.ai/docs", {
         userAgent:
           "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
       }),
@@ -122,7 +122,7 @@ describe("docs proxy page_view logging", () => {
   test.each([["HEAD"], ["POST"], ["OPTIONS"]])(
     "%s requests are not logged as page views",
     (method) => {
-      proxy(request("https://www.vellum.ai/docs", { method }));
+      proxy(request("https://www.mycadet.ai/docs", { method }));
 
       expect(pageViewLogs()).toHaveLength(0);
     },
@@ -138,7 +138,7 @@ describe("docs proxy prefetch filtering", () => {
     ["Purpose", "prefetch"],
   ])("%s: %s requests are not logged as page views", (header, value) => {
     proxy(
-      request("https://www.vellum.ai/docs", { headers: { [header]: value } }),
+      request("https://www.mycadet.ai/docs", { headers: { [header]: value } }),
     );
 
     expect(pageViewLogs()).toHaveLength(0);
@@ -146,7 +146,7 @@ describe("docs proxy prefetch filtering", () => {
 
   test("prefetch requests still mint the vid cookie", () => {
     const response = proxy(
-      request("https://www.vellum.ai/docs", {
+      request("https://www.mycadet.ai/docs", {
         headers: { "Next-Router-Segment-Prefetch": "/_tree" },
       }),
     );
@@ -157,12 +157,12 @@ describe("docs proxy prefetch filtering", () => {
 
 describe("docs proxy visitor cookie", () => {
   test("mints a vid cookie when absent and logs the same vid", () => {
-    const response = proxy(request("https://www.vellum.ai/docs"));
+    const response = proxy(request("https://www.mycadet.ai/docs"));
 
     const cookie = vidSetCookie(response);
     expect(cookie).toBeDefined();
     if (!cookie) {
-      throw new Error("Expected vellum_vid cookie");
+      throw new Error("Expected cadet_vid cookie");
     }
     expect(cookie).toContain("Max-Age=7776000"); // 90 days
     expect(cookie).toContain("HttpOnly");
@@ -176,7 +176,7 @@ describe("docs proxy visitor cookie", () => {
   test("reuses an existing vid cookie without re-setting it", () => {
     const existingVid = "11111111-2222-3333-4444-555555555555";
     const response = proxy(
-      request("https://www.vellum.ai/docs", {
+      request("https://www.mycadet.ai/docs", {
         cookie: `${VID_COOKIE_NAME}=${existingVid}`,
       }),
     );
@@ -185,10 +185,10 @@ describe("docs proxy visitor cookie", () => {
     expect(pageViewLogs()[0]?.vid).toBe(existingVid);
   });
 
-  test("cookie is Domain=.vellum.ai when Host is www.vellum.ai", () => {
-    const response = proxy(request("https://www.vellum.ai/docs"));
+  test("cookie is Domain=.mycadet.ai when Host is www.mycadet.ai", () => {
+    const response = proxy(request("https://www.mycadet.ai/docs"));
 
-    expect(vidSetCookie(response)).toContain("Domain=.vellum.ai");
+    expect(vidSetCookie(response)).toContain("Domain=.mycadet.ai");
   });
 
   test("cookie is host-only (no Domain) on localhost dev", () => {
@@ -207,7 +207,7 @@ describe("docs proxy UTM/click-ID capture", () => {
   test("explicit UTM params are logged with explicit resolution", () => {
     proxy(
       request(
-        "https://www.vellum.ai/docs?utm_source=linkedin&utm_medium=social&utm_campaign=launch",
+        "https://www.mycadet.ai/docs?utm_source=linkedin&utm_medium=social&utm_campaign=launch",
       ),
     );
 
@@ -221,7 +221,7 @@ describe("docs proxy UTM/click-ID capture", () => {
   });
 
   test("click IDs are logged raw alongside inferred paid attribution", () => {
-    proxy(request("https://www.vellum.ai/docs?gclid=abc123"));
+    proxy(request("https://www.mycadet.ai/docs?gclid=abc123"));
 
     expect(pageViewLogs()[0]).toMatchObject({
       utm_source: "google",
@@ -232,7 +232,7 @@ describe("docs proxy UTM/click-ID capture", () => {
   });
 
   test("an empty click ID param does not infer paid attribution", () => {
-    proxy(request("https://www.vellum.ai/docs?gclid="));
+    proxy(request("https://www.mycadet.ai/docs?gclid="));
 
     const [entry] = pageViewLogs();
     expect(entry?.utm_resolution).toBeUndefined();
@@ -241,14 +241,14 @@ describe("docs proxy UTM/click-ID capture", () => {
   });
 
   test("overlong click ID values are truncated to 512 chars", () => {
-    proxy(request(`https://www.vellum.ai/docs?gclid=${"x".repeat(600)}`));
+    proxy(request(`https://www.mycadet.ai/docs?gclid=${"x".repeat(600)}`));
 
     expect(pageViewLogs()[0]?.gclid).toBe("x".repeat(512));
   });
 
   test("referrer-inferred attribution is logged with referrer resolution", () => {
     proxy(
-      request("https://www.vellum.ai/docs/quickstart", {
+      request("https://www.mycadet.ai/docs/quickstart", {
         referrer: "https://chatgpt.com/c/abc123",
       }),
     );
@@ -274,7 +274,7 @@ describe("docs proxy UTM/click-ID capture", () => {
   ])(
     "referrer %s classifies as source=%s medium=%s",
     (referrer, source, medium) => {
-      proxy(request("https://www.vellum.ai/docs", { referrer }));
+      proxy(request("https://www.mycadet.ai/docs", { referrer }));
 
       expect(pageViewLogs()[0]).toMatchObject({
         utm_source: source,
@@ -285,7 +285,7 @@ describe("docs proxy UTM/click-ID capture", () => {
   );
 
   test("utm_source=chatgpt without utm_medium gets geo backfilled", () => {
-    proxy(request("https://www.vellum.ai/docs?utm_source=chatgpt"));
+    proxy(request("https://www.mycadet.ai/docs?utm_source=chatgpt"));
 
     expect(pageViewLogs()[0]).toMatchObject({
       utm_source: "chatgpt",
@@ -295,8 +295,8 @@ describe("docs proxy UTM/click-ID capture", () => {
 
   test("same-site referrer produces no attribution fields", () => {
     proxy(
-      request("https://www.vellum.ai/docs", {
-        referrer: "https://www.vellum.ai/",
+      request("https://www.mycadet.ai/docs", {
+        referrer: "https://www.mycadet.ai/",
       }),
     );
 
@@ -308,7 +308,7 @@ describe("docs proxy UTM/click-ID capture", () => {
 
 describe("docs proxy JSON log contract", () => {
   // Key order copied from a platform page_view log line (the platform's
-  // emitPageViewLog in vellum-assistant-platform web/src/proxy.ts); the
+  // emitPageViewLog in the platform repo web/src/proxy.ts); the
   // BigQuery sink + dbt stg_marketing_events__page_views parse this shape.
   const PLATFORM_FIXTURE = {
     source: "marketing",
@@ -324,7 +324,7 @@ describe("docs proxy JSON log contract", () => {
 
   test("attributed page_view lines match the platform key set and order", () => {
     proxy(
-      request("https://www.vellum.ai/docs", {
+      request("https://www.mycadet.ai/docs", {
         referrer: "https://t.co/Xc0y1brRmQ",
       }),
     );
@@ -343,7 +343,7 @@ describe("docs proxy JSON log contract", () => {
   });
 
   test("direct-traffic lines carry only the six base keys", () => {
-    proxy(request("https://www.vellum.ai/docs"));
+    proxy(request("https://www.mycadet.ai/docs"));
 
     const [entry] = pageViewLogs();
     expect(Object.keys(entry ?? {})).toEqual([

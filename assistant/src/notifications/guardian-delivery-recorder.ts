@@ -16,7 +16,7 @@
  * read it back.
  */
 
-import { DELIVERY_STATUS } from "@vellumai/gateway-client";
+import { DELIVERY_STATUS } from "@mycadet/gateway-client";
 
 import {
   createGuardianRequestDelivery,

@@ -13,14 +13,30 @@ import { resolveDebugTabParam } from "@/domains/settings/pages/debug-page.helper
 import { usePlatformGate } from "@/hooks/use-platform-gate";
 import { useTranslation } from "@/i18n";
 import { navigateToConversation } from "@/utils/conversation-navigation";
-import { Tabs } from "@vellumai/design-library/components/tabs";
+import { Tabs } from "@mycadet/design-library/components/tabs";
 
 const ALL_TABS = [
-  { id: "general", labelKey: "debugPage.tabs.general", defaultLabel: "General" },
-  { id: "terminal", labelKey: "debugPage.tabs.terminal", defaultLabel: "Terminal" },
+  {
+    id: "general",
+    labelKey: "debugPage.tabs.general",
+    defaultLabel: "General",
+  },
+  {
+    id: "terminal",
+    labelKey: "debugPage.tabs.terminal",
+    defaultLabel: "Terminal",
+  },
   { id: "doctor", labelKey: "debugPage.tabs.doctor", defaultLabel: "Doctor" },
-  { id: "database", labelKey: "debugPage.tabs.database", defaultLabel: "Database" },
-  { id: "conversations", labelKey: "debugPage.tabs.conversations", defaultLabel: "Conversations" },
+  {
+    id: "database",
+    labelKey: "debugPage.tabs.database",
+    defaultLabel: "Database",
+  },
+  {
+    id: "conversations",
+    labelKey: "debugPage.tabs.conversations",
+    defaultLabel: "Conversations",
+  },
   { id: "tones", labelKey: "debugPage.tabs.tones", defaultLabel: "Tone lab" },
 ] as const;
 

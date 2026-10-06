@@ -9,7 +9,7 @@ import { TableOfContents } from "@/app/docs/_components/table-of-contents";
 const TOC_ITEMS = [
   { id: "the-three-dimensions", label: "The three dimensions", level: 2 },
   { id: "the-options", label: "The options", level: 2 },
-  { id: "vellum-cloud", label: "Vellum Cloud", level: 3 },
+  { id: "cadet-cloud", label: "Cadet Cloud", level: 3 },
   { id: "local", label: "Local", level: 3 },
   { id: "user-hosted-remote", label: "User-Hosted Remote", level: 3 },
   { id: "which-should-i-choose", label: "Which should I choose?", level: 2 },
@@ -21,13 +21,13 @@ export function HostingOptionsContent() {
     <>
       <DocsContent title="Hosting options" breadcrumb="Docs / Hosting options">
         <p className="mb-4 text-stone-600 dark:text-stone-400">
-          Your Vellum assistant needs a computer to run on. Which computer, and
+          Your Cadet assistant needs a computer to run on. Which computer, and
           who manages it, is the hosting decision. The right choice depends on
           what matters most to you.
         </p>
         <p className="mb-8 text-stone-600 dark:text-stone-400">
           There are two primary options available today,{" "}
-          <strong>Vellum Cloud</strong> (recommended) and <strong>Local</strong>,
+          <strong>Cadet Cloud</strong> (recommended) and <strong>Local</strong>,
           plus advanced self-hosted paths for technical users. This page
           explains all of them so you can make an informed choice.
         </p>
@@ -45,7 +45,7 @@ export function HostingOptionsContent() {
                 Ease of use
               </h4>
               <p className="m-0 text-sm text-stone-600 dark:text-stone-400">
-                How much setup and maintenance is required? Does Vellum handle
+                How much setup and maintenance is required? Does Cadet handle
                 the infrastructure, or do you?
               </p>
             </div>
@@ -54,7 +54,7 @@ export function HostingOptionsContent() {
                 Privacy
               </h4>
               <p className="m-0 text-sm text-stone-600 dark:text-stone-400">
-                Where does your data live? Does it pass through Vellum&apos;s
+                Where does your data live? Does it pass through Cadet&apos;s
                 servers, or does it stay entirely on hardware you control?
               </p>
             </div>
@@ -84,33 +84,33 @@ export function HostingOptionsContent() {
             self-hosted paths for users who want full control.
           </p>
 
-          <div id="vellum-cloud" className="mb-10">
-            <SectionHeading id="vellum-cloud" level={3}>
-              Vellum Cloud
+          <div id="cadet-cloud" className="mb-10">
+            <SectionHeading id="cadet-cloud" level={3}>
+              Cadet Cloud
               <span className="ml-2 inline-block rounded-full bg-emerald-100 px-2 py-0.5 align-middle text-xs font-medium text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200">
                 Recommended
               </span>
             </SectionHeading>
             <p className="mb-4 text-stone-600 dark:text-stone-400">
-              Your assistant runs entirely on Vellum&apos;s secure
+              Your assistant runs entirely on Cadet&apos;s secure
               infrastructure. Ready out of the box. No local setup, no servers
               to manage, no hardware requirements. Just sign in and go.
             </p>
             <ul className="mb-4 list-disc space-y-2 pl-6 text-stone-600 dark:text-stone-400">
               <li>
-                <strong>Ease of use:</strong> The best. Minimal setup, Vellum
+                <strong>Ease of use:</strong> The best. Minimal setup, Cadet
                 handles everything.
               </li>
               <li>
                 <strong>Privacy:</strong> Your data lives in your private,
-                encrypted Vellum Cloud account. If keeping your data off
+                encrypted Cadet Cloud account. If keeping your data off
                 third-party infrastructure is a priority, consider Local
                 instead.
               </li>
               <li>
                 <strong>Security:</strong> Arguably the most secure option for
                 the user. The assistant runs completely sandboxed in
-                Vellum&apos;s cloud, not on any of your hardware. If something
+                Cadet&apos;s cloud, not on any of your hardware. If something
                 goes wrong, the blast radius is contained to our
                 infrastructure, not yours.
               </li>
@@ -180,7 +180,7 @@ export function HostingOptionsContent() {
               </li>
               <li>
                 <strong>Privacy:</strong> Your data stays on your
-                infrastructure. Nothing passes through Vellum&apos;s servers.
+                infrastructure. Nothing passes through Cadet&apos;s servers.
               </li>
               <li>
                 <strong>Security:</strong> You control the isolation level, but
@@ -189,7 +189,7 @@ export function HostingOptionsContent() {
             </ul>
             <p className="mb-0 text-stone-600 dark:text-stone-400">
               This is the option for technical users who want full control and
-              24/7 availability without relying on Vellum&apos;s infrastructure.
+              24/7 availability without relying on Cadet&apos;s infrastructure.
             </p>
           </div>
         </section>
@@ -248,7 +248,7 @@ export function HostingOptionsContent() {
               {/* Dots and labels */}
               <circle cx="410" cy="130" r="8" fill="#10b981" opacity="0.9" />
               <text x="410" y="115" textAnchor="middle" fontSize="11" fontWeight="600" fill="#18181b">
-                Vellum Cloud
+                Cadet Cloud
               </text>
 
               <circle cx="400" cy="240" r="8" fill="#f59e0b" opacity="0.9" />
@@ -271,7 +271,7 @@ export function HostingOptionsContent() {
           <div className="space-y-6">
             <div className="rounded-xl border border-stone-200 p-5 dark:border-moss-600/50">
               <h4 className="mb-2 font-sans text-base font-semibold text-stone-900 dark:text-stone-100">
-                Most people: Vellum Cloud
+                Most people: Cadet Cloud
                 <span className="ml-2 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200">
                   Recommended
                 </span>

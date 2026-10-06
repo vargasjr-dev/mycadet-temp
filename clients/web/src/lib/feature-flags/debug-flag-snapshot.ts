@@ -2,7 +2,7 @@
  * Debug-flag snapshot for the feedback tar.
  *
  * The client's debug flags are localStorage overrides under the
- * `vellum:debug:*` namespace with no server targeting, so the only record
+ * `cadet:debug:*` namespace with no server targeting, so the only record
  * of which ones were set when a report was filed is the client that filed
  * it. Without capturing them at submission time, flag state has to be
  * inferred from behavior in the diagnostics, which is ambiguous because the
@@ -11,14 +11,14 @@
  * Two complementary views are captured so analysis is unambiguous:
  *   - `resolved`: the effective value each flag's accessor returns, so the
  *     code-level default is reflected even when no override is stored.
- *   - `overrides`: every raw `vellum:debug:*` localStorage entry, scanned
+ *   - `overrides`: every raw `cadet:debug:*` localStorage entry, scanned
  *     generically so future debug flags appear in the export without any
  *     change here.
  */
 
 import { getImpersonatedAssistantVersion } from "@/lib/backwards-compat/impersonate-version-flag";
 
-const DEBUG_PREFIX = "vellum:debug:";
+const DEBUG_PREFIX = "cadet:debug:";
 
 export interface DebugFlagSnapshot {
   collectedAt: string;
@@ -31,7 +31,7 @@ export interface DebugFlagSnapshot {
     impersonateAssistantVersion: string | null;
   };
   /**
-   * Raw `vellum:debug:*` localStorage entries, verbatim. Keyed by the full
+   * Raw `cadet:debug:*` localStorage entries, verbatim. Keyed by the full
    * storage key so the namespace is self-documenting in the export.
    */
   overrides: Record<string, string>;

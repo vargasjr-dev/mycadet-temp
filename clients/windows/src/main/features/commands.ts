@@ -4,21 +4,21 @@ import {
   configureAboutRuntime,
   installAbout,
   openAboutWindow,
-} from "@vellumai/electron-desktop/about";
+} from "@mycadet/electron-desktop/about";
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 import {
   configureHotkeySettings,
   HOTKEY_SETTINGS,
-} from "@vellumai/electron-desktop/commands";
-import { installGlobalShortcuts } from "@vellumai/electron-desktop/global-shortcuts";
-import { installHotkeysIpc } from "@vellumai/electron-desktop/hotkeys";
-import { getName, onNameChange } from "@vellumai/electron-desktop/identity";
-import { installImageContextMenu } from "@vellumai/electron-desktop/image-context-menu";
-import { toggleQuickInput } from "@vellumai/electron-desktop/quick-input-window";
-import { installTextContextMenu } from "@vellumai/electron-desktop/text-context-menu";
+} from "@mycadet/electron-desktop/commands";
+import { installGlobalShortcuts } from "@mycadet/electron-desktop/global-shortcuts";
+import { installHotkeysIpc } from "@mycadet/electron-desktop/hotkeys";
+import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
+import { installImageContextMenu } from "@mycadet/electron-desktop/image-context-menu";
+import { toggleQuickInput } from "@mycadet/electron-desktop/quick-input-window";
+import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
 
 import { getRendererBase } from "../app-config";
 import { checkForUpdates } from "../auto-update";

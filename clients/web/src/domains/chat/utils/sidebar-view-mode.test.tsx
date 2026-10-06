@@ -11,7 +11,7 @@ import {
 } from "@/domains/chat/utils/sidebar-view-mode";
 
 const KEY = (assistantId: string) =>
-  `vellum:sidebar-view-mode:${assistantId}`;
+  `cadet:sidebar-view-mode:${assistantId}`;
 
 afterEach(() => {
   localStorage.clear();
@@ -84,7 +84,7 @@ describe("useViewMode", () => {
     });
 
     // The switch moved even though nothing reached storage.
-    expect(localStorage.getItem("vellum:sidebar-view-mode:asst-1")).toBeNull();
+    expect(localStorage.getItem("cadet:sidebar-view-mode:asst-1")).toBeNull();
     expect(result.current).toBe("grouped");
   });
 

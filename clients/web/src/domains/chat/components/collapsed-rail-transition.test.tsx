@@ -13,7 +13,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { cleanup, render } from "@testing-library/react";
 import { Pin } from "lucide-react";
 
-import { SideMenu } from "@vellumai/design-library";
+import { SideMenu } from "@mycadet/design-library";
 
 afterEach(() => {
   cleanup();

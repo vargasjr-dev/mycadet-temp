@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 
-import { Tabs } from "@vellumai/design-library/components/tabs";
+import { Tabs } from "@mycadet/design-library/components/tabs";
 
 export type InspectorTab =
   | "overview"

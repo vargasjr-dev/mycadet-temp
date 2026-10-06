@@ -246,13 +246,13 @@ Key files:
 | --- | --- | --- |
 | `assistant/ARCHITECTURE.md` | Current service architecture, STT boundaries, TTS provider abstraction, call routing, client/server roles. | Primary architecture reference. Any shipped live voice architecture should eventually be reflected here. |
 | `assistant/docs/stt-provider-onboarding.md` | Required steps for adding STT providers and keeping provider catalogs/client fallbacks in sync. | Confirms live voice should use the existing STT catalog rather than a new provider path. |
-| `assistant/docs/credential-execution-service.md` | Credential storage/access architecture. | Reference for provider-key handling and Docker mode. |
+| the Credential Execution Service doc (now at /docs/developer-guide/internals/credential-execution-service) | Credential storage/access architecture. | Reference for provider-key handling and Docker mode. |
 | `assistant/docs/error-handling.md` | Error handling conventions. | Use for live voice user-visible and structured error design. |
 | `plugins/README.md` and `assistant/docs/skills.md` | Plugin and skill docs. | Likely not directly involved in V1. |
-| `assistant/docs/architecture/security.md` | Security architecture. | Reference if live voice adds new auth scopes or gateway routes. |
-| `assistant/docs/architecture/integrations.md` | Integration architecture notes. | Reference if voice channel exposes new integration points. |
-| `assistant/docs/architecture/memory.md` | Memory architecture notes. | Reference if archival changes memory/conversation persistence. |
-| `assistant/docs/architecture/scheduling.md` | Scheduling architecture notes. | Not directly involved in V1. |
+| the Security Architecture doc (now at /docs/developer-guide/internals/security) | Security architecture. | Reference if live voice adds new auth scopes or gateway routes. |
+| the Integrations Architecture doc (now at /docs/developer-guide/internals/integrations) | Integration architecture notes. | Reference if voice channel exposes new integration points. |
+| the Memory Architecture doc (now at /docs/developer-guide/internals/memory) | Memory architecture notes. | Reference if archival changes memory/conversation persistence. |
+| the Scheduling Architecture doc (now at /docs/developer-guide/internals/scheduling) | Scheduling architecture notes. | Not directly involved in V1. |
 
 ### macOS client voice infrastructure
 

@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router";
 import type {
   CompanionIntroBeat,
   UnplacedDictationOffer,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import type { CommandHandlers } from "@/runtime/vellum-commands";
 
 import type * as VoiceShortcutConfirmation from "@/domains/chat/voice/voice-shortcut-confirmation";
@@ -227,7 +227,7 @@ mock.module("@/runtime/text-insertion", () => ({
 
 // The design-library barrel re-exports every name from this module, so the
 // mock must cover the full export surface or barrel linking fails.
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { error: toastErrorMock },
   Toaster: () => null,
   ToastContent: () => null,
@@ -1163,9 +1163,11 @@ test.each(["idle", "meet", "talk", "key", "share", "draw", "mute"] as const)(
 
 test("ignores the final offer if the voice bridge unmounts during its state read", async () => {
   let resolve!: (state: { intro: CompanionIntroBeat | null }) => void;
-  readCompanionState.mockReturnValueOnce(new Promise((done) => {
-    resolve = done;
-  }));
+  readCompanionState.mockReturnValueOnce(
+    new Promise((done) => {
+      resolve = done;
+    }),
+  );
   const view = render(
     <MemoryRouter>
       <GlobalPushToTalkBridge assistantId="assistant-1" enabled />

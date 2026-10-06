@@ -13,8 +13,8 @@ import type { DisplayMessage } from "@/domains/chat/types/types";
 import { messagePlainText } from "@/domains/chat/utils/message-plain-text";
 import { useSupportsQueueSteering } from "@/lib/backwards-compat/use-supports-queue-steering";
 import { isPointerCoarse } from "@/utils/pointer";
-import { Button } from "@vellumai/design-library";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { Button } from "@mycadet/design-library";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -218,7 +218,9 @@ export function QueuedMessagesDrawer({
         {/* Header */}
         <div className="mb-0.5 flex items-center justify-between md:mb-1">
           <span className="text-label-medium-default text-[var(--content-secondary)]">
-            {t("queuedMessagesDrawer.queueHeading", { count: queuedMessages.length })}
+            {t("queuedMessagesDrawer.queueHeading", {
+              count: queuedMessages.length,
+            })}
           </span>
           <Button
             variant="ghost"

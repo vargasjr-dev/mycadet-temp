@@ -9,7 +9,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { IpcConnectError } from "@vellumai/gateway-client/ipc-client";
+import { IpcConnectError } from "@mycadet/gateway-client/ipc-client";
 
 import {
   RouteError,

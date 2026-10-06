@@ -70,12 +70,12 @@ export function DeveloperGuideGetStartedContent() {
             <strong>local install</strong>. The assistant runtime, the
             gateway, the credential service, and the workspace all run
             on your Mac, so you can read state, attach a debugger, and
-            iterate without round-tripping through Vellum&apos;s
+            iterate without round-tripping through Cadet&apos;s
             infrastructure. Everything below assumes a local install
             unless noted.
           </p>
           <p className="mb-0 text-zinc-600">
-            Vellum Cloud is the same software running on managed
+            Cadet Cloud is the same software running on managed
             infrastructure. The HTTP API is gated behind the platform
             gateway in cloud mode, not exposed directly, so for raw API
             development you&apos;ll want a local install. See{" "}
@@ -102,7 +102,7 @@ export function DeveloperGuideGetStartedContent() {
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
             Most developer work happens in{" "}
-            <strong>vellum-assistant</strong>, the open-source repo that
+            <strong>cadet-assistant</strong>, the open-source repo that
             holds the assistant daemon and everything that ships with
             it:
           </p>
@@ -116,7 +116,7 @@ export function DeveloperGuideGetStartedContent() {
               the runtime
             </li>
             <li>
-              <code>cli/</code>: the <code>vellum</code> command line
+              <code>cli/</code>: the <code>cadet</code> command line
               interface
             </li>
             <li>
@@ -158,21 +158,21 @@ export function DeveloperGuideGetStartedContent() {
           <ol className="mb-4 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>
               Install the{" "}
-              <Link href="https://www.vellum.ai/downloads" className={linkClass}>
+              <Link href="https://www.mycadet.ai/downloads" className={linkClass}>
                 desktop app
               </Link>{" "}
               and walk through onboarding. Your workspace will live at{" "}
               <code>~/.vellum/</code>.
             </li>
             <li>
-              Clone <code>vellum-assistant</code> alongside it. Use the
+              Clone <code>mycadet</code> alongside it. Use the
               repo&apos;s top-level setup scripts to install
               dependencies and link your local build into the running
               installation.
             </li>
             <li>
               Verify with{" "}
-              <code>vellum ps</code>: you should see the{" "}
+              <code>cadet ps</code>: you should see the{" "}
               <code>assistant</code>, <code>gateway</code>, and{" "}
               <code>credential-executor</code> processes running.
             </li>
@@ -203,19 +203,19 @@ export function DeveloperGuideGetStartedContent() {
               CLI
             </SectionHeading>
             <p className="mb-3 text-zinc-600">
-              The <code>vellum</code> CLI is the highest-level
+              The <code>cadet</code> CLI is the highest-level
               interface. It reads your local credentials and routes
               commands to the running daemon.
             </p>
             <pre className="mb-3 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
               <code>{`# send a message and stream the response
-vellum message "summarize today's calendar"
+cadet message "summarize today's calendar"
 
 # tail the live event stream
-vellum events
+cadet events
 
 # inspect process state
-vellum ps`}</code>
+cadet ps`}</code>
             </pre>
             <p className="mb-0 text-zinc-600">
               Useful subcommands include <code>login</code>,{" "}
@@ -223,7 +223,7 @@ vellum ps`}</code>
               <code>message</code>, <code>events</code>,{" "}
               <code>logs</code>, <code>ps</code>, <code>terminal</code>,
               and <code>retire</code>. Run{" "}
-              <code>vellum --help</code> to see the full list.
+              <code>cadet --help</code> to see the full list.
             </p>
           </div>
 
@@ -239,12 +239,12 @@ vellum ps`}</code>
             </p>
             <pre className="mb-3 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
               <code>{`# list conversations
-curl -H "Authorization: Bearer $VELLUM_JWT" \\
+curl -H "Authorization: Bearer $CADET_JWT" \\
      http://127.0.0.1:7821/v1/conversations
 
 # post a message into a conversation
 curl -X POST \\
-     -H "Authorization: Bearer $VELLUM_JWT" \\
+     -H "Authorization: Bearer $CADET_JWT" \\
      -H "Content-Type: application/json" \\
      -d '{"text": "hello"}' \\
      http://127.0.0.1:7821/v1/messages`}</code>
@@ -274,7 +274,7 @@ curl -X POST \\
             </p>
             <pre className="mb-3 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
               <code>{`curl -N \\
-     -H "Authorization: Bearer $VELLUM_JWT" \\
+     -H "Authorization: Bearer $CADET_JWT" \\
      http://127.0.0.1:7821/v1/events`}</code>
             </pre>
             <p className="mb-0 text-zinc-600">

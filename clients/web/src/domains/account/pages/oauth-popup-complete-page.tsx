@@ -233,7 +233,7 @@ export function OAuthPopupCompletePage() {
     }
 
     const payload = {
-      type: "vellum:oauth-complete",
+      type: "cadet:oauth-complete",
       requestId,
       oauthStatus: oauthStatus || null,
       oauthProvider: oauthProvider || null,

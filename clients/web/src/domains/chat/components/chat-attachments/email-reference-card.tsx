@@ -1,7 +1,7 @@
 import { Mail, Send } from "lucide-react";
 import { Link } from "react-router";
 
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 import type {

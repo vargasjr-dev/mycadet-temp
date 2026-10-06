@@ -16,9 +16,9 @@
  * the bar as the slider's thumb and the two read as one control.
  */
 
-import { cn } from "@vellumai/design-library";
-import { Button } from "@vellumai/design-library/components/button";
-import { Slider } from "@vellumai/design-library/components/slider";
+import { cn } from "@mycadet/design-library";
+import { Button } from "@mycadet/design-library/components/button";
+import { Slider } from "@mycadet/design-library/components/slider";
 
 import { useTranslation } from "@/i18n";
 import {

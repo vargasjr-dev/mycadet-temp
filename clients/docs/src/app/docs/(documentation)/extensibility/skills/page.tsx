@@ -2,7 +2,7 @@ import { ExtensibilitySkillsContent } from "@/app/docs/_components/extensibility
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Skills - Vellum Docs",
+  title: "Skills - Cadet Docs",
   description:
     "Skills let a plugin bundle instructions, assets, and scripts the Assistant loads on demand when a conversation matches what the skill is for.",
   path: "/docs/extensibility/skills",

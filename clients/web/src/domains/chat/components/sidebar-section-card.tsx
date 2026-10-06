@@ -32,8 +32,8 @@
 
 import { useLayoutEffect, useRef, type ComponentProps } from "react";
 
-import { Card } from "@vellumai/design-library";
-import { cn } from "@vellumai/design-library/utils/cn";
+import { Card } from "@mycadet/design-library";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 import { useConversationListContext } from "@/domains/chat/components/conversation-list-context";
 import { ConversationNavSection } from "@/domains/chat/components/conversation-nav-section";

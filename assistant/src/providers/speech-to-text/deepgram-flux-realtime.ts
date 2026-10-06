@@ -118,7 +118,7 @@ export interface DeepgramFluxRealtimeOptions {
   inactivityTimeoutMs?: number;
   /**
    * WebSocket origin to dial. Defaults to Deepgram's own. The managed relay
-   * points this at the gateway, which forwards to velay.
+   * points this at the gateway, which forwards to tunnel.
    */
   baseUrl?: string;
   /** Path on {@link baseUrl}. Defaults to Deepgram's `/v2/listen`. */
@@ -149,7 +149,7 @@ export interface DeepgramFluxRealtimeOptions {
   language?: string;
   /**
    * Called with any JSON frame the Flux parser produced no events from. The
-   * managed relay multiplexes its own `velay_error` control frames onto the
+   * managed relay multiplexes its own `tunnel_error` control frames onto the
    * same socket; this is how the wrapper sees them.
    */
   onUnhandledFrame?: (frame: Record<string, unknown>) => void;
@@ -506,7 +506,7 @@ export class DeepgramFluxRealtimeTranscriber implements StreamingTranscriber {
   /**
    * Hand a frame the Flux parser made nothing of to the transport wrapper.
    * On the direct Deepgram path nothing listens and this is inert; on the
-   * managed relay it is how `velay_error` reaches the caller.
+   * managed relay it is how `tunnel_error` reaches the caller.
    */
   private reportUnhandledFrame(raw: string): void {
     if (!this.onUnhandledFrame) {
@@ -758,7 +758,7 @@ export class DeepgramFluxRealtimeTranscriber implements StreamingTranscriber {
       eotTimeoutMs: this.flux.eotTimeoutMs,
     });
 
-    // Relay-only params. Deepgram takes neither: `language` is how velay
+    // Relay-only params. Deepgram takes neither: `language` is how tunnel
     // picks the Flux model and language hint, and `contract` asks it to stop
     // translating Flux into the v1 Deepgram dialect.
     const params = new URLSearchParams(query);

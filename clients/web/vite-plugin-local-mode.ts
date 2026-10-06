@@ -40,7 +40,7 @@ import {
   readPairedGatewayTargets,
   authorizePairedForwardHeaders,
   type CliInvocation,
-} from "@vellumai/local-mode";
+} from "@mycadet/local-mode";
 
 const GUARDIAN_TOKEN_PATTERN =
   /^(?:\/assistant)?\/__local\/guardian-token\/([^/]+)$/;

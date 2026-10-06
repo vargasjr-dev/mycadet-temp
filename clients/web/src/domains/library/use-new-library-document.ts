@@ -8,7 +8,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 
 import { useCreateDocument } from "@/domains/library/use-create-document";
 import { useTranslation } from "@/i18n";
@@ -16,7 +16,7 @@ import {
   createBackgroundConversation,
   discardBackgroundConversation,
 } from "@/lib/background-conversation";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { invalidateConversationQueries } from "@/utils/conversation-cache";
 
 export function useNewLibraryDocument(

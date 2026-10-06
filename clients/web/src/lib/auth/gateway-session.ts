@@ -43,9 +43,9 @@ export function isRepairableGatewayTokenError(error: unknown): boolean {
   return error instanceof GatewayTokenError && error.status === 401;
 }
 
-const LS_TOKEN_KEY = "vellum:gw:token";
-const LS_EXPIRES_KEY = "vellum:gw:expiresAt";
-const LS_TOKEN_SOURCE_KEY = "vellum:gw:tokenSource";
+const LS_TOKEN_KEY = "cadet:gw:token";
+const LS_EXPIRES_KEY = "cadet:gw:expiresAt";
+const LS_TOKEN_SOURCE_KEY = "cadet:gw:tokenSource";
 
 // Legacy key names kept as read fallbacks in case the startup migration
 // in storage-migration.ts failed (e.g. QuotaExceededError on setItem).

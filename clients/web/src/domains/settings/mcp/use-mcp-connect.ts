@@ -6,7 +6,7 @@ import {
   CONNECTION_POLL_INTERVAL_MS,
   CONNECTION_POLL_WINDOW_MS,
 } from "@/lib/auth/oauth-connect-timing";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { openExternalUrl, openUrlFinishedListener } from "@/runtime/browser";
 import { isElectron } from "@/runtime/is-electron";
 import { isNativePlatform } from "@/runtime/native-auth";

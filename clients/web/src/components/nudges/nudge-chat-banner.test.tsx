@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from "bun:test";
 import { type ButtonHTMLAttributes, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-mock.module("@vellumai/design-library", () => ({
+mock.module("@mycadet/design-library", () => ({
   Button: ({
     children,
     iconOnly,

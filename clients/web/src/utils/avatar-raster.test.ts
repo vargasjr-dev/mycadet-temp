@@ -8,7 +8,7 @@ import {
   NOTIFICATION_AVATAR_INSET,
   NOTIFICATION_AVATAR_SIZE,
   notificationAvatarDiscHex,
-} from "@vellumai/avatar-manifest/notification-avatar";
+} from "@mycadet/avatar-manifest/notification-avatar";
 
 // Locks `object-cover` parity for every rasterized avatar surface
 // (Dock/menu-bar icons, the iOS Live Activity): a non-square avatar
@@ -43,7 +43,7 @@ describe("coverCropSquare", () => {
  * happy-dom hands back no 2D context, so there are no pixels to sample here:
  * the corner cannot be read as transparent directly, and the circular clip the
  * drawing passes through is what stands in for it. The clip has to match the
- * disc the SVG in `@vellumai/avatar-manifest` is clipped to, so an avatar whose
+ * disc the SVG in `@mycadet/avatar-manifest` is clipped to, so an avatar whose
  * subject runs to its own edges keeps the round silhouette on every platform.
  */
 describe("rasterizeNotificationAvatar", () => {

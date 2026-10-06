@@ -25,8 +25,8 @@
  * (non-React).
  */
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
-import { captureError } from "@/lib/sentry/capture-error";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import type { CommandUrlProvenance } from "@/runtime/native-deep-link";
 
 /**
@@ -429,9 +429,8 @@ export function publish<K extends BusEventName>(
       // One bad subscriber must not block downstream subscribers, and its
       // error must not stop here either: a handler that throws has skipped
       // the rest of its work for this event, and most subscribers have no
-      // catch of their own. `captureError` logs to the console and reports
-      // to Sentry, tagged with the event so one failing handler groups apart
-      // from another's.
+      // catch of their own. `captureError` reports to the console, tagged
+      // with the event so one failing handler groups apart from another's.
       captureError(err, {
         context: "event_bus.handler",
         tags: { bus_event: event },

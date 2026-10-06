@@ -15,7 +15,7 @@
  * which bypasses the handler's empty-buffer skip.
  */
 
-import type { LLMCallSite } from "@vellumai/plugin-api";
+import type { LLMCallSite } from "@mycadet/plugin-api";
 
 import type { MemoryJob } from "../../../../persistence/jobs-store.js";
 import { runBackgroundJob } from "../../../../runtime/background-job-runner.js";

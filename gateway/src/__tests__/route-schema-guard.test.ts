@@ -5,7 +5,7 @@ import {
   TWILIO_MEDIA_STREAM_WEBHOOK_PATH,
   TWILIO_STATUS_WEBHOOK_PATH,
   TWILIO_VOICE_WEBHOOK_PATH,
-} from "@vellumai/service-contracts/twilio-ingress";
+} from "@mycadet/service-contracts/twilio-ingress";
 import {
   A2A_AGENT_CARD_PATH,
   buildAgentCard,
@@ -222,7 +222,7 @@ const EXCLUDED_FROM_SCHEMA = new Set([
   "/v1/contacts/guardian/channel",
   // BFF token auth — loopback-only, not part of the public gateway API
   "/auth/token",
-  // Managed-speech relay — daemon-only WS egress to velay, rejected on any
+  // Managed-speech relay — daemon-only WS egress to tunnel, rejected on any
   // ingress path; not part of the public gateway API
   "/v1/speech/stt/stream",
   "/v2/speech/stt/stream",

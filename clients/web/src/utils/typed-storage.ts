@@ -31,7 +31,7 @@ import {
 export type StorageScope = "user" | "device";
 
 export interface StorageAccessorConfig<T> {
-  /** The full localStorage key (must include prefix, e.g. `vellum:pinnedApps`). */
+  /** The full localStorage key (must include prefix, e.g. `cadet:pinnedApps`). */
   key: string;
   /** `user` keys are cleared on logout; `device` keys are preserved. */
   scope: StorageScope;
@@ -257,7 +257,7 @@ export function parseBool(raw: string): boolean | null {
  * ```ts
  * // utils/pinned-apps-storage.ts
  * export const pinnedApps = createStorageAccessor<PinnedAppEntry[]>({
- *   key: "vellum:pinnedApps",
+ *   key: "cadet:pinnedApps",
  *   scope: "user",
  *   parse: parsePinnedApps,
  *   serialize: JSON.stringify,
@@ -353,7 +353,7 @@ export function createStorageAccessor<T>(
  * @example
  * ```ts
  * const drafts = createKeyedStorageAccessor<DraftState>({
- *   keyFn: (id) => `vellum:chatDrafts:${id}`,
+ *   keyFn: (id) => `cadet:chatDrafts:${id}`,
  *   scope: "user",
  *   parse: parseDraftState,
  *   serialize: JSON.stringify,
@@ -476,7 +476,7 @@ export interface RecordStorageAccessor<V> {
  * @example
  * ```ts
  * const ctxWindow = createRecordStorageAccessor<ContextWindowUsage>({
- *   keyFn: (id) => `vellum:ctxwindow:${id}`,
+ *   keyFn: (id) => `cadet:ctxwindow:${id}`,
  *   scope: "user",
  *   parseValue: validateUsage,
  *   fallback: {},

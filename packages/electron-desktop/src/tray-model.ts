@@ -11,12 +11,13 @@ import {
   pairedHostLabel,
   type Lockfile,
   type LockfileAssistant,
-} from "@vellumai/local-mode/contract";
+  isManagedCloud,
+} from "@mycadet/local-mode/contract";
 import {
   type CompanionSize,
   type CompanionSizeAxis,
   type VellumCommand,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { onAvatarChange } from "./avatar";
 import { getName, onNameChange } from "./identity";
@@ -210,7 +211,7 @@ const buildTrayMenu = (
     // belong in the switcher. Local/Docker lockfile entries are handled by
     // separate flows and would mis-route through the platform selection path.
     const assistants = lockfile.assistants.filter(
-      (a) => a.cloud === "vellum" || a.cloud === "paired",
+      (a) => isManagedCloud(a.cloud) || a.cloud === "paired",
     );
     const activeId = lockfile.activeAssistant;
 

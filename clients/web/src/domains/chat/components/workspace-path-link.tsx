@@ -29,7 +29,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
-import { MARKDOWN_INLINE_CODE_CLASS } from "@vellumai/design-library";
+import { MARKDOWN_INLINE_CODE_CLASS } from "@mycadet/design-library";
 import { workspaceTreeQueryOptions } from "@/lib/workspace-tree-query";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import {

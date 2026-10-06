@@ -9,7 +9,7 @@
 import { describe, test, expect, mock, beforeEach } from "bun:test";
 import "../../__tests__/test-preload.js";
 
-import { isTrustCheckedScopeProfile } from "@vellumai/gateway-client";
+import { isTrustCheckedScopeProfile } from "@mycadet/gateway-client";
 
 import { isNarrowScopeProfile } from "../../auth/scopes.js";
 import type { ScopeProfile } from "../../auth/types.js";

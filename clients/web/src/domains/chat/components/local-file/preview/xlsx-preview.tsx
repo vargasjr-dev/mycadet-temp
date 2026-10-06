@@ -16,7 +16,7 @@
 
 import { useId, useState, type ReactNode } from "react";
 
-import { ScrollShadow, Tabs, Typography } from "@vellumai/design-library";
+import { ScrollShadow, Tabs, Typography } from "@mycadet/design-library";
 
 import { PreviewError } from "@/domains/chat/components/local-file/preview/preview-error";
 import { PreviewNotice } from "@/domains/chat/components/local-file/preview/preview-notice";

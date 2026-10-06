@@ -33,9 +33,9 @@ const makeSender = (): {
   };
 };
 const subscribeWith = (s: ReturnType<typeof makeSender>) =>
-  ipcOnListeners.get("vellum:deepLinks:subscribe")?.({ sender: s.sender });
+  ipcOnListeners.get("cadet:deepLinks:subscribe")?.({ sender: s.sender });
 const unsubscribeWith = (s: ReturnType<typeof makeSender>) =>
-  ipcOnListeners.get("vellum:deepLinks:unsubscribe")?.({ sender: s.sender });
+  ipcOnListeners.get("cadet:deepLinks:unsubscribe")?.({ sender: s.sender });
 const appListeners = new Map<string, Listener>();
 const appOnMock = mock((event: string, listener: Listener) => {
   appListeners.set(event, listener);
@@ -83,7 +83,7 @@ const {
   resolveAuthCallbackScheme,
   resolveRegisteredSchemes,
 } = await import("./deep-links");
-const { resolveEnvironmentName } = await import("@vellumai/local-mode");
+const { resolveEnvironmentName } = await import("@mycadet/local-mode");
 
 const allowedEvent = {};
 
@@ -347,7 +347,7 @@ describe("parseVellumUrl", () => {
 
   test("legacy auth/callback → unknown with query stripped (no code leak)", () => {
     // The legacy code must not survive into the URL the renderer logs as
-    // a `deeplink.unknown` Sentry breadcrumb.
+    // a `deeplink.unknown` log.
     expect(
       parseVellumUrl("vellum://auth/callback?code=secret&state=xyz"),
     ).toEqual({ kind: "unknown", url: "vellum://auth/callback" });
@@ -444,7 +444,7 @@ describe("parseVellumUrl", () => {
   test("a bare connect link still parses as connect, never unknown", () => {
     // The user clicked a connect link; even with every field missing or
     // malformed the renderer routes them to the connect flow with guidance
-    // instead of Sentry-breadcrumbing an unknown URL.
+    // instead of logging an unknown URL.
     expect(parseVellumUrl("vellum://connect")).toEqual({ kind: "connect" });
     expect(parseVellumUrl("vellum://connect?url=&code=&bundle=")).toEqual({
       kind: "connect",
@@ -477,7 +477,7 @@ describe("parseVellumUrl", () => {
   });
 
   test("a connect link never reaches the unknown echo path, however malformed", () => {
-    // `unknown` carries its URL through to the renderer's Sentry breadcrumb,
+    // `unknown` carries its URL through to the renderer's log,
     // so a device code must never be able to route there. Every connect link
     // stays a connect link, malformed fields and all.
     for (const input of [
@@ -539,7 +539,7 @@ describe("installDeepLinks", () => {
     installDeepLinks();
 
     const drain = ipcHandleMock.mock.calls.find(
-      (call) => call[0] === "vellum:deepLinks:drain",
+      (call) => call[0] === "cadet:deepLinks:drain",
     )?.[1] as (event: unknown) => unknown[];
     expect(drain(allowedEvent)).toEqual([{ kind: "send", message: "cold" }]);
     expect(drain(allowedEvent)).toEqual([]);
@@ -554,7 +554,7 @@ describe("installDeepLinks", () => {
     ]);
 
     const drain = ipcHandleMock.mock.calls.find(
-      (call) => call[0] === "vellum:deepLinks:drain",
+      (call) => call[0] === "cadet:deepLinks:drain",
     )?.[1] as (event: unknown) => unknown[];
     expect(drain(allowedEvent)).toEqual([
       { kind: "openThread", threadId: "warm" },
@@ -622,7 +622,7 @@ describe("installDeepLinks", () => {
     expect(preventDefault).toHaveBeenCalled();
   });
 
-  test("registers the vellum:deepLinks:drain IPC handler returning + clearing the buffer", () => {
+  test("registers the cadet:deepLinks:drain IPC handler returning + clearing the buffer", () => {
     installDeepLinks();
 
     handleDeepLink("vellum://send?message=one");
@@ -630,7 +630,7 @@ describe("installDeepLinks", () => {
 
     // Find the registered handler.
     const drainCall = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:deepLinks:drain",
+      (c) => c[0] === "cadet:deepLinks:drain",
     );
     expect(drainCall).toBeDefined();
     const drainHandler = drainCall![1] as (event: unknown) => unknown;
@@ -646,7 +646,7 @@ describe("installDeepLinks", () => {
   test("with a subscriber present, live links broadcast but do NOT enter the buffer (no replay on renderer reload)", () => {
     installDeepLinks();
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:deepLinks:drain",
+      (c) => c[0] === "cadet:deepLinks:drain",
     )![1] as (event: unknown) => unknown[];
 
     // Backlog before any subscriber.
@@ -673,7 +673,7 @@ describe("installDeepLinks", () => {
   test("logout-relogin: link arriving while unsubscribed lands in the buffer for the next subscriber", () => {
     installDeepLinks();
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:deepLinks:drain",
+      (c) => c[0] === "cadet:deepLinks:drain",
     )![1] as (event: unknown) => unknown[];
 
     const s1 = makeSender();
@@ -694,7 +694,7 @@ describe("installDeepLinks", () => {
   test("unsubscribe with no matching subscriber is a no-op (idempotent delete)", () => {
     installDeepLinks();
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:deepLinks:drain",
+      (c) => c[0] === "cadet:deepLinks:drain",
     )![1] as (event: unknown) => unknown[];
 
     const s = makeSender();
@@ -716,7 +716,7 @@ describe("installDeepLinks", () => {
     windows = [w];
     handleDeepLink("vellum://send?message=live");
 
-    expect(w.webContents.send).toHaveBeenCalledWith("vellum:deepLinks:event", {
+    expect(w.webContents.send).toHaveBeenCalledWith("cadet:deepLinks:event", {
       kind: "send",
       message: "live",
     });
@@ -725,12 +725,12 @@ describe("installDeepLinks", () => {
   test("destroyed webContents auto-clears its subscription (no leak when React cleanup misses)", () => {
     // The real bug this guards against: window close on Darwin
     // can tear down the JS context before React effect cleanups
-    // flush, so `vellum:deepLinks:unsubscribe` never fires.
+    // flush, so `cadet:deepLinks:unsubscribe` never fires.
     // The `destroyed` listener cleans up regardless, so future
     // links buffer correctly.
     installDeepLinks();
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:deepLinks:drain",
+      (c) => c[0] === "cadet:deepLinks:drain",
     )![1] as (event: unknown) => unknown[];
 
     const s = makeSender();
@@ -759,11 +759,11 @@ describe("handleDeepLink — broadcast", () => {
 
     const expected = { kind: "send", message: "broadcast" };
     expect(w1.webContents.send).toHaveBeenCalledWith(
-      "vellum:deepLinks:event",
+      "cadet:deepLinks:event",
       expected,
     );
     expect(w2.webContents.send).toHaveBeenCalledWith(
-      "vellum:deepLinks:event",
+      "cadet:deepLinks:event",
       expected,
     );
   });
@@ -785,7 +785,7 @@ describe("handleDeepLink — broadcast", () => {
 
     handleDeepLink("javascript:alert(1)");
 
-    expect(w.webContents.send).toHaveBeenCalledWith("vellum:deepLinks:event", {
+    expect(w.webContents.send).toHaveBeenCalledWith("cadet:deepLinks:event", {
       kind: "unknown",
       url: "javascript:alert(1)",
     });
@@ -859,7 +859,7 @@ describe("handleDeepLink — window activation", () => {
     // Link buffered (no subscribers yet — the new window hasn't
     // mounted).
     const drainHandler = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:deepLinks:drain",
+      (c) => c[0] === "cadet:deepLinks:drain",
     );
     // installDeepLinks hasn't run in this test, so register the
     // handler via a fresh install before draining.
@@ -867,7 +867,7 @@ describe("handleDeepLink — window activation", () => {
       installDeepLinks();
     }
     const drain = ipcHandleMock.mock.calls.find(
-      (c) => c[0] === "vellum:deepLinks:drain",
+      (c) => c[0] === "cadet:deepLinks:drain",
     )![1] as (event: unknown) => unknown[];
     expect(drain(allowedEvent)).toEqual([
       { kind: "send", message: "delivered" },

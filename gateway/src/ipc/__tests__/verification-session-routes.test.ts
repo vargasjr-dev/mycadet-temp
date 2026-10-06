@@ -25,7 +25,7 @@ import {
   ValidateConsumeSessionIpcResponseSchema,
   VerificationSessionSchema,
   hashVerificationSecret,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import { eq } from "drizzle-orm";
 
 import "../../__tests__/test-preload.js";

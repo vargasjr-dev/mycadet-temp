@@ -25,7 +25,7 @@
  * @see {@link https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries}
  */
 
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useCallback, useEffect, useRef } from "react";
 
 import { type InfiniteData, useQueryClient } from "@tanstack/react-query";

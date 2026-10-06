@@ -223,10 +223,10 @@ mock.module("@/lib/platform-assistant-id", () => ({
   resolvePlatformAssistantId: resolvePlatformAssistantIdMock,
 }));
 
-// ── Sentry capture-error ─────────────────────────────────────────────────────
+// ── error reporting ─────────────────────────────────────────────────────
 
 const captureErrorMock = mock(() => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 
@@ -448,7 +448,7 @@ describe("registerForRemotePush", () => {
     expect(upsertMock).not.toHaveBeenCalled();
   });
 
-  test("reports an upsert error to Sentry instead of throwing", async () => {
+  test("reports an upsert error instead of throwing", async () => {
     upsertError = { detail: "boom" };
     await registerForRemotePush("11111111-1111-4111-8111-111111111111");
     registrationHandler?.({ value: "apns-token-abc" });
@@ -711,7 +711,7 @@ describe("hasSessionConfirmedRemotePushRegistration", () => {
     // whether the platform still holds the token row (the server prunes
     // rows on APNs BadDeviceToken), so it must not count as confirmed.
     localStorage.setItem(
-      "vellum:push_registration",
+      "cadet:push_registration",
       JSON.stringify({
         token: "persisted-token",
         bundleId: "ai.vocify-inc.vellum-assistant-ios",
@@ -784,7 +784,7 @@ describe("unregisterFromRemotePush", () => {
     // reload that wiped module memory — `lastRegistered` is null but the
     // platform still has the token, so logout must still delete it.
     localStorage.setItem(
-      "vellum:push_registration",
+      "cadet:push_registration",
       JSON.stringify({
         token: "persisted-token",
         bundleId: "ai.vocify-inc.vellum-assistant-ios",
@@ -846,7 +846,7 @@ describe("unregisterFromRemotePush", () => {
     expect(deleteMock).toHaveBeenCalledTimes(1);
   });
 
-  test("reports a failed delete to Sentry instead of silently dropping it", async () => {
+  test("reports a failed delete instead of silently dropping it", async () => {
     deleteError = { detail: "server error" };
     await registerForRemotePush("11111111-1111-4111-8111-111111111111");
     registrationHandler?.({ value: "apns-token-abc" });

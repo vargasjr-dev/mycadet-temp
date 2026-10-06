@@ -43,7 +43,7 @@ export interface PluginManifest {
   name: string;
   /**
    * Plugin version (semver). Informational. Host-compat negotiation lives
-   * in the plugin's `package.json` `peerDependencies["@vellumai/plugin-api"]`
+   * in the plugin's `package.json` `peerDependencies["@mycadet/plugin-api"]`
    * range — checked by the external-plugin loader against the assistant's
    * own version at load time.
    */
@@ -80,7 +80,7 @@ export interface PluginCredentialKeyPattern {
 // ─── Public plugin-API types ─────────────────────────────────────────────────
 // Defined in `assistant/src/plugin-api/types.ts` and re-exported here so
 // existing internal call sites keep working. Plugin authors import these from
-// `@vellumai/plugin-api`.
+// `@mycadet/plugin-api`.
 export type {
   HookFunction,
   InitContext,
@@ -493,7 +493,7 @@ export interface Plugin {
   /**
    * Tool registrations visible to the model. External plugin authors
    * declare the nameless `ToolDefinition` file shape (from
-   * `@vellumai/plugin-api`); the loader derives `name` from the
+   * `@mycadet/plugin-api`); the loader derives `name` from the
    * `tools/<name>.ts` basename and runs the definition through
    * `finalizeTool` to fill omitted required fields, producing the
    * `Tool` values stored here. Category / ownership metadata is

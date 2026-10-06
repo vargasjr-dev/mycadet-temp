@@ -19,7 +19,7 @@
  *   DELETE /v1/roadmap/:slug/upvote : remove the upvote
  */
 
-import { type EnvironmentDefinition, SEEDS } from "@vellumai/environments";
+import { type EnvironmentDefinition, SEEDS } from "@mycadet/environments";
 import { z } from "zod";
 
 import { getPlatformBaseUrl } from "../../config/env.js";

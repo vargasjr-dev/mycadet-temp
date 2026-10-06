@@ -24,7 +24,7 @@ const linkClass =
   "font-semibold text-emerald-700 underline hover:text-emerald-800";
 
 const PLUGIN_API_URL =
-  "https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api";
+  "https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api";
 
 type ToolField = {
   name: string;
@@ -255,7 +255,7 @@ export function ExtensibilityToolsContent() {
             These are the fields a tool definition can set. Names and types come
             from <code>ToolDefinition</code> in{" "}
             <Link href={PLUGIN_API_URL} className={linkClass}>
-              <code>@vellumai/plugin-api</code>
+              <code>@cadetai/plugin-api</code>
             </Link>
             .
           </p>
@@ -416,7 +416,7 @@ export function ExtensibilityToolsContent() {
               <strong className="text-zinc-900 dark:text-zinc-100">
                 Built-in default plugin tools
               </strong>
-              . Vellum ships a set of default plugins alongside the Assistant.
+              . Cadet ships a set of default plugins alongside the Assistant.
               Their tools register during bootstrap, before any user-installed
               plugin tools.
             </li>
@@ -452,7 +452,7 @@ export function ExtensibilityToolsContent() {
           </p>
           <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
             <code>{`// tools/example.ts
-import type { ToolContext, ToolExecutionResult } from "@vellumai/plugin-api";
+import type { ToolContext, ToolExecutionResult } from "@cadetai/plugin-api";
 
 export default {
   description:
@@ -482,7 +482,7 @@ export default {
           <p className="mb-0 text-zinc-600 dark:text-zinc-400">
             Types come from{" "}
             <Link href={PLUGIN_API_URL} className={linkClass}>
-              <code>@vellumai/plugin-api</code>
+              <code>@cadetai/plugin-api</code>
             </Link>
             , the only supported contract.
           </p>

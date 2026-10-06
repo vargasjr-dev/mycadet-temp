@@ -1,5 +1,5 @@
 /**
- * Embedded handle for `@vellumai/plugin-api`.
+ * Embedded handle for `@mycadet/plugin-api`.
  *
  * Standard `import * as pluginApi from "../plugin-api/index.ts"` lets Bun's
  * normal bundler walk the plugin-api module graph at build time — relative
@@ -11,11 +11,11 @@
  * The loaded namespace is then installed on `globalThis` under a well-known
  * symbol. The boot-time shim writer (`ensurePluginApiShim`) enumerates
  * {@link PLUGIN_API_EXPORTS} and generates a tiny ESM module at
- * `<workspaceDir>/node_modules/@vellumai/plugin-api/index.js` that
+ * `<workspaceDir>/node_modules/@mycadet/plugin-api/index.js` that
  * re-binds each runtime export from `globalThis` (falling back to a
  * direct import of the plugin-api source in processes where no host
  * installed the namespace). User plugins that
- * `import { ... } from "@vellumai/plugin-api"` walk up to that shim and
+ * `import { ... } from "@mycadet/plugin-api"` walk up to that shim and
  * pick up the bindings.
  *
  * Type-only exports erase before this module loads, so `Object.keys`

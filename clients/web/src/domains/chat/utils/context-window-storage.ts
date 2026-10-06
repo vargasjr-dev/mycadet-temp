@@ -35,7 +35,7 @@ function isValidUsage(value: unknown): value is ContextWindowUsage {
 }
 
 const storage = createRecordStorageAccessor<ContextWindowUsage>({
-  keyFn: (assistantId) => `vellum:ctxwindow:${assistantId}`,
+  keyFn: (assistantId) => `cadet:ctxwindow:${assistantId}`,
   scope: "user",
   parseValue: (value) => (isValidUsage(value) ? value : null),
   fallback: {},

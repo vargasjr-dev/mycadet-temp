@@ -28,7 +28,7 @@ interface HelperCall {
   params: Record<string, unknown>;
 }
 const calls: HelperCall[] = [];
-mock.module("@vellumai/native-sidecar/supervisor", () => ({
+mock.module("@mycadet/native-sidecar/supervisor", () => ({
   NativeSidecarClient: class {
     onNotification(): void {}
     call(method: string, params: Record<string, unknown>): Promise<unknown> {
@@ -46,7 +46,7 @@ const ensureNotificationAvatarFile = mock(() => {
   }
   return "/userData/notification-avatars/abc.png";
 });
-mock.module("@vellumai/electron-desktop/notification-avatar-file", () => ({
+mock.module("@mycadet/electron-desktop/notification-avatar-file", () => ({
   ensureNotificationAvatarFile,
 }));
 

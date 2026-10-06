@@ -1,5 +1,5 @@
 /**
- * @vellumai/credential-storage
+ * @mycadet/credential-storage
  *
  * Local credential persistence and materialization primitives.
  *
@@ -124,7 +124,12 @@ export interface OAuthConnectionRecord {
  * Result of a token refresh attempt.
  */
 export type TokenRefreshResult =
-  | { success: true; accessToken: string; expiresAt: number | null; refreshToken?: string }
+  | {
+      success: true;
+      accessToken: string;
+      expiresAt: number | null;
+      refreshToken?: string;
+    }
   | { success: false; error: string };
 
 /**
@@ -147,7 +152,7 @@ export interface TokenPersistence {
       accessToken: string;
       refreshToken?: string;
       expiresAt?: number | null;
-    }
+    },
   ): Promise<void>;
 
   /**

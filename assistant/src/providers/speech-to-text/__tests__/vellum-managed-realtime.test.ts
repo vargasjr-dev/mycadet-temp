@@ -1,5 +1,5 @@
 /**
- * Tests for the vellum managed realtime STT adapter (velay relay).
+ * Tests for the vellum managed realtime STT adapter (tunnel relay).
  *
  * The global WebSocket is replaced with a recording factory so tests can
  * assert on the dialed URL (query auth, no model param) and drive multiple
@@ -88,8 +88,8 @@ function resultsFrame(
   });
 }
 
-function velayErrorFrame(code: string, detail = ""): string {
-  return JSON.stringify({ type: "velay_error", code, detail });
+function tunnelErrorFrame(code: string, detail = ""): string {
+  return JSON.stringify({ type: "tunnel_error", code, detail });
 }
 
 const CONNECTION: SpeechRelayConnection = {
@@ -144,7 +144,7 @@ describe("Vellum managed realtime transcribers", () => {
     return { adapter, events };
   }
 
-  test("dials the velay STT route with query auth and no model param", async () => {
+  test("dials the tunnel STT route with query auth and no model param", async () => {
     await startAdapter({ sampleRate: 24000 });
 
     const ws = sockets[0]!;
@@ -155,9 +155,9 @@ describe("Vellum managed realtime transcribers", () => {
     expect(url.searchParams.get("encoding")).toBe("linear16");
     expect(url.searchParams.get("sample_rate")).toBe("24000");
     expect(url.searchParams.get("channels")).toBe("1");
-    // velay pins the model server-side and rejects the param.
+    // tunnel pins the model server-side and rejects the param.
     expect(url.searchParams.has("model")).toBe(false);
-    // velay's allowlist has no utterance_end_ms.
+    // tunnel's allowlist has no utterance_end_ms.
     expect(url.searchParams.has("utterance_end_ms")).toBe(false);
     // Auth travels in the URL, not a Deepgram Token header.
     expect(ws.ctorOptions?.headers?.Authorization).toBeUndefined();
@@ -177,11 +177,11 @@ describe("Vellum managed realtime transcribers", () => {
     ]);
   });
 
-  test("maps a mid-stream velay_error to a categorized SttError", async () => {
+  test("maps a mid-stream tunnel_error to a categorized SttError", async () => {
     const { events } = await startAdapter();
 
     sockets[0]!.simulateMessage(
-      velayErrorFrame("insufficient_balance", "balance is 0"),
+      tunnelErrorFrame("insufficient_balance", "balance is 0"),
     );
     sockets[0]!.simulateClose(1011, "insufficient_balance");
 
@@ -198,14 +198,14 @@ describe("Vellum managed realtime transcribers", () => {
   test("maps invalid_key to an auth error", async () => {
     const { events } = await startAdapter();
 
-    sockets[0]!.simulateMessage(velayErrorFrame("invalid_key"));
+    sockets[0]!.simulateMessage(tunnelErrorFrame("invalid_key"));
     sockets[0]!.simulateClose(1008, "invalid_key");
 
     expect(events[0]).toEqual(
       expect.objectContaining({
         type: "error",
         category: "auth",
-        message: expect.stringContaining("VELAY_BASE_URL"),
+        message: expect.stringContaining("TUNNEL_BASE_URL"),
       }),
     );
   });
@@ -222,7 +222,7 @@ describe("Vellum managed realtime transcribers", () => {
     sockets[0]!.simulateMessage(resultsFrame("tail text", { is_final: true }));
     adapter.finalizeUtterance();
     sockets[0]!.simulateMessage(
-      velayErrorFrame("session_duration_exceeded", "30m cap"),
+      tunnelErrorFrame("session_duration_exceeded", "30m cap"),
     );
     sockets[0]!.simulateClose(1000, "session_duration_exceeded");
 
@@ -235,13 +235,13 @@ describe("Vellum managed realtime transcribers", () => {
     ]);
   });
 
-  test("re-dials transparently when velay's session cap closes the stream", async () => {
+  test("re-dials transparently when tunnel's session cap closes the stream", async () => {
     const { adapter, events } = await startAdapter({ sampleRate: 16000 });
 
-    // Velay settles the in-flight utterance before closing.
+    // Tunnel settles the in-flight utterance before closing.
     sockets[0]!.simulateMessage(resultsFrame("first leg", { is_final: true }));
     sockets[0]!.simulateMessage(
-      velayErrorFrame("session_duration_exceeded", "30m cap"),
+      tunnelErrorFrame("session_duration_exceeded", "30m cap"),
     );
     sockets[0]!.simulateClose(1000, "session_duration_exceeded");
 
@@ -290,7 +290,7 @@ describe("Vellum managed realtime transcribers", () => {
           }),
         );
         if (generation < 2) {
-          socket.simulateMessage(velayErrorFrame("session_duration_exceeded"));
+          socket.simulateMessage(tunnelErrorFrame("session_duration_exceeded"));
           socket.simulateClose(1000, "session_duration_exceeded");
           await tick();
           sockets[generation + 1]!.simulateOpen();
@@ -314,7 +314,7 @@ describe("Vellum managed realtime transcribers", () => {
   test("finalize during a re-dial settles immediately", async () => {
     const { adapter, events } = await startAdapter();
 
-    sockets[0]!.simulateMessage(velayErrorFrame("session_duration_exceeded"));
+    sockets[0]!.simulateMessage(tunnelErrorFrame("session_duration_exceeded"));
     sockets[0]!.simulateClose(1000, "session_duration_exceeded");
 
     adapter.finalizeUtterance();
@@ -329,7 +329,7 @@ describe("Vellum managed realtime transcribers", () => {
       )) as unknown as typeof fetch;
     const { events } = await startAdapter();
 
-    sockets[0]!.simulateMessage(velayErrorFrame("session_duration_exceeded"));
+    sockets[0]!.simulateMessage(tunnelErrorFrame("session_duration_exceeded"));
     sockets[0]!.simulateClose(1000, "session_duration_exceeded");
     await tick();
 
@@ -358,7 +358,7 @@ describe("Vellum managed realtime transcribers", () => {
     expect(events).toEqual([{ type: "closed" }]);
 
     // The dial still resolves — the opened session must be stopped, not
-    // kept alive to meter against velay.
+    // kept alive to meter against tunnel.
     sockets[0]!.simulateOpen();
     await startPromise;
     expect(
@@ -370,7 +370,7 @@ describe("Vellum managed realtime transcribers", () => {
   test("stop during a re-dial closes exactly once", async () => {
     const { adapter, events } = await startAdapter();
 
-    sockets[0]!.simulateMessage(velayErrorFrame("session_duration_exceeded"));
+    sockets[0]!.simulateMessage(tunnelErrorFrame("session_duration_exceeded"));
     sockets[0]!.simulateClose(1000, "session_duration_exceeded");
 
     adapter.stop();
@@ -384,7 +384,7 @@ describe("Vellum managed realtime transcribers", () => {
     expect(events.filter((e) => e.type === "error")).toHaveLength(0);
   });
 
-  test("a failed dial surfaces velay's HTTP rejection via the probe", async () => {
+  test("a failed dial surfaces tunnel's HTTP rejection via the probe", async () => {
     globalThis.fetch = (async () =>
       new Response(
         JSON.stringify({

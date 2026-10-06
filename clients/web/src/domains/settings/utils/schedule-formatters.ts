@@ -8,7 +8,7 @@ import type {
   ConsolidationConfigGetResponse,
   HeartbeatConfigGetResponse,
 } from "@/generated/daemon/types.gen";
-import type { TagTone } from "@vellumai/design-library/components/tag";
+import type { TagTone } from "@mycadet/design-library/components/tag";
 
 import { fetchScheduleUsageSummary } from "@/domains/settings/api/schedules";
 import { resolveScheduleUsageWindow } from "@/domains/settings/utils/schedule-usage-window";

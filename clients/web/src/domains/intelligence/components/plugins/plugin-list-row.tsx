@@ -7,7 +7,7 @@ import type { PluginListItem } from "@/lib/plugins/types";
 import { usePluginIconSrc } from "@/hooks/use-plugin-icon-src";
 import type { PluginDrift } from "@/domains/intelligence/use-plugin-drift";
 import { useTranslation } from "@/i18n";
-import { Button, Card, Tag } from "@vellumai/design-library";
+import { Button, Card, Tag } from "@mycadet/design-library";
 
 interface PluginListRowProps {
   /** Owning assistant — used to fetch the bundled icon through the daemon client. */

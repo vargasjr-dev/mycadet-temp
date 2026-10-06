@@ -28,7 +28,7 @@ wired surface.
 ## TL;DR
 
 1. Create a directory `<workspaceDir>/plugins/my-plugin/`.
-2. Drop a `package.json` with a `name` and a `peerDependencies["@vellumai/plugin-api"]` semver range.
+2. Drop a `package.json` with a `name` and a `peerDependencies["@mycadet/plugin-api"]` semver range.
 3. Add `hooks/<name>.ts` files (default export = hook function).
 4. Add `tools/<name>.ts` files (default export = tool definition).
 5. Install in your assistant with `assistant plugins install <name>` and it immediately registers on start.
@@ -39,15 +39,15 @@ wired surface.
 
 The external plugin loader extends the assistant by wiring these contribution surfaces.
 
-| Surface             | Directory                | Discovery                                                                                      |
-| ------------------- | ------------------------ | ---------------------------------------------------------------------------------------------- |
-| Lifecycle hooks     | `hooks/<name>.ts`        | filename → `plugin.hooks[<name>]`                                                              |
-| Model-visible tools | `tools/<name>.ts`        | each file's default export → `plugin.tools[]`                                                  |
-| Skills              | `skills/<id>/SKILL.md`   | picked up on disk by the skill catalog loader                                                  |
-| Skill-scoped tools  | `skills/<id>/TOOLS.json` | registered only while the skill is active (see [Tools](#tools))                                |
-| Schedules           | `schedules/<name>/`      | reconciled into schedule rows on install/upgrade (see [Schedules](#schedules))                 |
-| MCP servers         | `mcp.json`               | connected on assistant start; tools land as `mcp__<id>__<tool>` (see [MCP servers](#mcp-servers)) |
-| HTTP routes         | `routes/<path>.ts`       | served under `/x/plugins/<name>/`                                                              |
+| Surface             | Directory                | Discovery                                                                                              |
+| ------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Lifecycle hooks     | `hooks/<name>.ts`        | filename → `plugin.hooks[<name>]`                                                                      |
+| Model-visible tools | `tools/<name>.ts`        | each file's default export → `plugin.tools[]`                                                          |
+| Skills              | `skills/<id>/SKILL.md`   | picked up on disk by the skill catalog loader                                                          |
+| Skill-scoped tools  | `skills/<id>/TOOLS.json` | registered only while the skill is active (see [Tools](#tools))                                        |
+| Schedules           | `schedules/<name>/`      | reconciled into schedule rows on install/upgrade (see [Schedules](#schedules))                         |
+| MCP servers         | `mcp.json`               | connected on assistant start; tools land as `mcp__<id>__<tool>` (see [MCP servers](#mcp-servers))      |
+| HTTP routes         | `routes/<path>.ts`       | served under `/x/plugins/<name>/`                                                                      |
 | Channels            | `channels/ingress.json`  | public `/webhooks/plugins/<name>/` routes; the plugin appears as a channel (see [Channels](#channels)) |
 
 ---
@@ -108,7 +108,7 @@ The external loader reads three fields:
   "name": "@you/my-plugin",
   "version": "0.0.1",
   "peerDependencies": {
-    "@vellumai/plugin-api": "^0.8.0"
+    "@mycadet/plugin-api": "^0.8.0"
   },
   "vellum": {}
 }
@@ -118,7 +118,7 @@ The external loader reads three fields:
   scope (`@you/`) for the in-runtime plugin name. Duplicates fail
   registration.
 - **`version`** — informational. Defaults to `"0.0.0"` if absent.
-- **`peerDependencies["@vellumai/plugin-api"]`** — semver range
+- **`peerDependencies["@mycadet/plugin-api"]`** — semver range
   checked against the running assistant version. Mismatch is **logged
   but does not block load today** (the install path is still in flux);
   once it stabilizes the mismatch will harden into a hard reject.
@@ -130,9 +130,9 @@ whatever your editor / linter / publish tooling expects.
 
 ---
 
-## Public API surface — `@vellumai/plugin-api`
+## Public API surface — `@mycadet/plugin-api`
 
-Plugins import types and constants from `@vellumai/plugin-api`. This
+Plugins import types and constants from `@mycadet/plugin-api`. This
 package is the only public-contract surface — anything not exported
 from there is assistant-internal and subject to change.
 
@@ -169,7 +169,7 @@ plugin.
 
 ```ts
 // hooks/init.ts
-import type { InitContext } from "@vellumai/plugin-api";
+import type { InitContext } from "@mycadet/plugin-api";
 
 export default async function init(ctx: InitContext): Promise<void> {
   // ctx.config            — your validated config (typed `unknown` for now)
@@ -193,7 +193,7 @@ explicit unload, etc.).
 
 ```ts
 // hooks/shutdown.ts
-import type { ShutdownContext } from "@vellumai/plugin-api";
+import type { ShutdownContext } from "@mycadet/plugin-api";
 
 export default async function shutdown(ctx: ShutdownContext): Promise<void> {
   // ctx.assistantVersion  — host semver string
@@ -213,7 +213,7 @@ Fires once per user turn, **after** the assistant assembles
 
 ```ts
 // hooks/user-prompt-submit.ts
-import type { UserPromptSubmitContext } from "@vellumai/plugin-api";
+import type { UserPromptSubmitContext } from "@mycadet/plugin-api";
 
 // In-place mutation style (return void):
 export default async function userPromptSubmit(
@@ -244,7 +244,7 @@ before acting.
 
 ```ts
 // hooks/pre-model-call.ts
-import type { PreModelCallContext } from "@vellumai/plugin-api";
+import type { PreModelCallContext } from "@mycadet/plugin-api";
 
 // In-place mutation style (return void):
 export default async function preModelCall(
@@ -276,7 +276,7 @@ a profile with a smaller context window relies on the loop's overflow recovery
 
 ```ts
 // hooks/pre-model-call.ts — route the user-facing reply by classified intent
-import type { PreModelCallContext } from "@vellumai/plugin-api";
+import type { PreModelCallContext } from "@mycadet/plugin-api";
 
 export default function preModelCall(ctx: PreModelCallContext): void {
   // Only route the user-facing reply; leave background/utility calls untouched.
@@ -301,7 +301,7 @@ whenever you need the current set — at `init` to build a map once, or per call
 
 ```ts
 // hooks/init.ts — build and validate the router's category → profile map
-import { getModelProfiles, type InitContext } from "@vellumai/plugin-api";
+import { getModelProfiles, type InitContext } from "@mycadet/plugin-api";
 
 const CATEGORY_PROFILE: Record<string, string> = {
   chat: "cost-optimized",
@@ -335,7 +335,7 @@ result, in tool-use order.
 
 ```ts
 // hooks/post-tool-use.ts
-import type { PostToolUseContext } from "@vellumai/plugin-api";
+import type { PostToolUseContext } from "@mycadet/plugin-api";
 
 // In-place mutation style (return void):
 export default async function postToolUse(
@@ -377,7 +377,7 @@ Runs for every model call regardless of call site, so **self-gate** on
 
 ```ts
 // hooks/post-model-call.ts
-import type { PostModelCallContext } from "@vellumai/plugin-api";
+import type { PostModelCallContext } from "@mycadet/plugin-api";
 
 // In-place mutation style (return void):
 export default async function postModelCall(
@@ -442,7 +442,7 @@ particular ending guards on it.
 
 ```ts
 // hooks/stop.ts
-import type { StopContext } from "@vellumai/plugin-api";
+import type { StopContext } from "@mycadet/plugin-api";
 
 export default async function stop(ctx: StopContext): Promise<void> {
   // ctx.conversationId — ID of the conversation the run belongs to
@@ -476,7 +476,7 @@ history.
 
 ```ts
 // hooks/post-compact.ts
-import type { PostCompactContext } from "@vellumai/plugin-api";
+import type { PostCompactContext } from "@mycadet/plugin-api";
 
 export default async function postCompact(
   ctx: PostCompactContext,
@@ -533,7 +533,7 @@ execution is reserved for first-party bundled skills) and a tool name may be
 owned by only one skill, so share a single carrier skill via the parents'
 `includes` rather than duplicating the entry. A plugin-resident skill tool
 and a bash child inherit `VELLUM_PLUGIN_NAME` so `resolveCredential()` from
-`@vellumai/plugin-api` can read credentials under that plugin's service.
+`@mycadet/plugin-api` can read credentials under that plugin's service.
 Companion scripts under `skills/<skill>/{scripts,tools}/` also recover the
 plugin name from their path, so raw `bun` works. See the `plugin-builder`
 skill's `references/skills.md` for the manifest shape; `admin-copilot` is
@@ -541,8 +541,8 @@ the reference implementation.
 
 ```ts
 // tools/my_tool.ts
-import type { ToolContext, ToolExecutionResult } from "@vellumai/plugin-api";
-import zod from "@vellumai/plugin-api";
+import type { ToolContext, ToolExecutionResult } from "@mycadet/plugin-api";
+import zod from "@mycadet/plugin-api";
 
 const myToolInputSchema = zod.object({
   query: z.string({
@@ -753,7 +753,7 @@ considered themselves a channel in all contexts where channels are viewed.
 Declare the public path in this file **and** implement the matching handler
 under `routes/<path>.ts`. A `routes/` file with no ingress declaration is not
 a public webhook. Resolve the URL to hand a vendor with
-`resolveWebhookUrl({ path: "events" })` from `@vellumai/plugin-api`.
+`resolveWebhookUrl({ path: "events" })` from `@mycadet/plugin-api`.
 
 Every public plugin route is signature-checked. Routes wait on a guardian
 approval of the declaration digest before they are served. Editing the file
@@ -765,7 +765,7 @@ Optional fields on a route:
 - **`handshake`**: `signed-headers` (default) or `signed-query` (WebSocket
   only, for a caller handed a URL and nothing else).
 - **`verification`**: declared HMAC scheme for a third-party vendor's own
-  signature. HTTP only. The descriptor names a credential *field* under this
+  signature. HTTP only. The descriptor names a credential _field_ under this
   plugin's own service; it cannot name another plugin's secret.
 - **`inbound`**: that the plugin's reply carries a message for the gateway's
   inbound pipeline. HTTP only. `"inbound": {}` reads the default envelope
@@ -891,7 +891,7 @@ reproducible pin. The marketplace-only flags (`--ref`, `--pin`,
 External ecosystem plugins are often shaped for a different host (e.g. a Claude
 Code plugin keyed on a `.claude-plugin/plugin.json`), so installed verbatim
 they fail this loader's contract — a name that doesn't match the directory, no
-`@vellumai/plugin-api` peer dependency, no `hooks/`/`tools/`. A postinstall
+`@mycadet/plugin-api` peer dependency, no `hooks/`/`tools/`. A postinstall
 adapter is a small, curated transform we commit _here_ to translate such a
 clone into Vellum's shape.
 
@@ -919,7 +919,7 @@ Install flow for an entry that has a stub:
    manifest captured before the overlay — preserving its `version`,
    `description`, `license`, and every other field — mutating only the two the
    loader requires: `name` (set to the install directory) and the
-   `@vellumai/plugin-api` peer dependency. The spent `postinstall` script is
+   `@mycadet/plugin-api` peer dependency. The spent `postinstall` script is
    dropped. An adapter therefore never needs to touch `package.json`.
 
 See [`caveman/`](./caveman/) for a worked example: it reads the terse-mode

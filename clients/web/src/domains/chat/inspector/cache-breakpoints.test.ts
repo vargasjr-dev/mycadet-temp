@@ -9,7 +9,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { parseCacheBreakpoints } from "./cache-breakpoints";
-import type { LLMCallSummary } from "@vellumai/assistant-api";
+import type { LLMCallSummary } from "@mycadet/assistant-api";
 
 const STABLE_TTL = "1h";
 const TAIL_TTL = "5m";

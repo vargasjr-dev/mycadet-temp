@@ -28,7 +28,7 @@ import { useEffect, useMemo } from "react";
 
 import { useParams, useSearchParams } from "react-router";
 
-import { Button, Card, Input, Textarea } from "@vellumai/design-library";
+import { Button, Card, Input, Textarea } from "@mycadet/design-library";
 
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useTranslation } from "@/i18n";
@@ -117,7 +117,9 @@ function ButtonRow() {
       <SectionLabel>{t("themeStagePage.sectionButtons")}</SectionLabel>
       <div className="flex items-center gap-3">
         <Button>{t("themeStagePage.buttonPrimary")}</Button>
-        <Button variant="outlined">{t("themeStagePage.buttonSecondary")}</Button>
+        <Button variant="outlined">
+          {t("themeStagePage.buttonSecondary")}
+        </Button>
         <Button disabled>{t("themeStagePage.buttonDisabled")}</Button>
       </div>
     </div>

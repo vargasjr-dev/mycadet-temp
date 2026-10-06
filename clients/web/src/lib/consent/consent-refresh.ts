@@ -4,7 +4,7 @@
  * server-effective verdicts for both data-capture gates; diagnostics
  * additionally routes through {@link applyResolvedDiagnosticsConsent} — the
  * single direction-asymmetric chokepoint that writes the saved preference and
- * the effective Sentry gate. A failed/timed-out fetch is swallowed and leaves
+ * the effective diagnostics gate. A failed/timed-out fetch is swallowed and leaves
  * all consent state unchanged (never flips a gate on or off).
  */
 import { fetchConsent } from "@/domains/account/profile";

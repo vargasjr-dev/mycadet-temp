@@ -1,8 +1,8 @@
 import { type PropsWithChildren, useEffect } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Typography } from "@mycadet/design-library/components/typography";
 import { Check, Copy, Loader2 } from "lucide-react";
 
 import { ExternalAnchor } from "@/components/external-anchor";

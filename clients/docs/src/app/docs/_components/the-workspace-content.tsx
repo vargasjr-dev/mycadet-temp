@@ -37,14 +37,14 @@ export function TheWorkspaceContent() {
           and edit.
         </p>
         <p className="mb-4 text-zinc-600">
-          On <strong>Vellum Cloud</strong>, your workspace is encrypted and
+          On <strong>Cadet Cloud</strong>, your workspace is encrypted and
           isolated to your account. You browse and edit it through the web
           app. There&apos;s no folder on your computer to worry about.
         </p>
         <p className="mb-8 text-zinc-600">
           On the <strong>desktop app with local hosting</strong>, the same
           workspace lives in a folder on your machine at{" "}
-          <code>~/.vellum/workspace/</code>, where you can also open it in any
+          <code>$VELLUM_WORKSPACE_DIR</code>, where you can also open it in any
           text editor. The structure and the files are the same in both
           places.
         </p>
@@ -65,7 +65,7 @@ export function TheWorkspaceContent() {
             What&apos;s in there
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Whether your workspace lives in Vellum Cloud or on your local
+            Whether your workspace lives in Cadet Cloud or on your local
             machine, the structure is the same. The tree below shows the
             local layout; on Cloud, you see the same files in the web app.
           </p>
@@ -478,7 +478,7 @@ export function TheWorkspaceContent() {
             The sandbox
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            On <strong>Vellum Cloud</strong>, your assistant runs in an
+            On <strong>Cadet Cloud</strong>, your assistant runs in an
             isolated cloud sandbox. It can read and write files inside its
             own workspace, but has no access to a host machine, so the host
             tools and shell commands described below don&apos;t apply.
@@ -510,7 +510,7 @@ export function TheWorkspaceContent() {
                   </td>
                   <td className="px-4 py-3 text-zinc-600">
                     file_read, file_write, file_edit &mdash; restricted
-                    to <code>~/.vellum/workspace/</code>
+                    to <code>$VELLUM_WORKSPACE_DIR</code>
                   </td>
                   <td className="px-4 py-3 text-zinc-600">
                     No approval needed
@@ -577,7 +577,7 @@ export function TheWorkspaceContent() {
             </li>
             <li>
               <strong>It&apos;s yours.</strong> Your workspace lives in your
-              private Vellum Cloud account, or on your own machine if you
+              private Cadet Cloud account, or on your own machine if you
               self-host. Credentials are stored separately and excluded from
               any exports. We don&apos;t share your workspace with other
               users, and we don&apos;t read it.

@@ -24,7 +24,7 @@ Use this surface when a third party must deliver to the assistant from outside: 
 }
 ```
 
-That route is served at `/webhooks/plugins/<plugin-name>/events` and handled by `routes/events.ts`. Resolve the URL to hand a vendor with `resolveWebhookUrl({ path: "events" })` from `@vellumai/plugin-api`. Do not hardcode a hostname. Do not tell a vendor to POST at `/x/plugins/...`.
+That route is served at `/webhooks/plugins/<plugin-name>/events` and handled by `routes/events.ts`. Resolve the URL to hand a vendor with `resolveWebhookUrl({ path: "events" })` from `@mycadet/plugin-api`. Do not hardcode a hostname. Do not tell a vendor to POST at `/x/plugins/...`.
 
 ### Route fields
 

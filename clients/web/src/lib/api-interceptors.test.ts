@@ -25,7 +25,7 @@ import {
 } from "bun:test";
 import type * as LocalMode from "@/lib/local-mode";
 import type { LockfileAssistant } from "@/runtime/local-mode-host";
-import type * as CaptureError from "@/lib/sentry/capture-error";
+import type * as CaptureError from "@/lib/error-reporting/capture-error";
 import type * as RemoteGatewaySession from "@/lib/auth/remote-gateway-session";
 
 const isLocalClientMock = mock(() => !process.env.VITE_PLATFORM_MODE);
@@ -104,11 +104,11 @@ mock.module("@/lib/auth/hard-navigate", () => ({
   hardNavigate: hardNavigateMock,
 }));
 
-// Sentry capture, stubbed so a failed in-place recovery doesn't touch the
-// real client and the capture can be asserted.
+// Error reporting, stubbed so a failed in-place recovery doesn't touch the
+// real client and the report can be asserted.
 const captureErrorMock = mock((_err: unknown, _ctx?: unknown) => {});
 mock.module(
-  "@/lib/sentry/capture-error",
+  "@/lib/error-reporting/capture-error",
   (): Partial<typeof CaptureError> => ({
     captureError: captureErrorMock,
   }),
@@ -1186,9 +1186,9 @@ describe("api-interceptors / daemonErrorInterceptor", () => {
 // no-restricted-syntax rule (which only matches literal key arguments)
 // does not fire in test-only setItem calls.
 const GW_TOKEN_KEYS = [
-  "vellum:gw:token",
-  "vellum:gw:expiresAt",
-  "vellum:gw:tokenSource",
+  "cadet:gw:token",
+  "cadet:gw:expiresAt",
+  "cadet:gw:tokenSource",
   "gw:token",
   "gw:expiresAt",
   "gw:tokenSource",
@@ -1196,10 +1196,10 @@ const GW_TOKEN_KEYS = [
 
 function seedGatewayTokens(): void {
   const values: Record<string, string> = {
-    "vellum:gw:token": "stale-jwt",
+    "cadet:gw:token": "stale-jwt",
     // generic-examples:ignore-next-line — reason: Unix timestamp for token expiry, not a phone number
-    "vellum:gw:expiresAt": "9999999999",
-    "vellum:gw:tokenSource": "/auth/token",
+    "cadet:gw:expiresAt": "9999999999",
+    "cadet:gw:tokenSource": "/auth/token",
     "gw:token": "legacy-jwt",
     // generic-examples:ignore-next-line — reason: Unix timestamp for token expiry, not a phone number
     "gw:expiresAt": "9999999999",
@@ -1253,8 +1253,8 @@ describe("api-interceptors / recovery interceptor registration", () => {
 
 describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
   const GATEWAY_URL = "http://localhost:9090";
-  const GW_401_RECOVERY_AT_KEY = "vellum:gw:401-reload-at";
-  const GW_401_ATTEMPTS_KEY = "vellum:gw:401-reload-attempts";
+  const GW_401_RECOVERY_AT_KEY = "cadet:gw:401-reload-at";
+  const GW_401_ATTEMPTS_KEY = "cadet:gw:401-reload-attempts";
   const GW_401_MAX_ATTEMPTS = 3;
 
   function makeResponse(status: number, url: string): Response {
@@ -1416,7 +1416,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     seedGatewayTokens();
     let tokenDuringPrime: string | null | undefined;
     primeGatewayWithRepairImpl = async () => {
-      tokenDuringPrime = localStorage.getItem("vellum:gw:token");
+      tokenDuringPrime = localStorage.getItem("cadet:gw:token");
       setSelfHostedConnection({ url: GATEWAY_URL, token: "fresh-tok" });
     };
 
@@ -2206,11 +2206,11 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
   const flush = (): Promise<void> =>
     new Promise((resolve) => setTimeout(resolve, 0));
 
-  const PLATFORM_AUTH_REDIRECT_KEY = "vellum:platform:auth-redirect-attempts";
+  const PLATFORM_AUTH_REDIRECT_KEY = "cadet:platform:auth-redirect-attempts";
   const PLATFORM_AUTH_MAX_REDIRECTS = 3;
-  const PLATFORM_RECOVERY_AT_KEY = "vellum:platform:recovery-attempt-at";
-  const PLATFORM_RECOVERY_ATTEMPTS_KEY = "vellum:platform:recovery-attempts";
-  const PLATFORM_RECOVERY_PATH_KEY = "vellum:platform:recovery-path";
+  const PLATFORM_RECOVERY_AT_KEY = "cadet:platform:recovery-attempt-at";
+  const PLATFORM_RECOVERY_ATTEMPTS_KEY = "cadet:platform:recovery-attempts";
+  const PLATFORM_RECOVERY_PATH_KEY = "cadet:platform:recovery-path";
   const PLATFORM_RECOVERY_MAX_ATTEMPTS = 3;
 
   /**

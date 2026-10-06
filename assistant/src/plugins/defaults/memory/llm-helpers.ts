@@ -3,13 +3,13 @@ import type {
   Message,
   ProviderResponse,
   ToolUseContent,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 /**
  * Small pure helpers over the LLM request/response types the memory plugin
  * runs its own inference with (via `getConfiguredProvider`). They live inside
  * the plugin — rather than importing the host's `providers/*` — so memory
- * depends only on its own files plus `@vellumai/plugin-api`, the boundary the
+ * depends only on its own files plus `@mycadet/plugin-api`, the boundary the
  * plugin model enforces. Every type they touch is exported from the contract.
  */
 
@@ -65,7 +65,7 @@ export function cachedTextBlock(text: string): ContentBlock {
  * model sees: name, description, input JSON schema). Structurally matches the
  * host provider wire-spec (`providers/types` → `tools/tool-types` `ToolDefinition`)
  * so instances stay assignable to `Provider.sendMessage({ tools })`. Kept local
- * rather than imported from `@vellumai/plugin-api`: the contract's same-named
+ * rather than imported from `@mycadet/plugin-api`: the contract's same-named
  * `ToolDefinition` is the richer, all-optional author-facing tool type, which
  * doesn't match the all-required wire-spec at the `: ToolDefinition` sites here.
  */

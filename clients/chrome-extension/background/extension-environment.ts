@@ -112,17 +112,17 @@ export function cloudUrlsForEnvironment(env: ExtensionEnvironment): CloudUrls {
   switch (env) {
     case 'production':
       return {
-        apiBaseUrl: 'https://platform.vellum.ai',
+        apiBaseUrl: 'https://cloud.mycadet.ai',
         webBaseUrl: 'https://www.vellum.ai',
       };
     case 'staging':
       return {
-        apiBaseUrl: 'https://staging-platform.vellum.ai',
+        apiBaseUrl: 'https://staging-cloud.mycadet.ai',
         webBaseUrl: 'https://staging-assistant.vellum.ai',
       };
     case 'dev':
       return {
-        apiBaseUrl: 'https://dev-platform.vellum.ai',
+        apiBaseUrl: 'https://dev-cloud.mycadet.ai',
         webBaseUrl: 'https://dev-assistant.vellum.ai',
       };
     case 'local':

@@ -7,7 +7,7 @@
  * user across browsers.
  *
  * Older daemons have neither the route nor the fields. There the web app keeps
- * its own list in the `vellum:pinnedApps` localStorage key, which is
+ * its own list in the `cadet:pinnedApps` localStorage key, which is
  * browser-wide and shared by every assistant: pins from one assistant show up
  * under another (LUM-3452). That defect is the reason pinning moved, and it
  * cannot be fixed from the client, so the legacy path keeps the old behaviour

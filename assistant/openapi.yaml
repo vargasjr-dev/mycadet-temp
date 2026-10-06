@@ -18045,7 +18045,7 @@ paths:
       description:
         Probe the configured public ingress URL and report whether a tunnel is serving this assistant.
         `unconfigured` means no tunnel has ever been recorded (or the ingress is managed for this assistant, as it is
-        when platform-hosted or fronted by a Velay tunnel), `stopped` means a tunnel ran before and is not running now
+        when platform-hosted or fronted by a Tunnel tunnel), `stopped` means a tunnel ran before and is not running now
         (callback ingress is explicitly switched off, or its URL is gone), `healthy` means the URL answers and fronts
         this assistant's web app, `unpairable` means it answers but does not serve that app, so a pairing link minted
         against it would not open, `unreachable` means it does not answer, and `foreign` means it answers for a
@@ -27346,7 +27346,7 @@ paths:
       operationId: platform_status_get
       summary: Get platform deployment context and connection status
       description:
-        Aggregates platform context, credentials, assistant ID, and webhook secret. Velay tunnel status is reported
+        Aggregates platform context, credentials, assistant ID, and webhook secret. Tunnel tunnel status is reported
         separately by gateway_status.
       tags:
         - platform

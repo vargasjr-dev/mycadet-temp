@@ -14,7 +14,7 @@
  * imported lazily, at the point of use. They pull heavy graphs behind them
  * (the scrub reaches the conversation database and registry, the sync reaches
  * the OAuth store, and the refresh reaches the provider and conversation
- * graphs), and this module sits under `@vellumai/plugin-api`, so static edges
+ * graphs), and this module sits under `@mycadet/plugin-api`, so static edges
  * would drag that machinery into every plugin-api consumer for a write most of
  * them never perform.
  *

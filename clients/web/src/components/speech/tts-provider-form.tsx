@@ -17,10 +17,10 @@ import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { synthesizeTTS } from "@/lib/tts-synthesize";
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
-import { Button } from "@vellumai/design-library/components/button";
-import { Select } from "@vellumai/design-library/components/select";
-import { Input } from "@vellumai/design-library/components/input";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { Select } from "@mycadet/design-library/components/select";
+import { Input } from "@mycadet/design-library/components/input";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import {
   CredentialsGuide,
@@ -333,9 +333,7 @@ export function TtsProviderForm({
       return true;
     } catch (err) {
       toast.error(
-        err instanceof Error
-          ? err.message
-          : t("ttsProviderForm.saveFailed"),
+        err instanceof Error ? err.message : t("ttsProviderForm.saveFailed"),
       );
       return false;
     } finally {
@@ -555,9 +553,7 @@ export function TtsProviderForm({
       <div className="flex items-center gap-2">
         {!isManaged && (
           <Button variant="outlined" onClick={handleTest} disabled={testing}>
-            {testing
-              ? t("ttsProviderForm.testing")
-              : t("ttsProviderForm.test")}
+            {testing ? t("ttsProviderForm.testing") : t("ttsProviderForm.test")}
           </Button>
         )}
         <div className="flex items-center gap-3">

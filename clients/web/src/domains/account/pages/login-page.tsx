@@ -15,10 +15,10 @@ import {
   nativeAuthErrorKey,
 } from "@/domains/account/native-auth-error";
 import { withPreservedAttribution } from "@/domains/account/social-auth";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { startNativeLogin, useIsNativePlatform } from "@/runtime/native-auth";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 /**
  * Capacitor native login. Opens the platform browser auth surface with no

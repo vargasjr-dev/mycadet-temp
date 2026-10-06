@@ -5,11 +5,13 @@ const MOCK_DEVICE_ID = "test-device-00000000-0000-0000-0000-000000000000";
 const mockGetGuardianAccessToken = mock(
   async (
     ..._args: unknown[]
-  ): Promise<{ ok: true; accessToken: string } | { ok: false; status: number; error: string }> =>
-    ({ ok: true, accessToken: "test-token" }),
+  ): Promise<
+    | { ok: true; accessToken: string }
+    | { ok: false; status: number; error: string }
+  > => ({ ok: true, accessToken: "test-token" }),
 );
 
-type Lockfile = import("@vellumai/local-mode/contract").Lockfile;
+type Lockfile = import("@mycadet/local-mode/contract").Lockfile;
 let lockfileListener: ((lockfile: Lockfile) => void) | null = null;
 let sessionTokenListener: (() => void) | null = null;
 let mockCurrentLockfile: Lockfile = {
@@ -160,10 +162,13 @@ const originalFetch = globalThis.fetch;
 const mockGatewayTokenFetch = async (input: string | URL | Request) => {
   const url = String(input);
   if (url.includes("/auth/token")) {
-    return new Response(JSON.stringify({ token: "gateway-jwt", expiresAt: Date.now() + 60_000 }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ token: "gateway-jwt", expiresAt: Date.now() + 60_000 }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
   if (url.endsWith("/events")) {
     if (eventStreamGate) {
@@ -300,7 +305,10 @@ function addParkedPresenceConnection(
  */
 function capturePresencePosts(): { url: string; body: string }[] {
   const posts: { url: string; body: string }[] = [];
-  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+  globalThis.fetch = (async (
+    input: string | URL | Request,
+    init?: RequestInit,
+  ) => {
     const url = String(input);
     if (url.endsWith("/clients/presence")) {
       posts.push({ url, body: String(init?.body) });
@@ -317,14 +325,25 @@ function capturePresencePosts(): { url: string; body: string }[] {
 /** A lockfile with one local and one cloud assistant. */
 const MIXED_LOCKFILE: Lockfile = {
   assistants: [
-    { assistantId: "local-1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
-    { assistantId: "cloud-1", cloud: "vellum", runtimeUrl: "https://platform.vellum.ai" },
+    {
+      assistantId: "local-1",
+      cloud: "local",
+      resources: { gatewayPort: 9001, daemonPort: 9002 },
+    },
+    {
+      assistantId: "cloud-1",
+      cloud: "vellum",
+      runtimeUrl: "https://platform.vellum.ai",
+    },
   ],
   activeAssistant: "local-1",
 };
 
 /** Create a poster that captures the first POST body for assertions. */
-function capturingPoster(): { poster: InstanceType<typeof HostProxyPoster>; body: () => Record<string, unknown> | null } {
+function capturingPoster(): {
+  poster: InstanceType<typeof HostProxyPoster>;
+  body: () => Record<string, unknown> | null;
+} {
   let postedBody: Record<string, unknown> | null = null;
   const fakeFetch = async (_url: unknown, init?: RequestInit) => {
     postedBody = JSON.parse(init?.body as string);
@@ -353,9 +372,10 @@ describe("host-proxy-router", () => {
     sessionTokenListener = null;
     mockCurrentLockfile = { assistants: [], activeAssistant: null };
     mockGetGuardianAccessToken.mockReset();
-    mockGetGuardianAccessToken.mockImplementation(
-      async () => ({ ok: true, accessToken: "test-token" }),
-    );
+    mockGetGuardianAccessToken.mockImplementation(async () => ({
+      ok: true,
+      accessToken: "test-token",
+    }));
     mockSessionToken = "test-session-token";
     globalThis.fetch = mockGatewayTokenFetch as typeof globalThis.fetch;
     presenceReporter = null;
@@ -395,7 +415,11 @@ describe("host-proxy-router", () => {
       // Appear
       lockfileListener?.({
         assistants: [
-          { assistantId: "a1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
+          {
+            assistantId: "a1",
+            cloud: "local",
+            resources: { gatewayPort: 9001, daemonPort: 9002 },
+          },
         ],
         activeAssistant: "a1",
       });
@@ -425,7 +449,11 @@ describe("host-proxy-router", () => {
 
       const lockfile: Lockfile = {
         assistants: [
-          { assistantId: "a1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
+          {
+            assistantId: "a1",
+            cloud: "local",
+            resources: { gatewayPort: 9001, daemonPort: 9002 },
+          },
         ],
         activeAssistant: "a1",
       };
@@ -445,7 +473,11 @@ describe("host-proxy-router", () => {
 
       lockfileListener?.({
         assistants: [
-          { assistantId: "a1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
+          {
+            assistantId: "a1",
+            cloud: "local",
+            resources: { gatewayPort: 9001, daemonPort: 9002 },
+          },
         ],
         activeAssistant: "a1",
       });
@@ -464,15 +496,24 @@ describe("host-proxy-router", () => {
         requests.push(String(input));
         return mockGatewayTokenFetch(input);
       }) as typeof globalThis.fetch;
-      let resolveToken: ((result: { ok: true; accessToken: string }) => void) | null = null;
+      let resolveToken:
+        | ((result: { ok: true; accessToken: string }) => void)
+        | null = null;
       mockGetGuardianAccessToken.mockImplementation(
-        () => new Promise((resolve) => { resolveToken = resolve; }),
+        () =>
+          new Promise((resolve) => {
+            resolveToken = resolve;
+          }),
       );
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
         assistants: [
-          { assistantId: "a1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
+          {
+            assistantId: "a1",
+            cloud: "local",
+            resources: { gatewayPort: 9001, daemonPort: 9002 },
+          },
         ],
         activeAssistant: "a1",
       });
@@ -492,14 +533,20 @@ describe("host-proxy-router", () => {
     });
 
     test("does not connect when guardian token fetch fails", async () => {
-      mockGetGuardianAccessToken.mockImplementation(
-        async () => ({ ok: false, status: 401, error: "expired" }),
-      );
+      mockGetGuardianAccessToken.mockImplementation(async () => ({
+        ok: false,
+        status: 401,
+        error: "expired",
+      }));
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
         assistants: [
-          { assistantId: "a1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
+          {
+            assistantId: "a1",
+            cloud: "local",
+            resources: { gatewayPort: 9001, daemonPort: 9002 },
+          },
         ],
         activeAssistant: "a1",
       });
@@ -525,7 +572,11 @@ describe("host-proxy-router", () => {
 
       lockfileListener?.({
         assistants: [
-          { assistantId: "a1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
+          {
+            assistantId: "a1",
+            cloud: "local",
+            resources: { gatewayPort: 9001, daemonPort: 9002 },
+          },
         ],
         activeAssistant: "a1",
       });
@@ -549,7 +600,11 @@ describe("host-proxy-router", () => {
 
       lockfileListener?.({
         assistants: [
-          { assistantId: "a1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
+          {
+            assistantId: "a1",
+            cloud: "local",
+            resources: { gatewayPort: 9001, daemonPort: 9002 },
+          },
         ],
         activeAssistant: "a1",
       });
@@ -575,7 +630,11 @@ describe("host-proxy-router", () => {
 
       lockfileListener?.({
         assistants: [
-          { assistantId: "a1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
+          {
+            assistantId: "a1",
+            cloud: "local",
+            resources: { gatewayPort: 9001, daemonPort: 9002 },
+          },
         ],
         activeAssistant: "a1",
       });
@@ -601,7 +660,11 @@ describe("host-proxy-router", () => {
 
       lockfileListener?.({
         assistants: [
-          { assistantId: "a1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
+          {
+            assistantId: "a1",
+            cloud: "local",
+            resources: { gatewayPort: 9001, daemonPort: 9002 },
+          },
         ],
         activeAssistant: "a1",
       });
@@ -625,7 +688,11 @@ describe("host-proxy-router", () => {
 
       lockfileListener?.({
         assistants: [
-          { assistantId: "a1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
+          {
+            assistantId: "a1",
+            cloud: "local",
+            resources: { gatewayPort: 9001, daemonPort: 9002 },
+          },
         ],
         activeAssistant: "a1",
       });
@@ -652,7 +719,11 @@ describe("host-proxy-router", () => {
       try {
         lockfileListener?.({
           assistants: [
-            { assistantId: "a1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
+            {
+              assistantId: "a1",
+              cloud: "local",
+              resources: { gatewayPort: 9001, daemonPort: 9002 },
+            },
           ],
           activeAssistant: "a1",
         });
@@ -820,8 +891,16 @@ describe("host-proxy-router", () => {
 
       lockfileListener?.({
         assistants: [
-          { assistantId: "local-1", cloud: "local", resources: { gatewayPort: 9001, daemonPort: 9002 } },
-          { assistantId: "cloud-1", cloud: "vellum", runtimeUrl: "https://platform.vellum.ai" },
+          {
+            assistantId: "local-1",
+            cloud: "local",
+            resources: { gatewayPort: 9001, daemonPort: 9002 },
+          },
+          {
+            assistantId: "cloud-1",
+            cloud: "vellum",
+            runtimeUrl: "https://platform.vellum.ai",
+          },
         ],
         activeAssistant: "local-1",
       });
@@ -829,8 +908,12 @@ describe("host-proxy-router", () => {
 
       expect(__testing.connections.has("local-1")).toBe(true);
       expect(__testing.connections.has("cloud-1")).toBe(true);
-      expect(__testing.connections.get("local-1")!.fingerprint).toBe("local:9001");
-      expect(__testing.connections.get("cloud-1")!.fingerprint).toBe("cloud:https://platform.vellum.ai:");
+      expect(__testing.connections.get("local-1")!.fingerprint).toBe(
+        "local:9001",
+      );
+      expect(__testing.connections.get("cloud-1")!.fingerprint).toBe(
+        "cloud:https://platform.vellum.ai:",
+      );
     });
 
     test("reconnects cloud assistant when runtimeUrl changes", async () => {
@@ -838,7 +921,11 @@ describe("host-proxy-router", () => {
 
       lockfileListener?.({
         assistants: [
-          { assistantId: "cloud-1", cloud: "vellum", runtimeUrl: "https://old.vellum.ai" },
+          {
+            assistantId: "cloud-1",
+            cloud: "vellum",
+            runtimeUrl: "https://old.vellum.ai",
+          },
         ],
         activeAssistant: "cloud-1",
       });
@@ -847,7 +934,11 @@ describe("host-proxy-router", () => {
 
       lockfileListener?.({
         assistants: [
-          { assistantId: "cloud-1", cloud: "vellum", runtimeUrl: "https://new.vellum.ai" },
+          {
+            assistantId: "cloud-1",
+            cloud: "vellum",
+            runtimeUrl: "https://new.vellum.ai",
+          },
         ],
         activeAssistant: "cloud-1",
       });
@@ -855,7 +946,9 @@ describe("host-proxy-router", () => {
 
       expect(__testing.connections.has("cloud-1")).toBe(true);
       expect(__testing.connections.get("cloud-1")!.sse).not.toBe(firstSse);
-      expect(__testing.connections.get("cloud-1")!.fingerprint).toBe("cloud:https://new.vellum.ai:");
+      expect(__testing.connections.get("cloud-1")!.fingerprint).toBe(
+        "cloud:https://new.vellum.ai:",
+      );
     });
 
     test("ignores non-vellum cloud assistants without resources", async () => {
@@ -863,7 +956,11 @@ describe("host-proxy-router", () => {
 
       lockfileListener?.({
         assistants: [
-          { assistantId: "custom-1", cloud: "custom", runtimeUrl: "https://my-server.com" },
+          {
+            assistantId: "custom-1",
+            cloud: "custom",
+            runtimeUrl: "https://my-server.com",
+          },
         ],
         activeAssistant: "custom-1",
       });
@@ -898,7 +995,11 @@ describe("host-proxy-router", () => {
 
       const lockfile: Lockfile = {
         assistants: [
-          { assistantId: "cloud-1", cloud: "vellum", runtimeUrl: "https://platform.vellum.ai" },
+          {
+            assistantId: "cloud-1",
+            cloud: "vellum",
+            runtimeUrl: "https://platform.vellum.ai",
+          },
         ],
         activeAssistant: "cloud-1",
       };
@@ -957,14 +1058,19 @@ describe("host-proxy-router", () => {
     test("routes request to registered executor", () => {
       const handled: string[] = [];
       setExecutor("host_bash", {
-        handleRequest: (msg) => { handled.push(`req:${msg.requestId}`); },
-        handleCancel: (msg) => { handled.push(`cancel:${msg.requestId}`); },
+        handleRequest: (msg) => {
+          handled.push(`req:${msg.requestId}`);
+        },
+        handleCancel: (msg) => {
+          handled.push(`cancel:${msg.requestId}`);
+        },
       });
 
       const poster = new HostProxyPoster({
         endpointBase: "http://127.0.0.1:9000/v1",
         authHeaders: () => ({ Authorization: "Bearer t" }),
-        fetch: (async () => new Response("ok")) as unknown as typeof globalThis.fetch,
+        fetch: (async () =>
+          new Response("ok")) as unknown as typeof globalThis.fetch,
       });
 
       __testing.dispatchMessage(
@@ -983,14 +1089,19 @@ describe("host-proxy-router", () => {
     test("routes file messages to file executor", () => {
       const handled: string[] = [];
       setExecutor("host_file", {
-        handleRequest: (msg) => { handled.push(`req:${msg.requestId}`); },
-        handleCancel: (msg) => { handled.push(`cancel:${msg.requestId}`); },
+        handleRequest: (msg) => {
+          handled.push(`req:${msg.requestId}`);
+        },
+        handleCancel: (msg) => {
+          handled.push(`cancel:${msg.requestId}`);
+        },
       });
 
       const poster = new HostProxyPoster({
         endpointBase: "http://127.0.0.1:9000/v1",
         authHeaders: () => ({ Authorization: "Bearer t" }),
-        fetch: (async () => new Response("ok")) as unknown as typeof globalThis.fetch,
+        fetch: (async () =>
+          new Response("ok")) as unknown as typeof globalThis.fetch,
       });
 
       __testing.dispatchMessage(
@@ -1004,7 +1115,10 @@ describe("host-proxy-router", () => {
 
     test("posts stub error for unimplemented bash executor", async () => {
       const { poster, body } = capturingPoster();
-      __testing.dispatchMessage({ type: "host_bash_request", requestId: "r1" }, poster);
+      __testing.dispatchMessage(
+        { type: "host_bash_request", requestId: "r1" },
+        poster,
+      );
       await flush();
 
       expect(body()).not.toBeNull();
@@ -1015,7 +1129,10 @@ describe("host-proxy-router", () => {
 
     test("posts stub error for unimplemented file executor", async () => {
       const { poster, body } = capturingPoster();
-      __testing.dispatchMessage({ type: "host_file_request", requestId: "f1" }, poster);
+      __testing.dispatchMessage(
+        { type: "host_file_request", requestId: "f1" },
+        poster,
+      );
       await flush();
 
       expect(body()!.requestId).toBe("f1");
@@ -1024,7 +1141,10 @@ describe("host-proxy-router", () => {
 
     test("posts stub error for unimplemented transfer executor", async () => {
       const { poster, body } = capturingPoster();
-      __testing.dispatchMessage({ type: "host_transfer_request", requestId: "t1" }, poster);
+      __testing.dispatchMessage(
+        { type: "host_transfer_request", requestId: "t1" },
+        poster,
+      );
       await flush();
 
       expect(body()!.requestId).toBe("t1");
@@ -1034,7 +1154,10 @@ describe("host-proxy-router", () => {
 
     test("posts stub error for unimplemented browser executor", async () => {
       const { poster, body } = capturingPoster();
-      __testing.dispatchMessage({ type: "host_browser_request", requestId: "b1" }, poster);
+      __testing.dispatchMessage(
+        { type: "host_browser_request", requestId: "b1" },
+        poster,
+      );
       await flush();
 
       expect(body()!.requestId).toBe("b1");
@@ -1045,7 +1168,8 @@ describe("host-proxy-router", () => {
       const poster = new HostProxyPoster({
         endpointBase: "http://127.0.0.1:9000/v1",
         authHeaders: () => ({ Authorization: "Bearer t" }),
-        fetch: (async () => new Response("ok")) as unknown as typeof globalThis.fetch,
+        fetch: (async () =>
+          new Response("ok")) as unknown as typeof globalThis.fetch,
       });
 
       // Should not throw
@@ -1059,7 +1183,8 @@ describe("host-proxy-router", () => {
       const poster = new HostProxyPoster({
         endpointBase: "http://127.0.0.1:9000/v1",
         authHeaders: () => ({ Authorization: "Bearer t" }),
-        fetch: (async () => new Response("ok")) as unknown as typeof globalThis.fetch,
+        fetch: (async () =>
+          new Response("ok")) as unknown as typeof globalThis.fetch,
       });
 
       mockLogWarn.mockClear();
@@ -1083,7 +1208,8 @@ describe("host-proxy-router", () => {
       const poster = new HostProxyPoster({
         endpointBase: "http://127.0.0.1:9000/v1",
         authHeaders: () => ({ Authorization: "Bearer t" }),
-        fetch: (async () => new Response("ok")) as unknown as typeof globalThis.fetch,
+        fetch: (async () =>
+          new Response("ok")) as unknown as typeof globalThis.fetch,
       });
 
       mockLogWarn.mockClear();
@@ -1177,7 +1303,11 @@ describe("host-proxy-router", () => {
       presenceReporter?.("idle");
       lockfileListener?.({
         assistants: [
-          { assistantId: "cloud-1", cloud: "vellum", runtimeUrl: "https://platform.vellum.ai" },
+          {
+            assistantId: "cloud-1",
+            cloud: "vellum",
+            runtimeUrl: "https://platform.vellum.ai",
+          },
         ],
         activeAssistant: "cloud-1",
       });

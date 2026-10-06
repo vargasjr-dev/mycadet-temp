@@ -41,9 +41,9 @@ import {
   ContextMenu,
   Menu,
   actionMenuDestructiveClasses,
-} from "@vellumai/design-library";
-import { Button } from "@vellumai/design-library/components/button";
-import { cn } from "@vellumai/design-library/utils/cn";
+} from "@mycadet/design-library";
+import { Button } from "@mycadet/design-library/components/button";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 /**
  * Hover-revealed "more" menu for a conversation row. Renders an ellipsis

@@ -105,11 +105,10 @@ describe("CSP_POLICY", () => {
     expect(directiveValue("base-uri")).toBe("'none'");
   });
 
-  test("connect-src allows vellum.ai and sentry but not broad https:", () => {
+  test("connect-src allows vellum.ai but not broad https:", () => {
     const connectSrc = directiveValue("connect-src")!;
     expect(connectSrc).toContain("https://*.vellum.ai");
     expect(connectSrc).toContain("wss://*.vellum.ai");
-    expect(connectSrc).toContain("https://*.ingest.sentry.io");
     expect(connectSrc).not.toMatch(/\bhttps:\s/);
   });
 

@@ -8,7 +8,7 @@ import {
 } from "@/generated/api/@tanstack/react-query.gen";
 import { openUrl, openUrlFinishedListener } from "@/runtime/browser";
 import { t } from "@/i18n";
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 export const PORTAL_RETURN_SNAPSHOT_KEY = "billing-portal-return-snapshot";
 

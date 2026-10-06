@@ -35,7 +35,7 @@ import {
   WebFetchDetailView,
 } from "@/domains/chat/components/web-fetch/web-fetch-detail-view";
 import type { ToolDetailPayload } from "@/stores/viewer-store";
-import type { WebFetchMetadata } from "@vellumai/assistant-api";
+import type { WebFetchMetadata } from "@mycadet/assistant-api";
 
 afterEach(() => {
   cleanup();

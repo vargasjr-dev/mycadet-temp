@@ -8,7 +8,7 @@ import {
   type GatewayLogsTailIpcResponse,
   GatewayLogsTailIpcResponseSchema,
   GatewayLogsTailRouteParamsSchema,
-} from "@vellumai/gateway-client/gateway-ipc-contracts";
+} from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import { ipcCallPersistent } from "../../ipc/gateway-client.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";

@@ -3,7 +3,7 @@
  *
  * Centralises detection of expected transient HTTP errors from daemon
  * API calls — startup races, auth-session hydration, org-header
- * propagation. Used by both Sentry error reporting (`captureError`) and
+ * propagation. Used by both the error reporter (`captureError`) and
  * TanStack Query retry predicates.
  *
  * References:

@@ -25,9 +25,9 @@ The Android app is a Capacitor shell that lives in [`android/`](./android/);
 it follows the same remote web app loading model as iOS.
 
 The macOS, Linux, and Windows Electron shells share their platform-neutral main and
-preload foundations through `@vellumai/electron-desktop` and native helper process supervision through `@vellumai/native-sidecar`. Thin client adapters
+preload foundations through `@mycadet/electron-desktop` and native helper process supervision through `@mycadet/native-sidecar`. Thin client adapters
 under each platform package connect that core to platform lifecycle and native
-features. Dependency-free Electron helpers remain in `@vellumai/electron-utils`.
+features. Dependency-free Electron helpers remain in `@mycadet/electron-utils`.
 
 ## What belongs here
 

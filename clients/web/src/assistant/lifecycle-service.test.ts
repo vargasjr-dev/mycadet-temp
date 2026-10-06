@@ -91,9 +91,9 @@ mock.module("@/lib/auth/gateway-session", () => ({
   },
   clearGatewayToken: () => {
     for (const key of [
-      "vellum:gw:token",
-      "vellum:gw:expiresAt",
-      "vellum:gw:tokenSource",
+      "cadet:gw:token",
+      "cadet:gw:expiresAt",
+      "cadet:gw:tokenSource",
       "gw:token",
       "gw:expiresAt",
       "gw:tokenSource",
@@ -167,12 +167,6 @@ mock.module("@/runtime/local-mode-host", () => ({
   getLocalAssistantStatusHost: getLocalAssistantStatusHostMock,
 }));
 
-// Sentry is a side-effect-only dep here; silence it.
-mock.module("@sentry/react", () => ({
-  captureException: () => {},
-  captureMessage: () => {},
-  addBreadcrumb: () => {},
-}));
 
 mock.module("@/assistant/lifecycle", () => ({
   buildInitializingTimeoutError,
@@ -240,7 +234,7 @@ beforeEach(() => {
     assistantsHydrated: false,
     selectedAssistantId: null,
   });
-  localStorage.removeItem("vellum:selectedAssistantId");
+  localStorage.removeItem("cadet:selectedAssistantId");
 });
 
 afterEach(() => {

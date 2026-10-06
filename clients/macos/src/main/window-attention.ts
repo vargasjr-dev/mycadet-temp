@@ -1,6 +1,6 @@
 import { app } from "electron";
 
-import { installWindowAttention } from "@vellumai/electron-desktop/window-attention";
+import { installWindowAttention } from "@mycadet/electron-desktop/window-attention";
 
 /**
  * Publishes each window's visible / focused / minimized state to the renderer

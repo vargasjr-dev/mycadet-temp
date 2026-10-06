@@ -15,7 +15,7 @@ import {
   RedeemVoiceInviteRequestSchema,
   type RedeemInviteByTokenRequest,
   type RedeemVoiceInviteRequest,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------

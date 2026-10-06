@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useRef } from "react";
 
-import { Stepper, type StepperStep } from "@vellumai/design-library";
+import { Stepper, type StepperStep } from "@mycadet/design-library";
 
 /** Status of the credential-save mutation a setup wizard drives. */
 export type MutationStatus = "idle" | "pending" | "success" | "error";

@@ -7,15 +7,15 @@ import { z } from "zod";
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
-import { buildHelperToastRequest } from "@vellumai/electron-desktop/helper-toast-request";
+} from "@mycadet/electron-desktop/capability-registry";
+import { buildHelperToastRequest } from "@mycadet/electron-desktop/helper-toast-request";
 import {
   configureNotifications,
   installNotifications,
   type NotificationCreateOptions,
   type NotificationLike,
-} from "@vellumai/electron-desktop/notifications";
-import { NativeSidecarClient } from "@vellumai/native-sidecar/supervisor";
+} from "@mycadet/electron-desktop/notifications";
+import { NativeSidecarClient } from "@mycadet/native-sidecar/supervisor";
 
 import { handle } from "../ipc.client";
 import log from "../logger";

@@ -1,6 +1,6 @@
 import { Pencil } from "lucide-react";
 
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 
 import { useAssistantHandleModal } from "@/components/assistant-handle-modal";
 import { useTranslation } from "@/i18n";

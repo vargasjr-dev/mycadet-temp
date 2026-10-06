@@ -34,8 +34,8 @@ import {
   NOTIFICATION_AVATAR_MAX_LOCAL_BYTES,
   NOTIFICATION_AVATAR_SIZE,
   NOTIFICATION_AVATAR_SPEC_VERSION,
-} from "@vellumai/avatar-manifest/notification-avatar";
-import type { NotificationAvatar } from "@vellumai/ipc-contract";
+} from "@mycadet/avatar-manifest/notification-avatar";
+import type { NotificationAvatar } from "@mycadet/ipc-contract";
 
 export type NotificationAvatarScope = NotificationIdentityScopeInput;
 

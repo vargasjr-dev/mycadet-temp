@@ -331,7 +331,7 @@ describe("useComposerSubmit staged emails", () => {
 
     expect(sendMessage).toHaveBeenCalledTimes(1);
     const sent = sendMessage.mock.calls[0]?.[0];
-    expect(sent?.startsWith("> [vellum:email-reference]")).toBe(true);
+    expect(sent?.startsWith("> [cadet:email-reference]")).toBe(true);
     expect(sent).toContain("> message-id: msg_in_1");
     expect(sendMessage.mock.calls[0]?.[1]).toEqual([]);
     expect(useComposerStore.getState().attachments).toHaveLength(0);
@@ -346,9 +346,9 @@ describe("useComposerSubmit staged emails", () => {
     await submit(result);
 
     const sent = sendMessage.mock.calls[0]?.[0] ?? "";
-    expect(sent.startsWith("> [vellum:email-reference]")).toBe(true);
-    expect(sent.indexOf("[vellum:channel-reference]")).toBeGreaterThan(
-      sent.indexOf("[/vellum:email-reference]"),
+    expect(sent.startsWith("> [cadet:email-reference]")).toBe(true);
+    expect(sent.indexOf("[cadet:channel-reference]")).toBeGreaterThan(
+      sent.indexOf("[/cadet:email-reference]"),
     );
     expect(sent.endsWith("compare these")).toBe(true);
   });
@@ -374,7 +374,7 @@ describe("useComposerSubmit staged channel reference", () => {
 
     expect(sendMessage).toHaveBeenCalledTimes(1);
     const sent = sendMessage.mock.calls[0]?.[0];
-    expect(sent?.startsWith("> [vellum:channel-reference]")).toBe(true);
+    expect(sent?.startsWith("> [cadet:channel-reference]")).toBe(true);
     expect(sent).toContain("deploy went red on the last step");
     expect(useChannelReferenceStore.getState().reference).toBeNull();
   });
@@ -387,7 +387,7 @@ describe("useComposerSubmit staged channel reference", () => {
     await submit(result);
 
     const sent = sendMessage.mock.calls[0]?.[0];
-    expect(sent?.startsWith("> [vellum:channel-reference]")).toBe(true);
+    expect(sent?.startsWith("> [cadet:channel-reference]")).toBe(true);
     expect(sent?.endsWith("what broke here?")).toBe(true);
     expect(useChannelReferenceStore.getState().reference).toBeNull();
     expect(useComposerStore.getState().input).toBe("");

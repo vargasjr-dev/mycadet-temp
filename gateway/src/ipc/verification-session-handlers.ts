@@ -14,7 +14,7 @@
  * upsert happen at consume time, in the engine, never in the daemon).
  *
  * Request/response shapes are pinned by the shared contract in
- * `@vellumai/gateway-client` (verification-session-contract.ts); the daemon
+ * `@mycadet/gateway-client` (verification-session-contract.ts); the daemon
  * client validates responses against the same schemas. Read methods return
  * the wire DTO or null; mutations return a minimal `{ ok: true }` ack.
  */
@@ -33,7 +33,7 @@ import {
   VERIFICATION_SESSIONS_IPC_METHODS,
   ValidateConsumeSessionIpcParamsSchema,
   hashVerificationSecret,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import {
   bindSessionIdentity,

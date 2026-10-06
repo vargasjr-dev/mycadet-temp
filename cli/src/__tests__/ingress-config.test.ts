@@ -10,7 +10,7 @@ process.env.VELLUM_LOCKFILE_DIR = testDir;
 import {
   parseTunnelRecord,
   TUNNEL_PROVIDERS,
-} from "@vellumai/service-contracts/ingress";
+} from "@mycadet/service-contracts/ingress";
 
 import type { AssistantEntry } from "../lib/assistant-config.js";
 import {

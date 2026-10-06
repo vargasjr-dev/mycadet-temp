@@ -10,7 +10,7 @@
  * plugin.
  */
 
-import type { Message } from "@vellumai/plugin-api";
+import type { Message } from "@mycadet/plugin-api";
 
 import type { InjectionMatcher } from "../../context/strip-injections.js";
 

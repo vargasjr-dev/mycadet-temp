@@ -1,8 +1,8 @@
 import { Suspense, type ReactElement, type ReactNode } from "react";
-import * as Sentry from "@sentry/react";
+
+import { ErrorBoundary } from "@/components/error-boundary";
 
 import { useTranslation } from "@/i18n";
-import { isChunkLoadError } from "@/lib/chunk-errors";
 
 interface LazyBoundaryProps {
   children: ReactNode;
@@ -33,11 +33,9 @@ interface LazyBoundaryProps {
  * lazy *routes*, React Router's `ErrorBoundary` (see
  * `RouteErrorBoundary`) catches the failure instead.
  *
- * Sentry captures every caught error with `tags.boundary` set to
- * `"lazy-component"` (chunk-fetch failures) or `"component-render"`
- * (genuine render bugs) so they're sliceable separately and
- * symmetric with the `"lazy-route"` / `"route-render"` tagging used
- * by `RouterProvider.onError` for route-level errors.
+ * The boundary reports through the console via the in-house
+ * `ErrorBoundary`; route-level errors report symmetrically through
+ * `RouterProvider.onError`.
  *
  * The default error UI matches the inline copy used by
  * `RouteErrorBoundary`'s chunk-fail variant so messaging stays
@@ -51,13 +49,7 @@ export function LazyBoundary({
   const { t } = useTranslation();
 
   return (
-    <Sentry.ErrorBoundary
-      beforeCapture={(scope, error) => {
-        scope.setTag(
-          "boundary",
-          isChunkLoadError(error) ? "lazy-component" : "component-render",
-        );
-      }}
+    <ErrorBoundary
       fallback={
         errorFallback ?? (
           <div
@@ -70,6 +62,6 @@ export function LazyBoundary({
       }
     >
       <Suspense fallback={fallback}>{children}</Suspense>
-    </Sentry.ErrorBoundary>
+    </ErrorBoundary>
   );
 }

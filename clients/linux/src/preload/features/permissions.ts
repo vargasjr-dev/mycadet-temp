@@ -3,7 +3,7 @@ import { ipcRenderer, type IpcRendererEvent } from "electron";
 import type {
   BridgeCapabilityRegistry,
   CapabilityModule,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 import {
   PERMISSIONS_GET_STATE,
   PERMISSIONS_OPEN_SETTINGS,
@@ -17,7 +17,7 @@ import {
   type SystemPermissionsState,
   type TextInsertionResult,
   type VellumBridge,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 const invokeItem = (
   channel: string,

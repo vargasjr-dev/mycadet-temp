@@ -7,8 +7,8 @@ import type { AnchorHTMLAttributes, ReactNode } from "react";
 import {
   textLinkVariants,
   type TextLinkTone,
-} from "@vellumai/design-library/components/text-link";
-import { cn } from "@vellumai/design-library/utils/cn";
+} from "@mycadet/design-library/components/text-link";
+import { cn } from "@mycadet/design-library/utils/cn";
 
 import { handleNativeAnchorClick } from "@/utils/native-anchor";
 

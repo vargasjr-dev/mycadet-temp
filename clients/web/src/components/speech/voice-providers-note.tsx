@@ -12,7 +12,7 @@
 
 import { Link } from "react-router";
 
-import { cn, textLinkVariants } from "@vellumai/design-library";
+import { cn, textLinkVariants } from "@mycadet/design-library";
 
 import { Trans } from "@/i18n";
 import { routes } from "@/utils/routes";

@@ -10,7 +10,7 @@
  *
  * Measuring the eye artwork needs the native `@resvg/resvg-js` binding, so the
  * assistant package's dependencies have to be installed first
- * (`bun install --filter=@vellumai/assistant`).
+ * (`bun install --filter=@mycadet/assistant`).
  *
  * The committed resources are XML rather than an image format nobody can read,
  * which makes them tempting to hand-edit. Everything below exists so an edit

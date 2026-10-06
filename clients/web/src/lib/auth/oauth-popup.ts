@@ -10,7 +10,7 @@
  */
 
 export interface OAuthCompletePayload {
-  type: "vellum:oauth-complete";
+  type: "cadet:oauth-complete";
   requestId?: string | null;
   oauthStatus?: string | null;
   oauthProvider?: string | null;
@@ -18,7 +18,7 @@ export interface OAuthCompletePayload {
 }
 
 export function oauthCompletionStorageKey(requestId: string): string {
-  return `vellum:oauth-complete:${requestId}`;
+  return `cadet:oauth-complete:${requestId}`;
 }
 
 export function isOAuthCompletePayloadForRequest(
@@ -28,7 +28,7 @@ export function isOAuthCompletePayloadForRequest(
   return (
     typeof payload === "object" &&
     payload !== null &&
-    (payload as OAuthCompletePayload).type === "vellum:oauth-complete" &&
+    (payload as OAuthCompletePayload).type === "cadet:oauth-complete" &&
     (payload as OAuthCompletePayload).requestId === requestId
   );
 }
@@ -62,7 +62,7 @@ export function parseOAuthCompletePayload(
     if (
       typeof parsed !== "object" ||
       parsed === null ||
-      (parsed as OAuthCompletePayload).type !== "vellum:oauth-complete"
+      (parsed as OAuthCompletePayload).type !== "cadet:oauth-complete"
     ) {
       return null;
     }

@@ -3,7 +3,7 @@ import { createElement } from "react";
 
 import type { SkillOrigin } from "@/domains/intelligence/skills/types";
 import { useTranslation } from "@/i18n";
-import { Tag } from "@vellumai/design-library";
+import { Tag } from "@mycadet/design-library";
 
 const ORIGIN_ICON: Record<SkillOrigin, typeof Globe> = {
   vellum: Box,
@@ -16,7 +16,9 @@ const ORIGIN_ICON: Record<SkillOrigin, typeof Globe> = {
 /** `vellum`, `clawhub`, and `skills.sh` are brand/product names, never translated. */
 function brandOrCatalogLabel(
   origin: SkillOrigin,
-  t: (key: "skillOriginBadge.custom" | "skillOriginBadge.assistantMemory") => string,
+  t: (
+    key: "skillOriginBadge.custom" | "skillOriginBadge.assistantMemory",
+  ) => string,
 ): string {
   switch (origin) {
     case "vellum":

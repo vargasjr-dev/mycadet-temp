@@ -21,7 +21,6 @@ import {
 import type { AssistantEntry } from "./assistant-config";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils";
 import { buildServiceRunArgs } from "./statefulset.js";
-import type { Species } from "./constants";
 import { getOrCreateHostDeviceId } from "./device-id.js";
 import {
   ASSISTANT_INTERNAL_PORT,
@@ -283,8 +282,6 @@ function ensureLocalBinOnPath(): void {
 }
 
 export interface HatchDockerParams {
-  /** Assistant species to hatch (e.g. `"vellum"`). */
-  species: Species;
   /** Run detached without attaching to logs or interactive setup. */
   detached?: boolean;
   /** Instance display name. Defaults to an auto-generated name. */
@@ -1130,7 +1127,6 @@ function startFileWatcher(opts: {
 
 export async function hatchDocker(params: HatchDockerParams): Promise<void> {
   const {
-    species,
     detached = false,
     name = null,
     configValues = {},
@@ -1176,7 +1172,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     emitProgress(1, 6, "Checking Docker...");
     await ensureDockerInstalled();
 
-    const instanceName = generateInstanceName(species, name);
+    const instanceName = generateInstanceName(name);
     // Resolve the gateway's host port. When joining an externally-owned
     // network namespace, the owner has already published the gateway port,
     // so the caller — not hatch — owns port allocation; use the supplied
@@ -1279,7 +1275,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         `vellum-credential-executor:${localTag}`;
 
       log(`🥚 Hatching Docker assistant: ${instanceName}`);
-      log(`   Species: ${species}`);
       log(
         `   Mode: ${mode.watcher ? "development (watch)" : "build-from-source"}`,
       );
@@ -1340,7 +1335,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       }
 
       log(`🥚 Hatching Docker assistant: ${instanceName}`);
-      log(`   Species: ${species}`);
       log(`   Images (${imageSource}):`);
       log(`     assistant:            ${imageTags.assistant}`);
       log(`     gateway:              ${imageTags.gateway}`);
@@ -1530,7 +1524,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       assistantId: instanceName,
       runtimeUrl,
       cloud: "docker",
-      species,
       hatchedAt: new Date().toISOString(),
       guardianBootstrapSecret: ownSecret,
       containerInfo: {

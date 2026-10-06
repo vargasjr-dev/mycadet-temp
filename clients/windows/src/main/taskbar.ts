@@ -8,14 +8,14 @@ import {
 } from "electron";
 import { z } from "zod";
 
-import { DOCK_SET_BADGE, type AssistantStatus } from "@vellumai/ipc-contract";
-import { onAvatarChange } from "@vellumai/electron-desktop/avatar";
-import { avatarBitmap } from "@vellumai/electron-desktop/avatar-image";
+import { DOCK_SET_BADGE, type AssistantStatus } from "@mycadet/ipc-contract";
+import { onAvatarChange } from "@mycadet/electron-desktop/avatar";
+import { avatarBitmap } from "@mycadet/electron-desktop/avatar-image";
 import {
   applyAlphaMask,
   roundedRectCoverage,
-} from "@vellumai/electron-desktop/image-mask";
-import { getStatus, onStatusChange } from "@vellumai/electron-desktop/status";
+} from "@mycadet/electron-desktop/image-mask";
+import { getStatus, onStatusChange } from "@mycadet/electron-desktop/status";
 
 import { on } from "./ipc.client";
 

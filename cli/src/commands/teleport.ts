@@ -1,3 +1,4 @@
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import { resolveAssistantApiKeyForInjection } from "../lib/assistant-api-key-resolution";
 import {
   findAssistantByName,
@@ -68,7 +69,7 @@ import { join } from "node:path";
 import {
   hasRecentBackup,
   RECENT_BACKUP_MAX_AGE_MS,
-} from "@vellumai/local-mode/teleport-backup-policy";
+} from "@mycadet/local-mode/teleport-backup-policy";
 
 function printHelp(): void {
   console.log(
@@ -416,7 +417,7 @@ async function backupSourceBeforeTeleport(
 ): Promise<void> {
   console.log(`Backing up ${displayName} (${cloud})...`);
   try {
-    if (cloud === "vellum") {
+    if (isManagedCloud(cloud)) {
       const platformToken = readPlatformToken();
       if (!platformToken) {
         console.error("Not logged in. Run 'vellum login' first.");
@@ -578,7 +579,7 @@ async function exportFromAssistant(
     return { bundleKey };
   }
 
-  if (cloud === "vellum") {
+  if (isManagedCloud(cloud)) {
     // Ask the managed runtime which version it's running so the signed-URL
     // request records the bundle's actual `min_runtime_version`. The
     // platform-managed runtime is the exporter; the CLI version is
@@ -603,7 +604,7 @@ async function exportFromAssistant(
     // reached via the platform's wildcard runtime proxy at
     // `/v1/assistants/<id>/migrations/export-to-gcs` — the
     // `localRuntimeExportToGcs` helper uses `resolveRuntimeMigrationUrl` to
-    // pick that shape for `cloud === "vellum"` and `migrationRequestHeaders`
+    // pick that shape for `isManagedCloud(cloud)` and `migrationRequestHeaders`
     // to send platform-token auth (no guardian-token bootstrap).
     const { url: uploadUrl, bundleKey } = await platformRequestSignedUrl(
       {
@@ -638,7 +639,7 @@ async function exportFromAssistant(
     console.log(`Export started (job ${jobId})...`);
 
     // Polling also goes through the wildcard proxy — `localRuntimePollJobStatus`
-    // builds `/v1/assistants/<id>/migrations/jobs/<jobId>` for `cloud === "vellum"`
+    // builds `/v1/assistants/<id>/migrations/jobs/<jobId>` for `isManagedCloud(cloud)`
     // (the dedicated `/v1/migrations/jobs/{id}/` endpoint queries platform-side
     // ImportJob records and 404s on runtime-created job IDs).
     const terminal = await pollJobUntilDone({
@@ -692,7 +693,7 @@ async function importToAssistant(
     process.exit(1);
   }
 
-  if (cloud === "vellum") {
+  if (isManagedCloud(cloud)) {
     // Platform target — the bundle is already in GCS; kick off preflight or
     // async import via the unified job-status endpoint.
     if (dryRun) {
@@ -1016,7 +1017,6 @@ export async function resolveOrHatchTarget(
   if (targetEnv === "local") {
     const beforeIds = new Set(loadAllAssistants().map((e) => e.assistantId));
     await hatchLocal(
-      "vellum",
       targetName ?? null,
       false,
       false,
@@ -1041,7 +1041,6 @@ export async function resolveOrHatchTarget(
   if (targetEnv === "docker") {
     const beforeIds = new Set(loadAllAssistants().map((e) => e.assistantId));
     await hatchDocker({
-      species: "vellum",
       detached: false,
       name: targetName ?? null,
       setupProviderCredentials: false,
@@ -1076,8 +1075,7 @@ export async function resolveOrHatchTarget(
       const entry: AssistantEntry = {
         assistantId: result.id,
         runtimeUrl: getPlatformUrl(),
-        cloud: "vellum",
-        species: "vellum",
+        cloud: "cloud",
         hatchedAt: new Date().toISOString(),
       };
       saveAssistantEntry(entry);
@@ -1093,8 +1091,7 @@ export async function resolveOrHatchTarget(
     const entry: AssistantEntry = {
       assistantId: result.id,
       runtimeUrl: getPlatformUrl(),
-      cloud: "vellum",
-      species: "vellum",
+      cloud: "cloud",
       hatchedAt: new Date().toISOString(),
     };
     saveAssistantEntry(entry);
@@ -1469,8 +1466,7 @@ export async function teleport(): Promise<void> {
         saveAssistantEntry({
           assistantId: existing.id,
           runtimeUrl: getPlatformUrl(),
-          cloud: "vellum",
-          species: "vellum",
+          cloud: "cloud",
           hatchedAt: new Date().toISOString(),
         });
         console.error(

@@ -13,7 +13,7 @@ import {
   unpackBundle,
   type BundleScanData,
 } from "./bundle-manager";
-import { resolveRelativePath } from "@vellumai/electron-utils/app-protocol";
+import { resolveRelativePath } from "@mycadet/electron-utils/app-protocol";
 
 let tmpDir: string;
 

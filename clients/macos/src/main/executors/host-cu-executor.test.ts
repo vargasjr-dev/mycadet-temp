@@ -64,9 +64,9 @@ import type {
   CoachmarkRefusal,
   CoachmarkRequest,
   CoachmarkResult,
-} from "@vellumai/ipc-contract";
-import type { HostProxyPoster } from "@vellumai/electron-desktop/host-proxy/poster";
-import type { HostProxySseMessage } from "@vellumai/electron-desktop/host-proxy/sse";
+} from "@mycadet/ipc-contract";
+import type { HostProxyPoster } from "@mycadet/electron-desktop/host-proxy/poster";
+import type { HostProxySseMessage } from "@mycadet/electron-desktop/host-proxy/sse";
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 

@@ -29,7 +29,7 @@ const linkClass =
   "font-semibold text-emerald-700 underline hover:text-emerald-800";
 
 const MARKETPLACE_URL =
-  "https://github.com/vellum-ai/vellum-assistant/blob/main/plugins/marketplace.json";
+  "https://github.com/vargasjr-dev/mycadet/blob/main/plugins/marketplace.json";
 
 const CLAUDE_MARKETPLACE_URL =
   "https://code.claude.com/docs/en/plugin-marketplaces";
@@ -133,7 +133,7 @@ const CLI_COMMANDS: CliCommand[] = [
       },
       {
         flag: "--ref <ref>",
-        desc: "Advanced. Read the catalog (and any adapter stub) from a different ref of the vellum-assistant repo; defaults to main. The external plugin itself is still fetched at the commit pinned in the manifest, never this ref. Marketplace installs only; for a GitHub URL, put the ref in the URL (.../tree/<ref>/...).",
+        desc: "Advanced. Read the catalog (and any adapter stub) from a different ref of the cadet-assistant repo; defaults to main. The external plugin itself is still fetched at the commit pinned in the manifest, never this ref. Marketplace installs only; for a GitHub URL, put the ref in the URL (.../tree/<ref>/...).",
       },
       {
         flag: "--pin <sha>",
@@ -255,9 +255,9 @@ export function ExtensibilityDistributionContent() {
       >
         <p className="mb-8 text-zinc-600 dark:text-zinc-400">
           A plugin does not have to live in your workspace to be installed.
-          Vellum keeps a curated catalog of external plugins, and the CLI
+          Cadet keeps a curated catalog of external plugins, and the CLI
           installs any of them by name. The catalog is a single manifest the
-          Vellum team reviews and approves, so installing a catalog plugin only
+          Cadet team reviews and approves, so installing a catalog plugin only
           ever pulls code that has been vetted into that list. For plugins not
           yet in the catalog, the CLI also accepts a GitHub URL directly, see{" "}
           <Link href="#untrusted-install" className={linkClass}>
@@ -275,7 +275,7 @@ export function ExtensibilityDistributionContent() {
             <Link href={MARKETPLACE_URL} className={linkClass}>
               <code>plugins/marketplace.json</code>
             </Link>{" "}
-            in the assistant repo. It lets Vellum surface plugins that live in
+            in the assistant repo. It lets Cadet surface plugins that live in
             other repositories without copying their code, and its shape is a
             subset of the{" "}
             <Link href={CLAUDE_MARKETPLACE_URL} className={linkClass}>
@@ -289,7 +289,7 @@ export function ExtensibilityDistributionContent() {
                 Curation is the allowlist.
               </strong>{" "}
               Only repositories listed in the manifest appear in the catalog.
-              There is no open registry, and the Vellum team reviews each entry
+              There is no open registry, and the Cadet team reviews each entry
               before it lands.
             </li>
             <li>
@@ -317,7 +317,7 @@ export function ExtensibilityDistributionContent() {
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
             Once your plugin works locally, you can list it in the marketplace
             catalog so anyone can install it by name. The catalog is a curated
-            allowlist: you open a PR adding an entry, the Vellum team reviews
+            allowlist: you open a PR adding an entry, the Cadet team reviews
             it, and once merged the plugin is discoverable via{" "}
             <code>assistant plugins search</code> and installable via{" "}
             <code>assistant plugins install</code>.
@@ -354,10 +354,10 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290`}</code>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
             Open a PR against{" "}
             <Link
-              href="https://github.com/vellum-ai/vellum-assistant"
+              href="https://github.com/vargasjr-dev/mycadet"
               className={linkClass}
             >
-              <code>vellum-ai/vellum-assistant</code>
+              <code>vargasjr-dev/mycadet</code>
             </Link>{" "}
             adding your plugin to <code>plugins/marketplace.json</code>. Copy
             this template and fill in your details:
@@ -393,7 +393,7 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290`}</code>
             3. Wait for review
           </SectionHeading>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
-            The Vellum team reviews each entry before it lands in the catalog.
+            The Cadet team reviews each entry before it lands in the catalog.
             The review checks that:
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600 dark:text-zinc-400">
@@ -403,7 +403,7 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290`}</code>
             </li>
             <li>
               The plugin has a valid <code>package.json</code> with a{" "}
-              <code>@vellumai/plugin-api</code> peer dependency.
+              <code>@cadetai/plugin-api</code> peer dependency.
             </li>
             <li>
               The plugin loads cleanly (hooks register, tools validate, no
@@ -433,11 +433,11 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290`}</code>
             <code>{`# Find a plugin in the catalog
 $ assistant plugins search memory
 NAME           PATH
-simple-memory  vellum-ai/simple-memory
+simple-memory  cadet-ai/simple-memory
 
 # Install it by name (clones the pinned commit)
 $ assistant plugins install simple-memory
-Installed plugin "simple-memory" (12 files) at ed09a4c → ~/.vellum/workspace/plugins/simple-memory
+Installed plugin "simple-memory" (12 files) at ed09a4c → $VELLUM_WORKSPACE_DIR/plugins/simple-memory
 The new plugin is picked up automatically.
 
 # Confirm what is installed
@@ -518,9 +518,9 @@ simple-memory  0.1.0    ok`}</code>
             <code>{`# Install from a repo URL (default branch)
 $ assistant plugins install https://github.com/owner/repo
 ⚠ Installing "repo" from an unreviewed GitHub source: owner/repo @ default branch.
- This plugin is NOT in the Vellum marketplace and has not been reviewed.
+ This plugin is NOT in the Cadet marketplace and has not been reviewed.
  Its hooks and tools run inside the assistant with full access — install it only if you trust the source.
-Installed untrusted plugin "repo" (8 files) → ~/.vellum/workspace/plugins/repo
+Installed untrusted plugin "repo" (8 files) → $VELLUM_WORKSPACE_DIR/plugins/repo
 
 # Install from a specific branch and sub-path
 $ assistant plugins install https://github.com/owner/repo/tree/my-branch/packages/cool-plugin
@@ -710,7 +710,7 @@ drift       none
 remote
   timestamp 2026-06-05T08:12:24
   hash      3eae182
-  location  https://github.com/vellum-ai/simple-memory
+  location  https://github.com/cadet-ai/simple-memory
 
 # Preview the move, then upgrade to the current pin
 $ assistant plugins upgrade simple-memory --dry-run
@@ -755,8 +755,8 @@ Upgraded "simple-memory" 2026-06-01T12:34:56 (ed09a4c) → 2026-06-05T08:12:24 (
           </p>
           <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
             <code>{`{
-  "name": "vellum-assistant",
-  "owner": { "name": "Vellum", "url": "https://github.com/vellum-ai/vellum-assistant" },
+  "name": "cadet-assistant",
+  "owner": { "name": "Cadet", "url": "https://github.com/vargasjr-dev/mycadet" },
   "plugins": [
     {
       "name": "example-plugin",
@@ -813,7 +813,7 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290  refs/tags/v1.2.0^{}`}</code>
             so contribute nothing on boot. A{" "}
             <strong>postinstall adapter</strong> bridges that gap: a small,
             curated transform committed alongside the marketplace entry that
-            reshapes the cloned tree into Vellum&apos;s layout during install.
+            reshapes the cloned tree into Cadet&apos;s layout during install.
           </p>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
             The adapter is a single JavaScript file referenced from the
@@ -821,15 +821,15 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290  refs/tags/v1.2.0^{}`}</code>
             the plugin is cloned but before the loader scans for surfaces, so it
             can move files, generate a manifest, or rename entry points. The
             transform receives the cloned directory path and the marketplace
-            entry, and is expected to leave the tree in Vellum&apos;s plugin
+            entry, and is expected to leave the tree in Cadet&apos;s plugin
             layout:
           </p>
           <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
             <code>
-              {`// adapter.js — reshapes a Claude Code skill into Vellum layout
+              {`// adapter.js — reshapes a Claude Code skill into Cadet layout
 export default function adapt({ dir, entry }) {
   // The source repo ships instructions in SKILL.md at the root.
-  // Vellum expects them under skills/<name>/SKILL.md.
+  // Cadet expects them under skills/<name>/SKILL.md.
   const fs = require("fs");
   const path = require("path");
 
@@ -846,7 +846,7 @@ export default function adapt({ dir, entry }) {
     JSON.stringify({
       name: entry.name,
       version: entry.version,
-      peerDependencies: { "@vellumai/plugin-api": ">=0.40.0" },
+      peerDependencies: { "@cadetai/plugin-api": ">=0.40.0" },
     }, null, 2),
   );
 }`}

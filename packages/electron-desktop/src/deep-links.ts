@@ -3,8 +3,8 @@ import { resolve } from "node:path";
 import { BrowserWindow, app, type WebContents } from "electron";
 import { z } from "zod";
 
-import type { DeepLink } from "@vellumai/ipc-contract";
-import { resolveEnvironmentName } from "@vellumai/local-mode";
+import type { DeepLink } from "@mycadet/ipc-contract";
+import { resolveEnvironmentName } from "@mycadet/local-mode";
 
 import { capabilityToken } from "./capability-registry";
 import type { IpcHandle, IpcOn } from "./ipc";
@@ -39,11 +39,11 @@ import type { IpcHandle, IpcOn } from "./ipc";
  *     argv only (`open-url` never fires). We handle both.
  *
  * Buffering: deep links arriving before the renderer is ready (or
- * before the first `vellum:deepLinks:drain` IPC call) are queued in
+ * before the first `cadet:deepLinks:drain` IPC call) are queued in
  * a module-scope `pending[]`. The renderer drains via
  * `window.vellum.deepLinks.drain()` once mounted. Live links arriving
  * after drain are pushed to the buffer too AND broadcast to every
- * BrowserWindow's `vellum:deepLinks:event` channel; consumers
+ * BrowserWindow's `cadet:deepLinks:event` channel; consumers
  * subscribe-then-drain to avoid races.
  *
  * Reference:
@@ -151,7 +151,7 @@ const ACCEPTED_SCHEMES = resolveAcceptedSchemes(currentEnv);
  *     than falling to `unknown`: the user clicked a connect link, so
  *     the renderer routes them to the connect flow with guidance.
  *     `code` is credential material: never logged, and never echoed
- *     on an `unknown` URL (which the renderer breadcrumbs to Sentry).
+ *     on an `unknown` URL (which the renderer logs).
  *   - `vellum://billing/checkout-complete?status=…&session_id=…` →
  *     `{ kind: "billingCheckoutComplete", status, sessionId, flow }`.
  *     The platform bounces a native-initiated Stripe Checkout here
@@ -186,7 +186,7 @@ export const parseVellumUrl = (input: string): DeepLink => {
   }
   if (url.host === "billing") {
     // Never echo the query back on the `unknown` fallbacks — the renderer
-    // logs that URL as a Sentry breadcrumb, and it may carry a session id.
+    // logs that URL, and it may carry a session id.
     const withoutQuery = `${url.protocol}//${url.host}${url.pathname}`;
     const segment = url.pathname.replace(/^\/+/, "").split("/")[0];
     if (segment !== "checkout-complete") {
@@ -269,13 +269,13 @@ export const extractDeepLinkFromArgv = (
 const pending: DeepLink[] = [];
 
 // Active renderer subscribers tracked by their `WebContents` rather
-// than a counter. Renderer calls `vellum:deepLinks:subscribe` when
+// than a counter. Renderer calls `cadet:deepLinks:subscribe` when
 // its `onLink` handler registers; we add the `event.sender` and
 // listen for that webContents's `destroyed` event so cleanup runs
 // even when React effect teardown doesn't fire (window-close kills
 // the JS context before `useEffect` cleanups flush — a leaked
 // counter would flip buffering off and silently drop later links).
-// `vellum:deepLinks:unsubscribe` covers the common mount/unmount
+// `cadet:deepLinks:unsubscribe` covers the common mount/unmount
 // path; the `destroyed` listener is the defense-in-depth.
 //
 // Buffer when the set is empty; broadcast-only when non-empty. This
@@ -295,7 +295,7 @@ const broadcast = (link: DeepLink): void => {
     if (win.isDestroyed()) {
       continue;
     }
-    win.webContents.send("vellum:deepLinks:event", link);
+    win.webContents.send("cadet:deepLinks:event", link);
   }
 };
 
@@ -378,7 +378,7 @@ export const installDeepLinks = (): void => {
   // broadcast-only) is governed by `subscriberCount`, not by
   // whether drain has been called.
   currentRuntime.handle(
-    "vellum:deepLinks:drain",
+    "cadet:deepLinks:drain",
     z.tuple([]),
     (): DeepLink[] => {
       return pending.splice(0, pending.length);
@@ -393,7 +393,7 @@ export const installDeepLinks = (): void => {
   // where the React effect cleanup doesn't run before the
   // webContents is torn down.
   currentRuntime.on(
-    "vellum:deepLinks:subscribe",
+    "cadet:deepLinks:subscribe",
     z.tuple([]),
     (_args, event) => {
       if (subscribers.has(event.sender)) {
@@ -406,7 +406,7 @@ export const installDeepLinks = (): void => {
     },
   );
   currentRuntime.on(
-    "vellum:deepLinks:unsubscribe",
+    "cadet:deepLinks:unsubscribe",
     z.tuple([]),
     (_args, event) => {
       subscribers.delete(event.sender);

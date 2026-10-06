@@ -11,9 +11,9 @@
  * detail page).
  */
 
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import type { AppSummary } from "@/types/app-types";
 import { shareApp } from "@/utils/share-app";
 

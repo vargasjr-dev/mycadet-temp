@@ -28,7 +28,7 @@
  * ## Both halves, one owner
  *
  * Minting and verification sit together because they must agree exactly, and
- * both belong to the gateway: it is what Velay hands the public base URL to,
+ * both belong to the gateway: it is what Tunnel hands the public base URL to,
  * what reads the plugin's `webhook_secret`, and what owns the
  * `/webhooks/plugins/` prefix. A plugin that needs one of these URLs asks the
  * gateway for it rather than assembling one, so the secret and the scheme

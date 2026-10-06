@@ -148,7 +148,7 @@ describe("multi-local", () => {
 
     test("allocation picks env-specific port bases for non-prod envs", async () => {
       // Each non-prod env sits in its own 1000-port window (see
-      // @vellumai/environments seeds). Hatching under VELLUM_ENVIRONMENT=dev should
+      // @mycadet/environments seeds). Hatching under VELLUM_ENVIRONMENT=dev should
       // produce ports in the dev block (18000+), not the production defaults.
       const prevEnv = process.env.VELLUM_ENVIRONMENT;
       const prevXdg = process.env.XDG_DATA_HOME;

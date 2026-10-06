@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { CompanionCharacter } from "@vellumai/ipc-contract";
+import type { CompanionCharacter } from "@mycadet/ipc-contract";
 
 import { on } from "./presence-runtime";
 
@@ -9,7 +9,7 @@ import { on } from "./presence-runtime";
  *
  * The renderer owns the assistant's identity, so it rasterizes the current
  * avatar (character SVG composited from traits, or a custom uploaded image)
- * to a square PNG and publishes the bytes over `vellum:icon:setAvatar`. Main
+ * to a square PNG and publishes the bytes over `cadet:icon:setAvatar`. Main
  * caches the latest PNG and lets each surface present it: the Dock icon
  * (`app.dock.setIcon`) clips it to a rounded square, and the menu-bar (Tray)
  * clips it to a circle under the status dot. One avatar feeds both surfaces.
@@ -122,7 +122,7 @@ const characterPayloadSchema = z.tuple([
 ]);
 
 /**
- * Register the `vellum:icon:setAvatar` renderer→main channel. Fire-and-forget
+ * Register the `cadet:icon:setAvatar` renderer→main channel. Fire-and-forget
  * (`ipcRenderer.send`): publishing an avatar has no return value, and a
  * rejected sender or malformed payload should drop silently rather than
  * surface an error in the renderer. Call once from `whenReady`, before the
@@ -136,12 +136,12 @@ export const installAvatarIpc = (): void => {
   }
   installed = true;
 
-  on("vellum:icon:setAvatar", avatarPayloadSchema, ([png]) => {
+  on("cadet:icon:setAvatar", avatarPayloadSchema, ([png]) => {
     setAvatar(png === null ? null : Buffer.from(png));
   });
 
   on(
-    "vellum:icon:setCharacter",
+    "cadet:icon:setCharacter",
     characterPayloadSchema,
     ([character, accentHex]) => {
       setCharacter(character, accentHex ?? null);

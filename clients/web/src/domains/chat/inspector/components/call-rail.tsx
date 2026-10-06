@@ -14,8 +14,8 @@ import {
   CALL_SITE_COMPACTION_AGENT,
   CALL_SITE_SYNTHETIC_AGENT_ERROR_MESSAGE,
   type LLMRequestLogEntry,
-} from "@vellumai/assistant-api";
-import { Tooltip } from "@vellumai/design-library";
+} from "@mycadet/assistant-api";
+import { Tooltip } from "@mycadet/design-library";
 
 type ChatTranslate = ReturnType<typeof useTranslation<"chat">>["t"];
 

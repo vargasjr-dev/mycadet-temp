@@ -2,7 +2,7 @@ import { DeveloperGuideFeaturesContent } from "@/app/docs/_components/developer-
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Features & Capabilities - Developer Guide - Vellum Docs",
+  title: "Features & Capabilities - Developer Guide - Cadet Docs",
   description:
     "Integrations, dynamic skill authoring, browser automation, attachments, and media embeds.",
   path: "/docs/developer-guide/features",

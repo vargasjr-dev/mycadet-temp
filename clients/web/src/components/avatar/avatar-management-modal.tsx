@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 
-import { Button, Modal } from "@vellumai/design-library";
+import { Button, Modal } from "@mycadet/design-library";
 
 import {
   fetchCharacterComponents,

@@ -2,7 +2,7 @@
  * Shared test helper: mock the IPC transport layer so tests can run
  * without a live gateway Unix socket.
  *
- * Mocks `@vellumai/gateway-client/ipc-client` — the lowest transport
+ * Mocks `@mycadet/gateway-client/ipc-client` — the lowest transport
  * layer — so that `gateway-client.ts` and everything above it (including
  * `ipcClassifyRisk`, response validation, singleton management) runs
  * for real.
@@ -70,7 +70,7 @@ function handleCall(method: string, params?: Record<string, unknown>): unknown {
  * (before any imports that transitively load gateway-client.ts).
  */
 export function installIpcMock(): void {
-  mock.module("@vellumai/gateway-client/ipc-client", () => ({
+  mock.module("@mycadet/gateway-client/ipc-client", () => ({
     ipcCall: async (
       _socketPath: string,
       method: string,

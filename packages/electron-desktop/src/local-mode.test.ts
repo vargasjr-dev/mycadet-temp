@@ -111,7 +111,7 @@ const refreshLockfileNowMock = mock(() => {});
 
 const { configureLocalMode, getPairedGuardianAccessToken, installLocalMode } =
   await import("./local-mode");
-const { guardianTokenPath } = await import("@vellumai/local-mode");
+const { guardianTokenPath } = await import("@mycadet/local-mode");
 
 const allowedEvent = {};
 
@@ -186,11 +186,11 @@ afterEach(() => {
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
 
 const hatch = (species?: unknown): Promise<unknown> =>
-  handlers["vellum:localMode:hatch"](allowedEvent, species) as Promise<unknown>;
+  handlers["cadet:localMode:hatch"](allowedEvent, species) as Promise<unknown>;
 
-describe("vellum:localMode:hatch handler", () => {
-  test("dev: spawns `bun run <repo>/cli/src/index.ts hatch <species>` and parses the id from stdout", async () => {
-    const pending = hatch("vellum");
+describe("cadet:localMode:hatch handler", () => {
+  test("dev: spawns `bun run <repo>/cli/src/index.ts hatch` and parses the id from stdout", async () => {
+    const pending = hatch();
     await tick();
     lastChild.stdout.emit(
       "data",
@@ -201,7 +201,7 @@ describe("vellum:localMode:hatch handler", () => {
     expect(await pending).toEqual({ ok: true, assistantId: "asst-42" });
     expect(spawnArgs[0]).toEqual([
       "bun",
-      ["run", path.join("/repo", "cli", "src", "index.ts"), "hatch", "vellum"],
+      ["run", path.join("/repo", "cli", "src", "index.ts"), "hatch"],
     ]);
   });
 
@@ -209,7 +209,7 @@ describe("vellum:localMode:hatch handler", () => {
     appState.isPackaged = true;
     cliInstallerState.isInstalled = true;
 
-    const pending = hatch("openclaw");
+    const pending = hatch();
     await tick();
     lastChild.stdout.emit(
       "data",
@@ -220,7 +220,7 @@ describe("vellum:localMode:hatch handler", () => {
     expect(await pending).toEqual({ ok: true, assistantId: "asst-pkg" });
     expect(spawnArgs[0]).toEqual([
       cliInstallerState.bundledBunPath,
-      ["run", cliInstallerState.cliBinPath, "hatch", "openclaw"],
+      ["run", cliInstallerState.cliBinPath, "hatch"],
     ]);
     expect(ensureCliInstalledMock).toHaveBeenCalledTimes(1);
   });
@@ -229,7 +229,7 @@ describe("vellum:localMode:hatch handler", () => {
     appState.isPackaged = true;
     cliInstallerState.isInstalled = false;
 
-    const pending = hatch("openclaw");
+    const pending = hatch();
     await tick();
     lastChild.stdout.emit(
       "data",
@@ -241,7 +241,7 @@ describe("vellum:localMode:hatch handler", () => {
     expect(ensureCliInstalledMock).toHaveBeenCalledTimes(1);
     expect(spawnArgs[0]).toEqual([
       cliInstallerState.bundledBunPath,
-      ["run", cliInstallerState.cliBinPath, "hatch", "openclaw"],
+      ["run", cliInstallerState.cliBinPath, "hatch"],
     ]);
   });
 
@@ -250,7 +250,7 @@ describe("vellum:localMode:hatch handler", () => {
     cliInstallerState.isInstalled = false;
     cliInstallerState.installError = new Error("network timeout");
 
-    const result = (await hatch("openclaw")) as { ok: boolean; error: string };
+    const result = (await hatch()) as { ok: boolean; error: string };
 
     expect(result.ok).toBe(false);
     expect(result.error).toBe("network timeout");
@@ -260,7 +260,7 @@ describe("vellum:localMode:hatch handler", () => {
   test("VELLUM_CLI_PATH env override takes precedence", async () => {
     process.env.VELLUM_CLI_PATH = "/custom/cli/index.ts";
 
-    const pending = hatch("vellum");
+    const pending = hatch();
     await tick();
     lastChild.stdout.emit(
       "data",
@@ -271,26 +271,12 @@ describe("vellum:localMode:hatch handler", () => {
     expect(await pending).toEqual({ ok: true, assistantId: "asst-env" });
     expect(spawnArgs[0]).toEqual([
       "bun",
-      ["run", "/custom/cli/index.ts", "hatch", "vellum"],
+      ["run", "/custom/cli/index.ts", "hatch"],
     ]);
   });
 
-  test("coerces a missing or empty species to the default", async () => {
-    const pending = hatch("");
-    await tick();
-    lastChild.emit("close", 0);
-    await pending;
-    expect(spawnArgs[0][1]).toContain("vellum");
-
-    const pending2 = hatch(undefined);
-    await tick();
-    lastChild.emit("close", 0);
-    await pending2;
-    expect(spawnArgs[1][1]).toContain("vellum");
-  });
-
   test("a non-zero exit resolves to a failure carrying the CLI's stderr", async () => {
-    const pending = hatch("vellum");
+    const pending = hatch();
     await tick();
     lastChild.stderr.emit("data", Buffer.from("daemon already running"));
     lastChild.emit("close", 1);
@@ -302,7 +288,7 @@ describe("vellum:localMode:hatch handler", () => {
   });
 
   test("a non-zero exit with no output carries a descriptive fallback error", async () => {
-    const pending = hatch("vellum");
+    const pending = hatch();
     await tick();
     lastChild.emit("close", 1);
 
@@ -312,7 +298,7 @@ describe("vellum:localMode:hatch handler", () => {
   });
 
   test("a spawn failure resolves to a failure rather than rejecting", async () => {
-    const pending = hatch("vellum");
+    const pending = hatch();
     await tick();
     lastChild.emit("error", new Error("ENOENT"));
 
@@ -322,7 +308,7 @@ describe("vellum:localMode:hatch handler", () => {
   });
 
   test("parses the assistant id from a Docker hatch banner", async () => {
-    const pending = hatch("vellum");
+    const pending = hatch();
     await tick();
     lastChild.stdout.emit(
       "data",
@@ -334,7 +320,7 @@ describe("vellum:localMode:hatch handler", () => {
   });
 
   test("a zero exit whose stdout has no parseable id fails instead of returning a blank id", async () => {
-    const pending = hatch("vellum");
+    const pending = hatch();
     await tick();
     lastChild.stdout.emit("data", Buffer.from("done, but no id line\n"));
     lastChild.emit("close", 0);
@@ -355,7 +341,7 @@ type WriteResult =
   | { ok: false; error: string };
 
 const readLockfile = (): Record<string, unknown> =>
-  handlers["vellum:localMode:readLockfile"](allowedEvent) as Record<
+  handlers["cadet:localMode:readLockfile"](allowedEvent) as Record<
     string,
     unknown
   >;
@@ -363,7 +349,7 @@ const saveLockfileAssistant = (
   assistant: unknown,
   activeAssistant?: unknown,
 ): WriteResult =>
-  handlers["vellum:localMode:saveLockfileAssistant"](
+  handlers["cadet:localMode:saveLockfileAssistant"](
     allowedEvent,
     assistant,
     activeAssistant,
@@ -372,7 +358,7 @@ const renameLockfileAssistant = (
   assistantId?: unknown,
   name?: unknown,
 ): WriteResult =>
-  handlers["vellum:localMode:renameLockfileAssistant"](
+  handlers["cadet:localMode:renameLockfileAssistant"](
     allowedEvent,
     assistantId,
     name,
@@ -381,7 +367,7 @@ const stampLockfileAssistantOnboarded = (
   assistantId?: unknown,
   onboardedAt?: unknown,
 ): WriteResult =>
-  handlers["vellum:localMode:stampLockfileAssistantOnboarded"](
+  handlers["cadet:localMode:stampLockfileAssistantOnboarded"](
     allowedEvent,
     assistantId,
     onboardedAt,
@@ -403,36 +389,36 @@ const writePairedLockfileAssistant = (assistantId: string): void => {
   );
 };
 const replacePlatformAssistants = (platformAssistants: unknown): WriteResult =>
-  handlers["vellum:localMode:replacePlatformAssistants"](
+  handlers["cadet:localMode:replacePlatformAssistants"](
     allowedEvent,
     platformAssistants,
   ) as WriteResult;
 const retire = (assistantId?: unknown): Promise<unknown> =>
-  handlers["vellum:localMode:retire"](
+  handlers["cadet:localMode:retire"](
     allowedEvent,
     assistantId,
   ) as Promise<unknown>;
 const unpair = (assistantId?: unknown): WriteResult =>
-  handlers["vellum:localMode:unpair"](allowedEvent, assistantId) as WriteResult;
+  handlers["cadet:localMode:unpair"](allowedEvent, assistantId) as WriteResult;
 const wake = (assistantId?: unknown, options?: unknown): Promise<unknown> =>
-  handlers["vellum:localMode:wake"](
+  handlers["cadet:localMode:wake"](
     allowedEvent,
     assistantId,
     options,
   ) as Promise<unknown>;
 const upgrade = (assistantId?: unknown, options?: unknown): Promise<unknown> =>
-  handlers["vellum:localMode:upgrade"](
+  handlers["cadet:localMode:upgrade"](
     allowedEvent,
     assistantId,
     options,
   ) as Promise<unknown>;
 const guardianToken = (assistantId?: unknown): Promise<unknown> =>
-  handlers["vellum:localMode:guardianToken"](
+  handlers["cadet:localMode:guardianToken"](
     allowedEvent,
     assistantId,
   ) as Promise<unknown>;
 const listDevices = (assistantId?: unknown): Promise<unknown> =>
-  handlers["vellum:localMode:listDevices"](
+  handlers["cadet:localMode:listDevices"](
     allowedEvent,
     assistantId,
   ) as Promise<unknown>;
@@ -440,7 +426,7 @@ const revokeDevice = (
   assistantId?: unknown,
   hashedDeviceId?: unknown,
 ): Promise<unknown> =>
-  handlers["vellum:localMode:revokeDevice"](
+  handlers["cadet:localMode:revokeDevice"](
     allowedEvent,
     assistantId,
     hashedDeviceId,
@@ -759,7 +745,7 @@ describe("lockfile IPC handlers", () => {
   });
 });
 
-describe("vellum:localMode:retire handler", () => {
+describe("cadet:localMode:retire handler", () => {
   test("dev: spawns `... retire <id> --yes` and reports success on a zero exit", async () => {
     const pending = retire("asst-1");
     await tick();
@@ -847,7 +833,7 @@ describe("vellum:localMode:retire handler", () => {
   });
 });
 
-describe("vellum:localMode:listDevices handler", () => {
+describe("cadet:localMode:listDevices handler", () => {
   test("dev: spawns `... devices <id> --json` and returns the parsed devices without a status field", async () => {
     const pending = listDevices("asst-1");
     await tick();
@@ -896,7 +882,7 @@ describe("vellum:localMode:listDevices handler", () => {
   });
 });
 
-describe("vellum:localMode:revokeDevice handler", () => {
+describe("cadet:localMode:revokeDevice handler", () => {
   test("dev: spawns `... devices revoke <hash> <id> --yes --json` and reports success on a zero exit", async () => {
     const pending = revokeDevice("asst-1", "hash-1");
     await tick();
@@ -938,7 +924,7 @@ describe("vellum:localMode:revokeDevice handler", () => {
   });
 });
 
-describe("vellum:localMode:unpair handler", () => {
+describe("cadet:localMode:unpair handler", () => {
   beforeEach(() => {
     fs.rmSync(lockfilePath, { force: true });
     fs.rmSync(path.join(configDir, "assistants"), {
@@ -1013,7 +999,7 @@ describe("vellum:localMode:unpair handler", () => {
   });
 });
 
-describe("vellum:localMode:pairing handlers", () => {
+describe("cadet:localMode:pairing handlers", () => {
   type StartResult = {
     ok: boolean;
     handle?: string;
@@ -1034,25 +1020,25 @@ describe("vellum:localMode:pairing handlers", () => {
   };
 
   const pairingStart = (address?: unknown): Promise<StartResult> =>
-    handlers["vellum:localMode:pairingStart"](
+    handlers["cadet:localMode:pairingStart"](
       allowedEvent,
       address,
     ) as Promise<StartResult>;
   const pairingPoll = (handle?: unknown, name?: unknown): Promise<PollResult> =>
-    handlers["vellum:localMode:pairingPoll"](
+    handlers["cadet:localMode:pairingPoll"](
       allowedEvent,
       handle,
       name,
     ) as Promise<PollResult>;
   const pairingCancel = (handle?: unknown): { ok: boolean } =>
-    handlers["vellum:localMode:pairingCancel"](allowedEvent, handle) as {
+    handlers["cadet:localMode:pairingCancel"](allowedEvent, handle) as {
       ok: boolean;
     };
 
   const PAIRING_LINK =
     "https://gw.example.com/assistant/pair#device_code=device-code-abc";
 
-  // The exchange itself belongs to `@vellumai/local-mode`; here the gateway is
+  // The exchange itself belongs to `@mycadet/local-mode`; here the gateway is
   // a stub so these cases cover the IPC wiring and nothing else.
   const realFetch = globalThis.fetch;
   let respond: () => Response;
@@ -1207,7 +1193,7 @@ describe("vellum:localMode:pairing handlers", () => {
   });
 });
 
-describe("vellum:localMode:wake handler", () => {
+describe("cadet:localMode:wake handler", () => {
   test("forwards repairGuardian to runWake, appending --repair-guardian", async () => {
     const pending = wake("asst-1", { repairGuardian: true });
     await tick();
@@ -1226,7 +1212,7 @@ describe("vellum:localMode:wake handler", () => {
   });
 
   test("a single-argument invoke still resolves ok with no options forwarded", async () => {
-    const pending = handlers["vellum:localMode:wake"](
+    const pending = handlers["cadet:localMode:wake"](
       allowedEvent,
       "asst-1",
     ) as Promise<unknown>;
@@ -1253,7 +1239,7 @@ describe("vellum:localMode:wake handler", () => {
   });
 });
 
-describe("vellum:localMode:upgrade handler", () => {
+describe("cadet:localMode:upgrade handler", () => {
   beforeEach(() => {
     fs.rmSync(lockfilePath, { force: true });
     saveLockfileAssistant(
@@ -1304,7 +1290,7 @@ describe("vellum:localMode:upgrade handler", () => {
   });
 });
 
-describe("vellum:localMode:guardianToken handler", () => {
+describe("cadet:localMode:guardianToken handler", () => {
   const FUTURE = new Date(Date.now() + 60 * 60 * 1000).toISOString();
   const PAST = new Date(Date.now() - 60_000).toISOString();
 
@@ -1504,15 +1490,15 @@ describe("vellum:localMode:guardianToken handler", () => {
   });
 });
 
-describe("vellum:localMode:readAssistantAvatar handler", () => {
+describe("cadet:localMode:readAssistantAvatar handler", () => {
   // Disk-read semantics (manifest precedence, legacy fallbacks, size cap)
-  // live with `readLockfileAssistantAvatar` in @vellumai/local-mode; this
+  // live with `readLockfileAssistantAvatar` in @mycadet/local-mode; this
   // covers only the IPC wiring around it.
   type AvatarResult =
     | { ok: true; avatar: Record<string, unknown> | null }
     | { ok: false; error: string };
   const readAssistantAvatar = (assistantId?: unknown): AvatarResult =>
-    handlers["vellum:localMode:readAssistantAvatar"](
+    handlers["cadet:localMode:readAssistantAvatar"](
       allowedEvent,
       assistantId,
     ) as AvatarResult;

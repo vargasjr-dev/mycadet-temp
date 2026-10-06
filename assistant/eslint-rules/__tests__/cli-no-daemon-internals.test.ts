@@ -25,7 +25,7 @@ tester.run("cli/no-daemon-internals", rule, {
       code: `
         import { writeFileSync } from "node:fs";
         import { Command } from "commander";
-        import { something } from "@vellumai/service-contracts";
+        import { something } from "@mycadet/service-contracts";
       `,
     },
     // The IPC client and socket path (src/ipc) are shared leaf transport.

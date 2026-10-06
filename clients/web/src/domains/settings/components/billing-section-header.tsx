@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 export interface BillingSectionHeaderProps {
   title: string;

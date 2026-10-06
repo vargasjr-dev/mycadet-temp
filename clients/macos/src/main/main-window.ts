@@ -1,18 +1,18 @@
 import { BrowserWindow, app, autoUpdater, shell } from "electron";
 import { z } from "zod";
-import { createWindowReadiness } from "@vellumai/electron-desktop/window-readiness";
+import { createWindowReadiness } from "@mycadet/electron-desktop/window-readiness";
 import {
   readOnboardingActive,
   restoreBounds,
   track as trackWindowState,
   writeOnboardingActive,
-} from "@vellumai/electron-desktop/window-state";
+} from "@mycadet/electron-desktop/window-state";
 
 import { getRendererRootUrl } from "./app-config";
 import { resolveAllowedOrigin } from "./app-origin";
 import { decideNavigation } from "./auth-nav";
-import { type VellumCommand } from "@vellumai/electron-desktop/commands";
-import { getName, onNameChange } from "@vellumai/electron-desktop/identity";
+import { type VellumCommand } from "@mycadet/electron-desktop/commands";
+import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
 import { handle } from "./ipc";
 import { createWindow } from "./windows";
 
@@ -173,10 +173,11 @@ const createMainWindow = (): BrowserWindow => {
   // `contentMinSize`). The persisted onboarding flag only drives the
   // traffic-light position (compact surfaces have no inline title bar).
   const onboardingActive = readOnboardingActive();
-  const { maximized: _maximized, fullscreen, ...restoredBounds } = restoreBounds(
-    "main",
-    MAIN_DEFAULT_STATE,
-  );
+  const {
+    maximized: _maximized,
+    fullscreen,
+    ...restoredBounds
+  } = restoreBounds("main", MAIN_DEFAULT_STATE);
   const sizing = {
     ...restoredBounds,
     minWidth: MAIN_MIN_SIZE.width,
@@ -362,7 +363,7 @@ export const toggleVisibility = (): void => {
 export const current = (): BrowserWindow | null => mainWindow;
 
 /**
- * Send a `vellum:command` IPC message directly to the main window,
+ * Send a `cadet:command` IPC message directly to the main window,
  * bypassing the application-menu `dispatchToFocused` "find focused
  * window" lookup. The tray click happens with the app potentially
  * backgrounded, so `getFocusedWindow()` can disagree with what the
@@ -375,7 +376,7 @@ export const current = (): BrowserWindow | null => mainWindow;
  */
 export const dispatchToMain = (command: VellumCommand): void => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
-  mainWindow.webContents.send("vellum:command", command);
+  mainWindow.webContents.send("cadet:command", command);
 };
 
 /**
@@ -415,7 +416,7 @@ export const installMainWindow = (): void => {
   // wrapper at `clients/web/src/runtime/main-window.ts` calls this; the
   // handler returns void so the caller can `await` without value.
   handle(
-    "vellum:mainWindow:ensureVisible",
+    "cadet:mainWindow:ensureVisible",
     z.tuple([]),
     async (): Promise<void> => {
       await ensureVisible();
@@ -426,7 +427,7 @@ export const installMainWindow = (): void => {
   // knows whether the current route is an onboarding step, so it toggles
   // the mode (traffic-light position) on/off as the user navigates.
   handle(
-    "vellum:mainWindow:setOnboarding",
+    "cadet:mainWindow:setOnboarding",
     z.tuple([z.boolean()]),
     async ([active]): Promise<void> => {
       setOnboarding(active);

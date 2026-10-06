@@ -29,7 +29,7 @@ import {
 } from "@/domains/chat/utils/tool-input";
 import { useTranslation } from "@/i18n";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { MidlineDot } from "@/components/midline-dot";
 import { AllowOptionsMenu } from "@/domains/chat/components/allow-options-menu";

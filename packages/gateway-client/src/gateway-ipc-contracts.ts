@@ -2,7 +2,7 @@
  * Shared IPC contracts for assistant-to-gateway gateway-owned reads.
  */
 
-import { CHANNEL_IDS } from "@vellumai/service-contracts/channels";
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
 import { RiskThresholdSchema } from "./channel-permission-contract.js";
@@ -33,13 +33,13 @@ export type FeatureFlagsIpcResponse = z.infer<
   typeof FeatureFlagsIpcResponseSchema
 >;
 
-export const VelayStatusIpcResponseSchema = z.object({
+export const TunnelStatusIpcResponseSchema = z.object({
   connected: z.boolean(),
   publicUrl: z.string().nullable().catch(null),
 });
 
-export type VelayStatusIpcResponse = z.infer<
-  typeof VelayStatusIpcResponseSchema
+export type TunnelStatusIpcResponse = z.infer<
+  typeof TunnelStatusIpcResponseSchema
 >;
 
 const GatewayLogsTailIpcParamsShape = {

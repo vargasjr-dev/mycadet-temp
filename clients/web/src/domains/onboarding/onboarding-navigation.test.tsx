@@ -101,7 +101,7 @@ mock.module("@/components/onboarding-layout", () => ({
   OnboardingLayout: ({ children }: { children: ReactNode }) => children,
 }));
 
-mock.module("@vellumai/design-library/components/button", () => ({
+mock.module("@mycadet/design-library/components/button", () => ({
   Button: ({
     children,
     onClick,
@@ -116,22 +116,19 @@ mock.module("@vellumai/design-library/components/button", () => ({
     </button>
   ),
 }));
-mock.module("@vellumai/design-library/components/select", () => ({
+mock.module("@mycadet/design-library/components/select", () => ({
   Select: () => null,
 }));
-mock.module("@vellumai/design-library/components/input", () => ({
+mock.module("@mycadet/design-library/components/input", () => ({
   Input: () => null,
 }));
 
-const { WelcomeScreen } = await import(
-  "@/domains/onboarding/pages/welcome-screen"
-);
-const { HostingScreen } = await import(
-  "@/domains/onboarding/pages/hosting-screen"
-);
-const { ApiKeyScreen } = await import(
-  "@/domains/onboarding/pages/api-key-screen"
-);
+const { WelcomeScreen } =
+  await import("@/domains/onboarding/pages/welcome-screen");
+const { HostingScreen } =
+  await import("@/domains/onboarding/pages/hosting-screen");
+const { ApiKeyScreen } =
+  await import("@/domains/onboarding/pages/api-key-screen");
 
 /** The options argument of the single `navigate()` this click produced. */
 function navigatedWith(): { to: string; opts: unknown } {

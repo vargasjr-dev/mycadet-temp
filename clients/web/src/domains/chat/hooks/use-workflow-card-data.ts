@@ -27,7 +27,7 @@ import {
 } from "@/domains/chat/workflow-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { isActiveStatus } from "@/utils/workflow-status";
-import type { WorkflowRunStatus } from "@vellumai/assistant-api";
+import type { WorkflowRunStatus } from "@mycadet/assistant-api";
 import {
   type ToolCallCardData,
   type ToolCallCardStep,

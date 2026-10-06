@@ -5,8 +5,8 @@ import * as motionReact from "motion/react";
 import {
   COMPANION_BASE_AVATAR_BOX,
   COMPANION_BASE_MAX_PILL_WIDTH,
-} from "@vellumai/ipc-contract";
-import type { VoiceActivityState } from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
+import type { VoiceActivityState } from "@mycadet/ipc-contract";
 
 /**
  * The reduced-motion answer, so one case can render the surface as a reader who

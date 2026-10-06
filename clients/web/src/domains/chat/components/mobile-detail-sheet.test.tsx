@@ -7,7 +7,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { useState } from "react";
-import { PortalContainerProvider } from "@vellumai/design-library/utils/portal-container";
+import { PortalContainerProvider } from "@mycadet/design-library/utils/portal-container";
 
 import { pressBackdrop } from "@/lib/overlay-test-helpers";
 import { useEdgeSwipeArbiterStore } from "@/stores/edge-swipe-arbiter-store";

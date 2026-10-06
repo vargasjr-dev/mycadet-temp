@@ -13,10 +13,10 @@ import type {
 /**
  * Plugin-facing facade over the embeddings subsystem: self-contained
  * operations that resolve the live workspace config internally, so callers
- * (plugins importing via `@vellumai/plugin-api`) hold no host config.
+ * (plugins importing via `@mycadet/plugin-api`) hold no host config.
  *
  * The operations are loaded via dynamic `import()` inside each wrapper so
- * that importing this module, which every `@vellumai/plugin-api` consumer
+ * that importing this module, which every `@mycadet/plugin-api` consumer
  * does transitively, does not eagerly pull the embed/vector import graph
  * (`job-utils`, `embedding-backend`). An eager pull would force those
  * modules' named exports to resolve at instantiation, which breaks the

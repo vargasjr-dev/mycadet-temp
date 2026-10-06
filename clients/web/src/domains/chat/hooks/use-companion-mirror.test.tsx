@@ -4,7 +4,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import type {
   CompanionContext,
   WatchCaptureTarget,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 import type * as WatchController from "@/domains/chat/watch/watch-controller";
 
 const published: CompanionContext[] = [];
@@ -846,7 +846,9 @@ describe("the popover the companion mirror publishes", () => {
     };
     act(() => {
       useChatSessionStore.setState({
-        snapshot: { messages: [{ id: "m-1", role: "assistant", surfaces: [surface] }] },
+        snapshot: {
+          messages: [{ id: "m-1", role: "assistant", surfaces: [surface] }],
+        },
         dismissedSurfaceIds: new Set(),
       } as never);
     });

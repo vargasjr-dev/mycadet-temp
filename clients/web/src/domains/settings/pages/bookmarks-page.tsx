@@ -12,8 +12,8 @@ import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useDisplayConversationTitle } from "@/utils/conversation-title";
 import { routes } from "@/utils/routes";
 import { navigateToConversation } from "@/utils/conversation-navigation";
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
 
 type SettingsTranslate = ReturnType<typeof useTranslation<"settings">>["t"];
 

@@ -1,7 +1,7 @@
 import { BrowserWindow } from "electron";
 import { z } from "zod";
 
-import type { HotkeyScope, ResolvedHotkey } from "@vellumai/ipc-contract";
+import type { HotkeyScope, ResolvedHotkey } from "@mycadet/ipc-contract";
 
 import { isValidAccelerator } from "./accelerator";
 import {
@@ -58,7 +58,11 @@ const HOTKEY_CATALOG: readonly HotkeyCommand[] = [
   { key: "togglePinConversation", label: "Pin conversation", scope: "menu" },
   { key: "sidebarToggle", label: "Toggle sidebar", scope: "menu" },
   { key: "popOut", label: "Pop out conversation", scope: "menu" },
-  { key: "previousConversation", label: "Previous conversation", scope: "menu" },
+  {
+    key: "previousConversation",
+    label: "Previous conversation",
+    scope: "menu",
+  },
   { key: "nextConversation", label: "Next conversation", scope: "menu" },
 ];
 
@@ -151,7 +155,7 @@ const writeHotkey = (key: string, accelerator: string | null): void => {
 const broadcastCatalog = (): void => {
   const catalog = resolveHotkeyCatalog();
   for (const window of BrowserWindow.getAllWindows()) {
-    window.webContents.send("vellum:hotkeys:changed", catalog);
+    window.webContents.send("cadet:hotkeys:changed", catalog);
   }
 };
 
@@ -163,15 +167,18 @@ let teardown: (() => void) | null = null;
  * broadcast to every window whenever the hotkeys setting changes (including
  * changes a different window initiated) so open settings views stay in sync.
  */
-export const installHotkeysIpc = ({ handle, exclude = [] }: HotkeysIpc): void => {
+export const installHotkeysIpc = ({
+  handle,
+  exclude = [],
+}: HotkeysIpc): void => {
   if (teardown) {
     return;
   }
   excludedKeys = new Set(exclude);
 
-  handle("vellum:hotkeys:get", z.tuple([]), () => resolveHotkeyCatalog());
+  handle("cadet:hotkeys:get", z.tuple([]), () => resolveHotkeyCatalog());
   handle(
-    "vellum:hotkeys:set",
+    "cadet:hotkeys:set",
     z.tuple([z.string(), z.union([z.string(), z.null()])]),
     ([key, accelerator]) => {
       writeHotkey(key, accelerator);

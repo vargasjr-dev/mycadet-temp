@@ -8,11 +8,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Navigate } from "react-router";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Slider } from "@vellumai/design-library/components/slider";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { Slider } from "@mycadet/design-library/components/slider";
+import { toast } from "@mycadet/design-library/components/toast";
 
-import { PERSONALITY_AXIS_IDS } from "@vellumai/assistant-api";
+import { PERSONALITY_AXIS_IDS } from "@mycadet/assistant-api";
 
 import {
   completeSliderValues,

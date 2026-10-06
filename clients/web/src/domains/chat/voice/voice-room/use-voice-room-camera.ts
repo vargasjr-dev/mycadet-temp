@@ -25,7 +25,7 @@ import {
   attachLiveVoiceImage,
   useLiveVoiceStore,
 } from "@/domains/chat/voice/live-voice/live-voice-store";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import { useVoiceCamera, type VoiceCamera } from "./voice-camera";
 

@@ -4,7 +4,7 @@
  * Exposes classify_risk to the assistant daemon over the IPC socket. The
  * assistant sends tool invocation parameters; the handler dispatches to the
  * appropriate classifier and returns a complete `ClassifyRiskIpcResponse`
- * (`@vellumai/gateway-client`, the contract both sides import).
+ * (`@mycadet/gateway-client`, the contract both sides import).
  */
 
 import { homedir } from "node:os";
@@ -14,7 +14,7 @@ import {
   ClassifyRiskIpcParamsSchema,
   type ClassifyRiskIpcParams,
   type ClassifyRiskIpcResponse,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import { parseArgs } from "../risk/arg-parser.js";
 import {

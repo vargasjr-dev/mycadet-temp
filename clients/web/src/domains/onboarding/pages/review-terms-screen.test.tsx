@@ -68,7 +68,7 @@ mock.module("@/stores/auth-store", () => ({
 mock.module("@/components/onboarding-layout", () => ({
   OnboardingLayout: ({ children }: { children: React.ReactNode }) => children,
 }));
-mock.module("@vellumai/design-library/components/button", () => ({
+mock.module("@mycadet/design-library/components/button", () => ({
   Button: ({
     children,
     onClick,
@@ -83,7 +83,7 @@ mock.module("@vellumai/design-library/components/button", () => ({
     </button>
   ),
 }));
-mock.module("@vellumai/design-library/components/checkbox", () => ({
+mock.module("@mycadet/design-library/components/checkbox", () => ({
   Checkbox: ({
     checked,
     onCheckedChange,
@@ -101,7 +101,7 @@ mock.module("@vellumai/design-library/components/checkbox", () => ({
     />
   ),
 }));
-mock.module("@vellumai/design-library/components/toggle", () => ({
+mock.module("@mycadet/design-library/components/toggle", () => ({
   Toggle: ({
     checked,
     onChange,

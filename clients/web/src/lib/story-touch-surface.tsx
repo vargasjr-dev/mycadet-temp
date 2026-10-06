@@ -13,7 +13,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { Decorator } from "@storybook/react-vite";
 
-import { TOUCH_SURFACE_MEDIA_QUERY } from "@vellumai/design-library";
+import { TOUCH_SURFACE_MEDIA_QUERY } from "@mycadet/design-library";
 
 /** Swap `window.matchMedia`; `configurable` so the teardown can put it back. */
 function setMatchMedia(impl: typeof window.matchMedia): void {

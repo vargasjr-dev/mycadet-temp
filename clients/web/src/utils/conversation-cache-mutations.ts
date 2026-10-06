@@ -404,7 +404,7 @@ export function surfaceConversationInCaches(
  *   row from the cache. Mirrors how `deleteConversation` cleans up
  *   after a local deletion.
  * - Network / other errors: rethrown to the caller so the SSE consumer
- *   can log/sentry-capture without silently dropping the signal.
+ *   can log/report without silently dropping the signal.
  */
 export async function refreshConversationRow(
   queryClient: QueryClient,

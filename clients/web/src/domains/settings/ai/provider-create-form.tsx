@@ -2,13 +2,13 @@ import { useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@vellumai/design-library/components/button";
-import { Disclosure } from "@vellumai/design-library/components/disclosure";
-import { Select } from "@vellumai/design-library/components/select";
-import { Input } from "@vellumai/design-library/components/input";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { toast } from "@vellumai/design-library/components/toast";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Disclosure } from "@mycadet/design-library/components/disclosure";
+import { Select } from "@mycadet/design-library/components/select";
+import { Input } from "@mycadet/design-library/components/input";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { toast } from "@mycadet/design-library/components/toast";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { Trans, useTranslation } from "@/i18n";
 import {
@@ -378,9 +378,7 @@ export function ProviderCreateForm({
               i18nKey="providerCreateForm.displayNameLabel"
               ns="settings"
               components={{
-                optional: (
-                  <span className="text-[var(--content-disabled)]" />
-                ),
+                optional: <span className="text-[var(--content-disabled)]" />,
               }}
             />
           </label>

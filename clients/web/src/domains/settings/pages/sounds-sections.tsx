@@ -21,9 +21,9 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import type { SoundsConfigGetResponse } from "@/generated/daemon/types.gen";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 type SoundsConfig = SoundsConfigGetResponse;
 
@@ -50,7 +50,10 @@ const SOUND_EVENT_LABEL_KEYS = {
   | "soundsSections.soundEventRandom"
 >;
 
-function soundEventDisplayName(event: SoundEventId, t: SettingsTranslate): string {
+function soundEventDisplayName(
+  event: SoundEventId,
+  t: SettingsTranslate,
+): string {
   return t(SOUND_EVENT_LABEL_KEYS[event]);
 }
 

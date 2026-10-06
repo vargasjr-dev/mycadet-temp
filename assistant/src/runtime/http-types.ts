@@ -161,14 +161,14 @@ export interface RuntimeHttpServerOptions {
 
 /**
  * Structured attachment metadata returned on a history row. Canonical wire
- * shape lives in `@vellumai/assistant-api`; aliased here so route modules can
+ * shape lives in `@mycadet/assistant-api`; aliased here so route modules can
  * keep importing the runtime-local name.
  */
 export type RuntimeAttachmentMetadata = ConversationMessageAttachment;
 
 /**
  * The daemon's history-row payload. Canonical wire contract lives in
- * `@vellumai/assistant-api` (`responses/conversation-message.ts`) so the
+ * `@mycadet/assistant-api` (`responses/conversation-message.ts`) so the
  * producer and every consumer (web, CLI, evals) derive from one source.
  */
 export type RuntimeMessagePayload = ConversationMessage;

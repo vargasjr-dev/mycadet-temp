@@ -30,7 +30,7 @@
  * do not grow it into a general sync framework.
  */
 
-import { ContactsIdentitySnapshotIpcResponseSchema } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import { ContactsIdentitySnapshotIpcResponseSchema } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import { getDbMigrationReadiness } from "../daemon/daemon-readiness.js";
 import { ipcCallPersistent } from "../ipc/gateway-client.js";

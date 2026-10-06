@@ -6,7 +6,7 @@
  * invite lifecycle — mint, list, revoke, redemption — against
  * `ingress_invites`; the daemon relays its CLI/HTTP invite surfaces here and
  * layers presentation fields on afterwards. Responses are validated against
- * the shared contract schemas in `@vellumai/gateway-client` — the same
+ * the shared contract schemas in `@mycadet/gateway-client` — the same
  * schemas the gateway routes are pinned to.
  *
  * Error posture (fail-closed — there is no local fallback): every wrapper
@@ -31,12 +31,12 @@ import {
   RedeemInviteVoiceIpcResponseSchema,
   type RedeemVoiceInviteRequest,
   RevokeInviteIpcResponseSchema,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import type { ZodType } from "zod";
 
 import { ipcCallPersistentValidated } from "../ipc/gateway-validated-call.js";
 
-export type { InviteWire } from "@vellumai/gateway-client";
+export type { InviteWire } from "@mycadet/gateway-client";
 
 /**
  * Call a gateway invite route and validate the response against its contract

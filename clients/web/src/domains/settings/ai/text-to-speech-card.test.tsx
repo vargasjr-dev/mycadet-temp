@@ -24,7 +24,7 @@ const ASSISTANT_ID = "asst-test";
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => ASSISTANT_ID,
 }));
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {} },
   Toaster: () => null,
   ToastContent: () => null,
@@ -43,7 +43,8 @@ let daemonConfigData: { services: Record<string, unknown> } = { services: {} };
 // so no async settling) — lets tests exercise a daemon-fetched provider list.
 let ttsCatalogData: { providers: unknown[] } | undefined;
 let managedVoicesData:
-  { voices: unknown[]; defaultModel: string | null } | undefined;
+  | { voices: unknown[]; defaultModel: string | null }
+  | undefined;
 mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
   ttsProvidersGetOptions: () => ({
     queryKey: ["tts-providers-test"],
@@ -177,7 +178,8 @@ describe("TextToSpeechCard — daemon provisioning on Save", () => {
     // The config PATCH (if any) must not carry a `provider` key — re-saving a
     // key must not switch the live provider.
     const ttsBody = configPatchCalls[0]?.body as
-      { services?: { tts?: Record<string, unknown> } } | undefined;
+      | { services?: { tts?: Record<string, unknown> } }
+      | undefined;
     expect(ttsBody?.services?.tts ?? {}).not.toHaveProperty("provider");
   });
 

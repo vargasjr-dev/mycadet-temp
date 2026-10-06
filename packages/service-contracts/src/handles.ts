@@ -79,7 +79,7 @@ export type ParsedHandle =
  * Build a local static credential handle from service and field.
  *
  * Accepts the same service/field values used in `credentialKey()` from
- * `@vellumai/credential-storage`.
+ * `@mycadet/credential-storage`.
  */
 export function localStaticHandle(service: string, field: string): string {
   return `${HandleType.LocalStatic}:${service}/${field}`;
@@ -119,7 +119,10 @@ export type ParseHandleResult =
 export function parseHandle(raw: string): ParseHandleResult {
   const colonIdx = raw.indexOf(":");
   if (colonIdx === -1) {
-    return { ok: false, error: `Invalid handle format: missing type prefix in "${raw}"` };
+    return {
+      ok: false,
+      error: `Invalid handle format: missing type prefix in "${raw}"`,
+    };
   }
 
   const prefix = raw.slice(0, colonIdx);
@@ -148,11 +151,7 @@ export function parseHandle(raw: string): ParseHandleResult {
     case HandleType.LocalOAuth: {
       // Split providerKey from connectionId.
       const slashIdx = rest.indexOf("/");
-      if (
-        slashIdx === -1 ||
-        slashIdx === 0 ||
-        slashIdx === rest.length - 1
-      ) {
+      if (slashIdx === -1 || slashIdx === 0 || slashIdx === rest.length - 1) {
         return {
           ok: false,
           error: `Invalid local_oauth handle: expected "local_oauth:<providerKey>/<connectionId>", got "${raw}"`,
@@ -202,11 +201,9 @@ export function parseHandle(raw: string): ParseHandleResult {
  * Zod schema that validates a string as a well-formed CES credential handle.
  * Useful in RPC schemas where the handle travels on the wire.
  */
-export const CredentialHandleSchema = z
-  .string()
-  .check(
-    z.refine((val: string) => {
-      const result = parseHandle(val);
-      return result.ok;
-    }, "Must be a valid CES credential handle (local_static:*, local_oauth:*, or platform_oauth:*)"),
-  );
+export const CredentialHandleSchema = z.string().check(
+  z.refine((val: string) => {
+    const result = parseHandle(val);
+    return result.ok;
+  }, "Must be a valid CES credential handle (local_static:*, local_oauth:*, or platform_oauth:*)"),
+);

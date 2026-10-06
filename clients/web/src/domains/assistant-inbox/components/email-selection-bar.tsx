@@ -1,7 +1,7 @@
 import { MessageSquarePlus, Trash2, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

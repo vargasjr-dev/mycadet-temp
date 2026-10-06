@@ -7,7 +7,7 @@ import { describe, expect, test } from "bun:test";
 import {
   IpcFrameReader,
   type StreamCallbacks,
-} from "@vellumai/ipc-server-utils";
+} from "@mycadet/ipc-server-utils";
 
 // ---------------------------------------------------------------------------
 // Helpers

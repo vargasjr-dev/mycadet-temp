@@ -19,7 +19,7 @@ import {
 } from "@/utils/app-pin-storage";
 import { installMemoryStorage } from "@/utils/memory-storage.test-helper";
 
-const STORAGE_KEY = "vellum:pinnedApps";
+const STORAGE_KEY = "cadet:pinnedApps";
 
 const memoryStorage = installMemoryStorage({
   beforeAll,

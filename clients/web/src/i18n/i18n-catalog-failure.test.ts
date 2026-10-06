@@ -19,7 +19,7 @@ const captureError = mock(
 const loadCatalogs = mock(async (_locale: string) => englishCatalogs);
 
 mock.module("@/i18n/system-locale", () => ({ systemLocales: () => ["es"] }));
-mock.module("@/lib/sentry/capture-error", () => ({ captureError }));
+mock.module("@/lib/error-reporting/capture-error", () => ({ captureError }));
 mock.module("@/i18n/catalogs", () => ({
   FALLBACK_CATALOGS: englishCatalogs,
   loadCatalogs,

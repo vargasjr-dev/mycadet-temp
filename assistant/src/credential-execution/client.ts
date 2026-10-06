@@ -1,7 +1,7 @@
 /**
  * CES RPC client — assistant-local entry point.
  *
- * Re-exports the shared `@vellumai/ces-client/rpc-client` types and factory
+ * Re-exports the shared `@mycadet/ces-client/rpc-client` types and factory
  * so that all assistant-internal consumers (`secure-keys.ts`, `lifecycle.ts`,
  * `server.ts`, etc.) import from this module without a direct package
  * dependency. The process-manager and transport wiring in the assistant
@@ -14,7 +14,7 @@ import {
   type CesRpcClientConfig,
   type CesTransport,
   createCesRpcClient,
-} from "@vellumai/ces-client/rpc-client";
+} from "@mycadet/ces-client/rpc-client";
 
 import { getLogger } from "../util/logger.js";
 
@@ -26,7 +26,7 @@ export {
   CesHandshakeError,
   type CesTransport,
   CesTransportError,
-} from "@vellumai/ces-client/rpc-client";
+} from "@mycadet/ces-client/rpc-client";
 
 const log = getLogger("ces-rpc-client");
 

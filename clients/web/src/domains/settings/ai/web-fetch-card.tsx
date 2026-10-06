@@ -11,16 +11,16 @@ import {
 } from "@/assistant/generated/web-fetch-provider-catalog.gen";
 import { secretPlaceholder } from "@/domains/settings/ai/secret-placeholder";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   getLocalSetting,
   removeLocalSetting,
   setLocalSetting,
 } from "@/utils/local-settings";
 import { useQueryClient } from "@tanstack/react-query";
-import { Select } from "@vellumai/design-library/components/select";
-import { Input } from "@vellumai/design-library/components/input";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Select } from "@mycadet/design-library/components/select";
+import { Input } from "@mycadet/design-library/components/input";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { ByoServiceCard } from "@/components/byo-service-card";
 import { ResetButton, SaveButton } from "@/components/service-form-controls";

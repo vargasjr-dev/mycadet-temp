@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
-import type { WorkflowJournalResponse } from "@vellumai/assistant-api";
+import type { WorkflowJournalResponse } from "@mycadet/assistant-api";
 
 import type {
   FetchWorkflowRunResult,

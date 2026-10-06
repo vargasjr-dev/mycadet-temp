@@ -7,7 +7,7 @@ import Capacitor
 ///
 /// ## Why this exists
 ///
-/// Live voice runs entirely in the web layer today (mic capture, the velay
+/// Live voice runs entirely in the web layer today (mic capture, the tunnel
 /// WebSocket, and TTS playback all live under
 /// `clients/web/src/domains/chat/voice/live-voice/`). `WKWebView` configures a
 /// default audio session on the app's behalf, and that default is wrong for a
@@ -26,7 +26,7 @@ import Capacitor
 ///
 /// The empirical verdict is **still outstanding**. The device spike that was
 /// meant to answer it (does `getUserMedia` keep producing PCM, and does the
-/// velay WebSocket keep pumping, once `WKWebView` is backgrounded or the screen
+/// tunnel WebSocket keep pumping, once `WKWebView` is backgrounded or the screen
 /// is locked?) has not been run, and no findings document exists. If that spike
 /// concludes "must move native", capture and the socket move to
 /// `AVAudioEngine` + `URLSessionWebSocketTask` in Swift — and this plugin

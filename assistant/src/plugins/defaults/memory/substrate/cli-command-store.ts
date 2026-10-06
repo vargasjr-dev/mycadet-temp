@@ -6,7 +6,7 @@
 // `usesConceptPageMemory()` holds.
 //
 // Enumerate the top-level `assistant` CLI commands from their declarative help
-// (`CLI_COMMAND_HELP`, exposed via `@vellumai/plugin-api`), render each as a
+// (`CLI_COMMAND_HELP`, exposed via `@mycadet/plugin-api`), render each as a
 // prose capability statement, embed dense + sparse, and upsert into
 // `memory_v2_concept_pages` under the slug `cli-commands/<name>`. The router
 // scores these alongside concept pages and skill entries; the injection layer
@@ -27,7 +27,7 @@
 //   - No MCP-style augmentation — the declared description is the canonical
 //     summary.
 
-import { CLI_COMMAND_HELP } from "@vellumai/plugin-api";
+import { CLI_COMMAND_HELP } from "@mycadet/plugin-api";
 
 import { getConfig } from "../../../../config/loader.js";
 import { generateSparseEmbedding } from "../../../../persistence/embeddings/embedding-backend.js";
@@ -145,7 +145,7 @@ async function runSeedV2CliCommandEntries(generation: number): Promise<void> {
     const seeds: CliCommandEntry[] = [];
 
     // Every top-level `assistant` CLI command declares its help as pure data
-    // (`CLI_COMMAND_HELP`, exposed via `@vellumai/plugin-api`); render each into
+    // (`CLI_COMMAND_HELP`, exposed via `@mycadet/plugin-api`); render each into
     // a capability statement here in the plugin. Reading declarative help keeps
     // the CLI's action graph — and the daemon/provider modules it imports — out
     // of this plugin's import tree, so the seed never touches `cli/program.ts`.

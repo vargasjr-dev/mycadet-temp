@@ -44,31 +44,31 @@ beforeEach(() => {
   });
 });
 
-describe("vellum:featureFlags:set", () => {
+describe("cadet:featureFlags:set", () => {
   test("persists the published flag map", () => {
-    registrationFor("vellum:featureFlags:set").fn([{ sounds: true, voice: false }]);
+    registrationFor("cadet:featureFlags:set").fn([{ sounds: true, voice: false }]);
     expect(store["featureFlags"]).toEqual({ sounds: true, voice: false });
   });
 
   test("accepts an empty map", () => {
-    const { schema } = registrationFor("vellum:featureFlags:set");
+    const { schema } = registrationFor("cadet:featureFlags:set");
     expect(schema.safeParse([{}]).success).toBe(true);
   });
 
   test("replaces stale flags on refresh", () => {
-    const registration = registrationFor("vellum:featureFlags:set");
+    const registration = registrationFor("cadet:featureFlags:set");
     registration.fn([{ oldFlag: true }]);
     registration.fn([{ newFlag: false }]);
     expect(store["featureFlags"]).toEqual({ newFlag: false });
   });
 
   test("rejects non-boolean flag values", () => {
-    const { schema } = registrationFor("vellum:featureFlags:set");
+    const { schema } = registrationFor("cadet:featureFlags:set");
     expect(schema.safeParse([{ sounds: "yes" }]).success).toBe(false);
   });
 
   test("rejects a missing payload", () => {
-    const { schema } = registrationFor("vellum:featureFlags:set");
+    const { schema } = registrationFor("cadet:featureFlags:set");
     expect(schema.safeParse([]).success).toBe(false);
   });
 });

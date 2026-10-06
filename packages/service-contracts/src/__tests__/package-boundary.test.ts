@@ -1,16 +1,16 @@
 /**
- * Package boundary tests for @vellumai/service-contracts.
+ * Package boundary tests for @mycadet/service-contracts.
  *
  * Ensures the package:
  * 1. Does NOT import from assistant, gateway, credential-executor, or other
  *    service runtime modules.
  * 2. Does NOT import from runtime shared packages that sit above it in the
- *    dependency hierarchy (@vellumai/credential-storage, @vellumai/egress-proxy).
- * 3. Does NOT import from x-client packages (@vellumai/assistant-client,
- *    @vellumai/ces-client, @vellumai/gateway-client).
+ *    dependency hierarchy (@mycadet/credential-storage, @mycadet/egress-proxy).
+ * 3. Does NOT import from x-client packages (@mycadet/assistant-client,
+ *    @mycadet/ces-client, @mycadet/gateway-client).
  * 4. Remains a pure schema/type package — no runtime dependencies beyond zod.
  *
- * @vellumai/service-contracts is the lowest layer of the shared packages
+ * @mycadet/service-contracts is the lowest layer of the shared packages
  * hierarchy and must not depend on any higher-layer package.
  */
 
@@ -112,7 +112,7 @@ describe("package boundary", () => {
         `Found ${violations.length} forbidden import(s) in service-contracts package:\n` +
           violations.map((v) => `  - ${v}`).join("\n") +
           "\n\n" +
-          "@vellumai/service-contracts is a pure schema/type package and must not\n" +
+          "@mycadet/service-contracts is a pure schema/type package and must not\n" +
           "import from runtime services or higher-layer packages.",
       );
     }
@@ -137,12 +137,12 @@ describe("package boundary", () => {
 
     const forbidden = Object.keys(allDeps).filter((dep) =>
       [
-        "@vellumai/assistant",
-        "@vellumai/credential-storage",
-        "@vellumai/egress-proxy",
-        "@vellumai/assistant-client",
-        "@vellumai/ces-client",
-        "@vellumai/gateway-client",
+        "@mycadet/assistant",
+        "@mycadet/credential-storage",
+        "@mycadet/egress-proxy",
+        "@mycadet/assistant-client",
+        "@mycadet/ces-client",
+        "@mycadet/gateway-client",
       ].includes(dep),
     );
 

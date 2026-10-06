@@ -93,7 +93,7 @@ mock.module("../../../ipc/gateway-client.js", () => ({
   },
   resetPersistentClient: () => {},
   ipcGetFeatureFlags: async () => ({}),
-  ipcGetVelayStatus: async () => null,
+  ipcGetTunnelStatus: async () => null,
   ipcClassifyRisk: async () => ({ risk: "low" }),
   ipcRegisterWebhookRoute: async () => ({
     ok: false as const,

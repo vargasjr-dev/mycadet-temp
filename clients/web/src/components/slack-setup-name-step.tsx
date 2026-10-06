@@ -1,6 +1,6 @@
 import { Check, ClipboardCopy } from "lucide-react";
 
-import { Button, Input, Typography } from "@vellumai/design-library";
+import { Button, Input, Typography } from "@mycadet/design-library";
 import { useTranslation } from "@/i18n";
 import {
   SLACK_APP_DESCRIPTION_MAX_LENGTH,

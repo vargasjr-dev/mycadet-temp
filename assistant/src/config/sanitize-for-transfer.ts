@@ -2,7 +2,7 @@ import {
   INGRESS_ASSISTANT_ID_KEY,
   INGRESS_LAST_TUNNEL_KEY,
   INGRESS_PAIRING_TUNNEL_KEY,
-} from "@vellumai/service-contracts/ingress";
+} from "@mycadet/service-contracts/ingress";
 
 /**
  * Strips environment-specific fields from config JSON before transferring

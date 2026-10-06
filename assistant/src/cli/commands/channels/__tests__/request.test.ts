@@ -29,7 +29,7 @@ mock.module("../../../../runtime/routes/oauth-commands-routes.js", () => ({
   },
 }));
 
-import { botProviderForChannel } from "@vellumai/service-contracts/channels";
+import { botProviderForChannel } from "@mycadet/service-contracts/channels";
 import type { Command } from "commander";
 
 import { runCliCommand } from "../../__tests__/cli-test-harness.js";

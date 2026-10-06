@@ -8,7 +8,7 @@
  * TypeScript types in `./types.ts`; the renderer trusts main.
  *
  * Consumers:
- *   - Main: `import { assistantStatusSchema } from "@vellumai/ipc-contract"`
+ *   - Main: `import { assistantStatusSchema } from "@mycadet/ipc-contract"`
  *     → use in `handle()` / `on()` registrations.
  *   - Preload / renderer: type-only imports; schemas are never bundled
  *     into the preload or renderer.

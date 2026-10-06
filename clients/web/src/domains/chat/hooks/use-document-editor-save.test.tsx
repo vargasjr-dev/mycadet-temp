@@ -4,7 +4,7 @@ import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 import type * as DocumentSave from "@/domains/chat/api/document-save";
 import type { DocumentSaveTarget } from "@/domains/chat/api/document-save";
-import type * as CaptureError from "@/lib/sentry/capture-error";
+import type * as CaptureError from "@/lib/error-reporting/capture-error";
 
 const saveDocumentContent = mock(
   async (_target: DocumentSaveTarget, _markdown: string): Promise<void> => {},
@@ -19,7 +19,7 @@ mock.module(
   }),
 );
 mock.module(
-  "@/lib/sentry/capture-error",
+  "@/lib/error-reporting/capture-error",
   (): Partial<typeof CaptureError> => ({ captureError }),
 );
 

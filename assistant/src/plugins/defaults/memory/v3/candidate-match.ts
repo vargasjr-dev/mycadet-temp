@@ -19,7 +19,7 @@
 // the catalog read are dependency-injected so tests exercise the ranking without
 // standing up Qdrant.
 
-import { listInstalledSkills } from "@vellumai/plugin-api";
+import { listInstalledSkills } from "@mycadet/plugin-api";
 
 import { getConfig } from "../../../../config/loader.js";
 import type { AssistantConfig } from "../../../../config/types.js";

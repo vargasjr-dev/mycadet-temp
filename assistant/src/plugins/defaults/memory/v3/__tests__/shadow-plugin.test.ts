@@ -29,7 +29,7 @@
 import { Database } from "bun:sqlite";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { VOICE_ESCALATION_CONTINUATION_MESSAGE_KIND } from "@vellumai/plugin-api";
+import { VOICE_ESCALATION_CONTINUATION_MESSAGE_KIND } from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import { setConfig } from "../../../../../__tests__/helpers/set-config.js";

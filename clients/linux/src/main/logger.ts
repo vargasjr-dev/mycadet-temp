@@ -1,4 +1,1 @@
-export {
-  default,
-  getLogFilePaths,
-} from "@vellumai/electron-desktop/app-logger";
+export { default, getLogFilePaths } from "@mycadet/electron-desktop/app-logger";

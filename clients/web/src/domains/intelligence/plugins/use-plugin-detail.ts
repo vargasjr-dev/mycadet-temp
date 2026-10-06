@@ -14,7 +14,7 @@ import {
 import type { PluginsByNameGetResponse } from "@/generated/daemon/types.gen";
 import { usePluginActions } from "@/hooks/use-plugin-actions";
 import { useTranslation } from "@/i18n";
-import { toast } from "@vellumai/design-library";
+import { toast } from "@mycadet/design-library";
 
 import { shortSha } from "@/lib/plugins/utils";
 

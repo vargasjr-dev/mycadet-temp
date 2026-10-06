@@ -1,7 +1,7 @@
 import { Check, ClipboardCopy, ExternalLink } from "lucide-react";
 
 import { useTranslation } from "@/i18n";
-import { Button, Notice, Typography } from "@vellumai/design-library";
+import { Button, Notice, Typography } from "@mycadet/design-library";
 
 export interface SlackSetupOpenStepProps {
   /**

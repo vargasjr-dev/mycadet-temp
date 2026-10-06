@@ -13,11 +13,11 @@ import { TrustRuleFormModal } from "@/domains/settings/components/trust-rules/tr
 import { useTranslation } from "@/i18n";
 import { deleteTrustRule, fetchTrustRules } from "@/lib/trust-rules-api";
 import type { TrustRuleItem, TrustRuleRisk } from "@/types/trust-rules";
-import { Button } from "@vellumai/design-library/components/button";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Tag, type TagTone } from "@vellumai/design-library/components/tag";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Button } from "@mycadet/design-library/components/button";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Tag, type TagTone } from "@mycadet/design-library/components/tag";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 function isDefaultRule(rule: TrustRuleItem): boolean {
   return rule.origin === "default" && !rule.userModified;

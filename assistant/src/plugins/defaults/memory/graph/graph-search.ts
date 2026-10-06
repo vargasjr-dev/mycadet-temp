@@ -10,7 +10,7 @@
 import {
   embedAndUpsert,
   selectedBackendSupportsMultimodal,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import type { AssistantConfig } from "../../../../config/types.js";
 import type { EmbeddingInput } from "../../../../persistence/embeddings/embedding-types.js";

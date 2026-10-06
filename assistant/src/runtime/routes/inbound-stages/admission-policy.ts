@@ -28,7 +28,7 @@ import {
   type AdmissionPolicy,
   isAdmissionPolicyExemptChannel,
   TRUST_CLASS_RANK,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 import type { ChannelId } from "../../../channels/types.js";
 import type { ChannelStatus } from "../../../contacts/types.js";

@@ -1,5 +1,5 @@
 /**
- * @vellumai/avatar-catalog: the single definition of the components an
+ * @mycadet/avatar-catalog: the single definition of the components an
  * assistant's character avatar is composed from.
  *
  * The daemon serves this catalog over `/avatar/character-components` and
@@ -9,7 +9,7 @@
  * than a daemon module every client copies.
  *
  * The palette is deliberately not re-exported here. It lives behind
- * `@vellumai/avatar-catalog/colors`, and importing it from that subpath is
+ * `@mycadet/avatar-catalog/colors`, and importing it from that subpath is
  * what keeps boot-path code (a sidebar pin resolving a stored colour id, the
  * accent variable's fallback) off the ~47 kB of SVG path data the shapes
  * carry. Re-exporting it would make the expensive import the convenient one.

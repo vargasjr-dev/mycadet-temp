@@ -144,7 +144,7 @@ export const fileReadDetail: ToolDetailPayload = payload({
     path: "clients/web/src/domains/chat/utils/risk.ts",
   },
   result: [
-    'import type { NoticeTone } from "@vellumai/design-library";',
+    'import type { NoticeTone } from "@mycadet/design-library";',
     "",
     "const VALID_RISK_LEVELS: ReadonlySet<string> = new Set([",
     '  "low",',
@@ -713,7 +713,7 @@ export const largeOutputDetail: ToolDetailPayload = payload({
     command: "bun pm ls --all",
   },
   result: Array.from({ length: 400 }, (_, i) => {
-    const name = `@vellumai/package-${String(i).padStart(3, "0")}`;
+    const name = `@mycadet/package-${String(i).padStart(3, "0")}`;
     return `├── ${name}@1.${i % 20}.${i % 7} resolved to node_modules/${name}`;
   }).join("\n"),
   riskLevel: "low",

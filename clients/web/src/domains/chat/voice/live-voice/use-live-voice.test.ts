@@ -24,7 +24,7 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 // connection module so importing the controller doesn't drag in the SDK client.
 mock.module("@/domains/chat/voice/live-voice/connection", () => ({
   resolveLiveVoiceWsUrl: mock(
-    async () => "wss://velay.vellum.ai/a/v1/live-voice",
+    async () => "wss://tunnel.mycadet.ai/a/v1/live-voice",
   ),
 }));
 
@@ -3139,7 +3139,7 @@ describe("reconnecting signal", () => {
     // A live, first-connect session never carries the reconnect label.
     expect(useLiveVoiceStore.getState().reconnecting).toBe(false);
 
-    // velay drops its tunnel → retryable 1013 → reconnect scheduled.
+    // tunnel drops its tunnel → retryable 1013 → reconnect scheduled.
     await act(async () => {
       h.client.emit("closed", { code: 1013, reason: "tunnel disconnected" });
     });
@@ -3220,7 +3220,7 @@ describe("reconnecting signal", () => {
 // ---------------------------------------------------------------------------
 // Initial-connect resilience (JARVIS-1282): a managed/hands-free session's
 // first connect must not flash `failed` for a transient pre-`ready` failure
-// (cold velay tunnel, token-mint blip) while the room's avatar animates in.
+// (cold tunnel, token-mint blip) while the room's avatar animates in.
 // ---------------------------------------------------------------------------
 
 describe("initial-connect resilience (JARVIS-1282)", () => {
@@ -3247,7 +3247,7 @@ describe("initial-connect resilience (JARVIS-1282)", () => {
     const h = renderController({ reconnectBackoffMs: FAST_BACKOFF });
     await startConnecting(h);
 
-    // Cold velay tunnel rejects the first upgrade → a pre-`ready` connection
+    // Cold tunnel rejects the first upgrade → a pre-`ready` connection
     // failure surfaces via the transport's `error` event.
     await act(async () => {
       const err: LiveVoiceClientError = {
@@ -3600,7 +3600,7 @@ describe("speak first (seed turn)", () => {
     await emitReady(h);
     expect(h.client.sentText).toEqual([SEED]);
 
-    // velay drops its tunnel mid-session. The same logical session comes back,
+    // tunnel drops its tunnel mid-session. The same logical session comes back,
     // and it has already said hello; greeting a second time would also land a
     // second copy of the seed in the user's transcript.
     await act(async () => {

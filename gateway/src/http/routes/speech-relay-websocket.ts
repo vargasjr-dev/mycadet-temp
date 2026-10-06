@@ -1,28 +1,28 @@
 /**
- * Managed-speech relay: daemon → gateway → velay.
+ * Managed-speech relay: daemon → gateway → tunnel.
  *
- * The assistant daemon must never dial velay itself — velay contact is
+ * The assistant daemon must never dial tunnel itself — tunnel contact is
  * gateway-only so deterministic policy stays in a process the agent cannot
- * rewrite. This route accepts a WebSocket from the daemon, dials velay's
+ * rewrite. This route accepts a WebSocket from the daemon, dials tunnel's
  * speech relay (`/v1/speech/{stt,tts}/stream`) with the Vellum assistant
  * API key, and pipes frames verbatim in both directions. The wire protocol
- * on both legs is Deepgram's own (plus velay's `velay_error` control
+ * on both legs is Deepgram's own (plus tunnel's `tunnel_error` control
  * frame), so the gateway stays byte-transparent.
  *
- * Contract mirrors velay's so the daemon adapter treats the gateway as a
+ * Contract mirrors tunnel's so the daemon adapter treats the gateway as a
  * drop-in relay endpoint:
  * - auth via `?key=` (a daemon-minted service JWT, NOT the assistant API
  *   key — the gateway attaches that to the upstream leg itself)
  * - rejections are JSON `{code, detail}` bodies
  * - upstream failures after upgrade surface as a synthesized
- *   `velay_error` text frame followed by an abnormal close
- * - a plain (non-upgrade) GET replays the gate and returns velay's own
+ *   `tunnel_error` text frame followed by an abnormal close
+ * - a plain (non-upgrade) GET replays the gate and returns tunnel's own
  *   HTTP rejection, so the daemon's dial-failure probe works end-to-end
  */
 
 import type { OutgoingHttpHeaders } from "node:http";
 
-import { velayHostForPlatformHost } from "@vellumai/service-contracts/ingress";
+import { tunnelHostForPlatformHost } from "@mycadet/service-contracts/ingress";
 
 import { resolveScopeProfile } from "../../auth/scopes.js";
 import { validateEdgeToken } from "../../auth/token-exchange.js";
@@ -31,17 +31,17 @@ import type { CredentialCache } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import { getLogger } from "../../logger.js";
 import { getPlatformBaseUrl } from "../../platform-url.js";
-import { VELAY_FORWARDED_HEADER } from "../../velay/bridge-utils.js";
-import { requestHasVelayBridgeAuth } from "../../velay/bridge-auth.js";
+import { TUNNEL_FORWARDED_HEADER } from "../../tunnel/bridge-utils.js";
+import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
 
 const log = getLogger("speech-relay-ws");
 
-/** Default relay origin when VELAY_BASE_URL is not configured. */
-const DEFAULT_VELAY_BASE_URL = "https://velay.vellum.ai";
+/** Default relay origin when TUNNEL_BASE_URL is not configured. */
+const DEFAULT_TUNNEL_BASE_URL = "https://tunnel.mycadet.ai";
 
 // Cap buffered bytes to prevent unbounded memory growth if upstream stalls.
 // Counted in bytes, not messages: the daemon legally bursts thousands of
-// small audio frames while the velay leg is still dialing (it flushes up to
+// small audio frames while the tunnel leg is still dialing (it flushes up to
 // ~10s of buffered utterance audio and keeps streaming live mic frames for
 // the duration of the dial — 16 kHz PCM16 is ~32 KB/s, so the worst
 // legitimate burst is well under this cap).
@@ -59,14 +59,14 @@ export type SpeechRelayOperation = "stt" | "tts";
 
 /**
  * Managed-speech contract version. `v1` is nova-3 and the released Deepgram
- * dialect; `v2` is Flux, which velay either translates back into that dialect
+ * dialect; `v2` is Flux, which tunnel either translates back into that dialect
  * or (with `contract=flux`) forwards verbatim.
  */
 export type SpeechRelayVersion = "v1" | "v2";
 
 /**
- * Param allowlists, mirroring velay's own (velay/internal/velay/deepgram.go).
- * Velay would reject unknown params anyway, but this relay is the policy
+ * Param allowlists, mirroring tunnel's own (tunnel/internal/tunnel/deepgram.go).
+ * Tunnel would reject unknown params anyway, but this relay is the policy
  * boundary — a buggy or compromised daemon must not get arbitrary query
  * strings forwarded upstream under the stored assistant API key.
  */
@@ -82,7 +82,7 @@ const ALLOWED_PARAMS: Record<SpeechRelayOperation, ReadonlySet<string>> = {
     "vad_events",
     "punctuate",
   ]),
-  // `model` is the client-selected TTS voice; velay only dials it after
+  // `model` is the client-selected TTS voice; tunnel only dials it after
   // Django's rate-card guard prices and echoes that exact model, so
   // forwarding it does not widen what the assistant API key can spend on.
   tts: new Set(["encoding", "sample_rate", "container", "model"]),
@@ -131,7 +131,7 @@ export interface SpeechRelayDeps {
 export type SpeechRelaySocketData = {
   wsType: "speech-relay";
   operation: SpeechRelayOperation;
-  /** wss URL of the velay speech endpoint, params already attached. */
+  /** wss URL of the tunnel speech endpoint, params already attached. */
   upstreamWsUrl: string;
   /** https twin of upstreamWsUrl, for failure probes. */
   upstreamHttpUrl: string;
@@ -141,7 +141,7 @@ export type SpeechRelaySocketData = {
   /**
    * Set by the close handler; open() re-checks it after its async
    * credential read so a daemon that hung up mid-read doesn't leave a
-   * dialed velay session with no close left to forward.
+   * dialed tunnel session with no close left to forward.
    */
   downstreamClosed?: boolean;
   pendingMessages?: (string | ArrayBuffer | Uint8Array)[];
@@ -157,32 +157,32 @@ function jsonError(status: number, code: string, detail: string): Response {
 }
 
 /**
- * Map a Vellum platform host onto its environment's velay origin. The
- * host-naming convention lives in `@vellumai/service-contracts/ingress`,
+ * Map a Vellum platform host onto its environment's tunnel origin. The
+ * host-naming convention lives in `@mycadet/service-contracts/ingress`,
  * shared with the web live-voice client; this wrapper adds the scheme.
  */
-export function velayOriginForPlatformHost(host: string): string | null {
-  const velayHost = velayHostForPlatformHost(host);
-  return velayHost ? `https://${velayHost}` : null;
+export function tunnelOriginForPlatformHost(host: string): string | null {
+  const tunnelHost = tunnelHostForPlatformHost(host);
+  return tunnelHost ? `https://${tunnelHost}` : null;
 }
 
 /**
- * Resolve the velay origin for this dial. An explicit VELAY_BASE_URL always
+ * Resolve the tunnel origin for this dial. An explicit TUNNEL_BASE_URL always
  * wins; otherwise derive it from the stored platform base URL so a non-prod
- * assistant's key is presented to its own environment's velay rather than
+ * assistant's key is presented to its own environment's tunnel rather than
  * prod (which would reject it with `invalid_key`).
  */
-async function resolveVelayBaseUrl(
+async function resolveTunnelBaseUrl(
   config: GatewayConfig,
   deps: SpeechRelayDeps,
 ): Promise<string> {
-  if (config.velayBaseUrl) {
-    return config.velayBaseUrl;
+  if (config.tunnelBaseUrl) {
+    return config.tunnelBaseUrl;
   }
   const platformBaseUrl = await getPlatformBaseUrl(deps.credentials);
   if (platformBaseUrl) {
     try {
-      const derived = velayOriginForPlatformHost(
+      const derived = tunnelOriginForPlatformHost(
         new URL(platformBaseUrl).hostname,
       );
       if (derived) {
@@ -192,19 +192,19 @@ async function resolveVelayBaseUrl(
       // Unparseable platform URL — fall through to the prod default.
     }
   }
-  return DEFAULT_VELAY_BASE_URL;
+  return DEFAULT_TUNNEL_BASE_URL;
 }
 
-function velaySpeechUrls(
-  velayBaseUrl: string,
+function tunnelSpeechUrls(
+  tunnelBaseUrl: string,
   operation: SpeechRelayOperation,
   params: URLSearchParams,
   version: SpeechRelayVersion,
 ): { wsUrl: string; httpUrl: string } {
-  // The velay tunnel client accepts ws(s):// bases too — normalize to the
+  // The tunnel client accepts ws(s):// bases too — normalize to the
   // http(s) twin first so the probe URL is always fetchable, then derive
   // the ws(s) dial URL from that.
-  const httpBase = velayBaseUrl.replace(/\/+$/, "").replace(/^ws/, "http");
+  const httpBase = tunnelBaseUrl.replace(/\/+$/, "").replace(/^ws/, "http");
   const query = params.toString();
   const path = `/${version}/speech/${operation}/stream${query ? `?${query}` : ""}`;
   return {
@@ -220,13 +220,13 @@ async function readAssistantApiKey(
 }
 
 /**
- * Replay a failed/probing request against velay as plain HTTPS. Velay runs
+ * Replay a failed/probing request against tunnel as plain HTTPS. Tunnel runs
  * its whole gate (key validation, params, balance, upstream dial) before
  * upgrading, so rejections reproduce as `{code, detail}` JSON; a request
  * that passes the gate fails only at the upgrade step, which returns no
  * such body.
  */
-async function probeVelay(
+async function probeTunnel(
   httpUrl: string,
   apiKey: string,
   fetchImpl: typeof fetch,
@@ -255,7 +255,7 @@ async function probeVelay(
 
 /**
  * Create the upgrade handler for one speech-relay path. Async: the
- * non-upgrade probe branch awaits velay.
+ * non-upgrade probe branch awaits tunnel.
  */
 export function createSpeechRelayUpgradeHandler(
   config: GatewayConfig,
@@ -272,13 +272,13 @@ export function createSpeechRelayUpgradeHandler(
     }
 
     // This is a daemon-loopback service path. Anything that arrived
-    // through velay's inbound tunnel (or the edge proxy) is categorically
+    // through tunnel's inbound tunnel (or the edge proxy) is categorically
     // rejected — the relay must never be reachable from outside.
     if (
-      req.headers.get(VELAY_FORWARDED_HEADER) !== null ||
-      requestHasVelayBridgeAuth(req)
+      req.headers.get(TUNNEL_FORWARDED_HEADER) !== null ||
+      requestHasTunnelBridgeAuth(req)
     ) {
-      log.warn("Speech relay: rejected velay-forwarded request");
+      log.warn("Speech relay: rejected tunnel-forwarded request");
       return jsonError(403, "forbidden", "not reachable via ingress");
     }
 
@@ -307,7 +307,7 @@ export function createSpeechRelayUpgradeHandler(
       return jsonError(401, "invalid_token", "service token rejected");
     }
 
-    // ?key= is the daemon→gateway auth carrier, not a velay param.
+    // ?key= is the daemon→gateway auth carrier, not a tunnel param.
     params.delete("key");
     const allowed = allowedParams(operation, version);
     for (const param of params.keys()) {
@@ -319,15 +319,15 @@ export function createSpeechRelayUpgradeHandler(
         );
       }
     }
-    const { wsUrl, httpUrl } = velaySpeechUrls(
-      await resolveVelayBaseUrl(config, deps),
+    const { wsUrl, httpUrl } = tunnelSpeechUrls(
+      await resolveTunnelBaseUrl(config, deps),
       operation,
       params,
       version,
     );
 
     // Non-upgrade request: this is the daemon's dial-failure probe.
-    // Replay the gate and hand back velay's own rejection.
+    // Replay the gate and hand back tunnel's own rejection.
     if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") {
       const apiKey = await readAssistantApiKey(deps);
       if (!apiKey) {
@@ -337,7 +337,7 @@ export function createSpeechRelayUpgradeHandler(
           "no Vellum assistant API key is stored — connect the platform account",
         );
       }
-      const rejection = await probeVelay(
+      const rejection = await probeTunnel(
         httpUrl,
         apiKey,
         deps.fetchImpl ?? fetch,
@@ -368,23 +368,23 @@ export function createSpeechRelayUpgradeHandler(
   };
 }
 
-/** Send a velay_error control frame downstream (best-effort). */
+/** Send a tunnel_error control frame downstream (best-effort). */
 function sendRelayError(
   ws: import("bun").ServerWebSocket<SpeechRelaySocketData>,
   code: string,
   detail: string,
 ): void {
   try {
-    ws.send(JSON.stringify({ type: "velay_error", code, detail }));
+    ws.send(JSON.stringify({ type: "tunnel_error", code, detail }));
   } catch {
     // The downstream socket may already be gone.
   }
 }
 
 /**
- * Bun.serve() websocket handlers for the speech relay: dial velay on open,
+ * Bun.serve() websocket handlers for the speech relay: dial tunnel on open,
  * then pipe frames verbatim both ways. Upstream failures synthesize a
- * `velay_error` frame (probing velay for the real rejection) so the daemon
+ * `tunnel_error` frame (probing tunnel for the real rejection) so the daemon
  * adapter's existing error mapping applies unchanged.
  */
 export function getSpeechRelayWebsocketHandlers() {
@@ -398,7 +398,7 @@ export function getSpeechRelayWebsocketHandlers() {
       const apiKey = await readAssistantApiKey(deps);
       if (ws.data.downstreamClosed) {
         // The daemon hung up while the credential read was pending; there
-        // is no close left to forward, so dialing now would leak a velay
+        // is no close left to forward, so dialing now would leak a tunnel
         // session until its timeout.
         log.info({ operation }, "Speech relay: daemon closed before dial");
         return;
@@ -430,7 +430,7 @@ export function getSpeechRelayWebsocketHandlers() {
 
       // A rejected handshake can emit error and close (in either order,
       // sometimes both) before the async rejection probe resolves —
-      // forwarding that raw close would beat the synthesized velay_error
+      // forwarding that raw close would beat the synthesized tunnel_error
       // frame to the daemon. Route every pre-open failure through one
       // guarded path instead.
       let dialFailureHandled = false;
@@ -439,7 +439,7 @@ export function getSpeechRelayWebsocketHandlers() {
           return;
         }
         dialFailureHandled = true;
-        void probeVelay(upstreamHttpUrl, apiKey, deps.fetchImpl ?? fetch).then(
+        void probeTunnel(upstreamHttpUrl, apiKey, deps.fetchImpl ?? fetch).then(
           (rejection) => {
             log.error(
               { operation, code: rejection?.code },
@@ -456,7 +456,7 @@ export function getSpeechRelayWebsocketHandlers() {
       };
 
       upstream.addEventListener("open", () => {
-        log.info({ operation }, "Speech relay upstream connected to velay");
+        log.info({ operation }, "Speech relay upstream connected to tunnel");
         ws.data.upstreamOpened = true;
         const pending = ws.data.pendingMessages;
         if (pending) {
@@ -492,8 +492,8 @@ export function getSpeechRelayWebsocketHandlers() {
           handleDialFailure();
           return;
         }
-        // Mid-session transport failure; velay already sent its own
-        // velay_error frame if it had one.
+        // Mid-session transport failure; tunnel already sent its own
+        // tunnel_error frame if it had one.
         log.error({ operation }, "Speech relay upstream error");
         ws.close(1011, "upstream_error");
       });

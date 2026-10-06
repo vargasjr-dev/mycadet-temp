@@ -7,13 +7,13 @@
  *   value (direction-asymmetric writes), so a stale-version record can't
  *   silently lose a prior explicit choice.
  * - **Effective reporting gate** (`device:diagnostics_reporting`) — what
- *   actually turns Sentry on. A local explicit opt-out closes it — the
+ *   actually turns client diagnostics on. A local explicit opt-out closes it — the
  *   just-adopted revoke or a pending device opt-out whose `patchConsent`
  *   write is still in flight (or failed). Otherwise, with a server record,
  *   the platform-computed effective verdict (`diagnosticsEffective`) decides;
  *   without one the gate derives from the device preference (absent reads
  *   open — opt-out default). Kept as its own watchable key because the
- *   `sentry-control` cross-tab watcher and the Electron main mirror react to
+ *   cross-tab watchers and the Electron main mirror react to
  *   it, and because an absent key marks a device that has never resolved
  *   consent (see {@link failCloseDiagnosticsGateUntilFirstSync}). A
  *   stale-version grant keeps reporting on — the review-terms
@@ -49,7 +49,7 @@ export interface ResolvedDiagnosticsConsent {
 /**
  * SOLE writer of the effective reporting gate (`diagnosticsReporting` device
  * bool), module-private so every write flows through the exported chokepoints.
- * The Electron main mirror is NOT synced here: the `sentry-control` watcher
+ * The Electron main mirror is NOT synced here: the cross-tab watcher
  * reacts to this device-setting change and pushes the
  * platform-session-composed value (`diagnosticsConsentGranted()`) to main, so a
  * device gate that is `true` without a confirmed live session never enables the

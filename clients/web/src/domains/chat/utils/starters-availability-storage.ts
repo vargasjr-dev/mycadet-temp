@@ -20,7 +20,7 @@ import { useState } from "react";
 import { createKeyedStorageAccessor } from "@/utils/typed-storage";
 
 const storage = createKeyedStorageAccessor<boolean>({
-  keyFn: (assistantId) => `vellum:startersSeen:${assistantId}`,
+  keyFn: (assistantId) => `cadet:startersSeen:${assistantId}`,
   scope: "user",
   parse: (raw) => raw === "true",
   serialize: (value) => (value ? "true" : "false"),

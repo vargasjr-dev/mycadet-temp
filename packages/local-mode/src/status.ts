@@ -2,7 +2,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import http from "node:http";
 import path from "node:path";
 
-import { SEEDS } from "@vellumai/environments";
+import { SEEDS } from "@mycadet/environments";
 
 import { resolveInstanceDir } from "./config";
 import { resolveEnvironmentName } from "./environment";

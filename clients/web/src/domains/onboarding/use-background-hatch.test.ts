@@ -65,7 +65,7 @@ mock.module("@/assistant/api", () => ({
   getAssistant: getAssistantMock,
   getAssistantHealthz: getAssistantHealthzMock,
 }));
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 const probeLocalGatewayReadyMock = mock(async (): Promise<boolean> => true);
@@ -126,9 +126,6 @@ mock.module("@/utils/api-errors", () => ({
     typeof (e as { detail?: unknown }).detail === "string"
       ? (e as { detail: string }).detail
       : (fallback ?? "error"),
-}));
-mock.module("@sentry/react", () => ({
-  captureMessage: () => {},
 }));
 
 // The paid stage only: the free path must never reach this module at all.

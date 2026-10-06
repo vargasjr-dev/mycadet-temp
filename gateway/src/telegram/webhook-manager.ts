@@ -1,4 +1,4 @@
-import { normalizePublicBaseUrl } from "@vellumai/service-contracts/ingress";
+import { normalizePublicBaseUrl } from "@mycadet/service-contracts/ingress";
 
 import type { CredentialCache } from "../credential-cache.js";
 import type { ConfigFileCache } from "../config-file-cache.js";
@@ -169,17 +169,17 @@ function readIngressBaseUrl(caches?: WebhookManagerCaches): string | undefined {
 
 /**
  * Claim `/webhooks/telegram` in the webhook ingress registry and return the
- * Velay URL that claim makes reachable.
+ * Tunnel URL that claim makes reachable.
  *
  * The claim comes first because both admission layers in front of the route
- * consult the registry: Velay drops an unadvertised path at the edge, and the
+ * consult the registry: Tunnel drops an unadvertised path at the edge, and the
  * bridge refuses one the registry does not hold. Handing Telegram a URL whose
  * path is unclaimed would register a webhook that every delivery bounces off.
  *
  * Returns undefined when the tunnel has published no URL yet or the claim
  * fails, which leaves the caller on the managed callback route.
  */
-function resolveVelayTelegramWebhookUrl(
+function resolveTunnelTelegramWebhookUrl(
   caches?: WebhookManagerCaches,
 ): string | undefined {
   const baseUrl = readIngressBaseUrl(caches);
@@ -213,15 +213,15 @@ async function resolveExpectedTelegramWebhookUrl(
   // resolver declines makes setup report success while setWebhook never runs
   // (LUM-2899).
   //
-  //   1. Platform pods (`IS_PLATFORM`) with `velay-webhooks` off always use
+  //   1. Platform pods (`IS_PLATFORM`) with `tunnel-webhooks` off always use
   //      the managed callback route and never consult ingress at all. A pod's
-  //      `ingress.publicBaseUrl` is written by the Velay tunnel client, not by
+  //      `ingress.publicBaseUrl` is written by the Tunnel tunnel client, not by
   //      a user, and that address is only live while the tunnel is:
   //      `clearManagedPublicBaseUrl` wipes the key when the tunnel drops, but
   //      Telegram keeps delivering to whatever was last registered, so a pod
   //      that resolved through the address alone would be pointed at a dead
   //      one. The platform callback route is the pod's stable inbound address.
-  //   2. With the flag on, a pod points Telegram at its published Velay URL
+  //   2. With the flag on, a pod points Telegram at its published Tunnel URL
   //      and claims that path in the ingress registry first, so the tunnel
   //      edge and the bridge both admit it. A pod with no published URL, or a
   //      claim that fails, still falls back to the managed callback route.
@@ -233,17 +233,17 @@ async function resolveExpectedTelegramWebhookUrl(
   //      deregisters, so `reconcileTelegramWebhook` handles it before calling
   //      this resolver. Platform pods are exempt (see the comment there).
   //   4. A configured public ingress URL wins (a self-hosted tunnel, or the
-  //      Velay-published URL while the tunnel is registered).
+  //      Tunnel-published URL while the tunnel is registered).
   //   5. Platform-connected local assistants holding vellum credentials fall
   //      back to a managed platform callback route.
   //      `registerManagedTelegramCallbackRoute` self-gates on platform
   //      features and credential presence, so a gateway with no platform
   //      context resolves to undefined and reconciliation skips.
   if (isPlatformMode()) {
-    if (isFeatureFlagEnabled("velay-webhooks")) {
-      const velayUrl = resolveVelayTelegramWebhookUrl(caches);
-      if (velayUrl) {
-        return velayUrl;
+    if (isFeatureFlagEnabled("tunnel-webhooks")) {
+      const tunnelUrl = resolveTunnelTelegramWebhookUrl(caches);
+      if (tunnelUrl) {
+        return tunnelUrl;
       }
     }
     return registerManagedTelegramCallbackRoute(caches);
@@ -266,11 +266,11 @@ let reconcileDrain: Promise<void> | undefined;
  * Reconcile the Telegram webhook, one reconciliation at a time.
  *
  * Every trigger routes through here because the address a reconciliation
- * resolves depends on config that moves underneath it. A Velay rules refresh
+ * resolves depends on config that moves underneath it. A Tunnel rules refresh
  * clears `ingress.publicBaseUrl` and republishes it moments later, and each
  * write fires a config change. Run concurrently, the clear-time reconciliation
  * resolves the managed callback route while the republish-time one resolves
- * Velay, and whichever setWebhook lands last decides where Telegram delivers.
+ * Tunnel, and whichever setWebhook lands last decides where Telegram delivers.
  * A stale winner leaves the pod on the fallback address until some later
  * trigger happens to correct it.
  *

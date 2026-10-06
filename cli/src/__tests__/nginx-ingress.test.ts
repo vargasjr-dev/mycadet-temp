@@ -2120,7 +2120,7 @@ describe("ensureTunnelEdge", () => {
         workspaceDir: ws,
         gatewayPort: 7830,
       }),
-    ).rejects.toThrow("@vellumai/web");
+    ).rejects.toThrow("@mycadet/web");
   });
 
   test("an unreachable edge throws with the log path", async () => {

@@ -9,7 +9,7 @@ import {
 import type {
   AssistantEventEnvelope,
   SubagentInnerEvent,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import type * as FetchSubagentHistory from "./fetch-subagent-history";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { PaginatedHistoryResult } from "@/domains/chat/transcript/types";

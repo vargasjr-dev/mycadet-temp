@@ -17,6 +17,7 @@
  * `{platformUrl}/v1/assistants/<id>/<rest>` with the stored platform credential.
  */
 
+import { isManagedCloud } from "./managed-cloud.js";
 import { resolveAssistant } from "./assistant-config.js";
 import { GATEWAY_PORT } from "./constants.js";
 import {
@@ -37,7 +38,7 @@ const FALLBACK_RUNTIME_URL = `http://127.0.0.1:${GATEWAY_PORT}`;
 /**
  * - `guardian`: `Authorization: Bearer <guardian JWT>`, refreshable on a 401.
  * - `session`: caller-supplied `X-Session-Token` + explicit org id.
- * - `platform`: `cloud: "vellum"` entry; headers resolved lazily from the
+ * - `platform`: `cloud: "cloud"` entry; headers resolved lazily from the
  *   stored platform token (org id needs a network lookup).
  */
 type AuthMode = "guardian" | "session" | "platform";
@@ -102,7 +103,7 @@ export class AssistantClient {
     }
 
     this._assistantId = entry.assistantId;
-    const platformManaged = !opts?.sessionToken && entry.cloud === "vellum";
+    const platformManaged = !opts?.sessionToken && isManagedCloud(entry.cloud);
     const platformHost = stripTrailingSlashes(entry.runtimeUrl);
 
     // SECURITY: a platform credential is account-scoped, far broader than the
@@ -150,7 +151,7 @@ export class AssistantClient {
   }
 
   /**
-   * Platform token for a `cloud: "vellum"` entry. Throws the actionable login
+   * Platform token for a `cloud: "cloud"` entry. Throws the actionable login
    * error rather than letting an anonymous request fall through to a bare 403.
    */
   private requirePlatformToken(): string {

@@ -22,7 +22,7 @@ mock.module("../runtime/local-actor-identity.js", () => ({
   findLocalGuardianPrincipalId: async () => "vellum-principal-1",
 }));
 
-import type { TrustVerdict } from "@vellumai/gateway-client";
+import type { TrustVerdict } from "@mycadet/gateway-client";
 
 import type { Conversation } from "../daemon/conversation.js";
 import * as providers from "../messaging/providers/index.js";

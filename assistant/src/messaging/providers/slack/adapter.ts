@@ -11,7 +11,7 @@ import {
   buildSlackChannelLabelMap,
   buildSlackUserLabelMap,
   renderSlackTextForModel,
-} from "@vellumai/slack-text";
+} from "@mycadet/slack-text";
 
 import { findContactChannel } from "../../../contacts/contact-store.js";
 import type { OAuthConnection } from "../../../oauth/connection.js";

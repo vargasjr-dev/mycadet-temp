@@ -55,12 +55,12 @@ import type {
   Provider,
   ProviderResponse,
   ToolUseContent,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 import {
   getConfiguredProvider,
   getEffectiveContextWindow,
   safeStringSlice,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 import { z } from "zod";
 
 import {

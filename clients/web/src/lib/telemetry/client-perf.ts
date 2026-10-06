@@ -1,5 +1,5 @@
 import { telemetryIngestPost } from "@/generated/daemon/sdk.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import type { TelemetryJsonValueWritable } from "@/generated/daemon/types.gen";
 import { readAnalyticsConsent } from "@/lib/telemetry/consent";
 import { mintRandomId } from "@/lib/telemetry/random-id";
@@ -82,7 +82,7 @@ export type ClientPerfCheckName =
  * forget: never throws into the caller, so a probe can sit on a hot render
  * or navigation path without adding a failure mode. Transport failures
  * (network, unreachable daemon) are swallowed; a contract-class 4xx
- * rejection (400/422, the wire refusing the event) is reported to Sentry
+ * rejection (400/422, the wire refusing the event) is reported via `captureError`
  * once per status per page load, because a batch the daemon refuses is
  * silent data loss otherwise. Auth-layer answers (401/403) and pre-relay
  * daemons (404) stay quiet, expected states rather than contract breaks.

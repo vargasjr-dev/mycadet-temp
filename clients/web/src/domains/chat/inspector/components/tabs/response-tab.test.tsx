@@ -9,7 +9,7 @@
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import type { LLMRequestLogEntry } from "@vellumai/assistant-api";
+import type { LLMRequestLogEntry } from "@mycadet/assistant-api";
 
 import { ResponseTab } from "./response-tab";
 

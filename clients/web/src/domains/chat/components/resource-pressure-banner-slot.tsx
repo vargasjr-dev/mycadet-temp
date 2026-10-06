@@ -79,10 +79,10 @@ export function ResourcePressureBannerSlot({
   const navigate = useNavigate();
 
   const dismissedUntilKey = assistantId
-    ? `vellum:resourcePressureDismissedUntil:${assistantId}`
+    ? `cadet:resourcePressureDismissedUntil:${assistantId}`
     : null;
   const suppressedKey = assistantId
-    ? `vellum:resourcePressureSuppressed:${assistantId}`
+    ? `cadet:resourcePressureSuppressed:${assistantId}`
     : null;
 
   // Seeded lazily at mount; the expiry effect below re-arms a timer for the

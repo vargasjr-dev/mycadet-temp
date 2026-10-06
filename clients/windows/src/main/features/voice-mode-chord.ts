@@ -4,7 +4,7 @@ import { z } from "zod";
 import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 import {
   HELPER_HOTKEY_EVENT,
   HELPER_HOTKEY_REGISTRATION_EVENT,
@@ -12,7 +12,7 @@ import {
   type HotkeyEvent,
   type VoiceModeChord,
   type VoiceModeChordRegistrationResult,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 import { handle } from "../ipc.client";
 import log from "../logger";

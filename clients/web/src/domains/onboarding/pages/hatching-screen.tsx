@@ -1,5 +1,4 @@
-import { captureError } from "@/lib/sentry/capture-error";
-import * as Sentry from "@sentry/react";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -68,8 +67,8 @@ import { BUNDLED_COMPONENTS } from "@/utils/avatar-bundled-components";
 import { randomCharacterTraits } from "@/utils/avatar-random";
 import { composeSvg } from "@/utils/avatar-svg-compositor";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
-import { ProgressBar } from "@vellumai/design-library/components/progress-bar";
+import { Button } from "@mycadet/design-library/components/button";
+import { ProgressBar } from "@mycadet/design-library/components/progress-bar";
 import { useTranslation } from "@/i18n";
 
 const COMPLETION_NAVIGATE_DELAY_MS = 800;
@@ -106,7 +105,11 @@ function releaseHatchGuards(): void {
 }
 
 type HatchPhase =
-  "initializing" | "provisioning" | "connecting" | "resizing" | "ready";
+  | "initializing"
+  | "provisioning"
+  | "connecting"
+  | "resizing"
+  | "ready";
 
 const PHASE_TARGET: Record<HatchPhase, number> = {
   initializing: 0,
@@ -143,7 +146,9 @@ export function interpolateSegmentProgress(
 }
 
 export type HatchGateDecision =
-  { kind: "proceed" } | { kind: "wait" } | { kind: "redirect"; to: string };
+  | { kind: "proceed" }
+  | { kind: "wait" }
+  | { kind: "redirect"; to: string };
 
 export function decideHatchGate(): HatchGateDecision {
   const decision = resolveNavigation(buildNavigationState(), {
@@ -415,7 +420,7 @@ export function HatchingScreen() {
           }
           if (!localHatchPromise) {
             localHatchRemote = remote;
-            localHatchPromise = hatchLocalAssistant(undefined, remote);
+            localHatchPromise = hatchLocalAssistant(remote);
           }
           // Keep `localHatchPromise` set through the rest of the flow. The
           // connectLocalAssistant() handoff below remounts this screen (see the
@@ -560,9 +565,9 @@ export function HatchingScreen() {
         // 201 = newly created; 200 = an existing assistant was returned.
         createdFreshAssistant = result.ok && result.status === 201;
         if (!result.ok) {
-          Sentry.captureMessage("Onboarding hatch request failed", {
-            level: "warning",
-            extra: { status: result.status, error: result.error },
+          console.warn("Onboarding hatch request failed", {
+            status: result.status,
+            error: result.error,
           });
           if (isPlatformHostedDisabled(result.status, result.error)) {
             setError(PLATFORM_HOSTED_DISABLED_MESSAGE);
@@ -650,9 +655,9 @@ export function HatchingScreen() {
         // The provisioning wait ran its course but the assistant never came
         // back. Completing here would hand the user an unreachable assistant,
         // so surface the same recoverable failure the other hatch timeouts do.
-        Sentry.captureMessage("Onboarding hatch wait exceeded timeout", {
-          level: "warning",
-          extra: { maxWaitMs: MAX_HATCH_WAIT_MS, stage: "post_resize_health" },
+        console.warn("Onboarding hatch wait exceeded timeout", {
+          maxWaitMs: MAX_HATCH_WAIT_MS,
+          stage: "post_resize_health",
         });
         setError(
           "Your assistant is taking longer than expected. Please try again.",
@@ -668,9 +673,8 @@ export function HatchingScreen() {
         return;
       }
       if (Date.now() - pollStartMs >= MAX_HATCH_WAIT_MS) {
-        Sentry.captureMessage("Onboarding hatch wait exceeded timeout", {
-          level: "warning",
-          extra: { maxWaitMs: MAX_HATCH_WAIT_MS },
+        console.warn("Onboarding hatch wait exceeded timeout", {
+          maxWaitMs: MAX_HATCH_WAIT_MS,
         });
         setError(
           "Your assistant is taking longer than expected. Please try again.",

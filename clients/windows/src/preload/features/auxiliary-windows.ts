@@ -3,7 +3,7 @@ import { ipcRenderer, type IpcRendererEvent } from "electron";
 import type {
   BridgeCapabilityRegistry,
   CapabilityModule,
-} from "@vellumai/electron-desktop/capability-registry";
+} from "@mycadet/electron-desktop/capability-registry";
 import {
   COMMAND_PALETTE_DISMISS,
   COMMAND_PALETTE_OPEN,
@@ -20,7 +20,7 @@ import {
   QUICK_INPUT_SUBMIT,
   type DictationOverlayState,
   type VellumBridge,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 const module: CapabilityModule<BridgeCapabilityRegistry<VellumBridge>> = {
   id: "auxiliary-windows",

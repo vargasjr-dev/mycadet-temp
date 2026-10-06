@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Skeleton } from "@vellumai/design-library/components/skeleton";
+import { Skeleton } from "@mycadet/design-library/components/skeleton";
 
 import { useTranslation } from "@/i18n";
 

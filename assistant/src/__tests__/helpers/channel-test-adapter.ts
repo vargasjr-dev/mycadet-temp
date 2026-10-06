@@ -73,7 +73,7 @@ mock.module(
   () => gatewayGuardianRequestsStoreBridge,
 );
 
-import type { TrustClass, TrustVerdict } from "@vellumai/gateway-client";
+import type { TrustClass, TrustVerdict } from "@mycadet/gateway-client";
 
 import { isChannelId } from "../../channels/types.js";
 import { findContactChannel } from "../../contacts/contact-store.js";

@@ -15,8 +15,8 @@ import { useTranslation } from "@/i18n";
 import { openBillingPathInBrowser } from "@/lib/billing/android-billing-handoff";
 import { useIsNativeAndroid } from "@/runtime/platform-detection";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
-import { Notice } from "@vellumai/design-library/components/notice";
+import { Button } from "@mycadet/design-library/components/button";
+import { Notice } from "@mycadet/design-library/components/notice";
 
 /**
  * In-flow banner shown on the billing settings surface when the org's Pro

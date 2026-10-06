@@ -29,15 +29,15 @@ import {
   channelsReadinessGetQueryKey,
   channelsReadinessRefreshPostMutation,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { extractErrorMessage } from "@/utils/api-errors";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { Input } from "@vellumai/design-library/components/input";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { Input } from "@mycadet/design-library/components/input";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { Trans, useTranslation } from "@/i18n";
 

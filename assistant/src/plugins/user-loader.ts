@@ -72,9 +72,9 @@ export async function loadUserPlugins(
   const importTimeoutMs =
     options.importTimeoutMs ?? USER_PLUGIN_IMPORT_TIMEOUT_MS;
 
-  // Materialize the workspace-level `@vellumai/plugin-api` shim *before*
+  // Materialize the workspace-level `@mycadet/plugin-api` shim *before*
   // we dynamic-import any user plugins. The shim file must exist on disk
-  // before the first plugin's `import "@vellumai/plugin-api"` is parsed.
+  // before the first plugin's `import "@mycadet/plugin-api"` is parsed.
   //
   // Wrapped in try/catch because per `AGENTS.md` the daemon must never
   // block startup. A shim-write failure (ENOSPC, read-only workspace,

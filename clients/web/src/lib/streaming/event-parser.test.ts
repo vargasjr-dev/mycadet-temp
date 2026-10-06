@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { DiskPressureStatus } from "@vellumai/assistant-api";
+import type { DiskPressureStatus } from "@mycadet/assistant-api";
 
 import type { AssistantEvent } from "@/types/event-types";
 import { parseAssistantEvent } from "@/lib/streaming/event-parser";
@@ -3500,7 +3500,7 @@ describe("envelope format parsing", () => {
     // `document_editor_update` declares `conversationId` as required on the
     // inner message. When the inner omits it, the parser does NOT rescue the
     // event with the envelope-level routing key — it falls through to unknown.
-    // This is the drift `@vellumai/assistant-api` exists to prevent.
+    // This is the drift `@mycadet/assistant-api` exists to prevent.
     const event = parseEvent({
       conversationId: "conv-from-envelope",
       message: {
@@ -3535,7 +3535,7 @@ describe("envelope format parsing", () => {
   test("envelope-level conversationId is NOT stamped onto strict-schema events", () => {
     // relationship_state_updated is a global event whose strict wire schema
     // doesn't declare conversationId. Stamping the envelope-derived value
-    // onto it is the drift `@vellumai/assistant-api` exists to prevent.
+    // onto it is the drift `@mycadet/assistant-api` exists to prevent.
     const event = parseEvent({
       conversationId: "should-be-ignored",
       message: {
@@ -3557,7 +3557,7 @@ describe("envelope format parsing", () => {
     // typed event simply has no conversationId — the parser never
     // grafts the envelope-level routing key onto schema-parsed events.
     // Drift between envelope and typed event is exactly what
-    // `@vellumai/assistant-api` exists to prevent. Downstream routing
+    // `@mycadet/assistant-api` exists to prevent. Downstream routing
     // that needs conversation scope reads the envelope at the SSE
     // pipe, not from the typed event.
     const event = parseEvent({
@@ -3604,7 +3604,7 @@ describe("ConversationMessage wire shape", () => {
   test("ConversationMessage carries wire-shape content fields", () => {
     // Type-level test: the canonical wire contract encodes textSegments as
     // plain strings and contentOrder as positional "<type>:<index>" strings.
-    const msg: import("@vellumai/assistant-api").ConversationMessage = {
+    const msg: import("@mycadet/assistant-api").ConversationMessage = {
       id: "msg-1",
       role: "assistant",
       timestamp: "2024-01-01T00:00:00.000Z",
@@ -3625,7 +3625,7 @@ describe("ConversationMessage wire shape", () => {
   });
 
   test("ConversationMessage works with only the required fields", () => {
-    const msg: import("@vellumai/assistant-api").ConversationMessage = {
+    const msg: import("@mycadet/assistant-api").ConversationMessage = {
       id: "msg-2",
       role: "user",
       timestamp: "2024-01-01T00:00:00.000Z",

@@ -9,7 +9,7 @@
  * The writer is loaded through a dynamic `import()` inside the wrapper, for the
  * same reason `persistence/conversation-plugin-facade.ts` does: it carries the
  * DB/drizzle import graph, whose named exports must not be forced to resolve
- * merely because a plugin imported `@vellumai/plugin-api`. Suites that
+ * merely because a plugin imported `@mycadet/plugin-api`. Suites that
  * partial-mock a module in that graph would otherwise fail to instantiate.
  */
 

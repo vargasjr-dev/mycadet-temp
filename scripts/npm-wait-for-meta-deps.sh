@@ -2,12 +2,12 @@
 #
 # npm-wait-for-meta-deps.sh
 #
-# Block until every @vellumai/* dependency pinned in meta/package.json is
+# Block until every @mycadet/* dependency pinned in meta/package.json is
 # resolvable on the npm registry.
 #
 # `npm publish` exiting 0 does not mean the version can be installed yet: npm
 # queues some publishes for asynchronous processing ("Your package is being
-# processed and may take a few minutes to become available"). @vellumai/cli
+# processed and may take a few minutes to become available"). @mycadet/cli
 # lands in that queue on every release and appears on the registry roughly
 # five minutes after its publish job goes green. The meta package is stamped
 # to depend on exact versions published moments earlier, so a shrinkwrap
@@ -42,6 +42,6 @@ while read -r spec; do
 done < <(node -e '
   const deps = require("./package.json").dependencies || {};
   for (const [name, version] of Object.entries(deps)) {
-    if (name.startsWith("@vellumai/")) console.log(`${name}@${version}`);
+    if (name.startsWith("@mycadet/")) console.log(`${name}@${version}`);
   }
 ')

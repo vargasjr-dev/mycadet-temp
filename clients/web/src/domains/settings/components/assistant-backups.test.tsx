@@ -26,12 +26,14 @@ mock.module("@/domains/settings/teleport/managed-export", () => ({
     calls.push(`export:${assistantId}`);
     onStep?.("exporting");
     if (exportFails) {
-      const { TeleportError } = await import(
-        "@/domains/settings/teleport/teleport-types"
-      );
+      const { TeleportError } =
+        await import("@/domains/settings/teleport/teleport-types");
       throw new TeleportError("export_failed", "Export failed (HTTP 500).");
     }
-    return { bundleKey: "uploads/org-abc/bundle.vbundle", runtimeVersion: "1.2.3" };
+    return {
+      bundleKey: "uploads/org-abc/bundle.vbundle",
+      runtimeVersion: "1.2.3",
+    };
   },
 }));
 
@@ -54,11 +56,11 @@ mock.module("@/runtime/native-file", () => ({
   },
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
     success: () => {},
     error: (message: string) => {

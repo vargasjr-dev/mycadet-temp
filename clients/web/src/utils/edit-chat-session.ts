@@ -10,7 +10,7 @@
  * never shared across apps or assistants.
  */
 
-const PREFIX = "vellum:edit-chat:";
+const PREFIX = "cadet:edit-chat:";
 const TTL_MS = 4 * 60 * 60 * 1000;
 
 interface Entry {

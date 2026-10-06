@@ -27,11 +27,11 @@ import {
 import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { compareParsed, parseSemver } from "@/utils/semver";
-import { Button } from "@vellumai/design-library/components/button";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { Select } from "@vellumai/design-library/components/select";
-import { toast } from "@vellumai/design-library/components/toast";
-import { textLinkVariants } from "@vellumai/design-library/components/text-link";
+import { Button } from "@mycadet/design-library/components/button";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { Select } from "@mycadet/design-library/components/select";
+import { toast } from "@mycadet/design-library/components/toast";
+import { textLinkVariants } from "@mycadet/design-library/components/text-link";
 
 function releaseLabel(
   release: ReleaseListItem,
@@ -258,7 +258,10 @@ export function AssistantUpgrades({
         toast.success(
           result.detail ||
             t("assistantUpgrades.toastUpdateInitiated", {
-              version: result.version ?? targetVersion ?? t("assistantUpgrades.latest"),
+              version:
+                result.version ??
+                targetVersion ??
+                t("assistantUpgrades.latest"),
             }),
         );
       }
@@ -278,14 +281,13 @@ export function AssistantUpgrades({
     }
   };
 
-  const targetLabel =
-    isPreviewReleaseChannel
-      ? t("assistantUpgrades.previewRelease")
-      : !upgradeAvailable
-        ? t("assistantUpgrades.selected")
-        : isRollback
-          ? t("assistantUpgrades.rollbackTo")
-          : t("assistantUpgrades.updateTo");
+  const targetLabel = isPreviewReleaseChannel
+    ? t("assistantUpgrades.previewRelease")
+    : !upgradeAvailable
+      ? t("assistantUpgrades.selected")
+      : isRollback
+        ? t("assistantUpgrades.rollbackTo")
+        : t("assistantUpgrades.updateTo");
 
   return (
     <div className="space-y-5">
@@ -422,7 +424,8 @@ export function AssistantUpgrades({
         message={
           isRollback
             ? t("assistantUpgrades.confirmRollbackMessage", {
-                version: effectiveSelectedVersion ?? t("assistantUpgrades.unknown"),
+                version:
+                  effectiveSelectedVersion ?? t("assistantUpgrades.unknown"),
               })
             : isPreviewReleaseChannel
               ? t("assistantUpgrades.confirmPreviewMessage", {
@@ -485,7 +488,8 @@ export function LocalAssistantUpgrades({
       const result = await upgradeCreate.upgrade();
       setSuccessMessage(
         t("assistantUpgrades.successUpdated", {
-          version: result.version ?? targetVersion ?? t("assistantUpgrades.latest"),
+          version:
+            result.version ?? targetVersion ?? t("assistantUpgrades.latest"),
         }),
       );
       toast.success(t("assistantUpgrades.toastUpdateComplete"), {

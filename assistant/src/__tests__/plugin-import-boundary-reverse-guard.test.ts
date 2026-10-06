@@ -62,7 +62,7 @@ const COMPOSITION_ROOTS = new Set([
  *   UPDATE_HOST_PLUGIN_IMPORT_BASELINE=1 bun test src/__tests__/plugin-import-boundary-reverse-guard.test.ts
  * and paste the printed object here. A new entry needs a justification in
  * your PR: prefer routing the dependency through a registered contribution or
- * `@vellumai/plugin-api` instead of adding one.
+ * `@mycadet/plugin-api` instead of adding one.
  */
 const BASELINE: Record<string, readonly string[]> = {
   compaction: [
@@ -292,7 +292,7 @@ describe("plugin import boundary (reverse: host → plugin)", () => {
         "",
         "Host code must not depend on a specific plugin's implementation.",
         "Route the dependency through a registered contribution (hook, tool,",
-        "route, injector, job handler) or `@vellumai/plugin-api`. If the",
+        "route, injector, job handler) or `@mycadet/plugin-api`. If the",
         "coupling is genuinely necessary, regenerate the baseline with",
         "UPDATE_HOST_PLUGIN_IMPORT_BASELINE=1 and justify the new edge in",
         "your PR.",

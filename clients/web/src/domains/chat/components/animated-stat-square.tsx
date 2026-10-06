@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
-import { StatSquare } from "@vellumai/design-library/components/stat-square";
+import { StatSquare } from "@mycadet/design-library/components/stat-square";
 
 /** Format a number compactly (e.g. 257400 -> "257.4K"). */
 export function formatNumber(n: number): string {

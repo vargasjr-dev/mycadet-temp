@@ -15,7 +15,7 @@
 
 import { afterEach, describe, expect, jest, mock, test } from "bun:test";
 
-import { Tooltip } from "@vellumai/design-library";
+import { Tooltip } from "@mycadet/design-library";
 import {
   act,
   cleanup,

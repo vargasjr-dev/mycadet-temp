@@ -4,7 +4,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { IpcCallError } from "@vellumai/gateway-client/ipc-client";
+import { IpcCallError } from "@mycadet/gateway-client/ipc-client";
 import { z } from "zod";
 
 import { ServiceUnavailableError } from "../../runtime/routes/errors.js";
@@ -23,9 +23,8 @@ mock.module("../gateway-client.js", () => ({
   ipcCallPersistent: ipcCallPersistentMock,
 }));
 
-const { ipcCallPersistentValidated } = await import(
-  "../gateway-validated-call.js"
-);
+const { ipcCallPersistentValidated } =
+  await import("../gateway-validated-call.js");
 
 const OkSchema = z.object({ ok: z.literal(true) });
 

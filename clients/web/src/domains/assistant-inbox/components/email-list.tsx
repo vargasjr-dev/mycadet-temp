@@ -1,6 +1,6 @@
 import { Paperclip } from "lucide-react";
 
-import { Checkbox, cn, CrossfadeStack } from "@vellumai/design-library";
+import { Checkbox, cn, CrossfadeStack } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

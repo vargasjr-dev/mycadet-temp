@@ -16,7 +16,7 @@ import { useTranslation } from "@/i18n";
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import { createDraftConversationId } from "@/domains/chat/utils/conversation-selection";
 import { useConversationStore } from "@/stores/conversation-store";

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { cn } from "@vellumai/design-library";
+import { cn } from "@mycadet/design-library";
 
 export interface AssistantInboxShellProps {
   children: ReactNode;

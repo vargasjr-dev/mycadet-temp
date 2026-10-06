@@ -18,7 +18,7 @@ import { CHANNEL_IDS } from "../channels/types.js";
 import {
   isAdmissionPolicyExemptChannel,
   isAdmissionPolicyHiddenChannel,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import "./test-preload.js";
 
 // Channels the GET list is expected to return: neither exempt (no runtime

@@ -24,7 +24,7 @@ import {
   type RemoteWebPairingChallengeResponse,
   type RemoteWebPairingVerificationRequest,
   type RemoteWebPairingVerificationResponse,
-} from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
 
 import { extractFlag } from "../lib/arg-utils.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";

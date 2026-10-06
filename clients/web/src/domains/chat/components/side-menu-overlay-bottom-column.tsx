@@ -2,7 +2,7 @@ import { MessageSquarePlus } from "lucide-react";
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { useTranslation } from "@/i18n";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 export interface SideMenuOverlayBottomColumnProps {
   footerAction?: ReactNode;

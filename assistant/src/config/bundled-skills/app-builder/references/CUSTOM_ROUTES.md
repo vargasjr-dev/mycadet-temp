@@ -6,7 +6,7 @@ When the app needs server-side persistence, custom API logic, or workspace file 
 
 ## Handler file convention
 
-Each handler file exports named functions for the HTTP methods it supports (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`). Handlers take the standard Web API `Request`. To reach daemon capabilities (publishing events, running a conversation turn), import them from `@vellumai/plugin-api` — that is the supported way, and it works identically in-process and in the route-host subprocess.
+Each handler file exports named functions for the HTTP methods it supports (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`). Handlers take the standard Web API `Request`. To reach daemon capabilities (publishing events, running a conversation turn), import them from `@mycadet/plugin-api` — that is the supported way, and it works identically in-process and in the route-host subprocess.
 
 ```
 {workspaceDir}/routes/
@@ -78,17 +78,17 @@ if (!createRes.ok) throw new Error(`HTTP ${createRes.status}`);
 
 ### Typing `window.vellum`
 
-Don't hand-declare `window.vellum` in a local `vellum.d.ts`. If the app depends on `@vellumai/plugin-api`, the `window.vellum` global is typed for you — add a one-line reference in a `.d.ts` (or entry file):
+Don't hand-declare `window.vellum` in a local `vellum.d.ts`. If the app depends on `@mycadet/plugin-api`, the `window.vellum` global is typed for you — add a one-line reference in a `.d.ts` (or entry file):
 
 ```typescript
-/// <reference types="@vellumai/plugin-api/app" />
+/// <reference types="@mycadet/plugin-api/app" />
 ```
 
-Equivalently, add `"@vellumai/plugin-api/app"` to `compilerOptions.types` in `tsconfig.json`. Both are types-only — do **not** `import` from `@vellumai/plugin-api` to get the global; a runtime bare import isn't supported for sandboxed apps. If you want to name a type, use `import type { VellumAppBridge } from "@vellumai/plugin-api/app"`.
+Equivalently, add `"@mycadet/plugin-api/app"` to `compilerOptions.types` in `tsconfig.json`. Both are types-only — do **not** `import` from `@mycadet/plugin-api` to get the global; a runtime bare import isn't supported for sandboxed apps. If you want to name a type, use `import type { VellumAppBridge } from "@mycadet/plugin-api/app"`.
 
-## Reaching daemon capabilities (`@vellumai/plugin-api`)
+## Reaching daemon capabilities (`@mycadet/plugin-api`)
 
-To reach a daemon capability from a handler, import it from `@vellumai/plugin-api`. These imports work the same way in-process and in the route-host subprocess.
+To reach a daemon capability from a handler, import it from `@mycadet/plugin-api`. These imports work the same way in-process and in the route-host subprocess.
 
 ### Publishing events to the client
 
@@ -96,7 +96,7 @@ Use `publishEvent` to push a real-time event to connected desktop/mobile clients
 
 ```typescript
 // routes/open-conversation.ts
-import { publishEvent } from "@vellumai/plugin-api";
+import { publishEvent } from "@mycadet/plugin-api";
 
 export async function POST(request: Request): Promise<Response> {
   const { conversationId } = await request.json();
@@ -121,7 +121,7 @@ Use `runConversationTurn` to surface an inbound event as a real assistant turn �
 
 ```typescript
 // routes/deploy-webhook.ts — an external CI system POSTs here when a build finishes
-import { runConversationTurn } from "@vellumai/plugin-api";
+import { runConversationTurn } from "@mycadet/plugin-api";
 
 export async function POST(request: Request): Promise<Response> {
   const { conversationId, status } = await request.json();
@@ -139,7 +139,7 @@ Omit `conversationId` to start a fresh conversation (the new id is returned). If
 
 ### Deprecated: the `context` argument
 
-Older routes were written with a second `context` argument (`context.assistantEventHub.publish(...)`, `context.conversations.postMessage(...)`). That argument still works in-process but is **deprecated** and will be removed — it isn't available in the route-host subprocess, and its use is tracked so remaining callers can be migrated. Port these to the `@vellumai/plugin-api` imports above: `context.assistantEventHub.publish` → `publishEvent`, `context.conversations.postMessage(id, text)` → `runConversationTurn({ conversationId: id, content: [{ type: "text", text }] })`.
+Older routes were written with a second `context` argument (`context.assistantEventHub.publish(...)`, `context.conversations.postMessage(...)`). That argument still works in-process but is **deprecated** and will be removed — it isn't available in the route-host subprocess, and its use is tracked so remaining callers can be migrated. Port these to the `@mycadet/plugin-api` imports above: `context.assistantEventHub.publish` → `publishEvent`, `context.conversations.postMessage(id, text)` → `runConversationTurn({ conversationId: id, content: [{ type: "text", text }] })`.
 
 ## Key rules
 

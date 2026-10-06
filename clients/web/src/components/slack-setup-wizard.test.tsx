@@ -25,12 +25,12 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 
-import * as toastModule from "@vellumai/design-library/components/toast";
+import * as toastModule from "@mycadet/design-library/components/toast";
 
 const toasts: string[] = [];
 // Spread the real module: the design library's barrel re-exports `Toaster` and
 // `ToastContent` from here, so a partial mock breaks unrelated imports.
-mock.module("@vellumai/design-library/components/toast", () => ({
+mock.module("@mycadet/design-library/components/toast", () => ({
   ...toastModule,
   toast: {
     ...toastModule.toast,
@@ -40,7 +40,7 @@ mock.module("@vellumai/design-library/components/toast", () => ({
     },
   },
 }));
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 

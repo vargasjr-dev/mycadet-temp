@@ -1,7 +1,7 @@
 import {
   type ConfirmationSurfaceData,
   ConfirmationSurfaceDataSchema,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
 

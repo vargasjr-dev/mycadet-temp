@@ -1,12 +1,12 @@
 // ---------------------------------------------------------------------------
-// Core types — re-exported from @vellumai/egress-proxy shared package
+// Core types — re-exported from @mycadet/egress-proxy shared package
 // ---------------------------------------------------------------------------
 
 export type {
   PolicyDecision,
   ProxyApprovalCallback,
   ProxyApprovalRequest,
-} from "@vellumai/egress-proxy";
+} from "@mycadet/egress-proxy";
 
 // Certificate management
 export {

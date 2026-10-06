@@ -2,9 +2,9 @@ import { WebSearchBraveContent } from "@/app/docs/_components/web-search-brave-c
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Brave Search - Web Search - Vellum Docs",
+  title: "Brave Search - Web Search - Cadet Docs",
   description:
-    "How to connect Brave Search as your web search provider in Vellum: API key setup, provider configuration, and usage.",
+    "How to connect Brave Search as your web search provider in Cadet: API key setup, provider configuration, and usage.",
   path: "/docs/key-concepts/web-search/brave",
 });
 

@@ -10,7 +10,7 @@
  *
  * Asserts, against the running instance:
  * - the app's filesystem route tree matches the snapshot
- * - every route serves HTML with the canonical https://www.vellum.ai<path>
+ * - every route serves HTML with the canonical https://www.mycadet.ai<path>
  *   (redirect stubs must redirect to another docs route instead)
  * - every route's `.md` mirror and its Accept: text/markdown negotiation
  *   variant return markdown with identical bodies
@@ -188,7 +188,7 @@ async function verifyLlmsTxt(): Promise<void> {
   check(res.status === 200, `/docs/llms.txt: expected 200, got ${res.status}`);
   const body = await res.text();
   check(
-    body.startsWith("# Vellum Docs"),
+    body.startsWith("# Cadet Docs"),
     "/docs/llms.txt: unexpected content",
   );
   for (const route of REDIRECT_STUB_ROUTES) {

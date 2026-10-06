@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useCallback, useMemo, useState, type FormEvent } from "react";
 
-import { Button, cn, Typography } from "@vellumai/design-library";
+import { Button, cn, Typography } from "@mycadet/design-library";
 
 import { DetailShellHeader } from "@/components/detail-shell";
 import {
@@ -62,7 +62,7 @@ import {
 import { StatusBadgePill } from "@/domains/chat/components/status-badge-pill";
 import { steerAcpRun, stopAcpRun } from "@/domains/chat/utils/acp-run-actions";
 import { acpRunStatusBadge, isActiveAcpStatus } from "@/utils/acp-run-status";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 /** Stable per-block key so React reconciles blocks across streamed re-renders. */
 function blockKey(block: AcpChatBlock, index: number): string {

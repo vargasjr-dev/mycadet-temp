@@ -30,8 +30,8 @@ import {
   type CompanionSizeAxis,
   type CompanionSurfaceState,
   type VellumCommand,
-} from "@vellumai/ipc-contract";
-import { companionSizeSubmenus } from "@vellumai/electron-desktop/companion-menu";
+} from "@mycadet/ipc-contract";
+import { companionSizeSubmenus } from "@mycadet/electron-desktop/companion-menu";
 
 // The module under test reaches `main-window.ts` to hand Talk to the renderer
 // that owns the live-voice session, and that chain loads `electron-store`, a
@@ -140,7 +140,9 @@ const surface = {
   },
   once: (event: string, listener: () => void) => {
     const once = () => {
-      const index = surfaceListeners.findIndex((entry) => entry.listener === once);
+      const index = surfaceListeners.findIndex(
+        (entry) => entry.listener === once,
+      );
       surfaceListeners.splice(index, 1);
       listener();
     };
@@ -670,7 +672,7 @@ const openGlow = (options: {
 const zonesWindow = (): GlowWindow | null =>
   others.get("companion-dock-zones") ?? null;
 
-mock.module("@vellumai/electron-desktop/floating-window", () => ({
+mock.module("@mycadet/electron-desktop/floating-window", () => ({
   createFloatingWindow: (options: {
     kind: string;
     width: number;
@@ -693,7 +695,7 @@ mock.module("@vellumai/electron-desktop/floating-window", () => ({
       : (others.get(kind) ?? null),
 }));
 
-mock.module("@vellumai/electron-desktop/avatar", () => ({
+mock.module("@mycadet/electron-desktop/avatar", () => ({
   getAvatarPng: () => null,
   getCharacter: () => null,
   getAccentHex: () => null,
@@ -711,7 +713,7 @@ let flags: Record<string, boolean> = { "companion-surface": true };
 /** Main's `featureFlags` listeners, so a case can fire a targeting change. */
 const flagListeners: (() => void)[] = [];
 
-mock.module("@vellumai/electron-desktop/settings", () => ({
+mock.module("@mycadet/electron-desktop/settings", () => ({
   readSetting: () => flags,
   onSettingChange: (_key: string, listener: () => void) => {
     flagListeners.push(listener);
@@ -745,7 +747,7 @@ let storedDock: CompanionDock = "bottom";
  */
 let introSeen = Number.MAX_SAFE_INTEGER;
 
-mock.module("@vellumai/electron-desktop/window-state", () => ({
+mock.module("@mycadet/electron-desktop/window-state", () => ({
   readCompanionSize: (axis: CompanionSizeAxis) => sizes[axis],
   readCompanionHidden: () => companionHidden,
   writeCompanionSize: (axis: CompanionSizeAxis, size: CompanionSize) => {
@@ -936,7 +938,7 @@ const drawFrame = (): void => {
   if (!glow) {
     throw new Error("No frame to draw");
   }
-  sendFrom(glow.webContents, "vellum:companion:frameDrawn");
+  sendFrom(glow.webContents, "cadet:companion:frameDrawn");
 };
 
 /**
@@ -944,10 +946,10 @@ const drawFrame = (): void => {
  * app's window pulls them on mount.
  */
 const takeReports = (): CompanionIntroReport[] => {
-  const pull = invocable.get("vellum:companion:takeIntroReports");
+  const pull = invocable.get("cadet:companion:takeIntroReports");
   if (!pull) {
     throw new Error(
-      "No handler registered for vellum:companion:takeIntroReports",
+      "No handler registered for cadet:companion:takeIntroReports",
     );
   }
   return pull([]) as CompanionIntroReport[];
@@ -955,9 +957,9 @@ const takeReports = (): CompanionIntroReport[] => {
 
 /** The state a renderer mounting on the surface would pull. */
 const state = (): CompanionSurfaceState => {
-  const pull = invocable.get("vellum:companion:getState");
+  const pull = invocable.get("cadet:companion:getState");
   if (!pull) {
-    throw new Error("No handler registered for vellum:companion:getState");
+    throw new Error("No handler registered for cadet:companion:getState");
   }
   return pull([]) as CompanionSurfaceState;
 };
@@ -967,19 +969,19 @@ const state = (): CompanionSurfaceState => {
  * fact a window built mid-press reads, so it is asked for the way one would.
  */
 const introStage = (): boolean => {
-  const pull = invocable.get("vellum:companion:getIntroStage");
+  const pull = invocable.get("cadet:companion:getIntroStage");
   if (!pull) {
-    throw new Error("No handler registered for vellum:companion:getIntroStage");
+    throw new Error("No handler registered for cadet:companion:getIntroStage");
   }
   return pull([]) as boolean;
 };
 
 /** Whether the app should announce the due introduction before it begins. */
 const introAnnouncement = (): boolean => {
-  const pull = invocable.get("vellum:companion:getIntroAnnouncement");
+  const pull = invocable.get("cadet:companion:getIntroAnnouncement");
   if (!pull) {
     throw new Error(
-      "No handler registered for vellum:companion:getIntroAnnouncement",
+      "No handler registered for cadet:companion:getIntroAnnouncement",
     );
   }
   return pull([]) as boolean;
@@ -987,7 +989,7 @@ const introAnnouncement = (): boolean => {
 
 /** Accept the app announcement and begin the surface's introduction. */
 const acceptIntroAnnouncement = (): void => {
-  send("vellum:companion:answerIntroAnnouncement", "start");
+  send("cadet:companion:answerIntroAnnouncement", "start");
 };
 
 /** Open the surface the way the installed app does after accepting its announcement. */
@@ -1417,10 +1419,10 @@ describe("the dial", () => {
   test("ending it takes the request back through a command", () => {
     mainWindowOpen = true;
     dispatched.length = 0;
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     dispatched.length = 0;
 
-    send("vellum:voiceActivity:control", { action: "endSession" });
+    send("cadet:voiceActivity:control", { action: "endSession" });
 
     expect(dispatched).toEqual([{ kind: "cancelVoiceStart" }]);
     expect(state().dialing).toBe(false);
@@ -1428,10 +1430,10 @@ describe("the dial", () => {
 
   test("an end with no dial takes nothing back", () => {
     mainWindowOpen = true;
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     dispatched.length = 0;
 
-    send("vellum:voiceActivity:control", { action: "endSession" });
+    send("cadet:voiceActivity:control", { action: "endSession" });
 
     expect(dispatched).toEqual([]);
   });
@@ -1473,19 +1475,19 @@ describe("the surface a call takes", () => {
   const bottomCentre = defaultAvatarCentre(SCREEN, GEOMETRY);
   /** Somewhere the user parked the pill, away from where a call puts it. */
   const park = (): { x: number; y: number } => {
-    send("vellum:companion:moveBy", 300 - centre().x, 200 - centre().y);
+    send("cadet:companion:moveBy", 300 - centre().x, 200 - centre().y);
     return centre();
   };
 
   beforeEach(() => {
     mainWindowOpen = true;
-    send("vellum:voiceActivity:end");
-    send("vellum:voiceActivity:control", { action: "endSession" });
+    send("cadet:voiceActivity:end");
+    send("cadet:voiceActivity:control", { action: "endSession" });
   });
 
   test("goes to the bottom centre of the display on the dial", () => {
     park();
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     expect(centre()).toEqual(bottomCentre);
   });
 
@@ -1494,31 +1496,31 @@ describe("the surface a call takes", () => {
    * the watch session's, and a call alone leaves it dark.
    */
   test("does not light the display's edge", () => {
-    send("vellum:companion:startVoice");
-    send("vellum:voiceActivity:start", START);
+    send("cadet:companion:startVoice");
+    send("cadet:voiceActivity:start", START);
     expect(glow).toBeNull();
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
   });
 
   test("goes home once the call is over", () => {
     const home = park();
-    send("vellum:companion:startVoice");
-    send("vellum:voiceActivity:start", START);
-    send("vellum:voiceActivity:end");
+    send("cadet:companion:startVoice");
+    send("cadet:voiceActivity:start", START);
+    send("cadet:voiceActivity:end");
     expect(centre()).toEqual(home);
   });
 
   test("goes home when the dial is declined", () => {
     const home = park();
-    send("vellum:companion:startVoice");
-    send("vellum:voiceActivity:end");
+    send("cadet:companion:startVoice");
+    send("cadet:voiceActivity:end");
     expect(centre()).toEqual(home);
   });
 
   test("goes home when the user ends the dial", () => {
     const home = park();
-    send("vellum:companion:startVoice");
-    send("vellum:voiceActivity:control", { action: "endSession" });
+    send("cadet:companion:startVoice");
+    send("cadet:voiceActivity:control", { action: "endSession" });
     expect(centre()).toEqual(home);
   });
 
@@ -1528,26 +1530,26 @@ describe("the surface a call takes", () => {
    */
   test("stays draggable for the call and still goes home after it", () => {
     const home = park();
-    send("vellum:companion:startVoice");
-    send("vellum:companion:moveBy", -200, -100);
+    send("cadet:companion:startVoice");
+    send("cadet:companion:moveBy", -200, -100);
     expect(centre()).not.toEqual(bottomCentre);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(centre()).toEqual(home);
   });
 
   test("does not move again for a session answering a dial", () => {
-    send("vellum:companion:startVoice");
-    send("vellum:companion:moveBy", -200, -100);
+    send("cadet:companion:startVoice");
+    send("cadet:companion:moveBy", -200, -100);
     const dragged = centre();
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     expect(centre()).toEqual(dragged);
   });
 
   test("is the call's for a session started in the app, not only for a dial", () => {
     park();
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     expect(centre()).toEqual(bottomCentre);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
   });
 });
 
@@ -1588,10 +1590,10 @@ describe("the edge a call's bar docks to", () => {
   };
   /** Drag the bar so the avatar rests on a point, mid-call or not. */
   const dragTo = (point: { x: number; y: number }): void => {
-    send("vellum:companion:moveBy", point.x - centre().x, point.y - centre().y);
+    send("cadet:companion:moveBy", point.x - centre().x, point.y - centre().y);
   };
   const release = (): void => {
-    send("vellum:companion:release");
+    send("cadet:companion:release");
   };
 
   beforeEach(() => {
@@ -1605,11 +1607,11 @@ describe("the edge a call's bar docks to", () => {
    * reset mid-call is the one way back that goes through the store.
    */
   afterEach(() => {
-    send("vellum:voiceActivity:end");
-    send("vellum:voiceActivity:control", { action: "endSession" });
-    send("vellum:companion:startVoice");
+    send("cadet:voiceActivity:end");
+    send("cadet:voiceActivity:control", { action: "endSession" });
+    send("cadet:companion:startVoice");
     resetCompanionSurfacePosition();
-    send("vellum:voiceActivity:control", { action: "endSession" });
+    send("cadet:voiceActivity:control", { action: "endSession" });
     storedDock = "bottom";
   });
 
@@ -1709,11 +1711,11 @@ describe("the edge a call's bar docks to", () => {
     storedDock = "top";
     // The dock is read once at load, so this case reaches it the way a drop
     // does; the store's read is `window-state.test.ts`'s subject.
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     dragTo({ x: 700, y: 30 });
     release();
-    send("vellum:voiceActivity:end");
-    send("vellum:companion:startVoice");
+    send("cadet:voiceActivity:end");
+    send("cadet:companion:startVoice");
     expect(centre()).toEqual(landing("top"));
     expect(state().dock).toBe("top");
   });
@@ -1724,7 +1726,7 @@ describe("the edge a call's bar docks to", () => {
    */
   test("a drag mid-call shows the edges and names the one it is heading for", () => {
     expect(zonesWindow()).toBeNull();
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     expect(zonesWindow()?.visible).toBe(false);
     expect(zonesWindow()?.bounds).toEqual(SCREEN);
     dragTo({ x: 100, y: 450 });
@@ -1741,9 +1743,9 @@ describe("the edge a call's bar docks to", () => {
    * for, jitter and all, and it must not flash the edges or move the bar.
    */
   test("a press that barely moves is a click, not a drag", () => {
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     const docked = centre();
-    send("vellum:companion:moveBy", 1, -1);
+    send("cadet:companion:moveBy", 1, -1);
     expect(zonesWindow()?.visible).toBe(false);
     expect(state().docking).toBeUndefined();
     release();
@@ -1760,7 +1762,7 @@ describe("the edge a call's bar docks to", () => {
   });
 
   test("the release docks the bar to the edge it was heading for and remembers it", () => {
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     dragTo({ x: 100, y: 450 });
     release();
     expect(zonesWindow()?.visible).toBe(false);
@@ -1772,40 +1774,40 @@ describe("the edge a call's bar docks to", () => {
 
   /** The column needs a canvas of its own shape, and the row wants the old one back. */
   test("a side dock stands the canvas up for the call and lays it back down after", () => {
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     dragTo({ x: 1400, y: 450 });
     release();
     expect(boundsSet.at(-1)?.height).toBe(SIDE.canvasHeight);
     expect(state().avatarBox).toBe(SIDE.avatarBox);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(boundsSet.at(-1)?.height).toBe(GEOMETRY.canvasHeight);
   });
 
   test("goes home after a call docked to a side", () => {
     dragTo({ x: 300, y: 200 });
     const home = centre();
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     dragTo({ x: 1400, y: 450 });
     release();
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(centre()).toEqual(home);
   });
 
   test("the next call stands the bar up on the side it was left on", () => {
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     dragTo({ x: 1400, y: 450 });
     release();
-    send("vellum:voiceActivity:end");
-    send("vellum:companion:startVoice");
+    send("cadet:voiceActivity:end");
+    send("cadet:companion:startVoice");
     expect(centre()).toEqual(landing("right", SIDE));
     expect(boundsSet.at(-1)?.height).toBe(SIDE.canvasHeight);
   });
 
   test("a call ending under a drag takes the edges down with it", () => {
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     dragTo({ x: 100, y: 450 });
     expect(zonesWindow()?.visible).toBe(true);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(zonesWindow()).toBeNull();
     expect(state().docking).toBeUndefined();
     // A release arriving after the call has nothing left to dock.
@@ -1814,7 +1816,7 @@ describe("the edge a call's bar docks to", () => {
   });
 
   test("a reset mid-call puts the bar back on the bottom for this call and the next", () => {
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     dragTo({ x: 100, y: 450 });
     release();
     expect(state().dock).toBe("left");
@@ -1822,12 +1824,12 @@ describe("the edge a call's bar docks to", () => {
     expect(state().dock).toBe("bottom");
     expect(storedDock).toBe("bottom");
     expect(centre()).toEqual(landing("bottom"));
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(centre()).toEqual(landing("bottom"));
   });
 
   test("the edges follow a drag onto another display", () => {
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     const second = displays[1];
     if (second === undefined) {
       throw new Error("Expected a second display");
@@ -1856,14 +1858,14 @@ describe("resetCompanionSurfacePosition", () => {
   });
   const bottomCentre = defaultAvatarCentre(SCREEN, GEOMETRY);
   const park = (): { x: number; y: number } => {
-    send("vellum:companion:moveBy", 300 - centre().x, 200 - centre().y);
+    send("cadet:companion:moveBy", 300 - centre().x, 200 - centre().y);
     return centre();
   };
 
   beforeEach(() => {
     mainWindowOpen = true;
-    send("vellum:voiceActivity:end");
-    send("vellum:voiceActivity:control", { action: "endSession" });
+    send("cadet:voiceActivity:end");
+    send("cadet:voiceActivity:control", { action: "endSession" });
   });
 
   test("takes a parked pill back to the bottom centre of its display", () => {
@@ -1888,13 +1890,13 @@ describe("resetCompanionSurfacePosition", () => {
    */
   test("mid-call, is where the call ends too", () => {
     park();
-    send("vellum:companion:startVoice");
-    send("vellum:voiceActivity:start", START);
-    send("vellum:companion:moveBy", -200, -100);
+    send("cadet:companion:startVoice");
+    send("cadet:voiceActivity:start", START);
+    send("cadet:companion:moveBy", -200, -100);
     expect(centre()).not.toEqual(bottomCentre);
     resetCompanionSurfacePosition();
     expect(centre()).toEqual(bottomCentre);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(centre()).toEqual(bottomCentre);
   });
 });
@@ -1912,7 +1914,7 @@ describe("the glide between the pill's home and the call's place", () => {
   });
   const bottomCentre = defaultAvatarCentre(SCREEN, GEOMETRY);
   const park = (): { x: number; y: number } => {
-    send("vellum:companion:moveBy", 300 - centre().x, 200 - centre().y);
+    send("cadet:companion:moveBy", 300 - centre().x, 200 - centre().y);
     return centre();
   };
   const wait = (ms: number): Promise<void> =>
@@ -1942,15 +1944,15 @@ describe("the glide between the pill's home and the call's place", () => {
 
   /** Leave the surface at rest with no call on it, whatever the case did. */
   afterEach(async () => {
-    send("vellum:voiceActivity:end");
-    send("vellum:voiceActivity:control", { action: "endSession" });
+    send("cadet:voiceActivity:end");
+    send("cadet:voiceActivity:control", { action: "endSession" });
     await settle();
     reducedMotion = true;
   });
 
   test("lands exactly on the call's place, over time rather than at once", async () => {
     const home = park();
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     expect(centre()).toEqual(home);
     await wait(MID_FLIGHT_MS);
     expect(between(centre(), home, bottomCentre)).toBe(true);
@@ -1960,9 +1962,9 @@ describe("the glide between the pill's home and the call's place", () => {
 
   test("goes home the same way once the call is over", async () => {
     const home = park();
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     await settle();
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     await wait(MID_FLIGHT_MS);
     expect(between(centre(), home, bottomCentre)).toBe(true);
     await settle();
@@ -1972,9 +1974,9 @@ describe("the glide between the pill's home and the call's place", () => {
   test("moves at once under Reduce motion", () => {
     reducedMotion = true;
     const home = park();
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     expect(centre()).toEqual(bottomCentre);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(centre()).toEqual(home);
   });
 
@@ -1985,10 +1987,10 @@ describe("the glide between the pill's home and the call's place", () => {
    */
   test("a call ending mid-flight sends the pill back to where it rested", async () => {
     const home = park();
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     await wait(MID_FLIGHT_MS);
     expect(centre()).not.toEqual(home);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     await settle();
     expect(centre()).toEqual(home);
     await settle();
@@ -2002,16 +2004,16 @@ describe("the glide between the pill's home and the call's place", () => {
    */
   test("a call arriving on the way home remembers that home", async () => {
     const home = park();
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     await settle();
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     await wait(MID_FLIGHT_MS);
     const passing = centre();
     expect(passing).not.toEqual(home);
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     await settle();
     expect(centre()).toEqual(bottomCentre);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     await settle();
     expect(centre()).toEqual(home);
     expect(centre()).not.toEqual(passing);
@@ -2019,10 +2021,10 @@ describe("the glide between the pill's home and the call's place", () => {
 
   test("a drag mid-flight wins over the glide", async () => {
     park();
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     await wait(MID_FLIGHT_MS);
     const reached = centre();
-    send("vellum:companion:moveBy", -60, -40);
+    send("cadet:companion:moveBy", -60, -40);
     const dragged = centre();
     expect(dragged).toEqual({ x: reached.x - 60, y: reached.y - 40 });
     await settle();
@@ -2036,7 +2038,7 @@ describe("the glide between the pill's home and the call's place", () => {
    */
   test("a size pick mid-flight lands the glide in the new canvas", async () => {
     const home = park();
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     await wait(MID_FLIGHT_MS);
     expect(between(centre(), home, bottomCentre)).toBe(true);
     setCompanionSurfaceSize("options", "huge");
@@ -2064,7 +2066,7 @@ describe("the glide between the pill's home and the call's place", () => {
     // passing through a point short of it.
     await wait(MID_FLIGHT_MS);
     expect(centreInNewCanvas()).toEqual(bigBottomCentre);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     await settle();
     expect(centreInNewCanvas()).toEqual(home);
   });
@@ -2076,7 +2078,7 @@ describe("the glide between the pill's home and the call's place", () => {
    */
   test("lands inside the display under it at landing time", async () => {
     park();
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     await wait(MID_FLIGHT_MS);
     const shrunk = { x: 0, y: 0, width: 1000, height: 600 };
     nearestDisplay = { bounds: shrunk, workArea: shrunk };
@@ -2101,13 +2103,13 @@ describe("the glide between the pill's home and the call's place", () => {
    */
   test("Reduce motion turned on mid-flight applies from the next move", async () => {
     const home = park();
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     await wait(MID_FLIGHT_MS);
     reducedMotion = true;
     expect(between(centre(), home, bottomCentre)).toBe(true);
     await settle();
     expect(centre()).toEqual(bottomCentre);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(centre()).toEqual(home);
   });
 });
@@ -2144,38 +2146,38 @@ describe("the light a watch session puts on the display", () => {
 
   beforeEach(() => {
     mainWindowOpen = true;
-    send("vellum:companion:setContext", context({ watching: false }));
+    send("cadet:companion:setContext", context({ watching: false }));
   });
 
   test("comes on with the session", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
+    send("cadet:companion:setContext", context({ watching: true }));
     expect(glow).not.toBeNull();
     expect(glow?.bounds).toEqual(SCREEN);
   });
 
   test("sits under the surface", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
+    send("cadet:companion:setContext", context({ watching: true }));
     expect(glow?.level).toEqual(["floating", -1]);
   });
 
   test("is told what the surface is told", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
+    send("cadet:companion:setContext", context({ watching: true }));
     glowPushes.length = 0;
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({ watching: true, captureCount: 2 }),
     );
     expect(glowPushes.at(-1)?.captureCount).toBe(2);
   });
 
   test("goes out with the session", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
-    send("vellum:companion:setContext", context({ watching: false }));
+    send("cadet:companion:setContext", context({ watching: true }));
+    send("cadet:companion:setContext", context({ watching: false }));
     expect(glow).toBeNull();
   });
 
   test("stays dark for a context that says nothing about a session", () => {
-    send("vellum:companion:setContext", context({}));
+    send("cadet:companion:setContext", context({}));
     expect(glow).toBeNull();
   });
 
@@ -2184,20 +2186,20 @@ describe("the light a watch session puts on the display", () => {
    * screen, whatever the last push said.
    */
   test("goes out when the window holding the session is destroyed", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
+    send("cadet:companion:setContext", context({ watching: true }));
     mainWindowOpen = false;
     fireVisibilityChange();
     expect(glow).toBeNull();
   });
 
   test("stays lit through a call", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
-    send("vellum:companion:startVoice");
-    send("vellum:voiceActivity:start", START);
+    send("cadet:companion:setContext", context({ watching: true }));
+    send("cadet:companion:startVoice");
+    send("cadet:voiceActivity:start", START);
     expect(glow).not.toBeNull();
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(glow).not.toBeNull();
-    send("vellum:companion:setContext", context({ watching: false }));
+    send("cadet:companion:setContext", context({ watching: false }));
   });
 
   /**
@@ -2207,7 +2209,7 @@ describe("the light a watch session puts on the display", () => {
    */
   test("frames the picked display rather than the surface's", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         captureTarget: { kind: "display", displayId: 2 },
@@ -2221,7 +2223,7 @@ describe("the light a watch session puts on the display", () => {
     // frame a menu bar short of the display draws every fraction measured
     // against the display's picture low by that much.
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         captureTarget: { kind: "display", displayId: 2 },
@@ -2232,7 +2234,7 @@ describe("the light a watch session puts on the display", () => {
 
   test("is placed again when the picked display changes shape", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         captureTarget: { kind: "display", displayId: 2 },
@@ -2248,7 +2250,7 @@ describe("the light a watch session puts on the display", () => {
 
   test("is placed again with the surface hidden", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         captureTarget: { kind: "display", displayId: 2 },
@@ -2265,7 +2267,7 @@ describe("the light a watch session puts on the display", () => {
 
   test("falls back to the surface's display for one that is gone", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         captureTarget: { kind: "display", displayId: 99 },
@@ -2277,7 +2279,7 @@ describe("the light a watch session puts on the display", () => {
   test("frames the picked window where the helper says it is", async () => {
     windowBounds = { x: 200, y: 120, width: 800, height: 600 };
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         captureTarget: { kind: "window", windowId: 4242 },
@@ -2286,13 +2288,13 @@ describe("the light a watch session puts on the display", () => {
     await Bun.sleep(0);
     expect(boundsAsked).toEqual([4242]);
     expect(glow?.bounds).toEqual({ x: 200, y: 120, width: 800, height: 600 });
-    send("vellum:companion:setContext", context({ watching: false }));
+    send("cadet:companion:setContext", context({ watching: false }));
   });
 
   test("hides the frame while the picked window is off screen", async () => {
     windowBounds = { x: 200, y: 120, width: 800, height: 600 };
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         captureTarget: { kind: "window", windowId: 4242 },
@@ -2311,20 +2313,20 @@ describe("the light a watch session puts on the display", () => {
     await Bun.sleep(300);
     expect(glow?.visible).toBe(true);
     expect(glow?.bounds).toEqual({ x: 10, y: 20, width: 800, height: 600 });
-    send("vellum:companion:setContext", context({ watching: false }));
+    send("cadet:companion:setContext", context({ watching: false }));
   });
 
   test("stops asking after the picked window once the session ends", async () => {
     windowBounds = { x: 200, y: 120, width: 800, height: 600 };
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         captureTarget: { kind: "window", windowId: 4242 },
       }),
     );
     await Bun.sleep(0);
-    send("vellum:companion:setContext", context({ watching: false }));
+    send("cadet:companion:setContext", context({ watching: false }));
     const asked = boundsAsked.length;
     await Bun.sleep(300);
     expect(boundsAsked.length).toBe(asked);
@@ -2333,7 +2335,7 @@ describe("the light a watch session puts on the display", () => {
 
   test("carries the target and whether one may be picked to the surface", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         watchTargets: true,
@@ -2342,7 +2344,7 @@ describe("the light a watch session puts on the display", () => {
     );
     expect(state().captureTarget).toEqual({ kind: "window", windowId: 7 });
     expect(state().watchTargets).toBe(true);
-    send("vellum:companion:setContext", context({}));
+    send("cadet:companion:setContext", context({}));
     expect(state().captureTarget).toBeUndefined();
     expect(state().watchTargets).toBe(false);
   });
@@ -2359,7 +2361,7 @@ describe("the picker behind Teach", () => {
   });
 
   test("lists what a session could read on demand", async () => {
-    const list = invocable.get("vellum:companion:listCaptureSources");
+    const list = invocable.get("cadet:companion:listCaptureSources");
     expect(list).toBeDefined();
     expect(await list?.([])).toEqual({
       ...listedSources,
@@ -2370,7 +2372,7 @@ describe("the picker behind Teach", () => {
   test("says when nothing listed could be captured for want of the grant", async () => {
     screenGranted = false;
     try {
-      const list = invocable.get("vellum:companion:listCaptureSources");
+      const list = invocable.get("cadet:companion:listCaptureSources");
       expect(await list?.([])).toEqual({
         ...listedSources,
         screenRecordingGranted: false,
@@ -2381,14 +2383,14 @@ describe("the picker behind Teach", () => {
   });
 
   test("a press with no pick is the toggle it always was", () => {
-    send("vellum:companion:toggleWatch");
+    send("cadet:companion:toggleWatch");
     expect(dispatched.at(-1)).toEqual({ kind: "toggleWatch" });
     expect(picksResolved).toHaveLength(0);
   });
 
   test("a pick rides the toggle to the window holding the session", async () => {
     resolvedPick = { kind: "window", windowId: 4242 };
-    send("vellum:companion:toggleWatch", {
+    send("cadet:companion:toggleWatch", {
       kind: "tab",
       chromeWindowId: 3,
       tabIndex: 2,
@@ -2420,14 +2422,14 @@ describe("the picker behind Teach", () => {
       await gate;
       return { kind: "window", windowId: 1 };
     };
-    send("vellum:companion:toggleWatch", {
+    send("cadet:companion:toggleWatch", {
       kind: "tab",
       chromeWindowId: 3,
       tabIndex: 1,
     });
     resolvedPickAsync = slow;
     resolvedPick = { kind: "window", windowId: 2 };
-    send("vellum:companion:toggleWatch", { kind: "window", windowId: 2 });
+    send("cadet:companion:toggleWatch", { kind: "window", windowId: 2 });
     await Bun.sleep(0);
     release();
     await Bun.sleep(0);
@@ -2448,18 +2450,18 @@ describe("the picker behind Teach", () => {
         await gate;
         return { kind: "window", windowId: 1 };
       };
-      send("vellum:companion:toggleWatch", {
+      send("cadet:companion:toggleWatch", {
         kind: "tab",
         chromeWindowId: 3,
         tabIndex: 1,
       });
       resolvedPickAsync = slow;
       if (supersede === "list") {
-        await invocable.get("vellum:companion:listCaptureSources")?.([]);
+        await invocable.get("cadet:companion:listCaptureSources")?.([]);
       } else {
-        send("vellum:companion:startVoice");
-        send("vellum:voiceActivity:start", START);
-        send("vellum:voiceActivity:end");
+        send("cadet:companion:startVoice");
+        send("cadet:voiceActivity:start", START);
+        send("cadet:voiceActivity:end");
       }
       release();
       await Bun.sleep(0);
@@ -2477,15 +2479,15 @@ describe("the picker behind Teach", () => {
       await gate;
       return { kind: "window", windowId: 1 };
     };
-    send("vellum:companion:startVoice");
-    send("vellum:companion:toggleWatch", {
+    send("cadet:companion:startVoice");
+    send("cadet:companion:toggleWatch", {
       kind: "tab",
       chromeWindowId: 3,
       tabIndex: 1,
     });
     resolvedPickAsync = slow;
     // The window asked for a session says no: the dial ends with no call.
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     release();
     await Bun.sleep(0);
     expect(dispatched.filter((c) => c.kind === "toggleWatch")).toEqual([]);
@@ -2501,13 +2503,13 @@ describe("the picker behind Teach", () => {
       await gate;
       return { kind: "window", windowId: 1 };
     };
-    send("vellum:companion:toggleWatch", {
+    send("cadet:companion:toggleWatch", {
       kind: "tab",
       chromeWindowId: 3,
       tabIndex: 1,
     });
     resolvedPickAsync = slow;
-    send("vellum:companion:toggleWatch");
+    send("cadet:companion:toggleWatch");
     release();
     await Bun.sleep(0);
     expect(dispatched).toEqual([{ kind: "toggleWatch" }]);
@@ -2515,7 +2517,7 @@ describe("the picker behind Teach", () => {
 
   test("a pick that resolves to nothing starts nothing", async () => {
     resolvedPick = null;
-    send("vellum:companion:toggleWatch", {
+    send("cadet:companion:toggleWatch", {
       kind: "tab",
       chromeWindowId: 3,
       tabIndex: 2,
@@ -2526,7 +2528,7 @@ describe("the picker behind Teach", () => {
 
   test("refuses a pick that names nothing the contract knows", () => {
     expect(() => {
-      send("vellum:companion:toggleWatch", { kind: "camera" });
+      send("cadet:companion:toggleWatch", { kind: "camera" });
     }).toThrow();
   });
 });
@@ -2667,7 +2669,7 @@ describe("the introduction announcement", () => {
     expect(introAnnouncement()).toBe(true);
     expect(state().intro).toBeNull();
     expect(introStage()).toBe(false);
-    send("vellum:companion:startVoice");
+    send("cadet:companion:startVoice");
     expect(mainTimeline).not.toContain("command:startVoice");
   });
 
@@ -2685,7 +2687,7 @@ describe("the introduction announcement", () => {
   test("records a skipped announcement without exposing the run", () => {
     openDueAnnouncement();
 
-    send("vellum:companion:answerIntroAnnouncement", "dismiss");
+    send("cadet:companion:answerIntroAnnouncement", "dismiss");
 
     expect(introAnnouncement()).toBe(false);
     expect(state().intro).toBeNull();
@@ -2697,7 +2699,7 @@ describe("the introduction announcement", () => {
     setName("Example Assistant");
     openDueAnnouncement();
     acceptIntroAnnouncement();
-    send("vellum:companion:advanceIntro", "next");
+    send("cadet:companion:advanceIntro", "next");
     expect(state().intro).not.toBeNull();
 
     setName(null);
@@ -2721,7 +2723,7 @@ describe("the introduction announcement", () => {
     openCompanionWindowImpl();
 
     expect(introAnnouncement()).toBe(true);
-    send("vellum:companion:answerIntroAnnouncement", "dismiss");
+    send("cadet:companion:answerIntroAnnouncement", "dismiss");
     expect(introSeen).toBe(COMPANION_INTRO_VERSION);
   });
 
@@ -2737,7 +2739,7 @@ describe("the introduction announcement", () => {
     setName("Example Assistant");
     openDueAnnouncement();
     acceptIntroAnnouncement();
-    send("vellum:companion:advanceIntro", "next");
+    send("cadet:companion:advanceIntro", "next");
 
     replayCompanionIntro();
     for (const entry of [...surfaceListeners]) {
@@ -2785,7 +2787,7 @@ describe("taking the introduction's last offer", () => {
       index < COMPANION_INTRO_BEATS.indexOf(beat);
       index += 1
     ) {
-      send("vellum:companion:advanceIntro", "next");
+      send("cadet:companion:advanceIntro", "next");
     }
     expect(state().intro).toBe(beat);
     mainTimeline.length = 0;
@@ -2803,7 +2805,7 @@ describe("taking the introduction's last offer", () => {
     "the ordinary avatar call path is blocked during %s",
     async (beat) => {
       openStagedRun(beat);
-      send("vellum:companion:startVoice");
+      send("cadet:companion:startVoice");
       await settleHandoff();
       expect(mainTimeline).not.toContain("command:startVoice");
       expect(state().dialing).not.toBe(true);
@@ -2814,12 +2816,12 @@ describe("taking the introduction's last offer", () => {
   test("asks for the session before it says the run is over", async () => {
     openStagedRun("try");
 
-    send("vellum:companion:advanceIntro", "try");
+    send("cadet:companion:advanceIntro", "try");
     await settleHandoff();
 
     expect(mainTimeline).toEqual([
       "command:startVoice",
-      "vellum:companion:introStage:false",
+      "cadet:companion:introStage:false",
     ]);
   });
 
@@ -2834,7 +2836,7 @@ describe("taking the introduction's last offer", () => {
     openStagedRun("try");
     mainWindowOpen = false;
 
-    send("vellum:companion:advanceIntro", "try");
+    send("cadet:companion:advanceIntro", "try");
 
     // Still staged: nothing has heard the press yet.
     expect(introStage()).toBe(true);
@@ -2847,7 +2849,7 @@ describe("taking the introduction's last offer", () => {
     expect(windowsRaised).toBeGreaterThan(0);
     expect(mainTimeline).toEqual([
       "command:startVoice",
-      "vellum:companion:introStage:false",
+      "cadet:companion:introStage:false",
     ]);
     expect(introStage()).toBe(false);
   });
@@ -2865,7 +2867,7 @@ describe("taking the introduction's last offer", () => {
     mainWindowOpen = false;
     windowClosesMidLoad = true;
 
-    send("vellum:companion:advanceIntro", "try");
+    send("cadet:companion:advanceIntro", "try");
     await settleHandoff();
 
     expect(windowsRaised).toBeGreaterThan(0);
@@ -2877,7 +2879,7 @@ describe("taking the introduction's last offer", () => {
   test("and the run is over, so no card waits for the call to end", async () => {
     openStagedRun("try");
 
-    send("vellum:companion:advanceIntro", "try");
+    send("cadet:companion:advanceIntro", "try");
     await settleHandoff();
 
     expect(state().intro).toBe(null);
@@ -2895,16 +2897,16 @@ describe("taking the introduction's last offer", () => {
       reducedMotion = reduceMotion;
       openStagedRun("try");
       if (ending === "skipped") {
-        send("vellum:companion:advanceIntro", "next");
+        send("cadet:companion:advanceIntro", "next");
       } else {
         if (ending !== "external call") {
-          send("vellum:companion:advanceIntro", "try");
+          send("cadet:companion:advanceIntro", "try");
           await settleHandoff();
         }
         if (ending !== "declined") {
-          send("vellum:voiceActivity:start", START);
+          send("cadet:voiceActivity:start", START);
         }
-        send("vellum:voiceActivity:end");
+        send("cadet:voiceActivity:end");
       }
       if (!reduceMotion) {
         await Bun.sleep(COMPANION_GLIDE_MS + 80);
@@ -2926,7 +2928,7 @@ describe("taking the introduction's last offer", () => {
       expect(surfaceLevels).toEqual([{ floating: false, level: undefined }]);
       expect(state().intro).toBe("idle");
       if (restore === "tour end") {
-        send("vellum:companion:advanceIntro", "dismiss");
+        send("cadet:companion:advanceIntro", "dismiss");
       } else if (restore === "window focus") {
         fireAppEvent("browser-window-focus", mainWindow);
       } else {
@@ -2950,7 +2952,7 @@ describe("taking the introduction's last offer", () => {
     async (beat) => {
       openStagedRun(beat);
 
-      send("vellum:companion:advanceIntro", "try");
+      send("cadet:companion:advanceIntro", "try");
       await settleHandoff();
 
       expect(mainTimeline).toEqual([]);
@@ -3431,8 +3433,8 @@ describe("setCompanionSurfaceSize", () => {
     // Parked by the path a drag takes. The first delta runs past every edge, so
     // it lands on a clamp whatever the window was doing beforehand; the second
     // puts the avatar on `CENTRE`.
-    send("vellum:companion:moveBy", -100000, -100000);
-    send("vellum:companion:moveBy", 700, 754);
+    send("cadet:companion:moveBy", -100000, -100000);
+    send("cadet:companion:moveBy", 700, 754);
     expect({
       x: origin.x + GEOMETRY.canvasWidth / 2,
       y: origin.y + RISE_ABOVE,
@@ -3474,12 +3476,12 @@ describe("the watch session main relays", () => {
     dispatched.length = 0;
     windowsRaised = 0;
     mainWindowOpen = true;
-    send("vellum:companion:setContext", context({ watching: false }));
+    send("cadet:companion:setContext", context({ watching: false }));
     pushes.length = 0;
   });
 
   test("hands the toggle to the app's renderer without raising it", () => {
-    send("vellum:companion:toggleWatch");
+    send("cadet:companion:toggleWatch");
     expect(dispatched).toEqual([{ kind: "toggleWatch" }]);
     // The whole point of the surface: the user is working somewhere else, and
     // here that work is what the session is for.
@@ -3488,14 +3490,14 @@ describe("the watch session main relays", () => {
 
   test("builds a window when there is none, rather than lose the press", () => {
     mainWindowOpen = false;
-    send("vellum:companion:toggleWatch");
+    send("cadet:companion:toggleWatch");
     expect(windowsRaised).toBe(1);
   });
 
   test("carries watching from the published context into pushed state", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
+    send("cadet:companion:setContext", context({ watching: true }));
     expect(state().watching).toBe(true);
-    send("vellum:companion:setContext", context({ watching: false }));
+    send("cadet:companion:setContext", context({ watching: false }));
     expect(state().watching).toBe(false);
   });
 
@@ -3504,7 +3506,7 @@ describe("the watch session main relays", () => {
    * screen being read with nothing on screen saying so.
    */
   test("still reports the session to a renderer that pulls state fresh", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
+    send("cadet:companion:setContext", context({ watching: true }));
     expect(state()).toMatchObject({ assistantName: "Ziggy", watching: true });
   });
 
@@ -3514,7 +3516,7 @@ describe("the watch session main relays", () => {
    * watching.
    */
   test("reads a context with no watching at all as no session", () => {
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(state().watching).toBe(false);
   });
 
@@ -3525,7 +3527,7 @@ describe("the watch session main relays", () => {
    */
   test("carries the capture count into pushed state", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({ watching: true, captureCount: 3 }),
     );
     expect(state().captureCount).toBe(3);
@@ -3536,7 +3538,7 @@ describe("the watch session main relays", () => {
    * vouch for, the same bargain absence is given everywhere else here.
    */
   test("reads a context with no capture count as no captures", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
+    send("cadet:companion:setContext", context({ watching: true }));
     expect(state().captureCount).toBe(0);
   });
 
@@ -3546,13 +3548,13 @@ describe("the watch session main relays", () => {
    * is the surface's only evidence that the real key was pressed.
    */
   test("carries the voice key's taps into pushed state", () => {
-    send("vellum:companion:setContext", context({ voiceKeyTaps: 2 }));
+    send("cadet:companion:setContext", context({ voiceKeyTaps: 2 }));
     expect(state().voiceKeyTaps).toBe(2);
   });
 
   /** A publisher that reports no taps has reported none. */
   test("reads a context with no taps as no taps", () => {
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(state().voiceKeyTaps).toBe(0);
   });
 
@@ -3563,7 +3565,7 @@ describe("the watch session main relays", () => {
    */
   test("carries the shortcut presses and their control into pushed state", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({ introChordPresses: 2, introChordControl: "draw" }),
     );
     expect(state().introChordPresses).toBe(2);
@@ -3572,7 +3574,7 @@ describe("the watch session main relays", () => {
 
   /** A publisher that reports no presses has heard none, and names nothing. */
   test("reads a context with no shortcut presses as none", () => {
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(state().introChordPresses).toBe(0);
     expect(state().introChordControl).toBeUndefined();
   });
@@ -3584,7 +3586,7 @@ describe("the watch session main relays", () => {
    */
   test("pushes once per change rather than once per fact", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({ working: true, watching: true }),
     );
     expect(pushes.length).toBe(1);
@@ -3606,21 +3608,21 @@ describe("the watch summary main relays", () => {
     dispatched.length = 0;
     windowsRaised = 0;
     mainWindowOpen = true;
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     pushes.length = 0;
   });
 
   test("carries the summary phase from the published context into pushed state", () => {
-    send("vellum:companion:setContext", context({ watchRetro: "pending" }));
+    send("cadet:companion:setContext", context({ watchRetro: "pending" }));
     expect(state().watchRetro).toBe("pending");
-    send("vellum:companion:setContext", context({ watchRetro: "ready" }));
+    send("cadet:companion:setContext", context({ watchRetro: "ready" }));
     expect(state().watchRetro).toBe("ready");
   });
 
   // Every value it can hold is a claim that something is happening, so absence
   // is the only way to say nothing is and has to survive the trip.
   test("a context with no summary reports none", () => {
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(state().watchRetro).toBeUndefined();
   });
 
@@ -3628,7 +3630,7 @@ describe("the watch summary main relays", () => {
   // lands a microtask later: dispatching ahead of the show would navigate a
   // page the user is not looking at yet.
   test("raises the app on a yes, since the report is the thing to read", async () => {
-    send("vellum:companion:answerWatchRetro", true);
+    send("cadet:companion:answerWatchRetro", true);
     expect(windowsRaised).toBe(1);
 
     await Promise.resolve();
@@ -3642,7 +3644,7 @@ describe("the watch summary main relays", () => {
    * question that gets asked again on the next push.
    */
   test("forwards a no without dragging the app over the user's work", () => {
-    send("vellum:companion:answerWatchRetro", false);
+    send("cadet:companion:answerWatchRetro", false);
     expect(dispatched).toEqual([{ kind: "answerWatchRetro", open: false }]);
     expect(windowsRaised).toBe(0);
   });
@@ -3653,12 +3655,12 @@ describe("the offer of Vellum's dictation on the surface", () => {
     dispatched.length = 0;
     windowsRaised = 0;
     mainWindowOpen = true;
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     pushes.length = 0;
   });
 
   test("carries the offer through to the surface", () => {
-    send("vellum:companion:setContext", {
+    send("cadet:companion:setContext", {
       ...context(),
       dictationOffer: {
         reason: "claimed",
@@ -3681,7 +3683,7 @@ describe("the offer of Vellum's dictation on the surface", () => {
    * nothing.
    */
   test("stops offering once the window that made the offer is gone", () => {
-    send("vellum:companion:setContext", {
+    send("cadet:companion:setContext", {
       ...context(),
       dictationOffer: {
         reason: "claimed",
@@ -3699,7 +3701,7 @@ describe("the offer of Vellum's dictation on the surface", () => {
   });
 
   test("a context with no offer reports none", () => {
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(state().dictationOffer).toBeUndefined();
   });
 
@@ -3709,7 +3711,7 @@ describe("the offer of Vellum's dictation on the surface", () => {
    */
   test("forwards every answer without raising the app", () => {
     for (const answer of ["use", "quit", "copy", "dismiss"] as const) {
-      send("vellum:companion:answerDictationOffer", answer, "offer-2");
+      send("cadet:companion:answerDictationOffer", answer, "offer-2");
     }
     expect(dispatched).toEqual([
       { kind: "answerDictationOffer", answer: "use", offerId: "offer-2" },
@@ -3726,8 +3728,8 @@ describe("the offer of Vellum's dictation on the surface", () => {
       reason: "paste-failed" as const,
       text: "make this friendlier",
     };
-    sendFrom(popout, "vellum:companion:setUnplacedDictationOffer", offer);
-    sendFrom(popout, "vellum:companion:setUnplacedDictationOffer", null);
+    sendFrom(popout, "cadet:companion:setUnplacedDictationOffer", offer);
+    sendFrom(popout, "cadet:companion:setUnplacedDictationOffer", null);
     expect(dispatched).toEqual([
       { kind: "setUnplacedDictationOffer", offer },
       { kind: "setUnplacedDictationOffer", offer: null },
@@ -3742,7 +3744,7 @@ describe("the offer of Vellum's dictation on the surface", () => {
       { reason: "paste-failed", text: "x".repeat(2001) },
     ]) {
       expect(() =>
-        send("vellum:companion:setUnplacedDictationOffer", offer),
+        send("cadet:companion:setUnplacedDictationOffer", offer),
       ).toThrow();
     }
     expect(dispatched).toEqual([]);
@@ -3754,7 +3756,7 @@ describe("the offer of Vellum's dictation on the surface", () => {
    * which is what a renderer's clipboard write needs.
    */
   test("a copy takes the offered words to the pasteboard", () => {
-    send("vellum:companion:setContext", {
+    send("cadet:companion:setContext", {
       ...context(),
       dictationOffer: {
         reason: "no-text-field",
@@ -3763,14 +3765,14 @@ describe("the offer of Vellum's dictation on the surface", () => {
       },
     });
 
-    send("vellum:companion:answerDictationOffer", "copy", "offer-2");
+    send("cadet:companion:answerDictationOffer", "copy", "offer-2");
 
     expect(copied).toEqual(["onions, tomatoes, and a bag of rice"]);
   });
 
   /** Every other answer leaves the user's pasteboard as they left it. */
   test("no other answer touches the pasteboard", () => {
-    send("vellum:companion:setContext", {
+    send("cadet:companion:setContext", {
       ...context(),
       dictationOffer: {
         reason: "no-text-field",
@@ -3780,7 +3782,7 @@ describe("the offer of Vellum's dictation on the surface", () => {
     });
 
     for (const answer of ["use", "quit", "dismiss"] as const) {
-      send("vellum:companion:answerDictationOffer", answer, "offer-2");
+      send("cadet:companion:answerDictationOffer", answer, "offer-2");
     }
 
     expect(copied).toEqual([]);
@@ -3791,7 +3793,7 @@ describe("the offer of Vellum's dictation on the surface", () => {
    * the window that published it is the one that has to stop.
    */
   test("a copy with nothing waiting takes nothing and still answers", () => {
-    send("vellum:companion:answerDictationOffer", "copy", "offer-2");
+    send("cadet:companion:answerDictationOffer", "copy", "offer-2");
 
     expect(copied).toEqual([]);
     expect(dispatched).toEqual([
@@ -3806,7 +3808,7 @@ describe("the offer of Vellum's dictation on the surface", () => {
    * publishing the new offer can drop it too.
    */
   test("a copy naming an offer that has been replaced takes nothing", () => {
-    send("vellum:companion:setContext", {
+    send("cadet:companion:setContext", {
       ...context(),
       dictationOffer: {
         reason: "no-text-field",
@@ -3816,7 +3818,7 @@ describe("the offer of Vellum's dictation on the surface", () => {
     });
     dispatched.length = 0;
 
-    send("vellum:companion:answerDictationOffer", "copy", "offer-2");
+    send("cadet:companion:answerDictationOffer", "copy", "offer-2");
 
     expect(copied).toEqual([]);
     expect(dispatched).toEqual([
@@ -3872,9 +3874,9 @@ describe("the popover beside the surface", () => {
     others.get("companion-popover") ?? null;
 
   const show = (popover: object, width = 300, height = 60): void => {
-    send("vellum:companion:setContext", context({ popover }));
+    send("cadet:companion:setContext", context({ popover }));
     send(
-      "vellum:companion:setPopoverSize",
+      "cadet:companion:setPopoverSize",
       (popover as { id: string }).id,
       width,
       height,
@@ -3882,28 +3884,28 @@ describe("the popover beside the surface", () => {
   };
 
   beforeEach(() => {
-    send("vellum:voiceActivity:end");
-    send("vellum:companion:setContext", context());
+    send("cadet:voiceActivity:end");
+    send("cadet:companion:setContext", context());
     dispatched.length = 0;
     windowsRaised = 0;
   });
 
   test("passes the popover through on the state, in its short form", () => {
-    send("vellum:companion:setContext", context({ popover: THREE }));
+    send("cadet:companion:setContext", context({ popover: THREE }));
 
     expect(state().popover).toEqual(THREE);
     expect(state().popoverView).toBe("row");
   });
 
   test("a card has no short form and is always drawn whole", () => {
-    send("vellum:companion:setContext", context({ popover: CARD }));
+    send("cadet:companion:setContext", context({ popover: CARD }));
 
     expect(state().popoverView).toBe("expanded");
   });
 
   test("drops a popover that fails its bounds and keeps the rest", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         popover: {
@@ -3919,10 +3921,10 @@ describe("the popover beside the surface", () => {
 
   /** Otherwise it would open at the size of whatever it showed last. */
   test("is not shown until its page reports a size for it", () => {
-    send("vellum:companion:setContext", context({ popover: ONE }));
+    send("cadet:companion:setContext", context({ popover: ONE }));
     expect(popoverWindow()?.visible).toBe(false);
 
-    send("vellum:companion:setPopoverSize", "req-1", 320, 68);
+    send("cadet:companion:setPopoverSize", "req-1", 320, 68);
 
     expect(popoverWindow()?.visible).toBe(true);
     expect(popoverWindow()?.bounds.width).toBe(320);
@@ -3935,9 +3937,9 @@ describe("the popover beside the surface", () => {
       id: "req-9",
       items: [{ ...ONE.items[0], id: "req-9" }],
     };
-    send("vellum:companion:setContext", context({ popover: fresh }));
+    send("cadet:companion:setContext", context({ popover: fresh }));
 
-    send("vellum:companion:setPopoverSize", "req-0", 320, 68);
+    send("cadet:companion:setPopoverSize", "req-0", 320, 68);
 
     expect(popoverWindow()?.visible).toBe(false);
   });
@@ -3946,7 +3948,7 @@ describe("the popover beside the surface", () => {
   test("stays on screen while the same kind of popover is measured again", () => {
     show(THREE);
 
-    send("vellum:companion:setContext", context({ popover: ONE }));
+    send("cadet:companion:setContext", context({ popover: ONE }));
 
     expect(popoverWindow()?.visible).toBe(true);
   });
@@ -3954,7 +3956,7 @@ describe("the popover beside the surface", () => {
   test("goes away when there is nothing to show", () => {
     show(ONE);
 
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
 
     expect(popoverWindow()?.visible).toBe(false);
   });
@@ -3969,7 +3971,7 @@ describe("the popover beside the surface", () => {
 
   /** A call's bar docked to an edge carries the short form as a row itself. */
   test("keeps its window away while a bottom-docked call's bar carries it", () => {
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     resetCompanionSurfacePosition();
     show(THREE);
 
@@ -3979,11 +3981,11 @@ describe("the popover beside the surface", () => {
 
   /** Reviewed, the list joins the bar too: one shape, one glow. */
   test("keeps its window away while the bar carries the reviewed list", () => {
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     resetCompanionSurfacePosition();
     show(THREE, 400, 180);
 
-    send("vellum:companion:setPopoverView", "req-1,req-2,req-3", "expanded");
+    send("cadet:companion:setPopoverView", "req-1,req-2,req-3", "expanded");
 
     expect(popoverWindow()?.visible === true).toBe(false);
     expect(state().popoverView).toBe("expanded");
@@ -3991,50 +3993,50 @@ describe("the popover beside the surface", () => {
 
   /** A list or a form is taller than the card room the canvas keeps. */
   test("grows the canvas to hold what the bar carries, and gives it back", () => {
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     resetCompanionSurfacePosition();
     show(THREE, 400, 180);
-    send("vellum:companion:setPopoverView", "req-1,req-2,req-3", "expanded");
+    send("cadet:companion:setPopoverView", "req-1,req-2,req-3", "expanded");
     const before = boundsSet.at(-1)?.height ?? 0;
 
-    send("vellum:companion:setAttachedPopoverHeight", "req-1,req-2,req-3", 700);
+    send("cadet:companion:setAttachedPopoverHeight", "req-1,req-2,req-3", 700);
     const grown = boundsSet.at(-1)?.height ?? 0;
     expect(grown).toBeGreaterThan(before);
     expect(grown).toBeGreaterThanOrEqual(700);
 
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(boundsSet.at(-1)?.height ?? 0).toBeLessThan(grown);
   });
 
   test("a height reported for another popover grows nothing", () => {
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     resetCompanionSurfacePosition();
     show(THREE, 400, 180);
     const count = boundsSet.length;
 
-    send("vellum:companion:setAttachedPopoverHeight", "req-0", 700);
+    send("cadet:companion:setAttachedPopoverHeight", "req-0", 700);
 
     expect(boundsSet.length).toBe(count);
   });
 
   /** The form takes typing, and the bar's window is the one drawing it. */
   test("lends the surface's window the keyboard for a form on the bar", () => {
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     resetCompanionSurfacePosition();
     show(SECRET);
 
-    send("vellum:companion:setPopoverView", "sec-1", "expanded");
+    send("cadet:companion:setPopoverView", "sec-1", "expanded");
     expect(surface.focusable).toBe(true);
     expect(surface.key).toBe(true);
 
-    send("vellum:companion:setPopoverView", "sec-1", "deferred");
+    send("cadet:companion:setPopoverView", "sec-1", "deferred");
     expect(surface.focusable).toBe(false);
   });
 
   test("put off, shows nothing, and a new popover shows itself again", () => {
     show(ONE);
 
-    send("vellum:companion:setPopoverView", "req-1", "deferred");
+    send("cadet:companion:setPopoverView", "req-1", "deferred");
     expect(state().popoverView).toBe("deferred");
     expect(popoverWindow()?.visible).toBe(false);
 
@@ -4046,19 +4048,19 @@ describe("the popover beside the surface", () => {
   /** Answering one approval in the list leaves the list open on the rest. */
   test("stays reviewed while approvals are answered", () => {
     show(THREE);
-    send("vellum:companion:setPopoverView", "req-1,req-2,req-3", "expanded");
+    send("cadet:companion:setPopoverView", "req-1,req-2,req-3", "expanded");
 
-    send("vellum:companion:setContext", context({ popover: ONE }));
+    send("cadet:companion:setContext", context({ popover: ONE }));
 
     expect(state().popoverView).toBe("expanded");
   });
 
   test("forgets how it was shown once nothing is left", () => {
     show(THREE);
-    send("vellum:companion:setPopoverView", "req-1,req-2,req-3", "expanded");
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setPopoverView", "req-1,req-2,req-3", "expanded");
+    send("cadet:companion:setContext", context());
 
-    send("vellum:companion:setContext", context({ popover: THREE }));
+    send("cadet:companion:setContext", context({ popover: THREE }));
 
     expect(state().popoverView).toBe("row");
   });
@@ -4066,7 +4068,7 @@ describe("the popover beside the surface", () => {
   test("a view for a popover no longer standing is dropped", () => {
     show(ONE);
 
-    send("vellum:companion:setPopoverView", "req-0", "deferred");
+    send("cadet:companion:setPopoverView", "req-0", "deferred");
 
     expect(state().popoverView).toBe("row");
   });
@@ -4076,11 +4078,11 @@ describe("the popover beside the surface", () => {
     show(SECRET);
     expect(popoverWindow()?.key).toBe(false);
 
-    send("vellum:companion:setPopoverView", "sec-1", "expanded");
+    send("cadet:companion:setPopoverView", "sec-1", "expanded");
     expect(popoverWindow()?.focusable).toBe(true);
     expect(popoverWindow()?.key).toBe(true);
 
-    send("vellum:companion:setPopoverView", "sec-1", "deferred");
+    send("cadet:companion:setPopoverView", "sec-1", "deferred");
     expect(popoverWindow()?.focusable).toBe(false);
   });
 
@@ -4096,7 +4098,7 @@ describe("the popover beside the surface", () => {
 
   test("takes prompts only while the surface is on screen", () => {
     const takesPrompts = (): unknown =>
-      invocable.get("vellum:companion:takesPrompts")?.([]);
+      invocable.get("cadet:companion:takesPrompts")?.([]);
 
     expect(takesPrompts()).toBe(true);
 
@@ -4110,15 +4112,15 @@ describe("the popover beside the surface", () => {
 
   /** Pressed, it goes: waiting on the submission leaves time to press again. */
   test("takes an answered approval off at once, and drops a second press", () => {
-    send("vellum:companion:setContext", context({ popover: THREE }));
+    send("cadet:companion:setContext", context({ popover: THREE }));
 
     send(
-      "vellum:companion:answerPopover",
+      "cadet:companion:answerPopover",
       { kind: "allow", itemId: "req-1" },
       "req-1,req-2,req-3",
     );
     send(
-      "vellum:companion:answerPopover",
+      "cadet:companion:answerPopover",
       { kind: "allow", itemId: "req-1" },
       "req-2,req-3",
     );
@@ -4132,15 +4134,15 @@ describe("the popover beside the surface", () => {
   });
 
   test("takes the credential form off once confirmed", () => {
-    send("vellum:companion:setContext", context({ popover: SECRET }));
+    send("cadet:companion:setContext", context({ popover: SECRET }));
 
     send(
-      "vellum:companion:answerPopover",
+      "cadet:companion:answerPopover",
       { kind: "secret", value: "hunter2" },
       "sec-1",
     );
     send(
-      "vellum:companion:answerPopover",
+      "cadet:companion:answerPopover",
       { kind: "secret", value: "hunter2" },
       "sec-1",
     );
@@ -4151,16 +4153,16 @@ describe("the popover beside the surface", () => {
 
   /** The window stops publishing it, and the hold has nothing left to hide. */
   test("forgets an answer once the prompt is gone from what is published", () => {
-    send("vellum:companion:setContext", context({ popover: ONE }));
+    send("cadet:companion:setContext", context({ popover: ONE }));
     send(
-      "vellum:companion:answerPopover",
+      "cadet:companion:answerPopover",
       { kind: "deny", itemId: "req-1" },
       "req-1",
     );
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
 
     // The same request id published again is a prompt the user has not seen.
-    send("vellum:companion:setContext", context({ popover: ONE }));
+    send("cadet:companion:setContext", context({ popover: ONE }));
 
     expect(state().popover).toEqual(ONE);
   });
@@ -4181,10 +4183,10 @@ describe("the popover beside the surface", () => {
       ],
       selected: "aura-1",
     };
-    send("vellum:companion:setContext", context({ popover: VOICES }));
+    send("cadet:companion:setContext", context({ popover: VOICES }));
 
     send(
-      "vellum:companion:answerPopover",
+      "cadet:companion:answerPopover",
       { kind: "pick", optionId: "aura-2" },
       "voices",
     );
@@ -4200,7 +4202,7 @@ describe("the popover beside the surface", () => {
   });
 
   test("a chevron's press opens its picker in the window holding the call", () => {
-    send("vellum:companion:togglePicker", "microphones");
+    send("cadet:companion:togglePicker", "microphones");
 
     expect(dispatched).toEqual([
       { kind: "toggleCompanionPicker", picker: "microphones" },
@@ -4209,18 +4211,18 @@ describe("the popover beside the surface", () => {
   });
 
   test("the voice chevron follows what the window publishes", () => {
-    send("vellum:companion:setContext", context({ voicesPickable: true }));
+    send("cadet:companion:setContext", context({ voicesPickable: true }));
     expect(state().voicesPickable).toBe(true);
 
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(state().voicesPickable).toBe(false);
   });
 
   test("an answer travels without raising the app", () => {
-    send("vellum:companion:setContext", context({ popover: ONE }));
+    send("cadet:companion:setContext", context({ popover: ONE }));
 
     send(
-      "vellum:companion:answerPopover",
+      "cadet:companion:answerPopover",
       { kind: "allow", itemId: "req-1" },
       "req-1",
     );
@@ -4245,10 +4247,10 @@ describe("the popover beside the surface", () => {
         { id: "req-4", title: "Save the file", detail: "" },
       ],
     };
-    send("vellum:companion:setContext", context({ popover: others }));
+    send("cadet:companion:setContext", context({ popover: others }));
 
     send(
-      "vellum:companion:answerPopover",
+      "cadet:companion:answerPopover",
       { kind: "deny", itemId: "req-2" },
       "req-2,req-3",
     );
@@ -4257,15 +4259,15 @@ describe("the popover beside the surface", () => {
   });
 
   test("an answer naming what no longer stands is dropped", () => {
-    send("vellum:companion:setContext", context({ popover: ONE }));
+    send("cadet:companion:setContext", context({ popover: ONE }));
 
     send(
-      "vellum:companion:answerPopover",
+      "cadet:companion:answerPopover",
       { kind: "allow", itemId: "req-7" },
       "req-1",
     );
     send(
-      "vellum:companion:answerPopover",
+      "cadet:companion:answerPopover",
       { kind: "secret", value: "hunter2" },
       "sec-1",
     );
@@ -4274,9 +4276,9 @@ describe("the popover beside the surface", () => {
   });
 
   test("open brings the app forward on the conversation", async () => {
-    send("vellum:companion:setContext", context({ popover: CARD }));
+    send("cadet:companion:setContext", context({ popover: CARD }));
 
-    send("vellum:companion:answerPopover", { kind: "open" }, "surf-1");
+    send("cadet:companion:answerPopover", { kind: "open" }, "surf-1");
     await Promise.resolve();
 
     expect(windowsRaised).toBe(1);
@@ -4291,7 +4293,7 @@ describe("the popover beside the surface", () => {
   });
 
   test("is given up when the app's window is destroyed", () => {
-    send("vellum:companion:setContext", context({ popover: ONE }));
+    send("cadet:companion:setContext", context({ popover: ONE }));
 
     mainWindowOpen = false;
     fireVisibilityChange();
@@ -4300,7 +4302,7 @@ describe("the popover beside the surface", () => {
   });
 
   test("opens web links in the browser", () => {
-    send("vellum:companion:openLink", "https://example.com/a?b=c");
+    send("cadet:companion:openLink", "https://example.com/a?b=c");
 
     expect(opened).toEqual(["https://example.com/a?b=c"]);
   });
@@ -4313,7 +4315,7 @@ describe("the popover beside the surface", () => {
       "vellum://workspace/x",
       "not a url",
     ]) {
-      send("vellum:companion:openLink", url);
+      send("cadet:companion:openLink", url);
     }
 
     expect(opened).toEqual([]);
@@ -4407,11 +4409,11 @@ describe("popoverBoundsFor", () => {
 describe("the call's renderer ownership", () => {
   beforeEach(() => {
     mainWindowOpen = true;
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
   });
 
   test("is given up when the window is destroyed", () => {
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     expect(state().call).toEqual(START);
     const before = pushes.length;
 
@@ -4424,17 +4426,17 @@ describe("the call's renderer ownership", () => {
   });
 
   test("survives the window merely being hidden", () => {
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
 
     mainWindowVisible = false;
     fireVisibilityChange();
 
     expect(state().call).toEqual(START);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
   });
 
   test("is given up when its renderer loads a new document", () => {
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
 
     mainRenderer.emit("did-start-navigation", {
       isMainFrame: true,
@@ -4446,7 +4448,7 @@ describe("the call's renderer ownership", () => {
   });
 
   test("is given up when its renderer process exits", () => {
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
 
     mainRenderer.emit("render-process-gone");
 
@@ -4455,7 +4457,7 @@ describe("the call's renderer ownership", () => {
   });
 
   test("survives same-document app navigation", () => {
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
 
     mainRenderer.emit("did-start-navigation", {
       isMainFrame: true,
@@ -4463,7 +4465,7 @@ describe("the call's renderer ownership", () => {
     });
 
     expect(state().call).toEqual(START);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
   });
 });
 
@@ -4477,7 +4479,7 @@ describe("the call's renderer ownership", () => {
  */
 describe("the watch flag when the app's window goes away", () => {
   test("is given up when the window is destroyed", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
+    send("cadet:companion:setContext", context({ watching: true }));
     expect(state().watching).toBe(true);
 
     mainWindowOpen = false;
@@ -4487,7 +4489,7 @@ describe("the watch flag when the app's window goes away", () => {
   });
 
   test("publishes the change, so the open surface redraws", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
+    send("cadet:companion:setContext", context({ watching: true }));
     const before = pushes.length;
 
     mainWindowOpen = false;
@@ -4503,7 +4505,7 @@ describe("the watch flag when the app's window goes away", () => {
    * still reading the screen, which is the same failure inverted.
    */
   test("survives the window merely being hidden", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
+    send("cadet:companion:setContext", context({ watching: true }));
 
     mainWindowOpen = true;
     fireVisibilityChange();
@@ -4516,7 +4518,7 @@ describe("the watch flag when the app's window goes away", () => {
    * where it is read, the same bargain `clearCompanionWorking` makes.
    */
   test("leaves the name standing", () => {
-    send("vellum:companion:setContext", context({ watching: true }));
+    send("cadet:companion:setContext", context({ watching: true }));
 
     mainWindowOpen = false;
     fireVisibilityChange();
@@ -4525,7 +4527,7 @@ describe("the watch flag when the app's window goes away", () => {
   });
 
   test("says nothing when no session was running", () => {
-    send("vellum:companion:setContext", context({ watching: false }));
+    send("cadet:companion:setContext", context({ watching: false }));
     const before = pushes.length;
 
     mainWindowOpen = false;
@@ -4541,7 +4543,7 @@ describe("the watch flag when the app's window goes away", () => {
    */
   test("gives up a dictation the same way", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({ dictating: "listening", dictationText: "the quick brown" }),
     );
     expect(state().dictating).toBe("listening");
@@ -4616,7 +4618,7 @@ describe("the Watch flag on the pushed state", () => {
 
 // The identity main holds, which is what opens the surface after a sign-in.
 // Imported after the mocks for the same reason the module under test is.
-const { setName } = await import("@vellumai/electron-desktop/identity");
+const { setName } = await import("@mycadet/electron-desktop/identity");
 
 describe("the surface while the app is in front", () => {
   test("steps off the screen when the app comes forward", () => {
@@ -4734,14 +4736,14 @@ describe("Share on the companion surface", () => {
   });
 
   test("a press with no pick is the stop", () => {
-    send("vellum:companion:setScreenShare");
+    send("cadet:companion:setScreenShare");
     expect(dispatched.at(-1)).toEqual({ kind: "setScreenShare" });
     expect(picksResolved).toHaveLength(0);
   });
 
   test("a pick is resolved and rides the command as the share's target", async () => {
     resolvedPick = { kind: "window", windowId: 4242 };
-    send("vellum:companion:setScreenShare", {
+    send("cadet:companion:setScreenShare", {
       kind: "tab",
       chromeWindowId: 3,
       tabIndex: 2,
@@ -4773,13 +4775,13 @@ describe("Share on the companion surface", () => {
       await gate;
       return { kind: "window", windowId: 1 };
     };
-    send("vellum:companion:setScreenShare", {
+    send("cadet:companion:setScreenShare", {
       kind: "tab",
       chromeWindowId: 3,
       tabIndex: 1,
     });
     resolvedPickAsync = slow;
-    send("vellum:companion:toggleWatch");
+    send("cadet:companion:toggleWatch");
     release();
     await Bun.sleep(0);
     expect(dispatched).toEqual([{ kind: "toggleWatch" }]);
@@ -4790,7 +4792,7 @@ describe("Share on the companion surface", () => {
     settingsOpened.length = 0;
     const resolvedBefore = picksResolved.length;
     try {
-      send("vellum:companion:setScreenShare", {
+      send("cadet:companion:setScreenShare", {
         kind: "display",
         displayId: 2,
       });
@@ -4808,7 +4810,7 @@ describe("Share on the companion surface", () => {
     frameError = SCREEN_REFUSAL;
     capturedFrame = null;
     try {
-      const capture = invocable.get("vellum:companion:captureScreen");
+      const capture = invocable.get("cadet:companion:captureScreen");
       expect(await capture?.([{ kind: "display", displayId: 2 }])).toBeNull();
       await Bun.sleep(0);
       expect(settingsOpened).toEqual(["guide:screen"]);
@@ -4822,7 +4824,7 @@ describe("Share on the companion surface", () => {
     settingsOpened.length = 0;
     guideError = new Error("The permission app is unavailable.");
     try {
-      send("vellum:companion:setScreenShare", {
+      send("cadet:companion:setScreenShare", {
         kind: "display",
         displayId: 2,
       });
@@ -4840,7 +4842,7 @@ describe("Share on the companion surface", () => {
     frameError = new Error("The window to capture is no longer on screen");
     capturedFrame = null;
     try {
-      const capture = invocable.get("vellum:companion:captureScreen");
+      const capture = invocable.get("cadet:companion:captureScreen");
       expect(await capture?.([{ kind: "window", windowId: 7 }])).toBeNull();
       await Bun.sleep(0);
       expect(settingsOpened).toEqual([]);
@@ -4850,7 +4852,7 @@ describe("Share on the companion surface", () => {
   });
 
   test("takes a frame of the shared target from the helper", async () => {
-    const capture = invocable.get("vellum:companion:captureScreen");
+    const capture = invocable.get("cadet:companion:captureScreen");
     expect(capture).toBeDefined();
     expect(await capture?.([{ kind: "display", displayId: 2 }])).toEqual({
       jpegBase64: "/9j/",
@@ -4863,7 +4865,7 @@ describe("Share on the companion surface", () => {
   });
 
   test("reads the shared surface's controls as fractions of that surface", async () => {
-    const read = invocable.get("vellum:companion:shareTargets");
+    const read = invocable.get("cadet:companion:shareTargets");
     expect(read).toBeDefined();
     windowBounds = { x: 100, y: 50, width: 1000, height: 500 };
     targetElements = {
@@ -4906,7 +4908,7 @@ describe("Share on the companion surface", () => {
   });
 
   test("takes a picker preview of one row from the helper", async () => {
-    const preview = invocable.get("vellum:companion:captureSourceThumbnail");
+    const preview = invocable.get("cadet:companion:captureSourceThumbnail");
     expect(preview).toBeDefined();
     expect(await preview?.([{ kind: "window", windowId: 7 }])).toBe(
       "data:image/jpeg;base64,/9j/",
@@ -4920,7 +4922,7 @@ describe("Share on the companion surface", () => {
 
   test("carries the share and whether one may start to the surface", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         screenShareEnabled: true,
         screenShare: { kind: "window", windowId: 7 },
@@ -4928,7 +4930,7 @@ describe("Share on the companion surface", () => {
     );
     expect(state().screenShare).toEqual({ kind: "window", windowId: 7 });
     expect(state().screenShareEnabled).toBe(true);
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(state().screenShare).toBeUndefined();
     expect(state().screenShareEnabled).toBe(false);
   });
@@ -4939,11 +4941,11 @@ describe("Share on the companion surface", () => {
    */
   test("frames what is shared when nothing is reading the screen", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({ screenShare: { kind: "display", displayId: 2 } }),
     );
     expect(glow?.bounds).toEqual({ x: 1440, y: 0, width: 1920, height: 1080 });
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(glow).toBeNull();
   });
 
@@ -4958,7 +4960,7 @@ describe("Share on the companion surface", () => {
       workArea: { x: 1440, y: 25, width: 1920, height: 1055 },
     };
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({ screenShare: { kind: "display", displayId: 2 } }),
     );
     expect(state().frameInsetTop).toBe(25);
@@ -4973,7 +4975,7 @@ describe("Share on the companion surface", () => {
    */
   test("pushes the inset again when the menu bar changes height", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({ screenShare: { kind: "display", displayId: 2 } }),
     );
     expect(glowPushes.at(-1)?.frameInsetTop).toBe(0);
@@ -4988,7 +4990,7 @@ describe("Share on the companion surface", () => {
 
   test("pushes the inset again with the surface hidden", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({ screenShare: { kind: "display", displayId: 2 } }),
     );
     companionOpen = false;
@@ -5004,7 +5006,7 @@ describe("Share on the companion surface", () => {
   /** A display event that left the bar alone is not a reason to push. */
   test("does not push for a display event that left the bar alone", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({ screenShare: { kind: "display", displayId: 2 } }),
     );
     glowPushes.length = 0;
@@ -5014,20 +5016,20 @@ describe("Share on the companion surface", () => {
 
   test("reports no inset over a framed window", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({ screenShare: { kind: "window", windowId: 7 } }),
     );
     expect(state().frameInsetTop).toBeUndefined();
   });
 
   test("reports no inset with nothing framed", () => {
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(state().frameInsetTop).toBeUndefined();
   });
 
   test("the share ends with the window holding it", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         screenShareEnabled: true,
         screenShare: { kind: "display", displayId: 2 },
@@ -5056,12 +5058,12 @@ describe("companion window: drawing on what is shared", () => {
   // rather than assumed, so each of these starts on a desktop with nothing
   // shared and a frame that is click-through.
   beforeEach(() => {
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
   });
 
   const shareDisplay = (): void => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         screenShareEnabled: true,
         screenShare: { kind: "display", displayId: 2 },
@@ -5073,15 +5075,15 @@ describe("companion window: drawing on what is shared", () => {
     shareDisplay();
     expect(glow?.clickThrough).toBe(true);
     expect(state().annotating).toBe(false);
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     expect(glow?.clickThrough).toBe(false);
     expect(state().annotating).toBe(true);
   });
 
   test("a second press gives the mouse back to the desktop", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setAnnotating", false);
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", false);
     expect(glow?.clickThrough).toBe(true);
     expect(state().annotating).toBe(false);
   });
@@ -5092,11 +5094,11 @@ describe("companion window: drawing on what is shared", () => {
    */
   test("a toggle turns the mode over in both directions", () => {
     shareDisplay();
-    send("vellum:companion:toggleAnnotating");
+    send("cadet:companion:toggleAnnotating");
     expect(state().annotating).toBe(true);
     expect(glow?.clickThrough).toBe(false);
 
-    send("vellum:companion:toggleAnnotating");
+    send("cadet:companion:toggleAnnotating");
     expect(state().annotating).toBe(false);
     expect(glow?.clickThrough).toBe(true);
   });
@@ -5111,14 +5113,14 @@ describe("companion window: drawing on what is shared", () => {
   test("the tool is the pencil until the pill says otherwise, and is kept", () => {
     shareDisplay();
     expect(state().annotationTool).toBe("freehand");
-    send("vellum:companion:setAnnotationTool", "box");
+    send("cadet:companion:setAnnotationTool", "box");
     expect(state().annotationTool).toBe("box");
 
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setAnnotating", false);
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", false);
     expect(state().annotationTool).toBe("box");
 
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(state().annotationTool).toBe("box");
   });
 
@@ -5138,8 +5140,8 @@ describe("companion window: drawing on what is shared", () => {
    */
   test("a scroll on the frame lets the rest of it through to the app", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setFrameScrolling", true);
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setFrameScrolling", true);
     expect(glow?.clickThrough).toBe(true);
     expect(glow?.forwarded).toBe(true);
     expect(state().annotating).toBe(true);
@@ -5147,9 +5149,9 @@ describe("companion window: drawing on what is shared", () => {
 
   test("the pointer moving after a scroll takes the mouse back", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setFrameScrolling", true);
-    send("vellum:companion:setFrameScrolling", false);
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setFrameScrolling", true);
+    send("cadet:companion:setFrameScrolling", false);
     expect(glow?.clickThrough).toBe(false);
     expect(state().annotating).toBe(true);
   });
@@ -5165,8 +5167,8 @@ describe("companion window: drawing on what is shared", () => {
     const watches: boolean[] = [];
     provideFrameScrollWatch((enable) => watches.push(enable));
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setFrameScrolling", true);
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setFrameScrolling", true);
     expect(watches).toEqual([true]);
     frameScrollEnded();
     expect(glow?.clickThrough).toBe(false);
@@ -5180,19 +5182,19 @@ describe("companion window: drawing on what is shared", () => {
     const watches: boolean[] = [];
     provideFrameScrollWatch((enable) => watches.push(enable));
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
 
-    send("vellum:companion:setFrameScrolling", true);
-    send("vellum:companion:setFrameScrolling", false);
+    send("cadet:companion:setFrameScrolling", true);
+    send("cadet:companion:setFrameScrolling", false);
     expect(watches).toEqual([true, false]);
 
-    send("vellum:companion:setFrameScrolling", true);
-    send("vellum:companion:setAnnotating", false);
+    send("cadet:companion:setFrameScrolling", true);
+    send("cadet:companion:setAnnotating", false);
     expect(watches).toEqual([true, false, true, false]);
 
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setFrameScrolling", true);
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setFrameScrolling", true);
+    send("cadet:companion:setContext", context());
     expect(watches).toEqual([true, false, true, false, true, false]);
 
     // A scroll that ended after the frame stopped waiting changes nothing.
@@ -5205,7 +5207,7 @@ describe("companion window: drawing on what is shared", () => {
     const watches: boolean[] = [];
     provideFrameScrollWatch((enable) => watches.push(enable));
     shareDisplay();
-    send("vellum:companion:setFrameScrolling", true);
+    send("cadet:companion:setFrameScrolling", true);
     frameScrollEnded();
     expect(watches).toEqual([]);
     expect(glow?.clickThrough).toBe(true);
@@ -5217,22 +5219,22 @@ describe("companion window: drawing on what is shared", () => {
    */
   test("a scroll with the mode off changes nothing, now or later", () => {
     shareDisplay();
-    send("vellum:companion:setFrameScrolling", true);
+    send("cadet:companion:setFrameScrolling", true);
     expect(glow?.clickThrough).toBe(true);
     expect(glow?.forwarded).toBe(false);
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     expect(glow?.clickThrough).toBe(false);
   });
 
   /** The mode going off leaves nothing for the scroll to have stepped aside from. */
   test("the mode going off forgets the scroll it stepped aside for", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setFrameScrolling", true);
-    send("vellum:companion:setAnnotating", false);
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setFrameScrolling", true);
+    send("cadet:companion:setAnnotating", false);
     expect(glow?.clickThrough).toBe(true);
     expect(glow?.forwarded).toBe(false);
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     expect(glow?.clickThrough).toBe(false);
   });
 
@@ -5244,12 +5246,12 @@ describe("companion window: drawing on what is shared", () => {
    */
   test("a frame opened afresh takes the mouse whatever the last one did", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setFrameScrolling", true);
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setFrameScrolling", true);
+    send("cadet:companion:setContext", context());
     expect(glow).toBeNull();
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     expect(glow?.clickThrough).toBe(false);
     expect(glow?.forwarded).toBe(false);
   });
@@ -5265,7 +5267,7 @@ describe("companion window: drawing on what is shared", () => {
     drawFrame();
     expect(glow?.focusable).toBe(false);
     expect(glow?.key).toBe(false);
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     expect(glow?.focusable).toBe(true);
     expect(glow?.key).toBe(true);
   });
@@ -5278,8 +5280,8 @@ describe("companion window: drawing on what is shared", () => {
    */
   test("drawing off makes the frame unfocusable again", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setAnnotating", false);
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", false);
     expect(glow?.focusable).toBe(false);
   });
 
@@ -5287,8 +5289,8 @@ describe("companion window: drawing on what is shared", () => {
   test("a scroll the frame steps aside for leaves its key status alone", () => {
     shareDisplay();
     drawFrame();
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setFrameScrolling", true);
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setFrameScrolling", true);
     expect(glow?.focusable).toBe(true);
     expect(glow?.key).toBe(true);
   });
@@ -5296,12 +5298,12 @@ describe("companion window: drawing on what is shared", () => {
   /** A window that replaces the frame mid-mode is lent key the same way. */
   test("a frame opened afresh is lent key status with the mouse", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setContext", context());
     expect(glow).toBeNull();
     shareDisplay();
     drawFrame();
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     expect(glow?.focusable).toBe(true);
     expect(glow?.key).toBe(true);
   });
@@ -5326,13 +5328,13 @@ describe("companion window: drawing on what is shared", () => {
 
   test("a drawn report from another window does not show the frame", () => {
     shareDisplay();
-    send("vellum:companion:frameDrawn");
+    send("cadet:companion:frameDrawn");
     expect(glow?.visible).toBe(false);
   });
 
   test("drawing turned on before the border is drawn takes key with it", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     expect(glow?.key).toBe(false);
     drawFrame();
     expect(glow?.visible).toBe(true);
@@ -5352,9 +5354,9 @@ describe("companion window: drawing on what is shared", () => {
    * a share by being pressed twice.
    */
   test("a toggle with nothing shared leaves the mode off", () => {
-    send("vellum:companion:toggleAnnotating");
+    send("cadet:companion:toggleAnnotating");
     expect(state().annotating).toBe(false);
-    send("vellum:companion:toggleAnnotating");
+    send("cadet:companion:toggleAnnotating");
     expect(state().annotating).toBe(false);
   });
 
@@ -5363,7 +5365,7 @@ describe("companion window: drawing on what is shared", () => {
    * display's clicks the moment one started.
    */
   test("refuses the mode with nothing shared", () => {
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     expect(state().annotating).toBe(false);
   });
 
@@ -5374,29 +5376,29 @@ describe("companion window: drawing on what is shared", () => {
    */
   test("refuses the mode while a watch session owns the frame", () => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         screenShareEnabled: true,
         screenShare: { kind: "display", displayId: 2 },
       }),
     );
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     expect(state().annotating).toBe(false);
   });
 
   test("a share that ends takes the mode with it", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setContext", context());
     expect(state().annotating).toBe(false);
   });
 
   test("a watch session starting mid-drawing takes the mode with it", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         screenShareEnabled: true,
@@ -5408,10 +5410,10 @@ describe("companion window: drawing on what is shared", () => {
 
   test("hands a finished mark to the window holding the session", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     dispatched.length = 0;
     const strokes = [{ points: [{ x: 0.25, y: 0.5 }] }];
-    send("vellum:companion:annotateShare", "released", strokes, INK);
+    send("cadet:companion:annotateShare", "released", strokes, INK);
     expect(dispatched).toEqual([
       { kind: "annotateShare", phase: "released", strokes, ink: INK },
     ]);
@@ -5420,9 +5422,9 @@ describe("companion window: drawing on what is shared", () => {
   /** The hand going down is what stops the frames, so it travels too. */
   test("hands on the hand going down as well as coming off", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     dispatched.length = 0;
-    send("vellum:companion:annotateShare", "drawing", [], INK);
+    send("cadet:companion:annotateShare", "drawing", [], INK);
     expect(dispatched).toEqual([
       { kind: "annotateShare", phase: "drawing", strokes: [], ink: INK },
     ]);
@@ -5437,10 +5439,10 @@ describe("companion window: drawing on what is shared", () => {
    */
   test("lets a bare release through after the mode has gone", () => {
     shareDisplay();
-    send("vellum:companion:setAnnotating", true);
-    send("vellum:companion:setAnnotating", false);
+    send("cadet:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", false);
     dispatched.length = 0;
-    send("vellum:companion:annotateShare", "released", [], INK);
+    send("cadet:companion:annotateShare", "released", [], INK);
     expect(dispatched).toEqual([
       { kind: "annotateShare", phase: "released", strokes: [], ink: INK },
     ]);
@@ -5455,7 +5457,7 @@ describe("companion window: drawing on what is shared", () => {
     shareDisplay();
     dispatched.length = 0;
     send(
-      "vellum:companion:annotateShare",
+      "cadet:companion:annotateShare",
       "released",
       [{ points: [{ x: 0.5, y: 0.5 }] }],
       INK,
@@ -5521,7 +5523,7 @@ describe("companion window: pointing at what is shared", () => {
       width: 60,
       height: 20,
     };
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
   });
 
   const shareOf = (
@@ -5529,7 +5531,7 @@ describe("companion window: pointing at what is shared", () => {
     over: Record<string, unknown> = {},
   ): void => {
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         screenShareEnabled: true,
         screenShare: target,
@@ -5548,7 +5550,7 @@ describe("companion window: pointing at what is shared", () => {
   const capture = async (
     target: typeof DISPLAY | typeof WINDOW = DISPLAY,
   ): Promise<void> => {
-    const take = invocable.get("vellum:companion:captureScreen");
+    const take = invocable.get("cadet:companion:captureScreen");
     if (!take) {
       throw new Error("No handler registered for captureScreen");
     }
@@ -5562,7 +5564,7 @@ describe("companion window: pointing at what is shared", () => {
   const acknowledge = (
     target: typeof DISPLAY | typeof WINDOW = DISPLAY,
   ): void => {
-    send("vellum:companion:sharedFrame", target);
+    send("cadet:companion:sharedFrame", target);
   };
 
   /** A share with a frame of it already sent, which is the resting case. */
@@ -5604,7 +5606,7 @@ describe("companion window: pointing at what is shared", () => {
       await shareAndSee();
       await showCompanionCoachmarks([MARK], CALL);
       const before = clears();
-      send("vellum:companion:clearMarks");
+      send("cadet:companion:clearMarks");
       expect(state().coachmarks).toBeUndefined();
       expect(state().screenShare).toEqual(DISPLAY);
       expect(clears()).toBe(before + 1);
@@ -5618,10 +5620,10 @@ describe("companion window: pointing at what is shared", () => {
      */
     test("steps the count the frame drops its ink on, marks up or not", () => {
       shareDisplay();
-      send("vellum:companion:setAnnotating", true);
+      send("cadet:companion:setAnnotating", true);
       const before = clears();
-      send("vellum:companion:clearMarks");
-      send("vellum:companion:clearMarks");
+      send("cadet:companion:clearMarks");
+      send("cadet:companion:clearMarks");
       expect(clears()).toBe(before + 2);
       // The mode is the user's, and stays where they put it.
       expect(state().annotating).toBe(true);
@@ -5629,7 +5631,7 @@ describe("companion window: pointing at what is shared", () => {
 
     test("is nothing with nothing shared", () => {
       const before = clears();
-      send("vellum:companion:clearMarks");
+      send("cadet:companion:clearMarks");
       expect(clears()).toBe(before);
     });
 
@@ -5642,7 +5644,7 @@ describe("companion window: pointing at what is shared", () => {
         letGo = resolve;
       });
       const drawing = showCompanionCoachmarks([{ target: "Share" }], CALL);
-      send("vellum:companion:clearMarks");
+      send("cadet:companion:clearMarks");
       letGo();
 
       expect(await drawing).toEqual({
@@ -6026,7 +6028,7 @@ describe("companion window: pointing at what is shared", () => {
     test("the share ending takes the watch down", async () => {
       await shareAndSee(WINDOW);
       await showCompanionCoachmarks([{ target: "Share" }], CALL);
-      send("vellum:companion:setContext", context());
+      send("cadet:companion:setContext", context());
 
       expect(watches.at(-1)).toEqual([]);
     });
@@ -6067,7 +6069,7 @@ describe("companion window: pointing at what is shared", () => {
   test("refuses marks while a watch session owns the frame", async () => {
     await capture();
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         screenShareEnabled: true,
@@ -6240,7 +6242,7 @@ describe("companion window: pointing at what is shared", () => {
   test("a share that ends takes the marks with it", async () => {
     await shareAndSee();
     await showCompanionCoachmarks([MARK], CALL);
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(state().coachmarks).toBeUndefined();
   });
 
@@ -6248,7 +6250,7 @@ describe("companion window: pointing at what is shared", () => {
     await shareAndSee();
     await showCompanionCoachmarks([MARK], CALL);
     send(
-      "vellum:companion:setContext",
+      "cadet:companion:setContext",
       context({
         watching: true,
         screenShareEnabled: true,
@@ -6295,7 +6297,7 @@ describe("companion window: pointing at what is shared", () => {
    */
   test("gives the mouse back to the desktop when marks go up", async () => {
     await shareAndSee();
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     expect(state().annotating).toBe(true);
     await showCompanionCoachmarks([MARK], CALL);
     expect(state().annotating).toBe(false);
@@ -6305,7 +6307,7 @@ describe("companion window: pointing at what is shared", () => {
   /** Taking marks down is not a reason to touch a mode the user set. */
   test("leaves the drawing mode alone when marks come down", async () => {
     await shareAndSee();
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     await showCompanionCoachmarks([], CALL);
     expect(state().annotating).toBe(true);
   });
@@ -6313,7 +6315,7 @@ describe("companion window: pointing at what is shared", () => {
   /** A refusal is not a reason to touch it either. */
   test("leaves the drawing mode alone when marks are refused", async () => {
     await shareAndSee();
-    send("vellum:companion:setAnnotating", true);
+    send("cadet:companion:setAnnotating", true);
     expect(await showCompanionCoachmarks([MARK], OTHER)).toEqual({
       kind: "refused",
       refusal: "not-this-call",
@@ -6401,15 +6403,15 @@ describe("the chord the introduction asks for", () => {
   /** Every control main has named for the app's window, most recent last. */
   const asked = (): (string | null)[] =>
     mainSends
-      .filter((sent) => sent.channel === "vellum:companion:introChord")
+      .filter((sent) => sent.channel === "cadet:companion:introChord")
       .map((sent) => sent.payload as string | null);
 
   /** What a window mounting mid-run pulls, which is the beat rather than the push. */
   const introChord = (): string | null => {
-    const pull = invocable.get("vellum:companion:getIntroChord");
+    const pull = invocable.get("cadet:companion:getIntroChord");
     if (!pull) {
       throw new Error(
-        "No handler registered for vellum:companion:getIntroChord",
+        "No handler registered for cadet:companion:getIntroChord",
       );
     }
     return pull([]) as string | null;
@@ -6426,7 +6428,7 @@ describe("the chord the introduction asks for", () => {
   /** Walk the run forward, which is what the card's Next does. */
   const walk = (steps: number): void => {
     for (let i = 0; i < steps; i++) {
-      send("vellum:companion:advanceIntro", "next");
+      send("cadet:companion:advanceIntro", "next");
     }
   };
 
@@ -6507,7 +6509,7 @@ describe("the chord the introduction asks for", () => {
     walk(4);
     mainSends.length = 0;
 
-    send("vellum:companion:advanceIntro", "dismiss");
+    send("cadet:companion:advanceIntro", "dismiss");
 
     expect(introChord()).toBeNull();
     expect(asked()).toEqual([null]);
@@ -6518,7 +6520,7 @@ describe("the introduction's reports", () => {
   /** Every report main has handed the app's window, most recent last. */
   const reports = (): CompanionIntroReport[] =>
     mainSends
-      .filter((sent) => sent.channel === "vellum:companion:introReport")
+      .filter((sent) => sent.channel === "cadet:companion:introReport")
       .map((sent) => sent.payload as CompanionIntroReport);
 
   /**
@@ -6554,7 +6556,7 @@ describe("the introduction's reports", () => {
    * this file's surface has no window server to fire a `closed` at.
    */
   afterEach(() => {
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     setCompanionSurfaceVisible(false);
     takeReports();
     mainSends.length = 0;
@@ -6591,8 +6593,8 @@ describe("the introduction's reports", () => {
     startIntro();
     mainSends.length = 0;
 
-    send("vellum:companion:advanceIntro", "next");
-    send("vellum:companion:advanceIntro", "next");
+    send("cadet:companion:advanceIntro", "next");
+    send("cadet:companion:advanceIntro", "next");
 
     expect(reports().map((report) => [report.event, report.beat])).toEqual([
       ["advanced", "meet"],
@@ -6604,10 +6606,10 @@ describe("the introduction's reports", () => {
   // got is a distinct count per beat, not a sum of rows.
   test("reports a step back as the beat it lands on", () => {
     startIntro();
-    send("vellum:companion:advanceIntro", "next");
+    send("cadet:companion:advanceIntro", "next");
     mainSends.length = 0;
 
-    send("vellum:companion:advanceIntro", "back");
+    send("cadet:companion:advanceIntro", "back");
 
     expect(reports().map((report) => [report.event, report.beat])).toEqual([
       ["advanced", "idle"],
@@ -6617,11 +6619,11 @@ describe("the introduction's reports", () => {
   test("reports the run completed when the last card is walked off", () => {
     startIntro();
     for (const _beat of COMPANION_INTRO_BEATS.slice(1)) {
-      send("vellum:companion:advanceIntro", "next");
+      send("cadet:companion:advanceIntro", "next");
     }
     mainSends.length = 0;
 
-    send("vellum:companion:advanceIntro", "next");
+    send("cadet:companion:advanceIntro", "next");
 
     expect(reports()).toEqual([
       {
@@ -6637,11 +6639,11 @@ describe("the introduction's reports", () => {
   // The beat a run was refused on is the whole of what a dismissal says.
   test("reports a dismissal on the beat it was made from", () => {
     startIntro();
-    send("vellum:companion:advanceIntro", "next");
-    send("vellum:companion:advanceIntro", "next");
+    send("cadet:companion:advanceIntro", "next");
+    send("cadet:companion:advanceIntro", "next");
     mainSends.length = 0;
 
-    send("vellum:companion:advanceIntro", "dismiss");
+    send("cadet:companion:advanceIntro", "dismiss");
 
     expect(reports().map((report) => [report.event, report.beat])).toEqual([
       ["dismissed", "talk"],
@@ -6669,12 +6671,12 @@ describe("the introduction's reports", () => {
     async (status) => {
       startIntro();
       for (const _beat of COMPANION_INTRO_BEATS.slice(1)) {
-        send("vellum:companion:advanceIntro", "next");
+        send("cadet:companion:advanceIntro", "next");
       }
       micStatus = status;
       dispatched.length = 0;
       mainSends.length = 0;
-      send("vellum:companion:advanceIntro", "try");
+      send("cadet:companion:advanceIntro", "try");
       await settleHandoff();
       expect(dispatched).toEqual([]);
       expect(state().intro).toBe("try");
@@ -6690,11 +6692,11 @@ describe("the introduction's reports", () => {
   test("reports the offer taken and the run finished on the last beat", async () => {
     startIntro();
     for (const _beat of COMPANION_INTRO_BEATS.slice(1)) {
-      send("vellum:companion:advanceIntro", "next");
+      send("cadet:companion:advanceIntro", "next");
     }
     mainSends.length = 0;
 
-    send("vellum:companion:advanceIntro", "try");
+    send("cadet:companion:advanceIntro", "try");
     // The last beat's press is counted where it lands, and it lands once the
     // renderer has the session it asks for.
     await settleHandoff();
@@ -6708,11 +6710,11 @@ describe("the introduction's reports", () => {
   test("reports a session on the last beat as the offer taken", () => {
     startIntro();
     for (const _beat of COMPANION_INTRO_BEATS.slice(1)) {
-      send("vellum:companion:advanceIntro", "next");
+      send("cadet:companion:advanceIntro", "next");
     }
     mainSends.length = 0;
 
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
 
     expect(reports().map((report) => [report.event, report.beat])).toEqual([
       ["offer_taken", "try"],
@@ -6724,10 +6726,10 @@ describe("the introduction's reports", () => {
   // interrupting the run, which main holds the beat through.
   test("says nothing for a session started mid-run", () => {
     startIntro();
-    send("vellum:companion:advanceIntro", "next");
+    send("cadet:companion:advanceIntro", "next");
     mainSends.length = 0;
 
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
 
     expect(reports()).toEqual([]);
   });
@@ -6741,8 +6743,8 @@ describe("the introduction's reports", () => {
   test("stamps every report with the run and the microphone", () => {
     micStatus = "denied";
     startIntro();
-    send("vellum:companion:advanceIntro", "next");
-    send("vellum:companion:advanceIntro", "dismiss");
+    send("cadet:companion:advanceIntro", "next");
+    send("cadet:companion:advanceIntro", "dismiss");
 
     expect(reports().length).toBe(3);
     for (const report of reports()) {
@@ -6766,8 +6768,8 @@ describe("the introduction's reports", () => {
 
     // The grant made mid-run, which is what the last beat's press wins.
     micStatus = "granted";
-    send("vellum:companion:advanceIntro", "next");
-    send("vellum:companion:advanceIntro", "dismiss");
+    send("cadet:companion:advanceIntro", "next");
+    send("cadet:companion:advanceIntro", "dismiss");
 
     expect(reports().length).toBe(3);
     expect(reports().every((report) => !report.micGranted)).toBe(true);
@@ -6778,7 +6780,7 @@ describe("the introduction's reports", () => {
   test("asks again when a new run begins", () => {
     micStatus = "denied";
     startIntro();
-    send("vellum:companion:advanceIntro", "dismiss");
+    send("cadet:companion:advanceIntro", "dismiss");
     micStatus = "granted";
     mainSends.length = 0;
 
@@ -6842,10 +6844,10 @@ describe("the introduction's reports", () => {
     mainWindowOpen = false;
     startIntro();
     for (let pass = 0; pass < 12; pass += 1) {
-      send("vellum:companion:advanceIntro", "next");
-      send("vellum:companion:advanceIntro", "back");
+      send("cadet:companion:advanceIntro", "next");
+      send("cadet:companion:advanceIntro", "back");
     }
-    send("vellum:companion:advanceIntro", "dismiss");
+    send("cadet:companion:advanceIntro", "dismiss");
 
     const held = takeReports();
     // The exposure, `meet` and `idle` crossed once each however many times they
@@ -6871,7 +6873,7 @@ describe("the introduction's reports", () => {
     mainWindowOpen = false;
     for (let run = 0; run < 9; run += 1) {
       startIntro();
-      send("vellum:companion:advanceIntro", "dismiss");
+      send("cadet:companion:advanceIntro", "dismiss");
     }
 
     const held = takeReports();
@@ -6908,7 +6910,7 @@ describe("the introduction's reports", () => {
     takeReports();
     mainSends.length = 0;
 
-    send("vellum:companion:advanceIntro", "next");
+    send("cadet:companion:advanceIntro", "next");
 
     expect(reports().map((report) => report.event)).toEqual(["advanced"]);
     expect(takeReports()).toEqual([]);
@@ -6917,35 +6919,35 @@ describe("the introduction's reports", () => {
 
 describe("active calls keep visible controls", () => {
   afterEach(() => {
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
   });
 
   test("a call temporarily opens a hidden companion and restores its preference", () => {
     setCompanionSurfaceVisible(false);
     expect(companionOpen).toBe(false);
     expect(companionHidden).toBe(true);
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     expect(companionOpen).toBe(true);
     expect(surface.visible).toBe(true);
     expect(companionHidden).toBe(true);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(companionOpen).toBe(false);
     expect(companionHidden).toBe(true);
   });
 
   test("hiding during a call takes effect only after it ends", () => {
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     setCompanionSurfaceVisible(false);
     expect(companionOpen).toBe(true);
     expect(surface.visible).toBe(true);
     expect(companionHidden).toBe(true);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(companionOpen).toBe(false);
   });
 
   test("call controls step away while the main window is in front", () => {
     setCompanionSurfaceVisible(false);
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     fireAppEvent("did-become-active");
     expect(surface.visible).toBe(false);
     fireAppEvent("did-resign-active");
@@ -6954,7 +6956,7 @@ describe("active calls keep visible controls", () => {
 
   test("ending a crashed renderer's call restores the hidden preference", () => {
     setCompanionSurfaceVisible(false);
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     expect(companionOpen).toBe(true);
     mainRenderer.emit("render-process-gone");
     expect(companionOpen).toBe(false);
@@ -6965,9 +6967,9 @@ describe("active calls keep visible controls", () => {
   });
 
   test("call cleanup does not recreate a destroyed companion", () => {
-    send("vellum:voiceActivity:start", START);
+    send("cadet:voiceActivity:start", START);
     companionOpen = false;
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(companionOpen).toBe(false);
   });
 });
@@ -6988,41 +6990,41 @@ describe("the voice key's start confirmation", () => {
   });
 
   afterEach(() => {
-    send("vellum:companion:setContext", context());
-    send("vellum:voiceActivity:end");
+    send("cadet:companion:setContext", context());
+    send("cadet:voiceActivity:end");
   });
 
   test("shows a hidden companion while asking and restores it after", () => {
     setCompanionSurfaceVisible(false);
-    send("vellum:companion:setContext", ASK);
+    send("cadet:companion:setContext", ASK);
     expect(companionOpen).toBe(true);
     expect(companionHidden).toBe(true);
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(companionOpen).toBe(false);
   });
 
   test("stays on screen over the app's own window while asking", () => {
     fireAppEvent("did-become-active");
     expect(surface.visible).toBe(false);
-    send("vellum:companion:setContext", ASK);
+    send("cadet:companion:setContext", ASK);
     expect(surface.visible).toBe(true);
-    send("vellum:companion:setContext", context());
+    send("cadet:companion:setContext", context());
     expect(surface.visible).toBe(false);
   });
 
   test("an answered start hands the surface to the call without closing", () => {
     setCompanionSurfaceVisible(false);
-    send("vellum:companion:setContext", ASK);
+    send("cadet:companion:setContext", ASK);
     send(
-      "vellum:companion:answerPopover",
+      "cadet:companion:answerPopover",
       { kind: "action", actionId: "start" },
       "voice-start-confirmation",
     );
     expect(companionOpen).toBe(true);
-    send("vellum:voiceActivity:start", START);
-    send("vellum:companion:setContext", context());
+    send("cadet:voiceActivity:start", START);
+    send("cadet:companion:setContext", context());
     expect(companionOpen).toBe(true);
-    send("vellum:voiceActivity:end");
+    send("cadet:voiceActivity:end");
     expect(companionOpen).toBe(false);
   });
 });

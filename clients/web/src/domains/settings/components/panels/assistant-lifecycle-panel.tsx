@@ -17,10 +17,10 @@ import type { Assistant } from "@/generated/api/types.gen";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
 import { useOrganizationStore } from "@/stores/organization-store";
-import { Button } from "@vellumai/design-library/components/button";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { Tag } from "@vellumai/design-library/components/tag";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { Tag } from "@mycadet/design-library/components/tag";
+import { toast } from "@mycadet/design-library/components/toast";
 
 export function AssistantLifecyclePanel() {
   const { t } = useTranslation("settings");

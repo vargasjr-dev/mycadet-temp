@@ -35,7 +35,7 @@ export interface GuardianActivationInterceptParams {
   canonicalSenderId: string | null;
   actorDisplayName: string | undefined;
   actorUsername: string | undefined;
-  sourceMetadata: import("@vellumai/gateway-client").SourceMetadata | undefined;
+  sourceMetadata: import("@mycadet/gateway-client").SourceMetadata | undefined;
   replyCallbackUrl: string | undefined;
   assistantId: string;
   externalMessageId: string;

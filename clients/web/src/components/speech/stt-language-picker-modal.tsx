@@ -11,7 +11,7 @@
  * must outlive this modal's content).
  */
 
-import { Modal } from "@vellumai/design-library/components/modal";
+import { Modal } from "@mycadet/design-library/components/modal";
 
 import { SttLanguagePicker } from "@/components/speech/stt-language-picker";
 import { useTranslation } from "@/i18n";

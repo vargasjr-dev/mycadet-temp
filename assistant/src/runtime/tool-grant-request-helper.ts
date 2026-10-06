@@ -13,7 +13,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import { isGuardianRequestExpired } from "@vellumai/gateway-client";
+import { isGuardianRequestExpired } from "@mycadet/gateway-client";
 
 import {
   createGuardianRequest,

@@ -5,7 +5,7 @@
  * updater to produce `DisplayAttachment` objects for chat bubbles.
  */
 
-import type { AssistantOutboundAttachment } from "@vellumai/assistant-api";
+import type { AssistantOutboundAttachment } from "@mycadet/assistant-api";
 import type { DisplayAttachment } from "@/types/attachment-types";
 import { deriveDisplayUrls } from "@/utils/attachment-urls";
 

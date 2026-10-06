@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { COMPANION_DICTATION_OFFER_MAX } from "@vellumai/ipc-contract";
+import { COMPANION_DICTATION_OFFER_MAX } from "@mycadet/ipc-contract";
 
 let emitInput: (() => void) | null = null;
 let popout = false;

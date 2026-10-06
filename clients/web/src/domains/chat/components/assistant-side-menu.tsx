@@ -1,7 +1,7 @@
 import {
   acceleratorToAriaKeyShortcuts,
   formatAcceleratorHint,
-} from "@vellumai/design-library";
+} from "@mycadet/design-library";
 import { Search, X } from "lucide-react";
 import {
   useCallback,
@@ -46,10 +46,10 @@ import { copyIdToClipboard } from "@/domains/chat/utils/copy-id-to-clipboard";
 import { ASSISTANT_SECTION_KEY } from "@/domains/chat/utils/sidebar-section-order";
 import { useCommandShortcut } from "@/hooks/use-command-shortcut";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { NATIVE_MOBILE_BARE_ICON_BUTTON } from "@/domains/chat/utils/native-mobile-button-constants";
 import type { Conversation } from "@/types/conversation-types";
-import { Button, cn, SideMenu, toast } from "@vellumai/design-library";
+import { Button, cn, SideMenu, toast } from "@mycadet/design-library";
 
 export interface AssistantSideMenuProps extends UseSidebarStateParams {
   assistantName?: string | null;
@@ -362,8 +362,8 @@ export function AssistantSideMenu({
       ? () => {
           getAllRows().then(onMarkAllReadInGroup, (error: unknown) => {
             /* A user-clicked action, so the failure is reported to the
-               user and, unfiltered, to Sentry: nothing about a click has
-               a natural retry surface. The action performs nothing rather
+               user and, unfiltered, to the console: nothing about a click
+               has a natural retry surface. The action performs nothing rather
                than acting on a partial member list. */
             toast.error(t("assistantSideMenu.bulkActionMembersFailed"));
             captureError(error, { context: "markAllReadInGroup:getAllRows" });

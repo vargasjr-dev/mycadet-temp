@@ -21,11 +21,14 @@ import { VIRTUAL_CENTER } from "@/domains/intelligence/components/constellation-
 import { memoryGraphOptions } from "@/domains/intelligence/memory-graph/get-memory-graph";
 import { emitMemoryEvent } from "@/domains/intelligence/memory-telemetry";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { buildForceLayout } from "./build-force-layout";
 import { CenteredMessage } from "./centered-message";
-import { ConceptDetailPanel, type ConceptDetailNode } from "./concept-detail-panel";
+import {
+  ConceptDetailPanel,
+  type ConceptDetailNode,
+} from "./concept-detail-panel";
 import { ConceptGraphIntroBanner } from "./concept-graph-intro-banner";
 import { ConceptGraphLegend } from "./concept-graph-legend";
 import {
@@ -1582,7 +1585,9 @@ export function ConceptGraphView({
                         focusOn(searchResults[0].id);
                       }
                     }}
-                    placeholder={t("conceptGraphView.searchConceptsPlaceholder")}
+                    placeholder={t(
+                      "conceptGraphView.searchConceptsPlaceholder",
+                    )}
                     aria-label={t("conceptGraphView.searchConceptsAriaLabel")}
                     className="w-36 bg-transparent text-[12px] outline-none placeholder:text-[var(--content-tertiary)]"
                     style={{ color: "var(--content-default)" }}

@@ -44,7 +44,7 @@ const {
   getMultiInstanceDir,
 } = await import("../paths.js");
 type EnvironmentDefinition =
-  import("@vellumai/environments").EnvironmentDefinition;
+  import("@mycadet/environments").EnvironmentDefinition;
 
 const prod: EnvironmentDefinition = {
   name: "production",

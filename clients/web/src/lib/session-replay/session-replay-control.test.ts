@@ -32,11 +32,11 @@ mock.module("@/lib/session-replay/session-replay-provider", () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Composed gate — reused verbatim from Sentry diagnostics consent.
+// Composed gate — reused verbatim from the diagnostics consent.
 // ---------------------------------------------------------------------------
 
 let consentGranted = false;
-mock.module("@/lib/sentry/consent-gate", () => ({
+mock.module("@/lib/consent/consent-gate", () => ({
   diagnosticsConsentGranted: () => consentGranted,
 }));
 
@@ -127,7 +127,7 @@ beforeEach(() => {
 });
 
 describe("sessionReplayConsentGranted", () => {
-  test("delegates to the Sentry diagnostics gate", () => {
+  test("delegates to the diagnostics consent gate", () => {
     consentGranted = true;
     expect(sessionReplayConsentGranted()).toBe(true);
     consentGranted = false;

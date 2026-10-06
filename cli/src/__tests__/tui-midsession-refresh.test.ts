@@ -30,7 +30,6 @@ function seedEntry(cloud: string, localUrl?: string): void {
     ...(localUrl ? { localUrl } : {}),
     cloud,
     paired: cloud === "paired",
-    species: "vellum",
   });
 }
 

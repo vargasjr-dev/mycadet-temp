@@ -4,7 +4,7 @@
  * raw data of every tool is in the same place under the same names.
  */
 
-import { Disclosure } from "@vellumai/design-library/components/disclosure";
+import { Disclosure } from "@mycadet/design-library/components/disclosure";
 
 import { CodeBlock, SectionLabel } from "@/components/detail-primitives";
 import { useTranslation } from "@/i18n";

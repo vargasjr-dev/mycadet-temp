@@ -5,7 +5,7 @@ import type {
   DocumentCommentDeletedEvent,
   DocumentCommentReopenedEvent,
   DocumentCommentResolvedEvent,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import type { DocumentsByIdCommentsPostResponse } from "@/generated/daemon/types.gen";
 import {
   type CommentStateMap,

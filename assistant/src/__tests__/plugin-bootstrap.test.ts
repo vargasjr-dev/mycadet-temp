@@ -118,7 +118,7 @@ describe("plugin bootstrap", () => {
 
   test("version mismatch: external plugin loader rejects when peerDependency unsatisfied", async () => {
     // Host-compat negotiation lives in the external-plugin loader against
-    // `peerDependencies["@vellumai/plugin-api"]`. The registry no longer
+    // `peerDependencies["@mycadet/plugin-api"]`. The registry no longer
     // re-validates a manifest-level `requires` block — the loader is the
     // single authoritative point. End-to-end coverage of the loader path
     // lives in `external-plugin-loader.test.ts`; this test asserts the

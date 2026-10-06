@@ -1,7 +1,7 @@
 import type {
   BackgroundToolStartedEvent,
   BackgroundToolCompletedEvent,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 
 import { useBackgroundTaskStore } from "@/domains/chat/background-task-store";
 

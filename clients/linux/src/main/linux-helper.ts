@@ -1,4 +1,4 @@
-import { NativeSidecarClient } from "@vellumai/native-sidecar/supervisor";
+import { NativeSidecarClient } from "@mycadet/native-sidecar/supervisor";
 
 import log from "./logger";
 

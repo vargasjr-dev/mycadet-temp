@@ -37,7 +37,7 @@ import {
   type HookFunction,
   isVisionNotSupportedError,
   type PostModelCallContext,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import { captionOutboundImagesInMessages } from "../src/caption-blocks.js";
 import {

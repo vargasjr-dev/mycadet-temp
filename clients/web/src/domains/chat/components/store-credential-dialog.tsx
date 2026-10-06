@@ -3,7 +3,7 @@ import {
   isCompletePrivateKeyBlock,
   PRIVATE_KEY_LABEL,
   type DetectedSecret,
-} from "@vellumai/service-contracts/secret-detection";
+} from "@mycadet/service-contracts/secret-detection";
 import { useTranslation } from "@/i18n";
 
 import { AddCredentialModal } from "@/components/add-credential-modal";
@@ -19,7 +19,7 @@ const UNKNOWN_SLOT: CredentialSlot = { service: "", field: "" };
 
 /**
  * Suggested vault slot per detection label from the shared secret-detection
- * patterns (`@vellumai/service-contracts/secret-detection`). Labels without
+ * patterns (`@mycadet/service-contracts/secret-detection`). Labels without
  * an entry — including the token-shape label and "Private Key", where the
  * owning service is unknowable — fall back to empty fields for the user to
  * fill in. Suggestions only; every field stays editable in the dialog.

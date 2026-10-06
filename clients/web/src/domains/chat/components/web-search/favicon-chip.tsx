@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { Typography, cn } from "@vellumai/design-library";
+import { Typography, cn } from "@mycadet/design-library";
 
 /**
  * Compact chip showing a site favicon and its title. Used in the

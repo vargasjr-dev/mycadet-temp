@@ -23,7 +23,7 @@ mock.module("@/assistant/avatar-api", () => ({
   fetchCharacterTraits: fetchCharacterTraitsMock,
   saveCharacterTraits: saveCharacterTraitsMock,
 }));
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 mock.module("@/hooks/use-assistant-avatar", () => ({

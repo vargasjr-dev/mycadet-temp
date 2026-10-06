@@ -54,9 +54,9 @@ let pendingWarmDeliveries: GuardianDeliveryStub[] | null = null;
  */
 function seedVellumGuardian(userFile: string | null): void {
   mockGuardianDeliveries = [
-    { channelType: "vellum", address: "vellum:self", status: "active" },
+    { channelType: "vellum", address: "cadet:self", status: "active" },
   ];
-  mockContactsByAddress["vellum:vellum:self"] = { userFile };
+  mockContactsByAddress["cadet:cadet:self"] = { userFile };
 }
 
 // ── Mock modules (must precede imports from the module under test) ──
@@ -149,9 +149,9 @@ describe("resolveGuardianPersonaPath", () => {
     // Cold start: the guardian binding exists upstream but the sync cache is
     // empty, so a bare sync resolution misses it and falls back to default.
     pendingWarmDeliveries = [
-      { channelType: "vellum", address: "vellum:self", status: "active" },
+      { channelType: "vellum", address: "cadet:self", status: "active" },
     ];
-    mockContactsByAddress["vellum:vellum:self"] = { userFile: "alice.md" };
+    mockContactsByAddress["cadet:cadet:self"] = { userFile: "alice.md" };
 
     expect(resolveGuardianPersonaPath()).toBeNull();
 
@@ -369,13 +369,13 @@ describe("resolveUserSlug (guardian trust WITH requester identity)", () => {
     // Guardian contact exists but has no explicit userFile (post-hatch state).
     seedVellumGuardian(null);
     // The requester principal id resolves to that same null-userFile contact.
-    mockContactsByAddress["vellum:principal-123"] = { userFile: null };
+    mockContactsByAddress["cadet:principal-123"] = { userFile: null };
 
     const trustContext = {
       sourceChannel: "vellum",
       trustClass: "guardian",
       requesterExternalUserId: "principal-123",
-      guardianExternalUserId: "vellum:self",
+      guardianExternalUserId: "cadet:self",
     } as TrustContext;
 
     expect(resolveUserSlug(trustContext)).toBe("guardian");
@@ -383,13 +383,13 @@ describe("resolveUserSlug (guardian trust WITH requester identity)", () => {
 
   test("an explicit requester userFile still wins over the guardian fallback", () => {
     seedVellumGuardian(null);
-    mockContactsByAddress["vellum:principal-123"] = { userFile: "alice.md" };
+    mockContactsByAddress["cadet:principal-123"] = { userFile: "alice.md" };
 
     const trustContext = {
       sourceChannel: "vellum",
       trustClass: "guardian",
       requesterExternalUserId: "principal-123",
-      guardianExternalUserId: "vellum:self",
+      guardianExternalUserId: "cadet:self",
     } as TrustContext;
 
     expect(resolveUserSlug(trustContext)).toBe("alice");
@@ -397,13 +397,13 @@ describe("resolveUserSlug (guardian trust WITH requester identity)", () => {
 
   test("non-guardian turn with a null-userFile contact does not borrow the guardian persona", () => {
     seedVellumGuardian(null);
-    mockContactsByAddress["vellum:principal-123"] = { userFile: null };
+    mockContactsByAddress["cadet:principal-123"] = { userFile: null };
 
     const trustContext = {
       sourceChannel: "vellum",
       trustClass: "trusted_contact",
       requesterExternalUserId: "principal-123",
-      guardianExternalUserId: "vellum:self",
+      guardianExternalUserId: "cadet:self",
     } as TrustContext;
 
     expect(resolveUserSlug(trustContext)).toBeNull();
@@ -456,9 +456,9 @@ describe("resolveUserSlug (guardian bound on a non-vellum channel)", () => {
 describe("resolveUserSlug (cold cache, background shape)", () => {
   test("misses on a cold cache, resolves the guardian after the construction-time warm", async () => {
     pendingWarmDeliveries = [
-      { channelType: "vellum", address: "vellum:self", status: "active" },
+      { channelType: "vellum", address: "cadet:self", status: "active" },
     ];
-    mockContactsByAddress["vellum:vellum:self"] = { userFile: "alice.md" };
+    mockContactsByAddress["cadet:cadet:self"] = { userFile: "alice.md" };
 
     const trustContext = {
       sourceChannel: "vellum",

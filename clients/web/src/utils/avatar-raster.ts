@@ -13,12 +13,12 @@
  * agrees on which avatar it is drawing.
  */
 
-import type { AvatarKind } from "@vellumai/avatar-manifest";
+import type { AvatarKind } from "@mycadet/avatar-manifest";
 import {
   NOTIFICATION_AVATAR_SIZE,
   notificationAvatarDiscHex,
   notificationAvatarGeometry,
-} from "@vellumai/avatar-manifest/notification-avatar";
+} from "@mycadet/avatar-manifest/notification-avatar";
 
 /**
  * The largest centered square of a `srcW`×`srcH` source, the source rect for
@@ -174,7 +174,7 @@ export async function rasterizeAvatar(
  * sender rather than a broken one.
  *
  * The geometry and the disc colour come from
- * `@vellumai/avatar-manifest/notification-avatar`, the same spec the daemon
+ * `@mycadet/avatar-manifest/notification-avatar`, the same spec the daemon
  * rasterizes with resvg, so the picture is one picture on every platform.
  */
 export async function rasterizeNotificationAvatar(

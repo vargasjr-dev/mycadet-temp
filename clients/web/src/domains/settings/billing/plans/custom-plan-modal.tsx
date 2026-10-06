@@ -22,12 +22,12 @@ import type {
 } from "@/generated/api/types.gen";
 import { useTranslation } from "@/i18n";
 import { ExternalAnchor } from "@/components/external-anchor";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 import {
   Select,
   type SelectOption,
-} from "@vellumai/design-library/components/select";
-import { Modal } from "@vellumai/design-library/components/modal";
+} from "@mycadet/design-library/components/select";
+import { Modal } from "@mycadet/design-library/components/modal";
 
 import {
   BASELINE_MACHINE,

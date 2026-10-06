@@ -22,8 +22,7 @@ const log = getLogger("boot-maintenance");
  * pages in `memory_v2_concept_pages` under the `skills/<id>` slug prefix), and
  * a one-shot best-effort cleanup of the legacy `memory_v2_skills` Qdrant
  * collection. Uses a dynamic import so v2 code does not load unless the gate
- * passes. Never awaits — startup must not block on this (see
- * `assistant/CLAUDE.md` daemon startup philosophy).
+ * passes. Never awaits — startup must not block on this.
  */
 export function maybeSeedCapabilitySkills(config: AssistantConfig): void {
   if (!usesConceptPageMemory(config.memory)) {

@@ -10,7 +10,7 @@
  * this never throws (it runs on contact-serve paths).
  */
 
-import { GetGuardianContactIpcResponseSchema } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import { GetGuardianContactIpcResponseSchema } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import { ipcCallPersistent } from "../ipc/gateway-client.js";
 import { getLogger } from "../util/logger.js";

@@ -29,7 +29,7 @@ import {
   traitsForAppIconName,
 } from "@/utils/avatar-app-icon";
 import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 /** Size of the row's thumbnail, sitting beside a single-line control. */
 const ROW_PREVIEW_SIZE = 32;
@@ -71,7 +71,7 @@ const STAGING_GROUND: IconGround = {
  *
  * A thumbnail standing in for "no alternate applied" follows the shell it is
  * running in or it depicts an icon that is on nobody's home screen. It is the
- * shell that is asked and not `VITE_SENTRY_ENVIRONMENT`, because the icon
+ * shell that is asked and not `VITE_ENVIRONMENT`, because the icon
  * belongs to the installed build while that variable names the web deploy: a
  * Staging shell loading a dev server would otherwise draw pink under a yellow
  * icon. Production is absent: the catalog green
@@ -85,7 +85,7 @@ const PRIMARY_ICON_GROUND: Partial<Record<ShellEnvironment, IconGround>> = {
 
 /**
  * Environment to fall back to when the shell names none, keyed by
- * `VITE_SENTRY_ENVIRONMENT`. An unset value is a local build, which each
+ * `VITE_ENVIRONMENT`. An unset value is a local build, which each
  * project runs on its own dev build (the App Dev scheme in
  * `clients/ios/README.md`, the `dev` flavor on Android), so it reads as dev.
  */
@@ -124,7 +124,7 @@ function primaryIconEnvironment(
   }
   if (shell === null) {
     return WEB_ENV_SHELL_ENVIRONMENT[
-      import.meta.env.VITE_SENTRY_ENVIRONMENT ?? "local"
+      import.meta.env.VITE_ENVIRONMENT ?? "local"
     ];
   }
   return undefined;

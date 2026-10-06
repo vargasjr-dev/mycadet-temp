@@ -10,7 +10,7 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { TrustVerdict } from "@vellumai/gateway-client";
+import type { TrustVerdict } from "@mycadet/gateway-client";
 
 const FROM_NUMBER = "+15555550100";
 

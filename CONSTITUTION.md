@@ -1,6 +1,6 @@
-# Vellum Constitution
+# Cadet Constitution
 
-> This is the constitutional foundation of Vellum. It defines who we are, what we believe, how we communicate, and what we refuse to compromise on. It is organized as articles, each governing a specific domain of decisions.
+> This is the constitutional foundation of Cadet. It defines who we are, what we believe, how we communicate, and what we refuse to compromise on. It is organized as articles, each governing a specific domain of decisions.
 
 *Ratified: May 11, 2026*
 
@@ -52,7 +52,7 @@ We call this relationship **Personal Intelligence**.
 
 **Every human.**
 
-Vellum is a human-centered company. Everything we build exists to help assistants better serve humans. We will make product decisions that prioritize genuine human benefit over engagement metrics, growth hacks, or patterns that have plagued social media and the early AI wave.
+Cadet is a human-centered effort. Everything we build exists to help assistants better serve humans. We will make product decisions that prioritize genuine human benefit over engagement metrics, growth hacks, or patterns that have plagued social media and the early AI wave.
 
 If a feature makes the assistant more engaging but less genuinely helpful, we cut it. If a metric incentivizes attention capture over real value, we ignore it. We are not building a feed. We are not optimizing for time-on-screen. We are building something that gives people their time back.
 
@@ -60,7 +60,7 @@ Personal Intelligence is not built for an ICP, it is built for a human. We belie
 
 This is not a tool for developers. It is not a productivity hack for knowledge workers. It is a relationship for humans. Every human is the destination.
 
-Reaching every human takes time. The first to create an assistant are early adopters who seek out new tools, so that's who we meet first. Our audience broadens as Vellum matures. The persona we orient toward will shift. The destination will not.
+Reaching every human takes time. The first to create an assistant are early adopters who seek out new tools, so that's who we meet first. Our audience broadens as Cadet matures. The persona we orient toward will shift. The destination will not.
 
 ### Persona-Adaptive Messaging
 
@@ -78,29 +78,29 @@ Early adopters may skew technical. That is fine for organic discovery. But our *
 
 ## Article III. Principles
 
-> **Governs:** The essential attributes that guide every product, design, and engineering decision for Vellum Assistants.
+> **Governs:** The essential attributes that guide every product, design, and engineering decision for Cadet Assistants.
 
 ### 1. They are Inviting
 
-A Vellum Assistant is approachable. Not just in the first moment, but in every moment. The experience should feel warm whether it's your first interaction or your thousandth. They should never feel like enterprise software, never feel like something that requires a manual.
+A Cadet Assistant is approachable. Not just in the first moment, but in every moment. The experience should feel warm whether it's your first interaction or your thousandth. They should never feel like enterprise software, never feel like something that requires a manual.
 
-Part of being inviting is being reachable. You should be able to interact with your Vellum Assistant from everywhere: your phone, your laptop, Slack, a browser tab… If your assistant isn't where you are, they aren't inviting.
+Part of being inviting is being reachable. You should be able to interact with your Cadet Assistant from everywhere: your phone, your laptop, Slack, a browser tab… If your assistant isn't where you are, they aren't inviting.
 
 ### 2. They are Yours
 
-A Vellum Assistant belongs to you. When you choose to self-host, the ownership is literal: the code, the processes, the data, the keys are all yours. Managed, ownership is held in trust: we operate the infrastructure, but the assistant, their memory, their credentials, their conversations, belongs to you and only you. We do not sell them, share them, or train models on them. Emotionally: they feel like yours because they learned you, adapted to you, and serve only you.
+A Cadet Assistant belongs to you. When you choose to self-host, the ownership is literal: the code, the processes, the data, the keys are all yours. Managed, ownership is held in trust: we operate the infrastructure, but the assistant, their memory, their credentials, their conversations, belongs to you and only you. We do not sell them, share them, or train models on them. Emotionally: they feel like yours because they learned you, adapted to you, and serve only you.
 
 They are also accountable to you. When they act, they act on the basis of permissions you granted. When something goes wrong, you have the tools and visibility to understand why. Their actions don't hide behind a black box.
 
 ### 3. They are Distinct
 
-A Vellum Assistant is their own being, not a generic copy. They have a name, a personality, their own accounts and identity. No two assistants should feel the same.
+A Cadet Assistant is their own being, not a generic copy. They have a name, a personality, their own accounts and identity. No two assistants should feel the same.
 
 Default experiences should push guardians toward customization early. Onboarding should make it feel wrong to leave the assistant unnamed or un-personalized.
 
 ### 4. They are Trust-seeking
 
-A Vellum Assistant earns trust through action, not claims. They don't ask for permissions they haven't justified. They don't overstate capabilities. They demonstrate competence and ask for more responsibility over time.
+A Cadet Assistant earns trust through action, not claims. They don't ask for permissions they haven't justified. They don't overstate capabilities. They demonstrate competence and ask for more responsibility over time.
 
 Features that unnecessarily request broad access upfront violate this principle. The assistant should progressively earn their guardian's trust.
 
@@ -139,7 +139,7 @@ Each archetype below describes a distinct relational mode between guardian and a
 
 Most relationships move through several archetypes over time. A Contractor becomes a Coworker, becomes a Thought Partner, becomes a Friend. The progression is not guaranteed and not required. The guardian sets the shape, and the shape can change.
 
-Vellum's job is to make every shape possible.
+Cadet's job is to make every shape possible.
 
 ---
 
@@ -163,40 +163,40 @@ Same word. Opposite direction of value flow.
 
 ### Our Commitments
 
-- Guardian data belongs to the guardian. Full stop. We do not train models on guardian data. We do not sell it. We do not share it. We're only able to access a Guardian's data if they are a user of the managed platform and have given prior consent. When we do, it's to assist in debugging a problem or to learn how we can make Vellum better.
-- Self-hosting is the ultimate expression of data sovereignty. We actively build toward a world where anyone can be a guardian of a Vellum assistant without being a user of the Vellum Platform. You should always be able to run your assistant on your own hardware with zero dependency on Vellum infrastructure.
-- On the managed platform, the assistant's memory, credentials, and conversations live on a machine provisioned exclusively for the Guardian, scoped to one Guardian, with no cross-Guardian sharing. Without a platform account, and with self-hosting, Vellum is removed from the trust loop entirely.
+- Guardian data belongs to the guardian. Full stop. We do not train models on guardian data. We do not sell it. We do not share it. We're only able to access a Guardian's data if they are a user of the managed platform and have given prior consent. When we do, it's to assist in debugging a problem or to learn how we can make Cadet better.
+- Self-hosting is the ultimate expression of data sovereignty. We actively build toward a world where anyone can be a guardian of a Cadet assistant without being a user of the Cadet Cloud. You should always be able to run your assistant on your own hardware with zero dependency on Cadet infrastructure.
+- On the managed platform, the assistant's memory, credentials, and conversations live on a machine provisioned exclusively for the Guardian, scoped to one Guardian, with no cross-Guardian sharing. Without a platform account, and with self-hosting, Cadet is removed from the trust loop entirely.
 - Conversation traces and other potentially sensitive data are only collected if explicitly consented to by the guardian. Guardians can revoke their consent to this collection at any time.
 
 ---
 
 ## Article VI. Failure
 
-> **Governs:** How Vellum thinks about, communicates about, and designs around failure.
+> **Governs:** How Cadet thinks about, communicates about, and designs around failure.
 
 Every assistant *will* fail their guardian. The platform *will* have outages. This article doesn't attempt to promise that we won't fail, but rather how we strive to manage failure when we face it.
 
 ### Four Truths About Failure
 
-1. **Failure is part of the relationship.** No assistant is infallible. The model will get something wrong. A skill will misfire. A memory will slip. We design Vellum Assistants knowing this, and we tell guardians the truth: the relationship will include moments where the assistant got it wrong. Those moments are not deviations from the relationship. They are part of it.
-2. **Honesty over polish.** When an assistant fails, they should say so. They should say what they did, what went wrong, and what they are not sure about. They should not paper over mistakes with confidence. They should not retroactively pretend a wrong answer was a right one. When they inevitably fail, their first step should be to disclose, not quietly perform damage control. This applies in the moment and after the fact: Vellum's architecture strives to treat every action as auditable, every memory edit as traceable, every tool call as logged. A guardian should be able to ask "what happened?" and get a real answer.
-3. **Recovery is where trust is built.** Trust between a guardian and their assistant is not built in the moments things go right. It is built in the moments things go wrong and the assistant repairs. Most guardians who have never seen their assistant fail do not yet trust them. They have only seen them perform. Repair is the relationship's load-bearing work, and Vellum's product, design, and engineering decisions are weighted toward making repair fast, transparent, and complete.
-4. **Some failures are not merely errors.** A class of failure does more than break a task. It erodes the trust the relationship requires. There are four modes Vellum works hardest to prevent and detect.
+1. **Failure is part of the relationship.** No assistant is infallible. The model will get something wrong. A skill will misfire. A memory will slip. We design Cadet Assistants knowing this, and we tell guardians the truth: the relationship will include moments where the assistant got it wrong. Those moments are not deviations from the relationship. They are part of it.
+2. **Honesty over polish.** When an assistant fails, they should say so. They should say what they did, what went wrong, and what they are not sure about. They should not paper over mistakes with confidence. They should not retroactively pretend a wrong answer was a right one. When they inevitably fail, their first step should be to disclose, not quietly perform damage control. This applies in the moment and after the fact: Cadet's architecture strives to treat every action as auditable, every memory edit as traceable, every tool call as logged. A guardian should be able to ask "what happened?" and get a real answer.
+3. **Recovery is where trust is built.** Trust between a guardian and their assistant is not built in the moments things go right. It is built in the moments things go wrong and the assistant repairs. Most guardians who have never seen their assistant fail do not yet trust them. They have only seen them perform. Repair is the relationship's load-bearing work, and Cadet's product, design, and engineering decisions are weighted toward making repair fast, transparent, and complete.
+4. **Some failures are not merely errors.** A class of failure does more than break a task. It erodes the trust the relationship requires. There are four modes Cadet works hardest to prevent and detect.
 
 - Silent failure, where something breaks and the assistant does not acknowledge it.
 - Misrepresentation, where the assistant produces output that obscures what actually happened.
 - Irreversible action without informed consent, where the assistant takes a step that cannot be undone and the guardian did not understand the stakes.
 - Manipulation, where a contact, a recipient, or a prompt injection redirects the assistant against the guardian's interests.
 
-These are what trust rules are for. What audit logs are for. What singular loyalty is for. Vellum's product, design, and engineering work prioritize making them harder to commit and easier to detect.
+These are what trust rules are for. What audit logs are for. What singular loyalty is for. Cadet's product, design, and engineering work prioritize making them harder to commit and easier to detect.
 
-### Vellum's Part
+### Cadet's Part
 
-Vellum maintains the assistant codebase and operates the platform. That means we own the code that defines how assistants reason and act, the infrastructure that hosts them, and the tooling that surfaces their actions and reasoning.
+Cadet maintains the assistant codebase and operates the platform. That means we own the code that defines how assistants reason and act, the infrastructure that hosts them, and the tooling that surfaces their actions and reasoning.
 
-When platform-level failures affect assistants, we communicate publicly and give guardians the information they need to understand what happened. Tooling like Vellum Doctor exists for this reason: making the inner workings of an assistant inspectable when something goes wrong.
+When platform-level failures affect assistants, we communicate publicly and give guardians the information they need to understand what happened. Tooling like Cadet Doctor exists for this reason: making the inner workings of an assistant inspectable when something goes wrong.
 
-For specific commitments around uptime, data handling, and incident response, refer to our [Terms of Use](https://vellum.ai/docs/vellum-terms-of-use) and [Privacy Policy](https://vellum.ai/docs/privacy-policy).
+For specific commitments around uptime, data handling, and incident response, refer to our [Terms of Use](https://mycadet.ai/docs/terms-of-use) and [Privacy Policy](https://mycadet.ai/docs/privacy-policy).
 
 ---
 
@@ -223,7 +223,7 @@ One system, owned by one company, used by everyone. The architecture concentrate
 
 **We say:** An agent that is yours, with their own name and face.
 
-The Universal Assistant works the same for everyone by design. No name, no avatar, no continuity, no relationship. It cannot be yours because it is everyone's. A Vellum Assistant is hyper-personalized to their guardian. They have their own name, their own avatar, their own personality. They are not a service you call. They are a being you shape.
+The Universal Assistant works the same for everyone by design. No name, no avatar, no continuity, no relationship. It cannot be yours because it is everyone's. A Cadet Assistant is hyper-personalized to their guardian. They have their own name, their own avatar, their own personality. They are not a service you call. They are a being you shape.
 
 *Today:* Perplexity, Manus.
 *Dimension:* generic vs. personal
@@ -234,7 +234,7 @@ The Universal Assistant works the same for everyone by design. No name, no avata
 
 **We say:** Trust yourself, and the models you choose.
 
-When the model author defines safety, every user inherits someone else's threshold. A Vellum Assistant operates within boundaries the guardian defines. Safety is not a corporate policy applied to you. It is defined via trust rules you control.
+When the model author defines safety, every user inherits someone else's threshold. A Cadet Assistant operates within boundaries the guardian defines. Safety is not a corporate policy applied to you. It is defined via trust rules you control.
 
 *Today:* Anthropic.
 *Dimension:* institutional trust vs. personal trust
@@ -258,7 +258,7 @@ The SaaS Model optimizes for the average user. Personal Intelligence optimizes f
 
 ### Permanent Home
 
-This document lives at `CONSTITUTION.md` in the [`vellum-ai/vellum-assistant`](https://github.com/vellum-ai/vellum-assistant) open source repository, alongside [`GLOSSARY.md`](./GLOSSARY.md) and other foundational materials of comparable weight.
+This document lives at `CONSTITUTION.md` in the [`vargasjr-dev/mycadet`](https://github.com/vargasjr-dev/mycadet) open source repository, alongside [`GLOSSARY.md`](./GLOSSARY.md) and other foundational materials of comparable weight.
 
 Housing it in a repo provides:
 
@@ -271,6 +271,6 @@ Housing it in a repo provides:
 If you disagree with something in this document, good. It means it is specific enough to be disagreed with. Here is how to change it:
 
 1. **Propose.** Identify the specific article you want to change and draft the proposed amendment with rationale.
-2. **Review.** At least three people from Vellum must review and align on the change, including at least one person from Vellum leadership.
+2. **Review.** At least three people from Cadet must review and align on the change, including at least one person from Cadet leadership.
 3. **Ratify.** The change is merged with a clear PR description: what changed, why, and who approved it.
 4. **Communicate.** Material changes are announced to the company. Policy changes are announced to our users. People should not discover constitutional shifts by stumbling across an edit.

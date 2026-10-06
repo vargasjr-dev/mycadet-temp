@@ -21,8 +21,8 @@ import type {
  * assistant matches on, so they are not translated and not reworded; the
  * field names below are the same.
  */
-const REFERENCE_OPEN = "[vellum:email-reference]";
-const REFERENCE_CLOSE = "[/vellum:email-reference]";
+const REFERENCE_OPEN = "[cadet:email-reference]";
+const REFERENCE_CLOSE = "[/cadet:email-reference]";
 
 /**
  * Longest snippet a reference carries. The list row's preview is already a

@@ -11,7 +11,7 @@
 
 import { useCallback, useLayoutEffect, useRef } from "react";
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 // ---------------------------------------------------------------------------
 // Types

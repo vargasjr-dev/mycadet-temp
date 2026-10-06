@@ -5,7 +5,7 @@ import { useTranslation } from "@/i18n";
 import { AppIcon, getAppIcon } from "@/utils/app-icon-registry";
 import { cn } from "@/utils/misc";
 import { preparePreviewHtml } from "@/utils/sandbox-bridge";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 export interface AppCardProps {
   name: string;

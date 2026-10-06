@@ -19,7 +19,7 @@
  * guessing whether the live view raced ahead of a lagging snapshot.
  */
 
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -39,7 +39,11 @@ import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
  *   upgraded to one of the above by the transport's teardown path.
  */
 export type SseClientEndReason =
-  "watchdog" | "cancelled" | "error" | "ended" | "aborted";
+  | "watchdog"
+  | "cancelled"
+  | "error"
+  | "ended"
+  | "aborted";
 
 export interface SseDebugClient {
   /** Stable client identifier. */

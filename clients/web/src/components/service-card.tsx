@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { DetailCard } from "@/components/detail-card";
 import { useTranslation } from "@/i18n";
-import { SegmentControl } from "@vellumai/design-library/components/segment-control";
+import { SegmentControl } from "@mycadet/design-library/components/segment-control";
 
 import type { ServiceMode } from "@/generated/daemon/types.gen";
 

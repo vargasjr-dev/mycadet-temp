@@ -9,12 +9,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { ContentBlock, ImageContent, Message } from "@vellumai/plugin-api";
+import type { ContentBlock, ImageContent, Message } from "@mycadet/plugin-api";
 import {
   getConfiguredProvider,
   getConversationDirPath,
   safeStringSlice,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 import { and, asc, desc, eq, gt } from "drizzle-orm";
 
 import type { AssistantConfig } from "../../../../../config/types.js";

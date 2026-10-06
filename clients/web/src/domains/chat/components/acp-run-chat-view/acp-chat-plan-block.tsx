@@ -1,4 +1,3 @@
-
 import { useTranslation } from "@/i18n";
 /**
  * A plan checklist in the ACP chat transcript.
@@ -6,7 +5,7 @@ import { useTranslation } from "@/i18n";
 
 import { Circle, CheckCircle2, ListChecks } from "lucide-react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 
 export interface AcpChatPlanBlockProps {
   /** Plan entries projected from the run's `plan` event. */

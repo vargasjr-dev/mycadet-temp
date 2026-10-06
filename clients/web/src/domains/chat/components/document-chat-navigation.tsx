@@ -1,4 +1,4 @@
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 import { FileText } from "lucide-react";
 
 import { useTranslation } from "@/i18n";

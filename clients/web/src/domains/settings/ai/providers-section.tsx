@@ -3,9 +3,9 @@ import { useMemo } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { Button } from "@vellumai/design-library/components/button";
-import { Skeleton } from "@vellumai/design-library/components/skeleton";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Skeleton } from "@mycadet/design-library/components/skeleton";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { LanguageModelSection } from "@/domains/settings/ai/language-model-section";
 import { ProviderRow } from "@/domains/settings/ai/provider-row";
@@ -45,11 +45,7 @@ export function ProvidersSection({
   onConnectionDeleted,
 }: ProvidersSectionProps) {
   const { t } = useTranslation("settings");
-  const {
-    data,
-    isLoading,
-    isError,
-  } = useQuery(
+  const { data, isLoading, isError } = useQuery(
     inferenceProviderconnectionsGetOptions({
       path: { assistant_id: assistantId },
     }),
@@ -85,11 +81,7 @@ export function ProvidersSection({
     <LanguageModelSection
       title={t("providersSection.title")}
       action={
-        <Button
-          variant="outlined"
-          onClick={onAddProvider}
-          leftIcon={<Plus />}
-        >
+        <Button variant="outlined" onClick={onAddProvider} leftIcon={<Plus />}>
           {t("providersSection.addProvider")}
         </Button>
       }

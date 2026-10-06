@@ -1,7 +1,7 @@
 import { Menu, X } from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
 
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { useSwipeHorizontal } from "@/hooks/use-swipe-horizontal";

@@ -3,7 +3,7 @@ import { loadWorkspaceMcpConfig } from "../../../../mcp/workspace-mcp-config.js"
 /**
  * Generic input for building capability statements: the capability fields of
  * a skill, decoupled from any one catalog shape. `ResolvedSkillEntry` values
- * from `@vellumai/plugin-api` satisfy it structurally, as do the converter
+ * from `@mycadet/plugin-api` satisfy it structurally, as do the converter
  * outputs in `graph/capability-seed.ts`.
  */
 export interface SkillCapabilityInput {

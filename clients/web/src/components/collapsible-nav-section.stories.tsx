@@ -19,7 +19,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Clock, MessageSquare, Pin, Star } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { SideMenu } from "@vellumai/design-library";
+import { SideMenu } from "@mycadet/design-library";
 
 import { CollapsibleNavSection } from "./collapsible-nav-section";
 import { SectionActionsButton } from "./section-actions-button";

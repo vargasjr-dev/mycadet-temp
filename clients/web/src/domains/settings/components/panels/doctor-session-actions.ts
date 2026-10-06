@@ -10,7 +10,7 @@ import {
   assistantsDoctorSessionsDestroy,
   assistantsMaintenanceModeExitCreate,
 } from "@/generated/api/sdk.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 // ---------------------------------------------------------------------------
 // Constants

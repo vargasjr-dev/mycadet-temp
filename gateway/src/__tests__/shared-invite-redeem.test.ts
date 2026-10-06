@@ -21,7 +21,7 @@ import {
 import {
   hashInviteToken,
   ResolveInboundTrustResponseSchema,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import { and, eq } from "drizzle-orm";
 
 // The route schema the daemon serves: the guardian-only chat route as a

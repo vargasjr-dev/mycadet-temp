@@ -15,7 +15,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button, Popover } from "@vellumai/design-library";
+import { Button, Popover } from "@mycadet/design-library";
 
 import { useQuoteReplyStore } from "@/domains/chat/quote-reply-store";
 import { resolveAssistantSelection } from "@/domains/chat/resolve-assistant-selection";

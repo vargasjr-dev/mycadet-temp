@@ -1,4 +1,3 @@
-
 import { useTranslation } from "@/i18n";
 /**
  * Pure presentational layout for the research-onboarding results step.
@@ -14,7 +13,7 @@ import { useTranslation } from "@/i18n";
 
 import type { ReactNode } from "react";
 
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import {
   ResearchFactsCard,

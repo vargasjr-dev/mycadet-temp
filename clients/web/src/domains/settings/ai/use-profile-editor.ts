@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { validateInferenceProfileConfig } from "@vellumai/assistant-api";
+import { validateInferenceProfileConfig } from "@mycadet/assistant-api";
 
 import { t } from "@/i18n";
 

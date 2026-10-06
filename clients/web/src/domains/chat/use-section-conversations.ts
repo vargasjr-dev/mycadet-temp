@@ -28,7 +28,7 @@ import { useSectionConversationListQuery } from "@/hooks/conversation-queries";
 import { useSupportsGroupFilter } from "@/lib/backwards-compat/use-supports-group-filter";
 import { useSupportsNativeOriginFilter } from "@/lib/backwards-compat/use-supports-native-origin-filter";
 import type { Conversation } from "@/types/conversation-types";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { loadMoreConversations } from "@/utils/conversation-cache-mutations";
 import {
   NATIVE_ORIGIN_CHANNEL,
@@ -232,8 +232,8 @@ export function useSectionConversations(
     loadMoreConversations(queryClient, assistantId, filter).catch(
       (error: unknown) => {
         /* Best-effort: the sentinel re-fires on the next intersection, so
-           daemon transients filter out and only unexpected failures reach
-           Sentry. */
+           daemon transients filter out and only unexpected failures get
+           reported. */
         captureError(error, {
           context: "useSectionConversations.loadMore",
           bestEffort: true,

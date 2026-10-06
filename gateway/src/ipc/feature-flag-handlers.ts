@@ -6,7 +6,7 @@
  * the HTTP GET /v1/feature-flags endpoint returns.
  */
 
-import type { FeatureFlagsIpcResponse } from "@vellumai/gateway-client/gateway-ipc-contracts";
+import type { FeatureFlagsIpcResponse } from "@mycadet/gateway-client/gateway-ipc-contracts";
 import { z } from "zod";
 
 import { loadFeatureFlagDefaults } from "../feature-flag-defaults.js";

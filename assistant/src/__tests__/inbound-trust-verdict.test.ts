@@ -18,7 +18,7 @@ mock.module("../runtime/gateway-client.js", () => ({
   deliverChannelReply: async () => {},
 }));
 
-import type { TrustVerdict } from "@vellumai/gateway-client";
+import type { TrustVerdict } from "@mycadet/gateway-client";
 
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { getDb } from "../persistence/db-connection.js";

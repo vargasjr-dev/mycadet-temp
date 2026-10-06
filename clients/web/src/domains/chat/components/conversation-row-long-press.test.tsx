@@ -39,7 +39,7 @@ mock.module("@/hooks/use-long-press", () => ({
 
 // Minimal design-library mocks. PanelItem renders a button wired to onSelect
 // so a click exercises the real selection path.
-mock.module("@vellumai/design-library", () => ({
+mock.module("@mycadet/design-library", () => ({
   PanelItem: ({ label, onSelect }: { label: string; onSelect?: () => void }) =>
     createElement(
       "button",
@@ -55,7 +55,7 @@ mock.module("@vellumai/design-library", () => ({
   },
 }));
 
-mock.module("@vellumai/design-library/utils/cn", () => ({
+mock.module("@mycadet/design-library/utils/cn", () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(" "),
 }));
 

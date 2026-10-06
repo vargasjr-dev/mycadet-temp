@@ -6,7 +6,7 @@
  * still import this helper *after* their `mock.module` calls (i.e. via the same
  * dynamic `await import` they use for `db/*`).
  */
-import { hashInviteCode, hashInviteToken } from "@vellumai/gateway-client";
+import { hashInviteCode, hashInviteToken } from "@mycadet/gateway-client";
 
 import { getGatewayDb } from "../../db/connection.js";
 import { ContactStore } from "../../db/contact-store.js";

@@ -61,4 +61,4 @@ export function parseVerificationCode(content: string): string | undefined {
 // ---------------------------------------------------------------------------
 
 // Single-sourced from the shared contract; re-exported for existing callers.
-export { hashVerificationSecret } from "@vellumai/gateway-client";
+export { hashVerificationSecret } from "@mycadet/gateway-client";

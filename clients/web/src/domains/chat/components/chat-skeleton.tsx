@@ -1,4 +1,4 @@
-import { Skeleton } from "@vellumai/design-library/components/skeleton";
+import { Skeleton } from "@mycadet/design-library/components/skeleton";
 
 export function ChatSkeleton() {
   return (

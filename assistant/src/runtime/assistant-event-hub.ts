@@ -15,7 +15,7 @@
 import {
   DESKTOP_PRESENCE_STATES,
   type DesktopPresenceState,
-} from "@vellumai/service-contracts/desktop-presence";
+} from "@mycadet/service-contracts/desktop-presence";
 
 import type { AssistantEvent } from "../api/index.js";
 import type { HostProxyCapability, InterfaceId } from "../channels/types.js";
@@ -442,10 +442,7 @@ export class AssistantEventHub {
    * Whether `connectionId` is still an active client subscription, optionally
    * required to belong to `clientId`.
    */
-  hasActiveClientConnection(
-    connectionId: string,
-    clientId?: string,
-  ): boolean {
+  hasActiveClientConnection(connectionId: string, clientId?: string): boolean {
     for (const entry of this.subscribers) {
       if (entry.connectionId !== connectionId) {
         continue;

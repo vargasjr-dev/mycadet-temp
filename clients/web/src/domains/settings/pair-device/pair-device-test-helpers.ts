@@ -10,7 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mock } from "bun:test";
 import { createElement, type ReactElement, type ReactNode } from "react";
 
-import type { RemoteWebPairingRequestSummary } from "@vellumai/service-contracts/remote-web-pairing";
+import type { RemoteWebPairingRequestSummary } from "@mycadet/service-contracts/remote-web-pairing";
 
 import type { IntegrationsIngressStatusGetResponse } from "@/generated/daemon/types.gen";
 

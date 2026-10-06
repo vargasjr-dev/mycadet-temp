@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import type { Conversation } from "@/types/conversation-types";
-import { Button } from "@vellumai/design-library";
+import { Button } from "@mycadet/design-library";
 
 import { DeleteConversationConfirmDialog } from "./delete-conversation-confirm-dialog";
 

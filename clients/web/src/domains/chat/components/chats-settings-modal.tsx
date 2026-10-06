@@ -1,8 +1,8 @@
 import type { RefObject } from "react";
-import { Button } from "@vellumai/design-library/components/button";
-import { Modal } from "@vellumai/design-library/components/modal";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Modal } from "@mycadet/design-library/components/modal";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import { useTranslation } from "@/i18n";
 

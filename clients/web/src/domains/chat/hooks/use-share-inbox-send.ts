@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import * as Sentry from "@sentry/react";
 
 import { requestComposerFocus } from "@/domains/chat/composer-focus";
 import {
@@ -90,13 +89,6 @@ export function useShareInboxSend({
 
   useEffect(() => {
     const store = usePendingDeepLinkStore.getState();
-    const breadcrumb = (outcome: string) => {
-      Sentry.addBreadcrumb({
-        category: "deeplink",
-        level: "info",
-        message: `shareInbox ${outcome}`,
-      });
-    };
 
     const inFlight = inFlightRef.current;
     if (inFlight !== null) {
@@ -106,7 +98,6 @@ export function useShareInboxSend({
           useComposerStore.getState().saveDraft(inFlight.threadId, inFlight.text);
         }
         inFlightRef.current = null;
-        breadcrumb("saved as the target thread's draft: user navigated away");
         return;
       }
       const owned = ownedAttachments(attachments, inFlight.ownedLocalIds);
@@ -119,7 +110,6 @@ export function useShareInboxSend({
           store.setPendingComposerMessage(inFlight.text);
         }
         requestComposerFocus();
-        breadcrumb("demoted to pre-fill: attachment upload failed");
         return;
       }
       const toSend: DisplayAttachment[] = owned
@@ -138,7 +128,6 @@ export function useShareInboxSend({
       inFlightRef.current = null;
       removeOwnedAttachments(inFlight.ownedLocalIds);
       void sendMessage(inFlight.text, toSend);
-      breadcrumb("sent");
       return;
     }
 
@@ -150,17 +139,15 @@ export function useShareInboxSend({
       const parked = store.consumePendingShareSend();
       if (parked !== null && parked.text.length > 0) {
         useComposerStore.getState().saveDraft(parked.threadId, parked.text);
-        breadcrumb("saved as the target thread's draft: user navigated away");
       }
       return;
     }
 
-    const demote = (reason: string) => {
+    const demote = (_reason: string) => {
       const parked = store.consumePendingShareSend();
       if (parked === null) {
         return;
       }
-      breadcrumb(`demoted to pre-fill: ${reason}`);
       if (parked.text.length > 0) {
         store.setPendingComposerMessage(parked.text);
       }

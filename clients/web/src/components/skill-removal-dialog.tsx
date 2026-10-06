@@ -1,4 +1,4 @@
-import { ConfirmDialog } from "@vellumai/design-library";
+import { ConfirmDialog } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 
@@ -30,9 +30,7 @@ export function SkillRemovalDialog({
       open={skillName !== null}
       title={t("skillRemovalDialog.title")}
       message={
-        skillName
-          ? t("skillRemovalDialog.message", { name: skillName })
-          : ""
+        skillName ? t("skillRemovalDialog.message", { name: skillName }) : ""
       }
       confirmLabel={t("skillRemovalDialog.remove")}
       destructive

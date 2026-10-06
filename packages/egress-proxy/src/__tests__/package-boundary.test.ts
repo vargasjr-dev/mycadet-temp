@@ -1,14 +1,14 @@
 /**
- * Package boundary tests for @vellumai/egress-proxy.
+ * Package boundary tests for @mycadet/egress-proxy.
  *
  * These tests ensure the egress-proxy package remains isolated from
  * assistant runtime and CES server implementation modules. If a direct
  * import of those modules is introduced, these tests will fail.
  *
  * Tightened boundaries (added):
- * - Does NOT import from x-client packages (@vellumai/assistant-client,
- *   @vellumai/ces-client, @vellumai/gateway-client).
- * - Does NOT import from @vellumai/service-contracts (the egress-proxy
+ * - Does NOT import from x-client packages (@mycadet/assistant-client,
+ *   @mycadet/ces-client, @mycadet/gateway-client).
+ * - Does NOT import from @mycadet/service-contracts (the egress-proxy
  *   package deals only with proxy session lifecycle and must not depend on
  *   CES wire-protocol types).
  */
@@ -132,14 +132,14 @@ describe("package boundary", () => {
     };
 
     const forbidden = [
-      "@vellumai/assistant",
-      "@vellumai/ces",
-      "@vellumai/vellum-gateway",
-      "@vellumai/assistant-client",
-      "@vellumai/ces-client",
-      "@vellumai/ces-contracts",
-      "@vellumai/gateway-client",
-      "@vellumai/service-contracts",
+      "@mycadet/assistant",
+      "@mycadet/ces",
+      "@mycadet/vellum-gateway",
+      "@mycadet/assistant-client",
+      "@mycadet/ces-client",
+      "@mycadet/ces-contracts",
+      "@mycadet/gateway-client",
+      "@mycadet/service-contracts",
     ];
 
     for (const dep of forbidden) {

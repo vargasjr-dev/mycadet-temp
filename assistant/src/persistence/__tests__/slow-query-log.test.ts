@@ -324,13 +324,13 @@ describe("callerFromStack", () => {
 
   test("preserves the assistant's own src frames in a packaged install", () => {
     // Local-runtime install: the daemon runs from
-    // node_modules/@vellumai/assistant/src, so app frames also contain
+    // node_modules/@mycadet/assistant/src, so app frames also contain
     // node_modules. Third-party deps are still skipped; assistant src is not.
     const stack = [
       "Error",
-      "    at emit (/app/node_modules/@vellumai/assistant/src/persistence/slow-query-log.ts:192:5)",
+      "    at emit (/app/node_modules/@mycadet/assistant/src/persistence/slow-query-log.ts:192:5)",
       "    at all (/app/node_modules/drizzle-orm/bun-sqlite/session.js:79:23)",
-      "    at claimDueSchedules (/app/node_modules/@vellumai/assistant/src/schedule/schedule-store.ts:88:12)",
+      "    at claimDueSchedules (/app/node_modules/@mycadet/assistant/src/schedule/schedule-store.ts:88:12)",
     ].join("\n");
     expect(callerFromStack(stack)).toBe(
       "schedule/schedule-store.ts:claimDueSchedules:88",

@@ -41,7 +41,7 @@ function portBlock(base: number): PortMap {
  * bounces non-prod shells off their own host.
  *
  * NOTE: this module is loaded by Capacitor's single-file TS config loader
- * (via the `@vellumai/environments/seeds` subpath), which cannot follow the
+ * (via the `@mycadet/environments/seeds` subpath), which cannot follow the
  * package index's `.js`-suffixed runtime re-exports. Keep this file's
  * imports type-only so it stays loadable on its own.
  */
@@ -64,12 +64,12 @@ export function cloudAssistantHubUrl(envName: string | undefined): string {
 export const SEEDS: Record<string, EnvironmentDefinition> = {
   production: {
     name: "production",
-    platformUrl: "https://platform.vellum.ai",
+    platformUrl: "https://cloud.mycadet.ai",
     webUrl: "https://www.vellum.ai",
   },
   staging: {
     name: "staging",
-    platformUrl: "https://staging-platform.vellum.ai",
+    platformUrl: "https://staging-cloud.mycadet.ai",
     webUrl: "https://staging-assistant.vellum.ai",
     portsOverride: portBlock(17000),
   },
@@ -77,13 +77,13 @@ export const SEEDS: Record<string, EnvironmentDefinition> = {
     name: "test",
     // Non-functional URL — used only by unit tests for URL resolution, never
     // hit in production.
-    platformUrl: "https://test-platform.vellum.ai",
+    platformUrl: "https://test-cloud.mycadet.ai",
     webUrl: "https://dev-assistant.vellum.ai",
     portsOverride: portBlock(19000),
   },
   dev: {
     name: "dev",
-    platformUrl: "https://dev-platform.vellum.ai",
+    platformUrl: "https://dev-cloud.mycadet.ai",
     webUrl: "https://dev-assistant.vellum.ai",
     portsOverride: portBlock(18000),
   },

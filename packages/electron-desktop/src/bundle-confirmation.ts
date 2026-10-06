@@ -61,12 +61,12 @@ export const openBundleConfirmation = (
 export const installBundleConfirmation = (): void => {
   const bundlePlatform = getBundlePlatform();
   bundlePlatform.ipc.handle(
-    "vellum:bundleConfirm:getData",
+    "cadet:bundleConfirm:getData",
     z.tuple([]),
     () => pendingData,
   );
   bundlePlatform.ipc.on(
-    "vellum:bundleConfirm:respond",
+    "cadet:bundleConfirm:respond",
     z.tuple([z.boolean()]),
     ([accepted]) => {
       if (pendingResolve) {

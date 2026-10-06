@@ -10,10 +10,10 @@ import {
   usePlatformGate,
 } from "@/hooks/use-platform-gate";
 import { routes } from "@/utils/routes";
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 /**
  * Stripe Checkout `cancel_url` landing page.

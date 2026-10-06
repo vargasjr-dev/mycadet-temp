@@ -16,17 +16,17 @@ import {
   organizationsBillingInvoicesRetrieve,
 } from "@/generated/api/sdk.gen";
 import type { InvoiceListResponse } from "@/generated/api/types.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { openExternalUrl } from "@/runtime/browser";
 import { assertHasResponse, toApiError } from "@/utils/api-errors";
 import { formatFriendlyDate } from "@/utils/format-date";
-import { Button } from "@vellumai/design-library/components/button";
-import { Card } from "@vellumai/design-library/components/card";
-import { Notice } from "@vellumai/design-library/components/notice";
-import { Tag, type TagTone } from "@vellumai/design-library/components/tag";
-import { toast } from "@vellumai/design-library/components/toast";
-import { Typography } from "@vellumai/design-library/components/typography";
-import { stripeScaleDigits } from "@vellumai/service-contracts/stripe-currency";
+import { Button } from "@mycadet/design-library/components/button";
+import { Card } from "@mycadet/design-library/components/card";
+import { Notice } from "@mycadet/design-library/components/notice";
+import { Tag, type TagTone } from "@mycadet/design-library/components/tag";
+import { toast } from "@mycadet/design-library/components/toast";
+import { Typography } from "@mycadet/design-library/components/typography";
+import { stripeScaleDigits } from "@mycadet/service-contracts/stripe-currency";
 
 import { useTranslation } from "@/i18n";
 import { BillingSectionHeader } from "./billing-section-header";
@@ -356,7 +356,9 @@ export function InvoicesTable() {
                               variant="ghost"
                               size="compact"
                               iconOnly={<Download className="h-3.5 w-3.5" />}
-                              aria-label={t("invoicesTable.downloadPdfAriaLabel")}
+                              aria-label={t(
+                                "invoicesTable.downloadPdfAriaLabel",
+                              )}
                               onClick={() => downloadPdf(invoice.invoice_pdf!)}
                             />
                           )}

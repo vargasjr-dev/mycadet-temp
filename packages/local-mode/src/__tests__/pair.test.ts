@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { pairingSessionSurvives } from "@vellumai/service-contracts/remote-web-pairing";
+import { pairingSessionSurvives } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { guardianTokenPath } from "../config";
 import {
@@ -213,7 +213,6 @@ describe("pairAssistant", () => {
       runtimeUrl: "http://10.0.0.5:7830",
       cloud: "paired",
       paired: true,
-      species: "vellum",
     });
     expect(Object.keys(entry)).toEqual([
       "assistantId",
@@ -221,7 +220,6 @@ describe("pairAssistant", () => {
       "runtimeUrl",
       "cloud",
       "paired",
-      "species",
     ]);
     // Importing never reassigns the active assistant.
     expect(onDisk.activeAssistant ?? null).toBeNull();

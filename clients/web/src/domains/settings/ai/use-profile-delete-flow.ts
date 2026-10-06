@@ -22,7 +22,7 @@ import type {
   ConfigGetResponse,
   ConfigPatchRequestWritable,
 } from "@/generated/daemon/types.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { badRequestMessage } from "@/utils/api-errors";
 
 export interface ProfileDeleteFlow {

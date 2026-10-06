@@ -3,7 +3,7 @@
  * the settings "Pair a device" card, the chooser's connect dialog, the
  * hostless "Add a remote assistant" dialog, and the `connect` deep link.
  *
- * `@vellumai/service-contracts/remote-web-pairing` owns the link format and
+ * `@mycadet/service-contracts/remote-web-pairing` owns the link format and
  * the rejection reasons. This module adds the two app-level pieces those
  * surfaces would otherwise each rebuild: the pair route a public base has to
  * carry to become a link, and the catalog copy for a base that cannot be one.
@@ -14,7 +14,7 @@ import {
   normalizePairingBaseUrl,
   tunnelProviderWebsiteName,
   type PublicBaseUrlRejection,
-} from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
 
 import { t } from "@/i18n";
 import { routes } from "@/utils/routes";

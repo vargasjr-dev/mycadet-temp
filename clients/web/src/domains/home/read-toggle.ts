@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 
 import type { TFunction } from "@/i18n";
 import { readStateIcon } from "@/utils/read-state-icon";
-import type { FeedItemStatus } from "@vellumai/assistant-api";
+import type { FeedItemStatus } from "@mycadet/assistant-api";
 
 /**
  * The read/unread toggle a notification offers, in one definition every

@@ -5,7 +5,7 @@ import {
   ADMISSION_POLICY_VALUES as ADMISSION_POLICY_VALUES_CONTRACT,
   type AdmissionPolicy,
   isAdmissionPolicy as isAdmissionPolicyContract,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import { type GatewayDb, getGatewayDb } from "./connection.js";
 import { channelAdmissionPolicy } from "./schema.js";
 import { type ChannelId, isChannelId } from "../channels/types.js";
@@ -19,11 +19,11 @@ import { type ChannelId, isChannelId } from "../channels/types.js";
  * (`no_one`, hard kill switch) to most-permissive (`strangers`, admits any
  * sender).
  *
- * Vocabulary is centralized in `@vellumai/gateway-client` so the gateway
+ * Vocabulary is centralized in `@mycadet/gateway-client` so the gateway
  * (storage + kill switch) and the runtime (admission stage) share one
  * canonical type.
  */
-export type { AdmissionPolicy } from "@vellumai/gateway-client";
+export type { AdmissionPolicy } from "@mycadet/gateway-client";
 
 export const ADMISSION_POLICY_VALUES: ReadonlyArray<AdmissionPolicy> =
   ADMISSION_POLICY_VALUES_CONTRACT;

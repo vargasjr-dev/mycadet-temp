@@ -19,7 +19,7 @@
  */
 import { useNavigate } from "react-router";
 
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import {
   dispatchOpenUrl,
@@ -29,7 +29,7 @@ import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { t } from "@/i18n";
 import { useIsNativePlatform } from "@/runtime/native-auth";
 import { canHandleForegroundDirective } from "@/runtime/window-attention";
-import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
+import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 /** Keep the retry visible long enough to notice and click. */
 const BLOCKED_OPEN_TOAST_DURATION_MS = 15_000;

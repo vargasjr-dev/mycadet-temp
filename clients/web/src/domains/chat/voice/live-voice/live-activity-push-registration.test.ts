@@ -63,7 +63,7 @@ mock.module("@/generated/api/sdk.gen", () => ({
 // ── Sentry capture-error ─────────────────────────────────────────────────────
 
 const captureErrorMock = mock(() => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 
@@ -82,7 +82,7 @@ beforeEach(() => {
   upsertMock.mockClear();
   deleteMock.mockClear();
   captureErrorMock.mockClear();
-  localStorage.removeItem("vellum:live_activity_registration");
+  localStorage.removeItem("cadet:live_activity_registration");
 });
 
 const REGISTRATION = {

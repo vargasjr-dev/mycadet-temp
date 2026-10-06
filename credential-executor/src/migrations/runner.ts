@@ -1,7 +1,13 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 
-import type { SecureKeyBackend } from "@vellumai/credential-storage";
+import type { SecureKeyBackend } from "@mycadet/credential-storage";
 
 import { getLogger } from "../logger.js";
 import type { CesMigration, CesMigrationStatus } from "./types.js";

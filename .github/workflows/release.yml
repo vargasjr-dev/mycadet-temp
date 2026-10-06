@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       slack_user_id:
-        description: 'Slack user ID of the person who triggered the release (e.g. U01ABCDEF)'
+        description: "Slack user ID of the person who triggered the release (e.g. U01ABCDEF)"
         required: false
         type: string
-        default: ''
+        default: ""
 
 concurrency:
   group: release
@@ -265,7 +265,7 @@ jobs:
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install Chrome for CRX signing
         uses: browser-actions/setup-chrome@c785b87e244131f27c9f19c1a33e2ead956ab7ce # v1.7.3
@@ -335,7 +335,15 @@ jobs:
           retention-days: 90
 
   publish-chrome-extension:
-    needs: [extract-version, build-chrome-extension, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, push-dockerhub-image]
+    needs:
+      [
+        extract-version,
+        build-chrome-extension,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+        push-dockerhub-image,
+      ]
     if: >-
       needs.extract-version.outputs.chrome_extension_changed == 'true'
       && needs.extract-version.outputs.is_staging == 'false'
@@ -1040,7 +1048,7 @@ jobs:
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Login to Docker Hub
         env:
@@ -1098,7 +1106,15 @@ jobs:
           echo "**Docker Hub:** \`${{ steps.tags.outputs.image }}:v${{ needs.extract-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
 
   register-release:
-    needs: [extract-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, push-dockerhub-image, release]
+    needs:
+      [
+        extract-version,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+        push-dockerhub-image,
+        release,
+      ]
     if: ${{ always() && !cancelled() && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && (needs.extract-version.outputs.is_staging == 'true' || (needs.push-dockerhub-image.result == 'success' && needs.release.result == 'success')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -1115,7 +1131,6 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           token: ${{ steps.app-token.outputs.token }}
-
 
       - name: Get release SHA
         id: release-sha
@@ -1273,7 +1288,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -1313,7 +1328,15 @@ jobs:
 
   publish-npm-prod:
     # Don't publish until backend images are live.
-    needs: [extract-version, build-npm-prod, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, push-dockerhub-image]
+    needs:
+      [
+        extract-version,
+        build-npm-prod,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+        push-dockerhub-image,
+      ]
     if: ${{ always() && !cancelled() && needs.build-npm-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && needs.push-dockerhub-image.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -1361,7 +1384,7 @@ jobs:
           fi
           npm publish /tmp/npm-dist/package.tgz --access public --no-provenance
 
-  # `@vellumai/plugin-api` is the public TypeScript authoring contract external
+  # `@mycadet/plugin-api` is the public TypeScript authoring contract external
   # plugins compile against. Unlike the other npm packages it is not a package
   # directory `npm pack` can consume directly: scripts/build-plugin-api.ts rolls
   # the plugin-api surface into a single self-contained `index.d.ts` (API
@@ -1380,16 +1403,16 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
       - name: Install dependencies
         run: |
-          if ! bun install --frozen-lockfile --filter=@vellumai/assistant; then
+          if ! bun install --frozen-lockfile --filter=@mycadet/assistant; then
             echo "bun install --frozen-lockfile failed; regenerating lockfile and retrying..."
             rm -f bun.lock
-            bun install --filter=@vellumai/assistant
+            bun install --filter=@mycadet/assistant
           fi
       - name: Build plugin-api package
         run: cd assistant && bun run scripts/build-plugin-api.ts --version "${{ needs.extract-version.outputs.version }}"
@@ -1410,7 +1433,15 @@ jobs:
 
   publish-plugin-api-prod:
     # Don't publish until backend images are live.
-    needs: [extract-version, build-plugin-api-prod, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, push-dockerhub-image]
+    needs:
+      [
+        extract-version,
+        build-plugin-api-prod,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+        push-dockerhub-image,
+      ]
     if: ${{ always() && !cancelled() && needs.build-plugin-api-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && needs.push-dockerhub-image.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -1454,7 +1485,14 @@ jobs:
 
   # ── Staging: pack CLI tarball and dispatch QA to platform repo ──────
   pack-cli:
-    needs: [extract-version, ci-cli, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
+    needs:
+      [
+        extract-version,
+        ci-cli,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+      ]
     if: ${{ needs.extract-version.outputs.is_staging == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -1463,12 +1501,12 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
         run: |
-          if ! bun install --frozen-lockfile --filter=@vellumai/cli; then
-            rm -f bun.lock && rm -rf node_modules && bun install --filter=@vellumai/cli
+          if ! bun install --frozen-lockfile --filter=@mycadet/cli; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/cli
           fi
 
       - name: Strip bundled deps from the manifest
@@ -1515,7 +1553,14 @@ jobs:
             --field run_id="${{ github.run_id }}"
 
   build-npm-staging:
-    needs: [extract-version, ci-assistant, ci-cli, ci-gateway, ci-credential-executor]
+    needs:
+      [
+        extract-version,
+        ci-assistant,
+        ci-cli,
+        ci-gateway,
+        ci-credential-executor,
+      ]
     if: ${{ needs.extract-version.outputs.is_staging == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -1528,7 +1573,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
@@ -1606,7 +1651,14 @@ jobs:
           npm publish /tmp/npm-dist/package.tgz --tag staging --access public --no-provenance
 
   build-plugin-api-staging:
-    needs: [extract-version, ci-assistant, ci-cli, ci-gateway, ci-credential-executor]
+    needs:
+      [
+        extract-version,
+        ci-assistant,
+        ci-cli,
+        ci-gateway,
+        ci-credential-executor,
+      ]
     if: ${{ needs.extract-version.outputs.is_staging == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -1616,16 +1668,16 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
       - name: Install dependencies
         run: |
-          if ! bun install --frozen-lockfile --filter=@vellumai/assistant; then
+          if ! bun install --frozen-lockfile --filter=@mycadet/assistant; then
             echo "bun install --frozen-lockfile failed; regenerating lockfile and retrying..."
             rm -f bun.lock
-            bun install --filter=@vellumai/assistant
+            bun install --filter=@mycadet/assistant
           fi
       - name: Build plugin-api package
         run: cd assistant && bun run scripts/build-plugin-api.ts --version "${{ needs.extract-version.outputs.version }}"
@@ -1689,7 +1741,15 @@ jobs:
 
   build-web-staging:
     name: build-npm-staging (web)
-    needs: [extract-version, ci-assistant, ci-cli, ci-gateway, ci-credential-executor, ci-web]
+    needs:
+      [
+        extract-version,
+        ci-assistant,
+        ci-cli,
+        ci-gateway,
+        ci-credential-executor,
+        ci-web,
+      ]
     if: ${{ needs.extract-version.outputs.is_staging == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -1699,14 +1759,14 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
       - name: Install dependencies
         run: |
-          if ! bun install --frozen-lockfile --filter=@vellumai/web; then
-            rm -f bun.lock && rm -rf node_modules && bun install --filter=@vellumai/web
+          if ! bun install --frozen-lockfile --filter=@mycadet/web; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/web
           fi
       - name: Generate API clients
         working-directory: clients/web
@@ -1800,11 +1860,11 @@ jobs:
           cd meta
           jq --arg v "$VERSION" '
             .version = $v |
-            .dependencies["@vellumai/assistant"] = $v |
-            .dependencies["@vellumai/cli"] = $v |
-            .dependencies["@vellumai/credential-executor"] = $v |
-            .dependencies["@vellumai/vellum-gateway"] = $v |
-            .dependencies["@vellumai/web"] = $v
+            .dependencies["@mycadet/assistant"] = $v |
+            .dependencies["@mycadet/cli"] = $v |
+            .dependencies["@mycadet/credential-executor"] = $v |
+            .dependencies["@mycadet/vellum-gateway"] = $v |
+            .dependencies["@mycadet/web"] = $v
           ' package.json > tmp && mv tmp package.json
       - name: Wait for dependencies to propagate
         run: ./scripts/npm-wait-for-meta-deps.sh
@@ -1839,7 +1899,16 @@ jobs:
   # with the platform.
   deploy-web-spa-staging:
     name: Deploy Web SPA (staging)
-    needs: [extract-version, ci-assistant, ci-cli, ci-gateway, ci-credential-executor, ci-web, register-release]
+    needs:
+      [
+        extract-version,
+        ci-assistant,
+        ci-cli,
+        ci-gateway,
+        ci-credential-executor,
+        ci-web,
+        register-release,
+      ]
     # register-release is gated with `always()`; a downstream job that needs an
     # always()-gated job must gate on its needs' results explicitly, or the
     # runner inherits the upstream conditional and skips this job even when every
@@ -1901,7 +1970,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -1909,11 +1978,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if ! bun install --frozen-lockfile --filter=@vellumai/web; then
+          if ! bun install --frozen-lockfile --filter=@mycadet/web; then
             echo "bun install --frozen-lockfile failed; regenerating lockfile and retrying..."
             rm -f bun.lock
             rm -rf node_modules
-            bun install --filter=@vellumai/web
+            bun install --filter=@mycadet/web
           fi
 
       - name: Generate API clients
@@ -1950,7 +2019,15 @@ jobs:
   publish-web-prod:
     name: publish-npm-prod (web)
     # Don't publish until backend images are live.
-    needs: [extract-version, build-web-prod, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, push-dockerhub-image]
+    needs:
+      [
+        extract-version,
+        build-web-prod,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+        push-dockerhub-image,
+      ]
     if: ${{ always() && !cancelled() && needs.build-web-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && needs.push-dockerhub-image.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -2105,13 +2182,13 @@ jobs:
       - name: Install Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
         working-directory: ${{ github.workspace }}
         run: |
-          if ! bun install --frozen-lockfile --filter=@vellumai/macos --filter=@vellumai/web; then
-            rm -f bun.lock && rm -rf node_modules && bun install --filter=@vellumai/macos --filter=@vellumai/web
+          if ! bun install --frozen-lockfile --filter=@mycadet/macos --filter=@mycadet/web; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/macos --filter=@mycadet/web
           fi
 
       # Installing does not download the Electron binary or build the mac
@@ -2179,31 +2256,16 @@ jobs:
       - name: Build and package Electron app
         env:
           CSC_NAME: Developer ID Application
-          SENTRY_DSN_MACOS: ${{ secrets.SENTRY_DSN_MACOS }}
           VITE_PLATFORM_MODE: "false"
-          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
-          VITE_SENTRY_DSN_MACOS: ${{ secrets.SENTRY_DSN_MACOS }}
-          VITE_SENTRY_ENVIRONMENT: ${{ needs.extract-version.outputs.is_staging == 'true' && 'staging' || 'production' }}
+          VITE_ENVIRONMENT: ${{ needs.extract-version.outputs.is_staging == 'true' && 'staging' || 'production' }}
           VITE_SESSION_REPLAY_APP_ID: ${{ vars.VITE_SESSION_REPLAY_APP_ID }}
           # Environment-scoped secret (pk_test_ on staging, pk_live_ on prod);
           # requires the job's `environment:` above, else it resolves empty and
           # the payment-method modal can't mount Stripe Elements. Publishable
           # keys are public, so embedding them is expected.
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
-          # Sentry release tracking for the Electron renderer. VITE_APP_VERSION
-          # tags renderer events with the release (read in
-          # clients/web/src/lib/sentry/sentry-init.ts) and names the registered
-          # release; the Vite Sentry plugin uploads source maps to SENTRY_PROJECT
-          # (vellum-assistant-macos, overriding the web default) so stacks
-          # symbolicate and issues resolve per release. The semver release
-          # version gives Sentry a correctly ordered release timeline.
+          # VITE_APP_VERSION stamps the semver release version into the bundle.
           VITE_APP_VERSION: ${{ needs.extract-version.outputs.version }}
-          SENTRY_UPLOAD_SOURCE_MAPS: "true"
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_PROJECT: vellum-assistant-macos
-          # A source-map upload failure degrades to a warning instead of failing
-          # the release build (see clients/web/vite.config.ts).
-          SENTRY_ALLOW_UPLOAD_FAILURE: "true"
         run: bun run pack --environment "${{ needs.extract-version.outputs.is_staging == 'true' && 'staging' || 'production' }}"
 
       - name: Rename DMG for release
@@ -2326,7 +2388,8 @@ jobs:
   upload-electron-updates:
     # Gate the GCS update-feed publish (an external side effect) on the channel's
     # meta publish: never offer an auto-update for a release that didn't publish.
-    needs: [extract-version, build-electron, publish-meta-prod, publish-meta-staging]
+    needs:
+      [extract-version, build-electron, publish-meta-prod, publish-meta-staging]
     # always() disables the implicit success(): publish-meta-prod/-staging is
     # skipped on the other channel.
     if: ${{ always() && !cancelled() && needs.build-electron.result == 'success' && (needs.publish-meta-prod.result == 'success' || needs.publish-meta-staging.result == 'success') }}
@@ -2404,7 +2467,21 @@ jobs:
           done
 
   release:
-    needs: [extract-version, publish-npm-prod, publish-web-prod, publish-meta-prod, publish-plugin-api-prod, build-electron, upload-electron-updates, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, push-dockerhub-image, build-chrome-extension]
+    needs:
+      [
+        extract-version,
+        publish-npm-prod,
+        publish-web-prod,
+        publish-meta-prod,
+        publish-plugin-api-prod,
+        build-electron,
+        upload-electron-updates,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+        push-dockerhub-image,
+        build-chrome-extension,
+      ]
     if: ${{ always() && !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.extract-version.result == 'success' && needs.publish-npm-prod.result == 'success' && needs.publish-web-prod.result == 'success' && needs.publish-meta-prod.result == 'success' && needs.publish-plugin-api-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && needs.push-dockerhub-image.result == 'success' && needs.build-electron.result == 'success' && needs.upload-electron-updates.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -2431,7 +2508,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Generate release notes from commits
         env:
@@ -2611,14 +2688,14 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Update vel dependency
         env:
           NEW_VERSION: ${{ needs.extract-version.outputs.version }}
         run: |
           cd vel
-          jq --arg v "$NEW_VERSION" '.dependencies["@vellumai/cli"] = $v' package.json > package.json.tmp && mv package.json.tmp package.json
+          jq --arg v "$NEW_VERSION" '.dependencies["@mycadet/cli"] = $v' package.json > package.json.tmp && mv package.json.tmp package.json
           bun install
 
       - name: Create Pull Request
@@ -2631,12 +2708,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
           git add vel/package.json vel/bun.lock
-          git commit -m "Bump @vellumai/cli to ${NEW_VERSION} in vel"
+          git commit -m "Bump @mycadet/cli to ${NEW_VERSION} in vel"
           git push origin "$BRANCH"
           PR_URL=$(gh pr create \
             --repo vellum-ai/vellum-assistant-platform \
-            --title "Bump @vellumai/cli to ${NEW_VERSION} in vel" \
-            --body "Auto-generated PR to update @vellumai/cli to ${NEW_VERSION}." \
+            --title "Bump @mycadet/cli to ${NEW_VERSION} in vel" \
+            --body "Auto-generated PR to update @mycadet/cli to ${NEW_VERSION}." \
             --base main \
             --head "$BRANCH")
           sleep 10
@@ -2645,7 +2722,19 @@ jobs:
   # ── iOS release (same-repo reusable workflow) ────────────────────────
 
   release-ios:
-    needs: [extract-version, publish-npm-prod, publish-web-prod, publish-meta-prod, publish-plugin-api-prod, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, push-dockerhub-image, build-chrome-extension]
+    needs:
+      [
+        extract-version,
+        publish-npm-prod,
+        publish-web-prod,
+        publish-meta-prod,
+        publish-plugin-api-prod,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+        push-dockerhub-image,
+        build-chrome-extension,
+      ]
     if: >-
       ${{
         always() && !cancelled()
@@ -2668,7 +2757,19 @@ jobs:
     secrets: inherit
 
   release-android:
-    needs: [extract-version, publish-npm-prod, publish-web-prod, publish-meta-prod, publish-plugin-api-prod, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, push-dockerhub-image, build-chrome-extension]
+    needs:
+      [
+        extract-version,
+        publish-npm-prod,
+        publish-web-prod,
+        publish-meta-prod,
+        publish-plugin-api-prod,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+        push-dockerhub-image,
+        build-chrome-extension,
+      ]
     if: >-
       ${{
         (
@@ -2709,7 +2810,16 @@ jobs:
   # Gated on the channel's meta publish like upload-electron-updates: never
   # offer a Windows auto-update for a release that didn't publish.
   release-windows:
-    needs: [build-windows, extract-version, publish-meta-prod, publish-meta-staging, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
+    needs:
+      [
+        build-windows,
+        extract-version,
+        publish-meta-prod,
+        publish-meta-staging,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+      ]
     if: >-
       ${{
         always() && !cancelled()
@@ -2743,10 +2853,10 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/assistant --filter=@vellumai/vellum-gateway
+        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/vellum-gateway
         working-directory: assistant
 
       - name: Lint
@@ -2768,7 +2878,7 @@ jobs:
         run: bun run test:stable
         working-directory: assistant
         env:
-          TEST_WORKERS: '16'
+          TEST_WORKERS: "16"
           TEST_DURATIONS_FILE: .test-durations
           TEST_DURATIONS_OUTPUT: .test-durations
 
@@ -2790,10 +2900,10 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/cli
+        run: bun install --frozen-lockfile --filter=@mycadet/cli
         working-directory: cli
 
       - name: Lint
@@ -2815,10 +2925,10 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/vellum-gateway
+        run: bun install --frozen-lockfile --filter=@mycadet/vellum-gateway
         working-directory: gateway
 
       - name: Lint
@@ -2844,10 +2954,10 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/credential-executor
+        run: bun install --frozen-lockfile --filter=@mycadet/credential-executor
         working-directory: credential-executor
 
       - name: Typecheck
@@ -2871,10 +2981,10 @@ jobs:
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: '1.3.11'
+          bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@vellumai/web
+        run: bun install --frozen-lockfile --filter=@mycadet/web
         working-directory: clients/web
 
       - name: Generate API clients
@@ -2896,7 +3006,42 @@ jobs:
   notify-release:
     name: Slack Notification (Release)
     if: ${{ always() && !cancelled() }}
-    needs: [extract-version, publish-npm-prod, publish-web-prod, publish-meta-prod, publish-plugin-api-prod, publish-npm-staging, publish-web-staging, publish-meta-staging, publish-plugin-api-staging, build-electron, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, push-dockerhub-image, register-release, release, merge-release-branch, update-platform, pack-cli, trigger-platform-qa, release-ios, release-android, build-windows, release-windows, ci-assistant, ci-cli, ci-credential-executor, ci-gateway, ci-web, build-chrome-extension, publish-chrome-extension, deploy-web-spa-staging, deploy-web-spa-production]
+    needs:
+      [
+        extract-version,
+        publish-npm-prod,
+        publish-web-prod,
+        publish-meta-prod,
+        publish-plugin-api-prod,
+        publish-npm-staging,
+        publish-web-staging,
+        publish-meta-staging,
+        publish-plugin-api-staging,
+        build-electron,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+        push-dockerhub-image,
+        register-release,
+        release,
+        merge-release-branch,
+        update-platform,
+        pack-cli,
+        trigger-platform-qa,
+        release-ios,
+        release-android,
+        build-windows,
+        release-windows,
+        ci-assistant,
+        ci-cli,
+        ci-credential-executor,
+        ci-gateway,
+        ci-web,
+        build-chrome-extension,
+        publish-chrome-extension,
+        deploy-web-spa-staging,
+        deploy-web-spa-production,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     continue-on-error: true

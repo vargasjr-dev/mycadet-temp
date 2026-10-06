@@ -22,7 +22,7 @@ import { memoryJobs } from "../../../../persistence/schema/index.js";
 const realEmitSignal = {
   ...(await import("../../../../notifications/emit-signal.js")),
 };
-const realPluginApi = { ...(await import("@vellumai/plugin-api")) };
+const realPluginApi = { ...(await import("@mycadet/plugin-api")) };
 
 let active = false;
 /** What the stubbed pipeline answers, per emit, in order. */
@@ -60,7 +60,7 @@ mock.module("../../../../notifications/emit-signal.js", () => ({
   },
 }));
 
-mock.module("@vellumai/plugin-api", () => ({
+mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,
   getConversation: async (id: string) =>
     active ? (gone.has(id) ? null : { id }) : realPluginApi.getConversation(id),

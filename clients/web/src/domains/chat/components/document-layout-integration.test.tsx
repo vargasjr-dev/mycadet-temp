@@ -8,7 +8,7 @@ import {
   test,
 } from "bun:test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Notice } from "@vellumai/design-library";
+import { Notice } from "@mycadet/design-library";
 import {
   act,
   cleanup,
@@ -32,7 +32,7 @@ import { useConversationStore } from "@/stores/conversation-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import type { DocumentContent } from "@/types/document-types";
-import type * as ErrorCapture from "@/lib/sentry/capture-error";
+import type * as ErrorCapture from "@/lib/error-reporting/capture-error";
 
 import { DocumentChatContent } from "./document-chat-content";
 import type * as Editor from "./tiptap-document-editor";
@@ -66,7 +66,7 @@ mock.module(
   }),
 );
 mock.module(
-  "@/lib/sentry/capture-error",
+  "@/lib/error-reporting/capture-error",
   (): Partial<typeof ErrorCapture> => ({
     captureError: mock(() => {}),
   }),

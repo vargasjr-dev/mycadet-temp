@@ -127,7 +127,7 @@ export function SkillsReferenceScheduleContent() {
             </li>
             <li>Timezone-aware</li>
             <li>
-              Notify mode can prefer the Vellum app used to create the schedule
+              Notify mode can prefer the Cadet app used to create the schedule
               on macOS, Windows, or iOS when no source channel is available
             </li>
             <li>
@@ -187,9 +187,9 @@ export function SkillsReferenceScheduleContent() {
               don&apos;t have open.
             </li>
             <li>
-              <strong>In-app links in Vellum chat.</strong> In Vellum chat,
+              <strong>In-app links in Cadet chat.</strong> In Cadet chat,
               schedule and conversation names the assistant mentions are links
-              to their details. Those links work in the Vellum app only, not in
+              to their details. Those links work in the Cadet app only, not in
               Slack, Telegram, Discord, email, or notifications.
             </li>
           </ul>

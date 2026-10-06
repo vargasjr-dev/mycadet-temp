@@ -22,15 +22,15 @@ function markdownUrl(route: string): string {
 
 export function buildLlmsText(pages: DocsPageMeta[]): string {
   const lines = [
-    "# Vellum Docs",
+    "# Cadet Docs",
     "",
-    "> Vellum is a personal AI assistant that remembers, learns, and takes real action across your apps, files, and communication channels.",
+    "> Cadet is a personal AI assistant that remembers, learns, and takes real action across your apps, files, and communication channels.",
     "",
-    "Vellum runs in Vellum Cloud by default, can run locally or on your own infrastructure, and ships as open-source software. These docs cover setup, memory, channels, skills, tools, hosting, security, and developer workflows.",
+    "Cadet runs in Cadet Cloud by default, can run locally or on your own infrastructure, and ships as open-source software. These docs cover setup, memory, channels, skills, tools, hosting, security, and developer workflows.",
     "",
-    "Install: `curl -fsSL https://www.vellum.ai/install.sh | bash && . ~/.config/vellum/env`",
+    "Install: `curl -fsSL https://www.mycadet.ai/install.sh | bash && . ~/.config/vellum/env`",
     "",
-    "Repo: https://github.com/vellum-ai/vellum-assistant",
+    "Repo: https://github.com/vargasjr-dev/mycadet",
     "",
     `Docs: ${SITE_URL}/docs`,
     "",

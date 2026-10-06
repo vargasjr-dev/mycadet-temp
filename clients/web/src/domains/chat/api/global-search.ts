@@ -55,7 +55,7 @@ function tokensWithFallback(
  * Perform a global search across the daemon's indexed data for the given
  * assistant. Returns results grouped by category.
  *
- * Gracefully returns empty results on failure (logs to Sentry).
+ * Gracefully returns empty results on failure (reports via captureError).
  */
 export async function searchGlobal(
   assistantId: string,

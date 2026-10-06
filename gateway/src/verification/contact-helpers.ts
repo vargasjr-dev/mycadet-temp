@@ -15,7 +15,7 @@ import { existsSync } from "node:fs";
 
 import { and, eq, sql } from "drizzle-orm";
 
-import { isBindingDemotion } from "@vellumai/gateway-client";
+import { isBindingDemotion } from "@mycadet/gateway-client";
 
 import { getGatewayDb } from "../db/connection.js";
 import {

@@ -37,7 +37,7 @@ import type {
   Provider,
   ProviderResponse,
   SendMessageOptions,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import {
   estimatePromptTokensWithTools,
@@ -70,8 +70,8 @@ interface ProviderCall {
 const providerCalls: ProviderCall[] = [];
 const warnCalls: Array<{ args: unknown[] }> = [];
 
-const realPluginApi = await import("@vellumai/plugin-api");
-mock.module("@vellumai/plugin-api", () => ({
+const realPluginApi = await import("@mycadet/plugin-api");
+mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,
   getConfiguredProvider: async () => providerStub,
   getEffectiveContextWindow: (

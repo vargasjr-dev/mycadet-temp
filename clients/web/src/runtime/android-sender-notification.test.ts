@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type {
   NotificationDeliveryResult,
   PrepareNotificationIdentityPayload,
-} from "@vellumai/ipc-contract";
+} from "@mycadet/ipc-contract";
 
 let nativePlatform = true;
 let platform = "android";
@@ -21,9 +21,11 @@ const post = mock(
     status: "posted",
   }),
 );
-const status = mock(async (): Promise<NotificationDeliveryResult> => ({
-  status: "posted",
-}));
+const status = mock(
+  async (): Promise<NotificationDeliveryResult> => ({
+    status: "posted",
+  }),
+);
 const getOwnershipGeneration = mock(
   async (): Promise<unknown> => ({ version: 1, generation: 7 }),
 );
@@ -122,11 +124,15 @@ beforeEach(() => {
 describe("Android notification ownership handshake", () => {
   test("does not request native ownership on old shells or other platforms", async () => {
     senderAvailable = false;
-    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(false);
+    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(
+      false,
+    );
     platform = "ios";
     senderAvailable = true;
     __resetAndroidSenderNotificationForTests();
-    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(false);
+    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(
+      false,
+    );
 
     expect(ownership).not.toHaveBeenCalled();
     expect(await postAndroidSenderNotification(postPayload)).toMatchObject({
@@ -139,11 +145,15 @@ describe("Android notification ownership handshake", () => {
       version: 1,
       capabilities: ["singlePostOwner", "deliveryStatus"],
     });
-    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(false);
+    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(
+      false,
+    );
     expect(ownership).not.toHaveBeenCalled();
 
     __resetAndroidSenderNotificationForTests();
-    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(true);
+    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(
+      true,
+    );
     expect(ownership).toHaveBeenCalledWith({
       version: 1,
       generation: 7,
@@ -158,7 +168,9 @@ describe("Android notification ownership handshake", () => {
     __setAndroidSenderNotificationWatchdogForTests(5);
     ownership.mockImplementationOnce(() => new Promise<never>(() => {}));
 
-    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(false);
+    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(
+      false,
+    );
     expect(await postAndroidSenderNotification(postPayload)).toEqual({
       status: "posted",
     });
@@ -172,7 +184,9 @@ describe("Android notification ownership handshake", () => {
       accepted: false,
     });
 
-    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(false);
+    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(
+      false,
+    );
     expect(await postAndroidSenderNotification(postPayload)).toEqual({
       status: "posted",
     });
@@ -180,7 +194,9 @@ describe("Android notification ownership handshake", () => {
 
   test("clears local ownership only after native confirms disable", async () => {
     await enableAndroidNotificationOwnership(ownershipBridge);
-    expect(await disableAndroidNotificationOwnership(ownershipBridge)).toBe(true);
+    expect(await disableAndroidNotificationOwnership(ownershipBridge)).toBe(
+      true,
+    );
     expect(ownership).toHaveBeenLastCalledWith({
       version: 1,
       generation: 7,
@@ -196,7 +212,9 @@ describe("Android notification ownership handshake", () => {
     __setAndroidSenderNotificationWatchdogForTests(5);
     ownership.mockImplementationOnce(() => new Promise<never>(() => {}));
 
-    expect(await disableAndroidNotificationOwnership(ownershipBridge)).toBe(false);
+    expect(await disableAndroidNotificationOwnership(ownershipBridge)).toBe(
+      false,
+    );
     expect(await postAndroidSenderNotification(postPayload)).toEqual({
       status: "posted",
     });
@@ -204,19 +222,27 @@ describe("Android notification ownership handshake", () => {
 
   test("accepts void and primitive bridge responses without breaking later transitions", async () => {
     ownership.mockResolvedValueOnce(undefined);
-    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(false);
+    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(
+      false,
+    );
     expect(await postAndroidSenderNotification(postPayload)).toEqual({
       status: "posted",
     });
 
     ownership.mockResolvedValueOnce(17);
-    expect(await disableAndroidNotificationOwnership(ownershipBridge)).toBe(false);
+    expect(await disableAndroidNotificationOwnership(ownershipBridge)).toBe(
+      false,
+    );
     expect(await postAndroidSenderNotification(postPayload)).toEqual({
       status: "posted",
     });
 
-    expect(await disableAndroidNotificationOwnership(ownershipBridge)).toBe(true);
-    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(true);
+    expect(await disableAndroidNotificationOwnership(ownershipBridge)).toBe(
+      true,
+    );
+    expect(await enableAndroidNotificationOwnership(ownershipBridge)).toBe(
+      true,
+    );
   });
 
   test("holds posts behind the enable transition", async () => {

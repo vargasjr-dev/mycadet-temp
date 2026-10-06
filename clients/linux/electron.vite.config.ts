@@ -14,7 +14,7 @@ import { resolveShortBuildCommitSha } from "./scripts/build-metadata";
 const DEPS_TO_INLINE = [
   ...SHARED_DESKTOP_INLINE_DEPS,
   "electron-updater",
-  "@vellumai/native-sidecar",
+  "@mycadet/native-sidecar",
 ];
 
 const resolveBunVersion = (): string => {
@@ -45,7 +45,6 @@ const BUILD_DEFINES = {
     process.env.VELLUM_ENABLE_CHROME_DEVTOOLS === "true" ||
       process.env.VELLUM_ENABLE_CHROME_DEVTOOLS === "1",
   ),
-  __SENTRY_DSN_LINUX__: JSON.stringify(process.env.SENTRY_DSN_LINUX || ""),
   __VELLUM_ROOT_HOSTNAME__: JSON.stringify(
     process.env.VITE_ROOT_HOSTNAME || ".vellum.ai",
   ),

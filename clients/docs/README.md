@@ -1,4 +1,4 @@
-# @vellumai/docs
+# @mycadet/docs
 
 Public docs site for the Vellum assistant: an SSR Next.js app serving
 https://www.vellum.ai/docs. Production ingress routes only `/docs/*` to this
@@ -22,15 +22,15 @@ prefix, so the bare root (`http://localhost:3005/`) is a 404. Before the dev
 server starts, `predev` regenerates the search index and markdown mirrors
 automatically; no manual generation step is needed.
 
-| Command | What it does |
-| --- | --- |
-| `bun run dev` | Dev server on port 3005 |
-| `bun run build` | Production build (standalone output; prebuild runs both generators) |
-| `bun run start` | Serve the production build |
-| `bun run lint` / `bun run typecheck` / `bun run test` | The usual checks |
-| `bun run docs:search:index` | Regenerate `public/docs/search-index.json` |
-| `bun run generate:agent-markdown` | Regenerate `generated/md/**` and `public/docs/llms.txt` |
-| `bun scripts/verify-parity.ts <base-url>` | End-to-end parity check against a running instance |
+| Command                                               | What it does                                                        |
+| ----------------------------------------------------- | ------------------------------------------------------------------- |
+| `bun run dev`                                         | Dev server on port 3005                                             |
+| `bun run build`                                       | Production build (standalone output; prebuild runs both generators) |
+| `bun run start`                                       | Serve the production build                                          |
+| `bun run lint` / `bun run typecheck` / `bun run test` | The usual checks                                                    |
+| `bun run docs:search:index`                           | Regenerate `public/docs/search-index.json`                          |
+| `bun run generate:agent-markdown`                     | Regenerate `generated/md/**` and `public/docs/llms.txt`             |
+| `bun scripts/verify-parity.ts <base-url>`             | End-to-end parity check against a running instance                  |
 
 ## Build pipeline
 

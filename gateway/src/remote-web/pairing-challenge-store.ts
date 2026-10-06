@@ -6,7 +6,7 @@ import {
   type RemoteWebPairingRequestSummary,
   type RemoteWebPairingTokenPendingResponse,
   type RemoteWebPairingVerificationResponse,
-} from "@vellumai/service-contracts/remote-web-pairing";
+} from "@mycadet/service-contracts/remote-web-pairing";
 
 const CODE_TTL_MS = REMOTE_WEB_PAIRING_CODE_TTL_MS;
 const MAX_ACTIVE_CHALLENGES = 200;

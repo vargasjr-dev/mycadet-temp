@@ -465,8 +465,8 @@ export async function runDaemon(): Promise<void> {
     // writer does (`readdirSync`, `readFileSync`, contact + provider
     // lookups) happens on a later tick, off the startup critical path.
     // Failures are logged — not silenced — to match the pattern used by
-    // other `void … .catch()` fire-and-forgets in this file and the
-    // assistant/CLAUDE.md rule that all errors must be observable.
+    // other `void … .catch()` fire-and-forgets in this file, and all
+    // errors must be observable.
     setImmediate(() => {
       void backfillRelationshipStateIfMissing().catch((err) =>
         log.warn(

@@ -1,5 +1,5 @@
 /**
- * Tests for @vellumai/ces-client
+ * Tests for @mycadet/ces-client
  *
  * Validates:
  * 1. Package independence — no imports from assistant/ or credential-executor/.
@@ -12,10 +12,13 @@ import { describe, expect, test, beforeEach, mock } from "bun:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { CES_PROTOCOL_VERSION } from "@vellumai/service-contracts/credential-rpc";
+import { CES_PROTOCOL_VERSION } from "@mycadet/service-contracts/credential-rpc";
 
 import { createCesHttpCredentialClient } from "../http-credentials.js";
-import type { CesHttpLogger, CesHttpCredentialConfig } from "../http-credentials.js";
+import type {
+  CesHttpLogger,
+  CesHttpCredentialConfig,
+} from "../http-credentials.js";
 import { fetchCesLogExport } from "../http-log-export.js";
 import {
   createCesRpcClient,
@@ -357,9 +360,7 @@ describe("fetchCesLogExport", () => {
     let capturedUrl = "";
     globalThis.fetch = mock((url: string | URL | Request) => {
       capturedUrl = typeof url === "string" ? url : url.toString();
-      return Promise.resolve(
-        new Response(new ArrayBuffer(0), { status: 200 }),
-      );
+      return Promise.resolve(new Response(new ArrayBuffer(0), { status: 200 }));
     }) as typeof fetch;
 
     await fetchCesLogExport(

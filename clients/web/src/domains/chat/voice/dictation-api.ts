@@ -1,4 +1,4 @@
-import type { DictationContext } from "@vellumai/assistant-api";
+import type { DictationContext } from "@mycadet/assistant-api";
 
 import { dictationPost } from "@/generated/daemon/sdk.gen";
 import type { DictationPostResponse } from "@/generated/daemon/types.gen";

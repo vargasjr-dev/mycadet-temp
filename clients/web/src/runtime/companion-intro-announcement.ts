@@ -1,4 +1,4 @@
-import type { CompanionIntroAnnouncementAction } from "@vellumai/ipc-contract";
+import type { CompanionIntroAnnouncementAction } from "@mycadet/ipc-contract";
 
 import { createBooleanBridgeStore } from "@/runtime/boolean-bridge-store";
 import { isElectron } from "@/runtime/is-electron";

@@ -3,7 +3,7 @@
  * transport ↔ channel-invite-transports/* cycles (×5).
  */
 
-import type { CommandIntent, SourceMetadata } from "@vellumai/gateway-client";
+import type { CommandIntent, SourceMetadata } from "@mycadet/gateway-client";
 
 import type { ChannelId } from "../channels/types.js";
 

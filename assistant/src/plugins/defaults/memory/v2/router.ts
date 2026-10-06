@@ -32,12 +32,12 @@
  * `injectMemoryV2Block`; until then nothing in the daemon calls it.
  */
 
-import type { Message } from "@vellumai/plugin-api";
+import type { Message } from "@mycadet/plugin-api";
 import {
   getAssistantName,
   getConfiguredProvider,
   resolveUserName,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 import { z } from "zod";
 
 import type { AssistantConfig } from "../../../../config/types.js";

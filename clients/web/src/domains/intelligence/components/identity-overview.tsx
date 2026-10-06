@@ -39,7 +39,7 @@ import {
 import { motion, useReducedMotion } from "motion/react";
 import { Link } from "react-router";
 
-import { Card, toast } from "@vellumai/design-library";
+import { Card, toast } from "@mycadet/design-library";
 
 import { AvatarManagementModal } from "@/components/avatar/avatar-management-modal";
 import { ChatAvatar } from "@/components/avatar/chat-avatar";

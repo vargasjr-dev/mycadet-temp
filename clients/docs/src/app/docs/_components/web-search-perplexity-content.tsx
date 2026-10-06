@@ -18,7 +18,7 @@ export function WebSearchPerplexityContent() {
       <DocsContent
         title="Perplexity"
         breadcrumb="Docs / Key Concepts / Web Search / Perplexity"
-        subtitle="AI-powered search with synthesized answers and inline citations. Use Perplexity as a web search provider in your Vellum assistant for conversational, citation-grade results."
+        subtitle="AI-powered search with synthesized answers and inline citations. Use Perplexity as a web search provider in your Cadet assistant for conversational, citation-grade results."
       >
         <section id="what-it-does">
           <SectionHeading id="what-it-does" level={2}>
@@ -31,7 +31,7 @@ export function WebSearchPerplexityContent() {
             assistant workflows that need to explain or summarize current information.
           </p>
           <p className="mb-0 text-zinc-600">
-            When configured as your web search provider, Vellum routes queries through
+            When configured as your web search provider, Cadet routes queries through
             the Perplexity API and feeds the synthesized answer (with its source citations)
             back to your assistant. The model can then quote from, verify, or expand on
             the answer without needing to scrape individual pages.
@@ -44,7 +44,7 @@ export function WebSearchPerplexityContent() {
           </SectionHeading>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              A running Vellum assistant. Cloud, self-hosted, or the desktop apps all work.
+              A running Cadet assistant. Cloud, self-hosted, or the desktop apps all work.
             </li>
             <li>
               A Perplexity API key. Create one at{" "}
@@ -75,7 +75,7 @@ export function WebSearchPerplexityContent() {
           <ol className="mb-6 list-decimal space-y-3 pl-6 text-zinc-600">
             <li>
               <strong>Open assistant settings.</strong>{" "}
-              In Vellum, head to{" "}
+              In Cadet, head to{" "}
               <span className="font-medium text-zinc-900">
                 Settings &rarr; Models &amp; Services
               </span>
@@ -85,12 +85,12 @@ export function WebSearchPerplexityContent() {
               <strong>Add your Perplexity API key.</strong>{" "}
               Under the <span className="font-medium text-zinc-900">Web Search</span> section,
               choose <span className="font-medium text-zinc-900">Perplexity</span> as the provider and
-              paste your API key. Vellum stores the key in your local secure store and never
+              paste your API key. Cadet stores the key in your local secure store and never
               writes it to disk in plaintext.
             </li>
             <li>
               <strong>Ask something current.</strong>{" "}
-              Start a new conversation and ask a question that needs fresh information. Vellum
+              Start a new conversation and ask a question that needs fresh information. Cadet
               calls Perplexity under the hood and feeds the synthesized answer back to the model
               in context.
             </li>
@@ -143,7 +143,7 @@ assistant config set services.web-search.provider perplexity`}
             <li>
               <strong>Billing.</strong>{" "}
               Perplexity usage is billed directly by Perplexity under the account that owns the key,
-              separately from Vellum credits.
+              separately from Cadet credits.
             </li>
             <li>
               <strong>Privacy.</strong>{" "}
@@ -191,7 +191,7 @@ assistant config set services.web-search.provider perplexity`}
                 href="/docs/key-concepts/web-search"
                 className="text-emerald-700 underline hover:text-emerald-800"
               >
-                Vellum Web Search reference
+                Cadet Web Search reference
               </Link>
             </li>
           </ul>

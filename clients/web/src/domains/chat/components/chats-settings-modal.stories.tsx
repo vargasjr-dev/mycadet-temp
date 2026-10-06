@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { useArgs } from "storybook/preview-api";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { Settings } from "lucide-react";
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 import { createInstance } from "i18next";
 import ICU from "i18next-icu";
 import { I18nextProvider } from "react-i18next";

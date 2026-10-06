@@ -25,7 +25,7 @@
  * `state.exhausted` is true.
  */
 
-import type { Message } from "@vellumai/plugin-api";
+import type { Message } from "@mycadet/plugin-api";
 
 import type { ContextWindowConfig } from "../../../config/types.js";
 import {

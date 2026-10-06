@@ -13,7 +13,7 @@ import {
   ADMISSION_POLICY_DEFAULT,
   isAdmissionPolicyHiddenChannel,
   type AdmissionPolicy,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import { CHANNEL_IDS, type ChannelId } from "../channels/types.js";
 import {
   AdmissionPolicyStore,

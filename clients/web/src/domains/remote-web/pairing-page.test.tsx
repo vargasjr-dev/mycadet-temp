@@ -10,7 +10,7 @@ import { MemoryRouter } from "react-router";
 
 // The implementation `@/lib/auth/remote-gateway-session` re-exports, imported
 // from its owner so the mock below hands the page the production parser.
-import { parseRemoteWebPairingParams } from "@vellumai/service-contracts/remote-web-pairing";
+import { parseRemoteWebPairingParams } from "@mycadet/service-contracts/remote-web-pairing";
 
 import type { RemoteWebPairingTokenResult } from "@/lib/auth/remote-gateway-session";
 

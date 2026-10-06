@@ -44,8 +44,8 @@ import { usePendingDeepLinkStore } from "@/stores/pending-deep-link-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { keptAppId } from "@/utils/conversation-navigation";
 import { routes } from "@/utils/routes";
-import { toast } from "@vellumai/design-library/components/toast";
-import { VOICE_START_REQUEST_TTL_MS } from "@vellumai/ipc-contract";
+import { toast } from "@mycadet/design-library/components/toast";
+import { VOICE_START_REQUEST_TTL_MS } from "@mycadet/ipc-contract";
 
 /**
  * How long a parked start-voice request stays live.

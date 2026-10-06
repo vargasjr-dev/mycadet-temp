@@ -1,6 +1,6 @@
 import { Zap } from "lucide-react";
 
-import { Button } from "@vellumai/design-library/components/button";
+import { Button } from "@mycadet/design-library/components/button";
 
 import { ChatAvatar } from "@/components/avatar/chat-avatar";
 import {

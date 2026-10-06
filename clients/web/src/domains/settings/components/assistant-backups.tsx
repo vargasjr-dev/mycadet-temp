@@ -28,12 +28,12 @@ import {
 } from "@/hooks/use-platform-gate";
 import { useTranslation } from "@/i18n";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { saveFile } from "@/runtime/native-file";
-import { Button } from "@vellumai/design-library/components/button";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { type TagTone, Tag } from "@vellumai/design-library/components/tag";
-import { toast } from "@vellumai/design-library/components/toast";
+import { Button } from "@mycadet/design-library/components/button";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { type TagTone, Tag } from "@mycadet/design-library/components/tag";
+import { toast } from "@mycadet/design-library/components/toast";
 
 const MAX_POINT_IN_TIME_BACKUPS = 3;
 
@@ -334,10 +334,18 @@ export function AssistantBackups({ assistantId }: { assistantId: string }) {
           <table className="w-full table-fixed text-body-medium-lighter">
             <thead>
               <tr className="border-b border-[var(--border-base)] text-left text-body-small-default text-[var(--content-secondary)]">
-                <th className="w-[35%] pb-2 pr-4">{t("assistantBackups.columnSnapshotName")}</th>
-                <th className="w-[13%] pb-2 pr-4">{t("assistantBackups.columnType")}</th>
-                <th className="w-[12%] pb-2 pr-4">{t("assistantBackups.columnReady")}</th>
-                <th className="w-[20%] pb-2 pr-4">{t("assistantBackups.columnCreated")}</th>
+                <th className="w-[35%] pb-2 pr-4">
+                  {t("assistantBackups.columnSnapshotName")}
+                </th>
+                <th className="w-[13%] pb-2 pr-4">
+                  {t("assistantBackups.columnType")}
+                </th>
+                <th className="w-[12%] pb-2 pr-4">
+                  {t("assistantBackups.columnReady")}
+                </th>
+                <th className="w-[20%] pb-2 pr-4">
+                  {t("assistantBackups.columnCreated")}
+                </th>
                 <th className="w-[20%] pb-2" />
               </tr>
             </thead>
@@ -450,8 +458,8 @@ export function AssistantBackups({ assistantId }: { assistantId: string }) {
                 <BackupTypeBadge type={backup.backup_type} />
                 <Tag tone={backup.ready_to_use ? "positive" : "warning"}>
                   {backup.ready_to_use
-                        ? t("assistantBackups.ready")
-                        : t("assistantBackups.pending")}
+                    ? t("assistantBackups.ready")
+                    : t("assistantBackups.pending")}
                 </Tag>
                 <span className="text-body-small-default text-[var(--content-secondary)]">
                   {formatTimestamp(backup.created_at)}

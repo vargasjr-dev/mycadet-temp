@@ -1,7 +1,7 @@
 /**
  * Assistant-side IPC client for communicating with the gateway.
  *
- * Thin wrapper over `@vellumai/gateway-client/ipc-client` that resolves
+ * Thin wrapper over `@mycadet/gateway-client/ipc-client` that resolves
  * the gateway socket path and injects the assistant logger. All transport
  * logic lives in the shared package; this module provides the same public
  * API the rest of the assistant codebase expects.
@@ -18,16 +18,16 @@ import {
   ListWebhookRoutesIpcResponseSchema,
   type RegisterWebhookRouteIpcParams,
   RegisterWebhookRouteIpcResponseSchema,
+  type TunnelStatusIpcResponse,
+  TunnelStatusIpcResponseSchema,
   UnregisterWebhookRouteIpcResponseSchema,
-  type VelayStatusIpcResponse,
-  VelayStatusIpcResponseSchema,
   type WebhookIngressRoute,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import {
   ipcCall as packageIpcCall,
   IpcCallError,
   PersistentIpcClient as PackagePersistentIpcClient,
-} from "@vellumai/gateway-client/ipc-client";
+} from "@mycadet/gateway-client/ipc-client";
 
 import { getLogger } from "../util/logger.js";
 import { abortableSleep, computeRetryDelay } from "../util/retry.js";
@@ -158,17 +158,17 @@ export async function ipcGetFeatureFlags(
 }
 
 // ---------------------------------------------------------------------------
-// Velay tunnel status
+// Tunnel tunnel status
 // ---------------------------------------------------------------------------
 
 /**
- * Fetch the current Velay tunnel status from the gateway via IPC.
+ * Fetch the current Tunnel tunnel status from the gateway via IPC.
  * Returns `null` when the gateway is unreachable or returns an unexpected
  * response — callers should treat `null` as "gateway not running".
  */
-export async function ipcGetVelayStatus(): Promise<VelayStatusIpcResponse | null> {
-  const parsed = VelayStatusIpcResponseSchema.safeParse(
-    await ipcCall("get_velay_status"),
+export async function ipcGetTunnelStatus(): Promise<TunnelStatusIpcResponse | null> {
+  const parsed = TunnelStatusIpcResponseSchema.safeParse(
+    await ipcCall("get_tunnel_status"),
   );
   return parsed.success ? parsed.data : null;
 }

@@ -6,8 +6,8 @@ import type { CheckoutIntent } from "@/lib/billing/checkout-intent";
 import { MACHINE_TIER_LABEL } from "@/lib/billing/machine-sizes";
 import type { ProvisioningDimensionFlags } from "@/lib/billing/provisioning-targets";
 import { useTranslation } from "@/i18n";
-import { Button } from "@vellumai/design-library/components/button";
-import { Typography } from "@vellumai/design-library/components/typography";
+import { Button } from "@mycadet/design-library/components/button";
+import { Typography } from "@mycadet/design-library/components/typography";
 
 import type {
   ProvisioningDimensions,

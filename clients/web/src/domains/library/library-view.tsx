@@ -34,7 +34,7 @@ import type { AppSummary } from "@/types/app-types";
 import { getCachedAppHtml } from "@/utils/app-html-cache";
 import { importBundle } from "@/utils/import-bundle";
 import { isPointerCoarse } from "@/utils/pointer";
-import { Button, Input, toast } from "@vellumai/design-library";
+import { Button, Input, toast } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
 

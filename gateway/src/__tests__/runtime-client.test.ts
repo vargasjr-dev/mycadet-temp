@@ -333,7 +333,7 @@ describe("resolvePublicHttpBaseUrl", () => {
 
   test("prefers the config publicBaseUrl and strips its trailing slash", async () => {
     const result = await resolvePublicHttpBaseUrl(
-      makeConfig({ velayBaseUrl: "https://velay-dev.vellum.ai" }),
+      makeConfig({ tunnelBaseUrl: "https://tunnel-dev.mycadet.ai" }),
       fakeConfigFile("https://assistant.example.com/"),
       getId("assistant-123"),
     );
@@ -343,7 +343,7 @@ describe("resolvePublicHttpBaseUrl", () => {
   test("does not read the platform assistant id when the config URL resolves", async () => {
     const platformIdGetter = getId("assistant-123");
     await resolvePublicHttpBaseUrl(
-      makeConfig({ velayBaseUrl: "https://velay-dev.vellum.ai" }),
+      makeConfig({ tunnelBaseUrl: "https://tunnel-dev.mycadet.ai" }),
       fakeConfigFile("https://assistant.example.com"),
       platformIdGetter,
     );
@@ -351,32 +351,32 @@ describe("resolvePublicHttpBaseUrl", () => {
     expect(platformIdGetter).not.toHaveBeenCalled();
   });
 
-  test("falls back to velayBaseUrl + platform assistant id when config is empty", async () => {
+  test("falls back to tunnelBaseUrl + platform assistant id when config is empty", async () => {
     const result = await resolvePublicHttpBaseUrl(
-      makeConfig({ velayBaseUrl: "https://velay-dev.vellum.ai" }),
+      makeConfig({ tunnelBaseUrl: "https://tunnel-dev.mycadet.ai" }),
       fakeConfigFile(undefined),
       getId("assistant-123"),
     );
-    expect(result).toBe("https://velay-dev.vellum.ai/assistant-123");
+    expect(result).toBe("https://tunnel-dev.mycadet.ai/assistant-123");
   });
 
-  test("strips a trailing slash on velayBaseUrl before joining the assistant id", async () => {
+  test("strips a trailing slash on tunnelBaseUrl before joining the assistant id", async () => {
     const result = await resolvePublicHttpBaseUrl(
-      makeConfig({ velayBaseUrl: "https://velay-dev.vellum.ai/" }),
+      makeConfig({ tunnelBaseUrl: "https://tunnel-dev.mycadet.ai/" }),
       fakeConfigFile(undefined),
       getId("assistant-123"),
     );
-    expect(result).toBe("https://velay-dev.vellum.ai/assistant-123");
+    expect(result).toBe("https://tunnel-dev.mycadet.ai/assistant-123");
   });
 
-  test("returns undefined when neither the config URL nor the velay fallback resolve", async () => {
+  test("returns undefined when neither the config URL nor the tunnel fallback resolve", async () => {
     expect(
       await resolvePublicHttpBaseUrl(makeConfig(), fakeConfigFile(undefined)),
     ).toBeUndefined();
-    // velayBaseUrl present but no platform assistant id → no fallback.
+    // tunnelBaseUrl present but no platform assistant id → no fallback.
     expect(
       await resolvePublicHttpBaseUrl(
-        makeConfig({ velayBaseUrl: "https://velay-dev.vellum.ai" }),
+        makeConfig({ tunnelBaseUrl: "https://tunnel-dev.mycadet.ai" }),
         fakeConfigFile(undefined),
         getId(undefined),
       ),

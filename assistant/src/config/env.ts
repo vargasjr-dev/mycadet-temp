@@ -157,15 +157,15 @@ export function getPlatformBaseUrl(): string {
   const env = str("VELLUM_ENVIRONMENT")?.trim();
   let defaultUrl: string;
   if (env === "production") {
-    defaultUrl = "https://platform.vellum.ai";
+    defaultUrl = "https://cloud.mycadet.ai";
   } else if (env === "staging") {
-    defaultUrl = "https://staging-platform.vellum.ai";
+    defaultUrl = "https://staging-cloud.mycadet.ai";
   } else if (env === "test") {
-    defaultUrl = "https://test-platform.vellum.ai";
+    defaultUrl = "https://test-cloud.mycadet.ai";
   } else if (env === "local") {
     defaultUrl = "http://localhost:8000";
   } else {
-    defaultUrl = "https://dev-platform.vellum.ai";
+    defaultUrl = "https://dev-cloud.mycadet.ai";
   }
   return (
     configUrl ||
@@ -176,8 +176,8 @@ export function getPlatformBaseUrl(): string {
 }
 
 /**
- * Returns the environment-level apex domain (e.g. "vellum.me",
- * "dev.vellum.me", "staging.vellum.me"). Never includes the
+ * Returns the environment-level apex domain (e.g. "mycadet.bot",
+ * "dev.mycadet.bot", "staging.mycadet.bot"). Never includes the
  * assistant-specific subdomain.
  */
 export function getApexDomain(): string {
@@ -185,23 +185,23 @@ export function getApexDomain(): string {
     const url = getPlatformBaseUrl();
     const host = new URL(url).hostname;
 
-    if (host.endsWith("platform.vellum.ai")) {
-      const prefix = host.replace(/[-.]?platform\.vellum\.ai$/, "");
+    if (host.endsWith("cloud.mycadet.ai")) {
+      const prefix = host.replace(/[-.]?cloud\.mycadet\.ai$/, "");
       if (prefix) {
-        return `${prefix}.vellum.me`;
+        return `${prefix}.mycadet.bot`;
       }
-      return "vellum.me";
+      return "mycadet.bot";
     }
 
     const env = str("VELLUM_ENVIRONMENT")?.trim();
     if (env && env !== "production") {
-      return `${env}.vellum.me`;
+      return `${env}.mycadet.bot`;
     }
-    return "local.vellum.me";
+    return "local.mycadet.bot";
   } catch {
     // Fall through to default
   }
-  return "vellum.me";
+  return "mycadet.bot";
 }
 
 export function getAssistantDomain(): string {

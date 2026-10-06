@@ -8,8 +8,8 @@ type StoredTheme = Theme | "velvet";
 
 /* Theme state lives under BOTH `device:theme` (the assistant SPA's key, read
  * first by the pre-hydration bootstrap in src/app/layout.tsx) and
- * `vellum_theme` (the shared platform key), since both apps share the
- * www.vellum.ai origin. Dark mode is stamped as both the `.dark` class
+ * `cadet_theme` (the shared platform key), since both apps share the
+ * www.mycadet.ai origin. Dark mode is stamped as both the `.dark` class
  * (docs-theme.css) and the `data-theme` attribute (design-library tokens). */
 
 const THEMES: { value: Theme; icon: typeof Sun; label: string }[] = [
@@ -29,7 +29,7 @@ function isValidStoredTheme(value: string | null): value is StoredTheme {
 
 function getStoredTheme(): StoredTheme {
   const stored =
-    localStorage.getItem("device:theme") ?? localStorage.getItem("vellum_theme");
+    localStorage.getItem("device:theme") ?? localStorage.getItem("cadet_theme");
   return isValidStoredTheme(stored) ? stored : "system";
 }
 
@@ -49,11 +49,11 @@ function applyThemeToDocument(theme: Theme) {
 }
 
 function applyTheme(theme: Theme) {
-  localStorage.setItem("vellum_theme", theme);
+  localStorage.setItem("cadet_theme", theme);
   localStorage.setItem("device:theme", theme);
   applyThemeToDocument(theme);
 
-  window.dispatchEvent(new CustomEvent("vellumThemeChange", { detail: theme }));
+  window.dispatchEvent(new CustomEvent("cadetThemeChange", { detail: theme }));
 }
 
 function getSnapshot(): Theme {
@@ -77,10 +77,10 @@ function subscribe(callback: () => void): () => void {
     callback();
   };
 
-  window.addEventListener("vellumThemeChange", handleThemeChange);
+  window.addEventListener("cadetThemeChange", handleThemeChange);
   mediaQuery.addEventListener("change", handleMediaChange);
   return () => {
-    window.removeEventListener("vellumThemeChange", handleThemeChange);
+    window.removeEventListener("cadetThemeChange", handleThemeChange);
     mediaQuery.removeEventListener("change", handleMediaChange);
   };
 }

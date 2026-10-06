@@ -20,7 +20,7 @@ const TOC_ITEMS = [
   { id: "credit-bundles", label: "Usage bundles", level: 3 },
   { id: "changing-your-plan", label: "Changing your plan", level: 3 },
   { id: "how-pricing-works", label: "How pricing works", level: 2 },
-  { id: "vellum-credits", label: "Vellum Credits", level: 2 },
+  { id: "cadet-credits", label: "Cadet Credits", level: 2 },
   {
     id: "what-happens-when-credits-run-out",
     label: "What happens when credits run out",
@@ -110,10 +110,10 @@ export function PricingContent() {
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
             We believe your AI costs should be transparent and predictable.
-            Vellum passes through model provider costs at cost. We don&apos;t
+            Cadet passes through model provider costs at cost. We don&apos;t
             charge any margin or markup on token usage. When you spend $1 worth
             of credits on LLM tokens, that full dollar goes to the model
-            provider. Our goal is to keep Vellum affordable and aligned with
+            provider. Our goal is to keep Cadet affordable and aligned with
             your actual usage, not to profit from the AI calls your assistant
             makes.
           </p>
@@ -123,7 +123,7 @@ export function PricingContent() {
           <CollapsibleSection id="plans" label="Plans">
             {/* Overview */}
             <p className="mb-6 text-zinc-600">
-              Vellum has two plans: <strong>Base</strong> (free) and{" "}
+              Cadet has two plans: <strong>Base</strong> (free) and{" "}
               <strong>Pro</strong> (paid). Pro comes in three preset packages
               (Mighty, Super, Ultra) that bundle machine size, storage, and
               monthly usage, or you can build a <strong>Custom</strong>{" "}
@@ -145,7 +145,7 @@ export function PricingContent() {
               <li>Small machine size (1 vCPU, 2 GiB RAM)</li>
               <li>6 GiB of persistent storage</li>
               <li>Pay-as-you-go credits (no monthly minimum)</li>
-              <li>Managed LLM credentials (Vellum covers the API keys)</li>
+              <li>Managed LLM credentials (Cadet covers the API keys)</li>
             </ul>
 
             {/* Pro packages */}
@@ -548,9 +548,9 @@ export function PricingContent() {
             </p>
           </CollapsibleSection>
 
-          <CollapsibleSection id="vellum-credits" label="Vellum Credits">
+          <CollapsibleSection id="cadet-credits" label="Cadet Credits">
             <p className="mb-4 text-zinc-600">
-              The purchase and use of Vellum Credits is governed by Section 6 of
+              The purchase and use of Cadet Credits is governed by Section 6 of
               our{" "}
               <a
                 href={routes.docs.legal.termsOfUse}
@@ -561,20 +561,20 @@ export function PricingContent() {
               .
             </p>
             <p className="mb-6 text-zinc-600">
-              Vellum makes available certain features and functionalities within
-              the Services, as designated by Vellum from time to time, that are
+              Cadet makes available certain features and functionalities within
+              the Services, as designated by Cadet from time to time, that are
               accessible exclusively through the use of prepaid credits
-              (&ldquo;Vellum Credits&rdquo;). These designated features and
+              (&ldquo;Cadet Credits&rdquo;). These designated features and
               functionalities are referred to as &ldquo;Credit-Eligible
               Features.&rdquo; Credit-Eligible Features currently include
               inference, web search, image creation, and paid third-party APIs
-              accessed through Vellum&apos;s managed OAuth (for example,
+              accessed through Cadet&apos;s managed OAuth (for example,
               Twitter). No alternative direct-payment method is available for
               Credit-Eligible Features.
             </p>
             <p className="mb-6 text-zinc-600">
               If your plan includes monthly usage, that usage is consumed
-              first. Vellum Credits are only spent after your included usage
+              first. Cadet Credits are only spent after your included usage
               is fully consumed.
             </p>
 
@@ -602,11 +602,11 @@ export function PricingContent() {
             label="Purchasing Credits"
           >
             <p className="mb-6 text-zinc-600">
-              You may fund your Vellum Credit balance (&ldquo;Vellum
-              Balance&rdquo;) by purchasing Vellum Credits in ten-dollar ($10.00
+              You may fund your Cadet Credit balance (&ldquo;Cadet
+              Balance&rdquo;) by purchasing Cadet Credits in ten-dollar ($10.00
               USD) increments, up to one hundred dollars ($100.00 USD) per
               top-up, through the payment methods made available in the
-              Services, or at such other amounts as determined by Vellum from
+              Services, or at such other amounts as determined by Cadet from
               time to time.
             </p>
             <p className="mb-6 text-zinc-600">
@@ -638,7 +638,7 @@ export function PricingContent() {
                 </li>
               </ol>
               <p className="mb-0 text-zinc-600">
-                One Vellum Credit equals one US dollar. So $10 in checkout adds
+                One Cadet Credit equals one US dollar. So $10 in checkout adds
                 10 credits to your balance.
               </p>
             </div>
@@ -723,7 +723,7 @@ export function PricingContent() {
               <strong>LLM inference</strong> (the biggest line item by far),{" "}
               <strong>web search</strong>, <strong>image generation</strong>,
               and <strong>paid third-party APIs</strong> you reach through
-              Vellum&apos;s managed OAuth (for example, Twitter). On plans
+              Cadet&apos;s managed OAuth (for example, Twitter). On plans
               with monthly included usage, this work draws on that usage
               first; credits are only spent after the included usage is fully
               consumed.
@@ -851,7 +851,7 @@ export function PricingContent() {
             </strong>{" "}
             Join our{" "}
             <a
-              href="https://www.vellum.ai/community"
+              href="https://www.mycadet.ai/community"
               className="font-semibold text-emerald-700 underline hover:text-emerald-800"
             >
               Discord

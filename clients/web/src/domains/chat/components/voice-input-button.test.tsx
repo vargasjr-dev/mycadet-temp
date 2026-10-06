@@ -3,9 +3,6 @@
  *
  *   1. Esc during recording discards the session — the captured audio is
  *      never transcribed and no transcript is delivered.
- *   2. Each session emits exactly one Sentry breadcrumb with duration,
- *      locale, and final transcript length (metrics only — never the
- *      transcript text).
  *
  * The browser capture surface (`MediaRecorder` + `getUserMedia`) is faked at
  * the global level since happy-dom provides neither; the fake recorder fires
@@ -29,11 +26,6 @@ import {
   MOBILE_GLYPH_CLASS,
 } from "@/domains/chat/components/chat-composer/composer-mobile-chrome";
 import { markHoldDictation } from "@/utils/voice-key";
-
-const addBreadcrumbSpy = mock((_breadcrumb: unknown) => {});
-mock.module("@sentry/react", () => ({
-  addBreadcrumb: addBreadcrumbSpy,
-}));
 
 const postSttTranscribeSpy = mock(
   async (
@@ -158,22 +150,6 @@ const { useVoiceRecordingStore } =
 // Helpers
 // ---------------------------------------------------------------------------
 
-interface RecordedBreadcrumb {
-  category: string;
-  data: {
-    outcome: string;
-    durationMs: number;
-    locale: string;
-    finalLength: number;
-  };
-}
-
-function lastBreadcrumb(): RecordedBreadcrumb {
-  const calls = addBreadcrumbSpy.mock.calls;
-  expect(calls.length).toBeGreaterThan(0);
-  return calls[calls.length - 1]![0] as RecordedBreadcrumb;
-}
-
 async function startSession(onTranscript: (text: string) => Promise<void>) {
   render(
     <VoiceInputButton assistantId="assistant-1" onTranscript={onTranscript} />,
@@ -190,7 +166,6 @@ async function startSession(onTranscript: (text: string) => Promise<void>) {
 
 describe("VoiceInputButton — Esc cancellation", () => {
   beforeEach(() => {
-    addBreadcrumbSpy.mockClear();
     postSttTranscribeSpy.mockClear();
     useVoiceRecordingStore.getState().reset();
   });
@@ -212,10 +187,6 @@ describe("VoiceInputButton — Esc cancellation", () => {
     expect(postSttTranscribeSpy).not.toHaveBeenCalled();
     expect(onTranscript).not.toHaveBeenCalled();
 
-    const crumb = lastBreadcrumb();
-    expect(crumb.category).toBe("dictation");
-    expect(crumb.data.outcome).toBe("cancelled");
-    expect(crumb.data.finalLength).toBe(0);
   });
 
   test("cancelDictation command (escape monitor relay) discards like Escape", async () => {
@@ -231,7 +202,6 @@ describe("VoiceInputButton — Esc cancellation", () => {
     });
     expect(postSttTranscribeSpy).not.toHaveBeenCalled();
     expect(onTranscript).not.toHaveBeenCalled();
-    expect(lastBreadcrumb().data.outcome).toBe("cancelled");
   });
 
   test("Escape while idle does nothing", () => {
@@ -246,46 +216,11 @@ describe("VoiceInputButton — Esc cancellation", () => {
     fireEvent.keyDown(window, { key: "Escape" });
 
     expect(useVoiceRecordingStore.getState().phase).toBe("idle");
-    expect(addBreadcrumbSpy).not.toHaveBeenCalled();
-  });
-});
-
-describe("VoiceInputButton — session breadcrumb", () => {
-  beforeEach(() => {
-    addBreadcrumbSpy.mockClear();
-    postSttTranscribeSpy.mockClear();
-    useVoiceRecordingStore.getState().reset();
-  });
-
-  afterEach(() => {
-    cleanup();
-    useVoiceRecordingStore.getState().reset();
-  });
-
-  test("completed session emits one breadcrumb with duration, locale, and final length", async () => {
-    const onTranscript = mock(async (_text: string) => {});
-    await startSession(onTranscript);
-
-    fireEvent.click(screen.getByRole("button", { name: "Stop recording" }));
-
-    await waitFor(() => {
-      expect(onTranscript).toHaveBeenCalledWith("hello world");
-    });
-    expect(postSttTranscribeSpy).toHaveBeenCalledTimes(1);
-    expect(addBreadcrumbSpy).toHaveBeenCalledTimes(1);
-
-    const crumb = lastBreadcrumb();
-    expect(crumb.category).toBe("dictation");
-    expect(crumb.data.outcome).toBe("completed");
-    expect(crumb.data.finalLength).toBe("hello world".length);
-    expect(crumb.data.durationMs).toBeGreaterThanOrEqual(0);
-    expect(typeof crumb.data.locale).toBe("string");
   });
 });
 
 describe("VoiceInputButton — native partials fallback", () => {
   beforeEach(() => {
-    addBreadcrumbSpy.mockClear();
     postSttTranscribeSpy.mockClear();
     useVoiceRecordingStore.getState().reset();
   });
@@ -316,7 +251,6 @@ describe("VoiceInputButton — native partials fallback", () => {
       "stt-not-configured",
     );
     expect(onTranscript).not.toHaveBeenCalled();
-    expect(lastBreadcrumb().data.outcome).toBe("error");
   });
 
   test("native Apple Speech text becomes the final transcript when batch STT fails", async () => {
@@ -337,7 +271,6 @@ describe("VoiceInputButton — native partials fallback", () => {
     await waitFor(() => {
       expect(onTranscript).toHaveBeenCalledWith("offline transcript");
     });
-    expect(lastBreadcrumb().data.outcome).toBe("completed");
   });
 
   test("recognizer final transcript delivered after stop becomes the transcript", async () => {
@@ -360,7 +293,6 @@ describe("VoiceInputButton — native partials fallback", () => {
     await waitFor(() => {
       expect(onTranscript).toHaveBeenCalledWith("the full final sentence");
     });
-    expect(lastBreadcrumb().data.outcome).toBe("completed");
   });
 
   test("empty native final makes an unconfigured daemon response an empty dictation", async () => {
@@ -383,7 +315,6 @@ describe("VoiceInputButton — native partials fallback", () => {
     expect(useVoiceRecordingStore.getState().errorCode).toBeNull();
     expect(onTranscript).not.toHaveBeenCalled();
     expect(postSttTranscribeSpy).toHaveBeenCalledTimes(1);
-    expect(lastBreadcrumb().data.outcome).toBe("empty");
   });
 
   test("waits for empty native final when stop races native startup", async () => {
@@ -415,7 +346,6 @@ describe("VoiceInputButton — native partials fallback", () => {
     expect(useVoiceRecordingStore.getState().errorCode).toBeNull();
     expect(onTranscript).not.toHaveBeenCalled();
     expect(postSttTranscribeSpy).toHaveBeenCalledTimes(1);
-    expect(lastBreadcrumb().data.outcome).toBe("empty");
   });
 
   test("configuration errors still surface when native startup resolves unavailable after stop", async () => {
@@ -449,7 +379,6 @@ describe("VoiceInputButton — native partials fallback", () => {
     );
     expect(onTranscript).not.toHaveBeenCalled();
     expect(postSttTranscribeSpy).toHaveBeenCalledTimes(1);
-    expect(lastBreadcrumb().data.outcome).toBe("error");
   });
 
   test("successful batch STT takes priority over native partials text", async () => {
@@ -489,7 +418,6 @@ describe("VoiceInputButton — native partials fallback", () => {
     await waitFor(() => {
       expect(onTranscript).toHaveBeenCalledWith("the complete utterance");
     });
-    expect(lastBreadcrumb().data.outcome).toBe("completed");
   });
 
   test("native recognizer runs alongside a silent stream and wins the fallback", async () => {
@@ -555,7 +483,6 @@ describe("VoiceInputButton — native partials fallback", () => {
 
 describe("VoiceInputButton — forced native provider (macOS Native Dictation)", () => {
   beforeEach(() => {
-    addBreadcrumbSpy.mockClear();
     postSttTranscribeSpy.mockClear();
     prefersNativeStt = true;
     useVoiceRecordingStore.getState().reset();
@@ -588,7 +515,6 @@ describe("VoiceInputButton — forced native provider (macOS Native Dictation)",
     });
     expect(postSttTranscribeSpy).not.toHaveBeenCalled();
     expect(streamStarted).toBe(false);
-    expect(lastBreadcrumb().data.outcome).toBe("completed");
   });
 
   test("captured audio with no native transcript surfaces the dictation-setup error", async () => {
@@ -607,7 +533,6 @@ describe("VoiceInputButton — forced native provider (macOS Native Dictation)",
     );
     expect(postSttTranscribeSpy).not.toHaveBeenCalled();
     expect(onTranscript).not.toHaveBeenCalled();
-    expect(lastBreadcrumb().data.outcome).toBe("error");
   });
 });
 

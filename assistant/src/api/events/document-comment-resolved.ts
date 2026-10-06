@@ -6,7 +6,7 @@
  * `resolvedBy` from the wire value.
  *
  * Canonical wire-contract source. Daemon code imports the type directly
- * from this file; external consumers import via `@vellumai/assistant-api`.
+ * from this file; external consumers import via `@mycadet/assistant-api`.
  */
 
 import { z } from "zod";

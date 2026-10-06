@@ -35,7 +35,7 @@ import {
   type HookFunction,
   persistSystemCard,
   type UserPromptSubmitContext,
-} from "@vellumai/plugin-api";
+} from "@mycadet/plugin-api";
 
 import {
   captionImagesInMessages,

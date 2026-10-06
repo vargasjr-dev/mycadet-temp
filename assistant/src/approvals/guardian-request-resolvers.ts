@@ -15,8 +15,8 @@
  * decision primitive.
  */
 
-import type { CreateOutboundSessionIpcResponse } from "@vellumai/gateway-client";
-import { isDenyingGuardianAction } from "@vellumai/service-contracts/guardian-requests";
+import type { CreateOutboundSessionIpcResponse } from "@mycadet/gateway-client";
+import { isDenyingGuardianAction } from "@mycadet/service-contracts/guardian-requests";
 
 import { answerCall } from "../calls/call-domain.js";
 import type {

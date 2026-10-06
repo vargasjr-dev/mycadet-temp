@@ -11,10 +11,10 @@ import {
 } from "bun:test";
 
 import type { LiveVoiceSocketData } from "../http/routes/live-voice-websocket.js";
-import { setVelayBridgeAuthHeader } from "../velay/bridge-auth.js";
+import { setTunnelBridgeAuthHeader } from "../tunnel/bridge-auth.js";
 import {
   GUARDIAN_PRINCIPAL,
-  VELAY_USER_ID,
+  TUNNEL_USER_ID,
   createFakeDownstreamWs,
   makeConfig,
   makeFakeServer,
@@ -36,11 +36,11 @@ mock.module("../auth/guardian-bootstrap.js", () => ({
   findVellumGuardian: () => mockFindVellumGuardian(),
 }));
 
-// The managed/velay path cross-checks the attested caller against the stored
-// `platform_user_id`. Default the credential to `VELAY_USER_ID` so the velay
+// The managed/tunnel path cross-checks the attested caller against the stored
+// `platform_user_id`. Default the credential to `TUNNEL_USER_ID` so the tunnel
 // success cases match; negative cases override this mock.
 let mockReadCredential = mock(
-  async (_key: string): Promise<string | undefined> => VELAY_USER_ID,
+  async (_key: string): Promise<string | undefined> => TUNNEL_USER_ID,
 );
 mock.module("../credential-reader.js", () => ({
   readCredential: (key: string) => mockReadCredential(key),
@@ -92,7 +92,7 @@ beforeEach(() => {
   mockFindVellumGuardian = mock(async () => ({
     principalId: GUARDIAN_PRINCIPAL,
   }));
-  mockReadCredential = mock(async () => VELAY_USER_ID);
+  mockReadCredential = mock(async () => TUNNEL_USER_ID);
 });
 
 describe("createLiveVoiceWebsocketHandler", () => {
@@ -269,10 +269,10 @@ describe("createLiveVoiceWebsocketHandler", () => {
   });
 });
 
-describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () => {
+describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () => {
   const TEST_TOKEN = mintEdgeToken();
-  // VELAY_USER_ID is declared at module scope (shared with the credential mock).
-  const VELAY_ORG_ID = "22222222-2222-2222-2222-222222222222";
+  // TUNNEL_USER_ID is declared at module scope (shared with the credential mock).
+  const TUNNEL_ORG_ID = "22222222-2222-2222-2222-222222222222";
   const originalIsPlatform = process.env.IS_PLATFORM;
 
   function setPlatform(on: boolean) {
@@ -283,17 +283,17 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
     }
   }
 
-  function makeVelayReq(
+  function makeTunnelReq(
     headers: Record<string, string> = {
-      "x-velay-user-id": VELAY_USER_ID,
-      "x-velay-org-id": VELAY_ORG_ID,
-      "x-velay-actor": "user",
+      "x-tunnel-user-id": TUNNEL_USER_ID,
+      "x-tunnel-org-id": TUNNEL_ORG_ID,
+      "x-tunnel-actor": "user",
     },
     opts: { bridgeAuth?: boolean } = {},
   ) {
     const requestHeaders = new Headers({ upgrade: "websocket", ...headers });
     if (opts.bridgeAuth !== false) {
-      setVelayBridgeAuthHeader(requestHeaders);
+      setTunnelBridgeAuthHeader(requestHeaders);
     }
     return new Request("http://localhost:7830/v1/live-voice", {
       headers: requestHeaders,
@@ -308,18 +308,18 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
     }
   });
 
-  test("managed mode + valid X-Velay-* headers with bridge proof authorizes the upgrade", async () => {
+  test("managed mode + valid X-Tunnel-* headers with bridge proof authorizes the upgrade", async () => {
     setPlatform(true);
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(makeVelayReq(), server);
+    const res = await handler(makeTunnelReq(), server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
   });
 
   /**
-   * Velay attests a platform user, not an actor principal, so this path has
+   * Tunnel attests a platform user, not an actor principal, so this path has
    * no principal in the request at all. The binding supplies it, which is
    * what lets the managed deployment carry an identity downstream rather than
    * leaving the daemon to resolve one of its own.
@@ -328,7 +328,7 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
     setPlatform(true);
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    await handler(makeVelayReq(), server);
+    await handler(makeTunnelReq(), server);
 
     const call = (server.upgrade as ReturnType<typeof mock>).mock
       .calls[0] as unknown[];
@@ -337,16 +337,16 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
     ).toBe("test-user");
   });
 
-  // Guardian pinning on the velay path: the attested caller must match the
+  // Guardian pinning on the tunnel path: the attested caller must match the
   // stored platform_user_id, or the daemon's guardian stamp would be unbacked.
-  test("managed mode + bridge proof but velay user is not the bound guardian is rejected", async () => {
+  test("managed mode + bridge proof but tunnel user is not the bound guardian is rejected", async () => {
     setPlatform(true);
     mockReadCredential = mock(
       async () => "99999999-9999-9999-9999-999999999999",
     );
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(makeVelayReq(), server);
+    const res = await handler(makeTunnelReq(), server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(403);
@@ -358,7 +358,7 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
     mockReadCredential = mock(async () => undefined);
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(makeVelayReq(), server);
+    const res = await handler(makeTunnelReq(), server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(403);
@@ -372,19 +372,19 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
     });
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(makeVelayReq(), server);
+    const res = await handler(makeTunnelReq(), server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(503);
     expect(server.upgrade).not.toHaveBeenCalled();
   });
 
-  test("managed mode + spoofed X-Velay-* headers without bridge proof is rejected", async () => {
+  test("managed mode + spoofed X-Tunnel-* headers without bridge proof is rejected", async () => {
     setPlatform(true);
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
     const res = await handler(
-      makeVelayReq(undefined, { bridgeAuth: false }),
+      makeTunnelReq(undefined, { bridgeAuth: false }),
       server,
     );
 
@@ -393,7 +393,7 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
     expect(server.upgrade).not.toHaveBeenCalled();
   });
 
-  test("managed mode without velay headers and without actor JWT is rejected", async () => {
+  test("managed mode without tunnel headers and without actor JWT is rejected", async () => {
     setPlatform(true);
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request("http://localhost:7830/v1/live-voice", {
@@ -407,15 +407,15 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
     expect(server.upgrade).not.toHaveBeenCalled();
   });
 
-  test("managed mode with X-Velay-Actor other than 'user' is rejected", async () => {
+  test("managed mode with X-Tunnel-Actor other than 'user' is rejected", async () => {
     setPlatform(true);
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
     const res = await handler(
-      makeVelayReq({
-        "x-velay-user-id": VELAY_USER_ID,
-        "x-velay-org-id": VELAY_ORG_ID,
-        "x-velay-actor": "service",
+      makeTunnelReq({
+        "x-tunnel-user-id": TUNNEL_USER_ID,
+        "x-tunnel-org-id": TUNNEL_ORG_ID,
+        "x-tunnel-actor": "service",
       }),
       server,
     );
@@ -430,9 +430,9 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
     const res = await handler(
-      makeVelayReq({
-        "x-velay-user-id": VELAY_USER_ID,
-        "x-velay-actor": "user",
+      makeTunnelReq({
+        "x-tunnel-user-id": TUNNEL_USER_ID,
+        "x-tunnel-actor": "user",
       }),
       server,
     );
@@ -442,11 +442,11 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
     expect(server.upgrade).not.toHaveBeenCalled();
   });
 
-  test("a gateway with no velay tunnel does NOT trust X-Velay-* headers even with bridge proof", async () => {
+  test("a gateway with no tunnel does NOT trust X-Tunnel-* headers even with bridge proof", async () => {
     setPlatform(false);
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(makeVelayReq(), server);
+    const res = await handler(makeTunnelReq(), server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(401);
@@ -454,17 +454,17 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
   });
 
   /**
-   * A locally hosted assistant reaches the mobile app through a velay tunnel
+   * A locally hosted assistant reaches the mobile app through a tunnel
    * with IS_PLATFORM unset. The attestation arrives through the same bridge
    * as on a managed pod, so the tunnel, not the env var, is what admits it.
    */
-  test("a locally hosted gateway with a velay tunnel trusts an attested caller with bridge proof", async () => {
+  test("a locally hosted gateway with a tunnel trusts an attested caller with bridge proof", async () => {
     setPlatform(false);
     const handler = createLiveVoiceWebsocketHandler(
-      makeConfig({ velayBaseUrl: "https://velay.example.test" }),
+      makeConfig({ tunnelBaseUrl: "https://tunnel.example.test" }),
     );
     const server = makeFakeServer();
-    const res = await handler(makeVelayReq(), server);
+    const res = await handler(makeTunnelReq(), server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
@@ -475,14 +475,14 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
     ).toBe("test-user");
   });
 
-  test("a locally hosted gateway with a velay tunnel still ignores spoofed headers without bridge proof", async () => {
+  test("a locally hosted gateway with a tunnel still ignores spoofed headers without bridge proof", async () => {
     setPlatform(false);
     const handler = createLiveVoiceWebsocketHandler(
-      makeConfig({ velayBaseUrl: "https://velay.example.test" }),
+      makeConfig({ tunnelBaseUrl: "https://tunnel.example.test" }),
     );
     const server = makeFakeServer();
     const res = await handler(
-      makeVelayReq(undefined, { bridgeAuth: false }),
+      makeTunnelReq(undefined, { bridgeAuth: false }),
       server,
     );
 
@@ -490,7 +490,7 @@ describe("createLiveVoiceWebsocketHandler — velay-attested managed auth", () =
     expect(server.upgrade).not.toHaveBeenCalled();
   });
 
-  test("managed mode still accepts a valid actor edge JWT (no velay headers)", async () => {
+  test("managed mode still accepts a valid actor edge JWT (no tunnel headers)", async () => {
     setPlatform(true);
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request(

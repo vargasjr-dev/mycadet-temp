@@ -2,9 +2,9 @@ import { KeyConceptsContent } from "@/app/docs/_components/key-concepts-content"
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Key Concepts - Vellum Docs",
+  title: "Key Concepts - Cadet Docs",
   description:
-    "Core Vellum concepts — workspace, skills and tools, memory and context, channels, assistant identity, and glossary.",
+    "Core Cadet concepts — workspace, skills and tools, memory and context, channels, assistant identity, and glossary.",
   path: "/docs/key-concepts",
 });
 

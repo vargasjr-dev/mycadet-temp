@@ -5,10 +5,7 @@
  * (`RiskThreshold`: none | low | medium | high). Null means unset.
  */
 
-import {
-  isRiskThreshold,
-  type RiskThreshold,
-} from "@vellumai/gateway-client";
+import { isRiskThreshold, type RiskThreshold } from "@mycadet/gateway-client";
 
 export function parseContactAutoApproveThreshold(
   value: string | null | undefined,

@@ -32,7 +32,7 @@ export interface RememberedOrigin {
   addedAt: string;
 }
 
-export const REMEMBERED_ORIGINS_STORAGE_KEY = "vellum:remembered-origins";
+export const REMEMBERED_ORIGINS_STORAGE_KEY = "cadet:remembered-origins";
 
 /**
  * Normalize a candidate origin URL to its canonical stored form, or `null`
@@ -153,7 +153,7 @@ let hydrationEpoch = 0;
  */
 let mutationQueue: Promise<unknown> = Promise.resolve();
 
-const MUTATION_LOCK_NAME = "vellum:remembered-origins:mutate";
+const MUTATION_LOCK_NAME = "cadet:remembered-origins:mutate";
 
 /**
  * Make the read-modify-write mutation atomic across tabs via the Web Locks

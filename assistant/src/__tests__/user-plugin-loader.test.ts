@@ -155,7 +155,7 @@ describe("user plugin loader", () => {
   });
 
   test("loads a plugin whose package.json name differs from its directory", async () => {
-    writePlugin("scoped", { name: "@vellumai/cool-plugin", version: "0.1.0" });
+    writePlugin("scoped", { name: "@mycadet/cool-plugin", version: "0.1.0" });
 
     await loadUserPlugins();
 

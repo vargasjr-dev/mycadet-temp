@@ -47,7 +47,7 @@ export function ReleasesContent({ releases }: ReleasesContentProps) {
         <a
           href={routes.signup}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 no-underline transition-colors hover:border-zinc-300 hover:bg-zinc-50"
-          aria-label="Sign up for Vellum Cloud"
+          aria-label="Sign up for Cadet Cloud"
         >
           <svg
             width="14"
@@ -121,7 +121,7 @@ export function ReleasesContent({ releases }: ReleasesContentProps) {
                           {formatFullDate(release.released_at)}
                         </time>
                         <a
-                          href={`https://github.com/vellum-ai/vellum-assistant/releases/tag/v${release.version}`}
+                          href={`https://github.com/vargasjr-dev/mycadet/releases/tag/v${release.version}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`View v${release.version} on GitHub`}

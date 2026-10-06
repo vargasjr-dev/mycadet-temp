@@ -1,5 +1,5 @@
 {
-  "name": "@vellumai/docs",
+  "name": "@mycadet/docs",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,7 +15,7 @@
     "test": "bun test src scripts next-config.test.ts --pass-with-no-tests"
   },
   "dependencies": {
-    "@vellumai/design-library": "workspace:*",
+    "@mycadet/design-library": "workspace:*",
     "clsx": "2.1.1",
     "isbot": "5.1.40",
     "lucide-react": "1.16.0",

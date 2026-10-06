@@ -10,7 +10,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { SubagentAvatarChip } from "@/components/avatar/subagent-avatar-chip";
 import { ThreeDotIndicator } from "@/domains/chat/components/tool-progress-card/three-dot-indicator";
 import { useSubagentStore } from "@/domains/chat/subagent-store";
-import type { SubagentStatus } from "@vellumai/assistant-api";
+import type { SubagentStatus } from "@mycadet/assistant-api";
 
 export interface SubagentAvatarBadgeProps {
   subagentId: string;

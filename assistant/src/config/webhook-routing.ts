@@ -12,11 +12,11 @@
 import {
   normalizePublicBaseUrl,
   resolveTwilioPublicBaseUrl,
-} from "@vellumai/service-contracts/twilio-ingress";
+} from "@mycadet/service-contracts/twilio-ingress";
 
 import { resolvePlatformCallbackRegistrationContext } from "../inbound/platform-callback-registration.js";
 import { isPublicIngressDisabled } from "../inbound/public-ingress-urls.js";
-import { isVelayWebhooksEnabled } from "../inbound/velay-webhooks-gate.js";
+import { isTunnelWebhooksEnabled } from "../inbound/tunnel-webhooks-gate.js";
 import { getIsPlatform } from "./env-registry.js";
 import { getConfig, loadRawConfig } from "./loader.js";
 
@@ -68,9 +68,9 @@ function isIngressExplicitlyDisabled(): boolean {
  * reports "no ingress" while `webhooks register` hands back a working callback
  * URL hides a broken registration instead of surfacing it.
  *
- *   1. **Platform pods** (`IS_PLATFORM`) with the `velay-webhooks` flag off
+ *   1. **Platform pods** (`IS_PLATFORM`) with the `tunnel-webhooks` flag off
  *      always use managed callbacks. With the flag on, a configured ingress
- *      (the Velay-published URL) wins, and managed callbacks remain the
+ *      (the Tunnel-published URL) wins, and managed callbacks remain the
  *      fallback — including when ingress is explicitly disabled, matching
  *      `resolveCallbackUrl`'s pod behavior.
  *   2. **A configured public ingress wins** for everyone else.
@@ -105,7 +105,7 @@ export async function hasWebhookRoutingConfigured(
   usesManagedCallbacks: boolean;
 }> {
   const platformManaged = allowManagedCallbacks && getIsPlatform();
-  if (platformManaged && !isVelayWebhooksEnabled()) {
+  if (platformManaged && !isTunnelWebhooksEnabled()) {
     return { configured: true, usesManagedCallbacks: true };
   }
 

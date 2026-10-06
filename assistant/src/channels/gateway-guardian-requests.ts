@@ -7,7 +7,7 @@
  * status CAS; the daemon relays lifecycle operations here and keeps
  * notifications, card withdrawal, and other daemon-domain side effects.
  * Responses are validated against the shared contract schemas in
- * `@vellumai/gateway-client` — the same schemas the gateway routes are
+ * `@mycadet/gateway-client` — the same schemas the gateway routes are
  * pinned to.
  *
  * Error posture (fail-closed — there is no local fallback):
@@ -43,7 +43,7 @@ import {
   type ListGuardianRequestsIpcParams,
   type ListPendingGuardianRequestsByDestinationIpcParams,
   type UpdateGuardianRequestDeliveryIpcParams,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 import type { ZodType } from "zod";
 
 import { ipcCallPersistentValidated } from "../ipc/gateway-validated-call.js";
@@ -58,7 +58,7 @@ export type {
   GuardianRequestPatch,
   GuardianRequestStatus,
   GuardianRequestWire,
-} from "@vellumai/gateway-client";
+} from "@mycadet/gateway-client";
 
 const log = getLogger("gateway-guardian-requests");
 

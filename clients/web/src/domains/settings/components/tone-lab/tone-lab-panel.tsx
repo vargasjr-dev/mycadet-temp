@@ -41,11 +41,11 @@ import {
   readVoiceStartToneOverride,
   writeVoiceStartToneOverride,
 } from "@/lib/sounds/voice-start-tone";
-import { Button } from "@vellumai/design-library/components/button";
-import { FilterChip } from "@vellumai/design-library/components/filter-chip";
-import { Slider } from "@vellumai/design-library/components/slider";
-import { toast } from "@vellumai/design-library/components/toast";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { Button } from "@mycadet/design-library/components/button";
+import { FilterChip } from "@mycadet/design-library/components/filter-chip";
+import { Slider } from "@mycadet/design-library/components/slider";
+import { toast } from "@mycadet/design-library/components/toast";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 const PRESET_LABEL_KEYS = {
   rise: "toneLab.presetNames.rise",

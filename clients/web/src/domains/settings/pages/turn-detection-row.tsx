@@ -26,8 +26,8 @@ import { configPatch } from "@/generated/daemon/sdk.gen";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
-import { toast } from "@vellumai/design-library/components/toast";
-import { Toggle } from "@vellumai/design-library/components/toggle";
+import { toast } from "@mycadet/design-library/components/toast";
+import { Toggle } from "@mycadet/design-library/components/toggle";
 
 /** The model family whose transcripts carry their own turn boundaries. */
 const TURN_DETECTING_FAMILY = "flux";

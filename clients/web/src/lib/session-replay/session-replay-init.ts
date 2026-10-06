@@ -11,7 +11,7 @@ import { detectClientOs } from "@/runtime/platform-detection";
 
 /**
  * Detect the host surface. Electron is checked first since its renderer also
- * runs the web bundle (mirrors `resolveDsn()` in `sentry-init.ts`).
+ * runs the web bundle.
  */
 function sessionReplaySurface(): SessionReplayConfig["surface"] {
   if (isElectron() || isNativePlatform()) {
@@ -43,7 +43,7 @@ export function sessionReplayProxyBase(
 
 /**
  * Bootstrap session-replay consent gating. No-ops when
- * `VITE_SESSION_REPLAY_APP_ID` is unset (mirrors Sentry's no-DSN no-op), so the
+ * `VITE_SESSION_REPLAY_APP_ID` is unset (a no-op by config), so the
  * plumbing stays dark until a real provider and the app ID are configured.
  */
 export function initSessionReplay(): void {
@@ -54,7 +54,7 @@ export function initSessionReplay(): void {
   const config: SessionReplayConfig = {
     appId,
     surface: sessionReplaySurface(),
-    environment: import.meta.env.VITE_SENTRY_ENVIRONMENT ?? "local",
+    environment: import.meta.env.VITE_SESSION_REPLAY_ENVIRONMENT ?? "local",
     release: import.meta.env.VITE_APP_VERSION,
     base: sessionReplayProxyBase(window.location, getPlatformRuntimeUrl()),
     network: sessionReplayNetworkConfig,

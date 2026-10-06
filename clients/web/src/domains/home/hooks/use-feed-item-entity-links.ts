@@ -27,7 +27,7 @@ import { useMemo } from "react";
 import { skillsGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { routes } from "@/utils/routes";
 import { schedulesListQueryOptions } from "@/utils/schedules";
-import type { FeedItem } from "@vellumai/assistant-api";
+import type { FeedItem } from "@mycadet/assistant-api";
 
 import { getFeedItemScheduleId, getFeedItemSkillId } from "../utils";
 

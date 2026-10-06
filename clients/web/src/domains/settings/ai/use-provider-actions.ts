@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { toast } from "@vellumai/design-library/components/toast";
+import { toast } from "@mycadet/design-library/components/toast";
 
 import { isDefaultProviderId } from "@/domains/settings/ai/provider-row-meta";
 import { t } from "@/i18n";
@@ -13,7 +13,7 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { inferenceProviderconnectionsByNameDelete } from "@/generated/daemon/sdk.gen";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 export interface ProviderActions {
   /** Point the default provider at this connection. No-op when ineligible. */

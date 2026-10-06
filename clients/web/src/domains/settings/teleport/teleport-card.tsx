@@ -26,9 +26,9 @@ import { PlatformLoginNotice } from "@/components/platform-login-notice";
 import { usePlatformGate } from "@/hooks/use-platform-gate";
 import { useTranslation } from "@/i18n";
 import { resolveDesktopHostOS } from "@/runtime/platform-detection";
-import { Button } from "@vellumai/design-library/components/button";
-import { ConfirmDialog } from "@vellumai/design-library/components/confirm-dialog";
-import { Notice } from "@vellumai/design-library/components/notice";
+import { Button } from "@mycadet/design-library/components/button";
+import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
+import { Notice } from "@mycadet/design-library/components/notice";
 
 import { TeleportProgressModal } from "./teleport-progress-modal";
 import {

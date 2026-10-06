@@ -24,7 +24,7 @@ mock.module("../tools/credentials/metadata-store.js", () => ({
 }));
 
 // ── Imports (after mocks) ────────────────────────────────────────────────
-import { neutralizeRedactedSentinels } from "@vellumai/service-contracts/redacted-credential";
+import { neutralizeRedactedSentinels } from "@mycadet/service-contracts/redacted-credential";
 
 import {
   buildForChatSentinel,

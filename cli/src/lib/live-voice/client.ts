@@ -56,7 +56,7 @@ export interface CliLiveVoiceClientOptions {
   /**
    * Where the credential goes. `header` is the gateway's `Authorization:
    * Bearer` (the local and self-hosted path); `query` means the URL already
-   * carries the token velay reads, and no header is sent. Defaults to `header`
+   * carries the token tunnel reads, and no header is sent. Defaults to `header`
    * so existing callers keep the gateway behaviour.
    */
   readonly tokenTransport?: "header" | "query";
@@ -357,7 +357,7 @@ function openAuthenticatedSocket(
   token: string,
   transport: "header" | "query",
 ): WebSocket {
-  // velay reads the credential from the query string and no headers at all,
+  // tunnel reads the credential from the query string and no headers at all,
   // and the URL it was given already carries it. Sending a bearer header there
   // would authenticate nothing and put a single-use token in a second place.
   if (transport === "query") {

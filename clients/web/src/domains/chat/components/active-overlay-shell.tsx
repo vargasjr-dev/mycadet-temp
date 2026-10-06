@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
-import { Typography } from "@vellumai/design-library";
+import { Typography } from "@mycadet/design-library";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 /** Design max width of the dropdown (Figma 6063:149685). */

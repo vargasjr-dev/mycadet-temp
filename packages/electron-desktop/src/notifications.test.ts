@@ -148,12 +148,12 @@ type NotificationLike = import("./notifications").NotificationLike;
 
 // --- Helpers ---------------------------------------------------------------
 
-const SHOW_CHANNEL = "vellum:notifications:show";
-const ACTION_CHANNEL = "vellum:notifications:action";
+const SHOW_CHANNEL = "cadet:notifications:show";
+const ACTION_CHANNEL = "cadet:notifications:action";
 const REGISTER_PUBLISHER_CHANNEL =
-  "vellum:notifications:registerIdentityPublisher";
-const PREPARE_CHANNEL = "vellum:notifications:prepareIdentity";
-const RESET_CHANNEL = "vellum:notifications:resetIdentities";
+  "cadet:notifications:registerIdentityPublisher";
+const PREPARE_CHANNEL = "cadet:notifications:prepareIdentity";
+const RESET_CHANNEL = "cadet:notifications:resetIdentities";
 const OPAQUE_SCOPE_A = `scope:v1:${"a".repeat(64)}`;
 const OPAQUE_SCOPE_B = `scope:v1:${"b".repeat(64)}`;
 const defaultSender = {

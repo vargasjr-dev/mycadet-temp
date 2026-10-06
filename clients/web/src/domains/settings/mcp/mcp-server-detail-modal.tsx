@@ -2,9 +2,9 @@ import { Cable } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import type { McpServerEntry, McpToolsSummaryServer } from "./mcp-api";
-import { Button } from "@vellumai/design-library/components/button";
-import { Input } from "@vellumai/design-library/components/input";
-import { Modal } from "@vellumai/design-library/components/modal";
+import { Button } from "@mycadet/design-library/components/button";
+import { Input } from "@mycadet/design-library/components/input";
+import { Modal } from "@mycadet/design-library/components/modal";
 
 import { useTranslation } from "@/i18n";
 
@@ -243,7 +243,9 @@ export function McpServerDetailModal({
                         onChange={(e) => setApiKeyValue(e.target.value)}
                         placeholder={
                           server.hasStaticAuth && server.authType === "api-key"
-                            ? t("mcpServerDetailModal.savedApiCredentialPlaceholder")
+                            ? t(
+                                "mcpServerDetailModal.savedApiCredentialPlaceholder",
+                              )
                             : t("mcpServerDetailModal.apiKeyPlaceholder")
                         }
                         fullWidth

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "bun:test";
 import type {
   BackgroundToolCompletedEvent,
   BackgroundToolStartedEvent,
-} from "@vellumai/assistant-api";
+} from "@mycadet/assistant-api";
 import {
   useBackgroundTaskStore,
   type BackgroundTaskEntry,
