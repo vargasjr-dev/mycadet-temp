@@ -1,8 +1,11 @@
 name: Close stale issues and PRs
 
 on:
-  schedule:
-    - cron: '0 9 * * *' # daily at 9am UTC
+  # rebrand(cadet): scheduled runs disabled pre-APA — this cron acted on the
+  # upstream repo's issues/PRs. Restore the schedule after the rebrand lands.
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '0 9 * * *' # daily at 9am UTC
 
 permissions:
   issues: write
