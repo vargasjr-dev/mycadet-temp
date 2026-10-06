@@ -113,7 +113,7 @@ describe("tunnel origin derivation", () => {
         credentials: makeKeyedCredentials({
           "credential/vellum/assistant_api_key": "vk-1",
           "credential/vellum/platform_base_url":
-            "https://staging-platform.vellum.ai",
+            "https://staging-cloud.mycadet.ai",
         }),
       },
     );
