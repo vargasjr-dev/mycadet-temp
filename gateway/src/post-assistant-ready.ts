@@ -138,7 +138,7 @@ async function executeDeferredTasks(): Promise<void> {
   // 2. Guardian binding backfill. Opt into actor-token recovery: an install
   //    whose contact reconcile could not run (the assistant DB's ACL columns
   //    were already dropped by migration 305 before the gateway read them) has
-  //    an empty contacts table but surviving actor tokens — rebind the vellum
+  //    an empty contacts table but surviving actor tokens — rebind the cadet
   //    guardian from those instead of leaving it unresolved. This is the single
   //    boot-time self-heal seam; runtime token/pairing callers stay fail-closed.
   try {

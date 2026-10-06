@@ -61,7 +61,7 @@ describe("migration 319 — remove legacy *-managed connections", () => {
     }
   });
 
-  test("leaves the vellum connection and personal connections untouched", () => {
+  test("leaves the cadet connection and personal connections untouched", () => {
     const db = createTestDb();
     migrateCreateProviderConnections(db);
     insertConnection(db, "vellum", "vellum");

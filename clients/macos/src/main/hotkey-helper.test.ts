@@ -286,14 +286,14 @@ describe("getMacHelperPath", () => {
   });
 
   test("resolves the per-environment executable name from CFBundleExecutable", () => {
-    helperExecutableName = "Vellum Helper Dev";
+    helperExecutableName = "Cadet Helper Dev";
     expect(getMacHelperPath()).toBe(
       "/repo/clients/macos/resources/vellum-mac-helper.app/Contents/MacOS/Vellum Helper Dev",
     );
   });
 
   test("resolves the per-environment bundle folder name from the sidecar", () => {
-    helperBundleName = "Vellum Helper Dev";
+    helperBundleName = "Cadet Helper Dev";
     expect(getMacHelperAppPath()).toBe(
       "/repo/clients/macos/resources/Vellum Helper Dev.app",
     );
@@ -304,7 +304,7 @@ describe("getMacHelperPath", () => {
 
   test("resolves the packaged bundle folder name from the sidecar", () => {
     appState.isPackaged = true;
-    helperBundleName = "Vellum Helper Staging";
+    helperBundleName = "Cadet Helper Staging";
     expect(getMacHelperAppPath()).toBe(
       "/mock/resources/bin/Vellum Helper Staging.app",
     );
@@ -610,10 +610,7 @@ describe("installHotkeyHelper", () => {
     emitChord("s");
 
     const chord = { kind: "chord", state: "down", key: "s" };
-    expect(owner.send).toHaveBeenCalledWith(
-      "cadet:helper:hotkey:event",
-      chord,
-    );
+    expect(owner.send).toHaveBeenCalledWith("cadet:helper:hotkey:event", chord);
     expect(focused.send).not.toHaveBeenCalledWith(
       "cadet:helper:hotkey:event",
       chord,
@@ -1070,14 +1067,18 @@ describe("installHotkeyHelper", () => {
 
     lastChild?.stdout.emit(
       "data",
-      Buffer.from('{"jsonrpc":"2.0","method":"input.pressed","params":{"index":0}}\n'),
+      Buffer.from(
+        '{"jsonrpc":"2.0","method":"input.pressed","params":{"index":0}}\n',
+      ),
     );
     expect(pressed).toEqual([0]);
 
     // A press is one-shot on both sides: a second report is nobody's.
     lastChild?.stdout.emit(
       "data",
-      Buffer.from('{"jsonrpc":"2.0","method":"input.pressed","params":{"index":0}}\n'),
+      Buffer.from(
+        '{"jsonrpc":"2.0","method":"input.pressed","params":{"index":0}}\n',
+      ),
     );
     expect(pressed).toEqual([0]);
 

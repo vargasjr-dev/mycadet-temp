@@ -51,7 +51,7 @@ let mockContactsByAddress: Record<string, { userFile: string | null }> = {};
 let pendingWarmDeliveries: GuardianDeliveryStub[] | null = null;
 
 /**
- * Seed a vellum guardian: a gateway delivery for the vellum channel plus the
+ * Seed a cadet guardian: a gateway delivery for the cadet channel plus the
  * local contact (by address) carrying its userFile.
  */
 function seedVellumGuardian(userFile: string | null): void {
@@ -152,7 +152,7 @@ describe("resolveGuardianPersonaPath", () => {
 
     expect(resolveGuardianPersonaPath()).toBeNull();
 
-    // Async callers warm the vellum guardian-delivery cache before the sync
+    // Async callers warm the cadet guardian-delivery cache before the sync
     // resolution; afterwards the guardian slug resolves instead of default.md.
     await getGuardianDelivery({ channelTypes: ["vellum"] });
 

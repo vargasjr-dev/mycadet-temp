@@ -74,12 +74,8 @@ describe("path characterization", () => {
       ),
     ).toBe("~\\.vellum\\workspace");
     expect(
-      formatHomeRelativePath(
-        "D:\\Vellum\\workspace",
-        "C:\\Users\\Alice",
-        win32,
-      ),
-    ).toBe("D:\\Vellum\\workspace");
+      formatHomeRelativePath("D:\\Cadet\\workspace", "C:\\Users\\Alice", win32),
+    ).toBe("D:\\Cadet\\workspace");
   });
 
   test("all path helpers resolve to expected locations", () => {
@@ -154,13 +150,13 @@ describe("path characterization", () => {
 });
 
 describe("XDG config dir name env-awareness", () => {
-  test("production returns vellum", () => {
+  test("production returns cadet", () => {
     delete process.env.VELLUM_ENVIRONMENT;
     delete process.env.XDG_CONFIG_HOME;
     expect(getXdgVellumConfigDirName()).toBe("vellum");
   });
 
-  test("production (explicit) returns vellum", () => {
+  test("production (explicit) returns cadet", () => {
     process.env.VELLUM_ENVIRONMENT = "production";
     expect(getXdgVellumConfigDirName()).toBe("vellum");
   });

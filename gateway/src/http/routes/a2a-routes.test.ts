@@ -82,7 +82,7 @@ describe("Agent Card", () => {
       supported_interfaces: Array<{ url: string }>;
       capabilities: { push_notifications: boolean };
     };
-    expect(card.name).toBe("Vellum Assistant");
+    expect(card.name).toBe("Cadet Assistant");
     expect(card.capabilities.push_notifications).toBe(true);
   });
 
@@ -127,7 +127,7 @@ describe("Agent Card", () => {
     expect(res.status).toBe(200);
     const card = (await res.json()) as { name: string; description: string };
     expect(card.name).toBe("Alice");
-    expect(card.description).toBe("Alice - a Vellum AI assistant");
+    expect(card.description).toBe("Alice - a Cadet AI assistant");
   });
 
   it("returns 503 when no public base URL is configured", async () => {

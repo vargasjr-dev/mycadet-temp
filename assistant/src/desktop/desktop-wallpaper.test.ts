@@ -188,8 +188,8 @@ test("renders the current identity name and picks up a rename on the next refres
   expect(renamed).toEqual(renderDesktopWallpaper(480, 300, null, null, "Bob"));
 });
 
-test("an unset or template identity displays Vellum OS", async () => {
-  const fallback = renderDesktopWallpaper(480, 300, null, null, "Vellum");
+test("an unset or template identity displays Cadet OS", async () => {
+  const fallback = renderDesktopWallpaper(480, 300, null, null, "Cadet");
   expect(await renderCurrentDesktopWallpaper(480, 300)).toEqual(fallback);
   writeFileSync(
     join(workspace, "IDENTITY.md"),

@@ -1750,7 +1750,7 @@ describe("memoryRetrospectiveJob", () => {
   // Source-derived persona override
   // -------------------------------------------------------------------------
 
-  test("local/vellum source → wake carries the guardian persona + vellum channel override", async () => {
+  test("local/vellum source → wake carries the guardian persona + cadet channel override", async () => {
     // Default source stub has no originChannel — a local/desktop conversation.
     await memoryRetrospectiveJob(makeJob(), stubConfig);
 
@@ -1765,7 +1765,7 @@ describe("memoryRetrospectiveJob", () => {
     expect(resolveUserSlugCalls).toEqual([undefined]);
   });
 
-  test("explicit vellum originChannel → override present", async () => {
+  test("explicit cadet originChannel → override present", async () => {
     conversationOverrides["src-conv-1"] = {
       source: "user",
       forkParentMessageId: null,

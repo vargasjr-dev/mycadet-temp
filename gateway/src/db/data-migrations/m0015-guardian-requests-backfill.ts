@@ -34,7 +34,7 @@ function getRawGatewayDb(): Database {
 }
 
 // The gateway derives sourceType from source_channel alone (phone → voice,
-// vellum → desktop, else channel). Legacy desktop/voice rows can carry a null
+// cadet → desktop, else channel). Legacy desktop/voice rows can carry a null
 // source_channel; give them the sentinel channel that derives back to the
 // stored source_type so they keep matching desktop/voice filters.
 const SENTINEL_CHANNEL_BY_SOURCE_TYPE: Record<string, string> = {

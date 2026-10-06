@@ -64,8 +64,8 @@ describe("133-collapse-provider-connections migration", () => {
   });
 
   test("rewrites the managed triple to identity shape", () => {
-    // The managed shape this migration rewrites: concrete upstream + vellum
-    // connection on the profile, defaultProvider pinning the vellum
+    // The managed shape this migration rewrites: concrete upstream + cadet
+    // connection on the profile, defaultProvider pinning the cadet
     // connection by name.
     writeConfig({
       llm: {
@@ -186,7 +186,7 @@ describe("133-collapse-provider-connections migration", () => {
     });
   });
 
-  test("a vellum connection with an unknown model keeps its concrete provider", () => {
+  test("a cadet connection with an unknown model keeps its concrete provider", () => {
     writeConfig({
       llm: {
         profiles: {
@@ -276,7 +276,7 @@ describe("133-collapse-provider-connections migration", () => {
     });
   });
 
-  test("an encoded model on a vellum connection decodes during the rewrite", () => {
+  test("an encoded model on a cadet connection decodes during the rewrite", () => {
     writeConfig({
       llm: {
         profiles: {
@@ -354,7 +354,7 @@ describe("133-collapse-provider-connections migration", () => {
     expect(postResolved.model).toBe(preResolved.model);
   });
 
-  test("a schema-dead vellum connection on a call site is dropped, never a rewrite signal", () => {
+  test("a schema-dead cadet connection on a call site is dropped, never a rewrite signal", () => {
     // The parsed call-site schema has no provider_connection field — a raw
     // value is invisible to the resolver. Flipping the provider from it
     // would move a BYOK call site onto the managed route, so it is removed

@@ -97,14 +97,14 @@ describe("connection CRUD label defaults", () => {
 });
 
 describe("seedCanonicalConnections labels", () => {
-  test("first boot seeds the default label on the vellum connection", () => {
+  test("first boot seeds the default label on the cadet connection", () => {
     const db = bootDb();
     seedCanonicalConnections(db);
 
     const conns = listConnections(db);
     const byName = Object.fromEntries(conns.map((c) => [c.name, c]));
 
-    expect(byName["vellum"]?.label).toBe("Vellum");
+    expect(byName["vellum"]?.label).toBe("Cadet");
   });
 
   test("second boot preserves user-customized label", () => {
@@ -114,14 +114,14 @@ describe("seedCanonicalConnections labels", () => {
     // User customizes the label.
     updateConnection(db, "vellum", {
       auth: { type: "platform" },
-      label: "Work Vellum",
+      label: "Work Cadet",
     });
 
     // Reboot.
     seedCanonicalConnections(db);
 
     const conn = getConnection(db, "vellum");
-    expect(conn?.label).toBe("Work Vellum");
+    expect(conn?.label).toBe("Work Cadet");
   });
 
   test("backfill fills null label on subsequent boot", () => {
@@ -142,6 +142,6 @@ describe("seedCanonicalConnections labels", () => {
     seedCanonicalConnections(db);
 
     const conn = getConnection(db, "vellum");
-    expect(conn?.label).toBe("Vellum");
+    expect(conn?.label).toBe("Cadet");
   });
 });

@@ -4,7 +4,7 @@ Implementation plan for [JARVIS-1578](https://linear.app/vellum/issue/JARVIS-157
 
 Status: implementation and source review complete; automated checks pass. Live device acceptance remains pending. Updated September 22, 2026.
 
-The user confirmed that browser support covers a Vellum tab that remains open. Notifications after the tab is closed are a separate follow-up.
+The user confirmed that browser support covers a Cadet tab that remains open. Notifications after the tab is closed are a separate follow-up.
 
 ## Implementation notes
 
@@ -12,7 +12,7 @@ The four phases share one development workspace and will be published as an orde
 
 Workflow-manager completion wakes are a separate remaining path. They do not carry the run identity and schedule/quiet ownership needed by this producer. Extending those wakes requires explicit provenance before enabling their alerts, so these changes cover delegated tasks and background commands without claiming all workflow completions.
 
-Background provenance reuses existing task/tool IDs and persisted trigger/result rows. If a successful result is deferred while other work remains pending, later terminal continuations can recover that unread result from the bounded machine-continuation history, including when later work fails or is cancelled. The recipient is the assistant's active Vellum guardian, matching existing reply delivery; task records do not carry a separate launch-time recipient. The resolved principal is included in the notification's existing context payload and checked before local or mobile delivery. Declared completion ownership must validate before delivery and is restricted to recipient-matched desktop/browser and mobile destinations. Recipient-owned background completions stay out of the assistant-wide Home feed and notification bell because those surfaces do not filter by recipient. Their results remain in the source conversation, with scoped desktop/browser and mobile alerts. No database or wire-format migration is introduced.
+Background provenance reuses existing task/tool IDs and persisted trigger/result rows. If a successful result is deferred while other work remains pending, later terminal continuations can recover that unread result from the bounded machine-continuation history, including when later work fails or is cancelled. The recipient is the assistant's active Cadet guardian, matching existing reply delivery; task records do not carry a separate launch-time recipient. The resolved principal is included in the notification's existing context payload and checked before local or mobile delivery. Declared completion ownership must validate before delivery and is restricted to recipient-matched desktop/browser and mobile destinations. Recipient-owned background completions stay out of the assistant-wide Home feed and notification bell because those surfaces do not filter by recipient. Their results remain in the source conversation, with scoped desktop/browser and mobile alerts. No database or wire-format migration is introduced.
 
 Completion callbacks use the pipeline's existing permanent deduplication claim. The scheduler waits for active background commands, terminal callbacks for cancelled commands, and queued result continuations before selecting its final result. Failed earlier explicit sends do not count as successful result delivery, but this change does not add a durable retry queue for a completion whose transports all fail. Releasing an already processed event's claim would also duplicate its notification-bell entry, so that delivery-retry redesign is outside this change.
 
@@ -24,16 +24,16 @@ Ask the assistant to do something, switch apps or tabs, and receive an operating
 
 Use the existing notification pipeline, native desktop bridge, browser notification bridge, notification bell, and mobile push adapters. The work connects completion events to these surfaces and fixes the conditions that currently silence or disconnect them.
 
-| Situation | Expected behavior |
-| --- | --- |
-| Answer finishes while its conversation is visible and attended | Show the answer in the conversation; suppress the redundant completion banner |
-| Answer finishes while another conversation is open | Notify and link to the conversation containing the answer |
-| Desktop app is minimized or another app has focus | Notify while the desktop app remains running and connected |
-| Browser tab stays open but is hidden for minutes | Keep receiving events and notify when browser/OS permission allows |
-| A requested background task completes | Notify once its user-facing result is ready, with a link to that result |
-| Scheduled work completes | Reuse the scheduler's result notification and quiet-mode rules |
-| Internal maintenance or a watcher with no matching event completes | Preserve its existing quiet behavior |
-| Notifications are denied or unavailable | Retain normal conversation/feed behavior; report delivery outcome accurately |
+| Situation                                                             | Expected behavior                                                                           |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Answer finishes while its conversation is visible and attended        | Show the answer in the conversation; suppress the redundant completion banner               |
+| Answer finishes while another conversation is open                    | Notify and link to the conversation containing the answer                                   |
+| Desktop app is minimized or another app has focus                     | Notify while the desktop app remains running and connected                                  |
+| Browser tab stays open but is hidden for minutes                      | Keep receiving events and notify when browser/OS permission allows                          |
+| A requested background task completes                                 | Notify once its user-facing result is ready, with a link to that result                     |
+| Scheduled work completes                                              | Reuse the scheduler's result notification and quiet-mode rules                              |
+| Internal maintenance or a watcher with no matching event completes    | Preserve its existing quiet behavior                                                        |
+| Notifications are denied or unavailable                               | Retain normal conversation/feed behavior; report delivery outcome accurately                |
 | Tab is closed, discarded, or frozen, or the machine is asleep/offline | No new background-delivery guarantee in this scope; retain normal resume/reconnect recovery |
 
 An alert on a phone and an alert on a computer are separate device deliveries. Avoid duplicates on the same receiving surface; this plan does not introduce an account-wide rule allowing only one device to notify.
@@ -57,7 +57,7 @@ The checked items below record implementation. The final device acceptance check
 
 Primary files: `assistant/src/notifications/decision-engine.ts`, `adapters/macos.ts`, `broadcaster.ts`, `destination-resolver.ts`, `conversation-pairing.ts`, and `clients/web/src/hooks/use-notification-intent-sync.ts`.
 
-- [x] Route eligible `chat.assistant_reply` events to both `vellum` and `platform`, intersected with available channels. A self-hosted installation without mobile push must still deliver locally.
+- [x] Route eligible `chat.assistant_reply` events to both `cadet` and `platform`, intersected with available channels. A self-hosted installation without mobile push must still deliver locally.
 - [x] Define one server-owned local-banner policy for eligible completion events. A selected user-reply or non-quiet scheduled-result notification may banner even at medium urgency. Preserve the current silent behavior of unrelated low/medium notifications and all explicitly quiet work.
 - [x] Keep urgency separate from presentation: do not mark ordinary completions high/critical merely to force a banner. Resolve presentation once and preserve the existing `notification_intent.silent` client contract. The client must continue honoring `silent: true`.
 - [x] Extend that policy to the explicitly user-facing background completions introduced in phase 4. Do not enable every existing `activity.complete` event indiscriminately; skill maintenance also uses that event.
@@ -67,7 +67,7 @@ Primary files: `assistant/src/notifications/decision-engine.ts`, `adapters/macos
 
 Acceptance: qualifying replies and scheduled results can reach desktop/browser banners; unrelated silent events remain silent; local-only installations work; notification clicks open the correct assistant and conversation; no duplicate transcript preview or unauthorized recipient delivery appears.
 
-Tests: notification decision engine, Vellum adapter, broadcaster, conversation pairing, notification-intent hook, and native remote/local deduplication. Include the current tests that explicitly require platform-only reply routing and update their contract with the implementation.
+Tests: notification decision engine, Cadet adapter, broadcaster, conversation pairing, notification-intent hook, and native remote/local deduplication. Include the current tests that explicitly require platform-only reply routing and update their contract with the implementation.
 
 ## Phase 2: Suppress only when the relevant conversation is attended
 
@@ -112,14 +112,14 @@ Primary files: `assistant/src/runtime/background-job-runner.ts`, `notifications/
 
 The general runner's current callers include schedules, watchers, heartbeat, sequences, and memory work. A blanket success notification in that runner would generate unwanted alerts and would still miss subagent/task continuations that use another path.
 
-| Work owner | Completion responsibility |
-| --- | --- |
-| Ordinary user conversation | Existing reply producer, connected in phase 1 |
-| Scheduled run, including its delegated work | Existing schedule-result producer; respect quiet and explicit delivery |
-| User-requested asynchronous work returning to a parent chat | Parent's finalized user-facing result, correlated to the originating work |
-| Explicit user-facing job using the general runner | Opt-in completion delivery after its result is persisted and complete |
-| Memory, heartbeat, watcher ticks, sequence steps | Existing assistant-authored notification decisions; no blanket success alert |
-| Silent forks, advisor work, live-voice delivery | Preserve current delivery ownership and silence rules |
+| Work owner                                                  | Completion responsibility                                                    |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Ordinary user conversation                                  | Existing reply producer, connected in phase 1                                |
+| Scheduled run, including its delegated work                 | Existing schedule-result producer; respect quiet and explicit delivery       |
+| User-requested asynchronous work returning to a parent chat | Parent's finalized user-facing result, correlated to the originating work    |
+| Explicit user-facing job using the general runner           | Opt-in completion delivery after its result is persisted and complete        |
+| Memory, heartbeat, watcher ticks, sequence steps            | Existing assistant-authored notification decisions; no blanket success alert |
+| Silent forks, advisor work, live-voice delivery             | Preserve current delivery ownership and silence rules                        |
 
 - [x] Trace actual background task and subagent terminal events through the parent continuation. Record which producer owns each user-facing result. A hidden/scripted kickoff must not by itself exclude a real user-requested completion, and internal wake text must never become notification copy.
 - [x] Introduce a typed, explicit completion context for eligible work: originating recipient/conversation, stable task or run identifier, and result-delivery owner. Reuse existing task/run IDs and `sendResultToUser`/quiet semantics. Do not infer eligibility from job-name strings, elapsed time, or text scoring.
@@ -152,7 +152,7 @@ Final manual acceptance:
 3. Watch the correct conversation and confirm no redundant completion banner; confirm approval/question cards still arrive.
 4. Complete a scheduled run and a user-requested background task, including delegated work. Confirm one result alert and no premature completion.
 5. Check quiet schedules, internal maintenance, explicit sends, cancellation, denied permission, and a disconnected/reconnected client.
-6. Smoke-test iOS and Android to catch duplicate local/remote pushes introduced by adding the `vellum` route.
+6. Smoke-test iOS and Android to catch duplicate local/remote pushes introduced by adding the `cadet` route.
 7. Exercise an unrelated connected principal, account/assistant switches, and pop-out windows to verify targeting and ownership.
 
 Record tested app/server versions and actual devices/browsers. Keep unavailable coverage explicit. Mark the ticket complete only when all four in-scope outcomes pass; a PR merge alone does not prove notification delivery.

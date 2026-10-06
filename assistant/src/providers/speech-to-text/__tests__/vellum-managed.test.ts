@@ -91,7 +91,7 @@ describe("sttErrorFromManagedSpeech", () => {
       },
       category: "provider-error",
       userFacing: true,
-      messageIncludes: "Vellum credits",
+      messageIncludes: "Cadet credits",
     },
     // Platform-supplied `detail` present: real remediation, surfaced verbatim.
     {
@@ -148,7 +148,7 @@ describe("sttErrorFromManagedSpeech", () => {
       },
       category: "auth",
       userFacing: true,
-      messageIncludes: "reconnect your Vellum account",
+      messageIncludes: "reconnect your Cadet account",
       messageExcludes: ["API key", "platform returned"],
     },
     {
@@ -161,7 +161,7 @@ describe("sttErrorFromManagedSpeech", () => {
       },
       category: "auth",
       userFacing: true,
-      messageIncludes: "reconnect your Vellum account",
+      messageIncludes: "reconnect your Cadet account",
       messageExcludes: ["API key", "platform returned"],
     },
     {
@@ -263,7 +263,7 @@ describe("describeSttFailure over managed STT failures", () => {
     const copy = describeSttFailure(err, "vellum");
     // Managed STT holds no local key: the "check your API key in Settings →
     // Voice" guidance is wrong, and the raw HTTP status must not leak.
-    expect(copy).toContain("reconnect your Vellum account");
+    expect(copy).toContain("reconnect your Cadet account");
     expect(copy).not.toContain("API key");
     expect(copy).not.toContain("Settings → Voice");
     expect(copy).not.toContain("platform returned 401");

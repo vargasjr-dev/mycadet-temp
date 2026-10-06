@@ -865,9 +865,9 @@ describe("voice-session-bridge", () => {
     );
   });
 
-  test("auto-denies with could-not-verify copy for local live-voice (vellum) turns", async () => {
+  test("auto-denies with could-not-verify copy for local live-voice (cadet) turns", async () => {
     const conversation = createConversation(
-      "voice bridge auto-deny vellum copy test",
+      "voice bridge auto-deny cadet copy test",
     );
 
     let clientHandler: (msg: AssistantEvent) => void = () => {};

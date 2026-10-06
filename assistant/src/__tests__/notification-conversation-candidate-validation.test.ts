@@ -162,7 +162,7 @@ describe("conversation candidate validation", () => {
     test("channels without candidates result in empty map entries", () => {
       const candidateMap: ConversationCandidateSet = {};
 
-      // When no candidates exist for vellum, the map has no entry
+      // When no candidates exist for cadet, the map has no entry
       expect(candidateMap.vellum).toBeUndefined();
     });
 
@@ -185,7 +185,7 @@ describe("conversation candidate validation", () => {
         telegram: telegramCandidates,
       };
 
-      // Vellum candidate should not be valid for telegram and vice versa
+      // Cadet candidate should not be valid for telegram and vice versa
       const validChannels: NotificationChannel[] = ["vellum", "telegram"];
 
       const result1 = validateConversationActions(

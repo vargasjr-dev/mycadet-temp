@@ -1,5 +1,5 @@
 /**
- * Regression tests for Vellum notification deep-link metadata.
+ * Regression tests for Cadet notification deep-link metadata.
  *
  * Validates that the VellumAdapter broadcasts notification_intent with
  * deepLinkMetadata, and that the broadcaster correctly passes deepLinkTarget
@@ -64,7 +64,7 @@ let nextPairingResult:
   | null = null;
 // Per-channel results take precedence over nextPairingResult, so mixed
 // broadcasts can drive prod-realistic pairings (e.g. platform is push_only
-// and pairs null while vellum creates a conversation).
+// and pairs null while cadet creates a conversation).
 let pairingResultsByChannel: Record<
   string,
   import("../notifications/conversation-pairing.js").PairingResult
@@ -516,7 +516,7 @@ describe("notification deep-link metadata", () => {
   // would miss (e.g. broadcaster stops merging pairing results).
 
   describe("NotificationBroadcaster deep-link injection", () => {
-    test("broadcaster merges pairing conversationId into deepLinkTarget for vellum", async () => {
+    test("broadcaster merges pairing conversationId into deepLinkTarget for cadet", async () => {
       const vellumAdapter = new MockAdapter("vellum");
       const broadcaster = new NotificationBroadcaster([vellumAdapter]);
 
@@ -539,7 +539,7 @@ describe("notification deep-link metadata", () => {
       expect(deepLink!.conversationId).toBe("conv-paired-abc");
     });
 
-    test("broadcaster merges pairing messageId into deepLinkTarget for vellum", async () => {
+    test("broadcaster merges pairing messageId into deepLinkTarget for cadet", async () => {
       const vellumAdapter = new MockAdapter("vellum");
       const broadcaster = new NotificationBroadcaster([vellumAdapter]);
 
@@ -641,7 +641,7 @@ describe("notification deep-link metadata", () => {
       const vellumAdapter = new MockAdapter("vellum");
       const broadcaster = new NotificationBroadcaster([vellumAdapter]);
 
-      // Passive vellum signal: pairing skips creation, returns null.
+      // Passive cadet signal: pairing skips creation, returns null.
       nextPairingResult = {
         conversationId: null,
         messageId: null,
@@ -693,7 +693,7 @@ describe("notification deep-link metadata", () => {
     //
     // The platform adapter forwards deepLinkTarget verbatim as
     // deep_link_metadata, so the broadcaster must enrich it with the
-    // conversationId the same way it does for vellum — otherwise remote-push
+    // conversationId the same way it does for cadet — otherwise remote-push
     // taps have no routing key and cannot navigate.
 
     test("broadcaster merges pairing conversationId and messageId into deepLinkTarget for platform", async () => {
@@ -785,7 +785,7 @@ describe("notification deep-link metadata", () => {
       ).toBeUndefined();
     });
 
-    test("vellum and platform each receive deep-link enrichment in the same broadcast", async () => {
+    test("cadet and platform each receive deep-link enrichment in the same broadcast", async () => {
       const vellumAdapter = new MockAdapter("vellum");
       const platformAdapter = new MockAdapter("platform");
       const broadcaster = new NotificationBroadcaster([
@@ -793,7 +793,7 @@ describe("notification deep-link metadata", () => {
         platformAdapter,
       ]);
 
-      // Vellum is ordered first and consumes the queued pairing result;
+      // Cadet is ordered first and consumes the queued pairing result;
       // the platform pairing call then receives the mock's auto-generated
       // conversation, so each channel is enriched from its own pairing.
       nextPairingResult = {
@@ -815,7 +815,7 @@ describe("notification deep-link metadata", () => {
 
       await broadcaster.broadcastDecision(signal, decision);
 
-      // Vellum behavior unchanged: paired conversation wins.
+      // Cadet behavior unchanged: paired conversation wins.
       expect(vellumAdapter.sent).toHaveLength(1);
       expect(vellumAdapter.sent[0].deepLinkTarget?.conversationId).toBe(
         "conv-vellum-paired",
@@ -828,10 +828,10 @@ describe("notification deep-link metadata", () => {
       expect(String(platformConvId)).toStartWith("mock-conv-");
     });
 
-    // ── Vellum pairing carried into the platform deep link ─────────────
+    // ── Cadet pairing carried into the platform deep link ─────────────
     //
     // In production the platform channel is push_only: its own pairing
-    // returns null. When the vellum channel creates (or reuses) a
+    // returns null. When the cadet channel creates (or reuses) a
     // conversation in the same broadcast, the platform deep link must
     // carry that conversation so remote-push taps land in the thread the
     // notification is about (approval requests, guardian questions).
@@ -862,7 +862,7 @@ describe("notification deep-link metadata", () => {
       };
 
       // Sentinel source context (access-req-*) that resolves to no
-      // conversation, so the vellum carry is the only viable deep-link source.
+      // conversation, so the cadet carry is the only viable deep-link source.
       const signal = makeSignal({ sourceContextId: "access-req-123" });
       // Platform listed first to prove the vellum-first ordering makes the
       // carry available regardless of selectedChannels order.
@@ -876,7 +876,7 @@ describe("notification deep-link metadata", () => {
 
       await broadcaster.broadcastDecision(signal, decision);
 
-      // Vellum unchanged: enriched from its own pairing.
+      // Cadet unchanged: enriched from its own pairing.
       expect(vellumAdapter.sent).toHaveLength(1);
       expect(vellumAdapter.sent[0].deepLinkTarget?.conversationId).toBe(
         "conv-vellum-created",
@@ -895,7 +895,7 @@ describe("notification deep-link metadata", () => {
       );
     });
 
-    test("platform prefers the vellum pairing over the source-context fallback in a mixed broadcast", async () => {
+    test("platform prefers the cadet pairing over the source-context fallback in a mixed broadcast", async () => {
       const vellumAdapter = new MockAdapter("vellum");
       const platformAdapter = new MockAdapter("platform");
       const broadcaster = new NotificationBroadcaster([
@@ -942,7 +942,7 @@ describe("notification deep-link metadata", () => {
       );
     });
 
-    test("platform deep link carries the conversation from a duplicate vellum delivery on retry", async () => {
+    test("platform deep link carries the conversation from a duplicate cadet delivery on retry", async () => {
       const vellumAdapter = new MockAdapter("vellum");
       const platformAdapter = new MockAdapter("platform");
       const broadcaster = new NotificationBroadcaster([
@@ -950,8 +950,8 @@ describe("notification deep-link metadata", () => {
         platformAdapter,
       ]);
 
-      // Persisted-decision retry: the vellum delivery row already exists
-      // (with the paired conversation), so the vellum channel skips as a
+      // Persisted-decision retry: the cadet delivery row already exists
+      // (with the paired conversation), so the cadet channel skips as a
       // duplicate before any fresh pairing runs.
       existingDeliveriesByChannel = {
         vellum: {
@@ -985,7 +985,7 @@ describe("notification deep-link metadata", () => {
 
       const results = await broadcaster.broadcastDecision(signal, decision);
 
-      // Vellum duplicate is skipped without re-sending.
+      // Cadet duplicate is skipped without re-sending.
       expect(vellumAdapter.sent).toHaveLength(0);
       const vellumResult = results.find((r) => r.channel === "vellum");
       expect(vellumResult?.status).toBe("skipped");
@@ -1001,7 +1001,7 @@ describe("notification deep-link metadata", () => {
       );
     });
 
-    test("platform falls back to sourceContextId in a mixed broadcast when vellum pairs no conversation", async () => {
+    test("platform falls back to sourceContextId in a mixed broadcast when cadet pairs no conversation", async () => {
       const vellumAdapter = new MockAdapter("vellum");
       const platformAdapter = new MockAdapter("platform");
       const broadcaster = new NotificationBroadcaster([
@@ -1009,7 +1009,7 @@ describe("notification deep-link metadata", () => {
         platformAdapter,
       ]);
 
-      // Passive vellum signal: pairing skips conversation creation.
+      // Passive cadet signal: pairing skips conversation creation.
       pairingResultsByChannel = {
         vellum: {
           conversationId: null,
@@ -1047,7 +1047,7 @@ describe("notification deep-link metadata", () => {
       );
     });
 
-    test("channels other than vellum and platform do not receive deterministic enrichment", async () => {
+    test("channels other than cadet and platform do not receive deterministic enrichment", async () => {
       const telegramAdapter = new MockAdapter("telegram");
       const broadcaster = new NotificationBroadcaster([telegramAdapter]);
 

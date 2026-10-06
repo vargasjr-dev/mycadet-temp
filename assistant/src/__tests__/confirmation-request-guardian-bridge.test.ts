@@ -274,7 +274,7 @@ describe("bridgeConfirmationRequestToGuardian", () => {
     );
   });
 
-  test("creates vellum delivery row via onConversationCreated callback", async () => {
+  test("creates cadet delivery row via onConversationCreated callback", async () => {
     const guardianRequest = makeGuardianRequest();
     const trustContext = makeTrustedContactContext();
 

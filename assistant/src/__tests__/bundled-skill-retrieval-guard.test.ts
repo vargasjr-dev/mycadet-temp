@@ -195,7 +195,7 @@ describe("bundled skill retrieval guard", () => {
     }
   });
 
-  test("skills do not require host_bash for Vellum CLI retrieval commands", () => {
+  test("skills do not require host_bash for Cadet CLI retrieval commands", () => {
     const violations: string[] = [];
 
     for (const skillFile of ALL_SKILL_FILES) {
@@ -215,13 +215,13 @@ describe("bundled skill retrieval guard", () => {
         continue;
       }
       violations.push(
-        `${rel}: contains host_bash with Vellum CLI retrieval markers (${RETRIEVAL_MARKERS.join(", ")})`,
+        `${rel}: contains host_bash with Cadet CLI retrieval markers (${RETRIEVAL_MARKERS.join(", ")})`,
       );
     }
 
     if (violations.length > 0) {
       const message = [
-        "Skills must not require host_bash for Vellum CLI retrieval commands.",
+        "Skills must not require host_bash for Cadet CLI retrieval commands.",
         "Use sandboxed bash for retrieval flows unless an explicit exception is documented.",
         "",
         "Violations:",

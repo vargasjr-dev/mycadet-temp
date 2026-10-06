@@ -86,7 +86,7 @@ describe("134-image-generation-mode-to-provider", () => {
     expect(numericId(last!)).toBe(highest);
   });
 
-  test("rewrites a managed gemini service to provider vellum, model preserved", () => {
+  test("rewrites a managed gemini service to provider cadet, model preserved", () => {
     writeConfig({
       services: {
         "image-generation": {
@@ -108,7 +108,7 @@ describe("134-image-generation-mode-to-provider", () => {
   // Managed OpenAI has no exemption: the backend derives from the model
   // prefix at request time, so a managed gpt-image-2 user keeps routing to
   // the OpenAI proxy through provider vellum.
-  test("rewrites a managed openai service to provider vellum, model preserved", () => {
+  test("rewrites a managed openai service to provider cadet, model preserved", () => {
     writeConfig({
       services: {
         "image-generation": {
@@ -202,9 +202,9 @@ describe("134-image-generation-mode-to-provider", () => {
   });
 
   // The migrated shape is what the daemon actually parses, so a managed user
-  // must land on vellum with their model intact rather than falling back to
+  // must land on cadet with their model intact rather than falling back to
   // a keyless BYOK provider.
-  test("migrated output parses to the vellum provider", () => {
+  test("migrated output parses to the cadet provider", () => {
     writeConfig({
       services: {
         "image-generation": {
@@ -238,7 +238,7 @@ describe("134-image-generation-mode-to-provider", () => {
       imageGenerationModeToProviderMigration.down!(workspaceDir);
 
       // The pre-migration backend provider (gemini) is not recoverable — it
-      // was overwritten with vellum on the way up and re-derives from the
+      // was overwritten with cadet on the way up and re-derives from the
       // model prefix on the next model write.
       expect(imageGen(readConfig())).toEqual({
         mode: "managed",

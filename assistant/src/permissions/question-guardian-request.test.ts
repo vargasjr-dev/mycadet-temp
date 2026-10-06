@@ -152,7 +152,7 @@ describe("createGuardianRequestForQuestion gating", () => {
     expect(createGuardianRequestMock).not.toHaveBeenCalled();
   });
 
-  test("skips channels without question-card delivery (whatsapp, vellum)", async () => {
+  test("skips channels without question-card delivery (whatsapp, cadet)", async () => {
     trustContext = guardianTrustContext({ sourceChannel: "whatsapp" });
     await createGuardianRequestForQuestion(makeEvent(), "conv-1");
     trustContext = guardianTrustContext({ sourceChannel: "vellum" });

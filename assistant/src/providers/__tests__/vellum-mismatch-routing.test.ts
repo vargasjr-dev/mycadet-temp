@@ -1,7 +1,7 @@
 /**
- * Guards that a `vellum` provider_connection only takes the provider-agnostic
+ * Guards that a `cadet` provider_connection only takes the provider-agnostic
  * routing path when the resolving profile declares a managed-routable upstream.
- * A `vellum` connection paired with a non-managed provider (openrouter/ollama/…)
+ * A `cadet` connection paired with a non-managed provider (openrouter/ollama/…)
  * is a misconfiguration and must use the normal mismatch recovery/error path,
  * not route as platform auth and silently fall back.
  */
@@ -74,7 +74,7 @@ function reset(): void {
   resolveResult = undefined;
 }
 
-describe("vellum connection mismatch handling", () => {
+describe("cadet connection mismatch handling", () => {
   beforeEach(reset);
 
   test("managed-routable provider routes with providerOverride", async () => {
@@ -113,7 +113,7 @@ describe("vellum connection mismatch handling", () => {
     expect((caught as ConnectionResolutionError).reason).toBe(
       "provider_mismatch",
     );
-    // Never routed as a vellum platform-auth request.
+    // Never routed as a cadet platform-auth request.
     expect(resolveCalls).toHaveLength(0);
   });
 
@@ -144,12 +144,12 @@ describe("vellum connection mismatch handling", () => {
 });
 
 /**
- * Boot seeding leaves a user-owned row claiming the `vellum` name in place, so
+ * Boot seeding leaves a user-owned row claiming the `cadet` name in place, so
  * an install can have no canonical row at all. A managed profile only resolves
  * on a platform install, so its route is platform auth, never the credentials
  * that row happens to carry, and never an error over the name collision.
  */
-describe("user-owned connection claiming the vellum name", () => {
+describe("user-owned connection claiming the cadet name", () => {
   beforeEach(reset);
 
   const userOwnedOpenai: Connection = {
@@ -215,7 +215,7 @@ describe("user-owned connection claiming the vellum name", () => {
     // The shape `resolveCallSiteConfig` produces when a call-site tweak pins a
     // concrete upstream over a managed profile: provider is the upstream, the
     // managed connection survives. The legacy config of the same shape (a BYOK
-    // profile pointing at a row named `vellum`) resolves the same way.
+    // profile pointing at a row named `cadet`) resolves the same way.
     fakeConnections.set("vellum", userOwnedOpenai);
     const provider = await tryResolveProviderForConnectionName(
       "vellum",

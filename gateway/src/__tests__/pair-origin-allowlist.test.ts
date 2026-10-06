@@ -29,7 +29,7 @@ const { CLIENT_METADATA_HEADERS } =
 // Simulate a loopback peer IP as supplied by the gateway server to the handler.
 const LOOPBACK_IP = "127.0.0.1";
 
-// A valid Vellum extension origin (production).
+// A valid Cadet extension origin (production).
 const PROD_ORIGIN = "chrome-extension://hphbdmpffeigpcdjkckleobjmhhokpne";
 // A non-Vellum extension origin.
 const MALICIOUS_ORIGIN =
@@ -80,7 +80,7 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("resolveExtensionOrigin", () => {
-  test("returns origin for every known Vellum extension ID", () => {
+  test("returns origin for every known Cadet extension ID", () => {
     for (const origin of KNOWN_EXTENSION_ORIGINS) {
       const req = new Request("http://localhost:7830/v1/events", {
         headers: { origin },

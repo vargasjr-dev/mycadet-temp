@@ -285,7 +285,7 @@ describe("native permission guide", () => {
   test("drags the helper bundle only from its live guide sender", async () => {
     await begin();
     const session = get()!;
-    expect(session.appName).toBe("Vellum Helper");
+    expect(session.appName).toBe("Cadet Helper");
     const win = windows.get("permission-guide")!;
     const drag = listeners.get("cadet:permissions:guide:drag")!;
     drag([session.id], { sender: {} });

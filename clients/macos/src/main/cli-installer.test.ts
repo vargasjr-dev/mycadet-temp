@@ -18,7 +18,10 @@ const mockBunVersion = "1.3.11";
 
 // `process.resourcesPath` is only defined inside a packaged Electron app.
 // Set a known value so `path.join(process.resourcesPath, "bun")` works.
-Object.defineProperty(process, "resourcesPath", { value: mockResourcesPath, writable: true });
+Object.defineProperty(process, "resourcesPath", {
+  value: mockResourcesPath,
+  writable: true,
+});
 
 mock.module("electron", () => ({
   app: {
@@ -147,7 +150,8 @@ afterEach(() => {
   readdirSyncError = null;
   writeFileSyncError = null;
   readFileSyncReturn = '{"dependencies":{"vellum":"latest"}}';
-  for (const key of Object.keys(readFileSyncByPath)) delete readFileSyncByPath[key];
+  for (const key of Object.keys(readFileSyncByPath))
+    delete readFileSyncByPath[key];
   readFileSyncError = null;
   renameSyncError = null;
   chmodSyncCalls.length = 0;
@@ -381,7 +385,9 @@ describe("ensureCliInstalled", () => {
       ([p]) => p === `${latestInstallDir}/package.json.tmp`,
     );
     expect(pkgWrite).toBeDefined();
-    expect(JSON.parse(pkgWrite![1]).packageManager).toBe(`bun@${mockBunVersion}`);
+    expect(JSON.parse(pkgWrite![1]).packageManager).toBe(
+      `bun@${mockBunVersion}`,
+    );
   });
 
   test("does not rewrite an already-stamped install on the upgrade path", async () => {
@@ -440,7 +446,11 @@ describe("ensureCliInstalled", () => {
     ]);
     // ...and bun re-floats to the environment's tag.
     expect(spawnCalls).toHaveLength(1);
-    expect(spawnCalls[0][1]).toEqual(["add", "vellum@latest", "--ignore-scripts"]);
+    expect(spawnCalls[0][1]).toEqual([
+      "add",
+      "cadet@latest",
+      "--ignore-scripts",
+    ]);
     // The running app version is recorded so it won't refresh again next launch.
     expect(writeFileSyncCalls).toContainEqual([
       `${latestInstallDir}/.app-version.tmp`,
@@ -474,7 +484,7 @@ describe("ensureCliInstalled", () => {
     expect(rmSyncCalls).toHaveLength(0);
   });
 
-  test("fresh unpinned install spawns bun add vellum@latest", async () => {
+  test("fresh unpinned install spawns bun add cadet@latest", async () => {
     existsSyncDefault = false;
 
     const promise = ensureCliInstalled();
@@ -486,7 +496,7 @@ describe("ensureCliInstalled", () => {
     expect(spawnCalls).toHaveLength(1);
     const [cmd, args, opts] = spawnCalls[0];
     expect(cmd).toBe(`${mockResourcesPath}/bun`);
-    expect(args).toEqual(["add", "vellum@latest", "--ignore-scripts"]);
+    expect(args).toEqual(["add", "cadet@latest", "--ignore-scripts"]);
     expect((opts as { cwd: string }).cwd).toBe(latestInstallDir);
     const env = (opts as { env: NodeJS.ProcessEnv }).env;
     expect(env).toBeDefined();
@@ -501,7 +511,7 @@ describe("ensureCliInstalled", () => {
 
     const promise = ensureCliInstalled();
 
-    // `bun add vellum@latest` fails (e.g. registry unreachable).
+    // `bun add cadet@latest` fails (e.g. registry unreachable).
     lastChild.stderr.emit("data", Buffer.from("network error"));
     lastChild.emit("close", 1);
     // The retry spawns against the seeded frozen lockfile.
@@ -515,7 +525,11 @@ describe("ensureCliInstalled", () => {
     expect(copyFileSyncCalls[1][0]).toBe(seedLockPath);
 
     expect(spawnCalls).toHaveLength(2);
-    expect(spawnCalls[0][1]).toEqual(["add", "vellum@latest", "--ignore-scripts"]);
+    expect(spawnCalls[0][1]).toEqual([
+      "add",
+      "cadet@latest",
+      "--ignore-scripts",
+    ]);
     expect(spawnCalls[1][1]).toEqual([
       "install",
       "--frozen-lockfile",
@@ -688,7 +702,11 @@ describe("ensureCliInstalled", () => {
     expect(removedPaths).toContain(nodeModulesDir);
     expect(removedPaths).toContain(`${latestInstallDir}/bun.lock`);
     expect(spawnCalls).toHaveLength(1);
-    expect(spawnCalls[0][1]).toEqual(["add", "vellum@latest", "--ignore-scripts"]);
+    expect(spawnCalls[0][1]).toEqual([
+      "add",
+      "cadet@latest",
+      "--ignore-scripts",
+    ]);
   });
 
   test("does not wipe when node_modules is absent (fresh install)", async () => {
@@ -776,7 +794,9 @@ describe("ensureCliInstalled", () => {
       private: true,
     });
     // The anchor lands before the install spawns.
-    expect(fsCallOrder.indexOf(`writeFileSync:${latestInstallDir}/package.json.tmp`)).toBeGreaterThanOrEqual(0);
+    expect(
+      fsCallOrder.indexOf(`writeFileSync:${latestInstallDir}/package.json.tmp`),
+    ).toBeGreaterThanOrEqual(0);
   });
 
   test("does not overwrite an existing package.json when anchoring", async () => {
@@ -802,7 +822,7 @@ describe("ensureCliInstalled", () => {
     // bun exits 0 without ever creating node_modules/.bin/vellum.
     lastChild.emit("close", 0);
 
-    await expect(promise).rejects.toThrow(/no vellum binary was found/);
+    await expect(promise).rejects.toThrow(/no cadet binary was found/);
 
     // The lock is cleared, so a subsequent attempt reinstalls from scratch.
     const retry = ensureCliInstalled();

@@ -204,13 +204,11 @@ describe("Windows auxiliary windows", () => {
     expect(window.loadURL).toHaveBeenCalledWith(
       "http://localhost:5173/assistant/floating/dictation-overlay",
     );
-    onListeners.get("cadet:dictationOverlay:setState")?.([
-      { kind: "dismiss" },
-    ]);
+    onListeners.get("cadet:dictationOverlay:setState")?.([{ kind: "dismiss" }]);
     expect(window.isDestroyed()).toBe(true);
   });
 
-  test("Escape cancels dictation only while Vellum is unfocused", () => {
+  test("Escape cancels dictation only while Cadet is unfocused", () => {
     onListeners.get("cadet:dictationOverlay:setState")?.([
       { kind: "recording", transcription: "" },
     ]);
@@ -224,9 +222,7 @@ describe("Windows auxiliary windows", () => {
 
     focusedWindow = null;
     appListeners.get("browser-window-blur")?.();
-    onListeners.get("cadet:dictationOverlay:setState")?.([
-      { kind: "dismiss" },
-    ]);
+    onListeners.get("cadet:dictationOverlay:setState")?.([{ kind: "dismiss" }]);
     expect(shortcutListeners.has("Escape")).toBe(false);
     expect(dispatchToMain).not.toHaveBeenCalled();
   });
@@ -246,9 +242,7 @@ describe("Windows auxiliary windows", () => {
     const { window } = created[0]!;
     await new Promise((resolve) => setTimeout(resolve, 120));
     expect(window.setIgnoreMouseEvents).toHaveBeenCalledWith(false);
-    onListeners.get("cadet:dictationOverlay:setState")?.([
-      { kind: "dismiss" },
-    ]);
+    onListeners.get("cadet:dictationOverlay:setState")?.([{ kind: "dismiss" }]);
   });
 
   test("loads auxiliary windows from the app origin in local-renderer dev", () => {

@@ -3,8 +3,8 @@
  * Probe-and-dispatch shim for `bun run dev`.
  *
  * Decides whether `vel up` is running by probing its edge proxy at
- * http://localhost:3000 (the URL Swift Vellum hits today; see
- * `cli/commands/up.ts::ensureEdgeProxyRunning` in the Vellum platform
+ * http://localhost:3000 (the URL Swift Cadet hits today; see
+ * `cli/commands/up.ts::ensureEdgeProxyRunning` in the Cadet platform
  * repo) and dispatches accordingly:
  *
  *   - vel up detected → `bun run dev:electron-only` with
@@ -27,7 +27,7 @@ import { spawn } from "node:child_process";
 // at the bare root and reverse-proxies `/assistant/*` to clients/web's Vite,
 // so we probe the origin and load `/assistant` (the renderer path) when
 // attaching. clients/web's `vite.config.ts` declares `base: "/assistant/"`,
-// which is the same path Swift Vellum hits today.
+// which is the same path Swift Cadet hits today.
 const VEL_EDGE_PROXY_ORIGIN = "http://localhost:3000";
 const VEL_RENDERER_URL = `${VEL_EDGE_PROXY_ORIGIN}/assistant`;
 const PROBE_TIMEOUT_MS = 1_500;

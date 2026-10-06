@@ -184,8 +184,8 @@ function resolveDiscoveredPluginIngress(
  * signer is allowed to be.
  *
  * Note this is reach the plugin can grant itself: a manifest can name a
- * `vellum`-signed path and have it served unreviewed. What it gets is a path
- * only Vellum can drive, carrying no authority over the assistant and
+ * `cadet`-signed path and have it served unreviewed. What it gets is a path
+ * only Cadet can drive, carrying no authority over the assistant and
  * nothing a plugin could not already reach by running its own code.
  *
  * Declarations that failed validation are in `problems` and are never

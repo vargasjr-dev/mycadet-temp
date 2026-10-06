@@ -101,7 +101,7 @@ describe("sendGuardianExpiryNotices", () => {
     expect(deliveredMessages).toHaveLength(0);
   });
 
-  test("adds an expiry message to vellum guardian conversations", async () => {
+  test("adds an expiry message to cadet guardian conversations", async () => {
     ensureConversation("guardian-conv");
 
     await sendGuardianExpiryNotices(

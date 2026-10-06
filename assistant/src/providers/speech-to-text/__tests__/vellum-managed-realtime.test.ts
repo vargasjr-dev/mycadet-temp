@@ -1,5 +1,5 @@
 /**
- * Tests for the vellum managed realtime STT adapter (tunnel relay).
+ * Tests for the cadet managed realtime STT adapter (tunnel relay).
  *
  * The global WebSocket is replaced with a recording factory so tests can
  * assert on the dialed URL (query auth, no model param) and drive multiple
@@ -100,7 +100,7 @@ const CONNECTION: SpeechRelayConnection = {
 
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
 
-describe("Vellum managed realtime transcribers", () => {
+describe("Cadet managed realtime transcribers", () => {
   let sockets: MockWebSocket[];
   let originalWebSocket: unknown;
   let originalFetch: unknown;

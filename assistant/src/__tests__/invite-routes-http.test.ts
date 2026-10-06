@@ -117,7 +117,7 @@ await initializeDb();
 
 // Pin the `inviteInstructionGenerator` call site to a connectionless profile.
 // The call site's catalog default (`cost-optimized`) carries the managed
-// `vellum` provider_connection, which does not exist in this test workspace's
+// `cadet` provider_connection, which does not exist in this test workspace's
 // DB — resolution would throw instead of degrading. A profile with no
 // provider_connection resolves to "no provider available", so instruction
 // generation falls back to the deterministic copy these tests assert.

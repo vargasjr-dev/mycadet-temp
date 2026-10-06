@@ -428,7 +428,7 @@ describe("writeHomeFeedItemForSignal", () => {
     expect(conversationLookups).toEqual(["cli-12345"]);
   });
 
-  test("assistant_tool source skips the automatic Home mirror when channelAllowlist omits vellum", async () => {
+  test("assistant_tool source skips the automatic Home mirror when channelAllowlist omits cadet", async () => {
     conversationRow = null;
     const signal = makeSignal({
       sourceChannel: "assistant_tool",
@@ -458,7 +458,7 @@ describe("writeHomeFeedItemForSignal", () => {
     expect(appendCalls).toHaveLength(0);
   });
 
-  test("assistant_tool source still mirrors when channelAllowlist includes vellum", async () => {
+  test("assistant_tool source still mirrors when channelAllowlist includes cadet", async () => {
     conversationRow = null;
     const signal = makeSignal({
       sourceChannel: "assistant_tool",
@@ -548,7 +548,7 @@ describe("writeHomeFeedItemForSignal", () => {
     // (heartbeat startup `"heartbeat"`, credential health `connectionId`,
     // watcher `watcher-<ts>`, scheduler retries-exhausted `jobId`, sweep
     // job id) never resolve via `getConversation`. The notification
-    // broadcaster pairs each vellum delivery with a real conversation
+    // broadcaster pairs each cadet delivery with a real conversation
     // before the home-feed write runs, so the caller threads that paired
     // id through as the fallback — the "Go to Convo" button now points at
     // the conversation the notification was actually delivered into.
@@ -987,7 +987,7 @@ describe("writeHomeFeedItemForSignal", () => {
     expect(appendCalls).toHaveLength(0);
   });
 
-  test("falls back to a non-vellum channel's rendered copy when vellum copy is absent", async () => {
+  test("falls back to a non-vellum channel's rendered copy when cadet copy is absent", async () => {
     // Regression: when `preferredChannels` narrows an assistant_tool signal
     // to a non-vellum channel (e.g. telegram), the broadcaster ships real
     // copy on that channel but `renderedCopy.vellum` is undefined. The
@@ -1397,8 +1397,8 @@ describe("writeHomeFeedItemForSignal", () => {
   });
 
   describe("body append into the feed item's conversation", () => {
-    test("appends the card summary when no vellum conversation was paired", async () => {
-      // The Slack/Telegram-only routing case: nothing paired a vellum
+    test("appends the card summary when no cadet conversation was paired", async () => {
+      // The Slack/Telegram-only routing case: nothing paired a cadet
       // conversation, so this seam is the only writer that can put the body
       // where the card's button points.
       conversationRow = { conversationType: "background" };
@@ -1455,7 +1455,7 @@ describe("writeHomeFeedItemForSignal", () => {
       );
     });
 
-    test("records the paired row when vellum already wrote the body", async () => {
+    test("records the paired row when cadet already wrote the body", async () => {
       // `pairDeliveryWithConversation` wrote the body, so nothing is written
       // again here, but the card still records the row so an edit can reach it
       // when the delivery walk does not.
@@ -1548,7 +1548,7 @@ describe("writeHomeFeedItemForSignal", () => {
       expect(item?.metadata?.notificationConversationMessageId).toBeUndefined();
     });
 
-    test("records the paired row when the vellum delivery failed", async () => {
+    test("records the paired row when the cadet delivery failed", async () => {
       // The row exists whatever the delivery reported, and a failed delivery
       // is exactly the case the edit path's delivery walk skips.
       conversationRow = { conversationType: "background" };

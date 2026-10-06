@@ -276,7 +276,7 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       "telegram",
     ] as NotificationChannel[]);
 
-    // Vellum (canonical inbox) stays in selectedChannels; telegram is
+    // Cadet (canonical inbox) stays in selectedChannels; telegram is
     // added on top. `--preferred-channels` is additive push, never a
     // replacement for the inbox.
     expect(decision.selectedChannels).toContain("vellum");
@@ -837,7 +837,7 @@ describe("schedule.result pass-through in notification decision engine", () => {
 
   test("delivers to the notification center as well as push", async () => {
     // Unlike an unseen chat reply, a scheduled run's output has no
-    // conversation the user is already in. `vellum` is where it persists.
+    // conversation the user is already in. `cadet` is where it persists.
     const decision = await evaluateSignal(makeScheduleResultSignal(), [
       "vellum",
       "telegram",

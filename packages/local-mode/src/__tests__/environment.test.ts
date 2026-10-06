@@ -139,7 +139,7 @@ describe("Windows path resolution", () => {
     const paths = [
       [
         defaultEnvironmentFilePath(env, options),
-        "AppData\\Roaming\\vellum\\environment",
+        "AppData\\Roaming\\cadet\\environment",
       ],
       [resolveConfigDir(env, options), "AppData\\Roaming\\vellum-dev"],
       [resolveRuntimeDir(env, options), "AppData\\Local\\vellum-dev"],

@@ -470,7 +470,7 @@ describe("editNotification", () => {
     });
 
     test("stands down when the adapter already rewrote that row", async () => {
-      // The ordinary vellum case: the delivery walk rewrites the paired row,
+      // The ordinary cadet case: the delivery walk rewrites the paired row,
       // so the card must not write it a second time.
       await appendFeedItem(makeItem(OWNED));
       decisionRow = { id: "dec-1" };

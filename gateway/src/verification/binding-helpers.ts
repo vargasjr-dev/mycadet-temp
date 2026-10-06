@@ -115,7 +115,7 @@ export function getMostRecentChannelGuardianTimestamp(
 
 /**
  * Resolve the canonical principal ID for the guardian.
- * Looks up the vellum channel binding's principal; falls back to the provided ID.
+ * Looks up the cadet channel binding's principal; falls back to the provided ID.
  */
 export function resolveCanonicalPrincipal(fallback: string): string {
   const row = getGatewayDb()

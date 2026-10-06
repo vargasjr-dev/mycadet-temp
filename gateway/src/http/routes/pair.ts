@@ -260,13 +260,13 @@ export async function handlePair(
   }
 
   if (interfaceId === "chrome-extension") {
-    // Require the request to originate from a known Vellum extension origin.
+    // Require the request to originate from a known Cadet extension origin.
     //
     // Chrome sets the `Origin: chrome-extension://<id>` header on cross-origin
     // requests from extension service workers and enforces it at the network
     // layer — no extension can impersonate another extension's origin. Combined
     // with Chrome's Private Network Access preflight requirement for localhost
-    // access, this ensures only the Vellum extension (across all known
+    // access, this ensures only the Cadet extension (across all known
     // environments) can pair via this interface ID.
     //
     // The residual risk is a local process spoofing the Origin header, which
@@ -279,7 +279,7 @@ export async function handlePair(
       });
       return errorResponse(
         "FORBIDDEN",
-        "origin does not match a known Vellum extension",
+        "origin does not match a known Cadet extension",
         403,
       );
     }
@@ -323,12 +323,12 @@ export async function handlePair(
     );
   }
 
-  // CLI pairing (e.g. `vellum pair`): a loopback-local caller mints a
+  // CLI pairing (e.g. `cadet pair`): a loopback-local caller mints a
   // device-bound token for another machine. The loopback / X-Forwarded-For /
   // edge-marker guards above are the boundary. A deviceId is required — CLI
   // pairing is always device-scoped (and thus revocable).
   if (interfaceId === "cli") {
-    // A real `vellum pair` is a terminal process and never sends an Origin
+    // A real `cadet pair` is a terminal process and never sends an Origin
     // header; any Origin means a browser/WebView is calling (e.g. dynamic
     // surface JS at https://<appId>.vellum.local). Reject it: combined with the
     // gateway's WebView CORS allowance, such JS could otherwise mint and read

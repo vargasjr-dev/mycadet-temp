@@ -134,7 +134,7 @@ function readConfigFile(): string {
   return readFileSync(CONFIG_PATH, "utf8");
 }
 
-/** A streaming TTS adapter standing in for the managed `vellum` provider. */
+/** A streaming TTS adapter standing in for the managed `cadet` provider. */
 function registerManagedTtsProvider(): TtsProvider {
   const provider: TtsProvider = {
     id: "vellum",

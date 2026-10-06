@@ -272,7 +272,7 @@ const postNativeNotificationConfirmation = (
     notifier.show(
       {
         id: randomUUID(),
-        title: resolvedSender?.name ?? "Vellum",
+        title: resolvedSender?.name ?? "Cadet",
         body: resolvedSender
           ? ASSISTANT_NOTIFICATION_CONFIRMATION_BODY
           : NOTIFICATION_CONFIRMATION_BODY,
@@ -526,7 +526,7 @@ export class PermissionsService {
       NOTIFICATION_PROMPT_TIMEOUT_MS,
       (settle) => {
         const notification = new Notification({
-          title: "Vellum",
+          title: "Cadet",
           body: NOTIFICATION_CONFIRMATION_BODY,
           silent: false,
         });

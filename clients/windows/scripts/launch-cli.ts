@@ -27,14 +27,14 @@ export function resolveOwnedCliTarget(execPath: string): string {
       readFileSync(ownershipPath, "utf8"),
     ) as LauncherOwnership;
   } catch {
-    throw new Error("The Vellum CLI launcher ownership file is invalid.");
+    throw new Error("The Cadet CLI launcher ownership file is invalid.");
   }
   if (
     typeof ownership.sourcePath !== "string" ||
     sameWindowsPath(ownership.sourcePath, execPath) ||
     !existsSync(ownership.sourcePath)
   ) {
-    throw new Error("The installed Vellum CLI runtime is unavailable.");
+    throw new Error("The installed Cadet CLI runtime is unavailable.");
   }
   return ownership.sourcePath;
 }

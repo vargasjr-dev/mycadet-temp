@@ -234,7 +234,7 @@ async function resolveExpectedTelegramWebhookUrl(
   //      this resolver. Platform pods are exempt (see the comment there).
   //   4. A configured public ingress URL wins (a self-hosted tunnel, or the
   //      Tunnel-published URL while the tunnel is registered).
-  //   5. Platform-connected local assistants holding vellum credentials fall
+  //   5. Platform-connected local assistants holding cadet credentials fall
   //      back to a managed platform callback route.
   //      `registerManagedTelegramCallbackRoute` self-gates on platform
   //      features and credential presence, so a gateway with no platform

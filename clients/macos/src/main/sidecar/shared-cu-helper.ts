@@ -8,7 +8,7 @@
  * other. The underlying process is the same signed binary, so the two share
  * the helper's Accessibility and Screen Recording grants. Those are the
  * helper's own, not the app's: the helper disclaims TCC responsibility, so
- * macOS lists and checks it apart from Vellum, and the app being allowed says
+ * macOS lists and checks it apart from Cadet, and the app being allowed says
  * nothing about whether a capture here will be (see
  * `screen-recording-permission.ts`). The process is not
  * spawned until the first `cu.perform` / `appControl.perform` call, so users

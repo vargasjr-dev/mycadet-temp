@@ -79,7 +79,7 @@ export const buildWindowsMenu = ({
       ...(app.isPackaged
         ? [
             {
-              label: "Install vellum Command...",
+              label: "Install cadet Command...",
               enabled: installCli !== undefined,
               click: installCli,
             },
@@ -168,7 +168,7 @@ export const buildWindowsMenu = ({
         : []),
       commandItem("Send Feedback...", { kind: "shareFeedback" }),
       {
-        label: "Vellum Documentation",
+        label: "Cadet Documentation",
         click: () => {
           void shell.openExternal("https://www.vellum.ai/docs");
         },

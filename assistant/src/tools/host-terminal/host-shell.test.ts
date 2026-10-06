@@ -179,7 +179,7 @@ describe("host_bash unavailable desktop-app recovery", () => {
 
     expect(result.isError).toBe(true);
     expect(result.content).toContain(
-      "The Vellum desktop app is needed to run commands on your computer",
+      "The Cadet desktop app is needed to run commands on your computer",
     );
     expect(result.content).toContain("https://www.vellum.ai/downloads");
     expect(result.content).toContain("Open it, then retry.");

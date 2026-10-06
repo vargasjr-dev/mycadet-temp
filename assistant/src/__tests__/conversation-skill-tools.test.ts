@@ -878,7 +878,7 @@ describe("skill_loaded telemetry recording", () => {
     });
   });
 
-  test("managed skill with vellum install origin records an event", () => {
+  test("managed skill with cadet install origin records an event", () => {
     mockCatalog = [makeSkill("deploy")];
     mockManifests = { deploy: makeManifest(["deploy_run"]) };
     mockInstallMetas = {
@@ -1139,7 +1139,7 @@ describe("skill_loaded telemetry recording", () => {
     expect(recordedSkillLoadedEvents).toHaveLength(1);
   });
 
-  test("instruction-only managed skill with vellum origin records exactly one event", () => {
+  test("instruction-only managed skill with cadet origin records exactly one event", () => {
     mockCatalog = [makeSkill("catalog-skill")];
     // No manifest — mirrors installSkillLocally output for catalog skills.
     mockInstallMetas = {

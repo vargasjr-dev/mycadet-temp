@@ -28,7 +28,7 @@ const setApplicationMenuMock = mock((_menu: unknown) => undefined);
 // Mutable so tests can flip packaged/dev; the CLI path items only exist in
 // packaged builds, so packaged is the default here.
 const electronApp = {
-  name: "Vellum Electron",
+  name: "Cadet Electron",
   isPackaged: true,
 };
 
@@ -155,10 +155,10 @@ const setStateAndRefresh = async (state: CliPathInstallState) => {
   await refreshCliPathMenuState();
 };
 
-const INSTALL_LABEL = "Install vellum Command…";
-const REPAIR_LABEL = "Repair vellum Command…";
-const UNINSTALL_LABEL = "Uninstall vellum Command";
-const SHADOWED_LABEL = "⚠ vellum is shadowed by another install";
+const INSTALL_LABEL = "Install cadet Command…";
+const REPAIR_LABEL = "Repair cadet Command…";
+const UNINSTALL_LABEL = "Uninstall cadet Command";
+const SHADOWED_LABEL = "⚠ cadet is shadowed by another install";
 
 installApplicationMenu();
 

@@ -99,7 +99,7 @@ describe("AssistantConfigSchema", () => {
     expect(result.auditLog).toEqual({ retentionDays: 0 });
   });
 
-  test("accepts vellum as an image generation provider", () => {
+  test("accepts cadet as an image generation provider", () => {
     const result = AssistantConfigSchema.parse({
       services: {
         "image-generation": { provider: "vellum", model: "gpt-image-2" },
@@ -429,7 +429,7 @@ describe("AssistantConfigSchema", () => {
     }
   });
 
-  test("accepts the vellum and chatgpt routing identities with a routable model", () => {
+  test("accepts the cadet and chatgpt routing identities with a routable model", () => {
     const inProfile = AssistantConfigSchema.safeParse({
       llm: {
         profiles: {
@@ -1645,7 +1645,7 @@ describe("AssistantConfigSchema", () => {
     expect(result.services.tts.provider).toBe("elevenlabs");
   });
 
-  test("accepts tts provider vellum as an ordinary choice", () => {
+  test("accepts tts provider cadet as an ordinary choice", () => {
     const result = AssistantConfigSchema.safeParse({
       services: { tts: { provider: "vellum" } },
     });
@@ -1807,7 +1807,7 @@ describe("AssistantConfigSchema", () => {
     expect(result.services.stt.provider).toBe("deepgram");
   });
 
-  test("accepts stt provider vellum as an ordinary choice", () => {
+  test("accepts stt provider cadet as an ordinary choice", () => {
     const result = AssistantConfigSchema.safeParse({
       services: { stt: { provider: "vellum" } },
     });
@@ -2088,7 +2088,7 @@ describe("TTS provider catalog integration", () => {
 
   test("resolveTtsConfig returns correct defaults for each catalog provider", () => {
     for (const providerId of listCatalogProviderIds()) {
-      // vellum is connection-based and only valid under managed mode.
+      // cadet is connection-based and only valid under managed mode.
       const mode = providerId === "vellum" ? "managed" : "your-own";
       const config = AssistantConfigSchema.parse({
         services: { tts: { mode, provider: providerId } },
@@ -2096,7 +2096,7 @@ describe("TTS provider catalog integration", () => {
       const resolved = resolveTtsConfig(config);
       expect(resolved.provider).toBe(providerId);
       if (providerId === "vellum") {
-        // The vellum config block is intentionally empty — the platform
+        // The cadet config block is intentionally empty — the platform
         // pins the voice and model.
         expect(resolved.providerConfig).toEqual({});
       } else {

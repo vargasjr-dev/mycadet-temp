@@ -74,14 +74,14 @@ describe("requireBoundGuardian", () => {
     expect(result!.status).toBe(403);
   });
 
-  test("denies when no vellum guardian is bound", async () => {
+  test("denies when no cadet guardian is bound", async () => {
     mockGuardians = [];
     const result = await requireBoundGuardian(ctx("vellum-principal-abc"));
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);
   });
 
-  test("denies a non-active (revoked) vellum row matching the actor", async () => {
+  test("denies a non-active (revoked) cadet row matching the actor", async () => {
     mockGuardians = [
       { ...guardian("vellum-principal-abc"), status: "revoked" },
     ];

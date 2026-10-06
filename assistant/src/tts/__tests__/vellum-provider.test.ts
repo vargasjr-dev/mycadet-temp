@@ -71,7 +71,7 @@ function request(
   } as TtsSynthesisRequest;
 }
 
-describe("vellum TTS adapter", () => {
+describe("cadet TTS adapter", () => {
   beforeEach(() => {
     synthesizeCalls = [];
     socketCalls = [];
@@ -135,7 +135,7 @@ describe("vellum TTS adapter", () => {
     mockSynthesizeResult = {
       ok: false,
       kind: "unavailable",
-      message: "No Vellum platform connection.",
+      message: "No Cadet platform connection.",
     };
     const provider = createVellumProvider();
     await expect(provider.synthesize(request())).rejects.toThrow(
@@ -144,7 +144,7 @@ describe("vellum TTS adapter", () => {
   });
 });
 
-describe("vellum TTS streaming", () => {
+describe("cadet TTS streaming", () => {
   beforeEach(() => {
     synthesizeCalls = [];
     socketCalls = [];
@@ -226,7 +226,7 @@ describe("vellum TTS streaming", () => {
   });
 });
 
-describe("vellum TTS definition", () => {
+describe("cadet TTS definition", () => {
   test("declares streaming synthesized-play with PCM media-stream playback", () => {
     expect(vellumTtsProviderDefinition.capabilities.supportsStreaming).toBe(
       true,
@@ -245,7 +245,7 @@ describe("vellum TTS definition", () => {
     expect(vellumTtsProviderDefinition.secretRequirements).toEqual([
       {
         credentialStoreKey: "credential/vellum/assistant_api_key",
-        displayName: "Vellum account connection",
+        displayName: "Cadet account connection",
         setCommand: "assistant platform connect",
       },
     ]);

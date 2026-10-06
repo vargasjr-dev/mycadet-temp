@@ -106,8 +106,8 @@ export const IngressRouteSchema = z.object({
    * `webhook_secret`, so a plugin can receive third-party callbacks it has
    * arranged itself, and a guardian decides whether that route is served.
    *
-   * `vellum` verifies against the platform's `webhook_secret`, for routes
-   * only Vellum calls, which would otherwise need a per-plugin secret
+   * `cadet` verifies against the platform's `webhook_secret`, for routes
+   * only Cadet calls, which would otherwise need a per-plugin secret
    * provisioned for a caller we already authenticate. Such a route is
    * served without a guardian approval: the trust it relies on was given
    * when the account was connected. See `findServableRoute` in
@@ -144,7 +144,7 @@ export const IngressRouteSchema = z.object({
    *
    * Absent (the default) means the platform scheme: `Vellum-Signature` over
    * the body, keyed by whichever `webhook_secret` {@link signer} selects.
-   * That is right for a caller Vellum controls and wrong for every other one
+   * That is right for a caller Cadet controls and wrong for every other one
    * — Comms signs `X-Osis-Signature`, Photon signs `X-Spectrum-Signature` over
    * a timestamped preamble, and Linq signs Standard Webhooks
    * (`webhook-id` / `webhook-timestamp` / `webhook-signature`). None of
@@ -159,7 +159,7 @@ export const IngressRouteSchema = z.object({
    *
    * The descriptor supersedes {@link signer} — it names its own credential
    * field, under this plugin's own service — so declaring it alongside
-   * `signer: "vellum"` is rejected: `vellum` routes are served without a
+   * `signer: "vellum"` is rejected: `cadet` routes are served without a
    * guardian approval (see `findServableRoute`), and a route that both skips
    * approval and verifies against a secret the plugin chose would be reach a
    * plugin grants itself. HTTP only, for the same reason `signed-query` is
@@ -181,9 +181,9 @@ export const IngressRouteSchema = z.object({
    * channel's would be. See `ingress-inbound.ts` for the declaration and
    * `plugin-inbound.ts` for what the gateway supplies rather than reads.
    *
-   * Rejected alongside `signer: "vellum"`. A `vellum`-signed route is served
+   * Rejected alongside `signer: "vellum"`. A `cadet`-signed route is served
    * without a guardian approval (see `findServableRoute`), which is defensible
-   * for a path only Vellum can drive and carrying no authority over the
+   * for a path only Cadet can drive and carrying no authority over the
    * assistant. Delivering messages *is* such authority — it is how a
    * conversation starts — so a route that both skips approval and injects
    * turns would be reach a plugin grants itself. HTTP only, for the same

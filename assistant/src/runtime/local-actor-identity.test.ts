@@ -126,7 +126,7 @@ describe("resolveDecidableGuardianPrincipalId", () => {
     );
   });
 
-  test("a null binding principal adopts the vellum anchor principal", async () => {
+  test("a null binding principal adopts the cadet anchor principal", async () => {
     ipcHandlers.set(METHOD, () => ({ guardians: [vellumGuardian] }));
 
     expect(await resolveDecidableGuardianPrincipalId(null)).toBe(

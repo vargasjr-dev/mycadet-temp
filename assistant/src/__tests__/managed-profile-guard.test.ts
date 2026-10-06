@@ -219,7 +219,7 @@ describe("PUT /v1/config/llm/profiles/:name — managed profile guard", () => {
         pathParams: { name: "my-custom" },
         body: { provider: "vellum", model: "not-a-real-model" },
       }),
-    ).rejects.toThrow(/not served by the Vellum managed route/);
+    ).rejects.toThrow(/not served by the Cadet managed route/);
     expect(committedRaw()).toBeNull();
   });
 
@@ -1250,7 +1250,7 @@ describe("code-owned default profiles — wire view and write normalization", ()
 
 describe("code-owned default profiles — BYO default provider wire view", () => {
   // With llm.defaultProvider set, the wire view must show the column of the
-  // intent × provider matrix that actually dispatches — not the vellum
+  // intent × provider matrix that actually dispatches — not the cadet
   // column — and the write path must echo-strip against that same view or an
   // honest GET → write round-trip is rejected.
   test("GET materializes the default provider's column for default profiles", async () => {

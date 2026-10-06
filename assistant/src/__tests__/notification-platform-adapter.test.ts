@@ -528,7 +528,7 @@ describe("PlatformPushAdapter", () => {
         copy: {
           title: "**Build** finished",
           body: [
-            "Here is the clip: ![vellum scene](vellum://workspace/a.mp4)",
+            "Here is the clip: ![cadet scene](vellum://workspace/a.mp4)",
             "```ts",
             "const a = 1;",
             "```",

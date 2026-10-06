@@ -68,7 +68,7 @@ describe("syncTerminalGuardianRequestStatus", () => {
 
   test("a landed CAS withdraws every delivered projection", async () => {
     const req = makeRequest();
-    const vellum = bridgeState.seedDelivery({
+    const cadet = bridgeState.seedDelivery({
       requestId: req.id,
       destinationChannel: "vellum",
       destinationConversationId: "conv-thread",
@@ -102,7 +102,7 @@ describe("syncTerminalGuardianRequestStatus", () => {
     );
     expect(withdrawSlackApprovalCard).toHaveBeenCalledTimes(1);
     const byId = new Map(deliveriesFor(req.id).map((d) => [d.id, d.status]));
-    expect(byId.get(vellum.id)).toBe("withdrawn");
+    expect(byId.get(cadet.id)).toBe("withdrawn");
     expect(byId.get(slack.id)).toBe("withdrawn");
   });
 

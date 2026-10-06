@@ -14,22 +14,22 @@ This directory owns the existing phone-call and media-stream path. It is valuabl
 
 Key files:
 
-| Path | What it contains | Relevance to live voice channel |
-| --- | --- | --- |
-| `assistant/src/calls/call-controller.ts` | Turn controller for active voice calls. It manages caller utterances, assistant LLM turns, speech output, interrupts, and state transitions. | Reuse ideas and possibly internal helpers, but do not reuse wholesale for V1 because it is phone-call shaped. |
-| `assistant/src/calls/voice-session-bridge.ts` | Bridge from voice input into the normal agent loop. It streams assistant text deltas and final messages back to a caller-supplied sink. | Strong reuse point for LLM inference. Needs a local-live-voice mode so it does not force phone-specific channel/prompt behavior. |
-| `assistant/src/calls/call-transport.ts` | Transport interface for streaming text/audio commands to the voice endpoint. | Reusable abstraction shape, but local macOS playback needs a new transport implementation or a sibling live-voice stream protocol. |
-| `assistant/src/calls/media-stream-server.ts` | Twilio Media Streams session orchestration. Wires media input, STT, output, and `CallController`. | Telephony-only. Useful as a reference for a long-lived audio WebSocket session. |
-| `assistant/src/calls/media-stream-stt-session.ts` | STT adapter for Twilio media stream input. Handles media chunks, transcript callbacks, and stream lifecycle. | Mostly not reusable for local PTT because local audio can be PCM and has explicit PTT boundaries. |
-| `assistant/src/calls/media-stream-output.ts` | Synthesizes assistant text and sends audio back through Twilio Media Streams. | Reuse provider/TTS strategy, not Twilio mu-law framing. |
-| `assistant/src/calls/media-stream-parser.ts` and `assistant/src/calls/media-stream-protocol.ts` | Twilio media stream message parsing and protocol types. | Out of scope for V1 local mic. |
-| `assistant/src/calls/call-state-machine.ts` | Allowed transitions for `CallStatus`. | Could inform local session state, but the existing states are phone-specific. |
-| `assistant/src/calls/types.ts` | Core call session, event, status, transport, and pending-question types. | Too telephony-shaped to use as the persisted data model for local live voice. |
-| `assistant/src/calls/call-store.ts` | Persistence helpers for call sessions and call events. | Good reference for event recording; not a good direct fit for local sessions because call records require phone fields. |
-| `assistant/src/calls/active-call-lease.ts` | Workspace-backed active phone call leases. | Not the right single-session lock for local live voice; V1 can use an in-memory assistant process lock unless crash recovery is required. |
-| `assistant/src/calls/tts-call-strategy.ts` | TTS provider selection strategy for calls. | Reusable policy reference for low-latency call audio. |
-| `assistant/src/calls/audio-store.ts` | In-memory audio entries and streaming entries used for call playback URLs. | Possible reuse for short-lived generated audio, but archival needs durable local storage. |
-| `assistant/src/calls/finalize-call.ts` and `assistant/src/calls/call-conversation-messages.ts` | Final phone-call cleanup and conversation summary messages. | Reuse the idea of conversation archival; V1 needs richer audio + transcript archival. |
+| Path                                                                                            | What it contains                                                                                                                             | Relevance to live voice channel                                                                                                           |
+| ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `assistant/src/calls/call-controller.ts`                                                        | Turn controller for active voice calls. It manages caller utterances, assistant LLM turns, speech output, interrupts, and state transitions. | Reuse ideas and possibly internal helpers, but do not reuse wholesale for V1 because it is phone-call shaped.                             |
+| `assistant/src/calls/voice-session-bridge.ts`                                                   | Bridge from voice input into the normal agent loop. It streams assistant text deltas and final messages back to a caller-supplied sink.      | Strong reuse point for LLM inference. Needs a local-live-voice mode so it does not force phone-specific channel/prompt behavior.          |
+| `assistant/src/calls/call-transport.ts`                                                         | Transport interface for streaming text/audio commands to the voice endpoint.                                                                 | Reusable abstraction shape, but local macOS playback needs a new transport implementation or a sibling live-voice stream protocol.        |
+| `assistant/src/calls/media-stream-server.ts`                                                    | Twilio Media Streams session orchestration. Wires media input, STT, output, and `CallController`.                                            | Telephony-only. Useful as a reference for a long-lived audio WebSocket session.                                                           |
+| `assistant/src/calls/media-stream-stt-session.ts`                                               | STT adapter for Twilio media stream input. Handles media chunks, transcript callbacks, and stream lifecycle.                                 | Mostly not reusable for local PTT because local audio can be PCM and has explicit PTT boundaries.                                         |
+| `assistant/src/calls/media-stream-output.ts`                                                    | Synthesizes assistant text and sends audio back through Twilio Media Streams.                                                                | Reuse provider/TTS strategy, not Twilio mu-law framing.                                                                                   |
+| `assistant/src/calls/media-stream-parser.ts` and `assistant/src/calls/media-stream-protocol.ts` | Twilio media stream message parsing and protocol types.                                                                                      | Out of scope for V1 local mic.                                                                                                            |
+| `assistant/src/calls/call-state-machine.ts`                                                     | Allowed transitions for `CallStatus`.                                                                                                        | Could inform local session state, but the existing states are phone-specific.                                                             |
+| `assistant/src/calls/types.ts`                                                                  | Core call session, event, status, transport, and pending-question types.                                                                     | Too telephony-shaped to use as the persisted data model for local live voice.                                                             |
+| `assistant/src/calls/call-store.ts`                                                             | Persistence helpers for call sessions and call events.                                                                                       | Good reference for event recording; not a good direct fit for local sessions because call records require phone fields.                   |
+| `assistant/src/calls/active-call-lease.ts`                                                      | Workspace-backed active phone call leases.                                                                                                   | Not the right single-session lock for local live voice; V1 can use an in-memory assistant process lock unless crash recovery is required. |
+| `assistant/src/calls/tts-call-strategy.ts`                                                      | TTS provider selection strategy for calls.                                                                                                   | Reusable policy reference for low-latency call audio.                                                                                     |
+| `assistant/src/calls/audio-store.ts`                                                            | In-memory audio entries and streaming entries used for call playback URLs.                                                                   | Possible reuse for short-lived generated audio, but archival needs durable local storage.                                                 |
+| `assistant/src/calls/finalize-call.ts` and `assistant/src/calls/call-conversation-messages.ts`  | Final phone-call cleanup and conversation summary messages.                                                                                  | Reuse the idea of conversation archival; V1 needs richer audio + transcript archival.                                                     |
 
 Important existing signatures:
 
@@ -61,7 +61,9 @@ export interface VoiceTurnOptions {
   signal?: AbortSignal;
 }
 
-export function startVoiceTurn(opts: VoiceTurnOptions): Promise<VoiceTurnHandle>;
+export function startVoiceTurn(
+  opts: VoiceTurnOptions,
+): Promise<VoiceTurnHandle>;
 ```
 
 ```ts
@@ -82,15 +84,15 @@ This directory owns provider-specific STT adapters and catalog metadata. It is t
 
 Key files:
 
-| Path | What it contains | Relevance to live voice channel |
-| --- | --- | --- |
-| `assistant/src/providers/speech-to-text/provider-catalog.ts` | Catalog entries for STT providers, supported boundaries, telephony routing, and streaming mode support. | Single source of truth for whether a provider can support low-latency live voice partials. |
-| `assistant/src/providers/speech-to-text/resolve.ts` | Runtime resolver for batch and streaming transcribers based on `services.stt.provider` and credentials. | Primary API the live voice assistant-side session should call. |
-| `assistant/src/providers/speech-to-text/deepgram-realtime.ts` | Deepgram realtime streaming adapter. | Candidate for sub-300ms partial transcripts. |
-| `assistant/src/providers/speech-to-text/google-gemini-live-stream.ts` | Gemini live streaming adapter. | Candidate streaming provider. |
-| `assistant/src/providers/speech-to-text/openai-whisper-stream.ts` | Incremental/batch-style Whisper stream adapter. | Useful fallback shape, but may not hit the sub-300ms partial target. |
-| `assistant/src/providers/speech-to-text/xai-realtime.ts` | xAI realtime streaming adapter. | Candidate streaming provider. |
-| `assistant/src/providers/speech-to-text/*.test.ts` | Provider resolver and adapter tests. | Patterns for fake providers and boundary tests. |
+| Path                                                                  | What it contains                                                                                        | Relevance to live voice channel                                                            |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `assistant/src/providers/speech-to-text/provider-catalog.ts`          | Catalog entries for STT providers, supported boundaries, telephony routing, and streaming mode support. | Single source of truth for whether a provider can support low-latency live voice partials. |
+| `assistant/src/providers/speech-to-text/resolve.ts`                   | Runtime resolver for batch and streaming transcribers based on `services.stt.provider` and credentials. | Primary API the live voice assistant-side session should call.                             |
+| `assistant/src/providers/speech-to-text/deepgram-realtime.ts`         | Deepgram realtime streaming adapter.                                                                    | Candidate for sub-300ms partial transcripts.                                               |
+| `assistant/src/providers/speech-to-text/google-gemini-live-stream.ts` | Gemini live streaming adapter.                                                                          | Candidate streaming provider.                                                              |
+| `assistant/src/providers/speech-to-text/openai-whisper-stream.ts`     | Incremental/batch-style Whisper stream adapter.                                                         | Useful fallback shape, but may not hit the sub-300ms partial target.                       |
+| `assistant/src/providers/speech-to-text/xai-realtime.ts`              | xAI realtime streaming adapter.                                                                         | Candidate streaming provider.                                                              |
+| `assistant/src/providers/speech-to-text/*.test.ts`                    | Provider resolver and adapter tests.                                                                    | Patterns for fake providers and boundary tests.                                            |
 
 The shared STT types live in `assistant/src/stt/types.ts`:
 
@@ -106,9 +108,7 @@ export type ConversationStreamingMode =
   | "incremental-batch"
   | "none";
 
-export type SttBoundaryId =
-  | "daemon-batch"
-  | "daemon-streaming";
+export type SttBoundaryId = "daemon-batch" | "daemon-streaming";
 
 export interface BatchTranscriber {
   readonly providerId: SttProviderId;
@@ -127,11 +127,11 @@ export interface StreamingTranscriber {
 
 The existing runtime already exposes a streaming STT WebSocket:
 
-| Path | What it contains |
-| --- | --- |
-| `assistant/src/stt/stt-stream-session.ts` | Session wrapper that creates a streaming transcriber, forwards partial/final/error/closed events, and manages lifecycle. |
-| `assistant/src/runtime/http-server.ts` | Runtime WebSocket upgrade handling for `/v1/stt/stream`. |
-| `gateway/src/http/routes/stt-stream-websocket.ts` | Gateway-authenticated client-facing proxy for `/v1/stt/stream`. |
+| Path                                              | What it contains                                                                                                         |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `assistant/src/stt/stt-stream-session.ts`         | Session wrapper that creates a streaming transcriber, forwards partial/final/error/closed events, and manages lifecycle. |
+| `assistant/src/runtime/http-server.ts`            | Runtime WebSocket upgrade handling for `/v1/stt/stream`.                                                                 |
+| `gateway/src/http/routes/stt-stream-websocket.ts` | Gateway-authenticated client-facing proxy for `/v1/stt/stream`.                                                          |
 
 For live voice, a single live-voice WebSocket should probably call the same resolver internally instead of asking the macOS client to coordinate two separate sockets.
 
@@ -141,15 +141,15 @@ This directory owns provider-agnostic text-to-speech configuration, provider reg
 
 Key files:
 
-| Path | What it contains | Relevance to live voice channel |
-| --- | --- | --- |
-| `assistant/src/tts/types.ts` | Provider IDs, TTS use cases, synthesis request/result types, provider interface. | Primary type surface for live voice synthesis. |
-| `assistant/src/tts/provider-catalog.ts` | TTS provider catalog, including Fish Audio capability metadata and credential key mapping. | Use this instead of PoC-specific Fish Audio env vars. |
-| `assistant/src/tts/provider-registry.ts` | Provider registry and lookup. | Live voice can resolve the configured provider and require streaming support. |
-| `assistant/src/tts/tts-config-resolver.ts` | Merges configured TTS defaults/provider settings. | Use existing voice config, including Fish Audio voice/model settings. |
-| `assistant/src/tts/synthesize-text.ts` | High-level buffered synthesis helper. | Good for existing message playback, but live voice likely needs direct streaming access to `synthesizeStream`. |
-| `assistant/src/tts/providers/fish-audio.ts` | Fish Audio adapter. | Primary V1 TTS provider for the s2-pro voice path if configured there. |
-| `assistant/src/runtime/routes/tts-routes.ts` | HTTP endpoints for message TTS and generic text TTS. | Existing endpoint is buffered and `message-playback` oriented; not enough by itself for live low-latency chunk playback. |
+| Path                                         | What it contains                                                                           | Relevance to live voice channel                                                                                          |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `assistant/src/tts/types.ts`                 | Provider IDs, TTS use cases, synthesis request/result types, provider interface.           | Primary type surface for live voice synthesis.                                                                           |
+| `assistant/src/tts/provider-catalog.ts`      | TTS provider catalog, including Fish Audio capability metadata and credential key mapping. | Use this instead of PoC-specific Fish Audio env vars.                                                                    |
+| `assistant/src/tts/provider-registry.ts`     | Provider registry and lookup.                                                              | Live voice can resolve the configured provider and require streaming support.                                            |
+| `assistant/src/tts/tts-config-resolver.ts`   | Merges configured TTS defaults/provider settings.                                          | Use existing voice config, including Fish Audio voice/model settings.                                                    |
+| `assistant/src/tts/synthesize-text.ts`       | High-level buffered synthesis helper.                                                      | Good for existing message playback, but live voice likely needs direct streaming access to `synthesizeStream`.           |
+| `assistant/src/tts/providers/fish-audio.ts`  | Fish Audio adapter.                                                                        | Primary V1 TTS provider for the s2-pro voice path if configured there.                                                   |
+| `assistant/src/runtime/routes/tts-routes.ts` | HTTP endpoints for message TTS and generic text TTS.                                       | Existing endpoint is buffered and `message-playback` oriented; not enough by itself for live low-latency chunk playback. |
 
 Important existing signatures:
 
@@ -200,16 +200,16 @@ Credential storage already exists and should be reused. The live voice channel s
 
 Key files:
 
-| Path | What it contains | Relevance to live voice channel |
-| --- | --- | --- |
-| `assistant/src/security/credential-backend.ts` | Generic credential backend interface. | Base contract used by secure key helpers. |
-| `assistant/src/security/secure-keys.ts` | High-level secure key access, provider-key lookup, masked key lookup, env fallback via provider catalog. | STT/TTS/LLM provider keys should flow through here or existing provider resolvers. |
-| `assistant/src/security/ces-credential-client.ts` | Credential Execution Service HTTP client. | Docker/container credential path. |
-| `assistant/src/security/ces-rpc-credential-backend.ts` | CES-backed credential backend implementation. | Existing backend integration. |
-| `assistant/src/security/encrypted-store.ts` | Local encrypted credential storage. | Local mode credential backend. |
-| `assistant/src/security/credential-key.ts` | Credential key helpers. | Use existing key naming conventions. |
-| `assistant/src/security/secret-patterns.ts` and `assistant/src/security/secret-scanner.ts` | Secret detection and masking rules. | If new integration-specific secrets are added later, update these patterns. |
-| `assistant/src/security/secret-ingress.ts` | Controlled handling of incoming secrets. | Reference for any setup flow that accepts provider keys. |
+| Path                                                                                       | What it contains                                                                                         | Relevance to live voice channel                                                    |
+| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `assistant/src/security/credential-backend.ts`                                             | Generic credential backend interface.                                                                    | Base contract used by secure key helpers.                                          |
+| `assistant/src/security/secure-keys.ts`                                                    | High-level secure key access, provider-key lookup, masked key lookup, env fallback via provider catalog. | STT/TTS/LLM provider keys should flow through here or existing provider resolvers. |
+| `assistant/src/security/ces-credential-client.ts`                                          | Credential Execution Service HTTP client.                                                                | Docker/container credential path.                                                  |
+| `assistant/src/security/ces-rpc-credential-backend.ts`                                     | CES-backed credential backend implementation.                                                            | Existing backend integration.                                                      |
+| `assistant/src/security/encrypted-store.ts`                                                | Local encrypted credential storage.                                                                      | Local mode credential backend.                                                     |
+| `assistant/src/security/credential-key.ts`                                                 | Credential key helpers.                                                                                  | Use existing key naming conventions.                                               |
+| `assistant/src/security/secret-patterns.ts` and `assistant/src/security/secret-scanner.ts` | Secret detection and masking rules.                                                                      | If new integration-specific secrets are added later, update these patterns.        |
+| `assistant/src/security/secret-ingress.ts`                                                 | Controlled handling of incoming secrets.                                                                 | Reference for any setup flow that accepts provider keys.                           |
 
 Important existing signatures:
 
@@ -242,46 +242,46 @@ The assistant docs already document architecture and provider onboarding. They s
 
 Key files:
 
-| Path | What it contains | Relevance to live voice channel |
-| --- | --- | --- |
-| `assistant/ARCHITECTURE.md` | Current service architecture, STT boundaries, TTS provider abstraction, call routing, client/server roles. | Primary architecture reference. Any shipped live voice architecture should eventually be reflected here. |
-| `assistant/docs/stt-provider-onboarding.md` | Required steps for adding STT providers and keeping provider catalogs/client fallbacks in sync. | Confirms live voice should use the existing STT catalog rather than a new provider path. |
-| the Credential Execution Service doc (now at /docs/developer-guide/internals/credential-execution-service) | Credential storage/access architecture. | Reference for provider-key handling and Docker mode. |
-| `assistant/docs/error-handling.md` | Error handling conventions. | Use for live voice user-visible and structured error design. |
-| `plugins/README.md` and `assistant/docs/skills.md` | Plugin and skill docs. | Likely not directly involved in V1. |
-| the Security Architecture doc (now at /docs/developer-guide/internals/security) | Security architecture. | Reference if live voice adds new auth scopes or gateway routes. |
-| the Integrations Architecture doc (now at /docs/developer-guide/internals/integrations) | Integration architecture notes. | Reference if voice channel exposes new integration points. |
-| the Memory Architecture doc (now at /docs/developer-guide/internals/memory) | Memory architecture notes. | Reference if archival changes memory/conversation persistence. |
-| the Scheduling Architecture doc (now at /docs/developer-guide/internals/scheduling) | Scheduling architecture notes. | Not directly involved in V1. |
+| Path                                                                                                       | What it contains                                                                                           | Relevance to live voice channel                                                                          |
+| ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `assistant/ARCHITECTURE.md`                                                                                | Current service architecture, STT boundaries, TTS provider abstraction, call routing, client/server roles. | Primary architecture reference. Any shipped live voice architecture should eventually be reflected here. |
+| `assistant/docs/stt-provider-onboarding.md`                                                                | Required steps for adding STT providers and keeping provider catalogs/client fallbacks in sync.            | Confirms live voice should use the existing STT catalog rather than a new provider path.                 |
+| the Credential Execution Service doc (now at /docs/developer-guide/internals/credential-execution-service) | Credential storage/access architecture.                                                                    | Reference for provider-key handling and Docker mode.                                                     |
+| `assistant/docs/error-handling.md`                                                                         | Error handling conventions.                                                                                | Use for live voice user-visible and structured error design.                                             |
+| `plugins/README.md` and `assistant/docs/skills.md`                                                         | Plugin and skill docs.                                                                                     | Likely not directly involved in V1.                                                                      |
+| the Security Architecture doc (now at /docs/developer-guide/internals/security)                            | Security architecture.                                                                                     | Reference if live voice adds new auth scopes or gateway routes.                                          |
+| the Integrations Architecture doc (now at /docs/developer-guide/internals/integrations)                    | Integration architecture notes.                                                                            | Reference if voice channel exposes new integration points.                                               |
+| the Memory Architecture doc (now at /docs/developer-guide/internals/memory)                                | Memory architecture notes.                                                                                 | Reference if archival changes memory/conversation persistence.                                           |
+| the Scheduling Architecture doc (now at /docs/developer-guide/internals/scheduling)                        | Scheduling architecture notes.                                                                             | Not directly involved in V1.                                                                             |
 
 ### macOS client voice infrastructure
 
 The user-facing local mic and playback pieces live under `clients/macos/` and shared Swift networking code:
 
-| Path | What it contains | Relevance to live voice channel |
-| --- | --- | --- |
-| `clients/macos/vellum-assistant/App/VoiceInputManager.swift` | Existing hotkey/hold-to-talk mic capture, partial transcript callbacks, streaming STT wiring, and recording state. | Strong reuse point for PTT capture behavior. |
-| `clients/macos/vellum-assistant/Features/Voice/AudioEngineController.swift` | `AVAudioEngine` wrapper for mic capture, prewarm, route changes, and tap lifecycle. | Reuse for local PCM capture. |
-| `clients/shared/Network/STTStreamingClient.swift` | Swift WebSocket client for `/v1/stt/stream` with ready/partial/final/error/closed events. | Reuse protocol/event patterns; live voice likely needs a sibling client because it carries TTS audio and turn events too. |
-| `clients/shared/Network/STTClient.swift` | Batch STT client. | Fallback only; not sufficient for sub-300ms partials. |
-| `clients/shared/Network/TTSClient.swift` | Buffered TTS HTTP client. | Existing playback helper path; not sufficient for streaming TTS chunks. |
-| `clients/macos/vellum-assistant/Features/Voice/OpenAIVoiceService.swift` | Existing voice-mode service using service-first STT, Apple fallback, and gateway TTS playback. | Useful reference, but V1 live voice should not depend on OpenAI-specific naming or full-buffer playback. |
-| `clients/macos/vellum-assistant/Features/Voice/VoiceModeManager.swift` | State machine for current chat voice mode. | Reference for local state and UI integration. Live voice likely needs a new manager because its session is phone-call-shaped and long-lived. |
+| Path                                                                        | What it contains                                                                                                   | Relevance to live voice channel                                                                                                              |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `clients/macos/vellum-assistant/App/VoiceInputManager.swift`                | Existing hotkey/hold-to-talk mic capture, partial transcript callbacks, streaming STT wiring, and recording state. | Strong reuse point for PTT capture behavior.                                                                                                 |
+| `clients/macos/vellum-assistant/Features/Voice/AudioEngineController.swift` | `AVAudioEngine` wrapper for mic capture, prewarm, route changes, and tap lifecycle.                                | Reuse for local PCM capture.                                                                                                                 |
+| `clients/shared/Network/STTStreamingClient.swift`                           | Swift WebSocket client for `/v1/stt/stream` with ready/partial/final/error/closed events.                          | Reuse protocol/event patterns; live voice likely needs a sibling client because it carries TTS audio and turn events too.                    |
+| `clients/shared/Network/STTClient.swift`                                    | Batch STT client.                                                                                                  | Fallback only; not sufficient for sub-300ms partials.                                                                                        |
+| `clients/shared/Network/TTSClient.swift`                                    | Buffered TTS HTTP client.                                                                                          | Existing playback helper path; not sufficient for streaming TTS chunks.                                                                      |
+| `clients/macos/vellum-assistant/Features/Voice/OpenAIVoiceService.swift`    | Existing voice-mode service using service-first STT, Apple fallback, and gateway TTS playback.                     | Useful reference, but V1 live voice should not depend on OpenAI-specific naming or full-buffer playback.                                     |
+| `clients/macos/vellum-assistant/Features/Voice/VoiceModeManager.swift`      | State machine for current chat voice mode.                                                                         | Reference for local state and UI integration. Live voice likely needs a new manager because its session is phone-call-shaped and long-lived. |
 
 ## 2. Reuse vs New
 
-| PoC component | Existing coverage | Recommendation |
-| --- | --- | --- |
-| WebSocket transport | Partially covered. Runtime/gateway already proxy `/v1/stt/stream`, and Twilio media streams already manage long-lived audio WebSockets. Neither route carries the complete live voice protocol of mic audio, transcript events, assistant text deltas, TTS chunks, interrupt, metrics, and archive completion. | Add a new gateway-authenticated live voice WebSocket route. Reuse runtime/gateway WebSocket patterns and STT stream session patterns. Do not port FastAPI. |
-| Mic capture | Mostly covered on macOS. `VoiceInputManager` and `AudioEngineController` already implement hotkey/hold-to-talk capture and PCM conversion for streaming STT. | Reuse capture primitives, but add a dedicated live voice client/session manager so existing dictation/chat voice mode does not absorb phone-call-shaped state. |
-| Streaming STT | Covered by provider catalog, resolver, streaming transcriber interface, runtime STT WebSocket, and macOS STT streaming client. | Reuse `resolveStreamingTranscriber()` internally from the live voice assistant session. Require a provider whose catalog entry supports `daemon-streaming` and `conversationStreamingMode: "realtime-ws"` for the latency target. |
-| Inference adapter | Covered by the existing provider abstraction and `startVoiceTurn()` bridge into the agent loop. The PoC direct Anthropic/OpenAI/local-http adapters duplicate this. | Reuse the existing LLM provider stack through the voice turn bridge. Prefer an existing low-latency call-site profile initially; add a dedicated live voice call site only if tuning diverges. A local-http target should be modeled as a normal provider/profile, not a live voice special case. |
-| Voice-mode prompt loader | Not covered as a direct PoC-style file loader, and should not be copied. Existing runtime already assembles user/workspace/system context for conversations. | Do not read identity or user files directly from live voice code. Use the normal conversation pipeline and, if needed, add a small local-live-voice control block analogous to phone-call control rules. |
-| Streaming TTS | Partially covered. TTS provider registry and Fish Audio adapter support streaming capability, but public HTTP routes are buffered/message-playback oriented. | Reuse `services.tts`, provider registry, and Fish Audio adapter. Add a live voice streaming path that calls `TtsProvider.synthesizeStream()` and forwards chunks to macOS. |
-| Audio playback | Partially covered. macOS currently has buffered playback via `TTSClient` and `AVAudioPlayer`; that is not ideal for low-latency streamed chunks. | Add streaming playback on macOS, probably under the live voice feature, using the default output device. Reuse existing audio session/route handling where possible. |
-| Latency metrics | Partially covered by logging/tracing patterns, but no live voice p50/p95 metric object exists. The PoC has a useful turn-level metric model. | Add small live voice metrics types for STT final latency, first LLM delta, first TTS audio, total turn time, and rolling summaries. Keep them local to the live voice module first. |
-| Conversation archival | Partially covered. Conversations and phone-call summary messages exist, but phone finalization archives summaries, not full local audio plus transcript. | Add live voice archival that writes normal conversation messages plus durable local audio artifacts. Reuse message metadata for `userMessageChannel: "vellum"` and `userMessageInterface: "macos"` unless a new channel is proven necessary. |
-| Single-session lock | Partially covered. Phone calls have active call leases and active call lookup, but these are phone-call data model concepts. | Add an in-memory `LiveVoiceSessionManager` single active session lock for V1. Consider a workspace-backed lease only if crash recovery or cross-process ownership becomes required. |
+| PoC component            | Existing coverage                                                                                                                                                                                                                                                                                              | Recommendation                                                                                                                                                                                                                                                                                    |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WebSocket transport      | Partially covered. Runtime/gateway already proxy `/v1/stt/stream`, and Twilio media streams already manage long-lived audio WebSockets. Neither route carries the complete live voice protocol of mic audio, transcript events, assistant text deltas, TTS chunks, interrupt, metrics, and archive completion. | Add a new gateway-authenticated live voice WebSocket route. Reuse runtime/gateway WebSocket patterns and STT stream session patterns. Do not port FastAPI.                                                                                                                                        |
+| Mic capture              | Mostly covered on macOS. `VoiceInputManager` and `AudioEngineController` already implement hotkey/hold-to-talk capture and PCM conversion for streaming STT.                                                                                                                                                   | Reuse capture primitives, but add a dedicated live voice client/session manager so existing dictation/chat voice mode does not absorb phone-call-shaped state.                                                                                                                                    |
+| Streaming STT            | Covered by provider catalog, resolver, streaming transcriber interface, runtime STT WebSocket, and macOS STT streaming client.                                                                                                                                                                                 | Reuse `resolveStreamingTranscriber()` internally from the live voice assistant session. Require a provider whose catalog entry supports `daemon-streaming` and `conversationStreamingMode: "realtime-ws"` for the latency target.                                                                 |
+| Inference adapter        | Covered by the existing provider abstraction and `startVoiceTurn()` bridge into the agent loop. The PoC direct Anthropic/OpenAI/local-http adapters duplicate this.                                                                                                                                            | Reuse the existing LLM provider stack through the voice turn bridge. Prefer an existing low-latency call-site profile initially; add a dedicated live voice call site only if tuning diverges. A local-http target should be modeled as a normal provider/profile, not a live voice special case. |
+| Voice-mode prompt loader | Not covered as a direct PoC-style file loader, and should not be copied. Existing runtime already assembles user/workspace/system context for conversations.                                                                                                                                                   | Do not read identity or user files directly from live voice code. Use the normal conversation pipeline and, if needed, add a small local-live-voice control block analogous to phone-call control rules.                                                                                          |
+| Streaming TTS            | Partially covered. TTS provider registry and Fish Audio adapter support streaming capability, but public HTTP routes are buffered/message-playback oriented.                                                                                                                                                   | Reuse `services.tts`, provider registry, and Fish Audio adapter. Add a live voice streaming path that calls `TtsProvider.synthesizeStream()` and forwards chunks to macOS.                                                                                                                        |
+| Audio playback           | Partially covered. macOS currently has buffered playback via `TTSClient` and `AVAudioPlayer`; that is not ideal for low-latency streamed chunks.                                                                                                                                                               | Add streaming playback on macOS, probably under the live voice feature, using the default output device. Reuse existing audio session/route handling where possible.                                                                                                                              |
+| Latency metrics          | Partially covered by logging/tracing patterns, but no live voice p50/p95 metric object exists. The PoC has a useful turn-level metric model.                                                                                                                                                                   | Add small live voice metrics types for STT final latency, first LLM delta, first TTS audio, total turn time, and rolling summaries. Keep them local to the live voice module first.                                                                                                               |
+| Conversation archival    | Partially covered. Conversations and phone-call summary messages exist, but phone finalization archives summaries, not full local audio plus transcript.                                                                                                                                                       | Add live voice archival that writes normal conversation messages plus durable local audio artifacts. Reuse message metadata for `userMessageChannel: "vellum"` and `userMessageInterface: "macos"` unless a new channel is proven necessary.                                                      |
+| Single-session lock      | Partially covered. Phone calls have active call leases and active call lookup, but these are phone-call data model concepts.                                                                                                                                                                                   | Add an in-memory `LiveVoiceSessionManager` single active session lock for V1. Consider a workspace-backed lease only if crash recovery or cross-process ownership becomes required.                                                                                                               |
 
 ## 3. Proposed Architecture
 
@@ -325,14 +325,14 @@ assistant/src/live-voice/
 
 This keeps the Twilio/phone call path intact while still reusing its lower-level lessons:
 
-| Existing phone path | Live voice V1 difference |
-| --- | --- |
-| Twilio inbound/outbound phone sessions. | Local macOS session initiated by an authenticated app user. |
-| Twilio Media Streams protocol, mu-law frames, stream SID, call SID. | PCM from local mic; no Twilio IDs or telephony codec requirements. |
-| Always-connected phone audio with speech start/end heuristics. | Push-to-talk with explicit press/release boundaries. |
+| Existing phone path                                                       | Live voice V1 difference                                                         |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Twilio inbound/outbound phone sessions.                                   | Local macOS session initiated by an authenticated app user.                      |
+| Twilio Media Streams protocol, mu-law frames, stream SID, call SID.       | PCM from local mic; no Twilio IDs or telephony codec requirements.               |
+| Always-connected phone audio with speech start/end heuristics.            | Push-to-talk with explicit press/release boundaries.                             |
 | Phone-specific call state, DTMF, ringing, pending questions, disclosures. | Local session states: idle, listening, transcribing, thinking, speaking, ending. |
-| Phone channel metadata. | Normal Vellum/macOS conversation metadata. |
-| Audio sent back through Twilio transport. | Audio chunks played through default macOS output. |
+| Phone channel metadata.                                                   | Normal Vellum/macOS conversation metadata.                                       |
+| Audio sent back through Twilio transport.                                 | Audio chunks played through default macOS output.                                |
 
 ### Assistant-side module
 
@@ -453,12 +453,12 @@ Recommended V1 approach:
 
 The current `startVoiceTurn()` is close, but its type and implementation assume phone calls in a few places:
 
-| Current behavior | Live voice need |
-| --- | --- |
-| `callSessionId?: string` and phone-call event sink naming. | `voiceSessionId` or a generic voice turn ID. |
-| Phone-call control prompt. | Local-live-voice control prompt, or no extra prompt if existing context is sufficient. |
-| Phone channel metadata. | `vellum` channel with `macos` interface metadata, unless a new channel is justified. |
-| Voice confirmation/guardian policy tuned for phone. | Confirm local host-computer and identity-boundary behavior with security rules before reuse. |
+| Current behavior                                           | Live voice need                                                                              |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `callSessionId?: string` and phone-call event sink naming. | `voiceSessionId` or a generic voice turn ID.                                                 |
+| Phone-call control prompt.                                 | Local-live-voice control prompt, or no extra prompt if existing context is sufficient.       |
+| Phone channel metadata.                                    | `cadet` channel with `macos` interface metadata, unless a new channel is justified.          |
+| Voice confirmation/guardian policy tuned for phone.        | Confirm local host-computer and identity-boundary behavior with security rules before reuse. |
 
 The bridge should be generalized with the smallest surface needed, not forked into a separate inference adapter.
 

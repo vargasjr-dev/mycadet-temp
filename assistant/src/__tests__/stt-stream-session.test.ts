@@ -359,7 +359,7 @@ describe("SttStreamSession", () => {
     test("managed start failure surfaces its remediation verbatim", async () => {
       const { ws, session } = createSession("vellum");
       const managedMessage =
-        "Managed speech needs a working Vellum platform connection — reconnect with 'assistant platform connect'.";
+        "Managed speech needs a working Cadet platform connection — reconnect with 'assistant platform connect'.";
 
       await session.start(
         async () => new ManagedFailingTranscriber(managedMessage),

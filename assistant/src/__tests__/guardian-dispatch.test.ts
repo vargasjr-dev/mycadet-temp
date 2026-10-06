@@ -8,7 +8,7 @@ import type { NotificationDeliveryResult } from "../notifications/types.js";
 // listActiveBindingsByAssistant) existed in the barrel.
 
 // The pending_question request principal is resolved via the gateway guardian
-// delivery for the vellum channel — the SAME source the Vellum actor uses — so
+// delivery for the cadet channel — the SAME source the Cadet actor uses — so
 // the stamped principal always equals the submitting actor principal. The real
 // contacts DB is seeded in resetTables(); the reader mock below derives the
 // gateway delivery from that DB binding so tests model drift / missing guardian
@@ -122,7 +122,7 @@ function resetTables(): void {
   db.run("DELETE FROM contacts");
   resetGatewayAclStore();
 
-  // Seed the vellum guardian binding (gateway does this at startup in production)
+  // Seed the cadet guardian binding (gateway does this at startup in production)
   createGuardianBinding({
     channel: "vellum",
     guardianExternalUserId: "test-principal-id",
@@ -153,7 +153,7 @@ describe("guardian-dispatch", () => {
     resetTables();
   });
 
-  test("creates a guardian action request and vellum delivery from pipeline results", async () => {
+  test("creates a guardian action request and cadet delivery from pipeline results", async () => {
     const convId = "conv-dispatch-1";
     ensureConversation(convId);
 
@@ -493,7 +493,7 @@ describe("guardian-dispatch", () => {
     const convId = "conv-dispatch-reuse-1";
     ensureConversation(convId);
 
-    // Both dispatches deliver to the same vellum conversation (simulating thread reuse)
+    // Both dispatches deliver to the same cadet conversation (simulating thread reuse)
     const sharedConversationId = "conv-shared-guardian";
 
     const session = createCallSession({

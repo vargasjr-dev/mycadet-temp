@@ -1594,7 +1594,7 @@ describe("LiveVoiceSession STT", () => {
 
   test("the pin gate follows the dialed provider, not the configured one", async () => {
     // A BYOK gemini config without credentials silently dials the managed
-    // vellum transcriber, which DOES honor the pin; the gate must follow
+    // cadet transcriber, which DOES honor the pin; the gate must follow
     // what was dialed, not what was configured.
     const originalRaw = loadRawConfig();
     const rawServices = (originalRaw.services ?? {}) as Record<string, unknown>;

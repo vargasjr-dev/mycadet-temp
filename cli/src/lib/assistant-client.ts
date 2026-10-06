@@ -344,7 +344,7 @@ export class AssistantClient {
     // Reactive auto-refresh on a 401 for the guardian path only. Ephemeral
     // (`--token`) and access-only sessions have no stored refresh credential and
     // just see the original 401; session and platform credentials are managed by
-    // the Cadet platform and are never refreshed here.
+    // the Cadet Cloud and are never refreshed here.
     if (response.status === 401 && this.authMode === "guardian") {
       const stored = loadGuardianToken(this._assistantId);
 

@@ -1,5 +1,5 @@
 /**
- * Tests for the post-import vellum metadata reconciliation helper.
+ * Tests for the post-import cadet metadata reconciliation helper.
  *
  * After every bundle import, `reconcileVellumMetadataFromCes` walks the
  * platform-identity fields the gateway requires and, for each one that

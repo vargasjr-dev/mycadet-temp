@@ -14,7 +14,8 @@ export interface RemoteProcess {
   command: string;
 }
 
-const VELLUM_PROCESS_MARKER = /vellum|qdrant|openclaw/;
+// `cadet` catches the rebranded process names; `vellum` keeps legacy ones visible.
+const VELLUM_PROCESS_MARKER = /cadet|vellum|qdrant|openclaw/;
 
 export function classifyProcess(command: string): string {
   if (/qdrant/.test(command)) return "qdrant";

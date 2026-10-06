@@ -3297,13 +3297,13 @@ describe("companionContextMenuTemplate", () => {
   };
 
   /**
-   * The way back to Vellum leads, since a press on the creature is a call now
+   * The way back to Cadet leads, since a press on the creature is a call now
    * and this is where going back to the app lives.
    */
-  test("opens with the way back to Vellum", () => {
+  test("opens with the way back to Cadet", () => {
     const { items, wasOpened } = build();
     expect(items.slice(0, 2).map((item) => item.label ?? item.type)).toEqual([
-      "Open Vellum",
+      "Open Cadet",
       "separator",
     ]);
     items[0]?.click?.();
@@ -3650,7 +3650,7 @@ describe("the watch summary main relays", () => {
   });
 });
 
-describe("the offer of Vellum's dictation on the surface", () => {
+describe("the offer of Cadet's dictation on the surface", () => {
   beforeEach(() => {
     dispatched.length = 0;
     windowsRaised = 0;

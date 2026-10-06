@@ -54,7 +54,7 @@ const IngressRouteViewSchema = z.object({
   credential: z.string(),
   /**
    * Whether the gateway serves this route right now. Not implied by the
-   * source's state: a `vellum`-signed route is served without approval.
+   * source's state: a `cadet`-signed route is served without approval.
    */
   served: z.boolean(),
   /**

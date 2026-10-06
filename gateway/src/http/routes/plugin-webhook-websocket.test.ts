@@ -203,7 +203,7 @@ describe("upgrade gate", () => {
     expect(upgrades).toHaveLength(1);
   });
 
-  it("still demands the platform signature on an unapproved vellum route", async () => {
+  it("still demands the platform signature on an unapproved cadet route", async () => {
     // Skipping approval did not skip authentication.
     const handle = makeHandler({
       resolve: () =>

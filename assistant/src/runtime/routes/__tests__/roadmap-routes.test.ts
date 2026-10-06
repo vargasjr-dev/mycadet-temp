@@ -131,7 +131,7 @@ describe("which deployment the roadmap calls reach", () => {
       delete process.env.VELLUM_ENVIRONMENT;
       stubFetch({ items: [], total: 0 });
 
-      await expect(list({})).rejects.toThrow("The Vellum roadmap has no");
+      await expect(list({})).rejects.toThrow("The Cadet roadmap has no");
       expect(calls).toHaveLength(0);
     },
   );
@@ -142,7 +142,7 @@ describe("which deployment the roadmap calls reach", () => {
     process.env.VELLUM_ENVIRONMENT = "production";
     stubFetch({ items: [], total: 0 });
 
-    await expect(list({})).rejects.toThrow("The Vellum roadmap has no");
+    await expect(list({})).rejects.toThrow("The Cadet roadmap has no");
     expect(calls).toHaveLength(0);
   });
 
@@ -343,11 +343,11 @@ describe("roadmap writes", () => {
         body: { title: "Dark mode", status: "planned" },
       }),
     ).rejects.toThrow(
-      "An assistant can change only an item's title and description; status is set by Vellum staff.",
+      "An assistant can change only an item's title and description; status is set by Cadet staff.",
     );
     await expect(
       update({ pathParams: { slug: "dark-mode" }, body: { tags: [] } }),
-    ).rejects.toThrow("tags is set by Vellum staff");
+    ).rejects.toThrow("tags is set by Cadet staff");
     expect(calls).toHaveLength(0);
   });
 
@@ -360,7 +360,7 @@ describe("roadmap writes", () => {
         body: { titel: "Dark mode", status: "planned" },
       }),
     ).rejects.toThrow(
-      "An assistant can change only an item's title and description; status is set by Vellum staff; titel is not a roadmap update field.",
+      "An assistant can change only an item's title and description; status is set by Cadet staff; titel is not a roadmap update field.",
     );
     expect(calls).toHaveLength(0);
   });
@@ -486,7 +486,7 @@ describe("upstream failures", () => {
     }) as typeof fetch;
 
     await expect(list({})).rejects.toThrow(
-      "Could not reach the Vellum roadmap service",
+      "Could not reach the Cadet roadmap service",
     );
   });
 });

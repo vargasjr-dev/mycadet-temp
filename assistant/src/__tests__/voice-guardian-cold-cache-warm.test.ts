@@ -3,7 +3,7 @@
  *
  * The sync trust resolver (`resolveActorTrust`) reads the IO-free guardian-
  * delivery cache snapshot (`peekCachedGuardianDelivery`) keyed per channel
- * filter. On a cold process only `vellum` is warmed at daemon startup, so
+ * filter. On a cold process only `cadet` is warmed at daemon startup, so
  * other channel keys stay empty until some async read warms that exact key —
  * a cold snapshot classifies `unknown`, and gateway-side binding writes don't
  * invalidate the daemon cache, so only `getGuardianDeliveryFresh` bypasses a
@@ -119,7 +119,7 @@ describe("guardian-delivery cache cold→warm transition for sync trust", () => 
   });
 
   test("startup vellum-only warm leaves the phone key cold", async () => {
-    // Daemon startup warms only `vellum`; that must not populate the `phone` key.
+    // Daemon startup warms only `cadet`; that must not populate the `phone` key.
     await getGuardianDelivery({ channelTypes: ["vellum"] });
     expect(
       peekCachedGuardianDelivery({ channelTypes: ["phone"] }),

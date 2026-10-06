@@ -37,7 +37,7 @@ mock.module("electron", () => ({
     on: () => undefined,
     off: () => undefined,
     getPath: () => "/tmp",
-    getName: () => "Vellum",
+    getName: () => "Cadet",
     getVersion: () => "0.0.0-test",
     get isPackaged() {
       return appState.isPackaged;

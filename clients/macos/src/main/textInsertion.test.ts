@@ -55,7 +55,8 @@ const createHarness = ({
   onPostShortcut?: () => void;
   runAppleScript?: () => Promise<unknown>;
 } = {}): Harness => {
-  let clipboardSnapshot = initialClipboardSnapshot ?? textSnapshot(initialClipboard);
+  let clipboardSnapshot =
+    initialClipboardSnapshot ?? textSnapshot(initialClipboard);
   let clipboardText = snapshotText(clipboardSnapshot);
   const timers: Array<() => void> = [];
   const writes: string[] = [];
@@ -70,8 +71,7 @@ const createHarness = ({
   return {
     deps: {
       getFocusedWindow: () => (focused ? ({} as never) : null),
-      readFrontAppFocus: () =>
-        Promise.resolve({ takesText, helperAnswered }),
+      readFrontAppFocus: () => Promise.resolve({ takesText, helperAnswered }),
       readClipboardSnapshot: () => clipboardSnapshot,
       restoreClipboardSnapshot: (snapshot: ClipboardSnapshot) => {
         clipboardSnapshot = snapshot;
@@ -110,7 +110,7 @@ const createHarness = ({
 };
 
 describe("typeIntoFrontApp", () => {
-  test("skips paste when a Vellum window is focused", async () => {
+  test("skips paste when a Cadet window is focused", async () => {
     const harness = createHarness({ focused: true });
 
     await expect(
@@ -342,7 +342,7 @@ describe("undoInFrontAppWithDeps", () => {
     expect(harness.runAppleScript).not.toHaveBeenCalled();
   });
 
-  test("does nothing while a Vellum window is in front", async () => {
+  test("does nothing while a Cadet window is in front", async () => {
     const harness = createHarness({ focused: true });
     const result = await undoInFrontAppWithDeps(harness.deps);
 

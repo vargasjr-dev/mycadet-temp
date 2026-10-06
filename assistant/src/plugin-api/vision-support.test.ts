@@ -247,7 +247,7 @@ describe("doesSupportVision with a BYO default provider", () => {
 
   test("without a default provider, a default profile judges the managed column", () => {
     // Null-reduction: no defaultProvider resolves cost-optimized through the
-    // vellum column (deepseek-v4p1-flash, vision-capable).
+    // cadet column (deepseek-v4p1-flash, vision-capable).
     setMockConfig({});
     expect(doesSupportVision(profile("cost-optimized"))).toBe(true);
   });

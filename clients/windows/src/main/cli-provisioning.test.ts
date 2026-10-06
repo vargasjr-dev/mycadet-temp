@@ -33,7 +33,7 @@ import {
 const tempDirs: string[] = [];
 
 const makeTempDir = (): string => {
-  const dir = mkdtempSync(path.join(tmpdir(), "Vellum Example User 用户 "));
+  const dir = mkdtempSync(path.join(tmpdir(), "Cadet Example User 用户 "));
   tempDirs.push(dir);
   return dir;
 };
@@ -251,7 +251,7 @@ test("isolates non-production launchers from the production PATH entry", () => {
   const staging = resolveCliLauncherPaths(localAppData, "staging");
   const development = resolveCliLauncherPaths(localAppData, "development");
 
-  expect(production.binDir).toBe(path.join(localAppData, "Vellum", "bin"));
+  expect(production.binDir).toBe(path.join(localAppData, "Cadet", "bin"));
   expect(staging.binDir).toBe(path.join(localAppData, "Vellum-staging", "bin"));
   expect(development.binDir).not.toBe(staging.binDir);
   expect(development.binDir).not.toBe(production.binDir);
@@ -377,8 +377,8 @@ test("preserves a launcher owned by another installed environment", () => {
   const paths = resolveCliLauncherPaths(path.join(root, "Local App Data"));
   const source = writeRuntime(path.join(root, "runtime"), "1.0.0");
   const userRegistry = registry();
-  const productionResources = path.join(root, "Vellum", "resources");
-  const stagingResources = path.join(root, "Vellum Staging", "resources");
+  const productionResources = path.join(root, "Cadet", "resources");
+  const stagingResources = path.join(root, "Cadet Staging", "resources");
 
   installCliLauncher(source, "1.0.0", paths, userRegistry.run, {
     ownerId: stagingResources,
@@ -401,7 +401,7 @@ test("removes a launcher with legacy ownership metadata", () => {
   const userRegistry = registry(paths.binDir);
   const legacyBun = path.join(paths.binDir, "bun.exe");
   mkdirSync(paths.binDir, { recursive: true });
-  writeFileSync(paths.executable, "legacy vellum", "utf8");
+  writeFileSync(paths.executable, "legacy cadet", "utf8");
   writeFileSync(legacyBun, "legacy bun", "utf8");
   writeFileSync(
     paths.ownership,
@@ -572,7 +572,7 @@ test("restores the last launcher when PATH registration fails", () => {
   expect(readLauncherSource(paths.ownership)).toBe(first);
   expect(getCliLauncherState(paths, first)).toBe("installed");
   const malformed: RegistryRunner = () => "Path REG_EXPAND_SZ";
-  expect(() => ensureUserPath("C:\\Vellum", malformed)).toThrow(
+  expect(() => ensureUserPath("C:\\Cadet", malformed)).toThrow(
     "Unable to read the Windows user PATH",
   );
 });

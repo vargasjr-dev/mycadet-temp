@@ -4,7 +4,7 @@
  * default provider's name.
  *
  * On platform-hosted installs the default transport rides the managed
- * (platform-billed) `vellum` connection while presenting the upstream
+ * (platform-billed) `cadet` connection while presenting the upstream
  * provider's name (e.g. "anthropic"). A BYOK profile `{provider:
  * "anthropic"}` with no explicit `provider_connection` must route through
  * the user's own connection when one exists — reusing the default on a bare

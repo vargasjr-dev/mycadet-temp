@@ -11,8 +11,8 @@ const msbuildPlatform = targetArch === "arm64" ? "ARM64" : "x64";
 
 const productName =
   env === "production"
-    ? "Vellum"
-    : `Vellum ${env.charAt(0).toUpperCase() + env.slice(1)}`;
+    ? "Cadet"
+    : `Cadet ${env.charAt(0).toUpperCase() + env.slice(1)}`;
 
 const appId =
   env === "production"
@@ -203,14 +203,14 @@ module.exports = {
   },
   protocols: [
     {
-      name: "Vellum Deep Links",
+      name: "Cadet Deep Links",
       schemes,
     },
   ],
   fileAssociations: [
     {
       ext: "vellum",
-      name: "Vellum Bundle",
+      name: "Cadet Bundle",
     },
   ],
   beforePack: buildElectronEntrypoints,

@@ -11,7 +11,7 @@
  *      confirm the reported symptom (`trust_class: unknown`), then
  *   2. the boot backfill `ensureVellumGuardianBinding({ recoverFromActorTokens })`
  *      that runs post-assistant-ready, then
- *   3. `resolveTrustVerdict` AGAIN, to confirm a new vellum turn now classifies
+ *   3. `resolveTrustVerdict` AGAIN, to confirm a new cadet turn now classifies
  *      the guardian and carries a real canonical identity.
  *
  * Nothing here is stubbed for the classifier or the recovery — both read the
@@ -94,7 +94,7 @@ afterEach(() => {
 });
 
 describe("LUM-2783 end-to-end: broken state → boot recovery → trust resolves guardian", () => {
-  test("empty contacts + active token: a new vellum turn resolves guardian, not unknown", async () => {
+  test("empty contacts + active token: a new cadet turn resolves guardian, not unknown", async () => {
     // The broken state: no contacts, surviving active actor token.
     seedActiveActorToken(PRINCIPAL);
 

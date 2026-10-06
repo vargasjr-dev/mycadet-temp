@@ -2393,12 +2393,12 @@ describe("outbound Telegram verification", () => {
     expect(msg).toContain("(resent)");
   });
 
-  test("telegram template includes Vellum assistant prefix", async () => {
+  test("telegram template includes Cadet assistant prefix", async () => {
     const msg = composeVerificationText(
       GUARDIAN_VERIFY_TEMPLATE_KEYS.TELEGRAM_CHALLENGE_REQUEST,
       { code: "999999", expiresInMinutes: 10, assistantName: "MyBot" },
     );
-    expect(msg).toContain("Vellum assistant");
+    expect(msg).toContain("Cadet assistant");
     expect(msg).not.toContain("999999");
   });
 

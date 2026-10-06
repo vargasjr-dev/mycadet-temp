@@ -257,7 +257,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
     const preDecision = {
       shouldNotify: true,
       selectedChannels: ["vellum"],
-      reasoningSummary: "LLM selected vellum only",
+      reasoningSummary: "LLM selected cadet only",
       renderedCopy: {
         vellum: { title: "Reminder", body: "Take out trash" },
       },
@@ -270,7 +270,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
     const enforcedDecision = {
       ...preDecision,
       selectedChannels: ["vellum", "telegram"],
-      reasoningSummary: `${preDecision.reasoningSummary} [routing_intent=all_channels enforced: vellum, telegram]`,
+      reasoningSummary: `${preDecision.reasoningSummary} [routing_intent=all_channels enforced: cadet, telegram]`,
     };
 
     evaluateSignalMock.mockResolvedValue(preDecision);
@@ -294,7 +294,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
     expect(updateDecisionMock).toHaveBeenCalledTimes(1);
     expect(updateDecisionMock).toHaveBeenCalledWith("dec-1", {
       selectedChannels: ["vellum", "telegram"],
-      reasoningSummary: `${preDecision.reasoningSummary} [routing_intent=all_channels enforced: vellum, telegram]`,
+      reasoningSummary: `${preDecision.reasoningSummary} [routing_intent=all_channels enforced: cadet, telegram]`,
       validationResults: {
         dedupeKey: "dedupe-rem-1",
         channelCount: 2,
@@ -432,8 +432,8 @@ describe("emitNotificationSignal source-active pre-gate", () => {
   });
 });
 
-describe("access-request vellum floor", () => {
-  test("rescues a suppressed access-request decision onto the vellum channel", async () => {
+describe("access-request cadet floor", () => {
+  test("rescues a suppressed access-request decision onto the cadet channel", async () => {
     evaluateSignalMock.mockResolvedValue({
       shouldNotify: false,
       selectedChannels: [],
@@ -486,7 +486,7 @@ describe("access-request vellum floor", () => {
     expect(dispatched.shouldNotify).toBe(true);
     expect(dispatched.selectedChannels).toContain("vellum");
     expect(dispatched.reasoningSummary).toContain(
-      "vellum forced: decisionable access request",
+      "cadet forced: decisionable access request",
     );
   });
 
@@ -552,11 +552,11 @@ describe("access-request vellum floor", () => {
     expect(dispatched.selectedChannels).toContain("vellum");
   });
 
-  test("re-adds vellum when single_channel routing enforcement strips it", async () => {
+  test("re-adds cadet when single_channel routing enforcement strips it", async () => {
     evaluateSignalMock.mockResolvedValue({
       shouldNotify: true,
       selectedChannels: ["vellum", "telegram"],
-      reasoningSummary: "LLM selected vellum + telegram",
+      reasoningSummary: "LLM selected cadet + telegram",
       renderedCopy: {},
       dedupeKey: "dedupe-ar-2",
       confidence: 0.9,
@@ -648,7 +648,7 @@ describe("access-request vellum floor", () => {
       reasoningSummary: string;
     };
     expect(dispatched.shouldNotify).toBe(false);
-    expect(dispatched.reasoningSummary).not.toContain("vellum forced");
+    expect(dispatched.reasoningSummary).not.toContain("cadet forced");
   });
 });
 
@@ -682,7 +682,7 @@ describe("high/critical urgency channel force", () => {
     });
   }
 
-  test("forces vellum and platform onto a high-urgency decision missing both", async () => {
+  test("forces cadet and platform onto a high-urgency decision missing both", async () => {
     evaluateSignalMock.mockResolvedValue(makeDecision({}));
 
     const result = await emitWithUrgency("high");
@@ -696,7 +696,7 @@ describe("high/critical urgency channel force", () => {
     expect(dispatched.selectedChannels).toContain("platform");
     expect(dispatched.selectedChannels).toContain("telegram");
     expect(dispatched.reasoningSummary).toContain(
-      "(vellum, platform forced: high urgency)",
+      "(cadet, platform forced: high urgency)",
     );
   });
 
@@ -712,7 +712,7 @@ describe("high/critical urgency channel force", () => {
     expect(updateDecisionMock).toHaveBeenCalledWith("dec-urg-1", {
       selectedChannels: ["vellum", "telegram", "platform"],
       reasoningSummary:
-        "LLM selected telegram only (vellum, platform forced: high urgency)",
+        "LLM selected telegram only (cadet, platform forced: high urgency)",
       validationResults: {
         dedupeKey: "dedupe-urg-1",
         channelCount: 3,
@@ -827,7 +827,7 @@ describe("high/critical urgency channel force", () => {
     expect(dispatched.selectedChannels).toEqual(["telegram"]);
   });
 
-  test("forces only vellum when the platform client is not configured", async () => {
+  test("forces only cadet when the platform client is not configured", async () => {
     isPlatformClientConfiguredMock.mockResolvedValue(false);
     evaluateSignalMock.mockResolvedValue(makeDecision({}));
 
@@ -839,13 +839,13 @@ describe("high/critical urgency channel force", () => {
     };
     expect(dispatched.selectedChannels).toEqual(["vellum", "telegram"]);
     expect(dispatched.reasoningSummary).toContain(
-      "(vellum forced: high urgency)",
+      "(cadet forced: high urgency)",
     );
   });
 
   // Real single_channel enforcement caps to the source channel when it is
   // connected, else to the FIRST selected channel. The force-add prepends
-  // vellum precisely so that fallback keeps the in-app banner; these tests
+  // cadet precisely so that fallback keeps the in-app banner; these tests
   // run the genuine enforcement to pin the interplay.
   describe("interplay with real single_channel enforcement", () => {
     beforeEach(() => {
@@ -872,7 +872,7 @@ describe("high/critical urgency channel force", () => {
       });
     }
 
-    test("vellum survives the cap when the decision selected only vellum", async () => {
+    test("cadet survives the cap when the decision selected only cadet", async () => {
       evaluateSignalMock.mockResolvedValue(
         makeDecision({ selectedChannels: ["vellum"] }),
       );
@@ -887,7 +887,7 @@ describe("high/critical urgency channel force", () => {
       expect(dispatched.selectedChannels).toEqual(["vellum"]);
     });
 
-    test("the cap picks the prepended vellum when the decision selected another channel", async () => {
+    test("the cap picks the prepended cadet when the decision selected another channel", async () => {
       evaluateSignalMock.mockResolvedValue(
         makeDecision({ selectedChannels: ["telegram"] }),
       );
@@ -919,7 +919,7 @@ describe("exclusive channelAllowlist policy", () => {
     };
   }
 
-  test("skips urgent vellum and platform force", async () => {
+  test("skips urgent cadet and platform force", async () => {
     evaluateSignalMock.mockResolvedValue(
       makeDecision({ selectedChannels: ["vellum"] }),
     );
@@ -976,10 +976,10 @@ describe("exclusive channelAllowlist policy", () => {
     };
     expect(dispatched.selectedChannels).toEqual(["vellum"]);
     expect(dispatched.shouldNotify).toBe(true);
-    expect(dispatched.reasoningSummary).toContain("channelAllowlist: vellum");
+    expect(dispatched.reasoningSummary).toContain("channelAllowlist: cadet");
   });
 
-  test("access-request floor still adds vellum when the allowlist omitted it", async () => {
+  test("access-request floor still adds cadet when the allowlist omitted it", async () => {
     evaluateSignalMock.mockResolvedValue(
       makeDecision({ shouldNotify: false, selectedChannels: [] }),
     );
@@ -1009,7 +1009,7 @@ describe("exclusive channelAllowlist policy", () => {
     expect(dispatched.shouldNotify).toBe(true);
     expect(dispatched.selectedChannels).toContain("vellum");
     expect(dispatched.reasoningSummary).toContain(
-      "vellum forced: decisionable access request",
+      "cadet forced: decisionable access request",
     );
   });
 });
@@ -1032,7 +1032,7 @@ describe("classifyNotificationReceipt", () => {
     ).toBe("gateway_accepted");
   });
 
-  test("does not claim client_os_posted from a vellum sent row", () => {
+  test("does not claim client_os_posted from a cadet sent row", () => {
     expect(
       classifyNotificationReceipt([
         { channel: "vellum", destination: "vellum", status: "sent" },

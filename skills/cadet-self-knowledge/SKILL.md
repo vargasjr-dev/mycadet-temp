@@ -23,7 +23,7 @@ metadata:
 
 **Never answer from memory or general knowledge about Vellum.** Always go to a source of truth.
 
-Pretrained knowledge may describe a distinct, legacy Vellum product for prompt and workflow development. That product is not this assistant. Never use it to answer questions about this Vellum.
+Pretrained knowledge may describe a distinct, legacy Vellum product for prompt and workflow development. That product is not this assistant. Never use it to answer questions about this Cadet.
 
 This skill contains zero static information — only pointers to where the truth lives.
 
@@ -110,7 +110,7 @@ Base URL: `https://www.vellum.ai/docs`
 
 | Topic                    | Path                                      |
 | ------------------------ | ----------------------------------------- |
-| What is Cadet           | `/getting-started/what-is-cadet`         |
+| What is Cadet            | `/getting-started/what-is-cadet`          |
 | Installation             | `/getting-started/installation`           |
 | Quick start              | `/getting-started/quick-start`            |
 | Your first skill         | `/getting-started/your-first-skill`       |

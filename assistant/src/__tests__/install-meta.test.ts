@@ -257,7 +257,7 @@ describe("readInstallMeta", () => {
       expect(result!.installedBy).toBeUndefined();
     });
 
-    test("infers vellum origin from version.json with version but no origin", () => {
+    test("infers cadet origin from version.json with version but no origin", () => {
       const dir = makeTempDir();
       writeFileSync(
         join(dir, "version.json"),

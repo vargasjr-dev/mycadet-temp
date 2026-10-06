@@ -128,7 +128,7 @@ function resetState(): void {
   db.run("DELETE FROM contact_channels");
   db.run("DELETE FROM contacts");
   gatewayGuardians = [];
-  // Seed the vellum guardian binding (gateway does this at startup in
+  // Seed the cadet guardian binding (gateway does this at startup in
   // production). The gateway list is the source of truth for guardian
   // resolution; the DB write mirrors it for any local INFO reads.
   seedGatewayGuardian({

@@ -1,6 +1,6 @@
 # Web App — Style Guide
 
-Coding style, naming conventions, and formatting rules for the Vellum
+Coding style, naming conventions, and formatting rules for the Cadet
 web app. For architectural decisions and patterns see
 [`CONVENTIONS.md`](./CONVENTIONS.md).
 

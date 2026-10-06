@@ -54,7 +54,9 @@ export class TeleportError extends Error {
 /** The lockfile `cloud` value reported for each hosting kind. */
 const LOCAL_CLOUD = "local";
 const DOCKER_CLOUD = "docker";
-const MANAGED_CLOUD = "vellum";
+// `cloud` is the canonical managed spelling, `cadet` the brand spelling, and
+// `vellum` the legacy lockfile value; all three classify as managed.
+const MANAGED_CLOUDS = ["cloud", "cadet", "vellum"];
 
 /** Classify an assistant's hosting from its lockfile `cloud` string. */
 export function classifyHosting(cloud: string | undefined): AssistantHosting {
@@ -63,9 +65,10 @@ export function classifyHosting(cloud: string | undefined): AssistantHosting {
       return "local";
     case DOCKER_CLOUD:
       return "docker";
-    case MANAGED_CLOUD:
-      return "managed";
     default:
+      if (MANAGED_CLOUDS.includes((cloud ?? "").toLowerCase())) {
+        return "managed";
+      }
       return "other";
   }
 }

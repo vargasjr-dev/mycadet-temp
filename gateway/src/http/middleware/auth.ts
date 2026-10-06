@@ -229,7 +229,7 @@ export function createAuthMiddleware(
   }
 
   /**
-   * Assert that the caller is the assistant's bound vellum guardian.
+   * Assert that the caller is the assistant's bound cadet guardian.
    *
    * Two auth modes:
    *
@@ -472,7 +472,7 @@ export function createAuthMiddleware(
 
   /**
    * Default path — validate JWT, require actor principal, assert it matches
-   * the bound vellum guardian.
+   * the bound cadet guardian.
    */
   async function requireEdgeGuardianAuthByActorPrincipal(
     req: Request,

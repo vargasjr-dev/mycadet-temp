@@ -639,7 +639,7 @@ describe("stripVellumLinks", () => {
     expect(stripVellumLinks(text)).toBe("a.png and b.pdf");
   });
 
-  test("preserves text with no vellum links", () => {
+  test("preserves text with no cadet links", () => {
     const text = "Plain text with [link](https://example.com)";
     expect(stripVellumLinks(text)).toBe(text);
   });
@@ -679,7 +679,7 @@ describe("incompleteVellumLinkSuffixLength", () => {
     expect(incompleteVellumLinkSuffixLength("all done, no links here")).toBe(0);
   });
 
-  test("returns 0 for a completed vellum link", () => {
+  test("returns 0 for a completed cadet link", () => {
     expect(
       incompleteVellumLinkSuffixLength(
         "see [report.pdf](vellum://workspace/scratch/report.pdf)",
@@ -704,7 +704,7 @@ describe("incompleteVellumLinkSuffixLength", () => {
     ["open paren", "grab [a.pdf]("],
     ["closed label", "grab [a.pdf]"],
     ["open label", "grab [a.pd"],
-  ])("withholds an in-progress vellum link (%s)", (_name, text) => {
+  ])("withholds an in-progress cadet link (%s)", (_name, text) => {
     expect(suffix(text).startsWith("[")).toBe(true);
     expect(
       stripVellumLinks(
@@ -719,7 +719,7 @@ describe("incompleteVellumLinkSuffixLength", () => {
     expect(suffix(text)).toBe("[next](vellum://workspace/scratch/n");
   });
 
-  test("stops withholding once the URL diverges from the vellum scheme", () => {
+  test("stops withholding once the URL diverges from the cadet scheme", () => {
     expect(
       incompleteVellumLinkSuffixLength("see [site](https://example.com"),
     ).toBe(0);
@@ -757,7 +757,7 @@ describe("incompleteVellumLinkSuffixLength", () => {
 // cleanAssistantContent — vellum:// links
 // ---------------------------------------------------------------------------
 
-describe("cleanAssistantContent — vellum links", () => {
+describe("cleanAssistantContent — cadet links", () => {
   test("extracts vellum:// links as directives without stripping them", () => {
     const content = [
       {
@@ -776,7 +776,7 @@ describe("cleanAssistantContent — vellum links", () => {
     );
   });
 
-  test("handles both vellum links and legacy tags in the same text", () => {
+  test("handles both cadet links and legacy tags in the same text", () => {
     const content = [
       {
         type: "text",
@@ -786,7 +786,7 @@ describe("cleanAssistantContent — vellum links", () => {
     const result = cleanAssistantContent(content);
 
     expect(result.directives).toHaveLength(2);
-    // vellum link is preserved, legacy tag is stripped
+    // cadet link is preserved, legacy tag is stripped
     expect((result.cleanedContent[0] as { text: string }).text).toContain(
       "[report.pdf](vellum://workspace/scratch/report.pdf)",
     );

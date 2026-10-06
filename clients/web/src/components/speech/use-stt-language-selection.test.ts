@@ -135,7 +135,7 @@ describe("useSttLanguageSelection", () => {
     daemonConfigData = { services: { stt: { provider: "vellum" } } };
     providerCatalogData = {
       providers: [
-        { id: "vellum", displayName: "Cadet", languageSelection: "manual" },
+        { id: "cadet", displayName: "Cadet", languageSelection: "manual" },
       ],
     };
 
@@ -154,7 +154,7 @@ describe("useSttLanguageSelection", () => {
     };
     providerCatalogData = {
       providers: [
-        { id: "vellum", displayName: "Cadet", languageSelection: "manual" },
+        { id: "cadet", displayName: "Cadet", languageSelection: "manual" },
       ],
     };
 
@@ -184,7 +184,7 @@ describe("useSttLanguageSelection", () => {
     daemonConfigData = { services: { stt: { provider: "vellum" } } };
     providerCatalogData = {
       providers: [
-        { id: "vellum", displayName: "Cadet", languageSelection: "manual" },
+        { id: "cadet", displayName: "Cadet", languageSelection: "manual" },
       ],
     };
 
@@ -204,7 +204,7 @@ describe("useSttLanguageSelection", () => {
     daemonConfigData = { services: { stt: { provider: "vellum" } } };
     providerCatalogData = {
       providers: [
-        { id: "vellum", displayName: "Cadet", languageSelection: "manual" },
+        { id: "cadet", displayName: "Cadet", languageSelection: "manual" },
       ],
     };
     deferPatches = true;
@@ -240,7 +240,7 @@ describe("useSttLanguageSelection", () => {
     };
     providerCatalogData = {
       providers: [
-        { id: "vellum", displayName: "Cadet", languageSelection: "manual" },
+        { id: "cadet", displayName: "Cadet", languageSelection: "manual" },
       ],
     };
 

@@ -38,12 +38,15 @@ export function AgenticPaymentsContent() {
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
             Your assistant can buy things for you. It does this through{" "}
-            <Link href="https://stripe.com/payments/link" className={LINK_CLASS}>
+            <Link
+              href="https://stripe.com/payments/link"
+              className={LINK_CLASS}
+            >
               Link
             </Link>
-            , Stripe&apos;s wallet, rather than with a card number you paste into
-            chat. You connect your Link account once. When a task calls for a
-            purchase, your assistant sends you a spend request naming the
+            , Stripe&apos;s wallet, rather than with a card number you paste
+            into chat. You connect your Link account once. When a task calls for
+            a purchase, your assistant sends you a spend request naming the
             merchant, the amount, and what the money is for. You approve it in
             the Link app, Link issues a single-use virtual card for that amount,
             and your assistant completes the checkout. Your saved cards stay in
@@ -52,9 +55,9 @@ export function AgenticPaymentsContent() {
           <p className="mb-0 text-stone-600 dark:text-stone-400">
             This is what lets your assistant finish a task end to end: order
             supplies, renew a subscription, pay for an API call, or book
-            something, without stopping to hand a checkout page back to you.
-            You set the amount, and you approve every purchase. Link describes
-            the agent side of this on its{" "}
+            something, without stopping to hand a checkout page back to you. You
+            set the amount, and you approve every purchase. Link describes the
+            agent side of this on its{" "}
             <Link href="https://link.com/agents" className={LINK_CLASS}>
               Link for agents
             </Link>{" "}
@@ -95,9 +98,9 @@ export function AgenticPaymentsContent() {
             </li>
             <li>
               <strong>Your assistant checks out.</strong> It fills the card into
-              the merchant&apos;s checkout with its browser, or sends the token to
-              the merchant&apos;s payment endpoint, then reports back with the
-              confirmation.
+              the merchant&apos;s checkout with its browser, or sends the token
+              to the merchant&apos;s payment endpoint, then reports back with
+              the confirmation.
             </li>
             <li>
               <strong>The purchase lands in your Link history</strong>, labeled
@@ -162,10 +165,10 @@ export function AgenticPaymentsContent() {
           </p>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
             The connection runs through Cadet&apos;s managed OAuth, so it needs
-            an assistant that is connected to the Cadet platform. If yours is
-            not, your assistant falls back to Link&apos;s own device login: it
-            shows you a link and a short phrase, and you approve the connection
-            in the Link app. Purchases work the same way either way.
+            an assistant that is connected to the Cadet Cloud. If yours is not,
+            your assistant falls back to Link&apos;s own device login: it shows
+            you a link and a short phrase, and you approve the connection in the
+            Link app. Purchases work the same way either way.
           </p>
         </section>
 
@@ -179,8 +182,8 @@ export function AgenticPaymentsContent() {
           <ul className="mb-4 list-disc space-y-2 pl-6 text-stone-600 dark:text-stone-400 marker:text-stone-400 dark:marker:text-stone-500">
             <li>
               <strong>Approval before every purchase.</strong> No card or token
-              is issued until you approve that specific request in the Link
-              app. Decline it and nothing happens.
+              is issued until you approve that specific request in the Link app.
+              Decline it and nothing happens.
             </li>
             <li>
               <strong>An amount you set.</strong> Each credential is issued for
@@ -202,9 +205,9 @@ export function AgenticPaymentsContent() {
               token.
             </li>
             <li>
-              <strong>A description you can read.</strong> Every request
-              carries a description of what is being bought and why. If it does
-              not match what you asked for, decline it.
+              <strong>A description you can read.</strong> Every request carries
+              a description of what is being bought and why. If it does not
+              match what you asked for, decline it.
             </li>
             <li>
               <strong>Real money only when you say so.</strong> Your assistant
@@ -222,8 +225,8 @@ export function AgenticPaymentsContent() {
             </li>
           </ul>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
-            For how connections are stored and what the assistant can and
-            cannot reach, see{" "}
+            For how connections are stored and what the assistant can and cannot
+            reach, see{" "}
             <Link
               href="/docs/key-concepts/oauth-integrations"
               className={LINK_CLASS}
@@ -286,8 +289,8 @@ export function AgenticPaymentsContent() {
                     Shared payment token
                   </td>
                   <td className="py-3 pr-4">
-                    Merchants and APIs that accept agent payments directly
-                    (HTTP 402 and the Machine Payments Protocol)
+                    Merchants and APIs that accept agent payments directly (HTTP
+                    402 and the Machine Payments Protocol)
                   </td>
                   <td className="py-3">
                     Sends the token with the request. No checkout form is
@@ -373,8 +376,9 @@ export function AgenticPaymentsContent() {
               complete that one yourself.
             </li>
             <li>
-              <strong>Your assistant handed you a checkout link instead of
-              paying:</strong>{" "}
+              <strong>
+                Your assistant handed you a checkout link instead of paying:
+              </strong>{" "}
               Link is not connected. Connect it and ask again.
             </li>
             <li>

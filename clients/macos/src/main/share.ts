@@ -26,7 +26,7 @@ import { handle } from "./ipc";
  * it out from under an in-flight share. Instead we reclaim only *stale* temp
  * dirs — ones old enough (see `SHARE_TMP_STALE_MS`) that no transfer could
  * still be using them — sweeping at startup and before each new share. Bounding
- * to stale dirs also keeps the sweep safe when a second Vellum build is sharing
+ * to stale dirs also keeps the sweep safe when a second Cadet build is sharing
  * concurrently (it won't touch that build's fresh temp dir), and the OS
  * reclaims `$TMPDIR` regardless.
  */
@@ -36,7 +36,7 @@ const SHARE_TMP_PREFIX = "vellum-share-";
 // A share temp dir older than this can't belong to an in-flight share — even a
 // large AirDrop over a slow link finishes well within an hour — so it's safe to
 // reclaim. Anything newer might still be open by the selected service (or by a
-// second Vellum build sharing at the same time), so it's left alone.
+// second Cadet build sharing at the same time), so it's left alone.
 const SHARE_TMP_STALE_MS = 60 * 60 * 1000;
 
 const ShareFileArgs = z.tuple([z.instanceof(Uint8Array), z.string().min(1)]);

@@ -7,7 +7,7 @@ export const DESKTOP_APP_DOWNLOAD_URL = "https://www.vellum.ai/downloads";
 export const CHROME_WEB_STORE_INSTALL_URL =
   "https://chromewebstore.google.com/detail/vellum-assistant-browser/hphbdmpffeigpcdjkckleobjmhhokpne";
 
-export const DESKTOP_APP_INSTALL_HINT = `Download the Vellum desktop app: ${DESKTOP_APP_DOWNLOAD_URL}. Open it, then retry.`;
+export const DESKTOP_APP_INSTALL_HINT = `Download the Cadet desktop app: ${DESKTOP_APP_DOWNLOAD_URL}. Open it, then retry.`;
 
 export type DesktopAppCapability = "files" | "screen" | "shell" | "apps";
 
@@ -21,7 +21,7 @@ const DESKTOP_APP_CAPABILITY_ACTION: Record<DesktopAppCapability, string> = {
 export function formatDesktopAppRequired(
   capability: DesktopAppCapability,
 ): string {
-  return `Error: The Vellum desktop app is needed to ${DESKTOP_APP_CAPABILITY_ACTION[capability]}. ${DESKTOP_APP_INSTALL_HINT}`;
+  return `Error: The Cadet desktop app is needed to ${DESKTOP_APP_CAPABILITY_ACTION[capability]}. ${DESKTOP_APP_INSTALL_HINT}`;
 }
 
 /** User-facing install step for status userActions and command-failure hints. */

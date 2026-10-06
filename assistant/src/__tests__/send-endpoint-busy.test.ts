@@ -68,7 +68,7 @@ mock.module("../runtime/local-actor-identity.js", () => ({
 // Mock the IPC transport rather than local-principal-trust.js so the sibling
 // resolver unit test (which mocks guardian-delivery-reader, not ipcCall) isn't
 // shadowed when both files run in one Bun process. resolve_guardian_delivery
-// returns a single active vellum guardian whose principal matches the
+// returns a single active cadet guardian whose principal matches the
 // dev-bypass-resolved id; any other method throws so unexpected IPC surfaces.
 mock.module("../ipc/gateway-client.js", () => ({
   ipcCall: async (method: string) => {
@@ -1021,7 +1021,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
     await stopServer();
   });
 
-  test("accepts message when conversationKey is omitted (vellum channel mints fresh)", async () => {
+  test("accepts message when conversationKey is omitted (cadet channel mints fresh)", async () => {
     await startServer(() => makeCompletingConversation());
 
     const res = await fetch(messagesUrl(), {
@@ -1041,7 +1041,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
     expect(body.accepted).toBe(true);
     expect(body.conversationId).toBeTruthy();
 
-    // The vellum channel never falls through to the shared
+    // The cadet channel never falls through to the shared
     // `default:vellum:<interface>` thread: each empty-handed send mints
     // a fresh conversation so the first-message id surfaces to the client.
     expect(getConversationByKey("default:cadet:macos")).toBeNull();
@@ -1049,7 +1049,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
     await stopServer();
   });
 
-  test("two empty-handed vellum sends each mint distinct conversations", async () => {
+  test("two empty-handed cadet sends each mint distinct conversations", async () => {
     await startServer(() => makeCompletingConversation());
 
     const res1 = await fetch(messagesUrl(), {

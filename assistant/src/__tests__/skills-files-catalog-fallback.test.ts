@@ -3,7 +3,7 @@
  *
  * When a skill id isn't resolvable via `findSkillById` (i.e. not installed
  * locally, not bundled, not a managed skill), `getSkillFiles` falls back to
- * the provider chain (vellum catalog → skills.sh → clawhub). Each provider
+ * the provider chain (cadet catalog → skills.sh → clawhub). Each provider
  * is tried in order until one returns data. When a skill IS resolved by
  * `findSkillById` but its on-disk directory is missing, `getSkillFiles`
  * returns a 404 without falling through to the provider chain so the
@@ -15,10 +15,10 @@
  *   - Installed skill: preserves the disk-read behavior with inline `content`.
  *   - Installed skill with missing directory: returns 404 without consulting providers.
  *   - `catalogSkillToSlim` mapping: `metadata.vellum["display-name"]` wins over `cs.name`.
- *   - skills.sh-shaped ID not in vellum catalog returns files from skills.sh provider.
- *   - clawhub-shaped ID not in vellum catalog returns files from clawhub provider.
+ *   - skills.sh-shaped ID not in cadet catalog returns files from skills.sh provider.
+ *   - clawhub-shaped ID not in cadet catalog returns files from clawhub provider.
  *   - ID that no provider handles returns 404.
- *   - Provider priority: vellum provider is tried before skills.sh/clawhub.
+ *   - Provider priority: cadet provider is tried before skills.sh/clawhub.
  */
 
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -256,7 +256,7 @@ describe("getSkillFiles — provider chain fallback", () => {
     _resetFileProvidersForTest();
   });
 
-  test("returns catalog skill with files (content: null) when skill is uninstalled but present in vellum catalog", async () => {
+  test("returns catalog skill with files (content: null) when skill is uninstalled but present in cadet catalog", async () => {
     const mockFiles: SkillFileEntry[] = [
       {
         path: "SKILL.md",
@@ -335,7 +335,7 @@ describe("getSkillFiles — provider chain fallback", () => {
     expect(result.error).toContain("ghost-skill");
   });
 
-  test("returns 404 with 'files unavailable' when vellum provider canHandle returns true but listFiles returns null", async () => {
+  test("returns 404 with 'files unavailable' when cadet provider canHandle returns true but listFiles returns null", async () => {
     mockVellumProvider = {
       canHandle: () => true,
       listFiles: async () => null,
@@ -515,8 +515,8 @@ describe("getSkillFiles — provider chain fallback", () => {
     expect(result.skill.name).toBe("Pretty Fancy Name");
   });
 
-  test("skills.sh-shaped ID not in vellum catalog returns files from skills.sh provider", async () => {
-    // Vellum provider doesn't handle this ID
+  test("skills.sh-shaped ID not in cadet catalog returns files from skills.sh provider", async () => {
+    // Cadet provider doesn't handle this ID
     mockVellumProvider = {
       canHandle: () => false,
       listFiles: async () => null,
@@ -563,8 +563,8 @@ describe("getSkillFiles — provider chain fallback", () => {
     expect(result.files[0].path).toBe("SKILL.md");
   });
 
-  test("clawhub-shaped ID not in vellum catalog returns files from clawhub provider", async () => {
-    // Vellum and skills.sh providers don't handle this ID
+  test("clawhub-shaped ID not in cadet catalog returns files from clawhub provider", async () => {
+    // Cadet and skills.sh providers don't handle this ID
     mockVellumProvider = {
       canHandle: () => false,
       listFiles: async () => null,
@@ -642,8 +642,8 @@ describe("getSkillFiles — provider chain fallback", () => {
     expect(result.status).toBe(404);
   });
 
-  test("provider priority — vellum provider is tried before skills.sh and clawhub", async () => {
-    // All three providers claim to handle this ID, but vellum should win
+  test("provider priority — cadet provider is tried before skills.sh and clawhub", async () => {
+    // All three providers claim to handle this ID, but cadet should win
     const vellumListFilesCalls: string[] = [];
     const skillsshListFilesCalls: string[] = [];
     const clawhubListFilesCalls: string[] = [];
@@ -666,7 +666,7 @@ describe("getSkillFiles — provider chain fallback", () => {
       readFileContent: async () => null,
       toSlimSkill: async () => ({
         id: "contested-skill",
-        name: "Vellum Contested",
+        name: "Cadet Contested",
         description: "",
         kind: "catalog",
         origin: "vellum",
@@ -724,10 +724,10 @@ describe("getSkillFiles — provider chain fallback", () => {
     if ("error" in result) {
       return;
     }
-    // Vellum provider should have been used
+    // Cadet provider should have been used
     expect(result.skill.origin).toBe("vellum");
-    expect(result.skill.name).toBe("Vellum Contested");
-    // Vellum was called, but skills.sh and clawhub were NOT called
+    expect(result.skill.name).toBe("Cadet Contested");
+    // Cadet was called, but skills.sh and clawhub were NOT called
     expect(vellumListFilesCalls).toEqual(["contested-skill"]);
     expect(skillsshListFilesCalls).toEqual([]);
     expect(clawhubListFilesCalls).toEqual([]);

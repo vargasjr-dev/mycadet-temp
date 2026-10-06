@@ -837,7 +837,7 @@ describe("isRequestInConversationScope", () => {
 
     expect(isRequestInConversationScope(req.id, "access-req-src")).toBe(true);
     // A channel delivery's paired conversation is in scope: it renders the
-    // same actionable in-app card as the vellum delivery's conversation.
+    // same actionable in-app card as the cadet delivery's conversation.
     expect(isRequestInConversationScope(req.id, "guardian-conv")).toBe(true);
     expect(isRequestInConversationScope(req.id, "unrelated-conv")).toBe(false);
     expect(isRequestInConversationScope("missing", "guardian-conv")).toBe(

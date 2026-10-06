@@ -191,7 +191,7 @@ describe("reserved channel types", () => {
     expect(channels.map((ch) => ch.type)).toEqual(["slack"]);
   });
 
-  test("the plain vellum channel type is not reserved", async () => {
+  test("the plain cadet channel type is not reserved", async () => {
     const { contact } = await new ContactStore().upsertContact({
       channels: [{ type: "vellum", address: "prin_1", isPrimary: true }],
     });

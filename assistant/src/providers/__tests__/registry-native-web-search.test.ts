@@ -87,7 +87,7 @@ const vellumConnection: ProviderConnection = {
   name: "vellum",
   provider: "vellum",
   auth: { type: "platform" },
-  label: "Vellum",
+  label: "Cadet",
   baseUrl: null,
   models: null,
   createdAt: 1,
@@ -172,13 +172,13 @@ describe("resolveProviderFromConnection connection cache TTL", () => {
   });
 });
 
-describe("resolveProviderFromConnection vellum GPU upstream", () => {
+describe("resolveProviderFromConnection cadet GPU upstream", () => {
   beforeEach(() => {
     adapterCalls.length = 0;
     clearConnectionProviderCache();
   });
 
-  test("a GPU model with providerOverride vellum builds an adapter", async () => {
+  test("a GPU model with providerOverride cadet builds an adapter", async () => {
     const adapter = await resolveProviderFromConnection(
       vellumConnection,
       makeConfig(),
@@ -192,7 +192,7 @@ describe("resolveProviderFromConnection vellum GPU upstream", () => {
     });
   });
 
-  test("providerOverride vellum is a factory id, not an unresolved identity", async () => {
+  test("providerOverride cadet is a factory id, not an unresolved identity", async () => {
     const adapter = await resolveProviderFromConnection(
       vellumConnection,
       makeConfig(),

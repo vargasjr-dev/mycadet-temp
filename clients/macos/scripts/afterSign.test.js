@@ -67,7 +67,7 @@ describe("resolveSigningIdentity", () => {
       expect(keychainFile).toBe("/tmp/electron-builder.keychain");
 
       return {
-        name: "Developer ID Application: Vellum AI, Inc. (ABCDE12345)",
+        name: "Developer ID Application: Cadet AI, Inc. (ABCDE12345)",
         hash: "1234567890ABCDEF",
       };
     });
@@ -75,7 +75,7 @@ describe("resolveSigningIdentity", () => {
     await expect(
       __resolveSigningIdentityForTesting(makeContext())
     ).resolves.toEqual({
-      name: "Developer ID Application: Vellum AI, Inc. (ABCDE12345)",
+      name: "Developer ID Application: Cadet AI, Inc. (ABCDE12345)",
       sign: "1234567890ABCDEF",
       keychainFile: "/tmp/electron-builder.keychain",
     });
@@ -83,12 +83,12 @@ describe("resolveSigningIdentity", () => {
   });
 
   test("passes APPLE_SIGNING_IDENTITY through as an explicit qualifier", async () => {
-    process.env.APPLE_SIGNING_IDENTITY = "Developer ID Application: Vellum";
+    process.env.APPLE_SIGNING_IDENTITY = "Developer ID Application: Cadet";
     findIdentityMock = mock(async (_certificateType, qualifier) => {
-      expect(qualifier).toBe("Developer ID Application: Vellum");
+      expect(qualifier).toBe("Developer ID Application: Cadet");
 
       return {
-        name: "Developer ID Application: Vellum",
+        name: "Developer ID Application: Cadet",
         hash: "ABCDEF1234567890",
       };
     });
@@ -96,7 +96,7 @@ describe("resolveSigningIdentity", () => {
     await expect(
       __resolveSigningIdentityForTesting(makeContext())
     ).resolves.toMatchObject({
-      name: "Developer ID Application: Vellum",
+      name: "Developer ID Application: Cadet",
       sign: "ABCDEF1234567890",
     });
   });

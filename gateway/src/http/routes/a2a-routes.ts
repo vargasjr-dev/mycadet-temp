@@ -55,7 +55,7 @@ export interface AgentCard {
 export function buildAgentCard(assistantName: string): AgentCard {
   return {
     name: assistantName,
-    description: `${assistantName} - a Vellum AI assistant`,
+    description: `${assistantName} - a Cadet AI assistant`,
     version: "1.0.0",
     supported_interfaces: [],
     capabilities: {
@@ -82,12 +82,12 @@ function readAssistantName(): string {
   try {
     const wsDir = getWorkspaceDir();
     const identityPath = join(wsDir, "prompts", "IDENTITY.md");
-    if (!existsSync(identityPath)) return "Vellum Assistant";
+    if (!existsSync(identityPath)) return "Cadet Assistant";
     const content = readFileSync(identityPath, "utf-8");
     const match = content.match(/\*\*Name:\*\*\s*(.+)/);
-    return match?.[1]?.trim() || "Vellum Assistant";
+    return match?.[1]?.trim() || "Cadet Assistant";
   } catch {
-    return "Vellum Assistant";
+    return "Cadet Assistant";
   }
 }
 

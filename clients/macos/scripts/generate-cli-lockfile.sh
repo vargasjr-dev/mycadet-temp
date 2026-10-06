@@ -31,7 +31,7 @@ case "$VELLUM_ENVIRONMENT" in
 esac
 SPEC="${VERSION:-$DEFAULT_TAG}"
 
-echo "Generating CLI lockfile for vellum@$SPEC ..."
+echo "Generating CLI lockfile for cadet@$SPEC ..."
 
 rm -rf "$SEED_DIR"
 mkdir -p "$SEED_DIR"

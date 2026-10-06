@@ -59,7 +59,7 @@ function readRow(
 }
 
 describe("migration 361: normalize managed connection rows", () => {
-  test("rewrites a platform-auth row with a concrete provider to provider vellum", () => {
+  test("rewrites a platform-auth row with a concrete provider to provider cadet", () => {
     const { sqlite, db } = createTestDb();
     insertRow(sqlite, "managed-openai", "openai", '{"type":"platform"}');
 
@@ -70,7 +70,7 @@ describe("migration 361: normalize managed connection rows", () => {
     expect(JSON.parse(row.auth)).toEqual({ type: "platform" });
   });
 
-  test("heals a stuck legacy canonical row (name vellum, concrete provider, platform auth)", () => {
+  test("heals a stuck legacy canonical row (name cadet, concrete provider, platform auth)", () => {
     const { sqlite, db } = createTestDb();
     insertRow(sqlite, "vellum", "anthropic", '{"type":"platform"}');
 

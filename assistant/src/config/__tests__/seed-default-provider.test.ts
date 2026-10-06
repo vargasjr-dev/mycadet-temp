@@ -83,7 +83,7 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
     invalidateConfigCache();
   });
 
-  test("platform hatch writes vellum", () => {
+  test("platform hatch writes cadet", () => {
     process.env.IS_PLATFORM = "true";
     const llm = seed(
       { llm: { default: { provider: "anthropic" } } },
@@ -137,7 +137,7 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
     expect(llm.defaultProvider).toEqual({ provider: "anthropic" });
   });
 
-  test("BYOK hatch that selected a managed connection writes vellum", () => {
+  test("BYOK hatch that selected a managed connection writes cadet", () => {
     const llm = seed(
       {
         llm: {

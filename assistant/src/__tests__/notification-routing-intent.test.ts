@@ -22,7 +22,7 @@ function makeDecision(
   return {
     shouldNotify: true,
     selectedChannels: ["vellum"],
-    reasoningSummary: "LLM selected vellum only",
+    reasoningSummary: "LLM selected cadet only",
     renderedCopy: {
       vellum: { title: "Reminder", body: "Test reminder" },
     },

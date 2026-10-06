@@ -3,12 +3,12 @@
  * (`processGuardianDecision` step 2).
  *
  * A guardian request projects an actionable card into every conversation a
- * delivery was paired with: the vellum card's pinned conversation AND each
+ * delivery was paired with: the cadet card's pinned conversation AND each
  * channel card's paired conversation (the decision engine injects the same
  * seed blocks into every channel's copy). Taps from any of those
  * conversations are legitimate; taps from unrelated conversations are not.
  * The scope check must therefore accept any recorded delivery destination
- * conversation regardless of the delivery's channel: narrowing to vellum
+ * conversation regardless of the delivery's channel: narrowing to cadet
  * rows silently no-opped every tap on a channel card's in-app projection
  * (LUM-3489's "one request, two independent tasks" confusion).
  */

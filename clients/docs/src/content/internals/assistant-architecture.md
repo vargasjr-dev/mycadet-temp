@@ -278,7 +278,7 @@ The `guardian-verify-setup` skill is the exclusive handler for channel verificat
 
 Guardian requests (tool approvals, access requests, voice ASK_GUARDIAN questions) live in the gateway's `guardian_requests` / `guardian_request_deliveries` tables and carry an `expiresAt` timestamp. Two paths retire a request the guardian never answered, and all user-facing copy on those paths is LLM-generated (never hardcoded strings) to maintain a natural, conversational tone across voice and text channels.
 
-**Voice consultation timeout:** When a voice call's ASK_GUARDIAN consultation times out before the guardian responds, the call controller expires the request via the gateway (`guardian_requests_expire` — deliveries expire with it), sends expiry notices to every surface the approval card reached (vellum conversations get an assistant message; external channels get a direct channel reply), and injects a `[GUARDIAN_TIMEOUT]` instruction so the model apologizes to the caller and offers a message or callback on the next voice turn.
+**Voice consultation timeout:** When a voice call's ASK_GUARDIAN consultation times out before the guardian responds, the call controller expires the request via the gateway (`guardian_requests_expire` — deliveries expire with it), sends expiry notices to every surface the approval card reached (cadet conversations get an assistant message; external channels get a direct channel reply), and injects a `[GUARDIAN_TIMEOUT]` instruction so the model apologizes to the caller and offers a message or callback on the next voice turn.
 
 **Background expiry sweep:** Independent of any active call, a 60-second sweep lists pending guardian requests past their `expiresAt` (`guardian_requests_list_expired_pending`), runs the side effects per row (withdrawing the approval cards on every surface, notifying the requester, releasing any in-memory pending interaction), and then confirms each with the per-request `guardian_requests_expire` CAS; a decision arriving past the deadline loses to expiry atomically, since the decide CAS guards on `expires_at`.
 
@@ -291,7 +291,7 @@ Guardian requests (tool approvals, access requests, voice ASK_GUARDIAN questions
 | `src/channels/gateway-guardian-requests.ts`       | Gateway-backed guardian-request client: typed wrappers over the `guardian_requests_*` IPC routes that own request/delivery state and expiry               |
 | `src/runtime/routes/guardian-expiry-sweep.ts`     | Periodic 60s sweep: bounded expired-pending list, per-row card-withdrawal, requester-notice, and pending-interaction fan-out, then per-request expire CAS |
 | `src/calls/call-controller.ts`                    | Voice timeout handling: expires the request, sends expiry notices, injects `[GUARDIAN_TIMEOUT]` instruction for the generated voice response              |
-| `src/calls/guardian-action-sweep.ts`              | Expiry notice delivery to guardian destinations (vellum conversation message or direct channel reply)                                                     |
+| `src/calls/guardian-action-sweep.ts`              | Expiry notice delivery to guardian destinations (cadet conversation message or direct channel reply)                                                      |
 | `src/runtime/guardian-action-message-composer.ts` | 2-tier text generation: daemon-injected LLM generator with deterministic fallback templates                                                               |
 
 ### WhatsApp Channel (Meta Cloud API)
@@ -674,7 +674,7 @@ Each provider that advertises a conversation streaming mode in the catalog ships
 | **Deepgram**       | `src/providers/speech-to-text/deepgram-realtime.ts`         | `realtime-ws`       | Opens a WebSocket to Deepgram's `/v1/listen` endpoint, forwards raw PCM audio, normalizes Deepgram's `is_final`/`speech_final` semantics into `partial`/`final` events. Uses model `nova-2`.                                                                        |
 | **Deepgram Flux**  | `src/providers/speech-to-text/deepgram-flux-realtime.ts`    | `realtime-ws`       | Opens a WebSocket to Deepgram's `/v2/listen` conversational endpoint. The model decides turn boundaries, so the adapter also emits `turn-start`, `eager-turn-end`, `turn-resumed`, and `turn-end`. Streaming only, no batch endpoint. Uses model `flux-general-en`. |
 | **Google Gemini**  | `src/providers/speech-to-text/google-gemini-live-stream.ts` | `realtime-ws`       | Opens a bidirectional streaming session against Gemini's Live API (`ai.live.connect`), forwards PCM audio frames, and normalizes `serverContent.inputTranscription` events into `partial`/`final` events. Uses model `gemini-2.5-flash-native-audio-latest`.        |
-| **Vellum managed** | `src/providers/speech-to-text/vellum-managed-realtime.ts`   | `realtime-ws`       | Wraps the Deepgram adapter and dials the gateway speech relay (`/v1/speech/stt/stream`) instead of Deepgram directly; both relay legs speak Deepgram's wire protocol, and the model is pinned server-side.                                                          |
+| **Cadet managed**  | `src/providers/speech-to-text/vellum-managed-realtime.ts`   | `realtime-ws`       | Wraps the Deepgram adapter and dials the gateway speech relay (`/v1/speech/stt/stream`) instead of Deepgram directly; both relay legs speak Deepgram's wire protocol, and the model is pinned server-side.                                                          |
 | **xAI**            | `src/providers/speech-to-text/xai-realtime.ts`              | `realtime-ws`       | Opens a WebSocket to `wss://api.x.ai/v1/stt` and normalizes xAI's `transcript.partial`/`transcript.done` payloads into `partial`/`final` events.                                                                                                                    |
 | **OpenAI Whisper** | `src/providers/speech-to-text/openai-whisper-stream.ts`     | `incremental-batch` | Whisper exposes no streaming endpoint, so the shared `incremental-batch-stream.ts` strategy re-transcribes an accumulating buffer and diffs successive results into `partial`/`final` events.                                                                       |
 
@@ -750,7 +750,7 @@ The assistant-side live voice module is intentionally bounded under `src/live-vo
 
 Live voice STT uses the same `resolveStreamingTranscriber()` path as conversation streaming, dialed with the provider the `liveVoice` STT role resolves to after managed-speech defaulting (`resolveEffectiveSpeechProviders`, see `config/managed-speech-defaults.ts`). For V1 latency-sensitive behavior, that provider must resolve to a `daemon-streaming` transcriber whose catalog entry has `conversationStreamingMode: "realtime-ws"` and usable credentials. Providers that only support batch or incremental-batch transcription remain valid for other voice surfaces, but do not satisfy live voice's streaming STT requirement.
 
-Live voice TTS uses `streamLiveVoiceTtsAudio()` and the TTS provider that `resolveEffectiveSpeechProviders` settles on (the configured `services.tts.provider`, or the managed `vellum` provider when the configured one has no usable credentials). The selected provider must be registered, catalog-compatible, and expose `capabilities.supportsStreaming` plus `synthesizeStream()`. Providers whose catalog entry advertises `supportsStreaming` (currently all five catalog providers: ElevenLabs, Fish Audio, Deepgram, xAI, and the managed Vellum provider) satisfy this requirement; a buffered-only provider would remain available for buffered message playback or other supported surfaces, but live voice reports a TTS error instead of silently falling back to buffered playback.
+Live voice TTS uses `streamLiveVoiceTtsAudio()` and the TTS provider that `resolveEffectiveSpeechProviders` settles on (the configured `services.tts.provider`, or the managed `cadet` provider when the configured one has no usable credentials). The selected provider must be registered, catalog-compatible, and expose `capabilities.supportsStreaming` plus `synthesizeStream()`. Providers whose catalog entry advertises `supportsStreaming` (currently all five catalog providers: ElevenLabs, Fish Audio, Deepgram, xAI, and the managed Cadet provider) satisfy this requirement; a buffered-only provider would remain available for buffered message playback or other supported surfaces, but live voice reports a TTS error instead of silently falling back to buffered playback.
 
 The `voiceFrontDoor` prompt skips current-turn legacy and v3 memory retrieval, while prior frozen memory cards and static memory context remain available. The front-door rule escalates rather than guessing when required personal context is absent. The escalated leg runs the ordinary memory pipeline against the latest visible caller prompt before the quality model, with low selector effort. This keeps memory work off the front-door TTFT path without cross-leg speculative state.
 
@@ -1069,7 +1069,7 @@ The daemon emits two distinct error message types via SSE:
 | -------------------------------- | ----------------------------------------------------------------------- | --------- |
 | `PROVIDER_NETWORK`               | Unable to reach the LLM provider (connection refused, timeout, DNS)     | Yes       |
 | `PROVIDER_RATE_LIMIT`            | LLM provider rate-limited the request (HTTP 429)                        | Yes       |
-| `MANAGED_USAGE_LIMIT`            | Vellum managed inference usage limit or quota was exceeded (HTTP 429)   | Yes       |
+| `MANAGED_USAGE_LIMIT`            | Cadet managed inference usage limit or quota was exceeded (HTTP 429)    | Yes       |
 | `PROVIDER_API`                   | Provider returned a server error (5xx) or retryable 4xx                 | Yes       |
 | `PROVIDER_BILLING`               | Invalid/expired API key or insufficient credits (HTTP 401, billing 4xx) | No        |
 | `CONTEXT_TOO_LARGE`              | Request exceeds the model's context window (HTTP 413, token limit)      | No        |
@@ -1084,7 +1084,7 @@ The daemon classifies errors via `classifyConversationError()` in `conversation-
 
 Classification uses a two-tier strategy:
 
-1. **Structured provider errors**: If the error is a `ProviderError` with a `statusCode`, the status code determines the category deterministically — `413` maps to `CONTEXT_TOO_LARGE` (not retryable), `401` maps to `PROVIDER_BILLING` (not retryable, invalid/expired key), `429` maps to `MANAGED_USAGE_LIMIT` when the provider is routed through the managed proxy or the payload matches a Vellum managed quota/limit response, otherwise `PROVIDER_RATE_LIMIT` (retryable), `5xx` to `PROVIDER_API` (retryable), other `4xx` to `PROVIDER_API` (retryable) unless a message pattern matches a more specific non-retryable category (context-too-large, billing/auth).
+1. **Structured provider errors**: If the error is a `ProviderError` with a `statusCode`, the status code determines the category deterministically — `413` maps to `CONTEXT_TOO_LARGE` (not retryable), `401` maps to `PROVIDER_BILLING` (not retryable, invalid/expired key), `429` maps to `MANAGED_USAGE_LIMIT` when the provider is routed through the managed proxy or the payload matches a Cadet managed quota/limit response, otherwise `PROVIDER_RATE_LIMIT` (retryable), `5xx` to `PROVIDER_API` (retryable), other `4xx` to `PROVIDER_API` (retryable) unless a message pattern matches a more specific non-retryable category (context-too-large, billing/auth).
 2. **Regex fallback**: For non-provider errors or `ProviderError` without a status code, regex pattern matching against the error message detects network failures, rate limits, and API errors. Phase-specific overrides handle regeneration contexts.
 
 Debug details are capped at 4,000 characters to prevent oversized payloads.
@@ -1416,7 +1416,7 @@ Rules enforced by guard tests:
 - Retrieval reads use `bash` + canonical CLI surfaces (`assistant config get` and domain read commands where available).
 - Direct gateway `curl` + manual bearer headers are for control-plane writes/actions, not retrieval reads.
 - Bundled skill docs must not instruct direct credential store lookups (`security find-generic-password`, `secret-tool`) for retrieval.
-- `host_bash` is not used for Vellum CLI retrieval commands unless intentionally allowlisted.
+- `host_bash` is not used for Cadet CLI retrieval commands unless intentionally allowlisted.
 - Outbound credentialed API calls use CES tools (`make_authenticated_request`, `run_authenticated_command`) so credential materialization happens in a separate process. Command output (stdout/stderr) is forwarded back to the assistant and may contain credential values if the command echoes them, so the isolation covers injection, not output. `host_bash` is available as a user-approved escape hatch but is outside the strong secrecy guarantee.
 
 ### Skill Directory Structure
@@ -1981,7 +1981,7 @@ Producer → NotificationSignal → Candidate Generation → Decision Engine (LL
 
 - **`deliveryEnabled`** — whether the channel can receive notification deliveries. The `NotificationChannel` type is derived from this flag: only channels with `deliveryEnabled: true` are valid notification targets.
 - **`conversationStrategy`** — how the notification pipeline materializes conversations for the channel:
-  - `start_new_conversation` — creates a fresh conversation per delivery (e.g. vellum desktop/mobile conversations)
+  - `start_new_conversation` — creates a fresh conversation per delivery (e.g. cadet desktop/mobile conversations)
   - `continue_existing_conversation` — intended to append to an existing channel-scoped conversation; currently materializes a background audit conversation per delivery (e.g. Telegram)
   - `not_deliverable` — channel cannot receive notifications (e.g. phone)
 
@@ -2006,20 +2006,20 @@ The pairing function (`pairDeliveryWithConversation`) is resilient — errors ar
 
 The notification pipeline uses a single conversation materialization path across producers:
 
-1. **Canonical pipeline** (`emitNotificationSignal` → decision engine → broadcaster → conversation pairing → adapters): The broadcaster pairs each delivery with a conversation, then dispatches a `notification_intent` SSE event via the Vellum adapter. The payload includes `deepLinkMetadata` (e.g. `{ conversationId, messageId }`) so the macOS client can deep-link to the relevant context when the user taps the notification. When `messageId` is present, the client scrolls to that specific message within the conversation (message-level anchoring).
+1. **Canonical pipeline** (`emitNotificationSignal` → decision engine → broadcaster → conversation pairing → adapters): The broadcaster pairs each delivery with a conversation, then dispatches a `notification_intent` SSE event via the Cadet adapter. The payload includes `deepLinkMetadata` (e.g. `{ conversationId, messageId }`) so the macOS client can deep-link to the relevant context when the user taps the notification. When `messageId` is present, the client scrolls to that specific message within the conversation (message-level anchoring).
 2. **Guardian bookkeeping** (`dispatchGuardianQuestion`): Guardian dispatch creates the gateway `guardian_requests` row and records `guardian_request_deliveries` derived from pipeline delivery results and the per-dispatch `onConversationCreated` callback — there is no separate conversation-creation path.
 
 ### Conversation Surfacing via `notification_conversation_created` (Creation-Only)
 
 The `notification_conversation_created` SSE event is emitted **only when a brand-new conversation is created** by the broadcaster. Reusing an existing conversation does not trigger this event — the macOS client already knows about the conversation from the original creation. This is enforced in `broadcaster.ts` by gating on `pairing.createdNewConversation === true`.
 
-When a new vellum notification conversation is created (strategy `start_new_conversation`), the broadcaster emits the event **immediately** (before waiting for slower channel deliveries like Telegram). This pushes the conversation to the macOS client so it can display the notification conversation in the sidebar and deep-link to it.
+When a new cadet notification conversation is created (strategy `start_new_conversation`), the broadcaster emits the event **immediately** (before waiting for slower channel deliveries like Telegram). This pushes the conversation to the macOS client so it can display the notification conversation in the sidebar and deep-link to it.
 
 ### Conversation-Created Events
 
 An SSE push event surfaces new conversations in the macOS client sidebar:
 
-- **`notification_conversation_created`** — Emitted by `broadcaster.ts` when a notification delivery **creates** a new vellum conversation (strategy `start_new_conversation`, `createdNewConversation: true`). **Not** emitted when a conversation is reused. Payload: `{ conversationId, title, sourceEventName }`.
+- **`notification_conversation_created`** — Emitted by `broadcaster.ts` when a notification delivery **creates** a new cadet conversation (strategy `start_new_conversation`, `createdNewConversation: true`). **Not** emitted when a conversation is reused. Payload: `{ conversationId, title, sourceEventName }`.
 
 The daemon persists the conversation and its initial message before broadcasting, so a client that receives the event can fetch the conversation immediately. A guardian-sensitive conversation is announced only to the guardian's own connections.
 
@@ -2036,9 +2036,9 @@ The decision engine produces per-channel conversation actions using a candidate-
 
 ### Guardian Call Conversation Affinity
 
-When a guardian question originates from an active phone call (`callSessionId` present on the signal), the decision engine enforces conversation affinity so all questions within the same call land in one vellum conversation:
+When a guardian question originates from an active phone call (`callSessionId` present on the signal), the decision engine enforces conversation affinity so all questions within the same call land in one cadet conversation:
 
-- **First question in a call** (no `conversationAffinityHint`): `enforceGuardianCallConversationAffinity` forces `start_new` for the vellum channel, creating a dedicated conversation for the call.
+- **First question in a call** (no `conversationAffinityHint`): `enforceGuardianCallConversationAffinity` forces `start_new` for the cadet channel, creating a dedicated conversation for the call.
 - **Subsequent questions in the same call** (affinity hint already set by `dispatchGuardianQuestion`): The guard is a no-op, and `enforceConversationAffinity` routes to `reuse_existing` using the hint's `conversationId`.
 
 This guard runs **before** `enforceConversationAffinity` in the post-decision chain so the two cooperate: the first dispatch creates the conversation, and subsequent dispatches reuse it via the affinity hint that `dispatchGuardianQuestion` sets after observing the first delivery's `conversationId`.
@@ -2061,13 +2061,13 @@ Reminders carry optional `routingIntent` (`single_channel` | `multi_channel` | `
 
 Notifications are delivered to five channel types. The daemon sends to external channels itself, calling each provider's API through the send modules in `src/messaging/providers/<channel>/`; nothing goes through the gateway.
 
-- **Vellum (always connected)**: SSE via the daemon's broadcast mechanism. The `VellumAdapter` emits a `notification_intent` message with rendered copy and optional `deepLinkMetadata` (includes `conversationId` for conversation navigation and `messageId` for message-level scroll anchoring).
+- **Cadet (always connected)**: SSE via the daemon's broadcast mechanism. The `VellumAdapter` emits a `notification_intent` message with rendered copy and optional `deepLinkMetadata` (includes `conversationId` for conversation navigation and `messageId` for message-level scroll anchoring).
 - **Platform (always connected)**: the `PlatformPushAdapter` posts the notification to the platform's `/v1/assistants/{id}/push/dispatch/` endpoint for native mobile push. Without platform credentials the delivery is recorded as failed.
 - **Telegram (when the guardian has a chat ID)**: the `TelegramAdapter` calls the Telegram Bot API through `telegram-bot/send.ts`. Approval cards carry inline keyboard buttons and fall back to plain text with typed-reply instructions if the rich send fails.
 - **Slack (when the guardian's chat is a DM)**: the `SlackAdapter` posts through `slack/send.ts`. Only `D`-prefixed DM channels qualify, so a binding made from a shared channel never receives notifications.
 - **Discord (when the guardian binding names a user)**: the `DiscordAdapter` opens the guardian's DM through the Discord REST API and sends through `discord/send.ts`.
 
-Connected channels are resolved at signal emission time by `getConnectedChannels()` in `emit-signal.ts`, from the guardian delivery list (`getGuardianDelivery()`): vellum and platform are always included, and Telegram, Slack, and Discord are included only when that list gives the guardian a deliverable endpoint on the channel.
+Connected channels are resolved at signal emission time by `getConnectedChannels()` in `emit-signal.ts`, from the guardian delivery list (`getGuardianDelivery()`): cadet and platform are always included, and Telegram, Slack, and Discord are included only when that list gives the guardian a deliverable endpoint on the channel.
 
 **Key modules:**
 
@@ -2080,7 +2080,7 @@ Connected channels are resolved at signal emission time by `getConnectedChannels
 | `assistant/src/notifications/broadcaster.ts`                               | Dispatches decisions to channel adapters; emits `notification_conversation_created` SSE event (creation-only)                         |
 | `assistant/src/notifications/conversation-pairing.ts`                      | Materializes conversation + message per delivery; executes conversation reuse decisions                                               |
 | `assistant/src/notifications/conversation-candidates.ts`                   | Builds per-channel candidate set of recent conversations for the decision engine                                                      |
-| `assistant/src/notifications/adapters/macos.ts`                            | Vellum adapter — broadcasts `notification_intent` via SSE with deep-link metadata                                                     |
+| `assistant/src/notifications/adapters/macos.ts`                            | Cadet adapter — broadcasts `notification_intent` via SSE with deep-link metadata                                                      |
 | `assistant/src/notifications/adapters/platform.ts`                         | Platform adapter: posts to the platform push-dispatch endpoint for native mobile push                                                 |
 | `assistant/src/notifications/adapters/telegram.ts`                         | Telegram adapter: calls the Telegram Bot API through `messaging/providers/telegram-bot/send.ts`                                       |
 | `assistant/src/notifications/adapters/slack.ts`                            | Slack adapter: posts to the guardian's DM through `messaging/providers/slack/send.ts`                                                 |

@@ -1,7 +1,7 @@
 /**
  * Backwards-compat gate: lazy LLM-context detail loading.
  *
- * Cadet Assistant 0.8.12 added `view=summary` on the llm-context list
+ * Cadet 0.8.12 added `view=summary` on the llm-context list
  * endpoints plus the per-log `GET /v1/llm-request-logs/:id/context`
  * detail endpoint, letting the inspector fetch a light call list and
  * load the selected call's sections lazily.

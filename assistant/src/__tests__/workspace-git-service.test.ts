@@ -95,7 +95,7 @@ describe("WorkspaceGitService", () => {
         encoding: "utf-8",
       }).trim();
 
-      expect(userName).toBe("Vellum Assistant");
+      expect(userName).toBe("Cadet Assistant");
       expect(userEmail).toBe("assistant@vellum.ai");
     });
 
@@ -430,10 +430,14 @@ describe("WorkspaceGitService", () => {
         expect(trackedFiles()).toContain(name);
       }
 
-      const messages = execFileSync("git", ["log", "--pretty=%B", "--reverse"], {
-        cwd: testDir,
-        encoding: "utf-8",
-      });
+      const messages = execFileSync(
+        "git",
+        ["log", "--pretty=%B", "--reverse"],
+        {
+          cwd: testDir,
+          encoding: "utf-8",
+        },
+      );
       expect(messages).toContain("batch: 1/3");
       expect(messages).toContain("batch: 2/3");
       expect(messages).toContain("batch: 3/3");
@@ -505,7 +509,12 @@ describe("WorkspaceGitService", () => {
       const service = new WorkspaceGitService(testDir);
       await service.ensureInitialized();
 
-      for (const name of ["keep.txt", "gone-a.txt", "gone-b.txt", "gone-c.txt"]) {
+      for (const name of [
+        "keep.txt",
+        "gone-a.txt",
+        "gone-b.txt",
+        "gone-c.txt",
+      ]) {
         writeFileSync(join(testDir, name), name);
       }
       await service.commitChanges("Seed files");
@@ -903,7 +912,7 @@ describe("WorkspaceGitService", () => {
       execFileSync("git", ["config", "user.email", "user@example.com"], {
         cwd: testDir,
       });
-      // main: committed runtime junk and a .gitignore without Vellum rules
+      // main: committed runtime junk and a .gitignore without Cadet rules
       writeFileSync(join(testDir, ".gitignore"), "main-rule\n");
       mkdirSync(join(testDir, "embedding-models"), { recursive: true });
       writeFileSync(join(testDir, "embedding-models", "model.bin"), "weights");
@@ -919,7 +928,7 @@ describe("WorkspaceGitService", () => {
       const service = new WorkspaceGitService(testDir);
       await service.ensureInitialized();
 
-      // Landed on main with the Vellum rules applied to MAIN's .gitignore
+      // Landed on main with the Cadet rules applied to MAIN's .gitignore
       const branch = execFileSync("git", ["symbolic-ref", "--short", "HEAD"], {
         cwd: testDir,
         encoding: "utf-8",
@@ -1028,7 +1037,7 @@ describe("WorkspaceGitService", () => {
       expect(headFiles).toContain("notes.md");
     });
 
-    test("untracking is limited to Vellum rules and keeps avatar/sounds state", async () => {
+    test("untracking is limited to Cadet rules and keeps avatar/sounds state", async () => {
       execFileSync("git", ["init", "-b", "main"], { cwd: testDir });
       execFileSync("git", ["config", "user.name", "Test"], { cwd: testDir });
       execFileSync("git", ["config", "user.email", "user@example.com"], {
@@ -1189,7 +1198,7 @@ describe("WorkspaceGitService", () => {
         encoding: "utf-8",
       }).trim();
 
-      expect(userName).toBe("Vellum Assistant");
+      expect(userName).toBe("Cadet Assistant");
       expect(userEmail).toBe("assistant@vellum.ai");
     });
 
@@ -1226,7 +1235,7 @@ describe("WorkspaceGitService", () => {
     test("existing repo with correct config is idempotent", async () => {
       // Set up a repo that already has everything configured correctly
       execFileSync("git", ["init", "-b", "main"], { cwd: testDir });
-      execFileSync("git", ["config", "user.name", "Vellum Assistant"], {
+      execFileSync("git", ["config", "user.name", "Cadet Assistant"], {
         cwd: testDir,
       });
       execFileSync("git", ["config", "user.email", "assistant@vellum.ai"], {
@@ -1256,7 +1265,7 @@ describe("WorkspaceGitService", () => {
         cwd: testDir,
         encoding: "utf-8",
       }).trim();
-      expect(userName).toBe("Vellum Assistant");
+      expect(userName).toBe("Cadet Assistant");
 
       const branch = execFileSync("git", ["symbolic-ref", "--short", "HEAD"], {
         cwd: testDir,

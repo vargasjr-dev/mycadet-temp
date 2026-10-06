@@ -212,7 +212,7 @@ describe("contacts_mirror_apply", () => {
         "INSERT INTO contact_channels (id, contact_id, type, address, is_primary, created_at) VALUES (?, ?, ?, ?, 1, ?)",
       )
       .run("g3-ch", "g3-co", "vellum", "OLD-3", 1);
-    // A DIFFERENT row (different contact) already holds (vellum, NEW-3) — the
+    // A DIFFERENT row (different contact) already holds (cadet, NEW-3) — the
     // address the guardian is about to rebind to. idx_contact_channels_type_address
     // would reject a naive address move.
     sqlite

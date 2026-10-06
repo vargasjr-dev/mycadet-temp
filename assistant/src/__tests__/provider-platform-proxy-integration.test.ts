@@ -695,7 +695,7 @@ describe("config mode flip → provider reinit", () => {
 });
 
 describe("managed proxy integration — constants integrity", () => {
-  test("anthropic, openai, gemini, fireworks, together, and vellum have metadata with managed=true and a proxyPath", () => {
+  test("anthropic, openai, gemini, fireworks, together, and cadet have metadata with managed=true and a proxyPath", () => {
     for (const provider of [
       "anthropic",
       "openai",
@@ -742,7 +742,7 @@ describe("managed proxy integration — constants integrity", () => {
     );
   });
 
-  test("vellum routes through the vellum runtime-proxy path", () => {
+  test("cadet routes through the cadet runtime-proxy path", () => {
     expect(PLATFORM_PROVIDER_META.vellum.proxyPath).toBe(
       "/v1/runtime-proxy/vellum",
     );

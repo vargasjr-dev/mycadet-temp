@@ -79,7 +79,7 @@ export function getCliRootDir(): string {
   return path.join(app.getPath("userData"), "cli");
 }
 
-/** The `vellum` bin path within an install directory. */
+/** The `cadet` bin path within an install directory. */
 function binPathIn(dir: string): string {
   return path.join(dir, "node_modules", ".bin", "vellum");
 }
@@ -97,7 +97,7 @@ function compareVersions(a: string, b: string): number {
 }
 
 /**
- * Newest existing install under `cli/` whose `vellum` bin is present: prefer
+ * Newest existing install under `cli/` whose `cadet` bin is present: prefer
  * `cli/latest`, otherwise the highest semver-named dir (including an old
  * pinned dir like `cli/0.9.0`). Returns `null` when nothing is installed.
  */
@@ -175,7 +175,7 @@ export function migrateStaleInstallDir(): void {
 
 /**
  * Absolute path of what the bundled bun should execute as the CLI: the repo
- * source entry in local builds, otherwise the installed `vellum` binary.
+ * source entry in local builds, otherwise the installed `cadet` binary.
  * Everything downstream (invocation, locator, PATH wrapper) flows through
  * this, so local builds never touch the npm install path.
  */
@@ -235,7 +235,7 @@ export function writeCliLocator(): void {
     mkdirSync(path.dirname(locatorPath), { recursive: true });
 
     const content =
-      "# Written by Vellum.app on every launch. Do not edit.\n" +
+      "# Written by Cadet.app on every launch. Do not edit.\n" +
       `VELLUM_BUN=${shQuote(getBundledBunPath())}\n` +
       `VELLUM_CLI_BIN=${shQuote(getCliBinPath())}\n`;
 
@@ -450,7 +450,7 @@ async function bunInstallCli(): Promise<void> {
   mkdirSync(installDir, { recursive: true });
 
   // Recover from a corrupt prior install. When `node_modules` already exists
-  // but no longer exposes the `vellum` bin — e.g. a partial tree left behind
+  // but no longer exposes the `cadet` bin — e.g. a partial tree left behind
   // by an app upgrade — `bun add` treats the lockfile as satisfied and exits
   // 0 without relinking the bin, so every relaunch repeats the same no-op and
   // the app stays wedged on "Failed to connect". Wipe the stale tree (and its
@@ -459,7 +459,7 @@ async function bunInstallCli(): Promise<void> {
   const nodeModulesDir = path.join(installDir, "node_modules");
   if (existsSync(nodeModulesDir) && !existsSync(binPathIn(installDir))) {
     log.warn(
-      "[cli-installer] stale CLI node_modules without a vellum bin; reinstalling clean",
+      "[cli-installer] stale CLI node_modules without a cadet bin; reinstalling clean",
     );
     rmSync(nodeModulesDir, { recursive: true, force: true });
     rmSync(path.join(installDir, "bun.lock"), { force: true });
@@ -472,12 +472,12 @@ async function bunInstallCli(): Promise<void> {
     const seeded = seedCliLockfile(installDir);
     const args = seeded
       ? ["install", "--frozen-lockfile", "--ignore-scripts"]
-      : ["add", `vellum@${PINNED_CLI_VERSION}`, "--ignore-scripts"];
+      : ["add", `cadet@${PINNED_CLI_VERSION}`, "--ignore-scripts"];
     await runBun(args, installDir);
   } else {
     // Unpinned: float to the environment's dist-tag, falling back to the seeded
     // frozen lockfile (resolved at build time) when the registry is unreachable.
-    const spec = `vellum@${getCliDistTag()}`;
+    const spec = `cadet@${getCliDistTag()}`;
     try {
       await runBun(["add", spec, "--ignore-scripts"], installDir);
     } catch (err) {
@@ -511,7 +511,7 @@ export function _resetInstallLock(): void {
 }
 
 /**
- * Install the vellum meta-package if it isn't already present.
+ * Install the cadet meta-package if it isn't already present.
  *
  * Packaged builds ship a pre-resolved lockfile so `bun install
  * --frozen-lockfile` pins the exact dependency graph from build time;
@@ -548,7 +548,7 @@ export async function ensureCliInstalled(): Promise<void> {
   // it surface downstream as a cryptic `bun run` "Module not found".
   if (!isCliInstalled()) {
     throw new Error(
-      `CLI install reported success but no vellum binary was found at ${getCliBinPath()}.`,
+      `CLI install reported success but no cadet binary was found at ${getCliBinPath()}.`,
     );
   }
 }
@@ -571,7 +571,10 @@ export function cleanupOldVersions(): void {
       if (!entry.isDirectory()) continue;
 
       try {
-        rmSync(path.join(cliRoot, entry.name), { recursive: true, force: true });
+        rmSync(path.join(cliRoot, entry.name), {
+          recursive: true,
+          force: true,
+        });
       } catch {
         // Individual entry cleanup failure is non-fatal.
       }

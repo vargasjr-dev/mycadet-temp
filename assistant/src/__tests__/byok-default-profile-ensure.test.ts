@@ -757,7 +757,7 @@ describe("ensureByokDefaultProfiles", () => {
     }
     expect(llm().activeProfile).toBe("balanced");
     expect(llm().advisorProfile).toBe("quality-optimized");
-    // With the stub gone, the default resolves active from the vellum column.
+    // With the stub gone, the default resolves active from the cadet column.
     const resolved = resolveDefaultProfileForProvider(
       profiles() as Record<string, ProfileEntry>,
       "balanced",
@@ -979,7 +979,7 @@ describe("ensureByokDefaultProfiles", () => {
     expect(readFileSync(configPath(), "utf-8")).toBe(before);
   });
 
-  test("a vellum default keeps a singleton copy (incomplete set is not hatch provenance)", () => {
+  test("a cadet default keeps a singleton copy (incomplete set is not hatch provenance)", () => {
     // A lone surviving copy is trivially uniform; the complete-set
     // requirement keeps it.
     const config = uneditedByokConfig();
@@ -1002,7 +1002,7 @@ describe("ensureByokDefaultProfiles", () => {
     expectSecondRunNoop();
   });
 
-  test("a vellum default keeps all copies when one was re-provisioned to another provider", () => {
+  test("a cadet default keeps all copies when one was re-provisioned to another provider", () => {
     // A re-provisioned copy breaks provider uniformity and keeps the whole
     // set; the stubs still delete.
     const config = uneditedByokConfig();

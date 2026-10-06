@@ -40,7 +40,7 @@ describe("/model list", () => {
   });
 
   test("default profile descriptions follow the default provider's column", async () => {
-    // The BYOK and vellum columns carry different description strings for
+    // The BYOK and cadet columns carry different description strings for
     // quality-optimized and cost-optimized; the listing must show the column
     // that actually dispatches on this install.
     mockLlm = {

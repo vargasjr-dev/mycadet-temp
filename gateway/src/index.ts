@@ -419,7 +419,7 @@ async function main() {
   const config = loadConfig();
   initLogger(config.logFile);
 
-  log.info("Starting Vellum Gateway...");
+  log.info("Starting Cadet Gateway...");
 
   // Initialize the JWT signing key shared with the daemon.
   // This must happen before any request handling.
@@ -2844,7 +2844,7 @@ async function main() {
 
   // Lazily bound below, once `remoteFeatureFlagSync` is constructed, so the
   // credential-change callback can trigger an immediate per-assistant flag
-  // re-sync. On a warm-pool claim the `vellum` credentials change to the
+  // re-sync. On a warm-pool claim the `cadet` credentials change to the
   // newly-assigned identity; without forcing a re-sync, flag values would not
   // refresh until the next scheduled poll (up to 5 min), so the onboarding
   // first message evaluates flags against stale values (see JARVIS-1018).
@@ -2949,10 +2949,10 @@ async function main() {
 
     // Register email callback route with the platform so inbound email
     // webhooks are forwarded to this gateway (same pattern as Telegram).
-    // Fires on initial credential load and whenever vellum credentials change
+    // Fires on initial credential load and whenever cadet credentials change
     // (key rotation, late provisioning).
     if (changed.has("vellum")) {
-      tunnelClient?.refreshCredentials("vellum credentials changed");
+      tunnelClient?.refreshCredentials("cadet credentials changed");
       registerEmailCallbackRoute({
         credentials: credentialCache,
         configFile: configFileCache,
@@ -2963,7 +2963,7 @@ async function main() {
         );
       });
 
-      // Vellum credentials are load-bearing for the Telegram webhook URL when
+      // Cadet credentials are load-bearing for the Telegram webhook URL when
       // the managed callback fallback applies: a platform connection arriving
       // or rotating after Telegram setup must repoint Telegram at the managed
       // callback route without waiting for an unrelated Telegram or ingress
@@ -2973,12 +2973,12 @@ async function main() {
         reconcileTelegramWebhook(telegramCaches).catch((err) => {
           log.error(
             { err },
-            "Failed to reconcile Telegram webhook after vellum credential change",
+            "Failed to reconcile Telegram webhook after cadet credential change",
           );
         });
       }
 
-      // Force an immediate per-assistant feature-flag re-sync. A `vellum`
+      // Force an immediate per-assistant feature-flag re-sync. A `cadet`
       // credential change means a warm-pool claim / key rotation / late
       // provisioning — the assistant identity the platform evaluates flags
       // for just changed. Without this, flags stay at their previous (often
@@ -2989,7 +2989,7 @@ async function main() {
       remoteFeatureFlagSyncRef?.syncNow().catch((err) => {
         log.error(
           { err },
-          "Failed to sync remote feature flags after vellum credential change",
+          "Failed to sync remote feature flags after cadet credential change",
         );
       });
     }
@@ -3154,7 +3154,7 @@ async function main() {
     onChanged: emitFlagChanged,
   });
   // Bind the ref so the credential-change callback above can force an
-  // immediate re-sync when the assistant's `vellum` identity changes
+  // immediate re-sync when the assistant's `cadet` identity changes
   // (warm-pool claim / key rotation) instead of waiting for the next poll.
   remoteFeatureFlagSyncRef = remoteFeatureFlagSync;
   // Intentionally fire-and-forget: remote flag fetch is best-effort;

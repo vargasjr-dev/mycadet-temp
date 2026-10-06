@@ -1,5 +1,5 @@
 /**
- * UX orchestration for "Install vellum Command…": wraps the cli-path-installer
+ * UX orchestration for "Install cadet Command…": wraps the cli-path-installer
  * primitives with confirmation/success dialogs and clipboard help. Both flows
  * surface failures via showErrorBox and never throw to the caller.
  */
@@ -32,10 +32,10 @@ const errorMessage = (err: unknown): string =>
 async function confirmReplaceForeignFile(): Promise<boolean> {
   const { response } = await dialog.showMessageBox({
     type: "warning",
-    message: "Replace existing vellum file?",
+    message: "Replace existing cadet file?",
     detail:
       `A "vellum" file already exists at ${getWrapperPath()} but wasn't ` +
-      "installed by Vellum (it may have been installed by npm with a custom " +
+      "installed by Cadet (it may have been installed by npm with a custom " +
       "prefix). Do you want to replace it with the Vellum-managed command?",
     buttons: ["Replace", "Cancel"],
     defaultId: 1,
@@ -69,27 +69,27 @@ async function showInstallSuccessDialog(): Promise<void> {
   let detail: string;
   if (state.kind === "installed" && !state.inPath) {
     detail =
-      `The vellum command is installed at ${wrapperPath}, but ` +
+      `The cadet command is installed at ${wrapperPath}, but ` +
       copyPathExportHelp();
   } else if (state.kind === "shadowed") {
     detail =
-      `The vellum command is installed at ${wrapperPath}, but another ` +
+      `The cadet command is installed at ${wrapperPath}, but another ` +
       `"vellum" was found at ${state.shadowedBy} (likely installed via ` +
       "npm) and will take precedence in your terminal. Run " +
-      '"npm uninstall -g vellum" to use the app-managed version.';
+      '"npm uninstall -g cadet" to use the app-managed version.';
     if (!state.inPath) {
       detail += ` Also, ${copyPathExportHelp()}`;
     }
   } else {
     // `installed` in PATH, plus a defensive default for anything else.
     detail =
-      `The vellum command is installed at ${wrapperPath}. ` +
+      `The cadet command is installed at ${wrapperPath}. ` +
       'Open a new terminal and run "vellum".';
   }
 
   await dialog.showMessageBox({
     type: "info",
-    message: "Vellum CLI installed",
+    message: "Cadet CLI installed",
     detail,
   });
 }
@@ -98,7 +98,10 @@ export async function runInstallCliCommandFlow(): Promise<void> {
   if (flowInFlight) return;
   flowInFlight = true;
   try {
-    if (installWrapper({ overwriteForeign: false }) === "needs-overwrite-confirmation") {
+    if (
+      installWrapper({ overwriteForeign: false }) ===
+      "needs-overwrite-confirmation"
+    ) {
       if (!(await confirmReplaceForeignFile())) return;
       installWrapper({ overwriteForeign: true });
     }
@@ -107,16 +110,16 @@ export async function runInstallCliCommandFlow(): Promise<void> {
       await ensureCliInstalled();
     } catch (err) {
       throw new Error(
-        `The vellum command was installed at ${getWrapperPath()}, but ` +
+        `The cadet command was installed at ${getWrapperPath()}, but ` +
           `downloading the CLI runtime failed: ${errorMessage(err)}. Use ` +
-          '"Repair vellum Command" in the Vellum menu to retry now — or it ' +
+          '"Repair cadet Command" in the Cadet menu to retry now — or it ' +
           "will be retried automatically the next time it's needed.",
       );
     }
 
     await showInstallSuccessDialog();
   } catch (err) {
-    dialog.showErrorBox("Failed to install vellum command", errorMessage(err));
+    dialog.showErrorBox("Failed to install cadet command", errorMessage(err));
   } finally {
     flowInFlight = false;
   }
@@ -128,8 +131,8 @@ export async function runUninstallCliCommandFlow(): Promise<void> {
   try {
     const { response } = await dialog.showMessageBox({
       type: "warning",
-      message: "Uninstall vellum command?",
-      detail: `This removes the vellum command at ${getWrapperPath()}.`,
+      message: "Uninstall cadet command?",
+      detail: `This removes the cadet command at ${getWrapperPath()}.`,
       buttons: ["Uninstall", "Cancel"],
       defaultId: 1,
       cancelId: 1,
@@ -139,25 +142,25 @@ export async function runUninstallCliCommandFlow(): Promise<void> {
     const resultDialogs = {
       removed: {
         type: "info",
-        message: "Vellum command uninstalled",
-        detail: "The vellum command was removed.",
+        message: "Cadet command uninstalled",
+        detail: "The cadet command was removed.",
       },
       "not-ours": {
         type: "warning",
-        message: "Vellum command not removed",
+        message: "Cadet command not removed",
         detail:
-          `The file at ${getWrapperPath()} wasn't installed by Vellum — ` +
+          `The file at ${getWrapperPath()} wasn't installed by Cadet — ` +
           "not removing it.",
       },
       absent: {
         type: "info",
         message: "Nothing to uninstall",
-        detail: "The vellum command is not installed.",
+        detail: "The cadet command is not installed.",
       },
     } as const;
     await dialog.showMessageBox(resultDialogs[uninstallWrapper()]);
   } catch (err) {
-    dialog.showErrorBox("Failed to uninstall vellum command", errorMessage(err));
+    dialog.showErrorBox("Failed to uninstall cadet command", errorMessage(err));
   } finally {
     flowInFlight = false;
   }

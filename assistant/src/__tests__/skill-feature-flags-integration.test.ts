@@ -28,7 +28,7 @@ import { parseFrontmatterFields } from "../skills/frontmatter.js";
 // Fixtures
 // ---------------------------------------------------------------------------
 
-/** A SKILL.md with `feature-flag: a2a-channel` declared in its vellum metadata. */
+/** A SKILL.md with `feature-flag: a2a-channel` declared in its cadet metadata. */
 const SKILL_MD_WITH_FLAG = `---
 name: "Email Setup"
 description: "Set up email integration"
@@ -94,12 +94,12 @@ function buildSkillSummary(
   let featureFlag: string | undefined;
   const metadataObj = parsed.fields.metadata;
   if (metadataObj != null && typeof metadataObj === "object") {
-    const vellum = (metadataObj as Record<string, unknown>).vellum as
+    const cadet = (metadataObj as Record<string, unknown>).vellum as
       | Record<string, unknown>
       | undefined;
     featureFlag =
-      typeof vellum?.["feature-flag"] === "string"
-        ? vellum["feature-flag"]
+      typeof cadet?.["feature-flag"] === "string"
+        ? cadet["feature-flag"]
         : undefined;
   }
 
@@ -129,8 +129,8 @@ describe("frontmatter feature-flag integration", () => {
     const metadataObj = parsed!.fields.metadata as Record<string, unknown>;
     expect(metadataObj).toBeTruthy();
 
-    const vellum = metadataObj.vellum as Record<string, unknown>;
-    expect(vellum["feature-flag"]).toBe("a2a-channel");
+    const cadet = metadataObj.vellum as Record<string, unknown>;
+    expect(cadet["feature-flag"]).toBe("a2a-channel");
   });
 
   test("skillFlagKey returns correct key for parsed skill", () => {
@@ -191,8 +191,8 @@ describe("frontmatter feature-flag integration", () => {
     const parsed = parseFrontmatterFields(SKILL_MD_WITH_FLAG);
     expect(parsed).not.toBeNull();
     const metadataObj = parsed!.fields.metadata as Record<string, unknown>;
-    const vellum = metadataObj.vellum as Record<string, unknown>;
-    const flagId = vellum["feature-flag"];
+    const cadet = metadataObj.vellum as Record<string, unknown>;
+    const flagId = cadet["feature-flag"];
     expect(flagId).toBe("a2a-channel");
 
     // Step 2: Build SkillSummary (as the catalog loader would)

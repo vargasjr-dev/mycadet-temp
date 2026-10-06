@@ -32,7 +32,7 @@ describe("canActOnPrivilegedDocuments", () => {
     ).toBe(true);
   });
 
-  test("the vellum channel grants access even to unknown actors", () => {
+  test("the cadet channel grants access even to unknown actors", () => {
     expect(
       canActOnPrivilegedDocuments({
         trustClass: "unknown",

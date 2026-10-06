@@ -29,9 +29,9 @@ describe("getVisibleProviderCatalog", () => {
 
     setOverridesForTesting({ "vellum-hosted-inference": true });
     const visible = getVisibleProviderCatalog(makeConfig());
-    const vellum = visible.find((p) => p.id === "vellum");
-    expect(vellum).toBeDefined();
-    expect(vellum!.models.map((m) => m.id)).toEqual(["qwen/qwen3-8b"]);
+    const cadet = visible.find((p) => p.id === "vellum");
+    expect(cadet).toBeDefined();
+    expect(cadet!.models.map((m) => m.id)).toEqual(["qwen/qwen3-8b"]);
   });
 
   test("shows openai-compatible endpoints unconditionally (GA'ed)", () => {

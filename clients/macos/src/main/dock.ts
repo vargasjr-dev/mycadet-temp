@@ -76,7 +76,7 @@ export const formatBadge = (count: number): string => {
 const POLICY_DEBOUNCE_MS = 100;
 
 // When the user is signed out and no windows are visible, drop the
-// Dock icon and run menu-bar-only — same accessory-mode UX Swift Vellum
+// Dock icon and run menu-bar-only — same accessory-mode UX Swift Cadet
 // exposes. Safe to flip on now that `installTray` provides an
 // always-available entry point back to the app (the Dock icon used to
 // be the only one). Kept as a module-level constant rather than a

@@ -30,7 +30,7 @@ export interface OpenRouterProviderOptions {
 const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 const OPENROUTER_APP_ATTRIBUTION_HEADERS = {
   "HTTP-Referer": "https://www.vellum.ai",
-  "X-OpenRouter-Title": "Vellum Assistant",
+  "X-OpenRouter-Title": "Cadet Assistant",
   "X-OpenRouter-Categories": "personal-agent,cli-agent",
 };
 

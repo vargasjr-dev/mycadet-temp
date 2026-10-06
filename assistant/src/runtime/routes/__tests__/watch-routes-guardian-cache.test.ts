@@ -45,7 +45,7 @@ afterAll(() => {
   mock.restore();
 });
 
-/** The shape `guardianForChannel` matches on for the vellum binding. */
+/** The shape `guardianForChannel` matches on for the cadet binding. */
 function guardian(principalId: string): GuardianDelivery {
   return {
     principalId,

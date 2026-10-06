@@ -981,14 +981,14 @@ describe("handleUpsertContact (gateway-native)", () => {
     expect(contactStoreUpsertMock).not.toHaveBeenCalled();
   });
 
-  test("rejects vellum metadata missing assistantId", async () => {
+  test("rejects cadet metadata missing assistantId", async () => {
     const handler = createContactsControlPlaneProxyHandler(makeConfig());
     const res = await handler.handleUpsertContact(
       new Request("http://localhost:7830/v1/contacts", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          displayName: "Vellum Bot",
+          displayName: "Cadet Bot",
           contactType: "assistant",
           assistantMetadata: {
             species: "vellum",
@@ -1004,14 +1004,14 @@ describe("handleUpsertContact (gateway-native)", () => {
     expect(contactStoreUpsertMock).not.toHaveBeenCalled();
   });
 
-  test("rejects vellum metadata missing gatewayUrl", async () => {
+  test("rejects cadet metadata missing gatewayUrl", async () => {
     const handler = createContactsControlPlaneProxyHandler(makeConfig());
     const res = await handler.handleUpsertContact(
       new Request("http://localhost:7830/v1/contacts", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          displayName: "Vellum Bot",
+          displayName: "Cadet Bot",
           contactType: "assistant",
           assistantMetadata: {
             species: "vellum",
@@ -1027,14 +1027,14 @@ describe("handleUpsertContact (gateway-native)", () => {
     expect(contactStoreUpsertMock).not.toHaveBeenCalled();
   });
 
-  test("accepts vellum assistant with full metadata", async () => {
+  test("accepts cadet assistant with full metadata", async () => {
     const handler = createContactsControlPlaneProxyHandler(makeConfig());
     const res = await handler.handleUpsertContact(
       new Request("http://localhost:7830/v1/contacts", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          displayName: "Vellum Bot",
+          displayName: "Cadet Bot",
           contactType: "assistant",
           assistantMetadata: {
             species: "vellum",

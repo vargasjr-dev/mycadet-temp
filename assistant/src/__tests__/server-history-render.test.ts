@@ -523,14 +523,14 @@ describe("renderHistoryContent", () => {
     // card survives a history reopen instead of degrading to plain text.
     const activityMetadata: ToolActivityMetadata = {
       webSearch: {
-        query: "vellum docs",
+        query: "cadet docs",
         provider: "brave",
         resultCount: 1,
         durationMs: 120,
         results: [
           {
             rank: 1,
-            title: "Vellum",
+            title: "Cadet",
             url: "https://vellum.ai",
             domain: "vellum.ai",
           },
@@ -543,7 +543,7 @@ describe("renderHistoryContent", () => {
         type: "tool_use",
         id: "tu_1",
         name: "web_search",
-        input: { query: "vellum docs" },
+        input: { query: "cadet docs" },
         _activityMetadata: activityMetadata,
       },
     ]);

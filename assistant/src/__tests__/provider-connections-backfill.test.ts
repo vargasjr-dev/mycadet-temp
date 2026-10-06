@@ -3,7 +3,7 @@
  * the entry's provider must win over the mode-derived default.
  *
  * On managed (platform-hosted) installs the mode default is the billed
- * `vellum` connection — stamping it onto a connection-less BYOK-intent
+ * `cadet` connection — stamping it onto a connection-less BYOK-intent
  * profile permanently routes the user's own-key setup through managed
  * billing. On your-own installs the mode default creates a parallel
  * `<provider>-personal` row with an empty credential slot even when a
@@ -55,7 +55,7 @@ afterEach(() => {
   }
 });
 
-test("managed mode prefers an existing user connection over the vellum default", () => {
+test("managed mode prefers an existing user connection over the cadet default", () => {
   process.env.IS_PLATFORM = "true";
   const created = createConnection(getDb(), {
     name: "anthropic-personal",
@@ -70,7 +70,7 @@ test("managed mode prefers an existing user connection over the vellum default",
   expect(backfilledConnection("byok")).toBe("anthropic-personal");
 });
 
-test("managed mode still stamps vellum when no user connection exists", () => {
+test("managed mode still stamps cadet when no user connection exists", () => {
   process.env.IS_PLATFORM = "true";
   seedConfig({ byok: { provider: "anthropic", model: "claude-fable-5" } });
 
@@ -79,7 +79,7 @@ test("managed mode still stamps vellum when no user connection exists", () => {
   expect(backfilledConnection("byok")).toBe("vellum");
 });
 
-test("managed-owned entries keep the vellum stamp even when a user connection exists", () => {
+test("managed-owned entries keep the cadet stamp even when a user connection exists", () => {
   process.env.IS_PLATFORM = "true";
   const created = createConnection(getDb(), {
     name: "anthropic-personal",

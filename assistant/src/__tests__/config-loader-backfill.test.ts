@@ -1734,7 +1734,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
 
     expect(raw.llm.activeProfile).toBe("balanced");
     // The hatch overlay selected a managed profile (all managed profiles
-    // share the single `vellum` connection), so no disabled stubs are
+    // share the single `cadet` connection), so no disabled stubs are
     // written: the defaults stay absent from llm.profiles and resolve active
     // from the code catalog. The default advisor falls to the strongest
     // active managed profile, `quality-optimized`.
@@ -2019,7 +2019,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
 
     // User's "active" decision survives the boot upsert.
     expect(config.llm.profiles.balanced?.status).toBe("active");
-    // Label is still suffixed (Vellum can push label updates).
+    // Label is still suffixed (Cadet can push label updates).
     expect(config.llm.profiles.balanced?.label).toBe("Balanced (Managed)");
   });
 });

@@ -29,7 +29,7 @@ export function getWrapperDir(): string {
   return path.join(homedir(), ".local", "bin");
 }
 
-/** Absolute path of the `vellum` PATH wrapper. */
+/** Absolute path of the `cadet` PATH wrapper. */
 export function getWrapperPath(): string {
   return path.join(getWrapperDir(), "vellum");
 }
@@ -44,15 +44,15 @@ export function buildWrapperScript(): string {
   return [
     "#!/bin/sh",
     WRAPPER_MARKER,
-    '# Installed by Vellum.app ("Install vellum Command"). Safe to delete.',
+    '# Installed by Cadet.app ("Install cadet Command"). Safe to delete.',
     `LOCATOR=${shQuote(getCliLocatorPath())}`,
     'if [ ! -f "$LOCATOR" ]; then',
-    '  echo "vellum: CLI not set up yet. Launch Vellum.app once to finish setup." >&2',
+    '  echo "cadet: CLI not set up yet. Launch Cadet.app once to finish setup." >&2',
     "  exit 1",
     "fi",
     '. "$LOCATOR"',
     'if [ ! -x "$VELLUM_BUN" ] || [ ! -e "$VELLUM_CLI_BIN" ]; then',
-    '  echo "vellum: installation is incomplete. Launch Vellum.app once to repair it." >&2',
+    '  echo "cadet: installation is incomplete. Launch Cadet.app once to repair it." >&2',
     "  exit 1",
     "fi",
     'exec "$VELLUM_BUN" "$VELLUM_CLI_BIN" "$@"',
@@ -137,7 +137,7 @@ function realpathOr(p: string): string {
 }
 
 /**
- * Determine how the `vellum` command resolves on the user's login-shell
+ * Determine how the `cadet` command resolves on the user's login-shell
  * PATH. `shadowed` means another executable wins over our wrapper (e.g. an
  * npm-global install earlier in PATH); symlink/case variants that resolve
  * to the wrapper itself don't count. Never throws — when login-shell PATH
@@ -162,7 +162,8 @@ export async function getCliPathInstallState(): Promise<CliPathInstallState> {
   const [firstHit] = findExecutablesInPath("vellum", shellPath);
   const firstHitIsWrapper =
     firstHit !== undefined &&
-    (firstHit === wrapperPath || realpathOr(firstHit) === realpathOr(wrapperPath));
+    (firstHit === wrapperPath ||
+      realpathOr(firstHit) === realpathOr(wrapperPath));
 
   const inPath =
     firstHitIsWrapper || splitPathEntries(shellPath).includes(getWrapperDir());

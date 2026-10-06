@@ -110,14 +110,14 @@ function findBlockById(
 
 const webSearchActivity: ToolActivityMetadata = {
   webSearch: {
-    query: "vellum docs",
+    query: "cadet docs",
     provider: "brave",
     resultCount: 2,
     durationMs: 142,
     results: [
       {
         rank: 1,
-        title: "Vellum",
+        title: "Cadet",
         url: "https://vellum.ai",
         domain: "vellum.ai",
       },
@@ -148,7 +148,7 @@ describe("annotatePersistedAssistantMessage — activityMetadata", () => {
         type: "tool_use",
         id: toolUseId,
         name: "web_search",
-        input: { query: "vellum docs" },
+        input: { query: "cadet docs" },
       },
     ]);
 
@@ -179,7 +179,7 @@ describe("annotatePersistedAssistantMessage — activityMetadata", () => {
         type: "server_tool_use",
         id: nativeId,
         name: "web_search",
-        input: { query: "vellum docs" },
+        input: { query: "cadet docs" },
       },
       {
         type: "tool_use",

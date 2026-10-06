@@ -245,7 +245,7 @@ describe("145-collapse-profile-bindings-to-entries", () => {
     ).toBe(true);
   });
 
-  test("folds a canonical vellum binding only for identity-servable models", () => {
+  test("folds a canonical cadet binding only for identity-servable models", () => {
     seedRows([{ name: "vellum", provider: "vellum" }]);
     writeConfig({
       llm: {

@@ -180,7 +180,7 @@ describe("formatBadge", () => {
 
   test('anything strictly greater than 99 truncates to "99+" before flooring', () => {
     // 99.0001 fails the `count > 99` check and bypasses `Math.floor`,
-    // landing on `"99+"`. This is intentional — Swift Vellum caps at 99
+    // landing on `"99+"`. This is intentional — Swift Cadet caps at 99
     // and matching its cap avoids visual jitter at the boundary.
     expect(formatBadge(99.0001)).toBe("99+");
     expect(formatBadge(99.9)).toBe("99+");
@@ -301,9 +301,7 @@ describe("installDock IPC registration", () => {
     expect(handleRegistrations).toHaveLength(0);
 
     const channels = onRegistrations.map((r) => r.channel);
-    expect(channels.filter((c) => c === "cadet:dock:setBadge")).toHaveLength(
-      1,
-    );
+    expect(channels.filter((c) => c === "cadet:dock:setBadge")).toHaveLength(1);
   });
 
   test("the setBadge schema accepts a single number and rejects anything else", () => {

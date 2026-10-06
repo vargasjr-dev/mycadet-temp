@@ -589,7 +589,7 @@ describe("SubagentDetailPanel: nested detail reads the live call", () => {
       {
         id: "tool-1",
         name: "web_search",
-        input: { query: "vellum" },
+        input: { query: "cadet" },
         startedAt: 1,
         completedAt: 2,
         result: "unparsed provider text",

@@ -25,12 +25,12 @@ describe("isDaemonCommand", () => {
   test("packaged Windows daemon under an install path containing spaces", () => {
     expect(
       isDaemonCommand(
-        '"C:\\Program Files\\Vellum\\resources\\cli-runtime\\vellum-daemon.exe"',
+        '"C:\\Program Files\\Cadet\\resources\\cli-runtime\\vellum-daemon.exe"',
       ),
     ).toBe(true);
     expect(
       isDaemonCommand(
-        '"C:\\Program Files\\Vellum\\resources\\cli-runtime\\vellum-daemon.exe" --serve',
+        '"C:\\Program Files\\Cadet\\resources\\cli-runtime\\vellum-daemon.exe" --serve',
       ),
     ).toBe(true);
   });
@@ -38,7 +38,7 @@ describe("isDaemonCommand", () => {
   test("quoted bun entry-script argument under a path containing spaces", () => {
     expect(
       isDaemonCommand(
-        '"C:\\Program Files\\bun\\bun.exe" run "C:\\Program Files\\Vellum\\src\\daemon\\main.ts"',
+        '"C:\\Program Files\\bun\\bun.exe" run "C:\\Program Files\\Cadet\\src\\daemon\\main.ts"',
       ),
     ).toBe(true);
   });

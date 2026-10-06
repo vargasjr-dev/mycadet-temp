@@ -460,7 +460,7 @@ describe("guardian copy carries no reply mechanics", () => {
     expect(decision.renderedCopy.telegram?.deliveryText).toBe(expectedQuestion);
   });
 
-  test("model-authored code phrasing is stripped from vellum and platform copy", async () => {
+  test("model-authored code phrasing is stripped from cadet and platform copy", async () => {
     configuredProvider = {
       sendMessage: async () => ({ content: [] }),
     };

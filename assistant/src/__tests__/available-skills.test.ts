@@ -203,7 +203,7 @@ describe("listInstalledSkills", () => {
 });
 
 describe("listCatalogSkills", () => {
-  test("projects vellum metadata with name fallback and flag gating", async () => {
+  test("projects cadet metadata with name fallback and flag gating", async () => {
     remoteFixture = [
       {
         id: "rich-skill",

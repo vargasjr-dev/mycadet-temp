@@ -1,8 +1,8 @@
 # Electron wrapper
 
-Desktop shell for the Vellum Assistant macOS app. Wraps [`clients/web/`](../web/)
+Desktop shell for the Cadet Assistant macOS app. Wraps [`clients/web/`](../web/)
 in an Electron `BrowserWindow`. Each assistant's background processes are owned
-entirely by the `vellum` CLI, which the app invokes as a subprocess — the
+entirely by the `cadet` CLI, which the app invokes as a subprocess — the
 Electron app is a GUI client, not a process manager.
 
 This package is the macOS distribution surface (outside the App Store).
@@ -49,7 +49,7 @@ Configuration lives in `src/main/auto-update.ts`:
 - **`autoDownload: true`** — updates download silently in the background.
 - **`autoInstallOnAppQuit: true`** — installs on next quit, not mid-session.
 - **Poll interval** — checks on launch, then every 4 hours.
-- **Manual trigger** — users can check via the `Vellum > Check for Updates…`
+- **Manual trigger** — users can check via the `Cadet > Check for Updates…`
   menu item (packaged builds only), or the renderer can invoke
   `cadet:update:check` / `cadet:update:install` over IPC.
 
@@ -72,14 +72,14 @@ which is a fast no-op when the lockfile already matches).
 ## How it runs
 
 `bun run dev` is the one command. On launch it probes
-`http://localhost:3000` (the URL Swift Vellum hits — `vel up`'s edge
+`http://localhost:3000` (the URL Swift Cadet hits — `vel up`'s edge
 proxy) with a 1.5s timeout and picks one of two paths:
 
 1. **vel up is running** → dispatches to `dev:electron-only` with
    `VELLUM_DEV_URL=http://localhost:3000/assistant`. No Vite is spawned
    here; the Electron BrowserWindow loads the edge proxy at the
    `/assistant` path (the bare root is the marketing site) and reuses
-   vel's backends (Django, gateway, daemon) the same way Swift Vellum
+   vel's backends (Django, gateway, daemon) the same way Swift Cadet
    does today. This is the common case once you have `vel up` going.
 
 2. **No vel up** → dispatches to `dev:standalone`, which uses
@@ -113,12 +113,12 @@ Override the env var yourself (e.g.,
 `VELLUM_DEV_URL=http://localhost:3002/assistant bun run dev:electron-only`)
 if you need to point at a non-default service.
 
-The app shows up as **Vellum Electron** in the menu bar and Dock
+The app shows up as **Cadet Electron** in the menu bar and Dock
 (via `app.setName`, gated to `!app.isPackaged` in `src/main/index.ts`),
 and writes preferences / electron-store data under
 `~/Library/Application Support/Vellum Electron/`. That keeps it cleanly
-separate from the Swift `Vellum.app`, `Vellum Local.app`, and
-`Vellum Dev.app` installs — running this locally won't clobber
+separate from the Swift `Vellum.app`, `Cadet Local.app`, and
+`Cadet Dev.app` installs — running this locally won't clobber
 whichever Swift channel you have around.
 
 - **Dev (vel up)** — Electron loads `http://localhost:3000/assistant` (edge proxy + the path clients/web's Vite is configured for).
@@ -127,14 +127,14 @@ whichever Swift channel you have around.
   `web-dist/` files. See [Web content delivery](#web-content-delivery).
 - **Assistant process** — The app does not run or supervise any background
   process of its own. Each local assistant runs its own processes, spawned and
-  managed by the `vellum` CLI; the main process only invokes the CLI as a
+  managed by the `cadet` CLI; the main process only invokes the CLI as a
   subprocess for lifecycle ops (hatch, retire, token). Packaging the CLI
   runtime so this works in distributed builds is a known gap.
 
 ## Native macOS integration
 
 - **Application menu** (`src/main/menu.ts`). Installs a standard macOS menu
-  bar with `Vellum`, `File`, `Edit`, `View`, `Window`, and `Help` submenus.
+  bar with `Cadet`, `File`, `Edit`, `View`, `Window`, and `Help` submenus.
   Most items are role-based so they work without renderer IPC; the `File`
   items dispatch through the typed command bus in `src/main/commands.ts`,
   which broadcasts to the focused window's renderer via a single
@@ -166,7 +166,7 @@ whichever Swift channel you have around.
     pasteboard/file-promise reference can still need it. Instead `share.ts`
     reclaims only _stale_ temp dirs (older than an hour — long past any
     transfer), sweeping at startup and before each new share, so it never
-    deletes a file still in use, including one from a second Vellum build
+    deletes a file still in use, including one from a second Cadet build
     sharing at the same time.
 
 - **Downloads** (`@mycadet/electron-desktop`'s `downloads.ts`, shared with the
@@ -397,7 +397,7 @@ The preload script exposes a typed `window.vellum` API to the renderer:
   back to the window.
 - `localMode.*` — provisions and retires local assistants and reads/writes
   the lockfile that records them. `hatch(species)` and `retire(assistantId)`
-  drive the Vellum CLI as a subprocess; `readLockfile()`,
+  drive the Cadet CLI as a subprocess; `readLockfile()`,
   `saveLockfileAssistant(assistant, activeAssistant?)`, and
   `replacePlatformAssistants(platformAssistants)` read and write the lockfile
   on disk. Every method is a thin wrapper over [`@mycadet/local-mode`](../../packages/local-mode/),
@@ -460,15 +460,15 @@ live in TypeScript types.
 The existing companion coachmarks check and request only the access needed by
 their current lesson. Every permission step is skippable.
 
-| Lesson     | Permission       | Purpose                                        |
-| ---------- | ---------------- | ---------------------------------------------- |
-| Try a call | Microphone       | Capture your voice during calls                |
-| Voice key  | Input Monitoring | Detect the global voice-key shortcut           |
-| Share      | Screen Recording | Share a screen or window through Vellum Helper |
+| Lesson     | Permission       | Purpose                                       |
+| ---------- | ---------------- | --------------------------------------------- |
+| Try a call | Microphone       | Capture your voice during calls               |
+| Voice key  | Input Monitoring | Detect the global voice-key shortcut          |
+| Share      | Screen Recording | Share a screen or window through Cadet Helper |
 
 Microphone uses the native prompt. Input Monitoring and Screen Recording lift
 the coachmark's permission control into a guide beside System Settings. Drag
-Vellum Helper into the privacy list and authenticate if asked.
+Cadet Helper into the privacy list and authenticate if asked.
 **Show in Finder** provides a keyboard and manual-drag alternative. The bundle
 label and icon reflect the actual installed helper, including development builds.
 
@@ -486,7 +486,7 @@ The guide follows the main Settings window using the helper's window inventory;
 when unavailable it stays near the bottom of the current display. Before a drag
 or Finder reveal it stops following and drops its floating level to leave native
 authentication visible. A confirmed grant closes the guide without raising the
-companion over Settings. Vellum returns to the same coachmark only after the
+companion over Settings. Cadet returns to the same coachmark only after the
 request settles and System Settings leaves the foreground. Settings keeps focus
 through its **Quit & Reopen** confirmation; an unknown foreground application or
 active authentication agent also defers the return. **Back to the tour** returns

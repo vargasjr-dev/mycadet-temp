@@ -352,7 +352,7 @@ describe("RetryProvider fallback-route escalation", () => {
       "openai",
       () =>
         new ProviderError(
-          "Model 'gpt-old' is not yet supported on the Vellum hosted service.",
+          "Model 'gpt-old' is not yet supported on the Cadet hosted service.",
           "openai",
           400,
         ),

@@ -27,7 +27,7 @@ afterEach(() => {
 });
 
 describe("seedAdmissionPolicyDefaults", () => {
-  test("seeds enforced channels with their defaults (vellum → guardian_only, rest → trusted_contacts)", () => {
+  test("seeds enforced channels with their defaults (cadet → guardian_only, rest → trusted_contacts)", () => {
     seedAdmissionPolicyDefaults(store);
 
     const byChannel = new Map(
@@ -94,7 +94,7 @@ describe("seedAdmissionPolicyDefaults", () => {
     // A legacy/stale row on a now-hidden channel must not strand the channel
     // at a floor the user can no longer see or reset in the UI.
     store.set("whatsapp", "no_one", "legacy kill switch");
-    store.set("vellum", "any_contact", "legacy widened vellum");
+    store.set("vellum", "any_contact", "legacy widened cadet");
     store.set("vellum-shared", "strangers", "legacy widened vellum-shared");
 
     seedAdmissionPolicyDefaults(store);

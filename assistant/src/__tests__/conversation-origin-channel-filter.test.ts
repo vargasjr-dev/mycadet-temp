@@ -22,7 +22,7 @@ function getRawDb(): Database {
  * an inbound message can claim the conversation for its channel, and migration
  * 288 settles the unclaimed ones to 'vellum' at daemon startup. So NULL means
  * "not yet attributed", and between one boot and the next it is what most rows
- * carry. Reading `vellum` strictly would leave every one of them in no section
+ * carry. Reading `cadet` strictly would leave every one of them in no section
  * at all: not native, not any channel.
  */
 describe("listConversations originChannel filter", () => {
@@ -45,14 +45,14 @@ describe("listConversations originChannel filter", () => {
     >[0]).map((c) => c.id);
   }
 
-  test("vellum matches rows that were never attributed", () => {
+  test("cadet matches rows that were never attributed", () => {
     createConversation({ id: "conv-unattributed", source: "user" });
     stamp("conv-unattributed", null);
 
     expect(listedIds("vellum")).toEqual(["conv-unattributed"]);
   });
 
-  test("vellum matches rows explicitly stamped vellum", () => {
+  test("cadet matches rows explicitly stamped cadet", () => {
     createConversation({ id: "conv-native", source: "user" });
     stamp("conv-native", "vellum");
 
@@ -62,7 +62,7 @@ describe("listConversations originChannel filter", () => {
   /* The whole point: an unattributed row and a stamped native row are the same
      section. Asserting both are returned together, rather than each alone,
      is what fails if the predicate goes back to a strict equality. */
-  test("vellum returns unattributed and stamped rows together", () => {
+  test("cadet returns unattributed and stamped rows together", () => {
     createConversation({ id: "conv-native", source: "user" });
     stamp("conv-native", "vellum");
     createConversation({ id: "conv-unattributed", source: "user" });
@@ -74,14 +74,14 @@ describe("listConversations originChannel filter", () => {
     ]);
   });
 
-  test("vellum does not claim a row belonging to a channel", () => {
+  test("cadet does not claim a row belonging to a channel", () => {
     createConversation({ id: "conv-slack", source: "user" });
     stamp("conv-slack", "slack");
 
     expect(listedIds("vellum")).toEqual([]);
   });
 
-  /* Only `vellum` is tolerant. A row is claimed for a channel by that channel
+  /* Only `cadet` is tolerant. A row is claimed for a channel by that channel
      alone, so there is no ambiguity for the others to absorb - and a tolerant
      `slack` would pull every unattributed row into the Slack card. */
   test("a channel matches exactly and never absorbs unattributed rows", () => {

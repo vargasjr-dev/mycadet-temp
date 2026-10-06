@@ -130,7 +130,7 @@ export async function admitInbound(
   //
   // Defense in depth: the §8.1 exempt set (platform/a2a) skips this check.
   // The same exemption is enforced PUT-side in channel-admission-policy.ts
-  // and at the runtime admission stage. `vellum` is hidden, not exempt: its
+  // and at the runtime admission stage. `cadet` is hidden, not exempt: its
   // floor stays enforced, and a guardian cannot lock themselves out of the
   // desktop client because PUT 403s hidden channels and the seed re-pins
   // `guardian_only`, which always admits the guardian.

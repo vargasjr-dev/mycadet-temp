@@ -429,11 +429,11 @@ describe("setInferenceProfileSession", () => {
     }
   });
 
-  test("BYOK default provider — pins a managed preset without a Vellum sign-in", async () => {
+  test("BYOK default provider — pins a managed preset without a Cadet sign-in", async () => {
     const conv = createConversation("sess-handler-byok-preset");
-    // Signed out of Vellum, but llm.defaultProvider points the managed
+    // Signed out of Cadet, but llm.defaultProvider points the managed
     // presets at the user's own anthropic connection — the pin must judge
-    // that body, not the Vellum column.
+    // that body, not the Cadet column.
     managedProxyEnabled = false;
     storedKeys["credential/anthropic/api_key"] = "test-key";
     getDb()

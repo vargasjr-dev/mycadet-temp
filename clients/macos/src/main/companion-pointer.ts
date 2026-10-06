@@ -3,7 +3,7 @@
  * as whether the companion window is taking mouse events.
  *
  * Written by the surface's `setInteractive`, and read by the input-activity
- * forwarder: a click on the companion is a press on Vellum's own controls,
+ * forwarder: a click on the companion is a press on Cadet's own controls,
  * not an edit in whatever the user was working in, and the offer those
  * controls answer must survive being pressed.
  *

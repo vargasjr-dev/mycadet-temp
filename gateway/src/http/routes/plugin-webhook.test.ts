@@ -364,7 +364,7 @@ describe("the gate", () => {
     expect(calls).toHaveLength(1);
   });
 
-  it("still demands the platform signature on an unapproved vellum route", async () => {
+  it("still demands the platform signature on an unapproved cadet route", async () => {
     // Skipping approval did not skip authentication.
     const { calls, fetchImpl } = recordingFetch();
     const handle = createPluginWebhookHandler({

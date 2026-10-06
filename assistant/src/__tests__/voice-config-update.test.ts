@@ -128,8 +128,8 @@ describe("voice_config_update — tts_provider", () => {
 
   test("a provider switch scrubs a legacy mode key from the raw config", async () => {
     // The daemon ignores a legacy `mode` key, but the settings cards read
-    // `mode: "managed"` as the Vellum marker — left behind, they would render
-    // Vellum while the daemon routes the newly chosen provider.
+    // `mode: "managed"` as the Cadet marker — left behind, they would render
+    // Cadet while the daemon routes the newly chosen provider.
     writeConfig({ services: { tts: { mode: "managed", provider: "vellum" } } });
     invalidateConfigCache();
 
@@ -144,7 +144,7 @@ describe("voice_config_update — tts_provider", () => {
     expect(tts).not.toHaveProperty("mode");
   });
 
-  test("tts_provider vellum persists when a platform connection is available", async () => {
+  test("tts_provider cadet persists when a platform connection is available", async () => {
     mockManagedSpeechAvailable = true;
 
     const result = await run(
@@ -239,7 +239,7 @@ describe("voice_config_update — tts_voice_id (managed/vellum active)", () => {
     expect((config.services as any)?.tts?.providers?.vellum?.model).toBe(
       "aura-2-zeus-en",
     );
-    // The ElevenLabs field is never touched when vellum is active.
+    // The ElevenLabs field is never touched when cadet is active.
     expect(
       (config.services as any)?.tts?.providers?.elevenlabs?.voiceId,
     ).toBeUndefined();
@@ -285,7 +285,7 @@ describe("voice_config_update — tts_voice_id (managed/vellum active)", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect(result.content).toStartWith("Vellum managed voice updated to");
+    expect(result.content).toStartWith("Cadet managed voice updated to");
     expect(result.content).toContain(
       'ui_show { surface_type: "voice_picker", data: {} }',
     );
@@ -536,7 +536,7 @@ describe("voice_config_update — stt_provider", () => {
     );
   });
 
-  test("persists the vellum provider when a platform connection is available", async () => {
+  test("persists the cadet provider when a platform connection is available", async () => {
     mockManagedSpeechAvailable = true;
 
     const result = await run(
@@ -548,7 +548,7 @@ describe("voice_config_update — stt_provider", () => {
     expect((readConfig().services as any)?.stt?.provider).toBe("vellum");
   });
 
-  test("rejects the vellum provider without a platform connection", async () => {
+  test("rejects the cadet provider without a platform connection", async () => {
     mockManagedSpeechAvailable = false;
 
     const result = await run(
@@ -604,7 +604,7 @@ describe("voice_config_update — stt_provider", () => {
     expect(result.content).toContain("stt_model must be one of");
   });
 
-  test("switching away from vellum takes effect", async () => {
+  test("switching away from cadet takes effect", async () => {
     writeConfig({ services: { stt: { provider: "vellum" } } });
     invalidateConfigCache();
 
@@ -916,7 +916,7 @@ describe("voice_config_update - stt_language", () => {
 // ---------------------------------------------------------------------------
 
 describe("voice_config_update — catalog-driven provider validation", () => {
-  test("rejects tts_provider vellum without a platform connection", async () => {
+  test("rejects tts_provider cadet without a platform connection", async () => {
     mockManagedSpeechAvailable = false;
 
     const result = await run(
@@ -930,7 +930,7 @@ describe("voice_config_update — catalog-driven provider validation", () => {
   });
 
   test("accepts every provider ID in the catalog", async () => {
-    // The catalog includes vellum, which is gated on a platform connection.
+    // The catalog includes cadet, which is gated on a platform connection.
     mockManagedSpeechAvailable = true;
     const catalogIds = listCatalogProviderIds();
     expect(catalogIds.length).toBeGreaterThanOrEqual(1);

@@ -39,14 +39,16 @@ See [`clients/web/src/runtime/dock.ts`](../src/runtime/dock.ts) and [`clients/we
 
 Most bridges are desktop-only niceties (Dock badge, biometrics) and so the off-Electron branch is a no-op. Some capabilities, though, are first-class on the web/dev host too and have a genuine non-Electron implementation — the wrapper is then a true **transport seam**: it selects the implementation once, and both branches are real.
 
-[`local-mode-host.ts`](../src/runtime/local-mode-host.ts) is the reference. Local-mode provisioning drives the Vellum CLI, which must run in a trusted host process — the Electron main process in the desktop shell, or the Vite dev-server middleware on web/dev. The wrapper is the one place that branch lives:
+[`local-mode-host.ts`](../src/runtime/local-mode-host.ts) is the reference. Local-mode provisioning drives the Cadet CLI, which must run in a trusted host process — the Electron main process in the desktop shell, or the Vite dev-server middleware on web/dev. The wrapper is the one place that branch lives:
 
 ```ts
 // clients/web/src/runtime/local-mode-host.ts
 export async function hatchLocalAssistant(species = "vellum") {
   if (isElectron()) return window.vellum!.localMode.hatch(species);
   // web/dev: the Vite middleware spawns the CLI binary
-  const res = await fetch("/assistant/__local/hatch", { method: "POST", /* … */ });
+  const res = await fetch("/assistant/__local/hatch", {
+    method: "POST" /* … */,
+  });
   return res.json();
 }
 ```
@@ -112,7 +114,7 @@ A subset of push signals — inbound deep links being the canonical case — can
 The macOS voice key asks before starting a call. The main renderer publishes a
 card through the companion popover
 (`domains/chat/voice/voice-shortcut-confirmation.ts`), and main keeps the
-companion on screen while it is published, over other apps and over Vellum's
+companion on screen while it is published, over other apps and over Cadet's
 own window, so nothing is raised. "Always start" persists the opt-out in the
 `voiceStartConfirmationSkipped` device setting. Another double tap, a hold, unmount,
 assistant changes, and calls started while the card is up withdraw it without
@@ -156,7 +158,7 @@ staging notification is stale. Only the explicit final-step action with micropho
 access can start the tour's real call. Talk practice needs no microphone grant.
 
 Before a native permission prompt or Settings opens, the tour lowers its window
-below system UI. Returning to Vellum or advancing the tour restores its floating
+below system UI. Returning to Cadet or advancing the tour restores its floating
 level. Finishing the tour sets the idle pill's home to the display's bottom
 center, including the home held by a call started from the final step.
 

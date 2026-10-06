@@ -149,8 +149,8 @@ exports.default = async function afterSign(context) {
   }
   const entitlementsDir = path.join(__dirname, "entitlements");
 
-  // The helper bundle's folder name is per-env (e.g. "Vellum Helper",
-  // "Vellum Helper Dev"). Discover it by reading the sidecar that
+  // The helper bundle's folder name is per-env (e.g. "Cadet Helper",
+  // "Cadet Helper Dev"). Discover it by reading the sidecar that
   // build-mac-helper.sh writes alongside the bundle; fall back to walking
   // the bin directory for any .app folder if the sidecar is missing.
   let helperAppName = null;

@@ -17,7 +17,7 @@ export const authHelp: CliCommandHelp = {
   ],
   helpText: `
 The auth namespace manages the assistant's authentication state with the
-Cadet platform. It provides commands to inspect identity and connection
+Cadet Cloud. It provides commands to inspect identity and connection
 status, helping diagnose configuration issues.
 
 Examples:
@@ -29,7 +29,7 @@ Examples:
       description: "Show platform identity and authentication status",
       helpText: `
 Fields:
-  platformUrl         The Cadet platform base URL this assistant connects to
+  platformUrl         The Cadet Cloud base URL this assistant connects to
   assistantId         This assistant's platform UUID
   organizationId      The organization this assistant belongs to (from PLATFORM_ORGANIZATION_ID)
   userId              The user who owns this assistant (from PLATFORM_USER_ID)

@@ -100,7 +100,7 @@ test("a cancel received before the helper responds drops the result", async () =
   expect(postCuResult).not.toHaveBeenCalled();
 });
 
-test("excludes Vellum windows while the helper captures the screen", async () => {
+test("excludes Cadet windows while the helper captures the screen", async () => {
   const states = [false, true];
   const windows = states.map((_, index) => ({
     isContentProtected: () => states[index],

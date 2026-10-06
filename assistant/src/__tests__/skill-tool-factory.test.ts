@@ -703,7 +703,7 @@ describe("createSkillTool: parameter misuse redirects", () => {
   test("a non-bundled skill reusing the name keeps the generic validation error", async () => {
     // Tool names are not reserved, so a workspace skill can define its own
     // `subagent_read` where `path` is a declared parameter. Its validation
-    // errors must describe its own manifest, not Vellum's file-reader redirect.
+    // errors must describe its own manifest, not Cadet's file-reader redirect.
     const tool = createSkillTool(
       makeEntry({
         name: "subagent_read",

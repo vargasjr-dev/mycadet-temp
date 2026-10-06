@@ -130,8 +130,8 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
     expect(result.reason).toContain("fallback leak");
   });
 
-  test("passes when channel was appended post-decision (urgency-forced vellum prepend)", async () => {
-    // Regression: emit-signal.ts prepends `vellum` to selectedChannels for
+  test("passes when channel was appended post-decision (urgency-forced cadet prepend)", async () => {
+    // Regression: emit-signal.ts prepends `cadet` to selectedChannels for
     // high/critical urgency without populating renderedCopy.vellum. The
     // broadcaster's composeFallbackCopy rescue handles those channels at
     // delivery time, so the deterministic check must not fail-closed here.
@@ -273,7 +273,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
     });
     const decision = makeDecision({
       reasoningSummary:
-        "assistant_reply pass-through (vellum forced: high urgency)",
+        "assistant_reply pass-through (cadet forced: high urgency)",
       verbatimCopy: true,
       renderedCopy: {
         vellum: { title: "Assistant", body: "chat assistant reply" },

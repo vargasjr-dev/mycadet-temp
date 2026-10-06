@@ -51,7 +51,7 @@ import { ensureVisible } from "./main-window";
 import { installWebContentsSecurity } from "./windows.client";
 
 /**
- * Windows shell for the Vellum Assistant: a hardened BrowserWindow loading
+ * Windows shell for the Cadet Assistant: a hardened BrowserWindow loading
  * the clients/web renderer (Vite dev server in dev, `app://` static serving
  * of `resources/cli-runtime/web-dist` in packaged builds). Every desktop
  * capability is a module under `./features/`, composed through the capability
@@ -61,12 +61,12 @@ import { installWebContentsSecurity } from "./windows.client";
 
 // Dev-only: override the package `name` (`@mycadet/windows`) so
 // `app.getPath("userData")` resolves to its own directory, cleanly separate
-// from other Vellum installs (including the macOS Electron shell when
+// from other Cadet installs (including the macOS Electron shell when
 // developing this package on a Mac). Packaged builds get a real
 // `productName` from electron-builder. Must run before `userData` is first
 // read.
 if (!app.isPackaged) {
-  app.setName("Vellum Electron Windows");
+  app.setName("Cadet Electron Windows");
 }
 
 // Toasts and taskbar grouping key off the AppUserModelID. Packaged builds

@@ -42,7 +42,7 @@ describe("resolveTypesafeProvider", () => {
     );
   });
 
-  test("a managed Jev profile resolves although it is configured as vellum", async () => {
+  test("a managed Jev profile resolves although it is configured as cadet", async () => {
     configured = {
       provider: stub("typesafe"),
       configuredProviderName: "vellum",

@@ -214,7 +214,7 @@ describe("findVellumGuardian (gateway DB)", () => {
     expect(result).toEqual({ principalId: "principal-owner" });
   });
 
-  test("returns null when no active vellum guardian channel exists", async () => {
+  test("returns null when no active cadet guardian channel exists", async () => {
     seedGuardianChannel({
       type: "vellum",
       address: "vellum-principal-1",
@@ -430,7 +430,7 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
     // The gateway carries actor tokens migrated from the assistant DB (m0002)
     // but an empty contacts table — the contact reconcile could not run because
     // assistant migration 305 had already dropped the ACL columns it reads. The
-    // backfill rebuilds the vellum guardian binding from the token's principal
+    // backfill rebuilds the cadet guardian binding from the token's principal
     // instead of refusing. Recovery is gateway-native, so the throwing
     // assistant backend stays installed to prove it never reads the mirror.
     seedActorToken(); // active token, guardianPrincipalId "principal-123"
@@ -498,7 +498,7 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
   });
 
   test("boot recovery does not reactivate a deliberately-revoked guardian binding", async () => {
-    // A guardian CONTACT still exists but its vellum channel was deliberately
+    // A guardian CONTACT still exists but its cadet channel was deliberately
     // revoked; active tokens survive (a still-live device). Boot recovery must
     // stay fail-closed rather than upserting the channel back to active and
     // silently undoing the revoke — recovery is only for a genuinely ABSENT
@@ -561,7 +561,7 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
     expect(reportCalls).toHaveLength(0);
   });
 
-  test("refuses when a guardian contact exists but the vellum binding is inactive — mint-refused report fires", async () => {
+  test("refuses when a guardian contact exists but the cadet binding is inactive — mint-refused report fires", async () => {
     seedGuardianChannel({
       type: "vellum",
       address: "vellum-principal-stale",

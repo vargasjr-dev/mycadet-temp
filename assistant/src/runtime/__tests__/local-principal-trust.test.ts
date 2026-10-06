@@ -74,7 +74,7 @@ describe("resolveLocalPrincipalTrustContext", () => {
 
   test("guardian ctx is equivalent to the prior toTrustContext output", async () => {
     // The actor IS the guardian: its principal id is the guardian binding's
-    // address (vellum canonicalization is pass-through) so the local resolver
+    // address (cadet canonicalization is pass-through) so the local resolver
     // classifies it guardian and we can compare the two outputs directly.
     mockGuardianList = [
       {

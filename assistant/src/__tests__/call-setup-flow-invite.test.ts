@@ -134,7 +134,7 @@ function createHarness(overrides?: Partial<CallSetupFlowDeps>) {
       return redemptionImpl(params);
     },
     resolveGuardianLabel: () => "Bob",
-    resolveAssistantLabel: () => "Vellum",
+    resolveAssistantLabel: () => "Cadet",
     getCallSession: () => ({ conversationId: CONVERSATION_ID }),
     finalizeCall: (callSessionId, conversationId) => {
       finalizeCalls.push({ callSessionId, conversationId });
@@ -216,7 +216,7 @@ describe("CallSetupFlow invite redemption", () => {
       await flow.start(inviteOutcome("Grace"), makeResolved(false));
 
       expect(spoken).toEqual([
-        "Hi Grace, this is Vellum, Hank's assistant. To get started, please enter the 6-digit code that Hank shared with you.",
+        "Hi Grace, this is Cadet, Hank's assistant. To get started, please enter the 6-digit code that Hank shared with you.",
       ]);
     });
 
@@ -265,7 +265,7 @@ describe("CallSetupFlow invite redemption", () => {
 
       // Greeting uses the bound contact displayName's first token only.
       const handoff =
-        "Great, I've verified that you are Carolina. It's nice to meet you! I'm Vellum, Bob's assistant. How can I help?";
+        "Great, I've verified that you are Carolina. It's nice to meet you! I'm Cadet, Bob's assistant. How can I help?";
       expect(spoken).toContain(handoff);
       expect(events).toContainEqual({
         eventType: "assistant_spoke",
@@ -340,7 +340,7 @@ describe("CallSetupFlow invite redemption", () => {
       await enterCode(flow);
 
       expect(spoken).toContain(
-        "Hi there! I'm Vellum, Bob's assistant. How can I help?",
+        "Hi there! I'm Cadet, Bob's assistant. How can I help?",
       );
       expect(spoken.every((text) => !text.includes(CALLER_NUMBER))).toBe(true);
     });

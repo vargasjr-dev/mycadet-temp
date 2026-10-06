@@ -2,10 +2,10 @@
  * Unit tests for the credential metadata merge helper used by the bundle
  * importers. Covers the behaviour the two importers rely on:
  *
- * - Bundle without vellum + target with vellum → target's vellum entries
+ * - Bundle without cadet + target with cadet → target's cadet entries
  *   survive and the bundle's non-vellum entries are kept.
  * - Bundle with mixed user services → non-vellum entries import, any
- *   rogue vellum entries in the bundle are dropped.
+ *   rogue cadet entries in the bundle are dropped.
  * - Live metadata empty / missing → bundle lands as-is.
  * - Malformed inputs → no corruption (bundle returned verbatim).
  */
@@ -91,7 +91,7 @@ describe("mergeMetadataPreservingVellum", () => {
     expect(mergedKeys.has("slack_channel:app_token")).toBe(true);
   });
 
-  test("bundle non-vellum entries still import alongside preserved vellum entries", () => {
+  test("bundle non-vellum entries still import alongside preserved cadet entries", () => {
     const target = vellumRecords();
     const bundle = [
       record({ service: "telegram", field: "bot_token" }),
@@ -103,11 +103,11 @@ describe("mergeMetadataPreservingVellum", () => {
       mergeMetadataPreservingVellum(file(bundle), file(target)),
     );
 
-    // 4 vellum + 3 user = 7 total.
+    // 4 cadet + 3 user = 7 total.
     expect(merged.credentials.length).toBe(7);
     expect(keys(merged.credentials).size).toBe(7);
 
-    // Target's credentialIds for vellum are preserved (not the bundle's).
+    // Target's credentialIds for cadet are preserved (not the bundle's).
     for (const r of merged.credentials) {
       if (r.service === "vellum") {
         expect(r.credentialId.startsWith("target-")).toBe(true);
@@ -117,7 +117,7 @@ describe("mergeMetadataPreservingVellum", () => {
 
   test("drops bundle vellum:* entries and preserves target's identity", () => {
     const target = vellumRecords();
-    // Bundle carries conflicting vellum entries — should be dropped even
+    // Bundle carries conflicting cadet entries — should be dropped even
     // though the source would normally be filtered before this helper is
     // called.
     const bundle = [
@@ -153,7 +153,7 @@ describe("mergeMetadataPreservingVellum", () => {
     ).toBe(true);
   });
 
-  test("no live metadata → bundle passes through unchanged (no vellum in bundle)", () => {
+  test("no live metadata → bundle passes through unchanged (no cadet in bundle)", () => {
     const bundle = [
       record({ service: "telegram", field: "bot_token" }),
       record({ service: "slack_channel", field: "app_token" }),
@@ -170,7 +170,7 @@ describe("mergeMetadataPreservingVellum", () => {
       record({ service: "telegram", field: "bot_token" }),
     ];
     const merged = parse(mergeMetadataPreservingVellum(file(bundle), null));
-    // Bundle's vellum entry is always filtered.
+    // Bundle's cadet entry is always filtered.
     expect(merged.credentials.length).toBe(1);
     expect(merged.credentials[0]?.service).toBe("telegram");
   });

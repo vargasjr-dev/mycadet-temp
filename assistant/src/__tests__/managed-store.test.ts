@@ -197,7 +197,7 @@ describe("buildSkillMarkdown", () => {
     ]);
   });
 
-  test("omits activation-hints / avoid-when when empty and no other vellum fields", () => {
+  test("omits activation-hints / avoid-when when empty and no other cadet fields", () => {
     const result = buildSkillMarkdown({
       name: "Empty Hints",
       description: "Empty arrays",
@@ -220,7 +220,7 @@ describe("buildSkillMarkdown", () => {
     expect(parsed.metadata.vellum.category).toBe("development");
   });
 
-  test("omits metadata when no vellum fields provided", () => {
+  test("omits metadata when no cadet fields provided", () => {
     const result = buildSkillMarkdown({
       name: "Solo",
       description: "No children",
@@ -240,7 +240,7 @@ describe("buildSkillMarkdown", () => {
     ).not.toContain("metadata:");
   });
 
-  test("omits metadata when includes is empty array and no other vellum fields", () => {
+  test("omits metadata when includes is empty array and no other cadet fields", () => {
     const result = buildSkillMarkdown({
       name: "Empty",
       description: "Empty array",
@@ -1394,12 +1394,12 @@ describe("validateManagedSkillId edge cases", () => {
 });
 
 describe("YAML metadata round-trip", () => {
-  test("all vellum fields round-trip through write and load", () => {
-    // Create a managed skill with every vellum metadata field populated
+  test("all cadet fields round-trip through write and load", () => {
+    // Create a managed skill with every cadet metadata field populated
     createManagedSkill({
       id: "yaml-roundtrip-all",
       name: "Full Metadata Skill",
-      description: "Tests all vellum fields round-trip correctly",
+      description: "Tests all cadet fields round-trip correctly",
       bodyMarkdown: "Full metadata body.",
       emoji: "🔬",
       includes: ["child-a", "child-b"],
@@ -1413,7 +1413,7 @@ describe("YAML metadata round-trip", () => {
     // Verify all fields are correctly preserved
     expect(skill!.name).toBe("Full Metadata Skill");
     expect(skill!.description).toBe(
-      "Tests all vellum fields round-trip correctly",
+      "Tests all cadet fields round-trip correctly",
     );
     expect(skill!.emoji).toBe("🔬");
     expect(skill!.includes).toEqual(["child-a", "child-b"]);
@@ -1472,7 +1472,7 @@ describe("YAML metadata round-trip", () => {
     const skill = catalog.find((s) => s.id === "yaml-nested-test");
     expect(skill).toBeDefined();
 
-    // Verify all nested vellum fields are correctly parsed
+    // Verify all nested cadet fields are correctly parsed
     expect(skill!.name).toBe("yaml-nested-skill");
     expect(skill!.description).toBe("Hand-authored YAML nested metadata test");
     expect(skill!.displayName).toBe("YAML Nested Skill");

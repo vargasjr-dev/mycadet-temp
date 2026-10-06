@@ -295,7 +295,7 @@ function seedChannelCapabilitiesConversation(
 // ---------------------------------------------------------------------------
 
 describe("resolveChannelCapabilities", () => {
-  test("defaults to vellum when no source channel is provided", () => {
+  test("defaults to cadet when no source channel is provided", () => {
     const caps = resolveChannelCapabilities();
     expect(caps.channel).toBe("vellum");
     // Without a sourceInterface, desktop UI capabilities are false
@@ -304,7 +304,7 @@ describe("resolveChannelCapabilities", () => {
     expect(caps.supportsVoiceInput).toBe(false);
   });
 
-  test("vellum channel with macos interface has full desktop capabilities", () => {
+  test("cadet channel with macos interface has full desktop capabilities", () => {
     const caps = resolveChannelCapabilities(undefined, "macos");
     expect(caps.channel).toBe("vellum");
     expect(caps.dashboardCapable).toBe(true);
@@ -312,7 +312,7 @@ describe("resolveChannelCapabilities", () => {
     expect(caps.supportsVoiceInput).toBe(true);
   });
 
-  test("vellum channel with vellum interface supports dynamic UI", () => {
+  test("cadet channel with cadet interface supports dynamic UI", () => {
     const caps = resolveChannelCapabilities("vellum", "vellum");
     expect(caps.channel).toBe("vellum");
     expect(caps.dashboardCapable).toBe(false);
@@ -320,7 +320,7 @@ describe("resolveChannelCapabilities", () => {
     expect(caps.supportsVoiceInput).toBe(false);
   });
 
-  test("defaults to vellum for null source channel", () => {
+  test("defaults to cadet for null source channel", () => {
     const caps = resolveChannelCapabilities(null);
     expect(caps.channel).toBe("vellum");
     expect(caps.dashboardCapable).toBe(false);
@@ -920,7 +920,7 @@ describe("applyRuntimeInjections with channelCapabilities", () => {
 // ---------------------------------------------------------------------------
 
 describe("trust-gating via channel capabilities", () => {
-  test("vellum channel with macos interface injects macOS guidance", () => {
+  test("cadet channel with macos interface injects macOS guidance", () => {
     const caps = resolveChannelCapabilities("vellum", "macos");
     const message: Message = {
       role: "user",
@@ -939,7 +939,7 @@ describe("trust-gating via channel capabilities", () => {
     expect(injected).not.toContain("CHANNEL CONSTRAINTS");
   });
 
-  test("vellum channel with Windows client OS injects PowerShell guidance", () => {
+  test("cadet channel with Windows client OS injects PowerShell guidance", () => {
     const caps: ChannelCapabilities = {
       channel: "vellum",
       dashboardCapable: true,
@@ -962,7 +962,7 @@ describe("trust-gating via channel capabilities", () => {
     expect(injected).not.toContain("CHANNEL CONSTRAINTS");
   });
 
-  test("vellum channel with Linux client OS injects host_bash guidance", () => {
+  test("cadet channel with Linux client OS injects host_bash guidance", () => {
     const caps: ChannelCapabilities = {
       channel: "vellum",
       dashboardCapable: true,
@@ -1002,7 +1002,7 @@ describe("trust-gating via channel capabilities", () => {
     expect(injected).not.toContain("complete those steps");
   });
 
-  test("vellum web interface allows dynamic UI but constrains dashboard references", () => {
+  test("cadet web interface allows dynamic UI but constrains dashboard references", () => {
     const caps = resolveChannelCapabilities("vellum", "vellum");
     const message: Message = {
       role: "user",
@@ -2091,7 +2091,7 @@ describe("buildUnifiedTurnContextBlock", () => {
 
     const text = buildUnifiedTurnContextBlock(options);
     // Essential fields remain
-    expect(text).toContain("source_channel: vellum");
+    expect(text).toContain("source_channel: cadet");
     expect(text).toContain(`canonical_actor_identity: ${uuid}`);
     expect(text).toContain("trust_class: guardian");
     // Redundant fields are omitted
@@ -3744,7 +3744,7 @@ describe("Slack channel chronological rendering — multi-thread", () => {
   test("non-slack conversations bypass chronological rendering", async () => {
     const lastUserMessage: Message = {
       role: "user",
-      content: [{ type: "text", text: "vellum question" }],
+      content: [{ type: "text", text: "cadet question" }],
     };
     seedChannelCapabilitiesConversation({
       channel: "vellum",
@@ -3761,7 +3761,7 @@ describe("Slack channel chronological rendering — multi-thread", () => {
       .filter((b): b is { type: "text"; text: string } => b.type === "text")
       .map((b) => b.text)
       .join("\n");
-    expect(allText).toContain("vellum question");
+    expect(allText).toContain("cadet question");
   });
 
   // ── DMs (chatType === "im") use chronological rendering ────────────────
@@ -5302,7 +5302,7 @@ describe("Slack channel chronological rendering — multi-thread", () => {
       supportsVoiceInput: true,
     });
     const { messages: result } = await applyRuntimeInjections(
-      [{ role: "user", content: [{ type: "text", text: "vellum question" }] }],
+      [{ role: "user", content: [{ type: "text", text: "cadet question" }] }],
       { conversationId: FALLBACK_CONVERSATION_ID },
     );
     const allText = result
@@ -5311,7 +5311,7 @@ describe("Slack channel chronological rendering — multi-thread", () => {
       .map((b) => b.text)
       .join("\n");
     expect(allText).not.toContain("<active_thread>");
-    expect(allText).toContain("vellum question");
+    expect(allText).toContain("cadet question");
   });
 
   test("slack DMs never get an active-thread focus block", async () => {

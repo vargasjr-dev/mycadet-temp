@@ -186,7 +186,7 @@ const isWatchEnabled = (): boolean =>
  * for the app's whole run or an active call. The tray's "Show Companion"
  * item controls the idle surface, a choice that persists across launches
  * (`readCompanionHidden` in `window-state.ts`), and it steps off the screen
- * for as long as Vellum itself is the frontmost app with its window showing
+ * for as long as Cadet itself is the frontmost app with its window showing
  * (see `syncFrontmost`).
  *
  * **It is also the desktop's live-voice session surface**, the counterpart to
@@ -207,7 +207,7 @@ const isWatchEnabled = (): boolean =>
  * off the main process entirely.
  *
  * **Non-activating**, through `createFloatingWindow`'s `type: "panel"` and
- * `frame: false` / `transparent: true`. Clicking it must never pull Vellum
+ * `frame: false` / `transparent: true`. Clicking it must never pull Cadet
  * forward: the surface exists precisely for when the user is working somewhere
  * else.
  *
@@ -472,7 +472,7 @@ let introAnnouncement = false;
  * Whether the surface is parked over the app's own window for the
  * introduction, rather than sitting where it lives.
  *
- * The surface steps off the screen while Vellum is frontmost with its window
+ * The surface steps off the screen while Cadet is frontmost with its window
  * showing (see {@link syncFrontmost}), which is exactly the moment a new user
  * is looking at the app: the introduction ran on a window nobody could see,
  * and users reported not knowing the companion existed. So a due run holds the
@@ -2206,7 +2206,7 @@ const FRAME_DRAW_TIMEOUT_MS = 3000;
  * opened `focusable: false` can never be one, so the pencil the layer hangs
  * on the pointer would never show and the user would have nothing to say the
  * mode took. Lent with `setFocusable` and then `focus`, which on a panel
- * makes it key without bringing Vellum forward, and released with
+ * makes it key without bringing Cadet forward, and released with
  * `setFocusable` alone: `blur` would flash the frame and drop it to the back
  * of its level, and `setFocusable(false)` does not resign key on macOS, so
  * the keyboard returns to the user's app on their next press in it rather
@@ -3381,7 +3381,7 @@ const setInteractive = (interactive: boolean): void => {
 };
 
 /**
- * Whether Vellum is the active application.
+ * Whether Cadet is the active application.
  *
  * The surface stands in for the app while the user is working somewhere else,
  * and it steps off the screen while the app itself is in front: over the app's
@@ -3392,7 +3392,7 @@ const setInteractive = (interactive: boolean): void => {
  * panels this app floats (Quick Input, the dictation overlay, this surface)
  * take key status without activating the app, and the main window loses key
  * status to them, so focus says the wrong thing in both directions: a panel
- * focused over someone else's app would count as Vellum being in front, and
+ * focused over someone else's app would count as Cadet being in front, and
  * the main window losing focus to one would count as the user having left.
  * Activation moves only when the user goes to another app or comes back.
  *
@@ -3473,10 +3473,10 @@ const syncFrontmost = (): void => {
 
 /**
  * Hand a press on the surface to the renderer that can act on it, without
- * bringing Vellum forward.
+ * bringing Cadet forward.
  *
  * **A window that exists is not raised, and one that does not is created.** A
- * user reaching for a floating avatar has chosen not to go back to Vellum, and
+ * user reaching for a floating avatar has chosen not to go back to Cadet, and
  * what they asked for shows itself on this surface, so an existing window is
  * left exactly where it was, hidden or not. The close button only hides the
  * main window, so it is missing only before the first one has been built, and
@@ -3556,10 +3556,10 @@ export const companionContextMenuTemplate = (
   },
 ): MenuItemConstructorOptions[] => [
   {
-    // The way back to Vellum from an idle surface. A press on the creature
+    // The way back to Cadet from an idle surface. A press on the creature
     // starts a call, so going back to the app is here, first, since it is the
     // one item a user reaches for that is not about the surface itself.
-    label: "Open Vellum",
+    label: "Open Cadet",
     click: () => {
       actions.open();
     },
@@ -3728,7 +3728,7 @@ export const installCompanionWindow = (): void => {
    *
    * This does not raise the app, for a sharper version of Talk's reason. The
    * user reached for a floating surface because they are working somewhere
-   * else, and here that work is the subject of the session: bringing Vellum
+   * else, and here that work is the subject of the session: bringing Cadet
    * forward would cover the very thing the session exists to watch.
    */
   on(
@@ -4612,7 +4612,7 @@ export const installCompanionWindow = (): void => {
   });
   // The app's window being shown, put away or closed moves the answer without
   // the app's activation changing at all: a window hidden from the tray leaves
-  // Vellum active with nothing of its own on screen.
+  // Cadet active with nothing of its own on screen.
   onMainWindowVisibilityChange(syncFrontmost);
 
   // One avatar feeds every surface, so a change to the Dock icon is a change
@@ -4720,7 +4720,7 @@ export const openCompanionWindow = (): void => {
       // introduction's card behind it.
       enableLargerThanScreen: true,
       // **Unfocusable, like the dictation overlay.** `type: "panel"` already
-      // makes the window non-activating, so clicking it never brings Vellum
+      // makes the window non-activating, so clicking it never brings Cadet
       // forward; this goes further and stops it taking key status, because a
       // panel that becomes key on any press would hold the keyboard after a
       // press on Talk and swallow whatever the user typed next into the app

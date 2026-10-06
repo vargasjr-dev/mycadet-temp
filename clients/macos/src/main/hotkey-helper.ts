@@ -925,7 +925,7 @@ const sendHotkeyEventToOwner = (event: HotkeyEvent): void => {
 };
 
 const sendInputActivityToOwner = (): void => {
-  // A press on the companion is a press on Vellum's own controls: the offer
+  // A press on the companion is a press on Cadet's own controls: the offer
   // those controls answer must not be taken down by the click answering it.
   if (isPointerOnCompanion()) {
     return;

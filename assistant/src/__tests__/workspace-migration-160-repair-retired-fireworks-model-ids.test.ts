@@ -136,7 +136,7 @@ describe("160-repair-retired-fireworks-model-ids migration", () => {
     expect(profiles.other.model).toBe(stale);
   });
 
-  test("repairs entry-bound fragments whose row kind is fireworks or vellum", () => {
+  test("repairs entry-bound fragments whose row kind is fireworks or cadet", () => {
     seedRows([
       { name: "my-fireworks", provider: "fireworks" },
       { name: "managed-alt", provider: "vellum" },

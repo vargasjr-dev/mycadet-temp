@@ -442,7 +442,7 @@ describe("runConversationTurn channel binding", () => {
   test("runs the turn on the channel it was addressed by", async () => {
     // Runtime assembly reads the per-turn channel first and only then the
     // conversation's origin, so a turn into a conversation whose origin was
-    // never recorded would otherwise run as `vellum`. That is the wrong
+    // never recorded would otherwise run as `cadet`. That is the wrong
     // channel for the message rows and for the permission cascade the tools
     // are approved against.
     const result = await runConversationTurn({
@@ -485,7 +485,7 @@ describe("runConversationTurn channel binding", () => {
   test("a queued turn carries its own channel rather than inheriting one", async () => {
     // The drain happens after this call returns and reads the channel off the
     // queued message, falling back to whichever turn was in flight. Here that
-    // fallback would be `vellum` — someone else's channel on a conversation
+    // fallback would be `cadet` — someone else's channel on a conversation
     // shared with another channel.
     const conversationId = "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d";
     holdTheTurnOpen();

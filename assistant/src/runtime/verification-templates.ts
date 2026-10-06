@@ -113,51 +113,51 @@ const templates: Record<
   },
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.TELEGRAM_CHALLENGE_REQUEST]: (_vars) => {
-    return "Vellum assistant guardian verification requested. Reply with the 6-digit code you were given.";
+    return "Cadet assistant guardian verification requested. Reply with the 6-digit code you were given.";
   },
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.TELEGRAM_RESEND]: (_vars) => {
-    return "Vellum assistant guardian verification requested. Reply with the 6-digit code you were given. (resent)";
+    return "Cadet assistant guardian verification requested. Reply with the 6-digit code you were given. (resent)";
   },
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.SLACK_CHALLENGE_REQUEST]: (_vars) => {
-    return "Vellum assistant guardian verification requested. Reply with the 6-digit code you were given.";
+    return "Cadet assistant guardian verification requested. Reply with the 6-digit code you were given.";
   },
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.SLACK_RESEND]: (_vars) => {
-    return "Vellum assistant guardian verification requested. Reply with the 6-digit code you were given. (resent)";
+    return "Cadet assistant guardian verification requested. Reply with the 6-digit code you were given. (resent)";
   },
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.SLACK_TRUSTED_CONTACT_CHALLENGE]: (vars) => {
-    return `Vellum assistant verification: your code is ${vars.code}. Reply with this code to verify your identity. It expires in ${vars.expiresInMinutes} minutes.`;
+    return `Cadet assistant verification: your code is ${vars.code}. Reply with this code to verify your identity. It expires in ${vars.expiresInMinutes} minutes.`;
   },
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.SLACK_TRUSTED_CONTACT_RESEND]: (vars) => {
-    return `Vellum assistant verification: your code is ${vars.code}. Reply with this code to verify your identity. It expires in ${vars.expiresInMinutes} minutes. (resent)`;
+    return `Cadet assistant verification: your code is ${vars.code}. Reply with this code to verify your identity. It expires in ${vars.expiresInMinutes} minutes. (resent)`;
   },
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.DISCORD_CHALLENGE_REQUEST]: (_vars) => {
-    return "Vellum assistant guardian verification requested. Reply with the 6-digit code you were given.";
+    return "Cadet assistant guardian verification requested. Reply with the 6-digit code you were given.";
   },
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.DISCORD_RESEND]: (_vars) => {
-    return "Vellum assistant guardian verification requested. Reply with the 6-digit code you were given. (resent)";
+    return "Cadet assistant guardian verification requested. Reply with the 6-digit code you were given. (resent)";
   },
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.DISCORD_TRUSTED_CONTACT_CHALLENGE]: (vars) => {
-    return `Vellum assistant verification: your code is ${vars.code}. Reply with this code to verify your identity. It expires in ${vars.expiresInMinutes} minutes.`;
+    return `Cadet assistant verification: your code is ${vars.code}. Reply with this code to verify your identity. It expires in ${vars.expiresInMinutes} minutes.`;
   },
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.DISCORD_TRUSTED_CONTACT_RESEND]: (vars) => {
-    return `Vellum assistant verification: your code is ${vars.code}. Reply with this code to verify your identity. It expires in ${vars.expiresInMinutes} minutes. (resent)`;
+    return `Cadet assistant verification: your code is ${vars.code}. Reply with this code to verify your identity. It expires in ${vars.expiresInMinutes} minutes. (resent)`;
   },
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.EMAIL_CHALLENGE_REQUEST]: (vars) => {
-    return `Vellum assistant guardian verification requested.\n\nYour verification code is: ${vars.code}\n\nReply to this email with only the 6-digit code above to complete verification. This code expires in ${vars.expiresInMinutes} minutes.`;
+    return `Cadet assistant guardian verification requested.\n\nYour verification code is: ${vars.code}\n\nReply to this email with only the 6-digit code above to complete verification. This code expires in ${vars.expiresInMinutes} minutes.`;
   },
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.EMAIL_RESEND]: (vars) => {
-    return `Vellum assistant guardian verification requested.\n\nYour new verification code is: ${vars.code}\n\nReply to this email with only the 6-digit code above to complete verification. This code expires in ${vars.expiresInMinutes} minutes. (resent)`;
+    return `Cadet assistant guardian verification requested.\n\nYour new verification code is: ${vars.code}\n\nReply to this email with only the 6-digit code above to complete verification. This code expires in ${vars.expiresInMinutes} minutes. (resent)`;
   },
 };
 

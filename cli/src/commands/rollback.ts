@@ -223,7 +223,7 @@ export async function rollback(): Promise<void> {
     process.exit(1);
   }
 
-  // ---------- Managed (Cadet platform) rollback ----------
+  // ---------- Managed (Cadet Cloud) rollback ----------
   if (isManagedCloud(cloud)) {
     await rollbackPlatformViaEndpoint(entry, version ?? undefined);
     return;

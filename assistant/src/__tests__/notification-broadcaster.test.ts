@@ -170,7 +170,7 @@ describe("notification broadcaster", () => {
     pairingCalls.length = 0;
     nextPairingResult = null;
   });
-  test("dispatches to the vellum adapter when selected", async () => {
+  test("dispatches to the cadet adapter when selected", async () => {
     const vellumAdapter = new MockAdapter("vellum");
     const broadcaster = new NotificationBroadcaster([vellumAdapter]);
 
@@ -187,7 +187,7 @@ describe("notification broadcaster", () => {
   });
 
   test("skips channels without registered adapters", async () => {
-    // Register only vellum, but decision selects both
+    // Register only cadet, but decision selects both
     const vellumAdapter = new MockAdapter("vellum");
     const broadcaster = new NotificationBroadcaster([vellumAdapter]);
 
@@ -202,7 +202,7 @@ describe("notification broadcaster", () => {
 
     const results = await broadcaster.broadcastDecision(signal, decision);
 
-    // Vellum should succeed, telegram should be skipped (no adapter registered)
+    // Cadet should succeed, telegram should be skipped (no adapter registered)
     expect(results).toHaveLength(2);
     const vellumResult = results.find((r) => r.channel === "vellum");
     const telegramResult = results.find((r) => r.channel === "telegram");
@@ -337,7 +337,7 @@ describe("notification broadcaster", () => {
 
   // ── Conversation-created event emission ─────────────────────────────
 
-  test("fires onConversationCreated when a new vellum conversation is created (start_new)", async () => {
+  test("fires onConversationCreated when a new cadet conversation is created (start_new)", async () => {
     const vellumAdapter = new MockAdapter("vellum");
     const broadcaster = new NotificationBroadcaster([vellumAdapter]);
     const conversationCreatedCalls: ConversationCreatedInfo[] = [];
@@ -581,7 +581,7 @@ describe("notification broadcaster", () => {
     expect(dispatchCalls[0].conversationId).toBe("conv-bound-telegram-456");
   });
 
-  test("vellum delivery does NOT carry binding context into pairing", async () => {
+  test("cadet delivery does NOT carry binding context into pairing", async () => {
     const vellumAdapter = new MockAdapter("vellum");
     const broadcaster = new NotificationBroadcaster([vellumAdapter]);
 

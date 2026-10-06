@@ -2,7 +2,7 @@
  * Gateway-side admission policy tests for `handle-inbound.ts`:
  *
  *  - `no_one` kill switch hard-denies pre-forward (P3 §4.2)
- *  - Exempt channels (`platform`, `a2a`) skip the kill switch; `vellum` and `phone` are enforced
+ *  - Exempt channels (`platform`, `a2a`) skip the kill switch; `cadet` and `phone` are enforced
  *  - `admissionPolicy` flows into `sourceMetadata` on forward
  *  - Default `trusted_contacts` is attached when no row is persisted
  *
@@ -179,8 +179,8 @@ describe("handle-inbound admission policy", () => {
     );
   });
 
-  test("`vellum` is configurable: its policy is forwarded (not exempt)", async () => {
-    // vellum can never be `no_one` (route returns 422), but other floors apply
+  test("`cadet` is configurable: its policy is forwarded (not exempt)", async () => {
+    // cadet can never be `no_one` (route returns 422), but other floors apply
     // and are forwarded for runtime enforcement.
     store.set("vellum", "guardian_only");
     resetAdmissionPolicyCache();

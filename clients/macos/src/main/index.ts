@@ -122,16 +122,16 @@ import { installTray } from "./tray.client";
 import { installWebContentsSecurity } from "./windows";
 
 // Dev-only: override the workspace `name` (`@mycadet/macos`) so the
-// menu bar's first submenu reads "Vellum Electron", and — more
+// menu bar's first submenu reads "Cadet Electron", and — more
 // importantly — so `app.getPath("userData")` resolves to
 // `~/Library/Application Support/Vellum Electron/`, cleanly separate
-// from the Swift `Vellum.app` / `Vellum Local.app` / `Vellum Dev.app`
-// installs the developer may also be running.
+// from the other app installs (current and legacy) the developer may
+// also be running.
 //
 // Caveat: `app.setName()` does NOT change the Dock / Cmd-Tab label —
 // those come from the running binary's `CFBundleName`. In dev the binary
 // is `node_modules/electron/dist/Electron.app`, whose `CFBundleName` is
-// stamped to "Vellum Electron" by `scripts/prepare-electron-dev-app.ts`
+// stamped to "Cadet Electron" by `scripts/prepare-electron-dev-app.ts`
 // (which also busts the macOS Dock display-name cache so the relabel
 // actually surfaces instead of the stale stock "Electron"). The userData
 // split is what prevents collision with Swift installs. Packaged builds
@@ -149,7 +149,7 @@ import { installWebContentsSecurity } from "./windows";
 // first IPC call, so this timing holds as long as `app.setName` runs
 // before `app.whenReady`.
 if (!app.isPackaged) {
-  app.setName("Vellum Electron");
+  app.setName("Cadet Electron");
 }
 const isDev = !app.isPackaged;
 
@@ -157,7 +157,7 @@ const isDev = !app.isPackaged;
 // Electron `safeStorage`. Without this, the first `safeStorage` call —
 // e.g. persisting the session token after sign-in via
 // `./session-token-store.client` makes Chromium prompt for the login
-// keychain password ("Vellum Electron Safe Storage"). Denying that
+// keychain password ("Cadet Electron Safe Storage"). Denying that
 // prompt surfaces as `keychain_password_mac.mm ... userCanceledErr
 // (-128)` and silently drops token persistence. `--use-mock-keychain`
 // routes os_crypt to an in-process mock backend: `safeStorage` stays
@@ -287,7 +287,7 @@ const registerAppProtocol = (): void => {
 
     // Paired remote gateways ride the same-origin path too, via
     // `/assistant/__gateway-paired/{assistantId}/*`: the packaged app's CSP
-    // pins `connect-src` to Vellum origins, so the renderer cannot reach a
+    // pins `connect-src` to Cadet origins, so the renderer cannot reach a
     // paired gateway directly. The WebRequest guard admits only trusted app
     // frames, and the lockfile's paired entries allowlist the remote targets.
     const pairedProxied = await forwardPairedGatewayRequest(
@@ -517,7 +517,7 @@ app
     // than being the first thing on screen at launch. Open from here on,
     // unless the user has hidden it from the tray, and on screen whenever the
     // app itself is not in front: it stands in for the app while the user is
-    // working somewhere else, and steps off while Vellum is the frontmost app
+    // working somewhere else, and steps off while Cadet is the frontmost app
     // with its window showing.
     //
     // A launch that has nobody signed in yet leaves it closed, and the window

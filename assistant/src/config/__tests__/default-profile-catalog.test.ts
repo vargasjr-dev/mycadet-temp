@@ -560,13 +560,13 @@ describe("resolveDefaultProfileForProvider", () => {
     expect(entry?.model).toBe(resolveModelIntent("anthropic", "balanced"));
   });
 
-  test("the vellum column keeps its underlying dispatch provider and managed connection", () => {
+  test("the cadet column keeps its underlying dispatch provider and managed connection", () => {
     const entry = resolveDefaultProfileForProvider(
       undefined,
       "balanced",
       dp("vellum"),
     );
-    // `vellum` is a routing identity: balanced dispatches through fireworks.
+    // `cadet` is a routing identity: balanced dispatches through fireworks.
     expect(entry?.provider).toBe(
       CODE_DEFAULT_PROFILE_ENTRIES.balanced.provider,
     );
@@ -645,7 +645,7 @@ describe("resolveDefaultProfileForProvider", () => {
     expect(entry?.provider_connection).toBe("gemini-personal");
   });
 
-  test("a null defaultProvider falls back to the vellum code bodies", () => {
+  test("a null defaultProvider falls back to the cadet code bodies", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {
       expect(resolveDefaultProfileForProvider(undefined, key, null)).toEqual(
         getEffectiveProfile(undefined, key) as ProfileEntry,
@@ -691,7 +691,7 @@ describe("resolveDefaultProfileForProvider", () => {
     );
   });
 
-  test("agrees with getEffectiveProfile for the vellum default provider", () => {
+  test("agrees with getEffectiveProfile for the cadet default provider", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {
       expect(
         resolveDefaultProfileForProvider(undefined, key, dp("vellum")),

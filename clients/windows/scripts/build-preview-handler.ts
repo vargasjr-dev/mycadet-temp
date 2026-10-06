@@ -43,12 +43,12 @@ export function registrationMetadata(architecture: PreviewArchitecture) {
     isolation: { previewHost: "prevhost.exe", disableProcessIsolation: false },
     classes: {
       [previewClsid]: {
-        name: "Vellum Bundle Preview",
+        name: "Cadet Bundle Preview",
         appId: "{534A1E02-D58F-44F0-B58B-36CBED287C7C}",
         threadingModel: "Apartment",
       },
       [thumbnailClsid]: {
-        name: "Vellum Bundle Thumbnail",
+        name: "Cadet Bundle Thumbnail",
         threadingModel: "Apartment",
       },
     },
@@ -106,7 +106,9 @@ async function bootstrapManagedVcpkg(
   const resolvedToolsRoot = resolve(buildToolsRoot);
   const resolvedTargetRoot = resolve(targetRoot);
   if (!resolvedTargetRoot.startsWith(`${resolvedToolsRoot}${sep}`)) {
-    throw new Error("Refusing to initialize vcpkg outside the build-tools root");
+    throw new Error(
+      "Refusing to initialize vcpkg outside the build-tools root",
+    );
   }
   await rm(targetRoot, { recursive: true, force: true });
   await mkdir(targetRoot, { recursive: true });
@@ -195,10 +197,7 @@ function testArchitectureSelection() {
     join(handlerRoot, "Vellum.PreviewHandler.vcxproj"),
     "utf8",
   );
-  assert.match(
-    project,
-    /\$\(VcpkgInstalledDir\)\$\(VcpkgTriplet\)\\include/,
-  );
+  assert.match(project, /\$\(VcpkgInstalledDir\)\$\(VcpkgTriplet\)\\include/);
   assert.match(project, /<AdditionalDependencies>zs\.lib;/);
 }
 

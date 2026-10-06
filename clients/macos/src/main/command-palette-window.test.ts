@@ -44,7 +44,7 @@ type CreateWindowOptions = {
   navigation: unknown;
 };
 
-const appState = { isPackaged: false, name: "Vellum" };
+const appState = { isPackaged: false, name: "Cadet" };
 const created: Array<{ opts: CreateWindowOptions; win: StubWindow }> = [];
 const ipcHandlers = new Map<string, (...args: unknown[]) => unknown>();
 
@@ -524,10 +524,9 @@ describe("dispatchMenuCommand", () => {
 
     dispatchMenuCommand({ kind: "openSettings" });
 
-    expect(palette.webContents.send).not.toHaveBeenCalledWith(
-      "cadet:command",
-      { kind: "openSettings" },
-    );
+    expect(palette.webContents.send).not.toHaveBeenCalledWith("cadet:command", {
+      kind: "openSettings",
+    });
     expect(dispatchToMainMock).toHaveBeenCalledWith({ kind: "openSettings" });
   });
 });

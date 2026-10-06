@@ -239,7 +239,7 @@ describe("secrets_add credential transcript scrub", () => {
     expect(scrubbedValues).toEqual([]);
   });
 
-  test("an unknown vellum credential is rejected and never triggers a scrub", async () => {
+  test("an unknown cadet credential is rejected and never triggers a scrub", async () => {
     await expect(
       addRoute.handler({
         body: {

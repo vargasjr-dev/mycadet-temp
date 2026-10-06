@@ -202,7 +202,7 @@ export async function beginPermissionGuide(
   ]);
   if (!fileStat.isDirectory() || !file.endsWith(".app") || icon.isEmpty()) {
     throw new Error(
-      "The permission app is unavailable. Reinstall Vellum and try again.",
+      "The permission app is unavailable. Reinstall Cadet and try again.",
     );
   }
   if (id !== generation) {

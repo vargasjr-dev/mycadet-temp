@@ -20,8 +20,8 @@ export const GUARDIAN_MISSING_CHECK_NAME = "gateway_guardian_missing";
 
 /**
  * Watchdog `check_name` for a refused vellum-guardian mint (evidence of a
- * prior guardian, no active vellum binding). Fires even when the integrity
- * state is `ok` — a guardian contact row can be intact while the vellum
+ * prior guardian, no active cadet binding). Fires even when the integrity
+ * state is `ok` — a guardian contact row can be intact while the cadet
  * binding is lost/inactive, and clients see `guardian_repair_required` 401s.
  */
 export const GUARDIAN_MINT_REFUSED_CHECK_NAME = "gateway_guardian_mint_refused";
@@ -60,7 +60,7 @@ export function reportGuardianMintRefused(
 ): void {
   report(
     GUARDIAN_MINT_REFUSED_CHECK_NAME,
-    "refused to mint a vellum guardian principal over evidence of a prior " +
+    "refused to mint a cadet guardian principal over evidence of a prior " +
       "guardian — clients get guardian_repair_required until re-pair",
     detail,
   );
@@ -83,5 +83,7 @@ function report(
 /** Test-only seams; see {@link createWatchdogReporter}. */
 export const setGuardianIntegrityReporterOverridesForTesting =
   reporter.setOverridesForTesting;
-export const resetGuardianIntegrityReporterForTesting = reporter.resetForTesting;
-export const flushGuardianIntegrityReporterForTesting = reporter.flushForTesting;
+export const resetGuardianIntegrityReporterForTesting =
+  reporter.resetForTesting;
+export const flushGuardianIntegrityReporterForTesting =
+  reporter.flushForTesting;

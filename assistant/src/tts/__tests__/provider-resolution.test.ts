@@ -89,7 +89,7 @@ describe("managed TTS provider resolution", () => {
       typeof resolveTtsConfig
     >[0];
 
-  test("resolves the vellum provider", () => {
+  test("resolves the cadet provider", () => {
     const config = configWith({ provider: "vellum", providers: {} });
     expect(resolveTtsConfig(config).provider).toBe("vellum");
   });

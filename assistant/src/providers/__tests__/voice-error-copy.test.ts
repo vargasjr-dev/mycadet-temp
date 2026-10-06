@@ -53,7 +53,7 @@ describe("describeSttFailure", () => {
   describe("managed speech (userFacing marker)", () => {
     test("auth failure surfaces the reconnect remediation verbatim", () => {
       const message =
-        "Managed speech needs a working Vellum platform connection — reconnect with 'assistant platform connect'.";
+        "Managed speech needs a working Cadet platform connection — reconnect with 'assistant platform connect'.";
       const copy = describeSttFailure(
         new SttError("auth", message, { userFacing: true }),
         "vellum",
@@ -67,7 +67,7 @@ describe("describeSttFailure", () => {
 
     test("credits-exhausted message survives the provider-error branch", () => {
       const message =
-        "Vellum credits are exhausted — add funds to your Vellum account to continue using managed transcription.";
+        "Cadet credits are exhausted — add funds to your Cadet account to continue using managed transcription.";
       const copy = describeSttFailure(
         new SttError("provider-error", message, { userFacing: true }),
         "vellum",

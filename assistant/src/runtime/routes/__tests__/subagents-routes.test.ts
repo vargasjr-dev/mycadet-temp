@@ -193,7 +193,7 @@ describe("getSubagentDetail", () => {
     // this id, and pre-fix the handler would have parsed ITS messages.
     seedSubagentConversation({
       conversationId: "conv-parent",
-      objective: "hey B how does vellum handle prompt injections",
+      objective: "hey B how does cadet handle prompt injections",
       assistantText: "parent-side text",
     });
     fakeStates.set("sa-1", {

@@ -56,7 +56,7 @@ test("rejects a launcher that points back to itself", () => {
   );
 
   expect(() => resolveOwnedCliTarget(launcher)).toThrow(
-    "installed Vellum CLI runtime is unavailable",
+    "installed Cadet CLI runtime is unavailable",
   );
 });
 
@@ -69,6 +69,6 @@ test("rejects a case-variant launcher path that points back to itself", () => {
   );
 
   expect(() => resolveOwnedCliTarget(launcher)).toThrow(
-    "installed Vellum CLI runtime is unavailable",
+    "installed Cadet CLI runtime is unavailable",
   );
 });

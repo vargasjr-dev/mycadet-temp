@@ -178,7 +178,7 @@ describe("routing invariant: all decision paths reference applyGuardianDecision"
       path: "runtime/routes/guardian-action-routes.ts",
       symbols: ["processGuardianDecision"],
     },
-    // Surface action route handler (Vellum in-app card buttons) — intercepts
+    // Surface action route handler (Cadet in-app card buttons) — intercepts
     // apr:* action IDs and routes through processGuardianDecision
     {
       path: "runtime/routes/surface-action-routes.ts",
@@ -2045,13 +2045,13 @@ describe("routing invariant: surface action apr:* buttons route through canonica
     expect(result!.source).toBe("vellum_surface");
   });
 
-  test("parseCallbackData returns vellum_surface source for vellum channel", () => {
+  test("parseCallbackData returns vellum_surface source for cadet channel", () => {
     const result = parseCallbackData("apr:req-1:reject", "vellum");
     expect(result).not.toBeNull();
     expect(result!.source).toBe("vellum_surface");
   });
 
-  test("processGuardianDecision approves access_request from vellum surface", async () => {
+  test("processGuardianDecision approves access_request from cadet surface", async () => {
     const requestId = `access-req-test-slack-U123-${Date.now()}`;
     sim.seedRequest({
       id: requestId,
@@ -2086,7 +2086,7 @@ describe("routing invariant: surface action apr:* buttons route through canonica
     expect(resolved!.status).toBe("approved");
   });
 
-  test("processGuardianDecision denies access_request from vellum surface", async () => {
+  test("processGuardianDecision denies access_request from cadet surface", async () => {
     const requestId = `access-req-test-slack-U789-${Date.now()}`;
     sim.seedRequest({
       id: requestId,

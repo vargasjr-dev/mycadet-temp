@@ -207,9 +207,9 @@ describe("026-backfill-install-meta migration", () => {
     expect(meta!.contentHash).toMatch(/^v2:[0-9a-f]{64}$/);
   });
 
-  // ─── Case 2: version with no origin (vellum or clawhub) ───────────────
+  // ─── Case 2: version with no origin (cadet or clawhub) ───────────────
 
-  test("infers vellum origin from version.json with version and no origin", () => {
+  test("infers cadet origin from version.json with version and no origin", () => {
     createSkillDir("vellum-skill", {
       versionJson: {
         version: "v1:abc123",

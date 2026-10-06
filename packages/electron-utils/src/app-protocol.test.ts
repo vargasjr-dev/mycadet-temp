@@ -59,7 +59,7 @@ describe("resolveAppProtocolPath - URL parser collapses `..` segments", () => {
 
   test("deeply nested `..` chains resolve to a safe in-root path", () => {
     expect(
-      resolveAppProtocolPath(ROOT, "app://vellum.ai/a/b/../../../etc/passwd"),
+      resolveAppProtocolPath(ROOT, "app://mycadet.ai/a/b/../../../etc/passwd"),
     ).toEqual({ kind: "ok", resolved: path.join(ROOT, "etc/passwd") });
   });
 

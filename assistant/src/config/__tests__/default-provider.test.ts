@@ -157,7 +157,7 @@ describe("resolveDefaultConnectionName", () => {
     ).toBe("my-connection");
   });
 
-  test("vellum resolves to the managed connection name", () => {
+  test("cadet resolves to the managed connection name", () => {
     expect(resolveDefaultConnectionName({ provider: "vellum" })).toBe(
       VELLUM_MANAGED_CONNECTION_NAME,
     );
@@ -187,7 +187,7 @@ describe("resolveDefaultConnectionName", () => {
     );
   });
 
-  test("an explicit pin wins even for vellum", () => {
+  test("an explicit pin wins even for cadet", () => {
     expect(
       resolveDefaultConnectionName({
         provider: "vellum",

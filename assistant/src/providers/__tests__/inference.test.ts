@@ -53,30 +53,30 @@ describe("migrateCreateProviderConnections", () => {
     expect(Array.isArray(rows)).toBe(true);
   });
 
-  test("seedCanonicalConnections seeds the provider-agnostic vellum connection", () => {
+  test("seedCanonicalConnections seeds the provider-agnostic cadet connection", () => {
     const { db } = setupDb();
     seedCanonicalConnections(db);
-    const vellum = getConnection(db, "vellum");
-    expect(vellum).not.toBeNull();
-    expect(vellum?.provider).toBe("vellum");
-    expect(vellum?.auth.type).toBe("platform");
+    const cadet = getConnection(db, "vellum");
+    expect(cadet).not.toBeNull();
+    expect(cadet?.provider).toBe("vellum");
+    expect(cadet?.auth.type).toBe("platform");
     // Derived from MANAGED_CONNECTION_NAMES → write-protected at the route layer.
-    expect(vellum?.isManaged).toBe(true);
+    expect(cadet?.isManaged).toBe(true);
   });
 
   test("seedCanonicalConnections is idempotent", () => {
     const { db } = setupDb();
-    // Run twice — should not throw or create duplicate vellum rows.
+    // Run twice — should not throw or create duplicate cadet rows.
     seedCanonicalConnections(db);
     seedCanonicalConnections(db);
     const managed = listConnections(db, { provider: "vellum" });
     expect(managed.filter((c) => c.name === "vellum").length).toBe(1);
   });
 
-  test("seedCanonicalConnections does not clobber a user connection named vellum", () => {
+  test("seedCanonicalConnections does not clobber a user connection named cadet", () => {
     const { db } = setupDb();
-    // `vellum` was not reserved before consolidation, so an install may already
-    // have a BYOK connection keyed `vellum`. Seeding must not rewrite it to the
+    // `cadet` was not reserved before consolidation, so an install may already
+    // have a BYOK connection keyed `cadet`. Seeding must not rewrite it to the
     // platform-auth sentinel.
     createConnection(db, {
       name: "vellum",

@@ -13,13 +13,9 @@ import {
   installFeedbackIpc,
   type FeedbackDependencies,
 } from "@mycadet/electron-desktop/feedback";
-import { installFeedbackIpc, type FeedbackDependencies } from "@mycadet/electron-desktop/feedback";
 import { writeSetting as writeSharedSetting } from "@mycadet/electron-desktop/settings";
 import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
-import {
-  readSetting,
-  writeSetting,
-} from "@mycadet/electron-desktop/settings";
+import { readSetting, writeSetting } from "@mycadet/electron-desktop/settings";
 
 import { WINDOWS_RELEASE_INFO } from "../app-config";
 import { handle, on } from "../ipc.client";
@@ -55,9 +51,8 @@ const diagnosticsFeature: CapabilityModule<DesktopCapabilityRegistry> = {
     );
     // Persist the renderer's effective diagnostics consent. Sentry reporting
     // is gone; this keeps the user's choice durable for the settings surface.
-    installDiagnosticsIpc(
-      { on },
-      (enabled) => writeSharedSetting("shareDiagnostics", enabled),
+    installDiagnosticsIpc({ on }, (enabled) =>
+      writeSharedSetting("shareDiagnostics", enabled),
     );
     installFeedbackIpc();
   },

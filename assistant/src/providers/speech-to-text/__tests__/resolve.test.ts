@@ -55,7 +55,7 @@ mock.module("../../../security/credential-key.js", () => ({
   credentialKey: (...args: string[]) => args.join("/"),
 }));
 
-// -- Vellum managed availability mock --------------------------------------
+// -- Cadet managed availability mock --------------------------------------
 
 let mockVellumAvailable = false;
 
@@ -680,7 +680,7 @@ describe("telephony capability catalog alignment", () => {
       deepgram: "deepgram",
       "google-gemini": "gemini",
       xai: "xai",
-      // vellum's credential is the platform connection, mocked below.
+      // cadet's credential is the platform connection, mocked below.
       vellum: "vellum",
     };
 
@@ -1209,7 +1209,7 @@ describe("vellum-flux managed resolution", () => {
   });
 });
 
-describe("vellum managed resolution", () => {
+describe("cadet managed resolution", () => {
   beforeEach(() => {
     mockVellumAvailable = false;
     mockProviderKeys = {};
@@ -1217,7 +1217,7 @@ describe("vellum managed resolution", () => {
     vellumStreamCtorCalls.length = 0;
   });
 
-  test("the vellum provider resolves the batch transcriber when the platform connection exists", async () => {
+  test("the cadet provider resolves the batch transcriber when the platform connection exists", async () => {
     mockVellumAvailable = true;
     applyConfig({ provider: "vellum" });
 
@@ -1225,14 +1225,14 @@ describe("vellum managed resolution", () => {
     expect(transcriber?.providerId).toBe("vellum");
   });
 
-  test("the vellum provider resolves null without a platform connection", async () => {
+  test("the cadet provider resolves null without a platform connection", async () => {
     mockVellumAvailable = false;
     applyConfig({ provider: "vellum" });
 
     expect(await resolveBatchTranscriber()).toBeNull();
   });
 
-  test("the vellum provider wins over a stored BYOK key", async () => {
+  test("the cadet provider wins over a stored BYOK key", async () => {
     mockVellumAvailable = true;
     mockProviderKeys = { deepgram: "dg-key" };
     applyConfig({ provider: "vellum" });
@@ -1245,7 +1245,7 @@ describe("vellum managed resolution", () => {
     }
   });
 
-  test("streaming resolver constructs the vellum adapter with the tunnel connection and sample rate", async () => {
+  test("streaming resolver constructs the cadet adapter with the tunnel connection and sample rate", async () => {
     mockVellumAvailable = true;
     mockTunnelConnection = {
       wsBaseUrl: "ws://gateway.test",
@@ -1613,7 +1613,7 @@ describe("streaming capability matches the streaming factory", () => {
     "google-gemini": "gemini",
     "openai-whisper": "openai",
     xai: "xai",
-    // vellum's credential is the platform connection, mocked below.
+    // cadet's credential is the platform connection, mocked below.
     vellum: "vellum",
     // Managed Flux rides the same platform connection.
     "vellum-flux": "vellum",
@@ -1830,7 +1830,7 @@ describe("deepgram-flux batch resolution", () => {
 });
 
 describe("sttCredentialGapReason", () => {
-  test("vellum gets connection copy; API-key providers keep key copy", () => {
+  test("cadet gets connection copy; API-key providers keep key copy", () => {
     expect(sttCredentialGapReason("vellum")).toContain("platform connect");
     expect(sttCredentialGapReason("vellum")).not.toContain("API key");
     expect(sttCredentialGapReason("deepgram")).toContain("API key");

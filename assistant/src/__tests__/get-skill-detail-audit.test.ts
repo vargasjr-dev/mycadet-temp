@@ -336,7 +336,7 @@ describe("getSkill — skillssh audit enrichment", () => {
     // WHEN we fetch its detail
     const result = await getSkill("caveman");
 
-    // THEN it resolves to the vellum origin (plugin skills are mapped to
+    // THEN it resolves to the cadet origin (plugin skills are mapped to
     // bundled/vellum for older clients) while preserving plugin attribution
     // on the owner descriptor
     expect("skill" in result).toBe(true);

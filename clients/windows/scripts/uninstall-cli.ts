@@ -21,7 +21,7 @@ export function uninstallPackagedCli(
   );
   if (result === "blocked") {
     throw new Error(
-      "Unable to remove the Vellum command launcher. Close active vellum commands and try again.",
+      "Unable to remove the Cadet command launcher. Close active cadet commands and try again.",
     );
   }
 }

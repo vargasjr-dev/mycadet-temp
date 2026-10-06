@@ -103,7 +103,7 @@ describe("selection chain", () => {
     expect(resolved.provider_connection).toBe("anthropic-personal");
   });
 
-  test("a null defaultProvider falls back to the vellum catalog bodies", () => {
+  test("a null defaultProvider falls back to the cadet catalog bodies", () => {
     const llm = LLMSchema.parse({});
     const resolved = resolveCallSiteConfig("conversationSummarization", llm);
     const vellumBody = CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"];
@@ -434,7 +434,7 @@ describe("composition", () => {
     expect(resolved.provider_connection).toBeUndefined();
   });
 
-  test("a provider-pinning tweak over the vellum default keeps the managed routing", () => {
+  test("a provider-pinning tweak over the cadet default keeps the managed routing", () => {
     const llm = LLMSchema.parse({
       callSites: {
         conversationSummarization: {
@@ -452,7 +452,7 @@ describe("composition", () => {
     expect(resolved.provider_connection).toBe("vellum");
   });
 
-  test("a model-only tweak on the vellum default keeps the identity provider", () => {
+  test("a model-only tweak on the cadet default keeps the identity provider", () => {
     const llm = LLMSchema.parse({
       callSites: {
         conversationSummarization: { model: "claude-haiku-4-5-20251001" },
@@ -548,7 +548,7 @@ describe("resolveDefaultProfileKey", () => {
 });
 
 describe("explicit default-profile references resolve through the default provider", () => {
-  // Regressed failure mode: the vellum column's model ids dispatched to
+  // Regressed failure mode: the cadet column's model ids dispatched to
   // BYOK connections.
   const managedStubs = {
     balanced: { source: "managed" as const },
@@ -584,7 +584,7 @@ describe("explicit default-profile references resolve through the default provid
     );
   });
 
-  test("a vellum default provider keeps the vellum bodies", () => {
+  test("a cadet default provider keeps the cadet bodies", () => {
     const llm = LLMSchema.parse({
       profiles: managedStubs,
       defaultProvider: { provider: "vellum" },

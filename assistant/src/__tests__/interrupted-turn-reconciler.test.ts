@@ -92,7 +92,7 @@ describe("interrupted-turn reconciler", () => {
     expect(readRow("conv-idle").processing_resume_attempts).toBe(0);
   });
 
-  test("the internal vellum channel is treated as a guardian-owned local conversation", () => {
+  test("the internal cadet channel is treated as a guardian-owned local conversation", () => {
     seedInterrupted("conv-vellum");
     setConversationOriginChannelIfUnset("conv-vellum", "vellum");
 

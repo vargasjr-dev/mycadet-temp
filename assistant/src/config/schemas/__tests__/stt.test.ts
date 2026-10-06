@@ -106,7 +106,7 @@ describe("SttServiceSchema", () => {
 });
 
 describe("managed provider", () => {
-  test("accepts vellum as an ordinary provider choice", () => {
+  test("accepts cadet as an ordinary provider choice", () => {
     const parsed = SttServiceSchema.parse({ provider: "vellum" });
     expect(parsed.provider).toBe("vellum");
   });

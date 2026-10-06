@@ -682,7 +682,7 @@ describe("command-registry", () => {
       expect(getAssistantPath("platform invoices get").baseRisk).toBe("low");
     });
 
-    // Every roadmap write lands on the public Vellum roadmap under the
+    // Every roadmap write lands on the public Cadet roadmap under the
     // assistant's name, so none of them may drift back to a risk level an
     // auto-approve policy would wave through.
     test("roadmap reads are low and every roadmap write is at least medium", () => {

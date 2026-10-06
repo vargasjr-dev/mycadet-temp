@@ -525,7 +525,7 @@ const riskOverrides: AssistantRiskOverride[] = [
     path: "roadmap create",
     risk: "high",
     reason:
-      "Publishes an item on the public Vellum roadmap under the assistant's name and notifies Vellum staff",
+      "Publishes an item on the public Cadet roadmap under the assistant's name and notifies Cadet staff",
   },
   {
     path: "roadmap update",

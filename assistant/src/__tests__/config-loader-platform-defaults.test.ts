@@ -304,7 +304,7 @@ describe("platform-managed config defaults", () => {
     expect(onDisk["services"]).toBeUndefined();
   });
 
-  test("IS_PLATFORM=true, config file exists with an explicit image-generation provider → provider wins over the vellum fill", () => {
+  test("IS_PLATFORM=true, config file exists with an explicit image-generation provider → provider wins over the cadet fill", () => {
     process.env.IS_PLATFORM = "true";
 
     // User has an explicit BYOK image-generation provider on disk. The fill

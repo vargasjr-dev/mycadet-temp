@@ -1,5 +1,5 @@
 /**
- * Vellum identity validation — platform-managed email.
+ * Cadet identity validation — platform-managed email.
  *
  * The route's edge-scoped auth already authenticates the platform,
  * so no external API key validation is needed.

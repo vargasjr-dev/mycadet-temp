@@ -492,7 +492,7 @@ describe("normalizeTelegramUpdate: rooms", () => {
   it("a text_mention names the bot by id when it has no username in the text", () => {
     const result = normalizeTelegramUpdate(
       makeGroupMessage({
-        text: "Vellum, thoughts?",
+        text: "Cadet, thoughts?",
         entities: [
           {
             type: "text_mention",
@@ -513,7 +513,7 @@ describe("normalizeTelegramUpdate: rooms", () => {
         makeGroupMessage({
           reply_to_message: {
             message_id: 69,
-            from: { id: 123456789, is_bot: true, first_name: "Vellum" },
+            from: { id: 123456789, is_bot: true, first_name: "Cadet" },
           },
         }),
         { bot: BOT },

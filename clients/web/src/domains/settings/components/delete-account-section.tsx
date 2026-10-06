@@ -18,7 +18,7 @@ import { toast } from "@mycadet/design-library/components/toast";
 
 export function DeleteAccountSection() {
   const { t } = useTranslation("settings");
-  // platformHostedOnly: deleting a Cadet platform account from a UI that
+  // platformHostedOnly: deleting a Cadet Cloud account from a UI that
   // is actively connected to a self-hosted assistant is confusing /
   // disruptive — the user can switch to a platform-hosted assistant to
   // access this action. The standard gate would still expose it.

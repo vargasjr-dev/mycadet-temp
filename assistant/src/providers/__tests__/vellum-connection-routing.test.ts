@@ -33,7 +33,7 @@ const vellumConnection = {
   name: "vellum",
   provider: "vellum",
   auth: { type: "platform" },
-  label: "Vellum",
+  label: "Cadet",
 } as unknown as ProviderConnection;
 
 const resolvedAuth: ResolvedAuth = {
@@ -42,7 +42,7 @@ const resolvedAuth: ResolvedAuth = {
   baseUrl: "https://platform.example/v1/runtime-proxy/fireworks",
 };
 
-describe("vellum connection routing", () => {
+describe("cadet connection routing", () => {
   test("isVellumManagedConnection identifies the sentinel connection", () => {
     expect(isVellumManagedConnection(vellumConnection)).toBe(true);
     // The provider column alone decides: a concrete provider is never the
@@ -52,7 +52,7 @@ describe("vellum connection routing", () => {
     expect(isVellumManagedConnection({ provider: "vellum" })).toBe(true);
   });
 
-  test("the vellum sentinel does not dispatch without an override", () => {
+  test("the cadet sentinel does not dispatch without an override", () => {
     // No `provider` override → the connection column is the routing
     // sentinel and must not build an adapter, even though Vellum-hosted
     // GPU models share this catalog id.
@@ -66,7 +66,7 @@ describe("vellum connection routing", () => {
     expect(adapter).toBeNull();
   });
 
-  test("provider override routes the vellum connection to the real upstream", () => {
+  test("provider override routes the cadet connection to the real upstream", () => {
     const adapter = createAdapterFromConnection(
       vellumConnection,
       resolvedAuth,
@@ -78,7 +78,7 @@ describe("vellum connection routing", () => {
     expect(adapter).not.toBeNull();
   });
 
-  test("provider override vellum routes GPU models through VellumProvider", () => {
+  test("provider override cadet routes GPU models through VellumProvider", () => {
     const adapter = createAdapterFromConnection(
       vellumConnection,
       {
@@ -97,7 +97,7 @@ describe("vellum connection routing", () => {
 });
 
 describe("effectiveConnectionAuth", () => {
-  test("a vellum row dispatches on platform auth regardless of the stored variant", () => {
+  test("a cadet row dispatches on platform auth regardless of the stored variant", () => {
     for (const stored of [
       { type: "api_key", credential: "vault/x" },
       { type: "none" },
@@ -131,23 +131,23 @@ describe("effectiveConnectionAuth", () => {
   });
 });
 
-describe("vellum connection persistence (DB round-trip)", () => {
+describe("cadet connection persistence (DB round-trip)", () => {
   // Guards the P1: a persisted `provider: "vellum"` row must survive the DB
   // loaders and create route, which validate against VALID_CONNECTION_PROVIDERS.
   // Without the sentinel on that allowlist these all reject the row and the
   // routing above never runs on a real config.
-  test("createConnection accepts a vellum sentinel row", () => {
+  test("createConnection accepts a cadet sentinel row", () => {
     const db = setupDb();
     const result = createConnection(db, {
       name: "vellum",
       provider: "vellum",
       auth: { type: "platform" },
-      label: "Vellum",
+      label: "Cadet",
     });
     expect(result.ok).toBe(true);
   });
 
-  test("getConnection loads a persisted vellum row (not dropped as invalid)", () => {
+  test("getConnection loads a persisted cadet row (not dropped as invalid)", () => {
     const db = setupDb();
     createConnection(db, {
       name: "vellum",
@@ -160,7 +160,7 @@ describe("vellum connection persistence (DB round-trip)", () => {
     expect(isVellumManagedConnection(loaded!)).toBe(true);
   });
 
-  test("listConnections includes a persisted vellum row", () => {
+  test("listConnections includes a persisted cadet row", () => {
     const db = setupDb();
     createConnection(db, {
       name: "vellum",

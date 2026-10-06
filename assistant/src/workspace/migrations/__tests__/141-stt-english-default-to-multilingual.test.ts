@@ -49,7 +49,7 @@ describe("141-stt-english-default-to-multilingual", () => {
   });
 
   test("treats legacy managed mode as the relay, not as its restore provider", () => {
-    // `mode: "managed"` routes to Vellum while `provider` holds the value a
+    // `mode: "managed"` routes to Cadet while `provider` holds the value a
     // switch back to bring-your-own would restore, so mode has to win.
     write({ mode: "managed", provider: "deepgram", language: "en" });
     MIG.run(workspaceDir);

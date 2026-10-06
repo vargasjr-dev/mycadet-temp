@@ -794,7 +794,7 @@ describe("speakSystemPrompt aborted synthesis", () => {
   });
 });
 
-describe("vellum managed playability", () => {
+describe("cadet managed playability", () => {
   test("playable only when the platform identity is fully provisioned", async () => {
     // The stored secret resolves, but availability decides.
     storedKeys["vellum"] = "stored";

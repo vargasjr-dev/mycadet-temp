@@ -1,5 +1,5 @@
 /**
- * `vellum conversations export` writes a transcript a person reads, so it
+ * `cadet conversations export` writes a transcript a person reads, so it
  * projects each row the way the transcript does: a row a `send_user_message`
  * turn marked private contributes the delivered message, never the model's
  * working notes. Unmarked rows are untouched.

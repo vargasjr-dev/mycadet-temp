@@ -154,19 +154,19 @@ describe("web_search tool", () => {
     expect(result.content).toContain("No web search API key configured");
   });
 
-  // ---- Provider vellum (managed, provider is the only axis) ---------------
+  // ---- Provider cadet (managed, provider is the only axis) ---------------
 
-  test("provider vellum with no mode routes to the platform proxy", async () => {
+  test("provider cadet with no mode routes to the platform proxy", async () => {
     seedWebSearch(undefined, "vellum");
 
-    const result = await execute({ query: "vellum managed query" });
+    const result = await execute({ query: "cadet managed query" });
 
     expect(result.isError).toBe(false);
     expect(mockManagedSearchProxyCalls).toHaveLength(1);
     expect(mockManagedSearchProxyCalls[0].provider).toBe("brave");
   });
 
-  test("provider vellum routes managed even under a stale your-own mode", async () => {
+  test("provider cadet routes managed even under a stale your-own mode", async () => {
     // The provider choice wins over a leftover legacy mode key.
     seedWebSearch("your-own", "vellum");
 
@@ -176,8 +176,8 @@ describe("web_search tool", () => {
     expect(mockManagedSearchProxyCalls).toHaveLength(1);
   });
 
-  test("provider vellum surfaces a 402 hard error and never falls back to BYOK keys", async () => {
-    // Billing rule: an explicit vellum choice must never silently reroute to
+  test("provider cadet surfaces a 402 hard error and never falls back to BYOK keys", async () => {
+    // Billing rule: an explicit cadet choice must never silently reroute to
     // a user's paid third-party key (and vice versa).
     seedWebSearch(undefined, "vellum");
     mockPerplexitySecureKey = "pplx-should-not-be-used";
@@ -512,7 +512,7 @@ describe("web_search tool", () => {
 
   // ---- Managed Brave provider -------------------------------------------
 
-  test("provider vellum uses Brave proxy without BYOK provider keys", async () => {
+  test("provider cadet uses Brave proxy without BYOK provider keys", async () => {
     seedWebSearch(undefined, "vellum");
     mockManagedSearchProxyResult = {
       ok: true,
@@ -604,7 +604,7 @@ describe("web_search tool", () => {
     );
   });
 
-  test("provider vellum passes abort signal to the platform proxy", async () => {
+  test("provider cadet passes abort signal to the platform proxy", async () => {
     seedWebSearch(undefined, "vellum");
     const controller = new AbortController();
 
@@ -614,7 +614,7 @@ describe("web_search tool", () => {
     expect(mockManagedSearchProxyCalls[0].signal).toBe(controller.signal);
   });
 
-  test("provider vellum maps insufficient balance to a managed usage error", async () => {
+  test("provider cadet maps insufficient balance to a managed usage error", async () => {
     seedWebSearch(undefined, "vellum");
     mockManagedSearchProxyResult = {
       ok: false,
@@ -633,7 +633,7 @@ describe("web_search tool", () => {
     expect(result.content).toContain("different web search provider");
   });
 
-  test("provider vellum maps proxied provider errors to a tool error", async () => {
+  test("provider cadet maps proxied provider errors to a tool error", async () => {
     seedWebSearch(undefined, "vellum");
     mockManagedSearchProxyResult = {
       ok: true,
@@ -650,7 +650,7 @@ describe("web_search tool", () => {
     );
   });
 
-  test("provider vellum returns a clear error when platform context is unavailable", async () => {
+  test("provider cadet returns a clear error when platform context is unavailable", async () => {
     seedWebSearch(undefined, "vellum");
     mockManagedSearchProxyResult = {
       ok: false,
@@ -662,7 +662,7 @@ describe("web_search tool", () => {
 
     expect(result.isError).toBe(true);
     expect(result.content).toContain("Managed search proxy is unavailable");
-    expect(result.content).toContain("Log in to Vellum");
+    expect(result.content).toContain("Log in to Cadet");
   });
 
   test("your-own mode keeps direct Brave BYOK behavior unchanged", async () => {
@@ -835,7 +835,7 @@ describe("web_search tool", () => {
     expect(result.isError).toBe(false);
     expect(capturedUrl).toContain("api.keenable.ai/v1/search/public");
     expect(capturedHeaders.get("x-api-key")).toBeNull();
-    expect(capturedHeaders.get("x-keenable-title")).toBe("Vellum Assistant");
+    expect(capturedHeaders.get("x-keenable-title")).toBe("Cadet Assistant");
     expect(result.content).toContain("Keenable Result 1");
     expect(result.content).toContain("https://example.com/keenable-1");
   });

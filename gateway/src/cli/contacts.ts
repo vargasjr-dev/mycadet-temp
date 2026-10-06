@@ -148,7 +148,7 @@ export function contactsUsage(): string {
     "  $ gateway contacts set-risk-threshold abc-123 --threshold high",
     "  $ gateway contacts set-risk-threshold abc-123 --threshold inherit",
     "",
-    "From the host: vellum exec --service gateway -- gateway contacts list",
+    "From the host: cadet exec --service gateway -- gateway contacts list",
   ].join("\n");
 }
 
@@ -260,7 +260,7 @@ export async function runContactsCommand(args: string[]): Promise<number> {
 
 function failUnreachable(): number {
   console.error(
-    "Gateway is not running or is unreachable over IPC. Start it with 'vellum wake', then retry.",
+    "Gateway is not running or is unreachable over IPC. Start it with 'cadet wake', then retry.",
   );
   return 1;
 }

@@ -1,6 +1,6 @@
 # Internal Reference
 
-Detailed reference documentation for the Cadet platform. For an overview and quick start, see the [README](../README.md).
+Detailed reference documentation for the Cadet Cloud. For an overview and quick start, see the [README](../README.md).
 
 ## Table of Contents
 
@@ -502,7 +502,7 @@ The CLI connects via HTTP. Forward the assistant's HTTP port with SSH:
 
 ```bash
 ssh -L 8741:localhost:8741 user@remote-host -N &
-VELLUM_DAEMON_URL=http://localhost:8741 vellum
+VELLUM_DAEMON_URL=http://localhost:8741 cadet
 ```
 
 When connecting to a remote assistant, autostart is disabled by default. Set `VELLUM_DAEMON_AUTOSTART=1` to override.
@@ -513,7 +513,7 @@ The macOS app also supports remote connections. Launch it from the terminal:
 
 ```bash
 ssh -L 8741:localhost:8741 user@remote-host -N &
-VELLUM_DAEMON_URL=http://localhost:8741 open -a Vellum
+VELLUM_DAEMON_URL=http://localhost:8741 open -a Cadet
 ```
 
 #### Troubleshooting
@@ -523,7 +523,7 @@ VELLUM_DAEMON_URL=http://localhost:8741 open -a Vellum
 | CLI: "could not connect to assistant"                 | Is the SSH port tunnel active? Check `VELLUM_DAEMON_URL` |
 | CLI: assistant starts locally despite remote override | Check that `VELLUM_DAEMON_AUTOSTART` is not set to `1`   |
 | macOS: not connecting                                 | Verify the assistant URL is reachable                    |
-| Any: "connection refused"                             | Is the remote assistant running? (`cadet ps` on remote) |
+| Any: "connection refused"                             | Is the remote assistant running? (`cadet ps` on remote)  |
 
 ## Development Workflow
 
@@ -661,7 +661,7 @@ dictation-stream.ts ──WSS──>  stt-stream-websocket.ts  ──WS──>  
 | `deepgram-flux`  | `realtime-ws`               | Yes               | No             |
 | `google-gemini`  | `realtime-ws`               | Yes               | Yes            |
 | `openai-whisper` | `incremental-batch`         | Yes               | Yes            |
-| `vellum`         | `realtime-ws`               | Yes               | Yes            |
+| `cadet`          | `realtime-ws`               | Yes               | Yes            |
 | `xai`            | `realtime-ws`               | Yes               | Yes            |
 
 ### Debugging Stream Sessions

@@ -12,8 +12,8 @@ const targetArch = process.env.ELECTRON_TARGET_ARCH || "arm64";
 
 const productName =
   env === "production"
-    ? "Vellum"
-    : `Vellum ${env.charAt(0).toUpperCase() + env.slice(1)}`;
+    ? "Cadet"
+    : `Cadet ${env.charAt(0).toUpperCase() + env.slice(1)}`;
 
 const appId =
   env === "production"
@@ -29,8 +29,8 @@ const appId =
 // `bin/` alongside the bundle.
 const helperBundleName =
   env === "production"
-    ? "Vellum Helper"
-    : `Vellum Helper ${env.charAt(0).toUpperCase() + env.slice(1)}`;
+    ? "Cadet Helper"
+    : `Cadet Helper ${env.charAt(0).toUpperCase() + env.slice(1)}`;
 
 // The Communication Notifications entitlement is restricted: an app that
 // declares it without an authorizing provisioning profile is killed at launch.
@@ -100,19 +100,19 @@ module.exports = {
   afterSign: "./scripts/afterSign.js",
   protocols: [
     {
-      name: "Vellum Deep Links",
+      name: "Cadet Deep Links",
       schemes,
     },
   ],
   fileAssociations: [
     {
       ext: "vellum",
-      name: "Vellum Bundle",
+      name: "Cadet Bundle",
       role: "Viewer",
     },
   ],
   dmg: {
-    // Installer-style DMG: a single app icon sits under "Install Vellum /
+    // Installer-style DMG: a single app icon sits under "Install Cadet /
     // Double click the icon below". The app moves itself to /Applications on
     // first launch (see src/main/move-to-applications.ts), so the DMG needs no
     // Applications alias and no drag step. The background (+ @2x) is rendered
@@ -137,13 +137,13 @@ module.exports = {
     extendInfo: {
       CFBundleIconName: "AppIcon",
       NSMicrophoneUsageDescription:
-        "Vellum uses the microphone to record voice input for chat.",
+        "Cadet uses the microphone to record voice input for chat.",
       NSCameraUsageDescription:
-        "Vellum uses the camera to capture photos when you ask your assistant to use the camera.",
+        "Cadet uses the camera to capture photos when you ask your assistant to use the camera.",
       NSSpeechRecognitionUsageDescription:
-        "Vellum uses speech recognition to transcribe dictated voice input.",
+        "Cadet uses speech recognition to transcribe dictated voice input.",
       NSAppleEventsUsageDescription:
-        "Vellum uses Automation to paste dictated voice input into the app you are using.",
+        "Cadet uses Automation to paste dictated voice input into the app you are using.",
       NSUserNotificationAlertStyle: "alert",
       // Declares the intent the notifier addon donates. Harmless without the
       // Communication Notifications entitlement, so it ships unconditionally.
@@ -154,7 +154,7 @@ module.exports = {
         {
           UTTypeIdentifier: "com.vellum.app-bundle",
           UTTypeConformsTo: ["public.data", "public.content"],
-          UTTypeDescription: "Vellum App Bundle",
+          UTTypeDescription: "Cadet App Bundle",
           UTTypeTagSpecification: {
             "public.filename-extension": ["vellum"],
             "public.mime-type": "application/x-vellum",

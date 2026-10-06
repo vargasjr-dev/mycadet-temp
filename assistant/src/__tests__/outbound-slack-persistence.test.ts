@@ -522,13 +522,13 @@ describe("outbound assistant Slack metadata persistence", () => {
     await handleMessageComplete(
       state,
       deps,
-      makeMessageCompleteEvent("vellum reply"),
+      makeMessageCompleteEvent("cadet reply"),
     );
 
     const persisted = lastAssistantPersisted();
     expect(persisted.metadata).toBeDefined();
     // Non-Slack channels must leave the existing metadata shape untouched,
-    // and a vellum turn is not a provider message, so it gets no neutral
+    // and a cadet turn is not a provider message, so it gets no neutral
     // envelope either.
     expect(persisted.metadata?.slackMeta).toBeUndefined();
     expect(persisted.metadata?.providerMeta).toBeUndefined();

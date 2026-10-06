@@ -70,7 +70,7 @@ describe("SSE actor principal resolves from the same guardian source as send/res
   test("warm gateway cache primes via the vellum-filtered read the async path uses", async () => {
     ipcGuardians = [gatewayVellumGuardian];
 
-    // The async path filters by channelType vellum; the sync peek must read
+    // The async path filters by channelType cadet; the sync peek must read
     // the same cache key, not the unfiltered "ALL" entry.
     await getGuardianDelivery({ channelTypes: ["vellum"] });
 

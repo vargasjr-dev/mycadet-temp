@@ -54,7 +54,7 @@ describe("parallel-tasks system prompt section", () => {
     expect(
       buildSystemPrompt({ canSpawnSubagents: true, hasNoClient: true }),
     ).toContain(HEADING);
-    // Every first-party client folds onto the `vellum` channel.
+    // Every first-party client folds onto the `cadet` channel.
     expect(
       buildSystemPrompt({
         canSpawnSubagents: true,

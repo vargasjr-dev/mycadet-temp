@@ -90,7 +90,7 @@ describe("getConnectedChannels gateway connectivity", () => {
     expect(await getConnectedChannels()).not.toContain("discord");
   });
 
-  test("always reports vellum and platform connected", async () => {
+  test("always reports cadet and platform connected", async () => {
     deliverableChannels = ["vellum", "platform"];
     gatewayGuardians = null;
 

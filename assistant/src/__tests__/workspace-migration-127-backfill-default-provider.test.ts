@@ -122,7 +122,7 @@ describe("127-backfill-default-provider", () => {
     expect(defaultProvider()).toEqual({ provider: "vellum" });
   });
 
-  test("IS_PLATFORM backfills vellum with no other signals", () => {
+  test("IS_PLATFORM backfills cadet with no other signals", () => {
     process.env.IS_PLATFORM = "true";
     writeConfig({ llm: { profiles: {} } });
 

@@ -259,14 +259,14 @@ export const typeIntoFrontAppWithDeps = async (
   }
 
   // **The application is not hidden to hand focus over.** Nothing here has it:
-  // the guard above returns when a Vellum window is focused, and the companion
+  // the guard above returns when a Cadet window is focused, and the companion
   // is a non-activating panel, so whatever the user was working in is still
   // frontmost and the keystroke reaches it.
   //
   // Hiding is also unusable on this path even where it would help, because it
   // is all or nothing: the companion goes off the screen with everything else,
   // and a window ordered back un-hides the whole application rather than
-  // itself, which pulls Vellum in front of the thing the words just went into.
+  // itself, which pulls Cadet in front of the thing the words just went into.
   const previousClipboard = deps.readClipboardSnapshot();
   deps.writeClipboardText(text);
 
@@ -285,7 +285,7 @@ export const typeIntoFrontApp = (text: string): Promise<TextInsertionResult> =>
 
 /**
  * Undo the last edit in the application in front, the way its Edit menu
- * would. The same keystroke path a paste takes, and the same guard: a Vellum
+ * would. The same keystroke path a paste takes, and the same guard: a Cadet
  * window in front means there is no other application to undo in.
  *
  * A paste is one undo step in every editor worth the name, which is what

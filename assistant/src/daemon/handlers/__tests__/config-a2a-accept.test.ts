@@ -287,7 +287,7 @@ describe("acceptA2AInvite", () => {
       senderAssistantId: SENDER_ASSISTANT_ID,
       acceptor: {
         assistantId: RECEIVER_GATEWAY_URL,
-        displayName: "Vellum Assistant",
+        displayName: "Cadet Assistant",
         gatewayUrl: RECEIVER_GATEWAY_URL,
       },
     });

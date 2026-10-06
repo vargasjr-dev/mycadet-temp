@@ -180,7 +180,7 @@ describe("pairDeliveryWithConversation", () => {
     assistantInitiatedThreadsEnabled = false;
   });
 
-  // ── start_new_conversation (vellum) ─────────────────────────────────
+  // ── start_new_conversation (cadet) ─────────────────────────────────
 
   test("creates a conversation and message for start_new_conversation strategy", async () => {
     const signal = makeSignal();
@@ -814,15 +814,15 @@ describe("pairDeliveryWithConversation", () => {
   });
 
   test("binding context does not trigger reuse for start_new_conversation channels", async () => {
-    // vellum uses start_new_conversation — binding context should be ignored for reuse
+    // cadet uses start_new_conversation — binding context should be ignored for reuse
     mockExistingConversations["conv-bound-vellum"] = {
       id: "conv-bound-vellum",
       source: "notification",
-      title: "Vellum Thread",
+      title: "Cadet Thread",
     };
     mockBindings["notification:vellum:device-1"] = {
       conversationId: "conv-bound-vellum",
-      sourceChannel: "notification:vellum",
+      sourceChannel: "notification:cadet",
       externalChatId: "device-1",
     };
 
@@ -840,7 +840,7 @@ describe("pairDeliveryWithConversation", () => {
       { bindingContext },
     );
 
-    // Should still create a new conversation — vellum is start_new_conversation
+    // Should still create a new conversation — cadet is start_new_conversation
     expect(result.conversationId).toBe("conv-001");
     expect(result.createdNewConversation).toBe(true);
     expect(createConversationMock).toHaveBeenCalledTimes(1);
@@ -848,9 +848,9 @@ describe("pairDeliveryWithConversation", () => {
     expect(getBindingByChannelChatMock).not.toHaveBeenCalled();
   });
 
-  // ── Passive default: vellum no-creates without opt-in ─────────────
+  // ── Passive default: cadet no-creates without opt-in ─────────────
 
-  test("passive vellum signal does not create a conversation or message", async () => {
+  test("passive cadet signal does not create a conversation or message", async () => {
     const signal = makeSignal({ requiresConversation: undefined });
     const copy = makeCopy();
 
@@ -869,7 +869,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(addMessageMock).not.toHaveBeenCalled();
   });
 
-  test("passive vellum signal suppresses even when decision engine says reuse_existing", async () => {
+  test("passive cadet signal suppresses even when decision engine says reuse_existing", async () => {
     mockExistingConversations["conv-explicit-passive"] = {
       id: "conv-explicit-passive",
       source: "notification",
@@ -987,7 +987,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(addMessageMock).not.toHaveBeenCalled();
   });
 
-  test("passive vellum signal appends the body to the producing conversation", async () => {
+  test("passive cadet signal appends the body to the producing conversation", async () => {
     mockExistingConversations["conv-producer"] = {
       id: "conv-producer",
       source: "schedule",
@@ -1024,7 +1024,7 @@ describe("pairDeliveryWithConversation", () => {
     // `resolveHomeFeedMirror` declines a signal that is neither
     // `assistant_tool`, nor flagged async-background, nor produced by a
     // background-typed conversation, so no card is written for this one. The
-    // append is deliberately not gated on that: the vellum banner still
+    // append is deliberately not gated on that: the cadet banner still
     // deep-links to this conversation, and the client suppresses the banner
     // entirely when the user is already viewing it, leaving the transcript as
     // the only place the notification can land.
@@ -1091,7 +1091,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(options.skipResurface).toBe(true);
   });
 
-  test("passive vellum signal appends regardless of the producing conversation's source", async () => {
+  test("passive cadet signal appends regardless of the producing conversation's source", async () => {
     // The reuse_existing branch requires a source match; appending to the
     // producing conversation does not, since the row already exists and the
     // feed links to it either way.
@@ -1116,7 +1116,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(createConversationMock).not.toHaveBeenCalled();
   });
 
-  test("passive vellum signal with a sentinel sourceContextId appends nothing", async () => {
+  test("passive cadet signal with a sentinel sourceContextId appends nothing", async () => {
     // Producers pass job ids, call session ids and `access-req-*` strings
     // here. Those resolve to no row, which matches the feed hiding the button.
     const signal = makeSignal({
@@ -1136,7 +1136,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(addMessageMock).not.toHaveBeenCalled();
   });
 
-  test("passive vellum signal appends to the producer, not the reuse_existing target", async () => {
+  test("passive cadet signal appends to the producer, not the reuse_existing target", async () => {
     mockExistingConversations["conv-producer"] = {
       id: "conv-producer",
       source: "schedule",
@@ -1193,7 +1193,7 @@ describe("pairDeliveryWithConversation", () => {
       string,
       unknown
     >;
-    // vellum channel normally yields "standard", but the metadata override wins
+    // cadet channel normally yields "standard", but the metadata override wins
     expect(callArgs.conversationType).toBe("background");
   });
 
@@ -1218,7 +1218,7 @@ describe("pairDeliveryWithConversation", () => {
       string,
       unknown
     >;
-    // No override — vellum (start_new_conversation) defaults to "standard"
+    // No override — cadet (start_new_conversation) defaults to "standard"
     expect(callArgs.conversationType).toBe("standard");
   });
 
@@ -1453,7 +1453,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(createConversationMock).not.toHaveBeenCalled();
   });
 
-  test("the vellum delivery of a guardian card still pairs its conversation", async () => {
+  test("the cadet delivery of a guardian card still pairs its conversation", async () => {
     const signal = makeSignal({
       sourceEventName: "guardian.question",
       contextPayload: { requestKind: "tool_approval", requestId: "req-1" },
@@ -1538,7 +1538,7 @@ describe("pairDeliveryWithConversation", () => {
     });
 
     test.each(["slack", "telegram", "discord"] as const)(
-      "%s retains the producer metadata despite a prepared vellum resolution",
+      "%s retains the producer metadata despite a prepared cadet resolution",
       async (channel) => {
         assistantInitiatedThreadsEnabled = true;
         const signal = share({
@@ -1571,7 +1571,7 @@ describe("pairDeliveryWithConversation", () => {
       },
     );
 
-    test("platform delivery does not pair a prepared vellum resolution", async () => {
+    test("platform delivery does not pair a prepared cadet resolution", async () => {
       assistantInitiatedThreadsEnabled = true;
       const signal = share();
       const assistantInitiatedThread = resolveAssistantInitiatedThread(signal);

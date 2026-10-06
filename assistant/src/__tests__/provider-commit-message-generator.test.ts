@@ -338,7 +338,7 @@ describe("ProviderCommitMessageGenerator", () => {
   // 13. Routing identity — no provider API key exists under an identity name;
   // the preflight skips it because resolution already verified the
   // connection credential.
-  test("routing identity (vellum) — skips the API-key preflight", async () => {
+  test("routing identity (cadet) — skips the API-key preflight", async () => {
     mockSecureKeys = {};
     resolvedProvider = {
       provider: mockProvider,

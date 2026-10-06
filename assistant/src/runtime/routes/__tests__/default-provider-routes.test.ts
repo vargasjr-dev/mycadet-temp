@@ -126,7 +126,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).message).toContain("default provider");
   });
 
-  test("vellum + authenticated → ok", async () => {
+  test("cadet + authenticated → ok", async () => {
     seedCanonicalVellumConnection();
     setConfig("llm", { defaultProvider: { provider: "vellum" } });
     managedProxyEnabled = true;
@@ -135,7 +135,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result)).toEqual({ status: "ok" });
   });
 
-  test("vellum + unauthenticated → vellum_unauthenticated naming the fix", async () => {
+  test("cadet + unauthenticated → vellum_unauthenticated naming the fix", async () => {
     seedCanonicalVellumConnection();
     setConfig("llm", { defaultProvider: { provider: "vellum" } });
     const result = await get();
@@ -143,7 +143,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).message).toContain("Log in");
   });
 
-  test("vellum + no platform URL → vellum_unauthenticated naming the URL", async () => {
+  test("cadet + no platform URL → vellum_unauthenticated naming the URL", async () => {
     seedCanonicalVellumConnection();
     setConfig("llm", { defaultProvider: { provider: "vellum" } });
     managedProxyBaseUrl = "";
@@ -152,14 +152,14 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).message).toContain("platform URL");
   });
 
-  test("vellum default with no canonical row → missing_connection", async () => {
+  test("cadet default with no canonical row → missing_connection", async () => {
     managedProxyEnabled = true;
     setConfig("llm", { defaultProvider: { provider: "vellum" } });
     const result = await get();
     expect(availability(result).status).toBe("missing_connection");
   });
 
-  test("user-owned connection claiming the vellum name → the platform's own status", async () => {
+  test("user-owned connection claiming the cadet name → the platform's own status", async () => {
     // seedCanonicalConnections skips reseeding when a user row claims the
     // name. Dispatch ignores that row and routes through platform auth, so a
     // signed-in platform is genuinely usable and reads as ok.
@@ -270,7 +270,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).message).toContain("unreachable");
   });
 
-  test("vellum + credential store unreachable → unknown, not logged-out", async () => {
+  test("cadet + credential store unreachable → unknown, not logged-out", async () => {
     seedCanonicalVellumConnection();
     setConfig("llm", { defaultProvider: { provider: "vellum" } });
     secureKeyResults["credential/vellum/assistant_api_key"] = {
@@ -282,7 +282,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).message).toContain("unreachable");
   });
 
-  test("vellum with a dangling explicit connectionName → missing_connection", async () => {
+  test("cadet with a dangling explicit connectionName → missing_connection", async () => {
     setConfig("llm", {
       defaultProvider: { provider: "vellum", connectionName: "ghost" },
     });
@@ -290,7 +290,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).status).toBe("missing_connection");
   });
 
-  test("vellum pinned to another provider's connection → provider_mismatch", async () => {
+  test("cadet pinned to another provider's connection → provider_mismatch", async () => {
     seedConnection({
       name: "anthropic-personal",
       provider: "anthropic",

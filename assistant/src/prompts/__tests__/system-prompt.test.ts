@@ -57,7 +57,7 @@ describe("buildSystemPrompt — persona override", () => {
     expect(result).not.toContain(DEFAULT_SENTINEL);
   });
 
-  test("no override → trust-context-derived resolution (default persona, vellum channel)", () => {
+  test("no override → trust-context-derived resolution (default persona, cadet channel)", () => {
     // No trust context and no resolvable guardian contact in this test env,
     // so the user persona falls back to users/default.md and the channel
     // section resolves channels/vellum.md (absent → omitted).

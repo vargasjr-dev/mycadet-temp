@@ -285,8 +285,8 @@ describe("resolveLiveVoiceCredentialReadiness", () => {
   });
 });
 
-describe("resolveLiveVoiceCredentialReadiness — managed (vellum) TTS", () => {
-  test("vellum TTS with a full platform connection → ready", async () => {
+describe("resolveLiveVoiceCredentialReadiness — managed (cadet) TTS", () => {
+  test("cadet TTS with a full platform connection → ready", async () => {
     ttsProvider = "vellum";
     ttsProviders = {};
     managedAvailable = true;
@@ -295,7 +295,7 @@ describe("resolveLiveVoiceCredentialReadiness — managed (vellum) TTS", () => {
     expect(readiness).toEqual({ status: "ready" });
   });
 
-  test("vellum TTS without a platform connection → connection copy, not API-key copy", async () => {
+  test("cadet TTS without a platform connection → connection copy, not API-key copy", async () => {
     ttsProvider = "vellum";
     ttsProviders = {};
     managedAvailable = false;
@@ -306,7 +306,7 @@ describe("resolveLiveVoiceCredentialReadiness — managed (vellum) TTS", () => {
         kind: "tts",
         providerId: "vellum",
         reason:
-          'TTS provider "vellum" needs a Vellum platform connection for managed speech',
+          'TTS provider "vellum" needs a Cadet platform connection for managed speech',
       },
     ]);
     expect(readiness.userMessage).toContain("assistant platform connect");

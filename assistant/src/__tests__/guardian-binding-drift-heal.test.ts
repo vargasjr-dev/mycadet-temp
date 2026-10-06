@@ -25,7 +25,7 @@ function resetTables(): void {
 }
 
 /**
- * Gateway delivery for the vellum guardian. `principalId` is the gateway-owned
+ * Gateway delivery for the cadet guardian. `principalId` is the gateway-owned
  * binding principal; `address` is the local channel address the heal resolves
  * its write target by (defaults to the principal for same-principal bindings).
  */
@@ -42,7 +42,7 @@ function gatewayGuardian(
   };
 }
 
-/** Read the local vellum guardian channel/contact by its channel address. */
+/** Read the local cadet guardian channel/contact by its channel address. */
 function localVellumGuardian(address: string) {
   const contact = findContactByAddress("vellum", address);
   const channel = contact?.channels.find((c) => c.type === "vellum");

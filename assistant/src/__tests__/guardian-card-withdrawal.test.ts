@@ -391,7 +391,7 @@ describe("withdrawGuardianRequestCards", () => {
   });
 
   test("suppresses only the acting conversation's broadcast for an in-app decision", async () => {
-    // Same request, two in-app projections: the vellum card and a channel
+    // Same request, two in-app projections: the cadet card and a channel
     // card's paired conversation. The acting client's optimistic completion
     // covers only the conversation it acted in; the sibling still needs its
     // live ui_surface_complete.
@@ -597,7 +597,7 @@ describe("withdrawGuardianRequestCards", () => {
       destinationChatId: "C1",
       destinationMessageId: "1.0",
     });
-    const vellum = bridgeState.seedDelivery({
+    const cadet = bridgeState.seedDelivery({
       requestId: req.id,
       destinationChannel: "vellum",
       destinationConversationId: "conv-1",
@@ -611,7 +611,7 @@ describe("withdrawGuardianRequestCards", () => {
     expect(result.complete).toBe(true);
     const byId = new Map(deliveriesFor(req.id).map((d) => [d.id, d.status]));
     expect(byId.get(slack.id)).toBe("withdrawn");
-    expect(byId.get(vellum.id)).toBe("withdrawn");
+    expect(byId.get(cadet.id)).toBe("withdrawn");
   });
 
   test("a retry skips rows already withdrawn: no re-edits, no re-broadcasts", async () => {
@@ -675,7 +675,7 @@ describe("recordApprovalCardDelivery", () => {
     expect(delivery?.status).toBe("sent");
   });
 
-  test("records a vellum card addressed by conversation id, defaulting to pending", async () => {
+  test("records a cadet card addressed by conversation id, defaulting to pending", async () => {
     const req = makeRequest();
     const delivery = await recordApprovalCardDelivery({
       requestId: req.id,
@@ -694,7 +694,7 @@ describe("recordGuardianRequestDeliveries", () => {
     withdrawSlackApprovalCard.mockClear();
   });
 
-  test("records each delivery with addressing + status and returns the vellum id", async () => {
+  test("records each delivery with addressing + status and returns the cadet id", async () => {
     const req = makeRequest();
     const vellumId = await recordGuardianRequestDeliveries({
       requestId: req.id,
@@ -716,17 +716,17 @@ describe("recordGuardianRequestDeliveries", () => {
 
     const deliveries = deliveriesFor(req.id);
     expect(deliveries).toHaveLength(2);
-    const vellum = deliveries.find((d) => d.destinationChannel === "vellum");
+    const cadet = deliveries.find((d) => d.destinationChannel === "vellum");
     const slack = deliveries.find((d) => d.destinationChannel === "slack");
-    expect(vellumId).toBe(vellum?.id);
-    expect(vellum?.destinationConversationId).toBe("conv-1");
-    expect(vellum?.status).toBe("sent");
+    expect(vellumId).toBe(cadet?.id);
+    expect(cadet?.destinationConversationId).toBe("conv-1");
+    expect(cadet?.status).toBe("sent");
     expect(slack?.destinationChatId).toBe("C999");
     expect(slack?.destinationMessageId).toBe("1700000000.1234");
     expect(slack?.status).toBe("sent");
   });
 
-  test("reuses a pre-created vellum row instead of creating a second", async () => {
+  test("reuses a pre-created cadet row instead of creating a second", async () => {
     const req = makeRequest();
     const pre = await recordApprovalCardDelivery({
       requestId: req.id,
@@ -823,8 +823,8 @@ describe("recordGuardianRequestDeliveries", () => {
     expect(delivery.status).toBe("sent");
   });
 
-  test("a late status patch cannot resurrect a withdrawn vellum row", async () => {
-    // The pre-created vellum row can be withdrawn by a fast decision while
+  test("a late status patch cannot resurrect a withdrawn cadet row", async () => {
+    // The pre-created cadet row can be withdrawn by a fast decision while
     // the broadcast is still settling; the recorder's sent patch must not
     // overwrite that receipt (mirrors the gateway store's sticky rule).
     const req = makeRequest({ status: "approved" });

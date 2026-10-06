@@ -299,7 +299,7 @@ describe("addPointerMessage", () => {
     expect(text).toContain("failed: busy");
   });
 
-  test("vellum origin channel is detected as trusted audience", async () => {
+  test("cadet origin channel is detected as trusted audience", async () => {
     const convId = "conv-ptr-vellum";
     ensureConversation(convId, { originChannel: "vellum" });
 

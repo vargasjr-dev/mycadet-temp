@@ -1,7 +1,7 @@
 /**
  * IPC route for the daemon's debug export.
  *
- * A debug bundle (a `.vbundle` a self-hosted owner sends to Vellum staff)
+ * A debug bundle (a `.vbundle` a self-hosted owner sends to Cadet staff)
  * carries the gateway's database and recent logs alongside the daemon's
  * data. The daemon cannot read those itself: in local mode the database
  * lives in the protected directory next to the encryption keys, and in

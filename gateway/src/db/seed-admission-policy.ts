@@ -24,9 +24,9 @@ import {
  * Per-channel default floors. Channels absent from this map default to
  * `ADMISSION_POLICY_DEFAULT` (`trusted_contacts`).
  *
- * `vellum` (the local desktop/web client) defaults to `guardian_only`: only
+ * `cadet` (the local desktop/web client) defaults to `guardian_only`: only
  * the guardian's own local client is admitted by default. The guardian is
- * always max-rank on vellum, so this never locks them out.
+ * always max-rank on cadet, so this never locks them out.
  *
  * `phone` is intentionally absent — it now seeds with the universal
  * `ADMISSION_POLICY_DEFAULT` (`trusted_contacts`), default-denying unknown /
@@ -54,7 +54,7 @@ export const CHANNEL_ADMISSION_DEFAULTS: Partial<
  * Insert a default row for every enforced channel that has none. Exempt
  * channels (`platform`/`a2a`) are skipped — they carry no floor.
  *
- * Hidden channels (`vellum`/`vellum-shared`/`whatsapp`) are not surfaced in
+ * Hidden channels (`cadet`/`vellum-shared`/`whatsapp`) are not surfaced in
  * the Channel Trust Floors UI, so a legacy or stale row would strand the
  * channel at a floor the user can no longer see or reset. They are pinned to
  * their default here, overwriting any drifted row, unlike the non-destructive

@@ -76,7 +76,7 @@ export function hasEvidenceOfPriorGuardian(): boolean {
  *
  * Side-effect-free (unlike {@link guardianIntegrityState}, it never fires the
  * missing-guardian reporter) and distinct from `findVellumGuardian`, which
- * additionally requires an ACTIVE vellum channel. Callers use this to tell a
+ * additionally requires an ACTIVE cadet channel. Callers use this to tell a
  * genuinely absent guardian (true data loss) from one that still exists but
  * whose binding was deliberately revoked/blocked.
  */

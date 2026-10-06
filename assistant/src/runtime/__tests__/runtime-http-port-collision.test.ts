@@ -9,7 +9,7 @@ import {
 /**
  * The daemon binds two client-facing transports. An occupied runtime HTTP port
  * must abort startup the same way an occupied IPC socket does, so the daemon
- * can never answer IPC (reading healthy to `vellum ps` and platform status)
+ * can never answer IPC (reading healthy to `cadet ps` and platform status)
  * while the gateway proxies /v1/* to a foreign listener.
  */
 describe("runtime HTTP port collision", () => {

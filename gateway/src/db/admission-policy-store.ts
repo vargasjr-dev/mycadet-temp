@@ -61,7 +61,7 @@ export interface AdmissionPolicyRow {
  * ADMISSION_POLICY_EXEMPT_CHANNELS in `packages/gateway-client`.
  *
  * `phone` is NOT exempt — voice ingress enforces the admission floor.
- * `vellum` / `vellum-shared` / `whatsapp` are NOT exempt: their floors are
+ * `cadet` / `vellum-shared` / `whatsapp` are NOT exempt: their floors are
  * still enforced at runtime, but they are hidden from the configurable UI (see
  * ADMISSION_POLICY_HIDDEN_CHANNELS), so they are intentionally absent here.
  */

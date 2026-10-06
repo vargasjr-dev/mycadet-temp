@@ -173,7 +173,7 @@ describe("config set - platform connection guard for service mode paths", () => 
     expect(exitCode).toBe(1);
     const parsed = JSON.parse(stdout);
     expect(parsed.ok).toBe(false);
-    expect(parsed.error).toContain("services.image-generation.provider vellum");
+    expect(parsed.error).toContain("services.image-generation.provider cadet");
     expect(mockIpcCalls.filter((c) => c.method === "config_set")).toHaveLength(
       0,
     );
@@ -237,13 +237,13 @@ describe("config set - platform connection guard for service mode paths", () => 
     expect(exitCode).toBe(1);
     const parsed = JSON.parse(stdout);
     expect(parsed.ok).toBe(false);
-    expect(parsed.error).toContain("services.web-search.provider vellum");
+    expect(parsed.error).toContain("services.web-search.provider cadet");
     expect(mockIpcCalls.filter((c) => c.method === "config_set")).toHaveLength(
       0,
     );
   });
 
-  test("config set services.web-search.provider vellum - fails when not connected, no IPC write emitted", async () => {
+  test("config set services.web-search.provider cadet - fails when not connected, no IPC write emitted", async () => {
     const { exitCode, stdout } = await runCli([
       "node",
       "assistant",
@@ -257,7 +257,7 @@ describe("config set - platform connection guard for service mode paths", () => 
     expect(exitCode).toBe(1);
     const parsed = JSON.parse(stdout);
     expect(parsed.ok).toBe(false);
-    expect(parsed.error).toContain("vellum platform connect");
+    expect(parsed.error).toContain("cadet platform connect");
     // The guard runs *before* the IPC call - no config_set should have been
     // emitted.
     expect(mockIpcCalls.filter((c) => c.method === "config_set")).toHaveLength(

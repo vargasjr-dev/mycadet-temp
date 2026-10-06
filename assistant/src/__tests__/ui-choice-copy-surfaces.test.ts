@@ -232,7 +232,7 @@ describe("choice and copy_block surface proxying", () => {
 
     const result = await surfaceProxyResolver(ctx, "ui_show", {
       surface_type: "copy_block",
-      data: JSON.stringify({ text: "bunx vellum doctor", label: "Command" }),
+      data: JSON.stringify({ text: "bunx cadet doctor", label: "Command" }),
     });
 
     expect(result.isError).toBe(false);
@@ -245,7 +245,7 @@ describe("choice and copy_block surface proxying", () => {
       return;
     }
     expect(showMessage.data).toEqual({
-      text: "bunx vellum doctor",
+      text: "bunx cadet doctor",
       label: "Command",
     });
   });
@@ -320,7 +320,7 @@ describe("choice and copy_block surface proxying", () => {
   test("ui_show teaching guard accepts copy_block text at the top level of the input", () => {
     const teachingError = uiShowTeachingError({
       surface_type: "copy_block",
-      text: "bunx vellum doctor",
+      text: "bunx cadet doctor",
       data: {},
     });
     expect(teachingError).toBeNull();
@@ -330,7 +330,7 @@ describe("choice and copy_block surface proxying", () => {
     const sent: AssistantEvent[] = [];
     const ctx = makeContext(sent);
     const result = await uiShowTool.execute(
-      { surface_type: "copy_block", text: "bunx vellum doctor", data: {} },
+      { surface_type: "copy_block", text: "bunx cadet doctor", data: {} },
       {
         proxyToolResolver: (toolName: string, input: Record<string, unknown>) =>
           surfaceProxyResolver(ctx, toolName, input),
@@ -345,7 +345,7 @@ describe("choice and copy_block surface proxying", () => {
     if (!showMessage || showMessage.surfaceType !== "copy_block") {
       return;
     }
-    expect(showMessage.data).toEqual({ text: "bunx vellum doctor" });
+    expect(showMessage.data).toEqual({ text: "bunx cadet doctor" });
   });
 
   test("uiShowTool.execute renders a dynamic_page whose html is at the top level", async () => {

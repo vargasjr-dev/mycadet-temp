@@ -2147,7 +2147,7 @@ export class WorkspaceGitService {
 
   /**
    * Write a git note to a specific commit.
-   * Uses the 'vellum' notes ref to avoid conflicts with default notes.
+   * Uses the 'cadet' notes ref to avoid conflicts with default notes.
    *
    * Retries once on `index.lock` errors — `git notes add` briefly holds
    * a ref lock that can collide with concurrent git operations (e.g. a
@@ -2161,7 +2161,7 @@ export class WorkspaceGitService {
     await this.mutex.withLock(async () => {
       const args = [
         "notes",
-        "--ref=vellum",
+        "--ref=cadet",
         "add",
         "-f",
         "-m",

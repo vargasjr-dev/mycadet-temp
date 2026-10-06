@@ -1002,7 +1002,7 @@ describe("NotificationBroadcaster records a channel delivery after acknowledgeme
     expect(sent?.patch).toEqual({ messageId: "1756800000.000100" });
   });
 
-  test("a vellum delivery is not recorded through this path", async () => {
+  test("a cadet delivery is not recorded through this path", async () => {
     composeFallbackReturn = {
       vellum: { title: "Reminder", body: "Time to drink water" },
     };
@@ -1111,139 +1111,139 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
       renderedCopy: {},
     });
 
-  test("vellum payload carries true when the platform adapter reports an accepted push; platform payload omits it", async () => {
+  test("cadet payload carries true when the platform adapter reports an accepted push; platform payload omits it", async () => {
     bothChannelsCopy();
 
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: true,
     });
     const broadcaster = new NotificationBroadcaster([
-      vellum.adapter,
+      cadet.adapter,
       platform.adapter,
     ]);
 
     await broadcaster.broadcastDecision(makeSignal(), bothChannelsDecision());
 
-    expect(vellum.sends.length).toBe(1);
-    expect(vellum.sends[0]?.payload.remotePushDispatched).toBe(true);
+    expect(cadet.sends.length).toBe(1);
+    expect(cadet.sends[0]?.payload.remotePushDispatched).toBe(true);
     expect(platform.sends.length).toBe(1);
     expect(platform.sends[0]?.payload.correlationId).toBe(
-      vellum.sends[0]?.payload.correlationId,
+      cadet.sends[0]?.payload.correlationId,
     );
     expect(platform.sends[0]?.payload.remotePushDispatched).toBeUndefined();
   });
 
-  test("vellum payload carries false when the platform dispatch fails", async () => {
+  test("cadet payload carries false when the platform dispatch fails", async () => {
     bothChannelsCopy();
 
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform", {
       success: false,
       error: "HTTP 503",
     });
     const broadcaster = new NotificationBroadcaster([
-      vellum.adapter,
+      cadet.adapter,
       platform.adapter,
     ]);
 
     await broadcaster.broadcastDecision(makeSignal(), bothChannelsDecision());
 
-    expect(vellum.sends.length).toBe(1);
-    expect(vellum.sends[0]?.payload.remotePushDispatched).toBe(false);
+    expect(cadet.sends.length).toBe(1);
+    expect(cadet.sends[0]?.payload.remotePushDispatched).toBe(false);
   });
 
-  test("vellum payload carries platforms accepted before a partial failure", async () => {
+  test("cadet payload carries platforms accepted before a partial failure", async () => {
     bothChannelsCopy();
 
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform", {
       success: false,
       error: "FCM failed",
       remotePushPlatforms: ["ios"],
     });
     const broadcaster = new NotificationBroadcaster([
-      vellum.adapter,
+      cadet.adapter,
       platform.adapter,
     ]);
 
     await broadcaster.broadcastDecision(makeSignal(), bothChannelsDecision());
 
-    expect(vellum.sends[0]?.payload.remotePushPlatforms).toEqual(["ios"]);
+    expect(cadet.sends[0]?.payload.remotePushPlatforms).toEqual(["ios"]);
   });
 
-  test("vellum payload carries false when the platform reports no accepted push (skipped or zero tokens)", async () => {
+  test("cadet payload carries false when the platform reports no accepted push (skipped or zero tokens)", async () => {
     bothChannelsCopy();
 
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: false,
     });
     const broadcaster = new NotificationBroadcaster([
-      vellum.adapter,
+      cadet.adapter,
       platform.adapter,
     ]);
 
     await broadcaster.broadcastDecision(makeSignal(), bothChannelsDecision());
 
-    expect(vellum.sends.length).toBe(1);
-    expect(vellum.sends[0]?.payload.remotePushDispatched).toBe(false);
+    expect(cadet.sends.length).toBe(1);
+    expect(cadet.sends[0]?.payload.remotePushDispatched).toBe(false);
   });
 
-  test("vellum payload carries false when the platform result omits remotePushAccepted", async () => {
+  test("cadet payload carries false when the platform result omits remotePushAccepted", async () => {
     bothChannelsCopy();
 
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform", { success: true });
     const broadcaster = new NotificationBroadcaster([
-      vellum.adapter,
+      cadet.adapter,
       platform.adapter,
     ]);
 
     await broadcaster.broadcastDecision(makeSignal(), bothChannelsDecision());
 
-    expect(vellum.sends.length).toBe(1);
-    expect(vellum.sends[0]?.payload.remotePushDispatched).toBe(false);
+    expect(cadet.sends.length).toBe(1);
+    expect(cadet.sends[0]?.payload.remotePushDispatched).toBe(false);
   });
 
-  test("vellum payload carries false when the platform adapter throws", async () => {
+  test("cadet payload carries false when the platform adapter throws", async () => {
     bothChannelsCopy();
 
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform: ChannelAdapter = {
       channel: "platform",
       async send(): Promise<DeliveryResult> {
         throw new Error("boom");
       },
     };
-    const broadcaster = new NotificationBroadcaster([vellum.adapter, platform]);
+    const broadcaster = new NotificationBroadcaster([cadet.adapter, platform]);
 
     const results = await broadcaster.broadcastDecision(
       makeSignal(),
       bothChannelsDecision(),
     );
 
-    expect(vellum.sends.length).toBe(1);
-    expect(vellum.sends[0]?.payload.remotePushDispatched).toBe(false);
+    expect(cadet.sends.length).toBe(1);
+    expect(cadet.sends[0]?.payload.remotePushDispatched).toBe(false);
     expect(results.find((r) => r.channel === "platform")?.status).toBe(
       "failed",
     );
     expect(results.find((r) => r.channel === "vellum")?.status).toBe("sent");
   });
 
-  test("vellum intent still flushes with false when the platform channel's prep throws", async () => {
+  test("cadet intent still flushes with false when the platform channel's prep throws", async () => {
     bothChannelsCopy();
     pairingErrorByChannel = { platform: new Error("pairing exploded") };
 
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: true,
     });
     const broadcaster = new NotificationBroadcaster([
-      vellum.adapter,
+      cadet.adapter,
       platform.adapter,
     ]);
 
@@ -1251,14 +1251,14 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
       broadcaster.broadcastDecision(makeSignal(), bothChannelsDecision()),
     ).rejects.toThrow("pairing exploded");
 
-    // The platform adapter never ran, but the deferred vellum send must not
+    // The platform adapter never ran, but the deferred cadet send must not
     // be lost -- its pending delivery row would block retries forever.
     expect(platform.sends.length).toBe(0);
-    expect(vellum.sends.length).toBe(1);
-    expect(vellum.sends[0]?.payload.remotePushDispatched).toBe(false);
+    expect(cadet.sends.length).toBe(1);
+    expect(cadet.sends[0]?.payload.remotePushDispatched).toBe(false);
   });
 
-  test("deadline expiry flushes vellum with false while the platform dispatch finishes in the background", async () => {
+  test("deadline expiry flushes cadet with false while the platform dispatch finishes in the background", async () => {
     bothChannelsCopy();
 
     let resolvePlatform: ((result: DeliveryResult) => void) | undefined;
@@ -1277,8 +1277,8 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
         });
       },
     };
-    const vellum = makeCapturingAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellum.adapter, platform]);
+    const cadet = makeCapturingAdapter("vellum");
+    const broadcaster = new NotificationBroadcaster([cadet.adapter, platform]);
 
     const results = await broadcaster.broadcastDecision(
       makeSignal(),
@@ -1287,24 +1287,24 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
     );
 
     expect(platformSends.length).toBe(1);
-    expect(vellum.sends.length).toBe(1);
-    expect(vellum.sends[0]?.payload.remotePushDispatched).toBe(false);
-    expect(vellum.sends[0]?.payload.remotePushPlatforms).toEqual(["ios"]);
+    expect(cadet.sends.length).toBe(1);
+    expect(cadet.sends[0]?.payload.remotePushDispatched).toBe(false);
+    expect(cadet.sends[0]?.payload.remotePushPlatforms).toEqual(["ios"]);
     expect(results.find((r) => r.channel === "platform")?.status).toBe(
       "pending",
     );
 
-    // The dispatch settling after the deadline must not re-send vellum.
+    // The dispatch settling after the deadline must not re-send cadet.
     resolvePlatform?.({ success: true, remotePushAccepted: true });
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(vellum.sends.length).toBe(1);
-    expect(vellum.sends[0]?.payload.remotePushDispatched).toBe(false);
+    expect(cadet.sends.length).toBe(1);
+    expect(cadet.sends[0]?.payload.remotePushDispatched).toBe(false);
   });
 
-  test("platform completing before the deadline sets the real outcome on the vellum payload", async () => {
+  test("platform completing before the deadline sets the real outcome on the cadet payload", async () => {
     bothChannelsCopy();
 
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform: ChannelAdapter = {
       channel: "platform",
       async send(): Promise<DeliveryResult> {
@@ -1312,7 +1312,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
         return { success: true, remotePushAccepted: true };
       },
     };
-    const broadcaster = new NotificationBroadcaster([vellum.adapter, platform]);
+    const broadcaster = new NotificationBroadcaster([cadet.adapter, platform]);
 
     const results = await broadcaster.broadcastDecision(
       makeSignal(),
@@ -1320,12 +1320,12 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
       { platformOutcomeDeadlineMs: 1_000 },
     );
 
-    expect(vellum.sends.length).toBe(1);
-    expect(vellum.sends[0]?.payload.remotePushDispatched).toBe(true);
+    expect(cadet.sends.length).toBe(1);
+    expect(cadet.sends[0]?.payload.remotePushDispatched).toBe(true);
     expect(results.find((r) => r.channel === "platform")?.status).toBe("sent");
   });
 
-  test("dispatches the platform adapter before the vellum intent when both are selected", async () => {
+  test("dispatches the platform adapter before the cadet intent when both are selected", async () => {
     bothChannelsCopy();
 
     const callOrder: string[] = [];
@@ -1350,7 +1350,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
     expect(callOrder).toEqual(["platform", "vellum"]);
   });
 
-  test("platform deep link still carries the vellum pairing when the vellum send is deferred", async () => {
+  test("platform deep link still carries the cadet pairing when the cadet send is deferred", async () => {
     bothChannelsCopy();
 
     pairingByChannel = {
@@ -1363,13 +1363,13 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
       },
     };
 
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: true,
     });
     const broadcaster = new NotificationBroadcaster([
-      vellum.adapter,
+      cadet.adapter,
       platform.adapter,
     ]);
 
@@ -1384,20 +1384,20 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
 });
 
 describe("NotificationBroadcaster forced-platform copy reuse", () => {
-  test("platform payload reuses the vellum rendered copy instead of template fallback", async () => {
+  test("platform payload reuses the cadet rendered copy instead of template fallback", async () => {
     // A urgency-forced platform channel has no rendered copy of its own; the
-    // template fallback must lose to the vellum channel's rendered copy.
+    // template fallback must lose to the cadet channel's rendered copy.
     composeFallbackReturn = {
       platform: { title: "Template title", body: "Template body" },
     };
 
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: true,
     });
     const broadcaster = new NotificationBroadcaster([
-      vellum.adapter,
+      cadet.adapter,
       platform.adapter,
     ]);
 
@@ -1591,7 +1591,7 @@ describe("NotificationBroadcaster new From me threads", () => {
   });
 
   test("alerts only after creation and shares canonical IDs, copy, urgency, and source metadata", async () => {
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: true,
@@ -1599,7 +1599,7 @@ describe("NotificationBroadcaster new From me threads", () => {
     });
     const broadcaster = new NotificationBroadcaster([
       platform.adapter,
-      vellum.adapter,
+      cadet.adapter,
     ]);
     const events: Array<{ silent: boolean; source?: string }> = [];
     broadcaster.setOnConversationCreated((info) => {
@@ -1612,7 +1612,7 @@ describe("NotificationBroadcaster new From me threads", () => {
     expect(events).toEqual([
       expect.objectContaining({ source: "assistant_initiated", silent: false }),
     ]);
-    expect(vellum.sends[0]?.payload).toMatchObject({
+    expect(cadet.sends[0]?.payload).toMatchObject({
       silent: false,
       urgency: "low",
       remotePushDispatched: true,
@@ -1676,13 +1676,13 @@ describe("NotificationBroadcaster new From me threads", () => {
       if (scenario === "flag_off") {
         dispatchOptions.assistantInitiatedThread.resolution.isCandidate = false;
       }
-      const vellum = makeCapturingAdapter("vellum");
+      const cadet = makeCapturingAdapter("vellum");
       const platform = makeCapturingAdapter("platform");
       const results = await new NotificationBroadcaster([
-        vellum.adapter,
+        cadet.adapter,
         platform.adapter,
       ]).broadcastDecision(signal, decision(), dispatchOptions);
-      expect(vellum.sends[0]?.payload.silent).toBe(true);
+      expect(cadet.sends[0]?.payload.silent).toBe(true);
       expect(platform.sends).toHaveLength(0);
       expect(results).toContainEqual(
         expect.objectContaining({
@@ -1696,42 +1696,42 @@ describe("NotificationBroadcaster new From me threads", () => {
 
   test("failed pairing never sends feature push to the hidden producer", async () => {
     pairingByChannel.vellum = defaultPairing();
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform");
     const signal = share();
     await new NotificationBroadcaster([
-      vellum.adapter,
+      cadet.adapter,
       platform.adapter,
     ]).broadcastDecision(signal, decision(), options(signal));
     expect(platform.sends).toHaveLength(0);
-    expect(vellum.sends[0]?.payload.silent).toBe(true);
+    expect(cadet.sends[0]?.payload.silent).toBe(true);
   });
 
   test("independently selected urgent push survives failed creation and quiet intent", async () => {
     pairingByChannel.vellum = defaultPairing();
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform");
     const signal = share();
     signal.attentionHints.urgency = "high";
     signal.contextPayload.quiet = true;
     await new NotificationBroadcaster([
-      vellum.adapter,
+      cadet.adapter,
       platform.adapter,
     ]).broadcastDecision(signal, decision(), options(signal, false));
     expect(platform.sends).toHaveLength(1);
     expect(platform.sends[0]?.payload.deepLinkTarget?.conversationId).toBe(
       "conv-background",
     );
-    expect(vellum.sends[0]?.payload.silent).toBe(true);
+    expect(cadet.sends[0]?.payload.silent).toBe(true);
   });
 
   test("invalid reuse that creates a new thread qualifies", async () => {
     pairingByChannel.vellum!.conversationFallbackUsed = true;
     const signal = share();
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform");
     await new NotificationBroadcaster([
-      vellum.adapter,
+      cadet.adapter,
       platform.adapter,
     ]).broadcastDecision(
       signal,
@@ -1743,7 +1743,7 @@ describe("NotificationBroadcaster new From me threads", () => {
       },
       options(signal),
     );
-    expect(vellum.sends[0]?.payload.silent).toBe(false);
+    expect(cadet.sends[0]?.payload.silent).toBe(false);
     expect(platform.sends).toHaveLength(1);
   });
 
@@ -1764,14 +1764,14 @@ describe("NotificationBroadcaster new From me threads", () => {
         conversationFallbackUsed: fallback ? 1 : 0,
       };
       const signal = share();
-      const vellum = makeCapturingAdapter("vellum");
+      const cadet = makeCapturingAdapter("vellum");
       const platform = makeCapturingAdapter("platform");
       await new NotificationBroadcaster([
-        vellum.adapter,
+        cadet.adapter,
         platform.adapter,
       ]).broadcastDecision(signal, decision(), options(signal));
       expect(pairedChannels).not.toContain("vellum");
-      expect(vellum.sends).toHaveLength(0);
+      expect(cadet.sends).toHaveLength(0);
       expect(platform.sends).toHaveLength(permitted ? 1 : 0);
       if (permitted) {
         expect(platform.sends[0]?.payload.deepLinkTarget).toMatchObject({
@@ -1784,7 +1784,7 @@ describe("NotificationBroadcaster new From me threads", () => {
 
   test("platform rejection preserves the local alert through the deferred send", async () => {
     const signal = share();
-    const vellum = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("vellum");
     const platform = makeCapturingAdapter("platform", {
       success: false,
       skipped: true,
@@ -1792,10 +1792,10 @@ describe("NotificationBroadcaster new From me threads", () => {
       error: "no_tokens",
     });
     await new NotificationBroadcaster([
-      vellum.adapter,
+      cadet.adapter,
       platform.adapter,
     ]).broadcastDecision(signal, decision(), options(signal));
-    expect(vellum.sends[0]?.payload).toMatchObject({
+    expect(cadet.sends[0]?.payload).toMatchObject({
       silent: false,
       remotePushDispatched: false,
     });

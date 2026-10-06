@@ -85,7 +85,7 @@ const cliPathItems = (): MenuItemConstructorOptions[] => {
       ...(cliState.kind === "shadowed"
         ? [
             {
-              label: "⚠ vellum is shadowed by another install",
+              label: "⚠ cadet is shadowed by another install",
               enabled: false,
             },
           ]
@@ -95,16 +95,16 @@ const cliPathItems = (): MenuItemConstructorOptions[] => {
       ...(!cliState.runtimeReady
         ? [
             cliPathFlowItem(
-              "Repair vellum Command\u2026",
+              "Repair cadet Command\u2026",
               runInstallCliCommandFlow,
             ),
           ]
         : []),
-      cliPathFlowItem("Uninstall vellum Command", runUninstallCliCommandFlow),
+      cliPathFlowItem("Uninstall cadet Command", runUninstallCliCommandFlow),
     ];
   }
   return [
-    cliPathFlowItem("Install vellum Command\u2026", runInstallCliCommandFlow),
+    cliPathFlowItem("Install cadet Command\u2026", runInstallCliCommandFlow),
   ];
 };
 
@@ -304,7 +304,7 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
         },
         { type: "separator" },
         {
-          label: "Vellum Documentation",
+          label: "Cadet Documentation",
           click: () => {
             void shell.openExternal("https://www.vellum.ai/docs");
           },
@@ -364,7 +364,7 @@ export const installApplicationMenu = (): void => {
 
   applyMenu();
 
-  // Detect the vellum CLI install state asynchronously so menu setup never
+  // Detect the cadet CLI install state asynchronously so menu setup never
   // waits on (or breaks from) login-shell PATH resolution; packaged-only
   // gating lives inside refreshCliPathMenuState.
   void refreshCliPathMenuState();

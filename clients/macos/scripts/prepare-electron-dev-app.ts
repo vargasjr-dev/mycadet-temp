@@ -11,11 +11,7 @@ const ELECTRON_APP = path.join(
   "dist",
   "Electron.app",
 );
-const ELECTRON_INFO_PLIST = path.join(
-  ELECTRON_APP,
-  "Contents",
-  "Info.plist",
-);
+const ELECTRON_INFO_PLIST = path.join(ELECTRON_APP, "Contents", "Info.plist");
 
 // Sentinel marking that we've restarted the Dock for this patched bundle.
 // Lives in `dist/` but OUTSIDE `Electron.app/` so it doesn't disturb the
@@ -40,8 +36,8 @@ const VELLUM_ENVIRONMENT = process.env.VELLUM_ENVIRONMENT || "local";
 const DEV_BUNDLE_ID = `com.vellum.vellum-assistant-electron-${VELLUM_ENVIRONMENT}`;
 
 const REQUIRED_PLIST_STRINGS: Record<string, string> = {
-  CFBundleDisplayName: "Vellum Electron",
-  CFBundleName: "Vellum Electron",
+  CFBundleDisplayName: "Cadet Electron",
+  CFBundleName: "Cadet Electron",
   CFBundleIdentifier: DEV_BUNDLE_ID,
   NSUserNotificationAlertStyle: "alert",
 };
@@ -124,7 +120,7 @@ if (changed || !isValidSignature()) {
 // macOS keyed to the bundle path. The `lsregister -f` above re-registers the
 // bundle but does NOT evict the running Dock's in-memory label, so a bundle
 // first seen as the stock "Electron" keeps showing "Electron" even after its
-// plist is stamped to "Vellum Electron". Restarting the Dock forces it to
+// plist is stamped to "Cadet Electron". Restarting the Dock forces it to
 // re-read the name. Done once per patched bundle (tracked by the marker, and
 // again whenever the plist actually changes) so routine `bun run dev` restarts
 // don't blink the Dock on every launch. Best-effort — never block the dev flow.

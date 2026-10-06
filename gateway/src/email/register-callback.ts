@@ -20,7 +20,7 @@ interface PlatformCallbackRouteResponse {
 }
 
 /**
- * Register a callback route with the Vellum platform so that inbound email
+ * Register a callback route with the Cadet platform so that inbound email
  * webhooks are forwarded to this gateway instance.
  *
  * Follows the same pattern as Telegram's managed callback route registration

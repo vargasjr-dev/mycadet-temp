@@ -22,7 +22,7 @@ function guardian(
 }
 
 describe("resolveDestinations — gateway guardian list", () => {
-  test("vellum carries guardianPrincipalId from the gateway list", () => {
+  test("cadet carries guardianPrincipalId from the gateway list", () => {
     const list = [
       guardian({
         channelType: "vellum",
@@ -37,7 +37,7 @@ describe("resolveDestinations — gateway guardian list", () => {
     });
   });
 
-  test("platform carries guardianPrincipalId from the vellum guardian", () => {
+  test("platform carries guardianPrincipalId from the cadet guardian", () => {
     const list = [
       guardian({
         channelType: "vellum",
@@ -170,7 +170,7 @@ describe("resolveDestinations — gateway empty or missing channel", () => {
     expect(result.has("telegram")).toBe(false);
   });
 
-  test("null gateway list omits vellum principalId metadata", () => {
+  test("null gateway list omits cadet principalId metadata", () => {
     const result = resolveDestinations(["vellum"], null);
     expect(result.get("vellum")).toEqual({ channel: "vellum" });
   });

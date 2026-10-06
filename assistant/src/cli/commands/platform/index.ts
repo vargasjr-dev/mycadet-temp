@@ -1,5 +1,5 @@
 /**
- * `assistant platform` — manage Cadet Platform integration.
+ * `assistant platform` — manage Cadet Cloud integration.
  *
  * Thin IPC wrapper that delegates all platform operations to the daemon.
  */
@@ -58,6 +58,9 @@ interface PlatformPlansResult {
 export function registerPlatformCommand(program: Command): void {
   registerCommand(program, {
     name: platformHelp.name,
+    // `cloud` is the preferred spelling; `platform` stays as an alias to
+    // smooth over the transition.
+    aliases: ["cloud"],
     transport: "ipc",
     description: platformHelp.description,
     build: (platform) => {

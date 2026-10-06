@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Generate the DMG background image for the Electron installer.
 #
-# Renders "Install Vellum" / "Double click the icon below" onto a white canvas
+# Renders "Install Cadet" / "Double click the icon below" onto a white canvas
 # using AppKit (system SF Pro font), producing both a standard and an @2x
 # (retina) PNG that electron-builder's `dmg.background` consumes. The single
 # app icon itself is drawn by Finder at the `dmg.contents` position — this only
@@ -18,7 +18,7 @@ APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUTPUT_DIR="$APP_DIR/build"
 mkdir -p "$OUTPUT_DIR"
 
-TITLE="Install Vellum"
+TITLE="Install Cadet"
 SUBTITLE="Double click the icon below"
 
 render() {

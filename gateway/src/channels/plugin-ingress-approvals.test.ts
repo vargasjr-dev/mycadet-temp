@@ -446,7 +446,7 @@ describe("findServableRoute", () => {
 
   it("serves nothing for a declaration that failed validation", () => {
     // A malformed manifest lands in `problems`, never in either list, so a
-    // vellum signer cannot smuggle an invalid route through.
+    // cadet signer cannot smuggle an invalid route through.
     const res = resolution({});
     expect(findServableRoute(res, "p", "hook", "http")).toBeUndefined();
   });

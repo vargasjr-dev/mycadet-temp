@@ -19,7 +19,7 @@ export type GetRawPeerIp = () => string;
  * - "none"         — no auth check, handler called directly
  * - "edge"         — edge JWT token required (aud=vellum-gateway)
  * - "edge-scoped"  — edge JWT + scope check (requires `scope` field)
- * - "edge-guardian" — caller must be the bound vellum guardian. In the default
+ * - "edge-guardian" — caller must be the bound cadet guardian. In the default
  *                      path, edge JWT is validated and the caller's actor
  *                      principal must match the guardian's principal id.
  *                      When DISABLE_HTTP_AUTH=true (platform-managed), the

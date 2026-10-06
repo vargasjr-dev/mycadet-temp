@@ -149,7 +149,7 @@ describe("CommitEnrichmentService", () => {
     // Verify git note was written
     const noteContent = execFileSync(
       "git",
-      ["notes", "--ref=vellum", "show", commitHash],
+      ["notes", "--ref=cadet", "show", commitHash],
       {
         cwd: testDir,
         encoding: "utf-8",
@@ -418,13 +418,13 @@ describe("CommitEnrichmentService", () => {
 
     // Both notes should exist
     const note1 = JSON.parse(
-      execFileSync("git", ["notes", "--ref=vellum", "show", hash1], {
+      execFileSync("git", ["notes", "--ref=cadet", "show", hash1], {
         cwd: testDir,
         encoding: "utf-8",
       }),
     );
     const note2 = JSON.parse(
-      execFileSync("git", ["notes", "--ref=vellum", "show", hash2], {
+      execFileSync("git", ["notes", "--ref=cadet", "show", hash2], {
         cwd: testDir,
         encoding: "utf-8",
       }),

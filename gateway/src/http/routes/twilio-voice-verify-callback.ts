@@ -125,7 +125,7 @@ export function createTwilioVoiceVerifyCallbackHandler(
     if (result.verificationType === "guardian") {
       try {
         // Resolve the canonical principal from the gateway DB (ACL source of
-        // truth) via the vellum channel guardian binding.
+        // truth) via the cadet channel guardian binding.
         const canonicalPrincipal = resolveCanonicalPrincipal(fromNumber);
 
         // Check for an existing phone guardian binding conflict against the

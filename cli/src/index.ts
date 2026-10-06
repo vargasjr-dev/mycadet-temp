@@ -108,8 +108,8 @@ function printHelp(): void {
   console.log("  gateway  Gateway management commands");
   console.log("  hatch    Create a new assistant instance");
   console.log("  logs     View logs from an assistant instance");
-  console.log("  login    Log in to the Cadet platform");
-  console.log("  logout   Log out of the Cadet platform");
+  console.log("  login    Log in to the Cadet Cloud");
+  console.log("  logout   Log out of the Cadet Cloud");
   console.log("  message  Send a message to a running assistant");
   console.log(
     "  pair     Print a pairing link and QR code for another device [beta]",

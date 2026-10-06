@@ -4,7 +4,7 @@ OAuth, messaging adapters, script proxy, and conversation disk view architecture
 
 ## Integrations — OAuth2 + Unified Messaging
 
-The integration framework lets Vellum connect to third-party services via OAuth2. The architecture follows these principles:
+The integration framework lets Cadet connect to third-party services via OAuth2. The architecture follows these principles:
 
 - **Secrets never reach the LLM** — OAuth tokens are stored in the credential vault and accessed exclusively through the `TokenManager`, which provides tokens to tool executors via `withValidToken()`. The LLM never sees raw tokens.
 - **PKCE or client_secret flows** — Desktop apps use PKCE by default (S256). Providers that require a client secret (e.g. Slack) pass it during the OAuth2 flow and store it in credential metadata for autonomous refresh.
@@ -506,7 +506,7 @@ $VELLUM_WORKSPACE_DIR/conversations/
 
 The disk view is updated at the daemon level, not automatically by the DB CRUD layer. Conversation creation, metadata updates, and deletion are synced from `conversation-crud.ts`, but message sync (`syncMessageToDisk`) is only called from daemon-level code paths (e.g. `conversation-messaging.ts`) — not from the CRUD `addMessage()` function. This means `messages.jsonl` reflects messages processed through the daemon's messaging pipeline, not every message write. All disk writes are best-effort; failures are logged but never thrown, so the disk view cannot break DB operations.
 
-> **Privacy note:** Conversation disk-view files live under `$VELLUM_WORKSPACE_DIR/conversations/`. Workspace files are not included in diagnostic log exports ("Send logs to Vellum"). For conversation-scoped exports, conversation data is included as structured JSON tables (e.g. `messages.json`, `llm-request-logs.json`), not as a raw database dump.
+> **Privacy note:** Conversation disk-view files live under `$VELLUM_WORKSPACE_DIR/conversations/`. Workspace files are not included in diagnostic log exports ("Send logs to Cadet"). For conversation-scoped exports, conversation data is included as structured JSON tables (e.g. `messages.json`, `llm-request-logs.json`), not as a raw database dump.
 
 ```mermaid
 sequenceDiagram

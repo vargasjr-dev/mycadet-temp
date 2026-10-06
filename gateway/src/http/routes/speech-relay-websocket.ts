@@ -4,7 +4,7 @@
  * The assistant daemon must never dial tunnel itself — tunnel contact is
  * gateway-only so deterministic policy stays in a process the agent cannot
  * rewrite. This route accepts a WebSocket from the daemon, dials tunnel's
- * speech relay (`/v1/speech/{stt,tts}/stream`) with the Vellum assistant
+ * speech relay (`/v1/speech/{stt,tts}/stream`) with the Cadet assistant
  * API key, and pipes frames verbatim in both directions. The wire protocol
  * on both legs is Deepgram's own (plus tunnel's `tunnel_error` control
  * frame), so the gateway stays byte-transparent.
@@ -334,7 +334,7 @@ export function createSpeechRelayUpgradeHandler(
         return jsonError(
           401,
           "missing_platform_connection",
-          "no Vellum assistant API key is stored — connect the platform account",
+          "no Cadet assistant API key is stored — connect the platform account",
         );
       }
       const rejection = await probeTunnel(
@@ -408,7 +408,7 @@ export function getSpeechRelayWebsocketHandlers() {
         sendRelayError(
           ws,
           "missing_platform_connection",
-          "no Vellum assistant API key is stored — connect the platform account",
+          "no Cadet assistant API key is stored — connect the platform account",
         );
         ws.close(1011, "missing_platform_connection");
         return;

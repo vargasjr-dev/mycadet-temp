@@ -85,7 +85,7 @@ export function createChannelAdmissionPolicyListHandler() {
       // Omit them from the client-facing list so the UI never surfaces a
       // control that would 403 on PUT anyway.
       //
-      // Hidden channels (`vellum`, `whatsapp`) are still enforced at runtime
+      // Hidden channels (`cadet`, `whatsapp`) are still enforced at runtime
       // but intentionally not shown in the Channel Trust Floors UI, so omit
       // them too.
       const policies: PolicyView[] = CHANNEL_IDS.filter(
@@ -125,7 +125,7 @@ export function createChannelAdmissionPolicySetHandler() {
       );
     }
 
-    // Hidden channels (`vellum`, `whatsapp`) are managed automatically at their
+    // Hidden channels (`cadet`, `whatsapp`) are managed automatically at their
     // default floor and not user-configurable. Reject writes so a stale row
     // can't strand them outside the (hidden) Channel Trust Floors UI — the
     // startup seed also resets any drift, this just blocks new drift at the door.
@@ -210,7 +210,7 @@ export function createChannelAdmissionPolicyDeleteHandler() {
       );
     }
 
-    // Hidden channels (`vellum`, `whatsapp`) are managed automatically — a
+    // Hidden channels (`cadet`, `whatsapp`) are managed automatically — a
     // delete would just drop the row and let the next seed re-pin the default,
     // so reject it rather than imply the user can reset the floor here.
     if (isAdmissionPolicyHiddenChannel(channelType)) {

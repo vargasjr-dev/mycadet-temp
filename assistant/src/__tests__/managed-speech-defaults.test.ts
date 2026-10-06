@@ -66,7 +66,7 @@ describe("maybeDefaultSpeechToManaged", () => {
     expect(config.services).toBeUndefined();
   });
 
-  test("defaults both services to vellum when no BYOK credentials resolve", async () => {
+  test("defaults both services to cadet when no BYOK credentials resolve", async () => {
     mockManagedSpeechAvailable = true;
 
     await maybeDefaultSpeechToManaged();
@@ -99,7 +99,7 @@ describe("maybeDefaultSpeechToManaged", () => {
     expect(config.services).toBeUndefined();
   });
 
-  test("no-ops when services are already on vellum", async () => {
+  test("no-ops when services are already on cadet", async () => {
     mockManagedSpeechAvailable = true;
     writeConfig({
       services: {
@@ -208,7 +208,7 @@ describe("maybeDefaultSpeechToManaged", () => {
   });
 
   test("a capability-preserving stand-in still writes the global provider", async () => {
-    // Plain deepgram has no turn detection, so the stand-in is plain vellum,
+    // Plain deepgram has no turn detection, so the stand-in is plain cadet,
     // which serves every role. That one belongs on the global, not a role.
     mockManagedSpeechAvailable = true;
     writeConfig({
@@ -246,7 +246,7 @@ describe("maybeDefaultSpeechToManaged", () => {
 
 describe("managed live voice runs Flux", () => {
   // Turn detection is the only reason to reach for that family, and a managed
-  // user cannot ask for it: the provider picker offers no family, so `vellum`
+  // user cannot ask for it: the provider picker offers no family, so `cadet`
   // is as specific as they can be.
   test("live voice upgrades to the flux family", async () => {
     mockManagedSpeechAvailable = true;

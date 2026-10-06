@@ -950,7 +950,7 @@ describe("emitAssistantReplyNotification", () => {
         {
           type: "text",
           text: [
-            "![vellum scene](vellum://workspace/clients/web/public/cut.mp4)",
+            "![cadet scene](vellum://workspace/clients/web/public/cut.mp4)",
             "![hero animation](vellum://workspace/repos/hero.mp4)",
           ].join(" "),
         },
@@ -971,7 +971,7 @@ describe("emitAssistantReplyNotification", () => {
       assistantRow = makeAssistantRow([
         {
           type: "text",
-          text: "Here is the scene: ![vellum scene](vellum://workspace/a.mp4)",
+          text: "Here is the scene: ![cadet scene](vellum://workspace/a.mp4)",
         },
       ] as ContentBlock[]);
 
@@ -1242,7 +1242,7 @@ describe("emitAssistantReplyNotification", () => {
   });
 
   // The phone case carries a `phone` channel; the in-app live-voice case is
-  // `vellum`/`macos`, identical to a typed desktop send, which is why the
+  // `cadet`/`macos`, identical to a typed desktop send, which is why the
   // channel field cannot stand in for the `voiceSessionTurn` marker.
   const VOICE_ROW_CASES: Array<{ name: string; metadata: unknown }> = [
     {

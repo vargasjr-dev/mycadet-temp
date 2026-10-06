@@ -38,7 +38,7 @@ function manifestFetch(body: unknown, status = 200, raw?: string): FetchLike {
 }
 
 const VALID_MANIFEST = {
-  name: "vellum-assistant",
+  name: "mycadet",
   owner: { name: "Cadet" },
   plugins: [
     {

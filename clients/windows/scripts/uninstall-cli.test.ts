@@ -5,7 +5,7 @@ import { resolveCliLauncherPaths } from "../src/main/cli-path-installer";
 import { uninstallPackagedCli } from "./uninstall-cli";
 
 const EXEC_PATH = path.join(
-  "C:\\Program Files\\Vellum",
+  "C:\\Program Files\\Cadet",
   "resources",
   "cli-runtime",
   "cli-uninstaller.exe",
@@ -18,7 +18,7 @@ test("fails when the command launcher cannot be removed", () => {
   expect(() =>
     uninstallPackagedCli(EXEC_PATH, LOCAL_APP_DATA, uninstallLauncher),
   ).toThrow(
-    "Unable to remove the Vellum command launcher. Close active vellum commands and try again.",
+    "Unable to remove the Cadet command launcher. Close active cadet commands and try again.",
   );
   expect(uninstallLauncher).toHaveBeenCalledWith(
     resolveCliLauncherPaths(LOCAL_APP_DATA, "production"),

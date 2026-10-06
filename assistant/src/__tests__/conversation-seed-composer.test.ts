@@ -53,7 +53,7 @@ function makeCopy(
 // ── resolveVerbosity ───────────────────────────────────────────────────
 
 describe("resolveVerbosity", () => {
-  test("vellum channel defaults to rich", () => {
+  test("cadet channel defaults to rich", () => {
     expect(resolveVerbosity("vellum" as NotificationChannel, {})).toBe("rich");
   });
 
@@ -341,7 +341,7 @@ describe("composeConversationSeed", () => {
   });
 
   describe("localization preservation", () => {
-    test("preserves localized LLM copy on vellum (rich)", () => {
+    test("preserves localized LLM copy on cadet (rich)", () => {
       const signal = makeSignal();
       const copy = makeCopy({
         conversationTitle: "通知",
@@ -400,7 +400,7 @@ describe("composeConversationSeed", () => {
   });
 
   describe("surface-aware verbosity", () => {
-    test("vellum seeds are formatted differently than telegram seeds", () => {
+    test("cadet seeds are formatted differently than telegram seeds", () => {
       const signal = makeSignal({
         attentionHints: {
           requiresAction: true,
@@ -433,7 +433,7 @@ describe("composeConversationSeed", () => {
         contextPayload: { interfaceHint: "telegram" },
       });
       const copy = makeCopy({ title: "Alert", body: "Details." });
-      // Channel is vellum but interfaceHint says telegram → compact format
+      // Channel is cadet but interfaceHint says telegram → compact format
       const seed = composeConversationSeed(
         signal,
         "vellum" as NotificationChannel,

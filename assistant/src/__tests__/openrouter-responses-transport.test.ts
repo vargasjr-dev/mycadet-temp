@@ -110,7 +110,7 @@ describe("OpenRouter Responses transport routing", () => {
     expect(lastResponsesOptions?.headers).toEqual(
       expect.objectContaining({
         "HTTP-Referer": "https://www.vellum.ai",
-        "X-OpenRouter-Title": "Vellum Assistant",
+        "X-OpenRouter-Title": "Cadet Assistant",
       }),
     );
   });

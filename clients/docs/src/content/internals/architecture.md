@@ -11,7 +11,7 @@ This file is the cross-system architecture index. Detailed designs live in domai
 | Browser extension                           | [`clients/chrome-extension/README.md`](clients/chrome-extension/README.md)                         |
 | Clients (web, iOS, Android, macOS, Windows) | [`clients/README.md`](clients/README.md)                                                           |
 | Mobile document chat session                | [`clients/web/docs/DOCUMENT_CHAT.md`](clients/web/docs/DOCUMENT_CHAT.md)                           |
-| Native live camera sampling                 | [`clients/android/README.md`](clients/android/README.md#live-camera-sampling)                       |
+| Native live camera sampling                 | [`clients/android/README.md`](clients/android/README.md#live-camera-sampling)                      |
 | Conversation assets                         | [`clients/web/docs/CONVERSATION_ASSETS.md`](clients/web/docs/CONVERSATION_ASSETS.md)               |
 | Public docs site (`clients/docs`)           | [`clients/docs/README.md`](clients/docs/README.md)                                                 |
 | Assistant memory deep dive                  | [`assistant/docs/architecture/memory.md`](assistant/docs/architecture/memory.md)                   |
@@ -30,12 +30,12 @@ This file is the cross-system architecture index. Detailed designs live in domai
 | Workflow orchestration engine               | [Workflow Orchestration Engine](#workflow-orchestration-engine) (this file)                        |
 | Watch sessions                              | [Watch Sessions](#watch-sessions) (this file)                                                      |
 | Screen annotation                           | [Screen Annotation](#screen-annotation) (this file)                                                |
-| Completion notifications                    | [Completion Notifications](#completion-notifications) (this file)                                 |
+| Completion notifications                    | [Completion Notifications](#completion-notifications) (this file)                                  |
 | From me chat notifications                  | [From Me Chat Notifications](#from-me-chat-notifications) (this file)                              |
 | Notification sender avatars                 | [Notification Sender Avatars](#notification-sender-avatars) (this file)                            |
 | Workflow authoring guide                    | [`assistant/docs/workflows.md`](assistant/docs/workflows.md)                                       |
 | Workflow manual testing runbook             | [`assistant/docs/workflows-testing.md`](assistant/docs/workflows-testing.md)                       |
-| Cadet Doctor                               | [`assistant/docs/cadet-doctor.md`](assistant/docs/cadet-doctor.md)                               |
+| Cadet Doctor                                | [`assistant/docs/cadet-doctor.md`](assistant/docs/cadet-doctor.md)                                 |
 
 ## Cross-Cutting Invariants
 
@@ -49,7 +49,7 @@ This file is the cross-system architecture index. Detailed designs live in domai
 - Packaged Windows startup provisions a user-scoped CLI runtime from
   `resources/cli-runtime`. Versioned installs and one fallback live under
   Electron `userData`; a small channel-scoped launcher under
-  `%LOCALAPPDATA%\Vellum*\bin` delegates to the selected runtime. Long-lived
+  `%LOCALAPPDATA%\Cadet*\bin` delegates to the selected runtime. Long-lived
   service executables stay in the versioned runtime, and the user PATH
   registry change is broadcast to the Windows shell. See
   [`clients/windows/README.md`](clients/windows/README.md#packaged-cli-provisioning).
@@ -77,7 +77,7 @@ This file is the cross-system architecture index. Detailed designs live in domai
 
 ## Environment and Data Layout
 
-Environments are **namespaces**, not containers. `VELLUM_ENVIRONMENT` selects a path prefix (`vellum` for `production`, `vellum-<env>` for the non-production seeds `dev`, `staging`, `test`, `local`). It does not own data. Data directories are always per-assistant, and the lockfile's `resources.instanceDir` field is the source of truth for any given assistant's on-disk location.
+Environments are **namespaces**, not containers. `VELLUM_ENVIRONMENT` selects a path prefix (`cadet` for `production`, `vellum-<env>` for the non-production seeds `dev`, `staging`, `test`, `local`). It does not own data. Data directories are always per-assistant, and the lockfile's `resources.instanceDir` field is the source of truth for any given assistant's on-disk location.
 
 ### Per-assistant data directories
 
@@ -136,7 +136,7 @@ Backwards compatibility lives entirely in the read path — no on-disk migration
 
 - Existing production lockfile entries with `instanceDir = homedir()` continue to work: the daemon receives `VELLUM_WORKSPACE_DIR = homedir()/.vellum/workspace` and resolves to `~/.vellum/` exactly as before.
 - Production writes still go to the legacy `~/.vellum.lock.json` filename; the rename-era `~/.vellum.lockfile.json` is accepted as a read fallback.
-- Unknown values of `VELLUM_ENVIRONMENT` (anything outside the seed table) resolve to `vellum` rather than a fabricated `vellum-<garbage>` directory, so misconfiguration degrades gracefully to the production path.
+- Unknown values of `VELLUM_ENVIRONMENT` (anything outside the seed table) resolve to `cadet` rather than a fabricated `vellum-<garbage>` directory, so misconfiguration degrades gracefully to the production path.
 
 ### Mixed local/remote and targeting
 
@@ -713,7 +713,7 @@ End-to-end coverage lives in `assistant/src/__tests__/web-search-backend-failure
 
 ## Public Roadmap as the Assistant
 
-`assistant roadmap` lets an assistant read and file feedback on the public Vellum roadmap under its own name rather than its owner's. It adds one outbound service boundary, from the daemon to the marketing service that serves the roadmap API.
+`assistant roadmap` lets an assistant read and file feedback on the public Cadet roadmap under its own name rather than its owner's. It adds one outbound service boundary, from the daemon to the marketing service that serves the roadmap API.
 
 - **Where the identity comes from.** The daemon reads `cadet:assistant_api_key` from the credential vault and spends it only on an outbound `Authorization: Api-Key` header. The plaintext key never crosses IPC into a CLI process and never appears in a response, a log, or an error body, so `runtime/routes/roadmap-routes.ts` is an allowlisted `secure-keys` importer (`credential-security-invariants`). `X-Api-Key` must not be substituted: that name collides with an unrelated internal credential under the service's case-insensitive header lookup, and a request carrying it is served as anonymous.
 - **Who may act.** Reads (`roadmap_list`, `roadmap_get`) fall back to anonymous when no key is stored, which only costs the viewer-upvoted marker. Every write requires the key and otherwise fails with a connect-first message. The gateway risk registry rates `create` and `delete` high and `update`, `upvote`, `unvote` medium: each one changes a public page attributed to the assistant.
@@ -752,7 +752,7 @@ graph TB
     USAGE["llm_usage_events<br/>call_site = workflowLeaf"]
     HUB["assistant event hub<br/>workflow_progress / _completed"]
     WAKE["Conversation wake<br/>completion summary"]
-    ROUTES["GET /v1/workflows*<br/>+ vellum workflows CLI"]
+    ROUTES["GET /v1/workflows*<br/>+ cadet workflows CLI"]
 
     TOOL --> GATE
     SCHED --> RM
@@ -833,7 +833,7 @@ The existing companion coachmarks request Microphone for calls, Input Monitoring
 for the voice key, and Screen Recording for sharing, only when their lesson needs
 access. Microphone uses its native prompt. Input Monitoring and Screen Recording
 can detach from the coachmark into a guide beside System Settings, with a native
-file drag of the capturing Vellum Helper application. Other app permissions stay
+file drag of the capturing Cadet Helper application. Other app permissions stay
 outside the companion tour.
 
 The informational introduction waits for an active assistant before offering the
@@ -946,7 +946,7 @@ Before launching Chrome or exposing its dock launcher, the Linux container sessi
 
 The same managed policy file sets `NetworkPredictionOptions=2` to disable speculative DNS prefetching, TCP/SSL preconnections, and page prerendering in virtual desktop Chrome. This avoids speculative background work at the cost of potential navigation latency.
 
-`desktop-wallpaper.ts` runs `desktop-wallpaper-renderer.ts` in a short-lived worker process. The renderer reads the current avatar manifest and reuses the notification avatar renderer for character and uploaded images. It composites the avatar over a dark, accent-tinted background with subtle rings and raised lettering reading `[assistant name] OS`. The wordmark reads the existing identity name, falls back to `Vellum OS` for unset identities, escapes XML, and measures text to fit long names using the desktop setup fonts. The session manager refreshes `data/desktop-panel/wallpaper.png` on desktop start and viewer reconnect, then runs `feh --no-fehbg --bg-fill` on the existing display. Identity and avatar reads, rendering, and PNG encoding all run in that worker. Missing character rasters are generated in memory; the worker never writes avatar manifests, images, or sidecars. It has a 30-second timeout and returns its PNG through a private temporary directory that is removed after completion or failure. Rendering and application are cosmetic and do not delay Chrome or fail the stream. A missing or unreadable avatar leaves the gradient and rings; unavailable native rendering leaves the X background unchanged. Reconnects during a render queue one fresh render of the latest avatar and discard the superseded result. Generation checks discard renders and queued refreshes after teardown. Wallpaper generation runs on demand under the existing flag.
+`desktop-wallpaper.ts` runs `desktop-wallpaper-renderer.ts` in a short-lived worker process. The renderer reads the current avatar manifest and reuses the notification avatar renderer for character and uploaded images. It composites the avatar over a dark, accent-tinted background with subtle rings and raised lettering reading `[assistant name] OS`. The wordmark reads the existing identity name, falls back to `Cadet OS` for unset identities, escapes XML, and measures text to fit long names using the desktop setup fonts. The session manager refreshes `data/desktop-panel/wallpaper.png` on desktop start and viewer reconnect, then runs `feh --no-fehbg --bg-fill` on the existing display. Identity and avatar reads, rendering, and PNG encoding all run in that worker. Missing character rasters are generated in memory; the worker never writes avatar manifests, images, or sidecars. It has a 30-second timeout and returns its PNG through a private temporary directory that is removed after completion or failure. Rendering and application are cosmetic and do not delay Chrome or fail the stream. A missing or unreadable avatar leaves the gradient and rings; unavailable native rendering leaves the X background unchanged. Reconnects during a render queue one fresh render of the latest avatar and discard the superseded result. Generation checks discard renders and queued refreshes after teardown. Wallpaper generation runs on demand under the existing flag.
 
 **Transport.** `/v1/desktop/stream` is a pure RFB byte pipe: after the upgrade, every frame in both directions is binary and `DesktopStreamBridge` (`desktop-stream-bridge.ts`) pumps it to and from the VNC port, buffering client bytes that arrive before that socket is up. Nothing is signaled in-band; outcomes are close codes in the application range so they can neither collide with tunnel's own `1013` nor be remapped by the gateway's tunnel bridge. The manager decides them and the bridge only relays (`DesktopLoss`, through the viewer-slot result, `onDesktopLost`, or the `DesktopStartError` a start rejects with): `4008` desktop disabled or unsupported on this daemon, `4013` another viewer holds the slot, `4011` the desktop failed to start, died under the viewer, or the viewer fell too far behind (a dropped `ws.send`), and the standard `1001` when the runtime is shutting down, whether the socket arrived after shutdown began or a live viewer is cut off by it. On the managed path tunnel's bridge carries the runtime's `1001` as `4001` and the gateway's `1011` as `4011`, both of which the panel treats as retryable endings. The daemon upgrade is gated exactly as `/v1/watch/stream` (private-network peer and origin, gateway service token, one shared `upgradeRuntimeStream` path); the feature gate runs after the upgrade because the gateway relays close codes, not HTTP statuses, to the browser. VNC needs no password: only same-pod processes can reach the loopback port, and the authenticated upgrade is the only bridge to it.
 
@@ -1049,12 +1049,12 @@ See [notification delivery](assistant/src/notifications/README.md) and [web life
 
 Assistant-authored shares from background or scheduled work can create a chat in From me under `assistant-initiated-threads`. `assistant-initiated-thread.ts` resolves promotion for cadet pairing, then verifies the new conversation's source, visibility, placement, and persisted seed before enabling an alert. Successful creation can produce a local banner at the share's original urgency and add the existing mobile push route when configured. Quiet intent, notification suppression, exclusive channel selection, and single-channel routing retain precedence.
 
-The broadcaster pairs vellum first so local and remote taps address the new conversation and message. Reuse and failed persistence do not enable this additional alert; duplicate delivery rows preserve the destination for a missing platform dispatch. The existing bounded wait and accepted-platform metadata coordinate remote and local mobile delivery. macOS uses the live native bridge while running, including hidden and minimized windows. iOS uses the existing APNs route. Android, other Electron clients, and open browser tabs share these transport policies. No historical scan, additional client subscription, or macOS push after Quit is involved.
+The broadcaster pairs cadet first so local and remote taps address the new conversation and message. Reuse and failed persistence do not enable this additional alert; duplicate delivery rows preserve the destination for a missing platform dispatch. The existing bounded wait and accepted-platform metadata coordinate remote and local mobile delivery. macOS uses the live native bridge while running, including hidden and minimized windows. iOS uses the existing APNs route. Android, other Electron clients, and open browser tabs share these transport policies. No historical scan, additional client subscription, or macOS push after Quit is involved.
 
 ```mermaid
 flowchart LR
     Share[Assistant-authored share] --> Routing[Existing notification routing]
-    Routing --> Pair[Vellum conversation pairing]
+    Routing --> Pair[Cadet conversation pairing]
     Pair --> Verify[New From me chat and seed persisted]
     Verify --> Local[Non-silent local intent]
     Verify --> Platform[Permitted mobile push]

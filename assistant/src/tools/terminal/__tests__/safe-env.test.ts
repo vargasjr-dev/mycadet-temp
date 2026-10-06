@@ -153,13 +153,13 @@ describe("safe-env Windows forwarding", () => {
 
   test("matches Windows environment names case-insensitively", () => {
     const windowsEnv = buildSanitizedEnv("win32", {
-      Path: "C:\\Windows\\System32;C:\\Program Files\\Vellum",
+      Path: "C:\\Windows\\System32;C:\\Program Files\\Cadet",
       systemroot: "C:\\Windows",
       ComSpec: "C:\\Windows\\System32\\cmd.exe",
     });
 
     expect(windowsEnv.PATH).toBe(
-      "C:\\Windows\\System32;C:\\Program Files\\Vellum",
+      "C:\\Windows\\System32;C:\\Program Files\\Cadet",
     );
     expect(windowsEnv.SystemRoot).toBe("C:\\Windows");
     expect(windowsEnv.COMSPEC).toBe("C:\\Windows\\System32\\cmd.exe");

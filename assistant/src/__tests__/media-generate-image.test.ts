@@ -186,7 +186,7 @@ describe("image-studio skill script wrapper", () => {
     expect(result.content).toContain("No Gemini API key");
   });
 
-  test("provider vellum uses managed proxy credentials", async () => {
+  test("provider cadet uses managed proxy credentials", async () => {
     seedImageGenService({ provider: "vellum" });
     mockManagedBaseUrl = "https://platform.example.com/v1/runtime-proxy/gemini";
     mockManagedProxyContext = {
@@ -207,7 +207,7 @@ describe("image-studio skill script wrapper", () => {
     });
   });
 
-  test("provider vellum routes managed to the gemini proxy for gemini models", async () => {
+  test("provider cadet routes managed to the gemini proxy for gemini models", async () => {
     seedImageGenService({ provider: "vellum" });
     mockManagedProxyContext = {
       enabled: true,
@@ -226,7 +226,7 @@ describe("image-studio skill script wrapper", () => {
     });
   });
 
-  test("provider vellum routes a gpt model to the openai proxy", async () => {
+  test("provider cadet routes a gpt model to the openai proxy", async () => {
     seedImageGenService({ provider: "vellum", model: "gpt-image-2" });
     mockManagedProxyContext = {
       enabled: true,
@@ -245,8 +245,8 @@ describe("image-studio skill script wrapper", () => {
     });
   });
 
-  test("provider vellum with no platform is a hard error, not a BYOK fallback", async () => {
-    // Billing rule: an explicit vellum choice never silently spends a stored
+  test("provider cadet with no platform is a hard error, not a BYOK fallback", async () => {
+    // Billing rule: an explicit cadet choice never silently spends a stored
     // provider key.
     seedImageGenService({ provider: "vellum" });
     mockGeminiKey = "gemini-key-should-not-be-used";
@@ -258,7 +258,7 @@ describe("image-studio skill script wrapper", () => {
     expect(lastGenerateProvider).toBeNull();
   });
 
-  test("provider vellum returns error when managed proxy is unavailable", async () => {
+  test("provider cadet returns error when managed proxy is unavailable", async () => {
     seedImageGenService({ provider: "vellum" });
     mockGeminiKey = "direct-key"; // should be ignored in managed mode
     mockManagedBaseUrl = undefined;
@@ -336,7 +336,10 @@ describe("image-studio skill script wrapper", () => {
   test("OpenRouter qualifies a built-in alias and keeps OpenRouter ownership", async () => {
     seedImageGenService({ provider: "openrouter" });
 
-    const result = await run({ prompt: "a robot", model: "openai" }, fakeContext);
+    const result = await run(
+      { prompt: "a robot", model: "openai" },
+      fakeContext,
+    );
 
     expect(result.isError).toBe(false);
     expect(lastGenerateProvider).toBe("openrouter");
@@ -494,7 +497,7 @@ describe("image-studio skill script wrapper", () => {
     );
   });
 
-  test("provider vellum credential error includes guidance not to change service config", async () => {
+  test("provider cadet credential error includes guidance not to change service config", async () => {
     seedImageGenService({ provider: "vellum" });
     mockManagedBaseUrl = undefined;
 

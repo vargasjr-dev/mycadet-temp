@@ -49,7 +49,7 @@ const ALLOWED_HEADERS = [
 ].join(", ");
 
 /**
- * Check whether the request `Origin` header matches a known Vellum Chrome
+ * Check whether the request `Origin` header matches a known Cadet Chrome
  * extension. Returns the validated origin string, or null if CORS headers
  * should not be added.
  *
@@ -74,7 +74,7 @@ export function resolveExtensionOrigin(req: Request): string | null {
 }
 
 /**
- * Build CORS response headers for a known Vellum Chrome extension origin,
+ * Build CORS response headers for a known Cadet Chrome extension origin,
  * including the Private Network Access header required for localhost fetches.
  */
 export function extensionCorsHeaders(origin: string): Record<string, string> {

@@ -15,7 +15,7 @@ describe("formatDesktopAppRequired", () => {
     const message = formatDesktopAppRequired("shell");
 
     expect(message).toContain(
-      "The Vellum desktop app is needed to run commands on your computer",
+      "The Cadet desktop app is needed to run commands on your computer",
     );
     expect(message).toContain(DESKTOP_APP_DOWNLOAD_URL);
     expect(message).toContain("Open it, then retry.");

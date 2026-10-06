@@ -5,7 +5,7 @@
  * A channel turn already carries its chat and thread ids on the trust
  * context; these lines make them visible to the model so a request like
  * "what did you send me this morning" can start from the chat it is in
- * instead of discovering it. The lines are channel-only: an app (vellum)
+ * instead of discovering it. The lines are channel-only: an app (cadet)
  * turn has no external chat, and a value that would only be noise is not
  * rendered. Values are passed through the same inline sanitizer as every
  * other line, so a channel-supplied id cannot break out of the block.

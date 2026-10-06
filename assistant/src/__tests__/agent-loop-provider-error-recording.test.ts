@@ -118,7 +118,7 @@ describe("AgentLoop provider_error event emission", () => {
       directions: { serious: 0.8 },
     };
     const thrown = new ProviderError(
-      "Vellum API error (400): directions are not loaded",
+      "Cadet API error (400): directions are not loaded",
       "vellum",
       400,
       {
@@ -155,7 +155,7 @@ describe("AgentLoop provider_error event emission", () => {
 
   test("actualProvider uses ProviderError.provider, not the wrapper name", async () => {
     const thrown = new ProviderError(
-      "Vellum API error (400): directions are not loaded",
+      "Cadet API error (400): directions are not loaded",
       "vellum",
       400,
     );

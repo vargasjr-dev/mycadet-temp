@@ -3,7 +3,7 @@
  * thinking config for pre-adaptive Claude models (Haiku 4.5, Opus 4.5,
  * Sonnet 4.5), preventing an Anthropic 400: these models reject
  * `thinking: { type: "adaptive" }` and only support the legacy
- * `{ type: "enabled", budget_tokens }` form, which Vellum never sends.
+ * `{ type: "enabled", budget_tokens }` form, which Cadet never sends.
  *
  * The legacy budget_tokens form supplied by pass-through callers is preserved,
  * as is adaptive thinking on models that support it.

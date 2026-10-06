@@ -8,7 +8,7 @@ import { installWindowAttention } from "@mycadet/electron-desktop/window-attenti
 
 /**
  * Publishes each window's visible / focused / minimized state to the renderer
- * that owns it. Vellum windows disable background throttling, which disables
+ * that owns it. Cadet windows disable background throttling, which disables
  * the Page Visibility API with it, so main is the only side that can answer
  * where a window is.
  *

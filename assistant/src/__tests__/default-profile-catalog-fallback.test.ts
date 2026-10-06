@@ -1,9 +1,9 @@
 /**
- * Managed backup profiles and the `fallbackProfile` pointers of the vellum
+ * Managed backup profiles and the `fallbackProfile` pointers of the cadet
  * column (`default-profile-catalog.ts`).
  *
  * The invariants under test:
- * - Every default profile's managed (vellum) implementation points at a
+ * - Every default profile's managed (cadet) implementation points at a
  *   backup profile that exists in the code catalog.
  * - Cross-provider rule: a backup pins its model at a DIFFERENT managed
  *   upstream than its primary, so an outage at the primary's provider can
@@ -47,8 +47,8 @@ import { getManagedUpstream } from "../providers/vellum-model-routing.js";
 
 const vellum: DefaultProviderConfig = { provider: "vellum" };
 
-describe("fallbackProfile pointers on the vellum column", () => {
-  test("every default profile's vellum impl points at an existing backup", () => {
+describe("fallbackProfile pointers on the cadet column", () => {
+  test("every default profile's cadet impl points at an existing backup", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {
       const impl = PROFILE_IMPLS[key].vellum;
       expect(impl.fallbackProfile).toBe(FALLBACK_PROFILE_BY_KEY[key]);

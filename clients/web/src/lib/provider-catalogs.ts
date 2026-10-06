@@ -46,7 +46,7 @@ export const TTS_PROVIDERS: readonly TTSProvider[] = [
       description:
         "Connect this assistant to your Cadet account; managed speech uses that connection instead of a provider API key.",
       url: "https://cloud.mycadet.ai/",
-      linkLabel: "Open Cadet Platform",
+      linkLabel: "Open Cadet Cloud",
     },
   },
   {

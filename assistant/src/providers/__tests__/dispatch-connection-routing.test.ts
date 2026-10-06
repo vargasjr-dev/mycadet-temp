@@ -300,7 +300,7 @@ describe("routing identities", () => {
     setConfig("llm", {});
   });
 
-  test("a stored vellum profile dispatches end-to-end through the real config loader", async () => {
+  test("a stored cadet profile dispatches end-to-end through the real config loader", async () => {
     registerConnection(
       { name: "vellum", provider: "vellum", auth: { type: "platform" } },
       { name: "anthropic", tag: "managed-stub" },
@@ -321,7 +321,7 @@ describe("routing identities", () => {
     expect(resolveProviderOpts[0]?.providerOverride).toBe("anthropic");
   });
 
-  test("a stored vellum GPU profile dispatches through the vellum adapter", async () => {
+  test("a stored cadet GPU profile dispatches through the cadet adapter", async () => {
     registerConnection(
       { name: "vellum", provider: "vellum", auth: { type: "platform" } },
       { name: "vellum", tag: "gpu-stub" },
@@ -368,7 +368,7 @@ describe("routing identities", () => {
     expect(resolveProviderCalls[0]?.name).toBe("chatgpt-subscription");
   });
 
-  test("resolveRoutingIdentity derives the vellum upstream from the model", () => {
+  test("resolveRoutingIdentity derives the cadet upstream from the model", () => {
     expect(resolveRoutingIdentity("vellum", "claude-opus-4-8")).toEqual({
       connectionName: "vellum",
       expectedProvider: "anthropic",
@@ -382,7 +382,7 @@ describe("routing identities", () => {
     });
   });
 
-  test("resolveRoutingIdentity throws loudly for an unroutable vellum model", () => {
+  test("resolveRoutingIdentity throws loudly for an unroutable cadet model", () => {
     expect(() => resolveRoutingIdentity("vellum", "not-a-real-model")).toThrow(
       ConnectionResolutionError,
     );
@@ -420,13 +420,13 @@ describe("routing identities", () => {
     expect(resolveRoutingIdentity(undefined, "claude-opus-4-8")).toBeNull();
   });
 
-  test("vellum identity resolves through the canonical row with the derived upstream override", async () => {
+  test("cadet identity resolves through the canonical row with the derived upstream override", async () => {
     fakeConnections.set("vellum", {
       name: "vellum",
       provider: "vellum",
       auth: { type: "platform" },
     });
-    fakeProviders.set("conn:vellum", { name: "anthropic", tag: "managed" });
+    fakeProviders.set("conn:cadet", { name: "anthropic", tag: "managed" });
 
     const provider = await tryResolveProviderForConnectionName(
       "ignored-stale-name",
@@ -447,13 +447,13 @@ describe("routing identities", () => {
     expect(resolveProviderOpts[0]?.providerOverride).toBe("anthropic");
   });
 
-  test("vellum identity + GPU model threads vellum as the upstream override", async () => {
+  test("cadet identity + GPU model threads cadet as the upstream override", async () => {
     fakeConnections.set("vellum", {
       name: "vellum",
       provider: "vellum",
       auth: { type: "platform" },
     });
-    fakeProviders.set("conn:vellum", { name: "vellum", tag: "gpu" });
+    fakeProviders.set("conn:cadet", { name: "vellum", tag: "gpu" });
 
     const provider = await tryResolveProviderForConnectionName(
       "ignored-stale-name",
@@ -511,7 +511,7 @@ describe("routing identities", () => {
   test("a chatgpt-identity subscription row dispatches with an openai override", async () => {
     // Migration 366 stamps the row with the "chatgpt" identity; the identity
     // must never reach adapter construction, so dispatch threads the openai
-    // upstream as providerOverride, mirroring the vellum sentinel.
+    // upstream as providerOverride, mirroring the cadet sentinel.
     fakeConnections.set("chatgpt-subscription", {
       name: "chatgpt-subscription",
       provider: "chatgpt",
@@ -720,7 +720,7 @@ describe("entry-name providers", () => {
     // Selection treats an unresolvable provider like an incomplete profile:
     // the broken winner loses and the next rung's model AND transport apply
     // together, restoring the pre-open-schema self-healing. The anchor is
-    // the managed default, so the heal lands on the vellum route.
+    // the managed default, so the heal lands on the cadet route.
     registerConnection(
       { name: "vellum", provider: "vellum", auth: { type: "platform" } },
       { name: "anthropic", tag: "managed-anchor" },

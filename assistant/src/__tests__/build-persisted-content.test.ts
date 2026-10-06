@@ -44,14 +44,14 @@ import {
 
 const webSearchActivity: ToolActivityMetadata = {
   webSearch: {
-    query: "vellum docs",
+    query: "cadet docs",
     provider: "anthropic-native",
     resultCount: 1,
     durationMs: 88,
     results: [
       {
         rank: 1,
-        title: "Vellum",
+        title: "Cadet",
         url: "https://vellum.ai",
         domain: "vellum.ai",
       },
@@ -93,7 +93,7 @@ describe("buildPersistedAssistantContent — native activityMetadata", () => {
         type: "server_tool_use",
         id: nativeId,
         name: "web_search",
-        input: { query: "vellum docs" },
+        input: { query: "cadet docs" },
       },
     ] as unknown as ContentBlock[];
 
@@ -114,7 +114,7 @@ describe("buildPersistedAssistantContent — native activityMetadata", () => {
         type: "server_tool_use",
         id: nativeId,
         name: "web_search",
-        input: { query: "vellum docs" },
+        input: { query: "cadet docs" },
       },
     ] as unknown as ContentBlock[];
 
@@ -136,7 +136,7 @@ describe("buildPersistedAssistantContent — native activityMetadata", () => {
         type: "tool_use",
         id: externalId,
         name: "web_search",
-        input: { query: "vellum docs" },
+        input: { query: "cadet docs" },
       },
     ] as unknown as ContentBlock[];
 
@@ -156,7 +156,7 @@ describe("buildPersistedAssistantContent — native activityMetadata", () => {
         type: "server_tool_use",
         id: nativeId,
         name: "web_search",
-        input: { query: "vellum docs" },
+        input: { query: "cadet docs" },
       },
     ] as unknown as ContentBlock[];
 

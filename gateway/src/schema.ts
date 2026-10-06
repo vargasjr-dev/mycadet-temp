@@ -9,10 +9,10 @@ export function buildSchema(): Record<string, unknown> {
   return {
     openapi: "3.1.0",
     info: {
-      title: "Vellum Gateway",
+      title: "Cadet Gateway",
       version: packageJson.version,
       description:
-        "HTTP gateway that bridges external channels (Telegram, WhatsApp, etc.) to the Vellum assistant runtime and provides an authenticated reverse proxy.",
+        "HTTP gateway that bridges external channels (Telegram, WhatsApp, etc.) to the Cadet assistant runtime and provides an authenticated reverse proxy.",
     },
     paths: {
       "/healthz": {
@@ -629,7 +629,7 @@ export function buildSchema(): Record<string, unknown> {
         post: {
           summary: "Email inbound webhook",
           description:
-            "Receives inbound email webhook events from the Vellum platform, verifies the HMAC signature, normalizes the message, and forwards it to the assistant runtime.",
+            "Receives inbound email webhook events from the Cadet platform, verifies the HMAC signature, normalizes the message, and forwards it to the assistant runtime.",
           operationId: "emailInboundWebhook",
           security: [{ VellumSignature: [] }],
           requestBody: {
@@ -638,7 +638,7 @@ export function buildSchema(): Record<string, unknown> {
               "application/json": {
                 schema: {
                   type: "object",
-                  description: "Vellum email webhook payload.",
+                  description: "Cadet email webhook payload.",
                 },
               },
             },
@@ -3684,7 +3684,7 @@ export function buildSchema(): Record<string, unknown> {
         delete: {
           summary: "Delete a channel admission policy",
           description:
-            "Authenticated gateway endpoint that removes the admission policy for a single channel from the SQLite-backed store and invalidates the in-memory admission-policy cache. Exempt channels (platform, a2a) and hidden channels (vellum, whatsapp) refuse deletion per §8.1.",
+            "Authenticated gateway endpoint that removes the admission policy for a single channel from the SQLite-backed store and invalidates the in-memory admission-policy cache. Exempt channels (platform, a2a) and hidden channels (cadet, whatsapp) refuse deletion per §8.1.",
           operationId: "channelAdmissionPolicyDelete",
           security: [{ BearerAuth: [] }],
           parameters: [
@@ -4346,7 +4346,7 @@ export function buildSchema(): Record<string, unknown> {
         post: {
           summary: "Auto-verify guardian email",
           description:
-            "Called by the platform to auto-verify the guardian's email channel. For BYO providers (resend, mailgun), validates the provider API key. For platform-managed email (vellum), the route's auth is sufficient. Creates a guardian email channel binding.",
+            "Called by the platform to auto-verify the guardian's email channel. For BYO providers (resend, mailgun), validates the provider API key. For platform-managed email (cadet), the route's auth is sufficient. Creates a guardian email channel binding.",
           operationId: "inboundRegister",
           security: [{ BearerAuth: [] }],
           requestBody: {
@@ -4360,7 +4360,7 @@ export function buildSchema(): Record<string, unknown> {
                     type: {
                       type: "string",
                       description:
-                        "Email provider type (e.g. resend, mailgun, vellum)",
+                        "Email provider type (e.g. resend, mailgun, cadet)",
                     },
                     guardian_email: {
                       type: "string",
@@ -5009,7 +5009,7 @@ export function buildSchema(): Record<string, unknown> {
           in: "header",
           name: "Vellum-Signature",
           description:
-            "HMAC-SHA256 signature computed by the Vellum platform over the raw request body using the webhook secret. Format: sha256=<hex-digest>.",
+            "HMAC-SHA256 signature computed by the Cadet platform over the raw request body using the webhook secret. Format: sha256=<hex-digest>.",
         },
         WhatsAppHubSignature: {
           type: "apiKey",

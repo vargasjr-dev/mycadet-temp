@@ -71,7 +71,7 @@ export interface ClassifiedConversationError {
 export interface ConversationErrorAttribution {
   connectionName?: string;
   profileName?: string;
-  /** Whether the resolved turn route uses Vellum-managed inference. */
+  /** Whether the resolved turn route uses Cadet-managed inference. */
   isManagedRoute?: boolean;
   /**
    * Which credential the failed request presented. Splits the non-managed side
@@ -198,7 +198,7 @@ export interface ErrorContext {
    */
   profileName?: string;
   /**
-   * Whether the resolved turn route uses Vellum-managed inference. Turn routing
+   * Whether the resolved turn route uses Cadet-managed inference. Turn routing
    * takes precedence over the provider registry's boot-time default.
    */
   isManagedRoute?: boolean;
@@ -362,7 +362,7 @@ function connectionResolutionUserMessage(
     case "unroutable_managed_model":
       return `The model "${error.model ?? "<unset>"}"${usedBy} isn't served by the Vellum managed route. Pick a model from the Vellum catalog, or choose a concrete provider in ${fixPath}.`;
     case "adapter_unavailable":
-      return `${connection}${usedBy} could not serve model "${error.model ?? "<unset>"}". This model is only available on the Vellum GPU route and was not sent through another provider.`;
+      return `${connection}${usedBy} could not serve model "${error.model ?? "<unset>"}". This model is only available on the Cadet GPU route and was not sent through another provider.`;
     case "missing_credential":
       // Provider-neutral: api_key connections store keys, oauth_subscription
       // connections store login tokens — the fix differs but the location
@@ -859,7 +859,7 @@ function managedUsageLimitClassification(): Omit<
   return {
     code: "MANAGED_USAGE_LIMIT",
     userMessage:
-      "Vellum managed inference is rate limited. This is a Vellum-side usage limit, not an AI provider outage.",
+      "Cadet managed inference is rate limited. This is a Cadet-side usage limit, not an AI provider outage.",
     retryable: true,
     errorCategory: "managed_usage_limit",
   };
@@ -879,7 +879,7 @@ function managedKeyInvalidClassification(): Omit<
   return {
     code: "MANAGED_KEY_INVALID",
     userMessage:
-      "Vellum's managed inference credential was rejected. This isn't a personal provider API key — Vellum provisions this one, so there's nothing to update in Settings.",
+      "Cadet's managed inference credential was rejected. This isn't a personal provider API key — Cadet provisions this one, so there's nothing to update in Settings.",
     retryable: false,
     errorCategory: "managed_key_invalid",
   };

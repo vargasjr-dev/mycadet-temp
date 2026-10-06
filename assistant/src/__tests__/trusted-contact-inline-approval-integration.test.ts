@@ -1252,7 +1252,7 @@ describe("(g) access_request resolver: requester code delivery", () => {
     const result = await applyGuardianDecision({
       requestId: req.id,
       action: "approve_once",
-      // Desktop decision: no channelDeliveryContext, actor on the vellum channel.
+      // Desktop decision: no channelDeliveryContext, actor on the cadet channel.
       actorContext: guardianActor({
         channel: "vellum",
         actorExternalUserId: undefined,

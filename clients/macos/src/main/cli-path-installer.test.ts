@@ -191,9 +191,11 @@ describe("buildWrapperScript", () => {
   });
 
   test("ends with the exec line", () => {
-    expect(buildWrapperScript().endsWith('exec "$VELLUM_BUN" "$VELLUM_CLI_BIN" "$@"\n')).toBe(
-      true,
-    );
+    expect(
+      buildWrapperScript().endsWith(
+        'exec "$VELLUM_BUN" "$VELLUM_CLI_BIN" "$@"\n',
+      ),
+    ).toBe(true);
   });
 });
 
@@ -216,7 +218,7 @@ describe("readWrapperOwnership", () => {
   });
 
   test("returns foreign for a file without the marker", () => {
-    readFileSyncResult = "#!/bin/sh\necho some other vellum tool\n";
+    readFileSyncResult = "#!/bin/sh\necho some other cadet tool\n";
     expect(readWrapperOwnership()).toBe("foreign");
   });
 
@@ -409,7 +411,7 @@ describe("getCliPathInstallState", () => {
     });
   });
 
-  test("returns shadowed with inPath true when another vellum precedes the wrapper", async () => {
+  test("returns shadowed with inPath true when another cadet precedes the wrapper", async () => {
     readFileSyncResult = buildWrapperScript();
     shellPathValue = `/opt/homebrew/bin:${wrapperDir}:/usr/bin:/bin`;
     shellPathHits = ["/opt/homebrew/bin/vellum", wrapperPath];

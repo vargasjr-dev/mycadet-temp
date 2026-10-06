@@ -1534,7 +1534,7 @@ describe("loadFromDb metadata injection rehydration", () => {
           backgroundTurnBlock: "<background_turn>\nbg body\n</background_turn>",
           turnContextBlock: "<turn_context>\nctx payload\n</turn_context>",
           channelCapabilitiesBlock:
-            "<channel_capabilities>\nchannel: vellum\n</channel_capabilities>",
+            "<channel_capabilities>\nchannel: cadet\n</channel_capabilities>",
           memoryInjectedBlock: "mem payload",
           memoryV2StaticBlock:
             "<info>\n## Essentials\n\nAlice prefers VS Code.\n</info>",
@@ -1571,7 +1571,7 @@ describe("loadFromDb metadata injection rehydration", () => {
       { type: "text", text: "<turn_context>\nctx payload\n</turn_context>" },
       {
         type: "text",
-        text: "<channel_capabilities>\nchannel: vellum\n</channel_capabilities>",
+        text: "<channel_capabilities>\nchannel: cadet\n</channel_capabilities>",
       },
       { type: "text", text: "<memory>\nmem payload\n</memory>" },
       {
@@ -1608,7 +1608,7 @@ describe("loadFromDb metadata injection rehydration", () => {
         metadata: JSON.stringify({
           backgroundTurnBlock: "<background_turn>\nbg body\n</background_turn>",
           channelCapabilitiesBlock:
-            "<channel_capabilities>\nchannel: vellum\n</channel_capabilities>",
+            "<channel_capabilities>\nchannel: cadet\n</channel_capabilities>",
           nonInteractiveContextBlock:
             "<non_interactive_context>\nno human present\n</non_interactive_context>",
         }),

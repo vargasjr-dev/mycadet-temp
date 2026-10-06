@@ -78,7 +78,7 @@ describe("deriveOrigin", () => {
 
   test("tags a plugin from a Windows command path", () => {
     expect(
-      deriveOrigin("bun run C:\\Vellum\\workspace\\plugins\\cognee\\server.ts"),
+      deriveOrigin("bun run C:\\Cadet\\workspace\\plugins\\cognee\\server.ts"),
     ).toBe("plugin:cognee");
   });
 

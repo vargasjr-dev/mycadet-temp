@@ -3,7 +3,7 @@
  * mobile apps.
  *
  * The daemon's `platform` notification channel POSTs background notifications
- * (reminders, activity completions, etc.) to the Cadet platform's
+ * (reminders, activity completions, etc.) to the Cadet Cloud's
  * `/v1/assistants/{id}/push/dispatch/` endpoint, which fans them out to every
  * native device token registered for the bound user. This module is the missing
  * client half: it asks the OS for an APNs or FCM token via

@@ -144,7 +144,7 @@ describe("getModelProfiles", () => {
   });
 
   test("default profile descriptions follow the default provider's column", () => {
-    // The BYOK and vellum columns of the profile matrix carry different
+    // The BYOK and cadet columns of the profile matrix carry different
     // description strings for quality-optimized and cost-optimized; the
     // listed description must come from the column that actually dispatches.
     mockDefaultProvider = { provider: "anthropic" };

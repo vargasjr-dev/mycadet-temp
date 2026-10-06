@@ -146,7 +146,7 @@ describe("runDeferredTasksWhenAssistantReady", () => {
       // run resolves instead of rejecting or crashing boot.
       await runDeferredTasksWhenAssistantReady(5);
 
-      // Refused, not minted: no vellum guardian binding appeared.
+      // Refused, not minted: no cadet guardian binding appeared.
       expect(getGatewayDb().select().from(contactChannels).all()).toHaveLength(
         0,
       );
@@ -186,7 +186,7 @@ describe("runDeferredTasksWhenAssistantReady", () => {
 
       await runDeferredTasksWhenAssistantReady(5);
 
-      // The boot backfill rebuilt the vellum guardian binding from the token's
+      // The boot backfill rebuilt the cadet guardian binding from the token's
       // principal, so trust resolution can classify the owner again.
       const channels = getGatewayDb().select().from(contactChannels).all();
       expect(channels).toHaveLength(1);

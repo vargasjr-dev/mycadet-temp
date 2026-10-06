@@ -82,7 +82,7 @@ describe("resolveLocalAuthContext", () => {
     expect(ctx.scopes.has("local.all")).toBe(true);
   });
 
-  test("actorPrincipalId is undefined when no vellum binding exists", async () => {
+  test("actorPrincipalId is undefined when no cadet binding exists", async () => {
     const db = getDb();
     db.run("DELETE FROM contact_channels");
     db.run("DELETE FROM contacts");

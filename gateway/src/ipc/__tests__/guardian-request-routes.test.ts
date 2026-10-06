@@ -232,7 +232,7 @@ describe("guardian_requests_create", () => {
     expect(getRequestRow(created.id)?.requestCode).toBe("ABC123");
   });
 
-  test("computes sourceType from sourceChannel: phone→voice, vellum→desktop, else channel", async () => {
+  test("computes sourceType from sourceChannel: phone→voice, cadet→desktop, else channel", async () => {
     const voice = await createRequest({
       kind: "pending_question",
       sourceChannel: "phone",
@@ -607,7 +607,7 @@ describe("scope reads", () => {
     const cases: Array<[Record<string, unknown>, boolean]> = [
       [{ requestId: created.id, conversationId: "conv-src" }, true],
       // A channel delivery's paired conversation renders the same actionable
-      // in-app card as the vellum delivery's conversation, so it is in scope
+      // in-app card as the cadet delivery's conversation, so it is in scope
       // regardless of the delivery's channel.
       [{ requestId: created.id, conversationId: "conv-dst" }, true],
       [{ requestId: created.id, conversationId: "conv-nope" }, false],

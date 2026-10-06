@@ -1272,10 +1272,10 @@ function validateSpeciesMetadata(
 
   if (species === "vellum") {
     if (typeof metadata.assistantId !== "string" || !metadata.assistantId) {
-      return 'Vellum assistant metadata requires a non-empty "assistantId" string';
+      return 'Cadet assistant metadata requires a non-empty "assistantId" string';
     }
     if (typeof metadata.gatewayUrl !== "string" || !metadata.gatewayUrl) {
-      return 'Vellum assistant metadata requires a non-empty "gatewayUrl" string';
+      return 'Cadet assistant metadata requires a non-empty "gatewayUrl" string';
     }
   }
 

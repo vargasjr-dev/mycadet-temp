@@ -76,38 +76,38 @@ const installResultDialog = (
     case "installed":
       return {
         type: "info",
-        message: "Vellum CLI installed",
+        message: "Cadet CLI installed",
         detail:
-          `The vellum command is installed at ${launcherPath}. ` +
+          `The cadet command is installed at ${launcherPath}. ` +
           'Open a new terminal and run "vellum".',
       };
     case "shadowed":
       return {
         type: "warning",
-        message: "Vellum CLI installed",
+        message: "Cadet CLI installed",
         detail:
-          `The vellum command is installed at ${launcherPath}, but another ` +
+          `The cadet command is installed at ${launcherPath}, but another ` +
           '"vellum" earlier in your PATH will take precedence in your terminal.',
       };
     case "foreign":
       return {
         type: "warning",
-        message: "Vellum CLI not installed",
+        message: "Cadet CLI not installed",
         detail:
           `A "vellum" file already exists at ${launcherPath} but wasn't ` +
-          "installed by Vellum, so it was left in place.",
+          "installed by Cadet, so it was left in place.",
       };
     default:
       return {
         type: "warning",
-        message: "Vellum CLI not installed",
-        detail: `The vellum command at ${launcherPath} could not be set up (${state}). Try again.`,
+        message: "Cadet CLI not installed",
+        detail: `The cadet command at ${launcherPath} could not be set up (${state}). Try again.`,
       };
   }
 };
 
 /**
- * "Install vellum Command..." from the menu. Provisioning is idempotent, so
+ * "Install cadet Command..." from the menu. Provisioning is idempotent, so
  * this doubles as repair. Never throws; failures surface via showErrorBox.
  */
 export async function runInstallCliCommandFlow(): Promise<void> {
@@ -121,7 +121,7 @@ export async function runInstallCliCommandFlow(): Promise<void> {
       installResultDialog(launcherState, launcherPath),
     );
   } catch (err) {
-    dialog.showErrorBox("Failed to install vellum command", errorMessage(err));
+    dialog.showErrorBox("Failed to install cadet command", errorMessage(err));
   } finally {
     flowInFlight = false;
   }

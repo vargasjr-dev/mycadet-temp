@@ -4,8 +4,8 @@
  * and the host-proxy computer-use executors) so the path logic lives in one
  * place.
  *
- * The helper bundle's folder name is per-environment (e.g. "Vellum Helper",
- * "Vellum Helper Dev"). macOS System Settings → Privacy & Security renders
+ * The helper bundle's folder name is per-environment (e.g. "Cadet Helper",
+ * "Cadet Helper Dev"). macOS System Settings → Privacy & Security renders
  * the .app folder name — not CFBundleName/CFBundleDisplayName, and not the
  * binary's filename — when listing the helper's grants, so the runtime
  * resolves the folder from the sidecar that build-mac-helper.sh writes

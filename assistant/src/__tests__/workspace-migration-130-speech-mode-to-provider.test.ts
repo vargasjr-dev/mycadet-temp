@@ -77,7 +77,7 @@ describe("130-speech-mode-to-provider", () => {
     expect(numericId(last!)).toBe(highest);
   });
 
-  test("rewrites a managed service to provider vellum", () => {
+  test("rewrites a managed service to provider cadet", () => {
     writeConfig({
       services: {
         stt: { mode: "managed", provider: "deepgram", providers: {} },
@@ -147,8 +147,8 @@ describe("130-speech-mode-to-provider", () => {
   });
 
   // The migrated shape is what the daemon actually parses, so a managed user
-  // must land on vellum rather than falling back to a keyless BYOK provider.
-  test("migrated output parses to the vellum provider", () => {
+  // must land on cadet rather than falling back to a keyless BYOK provider.
+  test("migrated output parses to the cadet provider", () => {
     writeConfig({
       services: {
         stt: { mode: "managed", provider: "deepgram", providers: {} },

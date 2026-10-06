@@ -361,11 +361,11 @@ describe("buildSystemPrompt", () => {
     mkdirSync(join(TEST_DIR, "channels"), { recursive: true });
     writeFileSync(
       join(TEST_DIR, "channels", "vellum.md"),
-      "# Channel persona\n\nThis is the Vellum channel.",
+      "# Channel persona\n\nThis is the Cadet channel.",
     );
     const result = buildSystemPrompt();
     expect(result).toContain("# Channel persona");
-    expect(result).toContain("This is the Vellum channel.");
+    expect(result).toContain("This is the Cadet channel.");
   });
 
   test("includes VOICE.md as the 12-voice section with prepended heading", () => {

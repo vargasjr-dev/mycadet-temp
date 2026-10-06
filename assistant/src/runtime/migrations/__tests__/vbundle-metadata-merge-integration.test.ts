@@ -3,12 +3,12 @@
  * `vellum:*` credential metadata entries across a bundle import.
  *
  * Covers:
- * - Buffer-based `commitImport`: target has all 4 vellum entries, bundle
- *   carries non-vellum user entries → target retains its vellum entries
+ * - Buffer-based `commitImport`: target has all 4 cadet entries, bundle
+ *   carries non-vellum user entries → target retains its cadet entries
  *   and gains the bundle's user entries.
  * - Streaming `streamCommitImport`: same scenario via the atomic-swap
  *   path.
- * - Bundle with rogue vellum entries → filtered out on both paths.
+ * - Bundle with rogue cadet entries → filtered out on both paths.
  * - Bundle without a metadata.json entry → target's preserved entries are
  *   restored on the buffer path.
  */
@@ -168,7 +168,7 @@ describe("commitImport — credential metadata merge", () => {
     expect(mergedKeys.has("telegram:bot_token")).toBe(true);
     expect(mergedKeys.has("slack_channel:app_token")).toBe(true);
 
-    // Preserved vellum entries must carry target's credentialIds.
+    // Preserved cadet entries must carry target's credentialIds.
     for (const r of merged.credentials) {
       if (r.service === "vellum") {
         expect(r.credentialId.startsWith("target-")).toBe(true);
@@ -176,7 +176,7 @@ describe("commitImport — credential metadata merge", () => {
     }
   });
 
-  test("rogue vellum entries in the bundle are dropped", () => {
+  test("rogue cadet entries in the bundle are dropped", () => {
     const metadataPath = seedTargetMetadata(workspaceDir, vellumRecords());
     const bundleMetadata = metadataJson([
       record("vellum", "assistant_api_key", "source-rogue"),
@@ -206,15 +206,15 @@ describe("commitImport — credential metadata merge", () => {
     expect(result.ok).toBe(true);
 
     const merged = readMetadata(metadataPath);
-    const vellum = merged.credentials.filter((r) => r.service === "vellum");
-    expect(vellum.length).toBe(4);
-    for (const r of vellum) {
+    const legacyRows = merged.credentials.filter((r) => r.service === "vellum");
+    expect(legacyRows.length).toBe(4);
+    for (const r of legacyRows) {
       expect(r.credentialId.startsWith("target-")).toBe(true);
     }
     expect(keys(merged.credentials).has("telegram:bot_token")).toBe(true);
   });
 
-  test("bundle without metadata.json still leaves target's vellum entries on disk", () => {
+  test("bundle without metadata.json still leaves target's cadet entries on disk", () => {
     const metadataPath = seedTargetMetadata(workspaceDir, vellumRecords());
 
     const { archive } = buildVBundle({
@@ -333,7 +333,7 @@ describe("streamCommitImport — credential metadata merge", () => {
     }
   });
 
-  test("rogue vellum entries in bundle are dropped on streaming path", async () => {
+  test("rogue cadet entries in bundle are dropped on streaming path", async () => {
     const metadataPath = seedTargetMetadata(workspaceDir, vellumRecords());
     const bundleMetadata = metadataJson([
       record("vellum", "assistant_api_key", "source-rogue"),
@@ -370,7 +370,7 @@ describe("streamCommitImport — credential metadata merge", () => {
     expect(keys(merged.credentials).has("telegram:bot_token")).toBe(true);
   });
 
-  test("bundle without metadata.json keeps target's vellum entries after swap", async () => {
+  test("bundle without metadata.json keeps target's cadet entries after swap", async () => {
     const metadataPath = seedTargetMetadata(workspaceDir, vellumRecords());
 
     const { archive } = buildVBundle({

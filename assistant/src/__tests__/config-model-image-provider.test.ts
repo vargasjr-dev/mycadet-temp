@@ -149,8 +149,8 @@ describe("setImageGenModel with provider openrouter", () => {
   });
 });
 
-describe("setImageGenModel with provider vellum", () => {
-  test("a model change leaves provider vellum untouched", () => {
+describe("setImageGenModel with provider cadet", () => {
+  test("a model change leaves provider cadet untouched", () => {
     writeConfig({
       services: {
         "image-generation": { provider: "vellum", model: "gpt-image-2" },

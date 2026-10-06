@@ -54,7 +54,7 @@ describe("screen_point_at", () => {
 
     expect(result.isError).toBe(true);
     expect(result.content).toContain(
-      "The Vellum desktop app is needed to view or control your screen",
+      "The Cadet desktop app is needed to view or control your screen",
     );
     expect(result.content).toContain("https://www.vellum.ai/downloads");
   });

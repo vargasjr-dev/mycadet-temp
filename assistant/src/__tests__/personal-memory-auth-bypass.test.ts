@@ -57,7 +57,7 @@ describe("isPersonalMemoryAllowed — no exposure to non-guardian channel actors
   });
 
   test("blocks personal memory for the fail-closed fallback trust", () => {
-    // `{vellum, unknown}` is FALLBACK_TURN_TRUST, not an internal flow: it is
+    // `{cadet, unknown}` is FALLBACK_TURN_TRUST, not an internal flow: it is
     // what the daemon substitutes when no per-turn actor was captured. Its own
     // contract is to bias to `unknown` "so a missing snapshot cannot
     // accidentally grant elevated trust", and every other consumer treats it

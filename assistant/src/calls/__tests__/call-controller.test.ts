@@ -136,7 +136,7 @@ mock.module("../../notifications/emit-signal.js", () => ({
 }));
 
 // Guardian principalId is resolved from the gateway binding reader. Mirror the
-// vellum binding seeded by resetTables so guardian dispatch can resolve it.
+// cadet binding seeded by resetTables so guardian dispatch can resolve it.
 mock.module("../../contacts/guardian-delivery-reader.js", () => ({
   getGuardianDelivery: async () => [
     {
@@ -372,7 +372,7 @@ function resetTables() {
     "contact_channels",
     "contacts",
   );
-  // Seed the vellum guardian binding (gateway does this at startup in production)
+  // Seed the cadet guardian binding (gateway does this at startup in production)
   createGuardianBinding({
     channel: "vellum",
     guardianExternalUserId: "test-principal-id",

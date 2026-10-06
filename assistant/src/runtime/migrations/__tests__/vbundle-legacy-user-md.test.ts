@@ -80,7 +80,7 @@ const CUSTOMIZED_PERSONA = `_ Lines starting with _ are comments - they won't ap
 - Work role: Staff Engineer
 - Goals: Ship drop-user-md
 - Hobbies/fun: Reading papers
-- Daily tools: Terminal, Vellum
+- Daily tools: Terminal, Cadet
 `;
 
 function cleanWorkspace() {

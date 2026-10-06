@@ -203,7 +203,7 @@ describe("queryUnreportedTurnEvents", () => {
   test("extracts interfaceId, channelId, and clientMetadata from messages.metadata", async () => {
     // Three user messages with different metadata shapes to cover the
     // realistic spectrum of attribution carried on messages.metadata:
-    //  - Full interactive: macOS surface, vellum channel, with a client
+    //  - Full interactive: macOS surface, cadet channel, with a client
     //    block stamped by the (forthcoming) HTTP header middleware.
     //  - Channel inbound: Slack surface, no client headers (channel
     //    inbound paths don't carry browser context).

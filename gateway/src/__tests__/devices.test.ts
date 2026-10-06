@@ -176,7 +176,7 @@ beforeEach(async () => {
   process.env.GATEWAY_SECURITY_DIR = securityDir;
   await initGatewayDb();
 
-  // resolveLocalGuardianPrincipalId() reads the gateway DB for the vellum
+  // resolveLocalGuardianPrincipalId() reads the gateway DB for the cadet
   // active guardian principal; seed one so device endpoints scope to it.
   const now = Date.now();
   getGatewayDb()

@@ -22,13 +22,13 @@ describe("stripMarkdownForPreview", () => {
   describe("media embeds", () => {
     test("drops an embed whole, alt text included", () => {
       expect(
-        preview("![vellum scene](vellum://workspace/clients/vellum-cut.mp4)"),
+        preview("![cadet scene](vellum://workspace/clients/vellum-cut.mp4)"),
       ).toBe("");
     });
 
     test("reduces an embed-only reply to empty so the fallback is reachable", () => {
       const reply = [
-        "![vellum scene](vellum://workspace/clients/web/public/cut.mp4)",
+        "![cadet scene](vellum://workspace/clients/web/public/cut.mp4)",
         "![hero animation](vellum://workspace/repos/hero.mp4)",
       ].join(" ");
       expect(preview(reply)).toBe("");
@@ -36,7 +36,7 @@ describe("stripMarkdownForPreview", () => {
 
     test("keeps the surrounding prose", () => {
       expect(
-        preview("Here is the scene: ![vellum scene](vellum://workspace/a.mp4)"),
+        preview("Here is the scene: ![cadet scene](vellum://workspace/a.mp4)"),
       ).toBe("Here is the scene:");
     });
 
@@ -292,7 +292,12 @@ describe("readPayloadStringArray", () => {
   });
 
   test("returns undefined when the key is missing or not an array", () => {
-    expect(readPayloadStringArray({ channelAllowlist: "telegram" }, "channelAllowlist")).toBeUndefined();
+    expect(
+      readPayloadStringArray(
+        { channelAllowlist: "telegram" },
+        "channelAllowlist",
+      ),
+    ).toBeUndefined();
     expect(readPayloadStringArray({}, "channelAllowlist")).toBeUndefined();
     expect(readPayloadStringArray(null, "channelAllowlist")).toBeUndefined();
   });
@@ -306,6 +311,8 @@ describe("decodeLiteralLineBreaks", () => {
   });
 
   test("leaves ordinary markdown alone", () => {
-    expect(decodeLiteralLineBreaks("**3 new emails**")).toBe("**3 new emails**");
+    expect(decodeLiteralLineBreaks("**3 new emails**")).toBe(
+      "**3 new emails**",
+    );
   });
 });

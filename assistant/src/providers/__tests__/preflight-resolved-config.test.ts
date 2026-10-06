@@ -125,7 +125,7 @@ describe("preflightResolvedConfig", () => {
     expect(err?.reason).toBe("provider_mismatch");
   });
 
-  test("a vellum identity preflights through the sentinel row with the derived upstream", async () => {
+  test("a cadet identity preflights through the sentinel row with the derived upstream", async () => {
     connectionsByName["vellum"] = {
       name: "vellum",
       provider: "vellum",
@@ -140,7 +140,7 @@ describe("preflightResolvedConfig", () => {
     ).resolves.toBeUndefined();
   });
 
-  test("a vellum identity without a platform login throws platform_unauthenticated", async () => {
+  test("a cadet identity without a platform login throws platform_unauthenticated", async () => {
     connectionsByName["vellum"] = {
       name: "vellum",
       provider: "vellum",
@@ -153,7 +153,7 @@ describe("preflightResolvedConfig", () => {
     expect(err?.reason).toBe("platform_unauthenticated");
   });
 
-  test("a user-owned row claiming the vellum name preflights the platform", async () => {
+  test("a user-owned row claiming the cadet name preflights the platform", async () => {
     // Dispatch ignores that row, so its credential is irrelevant to the
     // verdict: signed in passes, signed out is the platform's own failure.
     connectionsByName["vellum"] = {
@@ -178,7 +178,7 @@ describe("preflightResolvedConfig", () => {
     expect(err?.reason).toBe("platform_unauthenticated");
   });
 
-  test("an unroutable vellum model throws unroutable_managed_model", async () => {
+  test("an unroutable cadet model throws unroutable_managed_model", async () => {
     const err = await preflightError(
       resolved({
         provider: "vellum",
@@ -295,7 +295,7 @@ describe("preflightResolvedConfig", () => {
     expect(err?.reason).toBe("model_incompatible");
   });
 
-  test("the vellum managed connection serves managed-routable providers when logged in", async () => {
+  test("the cadet managed connection serves managed-routable providers when logged in", async () => {
     connectionsByName = {
       vellum: {
         name: "vellum",
@@ -315,7 +315,7 @@ describe("preflightResolvedConfig", () => {
     expect(err?.reason).toBe("platform_unauthenticated");
   });
 
-  test("the vellum managed connection rejects non-managed-routable providers", async () => {
+  test("the cadet managed connection rejects non-managed-routable providers", async () => {
     connectionsByName = {
       vellum: {
         name: "vellum",

@@ -23,7 +23,7 @@ mock.module("../../contacts/guardian-delivery-reader.js", () => ({
 }));
 
 // Local mirror the real heal repairs. `findContactByAddress` returns the local
-// contact (with its vellum channel) the heal writes to;
+// contact (with its cadet channel) the heal writes to;
 // `repairChannelAddress` records heal writes.
 let mockLocalContact: {
   id: string;

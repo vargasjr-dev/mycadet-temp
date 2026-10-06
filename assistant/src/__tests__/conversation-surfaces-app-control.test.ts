@@ -147,7 +147,7 @@ describe("surfaceProxyResolver — app-control tool routing", () => {
 
       expect(result.isError).toBe(true);
       expect(result.content).toContain(
-        "The Vellum desktop app is needed to control apps on your computer",
+        "The Cadet desktop app is needed to control apps on your computer",
       );
       expect(result.content).toContain("https://www.vellum.ai/downloads");
       // No envelope dispatched.
@@ -166,7 +166,7 @@ describe("surfaceProxyResolver — app-control tool routing", () => {
 
       expect(result.isError).toBe(true);
       expect(result.content).toContain(
-        "The Vellum desktop app is needed to control apps on your computer",
+        "The Cadet desktop app is needed to control apps on your computer",
       );
       expect(result.content).toContain("https://www.vellum.ai/downloads");
       expect(sentMessages).toHaveLength(0);

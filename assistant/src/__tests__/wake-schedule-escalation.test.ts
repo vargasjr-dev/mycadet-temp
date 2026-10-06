@@ -30,7 +30,7 @@ mock.module("../runtime/agent-wake.js", () => ({
   wakeAgentForOpportunity: mockWakeAgentForOpportunity,
 }));
 
-// The owner check reads the live vellum guardian binding. Drive it directly so
+// The owner check reads the live cadet guardian binding. Drive it directly so
 // "current guardian", "rebound guardian", and "gateway unreachable" are all
 // expressible.
 let boundGuardianPrincipalId: string | null = "guardian-principal";

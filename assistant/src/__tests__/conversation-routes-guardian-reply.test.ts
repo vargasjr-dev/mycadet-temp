@@ -812,7 +812,7 @@ describe("handleSendMessage guardian reply interception", () => {
     expect(routeGuardianReplyMock).toHaveBeenCalledTimes(1);
     const routerCall = (routeGuardianReplyMock as any).mock
       .calls[0][0] as Record<string, unknown>;
-    // Desktop (vellum) should suppress the NL engine
+    // Desktop (cadet) should suppress the NL engine
     expect(routerCall.approvalConversationGenerator).toBeUndefined();
   });
 

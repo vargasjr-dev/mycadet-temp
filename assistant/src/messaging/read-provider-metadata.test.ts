@@ -98,7 +98,7 @@ describe("readProviderMetadata", () => {
   it("reads a channel this repo has no code for", () => {
     // The point of the neutral shape. A plugin channel cannot add an adapter
     // here, so it describes its own rows directly and every channel-agnostic
-    // reader understands them with no Vellum code naming that channel.
+    // reader understands them with no Cadet code naming that channel.
     const metadata = JSON.stringify({
       providerMeta: JSON.stringify({
         source: "plugin",

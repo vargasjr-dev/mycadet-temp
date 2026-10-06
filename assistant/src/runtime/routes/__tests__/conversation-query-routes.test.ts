@@ -1029,7 +1029,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     getDb().delete(providerConnections).run();
     // Upgraded workspaces may still carry a legacy openai-managed row (hidden
     // from the list route, deleted by a follow-up migration). It must not be
-    // auto-picked — the derivation should bind to `vellum` instead.
+    // auto-picked — the derivation should bind to `cadet` instead.
     createConnection(getDb(), {
       name: "openai-managed",
       provider: "openai",

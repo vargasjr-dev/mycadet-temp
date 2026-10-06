@@ -76,9 +76,9 @@ const log = getLogger("plugin-webhook");
 /**
  * Credential holding the secret that signs this route.
  *
- * `vellum` routes verify against the platform's own webhook secret — the
+ * `cadet` routes verify against the platform's own webhook secret — the
  * same credential the email webhook uses — so a plugin that only ever hears
- * from Vellum needs no secret of its own. Everything else verifies against
+ * from Cadet needs no secret of its own. Everything else verifies against
  * the plugin's, stored under its own service name.
  *
  * A route declaring `verification` names its own field instead, but only the

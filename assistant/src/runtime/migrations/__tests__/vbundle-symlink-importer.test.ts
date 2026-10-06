@@ -320,7 +320,7 @@ describe("commitImport — symlinks", () => {
 - Work role: Staff Engineer
 - Goals: Ship drop-user-md
 - Hobbies/fun: Reading papers
-- Daily tools: Terminal, Vellum
+- Daily tools: Terminal, Cadet
 `;
 
     const guardianPath = join(workspaceDir, "users/captain.md");

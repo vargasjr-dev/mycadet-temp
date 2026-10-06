@@ -245,7 +245,7 @@ class WindowsPermissionsService {
       timeout.unref?.();
 
       const notification = new Notification({
-        title: "Vellum",
+        title: "Cadet",
         body: "Notifications are enabled.",
       });
       notification.once("show", () => settle("granted"));

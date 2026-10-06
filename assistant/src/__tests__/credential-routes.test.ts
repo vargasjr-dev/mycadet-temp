@@ -553,7 +553,6 @@ describe("credentials routes", () => {
       expect(secureStore.get("acp:claude_oauth_expires_at")).toBe("111");
     });
 
-
     test("a successful set scrubs the normalized value from transcripts exactly once", async () => {
       /**
        * The pasted plaintext may already sit in recent transcripts, so a
@@ -625,7 +624,7 @@ describe("credentials routes", () => {
       expect(scrubbedValues).toEqual([SECRET_VALUE]);
     });
 
-    test("non-secret vellum platform fields are stored but never scrubbed", async () => {
+    test("non-secret cadet platform fields are stored but never scrubbed", async () => {
       /**
        * Platform identity ids are benign UUIDs that legitimately appear in
        * transcripts; scrubbing them would redact ordinary conversation
@@ -930,7 +929,7 @@ describe("credentials routes", () => {
           body: { id: credentialId },
           headers: { "x-vellum-principal-type": "local" },
         }),
-      ).rejects.toThrow(/owned by the Vellum platform/);
+      ).rejects.toThrow(/owned by the Cadet platform/);
     });
 
     test("inspect refuses platform credentials", async () => {
@@ -976,7 +975,7 @@ describe("credentials routes", () => {
             value: "https://attacker.test",
           },
         }),
-      ).rejects.toThrow(/owned by the Vellum platform/);
+      ).rejects.toThrow(/owned by the Cadet platform/);
 
       expect(secureStore.get("vellum:platform_base_url")).toBe(
         PLATFORM_BASE_URL,
@@ -1103,7 +1102,7 @@ describe("credentials routes", () => {
           body: { id: credentialId },
           headers: { "x-vellum-principal-type": "local" },
         }),
-      ).rejects.toThrow(/owned by the Vellum platform/);
+      ).rejects.toThrow(/owned by the Cadet platform/);
     });
 
     test("inspect refuses platform credentials", async () => {
@@ -1149,7 +1148,7 @@ describe("credentials routes", () => {
             value: "https://attacker.test",
           },
         }),
-      ).rejects.toThrow(/owned by the Vellum platform/);
+      ).rejects.toThrow(/owned by the Cadet platform/);
 
       expect(secureStore.get("vellum:platform_base_url")).toBe(
         PLATFORM_BASE_URL,

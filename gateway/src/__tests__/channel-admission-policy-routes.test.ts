@@ -22,7 +22,7 @@ import {
 import "./test-preload.js";
 
 // Channels the GET list is expected to return: neither exempt (no runtime
-// admission model) nor hidden (`vellum`/`whatsapp`, enforced but not shown).
+// admission model) nor hidden (`cadet`/`whatsapp`, enforced but not shown).
 const VISIBLE_CHANNEL_IDS = CHANNEL_IDS.filter(
   (channel) =>
     !isAdmissionPolicyExemptChannel(channel) &&
@@ -125,7 +125,7 @@ describe("GET /v1/channel-admission-policy", () => {
     expect(phone?.policy).toBe(ADMISSION_POLICY_DEFAULT);
   });
 
-  test("omits exempt `a2a` and hidden `vellum`/`whatsapp` but includes enforced `phone`", async () => {
+  test("omits exempt `a2a` and hidden `cadet`/`whatsapp` but includes enforced `phone`", async () => {
     // a2a stays exempt (no runtime admission model). vellum/whatsapp are still
     // enforced at runtime but hidden from the Channel Trust Floors UI, so they
     // must not surface even when a row is persisted. phone is now enforced and
@@ -241,7 +241,7 @@ describe("PUT /v1/channel-admission-policy/:channelType", () => {
     expect(body.policy.note).toBeNull();
   });
 
-  test("rejects PUT for hidden channels (`vellum`, `vellum-shared`, `whatsapp`) with 403", async () => {
+  test("rejects PUT for hidden channels (`cadet`, `vellum-shared`, `whatsapp`) with 403", async () => {
     // Hidden channels are managed automatically and not user-configurable;
     // even a non-kill-switch policy must be rejected so no stranded row forms.
     const handler = createChannelAdmissionPolicySetHandler();
@@ -307,7 +307,7 @@ describe("DELETE /v1/channel-admission-policy/:channelType", () => {
     expect(store.get("slack")).toBe(ADMISSION_POLICY_DEFAULT);
   });
 
-  test("rejects DELETE for hidden channels (`vellum`, `whatsapp`) with 403", async () => {
+  test("rejects DELETE for hidden channels (`cadet`, `whatsapp`) with 403", async () => {
     store.set("whatsapp", "no_one");
     const handler = createChannelAdmissionPolicyDeleteHandler();
     for (const channel of ["vellum", "whatsapp"] as const) {

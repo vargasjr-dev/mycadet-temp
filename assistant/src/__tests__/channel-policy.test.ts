@@ -48,7 +48,7 @@ describe("channel policy registry", () => {
   });
 
   test("getDeliverableChannels returns a non-empty array", () => {
-    // At minimum, vellum should always be deliverable.
+    // At minimum, cadet should always be deliverable.
     const deliverable = getDeliverableChannels();
     expect(deliverable.length).toBeGreaterThan(0);
     expect(deliverable).toContain("vellum");
@@ -140,7 +140,7 @@ describe("channel policy registry", () => {
     expect(getTransportForChannel("vellum-shared")).toBeUndefined();
   });
 
-  test("deliverable channels include vellum and telegram", () => {
+  test("deliverable channels include cadet and telegram", () => {
     const deliverable = getDeliverableChannels();
     expect(deliverable).toContain("vellum");
     expect(deliverable).toContain("telegram");

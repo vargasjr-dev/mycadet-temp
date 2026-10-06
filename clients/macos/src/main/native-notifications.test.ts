@@ -156,7 +156,7 @@ describe("registerNativeNotificationCategories", () => {
       ),
     );
     for (const category of categories) {
-      expect(category.categoryId).toMatch(/^vellum\.actions\.[0-9a-f]{16}$/);
+      expect(category.categoryId).toMatch(/^cadet\.actions\.[0-9a-f]{16}$/);
     }
     expect(
       new Set(categories.map((category) => category.categoryId)).size,
@@ -264,7 +264,7 @@ describe("createNativeNotificationFactory", () => {
     expect(calls.length).toBe(1);
     const { request } = calls[0]!;
     expect(request.actions).toEqual([]);
-    expect(request.categoryId).toMatch(/^vellum\.actions\.[0-9a-f]{16}$/);
+    expect(request.categoryId).toMatch(/^cadet\.actions\.[0-9a-f]{16}$/);
   });
 
   test("swaps the sender name into the title and the title into the subtitle", () => {

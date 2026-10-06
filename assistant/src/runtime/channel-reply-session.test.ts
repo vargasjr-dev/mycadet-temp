@@ -756,7 +756,7 @@ describe("createChannelReplySession", () => {
     expect(reconciliation).toEqual({ mode: "fallback" });
   });
 
-  test("withholds an in-progress vellum link until it closes, then strips it", async () => {
+  test("withholds an in-progress cadet link until it closes, then strips it", async () => {
     // Slack streams are append-only, so a `[label](vellum://…)` link split
     // across deltas must not stream its internal path before the closing `)`
     // arrives — once emitted it could not be retracted.

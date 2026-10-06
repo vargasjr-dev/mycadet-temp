@@ -14,7 +14,7 @@ import log from "./logger";
 declare const __VELLUM_ENVIRONMENT__: string;
 
 /**
- * The app's user-facing product name ("Vellum", "Vellum Local", "Vellum Dev",
+ * The app's user-facing product name ("Cadet", "Cadet Local", "Cadet Dev",
  * …). `app.getName()` can't be used here: electron-builder writes the product
  * name to the bundle Info.plist (`CFBundleName`), not into the asar'd
  * package.json, so `app.getName()` returns the package `name` (`@mycadet/macos`)
@@ -27,8 +27,8 @@ function productDisplayName(): string {
     typeof __VELLUM_ENVIRONMENT__ === "string"
       ? __VELLUM_ENVIRONMENT__
       : "production";
-  if (env === "production") return "Vellum";
-  return `Vellum ${env.charAt(0).toUpperCase()}${env.slice(1)}`;
+  if (env === "production") return "Cadet";
+  return `Cadet ${env.charAt(0).toUpperCase()}${env.slice(1)}`;
 }
 
 /**
@@ -90,7 +90,7 @@ function createInstallSplash(): BrowserWindow {
  * new location.
  *
  * This is the "double-click to install" half of the DMG installer flow: the
- * DMG ships a single app icon under "Install Vellum / Double click the icon
+ * DMG ships a single app icon under "Install Cadet / Double click the icon
  * below" with no Applications alias, and the app installs itself here instead
  * of asking the user to drag it. It also resolves macOS app translocation —
  * an app launched from a quarantined DMG runs from a randomized read-only path
@@ -155,7 +155,7 @@ export async function relocateToApplicationsFolder(): Promise<boolean> {
         if (conflictType === "existsAndRunning") {
           // Another copy is already installed and running. Leave it be and
           // keep running from the current location for this session rather
-          // than nagging — the user clearly already has Vellum installed.
+          // than nagging — the user clearly already has Cadet installed.
           conflictedWithRunningCopy = true;
           log.info(
             "[move-to-applications] /Applications copy already running; skipping move",

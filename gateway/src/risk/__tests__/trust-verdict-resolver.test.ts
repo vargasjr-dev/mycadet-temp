@@ -378,7 +378,7 @@ describe("resolveTrustVerdict", () => {
   test("memberless sender whose address collides with the guardian's address on another channel type stays unknown", async () => {
     // ATL-958 regression: external identifiers are channel-local namespaces.
     // A telegram sender with NO telegram member row whose id happens to equal
-    // the guardian's vellum address is NOT the guardian — raw cross-channel
+    // the guardian's cadet address is NOT the guardian — raw cross-channel
     // address equality must never confer the class (it would grant
     // self-approval, unsandboxed shell, and memory access to a spoofable id).
     insertContact({
@@ -526,7 +526,7 @@ describe("resolveTrustVerdict", () => {
       policy: "deny",
     });
 
-    // Sender matches the revoked vellum address on telegram (no telegram
+    // Sender matches the revoked cadet address on telegram (no telegram
     // row): a memberless sender is a stranger — and even with a row, the
     // principal-level check requires an ACTIVE guardian channel → unknown.
     const verdict = await resolveTrustVerdict({

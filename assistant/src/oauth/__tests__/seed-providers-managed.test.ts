@@ -114,7 +114,7 @@ describe("PROVIDER_SEED_DATA managed mode wiring", () => {
 
   test("Link does not ship a Stripe publishable key to BYO installs", () => {
     // Link's authorize endpoint needs a `key` param naming the Stripe account
-    // behind the client_id. Vellum's belongs only in the platform registry,
+    // behind the client_id. Cadet's belongs only in the platform registry,
     // where it pairs with the platform's own client. Seeding it here would
     // send our merchant identity from every self-hosted install.
     const link = PROVIDER_SEED_DATA.stripe_link;

@@ -1,7 +1,7 @@
 /**
  * Unit tests for `resolveAnchoredGuardian`.
  *
- * Covers the gateway arms (source-channel match validated against the vellum
+ * Covers the gateway arms (source-channel match validated against the cadet
  * anchor, vellum-anchor fallback) and the cosmetic `requireAnchorPrincipal`
  * guard.
  */
@@ -29,7 +29,7 @@ describe("resolveAnchoredGuardian — gateway arm", () => {
           channelType: "vellum",
           address: "v-addr",
           principalId: "p-anchor",
-          displayName: "Vellum",
+          displayName: "Cadet",
         }),
         gw({
           channelType: "telegram",
@@ -56,7 +56,7 @@ describe("resolveAnchoredGuardian — gateway arm", () => {
           channelType: "vellum",
           address: "v-addr",
           principalId: "p-anchor",
-          displayName: "Vellum",
+          displayName: "Cadet",
         }),
         gw({
           channelType: "telegram",
@@ -70,7 +70,7 @@ describe("resolveAnchoredGuardian — gateway arm", () => {
     expect(result).toEqual({
       principalId: "p-anchor",
       address: "v-addr",
-      displayName: "Vellum",
+      displayName: "Cadet",
       channelType: "vellum",
       source: "vellum-anchor",
     });
@@ -83,7 +83,7 @@ describe("resolveAnchoredGuardian — gateway arm", () => {
           channelType: "vellum",
           address: "v-addr",
           principalId: "p-anchor",
-          displayName: "Vellum",
+          displayName: "Cadet",
         }),
       ],
       sourceChannel: "telegram",
@@ -112,14 +112,14 @@ describe("resolveAnchoredGuardian — gateway empty", () => {
 });
 
 describe("resolveAnchoredGuardian — requireAnchorPrincipal (cosmetic label)", () => {
-  test("vellum guardian with a null principal degrades to null", () => {
+  test("cadet guardian with a null principal degrades to null", () => {
     const result = resolveAnchoredGuardian({
       guardians: [
         gw({
           channelType: "vellum",
           address: "v-addr",
           principalId: null,
-          displayName: "Vellum",
+          displayName: "Cadet",
         }),
       ],
       sourceChannel: "telegram",
@@ -128,14 +128,14 @@ describe("resolveAnchoredGuardian — requireAnchorPrincipal (cosmetic label)", 
     expect(result).toBeNull();
   });
 
-  test("without requireAnchorPrincipal a null-principal vellum still resolves", () => {
+  test("without requireAnchorPrincipal a null-principal cadet still resolves", () => {
     const result = resolveAnchoredGuardian({
       guardians: [
         gw({
           channelType: "vellum",
           address: "v-addr",
           principalId: null,
-          displayName: "Vellum",
+          displayName: "Cadet",
         }),
       ],
       sourceChannel: "telegram",

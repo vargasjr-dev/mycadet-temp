@@ -114,7 +114,7 @@ describe("ensureDefaultProvider", () => {
     expect(llm().defaultProvider).toEqual({ provider: "fireworks" });
   });
 
-  test("IS_PLATFORM true resolves to vellum", async () => {
+  test("IS_PLATFORM true resolves to cadet", async () => {
     process.env.IS_PLATFORM = "true";
     writeConfig({ llm: {} });
 
@@ -141,7 +141,7 @@ describe("ensureDefaultProvider", () => {
     expect(llm().defaultProvider).toEqual({ provider: "openai" });
   });
 
-  test("hasManagedProxyPrereqs true resolves to vellum when off-platform", async () => {
+  test("hasManagedProxyPrereqs true resolves to cadet when off-platform", async () => {
     proxyState.prereqs = true;
     writeConfig({ llm: {} });
 
@@ -290,7 +290,7 @@ describe("ensureDefaultProvider", () => {
       expect(llm().defaultProvider).toEqual({ provider: "anthropic" });
     });
 
-    test("no key + logged in falls through to the vellum login fallback", async () => {
+    test("no key + logged in falls through to the cadet login fallback", async () => {
       proxyState.prereqs = true;
       writeConfig({ llm: { default: { provider: "anthropic" } } });
 

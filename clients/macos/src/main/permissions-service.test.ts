@@ -303,7 +303,7 @@ describe("notification permission requests", () => {
     expect(item.status).toBe("granted");
     expect(nativePosts).toHaveLength(1);
     expect(nativePosts[0]).toMatchObject({
-      title: "Vellum",
+      title: "Cadet",
       body: "Notifications are enabled.",
     });
     expect(nativePosts[0]!.sender).toBeUndefined();
@@ -345,7 +345,7 @@ describe("notification permission requests", () => {
 
     expect(nativePosts).toHaveLength(1);
     expect(nativePosts[0]).toMatchObject({
-      title: "Vellum",
+      title: "Cadet",
       body: "Notifications are enabled.",
     });
     expect(nativePosts[0]!.sender).toBeUndefined();
@@ -381,7 +381,7 @@ describe("notification permission requests", () => {
 
     expect(nativePosts).toHaveLength(1);
     expect(nativePosts[0]).toMatchObject({
-      title: "Vellum",
+      title: "Cadet",
       body: "Notifications are enabled.",
     });
     expect(nativePosts[0]!.sender).toBeUndefined();
@@ -416,7 +416,7 @@ describe("notification permission requests", () => {
     expect(item.status).toBe("granted");
     expect(electronNotificationsConstructed).toBe(1);
     expect(electronNotificationOptions).toEqual({
-      title: "Vellum",
+      title: "Cadet",
       body: "Notifications are enabled.",
       silent: false,
     });

@@ -118,7 +118,7 @@ describe("parsePluginIngressManifest", () => {
     expect(manifest.routes[0]!.signer).toBe("plugin");
   });
 
-  it("accepts a declared vellum signer", () => {
+  it("accepts a declared cadet signer", () => {
     const manifest = parsePluginIngressManifest({
       routes: [
         {
@@ -243,8 +243,8 @@ describe("parsePluginIngressManifest", () => {
     expect(manifest.routes[0]!.verification).toBeUndefined();
   });
 
-  it("rejects verification combined with signer vellum", () => {
-    // A `vellum` route is served without a guardian approval, so a descriptor
+  it("rejects verification combined with signer cadet", () => {
+    // A `cadet` route is served without a guardian approval, so a descriptor
     // there would let a plugin open an unreviewed route it verifies itself.
     expect(() =>
       parsePluginIngressManifest({
@@ -303,8 +303,8 @@ describe("parsePluginIngressManifest", () => {
     expect(manifest.routes[0]!.inbound?.identity).toBe("opaque");
   });
 
-  it("rejects inbound delivery combined with signer vellum", () => {
-    // A `vellum` route is served without a guardian approval. Delivering
+  it("rejects inbound delivery combined with signer cadet", () => {
+    // A `cadet` route is served without a guardian approval. Delivering
     // messages is how a conversation starts, so a route that both skipped
     // approval and injected turns would be reach a plugin grants itself.
     expect(() =>

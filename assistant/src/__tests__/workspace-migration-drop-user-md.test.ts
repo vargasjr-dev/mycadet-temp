@@ -170,7 +170,7 @@ function customizedContent(): string {
 - Preferred name/reference: Chris
 - Pronouns: they/them
 - Work role: Engineer
-- Daily tools: Vellum, vim, tmux
+- Daily tools: Cadet, vim, tmux
 `;
 }
 
@@ -326,7 +326,7 @@ describe("workspace migration 031-drop-user-md", () => {
   });
 
   test("prefers vellum-channel guardian over a more-recently-verified other guardian", () => {
-    // Older vellum guardian vs newer telegram guardian: vellum wins.
+    // Older cadet guardian vs newer telegram guardian: cadet wins.
     seedGuardian({
       id: "guardian-vellum",
       displayName: "Vee",

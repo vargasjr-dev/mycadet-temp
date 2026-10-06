@@ -623,7 +623,7 @@ export async function logs(): Promise<void> {
     case "vellum":
       console.error(
         "Logs for Vellum-managed instances are not yet supported.\n" +
-          "View logs in the Cadet platform dashboard.",
+          "View logs in the Cadet Cloud dashboard.",
       );
       process.exit(1);
       break;

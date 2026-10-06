@@ -212,7 +212,7 @@ describe("trust-context guards", () => {
     ).toBeDefined();
 
     // Must be `guardianPrincipalId: string | null` — a gateway guardian row
-    // with no principal is UNRESOLVED. Callers repair via the vellum anchor
+    // with no principal is UNRESOLVED. Callers repair via the cadet anchor
     // or fail closed; a plain `string` type invites `?? ""` coercion, which
     // creates undecidable guardian requests (LUM-2665).
     expect(

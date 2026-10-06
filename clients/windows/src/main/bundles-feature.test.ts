@@ -18,7 +18,7 @@ const getGuardianAccessTokenMock = mock(async () => ({
 
 mock.module("electron", () => ({
   app: {
-    getPath: () => "C:\\Vellum",
+    getPath: () => "C:\\Cadet",
     isPackaged: true,
     once: appOnceMock,
   },
@@ -41,8 +41,8 @@ mock.module("@mycadet/local-mode", () => ({
   ...localMode,
   getGuardianAccessToken: getGuardianAccessTokenMock,
   getLockfileData: () => ({ ok: false, error: "missing" }),
-  resolveConfigDir: () => "C:\\Vellum\\config",
-  resolveLockfilePaths: () => ["C:\\Vellum\\lockfile.json"],
+  resolveConfigDir: () => "C:\\Cadet\\config",
+  resolveLockfilePaths: () => ["C:\\Cadet\\lockfile.json"],
 }));
 
 mock.module("./ipc.client", () => ({
@@ -103,7 +103,7 @@ describe("Windows bundle workflow", () => {
     await expect(pending).resolves.toBe("guardian-token");
     expect(getGuardianAccessTokenMock).toHaveBeenCalledWith(
       "assistant-1",
-      "C:\\Vellum\\config",
+      "C:\\Cadet\\config",
       { command: "vellum.exe", baseArgs: [] },
       true,
     );

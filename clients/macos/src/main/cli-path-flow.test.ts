@@ -41,8 +41,9 @@ const getCliPathInstallStateMock = mock(
   }),
 );
 const installWrapperMock = mock(
-  (_opts: { overwriteForeign: boolean }): "installed" | "needs-overwrite-confirmation" =>
-    "installed",
+  (_opts: {
+    overwriteForeign: boolean;
+  }): "installed" | "needs-overwrite-confirmation" => "installed",
 );
 const uninstallWrapperMock = mock(
   (): "removed" | "not-ours" | "absent" => "removed",
@@ -103,16 +104,21 @@ beforeEach(() => {
 describe("runInstallCliCommandFlow", () => {
   test("foreign file + Cancel leaves the file untouched", async () => {
     installWrapperMock.mockReturnValue("needs-overwrite-confirmation");
-    showMessageBoxMock.mockResolvedValue({ response: 1, checkboxChecked: false });
+    showMessageBoxMock.mockResolvedValue({
+      response: 1,
+      checkboxChecked: false,
+    });
 
     await runInstallCliCommandFlow();
 
     expect(showMessageBoxMock).toHaveBeenCalledTimes(1);
     expect(showMessageBoxMock.mock.calls[0]?.[0]?.message).toBe(
-      "Replace existing vellum file?",
+      "Replace existing cadet file?",
     );
     expect(installWrapperMock).toHaveBeenCalledTimes(1);
-    expect(installWrapperMock).toHaveBeenCalledWith({ overwriteForeign: false });
+    expect(installWrapperMock).toHaveBeenCalledWith({
+      overwriteForeign: false,
+    });
     expect(ensureCliInstalledMock).not.toHaveBeenCalled();
   });
 
@@ -141,7 +147,7 @@ describe("runInstallCliCommandFlow", () => {
     expect(ensureCliInstalledMock).toHaveBeenCalledTimes(1);
     // State is only checked once, after install, for the success dialog.
     expect(getCliPathInstallStateMock).toHaveBeenCalledTimes(1);
-    expect(lastDialog()?.message).toBe("Vellum CLI installed");
+    expect(lastDialog()?.message).toBe("Cadet CLI installed");
   });
 
   test("CLI runtime download failure points at the Repair menu item", async () => {
@@ -152,10 +158,12 @@ describe("runInstallCliCommandFlow", () => {
     expect(showMessageBoxMock).not.toHaveBeenCalled();
     expect(showErrorBoxMock).toHaveBeenCalledTimes(1);
     const [title, message] = showErrorBoxMock.mock.calls[0]!;
-    expect(title).toBe("Failed to install vellum command");
-    expect(message).toContain(`The vellum command was installed at ${WRAPPER_PATH}`);
+    expect(title).toBe("Failed to install cadet command");
+    expect(message).toContain(
+      `The cadet command was installed at ${WRAPPER_PATH}`,
+    );
     expect(message).toContain("registry unreachable");
-    expect(message).toContain('"Repair vellum Command"');
+    expect(message).toContain('"Repair cadet Command"');
     expect(message).toContain("retried automatically");
   });
 
@@ -164,9 +172,11 @@ describe("runInstallCliCommandFlow", () => {
 
     await runInstallCliCommandFlow();
 
-    expect(installWrapperMock).toHaveBeenCalledWith({ overwriteForeign: false });
+    expect(installWrapperMock).toHaveBeenCalledWith({
+      overwriteForeign: false,
+    });
     expect(writeTextMock).not.toHaveBeenCalled();
-    expect(lastDialog()?.message).toBe("Vellum CLI installed");
+    expect(lastDialog()?.message).toBe("Cadet CLI installed");
     expect(lastDialog()?.detail).toContain(WRAPPER_PATH);
     expect(lastDialog()?.detail).toContain('run "vellum"');
   });
@@ -207,7 +217,7 @@ describe("runInstallCliCommandFlow", () => {
 
     expect(writeTextMock).not.toHaveBeenCalled();
     expect(lastDialog()?.detail).toContain("/opt/homebrew/bin/vellum");
-    expect(lastDialog()?.detail).toContain("npm uninstall -g vellum");
+    expect(lastDialog()?.detail).toContain("npm uninstall -g cadet");
     expect(lastDialog()?.detail).not.toContain("clipboard");
   });
 
@@ -223,7 +233,7 @@ describe("runInstallCliCommandFlow", () => {
 
     expect(writeTextMock).toHaveBeenCalledTimes(1);
     expect(writeTextMock).toHaveBeenCalledWith(PATH_EXPORT_LINE);
-    expect(lastDialog()?.detail).toContain("npm uninstall -g vellum");
+    expect(lastDialog()?.detail).toContain("npm uninstall -g cadet");
     expect(lastDialog()?.detail).toContain("copied to your clipboard");
   });
 
@@ -240,7 +250,7 @@ describe("runInstallCliCommandFlow", () => {
 
     expect(writeTextMock).toHaveBeenCalledTimes(1);
     expect(writeTextMock).toHaveBeenCalledWith(FISH_ADD_PATH_LINE);
-    expect(lastDialog()?.detail).toContain("npm uninstall -g vellum");
+    expect(lastDialog()?.detail).toContain("npm uninstall -g cadet");
     expect(lastDialog()?.detail).toContain("fish command");
   });
 
@@ -251,7 +261,7 @@ describe("runInstallCliCommandFlow", () => {
 
     expect(showErrorBoxMock).toHaveBeenCalledTimes(1);
     expect(showErrorBoxMock).toHaveBeenCalledWith(
-      "Failed to install vellum command",
+      "Failed to install cadet command",
       "boom",
     );
   });
@@ -259,12 +269,15 @@ describe("runInstallCliCommandFlow", () => {
 
 describe("runUninstallCliCommandFlow", () => {
   test("Cancel skips uninstallWrapper", async () => {
-    showMessageBoxMock.mockResolvedValue({ response: 1, checkboxChecked: false });
+    showMessageBoxMock.mockResolvedValue({
+      response: 1,
+      checkboxChecked: false,
+    });
 
     await runUninstallCliCommandFlow();
 
     expect(showMessageBoxMock.mock.calls[0]?.[0]?.message).toBe(
-      "Uninstall vellum command?",
+      "Uninstall cadet command?",
     );
     expect(uninstallWrapperMock).not.toHaveBeenCalled();
   });
@@ -275,7 +288,7 @@ describe("runUninstallCliCommandFlow", () => {
     await runUninstallCliCommandFlow();
 
     expect(uninstallWrapperMock).toHaveBeenCalledTimes(1);
-    expect(lastDialog()?.detail).toBe("The vellum command was removed.");
+    expect(lastDialog()?.detail).toBe("The cadet command was removed.");
   });
 
   test("not-ours refuses to remove a foreign file", async () => {
@@ -283,7 +296,7 @@ describe("runUninstallCliCommandFlow", () => {
 
     await runUninstallCliCommandFlow();
 
-    expect(lastDialog()?.detail).toContain("wasn't installed by Vellum");
+    expect(lastDialog()?.detail).toContain("wasn't installed by Cadet");
     expect(lastDialog()?.detail).toContain("not removing it");
   });
 
@@ -292,7 +305,7 @@ describe("runUninstallCliCommandFlow", () => {
 
     await runUninstallCliCommandFlow();
 
-    expect(lastDialog()?.detail).toBe("The vellum command is not installed.");
+    expect(lastDialog()?.detail).toBe("The cadet command is not installed.");
   });
 
   test("uninstallWrapper throwing surfaces via showErrorBox", async () => {
@@ -303,7 +316,7 @@ describe("runUninstallCliCommandFlow", () => {
     await runUninstallCliCommandFlow();
 
     expect(showErrorBoxMock).toHaveBeenCalledWith(
-      "Failed to uninstall vellum command",
+      "Failed to uninstall cadet command",
       "eperm",
     );
   });
@@ -314,7 +327,10 @@ describe("flow re-entrancy guard", () => {
   const parkInstallFlow = () => {
     let release!: () => void;
     ensureCliInstalledMock.mockImplementation(
-      () => new Promise<void>((resolve) => { release = resolve; }),
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
     );
     const flow = runInstallCliCommandFlow();
     return { flow, release: () => release() };

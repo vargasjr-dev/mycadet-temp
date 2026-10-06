@@ -7,7 +7,7 @@
  *   - Installed skill, missing file → 404 "File not found".
  *   - Installed skill with missing on-disk directory → 404 "Skill directory
  *     missing" without consulting the provider chain fallback.
- *   - Uninstalled vellum catalog skill → vellum provider returns content.
+ *   - Uninstalled cadet catalog skill → cadet provider returns content.
  *   - Uninstalled skills.sh skill → skills.sh provider returns content.
  *   - Uninstalled clawhub skill → clawhub provider returns content.
  *   - Skill not found anywhere → 404.
@@ -450,7 +450,7 @@ describe("getSkillFileContent — installed skill", () => {
 // ---------------------------------------------------------------------------
 
 describe("getSkillFileContent — uninstalled skill (provider chain)", () => {
-  test("delegates to vellum provider and returns the payload", async () => {
+  test("delegates to cadet provider and returns the payload", async () => {
     mockResolvedSkills = [];
     installFetchForbidden();
 
@@ -500,7 +500,7 @@ describe("getSkillFileContent — uninstalled skill (provider chain)", () => {
     mockResolvedSkills = [];
     installFetchForbidden();
 
-    // Vellum doesn't handle
+    // Cadet doesn't handle
     mockVellumProvider = makeNoopProvider("vellum");
 
     // skills.sh handles and returns content
@@ -531,7 +531,7 @@ describe("getSkillFileContent — uninstalled skill (provider chain)", () => {
     mockResolvedSkills = [];
     installFetchForbidden();
 
-    // Vellum and skills.sh don't handle
+    // Cadet and skills.sh don't handle
     mockVellumProvider = makeNoopProvider("vellum");
     mockSkillsshProvider = makeNoopProvider("skillssh");
 
@@ -563,7 +563,7 @@ describe("getSkillFileContent — uninstalled skill (provider chain)", () => {
     mockResolvedSkills = [];
     installFetchForbidden();
 
-    // Vellum provider claims this skill but returns null for the specific file
+    // Cadet provider claims this skill but returns null for the specific file
     mockVellumProvider = {
       canHandle: () => true,
       listFiles: async () => null,
@@ -580,13 +580,13 @@ describe("getSkillFileContent — uninstalled skill (provider chain)", () => {
     expect(result.error).toBe("File not found");
   });
 
-  test("stop-on-first-match: does not try clawhub when vellum canHandle returns true", async () => {
+  test("stop-on-first-match: does not try clawhub when cadet canHandle returns true", async () => {
     mockResolvedSkills = [];
     installFetchForbidden();
 
     const clawhubReadCalls: string[] = [];
 
-    // Vellum provider claims the skill but returns null for file content
+    // Cadet provider claims the skill but returns null for file content
     mockVellumProvider = {
       canHandle: () => true,
       listFiles: async () => null,
@@ -613,7 +613,7 @@ describe("getSkillFileContent — uninstalled skill (provider chain)", () => {
     };
 
     const result = await getSkillFileContent("simple-slug", "SKILL.md");
-    // Should be "File not found" (vellum handled but returned null)
+    // Should be "File not found" (cadet handled but returned null)
     expect("error" in result).toBe(true);
     if (!("error" in result)) {
       return;

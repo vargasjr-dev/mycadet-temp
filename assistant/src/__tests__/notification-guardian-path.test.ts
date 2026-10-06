@@ -52,7 +52,7 @@ mock.module("../notifications/emit-signal.js", () => ({
 }));
 
 // Guardian principalId is resolved from the gateway binding reader. Mirror the
-// seeded vellum binding so dispatch can resolve the principal.
+// seeded cadet binding so dispatch can resolve the principal.
 mock.module("../contacts/guardian-delivery-reader.js", () => ({
   getGuardianDelivery: async () => [
     {
@@ -123,7 +123,7 @@ function resetTables(): void {
   db.run("DELETE FROM contact_channels");
   db.run("DELETE FROM contacts");
 
-  // Seed the vellum guardian binding (gateway does this at startup in production)
+  // Seed the cadet guardian binding (gateway does this at startup in production)
   createGuardianBinding({
     channel: "vellum",
     guardianExternalUserId: "test-principal-id",
@@ -289,16 +289,16 @@ describe("ASK_GUARDIAN notification path", () => {
     const telegram = deliveries.find(
       (d) => d.destinationChannel === "telegram",
     );
-    const vellum = deliveries.find((d) => d.destinationChannel === "vellum");
+    const cadet = deliveries.find((d) => d.destinationChannel === "vellum");
     expect(telegram).toBeDefined();
     expect(telegram!.destinationChatId).toBe("tg-chat-abc");
     expect(telegram!.status).toBe("sent");
-    expect(vellum).toBeDefined();
-    expect(vellum!.destinationConversationId).toBe("conv-guardian-vellum");
-    expect(vellum!.status).toBe("sent");
+    expect(cadet).toBeDefined();
+    expect(cadet!.destinationConversationId).toBe("conv-guardian-vellum");
+    expect(cadet!.status).toBe("sent");
   });
 
-  test("creates a failed vellum delivery when pipeline emits no vellum result", async () => {
+  test("creates a failed cadet delivery when pipeline emits no cadet result", async () => {
     const convId = "conv-guardian-notif-4";
     ensureConversation(convId);
 

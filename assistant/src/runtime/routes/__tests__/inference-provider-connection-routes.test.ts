@@ -287,7 +287,7 @@ describe("POST inference/provider-connections (create)", () => {
     expect((err as BadRequestError).message).toContain("chatgpt");
   });
 
-  test("rejects key auth on the vellum provider", async () => {
+  test("rejects key auth on the cadet provider", async () => {
     const err = await call(
       findHandler("inference_provider_connections_create"),
       {
@@ -395,7 +395,7 @@ describe("POST inference/provider-connections (create)", () => {
     expect(result.auth).toEqual({ type: "none" });
   });
 
-  test("derives platform auth for the vellum provider when auth is omitted", async () => {
+  test("derives platform auth for the cadet provider when auth is omitted", async () => {
     const result = (await call(
       findHandler("inference_provider_connections_create"),
       {
@@ -1445,7 +1445,7 @@ describe("Managed connection write protection", () => {
 
     test("a user-owned row claiming the managed name stays deletable", async () => {
       // Boot seeding refuses to overwrite it and managed routing ignores it,
-      // so deleting is the only way to restore the canonical row. The vellum
+      // so deleting is the only way to restore the canonical row. The cadet
       // default resolves to this same name, and that guard must not block the
       // delete either: the next boot re-seeds the row it points at.
       seedConnection({
@@ -1585,7 +1585,7 @@ describe("isManaged flag on connection responses", () => {
     test("hides orphaned legacy *-managed rows from the list", async () => {
       // Existing installs (and fresh installs via migration 243) may still
       // carry the pre-consolidation rows until a follow-up migration deletes
-      // them; they must not surface in the UI alongside `vellum`.
+      // them; they must not surface in the UI alongside `cadet`.
       for (const name of [
         "anthropic-managed",
         "openai-managed",
@@ -1709,7 +1709,7 @@ describe("isManaged flag on connection responses", () => {
         findHandler("inference_provider_connections_update"),
         {
           pathParams: { name: "vellum" },
-          body: { auth: { type: "platform" }, label: "Vellum Anthropic" },
+          body: { auth: { type: "platform" }, label: "Cadet Anthropic" },
         },
       )) as { name: string; isManaged: boolean };
 

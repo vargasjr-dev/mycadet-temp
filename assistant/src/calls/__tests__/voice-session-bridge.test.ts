@@ -1091,7 +1091,7 @@ describe("default call protocol numbered rules", () => {
 
   test("a monolingual listening language becomes the pre-speech fallback", () => {
     // An assistant pinned to services.stt.language = "es" on a provider that
-    // honors the pin (deepgram, vellum) is already transcribing Spanish, so
+    // honors the pin (deepgram, cadet) is already transcribing Spanish, so
     // the opener must not default to English. The default test config runs
     // the auto-detect branch ("multi"), so the pinned branch is covered at
     // the fragment level.

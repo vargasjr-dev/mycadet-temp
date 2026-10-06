@@ -251,7 +251,7 @@ describe("gatherV1State", () => {
 
   test("reads graph nodes from the v1 store", () => {
     const id = insertNode(database, {
-      content: "Alice ships to Vellum at end of day.",
+      content: "Alice ships to Cadet at end of day.",
       type: "semantic",
       significance: 0.8,
     });
@@ -259,7 +259,7 @@ describe("gatherV1State", () => {
     expect(items.length).toBe(1);
     expect(items[0]).toMatchObject({
       id,
-      text: "Alice ships to Vellum at end of day.",
+      text: "Alice ships to Cadet at end of day.",
       source: "graph_node",
       significance: 0.8,
       type: "semantic",
@@ -655,7 +655,7 @@ describe("runMemoryV2Migration", () => {
   test("end-to-end: gathers, synthesizes, promotes, collapses, embeds, sentinel", async () => {
     const a = insertNode(database, {
       id: "node-a",
-      content: "User is Alice and works at Vellum",
+      content: "User is Alice and works at Cadet",
       significance: 0.95,
     });
     const b = insertNode(database, {
@@ -709,7 +709,7 @@ describe("runMemoryV2Migration", () => {
       join(workspaceDir, "memory", "essentials.md"),
       "utf-8",
     );
-    expect(essentials).toContain("User is Alice and works at Vellum");
+    expect(essentials).toContain("User is Alice and works at Cadet");
     expect(result.essentialsLines).toBe(1);
 
     // -- Embed jobs enqueued (one per page). No rebuild-edges follow-up:

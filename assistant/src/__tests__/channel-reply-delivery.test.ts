@@ -1512,7 +1512,7 @@ describe("channel-reply-delivery", () => {
     });
 
     it("does NOT call updateMessageMetadata when the assistant row has no envelope", async () => {
-      // vellum outbound: the row's metadata carries no provider envelope.
+      // cadet outbound: the row's metadata carries no provider envelope.
       // The reconciler must short-circuit silently.
       conversationMessages.push({
         id: "msg-vellum",

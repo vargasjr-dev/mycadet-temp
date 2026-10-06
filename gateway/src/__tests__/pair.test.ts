@@ -1,7 +1,7 @@
 /**
  * Tests for resolveLocalGuardianPrincipalId — the pair endpoint's local
  * guardian principal lookup. The lookup reads the gateway DB directly:
- * a seeded vellum active guardian resolves its principal; an empty DB (or a
+ * a seeded cadet active guardian resolves its principal; an empty DB (or a
  * read failure) falls back to "local".
  */
 
@@ -75,7 +75,7 @@ function seedGuardian(opts: {
 }
 
 describe("resolveLocalGuardianPrincipalId", () => {
-  test("returns the principal of a vellum active guardian seeded in the gateway DB", async () => {
+  test("returns the principal of a cadet active guardian seeded in the gateway DB", async () => {
     seedGuardian({ contactId: "guardian-1", principalId: "principal-owner" });
     expect(await resolveLocalGuardianPrincipalId()).toBe("principal-owner");
   });
@@ -84,7 +84,7 @@ describe("resolveLocalGuardianPrincipalId", () => {
     expect(await resolveLocalGuardianPrincipalId()).toBe("local");
   });
 
-  test("falls back to 'local' when the vellum guardian channel is not active", async () => {
+  test("falls back to 'local' when the cadet guardian channel is not active", async () => {
     seedGuardian({
       contactId: "guardian-2",
       principalId: "principal-owner",

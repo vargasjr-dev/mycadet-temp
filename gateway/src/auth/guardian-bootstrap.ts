@@ -94,15 +94,15 @@ export interface GuardianBootstrapResult {
 }
 
 /**
- * Thrown when a vellum guardian mint is refused: the gateway DB has no active
- * vellum guardian binding but carries evidence of prior onboarding, so a mint
+ * Thrown when a cadet guardian mint is refused: the gateway DB has no active
+ * cadet guardian binding but carries evidence of prior onboarding, so a mint
  * would permanently diverge from prior clients' tokens. Recovery is the
  * explicit /v1/guardian/init flow.
  */
 export class VellumGuardianMintRefusedError extends Error {
   constructor() {
     super(
-      "refusing to mint a vellum guardian principal: the gateway DB has " +
+      "refusing to mint a cadet guardian principal: the gateway DB has " +
         "evidence of a prior guardian — re-pair via guardian init to recover",
     );
     this.name = "VellumGuardianMintRefusedError";
@@ -226,7 +226,7 @@ export async function findGuardianForChannelActor(
  * Recover the guardian principal id from the gateway's own actor-token records.
  *
  * Only `role = 'guardian'` rows are considered, so a contact token can never
- * be recovered as the guardian. This recovers a lost vellum guardian binding
+ * be recovered as the guardian. This recovers a lost cadet guardian binding
  * on an install whose contact reconcile could not run: the assistant DB's
  * contact ACL columns were already dropped (assistant migration 305) by the
  * time the gateway's data migrations read them, so `contacts` stays empty
@@ -1082,7 +1082,7 @@ async function fetchPlatformOwnerDisplayName(): Promise<string | null> {
 }
 
 /**
- * Boot-time self-heal: rebuild an ABSENT vellum guardian binding from the
+ * Boot-time self-heal: rebuild an ABSENT cadet guardian binding from the
  * gateway's own active actor tokens, returning the recovered principal (or
  * null when nothing is recoverable). Single home for the recovery decision so
  * its safety is co-located rather than re-derived at the call site.
@@ -1126,13 +1126,13 @@ async function recoverAbsentVellumGuardianFromActorTokens(): Promise<
   });
   log.info(
     { guardianPrincipalId: recoveredPrincipalId },
-    "Recovered the vellum guardian binding from gateway actor tokens (empty contacts table on an upgraded install)",
+    "Recovered the cadet guardian binding from gateway actor tokens (empty contacts table on an upgraded install)",
   );
   return recoveredPrincipalId;
 }
 
 /**
- * Resolve the vellum guardian principal: (a) gateway fast path, then
+ * Resolve the cadet guardian principal: (a) gateway fast path, then
  * (b) mint a fresh principal when the gateway has no guardian.
  *
  * Shared by ensureVellumGuardianBinding + bootstrapGuardian. `isNew` is true
@@ -1148,7 +1148,7 @@ async function recoverAbsentVellumGuardianFromActorTokens(): Promise<
 async function resolveOrCreateVellumGuardian(options: {
   allowMintWithEvidence: boolean;
   /**
-   * Boot-time backfill only: when the gateway has no vellum guardian binding
+   * Boot-time backfill only: when the gateway has no cadet guardian binding
    * but active actor tokens survive (an upgraded install whose contact
    * reconcile could not run), rebuild the binding from the token's principal
    * instead of refusing. Runtime callers leave this off so their fail-closed
@@ -1164,7 +1164,7 @@ async function resolveOrCreateVellumGuardian(options: {
   if (gw) {
     log.debug(
       { guardianPrincipalId: gw.principalId },
-      "Vellum guardian binding already exists",
+      "Cadet guardian binding already exists",
     );
     return {
       guardianPrincipalId: gw.principalId,
@@ -1194,7 +1194,7 @@ async function resolveOrCreateVellumGuardian(options: {
   if (priorEvidence && !options.allowMintWithEvidence) {
     // Fires the missing-guardian reporter (error log + telemetry,
     // rate-limited there) when the DB is truly guardian-less. The state is
-    // `ok` when a guardian contact row survives with a lost/inactive vellum
+    // `ok` when a guardian contact row survives with a lost/inactive cadet
     // binding, so the refusal reports under its own check_name either way —
     // clients see guardian_repair_required 401s and that must never be
     // telemetry-silent. Best-effort: the refusal itself must not depend on
@@ -1207,13 +1207,13 @@ async function resolveOrCreateVellumGuardian(options: {
     }
     reportGuardianMintRefused({ integrity_state: integrityState });
     log.error(
-      "no active vellum guardian binding but the gateway DB carries evidence of prior onboarding — refusing to mint a divergent principal; re-pair via guardian init to recover",
+      "no active cadet guardian binding but the gateway DB carries evidence of prior onboarding — refusing to mint a divergent principal; re-pair via guardian init to recover",
     );
     throw new VellumGuardianMintRefusedError();
   }
   if (priorEvidence) {
     log.warn(
-      "minting a fresh vellum guardian principal over evidence of a prior guardian — prior clients' tokens will not match",
+      "minting a fresh cadet guardian principal over evidence of a prior guardian — prior clients' tokens will not match",
     );
   }
 
@@ -1240,7 +1240,7 @@ async function resolveOrCreateVellumGuardian(options: {
 }
 
 /**
- * Ensure a vellum guardian binding exists, returning its principalId.
+ * Ensure a cadet guardian binding exists, returning its principalId.
  * Resolves from the gateway DB, minting a fresh principal on a miss — unless
  * the DB carries evidence of a prior guardian, in which case it throws
  * {@link VellumGuardianMintRefusedError}. Every caller must handle that
@@ -1286,7 +1286,7 @@ function readHostReportedName(): string | undefined {
 
 /**
  * Execute the full guardian bootstrap flow:
- *   1. Ensure a guardian principal exists for the vellum channel
+ *   1. Ensure a guardian principal exists for the cadet channel
  *   2. Revoke existing credentials for this device
  *   3. Mint new JWT access token + opaque refresh token
  *   4. Persist token hashes

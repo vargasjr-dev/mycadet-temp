@@ -835,7 +835,7 @@ describe("readCatalogSkillFileContent (platform mode)", () => {
 // ---------------------------------------------------------------------------
 
 describe("catalogSkillToSlim", () => {
-  test("maps CatalogSkill to SlimSkillResponse with vellum origin", () => {
+  test("maps CatalogSkill to SlimSkillResponse with cadet origin", () => {
     const cs: CatalogSkill = {
       id: "test-skill",
       name: "test-skill",

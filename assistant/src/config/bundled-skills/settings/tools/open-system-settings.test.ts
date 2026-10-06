@@ -43,7 +43,7 @@ describe("open_system_settings tool", () => {
 
     expect(result).toEqual({
       content:
-        "Opened Windows Settings to Microphone privacy. Please enable Vellum Assistant.",
+        "Opened Windows Settings to Microphone privacy. Please enable Cadet Assistant.",
       isError: false,
     });
     expect(sentMessages).toEqual([

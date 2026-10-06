@@ -195,7 +195,7 @@ describe("POST inference/profiles (create) validation", () => {
     ).rejects.toBeInstanceOf(BadRequestError);
   });
 
-  test("creates a vellum profile for a managed-routable model", async () => {
+  test("creates a cadet profile for a managed-routable model", async () => {
     seedVellumConnection();
     const result = (await call("inference_profiles_create", {
       body: {
@@ -214,7 +214,7 @@ describe("POST inference/profiles (create) validation", () => {
     });
   });
 
-  test("rejects a vellum profile whose maxTokens exceeds the routed model's limits", async () => {
+  test("rejects a cadet profile whose maxTokens exceeds the routed model's limits", async () => {
     seedVellumConnection();
     await expect(
       call("inference_profiles_create", {
@@ -228,7 +228,7 @@ describe("POST inference/profiles (create) validation", () => {
     ).rejects.toThrow(/maxTokens/);
   });
 
-  test("rejects a vellum profile whose model has no managed upstream", async () => {
+  test("rejects a cadet profile whose model has no managed upstream", async () => {
     await expect(
       call("inference_profiles_create", {
         body: {
@@ -238,11 +238,11 @@ describe("POST inference/profiles (create) validation", () => {
         },
       }),
     ).rejects.toThrow(
-      /"not-a-real-model" is not served by the Vellum managed route/,
+      /"not-a-real-model" is not served by the Cadet managed route/,
     );
   });
 
-  test("rejects a vellum profile with an encoded routing string as its model", async () => {
+  test("rejects a cadet profile with an encoded routing string as its model", async () => {
     await expect(
       call("inference_profiles_create", {
         body: {
@@ -386,7 +386,7 @@ describe("inference-profile writes are availability-aware", () => {
       /Provider "gemini" is a valid provider id, but no gemini connection\/API key is configured/,
     );
     await expect(promise).rejects.toThrow(
-      /Recreate with --provider vellum --model gemini-3\.6-flash/,
+      /Recreate with --provider cadet --model gemini-3\.6-flash/,
     );
     await expect(promise).rejects.toThrow(/allowUnavailable/);
     expect(persistedProfiles()).toEqual({});
@@ -491,7 +491,7 @@ describe("inference-profile writes are availability-aware", () => {
     });
     await expect(promise).rejects.toBeInstanceOf(BadRequestError);
     await expect(promise).rejects.toThrow(
-      /Update it with --provider vellum --model gemini-3\.6-flash/,
+      /Update it with --provider cadet --model gemini-3\.6-flash/,
     );
     expect(persistedProfiles()).toMatchObject({
       "my-fast": { provider: "anthropic" },
@@ -762,7 +762,7 @@ describe("GET inference/profiles honors llm.defaultProvider", () => {
     expect(tail).toContain("alpha-custom");
   });
 
-  test("expands balanced through a BYOK default provider, not the vellum column", async () => {
+  test("expands balanced through a BYOK default provider, not the cadet column", async () => {
     setConfig("llm", {
       defaultProvider: { provider: "anthropic" },
       profiles: {},
@@ -772,7 +772,7 @@ describe("GET inference/profiles honors llm.defaultProvider", () => {
     };
     const balanced = listed.profiles.find((p) => p.name === "balanced");
     expect(balanced).toBeDefined();
-    // The vellum column implements `balanced` on fireworks; with a BYOK
+    // The cadet column implements `balanced` on fireworks; with a BYOK
     // anthropic default provider the CLI must report anthropic instead.
     expect(balanced!.provider).toBe("anthropic");
 
@@ -984,7 +984,7 @@ describe("PUT inference/active-profile validation", () => {
       /no gemini connection\/API key is configured/,
     );
     await expect(promise).rejects.toThrow(
-      /assistant inference profiles update my-gemini --provider vellum --model gemini-3\.6-flash/,
+      /assistant inference profiles update my-gemini --provider cadet --model gemini-3\.6-flash/,
     );
     await expect(promise).rejects.toThrow(
       /assistant inference send --profile my-gemini "Reply with OK"/,

@@ -5,7 +5,7 @@
  *     asserted via `X-Vellum-User-Id` header cross-referenced against the
  *     stored `vellum:platform_user_id` credential.
  *  2. Default (laptop / docker / bare-metal): edge JWT validated, then
- *     actor principal is matched against the bound vellum guardian.
+ *     actor principal is matched against the bound cadet guardian.
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";

@@ -183,14 +183,14 @@ describe("getMostRecentChannelGuardianTimestamp", () => {
 });
 
 describe("resolveCanonicalPrincipal", () => {
-  test("returns the guardian's principal from the active vellum channel", async () => {
+  test("returns the guardian's principal from the active cadet channel", async () => {
     seedContact({ id: "g1", role: "guardian", principalId: "principal-owner" });
     seedChannel({ contactId: "g1", type: "vellum", status: "active" });
 
     expect(await resolveCanonicalPrincipal("fallback")).toBe("principal-owner");
   });
 
-  test("falls back when no active vellum guardian exists", async () => {
+  test("falls back when no active cadet guardian exists", async () => {
     seedContact({ id: "g1", role: "guardian", principalId: "principal-owner" });
     // Active guardian channel of a different type does not satisfy the lookup.
     seedChannel({ contactId: "g1", type: "slack", status: "active" });

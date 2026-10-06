@@ -757,7 +757,7 @@ describe("TunnelClient", () => {
     credentialValues[credentialKey("vellum", "platform_assistant_id")] =
       "asst-123";
 
-    client.refreshCredentials("vellum credentials changed");
+    client.refreshCredentials("cadet credentials changed");
     await flushPromises();
 
     expect(sockets).toHaveLength(1);
@@ -817,7 +817,7 @@ describe("TunnelClient", () => {
     expect(sockets).toHaveLength(0);
     expect(reconnectDelays).toEqual([]);
 
-    client.refreshCredentials("vellum credentials changed");
+    client.refreshCredentials("cadet credentials changed");
     useFreshCredentials = true;
     resolveFirstApiKeyRead(undefined);
     await flushPromises();

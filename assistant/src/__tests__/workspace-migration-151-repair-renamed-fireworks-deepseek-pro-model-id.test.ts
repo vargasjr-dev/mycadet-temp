@@ -109,7 +109,7 @@ describe("151-repair-renamed-fireworks-deepseek-pro-model-id migration", () => {
     expect(llm.profiles.legacy.model).toBe(REPLACEMENT);
   });
 
-  test("repairs entry-bound fragments whose row kind is fireworks or vellum", () => {
+  test("repairs entry-bound fragments whose row kind is fireworks or cadet", () => {
     seedRows([
       { name: "my-fireworks", provider: "fireworks" },
       { name: "managed-alt", provider: "vellum" },

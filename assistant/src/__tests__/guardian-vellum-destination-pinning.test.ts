@@ -1,7 +1,7 @@
 /**
- * Regression tests for guardian-card vellum destination routing (LUM-2870).
+ * Regression tests for guardian-card cadet destination routing (LUM-2870).
  *
- * Two unrelated guardian requests must never share a vellum conversation:
+ * Two unrelated guardian requests must never share a cadet conversation:
  * un-pinned requests are forced to `start_new` by the decision engine's
  * guardian-request affinity guard (overriding any LLM `reuse_existing`
  * choice), so each request pairs with its own fresh conversation; pinned
@@ -105,7 +105,7 @@ function makeLlmDecisionReusing(conversationId: string): NotificationDecision {
   };
 }
 
-/** Run a signal's decision through the guard and pair the vellum delivery. */
+/** Run a signal's decision through the guard and pair the cadet delivery. */
 async function routeVellumDelivery(
   signal: NotificationSignal,
   decision: NotificationDecision,
@@ -124,7 +124,7 @@ async function routeVellumDelivery(
 
 // ── Tests ───────────────────────────────────────────────────────────
 
-describe("guardian vellum destination pinning", () => {
+describe("guardian cadet destination pinning", () => {
   beforeEach(() => {
     nextConversationSeq = 0;
     createdConversationIds.length = 0;

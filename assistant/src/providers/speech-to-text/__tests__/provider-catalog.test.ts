@@ -252,7 +252,7 @@ describe("STT provider catalog", () => {
 });
 
 describe("connection-based providers", () => {
-  test("vellum is excluded from the API-key credential provider list", () => {
+  test("cadet is excluded from the API-key credential provider list", () => {
     expect(listCredentialProviderNames()).not.toContain("vellum");
   });
 
@@ -349,7 +349,7 @@ describe("model families", () => {
 });
 
 describe("vellum-flux (managed Flux)", () => {
-  test("shares the vellum connection rather than a second credential", () => {
+  test("shares the cadet connection rather than a second credential", () => {
     expect(getProviderEntry("vellum-flux")?.credentialProvider).toBe("vellum");
     expect(listCredentialProviderNames()).not.toContain("vellum-flux");
   });
@@ -359,7 +359,7 @@ describe("vellum-flux (managed Flux)", () => {
     expect(supportsBoundary("vellum-flux", "daemon-batch")).toBe(false);
   });
 
-  test("decides end-of-turn itself, unlike plain vellum", () => {
+  test("decides end-of-turn itself, unlike plain cadet", () => {
     // The relay is dialed with contract=flux, so Flux's turn events survive.
     expect(supportsProviderTurnDetection("vellum-flux")).toBe(true);
     expect(supportsProviderTurnDetection("vellum")).toBe(false);
@@ -367,7 +367,7 @@ describe("vellum-flux (managed Flux)", () => {
 
   test("stays off telephony", () => {
     // The relay maps Finalize onto CloseStream and utterance-boundary finals
-    // are a nova-3 concept, so calls stay on `vellum`.
+    // are a nova-3 concept, so calls stay on `cadet`.
     expect(getProviderEntry("vellum-flux")?.telephonyMode).toBe("none");
   });
 

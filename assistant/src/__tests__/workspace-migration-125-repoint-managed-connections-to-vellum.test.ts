@@ -110,7 +110,7 @@ describe("125-repoint-managed-connections-to-vellum migration", () => {
     expect(profiles["my-quality"].provider_connection).toBe("vellum");
     expect(callSites.replySuggestion.provider_connection).toBe("vellum");
 
-    // The provider field is left intact — that is how vellum recovers the
+    // The provider field is left intact — that is how cadet recovers the
     // upstream at dispatch time.
     expect(profiles.balanced.provider).toBe("fireworks");
     expect(profiles["quality-optimized"].provider).toBe("anthropic");

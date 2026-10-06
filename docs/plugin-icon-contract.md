@@ -9,9 +9,9 @@ Any change to the format, limits, or manifest shape below is a **coordinated cro
 
 ## PNG icon rules (author-bundled)
 
-A plugin MAY ship a raster icon. The rules exist so third-party bytes served from a Vellum origin can never become a stored-XSS or path-traversal vector, and so a bad file degrades to "no icon" rather than an error.
+A plugin MAY ship a raster icon. The rules exist so third-party bytes served from a Cadet origin can never become a stored-XSS or path-traversal vector, and so a bad file degrades to "no icon" rather than an error.
 
-- **PNG only.** No SVG. SVG is executable markup; serving attacker-authored SVG from a Vellum origin is a stored-XSS risk. A single well-known container (PNG magic + IHDR) also keeps the parser tiny and dependency-free.
+- **PNG only.** No SVG. SVG is executable markup; serving attacker-authored SVG from a Cadet origin is a stored-XSS risk. A single well-known container (PNG magic + IHDR) also keeps the parser tiny and dependency-free.
 - **Fixed filename, fixed location.** The file is always `icon.png` at the plugin root — `<source.path>/icon.png` for a plugin pinned to a repo subdirectory (`source.path`), or `icon.png` at the repo root when `source.path` is omitted. There is **no author-controlled path**, so there is no traversal surface.
 - **Dimensions ≤ 128×128 px**, validated against the PNG IHDR width/height (not a trusted sidecar).
 - **Size ≤ 32 KB.** The size gate runs before the bytes are read, so an oversized file never enters memory.

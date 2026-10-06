@@ -78,7 +78,7 @@ describe("skills catalog loading", () => {
     expect(catalog.map((skill) => skill.id)).toEqual(["alpha", "zeta"]);
   });
 
-  test("parses supported host platforms from Vellum metadata", () => {
+  test("parses supported host platforms from Cadet metadata", () => {
     const skillDir = join(TEST_DIR, "skills", "platform-skill");
     mkdirSync(skillDir, { recursive: true });
     writeFileSync(

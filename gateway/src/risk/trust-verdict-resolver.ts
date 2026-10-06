@@ -190,7 +190,7 @@ export async function resolveTrustVerdict(
   // whose principal is NULL (pre-cutover row) is UNRESOLVED — fail safe, not
   // fail-stranger: surface a could-not-vouch verdict so the consumer
   // soft-denies with no stranger-lane side effects. The durable fix is the
-  // principal backfill / vellum re-link, not classification.
+  // principal backfill / cadet re-link, not classification.
   if (guardianIdentityMatch && !guardianIdentityMatch.principalId) {
     return { trustClass: "unknown", canonicalSenderId, resolutionFailed: true };
   }

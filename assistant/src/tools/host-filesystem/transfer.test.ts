@@ -335,7 +335,7 @@ describe("host_file_transfer cross-client guards", () => {
 
     expect(result.isError).toBe(true);
     expect(result.content).toContain(
-      "The Vellum desktop app is needed to access files on your computer",
+      "The Cadet desktop app is needed to access files on your computer",
     );
     expect(result.content).toContain("https://www.vellum.ai/downloads");
     expect(toSandboxCalls.length).toBe(0);

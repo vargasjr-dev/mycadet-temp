@@ -31,7 +31,7 @@ describe("MCP OAuth client metadata", () => {
       token_endpoint_auth_method: "none",
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
-      client_name: "Vellum Assistant",
+      client_name: "Cadet Assistant",
       logo_uri: "https://www.vellum.ai/favicon.svg",
     });
   });

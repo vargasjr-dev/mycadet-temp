@@ -121,7 +121,7 @@ describe("an owner-authored defer on a guardian-owned conversation", () => {
     expect(gateDecision(options.trustContext, "host")).toBe("proceed");
   });
 
-  test("the internal vellum channel counts as guardian-owned", () => {
+  test("the internal cadet channel counts as guardian-owned", () => {
     createConversation({ id: "conv-vellum" });
     setConversationOriginChannelIfUnset("conv-vellum", "vellum");
 

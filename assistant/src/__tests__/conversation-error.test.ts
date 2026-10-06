@@ -136,7 +136,7 @@ describe("classifyConversationError", () => {
 
       expect(result.code).toBe("MANAGED_USAGE_LIMIT");
       expect(result.retryable).toBe(true);
-      expect(result.userMessage).toContain("Vellum managed inference");
+      expect(result.userMessage).toContain("Cadet managed inference");
       expect(result.userMessage).toContain("not an AI provider outage");
       expect(result.errorCategory).toBe("managed_usage_limit");
     });
@@ -152,7 +152,7 @@ describe("classifyConversationError", () => {
       const result = classifyConversationError(err, baseCtx);
 
       expect(result.code).toBe("MANAGED_USAGE_LIMIT");
-      expect(result.userMessage).toContain("Vellum managed inference");
+      expect(result.userMessage).toContain("Cadet managed inference");
       expect(result.errorCategory).toBe("managed_usage_limit");
     });
 
@@ -237,7 +237,7 @@ describe("classifyConversationError", () => {
       });
 
       expect(result.code).toBe("MANAGED_USAGE_LIMIT");
-      expect(result.userMessage).toContain("Vellum managed inference");
+      expect(result.userMessage).toContain("Cadet managed inference");
       expect(result.errorCategory).toBe("managed_usage_limit");
     });
 
@@ -267,7 +267,7 @@ describe("classifyConversationError", () => {
       expect(result.profileName).toBe("direct");
     });
 
-    it("still recognizes a rewrapped Vellum quota body", () => {
+    it("still recognizes a rewrapped Cadet quota body", () => {
       const result = classifyConversationError(
         new Error('429 {"code":"daily_quota_exceeded"}'),
         baseCtx,
@@ -866,7 +866,7 @@ describe("classifyConversationError", () => {
 
       expect(result.code).toBe("MANAGED_KEY_INVALID");
       expect(result.userMessage).toBe(
-        "Vellum's managed inference credential was rejected. This isn't a personal provider API key — Vellum provisions this one, so there's nothing to update in Settings.",
+        "Cadet's managed inference credential was rejected. This isn't a personal provider API key — Cadet provisions this one, so there's nothing to update in Settings.",
       );
       expect(result.retryable).toBe(false);
       expect(result.errorCategory).toBe("managed_key_invalid");
@@ -886,7 +886,7 @@ describe("classifyConversationError", () => {
       expect(result.code).toBe("MANAGED_KEY_INVALID");
       expect(result.errorCategory).toBe("managed_key_invalid");
       expect(result.userMessage).toBe(
-        "Vellum's managed inference credential was rejected. This isn't a personal provider API key — Vellum provisions this one, so there's nothing to update in Settings.",
+        "Cadet's managed inference credential was rejected. This isn't a personal provider API key — Cadet provisions this one, so there's nothing to update in Settings.",
       );
     });
 
@@ -955,7 +955,7 @@ describe("classifyConversationError", () => {
 
       expect(result.code).toBe("MANAGED_KEY_INVALID");
       expect(result.userMessage).toBe(
-        "Vellum's managed inference credential was rejected. This isn't a personal provider API key — Vellum provisions this one, so there's nothing to update in Settings.",
+        "Cadet's managed inference credential was rejected. This isn't a personal provider API key — Cadet provisions this one, so there's nothing to update in Settings.",
       );
     });
 
@@ -1744,7 +1744,7 @@ describe("ConnectionResolutionError classification", () => {
     const result = classifyConversationError(err, errCtx);
     expect(result.code).toBe("PROVIDER_NOT_CONFIGURED");
     expect(result.userMessage).toContain("qwen/qwen3-8b");
-    expect(result.userMessage).toContain("Vellum GPU route");
+    expect(result.userMessage).toContain("Cadet GPU route");
     expect(result.userMessage).toContain('profile "steer"');
     expect(result.userMessage).toContain(
       "was not sent through another provider",

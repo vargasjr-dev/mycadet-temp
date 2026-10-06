@@ -1,5 +1,5 @@
 /**
- * The quiesce lease is the safety-critical piece of `vellum sleep --wait`:
+ * The quiesce lease is the safety-critical piece of `cadet sleep --wait`:
  * a stuck or misread lease would silently pause heartbeats, schedules, and
  * memory jobs. These tests pin the fail-open contract (missing, malformed,
  * or expired lease reads as "not quiesced") and the TTL clamps.

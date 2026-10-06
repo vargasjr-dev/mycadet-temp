@@ -1,6 +1,6 @@
 /**
  * Unit tests for the ingress section of the workspace config: the records
- * `vellum tunnel` leaves behind, who owns the public base URL, and when the
+ * `cadet tunnel` leaves behind, who owns the public base URL, and when the
  * records are dropped. The record truth table lives on the shared parser
  * (`packages/service-contracts/src/__tests__/ingress.test.ts`); what is
  * checked here is that the daemon reads the keys the CLI and the gateway

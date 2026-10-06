@@ -86,7 +86,7 @@ describe("132-web-search-mode-to-provider", () => {
     expect(numericId(last!)).toBe(highest);
   });
 
-  test("rewrites a managed service to provider vellum", () => {
+  test("rewrites a managed service to provider cadet", () => {
     writeConfig({
       services: { "web-search": { mode: "managed", provider: "brave" } },
     });
@@ -164,8 +164,8 @@ describe("132-web-search-mode-to-provider", () => {
   });
 
   // The migrated shape is what the daemon actually parses, so a managed user
-  // must land on vellum rather than falling back to a keyless BYOK provider.
-  test("migrated output parses to the vellum provider", () => {
+  // must land on cadet rather than falling back to a keyless BYOK provider.
+  test("migrated output parses to the cadet provider", () => {
     writeConfig({
       services: { "web-search": { mode: "managed", provider: "brave" } },
     });
@@ -186,7 +186,7 @@ describe("132-web-search-mode-to-provider", () => {
       webSearchModeToProviderMigration.down!(workspaceDir);
 
       // The pre-migration BYOK provider (brave) is not recoverable — it was
-      // overwritten with vellum on the way up.
+      // overwritten with cadet on the way up.
       expect(webSearch(readConfig())).toEqual({
         mode: "managed",
         provider: "vellum",

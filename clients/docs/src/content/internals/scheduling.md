@@ -75,7 +75,7 @@ sequenceDiagram
     participant Engine as Decision Engine<br/>(LLM)
     participant Enforce as enforceRoutingIntent
     participant Broadcaster as Broadcaster
-    participant Adapters as Channel Adapters<br/>(Vellum, Telegram)
+    participant Adapters as Channel Adapters<br/>(Cadet, Telegram)
 
     Scheduler->>Store: claimDueReminders(now)
     Store-->>Scheduler: ReminderRow[] (with routingIntent, routingHints)
@@ -112,7 +112,7 @@ One reminder creates one notification signal. The routing intent on that single 
 
 Channel availability is resolved when the signal is emitted (not when the reminder is created):
 
-- **Vellum** — always connected (local HTTP)
+- **Cadet** — always connected (local HTTP)
 - **Telegram** — connected when an active guardian binding exists
 
 If a channel becomes unavailable between reminder creation and fire time, it is silently excluded from delivery. The routing intent enforcement operates only on channels that are connected at fire time.

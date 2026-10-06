@@ -182,7 +182,7 @@ describe("notification decision strategy", () => {
       // Both channels get the same copy
       expect(copy.vellum!.title).toBe(copy.telegram!.title);
       expect(copy.vellum!.body).toBe(copy.telegram!.body);
-      // Telegram gets a dedicated chat message field; vellum does not.
+      // Telegram gets a dedicated chat message field; cadet does not.
       expect(copy.telegram!.deliveryText).toBe(copy.telegram!.body);
       expect(copy.vellum!.deliveryText).toBeUndefined();
     });
@@ -363,7 +363,7 @@ describe("notification decision strategy", () => {
   // -- NotificationChannel type correctness ----------------------------------
 
   describe("NotificationChannel type", () => {
-    test("vellum and telegram are valid notification channels", () => {
+    test("cadet and telegram are valid notification channels", () => {
       // This validates the type definition at runtime.
       const channels: NotificationChannel[] = ["vellum", "telegram"];
       expect(channels).toHaveLength(2);
@@ -472,7 +472,7 @@ describe("notification decision strategy", () => {
     });
 
     test("rejects reuse_existing targeting a different channel candidate", () => {
-      // conv-003 is a telegram candidate, not a vellum candidate
+      // conv-003 is a telegram candidate, not a cadet candidate
       const result = validateConversationActions(
         { vellum: { action: "reuse_existing", conversationId: "conv-003" } },
         validChannels,
@@ -922,7 +922,7 @@ describe("notification decision strategy", () => {
       };
     }
 
-    test("guardian.question with callSessionId and no affinity hint forces start_new for vellum", () => {
+    test("guardian.question with callSessionId and no affinity hint forces start_new for cadet", () => {
       const decision = makeDecision();
       const signal = makeSignal({
         sourceEventName: "guardian.question",
