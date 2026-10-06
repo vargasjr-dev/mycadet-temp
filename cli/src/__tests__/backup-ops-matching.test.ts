@@ -24,7 +24,7 @@ describe("assistantBackupFilenamePattern", () => {
     expect(pattern.test(`alpha-pre-upgrade-${STAMP}.vbundle`)).toBe(false);
   });
 
-  test("ignores user-named vellum backup files and other kinds", () => {
+  test("ignores user-named cadet backup files and other kinds", () => {
     const pattern = assistantBackupFilenamePattern("alpha");
     expect(pattern.test(`alpha-${STAMP}.vbundle`)).toBe(false);
     expect(pattern.test(`alpha-manual-${STAMP}.vbundle`)).toBe(false);

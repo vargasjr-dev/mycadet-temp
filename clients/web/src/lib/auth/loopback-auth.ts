@@ -1,7 +1,7 @@
 /**
  * Loopback authentication for local-mode web UI.
  *
- * Mirrors the CLI's `vellum login` browser flow: navigates to the
+ * Mirrors the CLI's `cadet login` browser flow: navigates to the
  * platform's login page, which authenticates via WorkOS and redirects
  * back to `http://localhost:{port}/callback?state=...&session_token=...`.
  * The local web server forwards `/callback` to the SPA's `PlatformLoopbackPage`,

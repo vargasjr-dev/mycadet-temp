@@ -137,9 +137,7 @@ export const createBundleConfirmBridge = (
   ipc: RendererIpc,
 ): VellumBridge["bundleConfirm"] => ({
   getData: () =>
-    ipc.invoke(
-      "cadet:bundleConfirm:getData",
-    ) as Promise<BundleScanData | null>,
+    ipc.invoke("cadet:bundleConfirm:getData") as Promise<BundleScanData | null>,
   respond: (accepted) => {
     ipc.send("cadet:bundleConfirm:respond", accepted);
   },

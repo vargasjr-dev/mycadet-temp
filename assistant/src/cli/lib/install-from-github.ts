@@ -11,7 +11,7 @@
  * When we curate an adapter stub for the plugin (a `plugins/<name>/` directory
  * in this repo with a `scripts.postinstall` command), the stub is overlaid
  * onto the clone and its postinstall runs to translate a foreign-ecosystem
- * layout into the shape Vellum's loader runs (see {@link applyAdapterStub}). A
+ * layout into the shape Cadet's loader runs (see {@link applyAdapterStub}). A
  * name with no marketplace entry is a not-found.
  *
  * Designed for direct programmatic use. The CLI command
@@ -394,14 +394,14 @@ async function resolvePluginSource(
 }
 
 /**
- * Prefixes reserved for first-party plugins that ship from the Vellum team.
+ * Prefixes reserved for first-party plugins that ship from the Cadet team.
  * User-installable plugins must not use them — the `.disabled` sentinel and
  * the plugin registry both key on manifest names, and a user plugin with a
  * reserved name would shadow or collide with a first-party one.
  *
  * - `default-`: built-in default plugins that ship in the assistant source
  *   tree.
- * - `vellum-`: first-class plugins shipped from the Vellum team (e.g. curated
+ * - `vellum-`: first-class plugins shipped from the Cadet team (e.g. curated
  *   marketplace entries).
  */
 export const RESERVED_PLUGIN_PREFIXES = ["default-", "vellum-"] as const;
@@ -858,7 +858,7 @@ export interface MaterializedTree {
 /**
  * Produce the exact plugin tree an install stages, into `destDir`: clone the
  * source at `source.ref`, then overlay the curated adapter stub (when one
- * exists) so a foreign-ecosystem clone is translated into Vellum shape.
+ * exists) so a foreign-ecosystem clone is translated into Cadet shape.
  *
  * `installPlugin` calls this and then fingerprints, records provenance, and
  * swaps the result into the workspace. `diffPlugin` (see {@link ./diff-plugin})
@@ -899,9 +899,9 @@ export async function materializePluginTree(
         deps.runGit ?? defaultGitRunner,
       );
   // An external clone is often a foreign-ecosystem plugin (e.g. a Claude Code
-  // plugin) that the Vellum loader can't run as-is. When we curate an adapter
+  // plugin) that the Cadet loader can't run as-is. When we curate an adapter
   // stub for it, overlay the stub and run its transform so the materialized
-  // tree is a valid Vellum plugin. Raw clones (no stub) are left untouched,
+  // tree is a valid Cadet plugin. Raw clones (no stub) are left untouched,
   // except for a minimal package.json synthesis when the upstream repo shipped
   // no recognized manifest. The synthesis is deterministic (name + fixed
   // version + fixed peer-dep range), so it produces the same bytes on initial install
@@ -1048,7 +1048,7 @@ const POSTINSTALL_TIMEOUT_MS = 60_000;
  * overlaid stub `package.json` exists only to name that adapter; the installed
  * plugin's manifest is rebuilt from the upstream `package.json` afterwards (see
  * {@link normalizeInstalledManifest}). Absent a stub (the common case for a
- * plugin already in Vellum shape), nothing is overlaid and the clone is
+ * plugin already in Cadet shape), nothing is overlaid and the clone is
  * installed as-is.
  *
  * On any adapter failure the error propagates so {@link installPlugin} rolls
@@ -1062,7 +1062,7 @@ async function applyAdapterStub(
 ): Promise<boolean> {
   // Capture the cloned upstream manifest before the stub overlay replaces it,
   // so the installed plugin can preserve it verbatim except for the two fields
-  // the Vellum loader requires (name + plugin-api peer dep).
+  // the Cadet loader requires (name + plugin-api peer dep).
   const upstreamPkg = readPackageJson(join(stagingDir, "package.json"));
 
   const stubFileCount = await copyDir(
@@ -1126,7 +1126,7 @@ function readPackageJson(path: string): PackageManifest | null {
  * That stub is install-time machinery, not the plugin's manifest, so once the
  * adapter has run we rebuild the manifest from the upstream `package.json`
  * captured before the overlay — preserving its `version`, `description`,
- * `license`, and every other field — and mutate only what the Vellum loader
+ * `license`, and every other field — and mutate only what the Cadet loader
  * requires: `name` must equal the install directory, and `@mycadet/plugin-api`
  * must be declared as a peer dependency. The spent `postinstall` script is
  * dropped so the installed plugin carries no install-time machinery.
@@ -1175,7 +1175,7 @@ function normalizeInstalledManifest(
 
 /**
  * Write a minimal Vellum-compatible `package.json` into a staged plugin that
- * shipped no manifest of its own. The Vellum external plugin loader
+ * shipped no manifest of its own. The Cadet external plugin loader
  * (`buildPluginFromDir`) hard-requires a `package.json` validated against
  * `PluginPackageJsonSchema` and silently skips the plugin when it's missing.
  *
@@ -1183,7 +1183,7 @@ function normalizeInstalledManifest(
  * synthesized manifest carries the install name and the default
  * `@mycadet/plugin-api` peer dependency range. No foreign-ecosystem
  * manifest data is read: the install name is the only identity we trust
- * when upstream ships no Vellum package.json.
+ * when upstream ships no Cadet package.json.
  */
 export function synthesizeMinimalPackageJson(
   name: string,
@@ -1357,7 +1357,7 @@ function copyTreeSkippingGit(srcRoot: string, destDir: string): number {
       // entry point. An upstream config would therefore run arbitrary code
       // ahead of the curated adapter, defeating the command/env guards. Bun
       // reads only the cwd's file (it neither walks up nor descends), so
-      // dropping it at the root closes the vector; a Vellum plugin never
+      // dropping it at the root closes the vector; a Cadet plugin never
       // consumes `bunfig.toml`. Match case-insensitively because the macOS
       // install target's filesystem is case-insensitive, where Bun would still
       // open a clone-supplied `BUNFIG.TOML`.

@@ -7,7 +7,7 @@
  * session + organization auth headers — those headers must never be set by
  * feature code. The binary data-plane (`PUT`/`GET` of bundle bytes) talks
  * directly to the GCS signed URLs, which carry their own auth in the URL and
- * need no Vellum headers.
+ * need no Cadet headers.
  */
 
 import { client } from "@/generated/api/client.gen";

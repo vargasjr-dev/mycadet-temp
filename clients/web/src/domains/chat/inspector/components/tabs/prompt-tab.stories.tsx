@@ -76,7 +76,7 @@ const meta: Meta<typeof PromptTab> = {
 export default meta;
 type Story = StoryObj<typeof PromptTab>;
 
-const SYSTEM_PROMPT = `You are Vellum, a helpful assistant.
+const SYSTEM_PROMPT = `You are Cadet, a helpful assistant.
 
 Follow the user's instructions carefully and use the available tools when
 they help you answer accurately. Keep responses concise.`;

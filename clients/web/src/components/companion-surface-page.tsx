@@ -99,7 +99,7 @@ import type {
  *
  * The surface is its own drag handle, so every press is a potential grab. A few
  * pixels of hand tremor between pressing the avatar and letting go must not
- * turn "take me back to Vellum" into a one-pixel nudge that does nothing.
+ * turn "take me back to Cadet" into a one-pixel nudge that does nothing.
  */
 const DRAG_SLOP = 3;
 
@@ -174,7 +174,7 @@ export function CompanionSurfacePage() {
   const [watchRetro, setWatchRetro] = useState<CompanionWatchRetro | undefined>(
     undefined,
   );
-  // Vellum's version of a dictation another app pasted, while the offer to
+  // Cadet's version of a dictation another app pasted, while the offer to
   // use it stands. Its own state for the reason `watchRetro` is.
   const [dictationOffer, setDictationOffer] = useState<
     CompanionDictationOfferWords | undefined
@@ -1140,7 +1140,7 @@ export function CompanionSurfacePage() {
         // button.** Idle, the press asks for a session: it leaves this window
         // immediately, since the session lives in the renderer holding the
         // chat layout, and what comes back is `call` once that renderer has
-        // one to report. On a call, or dialing one, the press brings Vellum
+        // one to report. On a call, or dialing one, the press brings Cadet
         // forward on the conversation the call is in, which is where the room
         // and the transcript are; main decides what that means.
         onAvatarClick={() => {

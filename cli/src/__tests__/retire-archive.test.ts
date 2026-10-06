@@ -39,7 +39,7 @@ describe("validateAssistantName", () => {
 });
 
 test("accepts a Windows archive path inside the retired directory", () => {
-  const retiredDir = "C:\\Users\\Example User\\AppData\\Local\\Vellum\\retired";
+  const retiredDir = "C:\\Users\\Example User\\AppData\\Local\\Cadet\\retired";
   expect(
     resolveRetiredFilePath("assistant", "tar.gz", retiredDir, "win32"),
   ).toBe(win32.join(retiredDir, "assistant.tar.gz"));

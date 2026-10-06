@@ -248,7 +248,7 @@ describe("ProfileDetailPanel - managed profiles", () => {
     await waitFor(() => {
       expect(getInputByPlaceholder("e.g. Claude Opus 4.8").disabled).toBe(true);
     });
-    expect(document.body.textContent).toContain("Managed by Vellum");
+    expect(document.body.textContent).toContain("Managed by Cadet");
     expect(
       Array.from(document.querySelectorAll("button")).some(
         (b) => b.textContent?.trim() === "Save As New",

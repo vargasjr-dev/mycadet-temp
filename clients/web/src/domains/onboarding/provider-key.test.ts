@@ -262,7 +262,7 @@ describe("pending provider key", () => {
 
   test("an assistant below the gate gets the legacy custom-balanced flow instead of the default-provider write", async () => {
     // 0.11.0 has the PUT endpoint but not the code-defined BYOK defaults —
-    // the new path would leave `balanced` resolving through the vellum
+    // the new path would leave `balanced` resolving through the cadet
     // column with the entered key unused.
     identityGetMock.mockImplementation(async () => ({
       data: { version: "0.11.0" },

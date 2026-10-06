@@ -4,7 +4,7 @@ export const APEX_DOMAIN = "vellum.ai";
 /** Canonical marketing site domain. */
 export const WWW_DOMAIN = "www.vellum.ai";
 
-/** The eTLD+1 shared by all Vellum domains. Cookie domain uses a leading dot. */
+/** The eTLD+1 shared by all Cadet domains. Cookie domain uses a leading dot. */
 export const VELLUM_COOKIE_DOMAIN = ".vellum.ai";
 
 /**

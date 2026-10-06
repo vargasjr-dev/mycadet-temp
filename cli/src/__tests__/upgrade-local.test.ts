@@ -307,7 +307,7 @@ afterAll(() => {
   mock.module("../lib/upgrade-lifecycle.js", () => realUpgradeLifecycle);
 });
 
-describe("vellum upgrade local", () => {
+describe("cadet upgrade local", () => {
   test("uses explicit target versions as-is", async () => {
     const resolveLatest = mock(async () => "v0.9.9");
 
@@ -457,11 +457,11 @@ describe("vellum upgrade local", () => {
 // resolves to its assistant; an ambiguous display name is an error listing
 // the matching IDs. That precedence lives in, and is tested directly against,
 // `lookupAssistantByIdentifier` (see assistant-config.test.ts). These tests
-// only check `vellum upgrade`'s wiring: each one stubs the exact result
+// only check `cadet upgrade`'s wiring: each one stubs the exact result
 // (found/ambiguous) the shared helper would return for a given argument, and
 // asserts the command acts on it correctly, without reimplementing the
 // lookup rules themselves.
-describe("vellum upgrade assistant targeting", () => {
+describe("cadet upgrade assistant targeting", () => {
   function makeQuillEntry(
     overrides: Partial<AssistantEntry> = {},
   ): AssistantEntry {
@@ -525,7 +525,7 @@ describe("vellum upgrade assistant targeting", () => {
   test("an exact assistant-ID argument resolves via the shared helper's found result", async () => {
     // `lookupAssistantByIdentifier` owns ID-wins-over-name precedence
     // (covered in assistant-config.test.ts); this only checks that
-    // `vellum upgrade` passes the raw argument through unmodified and acts
+    // `cadet upgrade` passes the raw argument through unmodified and acts
     // on whatever entry the shared helper resolves.
     const target = makeQuillEntry({ assistantId: "quill-uuid" });
     process.argv = argvFor("quill-uuid");

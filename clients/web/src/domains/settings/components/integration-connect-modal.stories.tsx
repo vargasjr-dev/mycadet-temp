@@ -170,7 +170,7 @@ const meta: Meta<typeof IntegrationConnectModal> = {
 export default meta;
 type Story = StoryObj<typeof IntegrationConnectModal>;
 
-/** Platform-hosted: the MCP server leads and the chevron offers only "Sign in through Vellum". */
+/** Platform-hosted: the MCP server leads and the chevron offers only "Sign in through Cadet". */
 export const NotionPlatformHosted: Story = {};
 
 /** Self-hosted: the same two paths plus "Use your own OAuth app" behind the chevron. */

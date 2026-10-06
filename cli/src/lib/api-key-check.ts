@@ -24,7 +24,7 @@ function isPlaceholder(value: string | undefined): boolean {
  * The CLI's job is to spawn the daemon and pass configuration via environment
  * variables — it does not read from the .vellum/ directory (see AGENTS.md).
  * Checking process.env is sufficient: the daemon forwards whatever is set
- * in the environment, so exporting a key before running `vellum hatch` is
+ * in the environment, so exporting a key before running `cadet hatch` is
  * the correct way to supply it.
  *
  * Uses the canonical LLM provider env-var catalog so the list stays in sync

@@ -118,7 +118,7 @@ describe("resolveAvatarRender", () => {
   test("draws the default character when there are components but no traits", () => {
     // What `ChatAvatar` renders for an assistant that never opened the avatar
     // builder, so every off-screen surface has to draw the same creature
-    // instead of falling back to the Vellum mark.
+    // instead of falling back to the Cadet mark.
     const result = resolveAvatarRender(null, palette, null, 512);
     expect(result.kind).toBe("character");
     expect(composeSvgMock).toHaveBeenCalledWith(

@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 type StubWebContents = {
-  on: (event: string, listener: (...args: unknown[]) => void) => StubWebContents;
+  on: (
+    event: string,
+    listener: (...args: unknown[]) => void,
+  ) => StubWebContents;
   setWindowOpenHandler: (
     handler: (details: { url: string }) => { action: "deny" | "allow" },
   ) => void;
@@ -95,16 +98,11 @@ mock.module("electron", () => ({
   },
 }));
 
-const { getVersionInfo, installAbout, openAboutWindow } = await import(
-  "./about"
-);
+const { getVersionInfo, installAbout, openAboutWindow } =
+  await import("./about");
 
 const aboutIpc = {
-  handle: (
-    channel: string,
-    _schema: unknown,
-    handler: unknown,
-  ): void => {
+  handle: (channel: string, _schema: unknown, handler: unknown): void => {
     ipcHandleMock(channel, handler);
   },
 };
@@ -129,10 +127,10 @@ afterEach(() => {
 describe("getVersionInfo", () => {
   test("returns name, version, sha, copyright, website", () => {
     const info = getVersionInfo();
-    expect(info.appName).toBe("Vellum");
+    expect(info.appName).toBe("Cadet");
     expect(info.version).toBe("1.2.3");
     expect(info.website).toBe("https://vellum.ai");
-    expect(info.copyright).toContain("Vellum");
+    expect(info.copyright).toContain("Cadet");
     expect(info.copyright).toContain(String(new Date().getFullYear()));
     // SHA isn't defined off the build pipeline; the module falls back
     // to "unknown" rather than throwing.
@@ -162,7 +160,7 @@ describe("installAbout", () => {
       copyright: string;
       website: string;
     };
-    expect(opts.applicationName).toBe("Vellum");
+    expect(opts.applicationName).toBe("Cadet");
     expect(opts.applicationVersion).toBe("1.2.3");
     expect(opts.website).toBe("https://vellum.ai");
   });

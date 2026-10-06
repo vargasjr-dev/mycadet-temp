@@ -36,7 +36,7 @@ const defaultDeps: DictationOfferActionDeps = {
  * saw. That press is dropped and the standing offer is left alone.
  *
  * Returns what was done, for the log and the tests: `replaced` (the other
- * app's paste undone and Vellum's words inserted), `quit` (the other app
+ * app's paste undone and Cadet's words inserted), `quit` (the other app
  * asked to quit), `copied` (main has put the words on the pasteboard),
  * `dismissed`, `moved-on` (the user has since left the application the paste
  * went into, so nothing is touched), `stale` (the press named an offer that
@@ -87,7 +87,7 @@ export async function answerDictationOffer(
 
 /**
  * The other app's paste is the last edit in the application the hold was
- * made in, and a paste is one undo step, so undoing it and inserting Vellum's
+ * made in, and a paste is one undo step, so undoing it and inserting Cadet's
  * words is what "use this instead" means.
  *
  * Only while that application is still in front. The undo goes to whatever

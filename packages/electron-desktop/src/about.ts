@@ -27,7 +27,7 @@ export const configureAboutRuntime = (next: AboutRuntime): void => {
 /**
  * Branded About window — replaces Electron's default `aboutPanel`
  * (which only shows the bundle name) with the same information surface
- * Swift Vellum exposes today: app name, version, commit SHA, copyright,
+ * Swift Cadet exposes today: app name, version, commit SHA, copyright,
  * link to the website.
  *
  * The UI itself is a React route in `clients/web` — `/assistant/about` —
@@ -59,8 +59,8 @@ const VELLUM_ENV: string =
 
 const APP_NAME =
   VELLUM_ENV === "production"
-    ? "Vellum"
-    : `Vellum ${VELLUM_ENV.charAt(0).toUpperCase() + VELLUM_ENV.slice(1)}`;
+    ? "Cadet"
+    : `Cadet ${VELLUM_ENV.charAt(0).toUpperCase() + VELLUM_ENV.slice(1)}`;
 
 const COMMIT_SHA: string =
   typeof __VELLUM_BUILD_SHA__ === "string" ? __VELLUM_BUILD_SHA__ : "unknown";

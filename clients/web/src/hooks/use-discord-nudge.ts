@@ -18,7 +18,7 @@ import {
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Public Discord invite URL for the Vellum community. */
+/** Public Discord invite URL for the Cadet community. */
 export const DISCORD_INVITE_URL = "https://discord.gg/ZABd9V2zM8";
 
 /**

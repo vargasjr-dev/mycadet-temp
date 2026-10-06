@@ -182,12 +182,12 @@ export type CompanionSurfacePhase =
    */
   | "dictating"
   /**
-   * Offer: the pill held open by Vellum's version of a dictation another app
+   * Offer: the pill held open by Cadet's version of a dictation another app
    * has already pasted.
    *
    * Nothing on macOS owns a key, so a hold of the voice key with another
    * dictation app running dictates twice. Rather than paste beside that app's
-   * words, Vellum shows its own and asks: use them instead, get that app off
+   * words, Cadet shows its own and asks: use them instead, get that app off
    * the key, or leave it. Open regardless of the pointer, for the reason
    * `summary` is: a question waiting on an answer rather than a hint.
    *
@@ -815,7 +815,7 @@ export interface CompanionSurfaceProps {
   shortcuts?: CompanionCallShortcuts;
   /**
    * Press the avatar. Idle, that starts a call; on a call, it goes back to
-   * Vellum, on the conversation the call is in. The caller decides which,
+   * Cadet, on the conversation the call is in. The caller decides which,
    * since it is the side holding the session; this side only names the press
    * for a reader, by the phase.
    *
@@ -1800,7 +1800,7 @@ export function CompanionSurface({
         can leave that slot for an intro beat without being clipped. */}
       <Avatar
         // The press's name, by the phase, since the caller decides what the
-        // press does by the same fact: a call's creature goes back to Vellum,
+        // press does by the same fact: a call's creature goes back to Cadet,
         // an idle one starts a call.
         label={
           phase === "call"

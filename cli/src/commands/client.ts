@@ -218,7 +218,7 @@ export function parseArgs(): ParsedArgs {
       }
       if (!entry && !hasExplicitUrl) {
         console.error(
-          `Active assistant '${active}' not found in lockfile. Set an active assistant with 'vellum use <name-or-id>'.`,
+          `Active assistant '${active}' not found in lockfile. Set an active assistant with 'cadet use <name-or-id>'.`,
         );
         process.exit(1);
       }
@@ -228,7 +228,7 @@ export function parseArgs(): ParsedArgs {
       entry = resolveAssistant();
     } else if (!entry) {
       console.error(
-        "No active assistant set. Set one with 'vellum use <name-or-id>' or specify one: 'vellum client <name-or-id>'.",
+        "No active assistant set. Set one with 'cadet use <name-or-id>' or specify one: 'cadet client <name-or-id>'.",
       );
       process.exit(1);
     }
@@ -239,7 +239,7 @@ export function parseArgs(): ParsedArgs {
   let assistantName = readAssistantName(entry);
   const cloud = entry?.cloud;
 
-  // Ephemeral auth: a handed-over token (e.g. from `vellum pair`) used for this
+  // Ephemeral auth: a handed-over token (e.g. from `cadet pair`) used for this
   // session only. Resolve it BEFORE the credential lookup below so an ephemeral
   // session never reads (or writes) the local token store.
   let bearerTokenOverride: string | undefined;
@@ -320,10 +320,10 @@ export function parseArgs(): ParsedArgs {
 }
 
 function printUsage(): void {
-  console.log(`${ANSI.bold}vellum client${ANSI.reset} - Connect to a hatched assistant
+  console.log(`${ANSI.bold}cadet client${ANSI.reset} - Connect to a hatched assistant
 
 ${ANSI.bold}USAGE:${ANSI.reset}
-    vellum client [name-or-id] [options]
+    cadet client [name-or-id] [options]
 
 ${ANSI.bold}ARGUMENTS:${ANSI.reset}
     [name-or-id]               Assistant display name or ID (default: active)
@@ -331,7 +331,7 @@ ${ANSI.bold}ARGUMENTS:${ANSI.reset}
 ${ANSI.bold}OPTIONS:${ANSI.reset}
     -u, --url <url>            Runtime URL
     -t, --token <jwt>          Bearer token to use for this session (e.g. from
-                              'vellum pair'). Overrides the stored token and is
+                              'cadet pair'). Overrides the stored token and is
                               not persisted.
     -a, --assistant-id <id>    Assistant ID
     -i, --interface <id>       Interface identifier: cli (default) or web
@@ -347,23 +347,23 @@ ${ANSI.bold}OPTIONS:${ANSI.reset}
     -h, --help                 Show this help message
 
 ${ANSI.bold}DEFAULTS:${ANSI.reset}
-    Reads from ~/.vellum.lock.json (created by vellum hatch).
+    Reads from ~/.vellum.lock.json (created by cadet hatch).
     Override with flags above.
 
 ${ANSI.bold}EXAMPLES:${ANSI.reset}
-    vellum client
-    vellum client vellum-assistant-foo
+    cadet client
+    cadet client vellum-assistant-foo
     # Remote assistants must be reached over https (e.g. a tunnel) — the
     # guardian refresh token is only sent over https or a loopback address:
-    vellum client --url https://your-tunnel.example
-    vellum client vellum-assistant-foo --url http://localhost:${GATEWAY_PORT}
+    cadet client --url https://your-tunnel.example
+    cadet client vellum-assistant-foo --url http://localhost:${GATEWAY_PORT}
 
     # Ephemeral: connect to another machine's assistant with a paired token
     # (no lockfile entry, nothing persisted):
-    vellum client --url https://your-tunnel.example --token <jwt>
+    cadet client --url https://your-tunnel.example --token <jwt>
 
     # Web interface on a fixed port, detached from the shell:
-    vellum client --interface web --port 4000 --background
+    cadet client --interface web --port 4000 --background
 `);
 }
 
@@ -449,7 +449,7 @@ const PLATFORM_SESSION_PATTERN =
   /^(?:\/assistant)?\/__local\/platform-session$/;
 
 // The loopback platform session token. Persisted via the same store the CLI
-// uses (so `vellum client` restarts and CLI logins stay in sync), cached here
+// uses (so `cadet client` restarts and CLI logins stay in sync), cached here
 // to keep it off the per-request proxy path. Set only after the SPA validates
 // the loopback `state`, so an unsolicited /callback can't fixate a session.
 let platformSessionToken: string | null | undefined;
@@ -718,7 +718,7 @@ async function handleLocalEndpoints(
     );
   }
 
-  // Paired devices: list and revoke via the CLI (`vellum devices … --json`).
+  // Paired devices: list and revoke via the CLI (`cadet devices … --json`).
   // Always 200 with `ok` discriminating success, matching the other hosts.
   const isDevicesRevoke = DEVICES_REVOKE_PATTERN.test(pathname);
   if (DEVICES_PATTERN.test(pathname) || isDevicesRevoke) {
@@ -1161,7 +1161,7 @@ const WEB_BACKGROUND_LOG_FILE = "client-web.log";
 const WEB_BACKGROUND_START_TIMEOUT_MS = 30_000;
 
 /**
- * Launch `vellum client --interface web` as a detached background process.
+ * Launch `cadet client --interface web` as a detached background process.
  *
  * The port is resolved up front (explicit --port must be free; otherwise the
  * first free port at/above 3000) and pinned via `--port` on the child so the
@@ -1227,7 +1227,7 @@ async function spawnBackgroundWebInterface(
     process.exit(1);
   }
 
-  console.log(`Vellum web interface: http://localhost:${port}${SPA_BASE}`);
+  console.log(`Cadet web interface: http://localhost:${port}${SPA_BASE}`);
   console.log(`Running in background (pid ${child.pid}). Logs: ${logPath}`);
   console.log(`Stop with: kill ${child.pid}`);
 }
@@ -1453,7 +1453,7 @@ async function runWebInterface(
   // the platform hardcodes in its loopback callback. We bind both loopback
   // families above so `localhost` reaches us whichever one it resolves to.
   const webInterfaceUrl = `http://localhost:${port}${SPA_BASE}`;
-  console.log(`Vellum web interface: ${webInterfaceUrl}`);
+  console.log(`Cadet web interface: ${webInterfaceUrl}`);
   if (openInBrowser) openBrowser(webInterfaceUrl);
 
   const shutdown = (): void => {

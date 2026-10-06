@@ -19,7 +19,7 @@ import { pluginLogoUrl } from "./mcp/plugin-logo";
  *   leads whenever the catalog has one.
  * - `mcp-manual`: a remote MCP server whose provider must allowlist our
  *   callback URL before sign-in can work.
- * - `managed-oauth`: sign in through Vellum's hosted OAuth app. Needs a
+ * - `managed-oauth`: sign in through Cadet's hosted OAuth app. Needs a
  *   platform session.
  * - `own-oauth`: register an OAuth app at the provider and paste its client
  *   credentials. Self-hosted assistants only.
@@ -214,7 +214,7 @@ function pluginMethod(
  * Decide which path to put in front of the user and which to tuck away.
  *
  * Order of preference: the provider's MCP server (works everywhere, the
- * provider maintains it), then Vellum's managed OAuth, then bring-your-own
+ * provider maintains it), then Cadet's managed OAuth, then bring-your-own
  * OAuth. Managed OAuth still leads when it is the only path and the user
  * only needs to log in, because logging in is the fix. A managed method
  * that cannot work here at all (gated) is dropped.

@@ -141,7 +141,7 @@ describe("parsePluginArtifact", () => {
   });
 
   test.each([
-    ["no vellum block", { name: "x" }],
+    ["no cadet block", { name: "x" }],
     ["no artifact block", { vellum: {} }],
     [
       "empty sha256 (bootstrap placeholder)",
@@ -180,7 +180,7 @@ describe("parsePluginArtifact", () => {
     ],
     ["missing url", { vellum: { artifact: { sha256: VALID_SHA } } }],
     ["artifact is not an object", { vellum: { artifact: "App.dmg" } }],
-    ["vellum is an array", { vellum: [] }],
+    ["cadet is an array", { vellum: [] }],
   ])("returns null for %s", (_label, pkg) => {
     // WHEN we parse a malformed / partial descriptor
     // THEN nothing is surfaced
@@ -226,7 +226,7 @@ describe("parsePluginIcon", () => {
   });
 
   test.each([
-    ["no vellum block", { name: "x" }],
+    ["no cadet block", { name: "x" }],
     ["no icon field", { vellum: {} }],
     ["icon is empty", { vellum: { icon: "" } }],
     ["icon is whitespace-only", { vellum: { icon: "   " } }],
@@ -236,7 +236,7 @@ describe("parsePluginIcon", () => {
     ],
     ["icon is a number", { vellum: { icon: 42 } }],
     ["icon is an object", { vellum: { icon: {} } }],
-    ["vellum is an array", { vellum: [] }],
+    ["cadet is an array", { vellum: [] }],
   ])("returns undefined for %s", (_label, pkg) => {
     expect(parsePluginIcon(pkg)).toBeUndefined();
   });

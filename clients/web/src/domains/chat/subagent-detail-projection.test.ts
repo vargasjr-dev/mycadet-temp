@@ -320,7 +320,7 @@ describe("createIncrementalDetailProjection — per-diff-class", () => {
         type: "tool_result",
         toolName: "web_search",
         toolUseId: "ws-2",
-        result: "Vellum\nhttps://vellum.ai",
+        result: "Cadet\nhttps://vellum.ai",
         timestamp: NOW + 900,
       }),
     );
@@ -331,7 +331,7 @@ describe("createIncrementalDetailProjection — per-diff-class", () => {
     expect(search?.searchResults?.length).toBeGreaterThan(0);
     // The chips keep only titles and links; the text the model read is kept
     // whole for the drawer's Raw output.
-    expect(search?.result).toBe("Vellum\nhttps://vellum.ai");
+    expect(search?.result).toBe("Cadet\nhttps://vellum.ai");
   });
 
   test("cross-subagent id collision (detail-1 reused) is NOT misclassified as mutate-last", () => {

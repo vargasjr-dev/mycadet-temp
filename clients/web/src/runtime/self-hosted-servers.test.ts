@@ -7,14 +7,7 @@
  * shared `bun test` run).
  */
 
-import {
-  beforeEach,
-  describe,
-  expect,
-  mock,
-  spyOn,
-  test,
-} from "bun:test";
+import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
 let isNativeMobileValue = true;
 mock.module("@/runtime/platform-detection", () => ({
@@ -408,7 +401,7 @@ describe("nativeSwitchToOrigin", () => {
   });
 
   test("returning to the baked origin drops the snapshot as well", async () => {
-    // The way back to Vellum Cloud is an origin swap like any other, and it
+    // The way back to Cadet Cloud is an origin swap like any other, and it
     // is the one the assistant chooser and the pair page take.
     await nativeSwitchToOrigin(null);
 

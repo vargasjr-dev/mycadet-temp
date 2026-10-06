@@ -126,7 +126,7 @@ describe("CreditsUpsellCard", () => {
 
     expect(getByTestId("platform-login-notice-stub")).toBeTruthy();
     expect(
-      getByText("Log in to the Vellum platform to add credits."),
+      getByText("Log in to the Cadet platform to add credits."),
     ).toBeTruthy();
     expect(queryByRole("button", { name: "Add credits" })).toBeNull();
     expect(queryByRole("button", { name: "View plans" })).toBeNull();

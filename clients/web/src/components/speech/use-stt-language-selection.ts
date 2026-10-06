@@ -130,7 +130,7 @@ export function useSttLanguageSelection(
   const daemonStt = daemonConfig?.services?.stt as
     | { provider?: string; mode?: string; language?: string }
     | undefined;
-  // A legacy managed-mode config routes to Vellum while `provider` holds the
+  // A legacy managed-mode config routes to Cadet while `provider` holds the
   // BYOK restore value; an unset provider falls back to the daemon schema
   // default (deepgram).
   const configuredProvider =

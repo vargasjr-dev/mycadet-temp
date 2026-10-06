@@ -159,7 +159,7 @@ Examples:
   registerGlobalJsonOption(program);
 
   // Fail fast when no assistant workspace exists on disk. The workspace is
-  // created by `vellum hatch` and must be present for any command to work.
+  // created by `cadet hatch` and must be present for any command to work.
   // Commander handles --help and --version before preAction fires, so those
   // remain available even without a workspace.
   // Workspace-independent commands are exempt:
@@ -193,7 +193,7 @@ Examples:
     const workspaceDir = getWorkspaceDir();
     if (!existsSync(workspaceDir)) {
       log.error(
-        `No assistant workspace found at ${workspaceDir}.\nRun 'vellum hatch' to create an assistant first.`,
+        `No assistant workspace found at ${workspaceDir}.\nRun 'cadet hatch' to create an assistant first.`,
       );
       process.exit(1);
     }

@@ -56,7 +56,7 @@ const startOptions: VoiceLiveActivityStart = {
   ...content,
   phase: "connecting",
   label: "Connecting…",
-  assistantName: "Vellum",
+  assistantName: "Cadet",
 };
 
 beforeEach(() => {
@@ -107,7 +107,9 @@ test("Android dispatches status calls but not ActivityKit push tokens", async ()
   await endVoiceLiveActivity();
   expect(end).toHaveBeenCalledTimes(1);
   const unsubscribe = subscribeVoiceLiveActivityPushToken(() => undefined);
-  const unsubscribeControls = subscribeVoiceLiveActivityControl(() => undefined);
+  const unsubscribeControls = subscribeVoiceLiveActivityControl(
+    () => undefined,
+  );
   expect(addListener).not.toHaveBeenCalled();
   unsubscribe();
   unsubscribeControls();

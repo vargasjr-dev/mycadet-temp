@@ -14,11 +14,11 @@ import { ChannelTranscriptEntryRow } from "./channel-transcript-entry-row";
 
 /**
  * A row of the read-only channel drawer, framed the way the drawer frames it.
- * Message rows offer "Reference in Vellum"; reaction rows are read-only. The
+ * Message rows offer "Reference in Cadet"; reaction rows are read-only. The
  * whole panel has its own stories (`Chat/ChannelTranscriptPanel`); these
  * cover the row itself.
  *
- * The "Reference in Vellum" control uses the shared reveal treatment, so on a
+ * The "Reference in Cadet" control uses the shared reveal treatment, so on a
  * pointer device it appears on hover and on keyboard focus, and on a device
  * that reports `hover: none` it is simply always visible. Tab through a story
  * to see the focus path.
@@ -30,7 +30,7 @@ const meta: Meta<typeof ChannelTranscriptEntryRow> = {
   args: {
     entry: SLACK_MESSAGE_ENTRY,
     channelLabel: "Slack",
-    assistantName: "Vellum",
+    assistantName: "Cadet",
     isReferenced: false,
   },
   argTypes: {
@@ -91,7 +91,7 @@ function Rows({ entries }: { entries: ChannelTranscriptEntry[] }) {
           key={entry.id}
           entry={entry}
           channelLabel="Slack"
-          assistantName="Vellum"
+          assistantName="Cadet"
           isReferenced={referencedId === entry.id}
           onToggleReference={(picked) =>
             setReferencedId((current) =>

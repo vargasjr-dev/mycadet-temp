@@ -973,9 +973,9 @@ describe("the managed route's annotation", () => {
       target: { value: "someone/new-model" },
     });
 
-    const vellum = candidateCard("vellum");
-    expect(vellum.textContent).toContain("Recommended");
-    expect(vellum.textContent).not.toContain("Managed");
+    const card = candidateCard("vellum");
+    expect(card.textContent).toContain("Recommended");
+    expect(card.textContent).not.toContain("Managed");
 
     // The shared encoding keeps its own word wherever the provider is the
     // question, so the two flows cannot be quietly unified.
@@ -986,7 +986,7 @@ describe("the managed route's annotation", () => {
 
     const managed = Array.from(
       document.querySelectorAll<HTMLElement>('[role="option"]'),
-    ).find((option) => optionLabel(option) === "Vellum");
+    ).find((option) => optionLabel(option) === "Cadet");
     expect(managed?.textContent).toContain("Managed");
   });
 });

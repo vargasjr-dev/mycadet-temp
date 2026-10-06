@@ -1,7 +1,7 @@
 import { gatewayToken } from "./gateway/token.js";
 
 function printUsage(): void {
-  console.log("Usage: vellum gateway <subcommand>");
+  console.log("Usage: cadet gateway <subcommand>");
   console.log("");
   console.log("Gateway management commands.");
   console.log("");

@@ -137,11 +137,17 @@ describe("Windows path resolution", () => {
 
   test("uses AppData with XDG read compatibility", () => {
     const paths = [
-      [defaultEnvironmentFilePath(env, options), "AppData\\Roaming\\vellum\\environment"],
+      [
+        defaultEnvironmentFilePath(env, options),
+        "AppData\\Roaming\\vellum\\environment",
+      ],
       [resolveConfigDir(env, options), "AppData\\Roaming\\vellum-dev"],
       [resolveRuntimeDir(env, options), "AppData\\Local\\vellum-dev"],
       [resolveLogDir(env, options), "AppData\\Local\\vellum-dev\\logs"],
-      [resolveInstanceDir(env, "assistant-123", options), "AppData\\Local\\vellum-dev\\assistants\\assistant-123"],
+      [
+        resolveInstanceDir(env, "assistant-123", options),
+        "AppData\\Local\\vellum-dev\\assistants\\assistant-123",
+      ],
     ];
     for (const [actual, suffix] of paths) {
       expect(actual).toBe(`C:\\Users\\Example\\${suffix}`);

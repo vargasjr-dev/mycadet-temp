@@ -33,20 +33,20 @@ describe("getCurrentEnvironment", () => {
   test("returns production seed when no override, no env var", () => {
     const env = getCurrentEnvironment();
     expect(env.name).toBe("production");
-    expect(env.platformUrl).toBe("https://platform.vellum.ai");
+    expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
   });
 
   test("returns dev seed when VELLUM_ENVIRONMENT=dev", () => {
     process.env.VELLUM_ENVIRONMENT = "dev";
     const env = getCurrentEnvironment();
     expect(env.name).toBe("dev");
-    expect(env.platformUrl).toBe("https://dev-platform.vellum.ai");
+    expect(env.platformUrl).toBe("https://dev-cloud.mycadet.ai");
   });
 
   test("returns staging seed when VELLUM_ENVIRONMENT=staging", () => {
     process.env.VELLUM_ENVIRONMENT = "staging";
     expect(getCurrentEnvironment().platformUrl).toBe(
-      "https://staging-platform.vellum.ai",
+      "https://staging-cloud.mycadet.ai",
     );
   });
 
@@ -59,7 +59,7 @@ describe("getCurrentEnvironment", () => {
     process.env.VELLUM_ENVIRONMENT = "staging";
     const env = getCurrentEnvironment("dev");
     expect(env.name).toBe("dev");
-    expect(env.platformUrl).toBe("https://dev-platform.vellum.ai");
+    expect(env.platformUrl).toBe("https://dev-cloud.mycadet.ai");
   });
 
   test("empty override argument falls through to env var", () => {
@@ -81,7 +81,7 @@ describe("getCurrentEnvironment", () => {
     try {
       const env = getCurrentEnvironment("no-such-env");
       expect(env.name).toBe("production");
-      expect(env.platformUrl).toBe("https://platform.vellum.ai");
+      expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
       expect(stderr).toHaveBeenCalledWith(
         expect.stringContaining('unknown environment "no-such-env"'),
       );
@@ -101,7 +101,7 @@ describe("getCurrentEnvironment", () => {
     try {
       const env = getCurrentEnvironment();
       expect(env.name).toBe("production");
-      expect(env.platformUrl).toBe("https://platform.vellum.ai");
+      expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
       expect(stderr).toHaveBeenCalledWith(
         expect.stringContaining('unknown environment "nope"'),
       );
@@ -137,7 +137,7 @@ describe("getCurrentEnvironment", () => {
     getCurrentEnvironment();
     delete process.env.VELLUM_PLATFORM_URL;
     const env = getCurrentEnvironment();
-    expect(env.platformUrl).toBe("https://platform.vellum.ai");
+    expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
   });
 
   test("VELLUM_ASSISTANT_PLATFORM_URL overrides assistantPlatformUrl", () => {
@@ -150,7 +150,7 @@ describe("getCurrentEnvironment", () => {
   test("VELLUM_ASSISTANT_PLATFORM_URL does not shadow platformUrl", () => {
     process.env.VELLUM_ASSISTANT_PLATFORM_URL = "http://override";
     const env = getCurrentEnvironment();
-    expect(env.platformUrl).toBe("https://platform.vellum.ai");
+    expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
   });
 
   test("does not auto-materialize a new environment from VELLUM_PLATFORM_URL alone", () => {
@@ -166,7 +166,7 @@ describe("getCurrentEnvironment", () => {
     try {
       const env = getCurrentEnvironment();
       expect(env.name).toBe("production");
-      expect(env.platformUrl).toBe("https://platform.vellum.ai");
+      expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
       expect(stderr).toHaveBeenCalledWith(
         expect.stringContaining('unknown environment "my-custom"'),
       );
@@ -200,7 +200,7 @@ describe("getSeed", () => {
     const seed = getSeed("dev");
     expect(seed).toBeDefined();
     expect(seed?.name).toBe("dev");
-    expect(seed?.platformUrl).toBe("https://dev-platform.vellum.ai");
+    expect(seed?.platformUrl).toBe("https://dev-cloud.mycadet.ai");
   });
 
   test("returns undefined for an unknown name", () => {
@@ -213,7 +213,7 @@ describe("getSeed", () => {
       seed.platformUrl = "mutated";
     }
     const second = getSeed("dev");
-    expect(second?.platformUrl).toBe("https://dev-platform.vellum.ai");
+    expect(second?.platformUrl).toBe("https://dev-cloud.mycadet.ai");
   });
 
   test("all five canonical seeds exist", () => {

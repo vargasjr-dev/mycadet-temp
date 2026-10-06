@@ -36,13 +36,13 @@ export function forceSleepStage(
   const store = useAssistantSleepStageStore.getState();
 
   if (value === undefined) {
-    console.info("[vellum] forceSleepStage:", store.forcedScene);
+    console.info("[cadet] forceSleepStage:", store.forcedScene);
     return store.forcedScene;
   }
 
   if (value !== null && !isScene(value)) {
     console.warn(
-      `[vellum] forceSleepStage: expected one of ${SCENES.join(", ")} or null`,
+      `[cadet] forceSleepStage: expected one of ${SCENES.join(", ")} or null`,
     );
     return store.forcedScene;
   }

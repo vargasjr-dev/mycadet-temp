@@ -48,13 +48,13 @@ type EnvironmentDefinition =
 
 const prod: EnvironmentDefinition = {
   name: "production",
-  platformUrl: "https://platform.vellum.ai",
+  platformUrl: "https://cloud.mycadet.ai",
   webUrl: "https://www.vellum.ai",
 };
 
 const dev: EnvironmentDefinition = {
   name: "dev",
-  platformUrl: "https://dev-platform.vellum.ai",
+  platformUrl: "https://dev-cloud.mycadet.ai",
   webUrl: "https://dev-assistant.vellum.ai",
 };
 

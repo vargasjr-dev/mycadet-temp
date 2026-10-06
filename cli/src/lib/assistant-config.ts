@@ -111,11 +111,11 @@ export type AssistantEntry = Omit<
   /** Loopback URL for same-machine health checks (e.g. `http://127.0.0.1:7831`).
    *  Avoids mDNS resolution issues when the machine checks its own gateway. */
   localUrl?: string;
-  /** Public https ingress URL recorded by `vellum tunnel` providers for this
+  /** Public https ingress URL recorded by `cadet tunnel` providers for this
    *  instance. The advertised-URL default for remote-web pairing. */
   ingressUrl?: string;
   bearerToken?: string;
-  /** True when this entry was registered via `vellum connect import` (a remote
+  /** True when this entry was registered via `cadet connect import` (a remote
    *  pairing). Set alongside `cloud: "paired"`; also backs the re-import /
    *  overwrite guard in connect import. */
   paired?: boolean;
@@ -205,7 +205,7 @@ function writeLockfileUnlocked(data: LockfileData): void {
 /**
  * Run `fn` under the same cross-process advisory lock the local-mode hosts
  * use, keyed to this environment's write-path lockfile, so CLI writers and
- * package-side writers (Electron main, Vite plugin, `vellum client`) never
+ * package-side writers (Electron main, Vite plugin, `cadet client`) never
  * interleave read-modify-write cycles. Reentrant, so wrapped units may call
  * the locked write helpers. Throws on lock timeout, matching the fs-error
  * contract of the write path.
@@ -514,7 +514,7 @@ function readLockfileForEnv(env: EnvironmentDefinition): LockfileData {
  * lockfile path, data dir). A running assistant from `dev` is invisible to
  * `loadAllAssistants()` when the current env is `local`, but its host
  * processes (daemon/gateway/qdrant) still show up in `ps ax`. The orphan
- * detector and `vellum clean` need the union of all envs' entries to avoid
+ * detector and `cadet clean` need the union of all envs' entries to avoid
  * misclassifying — or worse, killing — another env's running services.
  *
  * Optional `envs` override is provided for testability so call sites can
@@ -565,7 +565,7 @@ export function setActiveAssistant(assistantId: string): void {
  *
  * Priority:
  * 1. Explicit name argument
- * 2. Active assistant set via `vellum use`
+ * 2. Active assistant set via `cadet use`
  * 3. Sole lockfile entry (any cloud)
  */
 export function resolveAssistant(nameArg?: string): AssistantEntry | null {
@@ -592,7 +592,7 @@ export function resolveAssistant(nameArg?: string): AssistantEntry | null {
  *
  * Priority:
  * 1. Explicit name argument
- * 2. Active assistant set via `vellum use`
+ * 2. Active assistant set via `cadet use`
  * 3. Sole lockfile entry (any cloud)
  */
 export function resolveTargetAssistant(nameArg?: string): AssistantEntry {
@@ -617,11 +617,11 @@ export function resolveTargetAssistant(nameArg?: string): AssistantEntry {
 
     if (all.length === 0) {
       console.error(
-        `No assistant found. Run 'vellum hatch' first.${crossEnvironmentAssistantHint() ?? ""}`,
+        `No assistant found. Run 'cadet hatch' first.${crossEnvironmentAssistantHint() ?? ""}`,
       );
     } else {
       console.error(
-        `Multiple assistants found. Set an active assistant with 'vellum use <name>'.`,
+        `Multiple assistants found. Set an active assistant with 'cadet use <name>'.`,
       );
     }
   }

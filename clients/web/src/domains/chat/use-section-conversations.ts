@@ -58,8 +58,8 @@ import {
  * break "a conversation appears in exactly one section".
  *
  * Chats is what nothing else claimed: ungrouped and native. It carries the
- * same two axes as a channel, with `vellum` as the channel, which is why it
- * needs `supportsNativeOrigin`. Below that gate `vellum` is a strict equality
+ * same two axes as a channel, with `cadet` as the channel, which is why it
+ * needs `supportsNativeOrigin`. Below that gate `cadet` is a strict equality
  * on the daemon and matches only explicitly stamped rows, so asking for it
  * would return a fraction of the section and look like a quiet account rather
  * than a broken filter. Chats stays on its derived rows there.

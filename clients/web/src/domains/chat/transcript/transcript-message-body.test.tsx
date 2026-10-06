@@ -113,7 +113,7 @@ mock.module("@/domains/chat/utils/background-task-actions", () => ({
   stopBackgroundTask: stopBackgroundTaskMock,
 }));
 
-// The vellum file action modal builds on the design-library Modal (Radix
+// The cadet file action modal builds on the design-library Modal (Radix
 // dialog). Stub it with bare elements so these tests exercise the modal's
 // action wiring without pulling in Radix's portal and focus machinery. The
 // library Button stays real: the hover actions and the attachment download
@@ -381,7 +381,7 @@ function clickVellumLink(href: string, linkText: string) {
   });
 }
 
-/** Clicks an action button inside the vellum file action modal. */
+/** Clicks an action button inside the cadet file action modal. */
 function clickModalAction(name: string) {
   fireEvent.click(screen.getByRole("button", { name }));
 }
@@ -3302,7 +3302,7 @@ describe("TranscriptMessageBody", () => {
     expect(container.querySelector("[data-testid='attachments']")).toBeNull();
   });
 
-  test("vellum link click matches the decoded path basename for bare labels", () => {
+  test("cadet link click matches the decoded path basename for bare labels", () => {
     downloadAttachmentMock.mockClear();
     render(
       <TranscriptMessageBody
@@ -3468,7 +3468,7 @@ describe("TranscriptMessageBody", () => {
     ).not.toBeNull();
   });
 
-  test("vellum link click still matches link text and raw basename", () => {
+  test("cadet link click still matches link text and raw basename", () => {
     downloadAttachmentMock.mockClear();
     render(
       <TranscriptMessageBody

@@ -188,7 +188,7 @@ export async function authHeaders(
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("401") || msg.includes("403")) {
-      throw new Error("Authentication failed. Run 'vellum login' to refresh.");
+      throw new Error("Authentication failed. Run 'cadet login' to refresh.");
     }
     throw new Error(`Failed to fetch organization: ${msg}`);
   }
@@ -563,7 +563,7 @@ export async function hatchAssistant(
     };
     throw new Error(
       detail.detail ??
-        "Invalid or expired token. Run `vellum login` to re-authenticate.",
+        "Invalid or expired token. Run `cadet login` to re-authenticate.",
     );
   }
 

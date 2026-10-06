@@ -1,5 +1,5 @@
 /**
- * The staged external-channel reference, pinned above the Vellum composer.
+ * The staged external-channel reference, pinned above the Cadet composer.
  *
  * Sits in the same stack as `StagedQuotesStrip` and reads the same way: a
  * compact quoted preview with a single X that takes it back off. One slot, so

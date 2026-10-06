@@ -174,7 +174,7 @@ describe("isVisibleToUser", () => {
   });
 
   test("reads the host's window report under Electron, not the DOM", () => {
-    // Vellum windows disable the Page Visibility API, so the DOM reads
+    // Cadet windows disable the Page Visibility API, so the DOM reads
     // visible wherever the window actually is.
     setVisibilityState("visible");
     installBridge();

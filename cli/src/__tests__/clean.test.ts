@@ -80,12 +80,12 @@ afterAll(() => {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe("vellum clean --help", () => {
+describe("cadet clean --help", () => {
   test("prints usage and exits 0", async () => {
     process.argv = ["bun", "vellum", "clean", "--help"];
     await expect(clean()).rejects.toThrow("process.exit(0)");
     const output = consoleLogSpy.mock.calls.flat().join("\n");
-    expect(output).toContain("Usage: vellum clean");
+    expect(output).toContain("Usage: cadet clean");
     expect(output).toContain("orphaned");
   });
 
@@ -95,7 +95,7 @@ describe("vellum clean --help", () => {
   });
 });
 
-describe("vellum clean — no orphans", () => {
+describe("cadet clean — no orphans", () => {
   test("prints nothing-to-do message when no orphans are found", async () => {
     detectOrphansMock.mockResolvedValueOnce([]);
     process.argv = ["bun", "vellum", "clean"];
@@ -106,7 +106,7 @@ describe("vellum clean — no orphans", () => {
   });
 });
 
-describe("vellum clean — single orphan", () => {
+describe("cadet clean — single orphan", () => {
   test("kills the orphan and prints singular 'process'", async () => {
     detectOrphansMock.mockResolvedValueOnce([makeOrphan("assistant", "12345")]);
     stopProcessMock.mockResolvedValueOnce(true);
@@ -137,7 +137,7 @@ describe("vellum clean — single orphan", () => {
   });
 });
 
-describe("vellum clean — multiple orphans", () => {
+describe("cadet clean — multiple orphans", () => {
   test("uses plural 'processes' with multiple orphans", async () => {
     detectOrphansMock.mockResolvedValueOnce([
       makeOrphan("assistant", "1001"),

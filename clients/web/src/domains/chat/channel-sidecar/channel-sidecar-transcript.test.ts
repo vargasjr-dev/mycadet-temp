@@ -62,11 +62,11 @@ const telegramConversation: Pick<
 };
 
 describe("partitionChannelTranscript", () => {
-  test("moves attributable rows out of the Vellum lane", () => {
+  test("moves attributable rows out of the Cadet lane", () => {
     const messages = [
-      vellumRow("v1", "typed in Vellum"),
+      vellumRow("v1", "typed in Cadet"),
       slackRow("s1", "typed in Slack"),
-      vellumRow("v2", "also Vellum"),
+      vellumRow("v2", "also Cadet"),
     ];
 
     const { vellumMessages, entries } = partitionChannelTranscript({
@@ -81,7 +81,7 @@ describe("partitionChannelTranscript", () => {
     expect(entries[0]!.provenance.senderName).toBe("Alice");
   });
 
-  test("leaves an ordinary Vellum conversation untouched, by reference", () => {
+  test("leaves an ordinary Cadet conversation untouched, by reference", () => {
     const messages = [vellumRow("v1", "hello")];
 
     const { vellumMessages, entries } = partitionChannelTranscript({
@@ -150,7 +150,7 @@ describe("partitionChannelTranscript", () => {
 
   test("keeps attributed rows the drawer cannot render losslessly", () => {
     // Rows carrying more than plain text (non-text blocks, attachments) stay
-    // in the Vellum lane even when the channel attributes them: moving them
+    // in the Cadet lane even when the channel attributes them: moving them
     // would drop the content the drawer's text row cannot show.
     const withThinking: DisplayMessage = {
       ...slackRow("s1", "final reply text"),
@@ -187,7 +187,7 @@ describe("partitionChannelTranscript", () => {
     // The end of the outbound chain: the reply posted to Slack carries the
     // envelope its row gained from post-send reconciliation, so the drawer
     // shows the assistant's message where the reader saw it. A tool-bearing
-    // row from the same turn stays in the Vellum lane.
+    // row from the same turn stays in the Cadet lane.
     const reply: DisplayMessage = {
       ...slackRow("a1", "here is the answer"),
       role: "assistant",
@@ -214,7 +214,7 @@ describe("partitionChannelTranscript", () => {
     expect(entries[0]!.provenance.externalMessageId).toBe("a1.000100");
   });
 
-  test("keeps an unattributed assistant reply in the Vellum lane", () => {
+  test("keeps an unattributed assistant reply in the Cadet lane", () => {
     // A row whose envelope never arrived (reconciliation lost, backfill not
     // run) is indistinguishable to the client from a Vellum-only row. The
     // classifier must not fill that gap from the conversation's binding or

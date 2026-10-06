@@ -31,7 +31,7 @@ export const CATALOG_PROVIDERS = Object.keys(MODELS_BY_PROVIDER) as Array<
 /**
  * Whether a connection (identified by its stored `provider`) can serve
  * requests for `selectedProvider`. One routing sentinel serves providers
- * other than its own column value: the provider-agnostic `vellum`
+ * other than its own column value: the provider-agnostic `cadet`
  * connection serves every managed-routable provider. The `chatgpt`
  * subscription connection serves only its own identity: dispatch matches
  * connections by exact provider, so an "openai" fragment cannot route
@@ -96,9 +96,9 @@ export function useSelectableConnectionProviders(): ConnectionProvider[] {
 /**
  * Profile providers a set of connections can dispatch through, in
  * canonical picker order. A connection backs its own `provider`; the
- * Vellum-managed connection surfaces as a single "Vellum" entry (listed
+ * Vellum-managed connection surfaces as a single "Cadet" entry (listed
  * first) rather than expanding into the upstreams it routes to — which
- * provider actually serves a Vellum model is an implementation detail users
+ * provider actually serves a Cadet model is an implementation detail users
  * never see. A BYOK provider (e.g. Anthropic) still surfaces for a user who
  * entered that key.
  */
@@ -110,7 +110,7 @@ export function providersServedByConnections(
       connections.map((connection) => connection.provider),
     ),
   ];
-  // Vellum first, then canonical picker order; a provider absent from the
+  // Cadet first, then canonical picker order; a provider absent from the
   // catalog order (a connection for a provider this app version doesn't
   // list) is appended so version drift never hides a served provider.
   const ordered: ConnectionProvider[] = [];

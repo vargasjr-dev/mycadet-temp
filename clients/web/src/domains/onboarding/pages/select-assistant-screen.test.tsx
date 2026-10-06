@@ -2,7 +2,7 @@
  * Behavioral tests for the assistant chooser's paired-entry support.
  *
  * A paired assistant (a remote machine's assistant imported via
- * `vellum connect import`) is usable with no platform session: its card
+ * `cadet connect import`) is usable with no platform session: its card
  * renders unlocked, Continue connects it through
  * `connectPairedAssistant`, and an expired pairing surfaces re-pair
  * guidance instead of the generic connect error. Self-contained mocks:
@@ -89,7 +89,7 @@ const switchToOriginMock = mock(
 const nativeSwitchToOriginMock = mock(async (_url: string | null) => true);
 let isNativeMobileValue = false;
 const installNativeRememberedOriginsMock = mock(() => {});
-/** What the native shell reports as its baked Vellum Cloud origin, if any. */
+/** What the native shell reports as its baked Cadet Cloud origin, if any. */
 let nativeCloudOriginValue: string | null = null;
 /** Avatar data per assistant id; rows absent here resolve to nulls (glyph). */
 let rowAvatars = new Map<string, AvatarRead>();
@@ -503,10 +503,10 @@ function makeLocalAssistant(
 }
 
 const REPAIR_COPY =
-  "This pairing has expired. Run vellum pair on the assistant's machine and import it again with vellum connect import.";
+  "This pairing has expired. Run cadet pair on the assistant's machine and import it again with cadet connect import.";
 
 /**
- * What a shell reports as its baked Vellum Cloud origin. It is the Capacitor
+ * What a shell reports as its baked Cadet Cloud origin. It is the Capacitor
  * `server.url`, which is the hub's `/assistant` root rather than a bare base.
  */
 const BAKED_CLOUD_URL = "https://www.vellum.ai/assistant";
@@ -729,7 +729,7 @@ describe("SelectAssistantScreen paired assistants", () => {
       screen.getByText(/It only forgets the pairing on this device/),
     ).toBeTruthy();
     expect(
-      screen.getByText(/Pair again anytime with vellum connect import/),
+      screen.getByText(/Pair again anytime with cadet connect import/),
     ).toBeTruthy();
 
     fireEvent.click(screen.getByText("Confirm remove"));
@@ -1222,18 +1222,18 @@ describe("SelectAssistantScreen native mobile", () => {
     expect(installNativeRememberedOriginsMock).toHaveBeenCalled();
   });
 
-  test("a shell serving a self-hosted origin offers a Vellum Cloud card", async () => {
+  test("a shell serving a self-hosted origin offers a Cadet Cloud card", async () => {
     isNativeMobileValue = true;
     nativeCloudOriginValue = BAKED_CLOUD_URL;
     assistantsValue = [];
 
     render(<SelectAssistantScreen />);
 
-    await waitFor(() => expect(screen.getByText("Vellum Cloud")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Cadet Cloud")).toBeTruthy());
     // No device-local entry to forget, so the card carries no actions menu.
-    expect(screen.queryByLabelText("Actions for Vellum Cloud")).toBeNull();
+    expect(screen.queryByLabelText("Actions for Cadet Cloud")).toBeNull();
 
-    fireEvent.click(screen.getByText("Vellum Cloud"));
+    fireEvent.click(screen.getByText("Cadet Cloud"));
     fireEvent.click(screen.getByText("Continue"));
 
     await waitFor(() =>
@@ -1259,10 +1259,8 @@ describe("SelectAssistantScreen native mobile", () => {
     try {
       render(<SelectAssistantScreen />);
 
-      await waitFor(() =>
-        expect(screen.getByText("Vellum Cloud")).toBeTruthy(),
-      );
-      fireEvent.click(screen.getByText("Vellum Cloud"));
+      await waitFor(() => expect(screen.getByText("Cadet Cloud")).toBeTruthy());
+      fireEvent.click(screen.getByText("Cadet Cloud"));
       fireEvent.click(screen.getByText("Continue"));
 
       await waitFor(() =>
@@ -1309,7 +1307,7 @@ describe("SelectAssistantScreen native mobile", () => {
 
     render(<SelectAssistantScreen />);
 
-    await waitFor(() => expect(screen.getByText("Vellum Cloud")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Cadet Cloud")).toBeTruthy());
     // The default selection commits in an effect after the card renders, so
     // clicking on render alone hits a disabled Continue and does nothing.
     await waitFor(() =>
@@ -1324,7 +1322,7 @@ describe("SelectAssistantScreen native mobile", () => {
     );
   });
 
-  test("no Vellum Cloud card when the shell already serves the baked origin", async () => {
+  test("no Cadet Cloud card when the shell already serves the baked origin", async () => {
     isNativeMobileValue = true;
     assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
 
@@ -1333,10 +1331,10 @@ describe("SelectAssistantScreen native mobile", () => {
     await waitFor(() =>
       expect(screen.getByText("Choose an Assistant")).toBeTruthy(),
     );
-    expect(screen.queryByText("Vellum Cloud")).toBeNull();
+    expect(screen.queryByText("Cadet Cloud")).toBeNull();
   });
 
-  test("no Vellum Cloud card on a browser surface", async () => {
+  test("no Cadet Cloud card on a browser surface", async () => {
     nativeCloudOriginValue = BAKED_CLOUD_URL;
     assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
 
@@ -1345,7 +1343,7 @@ describe("SelectAssistantScreen native mobile", () => {
     await waitFor(() =>
       expect(screen.getByText("Choose an Assistant")).toBeTruthy(),
     );
-    expect(screen.queryByText("Vellum Cloud")).toBeNull();
+    expect(screen.queryByText("Cadet Cloud")).toBeNull();
   });
 });
 

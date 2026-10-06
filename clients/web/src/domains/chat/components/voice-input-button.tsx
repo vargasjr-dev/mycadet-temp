@@ -569,7 +569,7 @@ export const VoiceInputButton = forwardRef<
     };
   }, [recording, cancelRecording]);
 
-  // The DOM listener above only sees Escape while a Vellum window has
+  // The DOM listener above only sees Escape while a Cadet window has
   // focus. During system-wide push-to-talk dictation into another app the
   // Electron escape monitor owns Escape and relays it as a command; the
   // same recorder-ownership guard applies.
@@ -976,7 +976,7 @@ export const VoiceInputButton = forwardRef<
             // nothing — most likely macOS Dictation (and its on-device
             // model) isn't enabled. Surface that instead of resetting
             // silently; there is no daemon failure to report here.
-                onError?.("native-stt-no-transcript");
+            onError?.("native-stt-no-transcript");
             vsFail("native-stt-no-transcript");
             return;
           } else if (daemonFailure && !nativeFinalStopRan) {
@@ -986,12 +986,12 @@ export const VoiceInputButton = forwardRef<
               vsReset();
               return;
             }
-                const code = errorCodeForReason(daemonFailure);
+            const code = errorCodeForReason(daemonFailure);
             onError?.(code);
             vsFail(code);
             return;
           } else {
-                vsReset();
+            vsReset();
             return;
           }
         } catch {

@@ -33,7 +33,7 @@ const meta = {
     ),
   ],
   args: {
-    assistantName: "Vellum",
+    assistantName: "Cadet",
     onClearContext: () => {},
   },
 } satisfies Meta<typeof ContextWindowIndicator>;

@@ -102,7 +102,7 @@ function staleAgentDiagnostic(tunnels: NgrokTunnel[], port: number): string {
 
 /** Recovery copy for a saved domain whose reservation may have lapsed. */
 function savedDomainRecoveryHint(domain: string): string {
-  return `The saved ngrok domain '${domain}' (ingress.ngrok.domain in the workspace config) may no longer be reserved. Run \`vellum tunnel --provider ngrok --clear-domain\` to drop it and tunnel without one.`;
+  return `The saved ngrok domain '${domain}' (ingress.ngrok.domain in the workspace config) may no longer be reserved. Run \`cadet tunnel --provider ngrok --clear-domain\` to drop it and tunnel without one.`;
 }
 
 /** Whether a tunnel public URL's host equals the given reserved domain. */
@@ -274,7 +274,7 @@ export async function maybeStartNgrokTunnel(
       // mismatched URL would clobber the reserved-domain intent. Leave the
       // tunnel running but refuse to bless it in config.
       console.warn(
-        `   ⚠ Existing ngrok tunnel ${existingUrl} does not match the reserved domain '${savedDomain}'. Ignoring it. Stop the running ngrok agent and run \`vellum tunnel --provider ngrok --domain ${savedDomain}\` to bind the reserved domain.`,
+        `   ⚠ Existing ngrok tunnel ${existingUrl} does not match the reserved domain '${savedDomain}'. Ignoring it. Stop the running ngrok agent and run \`cadet tunnel --provider ngrok --domain ${savedDomain}\` to bind the reserved domain.`,
       );
       return null;
     }
@@ -287,7 +287,7 @@ export async function maybeStartNgrokTunnel(
     // the edge unification, or by an external process). Spawning a second
     // agent would collide (ERR_NGROK_334) on single-agent plans, so skip.
     console.warn(
-      `   ⚠ ${staleAgentDiagnostic(runningTunnels, targetPort)} Stop that ngrok agent, then run \`vellum tunnel --provider ngrok\` to tunnel the local edge.`,
+      `   ⚠ ${staleAgentDiagnostic(runningTunnels, targetPort)} Stop that ngrok agent, then run \`cadet tunnel --provider ngrok\` to tunnel the local edge.`,
     );
     return null;
   }
@@ -312,7 +312,7 @@ export async function maybeStartNgrokTunnel(
     return ngrokProcess;
   } catch {
     console.warn(
-      `   ⚠ Could not start ngrok tunnel. Webhook integrations may not work until you run \`vellum tunnel --provider ngrok\`.`,
+      `   ⚠ Could not start ngrok tunnel. Webhook integrations may not work until you run \`cadet tunnel --provider ngrok\`.`,
     );
     if (savedDomain) {
       console.warn(`   ⚠ ${savedDomainRecoveryHint(savedDomain)}`);

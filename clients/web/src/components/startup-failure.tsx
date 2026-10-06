@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useTranslation } from "@/i18n";
 import { markNativeLaunchScreenReady } from "@/runtime/native-launch-screen";
 
-export const STARTUP_FAILURE_TITLE = "Vellum couldn't start";
+export const STARTUP_FAILURE_TITLE = "Cadet couldn't start";
 export const STARTUP_FAILURE_MESSAGE =
   "Reload the app to try again. If this keeps happening, update or reinstall the app.";
 

@@ -29,7 +29,7 @@ import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 
 function printUsage(): void {
   console.log(
-    "Usage: vellum restore <name> --from <path> [--version <version>] [--dry-run]",
+    "Usage: cadet restore <name> --from <path> [--version <version>] [--dry-run]",
   );
   console.log("");
   console.log("Restore data from a .vbundle backup into an assistant.");
@@ -50,11 +50,11 @@ function printUsage(): void {
   );
   console.log("");
   console.log("Examples:");
-  console.log("  vellum restore my-assistant --from backup.vbundle");
+  console.log("  cadet restore my-assistant --from backup.vbundle");
   console.log(
-    "  vellum restore my-assistant --from backup.vbundle --version v1.2.3",
+    "  cadet restore my-assistant --from backup.vbundle --version v1.2.3",
   );
-  console.log("  vellum restore my-assistant --from backup.vbundle --dry-run");
+  console.log("  cadet restore my-assistant --from backup.vbundle --dry-run");
 }
 
 function parseArgs(argv: string[]): {
@@ -128,7 +128,7 @@ async function getAccessToken(
       console.error(
         `Error: Could not connect to assistant '${displayName}'. Is it running?`,
       );
-      console.error(`Try: vellum wake ${displayName}`);
+      console.error(`Try: cadet wake ${displayName}`);
       process.exit(1);
     }
     throw err;
@@ -190,7 +190,7 @@ async function restorePlatform(
   // Step 1 — Authenticate
   const token = readPlatformToken();
   if (!token) {
-    console.error("Not logged in. Run 'vellum login' first.");
+    console.error("Not logged in. Run 'cadet login' first.");
     process.exit(1);
   }
 
@@ -213,7 +213,7 @@ async function restorePlatform(
   if (opts.dryRun) {
     if (opts.version) {
       console.error(
-        "Dry-run is not supported with --version. Use `vellum restore --from <path> --dry-run` for data-only preflight.",
+        "Dry-run is not supported with --version. Use `cadet restore --from <path> --dry-run` for data-only preflight.",
       );
       process.exit(1);
     }
@@ -239,7 +239,7 @@ async function restorePlatform(
       preflightResult.statusCode === 401 ||
       preflightResult.statusCode === 403
     ) {
-      console.error("Authentication failed. Run 'vellum login' to refresh.");
+      console.error("Authentication failed. Run 'cadet login' to refresh.");
       process.exit(1);
     }
 
@@ -263,7 +263,7 @@ async function restorePlatform(
       preflightResult.statusCode === 504
     ) {
       console.error(
-        `Assistant is unreachable. Try 'vellum wake ${name}' first.`,
+        `Assistant is unreachable. Try 'cadet wake ${name}' first.`,
       );
       process.exit(1);
     }
@@ -344,7 +344,7 @@ async function restorePlatform(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("401") || msg.includes("403")) {
-        console.error("Authentication failed. Run 'vellum login' to refresh.");
+        console.error("Authentication failed. Run 'cadet login' to refresh.");
         process.exit(1);
       }
       console.error(`Error: Rollback failed — ${msg}`);
@@ -375,7 +375,7 @@ async function restorePlatform(
   }
 
   if (importResult.statusCode === 401 || importResult.statusCode === 403) {
-    console.error("Authentication failed. Run 'vellum login' to refresh.");
+    console.error("Authentication failed. Run 'cadet login' to refresh.");
     process.exit(1);
   }
 
@@ -398,7 +398,7 @@ async function restorePlatform(
     importResult.statusCode === 503 ||
     importResult.statusCode === 504
   ) {
-    console.error(`Assistant is unreachable. Try 'vellum wake ${name}' first.`);
+    console.error(`Assistant is unreachable. Try 'cadet wake ${name}' first.`);
     process.exit(1);
   }
 
@@ -534,7 +534,7 @@ export async function restore(): Promise<void> {
   // --dry-run is not supported with --version
   if (version && dryRun) {
     console.error(
-      "Dry-run is not supported with --version. Use `vellum restore --from <path> --dry-run` for data-only preflight.",
+      "Dry-run is not supported with --version. Use `cadet restore --from <path> --dry-run` for data-only preflight.",
     );
     process.exit(1);
   }
@@ -550,7 +550,7 @@ export async function restore(): Promise<void> {
   const entry = findAssistantByName(name);
   if (!entry) {
     console.error(`Error: No assistant found with name '${name}'.`);
-    console.error("Run 'vellum ps' to see available assistants.");
+    console.error("Run 'cadet ps' to see available assistants.");
     process.exit(1);
   }
 
@@ -671,7 +671,7 @@ async function runLocalRestore(opts: {
         console.error(
           `Error: Could not connect to assistant '${name}'. Is it running?`,
         );
-        console.error(`Try: vellum wake ${name}`);
+        console.error(`Try: cadet wake ${name}`);
         process.exit(1);
       }
       throw err;
@@ -786,7 +786,7 @@ async function runLocalRestore(opts: {
         console.error(
           `Error: Could not connect to assistant '${name}'. Is it running?`,
         );
-        console.error(`Try: vellum wake ${name}`);
+        console.error(`Try: cadet wake ${name}`);
         process.exit(1);
       }
       throw err;
@@ -830,7 +830,7 @@ async function runLocalRestore(opts: {
         console.warn(
           "\n⚠️  The assistant is in a failed-migrations state; the restored data takes effect after a restart:",
         );
-        console.warn(`   vellum sleep ${name} && vellum wake ${name}`);
+        console.warn(`   cadet sleep ${name} && cadet wake ${name}`);
       }
     } catch {
       // Best-effort advisory — never fail a completed restore over it.

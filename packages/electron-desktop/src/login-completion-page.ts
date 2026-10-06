@@ -20,7 +20,7 @@ export function renderLoginCompletionPage(success: boolean): string {
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vellum — ${title}</title>
+<title>Cadet — ${title}</title>
 <style>
 :root {
   --surface: #F5F3EB;

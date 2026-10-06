@@ -160,7 +160,7 @@ const readSlackProvenance: ChannelMessageProvenanceReader = (
  * Per-channel readers, one per envelope the wire carries.
  *
  * A channel absent from this map is not ineligible for the sidecar. It has no
- * per-row envelope on the wire, so its rows stay in the Vellum lane and its
+ * per-row envelope on the wire, so its rows stay in the Cadet lane and its
  * drawer shows the channel's identity and source link instead of a message
  * list. See the module docstring.
  */
@@ -170,7 +170,7 @@ const PROVENANCE_READERS: Record<string, ChannelMessageProvenanceReader> = {
 
 /**
  * The external channel a conversation is bound to, or `null` when it is an
- * ordinary Vellum conversation.
+ * ordinary Cadet conversation.
  *
  * Reads `channelBinding.sourceChannel` first (the daemon's authoritative
  * field) and falls back to `originChannel`, matching the daemon-side
@@ -196,7 +196,7 @@ export function getBoundChannelId(
  *
  * `null` is the conservative answer and the common one. It never means "this
  * row is definitely Vellum-only", only "nothing observable says otherwise",
- * which is why callers use it to *keep* a row in the Vellum lane rather than
+ * which is why callers use it to *keep* a row in the Cadet lane rather than
  * to move it out of one.
  */
 export function readChannelMessageProvenance(

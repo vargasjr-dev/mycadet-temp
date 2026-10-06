@@ -44,7 +44,7 @@ function getGuardianTokenPath(assistantId: string): string {
 
 /**
  * Best-effort removal of an assistant's stored guardian token (used by
- * `vellum unpair` to forget a paired connection). Never throws if the token
+ * `cadet unpair` to forget a paired connection). Never throws if the token
  * file or its per-assistant directory is already absent.
  */
 export function deleteGuardianToken(assistantId: string): void {
@@ -377,7 +377,7 @@ function classifyRefreshHttpStatus(status: number): GuardianTokenRefreshResult {
  *
  * Concurrency-safe: the gateway rotates refresh tokens and treats reuse of an
  * already-rotated token as replay (revoking the whole token family), so two
- * processes (e.g. `vellum message` + `vellum events`) refreshing the same
+ * processes (e.g. `cadet message` + `cadet events`) refreshing the same
  * stored token at once would self-revoke and force re-pairing. We serialize on
  * a per-assistant lock and, once held, re-read the stored token: if another
  * process already rotated it while we waited, we return that fresh token
@@ -417,7 +417,7 @@ export async function refreshGuardianTokenResult(
     return {
       ok: false,
       status: 401,
-      error: "Guardian token expired. Re-run `vellum hatch` or `vellum wake`.",
+      error: "Guardian token expired. Re-run `cadet hatch` or `cadet wake`.",
     };
   }
 

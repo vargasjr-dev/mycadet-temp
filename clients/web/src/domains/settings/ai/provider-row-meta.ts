@@ -84,7 +84,7 @@ function authMeta(conn: ProviderConnection): string | null {
 /**
  * Subtitle for a Providers row (Figma 7412:133539): what the connection
  * serves and how it authenticates, e.g. "8 models  •  Own API key",
- * "Included with your plan" for the managed Vellum row, or the endpoint
+ * "Included with your plan" for the managed Cadet row, or the endpoint
  * meta for a custom provider.
  */
 export function providerRowMeta(conn: ProviderConnection): string {

@@ -19,10 +19,10 @@ afterEach(() => {
 describe("tunnelHostForPlatformUrl", () => {
   test("maps a platform host onto its environment's tunnel", () => {
     delete process.env.VELLUM_TUNNEL_HOST;
-    expect(tunnelHostForPlatformUrl("https://platform.vellum.ai")).toBe(
+    expect(tunnelHostForPlatformUrl("https://cloud.mycadet.ai")).toBe(
       "tunnel.mycadet.ai",
     );
-    expect(tunnelHostForPlatformUrl("https://dev-platform.vellum.ai")).toBe(
+    expect(tunnelHostForPlatformUrl("https://dev-cloud.mycadet.ai")).toBe(
       "tunnel-dev.mycadet.ai",
     );
   });
@@ -39,7 +39,7 @@ describe("tunnelHostForPlatformUrl", () => {
 
   test("the env override wins, which is how a local vel up tunnel is reached", () => {
     process.env.VELLUM_TUNNEL_HOST = "localhost:8501";
-    expect(tunnelHostForPlatformUrl("https://platform.vellum.ai")).toBe(
+    expect(tunnelHostForPlatformUrl("https://cloud.mycadet.ai")).toBe(
       "localhost:8501",
     );
   });

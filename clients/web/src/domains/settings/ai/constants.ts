@@ -30,7 +30,7 @@ export const INFERENCE_PROVIDERS = [
 
 /**
  * Narrows a stored provider to the picker's domain. `LlmProvider` is wider:
- * it also carries routing sentinels (`openai-compatible`, `vellum`,
+ * it also carries routing sentinels (`openai-compatible`, `cadet`,
  * `chatgpt`) that deliberately never appear in the provider picker.
  */
 export function isInferenceProvider(
@@ -51,18 +51,18 @@ export const VELLUM_CONNECTION_PROVIDER = "vellum";
 
 /**
  * `provider` value stored on the canonical ChatGPT-subscription connection
- * (daemon migration 366 stamps the row identity). Like `vellum`, a routing
+ * (daemon migration 366 stamps the row identity). Like `cadet`, a routing
  * sentinel rather than a real LLM provider: the row dispatches OpenAI Codex
  * models through the subscription endpoint.
  */
 export const CHATGPT_CONNECTION_PROVIDER = "chatgpt";
 
 /**
- * Providers the single Vellum-managed (`vellum`) connection can serve. Mirrors
+ * Providers the single Vellum-managed (`cadet`) connection can serve. Mirrors
  * the daemon's managed-routable set. A managed profile keeps its real provider
- * (e.g. `fireworks`) while binding to the provider-agnostic `vellum`
+ * (e.g. `fireworks`) while binding to the provider-agnostic `cadet`
  * connection, so the editor must treat that connection as available for these
- * providers even though its own `provider` is `vellum`.
+ * providers even though its own `provider` is `cadet`.
  */
 export const MANAGED_ROUTABLE_PROVIDERS = new Set<string>(
   VELLUM_SERVED_PROVIDERS,

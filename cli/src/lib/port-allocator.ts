@@ -10,7 +10,7 @@ import { createServer } from "net";
  * The previous design (`evals/src/lib/orphan-cleanup.ts`) tried to fix this
  * by sweeping dead eval-run resources before the next hatch. That only
  * helped when the conflict came from a prior eval run; an unrelated local
- * `vellum hatch` holding the port wedged the whole flow. Discovering an
+ * `cadet hatch` holding the port wedged the whole flow. Discovering an
  * open port at hatch time is the proper fix and lets us delete the cleanup
  * pre-flight entirely.
  *

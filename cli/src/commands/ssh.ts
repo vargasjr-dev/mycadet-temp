@@ -21,7 +21,7 @@ const SSH_OPTS = [
 export async function ssh(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: vellum ssh [<name>]");
+    console.log("Usage: cadet ssh [<name>]");
     console.log("");
     console.log("SSH into a remote assistant instance.");
     console.log("");
@@ -39,7 +39,7 @@ export async function ssh(): Promise<void> {
     if (name) {
       console.error(`No assistant instance found with name '${name}'.`);
     } else {
-      console.error("No assistant instance found. Run `vellum hatch` first.");
+      console.error("No assistant instance found. Run `cadet hatch` first.");
     }
     process.exit(1);
   }
@@ -49,7 +49,7 @@ export async function ssh(): Promise<void> {
   if (cloud === "local") {
     console.error(
       "Cannot SSH into a local assistant. Local assistants run directly on this machine.\n" +
-        `Use 'vellum ps ${entry.assistantId}' to check its processes instead.`,
+        `Use 'cadet ps ${entry.assistantId}' to check its processes instead.`,
     );
     process.exit(1);
   }
@@ -101,7 +101,7 @@ export async function ssh(): Promise<void> {
     const token = readPlatformToken();
     if (!token) {
       console.error(
-        "Not logged in. Run `vellum login` first to authenticate with the platform.",
+        "Not logged in. Run `cadet login` first to authenticate with the platform.",
       );
       process.exit(1);
     }

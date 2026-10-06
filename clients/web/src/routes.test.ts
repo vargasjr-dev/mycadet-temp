@@ -122,7 +122,7 @@ describe("remote web pairing route", () => {
 
 describe("credential entry route", () => {
   // The one-time credential entry page must stay outside the auth-protected
-  // assistant app tree: the link recipient may have no Vellum session, and
+  // assistant app tree: the link recipient may have no Cadet session, and
   // the single-use token in the request body is the only authorization.
   test("matches outside the auth-protected assistant app tree", () => {
     const matches =

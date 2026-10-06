@@ -49,7 +49,7 @@ whether and where to deliver the notification based on connected channels,
 urgency, and user preferences.
 
 Minimal usage: only --message is required. Add --urgent for a push +
-visual flag in the Vellum Home feed. Source channel/event name fall back
+visual flag in the Cadet Home feed. Source channel/event name fall back
 to assistant_tool / assistant.share when omitted.
 
 Examples:
@@ -71,7 +71,7 @@ Examples:
         {
           flags: "--urgent",
           description:
-            "Mark this notification as urgent (fires push + visual flag in Vellum Home)",
+            "Mark this notification as urgent (fires push + visual flag in Cadet Home)",
           defaultValue: false,
         },
         {
@@ -127,12 +127,12 @@ Examples:
         {
           flags: "--preferred-channels <channels>",
           description:
-            "Comma-separated channel hints (e.g. vellum,telegram,slack). Additive: vellum stays selected.",
+            "Comma-separated channel hints (e.g. cadet,telegram,slack). Additive: cadet stays selected.",
         },
         {
           flags: "--channels <channels>",
           description:
-            "Exclusive channel allowlist (e.g. telegram). Replaces the default set. Urgent delivery does not add vellum or platform. Wins over --preferred-channels.",
+            "Exclusive channel allowlist (e.g. telegram). Replaces the default set. Urgent delivery does not add cadet or platform. Wins over --preferred-channels.",
         },
         {
           flags: "--session-id <id>",
@@ -152,7 +152,7 @@ Examples:
         {
           flags: "--conversation-id <id>",
           description:
-            "Local vellum conversation ID to deliver into. When set, the notification reuses the specified conversation instead of starting a new one — bypasses the LLM's conversation-routing decision via affinity hint.",
+            "Local cadet conversation ID to deliver into. When set, the notification reuses the specified conversation instead of starting a new one — bypasses the LLM's conversation-routing decision via affinity hint.",
         },
       ],
       helpText: `
@@ -167,17 +167,17 @@ Behavioral notes:
     is treated as critical and requires user action. Explicit --urgency /
     --requires-action flags still win for back-compat.
   - Without --urgent, --urgency defaults to low and --requires-action to false.
-  - --preferred-channels are additive hints; vellum stays in the selected set.
+  - --preferred-channels are additive hints; cadet stays in the selected set.
   - --channels is an exclusive allowlist. Only those connected channels are
-    selected. Urgent delivery does not force vellum or platform, and Home
-    does not mirror unless vellum is in the list. When both flags are set,
+    selected. Urgent delivery does not force cadet or platform, and Home
+    does not mirror unless cadet is in the list. When both flags are set,
     --channels wins.
   - --json includes selectedChannels, deliveryResults, and receiptClass.
     receiptClass is the strongest delivery proof (provider_accepted,
     gateway_accepted, client_os_posted, or unknown), not a promise the
     user saw a banner.
   - --dedupe-key suppresses duplicate signals with the same key.
-  - --conversation-id pins delivery to an existing vellum conversation
+  - --conversation-id pins delivery to an existing cadet conversation
     deterministically. Other channels (telegram, slack) continue to use
     binding-based pairing for their external threads.
 
@@ -190,7 +190,7 @@ Examples:
     {
       name: "list",
       description:
-        "List Vellum Home feed notifications surfaced by the assistant. Excludes dismissed items by default.",
+        "List Cadet Home feed notifications surfaced by the assistant. Excludes dismissed items by default.",
       options: [
         {
           flags: "--all",
@@ -245,9 +245,9 @@ Examples:
         },
       ],
       helpText: `
-Reads Vellum's Home feed at $VELLUM_WORKSPACE_DIR/data/home-feed.json.
+Reads Cadet's Home feed at $VELLUM_WORKSPACE_DIR/data/home-feed.json.
 Items are ordered by priority then recency, matching what the user sees
-in the macOS Home page. This is only the assistant's Vellum notification
+in the macOS Home page. This is only the assistant's Cadet notification
 feed; it does not read email inboxes, Gmail, Outlook, or other external
 message providers. Use OAuth/provider-specific commands for external mail.
 

@@ -21,7 +21,7 @@ interface MobileAppOverlayProps {
   onToggleMinimized: () => void;
   /** Closes the overlay (resets `openedAppState` upstream). */
   onClose: () => void;
-  /** Routes a validated root-relative Vellum URL in the host client. */
+  /** Routes a validated root-relative Cadet URL in the host client. */
   onNavigateAppRoute: (href: string) => void;
   /** Initiates app share flow. */
   onShare: () => void;

@@ -1,13 +1,13 @@
 /**
  * Tests for `ImageGenerationCard`'s provider-only configuration (the
- * Managed / Your Own mode toggle is gone — Vellum is a provider):
+ * Managed / Your Own mode toggle is gone — Cadet is a provider):
  *
- *   1. No mode segmented-control renders; the picker offers Vellum,
+ *   1. No mode segmented-control renders; the picker offers Cadet,
  *      Gemini, OpenAI, and OpenRouter.
- *   2. Vellum needs no API key, lists every model, and saves as a
+ *   2. Cadet needs no API key, lists every model, and saves as a
  *      provider+mode pair for old-daemon compatibility.
  *   3. Gemini gates on a key and lists only gemini models.
- *   4. Legacy managed-mode daemon configs render as Vellum; an openai
+ *   4. Legacy managed-mode daemon configs render as Cadet; an openai
  *      daemon config renders honestly without being clobbered.
  *
  * The design-library Select is real, driven via its combobox trigger like
@@ -180,27 +180,27 @@ describe("ImageGenerationCard — provider-only configuration", () => {
     expect(trigger("Image generation provider")).toBeTruthy();
   });
 
-  test("the provider picker offers Vellum, Gemini, OpenAI and OpenRouter", () => {
+  test("the provider picker offers Cadet, Gemini, OpenAI and OpenRouter", () => {
     renderCard();
 
     fireEvent.click(trigger("Image generation provider"));
     expect(visibleOptions()).toEqual([
-      "Vellum",
+      "Cadet",
       "Gemini",
       "OpenAI",
       "OpenRouter",
     ]);
   });
 
-  test("Vellum hides the key field, lists every model, and saves the pair", async () => {
+  test("Cadet hides the key field, lists every model, and saves the pair", async () => {
     renderCard();
 
     fireEvent.click(trigger("Image generation provider"));
-    selectOption("Vellum");
+    selectOption("Cadet");
 
     expect(screen.queryByText("API Key")).toBeNull();
     expect(
-      screen.getByText(/Image generation runs through your Vellum account/),
+      screen.getByText(/Image generation runs through your Cadet account/),
     ).toBeTruthy();
 
     fireEvent.click(trigger("Image generation model"));
@@ -267,15 +267,13 @@ describe("ImageGenerationCard — provider-only configuration", () => {
   });
 
   // A config written by the legacy mode toggle marks managed via `mode`.
-  test("a legacy managed-mode daemon renders as Vellum", () => {
+  test("a legacy managed-mode daemon renders as Cadet", () => {
     daemonConfigData = {
       services: { "image-generation": { mode: "managed", provider: "gemini" } },
     };
     renderCard();
 
-    expect(trigger("Image generation provider").textContent).toContain(
-      "Vellum",
-    );
+    expect(trigger("Image generation provider").textContent).toContain("Cadet");
     expect(screen.queryByText("API Key")).toBeNull();
   });
 
@@ -320,7 +318,7 @@ describe("ImageGenerationCard — provider-only configuration", () => {
     });
   });
 
-  test("a daemon predating the vellum enum still gets explicit BYOK provider writes", async () => {
+  test("a daemon predating the cadet enum still gets explicit BYOK provider writes", async () => {
     // Only "vellum" is unrepresentable on old daemons; gemini/openai are in
     // the old enum, so a provider switch must not be dropped.
     daemonSupportsVellumProvider = false;
@@ -484,15 +482,15 @@ describe("ImageGenerationCard — provider-only configuration", () => {
     ).toBe("openai/gpt-image-2");
   });
 
-  test("a daemon predating the vellum provider gets the legacy managed write", async () => {
-    // Old daemon schemas reject provider "vellum" outright; the Vellum
+  test("a daemon predating the cadet provider gets the legacy managed write", async () => {
+    // Old daemon schemas reject provider "vellum" outright; the Cadet
     // selection degrades to the legacy mode-only representation the read
-    // bridge renders as Vellum again.
+    // bridge renders as Cadet again.
     daemonSupportsVellumProvider = false;
     renderCard();
 
     fireEvent.click(trigger("Image generation provider"));
-    selectOption("Vellum");
+    selectOption("Cadet");
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(configPatchCalls.length).toBe(1));

@@ -3,10 +3,10 @@ export function logHatchNextSteps(
   instanceName: string,
 ): void {
   log("Next steps:");
-  log("  vellum client");
-  log('  vellum message "hello"');
-  log("  vellum events");
-  log("  vellum ps");
-  log(`  vellum use ${instanceName}`);
+  log("  cadet client");
+  log('  cadet message "hello"');
+  log("  cadet events");
+  log("  cadet ps");
+  log(`  cadet use ${instanceName}`);
   log("");
 }

@@ -8,7 +8,7 @@ import type { CharacterComponents, CharacterTraits } from "@/types/avatar";
  *
  *   1. `character` — an animated SVG composited from the assistant's traits.
  *   2. `image` — a custom uploaded image (blob URL or remote URL).
- *   3. `none` — no avatar; the consumer falls back to the Vellum mark.
+ *   3. `none` — no avatar; the consumer falls back to the Cadet mark.
  *
  * An assistant that has components but has never picked traits still draws a
  * character, the default one every surface derives through
@@ -34,7 +34,7 @@ export type AvatarRender =
  * draw at all.
  *
  * An assistant that has never opened the avatar builder still shows a creature
- * rather than the Vellum mark, so the default has to be resolved in one place:
+ * rather than the Cadet mark, so the default has to be resolved in one place:
  * every surface that draws the assistant (the chat avatar, the favicon, the
  * Electron dock and menu-bar icons, the Live Activity island, the iOS Home
  * Screen widgets) must land on the same face.

@@ -63,7 +63,7 @@ function readActiveCallLeases(vellumDir: string): ActiveCallLease[] {
 export async function sleep(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: vellum sleep [<name>] [--force] [--wait [<duration>]]");
+    console.log("Usage: cadet sleep [<name>] [--force] [--wait [<duration>]]");
     console.log("");
     console.log("Stop the assistant and gateway processes.");
     console.log("");
@@ -154,14 +154,14 @@ export async function sleep(): Promise<void> {
 
   if (entry.cloud === "paired") {
     console.error(
-      `Error: '${entry.assistantId}' is a remote assistant paired from another machine — its lifecycle is managed on its host machine, not here. Use \`vellum client ${entry.assistantId}\` to chat with it.`,
+      `Error: '${entry.assistantId}' is a remote assistant paired from another machine — its lifecycle is managed on its host machine, not here. Use \`cadet client ${entry.assistantId}\` to chat with it.`,
     );
     process.exit(1);
   }
 
   if (entry.cloud && entry.cloud !== "local") {
     console.error(
-      `Error: 'vellum sleep' only works with local and docker assistants. '${entry.assistantId}' is a ${entry.cloud} instance.`,
+      `Error: 'cadet sleep' only works with local and docker assistants. '${entry.assistantId}' is a ${entry.cloud} instance.`,
     );
     process.exit(1);
   }
@@ -189,7 +189,7 @@ export async function sleep(): Promise<void> {
           console.error(
             `Error: assistant is staying awake for active phone calls (${activeIds.join(
               ", ",
-            )}). Use 'vellum sleep --force' to stop it anyway.`,
+            )}). Use 'cadet sleep --force' to stop it anyway.`,
           );
           process.exit(1);
         }
@@ -197,7 +197,7 @@ export async function sleep(): Promise<void> {
         console.error(
           `Error: ${
             err instanceof Error ? err.message : String(err)
-          }. Use 'vellum sleep --force' to override if you want to stop the assistant anyway.`,
+          }. Use 'cadet sleep --force' to override if you want to stop the assistant anyway.`,
         );
         process.exit(1);
       }
@@ -261,7 +261,7 @@ export async function sleep(): Promise<void> {
  * Wait for the assistant's in-flight background work (heartbeats, memory
  * jobs, schedule runs, active conversation turns) to finish before the stop.
  * Every failure mode falls back to a normal stop with a note — a drain must
- * never make `vellum sleep` less reliable than it is without `--wait`.
+ * never make `cadet sleep` less reliable than it is without `--wait`.
  */
 async function runDrainPhase(
   entry: AssistantEntry,

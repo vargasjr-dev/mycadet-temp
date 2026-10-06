@@ -35,7 +35,7 @@ export function registerPlatformConnectCommand(platform: Command): void {
           // --force runs it.
           log.info(
             "The stored platform credential was rejected by the platform. " +
-              "Run 'vellum login --force' to sign in again and replace it.",
+              "Run 'cadet login --force' to sign in again and replace it.",
           );
         } else {
           log.info(

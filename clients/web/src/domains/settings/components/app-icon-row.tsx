@@ -46,7 +46,7 @@ interface IconGround {
 }
 
 /**
- * Vellum Dev draws its icon on pink on both platforms.
+ * Cadet Dev draws its icon on pink on both platforms.
  *
  * `clients/ios/App/App/AppIcon-Dev.icon` declares its fill as the Display P3
  * conversion of the sRGB hex {@link APP_ICON_GROUNDS} carries, and
@@ -59,7 +59,7 @@ const DEV_GROUND: IconGround = {
   srgb: APP_ICON_GROUNDS.dev,
 };
 
-/** Vellum Staging's yellow, read the same way off the same pair of shells. */
+/** Cadet Staging's yellow, read the same way off the same pair of shells. */
 const STAGING_GROUND: IconGround = {
   displayP3: "color(display-p3 0.89313 0.79283 0.2841)",
   srgb: APP_ICON_GROUNDS.staging,

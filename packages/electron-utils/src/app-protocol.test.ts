@@ -59,10 +59,7 @@ describe("resolveAppProtocolPath - URL parser collapses `..` segments", () => {
 
   test("deeply nested `..` chains resolve to a safe in-root path", () => {
     expect(
-      resolveAppProtocolPath(
-        ROOT,
-        "app://vellum.ai/a/b/../../../etc/passwd",
-      ),
+      resolveAppProtocolPath(ROOT, "app://vellum.ai/a/b/../../../etc/passwd"),
     ).toEqual({ kind: "ok", resolved: path.join(ROOT, "etc/passwd") });
   });
 
@@ -84,7 +81,9 @@ describe("resolveAppProtocolPath - malformed input handling", () => {
   });
 
   test("rejects invalid URLs and disallowed packaged origins", () => {
-    expect(resolveAppProtocolPath(ROOT, "not a URL", undefined, APP_ORIGIN)).toEqual({
+    expect(
+      resolveAppProtocolPath(ROOT, "not a URL", undefined, APP_ORIGIN),
+    ).toEqual({
       kind: "forbidden",
     });
     for (const requestUrl of [
@@ -181,11 +180,7 @@ describe("resolveAppProtocolPath - mount-prefix stripping", () => {
     // `/favicon.ico` lives at the bare protocol root. Stays under
     // `rendererRoot/favicon.ico` (where Vite emits favicon).
     expect(
-      resolveAppProtocolPath(
-        ROOT,
-        "app://vellum.ai/favicon.ico",
-        "/assistant",
-      ),
+      resolveAppProtocolPath(ROOT, "app://vellum.ai/favicon.ico", "/assistant"),
     ).toEqual({ kind: "ok", resolved: path.join(ROOT, "favicon.ico") });
   });
 
@@ -220,10 +215,7 @@ describe("resolveAppProtocolPath - mount-prefix stripping", () => {
 });
 
 describe("planAppProtocolAssetRequest - packaged routes", () => {
-  const plan = (
-    requestUrl: string,
-    files: string[] = [],
-  ) =>
+  const plan = (requestUrl: string, files: string[] = []) =>
     planAppProtocolAssetRequest({
       rendererRoot: ROOT,
       indexHtml: INDEX_HTML,

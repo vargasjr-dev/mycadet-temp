@@ -595,14 +595,14 @@ describe("SubagentDetailPanel: nested detail reads the live call", () => {
         result: "unparsed provider text",
         activityMetadata: {
           webSearch: {
-            query: "vellum assistant",
+            query: "cadet assistant",
             provider: "brave",
             resultCount: 1,
             durationMs: 1,
             results: [
               {
                 rank: 1,
-                title: "Vellum",
+                title: "Cadet",
                 url: "https://vellum.ai",
                 domain: "vellum.ai",
               },
@@ -614,7 +614,7 @@ describe("SubagentDetailPanel: nested detail reads the live call", () => {
     render(<SubagentDetailPanel entry={entry} onClose={noop} />);
     fireEvent.click(screen.getByTestId("timeline-pill"));
 
-    expect(screen.getByText("vellum assistant")).toBeDefined();
+    expect(screen.getByText("cadet assistant")).toBeDefined();
     expect(screen.getByText("Sources (1)")).toBeDefined();
     expect(screen.queryByText("unparsed provider text")).toBeNull();
   });

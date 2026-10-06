@@ -59,7 +59,7 @@ describe("SPA shell: Open Graph metadata", () => {
     expect(ogTag("og:description")).toBeTruthy();
     expect(ogTag("og:image")).toBe(EXPECTED_IMAGE);
     expect(ogTag("og:type")).toBe("website");
-    expect(ogTag("og:site_name")).toBe("Vellum");
+    expect(ogTag("og:site_name")).toBe("Cadet");
   });
 
   test("declares the image dimensions so cards render on first share", () => {

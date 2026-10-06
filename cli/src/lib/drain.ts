@@ -1,5 +1,5 @@
 /**
- * Drain phase for `vellum sleep --wait`.
+ * Drain phase for `cadet sleep --wait`.
  *
  * Arms the assistant's quiesce lease (pausing the START of new background
  * work — heartbeats, schedule claims, memory-job claims), then polls the

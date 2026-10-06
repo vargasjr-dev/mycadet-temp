@@ -84,9 +84,7 @@ function verify(
     body: bytes(body),
     secret: opts.secret ?? SECRET,
     nowMs: opts.nowMs ?? NOW_MS,
-    ...(opts.requestUrl !== undefined
-      ? { requestUrl: opts.requestUrl }
-      : {}),
+    ...(opts.requestUrl !== undefined ? { requestUrl: opts.requestUrl } : {}),
     ...(opts.publicBaseUrl !== undefined
       ? { publicBaseUrl: opts.publicBaseUrl }
       : {}),
@@ -112,9 +110,7 @@ function urlAndFormSignature(
     .sort()
     .map((key) => `${key}${params[key]}`)
     .join("");
-  return createHmac("sha1", secret)
-    .update(`${url}${sorted}`)
-    .digest("base64");
+  return createHmac("sha1", secret).update(`${url}${sorted}`).digest("base64");
 }
 
 function formBody(params: Record<string, string>): string {
@@ -661,7 +657,9 @@ describe("HMAC URL and form payloads", () => {
         "X-Forwarded-Host": "assistant.example.test",
       },
       formBody(PARAMS),
-      { requestUrl: "http://127.0.0.1:8080/webhooks/plugins/sms/events-twilio/" },
+      {
+        requestUrl: "http://127.0.0.1:8080/webhooks/plugins/sms/events-twilio/",
+      },
     );
     expect(result).toEqual({ ok: true });
   });
@@ -676,7 +674,9 @@ describe("HMAC URL and form payloads", () => {
         "X-Vellum-Ingress-Url": injected,
       },
       formBody(PARAMS),
-      { requestUrl: "http://127.0.0.1:8080/webhooks/plugins/sms/events-twilio/" },
+      {
+        requestUrl: "http://127.0.0.1:8080/webhooks/plugins/sms/events-twilio/",
+      },
     );
     expect(result).toEqual({ ok: true });
   });
@@ -689,8 +689,7 @@ describe("HMAC URL and form payloads", () => {
       },
       formBody(PARAMS),
       {
-        requestUrl:
-          "http://127.0.0.1:8080/webhooks/plugins/sms/events-twilio/",
+        requestUrl: "http://127.0.0.1:8080/webhooks/plugins/sms/events-twilio/",
         publicBaseUrl: "https://assistant.example.test",
       },
     );

@@ -14,7 +14,7 @@
  * The request itself is the same authenticated request `oauth request`
  * makes: the route resolves the provider's connection and injects the
  * credential, so no token is ever handled here. A channel this map does not
- * name has no bot credential of its own (phone, vellum, platform) or is not
+ * name has no bot credential of its own (phone, cadet, platform) or is not
  * built in, and the command says so rather than guessing a provider.
  */
 

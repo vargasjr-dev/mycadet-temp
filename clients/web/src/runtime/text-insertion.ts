@@ -23,7 +23,7 @@ export async function insertTextIntoFrontApp(
 }
 
 /**
- * Undo the last edit in the application in front, for putting Vellum's
+ * Undo the last edit in the application in front, for putting Cadet's
  * dictation in the place of one another app pasted. Unavailable off Electron.
  */
 export async function undoInFrontApp(): Promise<TextInsertionResult> {

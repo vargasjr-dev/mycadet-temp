@@ -204,15 +204,15 @@ Examples:
       helpText: `
 A provider entry names a model provider plus how to reach it. Auth is
 derived from the provider: keyless providers (ollama) need none, the
-Vellum entry routes through the platform's managed proxy, and everything
+Cadet entry routes through the platform's managed proxy, and everything
 else uses an API key referenced by --credential.
 
 Canonical entry (seeded on every boot):
-  vellum → the platform-managed provider; cannot be deleted
+  cadet → the platform-managed provider; cannot be deleted
 
 Examples:
   $ assistant inference providers list
-  $ assistant inference providers get vellum
+  $ assistant inference providers get cadet
   $ assistant inference providers create anthropic-personal \\
       --provider anthropic --credential credential/anthropic/api_key
   $ assistant inference providers create local-llm \\
@@ -294,8 +294,7 @@ a profile that uses it:
             },
             {
               flags: "--base-url <url>",
-              description:
-                "Endpoint base URL (openai-compatible or ollama)",
+              description: "Endpoint base URL (openai-compatible or ollama)",
             },
           ],
         },

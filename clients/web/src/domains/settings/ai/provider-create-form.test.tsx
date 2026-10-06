@@ -501,7 +501,7 @@ describe("ProviderCreateForm submit sequence", () => {
     // Ollama isn't selectable on platform-hosted assistants, so the picker
     // falls back to the first selectable provider: a keyed one, so the API
     // key field renders (adding a provider always means your own key;
-    // platform-managed routing is the Vellum row, not a per-provider choice).
+    // platform-managed routing is the Cadet row, not a per-provider choice).
     expect(getInputByPlaceholder("Enter your API key")).toBeDefined();
 
     // It stays on the menu, disabled and stating why, so the restriction

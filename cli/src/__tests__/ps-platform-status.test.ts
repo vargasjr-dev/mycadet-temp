@@ -140,7 +140,7 @@ import { listAllAssistants } from "../commands/ps.js";
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("vellum ps — platform status line", () => {
+describe("cadet ps — platform status line", () => {
   test("no local token: prints 'Platform: not logged in' and skips ALL network fetches", async () => {
     readPlatformTokenMock.mockReturnValue(null);
 

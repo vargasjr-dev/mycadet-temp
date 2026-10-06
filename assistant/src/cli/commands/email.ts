@@ -87,7 +87,7 @@ export function registerEmailCommand(program: Command): void {
 Arguments:
   username   The local part of the email address (e.g. "mybot" → mybot@${assistantDomain()})
 
-Registers a new email address on the Vellum platform for the current
+Registers a new email address on the Cadet platform for the current
 assistant. Each assistant can have one email address. The address is
 immediately active for receiving inbound email.
 

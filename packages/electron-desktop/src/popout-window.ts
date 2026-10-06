@@ -92,7 +92,7 @@ export const openPopout = (conversationId: string): void => {
       ...sizing,
       minWidth: POPOUT_MIN_WIDTH,
       minHeight: POPOUT_MIN_HEIGHT,
-      title: "Vellum",
+      title: "Cadet",
       show: false,
     },
     // A pop-out thread can own a live-voice session too, which is why the

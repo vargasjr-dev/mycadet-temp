@@ -37,7 +37,7 @@ export function VoicePickerField({
   const [open, setOpen] = useState(false);
   // Gate on the catalog, not the saved-config `available`: this field is always
   // parent-controlled (the Text-to-Speech card decides to show it from its
-  // draft provider), so a draft switch to Vellum must reveal the picker before
+  // draft provider), so a draft switch to Cadet must reveal the picker before
   // the provider is persisted.
   const { voices } = useManagedVoiceSelection(assistantId);
 

@@ -868,7 +868,7 @@ describe("StatusBanner", () => {
             ? "Your assistant runs locally"
             : "Reconnecting to your assistant…",
         );
-        expect(html).toContain("Open the Vellum desktop app");
+        expect(html).toContain("Open the Cadet desktop app");
         expect(html).not.toContain("Wake up");
         expect(html).toContain('data-tone="neutral"');
       },
@@ -925,7 +925,7 @@ describe("StatusBanner", () => {
 
     test("prefers can't-be-reached over the runs-locally banner for a paired assistant", () => {
       // Even where local-mode operations aren't available, a paired entry
-      // must not claim it "runs locally" or suggest `vellum wake`.
+      // must not claim it "runs locally" or suggest `cadet wake`.
       localHealthMock = "unreachable";
       isLocalModeHostAvailableMock = false;
       assistantsMock = [
@@ -1002,9 +1002,9 @@ describe("StatusBanner", () => {
       expect(html).not.toContain("lucide-cloud-off");
     });
 
-    test("hides the Wake up button for an assistant vellum wake can't start (e.g. Docker)", () => {
+    test("hides the Wake up button for an assistant cadet wake can't start (e.g. Docker)", () => {
       // Capable host, but the active assistant isn't CLI-wakeable (Docker /
-      // apple-container) — offering "Wake up" would call `vellum wake`, which
+      // apple-container) — offering "Wake up" would call `cadet wake`, which
       // refuses those. Show status without the button.
       localHealthMock = "sleeping";
       isLocalModeHostAvailableMock = true;
@@ -1124,7 +1124,7 @@ describe("StatusBanner", () => {
 
       expect(html).toContain("Your assistant is asleep");
       expect(html).toContain("Wake up");
-      expect(html).not.toContain("Trying to reach Vellum");
+      expect(html).not.toContain("Trying to reach Cadet");
       expect(html).not.toContain("Retry now");
     });
 
@@ -1136,7 +1136,7 @@ describe("StatusBanner", () => {
       const html = renderToStaticMarkup(<StatusBanner />);
 
       expect(html).toContain("Your assistant is waking up");
-      expect(html).not.toContain("Trying to reach Vellum");
+      expect(html).not.toContain("Trying to reach Cadet");
     });
   });
 
@@ -1198,7 +1198,7 @@ describe("StatusBanner", () => {
 
       const html = renderToStaticMarkup(<StatusBanner />);
 
-      expect(html).toContain("Trying to reach Vellum");
+      expect(html).toContain("Trying to reach Cadet");
       expect(html).toContain("Retry now");
       expect(html).toContain('data-tone="error"');
       expect(html).toContain("lucide-cloud-off");
@@ -1227,7 +1227,7 @@ describe("StatusBanner", () => {
       const html = renderToStaticMarkup(<StatusBanner />);
 
       expect(html).toContain("Assistant fatal error");
-      expect(html).not.toContain("Trying to reach Vellum");
+      expect(html).not.toContain("Trying to reach Cadet");
     });
 
     test("does not render backend-unreachable connectivity state outside Electron", () => {

@@ -238,9 +238,9 @@ export function useProfileEditor({
   );
   const [key, setKey] = useState(mode === "create" ? "" : (profileName ?? ""));
   // "vellum" is a picker-level value: profiles bound to the Vellum-managed
-  // connection present (and edit) as provider "Vellum"; the wire-shape
+  // connection present (and edit) as provider "Cadet"; the wire-shape
   // upstream is derived from the model at save time. The form opens on the
-  // stored upstream and only promotes to Vellum once the loaded connections
+  // stored upstream and only promotes to Cadet once the loaded connections
   // prove the bound row is the managed sentinel (see the effect below).
   // A stored "chatgpt" provider (migration 144 output, the picker, or the
   // API) opens as the ChatGPT selection.
@@ -332,7 +332,7 @@ export function useProfileEditor({
       : THINKING_LEVEL_INHERIT,
   );
 
-  // Derived: selected model from catalog. A saved Vellum model may be a
+  // Derived: selected model from catalog. A saved Cadet model may be a
   // routed `<provider>/<model>` string; parse it once - the native id feeds
   // every catalog lookup and the save path, the prefix feeds upstream
   // derivation.
@@ -446,7 +446,7 @@ export function useProfileEditor({
   // One-time helper note shown after an inline provider create succeeds.
   const [newProviderNote, setNewProviderNote] = useState(false);
 
-  // Promote a vellum-bound profile into Vellum picker mode once the loaded
+  // Promote a vellum-bound profile into Cadet picker mode once the loaded
   // connections prove the bound row is the managed sentinel. Skipped once the
   // user changes the provider themselves.
   useEffect(() => {
@@ -627,7 +627,7 @@ export function useProfileEditor({
   // provider + connection, collapse the sub-form, surface the helper note,
   // and invalidate the connections query so pickers pick up the row.
   function handleProviderCreated(connection: ProviderConnection) {
-    // The create form can't produce a vellum connection; bail before touching
+    // The create form can't produce a cadet connection; bail before touching
     // any state so the sub-form can't get stuck.
     const newProvider = connection.provider;
     if (newProvider === "vellum") {
@@ -746,11 +746,11 @@ export function useProfileEditor({
           ? availableConnectionsForProvider[0].name
           : providerConnection;
       const effectiveBinding = connectionNotFound ? "" : resolvedBinding;
-      // The Vellum picker entry's wire shape is version-gated. Daemons at the
+      // The Cadet picker entry's wire shape is version-gated. Daemons at the
       // gate's MIN_VERSION store the routing identity directly
       // (`provider: "vellum"` + native model, no binding); older daemons get
       // the legacy shape: the model's managed upstream as `provider`, bound
-      // to the provider-agnostic vellum connection.
+      // to the provider-agnostic cadet connection.
       // The chatgpt identity needs no version gate: the picker offers it
       // only when the daemon returned a provider "chatgpt" row, which only
       // daemons that understand the identity payload do.

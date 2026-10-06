@@ -707,7 +707,7 @@ function ProviderStep({
 
 /**
  * The row's annotation as this flow says it. The shared picker encoding calls
- * the Vellum route "Managed", which is what the provider-first picker and the
+ * the Cadet route "Managed", which is what the provider-first picker and the
  * Providers section keep saying; a person choosing a model first is being
  * pointed at a route rather than told how it is run, so here the same row
  * reads "Recommended". Every other annotation passes through untouched.

@@ -19,7 +19,7 @@ export interface BillingBalanceStatus {
    */
   isLowBalance: boolean;
   /**
-   * Server-computed daily-limit state: today's Vellum credit spend has reached
+   * Server-computed daily-limit state: today's Cadet credit spend has reached
    * the org's configured daily cap. Independent of the balance, so it holds
    * even when credits remain. Drives the composer's daily-limit banner
    * proactively, without waiting for a send to fail.

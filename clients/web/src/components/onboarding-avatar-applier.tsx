@@ -41,7 +41,7 @@ export function shouldDropAvatarHandoff(failedAttempts: number): boolean {
 
 /**
  * Persist the avatar's voice to the assistant's managed-TTS config. Onboarding
- * assistants are managed, so the voice lives on the `vellum` provider block,
+ * assistants are managed, so the voice lives on the `cadet` provider block,
  * the same field every voice picker writes.
  *
  * A null voice is a no-op success: the catalog never loaded, so there is

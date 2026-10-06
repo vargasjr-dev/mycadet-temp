@@ -494,7 +494,7 @@ describe("RemoteWebPairingPage", () => {
     );
 
     const link = await screen.findByRole("link", {
-      name: "Open in the Vellum app",
+      name: "Open in the Cadet app",
     });
     const href = link.getAttribute("href") ?? "";
     expect(href.startsWith("vellum-assistant://connect?")).toBe(true);
@@ -527,7 +527,7 @@ describe("RemoteWebPairingPage", () => {
     );
 
     const link = await screen.findByRole("link", {
-      name: "Open in the Vellum app",
+      name: "Open in the Cadet app",
     });
     const href = link.getAttribute("href") ?? "";
     expect(href.startsWith("intent://connect?")).toBe(true);
@@ -556,7 +556,7 @@ describe("RemoteWebPairingPage", () => {
     );
 
     const link = await screen.findByRole("link", {
-      name: "Open in the Vellum app",
+      name: "Open in the Cadet app",
     });
     const href = link.getAttribute("href") ?? "";
     const query = new URLSearchParams(href.slice(href.indexOf("?") + 1));
@@ -581,7 +581,7 @@ describe("RemoteWebPairingPage", () => {
     );
 
     const link = await screen.findByRole("link", {
-      name: "Open in the Vellum app",
+      name: "Open in the Cadet app",
     });
     const href = link.getAttribute("href") ?? "";
     expect(androidIntentQuery(href).get("name")).toBe("My Homelab");
@@ -604,7 +604,7 @@ describe("RemoteWebPairingPage", () => {
       );
 
       const link = await screen.findByRole("link", {
-        name: "Open in the Vellum app",
+        name: "Open in the Cadet app",
       });
       const href = link.getAttribute("href") ?? "";
       const query = new URLSearchParams(href.slice(href.indexOf("?") + 1));
@@ -632,7 +632,7 @@ describe("RemoteWebPairingPage", () => {
     );
 
     const link = await screen.findByRole("link", {
-      name: "Open in the Vellum app",
+      name: "Open in the Cadet app",
     });
     const href = link.getAttribute("href") ?? "";
     const query = androidIntentQuery(href);
@@ -657,7 +657,7 @@ describe("RemoteWebPairingPage", () => {
       );
     });
     expect(
-      screen.queryByRole("link", { name: "Open in the Vellum app" }),
+      screen.queryByRole("link", { name: "Open in the Cadet app" }),
     ).toBeNull();
   });
 
@@ -680,7 +680,7 @@ describe("RemoteWebPairingPage", () => {
       );
 
       const link = await screen.findByRole("link", {
-        name: "Open in the Vellum app",
+        name: "Open in the Cadet app",
       });
       const href = link.getAttribute("href") ?? "";
       expect(androidIntentFallback(href)).toBe(window.location.href);
@@ -698,7 +698,7 @@ describe("RemoteWebPairingPage", () => {
         );
       });
       expect(
-        screen.queryByRole("link", { name: "Open in the Vellum app" }),
+        screen.queryByRole("link", { name: "Open in the Cadet app" }),
       ).toBeNull();
     } finally {
       window.history.pushState(null, "", "/");
@@ -730,7 +730,7 @@ describe("RemoteWebPairingPage", () => {
         );
       });
       expect(
-        screen.queryByRole("link", { name: "Open in the Vellum app" }),
+        screen.queryByRole("link", { name: "Open in the Cadet app" }),
       ).toBeNull();
     },
   );

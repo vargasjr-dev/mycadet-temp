@@ -91,7 +91,7 @@ describe("cross-environment assistant detection", () => {
     expect(hint).not.toBeNull();
     expect(hint).toContain("'dev'");
     expect(hint).toContain("This CLI targets 'production'");
-    expect(hint).toContain("Install vellum Command");
+    expect(hint).toContain("Install cadet Command");
     expect(hint).toContain("VELLUM_ENVIRONMENT=dev");
   });
 

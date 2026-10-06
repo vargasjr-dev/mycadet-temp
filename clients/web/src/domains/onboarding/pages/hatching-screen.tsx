@@ -261,7 +261,7 @@ export function HatchingScreen() {
     // lockfile entry while a gateway token is held, and daemon SDK calls (the
     // healthz probes below) rewrite to the local gateway while a self-hosted
     // connection is primed. Dropping both is the same handoff the hosting
-    // screen performs for its Vellum Cloud choice.
+    // screen performs for its Cadet Cloud choice.
     if (managedHatch && isLocalClient()) {
       clearGatewayToken();
       setSelfHostedConnection(null);

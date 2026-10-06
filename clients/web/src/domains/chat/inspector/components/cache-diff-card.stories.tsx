@@ -35,7 +35,7 @@ const meta: Meta<typeof CacheDiffCard> = {
 export default meta;
 type Story = StoryObj<typeof CacheDiffCard>;
 
-const SYSTEM_PROMPT = `You are Vellum, a helpful assistant.
+const SYSTEM_PROMPT = `You are Cadet, a helpful assistant.
 
 Follow the user's instructions carefully and use the available tools when
 they help you answer accurately. Keep responses concise.`;

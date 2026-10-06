@@ -123,7 +123,7 @@ describe("matchesSectionFilter", () => {
     expect(matchesSectionFilter(conversation(), SLACK)).toBe(false);
   });
 
-  test("vellum admits an unattributed row, every other channel is exact", () => {
+  test("cadet admits an unattributed row, every other channel is exact", () => {
     // `origin_channel` is left unset so an inbound message can still claim
     // the conversation; reading unset as native is the self-correcting error.
     expect(matchesSectionFilter(conversation(), NATIVE_CHATS)).toBe(true);

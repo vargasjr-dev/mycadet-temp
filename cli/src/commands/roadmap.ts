@@ -2,7 +2,7 @@ import { readPlatformToken, getWebUrl } from "../lib/platform-client.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 
 function printUsage(): void {
-  console.log("Usage: vellum roadmap <subcommand>");
+  console.log("Usage: cadet roadmap <subcommand>");
   console.log("");
   console.log("Manage roadmap items.");
   console.log("");
@@ -29,14 +29,14 @@ function printUsage(): void {
   );
   console.log("");
   console.log("Examples:");
-  console.log('  $ vellum roadmap list --query "dark mode"');
-  console.log("  $ vellum roadmap list --status planned --sort upvotes");
-  console.log("  $ vellum roadmap get my-feature-slug");
-  console.log('  $ vellum roadmap create --title "Add dark mode"');
+  console.log('  $ cadet roadmap list --query "dark mode"');
+  console.log("  $ cadet roadmap list --status planned --sort upvotes");
+  console.log("  $ cadet roadmap get my-feature-slug");
+  console.log('  $ cadet roadmap create --title "Add dark mode"');
   console.log(
-    '  $ vellum roadmap update my-feature --description "Follow the OS setting"',
+    '  $ cadet roadmap update my-feature --description "Follow the OS setting"',
   );
-  console.log("  $ vellum roadmap upvote my-feature-slug");
+  console.log("  $ cadet roadmap upvote my-feature-slug");
 }
 
 function consumeValue(args: string[], i: number, flag: string): string {
@@ -51,7 +51,7 @@ function consumeValue(args: string[], i: number, flag: string): string {
 function requireAuth(): string {
   const token = readPlatformToken();
   if (!token) {
-    console.error("Not logged in. Run `vellum login` first.");
+    console.error("Not logged in. Run `cadet login` first.");
     process.exit(1);
   }
   return token;
@@ -60,7 +60,7 @@ function requireAuth(): string {
 function requireSlug(args: string[], command: string): string {
   const slug = args[0];
   if (!slug || slug.startsWith("--")) {
-    console.error(`Usage: vellum roadmap ${command} <slug>`);
+    console.error(`Usage: cadet roadmap ${command} <slug>`);
     process.exit(1);
   }
   return slug;
@@ -267,7 +267,7 @@ async function roadmapCreate(args: string[]): Promise<void> {
 
   if (!title) {
     console.error("Error: --title is required.");
-    console.error('Usage: vellum roadmap create --title "My feature request"');
+    console.error('Usage: cadet roadmap create --title "My feature request"');
     process.exitCode = 1;
     return;
   }

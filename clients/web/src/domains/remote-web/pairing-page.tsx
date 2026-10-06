@@ -54,8 +54,8 @@ function statusCopy(state: PairingState): { title: string; body: string } {
       };
     case "handoff_choice":
       return {
-        title: "Open in the Vellum app",
-        body: "Scanning from a phone with the Vellum app installed? Hand this pairing to the app.",
+        title: "Open in the Cadet app",
+        body: "Scanning from a phone with the Cadet app installed? Hand this pairing to the app.",
       };
     case "verifying":
       return {
@@ -70,7 +70,7 @@ function statusCopy(state: PairingState): { title: string; body: string } {
     case "expired":
       return {
         title: "Pairing expired",
-        body: "This pairing code is invalid or expired. Run vellum pair on the machine running your assistant to get a new one.",
+        body: "This pairing code is invalid or expired. Run cadet pair on the machine running your assistant to get a new one.",
       };
     case "error":
       return {
@@ -256,7 +256,7 @@ export function RemoteWebPairingPage() {
   );
 
   // A phone that scanned the pairing QR with its camera lands here in a browser.
-  // If the Vellum app is installed we offer to hand the pairing to it before
+  // If the Cadet app is installed we offer to hand the pairing to it before
   // burning the single-use code, never inside a native shell that pairs directly.
   const appHandoffPlatform = useMemo<AppHandoffPlatform | null>(() => {
     if (!params.deviceCode || isNativePlatform()) {

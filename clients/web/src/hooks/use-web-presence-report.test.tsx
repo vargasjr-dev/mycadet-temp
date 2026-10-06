@@ -843,7 +843,7 @@ describe("useWebPresenceReport: reconciliation", () => {
 
 describe("useWebPresenceReport: Electron renderer", () => {
   beforeEach(() => {
-  nativePlatform = false;
+    nativePlatform = false;
     electron = true;
     useConversationStore.getState().setActiveConversationId("conv-1");
   });
@@ -921,7 +921,7 @@ describe("useWebPresenceReport: Electron renderer", () => {
 
   test("an unattended window reports invisible despite the DOM", async () => {
     windowAttended = false;
-    // Vellum windows disable the Page Visibility API, so the DOM reads
+    // Cadet windows disable the Page Visibility API, so the DOM reads
     // visible wherever the window actually is.
     setVisibilityState("visible");
     await renderTouched();
@@ -936,7 +936,7 @@ describe("useWebPresenceReport: Electron renderer", () => {
   });
 
   // The desktop publishes no lifecycle edge of its own, so one arriving here
-  // came from the DOM source, which cannot see where a Vellum window is.
+  // came from the DOM source, which cannot see where a Cadet window is.
   // Trusting it would report a window nobody is looking at as visible.
   test("a foreground edge on an unfocused window reports invisible", async () => {
     await renderTouched();

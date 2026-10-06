@@ -5,7 +5,7 @@
  *
  * The chat surface tags conversations that originate from an external
  * channel — in the header and channel footer — with the channel's human
- * label and an icon so they read as distinct from native Vellum
+ * label and an icon so they read as distinct from native Cadet
  * conversations. This module is the "adapter" layer for that presentation:
  * add a channel here once and every surface picks it up.
  *

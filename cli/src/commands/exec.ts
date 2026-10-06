@@ -52,7 +52,7 @@ export async function exec(): Promise<void> {
   const rawArgs = process.argv.slice(3);
 
   // Only check for help flags before the -- separator so that
-  // `vellum exec -- curl --help` passes through correctly.
+  // `cadet exec -- curl --help` passes through correctly.
   const dashDashIndex = rawArgs.indexOf("--");
   const preArgs =
     dashDashIndex === -1 ? rawArgs : rawArgs.slice(0, dashDashIndex);
@@ -63,7 +63,7 @@ export async function exec(): Promise<void> {
     rawArgs.length === 0
   ) {
     console.log(
-      "Usage: vellum exec [<name>] [--service <svc>] [-it] -- <command...>",
+      "Usage: cadet exec [<name>] [--service <svc>] [-it] -- <command...>",
     );
     console.log("");
     console.log("Execute a command inside an assistant's container.");
@@ -94,17 +94,17 @@ export async function exec(): Promise<void> {
     console.log("  credential-executor (or vellum-credential-executor)");
     console.log("");
     console.log("Examples:");
-    console.log("  vellum exec -- ls -la /workspace");
-    console.log("  vellum exec -- cat /workspace/NOW.md");
-    console.log("  vellum exec -it -- /bin/bash");
-    console.log("  vellum exec --service gateway -- cat /tmp/gateway.log");
+    console.log("  cadet exec -- ls -la /workspace");
+    console.log("  cadet exec -- cat /workspace/NOW.md");
+    console.log("  cadet exec -it -- /bin/bash");
+    console.log("  cadet exec --service gateway -- cat /tmp/gateway.log");
     process.exit(0);
   }
 
   if (dashDashIndex === -1) {
     console.error(
       "Error: missing '--' separator before command.\n" +
-        "Usage: vellum exec [<name>] -- <command...>",
+        "Usage: cadet exec [<name>] -- <command...>",
     );
     process.exit(1);
   }
@@ -149,7 +149,7 @@ export async function exec(): Promise<void> {
     if (nameArg) {
       console.error(`No assistant instance found with name '${nameArg}'.`);
     } else {
-      console.error("No assistant instance found. Run `vellum hatch` first.");
+      console.error("No assistant instance found. Run `cadet hatch` first.");
     }
     process.exit(1);
   }
@@ -212,7 +212,7 @@ export async function exec(): Promise<void> {
     const token = readPlatformToken();
     if (!token) {
       console.error(
-        "Not logged in. Run `vellum login` first to authenticate with the platform.",
+        "Not logged in. Run `cadet login` first to authenticate with the platform.",
       );
       process.exit(1);
     }
@@ -244,8 +244,6 @@ export async function exec(): Promise<void> {
     return;
   }
 
-  console.error(
-    `Error: 'vellum exec' is not supported for ${cloud} instances.`,
-  );
+  console.error(`Error: 'cadet exec' is not supported for ${cloud} instances.`);
   process.exit(1);
 }

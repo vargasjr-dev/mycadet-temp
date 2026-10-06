@@ -2,7 +2,7 @@
  * Read-only external-channel transcript, rendered in the shared chat drawer.
  *
  * The canonical home for rows the client can attribute to a bound channel: the
- * Vellum lane omits them (see `partitionChannelTranscript`), so this panel is
+ * Cadet lane omits them (see `partitionChannelTranscript`), so this panel is
  * where they are drawn, once.
  *
  * This is the container half of the drawer: it owns every store and query

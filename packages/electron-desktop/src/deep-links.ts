@@ -84,7 +84,7 @@ export function resolveAuthCallbackScheme(env: string): string {
 }
 
 // Schemes to REGISTER with the OS via `app.setAsDefaultProtocolClient`.
-// Production claims both `vellum` and `vellum-assistant`; non-production
+// Production claims both `cadet` and `vellum-assistant`; non-production
 // claims only the env-specific scheme to avoid hijacking production.
 export function resolveRegisteredSchemes(env: string): string[] {
   if (env === "production") {
@@ -137,8 +137,8 @@ const ACCEPTED_SCHEMES = resolveAcceptedSchemes(currentEnv);
  *     Trailing slashes / extra path segments are tolerated;
  *     `threadId` is the first non-empty path segment.
  *   - `vellum://connect?url=…&code=…` → `{ kind: "connect", … }`.
- *     The pair page's "Open in the Vellum app" button and
- *     `vellum pair --app` QR codes. `url` must parse as https
+ *     The pair page's "Open in the Cadet app" button and
+ *     `cadet pair --app` QR codes. `url` must parse as https
  *     (dropped otherwise); `code` (the device code) is opaque, so it
  *     is only bounded in length and refused when it carries
  *     whitespace or control characters, and rides only alongside a

@@ -8,7 +8,11 @@
 
 /** Stable key resolved to a brand/lucide icon by the icon resolver. */
 export type SuggestionIconKey =
-  "gmail" | "google-calendar" | "google-drive" | "vellum" | "generic";
+  | "gmail"
+  | "google-calendar"
+  | "google-drive"
+  | "vellum"
+  | "generic";
 
 /** A single requirement shown in the detail drawer "Here's what we'll need". */
 export interface SuggestionRequirement {
@@ -44,7 +48,7 @@ export interface ThreadSuggestion {
 /** A titled group of suggestions in the scrollable library. */
 export interface SuggestionGroup {
   id: string;
-  /** Section heading, e.g. "Your plugins" or "Vellum picks". */
+  /** Section heading, e.g. "Your plugins" or "Cadet picks". */
   title: string;
   /** Provenance — drives future real-data sourcing; informational for now. */
   source: "plugin" | "vellum-curated";

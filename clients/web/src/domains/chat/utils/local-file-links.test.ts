@@ -137,7 +137,7 @@ describe("classifyMarkdownHref", () => {
     });
   });
 
-  test("vellum attachment links", () => {
+  test("cadet attachment links", () => {
     expect(classifyMarkdownHref("vellum://workspace/scratch/a.png")).toEqual({
       kind: "vellum",
     });

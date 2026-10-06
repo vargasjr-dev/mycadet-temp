@@ -7,7 +7,7 @@ import { PlatformLoginButton } from "@/components/platform-login-button";
 interface PlatformLoginNoticeProps {
   /**
    * Why the surface needs a platform session — typically the existing
-   * "Log in to the Vellum platform to {action}." sentence.
+   * "Log in to the Cadet platform to {action}." sentence.
    */
   children: ReactNode;
   /** Forwarded to the underlying `Notice` (e.g. layout spacing). */

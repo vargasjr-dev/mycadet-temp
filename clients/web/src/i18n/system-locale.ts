@@ -21,7 +21,7 @@
  *
  * - **Capacitor (iOS / Android)**: the WKWebView / Android WebView reports
  *   the *system* language. The gap is iOS's per-app language setting
- *   (Settings → Vellum → Preferred Language, iOS 13+): a user who sets only
+ *   (Settings → Cadet → Preferred Language, iOS 13+): a user who sets only
  *   this app to Spanish while the phone stays English still gets `en` here.
  *   Closing that means `Device.getLanguageTag()` from `@capacitor/device`,
  *   which reads `Locale.preferredLanguages` and so sees the per-app choice.

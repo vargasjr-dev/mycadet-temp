@@ -123,7 +123,7 @@ let stopAttention: (() => void) | null = null;
 
 /**
  * Run as the Electron renderer does, with main pushing this window's state.
- * The DOM stays `"visible"` throughout, the way a Vellum window with
+ * The DOM stays `"visible"` throughout, the way a Cadet window with
  * background throttling disabled reports it whatever the window is doing.
  */
 function runInElectron(attended: boolean): void {

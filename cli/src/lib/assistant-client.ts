@@ -98,7 +98,7 @@ export class AssistantClient {
       throw new Error(
         opts?.assistantId
           ? `No assistant found with name '${opts.assistantId}'.`
-          : "No assistant found. Hatch one first with 'vellum hatch'.",
+          : "No assistant found. Hatch one first with 'cadet hatch'.",
       );
     }
 
@@ -158,7 +158,7 @@ export class AssistantClient {
     const token = readPlatformToken();
     if (!token) {
       throw new Error(
-        "Not logged in. Run `vellum login` first to authenticate with the platform.",
+        "Not logged in. Run `cadet login` first to authenticate with the platform.",
       );
     }
     return token;
@@ -344,12 +344,12 @@ export class AssistantClient {
     // Reactive auto-refresh on a 401 for the guardian path only. Ephemeral
     // (`--token`) and access-only sessions have no stored refresh credential and
     // just see the original 401; session and platform credentials are managed by
-    // the Vellum platform and are never refreshed here.
+    // the Cadet platform and are never refreshed here.
     if (response.status === 401 && this.authMode === "guardian") {
       const stored = loadGuardianToken(this._assistantId);
 
       // Another process may have already rotated and persisted a fresh access
-      // token (e.g. a concurrent `vellum events`). Adopt it and retry — this
+      // token (e.g. a concurrent `cadet events`). Adopt it and retry — this
       // sends no refresh credential, just picks up the newer local token.
       if (stored?.accessToken && stored.accessToken !== this.token) {
         this.token = stored.accessToken;

@@ -123,7 +123,7 @@ function CredentialsPageInner() {
     () => listQuery.data?.credentials ?? [],
     [listQuery.data],
   );
-  // Managed credentials are provisioned by Vellum and can only be read here, so
+  // Managed credentials are provisioned by Cadet and can only be read here, so
   // the list and the managed/personal split are developer-mode surfaces.
   // Standard users see just the credentials they can act on.
   const isDeveloperMode =

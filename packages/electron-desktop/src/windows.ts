@@ -16,7 +16,7 @@ import { areChromeDevToolsEnabled } from "./devtools";
 const preloadPath = (): string => path.join(__dirname, "../preload/index.js");
 
 /**
- * The hardened `webPreferences` baseline every Vellum window - and every child
+ * The hardened `webPreferences` baseline every Cadet window - and every child
  * popup spawned from one - must carry. Defined exactly once so the security
  * posture can't drift between call sites the way hand-rolled
  * `new BrowserWindow(...)` blocks do.
@@ -31,7 +31,7 @@ const preloadPath = (): string => path.join(__dirname, "../preload/index.js");
  *   inspected on an end user's machine.
  *
  * `preload` is deliberately excluded: it is role-specific (app windows load the
- * Vellum bridge, OAuth popups intentionally run without it), so each caller
+ * Cadet bridge, OAuth popups intentionally run without it), so each caller
  * supplies its own. See Electron's security checklist:
  * https://www.electronjs.org/docs/latest/tutorial/security
  */

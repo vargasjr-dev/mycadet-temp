@@ -10,7 +10,7 @@ import {
 } from "./http-client.js";
 
 const VELLUM_COMMAND_PATTERN =
-  /vellum-daemon|vellum-cli|vellum-gateway|credential-executor|@vellumai|[\\/]\.?vellum[\\/]|[\\/]daemon[\\/]main|[\\/]\.vellum[\\/].*qdrant[\\/]bin[\\/]qdrant/;
+  /vellum-daemon|vellum-cli|vellum-gateway|credential-executor|@vellumai|[\\/]\.?cadet[\\/]|[\\/]daemon[\\/]main|[\\/]\.vellum[\\/].*qdrant[\\/]bin[\\/]qdrant/;
 
 export const isVellumCommandLine = (command: string): boolean =>
   VELLUM_COMMAND_PATTERN.test(command);
@@ -102,7 +102,7 @@ export function isVellumWindowsProcess(
     return isVellumCommandLine(commandLine);
   }
   if (
-    /^(?:vellum|vellum-cli|vellum-daemon|vellum-gateway|credential-executor)\.exe$/i.test(
+    /^(?:cadet|vellum-cli|vellum-daemon|vellum-gateway|credential-executor)\.exe$/i.test(
       imageName,
     )
   ) {
@@ -223,7 +223,7 @@ export type ProcessState =
  * matches the spawner's own `waitForDaemonReady` timeout so a concurrent
  * caller never kills a process the spawner is still waiting on) for it to
  * start answering health checks. If it remains unresponsive, verifies it
- * belongs to Vellum before killing it, then cleans up the PID file.
+ * belongs to Cadet before killing it, then cleans up the PID file.
  *
  * When callers pass the `"readyz"` readiness endpoint, this also CLASSIFIES
  * DB migration readiness with a single `/readyz` probe (read from the body —
@@ -254,7 +254,7 @@ export async function resolveProcessState(
       "healthz",
     );
     if (!becameHealthy) {
-      // Genuinely hung — kill if it belongs to Vellum, otherwise just clean up.
+      // Genuinely hung — kill if it belongs to Cadet, otherwise just clean up.
       if (isVellumProcess(result.pid)) {
         console.log(
           `${label} process alive (pid ${result.pid}) but not responding — killing and restarting...`,
@@ -265,7 +265,7 @@ export async function resolveProcessState(
         }
       } else {
         console.log(
-          `Stale PID file (pid ${result.pid} is not a Vellum process) — cleaning up...`,
+          `Stale PID file (pid ${result.pid} is not a Cadet process) — cleaning up...`,
         );
       }
       removeFiles(pidFile);
@@ -450,12 +450,12 @@ export async function stopProcessByPidFile(
     return false;
   }
 
-  // Verify the PID actually belongs to a vellum process before killing.
+  // Verify the PID actually belongs to a cadet process before killing.
   // If the PID file is stale and the OS reused the PID, skip the kill
   // and clean up the stale files instead.
   if (!ownsProcess(pid)) {
     console.log(
-      `PID ${pid} is not a vellum process — cleaning up stale ${label} PID file.`,
+      `PID ${pid} is not a cadet process — cleaning up stale ${label} PID file.`,
     );
     removeFiles(pidFile, extraCleanupFiles);
     return false;
@@ -469,7 +469,7 @@ export async function stopProcessByPidFile(
 }
 
 /**
- * Find and stop any vellum daemon processes that may not be tracked by a PID
+ * Find and stop any cadet daemon processes that may not be tracked by a PID
  * file. Scans `ps` output for the `vellum-daemon` binary name.
  *
  * Returns true if at least one process was stopped.

@@ -5,7 +5,7 @@ import type { ElectronHostOS } from "@/runtime/platform-detection";
  * port of the macOS `TeleportSection.swift`.
  *
  * Teleport moves an assistant between hosting environments (local, Docker, or
- * the Vellum cloud platform) *without* retiring the source until the user
+ * the Cadet cloud platform) *without* retiring the source until the user
  * confirms the new one works. Everything in this file is side-effect-free so it
  * can be unit-tested without the gateway/platform transport.
  */

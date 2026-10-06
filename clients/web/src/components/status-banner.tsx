@@ -807,7 +807,7 @@ function useAssistantBannerConfig(): BannerConfig | null {
         setIsLocalWakeSettling(false);
         setWakeLocalAssistantError(
           result.error ||
-            "Wake failed. Try running vellum wake in your terminal.",
+            "Wake failed. Try running cadet wake in your terminal.",
         );
         return;
       }
@@ -822,7 +822,7 @@ function useAssistantBannerConfig(): BannerConfig | null {
       setIsLocalWakeSettling(false);
       captureError(err, { context: "wake_local_assistant_status_banner" });
       setWakeLocalAssistantError(
-        "Wake failed. Try running vellum wake in your terminal.",
+        "Wake failed. Try running cadet wake in your terminal.",
       );
     } finally {
       setIsWakingLocalAssistant(false);
@@ -873,7 +873,7 @@ function useAssistantBannerConfig(): BannerConfig | null {
           : "Your assistant runs locally",
       icon: <CloudOff className="h-4 w-4" aria-hidden="true" />,
       children:
-        "Open the Vellum desktop app or run vellum wake in your terminal to start it.",
+        "Open the Cadet desktop app or run cadet wake in your terminal to start it.",
     };
   }
 
@@ -886,7 +886,7 @@ function useAssistantBannerConfig(): BannerConfig | null {
       ? "starting"
       : localHealth;
   // Only offer "Wake up" when the CLI can actually start this assistant —
-  // `vellum wake` works on plain local entries, not Docker/apple-container,
+  // `cadet wake` works on plain local entries, not Docker/apple-container,
   // and never a paired entry (the remote host isn't ours to start).
   const localWakeAction =
     !isPairedActiveAssistant &&
@@ -926,7 +926,7 @@ function useAssistantBannerConfig(): BannerConfig | null {
   ) {
     return {
       tone: "error",
-      title: "Trying to reach Vellum…",
+      title: "Trying to reach Cadet…",
       icon: <CloudOff className="h-4 w-4" aria-hidden="true" />,
       actions: (
         <Button variant="outlined" size="compact" onClick={retryConnectivity}>

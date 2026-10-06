@@ -14,10 +14,10 @@ export const PLUGINS_SEARCH_INSTALL_HINT =
 export const pluginsHelp: CliCommandHelp = {
   name: "plugins",
   description:
-    "Manage external plugins, which bundle apps, channels, MCPs, skills and more from other Vellum users",
+    "Manage external plugins, which bundle apps, channels, MCPs, skills and more from other Cadet users",
   helpText: `
 Plugins are superpowers: installable extensions that add apps, channels, MCPs,
-skills, tools, integrations, and so much more from other Vellum users. When the
+skills, tools, integrations, and so much more from other Cadet users. When the
 user asks to set up, install, connect, or integrate a product, service, or app,
 run 'assistant plugins search <name>' first before searching the web.`,
   subcommands: [
@@ -25,7 +25,7 @@ run 'assistant plugins search <name>' first before searching the web.`,
       name: "install",
       args: "<name-or-url>",
       description:
-        "Install a plugin by name from the Vellum platform (content is served as a verified tarball from the plugin's pinned commit), or directly from a GitHub URL (untrusted)",
+        "Install a plugin by name from the Cadet platform (content is served as a verified tarball from the plugin's pinned commit), or directly from a GitHub URL (untrusted)",
       options: [
         {
           flags: "--force",
@@ -180,7 +180,7 @@ Examples:
     {
       name: "publish",
       description:
-        "Validate and submit the plugin in the current directory to the Vellum marketplace catalog",
+        "Validate and submit the plugin in the current directory to the Cadet marketplace catalog",
       options: [
         {
           flags: "--print",
@@ -204,11 +204,11 @@ Examples:
       helpText: `
 
 Validates the plugin in the current directory (or --path), resolves the
-git commit SHA and GitHub remote, and submits the entry to the Vellum
+git commit SHA and GitHub remote, and submits the entry to the Cadet
 platform API. The platform creates a pull request against
 vellum-ai/vellum-assistant adding the plugin to the marketplace catalog.
 
-Requires a connected Vellum platform account (run \`assistant platform connect\`).
+Requires a connected Cadet platform account (run \`assistant platform connect\`).
 Use --print to validate and print the entry without submitting.
 
 Examples:

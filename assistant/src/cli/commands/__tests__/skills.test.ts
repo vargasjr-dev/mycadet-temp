@@ -150,7 +150,7 @@ describe("skills list", () => {
 
   test("--json derives source from owner for plugin-resident skills", async () => {
     /**
-     * Plugin-resident skills are mapped to kind:bundled/origin:vellum, so
+     * Plugin-resident skills are mapped to kind:bundled/origin:cadet, so
      * their attribution lives on `owner`. The CLI must surface that as
      * `plugin:<id>` instead of collapsing to "bundled".
      */
@@ -567,7 +567,7 @@ describe("skills search", () => {
     expect(parsed.communityError).toBe("community unavailable");
   });
 
-  test("deduplicates by id — vellum wins over community", async () => {
+  test("deduplicates by id — cadet wins over community", async () => {
     mockIpcResults = [
       {
         ok: true,
@@ -576,7 +576,7 @@ describe("skills search", () => {
             {
               id: "react-tools",
               name: "React Tools",
-              description: "Vellum version",
+              description: "Cadet version",
               origin: "vellum",
               kind: "catalog",
               status: "available",
@@ -609,7 +609,7 @@ describe("skills search", () => {
     ]);
 
     const parsed = JSON.parse(stdout);
-    // vellum skill should be in catalog
+    // cadet skill should be in catalog
     expect(parsed.catalog).toHaveLength(1);
     expect(parsed.catalog[0].origin).toBe("vellum");
     // community skill with same id should be deduplicated out

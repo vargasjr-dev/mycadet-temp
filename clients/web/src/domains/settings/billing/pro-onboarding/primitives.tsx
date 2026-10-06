@@ -180,7 +180,7 @@ const TOP_CREATURE_PLACEMENTS: CreaturePlacement[] = [
 ];
 
 /**
- * Absolutely-positioned decoration layer that scatters bundled Vellum
+ * Absolutely-positioned decoration layer that scatters bundled Cadet
  * creatures around a card's edges (clipped by the card's `overflow-hidden`).
  * `variant="top"` places three across the top edge (email card); `variant="full"`
  * scatters six around all edges (all-set card). Renders nothing until the lazy

@@ -10,7 +10,7 @@ import {
 } from "../../lib/guardian-token.js";
 
 function printUsage(): void {
-  console.log("Usage: vellum gateway token <subcommand> <assistantId>");
+  console.log("Usage: cadet gateway token <subcommand> <assistantId>");
   console.log("");
   console.log("Manage gateway authentication tokens.");
   console.log("");

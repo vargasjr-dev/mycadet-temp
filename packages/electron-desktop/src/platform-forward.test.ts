@@ -14,7 +14,11 @@ const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Vellum-Electron-Renderer-Origin";
 
 const request = (
   pathname: string,
-  init: { method?: string; origin?: string; headers?: Record<string, string> } = {},
+  init: {
+    method?: string;
+    origin?: string;
+    headers?: Record<string, string>;
+  } = {},
 ) => ({
   url: `app://vellum.ai${pathname}`,
   method: init.method ?? "GET",
@@ -38,10 +42,7 @@ describe("planPlatformForward", () => {
   });
 
   test("forwards /v1/* requests to platform", () => {
-    const plan = planPlatformForward(
-      request("/v1/assistants"),
-      PLATFORM,
-    );
+    const plan = planPlatformForward(request("/v1/assistants"), PLATFORM);
     expect(plan.kind).toBe("forward");
     if (plan.kind !== "forward") throw new Error("expected forward");
     expect(plan.url).toBe("https://platform.vellum.ai/v1/assistants");
@@ -61,10 +62,7 @@ describe("planPlatformForward", () => {
   });
 
   test("forwards /accounts/* requests to platform", () => {
-    const plan = planPlatformForward(
-      request("/accounts/login"),
-      PLATFORM,
-    );
+    const plan = planPlatformForward(request("/accounts/login"), PLATFORM);
     if (plan.kind !== "forward") throw new Error("expected forward");
     expect(plan.url).toBe("https://platform.vellum.ai/accounts/login");
   });
@@ -294,9 +292,7 @@ describe("planPlatformForward", () => {
       "https://staging-platform.vellum.ai",
     );
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe(
-      "https://staging-platform.vellum.ai/v1/assistants",
-    );
+    expect(plan.url).toBe("https://staging-platform.vellum.ai/v1/assistants");
     expect(plan.headers.get("origin")).toBe(
       "https://staging-platform.vellum.ai",
     );
@@ -313,13 +309,13 @@ describe("planPlatformForward", () => {
   });
 
   test("does not forward paths that merely start with a prefix string", () => {
-    expect(
-      planPlatformForward(request("/v1something/else"), PLATFORM),
-    ).toEqual({ kind: "pass" });
+    expect(planPlatformForward(request("/v1something/else"), PLATFORM)).toEqual(
+      { kind: "pass" },
+    );
 
-    expect(
-      planPlatformForward(request("/accountsettings"), PLATFORM),
-    ).toEqual({ kind: "pass" });
+    expect(planPlatformForward(request("/accountsettings"), PLATFORM)).toEqual({
+      kind: "pass",
+    });
   });
 });
 
@@ -457,9 +453,13 @@ describe("fetchForwardPlanWithRetry", () => {
 
   test("a successful response passes through untouched on the first attempt", async () => {
     const upstream = new Response("hello", { status: 201 });
-    const response = await fetchForwardPlanWithRetry(get, async () => upstream, {
-      sleep: noSleep,
-    });
+    const response = await fetchForwardPlanWithRetry(
+      get,
+      async () => upstream,
+      {
+        sleep: noSleep,
+      },
+    );
     expect(response).toBe(upstream);
   });
 });

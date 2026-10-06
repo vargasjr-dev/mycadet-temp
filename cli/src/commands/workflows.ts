@@ -90,7 +90,7 @@ function printSavedTable(workflows: SavedWorkflow[]): void {
 }
 
 function printHelp(): void {
-  console.log("Usage: vellum workflows <subcommand> [options]");
+  console.log("Usage: cadet workflows <subcommand> [options]");
   console.log("");
   console.log("Inspect and control workflow runs on the active assistant.");
   console.log("");
@@ -127,7 +127,7 @@ function createClient(assistantName?: string): AssistantClient {
     throw new Error(
       assistantName
         ? `No assistant found matching '${assistantName}'.`
-        : "No assistant found. Hatch one with 'vellum hatch' first.",
+        : "No assistant found. Hatch one with 'cadet hatch' first.",
     );
   }
 }
@@ -138,7 +138,7 @@ function rethrowFetchError(err: unknown): never {
     (err.message.includes("fetch") || err.message.includes("connect"))
   ) {
     throw new Error(
-      "Could not reach the assistant. Is it running? Try 'vellum wake'.",
+      "Could not reach the assistant. Is it running? Try 'cadet wake'.",
     );
   }
   throw err;
@@ -268,7 +268,7 @@ export async function workflows(): Promise<void> {
   if (subcommand === "show") {
     const runId = args[1];
     if (!runId) {
-      console.error("Usage: vellum workflows show <run-id>");
+      console.error("Usage: cadet workflows show <run-id>");
       process.exit(1);
     }
     await showRun(runId, assistantName);
@@ -278,7 +278,7 @@ export async function workflows(): Promise<void> {
   if (subcommand === "abort") {
     const runId = args[1];
     if (!runId) {
-      console.error("Usage: vellum workflows abort <run-id>");
+      console.error("Usage: cadet workflows abort <run-id>");
       process.exit(1);
     }
     await abortRun(runId, assistantName);
@@ -288,7 +288,7 @@ export async function workflows(): Promise<void> {
   if (subcommand === "resume") {
     const runId = args[1];
     if (!runId) {
-      console.error("Usage: vellum workflows resume <run-id>");
+      console.error("Usage: cadet workflows resume <run-id>");
       process.exit(1);
     }
     await resumeRun(runId, assistantName);

@@ -1,5 +1,5 @@
 /**
- * Fetches the managed (Vellum) TTS voice catalog. Fetch-only: the platform is
+ * Fetches the managed (Cadet) TTS voice catalog. Fetch-only: the platform is
  * the single source of truth for offered voices and the default, so until the
  * catalog loads (or when it fails) `voices` is empty and pickers render nothing
  * rather than a stale local list.

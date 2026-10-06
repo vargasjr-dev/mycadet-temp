@@ -38,7 +38,7 @@ describe("profileUsesFreeTextModel", () => {
     expect(profileUsesFreeTextModel("openrouter", "tencent/hy3")).toBe(true);
   });
 
-  test("is false for a Vellum routed catalog model", () => {
+  test("is false for a Cadet routed catalog model", () => {
     expect(
       profileUsesFreeTextModel("vellum", "anthropic/claude-opus-4-8"),
     ).toBe(false);

@@ -356,7 +356,7 @@ describe("tts voice — active-provider routing", () => {
     ipcResponders.config_set = { ok: true, result: {} };
   }
 
-  test("managed (vellum) writes to services.tts.providers.vellum.model", async () => {
+  test("managed (cadet) writes to services.tts.providers.vellum.model", async () => {
     respondProvider("vellum");
 
     const { exitCode } = await runCommand(["tts", "voice", "aura-2-zeus-en"]);

@@ -45,7 +45,7 @@ export interface SandboxFetchProxyOptions {
    * since the parent — not the sandbox — must resolve and download the file.
    */
   onOpenVellumLink?: (href: string, linkText: string) => void;
-  /** Handler for validated root-relative Vellum app routes. */
+  /** Handler for validated root-relative Cadet app routes. */
   onNavigateAppRoute?: (href: string) => void;
 }
 

@@ -318,7 +318,7 @@ describe("useSectionConversations", () => {
   });
 
   /* Chats is the ungrouped remainder AND native, so it carries both axes with
-     `vellum` as the channel. Without `system:all` it would also collect rows
+     `cadet` as the channel. Without `system:all` it would also collect rows
      the user filed into custom groups. */
   test("Chats asks for the ungrouped native rows", () => {
     openGate();
@@ -337,7 +337,7 @@ describe("useSectionConversations", () => {
   });
 
   /* Ungrouped, there are no channel sections, so Chats is the only section a
-     Slack or Telegram row can appear in. Narrowing to `vellum` here would drop
+     Slack or Telegram row can appear in. Narrowing to `cadet` here would drop
      every one of them from the sidebar - not reorder them, remove them - so
      the filter must carry `system:all` alone.
 
@@ -361,7 +361,7 @@ describe("useSectionConversations", () => {
     expect(sentFilters.at(-1)).toEqual({ groupId: "system:all" });
   });
 
-  /* Below the native-origin gate the daemon compiles `vellum` to a strict
+  /* Below the native-origin gate the daemon compiles `cadet` to a strict
      equality, which matches only explicitly stamped rows and returns a
      fraction of the section. That reads as a quiet account rather than a
      broken filter, so Chats must not ask at all.

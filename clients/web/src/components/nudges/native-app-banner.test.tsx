@@ -61,12 +61,12 @@ describe("NativeAppBanner", () => {
 
     renderBanner(promotion);
 
-    expect(screen.getByText("Get the Vellum app")).toBeDefined();
+    expect(screen.getByText("Get the Cadet app")).toBeDefined();
     expect(
-      screen.getByRole("button", { name: "Download Vellum mobile app" }),
+      screen.getByRole("button", { name: "Download Cadet mobile app" }),
     ).toBeDefined();
     expect(
-      screen.getByRole("status", { name: "Download the Vellum mobile app" }),
+      screen.getByRole("status", { name: "Download the Cadet mobile app" }),
     ).toBeDefined();
   });
 

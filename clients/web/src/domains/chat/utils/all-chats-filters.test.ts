@@ -204,7 +204,7 @@ describe("filterFromSearchParams", () => {
 
   test("falls back to All for the native origin, which All already shows", () => {
     expect(
-      filterFromSearchParams(new URLSearchParams("channel=vellum"), available),
+      filterFromSearchParams(new URLSearchParams("channel=cadet"), available),
     ).toEqual({ kind: "all" });
   });
 

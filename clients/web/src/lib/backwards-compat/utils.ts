@@ -1,7 +1,7 @@
 /**
  * Backwards-compat helpers for assistant version asymmetry.
  *
- * The web app always serves the latest bundle from Vellum's infra,
+ * The web app always serves the latest bundle from Cadet's infra,
  * but the assistant side can be running any version the
  * user has installed locally. New web features routinely ship before
  * every assistant out there has been upgraded, so the web app needs to

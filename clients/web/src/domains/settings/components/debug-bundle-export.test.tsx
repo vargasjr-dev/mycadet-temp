@@ -93,7 +93,7 @@ describe("DebugBundleExport", () => {
       screen.getByRole("button", { name: "Export debug bundle" }),
     );
 
-    await screen.findByText(/sent to vellum at/i);
+    await screen.findByText(/sent to cadet at/i);
     expect(calls).toEqual([
       "platform:asst-1",
       "export:local-1:https://bucket/signed",
@@ -110,7 +110,7 @@ describe("DebugBundleExport", () => {
 
     await waitFor(() => expect(toastErrors).toHaveLength(1));
     expect(toastErrors[0]).toContain("gateway socket missing");
-    expect(screen.queryByText(/sent to vellum at/i)).toBeNull();
+    expect(screen.queryByText(/sent to cadet at/i)).toBeNull();
     expect(
       screen.getByRole("button", { name: "Export debug bundle" }),
     ).toBeTruthy();
@@ -130,6 +130,6 @@ describe("DebugBundleExport", () => {
     gatewayPath = null;
     renderRow();
     expect(screen.queryByRole("button")).toBeNull();
-    screen.getByText(/export from the vellum desktop app/i);
+    screen.getByText(/export from the cadet desktop app/i);
   });
 });

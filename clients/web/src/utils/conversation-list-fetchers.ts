@@ -499,7 +499,7 @@ export const SYSTEM_ALL_GROUP_ID = "system:all";
 export const SYSTEM_ASSISTANT_GROUP_ID = "system:assistant";
 
 /**
- * The `originChannel` value for a conversation started in Vellum rather than
+ * The `originChannel` value for a conversation started in Cadet rather than
  * arriving from an external channel, and so the filter the Chats section
  * asks for.
  *

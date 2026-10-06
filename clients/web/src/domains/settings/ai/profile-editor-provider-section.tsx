@@ -419,7 +419,7 @@ export function ProfileEditorProviderSection({
     provider && providerConnection
       ? entryPickerValue(provider, providerConnection)
       : null;
-  // A binding to an identity row (a chatgpt row serving openai, a vellum
+  // A binding to an identity row (a chatgpt row serving openai, a cadet
   // row serving a managed-routable vendor) has no entry option of its own:
   // identity rows never expand. The identity's bare option names the route
   // the profile actually dispatches through, so the trigger shows it

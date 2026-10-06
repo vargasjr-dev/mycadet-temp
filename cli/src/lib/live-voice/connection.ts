@@ -18,7 +18,7 @@
  * non-guardian can be stopped.
  *
  * The CLI already holds exactly that credential and has since it first paired:
- * `leaseGuardianToken` POSTs `/v1/guardian/init`, which resolves the *vellum*
+ * `leaseGuardianToken` POSTs `/v1/guardian/init`, which resolves the *cadet*
  * guardian principal and mints an access token subject
  * `actor:<assistantId>:<guardianPrincipalId>`, the same principal
  * `findVellumGuardian()` returns on the other side of the check. So the pin
@@ -111,7 +111,7 @@ export async function resolveLiveVoiceConnection(
   const token = await resolveGuardianAccessToken(entry.assistantId, baseUrl);
   if (!token) {
     throw new LiveVoiceConnectionError(
-      `No credential for '${entry.assistantId}'. Run 'vellum wake ` +
+      `No credential for '${entry.assistantId}'. Run 'cadet wake ` +
         `${entry.assistantId}' to lease one.`,
     );
   }
@@ -129,7 +129,7 @@ export async function resolveLiveVoiceConnection(
  * Resolve a live-voice connection to a platform-hosted assistant.
  *
  * The session token is the CLI's own platform login, not anything specific to
- * this assistant, so a missing one is a `vellum login` problem rather than an
+ * this assistant, so a missing one is a `cadet login` problem rather than an
  * assistant problem and says so.
  *
  * The minted token is deliberately resolved here, at the last moment before
@@ -142,8 +142,8 @@ async function resolveCloudConnection(
   const sessionToken = readPlatformToken();
   if (!sessionToken) {
     throw new LiveVoiceConnectionError(
-      `${formatAssistantReference(entry)} is a Vellum cloud assistant, which ` +
-        "needs a platform login. Run 'vellum login' and try again.",
+      `${formatAssistantReference(entry)} is a Cadet cloud assistant, which ` +
+        "needs a platform login. Run 'cadet login' and try again.",
     );
   }
 

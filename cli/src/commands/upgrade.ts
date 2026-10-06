@@ -111,10 +111,10 @@ function parseArgs(): UpgradeArgs {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "--help" || arg === "-h") {
-      console.log("Usage: vellum upgrade [<name>] [options]");
+      console.log("Usage: cadet upgrade [<name>] [options]");
       console.log("");
       console.log("Upgrade an assistant to a newer version.");
-      console.log("To roll back to a previous version, use `vellum rollback`.");
+      console.log("To roll back to a previous version, use `cadet rollback`.");
       console.log("");
       console.log("Arguments:");
       console.log(
@@ -143,16 +143,16 @@ function parseArgs(): UpgradeArgs {
       console.log("");
       console.log("Examples:");
       console.log(
-        "  vellum upgrade                              # Upgrade the active assistant to the CLI's version",
+        "  cadet upgrade                              # Upgrade the active assistant to the CLI's version",
       );
       console.log(
-        "  vellum upgrade --latest                     # Upgrade CLI + assistant to the latest stable release",
+        "  cadet upgrade --latest                     # Upgrade CLI + assistant to the latest stable release",
       );
       console.log(
-        "  vellum upgrade my-assistant                  # Upgrade a specific assistant by name",
+        "  cadet upgrade my-assistant                  # Upgrade a specific assistant by name",
       );
       console.log(
-        "  vellum upgrade my-assistant --version v1.2.3 # Upgrade to a specific version",
+        "  cadet upgrade my-assistant --version v1.2.3 # Upgrade to a specific version",
       );
       process.exit(0);
     } else if (arg === "--version") {
@@ -215,7 +215,7 @@ function parseArgs(): UpgradeArgs {
  * 1. Explicit name argument (exact assistant ID wins over a display-name
  *    match; a unique display-name match resolves; an ambiguous display
  *    name is an error listing the matching IDs)
- * 2. Active assistant set via `vellum use`
+ * 2. Active assistant set via `cadet use`
  * 3. Sole assistant (when exactly one exists)
  */
 function resolveTargetAssistant(nameArg: string | null): AssistantEntry {
@@ -240,12 +240,12 @@ function resolveTargetAssistant(nameArg: string | null): AssistantEntry {
   if (all.length === 1) return all[0];
 
   if (all.length === 0) {
-    const msg = "No assistants found. Run 'vellum hatch' first.";
+    const msg = "No assistants found. Run 'cadet hatch' first.";
     console.error(msg);
     emitCliError("ASSISTANT_NOT_FOUND", msg);
   } else {
     const msg =
-      "Multiple assistants found. Specify a name or set an active assistant with 'vellum use <name>'.";
+      "Multiple assistants found. Specify a name or set an active assistant with 'cadet use <name>'.";
     console.error(msg);
     emitCliError("ASSISTANT_NOT_FOUND", msg);
   }
@@ -290,8 +290,8 @@ async function upgradeDocker(
     // Best-effort — if we can't get migration state, rollback will skip migration reversal
   }
 
-  // Reject downgrades — `vellum upgrade` only handles forward version changes.
-  // Users should use `vellum rollback --version <version>` for downgrades.
+  // Reject downgrades — `cadet upgrade` only handles forward version changes.
+  // Users should use `cadet rollback --version <version>` for downgrades.
   if (!currentVersion && versionTag) {
     console.warn(
       "⚠️  Could not determine current version from health endpoint — skipping version-direction check.\n",
@@ -300,7 +300,7 @@ async function upgradeDocker(
   if (currentVersion && versionTag) {
     const cmp = compareVersions(versionTag, currentVersion);
     if (cmp !== null && cmp < 0) {
-      const msg = `Cannot upgrade to an older version (${versionTag} < ${currentVersion}). Use \`vellum rollback --version ${versionTag}\` instead.`;
+      const msg = `Cannot upgrade to an older version (${versionTag} < ${currentVersion}). Use \`cadet rollback --version ${versionTag}\` instead.`;
       console.error(msg);
       emitCliError("VERSION_DIRECTION", msg);
       process.exit(1);
@@ -355,7 +355,7 @@ async function upgradeDocker(
   }
 
   // Persist rollback state to lockfile BEFORE any destructive changes.
-  // This enables the `vellum rollback` command to restore the previous version.
+  // This enables the `cadet rollback` command to restore the previous version.
   if (entry.containerInfo) {
     const rollbackEntry: AssistantEntry = {
       ...entry,
@@ -468,7 +468,7 @@ async function upgradeDocker(
     console.warn("⚠️  Pre-upgrade backup failed (continuing with upgrade)\n");
   }
 
-  // Persist the backup path so `vellum rollback` can restore the exact backup
+  // Persist the backup path so `cadet rollback` can restore the exact backup
   // created for this upgrade attempt — never a stale backup from a prior cycle.
   // Re-read the entry to pick up the rollback state saved earlier.
   {
@@ -529,7 +529,7 @@ async function upgradeDocker(
       previousContainerInfo: entry.containerInfo,
       previousDbMigrationVersion: preMigrationState.dbVersion,
       previousWorkspaceMigrationId: preMigrationState.lastWorkspaceMigrationId,
-      // Preserve the backup path so `vellum rollback` can restore it later
+      // Preserve the backup path so `cadet rollback` can restore it later
       preUpgradeBackupPath: backupPath ?? undefined,
     };
     saveAssistantEntry(updatedEntry);
@@ -905,7 +905,7 @@ async function upgradeLocal(
   if (currentVersion && targetVersion) {
     const cmp = compareVersions(targetVersion, currentVersion);
     if (cmp !== null && cmp < 0) {
-      const msg = `Cannot upgrade to an older version (${targetVersion} < ${currentVersion}). Use \`vellum rollback --version ${targetVersion}\` instead.`;
+      const msg = `Cannot upgrade to an older version (${targetVersion} < ${currentVersion}). Use \`cadet rollback --version ${targetVersion}\` instead.`;
       console.error(msg);
       emitCliError("VERSION_DIRECTION", msg);
       process.exit(1);
@@ -1117,7 +1117,7 @@ const PLATFORM_HEALTH_CONFIRM_TIMEOUT_MS = 120_000;
 const PLATFORM_HEALTH_CONFIRM_INTERVAL_MS = 5_000;
 
 const UPGRADE_IN_PROGRESS_MSG =
-  "An upgrade is already in progress for this assistant. Check `vellum ps`.";
+  "An upgrade is already in progress for this assistant. Check `cadet ps`.";
 
 function platformUpgradeTimeoutMs(): number {
   const override = process.env.VELLUM_PLATFORM_UPGRADE_TIMEOUT_MS;
@@ -1193,7 +1193,7 @@ async function waitForPlatformUpgrade(
         await sleep(PLATFORM_HEALTH_CONFIRM_INTERVAL_MS);
       }
       console.warn(
-        `⚠️  Upgraded to ${finalVersion}, but the health check did not confirm. Check \`vellum ps\`.`,
+        `⚠️  Upgraded to ${finalVersion}, but the health check did not confirm. Check \`cadet ps\`.`,
       );
       return;
     }
@@ -1207,7 +1207,7 @@ async function waitForPlatformUpgrade(
 
   const timeoutMin = Math.round(timeoutMs / 60_000);
   console.warn(
-    `⚠️  Upgrade request was accepted but completion was not confirmed within ${timeoutMin} minutes. The platform may still be working — check \`vellum ps\` or the web settings page.`,
+    `⚠️  Upgrade request was accepted but completion was not confirmed within ${timeoutMin} minutes. The platform may still be working — check \`cadet ps\` or the web settings page.`,
   );
 }
 
@@ -1223,7 +1223,7 @@ async function upgradePlatform(
   const token = readPlatformToken();
   if (!token) {
     const msg =
-      "Error: Not logged in. Run `vellum login --token <token>` first.";
+      "Error: Not logged in. Run `cadet login --token <token>` first.";
     console.error(msg);
     emitCliError("AUTH_FAILED", msg);
     process.exit(1);
@@ -1267,7 +1267,7 @@ async function upgradePlatform(
   }
 
   if (resolution.isDowngrade && resolution.target && currentVersion) {
-    const msg = `Cannot upgrade to an older version (${resolution.target} < ${currentVersion}). Use \`vellum rollback --version ${resolution.target}\` instead.`;
+    const msg = `Cannot upgrade to an older version (${resolution.target} < ${currentVersion}). Use \`cadet rollback --version ${resolution.target}\` instead.`;
     console.error(msg);
     emitCliError("VERSION_DIRECTION", msg);
     process.exit(1);
@@ -1311,7 +1311,7 @@ async function upgradePlatform(
   if (response.status === 401 || response.status === 403) {
     const text = await response.text();
     console.error(
-      `Authentication failed (${response.status}). Run 'vellum login' to refresh.`,
+      `Authentication failed (${response.status}). Run 'cadet login' to refresh.`,
     );
     emitCliError("AUTH_FAILED", "Authentication failed", text);
     try {
@@ -1527,7 +1527,7 @@ async function resolveLatestAndMaybeSelfUpdate(
     console.log(`🔄 Updating CLI to ${latestTag}...`);
     const installResult = spawnSync(
       "bun",
-      ["install", "-g", `vellum@${stripVersionPrefix(latestTag)}`],
+      ["install", "-g", `cadet@${stripVersionPrefix(latestTag)}`],
       { stdio: "inherit", windowsHide: true },
     );
     if (installResult.error || installResult.status !== 0) {

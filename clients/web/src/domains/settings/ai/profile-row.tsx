@@ -39,7 +39,7 @@ interface ProfileRowProps {
 
 /**
  * One row of the Profiles section (Figma 7412:133380): label, a
- * "{model} • Managed by Vellum" subtitle, the Default chip, and a kebab
+ * "{model} • Managed by Cadet" subtitle, the Default chip, and a kebab
  * menu showing only the actions valid for this row (per the design
  * annotation on Light 738). Clicking the row opens the profile in the
  * sidepanel.

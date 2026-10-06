@@ -44,7 +44,7 @@ interface SelfHostedServersList {
   servers: SelfHostedServerEntry[];
   /** The configured self-hosted origin, or `null` when on the baked default. */
   activeUrl: string | null;
-  /** The Vellum Cloud origin the shell ships with, or `null` if unreadable. */
+  /** The Cadet Cloud origin the shell ships with, or `null` if unreadable. */
   bakedUrl: string | null;
 }
 
@@ -52,7 +52,7 @@ interface SelfHostedServersPlugin {
   list(): Promise<SelfHostedServersList>;
   add(options: { url: string; name?: string }): Promise<{ ok: boolean }>;
   remove(options: { url: string }): Promise<{ ok: boolean }>;
-  /** An absent `url` returns the shell to its baked Vellum Cloud origin. */
+  /** An absent `url` returns the shell to its baked Cadet Cloud origin. */
   switchTo(options: { url?: string }): Promise<{ ok: boolean }>;
   /** Switches origin and loads a route relative to the assistant app entry. */
   switchToPath(options: {
@@ -288,7 +288,7 @@ async function nativeOriginSwap(
 }
 
 /**
- * Swap the shell's origin in place, `null` meaning "back to the baked Vellum
+ * Swap the shell's origin in place, `null` meaning "back to the baked Cadet
  * Cloud origin". Resolves whether the shell took the switch, so a caller on an
  * older shell (or off native mobile) can fall back to a plain navigation.
  *
@@ -323,7 +323,7 @@ export async function nativeSwitchToOriginPath(
 }
 
 /**
- * The baked Vellum Cloud origin to offer as a way back, or `null` when there
+ * The baked Cadet Cloud origin to offer as a way back, or `null` when there
  * is nothing to offer: off native mobile, on a shell without the plugin, or
  * when the shell is already serving the baked origin (no configured
  * self-hosted slot).

@@ -49,7 +49,7 @@ describe("resolveRuntimeMigrationUrl", () => {
     );
   });
 
-  test("vellum (platform-managed) cloud uses wildcard-proxy /v1/assistants/<id>/migrations/<subpath>", () => {
+  test("cadet (platform-managed) cloud uses wildcard-proxy /v1/assistants/<id>/migrations/<subpath>", () => {
     const entry = makeEntry({
       cloud: "vellum",
       runtimeUrl: "https://platform.vellum.ai",
@@ -112,7 +112,7 @@ describe("resolveRuntimeUrl", () => {
     );
   });
 
-  test("vellum cloud uses wildcard-proxy /v1/assistants/<id>/<subpath>", () => {
+  test("cadet cloud uses wildcard-proxy /v1/assistants/<id>/<subpath>", () => {
     const entry = makeEntry({
       cloud: "vellum",
       runtimeUrl: "https://platform.vellum.ai",

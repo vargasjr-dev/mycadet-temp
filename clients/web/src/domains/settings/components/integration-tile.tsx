@@ -73,7 +73,7 @@ export interface IntegrationTileProps {
   /**
    * Puts a chevron beside the connect action for the other ways in. For a
    * self-hosted assistant, where the choice between the provider's server,
-   * Vellum's hosted sign-in, and your own OAuth app is a real one the user is
+   * Cadet's hosted sign-in, and your own OAuth app is a real one the user is
    * expected to make, so a caller reads it from
    * `useActiveAssistantIsSelfHosted()` (`@/hooks/use-platform-gate`). With one
    * method there is nothing to choose, so the button stays plain whatever

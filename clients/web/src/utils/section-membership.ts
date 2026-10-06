@@ -159,7 +159,7 @@ export function isSidebarVisible(
  * - `system:all` means "nothing else claimed it", so it matches a NULL group
  *   and the non-pinned system buckets, not the literal string. Most rows
  *   carry no `group_id` at all.
- * - `vellum` matches an unattributed row as well as an explicitly native one,
+ * - `cadet` matches an unattributed row as well as an explicitly native one,
  *   because `origin_channel` is left unset at insert so an inbound message can
  *   still claim the conversation for its channel.
  *

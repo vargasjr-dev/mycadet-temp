@@ -244,7 +244,7 @@ describe("the popover's cards", () => {
     });
 
     expect(container.textContent).toContain("Shipping address");
-    fireEvent.click(buttonOf(container, "Open Vellum")!);
+    fireEvent.click(buttonOf(container, "Open Cadet")!);
 
     expect(answers).toEqual([{ kind: "open" }]);
   });

@@ -52,11 +52,11 @@ type TranslateFilterLabel = (
     | "superpowersFilters.filterLabel.assistantMemory",
 ) => string;
 
-/** `vellum`, `clawhub`, and `skills.sh` are brand/product names, never translated. */
+/** `cadet`, `clawhub`, and `skills.sh` are brand/product names, never translated. */
 function filterLabel(value: SuperpowerFilter, t: TranslateFilterLabel): string {
   switch (value) {
     case "vellum":
-      return "Vellum";
+      return "Cadet";
     case "clawhub":
       return "Clawhub";
     case "skillssh":

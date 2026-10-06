@@ -37,7 +37,7 @@ const ROUTE = "/account/login";
 describeAuthEntryContract("LoginPage", {
   Page: LoginPage,
   route: ROUTE,
-  authScreenText: "Welcome to Vellum",
+  authScreenText: "Welcome to Cadet",
   oauthTriggerText: "Log In",
 });
 
@@ -70,7 +70,7 @@ describe("LoginPage native split", () => {
   test("the browser gets the same welcome screen local mode shows", () => {
     renderEntry();
 
-    expect(screen.getByText("Welcome to Vellum")).toBeTruthy();
+    expect(screen.getByText("Welcome to Cadet")).toBeTruthy();
     expect(screen.getByText("Log In")).toBeTruthy();
     expect(screen.getByText("Sign up")).toBeTruthy();
     // The account is not optional here — that route past it belongs to the
@@ -83,7 +83,7 @@ describe("LoginPage native split", () => {
     renderEntry();
 
     expect(screen.getByLabelText("Loading")).toBeTruthy();
-    expect(screen.queryByText("Welcome to Vellum")).toBeNull();
+    expect(screen.queryByText("Welcome to Cadet")).toBeNull();
   });
 
   test("the wait holds the same welcome shell on native", () => {
@@ -92,7 +92,7 @@ describe("LoginPage native split", () => {
     renderEntry();
 
     expect(screen.getByLabelText("Loading")).toBeTruthy();
-    expect(screen.queryByText("Welcome to Vellum")).toBeNull();
+    expect(screen.queryByText("Welcome to Cadet")).toBeNull();
   });
 
   /**
@@ -105,7 +105,7 @@ describe("LoginPage native split", () => {
     authEntry.native = true;
     renderEntry();
 
-    expect(screen.getByText("Welcome to Vellum")).toBeTruthy();
+    expect(screen.getByText("Welcome to Cadet")).toBeTruthy();
     // AuthKit hosts the provider selection, so the native screen offers this
     // one button and nothing beside it. See `docs/CAPACITOR.md`.
     expect(screen.getByText("Sign in")).toBeTruthy();
@@ -180,7 +180,7 @@ describe("LoginPage native sign-in failures", () => {
     signIn();
 
     await waitFor(() => {
-      expect(screen.getByText(/No Vellum account is linked/)).toBeTruthy();
+      expect(screen.getByText(/No Cadet account is linked/)).toBeTruthy();
     });
   });
 

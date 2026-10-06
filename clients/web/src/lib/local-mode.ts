@@ -509,7 +509,7 @@ function clearSelectedAssistantSession(): void {
 /**
  * Forget a paired assistant on this device: the host removes its lockfile
  * entry and deletes its stored guardian token, never touching the remote
- * assistant (pair again anytime with `vellum connect import`). When the
+ * assistant (pair again anytime with `cadet connect import`). When the
  * removed entry is the effective selection, the session residue (selection
  * key, gateway token, self-hosted connection) is cleared the same way a
  * local retire clears it, so the next connect starts clean.
@@ -541,7 +541,7 @@ const PAIRING_FALLBACK_ERROR = "Failed to connect to that assistant.";
 
 /**
  * Whether a refused pairing step is worth polling through, classified by the
- * shared reason table so the dialog and `vellum connect import` cannot drift.
+ * shared reason table so the dialog and `cadet connect import` cannot drift.
  */
 export function isRetryablePairingFailure(
   failure: LocalPairingFailure,
@@ -657,7 +657,7 @@ export function hasAssistants(): boolean {
  *
  * Deliberately excludes the externally-managed container runtimes (`docker`,
  * `apple-container`) and remote self-hosted clouds (`paired`/`gcp`/`aws`/
- * `custom`, reached at their own `runtimeUrl`), along with platform (`vellum`):
+ * `custom`, reached at their own `runtimeUrl`), along with platform (`cadet`):
  * the web client manages none of those through its lifecycle flows. Docker
  * instances ARE still reachable over the local gateway proxy — that broader,
  * connect-only set is {@link isLocalGatewayAssistant}. See the `KNOWN_CLOUDS`
@@ -679,7 +679,7 @@ export function isLocalAssistant(a: LockfileAssistant): boolean {
  * the lifecycle flows (wake, local retire), which stay `cloud === "local"`.
  * Excludes `apple-container` (its entries are managed by the macOS app and
  * record no renderer-resolvable loopback gateway), the remote self-hosted
- * clouds, and platform (`vellum`).
+ * clouds, and platform (`cadet`).
  */
 export function isLocalGatewayAssistant(a: LockfileAssistant): boolean {
   return isLoopbackGatewayCloud(a.cloud);
@@ -690,7 +690,7 @@ export function isPlatformAssistant(a: LockfileAssistant): boolean {
 }
 
 /**
- * A remote assistant paired from another machine via `vellum connect import`
+ * A remote assistant paired from another machine via `cadet connect import`
  * (`cloud === "paired"`): reached directly at its own `runtimeUrl` with the
  * stored guardian access token as the bearer. Not local (no lifecycle flows,
  * wake/retire refuse it) and not platform (no platform session involved).
@@ -701,7 +701,7 @@ export function isPairedAssistant(a: { cloud?: string }): boolean {
 }
 
 /**
- * Whether `vellum wake` can start or repair the assistant with this id. Wake
+ * Whether `cadet wake` can start or repair the assistant with this id. Wake
  * operates only on plain local assistants (the {@link isLocalAssistant} set) —
  * it refuses Docker and apple-container entries — so the "Wake up" and
  * guardian-repair affordances are limited to them. A missing gateway port does
@@ -872,7 +872,7 @@ function pairedGatewayProxyUrl(assistantId: string): string {
  * absolute http(s) `runtimeUrl` for the host to forward to.
  *
  * The renderer never fetches the remote origin directly: the packaged app's
- * CSP pins `connect-src` to Vellum origins, and a browser-served SPA would be
+ * CSP pins `connect-src` to Cadet origins, and a browser-served SPA would be
  * stopped by the remote gateway's CORS. Instead the serving host (the Electron
  * `app://` handler, the Vite dev middleware, the CLI web server) resolves the
  * entry's recorded `runtimeUrl` and forwards, exactly like the loopback
@@ -1141,7 +1141,7 @@ function isGatewayStillStarting(
  * connections (a thrown transport error), answers `503`/`5xx`, or rejects the
  * mint with a repairable `401` while it re-provisions its guardian binding.
  * A guardian refresh `503` is the same window: the host shells out to
- * `vellum gateway token refresh`, which cannot reach a gateway that is still
+ * `cadet gateway token refresh`, which cannot reach a gateway that is still
  * binding its port. A `403` loopback-boundary refusal is terminal. A missing
  * (`404`) or rejected (`401`) guardian token, or a guardian `500`
  * (malformed file, CLI spawn failure, refresh timeout), will not heal by

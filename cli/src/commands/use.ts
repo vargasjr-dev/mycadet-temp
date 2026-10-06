@@ -11,7 +11,7 @@ export async function use(): Promise<void> {
   const args = process.argv.slice(3);
 
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: vellum use [<name-or-id>]");
+    console.log("Usage: cadet use [<name-or-id>]");
     console.log("");
     console.log("Set the active assistant for commands.");
     console.log("");

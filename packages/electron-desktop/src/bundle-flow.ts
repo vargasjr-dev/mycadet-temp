@@ -25,7 +25,9 @@ export function resolveActiveGateway(): ActiveGateway | null {
   return getBundlePlatform().resolveActiveGateway();
 }
 
-async function acquireGatewayToken(assistantId: string): Promise<string | null> {
+async function acquireGatewayToken(
+  assistantId: string,
+): Promise<string | null> {
   return getBundlePlatform().acquireGatewayToken(assistantId);
 }
 
@@ -63,7 +65,7 @@ export async function handleBundleFile(filePath: string): Promise<void> {
   if (!gateway) {
     dialog.showErrorBox(
       "Cannot open bundle",
-      "Vellum assistant is not running. Please start Vellum first.",
+      "Cadet assistant is not running. Please start Cadet first.",
     );
     return;
   }

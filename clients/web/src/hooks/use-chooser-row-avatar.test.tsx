@@ -235,7 +235,7 @@ function createWrapper(
   };
 }
 
-/** A signed-in platform account on this device, the state a `vellum login` leaves. */
+/** A signed-in platform account on this device, the state a `cadet login` leaves. */
 function signInToPlatform(): void {
   useAuthStore.setState({
     platformSession: "present",

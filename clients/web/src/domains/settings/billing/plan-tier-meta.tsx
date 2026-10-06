@@ -4,7 +4,7 @@ import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-component
 /** Pro package tier keys, keyed by `ProPackage.key` ("free" is the base plan). */
 export type PlanTierKey = "free" | "mighty" | "super" | "ultra";
 
-/** Vellum creature traits per plan tier, matching the pricing-page creatures. */
+/** Cadet creature traits per plan tier, matching the pricing-page creatures. */
 export const TIER_TRAITS: Record<
   string,
   { bodyShape: string; eyeStyle: string; color: string }
@@ -31,7 +31,7 @@ export const FREE_STORAGE_GIB = 4;
 export const FREE_CREDITS_USD = 0;
 
 /**
- * Vellum creature avatar for a plan tier. The ~48 kB bundled component payload
+ * Cadet creature avatar for a plan tier. The ~48 kB bundled component payload
  * loads lazily; a same-size placeholder holds the layout until it resolves.
  */
 export function PlanTierAvatar({

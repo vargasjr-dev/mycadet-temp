@@ -29,7 +29,7 @@ ${KNOWN_CHANNELS.join(", ")}. A channel without a built-in readiness probe
 reports as unsupported.
 
 ${CHANNELS_PLUGIN_SEARCH_HINT} Plugins can bundle additional channels
-from other Vellum users.
+from other Cadet users.
 
 Two identities can reach a channel's platform. 'request' acts as the
 assistant's own bot on that channel (${BOT_CHANNELS}), resolving the bot
@@ -76,7 +76,7 @@ reaches the platform directly and leaves no record of what was said.
 
 Arguments:
   <channel>  One of: ${BOT_CHANNELS}. A channel with no bot credential of
-             its own (phone, vellum) is refused.
+             its own (phone, cadet) is refused.
   <url>      The API method path, relative to the platform's API host
              (for Slack, '/conversations.history'; for Discord, '/users/@me';
              for Telegram, '/getMe'). The provider supplies the host.

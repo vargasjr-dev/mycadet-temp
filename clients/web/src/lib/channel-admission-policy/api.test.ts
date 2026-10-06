@@ -52,7 +52,7 @@ describe("isInternalChannel", () => {
     expect(isInternalChannel("a2a")).toBe(true);
   });
 
-  test("client-controllable channels (incl. vellum) are not internal", () => {
+  test("client-controllable channels (incl. cadet) are not internal", () => {
     expect(isInternalChannel("vellum")).toBe(false);
     expect(isInternalChannel("slack")).toBe(false);
     expect(isInternalChannel("telegram")).toBe(false);

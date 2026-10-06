@@ -92,7 +92,11 @@ function createBinaryMockFetch(status: number | number[], data: Buffer) {
   return { fetchFn: fetchFn as typeof globalThis.fetch, captured };
 }
 
-function makeLocalPoster(fetchFn: typeof globalThis.fetch, port = 9000, token = "test-token") {
+function makeLocalPoster(
+  fetchFn: typeof globalThis.fetch,
+  port = 9000,
+  token = "test-token",
+) {
   return new HostProxyPoster({
     endpointBase: `http://127.0.0.1:${port}/v1`,
     authHeaders: () => ({ Authorization: `Bearer ${token}` }),
@@ -101,7 +105,12 @@ function makeLocalPoster(fetchFn: typeof globalThis.fetch, port = 9000, token = 
   });
 }
 
-function makeCloudPoster(fetchFn: typeof globalThis.fetch, runtimeUrl = "https://platform.vellum.ai", assistantId = "asst-123", sessionToken = "session-tok") {
+function makeCloudPoster(
+  fetchFn: typeof globalThis.fetch,
+  runtimeUrl = "https://platform.vellum.ai",
+  assistantId = "asst-123",
+  sessionToken = "session-tok",
+) {
   return new HostProxyPoster({
     endpointBase: `${runtimeUrl}/v1/assistants/${assistantId}`,
     authHeaders: () => ({ "X-Session-Token": sessionToken }),
@@ -255,9 +264,7 @@ describe("HostProxyPoster", () => {
 
       expect(result).toBe(true);
       const req = captured[0];
-      expect(req.url).toBe(
-        "http://127.0.0.1:9000/v1/host-app-control-result",
-      );
+      expect(req.url).toBe("http://127.0.0.1:9000/v1/host-app-control-result");
 
       const body = JSON.parse(req.body!);
       expect(body.requestId).toBe("req-6");
@@ -375,9 +382,7 @@ describe("HostProxyPoster", () => {
       expect(buf!.toString()).toBe("file-bytes-here");
 
       const req = captured[0];
-      expect(req.url).toBe(
-        "http://127.0.0.1:9000/v1/transfers/xfer-1/content",
-      );
+      expect(req.url).toBe("http://127.0.0.1:9000/v1/transfers/xfer-1/content");
       expect(req.method).toBe("GET");
       expect(req.headers["Authorization"]).toBe("Bearer test-token");
       expect(req.headers["X-Vellum-Client-Id"]).toBe(FAKE_DEVICE_ID);
@@ -421,9 +426,7 @@ describe("HostProxyPoster", () => {
 
       expect(result).toBe(true);
       const req = captured[0];
-      expect(req.url).toBe(
-        "http://127.0.0.1:9000/v1/transfers/xfer-2/content",
-      );
+      expect(req.url).toBe("http://127.0.0.1:9000/v1/transfers/xfer-2/content");
       expect(req.method).toBe("PUT");
       expect(req.headers["Content-Type"]).toBe("application/octet-stream");
       expect(req.headers["X-Transfer-SHA256"]).toBe("abc123sha256");
@@ -526,7 +529,10 @@ describe("HostProxyPoster", () => {
       const refresh = mock(async () => "fresh-token");
       const poster = makeRefreshingPoster(fetchFn, refresh);
 
-      const result = await poster.postBashResult({ requestId: "r1", stdout: "" });
+      const result = await poster.postBashResult({
+        requestId: "r1",
+        stdout: "",
+      });
 
       expect(result).toBe(true);
       expect(refresh).toHaveBeenCalledTimes(1);
@@ -541,7 +547,10 @@ describe("HostProxyPoster", () => {
       const refresh = mock(async () => null);
       const poster = makeRefreshingPoster(fetchFn, refresh);
 
-      const result = await poster.postBashResult({ requestId: "r2", stdout: "" });
+      const result = await poster.postBashResult({
+        requestId: "r2",
+        stdout: "",
+      });
 
       expect(result).toBe(false);
       expect(refresh).toHaveBeenCalledTimes(1);
@@ -554,7 +563,10 @@ describe("HostProxyPoster", () => {
         throw new Error("refresh failed");
       });
 
-      const result = await poster.postBashResult({ requestId: "r3", stdout: "" });
+      const result = await poster.postBashResult({
+        requestId: "r3",
+        stdout: "",
+      });
 
       expect(result).toBe(false);
       expect(captured).toHaveLength(1);
@@ -565,7 +577,10 @@ describe("HostProxyPoster", () => {
       const refresh = mock(async () => "fresh-token");
       const poster = makeRefreshingPoster(fetchFn, refresh);
 
-      const result = await poster.postBashResult({ requestId: "r4", stdout: "" });
+      const result = await poster.postBashResult({
+        requestId: "r4",
+        stdout: "",
+      });
 
       expect(result).toBe(false);
       expect(refresh).toHaveBeenCalledTimes(1);
@@ -576,7 +591,10 @@ describe("HostProxyPoster", () => {
       const { fetchFn, captured } = createMockFetch([401]);
       const poster = makeLocalPoster(fetchFn);
 
-      const result = await poster.postBashResult({ requestId: "r5", stdout: "" });
+      const result = await poster.postBashResult({
+        requestId: "r5",
+        stdout: "",
+      });
 
       expect(result).toBe(false);
       expect(captured).toHaveLength(1);
@@ -740,7 +758,10 @@ describe("HostProxyPoster", () => {
     });
 
     test("uses assistant-scoped URLs for transfer content", async () => {
-      const { fetchFn, captured } = createBinaryMockFetch(200, Buffer.from("ok"));
+      const { fetchFn, captured } = createBinaryMockFetch(
+        200,
+        Buffer.from("ok"),
+      );
       const poster = makeCloudPoster(fetchFn);
 
       await poster.pullTransferContent("xfer-1");

@@ -36,14 +36,14 @@ afterEach(() => {
 // What matters here is the dev floor's two properties, the conservative
 // default, and the ordering relationship with the group-filter gate that the
 // call site depends on. `false` means the Chats section stays on the rows it
-// is handed rather than asking for `vellum` and receiving only the explicitly
+// is handed rather than asking for `cadet` and receiving only the explicitly
 // stamped fraction of itself.
 describe("useSupportsNativeOriginFilter", () => {
   test("false when the version is unknown", () => {
     expect(readGate(null)).toBe(false);
   });
 
-  test("false for assistants whose vellum filter is a strict equality", () => {
+  test("false for assistants whose cadet filter is a strict equality", () => {
     expect(readGate("0.11.2")).toBe(false);
     expect(readGate("0.11.1")).toBe(false);
     expect(readGate("0.10.12")).toBe(false);

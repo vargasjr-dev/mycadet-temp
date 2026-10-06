@@ -8,7 +8,7 @@
  * here reads a store or a query, so what the stories show is exactly what the
  * container renders.
  *
- * It has no composer by design. The Vellum composer is the only input, and the
+ * It has no composer by design. The Cadet composer is the only input, and the
  * only way out of here toward the channel is the source link in the header.
  */
 
@@ -42,7 +42,7 @@ export interface ChannelTranscriptPanelViewProps {
    * would be wrong rather than merely vague.
    */
   assistantName: string | null;
-  /** Row currently staged on the Vellum composer, or `null` when none is. */
+  /** Row currently staged on the Cadet composer, or `null` when none is. */
   referencedEntryId: string | null;
   onToggleReference: (entry: ChannelTranscriptEntry) => void;
   onClose: () => void;

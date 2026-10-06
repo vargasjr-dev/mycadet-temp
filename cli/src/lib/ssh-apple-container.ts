@@ -24,7 +24,7 @@ export async function sshAppleContainer(
   if (!existsSync(mgmtSocket)) {
     console.error(
       `Management socket not found at ${mgmtSocket}.\n` +
-        "The assistant may have been stopped. Run 'vellum hatch' to start it.",
+        "The assistant may have been stopped. Run 'cadet hatch' to start it.",
     );
     process.exit(1);
   }

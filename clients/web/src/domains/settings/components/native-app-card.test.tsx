@@ -81,7 +81,7 @@ describe("NativeAppCard", () => {
 
     expect(screen.getByText("Get the iOS App")).toBeDefined();
     expect(
-      screen.getByText("The Vellum iOS app gives you a native experience."),
+      screen.getByText("The Cadet iOS app gives you a native experience."),
     ).toBeDefined();
 
     fireEvent.click(screen.getByRole("button", { name: "Download" }));
@@ -142,9 +142,9 @@ describe("NativeAppCard", () => {
 
     render(<NativeAppCard />);
 
-    expect(screen.getByText("Get the Vellum Mobile App")).toBeDefined();
+    expect(screen.getByText("Get the Cadet Mobile App")).toBeDefined();
     expect(
-      screen.getByText("The Vellum mobile app gives you a native experience."),
+      screen.getByText("The Cadet mobile app gives you a native experience."),
     ).toBeDefined();
 
     fireEvent.click(screen.getByRole("button", { name: "Download" }));
@@ -163,7 +163,7 @@ describe("NativeAppCard", () => {
 
     render(<NativeAppCard />);
 
-    expect(screen.getByText("Get the Vellum Mobile App")).toBeDefined();
+    expect(screen.getByText("Get the Cadet Mobile App")).toBeDefined();
   });
 
   test("renders nothing outside mobile web", () => {

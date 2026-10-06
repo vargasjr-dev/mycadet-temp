@@ -45,9 +45,9 @@ function useHostingOptions(): HostingOption[] {
   return [
     {
       mode: "vellum-cloud",
-      label: "Vellum Cloud",
+      label: "Cadet Cloud",
       subtitle:
-        "Always on, 24/7, even when your computer is off. Runs on Vellum's secure infrastructure.",
+        "Always on, 24/7, even when your computer is off. Runs on Cadet's secure infrastructure.",
       icon: <Cloud className={ICON_CLASS} />,
       ...(cloudDisabled
         ? {

@@ -40,7 +40,7 @@ export { findWebDistDir } from "./web-dist.js";
  * CLI-managed nginx reverse proxy that fronts the gateway as the canonical
  * tunnel target: browser → tunnel (TLS) → nginx@127.0.0.1 → gateway@127.0.0.1.
  *
- * `vellum tunnel` (and the wake restore path) bring this edge up via
+ * `cadet tunnel` (and the wake restore path) bring this edge up via
  * `ensureTunnelEdge` and always front its loopback listen port.
  */
 
@@ -485,7 +485,7 @@ export function getNginxVersion(): string | null {
 /*
  * PID handling is deliberately self-contained rather than reusing the
  * process.ts helpers: stopProcessByPidFile's isVellumProcess() guard only
- * matches command lines containing a vellum path, which fails for a custom
+ * matches command lines containing a cadet path, which fails for a custom
  * VELLUM_WORKSPACE_DIR and would silently leave nginx running (the same
  * reason local.ts kills ngrok directly). This module is also imported by
  * sleep/retire, whose tests mock.module() process.js process-globally —
@@ -761,7 +761,7 @@ const OWNERSHIP_SETTLE_INTERVAL_MS = 100;
 /**
  * Outcome of an attempt to bring up the nginx ingress edge. Callers render
  * their own messaging per variant: `ensureTunnelEdge` maps failure variants to
- * thrown errors with actionable text, which `vellum tunnel` and
+ * thrown errors with actionable text, which `cadet tunnel` and
  * `nginx-ingress up` print before exiting non-zero while the wake restore path
  * warns and continues.
  */
@@ -808,7 +808,7 @@ export type StartRemoteWebIngressResult =
  * requested config.
  *
  * Pure mechanism: it performs no console output and never exits the process, so
- * every edge caller (`vellum tunnel`, `nginx-ingress up`, the wake restore
+ * every edge caller (`cadet tunnel`, `nginx-ingress up`, the wake restore
  * path) can share one implementation and map the returned result to its own UX.
  */
 export async function startRemoteWebIngress(opts: {
@@ -1048,8 +1048,8 @@ function stuckEdgeRecoveryHint(workspaceDir: string): string {
   const pid = getIngressPid(workspaceDir);
   const target = pid !== null ? `the nginx process (PID ${pid})` : "it";
   return (
-    `Vellum could not stop ${target}, even with SIGKILL. ` +
-    `Stop it by hand and retry, or run \`vellum sleep\` to shut the ` +
+    `Cadet could not stop ${target}, even with SIGKILL. ` +
+    `Stop it by hand and retry, or run \`cadet sleep\` to shut the ` +
     `assistant down entirely. Check the nginx log: ${logPath}`
   );
 }

@@ -984,7 +984,7 @@ describe("adjustSectionUnreadCache", () => {
     expect(unreadOf(client, (s) => s.kind === "group")).toBe(1);
   });
 
-  test("unattributed and vellum rows adjust the Chats bucket", () => {
+  test("unattributed and cadet rows adjust the Chats bucket", () => {
     const client = new QueryClient();
     seedIndex(client);
 
@@ -1133,7 +1133,7 @@ describe("applySurfacedConversation", () => {
       conversationType: "background",
     });
     seedBackground(qc, [bg]);
-    // Chats section contents cache: {groupId: system:all, channel: vellum}.
+    // Chats section contents cache: {groupId: system:all, channel: cadet}.
     const chatsKey = conversationListQueryKey(ASSISTANT_ID, {
       groupId: "system:all",
       originChannel: "vellum",

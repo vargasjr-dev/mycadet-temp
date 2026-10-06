@@ -183,7 +183,7 @@ describe("sleep command", () => {
     try {
       await expect(sleep()).rejects.toThrow("process.exit:1");
       expect(consoleError).toHaveBeenCalledWith(
-        expect.stringContaining("vellum sleep --force"),
+        expect.stringContaining("cadet sleep --force"),
       );
     } finally {
       process.exit = originalExit;

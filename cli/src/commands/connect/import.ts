@@ -1,8 +1,8 @@
 /**
- * `vellum connect import <address> [--name <localname>]`
+ * `cadet connect import <address> [--name <localname>]`
  *
  * Pair this machine with an assistant running elsewhere and register it
- * locally so `vellum client`/`message`/`events <name>` work against it. The
+ * locally so `cadet client`/`message`/`events <name>` work against it. The
  * device-code exchange, the lockfile write, and the token write live in
  * `pairingStart`/`pairingPoll` (`@mycadet/local-mode`); this command owns the
  * argv parsing, the polling cadence, and the output copy.
@@ -24,10 +24,10 @@ import { getCurrentEnvironment } from "../../lib/environments/resolve.js";
 import { STALE_CLI_UPDATE_HINT } from "../../lib/stale-cli-hint.js";
 
 function printUsage(): void {
-  console.log(`vellum connect import - Pair with an assistant running on another machine
+  console.log(`cadet connect import - Pair with an assistant running on another machine
 
 USAGE:
-    vellum connect import <address> [options]
+    cadet connect import <address> [options]
 
 Registers the assistant at <address> on this machine: a lockfile entry plus a
 guardian token, both under the local name below. The pairing is a device of
@@ -35,12 +35,12 @@ its own on the host, listed and separately revocable there.
 
 <address> is either form of pairing artifact:
 
-    A pairing link from 'vellum pair' (or the host's Pair a device card). It
+    A pairing link from 'cadet pair' (or the host's Pair a device card). It
     carries an approved device code, so the import completes right away.
 
     The assistant's public https address, e.g. https://your-assistant.ts.net.
     This machine mints its own pairing code, prints it, and polls until the
-    code is approved on the host with 'vellum pair --web-approve <code>' or
+    code is approved on the host with 'cadet pair --web-approve <code>' or
     expires (10 minutes). Ctrl-C cancels the attempt. A temporary network
     failure is retried until then rather than ending the attempt.
 
@@ -56,9 +56,9 @@ OPTIONS:
                     re-importing the same host updates its entry.
 
 EXAMPLES:
-    vellum connect import "https://your-assistant.ts.net/assistant/pair#device_code=abc123"
-    vellum connect import https://your-assistant.ts.net
-    vellum connect import https://your-assistant.ts.net --name desk
+    cadet connect import "https://your-assistant.ts.net/assistant/pair#device_code=abc123"
+    cadet connect import https://your-assistant.ts.net
+    cadet connect import https://your-assistant.ts.net --name desk
 `);
 }
 
@@ -86,11 +86,11 @@ function reportImported(result: {
     `${result.updated ? "Updated" : "Imported"} paired assistant '${result.assistantId}'.`,
   );
   console.log("");
-  console.log(`  Connect with:  vellum client ${result.assistantId}`);
+  console.log(`  Connect with:  cadet client ${result.assistantId}`);
   console.log("");
   console.log(
     result.accessOnly
-      ? "Note: the assistant issued an access-only token, so this connection will expire. Run `vellum connect import` again with a fresh pairing link when it does."
+      ? "Note: the assistant issued an access-only token, so this connection will expire. Run `cadet connect import` again with a fresh pairing link when it does."
       : "Note: this connection includes a refresh credential, so it can renew itself. Re-pair only if it's revoked or the refresh credential expires.",
   );
 }
@@ -126,7 +126,7 @@ function importLegacyPairingBundle(
     "Warning: base64 pairing bundles are deprecated and will stop working in a future release.",
   );
   console.log(
-    "Newer hosts print a pairing link instead: run `vellum pair` there and import that link.",
+    "Newer hosts print a pairing link instead: run `cadet pair` there and import that link.",
   );
   console.log("");
   reportImported(result);
@@ -152,7 +152,7 @@ export async function connectImport(): Promise<void> {
   if (unknownFlag) {
     console.error(`Error: unknown option '${unknownFlag}'.`);
     console.error(
-      "Run `vellum connect import --help` to see available options.",
+      "Run `cadet connect import --help` to see available options.",
     );
     console.error(
       `If this option is from newer docs, ${STALE_CLI_UPDATE_HINT}`,
@@ -212,7 +212,7 @@ export async function connectImport(): Promise<void> {
       console.log("Approve this pairing on the assistant's machine:");
       console.log("");
       console.log(`  Code: ${started.userCode}`);
-      console.log(`  Run:  vellum pair --web-approve ${started.userCode}`);
+      console.log(`  Run:  cadet pair --web-approve ${started.userCode}`);
       console.log("");
       console.log(`Waiting for approval (expires ${started.expiresAt})...`);
     }

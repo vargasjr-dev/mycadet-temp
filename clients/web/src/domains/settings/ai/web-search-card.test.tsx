@@ -1,12 +1,12 @@
 /**
  * Tests for `WebSearchCard`'s provider-only configuration (the Managed /
- * Your Own mode toggle is gone — Vellum is a provider like any other):
+ * Your Own mode toggle is gone — Cadet is a provider like any other):
  *
  *   1. No mode segmented-control renders in the card header.
- *   2. Vellum is selectable, needs no API key, and saves as a
+ *   2. Cadet is selectable, needs no API key, and saves as a
  *      provider+mode pair for old-daemon compatibility.
  *   3. BYOK providers still gate Save on a credential.
- *   4. Legacy managed-mode daemon configs render as Vellum — except
+ *   4. Legacy managed-mode daemon configs render as Cadet — except
  *      Provider Native, which stays itself (mirrors migration 132).
  *
  * The design-library Select is real, driven via its combobox trigger like
@@ -157,13 +157,13 @@ describe("WebSearchCard — provider-only configuration", () => {
     expect(providerTrigger()).toBeTruthy();
   });
 
-  test("Vellum and Provider Native are offered alongside the BYOK providers", () => {
+  test("Cadet and Provider Native are offered alongside the BYOK providers", () => {
     renderCard();
 
     fireEvent.click(providerTrigger());
     const options = visibleOptions();
     expect(options).toEqual([
-      "Vellum",
+      "Cadet",
       "Provider Native",
       "Perplexity",
       "Brave",
@@ -178,15 +178,15 @@ describe("WebSearchCard — provider-only configuration", () => {
     ]);
   });
 
-  test("selecting Vellum hides the API key field and saves the provider+mode pair", async () => {
+  test("selecting Cadet hides the API key field and saves the provider+mode pair", async () => {
     renderCard();
 
     fireEvent.click(providerTrigger());
-    selectOption("Vellum");
+    selectOption("Cadet");
 
     expect(screen.queryByText("API Key")).toBeNull();
     expect(
-      screen.getByText(/Search runs through your Vellum account/),
+      screen.getByText(/Search runs through your Cadet account/),
     ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
@@ -347,16 +347,16 @@ describe("WebSearchCard — provider-only configuration", () => {
     expect(saveButton.disabled).toBe(false);
   });
 
-  test("a daemon predating the vellum provider gets the legacy managed write", async () => {
-    // Old daemon schemas reject provider "vellum" outright; the Vellum
+  test("a daemon predating the cadet provider gets the legacy managed write", async () => {
+    // Old daemon schemas reject provider "vellum" outright; the Cadet
     // selection must degrade to the legacy Managed representation — mode
     // only, letting the deep-merge keep the stored provider so the read
-    // bridge renders the pair as Vellum again.
+    // bridge renders the pair as Cadet again.
     daemonSupportsVellumProvider = false;
     renderCard();
 
     fireEvent.click(providerTrigger());
-    selectOption("Vellum");
+    selectOption("Cadet");
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(configPatchCalls.length).toBe(1));
@@ -368,18 +368,18 @@ describe("WebSearchCard — provider-only configuration", () => {
 
   // A config written by the legacy mode toggle marks managed via `mode`
   // while `provider` holds the BYOK restore value.
-  test("a legacy managed-mode daemon renders as Vellum", () => {
+  test("a legacy managed-mode daemon renders as Cadet", () => {
     daemonConfigData = {
       services: { "web-search": { mode: "managed", provider: "brave" } },
     };
     renderCard();
 
-    expect(providerTrigger().textContent).toContain("Vellum");
+    expect(providerTrigger().textContent).toContain("Cadet");
     expect(screen.queryByText("API Key")).toBeNull();
   });
 
   test("a legacy managed-mode Provider Native daemon stays Provider Native", () => {
-    // The platform default config: managed mode never meant "Vellum search"
+    // The platform default config: managed mode never meant "Cadet search"
     // for Provider Native — migration 132 preserves it, so must the card.
     daemonConfigData = {
       services: {
@@ -392,7 +392,7 @@ describe("WebSearchCard — provider-only configuration", () => {
     renderCard();
 
     expect(providerTrigger().textContent).toContain("Provider Native");
-    expect(providerTrigger().textContent).not.toContain("Vellum");
+    expect(providerTrigger().textContent).not.toContain("Cadet");
   });
 
   test("escaping a legacy managed-mode daemon resets mode alongside the provider", async () => {

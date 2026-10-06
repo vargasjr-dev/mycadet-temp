@@ -34,7 +34,7 @@ const WILDCARD_HOST = `*${ROOT_HOSTNAME}`;
 // https://storage.googleapis.com (+ wildcard) in connect-src: teleport streams
 // assistant `.vbundle` bytes directly to/from GCS via platform-issued signed
 // URLs (PUT on export-to-cloud, GET on import-to-local). Those requests leave
-// the renderer for Google's storage host, which isn't a Vellum origin, so the
+// the renderer for Google's storage host, which isn't a Cadet origin, so the
 // transfer is CSP-blocked without an explicit allowlist. Both the path-style
 // (`storage.googleapis.com/<bucket>/...`) and virtual-hosted
 // (`<bucket>.storage.googleapis.com/...`) URL shapes are covered.

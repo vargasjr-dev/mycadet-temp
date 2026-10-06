@@ -66,7 +66,7 @@ export function isWatchEnabled(): boolean {
  *
  * Nothing is navigated and the app is deliberately not raised, unlike
  * `startVoice`. The session reads the user's screen, so the work in front of
- * them is its subject: bringing Vellum forward would cover the very thing the
+ * them is its subject: bringing Cadet forward would cover the very thing the
  * session exists to watch.
  */
 export function handleToggleWatchCommand(target?: WatchCaptureTarget): void {

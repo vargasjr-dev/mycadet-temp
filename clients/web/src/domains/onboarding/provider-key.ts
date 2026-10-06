@@ -331,7 +331,7 @@ async function applyLegacyOnboardingProfile(
 /**
  * Apply the model-provider selection collected during onboarding to the
  * freshly hatched local assistant. Consumes the pending key; no-op when nothing
- * was collected (e.g. Vellum Cloud, which skips the API-key step). Throws
+ * was collected (e.g. Cadet Cloud, which skips the API-key step). Throws
  * {@link ProviderKeyRejectedError} when the daemon's provider-side validation
  * rejects the key, re-staging the full selection so the API-key screen can
  * prefill on the correction pass (and a reload re-applies and re-surfaces

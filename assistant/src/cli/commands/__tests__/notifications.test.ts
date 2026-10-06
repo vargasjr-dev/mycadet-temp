@@ -299,7 +299,7 @@ describe("notifications send", () => {
     expect(parsed).toEqual({
       ok: false,
       error:
-        'Invalid source-channel "water_reminder". Must be one of: assistant_tool, vellum, phone, telegram, slack, scheduler, watcher',
+        'Invalid source-channel "water_reminder". Must be one of: assistant_tool, cadet, phone, telegram, slack, scheduler, watcher',
     });
     expect(ipcCalls).toHaveLength(0);
   });
@@ -314,12 +314,12 @@ describe("notifications send", () => {
     expect(exitCode).toBe(0);
     const normalizedHelp = stdout.replace(/\s+/g, " ");
     expect(normalizedHelp).toContain(
-      "One of: assistant_tool, vellum, phone, telegram, slack, scheduler, watcher",
+      "One of: assistant_tool, cadet, phone, telegram, slack, scheduler, watcher",
     );
     expect(normalizedHelp).toContain("(default: assistant_tool)");
   });
 
-  test("send --conversation-id pins the vellum affinity hint", async () => {
+  test("send --conversation-id pins the cadet affinity hint", async () => {
     const { parsed, exitCode } = await runCommand([
       "send",
       "--source-channel",
@@ -549,7 +549,7 @@ describe("notifications list", () => {
     expect(ipcCalls[0].method).toBe("list_home_feed");
   });
 
-  test("list help disambiguates Vellum notifications from email inboxes", async () => {
+  test("list help disambiguates Cadet notifications from email inboxes", async () => {
     const { stdout, exitCode } = await runRawCommand([
       "notifications",
       "list",
@@ -558,7 +558,7 @@ describe("notifications list", () => {
 
     expect(exitCode).toBe(0);
     const normalizedHelp = stdout.replace(/\s+/g, " ");
-    expect(normalizedHelp).toContain("Vellum Home feed");
+    expect(normalizedHelp).toContain("Cadet Home feed");
     expect(normalizedHelp).toContain("does not read email inboxes");
     expect(normalizedHelp).toContain("Gmail");
     expect(normalizedHelp).toContain("Outlook");

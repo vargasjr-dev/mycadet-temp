@@ -222,7 +222,7 @@ export function undispatchableProfileReason(p: ProfilePickerEntry): string {
  * The model a Vellum-managed profile currently runs on, as a display name.
  *
  * Managed profiles are named for the tier they serve ("Balanced", "Speed"),
- * and the model behind a tier moves whenever Vellum repoints the pin, so the
+ * and the model behind a tier moves whenever Cadet repoints the pin, so the
  * profile name alone never says what is about to run. A user profile is named
  * by the person who made it, usually after the model it pins, so naming the
  * model there would only repeat the label beside it.

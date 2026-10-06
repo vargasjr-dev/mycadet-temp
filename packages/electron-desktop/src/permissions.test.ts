@@ -32,29 +32,21 @@ mock.module("electron", () => ({
 }));
 
 const permissionPolicy = await import("./permissions");
-const {
-  denyAllPermissions,
-  installPermissionHandler,
-} = permissionPolicy;
+const { denyAllPermissions, installPermissionHandler } = permissionPolicy;
 
 const allowedOrigin = { protocol: "app:", host: "vellum.ai" };
 const resolveAllowedOrigin = () => allowedOrigin;
 const shouldGrantPermissionCheck = (
-  ...args: Parameters<typeof permissionPolicy.shouldGrantPermissionCheck> extends [
-    infer Permission,
-    infer Origin,
-    infer Details,
-    ...unknown[],
-  ]
+  ...args: Parameters<
+    typeof permissionPolicy.shouldGrantPermissionCheck
+  > extends [infer Permission, infer Origin, infer Details, ...unknown[]]
     ? [Permission, Origin, Details]
     : never
 ) => permissionPolicy.shouldGrantPermissionCheck(...args, allowedOrigin);
 const shouldGrantPermissionRequest = (
-  ...args: Parameters<typeof permissionPolicy.shouldGrantPermissionRequest> extends [
-    infer Permission,
-    infer Details,
-    ...unknown[],
-  ]
+  ...args: Parameters<
+    typeof permissionPolicy.shouldGrantPermissionRequest
+  > extends [infer Permission, infer Details, ...unknown[]]
     ? [Permission, Details]
     : never
 ) => permissionPolicy.shouldGrantPermissionRequest(...args, allowedOrigin);

@@ -104,7 +104,7 @@ describe("route classification through the active profile", () => {
     ).toBe(true);
   });
 
-  test("a binding to the canonical vellum name is managed even when a user-owned row claims it", () => {
+  test("a binding to the canonical cadet name is managed even when a user-owned row claims it", () => {
     // The daemon ignores a user-owned row named "vellum" and routes through
     // platform auth regardless, so the row's BYOK auth must not win here.
     expect(
@@ -550,7 +550,7 @@ describe("mainAgent call-site tweak composition", () => {
     ).toBe(true);
   });
 
-  test("a vellum winner keeps managed routing under a concrete provider tweak", () => {
+  test("a cadet winner keeps managed routing under a concrete provider tweak", () => {
     expect(
       classify({
         llm: {
@@ -595,7 +595,7 @@ describe("stale managed default stubs", () => {
     ).toBe(true);
   });
 
-  test("a stale invariant stub with no default provider is managed (catalog vellum column)", () => {
+  test("a stale invariant stub with no default provider is managed (catalog cadet column)", () => {
     expect(
       classify({
         llm: {

@@ -7,7 +7,7 @@ export const imageGenerationHelp: CliCommandHelp = {
   description: "AI image generation and editing",
   helpText: `
 Modes:
-  managed    — Uses platform-managed credentials (requires login to Vellum).
+  managed    — Uses platform-managed credentials (requires login to Cadet).
   your-own   — Uses your own Gemini or OpenAI API key depending on the configured model.
 
 Supported models: pass a tier alias, the assistant resolves it to the

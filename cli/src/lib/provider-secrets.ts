@@ -258,7 +258,7 @@ export function inferProviderFromModel(model: string): string | undefined {
     return "typesafe";
   }
   if (model === "qwen/qwen3-8b") {
-    // The only qwen/* ID the Vellum hosted provider carries; the rest are
+    // The only qwen/* ID the Cadet hosted provider carries; the rest are
     // OpenRouter's.
     return "vellum";
   }
@@ -351,7 +351,7 @@ export async function readGatewayApiKey(
     const message = await parseErrorMessage(response);
     if (response.status === 404) {
       throw new Error(
-        `Active assistant at ${gatewayUrl} does not expose /v1/secrets/read (${message}). Run \`vellum ps\` to confirm the active assistant, then select a self-hosted assistant with \`vellum use <assistant>\` or wake a current assistant before running setup.`,
+        `Active assistant at ${gatewayUrl} does not expose /v1/secrets/read (${message}). Run \`cadet ps\` to confirm the active assistant, then select a self-hosted assistant with \`cadet use <assistant>\` or wake a current assistant before running setup.`,
       );
     }
     throw new Error(
@@ -697,7 +697,7 @@ export async function ensureProviderApiKey(
         return {
           status: "missing",
           provider,
-          message: `Missing ${envVarName}. Set it in the environment or run vellum setup from an interactive terminal.`,
+          message: `Missing ${envVarName}. Set it in the environment or run cadet setup from an interactive terminal.`,
         };
       }
       apiKey = (
@@ -784,13 +784,13 @@ export async function configureHatchProviderApiKey(
 
     log(
       `⚠️  Provider credential setup skipped: ${result.message}\n` +
-        `   The assistant is still hatched. Run \`vellum setup --provider ${provider}\` to finish setup.`,
+        `   The assistant is still hatched. Run \`cadet setup --provider ${provider}\` to finish setup.`,
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     log(
       `⚠️  Provider credential setup failed: ${message}\n` +
-        `   The assistant is still hatched. Run \`vellum setup --provider ${provider}\` after fixing the issue.`,
+        `   The assistant is still hatched. Run \`cadet setup --provider ${provider}\` after fixing the issue.`,
     );
   }
 }

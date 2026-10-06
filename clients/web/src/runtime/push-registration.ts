@@ -3,7 +3,7 @@
  * mobile apps.
  *
  * The daemon's `platform` notification channel POSTs background notifications
- * (reminders, activity completions, etc.) to the Vellum platform's
+ * (reminders, activity completions, etc.) to the Cadet platform's
  * `/v1/assistants/{id}/push/dispatch/` endpoint, which fans them out to every
  * native device token registered for the bound user. This module is the missing
  * client half: it asks the OS for an APNs or FCM token via
@@ -75,8 +75,7 @@ interface RegisteredToken {
   runtimeAssistantId: string;
 }
 
-interface AndroidPushRegistrationPlugin
-  extends AndroidNotificationOwnershipBridge {
+interface AndroidPushRegistrationPlugin extends AndroidNotificationOwnershipBridge {
   register(): Promise<void>;
   unregister(): Promise<void>;
   getCapabilities(): Promise<{ capabilities: string[] }>;
@@ -375,9 +374,7 @@ export function extractScopedPushTapPayload(
     identity: { scopeId, assistantId, nativeSenderId },
     ...(presentation ? { presentation } : {}),
     ...(nameProvenance ? { nameProvenance } : {}),
-    ...(record.suppressGroupTitle === true
-      ? { suppressGroupTitle: true }
-      : {}),
+    ...(record.suppressGroupTitle === true ? { suppressGroupTitle: true } : {}),
   };
 }
 

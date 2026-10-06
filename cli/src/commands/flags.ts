@@ -63,7 +63,7 @@ function printFlagTable(flags: FeatureFlagEntry[]): void {
 }
 
 function printHelp(): void {
-  console.log("Usage: vellum flags [subcommand] [options]");
+  console.log("Usage: cadet flags [subcommand] [options]");
   console.log("");
   console.log("Show and toggle feature flags for the active assistant.");
   console.log(
@@ -90,16 +90,16 @@ function printHelp(): void {
   console.log("");
   console.log("Examples:");
   console.log(
-    "  $ vellum flags                                              # list flags for active assistant",
+    "  $ cadet flags                                              # list flags for active assistant",
   );
   console.log(
-    "  $ vellum flags get browser                                     # inspect one flag",
+    "  $ cadet flags get browser                                     # inspect one flag",
   );
   console.log(
-    "  $ vellum flags set browser true                               # enable a flag",
+    "  $ cadet flags set browser true                               # enable a flag",
   );
   console.log(
-    "  $ vellum flags set browser true     --assistant eval-1       # target by name/id",
+    "  $ cadet flags set browser true     --assistant eval-1       # target by name/id",
   );
 }
 
@@ -122,7 +122,7 @@ function createClient(assistantName?: string): AssistantClient {
     throw new Error(
       assistantName
         ? `No assistant found matching '${assistantName}'.`
-        : "No assistant found. Hatch one with 'vellum hatch' first.",
+        : "No assistant found. Hatch one with 'cadet hatch' first.",
     );
   }
 }
@@ -133,7 +133,7 @@ function rethrowFetchError(err: unknown): never {
     (err.message.includes("fetch") || err.message.includes("connect"))
   ) {
     throw new Error(
-      `Could not reach the assistant gateway. Is it running? Try 'vellum wake'.${
+      `Could not reach the assistant gateway. Is it running? Try 'cadet wake'.${
         crossEnvironmentAssistantHint() ?? ""
       }`,
     );
@@ -223,7 +223,7 @@ export async function flags(): Promise<void> {
   if (subcommand === "get") {
     const key = args[1];
     if (!key) {
-      console.error("Usage: vellum flags get <key>");
+      console.error("Usage: cadet flags get <key>");
       process.exit(1);
     }
     await getFlag(key, assistantName);
@@ -234,7 +234,7 @@ export async function flags(): Promise<void> {
     const key = args[1];
     const rawValue = args[2];
     if (!key || rawValue === undefined) {
-      console.error("Usage: vellum flags set <key> <true|false>");
+      console.error("Usage: cadet flags set <key> <true|false>");
       process.exit(1);
     }
     if (rawValue !== "true" && rawValue !== "false") {

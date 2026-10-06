@@ -876,7 +876,7 @@ describe("handleDeepLink — window activation", () => {
 });
 
 describe("resolveRegisteredSchemes", () => {
-  test("production registers vellum and vellum-assistant", () => {
+  test("production registers cadet and vellum-assistant", () => {
     expect(resolveRegisteredSchemes("production")).toEqual([
       "vellum",
       "vellum-assistant",

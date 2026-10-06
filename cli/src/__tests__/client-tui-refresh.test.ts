@@ -1,5 +1,5 @@
 /**
- * Tests for resolveFreshBearerToken: the `vellum client` TUI proactively
+ * Tests for resolveFreshBearerToken: the `cadet client` TUI proactively
  * refreshes a stale STORED guardian token at startup, while leaving platform
  * session auth, ephemeral --token overrides, and still-fresh tokens untouched.
  */

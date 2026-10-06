@@ -1,5 +1,5 @@
 /**
- * Fetch the installable plugin catalog from the Vellum platform.
+ * Fetch the installable plugin catalog from the Cadet platform.
  *
  * The platform serves a flattened view of the curated marketplace at
  * `GET {PLATFORM}/v1/plugins/`. Rows are normalized to {@link MarketplaceEntry}

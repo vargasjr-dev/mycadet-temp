@@ -150,7 +150,7 @@ export const STT_LANGUAGES: readonly SttLanguageOption[] = [
 /**
  * Daemon provider ids whose language option accepts `"multi"`: Deepgram
  * code-switching is a nova-3 mode, so it only works where nova-3 runs.
- * `deepgram` streams to nova-3 directly and `vellum` relays to Deepgram
+ * `deepgram` streams to nova-3 directly and `cadet` relays to Deepgram
  * with the model pinned to nova-3 server-side. Mirrors the resolver's guard
  * in `assistant/src/providers/speech-to-text/resolve.ts`, which drops
  * `"multi"` before it reaches any other adapter (xAI expects BCP-47 codes),
@@ -165,7 +165,7 @@ const MULTI_CAPABLE_DAEMON_PROVIDERS: ReadonlySet<string> = new Set([
  * Daemon provider ids that get the extended nova-3 monolingual roster (the
  * `extended` entries). The extended entries are verified against Deepgram's
  * nova-3 documentation only, so they are offered exactly where nova-3 runs:
- * `deepgram` directly and `vellum` via the managed relay (model pinned to
+ * `deepgram` directly and `cadet` via the managed relay (model pinned to
  * nova-3 server-side). Other language-selectable providers (xai) keep the
  * pre-expansion multi-roster set they were verified with; an unverified code
  * there could silently degrade recognition rather than error.

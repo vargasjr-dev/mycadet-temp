@@ -1,5 +1,5 @@
 /**
- * Pure helpers for `vellum pair`'s remote-web approval flow.
+ * Pure helpers for `cadet pair`'s remote-web approval flow.
  *
  * Pairing challenge stores are in-memory per gateway process, so approving a
  * code against a different assistant or environment than the one that served

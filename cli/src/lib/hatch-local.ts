@@ -135,7 +135,7 @@ function installCLISymlink(): void {
   }
 
   console.log(
-    `   ⚠ Could not create symlink for vellum CLI (tried ${preferredPath} and ${fallbackPath})`,
+    `   ⚠ Could not create symlink for cadet CLI (tried ${preferredPath} and ${fallbackPath})`,
   );
 }
 
@@ -186,7 +186,7 @@ export async function hatchLocal(
       if (existing && (!existing.cloud || existing.cloud === "local")) {
         throw new Error(
           `An assistant named "${instanceName}" is already hatched.\n` +
-            `Run \`vellum wake\` to restart it, or \`vellum retire ${instanceName}\` to remove it first.`,
+            `Run \`cadet wake\` to restart it, or \`cadet retire ${instanceName}\` to remove it first.`,
         );
       }
 
@@ -230,7 +230,7 @@ export async function hatchLocal(
         reporter.warn(
           "Warning: No LLM provider API key is configured. The assistant will fail when you try to send a message.",
         );
-        reporter.warn("  To fix, export your key before running vellum hatch:");
+        reporter.warn("  To fix, export your key before running cadet hatch:");
         reporter.warn("  export ANTHROPIC_API_KEY=<your-key>");
         reporter.warn("");
       }
@@ -341,7 +341,7 @@ export async function hatchLocal(
   if (provider !== undefined && provider !== null && !guardianAccessToken) {
     reporter.error(
       `⚠️  Provider credential setup skipped because the guardian token was not leased.\n` +
-        `   The assistant is still hatched. Run \`vellum setup --provider ${provider}\` after fixing the connection.`,
+        `   The assistant is still hatched. Run \`cadet setup --provider ${provider}\` after fixing the connection.`,
     );
   } else if (provider !== undefined) {
     reporter.log("");

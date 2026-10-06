@@ -1,5 +1,5 @@
 /**
- * Vellum brand glyph for the menu-bar (Tray) status item.
+ * Cadet brand glyph for the menu-bar (Tray) status item.
  *
  * Embedded as base64 rather than shipped as a loose PNG so the glyph travels
  * inside the bundled main process (`out/main/index.js`) with no extra
@@ -8,7 +8,7 @@
  * before any window or protocol handler exists. The 1x (32px) and 2x (64px)
  * variants give Retina menu bars the crisp rendition.
  *
- * The glyph is intentionally full-color (the green Vellum mark), so the Tray
+ * The glyph is intentionally full-color (the green Cadet mark), so the Tray
  * image is a non-template image — see `status-icon.ts` for why a template
  * image can't carry the colored status dot.
  */

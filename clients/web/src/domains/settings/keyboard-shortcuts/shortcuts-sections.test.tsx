@@ -54,7 +54,7 @@ const { ShortcutsSections } =
 
 beforeEach(() => {
   catalog = [
-    hotkey("globalHotkey", "Open Vellum", "global", "CmdOrCtrl+Shift+G"),
+    hotkey("globalHotkey", "Open Cadet", "global", "CmdOrCtrl+Shift+G"),
     hotkey("newConversation", "New chat", "menu", "CmdOrCtrl+N"),
     hotkey(
       "popOut",
@@ -79,7 +79,7 @@ describe("ShortcutsSections", () => {
   test("renders each command grouped under its scope section", async () => {
     render(<ShortcutsSections />);
 
-    expect(await screen.findByText("Open Vellum")).toBeDefined();
+    expect(await screen.findByText("Open Cadet")).toBeDefined();
     expect(screen.getByText("New chat")).toBeDefined();
     expect(screen.getByText("Global shortcuts")).toBeDefined();
     expect(screen.getByText("App shortcuts")).toBeDefined();
@@ -107,7 +107,7 @@ describe("ShortcutsSections", () => {
   test("blocks a conflicting capture and surfaces a warning", async () => {
     render(<ShortcutsSections />);
     fireEvent.click(
-      await screen.findByLabelText("Record shortcut for Open Vellum"),
+      await screen.findByLabelText("Record shortcut for Open Cadet"),
     );
 
     // CmdOrCtrl+N is already bound to "New chat".
@@ -122,7 +122,7 @@ describe("ShortcutsSections", () => {
 
   test("does not render a row for a reserved command", async () => {
     render(<ShortcutsSections />);
-    await screen.findByText("Open Vellum");
+    await screen.findByText("Open Cadet");
     expect(screen.queryByText("Find")).toBeNull();
   });
 

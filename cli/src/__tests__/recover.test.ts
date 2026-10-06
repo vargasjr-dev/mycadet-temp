@@ -170,9 +170,9 @@ describe("recover --help", () => {
     process.argv = ["bun", "vellum", "recover", "--help"];
     await expect(recover()).rejects.toThrow("process.exit(0)");
     const output = consoleLogSpy.mock.calls.flat().join("\n");
-    expect(output).toContain("Usage: vellum recover <name>");
+    expect(output).toContain("Usage: cadet recover <name>");
     expect(output).toContain("Examples:");
-    expect(output).toContain("vellum recover");
+    expect(output).toContain("cadet recover");
   });
 });
 

@@ -1,7 +1,7 @@
 /**
  * Backwards-compat gate: the per-message "Summarize up to here" action.
  *
- * Vellum Assistant 0.10.8 added `POST /v1/conversations/summarize` (the
+ * Cadet Assistant 0.10.8 added `POST /v1/conversations/summarize` (the
  * endpoint that summarizes a conversation's working memory up to a chosen
  * message). Older assistants 404 that route, so the web app hides the
  * per-message hover / long-press "Summarize up to here" affordance — the

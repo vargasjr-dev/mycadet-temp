@@ -32,7 +32,7 @@ import { shellArg } from "../lib/shell-arg.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import { runTailscaleTunnel } from "../lib/tailscale-tunnel.js";
 
-// `vellum` is the managed option this command owns; the local providers come
+// `cadet` is the managed option this command owns; the local providers come
 // from the shared registry so validation here cannot drift from what the
 // workspace config accepts.
 const VALID_PROVIDERS = ["vellum", ...TUNNEL_PROVIDERS] as const;
@@ -67,7 +67,7 @@ function parseArgs(): TunnelArgs {
     const arg = args[i];
     if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: vellum tunnel [<name>] --provider <provider> [options]",
+        "Usage: cadet tunnel [<name>] --provider <provider> [options]",
       );
       console.log("");
       console.log("Front a locally running assistant with an HTTPS tunnel.");
@@ -105,7 +105,7 @@ function parseArgs(): TunnelArgs {
         "  --domain <domain>             Reserved ngrok domain to bind (ngrok provider only).",
       );
       console.log(
-        "                                Saved to the workspace config so `vellum wake` restores reuse it.",
+        "                                Saved to the workspace config so `cadet wake` restores reuse it.",
       );
       console.log(
         "  --clear-domain                Clear the saved ngrok domain (ngrok provider only) and tunnel",
@@ -131,7 +131,7 @@ function parseArgs(): TunnelArgs {
       console.log("");
       console.log("Providers:");
       console.log(
-        "  vellum       Managed tunnel via Vellum Cloud (not yet available)",
+        "  cadet       Managed tunnel via Cadet Cloud (not yet available)",
       );
       console.log(
         "  ngrok        ngrok tunnel — install: brew install ngrok/ngrok/ngrok",
@@ -156,14 +156,14 @@ function parseArgs(): TunnelArgs {
       );
       console.log("");
       console.log("Examples:");
-      console.log("  $ vellum tunnel --provider ngrok");
+      console.log("  $ cadet tunnel --provider ngrok");
       console.log(
-        "  $ vellum tunnel --provider ngrok --domain my-assistant.ngrok.app",
+        "  $ cadet tunnel --provider ngrok --domain my-assistant.ngrok.app",
       );
-      console.log("  $ vellum tunnel --provider ngrok --clear-domain");
-      console.log("  $ vellum tunnel --provider cloudflare");
-      console.log("  $ vellum tunnel my-assistant --provider tailscale");
-      console.log("  $ vellum tunnel --provider ngrok --detach");
+      console.log("  $ cadet tunnel --provider ngrok --clear-domain");
+      console.log("  $ cadet tunnel --provider cloudflare");
+      console.log("  $ cadet tunnel my-assistant --provider tailscale");
+      console.log("  $ cadet tunnel --provider ngrok --detach");
       process.exit(0);
     } else if (arg === "--provider") {
       const next = args[i + 1];
@@ -220,7 +220,7 @@ function parseArgs(): TunnelArgs {
     const target = assistantName ? ` ${shellArg(assistantName)}` : "";
     for (const name of TUNNEL_PROVIDERS) {
       console.error(
-        `  vellum tunnel${target} --provider ${name.padEnd(13)}${PROVIDER_REACH[name]}`,
+        `  cadet tunnel${target} --provider ${name.padEnd(13)}${PROVIDER_REACH[name]}`,
       );
     }
     process.exit(1);
@@ -285,7 +285,7 @@ function toLocalTunnelTarget(entry: AssistantEntry): LocalTunnelTarget | null {
 function describeUntunnelableEntry(entry: AssistantEntry): string {
   const reference = formatAssistantReference(entry);
   return isManagedCloud(entry.cloud)
-    ? `Assistant '${reference}' runs on Vellum Cloud and needs no tunnel.`
+    ? `Assistant '${reference}' runs on Cadet Cloud and needs no tunnel.`
     : `Assistant '${reference}' has no locally managed runtime to tunnel.`;
 }
 
@@ -320,7 +320,7 @@ function resolveLocalTunnelTarget(
   console.error(describeUntunnelableEntry(entry));
   if (localTargets.length === 0) {
     console.error(
-      "No local assistant found to tunnel. Run `vellum hatch` first.",
+      "No local assistant found to tunnel. Run `cadet hatch` first.",
     );
   } else {
     console.error(
@@ -366,7 +366,7 @@ const TUNNEL_ESTABLISHED_RE = /Tunnel established: (\S+)/;
 const TUNNEL_ADOPTED_RE = /Found existing ngrok tunnel: (\S+)/;
 
 /**
- * Re-invoke `vellum tunnel` (without `-d`/`--detach`) as a detached background
+ * Re-invoke `cadet tunnel` (without `-d`/`--detach`) as a detached background
  * process via `relaunchDetached`, waiting for the child to either print its
  * "Tunnel established"/"Found existing ngrok tunnel" line (readiness) or
  * exit early (failure), so a misconfigured provider still fails loudly in

@@ -78,7 +78,7 @@ export const statusColor = (status: AssistantStatus): Rgb => {
 
 /**
  * Menu-bar (Tray) icon composition: the assistant avatar (clipped to a
- * circle), or the Vellum brand glyph when no avatar is set, with a colored
+ * circle), or the Cadet brand glyph when no avatar is set, with a colored
  * status dot baked into the bottom-right corner.
  *
  * The icon is an 18pt avatar/glyph with a 6pt status dot (a 0.5-alpha dark

@@ -48,7 +48,7 @@ describe("ContextWindowIndicator", () => {
     // GIVEN usage that would otherwise paint a 45%-full ring
     // WHEN the opt-in preference is off (the shipped default)
     const { container } = render(
-      <ContextWindowIndicator usage={USAGE} assistantName="Vellum" />,
+      <ContextWindowIndicator usage={USAGE} assistantName="Cadet" />,
     );
 
     // THEN the composer gets no ring at all
@@ -61,7 +61,7 @@ describe("ContextWindowIndicator", () => {
     indicatorEnabled = true;
 
     // WHEN the same usage renders
-    render(<ContextWindowIndicator usage={USAGE} assistantName="Vellum" />);
+    render(<ContextWindowIndicator usage={USAGE} assistantName="Cadet" />);
 
     // THEN the ring appears, labelled with the rounded fill percentage
     expect(screen.getByLabelText("Context window 45% full")).toBeDefined();
@@ -73,7 +73,7 @@ describe("ContextWindowIndicator", () => {
 
     // WHEN the indicator renders without usage
     const { container } = render(
-      <ContextWindowIndicator usage={null} assistantName="Vellum" />,
+      <ContextWindowIndicator usage={null} assistantName="Cadet" />,
     );
 
     // THEN there is nothing to show
@@ -121,7 +121,7 @@ describe("ContextWindowIndicator presentation axis", () => {
     const { container } = render(
       <ContextWindowIndicator
         usage={USAGE}
-        assistantName="Vellum"
+        assistantName="Cadet"
         onClearContext={() => {}}
       />,
     );
@@ -137,7 +137,7 @@ describe("ContextWindowIndicator presentation axis", () => {
 
     // WHEN the ring renders
     const { container } = render(
-      <ContextWindowIndicator usage={USAGE} assistantName="Vellum" />,
+      <ContextWindowIndicator usage={USAGE} assistantName="Cadet" />,
     );
 
     // THEN it is the same presentation as the roomy touch case above
@@ -152,7 +152,7 @@ describe("ContextWindowIndicator presentation axis", () => {
 
     // WHEN the ring renders
     const { container } = render(
-      <ContextWindowIndicator usage={USAGE} assistantName="Vellum" />,
+      <ContextWindowIndicator usage={USAGE} assistantName="Cadet" />,
     );
 
     // THEN the control reveals a tooltip rather than opening a sheet, while

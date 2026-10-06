@@ -38,7 +38,7 @@ export interface ChatAvatarProps {
  * 1. Animated character avatar from saved traits
  * 2. Custom uploaded image
  * 3. Default animated character avatar from first component of each type
- * 4. Vellum "V" fallback
+ * 4. Cadet "V" fallback
  *
  * Animation:
  *   - Mount plays an entrance spring (scale 0.6 → 1, opacity 0 → 1).

@@ -90,7 +90,7 @@ export async function setup(): Promise<void> {
   const args = process.argv.slice(3);
 
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: vellum setup [--provider <provider>]");
+    console.log("Usage: cadet setup [--provider <provider>]");
     console.log("");
     console.log("Configure a provider API key on the active assistant.");
     console.log("");
@@ -107,9 +107,9 @@ export async function setup(): Promise<void> {
     console.log("  - Otherwise prompts securely without echoing the key.");
     console.log("");
     console.log("Examples:");
-    console.log("  vellum setup");
-    console.log("  ANTHROPIC_API_KEY=... vellum setup");
-    console.log("  vellum setup --provider openai");
+    console.log("  cadet setup");
+    console.log("  ANTHROPIC_API_KEY=... cadet setup");
+    console.log("  cadet setup --provider openai");
     process.exit(0);
   }
 
@@ -123,16 +123,14 @@ export async function setup(): Promise<void> {
 
   const entry = resolveAssistant();
   if (!entry) {
-    console.error(
-      "Error: No active assistant found. Run `vellum hatch` first.",
-    );
+    console.error("Error: No active assistant found. Run `cadet hatch` first.");
     process.exit(1);
   }
 
   const gatewayUrl = entry.localUrl ?? entry.runtimeUrl;
   const bearerToken = await resolveSetupBearerToken(entry, gatewayUrl);
 
-  console.log("Vellum Setup");
+  console.log("Cadet Setup");
   console.log("============\n");
 
   try {

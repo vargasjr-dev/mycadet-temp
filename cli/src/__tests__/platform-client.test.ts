@@ -193,12 +193,12 @@ describe("getPlatformUrl resolution order", () => {
 
   test("falls back to prod env seed URL when lockfile and VELLUM_PLATFORM_URL are unset (prod env)", () => {
     // VELLUM_ENVIRONMENT is unset → production → prod seed URL.
-    expect(getPlatformUrl()).toBe("https://platform.vellum.ai");
+    expect(getPlatformUrl()).toBe("https://cloud.mycadet.ai");
   });
 
   test("falls back to dev env seed URL when VELLUM_ENVIRONMENT=dev", () => {
     process.env.VELLUM_ENVIRONMENT = "dev";
-    expect(getPlatformUrl()).toBe("https://dev-platform.vellum.ai");
+    expect(getPlatformUrl()).toBe("https://dev-cloud.mycadet.ai");
   });
 
   test("trims whitespace from VELLUM_PLATFORM_URL", () => {

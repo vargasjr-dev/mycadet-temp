@@ -1,8 +1,8 @@
 /**
- * Backwards-compat gate: `originChannel=vellum` matching unattributed rows.
+ * Backwards-compat gate: `originChannel=cadet` matching unattributed rows.
  *
  * Old behavior (< MIN_VERSION): the daemon compiles `originChannel` to a
- * strict equality, so `vellum` matches only rows explicitly stamped
+ * strict equality, so `cadet` matches only rows explicitly stamped
  * `'vellum'`. `origin_channel` is deliberately NULL at insert (an inbound
  * message claims the conversation for its own channel, and migration 288
  * settles the unclaimed ones at daemon startup), so between one boot and the
@@ -10,7 +10,7 @@
  * the Chats section. Silent, and plausible-looking: a Chats card holding a
  * handful of rows reads as a quiet account, not as a broken filter.
  *
- * New behavior (>= MIN_VERSION): `vellum` matches NULL as well, so the Chats
+ * New behavior (>= MIN_VERSION): `cadet` matches NULL as well, so the Chats
  * card in Grouped view receives everything no channel claimed.
  *
  * This is a separate gate from {@link useSupportsGroupFilter} rather than a

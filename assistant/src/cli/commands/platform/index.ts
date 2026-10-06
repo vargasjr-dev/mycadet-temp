@@ -1,5 +1,5 @@
 /**
- * `assistant platform` — manage Vellum Platform integration.
+ * `assistant platform` — manage Cadet Platform integration.
  *
  * Thin IPC wrapper that delegates all platform operations to the daemon.
  */

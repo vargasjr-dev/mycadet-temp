@@ -31,7 +31,7 @@ export const DAILY_CREDIT_LIMIT_ANCHOR_ID = "daily-credit-limit";
 /**
  * Settings → Billing daily credit limit control. Embedded directly inside the
  * Credit Balance card by `BillingPanel.tsx`, under its own enable toggle. When
- * on, an always-visible input caps how much Vellum credit the org can spend per
+ * on, an always-visible input caps how much Cadet credit the org can spend per
  * UTC day; the spend counter resets at midnight UTC. Turning the toggle off
  * clears the limit (`null`), except when a saved limit is holding up enabled
  * automatic top-ups: the backend requires one in that state, so the toggle

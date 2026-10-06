@@ -259,7 +259,7 @@ describe("hatch provider secrets", () => {
     const output = logs.join("\n");
     expect(output).toContain("Provider credential setup skipped");
     expect(output).toContain("Missing ANTHROPIC_API_KEY");
-    expect(output).toContain("vellum setup --provider anthropic");
+    expect(output).toContain("cadet setup --provider anthropic");
   });
 
   test("surfaces gateway validation failures without throwing or logging the key", async () => {
@@ -283,7 +283,7 @@ describe("hatch provider secrets", () => {
     const output = logs.join("\n");
     expect(output).toContain("Provider credential setup failed");
     expect(output).toContain("API key is invalid or expired.");
-    expect(output).toContain("vellum setup --provider anthropic");
+    expect(output).toContain("cadet setup --provider anthropic");
     expect(output).not.toContain("test-anthropic-key");
   });
 
@@ -325,9 +325,9 @@ describe("hatch provider secrets", () => {
     });
 
     test("is true when a model implies the provider", () => {
-      expect(
-        hasExplicitHatchProvider({ "llm.default.model": "gpt-5.4" }),
-      ).toBe(true);
+      expect(hasExplicitHatchProvider({ "llm.default.model": "gpt-5.4" })).toBe(
+        true,
+      );
     });
   });
 
@@ -368,9 +368,9 @@ describe("hatch provider secrets", () => {
     });
 
     test("does not prompt outside an interactive terminal", () => {
-      expect(
-        shouldPromptForHatchProvider({ ...base, stdinIsTTY: false }),
-      ).toBe(false);
+      expect(shouldPromptForHatchProvider({ ...base, stdinIsTTY: false })).toBe(
+        false,
+      );
       expect(
         shouldPromptForHatchProvider({ ...base, stdinIsTTY: undefined }),
       ).toBe(false);

@@ -41,7 +41,8 @@ export function SettingsLayout() {
     return () => setWindowsMenuBarSuppressed(false);
   }, [setWindowsMenuBarSuppressed]);
   const { t } = useTranslation("settings");
-  const notificationSettingsAvailable = useIsNativeAndroid() || isBrowserNotificationHost();
+  const notificationSettingsAvailable =
+    useIsNativeAndroid() || isBrowserNotificationHost();
   const activeAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
   // The Bookmarks and Credentials tabs need routes that only newer assistants
   // serve (v0.8.1+ / v0.10.8+); an older assistant 404s them, so hide the
@@ -55,7 +56,7 @@ export function SettingsLayout() {
   const canUseInternalActions = useCanUseInternalThreadActions();
   // The Usage item is never hidden: the Usage tab reads from the local daemon
   // and works for every assistant. Its label only gains "Billing &" when the
-  // Billing tab is actually shown — i.e. signed in to the Vellum platform
+  // Billing tab is actually shown — i.e. signed in to the Cadet platform
   // (`usePlatformGate() === "full"`), matching billing-page.tsx's
   // `showBillingTab`. Signed-out / self-hosted users see just "Usage".
   const billingGate = usePlatformGate();

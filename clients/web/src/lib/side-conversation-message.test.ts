@@ -16,7 +16,7 @@ import { describe, expect, test } from "bun:test";
 import { buildSideConversationMessageBody } from "@/lib/side-conversation-message";
 
 describe("buildSideConversationMessageBody", () => {
-  test("marks the send hidden on the vellum transport", () => {
+  test("marks the send hidden on the cadet transport", () => {
     const body = buildSideConversationMessageBody({
       conversationId: "conv-1",
       content: "<system-message>rewrite</system-message>",

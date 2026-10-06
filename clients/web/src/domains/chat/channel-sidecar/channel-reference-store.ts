@@ -1,6 +1,6 @@
 /**
  * channel-reference-store: the one external-channel message pinned to the
- * Vellum composer.
+ * Cadet composer.
  *
  * One at a time, by construction: the state is a single slot rather than a
  * list, so "reference this instead" is the only thing a second pick can mean

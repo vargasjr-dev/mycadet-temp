@@ -27,39 +27,42 @@ export function classifyProcess(command: string): string {
     return "openclaw-adapter";
   if (/vellum-daemon|[\\/]daemon[\\/]main/.test(command)) return "assistant";
   if (/daemon\s+(start|restart)/.test(command)) return "assistant";
-  if (/vellum-cli|[\\/]vellum(?:-cli)?\.exe/.test(command)) return "vellum";
+  if (/(?:cadet|vellum)-cli|[\\/](?:cadet|vellum)(?:-cli)?\.exe/.test(command))
+    return "vellum";
   // Exclude macOS desktop app processes — their path contains .app/Contents/MacOS/
   // but they are not background service processes.
   if (/\.app\/Contents\/MacOS\//.test(command)) return "unknown";
-  // Match vellum CLI commands (e.g. "vellum hatch", "vellum sleep") but NOT
+  // Match cadet CLI commands (e.g. "cadet hatch", "cadet sleep") but NOT
   // unrelated processes whose working directory or repo path happens to contain
   // "vellum" (e.g. /Users/runner/work/vellum-assistant/vellum-assistant/...).
   // We require a word boundary before "vellum" to avoid matching repo paths.
-  if (/(?:^|\/)vellum(?:\s|$)/.test(command)) return "vellum";
+  if (/(?:^|\/)(?:cadet|vellum)(?:\s|$)/.test(command)) return "vellum";
   return "unknown";
 }
 
 /**
  * True when the command line is a deliberate long-running interactive CLI
- * session (e.g. a live `vellum tunnel` in someone's terminal). Such sessions
- * have no PID-file registration, so `vellum clean` would otherwise kill them
+ * session (e.g. a live `cadet tunnel` in someone's terminal). Such sessions
+ * have no PID-file registration, so `cadet clean` would otherwise kill them
  * mid-session. The command line may be "bun /path/to/bin/vellum tunnel ...",
- * so match the subcommand right after the vellum binary/script path (allowing
+ * so match the subcommand right after the cadet binary/script path (allowing
  * only the known global flags in between; see GLOBAL_FLAGS in cli/src/index.ts).
- * Later argv tokens (e.g. "vellum hatch --name logs") must not match.
+ * Later argv tokens (e.g. "cadet hatch --name logs") must not match.
  *
  * `detectOrphanedProcesses` consults this before classification so that
- * service-like substrings in later argv (e.g. `vellum exec -it --service
+ * service-like substrings in later argv (e.g. `cadet exec -it --service
  * vellum-gateway -- /bin/sh`) cannot re-flag a live session, while
- * `classifyProcess` stays a pure display label for `vellum ps`.
+ * `classifyProcess` stays a pure display label for `cadet ps`.
  *
- * Also spared: bare `vellum` (no subcommand launches the implicit TUI client
- * via tryLaunchClient) and `vellum wake --foreground` (stays attached with
+ * Also spared: bare `cadet` (no subcommand launches the implicit TUI client
+ * via tryLaunchClient) and `cadet wake --foreground` (stays attached with
  * logs in the terminal).
  */
 export function isInteractiveCliSession(command: string): boolean {
+  // Matches both the current `cadet` binary and legacy `vellum`-named
+  // processes, so pre-rebrand sessions are still detected and spared.
   const vellumToken =
-    /(?:^|[\\/])vellum(?:-cli)?(?:\.exe)?["']?(?:\s+--(?:no-color|plain))*/;
+    /(?:^|[\\/])(?:cadet|vellum)(?:-cli)?(?:\.exe)?["']?(?:\s+--(?:no-color|plain))*/;
   const interactiveSubcommand = new RegExp(
     vellumToken.source +
       String.raw`\s+(?:tunnel|events|logs|client|terminal|ssh|exec|message|workflows)\b`,
@@ -188,8 +191,8 @@ export async function detectOrphanedProcesses(
   const seenPids = new Set<string>();
 
   // PIDs that belong to a known assistant in *any* environment are not
-  // orphans. Without this filter, running `vellum ps` from an env that has
-  // no assistants — or `vellum clean` from any env — would flag (or kill)
+  // orphans. Without this filter, running `cadet ps` from an env that has
+  // no assistants — or `cadet clean` from any env — would flag (or kill)
   // another env's healthy services as orphans.
   const knownPids =
     options.excludePids ??

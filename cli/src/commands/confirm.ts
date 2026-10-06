@@ -1,5 +1,5 @@
 /**
- * `vellum confirm <assistant> --request-id <id> --decision allow|deny`
+ * `cadet confirm <assistant> --request-id <id> --decision allow|deny`
  *
  * Resolve a pending tool confirmation on a running assistant via its
  * runtime HTTP API. The assistant raises a `confirmation_request` event
@@ -13,10 +13,10 @@ import { extractFlag } from "../lib/arg-utils.js";
 import { AssistantClient } from "../lib/assistant-client.js";
 
 function printUsage(): void {
-  console.log(`vellum confirm - Resolve a pending tool confirmation
+  console.log(`cadet confirm - Resolve a pending tool confirmation
 
 USAGE:
-    vellum confirm [assistant] --request-id <id> [--decision allow|deny]
+    cadet confirm [assistant] --request-id <id> [--decision allow|deny]
 
 ARGUMENTS:
     [assistant]    Instance name (default: active assistant)
@@ -27,9 +27,9 @@ OPTIONS:
     --json                Output raw JSON response
 
 EXAMPLES:
-    vellum confirm --request-id ede263d9-cc45-4d63-86f8-a656d17b3a3a
-    vellum confirm my-assistant --request-id req-1 --decision deny
-    vellum confirm --json --request-id req-1
+    cadet confirm --request-id ede263d9-cc45-4d63-86f8-a656d17b3a3a
+    cadet confirm my-assistant --request-id req-1 --decision deny
+    cadet confirm --json --request-id req-1
 `);
 }
 
@@ -45,7 +45,7 @@ type ParseResult =
   | { ok: false; error: string };
 
 /**
- * Parse `vellum confirm` arguments. Pure: does no I/O and never exits, so the
+ * Parse `cadet confirm` arguments. Pure: does no I/O and never exits, so the
  * positional/flag rules can be unit-tested. Defaults the decision to `allow`,
  * which is the common automation case (approve and continue).
  */

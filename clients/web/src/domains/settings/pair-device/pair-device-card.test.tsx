@@ -91,15 +91,12 @@ mock.module(
 );
 
 const { PairDeviceCard } = await import("./pair-device-card");
-const { MIN_VERSION: INGRESS_STATUS_MIN_VERSION } = await import(
-  "@/lib/backwards-compat/ingress-status-gate"
-);
-const { useAssistantIdentityStore } = await import(
-  "@/stores/assistant-identity-store"
-);
-const { useResolvedAssistantsStore } = await import(
-  "@/stores/resolved-assistants-store"
-);
+const { MIN_VERSION: INGRESS_STATUS_MIN_VERSION } =
+  await import("@/lib/backwards-compat/ingress-status-gate");
+const { useAssistantIdentityStore } =
+  await import("@/stores/assistant-identity-store");
+const { useResolvedAssistantsStore } =
+  await import("@/stores/resolved-assistants-store");
 const PUBLIC_URL = "https://foo.ts.net";
 const PAIR_URL = "https://foo.ts.net/assistant/pair#device_code=DEV-123";
 const ASSISTANT_ID = "self";
@@ -370,7 +367,7 @@ describe("PairDeviceCard", () => {
 
     const input = screen.getByLabelText("Public URL") as HTMLInputElement;
     expect(input.value).toBe("https://tunnel.example.ts.net");
-    // Helper text explains the prefilled address came from `vellum tunnel`.
+    // Helper text explains the prefilled address came from `cadet tunnel`.
     expect(screen.getByText(/comes from/)).toBeTruthy();
     // A recorded tunnel URL suppresses the no-tunnel empty state.
     expect(screen.queryByText("Open a tunnel first")).toBeNull();
@@ -380,9 +377,9 @@ describe("PairDeviceCard", () => {
     renderCard();
 
     expect(screen.getByText("Open a tunnel first")).toBeTruthy();
-    expect(screen.getByText("vellum tunnel --provider tailscale")).toBeTruthy();
+    expect(screen.getByText("cadet tunnel --provider tailscale")).toBeTruthy();
     expect(screen.getByText(/Paste it into Public URL below/)).toBeTruthy();
-    expect(screen.getByText("vellum tunnel --help")).toBeTruthy();
+    expect(screen.getByText("cadet tunnel --help")).toBeTruthy();
     // The manual field stays available beneath the guidance.
     expect(screen.getByLabelText("Public URL")).toBeTruthy();
     expect(
@@ -400,7 +397,7 @@ describe("PairDeviceCard", () => {
 
     expect(
       screen.getByText(
-        "This is Tailscale's website, not your assistant's address. Start a tunnel on the host to get one; `vellum tunnel --help` lists the providers.",
+        "This is Tailscale's website, not your assistant's address. Start a tunnel on the host to get one; `cadet tunnel --help` lists the providers.",
       ),
     ).toBeTruthy();
     // The bad URL is refused client-side — no challenge is ever minted.
@@ -461,7 +458,7 @@ describe("PairDeviceCard", () => {
 
     expect(screen.getByText("Pair a device")).toBeTruthy();
     // The mount-time pending-request poll settles; the device list is never
-    // fetched, so the host `vellum devices` spawn never happens.
+    // fetched, so the host `cadet devices` spawn never happens.
     await waitFor(() =>
       expect(
         fetchLog.some((r) => r.url.endsWith("/v1/remote-web/pairing-requests")),
@@ -579,7 +576,9 @@ describe("PairDeviceCard: pending pairing requests", () => {
     fireEvent.click(screen.getByRole("button", { name: "Approve" }));
 
     await waitFor(() => expect(actionCalls("approve")).toHaveLength(1));
-    expect(requestBody(actionCalls("approve")[0])).toEqual({ requestId: "req-1" });
+    expect(requestBody(actionCalls("approve")[0])).toEqual({
+      requestId: "req-1",
+    });
     await waitFor(() => expect(screen.queryByText("QRST-7890")).toBeNull());
     expect(actionCalls("deny")).toHaveLength(0);
   });
@@ -645,7 +644,10 @@ describe("PairDeviceCard: pending pairing requests", () => {
       onPendingRequests: () =>
         jsonResponse({
           requests: [
-            pendingRequestBody({ requesterIp: "127.0.0.1", viaEdgeProxy: false }),
+            pendingRequestBody({
+              requesterIp: "127.0.0.1",
+              viaEdgeProxy: false,
+            }),
           ],
         }),
     });
@@ -661,7 +663,9 @@ describe("PairDeviceCard: pending pairing requests", () => {
   test("a tunnel-edge request keeps showing the requester IP", async () => {
     installPendingFetch({
       onPendingRequests: () =>
-        jsonResponse({ requests: [pendingRequestBody({ viaEdgeProxy: true })] }),
+        jsonResponse({
+          requests: [pendingRequestBody({ viaEdgeProxy: true })],
+        }),
     });
     renderCard();
 
@@ -710,10 +714,10 @@ describe("PairDeviceCard: tunnel status", () => {
     expect(screen.queryByText("Open a tunnel first")).toBeNull();
 
     expect(await screen.findByText("Open a tunnel first")).toBeTruthy();
-    expect(screen.getByText("vellum tunnel --provider tailscale")).toBeTruthy();
+    expect(screen.getByText("cadet tunnel --provider tailscale")).toBeTruthy();
   });
 
-  // The user leaves this state to run `vellum tunnel` in a terminal beside the
+  // The user leaves this state to run `cadet tunnel` in a terminal beside the
   // window, which is never a foreground edge, so `app.resume` alone would
   // strand the card on "Open a tunnel first" until a full reload.
   test("re-checks from the first-run notice, which the row cannot offer", async () => {
@@ -755,7 +759,7 @@ describe("PairDeviceCard: tunnel status", () => {
     await screen.findByText("The tunnel is running and reachable.");
     openUrlField();
     expect(urlField().value).toBe(TUNNEL_URL);
-    // The helper text still credits `vellum tunnel` for the address.
+    // The helper text still credits `cadet tunnel` for the address.
     expect(screen.getByText(/comes from/)).toBeTruthy();
   });
 
@@ -999,7 +1003,7 @@ describe("PairDeviceCard: tunnel status", () => {
     ).toBeTruthy();
     expect(screen.getByText("connection refused")).toBeTruthy();
     expect(
-      screen.getByText("vellum tunnel 'My Assistant' --provider tailscale"),
+      screen.getByText("cadet tunnel 'My Assistant' --provider tailscale"),
     ).toBeTruthy();
   });
 
@@ -1014,7 +1018,7 @@ describe("PairDeviceCard: tunnel status", () => {
 
     expect(await screen.findByText("Open a tunnel first")).toBeTruthy();
     expect(
-      screen.getByText("vellum tunnel 'My Assistant' --provider tailscale"),
+      screen.getByText("cadet tunnel 'My Assistant' --provider tailscale"),
     ).toBeTruthy();
   });
 

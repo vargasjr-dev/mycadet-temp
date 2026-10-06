@@ -43,7 +43,7 @@ const manualPlan = planFor({
   ],
 });
 
-/** Vellum's hosted sign-in and nothing else, the shape a host is asked for. */
+/** Cadet's hosted sign-in and nothing else, the shape a host is asked for. */
 const hostedOnlyPlan = planFor({ providers: [NOTION_PROVIDER] });
 
 /** Notion over both its MCP server and a Vellum-hosted account. */
@@ -83,7 +83,7 @@ describe("IntegrationConnectModal", () => {
     expect(handlers.onConnect).toHaveBeenCalledTimes(1);
 
     openMenu("Other ways to connect Notion");
-    await screen.findByRole("menuitem", { name: "Sign in through Vellum" });
+    await screen.findByRole("menuitem", { name: "Sign in through Cadet" });
   });
 
   test("opens on the method the caller picked", () => {
@@ -183,7 +183,7 @@ describe("IntegrationConnectModal", () => {
     modal({ plan: connectedPlan });
 
     openMenu("Connect another");
-    await screen.findByRole("menuitem", { name: "Sign in through Vellum" });
+    await screen.findByRole("menuitem", { name: "Sign in through Cadet" });
     expect(
       screen.queryByRole("menuitem", { name: "Notion MCP server" }),
     ).toBeNull();
@@ -197,14 +197,14 @@ describe("IntegrationConnectModal", () => {
     // the click lands on the backdrop showing through it. A backdrop press is
     // the only gesture that dismisses, and this is not one.
     openMenu("Connect another");
-    await screen.findByRole("menuitem", { name: "Sign in through Vellum" });
+    await screen.findByRole("menuitem", { name: "Sign in through Cadet" });
 
     const overlay = document.body.querySelector('[data-slot="modal-overlay"]');
     expect(overlay).not.toBeNull();
     fireEvent.click(overlay as Element);
 
     expect(handlers.onClose).not.toHaveBeenCalled();
-    screen.getByRole("menuitem", { name: "Sign in through Vellum" });
+    screen.getByRole("menuitem", { name: "Sign in through Cadet" });
   });
 
   test("drops Connect another when the only path is already connected", () => {
@@ -332,7 +332,7 @@ describe("IntegrationConnectModal", () => {
 
     openMenu("Connect another");
     fireEvent.click(
-      await screen.findByRole("menuitem", { name: "Sign in through Vellum" }),
+      await screen.findByRole("menuitem", { name: "Sign in through Cadet" }),
     );
 
     await screen.findByRole("heading", { name: "Connect Notion" });
@@ -368,11 +368,9 @@ describe("IntegrationConnectModal", () => {
 
   test("falls back to the connect view when nothing is connected any more", () => {
     const { rerender } = modal({ plan: connectedPlan });
-    screen.getByText("Manage how Vellum connects to Notion.");
+    screen.getByText("Manage how Cadet connects to Notion.");
 
-    rerender(
-      <IntegrationConnectModal {...handlers} plan={notionPlan} />,
-    );
+    rerender(<IntegrationConnectModal {...handlers} plan={notionPlan} />);
     screen.getByRole("heading", { name: "Connect Notion" });
   });
 });

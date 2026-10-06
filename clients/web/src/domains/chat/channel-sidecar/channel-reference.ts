@@ -1,5 +1,5 @@
 /**
- * The reference a reader stages when they pick "Reference in Vellum" on a
+ * The reference a reader stages when they pick "Reference in Cadet" on a
  * message in the channel drawer, and how it reaches the assistant.
  *
  * ## Why the reference ships as text
@@ -31,7 +31,7 @@ import {
 } from "@/domains/chat/channel-sidecar/channel-sidecar-transcript";
 
 /**
- * One staged external-channel message, pinned to the Vellum composer.
+ * One staged external-channel message, pinned to the Cadet composer.
  *
  * Field names are the neutral vocabulary, not any channel's: a Slack
  * `channelTs` and an email `Message-ID` both land in `externalMessageId`.

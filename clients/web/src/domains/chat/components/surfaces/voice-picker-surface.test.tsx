@@ -59,7 +59,7 @@ let daemonConfigData: { services: Record<string, unknown> } = {
 let configPending = false;
 let providersData: { providers: unknown[] } = {
   providers: [
-    { id: "vellum", displayName: "Vellum", supportsVoiceSelection: true },
+    { id: "vellum", displayName: "Cadet", supportsVoiceSelection: true },
   ],
 };
 let managedVoicesData: { voices: unknown[]; defaultModel: string | null } = {
@@ -183,7 +183,7 @@ beforeEach(() => {
   daemonConfigData = { services: { tts: { provider: "vellum" } } };
   providersData = {
     providers: [
-      { id: "vellum", displayName: "Vellum", supportsVoiceSelection: true },
+      { id: "vellum", displayName: "Cadet", supportsVoiceSelection: true },
     ],
   };
   managedVoicesData = {
@@ -223,7 +223,7 @@ describe("VoicePickerSurface", () => {
     expect(rows.length).toBe(1);
     expect(rows[0]!.textContent).toContain("Professional, reassuring");
     // Managed voices bill credits, so the card says so.
-    expect(screen.getByText(/Uses Vellum credits/)).toBeTruthy();
+    expect(screen.getByText(/Uses Cadet credits/)).toBeTruthy();
   });
 
   test("the provider dropdown scopes the list to the chosen provider", () => {
@@ -275,7 +275,7 @@ describe("VoicePickerSurface", () => {
   test("a daemon too old to select voices gets a pointer, not an empty card", () => {
     providersData = {
       providers: [
-        { id: "vellum", displayName: "Vellum", supportsVoiceSelection: false },
+        { id: "vellum", displayName: "Cadet", supportsVoiceSelection: false },
       ],
     };
     renderSurface();

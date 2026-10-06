@@ -140,7 +140,7 @@ describe("startCes", () => {
   }, 15_000);
   test("uses a Windows named pipe for the local CES seam", () => {
     const resources = {
-      instanceDir: "C:\\Users\\Example\\Vellum\\assistant-123",
+      instanceDir: "C:\\Users\\Example\\Cadet\\assistant-123",
     } as Parameters<typeof resolveCesSocketPath>[0];
 
     const socketPath = resolveCesSocketPath(resources, "win32");

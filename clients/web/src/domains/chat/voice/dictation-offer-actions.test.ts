@@ -55,7 +55,7 @@ afterEach(() => {
 });
 
 describe("answering the dictation offer", () => {
-  test("use undoes the other app's paste and inserts Vellum's words", async () => {
+  test("use undoes the other app's paste and inserts Cadet's words", async () => {
     setDictationOffer(WISPR, "Send me the files.", "com.example.editor");
     const d = deps("com.example.editor");
     expect(await answerDictationOffer("use", standingId(), d.deps)).toBe(

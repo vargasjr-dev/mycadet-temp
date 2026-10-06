@@ -68,7 +68,7 @@ export function channelTimestampToIso(
  * The drawer draws sender, time, and body text. A row carrying anything else
  * a reader can see (attachments, or non-text content blocks such as tool
  * activity, thinking, or surfaces) would lose that content if it left the
- * Vellum lane, so the partition keeps such rows in the lane even when the
+ * Cadet lane, so the partition keeps such rows in the lane even when the
  * channel attributes them.
  */
 function isLosslessAsPlainText(message: DisplayMessage): boolean {
@@ -79,11 +79,11 @@ function isLosslessAsPlainText(message: DisplayMessage): boolean {
 }
 
 /**
- * Split one transcript into the Vellum lane and the external-channel lane.
+ * Split one transcript into the Cadet lane and the external-channel lane.
  *
  * A row moves to the channel lane only when the client can attribute it (see
  * `readChannelMessageProvenance`) AND the drawer can render it losslessly
- * (see {@link isLosslessAsPlainText}). Every other row stays in the Vellum
+ * (see {@link isLosslessAsPlainText}). Every other row stays in the Cadet
  * lane, so the failure mode is a lane identical to the unpartitioned
  * transcript, never content that vanishes from both lanes.
  *

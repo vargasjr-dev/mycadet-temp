@@ -212,7 +212,7 @@ export function CatchUpWidgetPreview({
                 paddingLeft: ROW_LEADING_INSET * scale,
               }}
             >
-              Open Vellum to see your recent chats.
+              Open Cadet to see your recent chats.
             </span>
           ) : (
             <div style={{ display: "flex", flexDirection: "column" }}>

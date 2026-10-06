@@ -297,7 +297,7 @@ describe("provider secret helpers", () => {
       status: "missing",
       provider: "anthropic",
       message:
-        "Missing ANTHROPIC_API_KEY. Set it in the environment or run vellum setup from an interactive terminal.",
+        "Missing ANTHROPIC_API_KEY. Set it in the environment or run cadet setup from an interactive terminal.",
     });
     expect(calls).toHaveLength(1);
   });

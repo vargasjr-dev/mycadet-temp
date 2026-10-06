@@ -48,9 +48,8 @@ function bundleGroundP3(bundle: string): string {
   const path = join(ICON_BUNDLE_DIR, bundle, "icon.json");
   const specializations: FillSpecialization[] =
     JSON.parse(readFileSync(path, "utf8"))["fill-specializations"] ?? [];
-  const solid = specializations.find(
-    (entry) => entry.appearance === undefined,
-  )?.value?.solid;
+  const solid = specializations.find((entry) => entry.appearance === undefined)
+    ?.value?.solid;
   if (typeof solid !== "string") {
     throw new Error(`${bundle} declares no default solid fill`);
   }
@@ -146,7 +145,7 @@ const getInfoMock = mock(async () => {
   if (shellAppId === null) {
     throw new Error("App.getInfo unavailable");
   }
-  return { id: shellAppId, name: "Vellum", version: "1.0.0", build: "1" };
+  return { id: shellAppId, name: "Cadet", version: "1.0.0", build: "1" };
 });
 
 import * as platformDetection from "@/runtime/platform-detection";

@@ -40,7 +40,7 @@ function Harness() {
 const PAYLOAD: ChannelSetupPayload = {
   channel: "slack",
   assistantId: "a1",
-  assistantName: "Vellum",
+  assistantName: "Cadet",
   conversationId: "c1",
 };
 

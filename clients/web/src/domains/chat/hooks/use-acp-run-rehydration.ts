@@ -54,7 +54,7 @@ interface AcpSessionEventLogItem {
 }
 
 interface AcpSessionRow {
-  // Vellum ACP session id — the key SSE events and steer/cancel routes address.
+  // Cadet ACP session id — the key SSE events and steer/cancel routes address.
   // The store is keyed by this, NOT the agent-protocol `acpSessionId`.
   id: string;
   acpSessionId: string;

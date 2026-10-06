@@ -49,7 +49,7 @@ type Story = StoryObj<typeof ChannelSetupPanel>;
 const slackPayload: ChannelSetupPayload = {
   channel: "slack",
   assistantId: ASSISTANT_ID,
-  assistantName: "Vellum",
+  assistantName: "Cadet",
 };
 
 export const SlackSetup: Story = {
@@ -67,7 +67,7 @@ export const TelegramSetup: Story = {
     payload: {
       channel: "telegram",
       assistantId: ASSISTANT_ID,
-      assistantName: "Vellum",
+      assistantName: "Cadet",
     },
   },
   decorators: [withFrame, withQueryCache(seedReadiness("telegram", false))],
@@ -78,7 +78,7 @@ export const DiscordSetup: Story = {
     payload: {
       channel: "discord",
       assistantId: ASSISTANT_ID,
-      assistantName: "Vellum",
+      assistantName: "Cadet",
     },
   },
   decorators: [
@@ -98,7 +98,7 @@ export const PhoneSetup: Story = {
     payload: {
       channel: "phone",
       assistantId: ASSISTANT_ID,
-      assistantName: "Vellum",
+      assistantName: "Cadet",
     },
   },
   decorators: [withFrame, withQueryCache(seedReadiness("phone", false))],

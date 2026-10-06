@@ -15,7 +15,7 @@ import { denyAllPermissions } from "./permissions";
 /**
  * The lockfile-backed bundle host shared by both desktop shells: the active
  * local assistant's gateway and a guardian token for it, minted through the
- * `vellum` CLI.
+ * `cadet` CLI.
  */
 export const createBundleHostProvider = (
   resolveInvocation: () => Promise<CliInvocation>,

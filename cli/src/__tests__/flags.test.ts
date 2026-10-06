@@ -67,7 +67,7 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-describe("vellum flags --assistant routing", () => {
+describe("cadet flags --assistant routing", () => {
   beforeEach(() => {
     process.env.VELLUM_LOCKFILE_DIR = testDir;
     rmSync(join(testDir, ".vellum.lock.json"), { force: true });
@@ -151,7 +151,7 @@ describe("vellum flags --assistant routing", () => {
   });
 
   test("set --assistant <id> placed BEFORE positional args still parses correctly", async () => {
-    // Eval harness composes `vellum flags set <key> <value> --assistant <id>`
+    // Eval harness composes `cadet flags set <key> <value> --assistant <id>`
     // but human users might write `--assistant <id> set <key> <value>`.
     // The extractor strips --assistant from anywhere in argv so positional
     // parsing downstream sees the same shape either way.
@@ -240,7 +240,7 @@ describe("vellum flags --assistant routing", () => {
   });
 });
 
-describe("vellum flags cross-environment hint", () => {
+describe("cadet flags cross-environment hint", () => {
   let xdgDataHome: string;
   let prevXdg: string | undefined;
   let prevEnv: string | undefined;
@@ -299,7 +299,7 @@ describe("vellum flags cross-environment hint", () => {
     writeLockfile([makeEntry("alice-1", { name: "Alice" })], "alice-1");
     seedDevAssistant();
     process.argv = ["bun", "vellum", "flags", "set", "browser", "true"];
-    await expect(flags()).rejects.toThrow(/Install vellum Command/);
+    await expect(flags()).rejects.toThrow(/Install cadet Command/);
   });
 
   test("gateway-unreachable error stays bare when no other env has assistants", async () => {
@@ -313,6 +313,6 @@ describe("vellum flags cross-environment hint", () => {
       error = e as Error;
     }
     expect(error?.message).toContain("Could not reach the assistant gateway");
-    expect(error?.message).not.toContain("Install vellum Command");
+    expect(error?.message).not.toContain("Install cadet Command");
   });
 });

@@ -6,7 +6,7 @@
  * upstream derives from the model per-request, no connection binding).
  * Older daemons reject the value at the profile write route, so the
  * editor writes the legacy wire shape instead — the model's managed
- * upstream as `provider`, bound to the provider-agnostic `vellum`
+ * upstream as `provider`, bound to the provider-agnostic `cadet`
  * connection. The UI is identical either way; only the payload differs.
  *
  * Async: this gates a WRITE path, and the legacy fallback persists a

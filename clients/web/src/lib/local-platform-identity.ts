@@ -495,7 +495,7 @@ async function ensureLocalAssistantPlatformIdentity(
   );
   if (!organizationId) {
     throw new Error(
-      "Sign in to Vellum and select an organization to register this local assistant.",
+      "Sign in to Cadet and select an organization to register this local assistant.",
     );
   }
 
@@ -747,7 +747,7 @@ async function platformPost<T>(
   const electronHostOS = detectElectronHostOS();
   if (electronHostOS) {
     if (!sessionToken) {
-      throw new Error("Sign in to Vellum to register this local assistant.");
+      throw new Error("Sign in to Cadet to register this local assistant.");
     }
     headers.set(
       ELECTRON_RENDERER_ORIGIN_HEADER,

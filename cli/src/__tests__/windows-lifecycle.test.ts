@@ -55,27 +55,27 @@ test("selects a direct process-table command with fixed arguments", () => {
 
 test("preserves command lines containing spaces and Unicode usernames", () => {
   const [parsed] = parseRemotePs(
-    "42 1 C:\\Users\\Example User 用户\\Vellum\\vellum-daemon.exe --port 3030",
+    "42 1 C:\\Users\\Example User 用户\\Cadet\\vellum-daemon.exe --port 3030",
   );
   expect(parsed.command).toContain(
-    "Example User 用户\\Vellum\\vellum-daemon.exe",
+    "Example User 用户\\Cadet\\vellum-daemon.exe",
   );
   expect(
     isInteractiveCliSession(
-      '"C:\\Users\\Example User 用户\\Vellum\\vellum.exe" exec -it --service vellum-gateway',
+      '"C:\\Users\\Example User 用户\\Cadet\\vellum.exe" exec -it --service vellum-gateway',
     ),
   ).toBeTrue();
 });
 
 test("rejects a stale PID file", () => {
-  const dir = mkdtempSync(path.join(tmpdir(), "vellum stale pid "));
+  const dir = mkdtempSync(path.join(tmpdir(), "cadet stale pid "));
   const pidFile = path.join(dir, "assistant.pid");
   writeFileSync(pidFile, "2147483647\n", "utf8");
   expect(isProcessAlive(pidFile)).toEqual({ alive: false, pid: null });
   rmSync(dir, { recursive: true, force: true });
 });
 
-test("recognizes only Vellum Bun-hosted process command lines", () => {
+test("recognizes only Cadet Bun-hosted process command lines", () => {
   expect(
     isVellumCommandLine(
       "bun.exe C:\\Users\\Example User 用户\\.vellum\\runtime\\assistant\\src\\daemon\\main.ts",
@@ -210,7 +210,7 @@ test("an unreadable identity after the wait never gets a group kill", async () =
 });
 
 test("preserves PID tracking when process termination fails", async () => {
-  const dir = mkdtempSync(path.join(tmpdir(), "vellum live pid "));
+  const dir = mkdtempSync(path.join(tmpdir(), "cadet live pid "));
   const pidFile = path.join(dir, "assistant.pid");
   writeFileSync(pidFile, `${process.pid}\n`, "utf8");
 

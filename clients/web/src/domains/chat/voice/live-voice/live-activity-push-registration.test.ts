@@ -25,7 +25,7 @@ mock.module("@/lib/platform-assistant-id", () => ({
 const bundleId = "ai.vocify-inc.vellum-assistant-ios";
 const getInfoMock = mock(async () => ({
   id: bundleId,
-  name: "Vellum",
+  name: "Cadet",
   build: "1",
   version: "1.0.0",
 }));

@@ -505,7 +505,7 @@ export async function retireDocker(name: string): Promise<void> {
       await stopProcess(watcherPid, "file-watcher");
     } else {
       console.log(
-        `PID ${watcherPid} is not a vellum process — skipping stale file-watcher PID.`,
+        `PID ${watcherPid} is not a cadet process — skipping stale file-watcher PID.`,
       );
     }
   }
@@ -545,11 +545,11 @@ export async function retireDocker(name: string): Promise<void> {
   // - Use loadAllAssistantsAcrossEnvs() instead of loadAllAssistants() to
   //   avoid stopping Colima while another VELLUM_ENVIRONMENT still has a
   //   running Docker instance.
-  // - Track whether Vellum started Colima (vs. the user already had it
+  // - Track whether Cadet started Colima (vs. the user already had it
   //   running for non-Vellum workloads) \u2014 e.g. via a dedicated Colima
-  //   profile (`colima start --profile vellum`) or a sentinel file.
+  //   profile (`colima start --profile cadet`) or a sentinel file.
   // - Only stop if both conditions are met: no cross-env Docker instances
-  //   AND Vellum owns the Colima lifecycle.
+  //   AND Cadet owns the Colima lifecycle.
 
   console.log(`\u2705 Docker instance retired.`);
 }
@@ -1205,7 +1205,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     // strategy as the gateway port: the env-default (production 7821 /
     // non-prod overrides) is the *preferred* starting point, and we walk
     // upward until we find a free port. Without this, two concurrent
-    // `vellum hatch --remote docker` on the same host collide on a fixed
+    // `cadet hatch --remote docker` on the same host collide on a fixed
     // 7821 bind ("port is already allocated"). Unused when netnsContainer
     // is set — no host ports are published in that mode.
     let assistantPort: number;
@@ -1573,12 +1573,12 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       if (providerSetupAction === "defer" && provider !== null) {
         log(
           `Provider credential setup deferred in detached mode.\n` +
-            `Run \`vellum setup --provider ${provider}\` after the assistant is ready.`,
+            `Run \`cadet setup --provider ${provider}\` after the assistant is ready.`,
         );
       } else if (providerSetupAction === "missing-token" && provider !== null) {
         log(
           `⚠️  Provider credential setup skipped because the guardian token was not leased.\n` +
-            `   The assistant is still hatched. Run \`vellum setup --provider ${provider}\` after fixing the connection.`,
+            `   The assistant is still hatched. Run \`cadet setup --provider ${provider}\` after fixing the connection.`,
         );
       } else if (
         providerSetupAction === "configure" &&
@@ -1632,7 +1632,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         // SIGINT (Ctrl+C): full cleanup including stopping containers.
         process.on("SIGINT", () => void cleanup());
 
-        // SIGTERM (from `vellum retire`): exit quickly — the caller
+        // SIGTERM (from `cadet retire`): exit quickly — the caller
         // handles container teardown, so we only need to close the
         // file watchers and let the process terminate.
         process.on("SIGTERM", () => {
@@ -1692,10 +1692,10 @@ async function waitForGatewayAndLease(opts: {
     log(`  Runtime: ${runtimeUrl}`);
     log(`  Container: ${containerName}`);
     log("");
-    log(`Stop with: vellum retire ${instanceName}`);
+    log(`Stop with: cadet retire ${instanceName}`);
 
-    // Lease a guardian token even in detached mode so that `vellum ps`,
-    // `vellum exec`, and other CLI commands can authenticate to the
+    // Lease a guardian token even in detached mode so that `cadet ps`,
+    // `cadet exec`, and other CLI commands can authenticate to the
     // gateway. Skip the /readyz readiness poll (the caller asked to detach
     // and not block) but retry the lease itself since the gateway may need
     // a moment to accept connections after the container starts.
@@ -1727,8 +1727,8 @@ async function waitForGatewayAndLease(opts: {
     if (!guardianAccessToken) {
       log(
         `⚠️  Guardian token lease failed after ${DOCKER_READY_TIMEOUT_MS / 1000}s.\n` +
-          `   The assistant is running but CLI commands (vellum ps, vellum exec) will not authenticate.\n` +
-          `   Re-hatch or run \`vellum setup\` to recover.`,
+          `   The assistant is running but CLI commands (cadet ps, cadet exec) will not authenticate.\n` +
+          `   Re-hatch or run \`cadet setup\` to recover.`,
       );
     }
     return { ready: true, guardianAccessToken };

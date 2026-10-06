@@ -130,7 +130,7 @@ afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
 });
 
-describe("vellum debug-bundle", () => {
+describe("cadet debug-bundle", () => {
   test("mints the URL on the platform, exports with the debug profile, and waits", async () => {
     await debugBundle();
 
@@ -151,7 +151,7 @@ describe("vellum debug-bundle", () => {
     expect(token).toBe("local-token");
     expect(params).toEqual({
       uploadUrl: "https://storage.googleapis.com/b/signed",
-      description: "debug bundle for Vellum staff",
+      description: "debug bundle for Cadet staff",
       profile: "debug",
     });
     expect(pollMock).toHaveBeenCalled();
@@ -250,7 +250,7 @@ describe("vellum debug-bundle", () => {
     } finally {
       errorSpy.mockRestore();
     }
-    expect(errors.join("\n")).toContain("vellum login");
+    expect(errors.join("\n")).toContain("cadet login");
     expect(fetchCalls).toHaveLength(0);
   });
 });

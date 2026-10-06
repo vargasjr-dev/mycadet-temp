@@ -150,7 +150,7 @@ function currentContext(): CompanionContext {
     // surface is the only thing on screen to say so.
     dictating: dictatingPhase(),
     dictationText: dictationTail(),
-    // Vellum's version of a dictation another app pasted, while offered.
+    // Cadet's version of a dictation another app pasted, while offered.
     // Published from here for the reason `watchRetro` is: the words and the
     // way into the application they would go to are both this window's.
     dictationOffer: currentOffer(),

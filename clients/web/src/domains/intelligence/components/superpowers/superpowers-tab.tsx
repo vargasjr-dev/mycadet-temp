@@ -1010,7 +1010,7 @@ type TranslateEmptyStateCopy = (
     | "superpowersTab.emptyState.defaultSubtitle",
 ) => string;
 
-/** `Vellum`, `Clawhub`, and `skills.sh` in the empty-state copy are brand/product names, never translated. */
+/** `Cadet`, `Clawhub`, and `skills.sh` in the empty-state copy are brand/product names, never translated. */
 function getEmptyStateCopy(
   filter: SuperpowerFilter,
   category: string | null,

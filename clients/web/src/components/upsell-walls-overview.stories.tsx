@@ -238,7 +238,7 @@ export const CreditWalls: Story = {
               />
             }
             title="Daily credit limit reached"
-            subtitle="This limit applies to Vellum credit spend and resets at midnight UTC."
+            subtitle="This limit applies to Cadet credit spend and resets at midnight UTC."
             action={{ label: "Adjust Limit", onClick: () => {} }}
           />
         </WallCase>
@@ -247,7 +247,7 @@ export const CreditWalls: Story = {
           wall="Provider billing (bring-your-own key)"
           trigger="The user's own model provider is out of funds."
           cta="Open Settings"
-          destination="/assistant/settings/ai (no Vellum upsell)"
+          destination="/assistant/settings/ai (no Cadet upsell)"
         >
           <BillingErrorBanner
             ariaLabel="Your API key needs credits"

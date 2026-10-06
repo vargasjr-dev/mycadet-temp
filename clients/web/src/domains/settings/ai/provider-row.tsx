@@ -33,7 +33,7 @@ interface ProviderRowProps {
  * One row of the Providers section (Figma 7412:133539): display name, a
  * "{models}  •  {auth}" meta line, Default/Managed/Local/Custom chips, and
  * a kebab menu with the actions valid for this row. Clicking a row opens
- * the connection in the sidepanel editor; the managed Vellum row is not
+ * the connection in the sidepanel editor; the managed Cadet row is not
  * editable (platform-owned auth), so it exposes no open affordance and its
  * kebab carries only Set as default.
  */
@@ -56,7 +56,7 @@ export function ProviderRow({
   const showSetDefault =
     supportsDefaultProvider && !isDefault && eligibleForDefault;
   const showEdit = !isManaged && onOpen != null;
-  // Managed (Vellum) connections are platform-owned and the default
+  // Managed (Cadet) connections are platform-owned and the default
   // provider must always resolve somewhere, so neither is deletable.
   const showDelete = !isManaged && !isDefault;
   const hasMenu = showSetDefault || showEdit || showDelete;
@@ -134,7 +134,7 @@ export function ProviderRow({
             </Menu.Root>
           ) : (
             // Keep row heights aligned when a managed row has no menu (the
-            // default Vellum row with default-provider support absent).
+            // default Cadet row with default-provider support absent).
             <span className="inline-block w-8" aria-hidden />
           )}
         </>

@@ -231,7 +231,7 @@ async function retireCustom(entry: AssistantEntry): Promise<void> {
   console.log(`\u{1F5D1}\ufe0f  Retiring custom instance on ${sshHost}...\n`);
 
   const remoteCmd = [
-    "bunx vellum sleep 2>/dev/null || true",
+    "bunx cadet sleep 2>/dev/null || true",
     "pkill -f gateway 2>/dev/null || true",
     "rm -rf ~/.vellum",
   ].join(" && ");
@@ -267,7 +267,7 @@ async function retireVellum(
   const token = readPlatformRetireToken();
   if (!token) {
     console.error(
-      "Error: Not logged in. Run `vellum login --token <token>` first.",
+      "Error: Not logged in. Run `cadet login --token <token>` first.",
     );
     process.exit(1);
   }
@@ -371,9 +371,7 @@ export async function retire(): Promise<void> {
 async function retireInner(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log(
-      "Usage: vellum retire <name-or-id> [--source <source>] [--yes]",
-    );
+    console.log("Usage: cadet retire <name-or-id> [--source <source>] [--yes]");
     console.log("");
     console.log("Delete an assistant instance and archive its data.");
     console.log(
@@ -399,7 +397,7 @@ async function retireInner(): Promise<void> {
   if (!name) {
     console.error("Error: Assistant name or ID is required.");
     console.error(
-      "Usage: vellum retire <name-or-id> [--source <source>] [--yes]",
+      "Usage: cadet retire <name-or-id> [--source <source>] [--yes]",
     );
     process.exit(1);
   }
@@ -407,7 +405,7 @@ async function retireInner(): Promise<void> {
   const lookup = lookupAssistantByIdentifier(name);
   if (lookup.status !== "found") {
     console.error(formatAssistantLookupError(name, lookup));
-    console.error("Run 'vellum hatch' first, or check the instance name.");
+    console.error("Run 'cadet hatch' first, or check the instance name.");
     process.exit(1);
   }
 
@@ -420,9 +418,9 @@ async function retireInner(): Promise<void> {
     // A remote assistant paired from another machine. Retiring tears the
     // assistant down — that can only happen on its host machine, never from a
     // paired machine, which holds nothing but a pairing record. (Removing that
-    // local record is `vellum unpair`'s job, not retire's.)
+    // local record is `cadet unpair`'s job, not retire's.)
     console.error(
-      `Error: '${assistantId}' is a remote assistant paired from another machine — it can't be retired from here. Retiring tears down the assistant, which can only be done on its host machine. To remove the local pairing record on this machine, run \`vellum unpair ${assistantId}\`.`,
+      `Error: '${assistantId}' is a remote assistant paired from another machine — it can't be retired from here. Retiring tears down the assistant, which can only be done on its host machine. To remove the local pairing record on this machine, run \`cadet unpair ${assistantId}\`.`,
     );
     process.exit(1);
   }
@@ -494,7 +492,7 @@ async function retireInner(): Promise<void> {
   console.log(`Removed ${formatAssistantReference(entry)} from config.`);
 
   // When no assistants remain, remove the dock-display-name sentinel so
-  // the dock label falls back to "Vellum" instead of using the
+  // the dock label falls back to "Cadet" instead of using the
   // retired assistant's name.
   if (loadAllAssistants().length === 0) {
     const dockLabelFile = join(

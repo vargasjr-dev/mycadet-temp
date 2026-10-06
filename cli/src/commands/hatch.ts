@@ -319,7 +319,7 @@ export async function hatch(): Promise<void> {
 async function hatchVellumPlatform(): Promise<void> {
   const token = readPlatformToken();
   if (!token) {
-    console.error("Not logged in. Run `vellum login --token <token>` first.");
+    console.error("Not logged in. Run `cadet login --token <token>` first.");
     process.exit(1);
   }
 

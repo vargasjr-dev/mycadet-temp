@@ -1,13 +1,13 @@
 /**
- * `vellum unpair <name> [--yes]`
+ * `cadet unpair <name> [--yes]`
  *
- * Forget a pairing imported from another machine via `vellum connect import`:
+ * Forget a pairing imported from another machine via `cadet connect import`:
  * remove its lockfile entry and stored guardian token from THIS machine. Only
- * paired assistants (`cloud: "paired"`) can be unpaired — `vellum retire` owns
+ * paired assistants (`cloud: "paired"`) can be unpaired — `cadet retire` owns
  * local and managed assistants.
  *
  * This is client-side only: it forgets the connection here but does not revoke
- * the device on the host. (Host-side revocation is `vellum devices`.)
+ * the device on the host. (Host-side revocation is `cadet devices`.)
  */
 
 import {
@@ -24,10 +24,10 @@ import {
 import { deleteGuardianToken } from "../lib/guardian-token";
 
 function printUsage(): void {
-  console.log(`vellum unpair [beta] - Forget a paired assistant imported from another machine
+  console.log(`cadet unpair [beta] - Forget a paired assistant imported from another machine
 
 USAGE:
-    vellum unpair <name> [--yes]
+    cadet unpair <name> [--yes]
 
 ARGUMENTS:
     <name>    Name or id of the paired assistant to forget
@@ -36,13 +36,13 @@ OPTIONS:
     --yes     Skip the interactive confirmation prompt (for automation)
 
 Removes the local connection (lockfile entry + stored token). Only paired
-assistants (imported via 'vellum connect import') can be unpaired; use
-'vellum retire' for local or managed assistants.
+assistants (imported via 'cadet connect import') can be unpaired; use
+'cadet retire' for local or managed assistants.
 
 EXAMPLES:
-    vellum unpair paired-desk
-    vellum unpair "Desk Box"
-    vellum unpair paired-desk --yes
+    cadet unpair paired-desk
+    cadet unpair "Desk Box"
+    cadet unpair paired-desk --yes
 `);
 }
 
@@ -71,7 +71,7 @@ export async function unpair(): Promise<void> {
 
   if (entry.cloud !== "paired") {
     console.error(
-      `Error: '${name}' is not a paired assistant. Use \`vellum retire\` to remove a local or managed assistant.`,
+      `Error: '${name}' is not a paired assistant. Use \`cadet retire\` to remove a local or managed assistant.`,
     );
     process.exit(1);
   }

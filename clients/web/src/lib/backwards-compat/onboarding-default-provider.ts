@@ -7,7 +7,7 @@
  * `balanced` default then resolves through that provider's matrix column.
  * Older assistants can't complete that flow: pre-0.10.8 daemons 404
  * `PUT /v1/config/llm/default-provider`, and 0.10.8 through 0.11.0 accept
- * the write but resolve `balanced` through the vellum column regardless,
+ * the write but resolve `balanced` through the cadet column regardless,
  * leaving the picked key unused. Both need the legacy flow instead
  * (author + activate a `custom-balanced` profile), which newer daemons
  * also understand — their BYOK conversion pass migrates it.

@@ -1,5 +1,5 @@
 /**
- * Tests for `vellum connect import <link-or-url>`: drive the host-side pairing
+ * Tests for `cadet connect import <link-or-url>`: drive the host-side pairing
  * session (device-code exchange) and persist a lockfile entry + guardian token
  * under a unique local id.
  */
@@ -208,7 +208,7 @@ describe("connect import", () => {
 
     const output = logs.join("\n");
     expect(output).toContain("Imported paired assistant 'link-box'");
-    expect(output).toContain("vellum client link-box");
+    expect(output).toContain("cadet client link-box");
     // No intermediate output: an approved link never shows an approval code.
     expect(output).not.toContain("Code:");
     expect(output).not.toContain("Waiting for approval");
@@ -261,7 +261,7 @@ describe("connect import", () => {
 
     const output = logs.join("\n");
     expect(output).toContain("Code: ABCD-EFGH");
-    expect(output).toContain("vellum pair --web-approve ABCD-EFGH");
+    expect(output).toContain("cadet pair --web-approve ABCD-EFGH");
     expect(output).toContain("Imported paired assistant 'coded-box'");
     // No refresh credential came back, so the import is access-only.
     expect(output).toContain("access-only");
@@ -376,7 +376,7 @@ describe("connect import", () => {
     expect(fetched).toBe(false);
     const output = logs.join("\n");
     expect(output).toContain("deprecated");
-    expect(output).toContain("vellum pair");
+    expect(output).toContain("cadet pair");
     expect(output).toContain("Imported paired assistant 'legacy-box'");
     expect(findAssistantByName("legacy-box")!.runtimeUrl).toBe(HOST);
     expect(loadGuardianToken("legacy-box")?.accessToken).toBe("bundle-tok");
@@ -543,7 +543,7 @@ describe("connect import", () => {
     // error would be a lie: the address was never the problem.
     expect(exited).toBe(true);
     expect(out).toContain("unknown option '--qr'");
-    expect(out).toContain("bun install -g vellum@latest");
+    expect(out).toContain("bun install -g cadet@latest");
     expect(out).not.toContain("pairing link");
     expect(fetched).toBe(false);
   });

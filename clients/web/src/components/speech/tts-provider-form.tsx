@@ -107,14 +107,14 @@ export function TtsProviderForm({
     if (!fetched) {
       return TTS_PROVIDERS;
     }
-    // Assistants running an older catalog omit vellum, but the managed option
+    // Assistants running an older catalog omit cadet, but the managed option
     // must still be offered (and a legacy managed config still renders as
-    // Vellum) — graft the static entry on.
+    // Cadet) — graft the static entry on.
     if (fetched.some((p) => p.id === "vellum")) {
       return fetched;
     }
-    const vellum = TTS_PROVIDERS.find((p) => p.id === "vellum");
-    return vellum ? [vellum, ...fetched] : fetched;
+    const cadet = TTS_PROVIDERS.find((p) => p.id === "vellum");
+    return cadet ? [cadet, ...fetched] : fetched;
   }, [catalogData]);
 
   // Seed the provider from the daemon's live config so a Save doesn't clobber a
@@ -134,13 +134,13 @@ export function TtsProviderForm({
       }
     | undefined;
   // A config written by the legacy mode toggle marks managed via `mode` while
-  // `provider` holds the BYOK restore value — the daemon routes it to Vellum,
-  // so the form must render it as Vellum too.
+  // `provider` holds the BYOK restore value — the daemon routes it to Cadet,
+  // so the form must render it as Cadet too.
   const daemonTtsProvider =
     daemonTts?.mode === "managed" ? "vellum" : daemonTts?.provider;
 
   // Mirrors the daemon's `services.tts.provider` schema default. Deliberately
-  // not `providers[0]` — the catalog leads with Vellum, and an unconfigured
+  // not `providers[0]` — the catalog leads with Cadet, and an unconfigured
   // client must not claim the managed provider on its own.
   const defaultProviderId = "elevenlabs";
   const serverProvider = useMemo(
@@ -157,7 +157,7 @@ export function TtsProviderForm({
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Managed (Vellum) voices, fetched live from the platform via the daemon so
+  // Managed (Cadet) voices, fetched live from the platform via the daemon so
   // the offered list and default track the platform's rate card. Empty until
   // loaded — the picker renders only from platform data.
   const {
@@ -416,13 +416,13 @@ export function TtsProviderForm({
   const apiKeyPlaceholder = providerHasKey
     ? "••••••••  (Enter a new key to replace)"
     : selectedProvider.apiKeyPlaceholder;
-  // Vellum authenticates via the platform connection, so it has no key to enter
+  // Cadet authenticates via the platform connection, so it has no key to enter
   // and nothing for the client-side Test path (a direct provider call) to use.
   const isManaged = draftProvider === "vellum";
   // Managed voice selection needs a daemon that persists
   // `services.tts.providers.vellum.model`. Old daemons (and the static
   // fallback catalog used before the live catalog loads) report
-  // supportsVoiceSelection: false for vellum, hiding the selector so the UI
+  // supportsVoiceSelection: false for cadet, hiding the selector so the UI
   // never claims to save a voice the daemon would ignore.
   const managedVoiceSupported =
     isManaged && selectedProvider.supportsVoiceSelection;
@@ -543,7 +543,7 @@ export function TtsProviderForm({
       )}
 
       {/* The credentials guide is the "where's my API key" helper for BYO
-          providers. The managed (Vellum) provider needs no key — the assistant
+          providers. The managed (Cadet) provider needs no key — the assistant
           is already connected — so its "Connect this assistant" card is just
           noise between the voice picker and the preview button. */}
       {!hideCredentialsGuide && !isManaged && (

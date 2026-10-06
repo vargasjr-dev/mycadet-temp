@@ -301,26 +301,26 @@ export async function login(): Promise<void> {
   const args = process.argv.slice(3);
 
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: vellum login [--token <session-token>] [--force]");
+    console.log("Usage: cadet login [--token <session-token>] [--force]");
     console.log("");
-    console.log("Log in to the Vellum platform.");
+    console.log("Log in to the Cadet platform.");
     console.log("");
     console.log("By default, opens a browser window for authentication.");
     console.log("Alternatively, pass a session token directly with --token.");
     console.log("");
     console.log("On success, syncs cloud-managed assistants to the local");
-    console.log("lockfile so they appear in `vellum ps`.");
+    console.log("lockfile so they appear in `cadet ps`.");
     console.log("");
     console.log("Options:");
-    console.log("  --token <token>    Session token from the Vellum platform");
+    console.log("  --token <token>    Session token from the Cadet platform");
     console.log(
       "  --force, -f        Re-authenticate even if already logged in",
     );
     console.log("");
     console.log("Examples:");
-    console.log("  vellum login");
-    console.log("  vellum login --token <session-token>");
-    console.log("  vellum login --force");
+    console.log("  cadet login");
+    console.log("  cadet login --token <session-token>");
+    console.log("  cadet login --force");
     process.exit(0);
   }
 
@@ -345,7 +345,7 @@ export async function login(): Promise<void> {
       try {
         const existingUser = await fetchCurrentUser(existingToken);
         console.error(
-          `Already logged in as ${existingUser.email}. Run \`vellum logout\` first, or use \`vellum login --force\` to re-authenticate.`,
+          `Already logged in as ${existingUser.email}. Run \`cadet logout\` first, or use \`cadet login --force\` to re-authenticate.`,
         );
         process.exit(1);
       } catch {
@@ -447,7 +447,7 @@ export async function login(): Promise<void> {
     }
 
     // Sync cloud assistants from the platform into the local lockfile.
-    // This ensures `vellum ps` shows managed assistants immediately
+    // This ensures `cadet ps` shows managed assistants immediately
     // after login (e.g. after a retire-and-rehatch cycle). We've just
     // saved this token, so it's guaranteed non-empty here.
     try {
@@ -482,10 +482,10 @@ export async function login(): Promise<void> {
 export async function logout(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: vellum logout");
+    console.log("Usage: cadet logout");
     console.log("");
     console.log(
-      "Log out of the Vellum platform, remove the stored session token,",
+      "Log out of the Cadet platform, remove the stored session token,",
     );
     console.log("and remove cloud-managed assistants from the local lockfile.");
     process.exit(0);
@@ -511,15 +511,15 @@ export async function logout(): Promise<void> {
 export async function whoami(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: vellum whoami");
+    console.log("Usage: cadet whoami");
     console.log("");
-    console.log("Show the currently logged-in Vellum platform user.");
+    console.log("Show the currently logged-in Cadet platform user.");
     process.exit(0);
   }
 
   const token = readPlatformToken();
   if (!token) {
-    console.error("Not logged in. Run `vellum login` first.");
+    console.error("Not logged in. Run `cadet login` first.");
     process.exit(1);
   }
 

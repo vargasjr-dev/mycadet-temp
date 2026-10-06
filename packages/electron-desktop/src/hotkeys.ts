@@ -45,7 +45,7 @@ interface HotkeyCommand {
  * so conflict detection still sees their chords.
  */
 const HOTKEY_CATALOG: readonly HotkeyCommand[] = [
-  { key: "globalHotkey", label: "Open Vellum", scope: "global" },
+  { key: "globalHotkey", label: "Open Cadet", scope: "global" },
   { key: "quickInput", label: "Quick Input", scope: "global" },
   { key: "toggleVoice", label: "Talk", scope: "global" },
   { key: "newConversation", label: "New chat", scope: "menu" },

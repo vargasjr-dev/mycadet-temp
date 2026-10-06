@@ -287,7 +287,7 @@ describe("SpeechToTextCard — macOS Native Dictation option", () => {
     expect(sttBody?.services?.stt ?? {}).not.toHaveProperty("provider");
   });
 
-  test("selecting a provider from a Vellum daemon writes that provider", async () => {
+  test("selecting a provider from a Cadet daemon writes that provider", async () => {
     daemonConfigData = { services: { stt: { provider: "vellum" } } };
     renderCard();
 
@@ -303,7 +303,7 @@ describe("SpeechToTextCard — macOS Native Dictation option", () => {
   });
 });
 
-describe("SpeechToTextCard — Vellum provider", () => {
+describe("SpeechToTextCard — Cadet provider", () => {
   beforeEach(() => {
     localStorage.clear();
     nativeDictationSupported = false;
@@ -319,33 +319,33 @@ describe("SpeechToTextCard — Vellum provider", () => {
     localStorage.clear();
   });
 
-  test("Vellum is offered in the provider dropdown", () => {
+  test("Cadet is offered in the provider dropdown", () => {
     renderCard();
 
     openProviderSelect();
-    expect(visibleOptions()).toContain("Vellum");
+    expect(visibleOptions()).toContain("Cadet");
   });
 
-  test("a vellum daemon provider renders as the selected option with no API key field", () => {
+  test("a cadet daemon provider renders as the selected option with no API key field", () => {
     daemonConfigData = { services: { stt: { provider: "vellum" } } };
     renderCard();
 
     const trigger = document.querySelector<HTMLButtonElement>(
       'button[role="combobox"][aria-label="STT provider"]',
     );
-    expect(trigger?.textContent).toContain("Vellum");
-    // Vellum authenticates via the platform connection — there is no key.
+    expect(trigger?.textContent).toContain("Cadet");
+    // Cadet authenticates via the platform connection — there is no key.
     expect(screen.queryByText("API Key")).toBeNull();
     expect(
-      screen.getByText(/Transcription runs through your Vellum account/),
+      screen.getByText(/Transcription runs through your Cadet account/),
     ).toBeTruthy();
   });
 
-  test("selecting Vellum saves provider vellum and stores no credential", async () => {
+  test("selecting Cadet saves provider cadet and stores no credential", async () => {
     renderCard();
 
     openProviderSelect();
-    selectOption("Vellum");
+    selectOption("Cadet");
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(configPatchCalls.length).toBe(1));
@@ -360,7 +360,7 @@ describe("SpeechToTextCard — Vellum provider", () => {
 
   // A config written by the legacy mode toggle marks managed via `mode` while
   // `provider` holds the BYOK restore value.
-  test("a legacy managed-mode daemon renders as Vellum", () => {
+  test("a legacy managed-mode daemon renders as Cadet", () => {
     daemonConfigData = {
       services: { stt: { mode: "managed", provider: "deepgram" } },
     };
@@ -369,7 +369,7 @@ describe("SpeechToTextCard — Vellum provider", () => {
     const trigger = document.querySelector<HTMLButtonElement>(
       'button[role="combobox"][aria-label="STT provider"]',
     );
-    expect(trigger?.textContent).toContain("Vellum");
+    expect(trigger?.textContent).toContain("Cadet");
     expect(screen.queryByText("API Key")).toBeNull();
   });
 
@@ -391,9 +391,9 @@ describe("SpeechToTextCard — Vellum provider", () => {
     });
   });
 
-  test("leaving Vellum for native dictation writes a daemon-backed fallback", async () => {
+  test("leaving Cadet for native dictation writes a daemon-backed fallback", async () => {
     // Native is client-only (no daemon mapping), so without an explicit write
-    // the daemon would stay on Vellum and a refetch would snap the dropdown
+    // the daemon would stay on Cadet and a refetch would snap the dropdown
     // back to it.
     nativeDictationSupported = true;
     daemonConfigData = { services: { stt: { provider: "vellum" } } };
@@ -544,13 +544,13 @@ describe("SpeechToTextCard: Spoken language picker", () => {
   });
 
   test("hides when the draft switches to an auto-detecting provider", async () => {
-    // Saved provider vellum (manual), dropdown switched to OpenAI without
+    // Saved provider cadet (manual), dropdown switched to OpenAI without
     // saving: Whisper auto-detects, so a picker here would offer a language
     // the drafted provider ignores.
     daemonConfigData = { services: { stt: { provider: "vellum" } } };
     providerCatalogData = {
       providers: [
-        { id: "vellum", displayName: "Vellum", languageSelection: "manual" },
+        { id: "vellum", displayName: "Cadet", languageSelection: "manual" },
         {
           id: "openai-whisper",
           displayName: "Whisper",
@@ -569,7 +569,7 @@ describe("SpeechToTextCard: Spoken language picker", () => {
   });
 
   test("hides when the draft switches between manual providers", async () => {
-    // Saved provider deepgram (manual), dropdown switched to Vellum without
+    // Saved provider deepgram (manual), dropdown switched to Cadet without
     // saving: both are manual, but a pick would hot-apply to the still
     // active deepgram config while the row advertises the draft's options,
     // so any pending provider draft hides the picker.
@@ -581,7 +581,7 @@ describe("SpeechToTextCard: Spoken language picker", () => {
           displayName: "Deepgram",
           languageSelection: "manual",
         },
-        { id: "vellum", displayName: "Vellum", languageSelection: "manual" },
+        { id: "vellum", displayName: "Cadet", languageSelection: "manual" },
       ],
     };
     renderCard();
@@ -589,7 +589,7 @@ describe("SpeechToTextCard: Spoken language picker", () => {
     await waitFor(() => expect(languageTrigger()).not.toBeNull());
 
     openProviderSelect();
-    selectOption("Vellum");
+    selectOption("Cadet");
 
     expect(languageTrigger()).toBeNull();
   });

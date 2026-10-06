@@ -29,7 +29,7 @@ export function SignupShell({ children }: { children?: ReactNode }) {
           <img
             src={publicAsset("/vellum-logo-white.svg")}
             // eslint-disable-next-line local/no-untranslated-strings -- brand name
-            alt="Vellum"
+            alt="Cadet"
             width={82}
             height={25}
           />

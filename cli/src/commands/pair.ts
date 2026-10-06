@@ -1,11 +1,11 @@
 /**
- * `vellum pair [assistant] [options]`
+ * `cadet pair [assistant] [options]`
  *
  * Print the pairing link for another device, and the same link rendered as a
  * QR code. Runs on the machine hosting the assistant: it mints a remote-web
  * pairing challenge over the loopback gateway and approves it immediately, so
  * running this command IS the local-presence proof and one scan (or one paste
- * into `vellum connect import`) completes the pairing.
+ * into `cadet connect import`) completes the pairing.
  *
  * `--web-approve` is the reverse direction: approve a code a device already
  * shows, for pairings that device started on its own.
@@ -49,7 +49,7 @@ function assistantDisplayName(entry: AssistantEntry): string {
  * The tunnel-recorded ingress URL from this entry's own lockfile record, when
  * usable as the pairing link's advertised address: https and non-loopback (the
  * bar a pairing URL must clear). The lockfile is the CLI-owned contract:
- * `vellum tunnel` providers mirror the URL onto the entry when they save it.
+ * `cadet tunnel` providers mirror the URL onto the entry when they save it.
  */
 function usableEntryIngressUrl(entry: AssistantEntry): string | null {
   const saved = entry.ingressUrl?.trim();
@@ -78,31 +78,31 @@ const RETIRED_FLAGS = new Map<string, string>([
   [
     "--web",
     "the device being paired mints its own code. Run " +
-      "`vellum connect import <assistant-url>` there, then approve the code " +
-      "it prints with `vellum pair --web-approve <code>`.",
+      "`cadet connect import <assistant-url>` there, then approve the code " +
+      "it prints with `cadet pair --web-approve <code>`.",
   ],
 ]);
 
 function printUsage(): void {
-  console.log(`vellum pair [beta] - Print a pairing link and QR code for another device
+  console.log(`cadet pair [beta] - Print a pairing link and QR code for another device
 
 USAGE:
-    vellum pair [assistant] [options]
+    cadet pair [assistant] [options]
 
 Mints a pairing challenge on the assistant's gateway over loopback and
 approves it on the spot (running this command on the host machine is the
 approval), then prints the pairing link and the same link as a QR code.
-Scanning the QR, opening the link, or passing it to 'vellum connect import'
+Scanning the QR, opening the link, or passing it to 'cadet connect import'
 on the other device completes the pairing in one step.
 
-The link needs a public https address: --url, else the address 'vellum tunnel'
+The link needs a public https address: --url, else the address 'cadet tunnel'
 recorded for this assistant, else the assistant's runtime URL. Loopback,
 private-network, plain-http, and tunnel-provider website addresses are refused
 before anything is minted.
 
 The challenge lives on the assistant's gateway and expires (10 minutes); the
 link carries only a one-time device code, no tokens. Each paired device is
-listed and separately revocable via 'vellum devices'.
+listed and separately revocable via 'cadet devices'.
 
 ARGUMENTS:
     [assistant]     Assistant display name or ID (default: the active assistant)
@@ -110,11 +110,11 @@ ARGUMENTS:
 OPTIONS:
     --url <url>     Public https base URL to advertise, e.g.
                     https://your-assistant.ts.net. Overrides the address saved
-                    by 'vellum tunnel'.
+                    by 'cadet tunnel'.
     --label <name>  Name for this pairing. Shown in the output, and used as the
                     assistant's name in the --app link.
     --app           Encode the QR as a <scheme>://connect link that opens the
-                    Vellum app directly. The https link is still printed as a
+                    Cadet app directly. The https link is still printed as a
                     fallback for devices without the app.
     --app-scheme <scheme>
                     URL scheme for --app links; requires --app (default:
@@ -122,7 +122,7 @@ OPTIONS:
                     vellum-assistant-dev and vellum-assistant-staging).
     --web-approve <code>
                     Approve a pairing code another device is showing, in
-                    ABCD-EFGH form, e.g. from 'vellum connect import <url>' or
+                    ABCD-EFGH form, e.g. from 'cadet connect import <url>' or
                     the /assistant/pair page. Mints no link of its own.
     --json          Print JSON instead of the QR code:
                     {pairUrl, deviceCode, expiresAt, expiresInSeconds}, plus
@@ -130,10 +130,10 @@ OPTIONS:
                     response: {status, verificationUri, expiresAt}.
 
 EXAMPLES:
-    vellum pair
-    vellum pair "My Assistant" --url https://your-assistant.ts.net
-    vellum pair --app --label "Phone"
-    vellum pair --web-approve ABCD-EFGH
+    cadet pair
+    cadet pair "My Assistant" --url https://your-assistant.ts.net
+    cadet pair --app --label "Phone"
+    cadet pair --web-approve ABCD-EFGH
 `);
 }
 
@@ -184,7 +184,7 @@ async function gatewayPost(
       `Error: could not reach the gateway at ${gatewayUrl} ` +
         `(${err instanceof Error ? err.message : String(err)}).`,
     );
-    console.error("Is the assistant running? Try `vellum wake`.");
+    console.error("Is the assistant running? Try `cadet wake`.");
     process.exit(1);
   }
 }
@@ -271,7 +271,7 @@ export async function pair(): Promise<void> {
     console.error(
       `Error: ${retiredFlag} is no longer an option: ${RETIRED_FLAGS.get(retiredFlag)}`,
     );
-    console.error("Run `vellum pair --help` to see available options.");
+    console.error("Run `cadet pair --help` to see available options.");
     process.exit(1);
   }
 
@@ -279,7 +279,7 @@ export async function pair(): Promise<void> {
   const webApproval = rawArgs.includes("--web-approve");
   const appVariant = rawArgs.includes("--app");
   // `--qr` is accepted and ignored: QR output is unconditional, and iOS
-  // Settings copy in the field names `vellum pair --qr`. Out of --help as a
+  // Settings copy in the field names `cadet pair --qr`. Out of --help as a
   // compatibility shim, not part of the command's surface.
   let args = rawArgs.filter(
     (a) => a !== "--json" && a !== "--app" && a !== "--qr",
@@ -305,7 +305,7 @@ export async function pair(): Promise<void> {
   const unknownFlag = args.find((a) => a.startsWith("--"));
   if (unknownFlag) {
     console.error(`Error: unknown option '${unknownFlag}'.`);
-    console.error("Run `vellum pair --help` to see available options.");
+    console.error("Run `cadet pair --help` to see available options.");
     console.error(
       `If this option is from newer docs, ${STALE_CLI_UPDATE_HINT}`,
     );
@@ -336,7 +336,7 @@ export async function pair(): Promise<void> {
   // Resolve the target. An explicit argument is matched by display name OR id
   // (with the standard ambiguity error); no argument falls back to the active
   // assistant. Join positional tokens so multi-word display names work even
-  // unquoted (e.g. `vellum pair My Assistant`).
+  // unquoted (e.g. `cadet pair My Assistant`).
   const assistantName = parseAssistantTargetArg(args);
   let entry: AssistantEntry | null;
   if (assistantName) {
@@ -349,7 +349,7 @@ export async function pair(): Promise<void> {
   } else {
     entry = resolveAssistant();
     if (!entry) {
-      console.error("No assistant instance found. Run `vellum hatch` first.");
+      console.error("No assistant instance found. Run `cadet hatch` first.");
       process.exit(1);
     }
   }
@@ -374,7 +374,7 @@ export async function pair(): Promise<void> {
   if (savedIngressUrl && !jsonOutput) {
     console.log(
       `Using saved ingress URL ${savedIngressUrl} ` +
-        "(from vellum tunnel; override with --url).",
+        "(from cadet tunnel; override with --url).",
     );
   }
 
@@ -427,10 +427,10 @@ export async function pair(): Promise<void> {
     );
     console.error(
       "Re-run with your assistant's public URL, e.g.:\n" +
-        "  vellum pair --url https://your-assistant.ts.net",
+        "  cadet pair --url https://your-assistant.ts.net",
     );
     console.error(
-      "No public URL yet? Run `vellum tunnel --provider tailscale` first.",
+      "No public URL yet? Run `cadet tunnel --provider tailscale` first.",
     );
     process.exit(1);
   }
@@ -483,7 +483,7 @@ export async function pair(): Promise<void> {
   });
   console.log("");
   if (appUrl) {
-    console.log("The QR opens the Vellum app. App link:");
+    console.log("The QR opens the Cadet app. App link:");
     console.log("");
     console.log(`  ${appUrl}`);
     console.log("");
@@ -494,7 +494,7 @@ export async function pair(): Promise<void> {
   console.log("");
   console.log(`  ${pairUrl}`);
   console.log("");
-  console.log(`On another computer, run:  vellum connect import "${pairUrl}"`);
+  console.log(`On another computer, run:  cadet connect import "${pairUrl}"`);
   console.log("");
   console.log(`Expires: ${challenge.expiresAt}`);
 }

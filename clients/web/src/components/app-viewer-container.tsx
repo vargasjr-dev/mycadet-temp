@@ -28,7 +28,7 @@ export interface AppViewerContainerProps {
   html: string;
   assistantId: string;
   onClose: () => void;
-  /** Routes a validated root-relative Vellum URL in the host client. */
+  /** Routes a validated root-relative Cadet URL in the host client. */
   onNavigateAppRoute: (href: string) => void;
   onEdit?: () => void;
   /** When true, the nav bar Edit button becomes the expand-app affordance. */

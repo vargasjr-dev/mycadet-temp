@@ -13,7 +13,7 @@ import { isElectron } from "@/runtime/is-electron";
  * links, future notification action clicks) and need to accompany
  * the state update with making the window user-visible. Without
  * this, a click on `vellum://send?message=hi` on a backgrounded
- * Vellum would update composer state with no visible response.
+ * Cadet would update composer state with no visible response.
  *
  * Same wrapper shape as `dock.ts` / `app-info.ts`: no-op off
  * Electron, awaits an IPC handler that resolves once the window

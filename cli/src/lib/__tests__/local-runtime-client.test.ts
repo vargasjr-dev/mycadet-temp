@@ -523,7 +523,7 @@ describe("localRuntimeIdentity", () => {
     expect(calls[0]!.url).not.toContain("/v1/identity");
   });
 
-  test("vellum entry: GETs /v1/assistants/<id>/health through the wildcard proxy", async () => {
+  test("cadet entry: GETs /v1/assistants/<id>/health through the wildcard proxy", async () => {
     const { calls, fetchMock } = captureFetch(() => {
       return new Response(JSON.stringify({ version: "0.7.2" }), {
         status: 200,
@@ -595,7 +595,7 @@ describe("localRuntimeIdentity", () => {
   // before any other helper got a chance to clear the cache and retry.
   // ---------------------------------------------------------------------
 
-  test("vellum entry: retries once after 401 with a fresh org-ID lookup", async () => {
+  test("cadet entry: retries once after 401 with a fresh org-ID lookup", async () => {
     // Use a non-vak session token so authHeaders fetches + caches an org ID.
     const SESSION_TOKEN = "session-abcdef";
     const PLATFORM_URL = "https://platform.vellum.ai";

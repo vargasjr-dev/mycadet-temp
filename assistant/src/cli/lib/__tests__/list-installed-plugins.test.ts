@@ -135,7 +135,7 @@ describe("listInstalledPlugins", () => {
   });
 
   test.each([
-    ["missing vellum block", { name: "p", version: "1.0.0" }],
+    ["missing cadet block", { name: "p", version: "1.0.0" }],
     ["non-string icon", { name: "p", version: "1.0.0", vellum: { icon: 42 } }],
     ["empty icon", { name: "p", version: "1.0.0", vellum: { icon: "" } }],
     [

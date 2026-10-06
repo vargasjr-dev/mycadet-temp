@@ -147,7 +147,7 @@ describe("pair command", () => {
       `${PUBLIC_URL}/assistant/pair#device_code=device-code`,
     );
     expect(output).toContain("\u2588");
-    expect(output).toContain("vellum connect import");
+    expect(output).toContain("cadet connect import");
     expect(output).toContain("Expires: 2026-06-04T00:10:00.000Z");
     // The base64 bundle is gone: no blob, and no hand-this-over copy.
     expect(output).not.toContain("Hand this to the other machine");
@@ -190,7 +190,7 @@ describe("pair command", () => {
   });
 
   test("--qr is a silent no-op, identical to a flagless run", async () => {
-    // Shipped iOS builds tell users to run `vellum pair --qr` (see
+    // Shipped iOS builds tell users to run `cadet pair --qr` (see
     // clients/ios/App/App/Settings.bundle/Root.plist), copy those installs can
     // never receive an update for, so the flag stays accepted and ignored.
     const origFetch = globalThis.fetch;
@@ -343,7 +343,7 @@ describe("pair command", () => {
     expect(exited).toBe(true);
     const joined = errors.join("\n");
     expect(joined).toContain("--web is no longer an option");
-    expect(joined).toContain("vellum connect import");
+    expect(joined).toContain("cadet connect import");
     expect(joined).toContain("--web-approve");
     expect(fetchCalled).toBe(false);
   });
@@ -432,7 +432,7 @@ describe("pair command", () => {
     const joined = errors.join("\n");
     expect(joined).toContain("unknown option '--frobnicate'");
     expect(joined).toContain("your CLI may be out of date");
-    expect(joined).toContain("bun install -g vellum@latest");
+    expect(joined).toContain("bun install -g cadet@latest");
     expect(fetchCalled).toBe(false);
   });
 
@@ -542,8 +542,8 @@ describe("pair command", () => {
     const joined = errors.join("\n");
     expect(joined).toContain(LOOPBACK_CUSTOM);
     expect(joined).toContain("loopback");
-    expect(joined).toContain("vellum pair --url");
-    expect(joined).toContain("vellum tunnel --provider tailscale");
+    expect(joined).toContain("cadet pair --url");
+    expect(joined).toContain("cadet tunnel --provider tailscale");
 
     // Exited before minting, so no challenge exists for a dead link.
     expect(exited).toBe(true);

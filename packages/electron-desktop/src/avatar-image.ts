@@ -7,7 +7,7 @@ import { getAvatarPng } from "./avatar";
  * the shared first step both icon surfaces need before clipping (the Dock to a
  * rounded square, the Tray to a circle). Returns `null` when there is no
  * avatar or the bytes can't be decoded, so callers fall back to the bundled
- * Vellum mark.
+ * Cadet mark.
  *
  * Kept separate from the per-surface masking so the decode/resize lives in one
  * place; the renderer always publishes a square PNG, so a plain resize never

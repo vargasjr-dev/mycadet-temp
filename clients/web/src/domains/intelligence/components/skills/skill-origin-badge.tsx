@@ -13,7 +13,7 @@ const ORIGIN_ICON: Record<SkillOrigin, typeof Globe> = {
   "assistant-memory": Brain,
 };
 
-/** `vellum`, `clawhub`, and `skills.sh` are brand/product names, never translated. */
+/** `cadet`, `clawhub`, and `skills.sh` are brand/product names, never translated. */
 function brandOrCatalogLabel(
   origin: SkillOrigin,
   t: (
@@ -22,7 +22,7 @@ function brandOrCatalogLabel(
 ): string {
   switch (origin) {
     case "vellum":
-      return "Vellum";
+      return "Cadet";
     case "clawhub":
       return "Clawhub";
     case "skillssh":

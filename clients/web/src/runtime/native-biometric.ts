@@ -121,7 +121,7 @@ let pendingRetrieval: Promise<string | null> | null = null;
 async function retrieveTokenForServer(server: string): Promise<string> {
   const { token } = await NativeBiometric.retrieveToken({
     server,
-    reason: "Sign in to Vellum",
+    reason: "Sign in to Cadet",
   });
   return token;
 }

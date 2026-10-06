@@ -519,7 +519,7 @@ function nativeDeliveryFailure(
  * Daemon-side notification emitters set `deepLinkMetadata.conversationId`
  * explicitly in `broadcaster.ts` (the only production construction site
  * for vellum-channel deep links). The web client receives notifications
- * only on the vellum channel, so `conversationId` is always present in
+ * only on the cadet channel, so `conversationId` is always present in
  * `deepLinkMetadata` for any notification that reaches this code path.
  */
 export function extractConversationId(
@@ -1190,7 +1190,7 @@ export function postForegroundRemotePush(
   void postLocalNotification({
     // A data-only push carries no notification block, so the copy the OS
     // would have rendered lives in `data`.
-    title: text(notification.title) ?? text(data.title) ?? "Vellum",
+    title: text(notification.title) ?? text(data.title) ?? "Cadet",
     body: text(notification.body) ?? text(data.body) ?? "",
     sourceEventName,
     assistantName: text(data.sender_name),

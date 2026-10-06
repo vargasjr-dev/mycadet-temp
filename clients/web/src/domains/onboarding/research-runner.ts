@@ -63,7 +63,8 @@ const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 type ResearchDeadlineResult<T> =
-  { timedOut: true } | { timedOut: false; value: T };
+  | { timedOut: true }
+  | { timedOut: false; value: T };
 
 async function raceResearchDeadline<T>(
   promise: Promise<T>,
@@ -110,7 +111,7 @@ export function resolveResearchCompletionStatus({
 }
 
 /**
- * Org that owns first-party, reviewed Vellum plugins. Onboarding only ever
+ * Org that owns first-party, reviewed Cadet plugins. Onboarding only ever
  * surfaces and installs plugins from this owner — never third-party/external
  * marketplace repos — so a new user is never offered (or silently handed)
  * community code during onboarding.
@@ -121,7 +122,7 @@ const VELLUM_PLUGIN_OWNER = "vellum-ai";
  * Vellum-hosted plugins that are still infrastructure/meta rather than a
  * capability worth offering a new user (a reference memory sample, the
  * self-edit diff card). Dropped on top of the owner filter. Anything else owned
- * by Vellum — including future persona plugins like a developer/PM kit — flows
+ * by Cadet — including future persona plugins like a developer/PM kit — flows
  * through automatically.
  */
 const NON_RECOMMENDABLE_PLUGINS = new Set<string>([

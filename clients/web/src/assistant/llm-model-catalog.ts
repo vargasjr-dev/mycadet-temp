@@ -1320,8 +1320,8 @@ export const DEFAULT_MODEL_BY_PROVIDER: Record<LlmProviderId, string> = {
  */
 export const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   // Routing identities that cards and pickers render as providers.
-  // `vellum` is also the catalog owner of Vellum-hosted GPU models.
-  vellum: "Vellum",
+  // `cadet` is also the catalog owner of Vellum-hosted GPU models.
+  vellum: "Cadet",
   chatgpt: "ChatGPT Subscription",
   anthropic: "Anthropic",
   openai: "OpenAI",
@@ -1419,9 +1419,9 @@ export const VELLUM_SERVED_PROVIDERS = [
 ] as const;
 
 /**
- * The Vellum entry's model list: the union of the managed-routable providers'
+ * The Cadet entry's model list: the union of the managed-routable providers'
  * catalogs, deduplicated by id in VELLUM_SERVED_PROVIDERS order. Users pick
- * "Vellum" + a model; which upstream serves it is an implementation detail.
+ * "Cadet" + a model; which upstream serves it is an implementation detail.
  */
 const VELLUM_MODELS: readonly LlmCatalogModel[] = (() => {
   const seenIds = new Set<string>();
@@ -1446,13 +1446,13 @@ const VELLUM_MODELS: readonly LlmCatalogModel[] = (() => {
 })();
 
 /**
- * The managed upstream that serves a model picked under the Vellum entry —
+ * The managed upstream that serves a model picked under the Cadet entry —
  * the first VELLUM_SERVED_PROVIDERS member whose catalog lists the id. Used
  * at profile-save time to derive the wire-shape provider for
  * provider_connection: "vellum" profiles.
  */
 /**
- * Decode a `<provider>/<model>` Vellum routing string (mirrors the daemon's
+ * Decode a `<provider>/<model>` Cadet routing string (mirrors the daemon's
  * parseVellumModel): the prefix names the upstream, the remainder is the
  * upstream's native model id. Null for anything else.
  */
@@ -1588,8 +1588,8 @@ export function getDefaultModelForProvider(
   if (provider === "chatgpt") {
     return "gpt-5.6-luna";
   }
-  // The Vellum picker serves the union of managed catalogs. The GPU
-  // catalog's defaultModel is not the Vellum connection default.
+  // The Cadet picker serves the union of managed catalogs. The GPU
+  // catalog's defaultModel is not the Cadet connection default.
   if (provider === "vellum") {
     return undefined;
   }

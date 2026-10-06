@@ -1,7 +1,7 @@
 /**
- * `vellum debug-bundle [name]`
+ * `cadet debug-bundle [name]`
  *
- * Send Vellum staff a debug bundle of a self-hosted assistant: the
+ * Send Cadet staff a debug bundle of a self-hosted assistant: the
  * workspace, its logs, and the gateway's own database, with no credentials.
  * Staff open it on a throwaway debug clone. The platform only hands out the
  * upload URL while "Allow Staff Access" is on, and the bundle is deleted
@@ -47,34 +47,34 @@ export const DEBUG_PROFILE_MIN_VERSION = "0.12.3";
 const TOKEN_EXPIRY_MARGIN_MS = 60 * 1000;
 
 function printHelp(): void {
-  console.log(`Usage: vellum debug-bundle [name]
+  console.log(`Usage: cadet debug-bundle [name]
 
-Send Vellum staff a debug bundle of a self-hosted assistant so they can
+Send Cadet staff a debug bundle of a self-hosted assistant so they can
 inspect a copy of it. The bundle holds the assistant's workspace, its
 logs, and the gateway's own database. It never holds credentials.
 
 Arguments:
   name    Assistant ID or unique display name. Defaults to the active
-          assistant (see 'vellum use'). Multi-word names need no quotes.
+          assistant (see 'cadet use'). Multi-word names need no quotes.
 
 Requirements:
   - 'Allow Staff Access' is on for the assistant (Settings > Privacy).
-  - You are logged in ('vellum login'), which also registers the
+  - You are logged in ('cadet login'), which also registers the
     assistant with the platform.
   - The assistant runs version ${DEBUG_PROFILE_MIN_VERSION} or newer.
   - The assistant is self-hosted. Vellum-hosted assistants need no bundle;
     staff clone them directly.
 
 Side effects:
-  - Uploads the bundle to Vellum's debug-bundle storage, where it is
+  - Uploads the bundle to Cadet's debug-bundle storage, where it is
     deleted after 7 days. Nothing on this machine changes.
   - Records a 'debug bundle exported' entry in your account's audit history.
   - Waits for the upload to finish (up to 60 minutes for a large workspace).
 
 Examples:
-  vellum debug-bundle
-  vellum debug-bundle my-assistant
-  vellum debug-bundle Support Bot
+  cadet debug-bundle
+  cadet debug-bundle my-assistant
+  cadet debug-bundle Support Bot
 `);
 }
 
@@ -89,20 +89,20 @@ export async function debugBundle(): Promise<void> {
   const reference = formatAssistantReference(entry);
   if (isManagedCloud(entry.cloud)) {
     console.error(
-      `${reference} is hosted by Vellum, so staff can clone it directly. No bundle is needed.`,
+      `${reference} is hosted by Cadet, so staff can clone it directly. No bundle is needed.`,
     );
     process.exit(1);
   }
 
   const platformToken = readPlatformToken();
   if (!platformToken) {
-    console.error("Not logged in. Run 'vellum login' first.");
+    console.error("Not logged in. Run 'cadet login' first.");
     process.exit(1);
   }
   const platformAssistantId = entry.platformAssistantId?.trim();
   if (!platformAssistantId) {
     console.error(
-      `${reference} is not registered with the platform yet. Run 'vellum login' and retry.`,
+      `${reference} is not registered with the platform yet. Run 'cadet login' and retry.`,
     );
     process.exit(1);
   }
@@ -117,7 +117,7 @@ export async function debugBundle(): Promise<void> {
   const comparison = compareVersions(version, DEBUG_PROFILE_MIN_VERSION);
   if (comparison === null || comparison < 0) {
     console.error(
-      `${reference} runs version ${version || "unknown"}, which cannot build a debug bundle. Update it to ${DEBUG_PROFILE_MIN_VERSION} or newer ('vellum upgrade') and retry.`,
+      `${reference} runs version ${version || "unknown"}, which cannot build a debug bundle. Update it to ${DEBUG_PROFILE_MIN_VERSION} or newer ('cadet upgrade') and retry.`,
     );
     process.exit(1);
   }
@@ -151,7 +151,7 @@ export async function debugBundle(): Promise<void> {
   try {
     ({ jobId } = await localRuntimeExportToGcs(entry, accessToken, {
       uploadUrl,
-      description: "debug bundle for Vellum staff",
+      description: "debug bundle for Cadet staff",
       profile: "debug",
     }));
   } catch (err) {

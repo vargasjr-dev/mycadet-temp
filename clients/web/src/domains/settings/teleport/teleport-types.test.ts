@@ -13,7 +13,7 @@ describe("classifyHosting", () => {
     expect(classifyHosting("local")).toBe("local");
     expect(classifyHosting("docker")).toBe("docker");
     expect(classifyHosting("vellum")).toBe("managed");
-    expect(classifyHosting("Vellum")).toBe("managed");
+    expect(classifyHosting("Cadet")).toBe("managed");
   });
 
   it("treats unknown or missing values as other", () => {

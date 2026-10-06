@@ -239,7 +239,7 @@ describe("resolvePreview", () => {
     expect(
       resolvePreview(
         "Runbook",
-        "Do this first:\n\n- ```\n  vellum run\n  ```\n\nThen check the log.",
+        "Do this first:\n\n- ```\n  cadet run\n  ```\n\nThen check the log.",
       ),
     ).toBe("Do this first: Then check the log.");
   });

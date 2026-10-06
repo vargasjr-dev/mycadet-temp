@@ -10,7 +10,7 @@ export const emailHelp: CliCommandHelp = {
     { flags: "--json", description: "Machine-readable compact JSON output" },
   ],
   helpText: `
-Set up and manage this assistant's native email address on the Vellum
+Set up and manage this assistant's native email address on the Cadet
 platform. No third-party email provider or browser sign-up needed.
 
 Examples:
@@ -109,7 +109,7 @@ Arguments:
   to   Recipient email address(es) — one or more
 
 Sends an email from the assistant's registered email address via the
-Vellum runtime proxy. The "from" address is automatically resolved
+Cadet runtime proxy. The "from" address is automatically resolved
 from the assistant's registered email address.
 
 Body source priority: --body flag > --file flag > stdin (if not a TTY).

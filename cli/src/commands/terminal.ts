@@ -1,14 +1,14 @@
 /**
- * `vellum terminal` — Interactive shell into a managed assistant container.
+ * `cadet terminal` — Interactive shell into a managed assistant container.
  *
  * Bridges the local tty to a platform terminal session (K8s exec) so the
  * user can interact with their assistant's sandbox from iTerm2 or any
  * local terminal emulator.
  *
  * Subcommands:
- *   vellum terminal                     — Interactive shell
- *   vellum terminal attach <name>       — Attach to a tmux session
- *   vellum terminal list                — List tmux sessions
+ *   cadet terminal                     — Interactive shell
+ *   cadet terminal attach <name>       — Attach to a tmux session
+ *   cadet terminal list                — List tmux sessions
  */
 
 import {
@@ -28,7 +28,7 @@ import type { ResolvedManagedAssistant } from "../lib/terminal-session.js";
 // ---------------------------------------------------------------------------
 
 function printHelp(): void {
-  console.log("Usage: vellum terminal [subcommand] [options]");
+  console.log("Usage: cadet terminal [subcommand] [options]");
   console.log("");
   console.log(
     "Open an interactive terminal session into a managed assistant container.",
@@ -52,10 +52,10 @@ function printHelp(): void {
   );
   console.log("");
   console.log("Examples:");
-  console.log("  vellum terminal");
-  console.log("  vellum terminal attach my-session");
-  console.log("  vellum terminal list");
-  console.log("  vellum terminal --assistant my-assistant");
+  console.log("  cadet terminal");
+  console.log("  cadet terminal attach my-session");
+  console.log("  cadet terminal list");
+  console.log("  cadet terminal --assistant my-assistant");
 }
 
 // ---------------------------------------------------------------------------
@@ -170,9 +170,9 @@ export async function terminal(): Promise<void> {
   // Parse arguments
   //
   // Accepted forms:
-  //   vellum terminal [--assistant <name>]
-  //   vellum terminal list [--assistant <name>]
-  //   vellum terminal attach <session> [--assistant <name>]
+  //   cadet terminal [--assistant <name>]
+  //   cadet terminal list [--assistant <name>]
+  //   cadet terminal attach <session> [--assistant <name>]
   let subcommand: string | undefined;
   let assistantName: string | undefined;
   let tmuxSessionName: string | undefined;
@@ -208,9 +208,9 @@ export async function terminal(): Promise<void> {
 
   if (subcommand === "attach") {
     if (!tmuxSessionName) {
-      console.error("Usage: vellum terminal attach <session-name>");
+      console.error("Usage: cadet terminal attach <session-name>");
       console.error(
-        "\nUse 'vellum terminal list' to see available tmux sessions.",
+        "\nUse 'cadet terminal list' to see available tmux sessions.",
       );
       process.exit(1);
     }

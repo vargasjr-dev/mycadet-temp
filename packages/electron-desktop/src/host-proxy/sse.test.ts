@@ -123,10 +123,7 @@ describe("HostProxySseClient", () => {
 
   test("skips malformed JSON data lines", async () => {
     const messages: HostProxySseMessage[] = [];
-    const body = sseStream([
-      "data: not json\n\n",
-      'data: {"type":"ok"}\n\n',
-    ]);
+    const body = sseStream(["data: not json\n\n", 'data: {"type":"ok"}\n\n']);
 
     client = new HostProxySseClient({
       eventsUrl: "http://127.0.0.1:9999/v1/events",
@@ -483,7 +480,9 @@ describe("HostProxySseClient", () => {
     client.connect();
     await flush(50);
 
-    expect(capturedUrl).toBe("https://platform.vellum.ai/v1/assistants/asst-123/events");
+    expect(capturedUrl).toBe(
+      "https://platform.vellum.ai/v1/assistants/asst-123/events",
+    );
     expect(capturedHeaders["X-Session-Token"]).toBe("session-tok-abc");
     expect(capturedHeaders["Authorization"]).toBeUndefined();
     expect(capturedHeaders["X-Vellum-Client-Id"]).toBe(MOCK_DEVICE_ID);
@@ -556,10 +555,7 @@ describe("HostProxySseClient", () => {
   test("handles data split across multiple chunks", async () => {
     const messages: HostProxySseMessage[] = [];
     // JSON payload split across two chunks
-    const body = sseStream([
-      'data: {"type":"sp',
-      'lit_msg","val":1}\n\n',
-    ]);
+    const body = sseStream(['data: {"type":"sp', 'lit_msg","val":1}\n\n']);
 
     client = new HostProxySseClient({
       eventsUrl: "http://127.0.0.1:9999/v1/events",

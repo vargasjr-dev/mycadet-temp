@@ -677,7 +677,7 @@ export async function performDockerRollback(
     if (cmp !== null) {
       if (cmp > 0) {
         const msg =
-          "Cannot roll back to a newer version. Use `vellum upgrade` instead.";
+          "Cannot roll back to a newer version. Use `cadet upgrade` instead.";
         console.error(msg);
         emitCliError("VERSION_DIRECTION", msg);
         process.exit(1);

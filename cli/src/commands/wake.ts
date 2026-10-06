@@ -39,7 +39,7 @@ import {
 export async function wake(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: vellum wake [<name>] [options]");
+    console.log("Usage: cadet wake [<name>] [options]");
     console.log("");
     console.log("Start the assistant and gateway processes.");
     console.log("");
@@ -70,7 +70,7 @@ export async function wake(): Promise<void> {
   // Gate it behind an explicit flag so the automatic connect-repair path
   // (`runWake` spawns `wake <id>` with no flags) can never revoke a live session
   // — it only ever restarts + sibling-seeds. A genuine spent-bootstrap brick is
-  // recovered deliberately via `vellum wake <id> --repair-guardian`.
+  // recovered deliberately via `cadet wake <id> --repair-guardian`.
   const repairGuardian = args.includes("--repair-guardian");
   const nameArg = args.find((a) => !a.startsWith("-"));
   const entry = resolveTargetAssistant(nameArg);
@@ -101,14 +101,14 @@ export async function wake(): Promise<void> {
 
   if (entry.cloud === "paired") {
     console.error(
-      `Error: '${entry.assistantId}' is a remote assistant paired from another machine — its lifecycle is managed on its host machine, not here. Use \`vellum client ${entry.assistantId}\` to chat with it.`,
+      `Error: '${entry.assistantId}' is a remote assistant paired from another machine — its lifecycle is managed on its host machine, not here. Use \`cadet client ${entry.assistantId}\` to chat with it.`,
     );
     process.exit(1);
   }
 
   if (entry.cloud && entry.cloud !== "local") {
     console.error(
-      `Error: 'vellum wake' only works with local and docker assistants. '${entry.assistantId}' is a ${entry.cloud} instance.`,
+      `Error: 'cadet wake' only works with local and docker assistants. '${entry.assistantId}' is a ${entry.cloud} instance.`,
     );
     process.exit(1);
   }

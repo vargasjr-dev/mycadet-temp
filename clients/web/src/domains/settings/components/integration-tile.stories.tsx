@@ -16,7 +16,7 @@ import { IntegrationTile, type TileConnectState } from "./integration-tile";
 
 const noop = () => {};
 
-/** Notion on a self-hosted assistant: MCP, Vellum's sign-in, or your own app. */
+/** Notion on a self-hosted assistant: MCP, Cadet's sign-in, or your own app. */
 const selfHostedNotionPlan = planFor({
   providers: [NOTION_PROVIDER],
   definitions: [pluginDefinition()],
@@ -85,7 +85,7 @@ type Story = StoryObj<typeof IntegrationTile>;
 export const Idle: Story = {};
 
 /**
- * Notion can also be connected through Vellum's hosted sign-in, and the tile
+ * Notion can also be connected through Cadet's hosted sign-in, and the tile
  * says nothing about it: the alternatives only earn their place once the
  * recommended path has actually failed.
  */
@@ -109,7 +109,7 @@ export const IdleSelfHosted: Story = {
     );
     for (const label of [
       "Notion MCP server",
-      "Sign in through Vellum",
+      "Sign in through Cadet",
       "Use your own OAuth app",
     ]) {
       await expect(
@@ -219,7 +219,7 @@ export const FailedMcp: Story = {
         name: "Other ways to connect Linear",
       }),
     );
-    for (const label of ["Setup guide", "Sign in through Vellum"]) {
+    for (const label of ["Setup guide", "Sign in through Cadet"]) {
       await expect(
         await screen.findByRole("menuitem", { name: label }),
       ).toBeInTheDocument();
@@ -244,7 +244,7 @@ export const FailedLongMessage: Story = {
   },
 };
 
-/** Vellum's own sign-in has no provider setup guide and nowhere else to go. */
+/** Cadet's own sign-in has no provider setup guide and nowhere else to go. */
 export const FailedManaged: Story = {
   args: {
     state: {

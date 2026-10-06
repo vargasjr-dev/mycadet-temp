@@ -39,7 +39,7 @@ export async function switchToAssistant(
   let entry = getLockfileAssistant(assistantId);
   if (!entry) {
     // The renderer cache can trail main's watched lockfile (e.g. a
-    // `vellum connect import` while the app was open). Reload before
+    // `cadet connect import` while the app was open). Reload before
     // treating the id as managed, or a fresh paired entry would be
     // selected without credentials.
     await loadLockfile();

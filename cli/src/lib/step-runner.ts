@@ -9,7 +9,7 @@ import { spawn } from "child_process";
  *   - the CLI's top-level catch (`console.error("Error:", err.message)`)
  *     which leaks them onto stderr,
  *   - `subprocess-*.log` files captured by the evals harness when it
- *     spawns `vellum hatch` (which then becomes the inlined log on the
+ *     spawns `cadet hatch` (which then becomes the inlined log on the
  *     run-detail report page),
  *   - `run.json#error` and the last-N-lines tail in `progress.ndjson`
  *     that the evals harness emits for `SubprocessFailedError`.

@@ -2,7 +2,7 @@
  * In-memory cache for the installable plugin catalog.
  *
  * Platform-first: when platform features are enabled the catalog is fetched
- * from the Vellum platform and any fetch failure propagates (fail hard — no
+ * from the Cadet platform and any fetch failure propagates (fail hard — no
  * stale-cache smoothing). Successful loads are held per git ref for a short
  * TTL. When `VELLUM_DISABLE_PLATFORM` disables platform features the bundled
  * offline manifest is read instead, with zero network calls.

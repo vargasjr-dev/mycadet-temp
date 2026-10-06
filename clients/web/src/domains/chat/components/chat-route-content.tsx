@@ -396,7 +396,7 @@ export function ChatMainPanel({
 
   // Channel sidecar: while the flag is on and this conversation is bound to an
   // external channel, rows the client can attribute to that channel are drawn
-  // in the read-only drawer instead of here, so the Vellum lane shows each row
+  // in the read-only drawer instead of here, so the Cadet lane shows each row
   // exactly once. Everything downstream in this panel (transcript projection,
   // scroll, empty state, counts) reads the lane, because the lane IS the chat
   // in that arrangement. `vellumMessages` is the same array by reference

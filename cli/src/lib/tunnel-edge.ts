@@ -58,7 +58,7 @@ function wantsTunnelEdge(workspaceDir: string): boolean {
 }
 
 /**
- * The `vellum tunnel` invocation that rebuilds this assistant's edge. That
+ * The `cadet tunnel` invocation that rebuilds this assistant's edge. That
  * command requires `--provider`, and a `<provider>` placeholder would be shell
  * redirection rather than something to paste, so name the provider recorded
  * here; with none recorded, point at the help that lists them.
@@ -75,12 +75,12 @@ function tunnelRestartCommand(
       loadRawConfig(workspaceDir).ingress,
     );
     if (record) {
-      return `vellum tunnel ${shellArg(assistantId)} --provider ${record.provider}`;
+      return `cadet tunnel ${shellArg(assistantId)} --provider ${record.provider}`;
     }
   } catch {
     // An unreadable config names no provider; the help pointer still holds.
   }
-  return "vellum tunnel --help";
+  return "cadet tunnel --help";
 }
 
 /**
@@ -221,7 +221,7 @@ function ownsSharedIngress(
  * Wake counterpart to `stopContainerTunnelEdge`: bring the shared
  * default-workspace edge back for a container assistant, so a tunnel that
  * survived across sleep (a tailnet serve, a reserved ngrok domain) reaches the
- * gateway again without a manual `vellum tunnel`.
+ * gateway again without a manual `cadet tunnel`.
  *
  * No webhook auto-tunnel here. Container wakes have never tracked a spawned
  * ngrok PID, so starting one would leak it past the next sleep.

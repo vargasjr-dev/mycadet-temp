@@ -11,7 +11,7 @@ import {
  * for the narrower question of whether the user is watching.
  *
  * This is the desktop renderer's replacement for
- * `runtime/event-sources/dom-visibility.ts`, which cannot fire there: Vellum
+ * `runtime/event-sources/dom-visibility.ts`, which cannot fire there: Cadet
  * windows disable background throttling, and that disables the Page
  * Visibility API with it. Off Electron the runtime wrapper is a no-op and the
  * returned unsubscribe-noop drops through cleanly.

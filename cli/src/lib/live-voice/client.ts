@@ -380,6 +380,6 @@ function closeReason(event: CloseEvent): string {
   return (
     "Live-voice session closed before it opened " +
     `(code ${event.code}). The gateway may have rejected the credential: ` +
-    "try 'vellum wake' to lease a fresh one."
+    "try 'cadet wake' to lease a fresh one."
   );
 }

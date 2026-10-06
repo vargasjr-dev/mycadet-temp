@@ -7,7 +7,7 @@ import {
 } from "../lib/environments/resolve.js";
 
 function printUsage(): void {
-  console.log("Usage: vellum env <subcommand>");
+  console.log("Usage: cadet env <subcommand>");
   console.log("");
   console.log("Manage the default CLI environment.");
   console.log("");
@@ -19,15 +19,15 @@ function printUsage(): void {
   console.log(`Known environments: ${Object.keys(SEEDS).join(", ")}`);
   console.log("");
   console.log("Examples:");
-  console.log("  $ vellum env set local    # all commands default to local");
-  console.log("  $ vellum env get          # show resolved environment");
-  console.log("  $ vellum env clear        # revert to production default");
+  console.log("  $ cadet env set local    # all commands default to local");
+  console.log("  $ cadet env get          # show resolved environment");
+  console.log("  $ cadet env clear        # revert to production default");
 }
 
 function envSet(name: string | undefined): void {
   if (!name) {
     console.error(
-      `Usage: vellum env set <name>\nKnown environments: ${Object.keys(SEEDS).join(", ")}`,
+      `Usage: cadet env set <name>\nKnown environments: ${Object.keys(SEEDS).join(", ")}`,
     );
     process.exitCode = 1;
     return;

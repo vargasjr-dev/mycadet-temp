@@ -46,7 +46,9 @@ beforeEach(() => {
 
 describe("cadet:featureFlags:set", () => {
   test("persists the published flag map", () => {
-    registrationFor("cadet:featureFlags:set").fn([{ sounds: true, voice: false }]);
+    registrationFor("cadet:featureFlags:set").fn([
+      { sounds: true, voice: false },
+    ]);
     expect(store["featureFlags"]).toEqual({ sounds: true, voice: false });
   });
 

@@ -10,7 +10,7 @@ const RETRY_DELAY_MS = 2_000;
 
 /**
  * Mirror the active assistant's persona name into its lockfile entry so
- * lockfile consumers (assistant chooser, Electron tray, `vellum pair`) show
+ * lockfile consumers (assistant chooser, Electron tray, `cadet pair`) show
  * the live name instead of a stale snapshot.
  *
  * Reads both `name` and `assistantId` from `useAssistantIdentityStore`: the

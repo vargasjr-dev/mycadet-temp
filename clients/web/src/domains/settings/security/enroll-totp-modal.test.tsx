@@ -12,7 +12,7 @@ const ENROLLMENT: MfaEnrollResponse = {
   qr_code: "data:image/png;base64,abc",
   secret: "JBSWY3DPEHPK3PXP",
   uri: "otpauth://totp/Vellum:alice@example.com?secret=JBSWY3DPEHPK3PXP",
-  issuer: "Vellum",
+  issuer: "Cadet",
   user: "alice@example.com",
   created_at: "2026-07-01T00:00:00.000Z",
 };

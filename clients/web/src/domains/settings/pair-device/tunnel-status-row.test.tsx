@@ -115,8 +115,10 @@ describe("TunnelStatusRow", () => {
       provider: "tailscale",
     });
 
-    expect(screen.getByText(/Start this assistant's tunnel again/)).toBeDefined();
-    expect(screen.getByText("vellum tunnel --provider tailscale")).toBeDefined();
+    expect(
+      screen.getByText(/Start this assistant's tunnel again/),
+    ).toBeDefined();
+    expect(screen.getByText("cadet tunnel --provider tailscale")).toBeDefined();
   });
 
   test("reports an address that answers without serving the pairing app", () => {
@@ -134,8 +136,10 @@ describe("TunnelStatusRow", () => {
       ),
     ).toBeDefined();
     expect(screen.getByText("HTTP 404")).toBeDefined();
-    expect(screen.getByText(/Start this assistant's tunnel again/)).toBeDefined();
-    expect(screen.getByText("vellum tunnel --provider tailscale")).toBeDefined();
+    expect(
+      screen.getByText(/Start this assistant's tunnel again/),
+    ).toBeDefined();
+    expect(screen.getByText("cadet tunnel --provider tailscale")).toBeDefined();
     expect(screen.getByText(PUBLIC_URL)).toBeDefined();
   });
 
@@ -147,7 +151,7 @@ describe("TunnelStatusRow", () => {
       provider: "ngrok",
     });
 
-    expect(screen.getByText("vellum tunnel --provider ngrok")).toBeDefined();
+    expect(screen.getByText("cadet tunnel --provider ngrok")).toBeDefined();
   });
 
   test("names the assistant a foreign edge is serving", () => {
@@ -192,7 +196,7 @@ describe("TunnelStatusRow", () => {
       ),
     ).toBeDefined();
     expect(
-      screen.getByText("vellum tunnel --provider cloudflare"),
+      screen.getByText("cadet tunnel --provider cloudflare"),
     ).toBeDefined();
     expect(screen.getByText(PUBLIC_URL)).toBeDefined();
   });
@@ -206,7 +210,7 @@ describe("TunnelStatusRow", () => {
     );
 
     expect(
-      screen.getByText("vellum tunnel jarvis --provider tailscale"),
+      screen.getByText("cadet tunnel jarvis --provider tailscale"),
     ).toBeDefined();
   });
 
@@ -217,7 +221,7 @@ describe("TunnelStatusRow", () => {
     );
 
     expect(
-      screen.getByText("vellum tunnel 'My Assistant' --provider tailscale"),
+      screen.getByText("cadet tunnel 'My Assistant' --provider tailscale"),
     ).toBeDefined();
   });
 
@@ -269,43 +273,43 @@ describe("TunnelStatusRow", () => {
 describe("tunnelStartCommand", () => {
   test("leaves a plain name unquoted", () => {
     expect(tunnelStartCommand("tailscale", "jarvis-2.0_beta")).toBe(
-      "vellum tunnel jarvis-2.0_beta --provider tailscale",
+      "cadet tunnel jarvis-2.0_beta --provider tailscale",
     );
   });
 
   test("neutralizes a command separator", () => {
     expect(tunnelStartCommand("tailscale", "Bob&Alice")).toBe(
-      "vellum tunnel 'Bob&Alice' --provider tailscale",
+      "cadet tunnel 'Bob&Alice' --provider tailscale",
     );
   });
 
   test("neutralizes variable expansion", () => {
     expect(tunnelStartCommand("tailscale", "My $team")).toBe(
-      "vellum tunnel 'My $team' --provider tailscale",
+      "cadet tunnel 'My $team' --provider tailscale",
     );
   });
 
   test("neutralizes command substitution", () => {
     expect(tunnelStartCommand("tailscale", "a`whoami`")).toBe(
-      "vellum tunnel 'a`whoami`' --provider tailscale",
+      "cadet tunnel 'a`whoami`' --provider tailscale",
     );
   });
 
   test("closes, escapes and reopens around an embedded single quote", () => {
     expect(tunnelStartCommand("tailscale", "Bob's box")).toBe(
-      "vellum tunnel 'Bob'\\''s box' --provider tailscale",
+      "cadet tunnel 'Bob'\\''s box' --provider tailscale",
     );
   });
 
   test("keeps a name with whitespace one argument", () => {
     expect(tunnelStartCommand("ngrok", "My Assistant")).toBe(
-      "vellum tunnel 'My Assistant' --provider ngrok",
+      "cadet tunnel 'My Assistant' --provider ngrok",
     );
   });
 
   test("omits the name when none is known", () => {
     expect(tunnelStartCommand("cloudflare", null)).toBe(
-      "vellum tunnel --provider cloudflare",
+      "cadet tunnel --provider cloudflare",
     );
   });
 });

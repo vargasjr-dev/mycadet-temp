@@ -21,7 +21,7 @@ const dependencies = (
   },
   readFile: async () => "",
   getVersionInfo: () => ({
-    appName: "Vellum",
+    appName: "Cadet",
     version: "1.2.3",
     commitSha: "abc1234",
     releaseChannel: "staging",
@@ -38,7 +38,7 @@ describe("collectDiagnostics", () => {
     const result = collectDiagnostics();
 
     expect(result.app).toEqual({
-      name: "Vellum",
+      name: "Cadet",
       version: "1.2.3",
       commitSha: "abc1234",
       releaseChannel: "staging",
@@ -52,9 +52,7 @@ describe("collectDiagnostics", () => {
   });
 
   test("reports only authenticated presence for a live session", () => {
-    configureFeedback(
-      dependencies({ hasSession: () => true }),
-    );
+    configureFeedback(dependencies({ hasSession: () => true }));
     const result = collectDiagnostics();
 
     expect(result.session).toEqual({ authenticated: true });
@@ -74,7 +72,7 @@ describe("collectRedactedLogs", () => {
           return [
             "session_token=private-value",
             "user@example.com",
-            "C:\\Users\\Alice\\AppData\\Local\\Vellum",
+            "C:\\Users\\Alice\\AppData\\Local\\Cadet",
           ].join("\n");
         },
       }),
@@ -83,7 +81,7 @@ describe("collectRedactedLogs", () => {
 
     expect(result).toContain("session_token=[REDACTED]");
     expect(result).toContain("[REDACTED_EMAIL]");
-    expect(result).toContain("~\\AppData\\Local\\Vellum");
+    expect(result).toContain("~\\AppData\\Local\\Cadet");
     expect(result).not.toContain("private-value");
   });
 });

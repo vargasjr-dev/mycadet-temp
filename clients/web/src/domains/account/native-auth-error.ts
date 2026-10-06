@@ -7,7 +7,7 @@
  * dropped connection and useless for everything else, and the flow's real
  * failure mode is everything else: the platform refusing the sign-in after
  * the IdP already accepted it. A user whose signup is closed, or whose Google
- * account was never linked to a Vellum account, retried forever against copy
+ * account was never linked to a Cadet account, retried forever against copy
  * that told them retrying would work.
  *
  * The native shells (`clients/ios/App/App/NativeAuthPlugin.swift`,

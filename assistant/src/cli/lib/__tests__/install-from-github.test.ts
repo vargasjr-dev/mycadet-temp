@@ -885,7 +885,7 @@ describe("installPlugin — marketplace resolution", () => {
       { fetch, runGit, workspacePluginsDir: pluginsDir },
     );
 
-    // THEN the materialized tree is a valid Vellum plugin: package.json `name`
+    // THEN the materialized tree is a valid Cadet plugin: package.json `name`
     // matches the directory and declares the @mycadet/plugin-api peer dep
     // (fixing both loader warnings), and the upstream installer name is gone
     const target = join(pluginsDir, "caveman");
@@ -1089,7 +1089,7 @@ describe("installPlugin — marketplace resolution", () => {
       { fetch, runGit, workspacePluginsDir: pluginsDir },
     );
 
-    // THEN the adapter still ran and produced a valid Vellum plugin
+    // THEN the adapter still ran and produced a valid Cadet plugin
     const target = join(pluginsDir, "caveman");
     expect(result.commit).toBe("63a91ecadbf4c4719a4602a5abb00883f9966034");
     expect(
@@ -1588,7 +1588,7 @@ describe("installPlugin — direct (untrusted) install", () => {
             repo: "example-org/manifest-less",
             ref: NO_PKG_SHA,
           },
-          description: "A plugin with skills but no Vellum package.json.",
+          description: "A plugin with skills but no Cadet package.json.",
         },
       ],
     };

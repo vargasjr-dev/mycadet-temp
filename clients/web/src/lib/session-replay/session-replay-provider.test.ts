@@ -38,7 +38,7 @@ describe("sessionReplayRootHostname", () => {
     expect(sessionReplayRootHostname("app://vellum.ai")).toBeUndefined();
   });
 
-  test("shares https recordings across Vellum subdomains", () => {
+  test("shares https recordings across Cadet subdomains", () => {
     expect(sessionReplayRootHostname("https://app.vellum.ai")).toBe(
       ".vellum.ai",
     );

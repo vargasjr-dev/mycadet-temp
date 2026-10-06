@@ -282,15 +282,15 @@ describe("ProfilesSection - chips", () => {
     expect(speedRow?.textContent).toContain("Disabled");
   });
 
-  test("managed rows carry the inline Managed by Vellum line", () => {
+  test("managed rows carry the inline Managed by Cadet line", () => {
     renderSection();
     const rows = Array.from(
       document.querySelectorAll<HTMLElement>('[data-slot="list-row"]'),
     );
     const balancedRow = rows.find((r) => r.textContent?.includes("Balanced"));
     const customRow = rows.find((r) => r.textContent?.includes("My Custom"));
-    expect(balancedRow?.textContent).toContain("Managed by Vellum");
-    expect(customRow?.textContent).not.toContain("Managed by Vellum");
+    expect(balancedRow?.textContent).toContain("Managed by Cadet");
+    expect(customRow?.textContent).not.toContain("Managed by Cadet");
   });
 });
 

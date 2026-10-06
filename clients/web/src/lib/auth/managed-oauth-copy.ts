@@ -24,7 +24,7 @@ export function managedOAuthErrorMessage(
           })
         : t("useOauthConnect.authorizationFailed", { name: providerLabel });
     case "start-failed":
-      // The reason ("Sign in to Vellum to register this local assistant") is
+      // The reason ("Sign in to Cadet to register this local assistant") is
       // what makes this actionable, but it is raw error text rather than
       // catalog copy, so it goes inside a localized frame as data.
       return error.detail

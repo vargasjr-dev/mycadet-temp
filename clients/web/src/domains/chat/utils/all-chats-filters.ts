@@ -57,7 +57,7 @@ export function allChatsFilterKey(filter: AllChatsFilter): string {
  * back to All. A channel is taken at its word, since `origin_channel` is an
  * open set (a plugin channel's id is its plugin name) and there is no list to
  * check it against; the native origin is the exception, because chats started
- * in Vellum are what All already shows.
+ * in Cadet are what All already shows.
  */
 export function filterFromSearchParams(
   params: URLSearchParams,

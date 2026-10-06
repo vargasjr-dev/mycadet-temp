@@ -88,8 +88,8 @@ describe("sttLanguageOptionsFor", () => {
     }
   });
 
-  test("includes the extended roster for deepgram and vellum", () => {
-    // Both run Deepgram nova-3 (vellum relays with the model pinned
+  test("includes the extended roster for deepgram and cadet", () => {
+    // Both run Deepgram nova-3 (cadet relays with the model pinned
     // server-side), the roster the extended entries were verified against.
     for (const providerId of ["deepgram", "vellum"]) {
       const codes = sttLanguageOptionsFor("", providerId).map((o) => o.code);
@@ -99,7 +99,7 @@ describe("sttLanguageOptionsFor", () => {
     }
   });
 
-  test("deepgram and vellum options are identical", () => {
+  test("deepgram and cadet options are identical", () => {
     expect(sttLanguageOptionsFor("", "vellum")).toEqual(
       sttLanguageOptionsFor("", "deepgram"),
     );

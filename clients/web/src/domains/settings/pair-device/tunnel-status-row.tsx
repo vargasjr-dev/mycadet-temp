@@ -71,7 +71,7 @@ export function statusCheckedAt(status: TunnelStatusView): string | null {
 
 /**
  * The command that starts this assistant's tunnel. Names the assistant where
- * one is known: on a computer running several, an unnamed `vellum tunnel`
+ * one is known: on a computer running several, an unnamed `cadet tunnel`
  * may start a different assistant's tunnel than the card is reporting on.
  */
 export function tunnelStartCommand(
@@ -80,8 +80,8 @@ export function tunnelStartCommand(
 ): string {
   const name = assistantName?.trim();
   return name
-    ? `vellum tunnel ${shellArg(name)} --provider ${provider}`
-    : `vellum tunnel --provider ${provider}`;
+    ? `cadet tunnel ${shellArg(name)} --provider ${provider}`
+    : `cadet tunnel --provider ${provider}`;
 }
 
 /** Names that survive a shell verbatim; everything else has to be quoted. */

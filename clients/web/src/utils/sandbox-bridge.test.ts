@@ -323,7 +323,7 @@ describe("isBlockedRelayPath", () => {
 });
 
 describe("getRelayableAppRoute", () => {
-  it("normalizes root-relative Vellum app routes", () => {
+  it("normalizes root-relative Cadet app routes", () => {
     expect(
       getRelayableAppRoute("/assistant/conversations/conversation-1"),
     ).toBe("/assistant/conversations/conversation-1");

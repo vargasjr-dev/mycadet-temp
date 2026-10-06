@@ -21,7 +21,7 @@ describe("isVellumStaff", () => {
     expect(isVellumStaff(user({ isStaff: true }))).toBe(true);
   });
 
-  test("accepts a Vellum address case-insensitively", () => {
+  test("accepts a Cadet address case-insensitively", () => {
     expect(isVellumStaff(user({ email: "alice@" + "VELLUM.AI" }))).toBe(true);
   });
 

@@ -207,7 +207,9 @@ mock.module("@/hooks/use-plugins-list", () => ({
     installedPlugins: seededPlugins,
   }),
 }));
-mock.module("@/lib/error-reporting/capture-error", () => ({ captureError: () => {} }));
+mock.module("@/lib/error-reporting/capture-error", () => ({
+  captureError: () => {},
+}));
 // A desktop shell hands the authorization URL to the OS browser, so the
 // attempt reaches its waiting phase without a popup jsdom cannot open.
 mock.module("@/runtime/is-electron", () => ({ isElectron: () => true }));
@@ -754,7 +756,7 @@ describe("IntegrationsPage", () => {
     fireEvent.pointerDown(chevron, { button: 0, ctrlKey: false });
     for (const label of [
       "Notion MCP server",
-      "Sign in through Vellum",
+      "Sign in through Cadet",
       "Use your own OAuth app",
     ]) {
       await screen.findByRole("menuitem", { name: label });
@@ -852,7 +854,7 @@ describe("IntegrationsPage", () => {
 
     openTileMenu("Notion");
     fireEvent.click(
-      await screen.findByRole("menuitem", { name: "Sign in through Vellum" }),
+      await screen.findByRole("menuitem", { name: "Sign in through Cadet" }),
     );
 
     await waitFor(() => expect(managedConnect).toHaveBeenCalledTimes(1));
@@ -923,7 +925,7 @@ describe("IntegrationsPage", () => {
     await screen.findByText("Notion");
     expect(screen.getAllByText("Notion")).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Configure Notion" }));
-    await screen.findByText("Manage how Vellum connects to Notion.");
+    await screen.findByText("Manage how Cadet connects to Notion.");
   });
 
   test("MCP connections remain available without platform login", async () => {
@@ -1084,7 +1086,7 @@ describe("IntegrationsPage", () => {
       ),
     });
 
-    await screen.findByText("Manage how Vellum connects to Notion.");
+    await screen.findByText("Manage how Cadet connects to Notion.");
     screen.getByText("user@example.com");
     await settle();
   });
@@ -1097,7 +1099,7 @@ describe("IntegrationsPage", () => {
     await screen.findByRole("heading", { name: /Your integrations/ });
     fireEvent.click(screen.getByRole("button", { name: "Configure Notion" }));
 
-    await screen.findByText("Manage how Vellum connects to Notion.");
+    await screen.findByText("Manage how Cadet connects to Notion.");
     screen.getByText("user@example.com");
     await settle();
   });
@@ -1136,7 +1138,7 @@ describe("IntegrationsPage", () => {
 
     await screen.findByRole("heading", { name: /Your integrations/ });
     fireEvent.click(screen.getByRole("button", { name: "Configure Example" }));
-    await screen.findByText("Manage how Vellum connects to Example.");
+    await screen.findByText("Manage how Cadet connects to Example.");
 
     fireEvent.click(
       screen.getByRole("button", { name: "Remove Example MCP server" }),
@@ -1230,7 +1232,7 @@ describe("IntegrationsPage", () => {
 
     await screen.findByRole("heading", { name: /Your integrations/ });
     fireEvent.click(screen.getByRole("button", { name: "Configure Example" }));
-    await screen.findByText("Manage how Vellum connects to Example.");
+    await screen.findByText("Manage how Cadet connects to Example.");
 
     // The plugin installs once, so its server is not on offer a second time:
     // the row it already has is where a stalled sign-in is finished.
@@ -1256,7 +1258,7 @@ describe("IntegrationsPage", () => {
     // with it lives.
     await screen.findByRole("heading", { name: /Your integrations/ });
     fireEvent.click(screen.getByRole("button", { name: "Configure Example" }));
-    await screen.findByText("Manage how Vellum connects to Example.");
+    await screen.findByText("Manage how Cadet connects to Example.");
 
     fireEvent.click(
       screen.getByRole("button", { name: "Remove Example MCP server" }),
@@ -1431,7 +1433,7 @@ describe("IntegrationsPage", () => {
 
     await screen.findByRole("heading", { name: /Your integrations/ });
     fireEvent.click(screen.getByRole("button", { name: "Configure Example" }));
-    await screen.findByText("Manage how Vellum connects to Example.");
+    await screen.findByText("Manage how Cadet connects to Example.");
 
     fireEvent.click(
       screen.getByRole("button", {

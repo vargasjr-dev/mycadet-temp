@@ -69,11 +69,11 @@ describe("NudgeChatBanner", () => {
     const html = renderToStaticMarkup(
       <NudgeChatBanner
         icon={<span>icon</span>}
-        title="Vellum is open source"
+        title="Cadet is open source"
         subtitle="Star us on GitHub or contribute"
         ctaLabel="Star us"
-        ctaAriaLabel="Star Vellum on GitHub"
-        ariaLabel="Vellum is open source on GitHub"
+        ctaAriaLabel="Star Cadet on GitHub"
+        ariaLabel="Cadet is open source on GitHub"
         onAction={() => {}}
         onDismiss={() => {}}
       />,
@@ -89,11 +89,11 @@ describe("NudgeChatBanner", () => {
     const html = renderToStaticMarkup(
       <NudgeChatBanner
         icon={<span>icon</span>}
-        title="Vellum is open source"
+        title="Cadet is open source"
         subtitle="Star us on GitHub or contribute"
         ctaLabel="Star us"
-        ctaAriaLabel="Star Vellum on GitHub"
-        ariaLabel="Vellum is open source on GitHub"
+        ctaAriaLabel="Star Cadet on GitHub"
+        ariaLabel="Cadet is open source on GitHub"
         onAction={() => {}}
         onDismiss={() => {}}
       />,

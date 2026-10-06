@@ -88,11 +88,11 @@ const commands = {
 type CommandName = keyof typeof commands;
 
 function printHelp(): void {
-  console.log("Usage: vellum <command> [options]");
+  console.log("Usage: cadet <command> [options]");
   console.log("");
   console.log("Commands:");
   console.log("  backup   Export a backup of a running assistant");
-  console.log("  clean    Kill orphaned vellum processes");
+  console.log("  clean    Kill orphaned cadet processes");
   console.log("  client   Connect to a hatched assistant");
   console.log("  confirm  Resolve a pending tool confirmation on an assistant");
   console.log(
@@ -108,8 +108,8 @@ function printHelp(): void {
   console.log("  gateway  Gateway management commands");
   console.log("  hatch    Create a new assistant instance");
   console.log("  logs     View logs from an assistant instance");
-  console.log("  login    Log in to the Vellum platform");
-  console.log("  logout   Log out of the Vellum platform");
+  console.log("  login    Log in to the Cadet platform");
+  console.log("  logout   Log out of the Cadet platform");
   console.log("  message  Send a message to a running assistant");
   console.log(
     "  pair     Print a pairing link and QR code for another device [beta]",
@@ -128,7 +128,7 @@ function printHelp(): void {
   console.log("  sleep    Stop the assistant process");
   console.log("  ssh      SSH into a remote assistant instance");
   console.log(
-    "  debug-bundle  Send Vellum staff a debug bundle of a self-hosted assistant",
+    "  debug-bundle  Send Cadet staff a debug bundle of a self-hosted assistant",
   );
   console.log("  teleport Transfer assistant data between environments");
   console.log("  terminal Open a terminal into a managed assistant container");
@@ -165,8 +165,8 @@ function applyNoColorFlags(argv: string[]): void {
 }
 
 /**
- * Load env vars from the vellum config dotenv file into `process.env` so
- * that `vellum hatch` forwards provider API keys to containers and other
+ * Load env vars from the cadet config dotenv file into `process.env` so
+ * that `cadet hatch` forwards provider API keys to containers and other
  * commands have access to them.
  *
  * Reads `$XDG_CONFIG_HOME/vellum{-env}/.env` — the same config directory

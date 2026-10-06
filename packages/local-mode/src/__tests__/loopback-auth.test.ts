@@ -96,7 +96,9 @@ describe("isActiveAssistant", () => {
   });
 
   function makeTempDir(): string {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vellum-local-mode-test-"));
+    const dir = fs.mkdtempSync(
+      path.join(os.tmpdir(), "vellum-local-mode-test-"),
+    );
     tempDirs.push(dir);
     return dir;
   }
@@ -154,6 +156,8 @@ describe("isActiveAssistant", () => {
   });
 
   test("returns false when lockfile does not exist", () => {
-    expect(isActiveAssistant(["/nonexistent/lockfile.json"], "any")).toBe(false);
+    expect(isActiveAssistant(["/nonexistent/lockfile.json"], "any")).toBe(
+      false,
+    );
   });
 });

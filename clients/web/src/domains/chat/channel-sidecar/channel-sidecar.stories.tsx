@@ -1,7 +1,7 @@
 /**
  * The channel sidecar as the product ships it, end to end: the header's
  * channel-thread control, the read-only transcript drawer beside the chat
- * column, and "Reference in Vellum" staging the removable reference chip
+ * column, and "Reference in Cadet" staging the removable reference chip
  * above the real composer.
  *
  * Every piece is the shipped component. The control and the chip self-source
@@ -18,7 +18,7 @@
  * (`Chat/ChannelThreadControl`, `Chat/ChannelTranscriptPanel`,
  * `Chat/ChannelTranscriptEntryRow`).
  *
- * The chat column carries no transcript: the sidecar's Vellum lane is the
+ * The chat column carries no transcript: the sidecar's Cadet lane is the
  * ordinary chat, which is not the subject here, and the drawer needs the
  * column only as the flex sibling it takes its width from. The composer stack
  * is mounted for real because the chip's whole job is to sit on it.
@@ -56,8 +56,7 @@ function ChannelSidecarSlice({
   entries: ChannelTranscriptEntry[];
 }) {
   const mainView = useViewerStore.use.mainView();
-  const activeChannelTranscript =
-    useViewerStore.use.activeChannelTranscript();
+  const activeChannelTranscript = useViewerStore.use.activeChannelTranscript();
   const stagedReference = useChannelReferenceStore.use.reference();
   const channelLabel = getChannelLabel(target.channelId);
 
@@ -110,7 +109,7 @@ function ChannelSidecarSlice({
               threadName={target.threadName}
               sourceHref={target.sourceHref}
               entries={entries}
-              assistantName="Vellum"
+              assistantName="Cadet"
               referencedEntryId={stagedReference?.messageId ?? null}
               onToggleReference={(entry) =>
                 useChannelReferenceStore
@@ -119,9 +118,7 @@ function ChannelSidecarSlice({
                     toChannelReference({ entry, target, channelLabel }),
                   )
               }
-              onClose={() =>
-                useViewerStore.getState().closeChannelTranscript()
-              }
+              onClose={() => useViewerStore.getState().closeChannelTranscript()}
             />
           }
         />
@@ -141,17 +138,14 @@ type Story = StoryObj;
 
 /**
  * A Slack-bound conversation with everything Slack reports. Pick "Reference
- * in Vellum" on a message row: the chip animates in above the composer, the
+ * in Cadet" on a message row: the chip animates in above the composer, the
  * row draws as pressed, a second row replaces the first (one slot), and the
  * chip's X or the pressed row clears it. The reaction row offers no reference
  * control. The header control and the panel's X both close the drawer.
  */
 export const SlackThread: Story = {
   render: () => (
-    <ChannelSidecarSlice
-      target={SLACK_TARGET}
-      entries={SLACK_THREAD_ENTRIES}
-    />
+    <ChannelSidecarSlice target={SLACK_TARGET} entries={SLACK_THREAD_ENTRIES} />
   ),
 };
 

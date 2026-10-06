@@ -121,7 +121,7 @@ export async function localRuntimeExportToGcs(
     uploadUrl: string;
     description?: string;
     /**
-     * `"debug"` builds a bundle for Vellum staff: no credentials, plus the
+     * `"debug"` builds a bundle for Cadet staff: no credentials, plus the
      * gateway's database and logs. Omitted means a normal teleport bundle.
      */
     profile?: "migration" | "debug";
@@ -296,7 +296,7 @@ export interface RuntimeIdentity {
 
 /**
  * Fetch the target runtime's APP_VERSION via `/v1/health`. Used by
- * `vellum teleport` and `vellum backup` to stamp the exported bundle's
+ * `cadet teleport` and `cadet backup` to stamp the exported bundle's
  * `min_runtime_version` with the version of the runtime that actually
  * produced it — which can diverge from the orchestrating CLI's version when
  * the target was upgraded independently.
@@ -314,7 +314,7 @@ export interface RuntimeIdentity {
  * `{platformUrl}/v1/assistants/<assistantId>/health` and authenticated via
  * the platform token.
  *
- * For the vellum target this is the FIRST network call in the
+ * For the cadet target this is the FIRST network call in the
  * teleport/backup export flow, so a stale `Vellum-Organization-Id` cache
  * entry would surface as a hard abort before any retry-friendly call (like
  * `platformRequestSignedUrl`) gets a chance to recover. Mirror that helper's

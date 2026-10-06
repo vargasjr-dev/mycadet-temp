@@ -13,7 +13,7 @@
  * voice change the phone `voice_config_update` path gives, with no session
  * runtime message.
  *
- * Only offered for managed (Vellum) assistants whose daemon advertises voice
+ * Only offered for managed (Cadet) assistants whose daemon advertises voice
  * selection — BYO providers pick their voice on Settings → Models & Services,
  * with the rest of their provider config. When
  * unavailable, `available` is false and the surfaces render no picker.
@@ -105,7 +105,7 @@ export function useManagedVoiceSelection(
   const isManaged =
     daemonTts?.mode === "managed" || daemonTts?.provider === "vellum";
 
-  // Only new daemons report vellum as voice-selectable; an old daemon (or an
+  // Only new daemons report cadet as voice-selectable; an old daemon (or an
   // unfetched catalog) reports false, hiding the picker so we never claim to
   // save a voice the daemon would ignore.
   const vellumSupportsVoiceSelection =

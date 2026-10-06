@@ -73,7 +73,7 @@ import {
 
 function printHelp(): void {
   console.log(
-    "Usage: vellum teleport --from <assistant> <--local | --docker | --platform> [name] [options]",
+    "Usage: cadet teleport --from <assistant> <--local | --docker | --platform> [name] [options]",
   );
   console.log("");
   console.log(
@@ -149,12 +149,12 @@ function printHelp(): void {
   console.log("  --help, -h          Show this help");
   console.log("");
   console.log("Examples:");
-  console.log("  vellum teleport --from my-local --docker");
+  console.log("  cadet teleport --from my-local --docker");
   console.log(
     "      Hatch a new docker assistant, import data, and retire my-local",
   );
   console.log("");
-  console.log("  vellum teleport --from my-local --docker my-docker");
+  console.log("  cadet teleport --from my-local --docker my-docker");
   console.log(
     "      Import data from my-local into existing docker assistant my-docker",
   );
@@ -162,23 +162,23 @@ function printHelp(): void {
     "      (or hatch a new docker assistant named my-docker if it doesn't exist)",
   );
   console.log("");
-  console.log("  vellum teleport --from my-local --platform");
+  console.log("  cadet teleport --from my-local --platform");
   console.log(
     "      Hatch a new platform assistant and import data from my-local",
   );
   console.log("");
-  console.log("  vellum teleport --from my-cloud --local my-new-local");
+  console.log("  cadet teleport --from my-cloud --local my-new-local");
   console.log(
     "      Import data from platform assistant my-cloud into local assistant",
   );
   console.log("");
-  console.log("  vellum teleport --from my-docker --local --keep-source");
+  console.log("  cadet teleport --from my-docker --local --keep-source");
   console.log(
     "      Transfer to a new local assistant but keep the docker source running",
   );
   console.log("");
   console.log(
-    "  vellum teleport --from staging --docker staging-copy --dry-run",
+    "  cadet teleport --from staging --docker staging-copy --dry-run",
   );
   console.log("      Preview what would be imported without applying changes");
 }
@@ -279,7 +279,7 @@ async function getAccessToken(
       console.error(
         `Error: Could not connect to assistant '${displayName}'. Is it running?`,
       );
-      console.error(`Try: vellum wake ${displayName}`);
+      console.error(`Try: cadet wake ${displayName}`);
       process.exit(1);
     }
     throw err;
@@ -420,7 +420,7 @@ async function backupSourceBeforeTeleport(
     if (isManagedCloud(cloud)) {
       const platformToken = readPlatformToken();
       if (!platformToken) {
-        console.error("Not logged in. Run 'vellum login' first.");
+        console.error("Not logged in. Run 'cadet login' first.");
         process.exit(1);
       }
       const createdAts = await listPlatformBackups(entry, platformToken);
@@ -470,7 +470,7 @@ async function exportFromAssistant(
   const platformToken = readPlatformToken();
   if (!platformToken) {
     console.error(
-      "Not logged in. Run 'vellum login' first (required for GCS-based teleport).",
+      "Not logged in. Run 'cadet login' first (required for GCS-based teleport).",
     );
     process.exit(1);
   }
@@ -481,7 +481,7 @@ async function exportFromAssistant(
     // CLI), so the daemon's version is what defines the bundle's
     // `min_runtime_version`. Stamping with `cliPkg.version` instead would
     // record an inaccurate compatibility band whenever the CLI/daemon have
-    // drifted (a normal case in real usage — `vellum upgrade` swaps the
+    // drifted (a normal case in real usage — `cadet upgrade` swaps the
     // daemon, the CLI is updated separately).
     let sourceRuntimeVersion: string;
     try {
@@ -646,14 +646,14 @@ async function exportFromAssistant(
       label: "platform export",
       poll: () => localRuntimePollJobStatus(entry, exportPlatformToken, jobId),
       // The platform token is normally static per-process, but re-reading the
-      // on-disk credential covers the case where the user ran `vellum login`
+      // on-disk credential covers the case where the user ran `cadet login`
       // in another terminal during a long migration. A persistent 401 after
       // a re-read surfaces to the caller with a clear next step.
       refreshOn401: async () => {
         const refreshed = readPlatformToken();
         if (!refreshed) {
           throw new Error(
-            "Platform auth expired during export and no credential was found on disk. Run 'vellum login' and retry.",
+            "Platform auth expired during export and no credential was found on disk. Run 'cadet login' and retry.",
           );
         }
         exportPlatformToken = refreshed;
@@ -688,7 +688,7 @@ async function importToAssistant(
   const platformToken = readPlatformToken();
   if (!platformToken) {
     console.error(
-      "Not logged in. Run 'vellum login' first (required for GCS-based teleport).",
+      "Not logged in. Run 'cadet login' first (required for GCS-based teleport).",
     );
     process.exit(1);
   }
@@ -706,7 +706,7 @@ async function importToAssistant(
       );
 
       if (preflight.statusCode === 401 || preflight.statusCode === 403) {
-        console.error("Authentication failed. Run 'vellum login' to refresh.");
+        console.error("Authentication failed. Run 'cadet login' to refresh.");
         process.exit(1);
       }
 
@@ -721,7 +721,7 @@ async function importToAssistant(
         preflight.statusCode === 504
       ) {
         console.error(
-          `Assistant is unreachable. Try 'vellum wake ${entry.assistantId}'.`,
+          `Assistant is unreachable. Try 'cadet wake ${entry.assistantId}'.`,
         );
         process.exit(1);
       }
@@ -747,7 +747,7 @@ async function importToAssistant(
     );
 
     if (importResult.statusCode === 401 || importResult.statusCode === 403) {
-      console.error("Authentication failed. Run 'vellum login' to refresh.");
+      console.error("Authentication failed. Run 'cadet login' to refresh.");
       process.exit(1);
     }
 
@@ -762,7 +762,7 @@ async function importToAssistant(
       importResult.statusCode === 504
     ) {
       console.error(
-        `Assistant is unreachable. Try 'vellum wake ${entry.assistantId}'.`,
+        `Assistant is unreachable. Try 'cadet wake ${entry.assistantId}'.`,
       );
       process.exit(1);
     }
@@ -790,7 +790,7 @@ async function importToAssistant(
           const refreshed = readPlatformToken();
           if (!refreshed) {
             throw new Error(
-              "Platform auth expired during import and no credential was found on disk. Run 'vellum login' and retry.",
+              "Platform auth expired during import and no credential was found on disk. Run 'cadet login' and retry.",
             );
           }
           importPlatformToken = refreshed;
@@ -827,7 +827,7 @@ async function importToAssistant(
         console.error(
           `Error: Could not read target runtime version from '${entry.assistantId}': ${msg}`,
         );
-        console.error(`Try: vellum wake ${entry.assistantId}`);
+        console.error(`Try: cadet wake ${entry.assistantId}`);
         process.exit(1);
       }
 
@@ -881,7 +881,7 @@ async function importToAssistant(
       console.error(
         `Error: Could not read target runtime version from '${entry.assistantId}': ${msg}`,
       );
-      console.error(`Try: vellum wake ${entry.assistantId}`);
+      console.error(`Try: cadet wake ${entry.assistantId}`);
       process.exit(1);
     }
 
@@ -1062,7 +1062,7 @@ export async function resolveOrHatchTarget(
   if (targetEnv === "platform") {
     const token = readPlatformToken();
     if (!token) {
-      console.error("Not logged in. Run 'vellum login' first.");
+      console.error("Not logged in. Run 'cadet login' first.");
       process.exit(1);
     }
 
@@ -1083,7 +1083,7 @@ export async function resolveOrHatchTarget(
         `Error: You already have a platform assistant '${result.id}'.`,
       );
       console.error(
-        `Retire it first with 'vellum retire ${result.id}', then retry the teleport.`,
+        `Retire it first with 'cadet retire ${result.id}', then retry the teleport.`,
       );
       process.exit(1);
     }
@@ -1295,10 +1295,10 @@ export async function teleport(): Promise<void> {
   if (to) {
     console.error("Error: --to is deprecated. Use environment flags instead:");
     console.error(
-      "  vellum teleport --from <source> --local|--docker|--platform [name]",
+      "  cadet teleport --from <source> --local|--docker|--platform [name]",
     );
     console.error("");
-    console.error("Run 'vellum teleport --help' for details.");
+    console.error("Run 'cadet teleport --help' for details.");
     process.exit(1);
   }
 
@@ -1316,7 +1316,7 @@ export async function teleport(): Promise<void> {
   const fromEntry = findAssistantByName(from);
   if (!fromEntry) {
     console.error(
-      `Assistant '${from}' not found in lockfile. Run \`vellum ps\` to see available assistants.`,
+      `Assistant '${from}' not found in lockfile. Run \`cadet ps\` to see available assistants.`,
     );
     process.exit(1);
   }
@@ -1382,7 +1382,7 @@ export async function teleport(): Promise<void> {
               `but the platform source is on ${sourceVersion}.`,
           );
           console.error(
-            `Upgrade your ${toCloud} assistant first: vellum upgrade ${existingTarget.assistantId}`,
+            `Upgrade your ${toCloud} assistant first: cadet upgrade ${existingTarget.assistantId}`,
           );
           process.exit(1);
         }
@@ -1433,7 +1433,7 @@ export async function teleport(): Promise<void> {
   if (targetEnv === "platform") {
     const token = readPlatformToken();
     if (!token) {
-      console.error("Not logged in. Run 'vellum login' first.");
+      console.error("Not logged in. Run 'cadet login' first.");
       process.exit(1);
     }
 
@@ -1473,7 +1473,7 @@ export async function teleport(): Promise<void> {
           `Error: You already have a platform assistant '${existing.id}'.`,
         );
         console.error(
-          `Retire it first with 'vellum retire ${existing.id}', then retry the teleport.`,
+          `Retire it first with 'cadet retire ${existing.id}', then retry the teleport.`,
         );
         process.exit(1);
       }
@@ -1517,7 +1517,7 @@ export async function teleport(): Promise<void> {
   // Non-platform targets (local/docker)
   // For local<->docker transfers, stop (sleep) the source to free up ports
   // before hatching the target. We do NOT retire yet — if hatch or import
-  // fails, the user can recover by running `vellum wake <source>`.
+  // fails, the user can recover by running `cadet wake <source>`.
   const sourceIsLocalOrDocker = fromCloud === "local" || fromCloud === "docker";
   const targetIsLocalOrDocker = targetEnv === "local" || targetEnv === "docker";
 
@@ -1541,7 +1541,7 @@ export async function teleport(): Promise<void> {
             `but the platform source is on ${sourceVersion}.`,
         );
         console.error(
-          `Upgrade your ${targetEnv} assistant first: vellum upgrade ${existingTarget.assistantId}`,
+          `Upgrade your ${targetEnv} assistant first: cadet upgrade ${existingTarget.assistantId}`,
         );
         process.exit(1);
       }

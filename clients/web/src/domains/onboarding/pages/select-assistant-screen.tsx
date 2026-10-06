@@ -128,7 +128,7 @@ function assistantSubtitle(
 }
 
 /**
- * What an origin card renders from. The baked Vellum Cloud origin a native
+ * What an origin card renders from. The baked Cadet Cloud origin a native
  * shell reports has no `addedAt` of its own, so the card asks only for the
  * identity and the label.
  */
@@ -150,7 +150,7 @@ function originSelectionKey(origin: OriginCardEntry): string {
   return `origin:${origin.url}`;
 }
 
-/** Selection key for the native shell's baked Vellum Cloud card. */
+/** Selection key for the native shell's baked Cadet Cloud card. */
 const CLOUD_SELECTION_KEY = "origin:vellum-cloud";
 
 /**
@@ -187,12 +187,12 @@ export function SelectAssistantScreen() {
     cancel: cancelLogin,
   } = useOnboardingLogin();
 
-  // The native shell's baked Vellum Cloud origin, present only while the shell
+  // The native shell's baked Cadet Cloud origin, present only while the shell
   // is pointed somewhere else and only on a build carrying the plugin.
   const [cloudOriginUrl, setCloudOriginUrl] = useState<string | null>(null);
   const cloudOrigin: OriginCardEntry | null =
     cloudOriginUrl !== null
-      ? { url: cloudOriginUrl, name: "Vellum Cloud" }
+      ? { url: cloudOriginUrl, name: "Cadet Cloud" }
       : null;
   // Stable dep for the selection effect: `cloudOrigin` is a fresh object each
   // render.
@@ -281,7 +281,7 @@ export function SelectAssistantScreen() {
     void useRememberedOriginsStore.getState().hydrate();
   }, []);
 
-  // The way back to Vellum Cloud, offered only by a shell that is currently
+  // The way back to Cadet Cloud, offered only by a shell that is currently
   // serving a self-hosted origin.
   useEffect(() => {
     if (!nativeMobile) {
@@ -417,7 +417,7 @@ export function SelectAssistantScreen() {
         // The host's own guardian-token message says to re-run hatch/wake,
         // which cannot fix a remote pairing; surface re-pair guidance instead.
         setError(
-          "This pairing has expired. Run vellum pair on the assistant's machine and import it again with vellum connect import.",
+          "This pairing has expired. Run cadet pair on the assistant's machine and import it again with cadet connect import.",
         );
       } else {
         setError("Failed to connect. Please try again.");
@@ -1224,7 +1224,7 @@ function AssistantCard({
  * Chooser card for a remote origin. An origin is only an address: it is
  * always selectable (no session is needed to navigate away), and its menu
  * removal only forgets the entry on this device. The native shell's baked
- * Vellum Cloud origin reuses the card without a menu, since there is no
+ * Cadet Cloud origin reuses the card without a menu, since there is no
  * device-local entry to forget.
  */
 function RemoteOriginCard({

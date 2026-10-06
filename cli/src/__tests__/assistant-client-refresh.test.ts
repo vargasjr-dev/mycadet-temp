@@ -207,7 +207,7 @@ describe("AssistantClient 401 -> refresh -> retry", () => {
 
   test("adopts a token rotated by another process on a 401 (no refresh sent)", async () => {
     // Construct the client capturing the current ("old-acc") token, then
-    // simulate a concurrent process (e.g. `vellum events`) rotating + persisting
+    // simulate a concurrent process (e.g. `cadet events`) rotating + persisting
     // a fresh, not-due token. A 401 must pick up the fresh local token and retry
     // WITHOUT sending the refresh credential.
     seedPaired("refresh-tok", { due: false });

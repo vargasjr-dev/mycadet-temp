@@ -59,7 +59,7 @@ export function getSeed(name: string): EnvironmentDefinition | undefined {
  * Priority:
  *   1. `override` argument (from a `--environment` CLI flag, when wired)
  *   2. `VELLUM_ENVIRONMENT` env var
- *   3. User config file (`~/.config/vellum/environment`, set via `vellum env set`)
+ *   3. User config file (`~/.config/vellum/environment`, set via `cadet env set`)
  *   4. Default: `production`
  *
  * Per-field env-var overrides are honored on the resolved definition as

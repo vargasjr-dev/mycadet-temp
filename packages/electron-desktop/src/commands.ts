@@ -67,7 +67,7 @@ export const GLOBAL_SHORTCUT_DEFAULTS: Record<string, string> = {
    * Talk. Ships **unbound**, and is the only global here that does.
    *
    * A global registration outranks every app's own shortcuts for as long as
-   * Vellum runs, and `globalShortcut.register` cannot see those: it reports a
+   * Cadet runs, and `globalShortcut.register` cannot see those: it reports a
    * conflict only against other *global* registrants, so it returns true for
    * chords that are load-bearing inside other apps. Cmd+Shift+T registered
    * cleanly and took reopen-closed-tab away from every browser on the machine.

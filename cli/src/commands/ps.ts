@@ -147,7 +147,7 @@ const SSH_OPTS = [
 const REMOTE_PS_CMD = [
   // List vellum-related processes: daemon, gateway, qdrant, and any bun children
   "ps ax -o pid=,ppid=,args=",
-  "| grep -E 'vellum|vellum-gateway|qdrant|openclaw'",
+  "| grep -E 'cadet|vellum-gateway|qdrant|openclaw'",
   "| grep -v grep",
 ].join(" ");
 
@@ -407,7 +407,7 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
         {
           name: "assistant",
           status: withStatusEmoji("unreachable"),
-          info: "could not reach platform API — run `vellum login`",
+          info: "could not reach platform API — run `cadet login`",
         },
       ];
       printTable(rows);
@@ -483,7 +483,7 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
   const procs = parseRemotePs(output);
 
   if (procs.length === 0) {
-    console.log("No vellum processes found on the remote instance.");
+    console.log("No cadet processes found on the remote instance.");
     return;
   }
 
@@ -629,7 +629,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
       }));
       printTable(rows);
       console.log(
-        `\nHint: Run \`vellum clean\` to clean up orphaned processes.`,
+        `\nHint: Run \`cadet clean\` to clean up orphaned processes.`,
       );
     }
 
@@ -654,7 +654,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
 export async function ps(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: vellum ps [<name-or-id>] [--verbose]");
+    console.log("Usage: cadet ps [<name-or-id>] [--verbose]");
     console.log("");
     console.log(
       "List all assistants, or show processes for a specific assistant.",

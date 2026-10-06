@@ -317,7 +317,7 @@ export const routeTree = [
   // One-time credential entry — public page opened from a single-use
   // credential-request link. Kept OUTSIDE the auth-protected tree (same
   // sibling pattern as /assistant/pair) because the recipient of the link
-  // may have no Vellum session at all; the single-use token, sent in the
+  // may have no Cadet session at all; the single-use token, sent in the
   // request body, is the only authorization the gateway needs.
   {
     path: "/assistant/credentials/enter",

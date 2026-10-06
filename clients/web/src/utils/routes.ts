@@ -95,7 +95,7 @@ export const routes = {
    * credential-request link (`?token=` carries the secret-request token).
    * Same standalone pattern as `remotePair`: lives under `/assistant/*` for
    * the Vite SPA fallback but is declared OUTSIDE the auth-protected tree in
-   * `routes.tsx` — the person opening the link may have no Vellum session.
+   * `routes.tsx` — the person opening the link may have no Cadet session.
    */
   credentialEntry: r("/assistant/credentials/enter"),
   quickInput: r("/assistant/quick-input"),
@@ -316,7 +316,7 @@ export const routes = {
     bookmarks: r("/assistant/settings/bookmarks"),
     usage: SETTINGS_USAGE_PATH,
     // Deep-link straight to the Billing sub-tab (only shown when signed in to
-    // the Vellum platform).
+    // the Cadet platform).
     usageBilling: `${SETTINGS_USAGE_PATH}?tab=billing`,
     // Lands on the daily credit limit card inside the Billing tab. The hash
     // must match `DAILY_CREDIT_LIMIT_ANCHOR_ID` in `daily-credit-limit-card.tsx`

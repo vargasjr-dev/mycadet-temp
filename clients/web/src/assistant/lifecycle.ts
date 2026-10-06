@@ -58,10 +58,7 @@ export function assistantStateCanServeChat(
   kind: AssistantState["kind"],
   selfHostedChatEnabled: boolean,
 ): boolean {
-  return (
-    kind === "active" ||
-    (kind === "self_hosted" && selfHostedChatEnabled)
-  );
+  return kind === "active" || (kind === "self_hosted" && selfHostedChatEnabled);
 }
 
 export function resolveAssistantLifecycleState(
@@ -125,7 +122,7 @@ export function shouldRecoverFromHatchFailure(status?: number): boolean {
 export const PLATFORM_HOSTED_DISABLED_CODE = "platform_hosted_disabled";
 
 export const PLATFORM_HOSTED_DISABLED_MESSAGE =
-  "We are at capacity for Vellum Managed Assistants, more will be available soon!";
+  "We are at capacity for Cadet Managed Assistants, more will be available soon!";
 
 export function isPlatformHostedDisabled(
   status: number | undefined,

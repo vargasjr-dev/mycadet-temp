@@ -133,7 +133,7 @@ describe("parity with meta/llm-provider-catalog.json", () => {
   ).filter((id) => id !== "openai-compatible" && id !== "vellum");
   const pickerProviderIds = webProviderIds;
 
-  test("vellum picker is the union of served catalogs, including GPU models", () => {
+  test("cadet picker is the union of served catalogs, including GPU models", () => {
     // MODELS_BY_PROVIDER.vellum lists only Vellum-hosted GPU models. The
     // picker still exposes the union of every served catalog through
     // getModelsForProvider("vellum").
@@ -170,7 +170,7 @@ describe("parity with meta/llm-provider-catalog.json", () => {
     expect(getManagedUpstreamForModel("not-a-real-model")).toBeUndefined();
   });
 
-  test("vellum GPU models stay out of pickers and hide without hosted inference", () => {
+  test("cadet GPU models stay out of pickers and hide without hosted inference", () => {
     expect(Object.keys(MODELS_BY_PROVIDER)).toContain("vellum");
     expect(INFERENCE_PROVIDERS).not.toContain("vellum");
     expect(CONNECTION_PROVIDERS).not.toContain("vellum");
@@ -190,7 +190,9 @@ describe("parity with meta/llm-provider-catalog.json", () => {
 
   test("structured-decision models stay visible on the provider row but not in text pickers", () => {
     expect(
-      getModelsForProvider("typesafe").some((model) => model.id === "jev-latest"),
+      getModelsForProvider("typesafe").some(
+        (model) => model.id === "jev-latest",
+      ),
     ).toBe(true);
     expect(catalogModelSupportsText("typesafe", "jev-latest")).toBe(false);
     expect(providerOffersTextGeneration("typesafe")).toBe(false);
@@ -254,14 +256,14 @@ describe("parity with meta/llm-provider-catalog.json", () => {
     );
   });
 
-  test("CONNECTION_PROVIDERS covers every meta catalog provider except vellum", () => {
+  test("CONNECTION_PROVIDERS covers every meta catalog provider except cadet", () => {
     // The connection-creation picker is driven by CONNECTION_PROVIDERS in
     // provider-editor-constants.ts. Unlike INFERENCE_PROVIDERS, it
     // intentionally includes daemon-only providers (ollama) and the
     // free-form openai-compatible escape hatch — any daemon provider can
     // back a connection — so it must list exactly the meta catalog's
     // provider ids or a provider becomes un-creatable as a connection.
-    // `vellum` is excluded: those models use the assistant API key on the
+    // `cadet` is excluded: those models use the assistant API key on the
     // existing managed connection and have no BYOK create path.
     // Order is not asserted: the list's order is the picker's display order.
     const connectionProviderIds: string[] = [...CONNECTION_PROVIDERS];

@@ -1175,7 +1175,7 @@ describe("isCliWakeableAssistant", () => {
     expect(isCliWakeableAssistant("dk")).toBe(false);
   });
 
-  test("a platform (vellum) entry is not CLI-wakeable", () => {
+  test("a platform (cadet) entry is not CLI-wakeable", () => {
     setLockfile({ assistants: [platform], activeAssistant: "platform-a" });
     expect(isCliWakeableAssistant("platform-a")).toBe(false);
   });

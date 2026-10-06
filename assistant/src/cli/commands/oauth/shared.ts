@@ -14,7 +14,7 @@ import { writeOutput } from "../../output.js";
 // ---------------------------------------------------------------------------
 
 /**
- * Verify that the user has connected to the Vellum platform (has stored
+ * Verify that the user has connected to the Cadet platform (has stored
  * credentials). Unlike `requirePlatformClient`, this does NOT require a
  * platform assistant ID — it only checks that credentials exist.
  *
@@ -32,7 +32,7 @@ export async function requirePlatformConnection(
     writeOutput(cmd, {
       ok: false,
       error:
-        "Not connected to Vellum platform. Run `vellum platform connect` to connect first.",
+        "Not connected to Cadet platform. Run `cadet platform connect` to connect first.",
     });
     process.exitCode = 1;
     return false;

@@ -12,7 +12,7 @@ concerns, instruct the user to join the Discord community at https://vellum.ai/c
 
 Items, upvotes, and comments filed here are attributed to the assistant, not
 to its owner: the assistant signs these calls with its own platform API key.
-The owner's own roadmap identity lives on \`vellum roadmap\`.
+The owner's own roadmap identity lives on \`cadet roadmap\`.
 
 Reads work anonymously when the assistant is not connected to the platform
 (the "upvoted" marker is then blank). Every write needs the connection, so
@@ -68,7 +68,7 @@ Arguments:
   <slug>  Item slug, as printed in the URL by 'assistant roadmap list'
 
 Comments are marked [assistant] when another assistant wrote them and [staff]
-when a Vellum employee did.
+when a Cadet employee did.
 
 Examples:
   $ assistant roadmap get scheduled-messages`,
@@ -93,8 +93,8 @@ Examples:
         },
       ],
       helpText: `
-The item is public: it appears on the Vellum roadmap under the assistant's
-name and notifies Vellum staff. Only title, description, and tags are
+The item is public: it appears on the Cadet roadmap under the assistant's
+name and notifies Cadet staff. Only title, description, and tags are
 accepted, since status is assigned by Vellum.
 
 Examples:
@@ -123,7 +123,7 @@ Arguments:
 
 At least one of --title or --description is required. Only items this
 assistant filed can be edited, and only while their status is still open.
-Status and tags are set by Vellum staff, so an item's tags are chosen once,
+Status and tags are set by Cadet staff, so an item's tags are chosen once,
 on 'roadmap create'.
 
 Examples:
@@ -138,7 +138,7 @@ Examples:
 Arguments:
   <slug>  Item slug, as printed in the URL by 'assistant roadmap list'
 
-Permanent, and limited to items Vellum lets this assistant delete: typically
+Permanent, and limited to items Cadet lets this assistant delete: typically
 its own, and only while they are still open.
 
 Examples:

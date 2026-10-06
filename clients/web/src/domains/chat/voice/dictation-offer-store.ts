@@ -123,7 +123,7 @@ export function sawInputSinceArming(): boolean {
 }
 
 /**
- * Offer Vellum's words, unless the user has already moved on: a press since
+ * Offer Cadet's words, unless the user has already moved on: a press since
  * the hold ended means the other app's paste is no longer the last edit, so
  * there is nothing "use" could safely replace. Returns whether the offer was
  * made.

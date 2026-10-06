@@ -79,7 +79,7 @@ describe("IntegrationTile", () => {
     openMenu("Other ways to connect Notion");
     for (const label of [
       "Notion MCP server",
-      "Sign in through Vellum",
+      "Sign in through Cadet",
       "Use your own OAuth app",
     ]) {
       await screen.findByRole("menuitem", { name: label });
@@ -116,7 +116,7 @@ describe("IntegrationTile", () => {
     await screen.findByRole("menuitem", { name: "Notion MCP server" });
     await screen.findByRole("menuitem", { name: "Use your own OAuth app" });
     expect(
-      screen.queryByRole("menuitem", { name: "Sign in through Vellum" }),
+      screen.queryByRole("menuitem", { name: "Sign in through Cadet" }),
     ).toBeNull();
   });
 
@@ -326,7 +326,7 @@ describe("IntegrationTile", () => {
     // Both of them behind the retry's chevron, where they cost the tile no
     // height at all.
     openMenu("Other ways to connect Linear");
-    await screen.findByRole("menuitem", { name: "Sign in through Vellum" });
+    await screen.findByRole("menuitem", { name: "Sign in through Cadet" });
     fireEvent.click(screen.getByRole("menuitem", { name: "Setup guide" }));
     expect(handlers.onOpenSetupGuide).toHaveBeenCalledWith(
       "https://example.com/docs/linear-mcp",

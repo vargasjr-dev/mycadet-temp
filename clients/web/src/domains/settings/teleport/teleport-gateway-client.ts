@@ -92,7 +92,7 @@ export async function exportLocalBundle(
  * Ask a local/docker assistant's daemon to build a *debug* bundle and PUT it
  * to a signed URL: `POST /v1/migrations/export-to-gcs` with
  * `profile: "debug"`. The debug profile carries no credentials and adds the
- * gateway's database and logs, for Vellum staff to open on a debug clone.
+ * gateway's database and logs, for Cadet staff to open on a debug clone.
  * Returns the 202 `job_id`; poll it with {@link pollLocalExportJob}.
  */
 export async function exportLocalDebugBundle(

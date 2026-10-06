@@ -1,7 +1,7 @@
 import type { AuthUser } from "@/stores/auth-store";
 
 /**
- * Whether a session belongs to Vellum staff.
+ * Whether a session belongs to Cadet staff.
  *
  * The platform's `isStaff` bit is the primary signal. A `@vellum.ai` address
  * is the fallback for sessions whose snapshot carries no staff bit. Local

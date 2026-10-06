@@ -227,7 +227,6 @@ mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 
-
 const stableQueryClient = {};
 mock.module("@tanstack/react-query", () => ({
   useQueryClient: () => stableQueryClient,
@@ -1182,7 +1181,7 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
   });
 
   test("a managed hatch without the post-checkout marker completes on the first non-pro read", async () => {
-    // Picking Vellum Cloud is not a purchase: a free managed hatch must never
+    // Picking Cadet Cloud is not a purchase: a free managed hatch must never
     // be parked on the post-checkout wait.
     isLocalClientValue = true;
     searchParams = new URLSearchParams("hosting=vellum-cloud");

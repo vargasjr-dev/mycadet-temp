@@ -30,19 +30,19 @@ import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 export interface ChannelSidecar {
   /**
    * The thread to offer, or `null` when there is nothing worth opening (flag
-   * off, ordinary Vellum conversation, or a binding with neither rows nor a
+   * off, ordinary Cadet conversation, or a binding with neither rows nor a
    * link). The header renders its channel-thread control on non-null and
    * falls back to the source-link pill otherwise.
    */
   target: ChannelSidecarTarget | null;
   /**
    * The external-channel lane, oldest first. Empty with the flag off, on an
-   * ordinary Vellum conversation, or on a channel whose rows the client
+   * ordinary Cadet conversation, or on a channel whose rows the client
    * cannot attribute.
    */
   entries: ChannelTranscriptEntry[];
   /**
-   * The Vellum lane. Returned by reference from `messages` whenever nothing
+   * The Cadet lane. Returned by reference from `messages` whenever nothing
    * moved, so conversations the sidecar does not touch see no new array.
    *
    * The partition applies whenever the flag is on and the conversation is

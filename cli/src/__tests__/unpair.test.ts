@@ -1,5 +1,5 @@
 /**
- * Tests for `vellum unpair <name>`: forget a paired (cloud:"paired") assistant
+ * Tests for `cadet unpair <name>`: forget a paired (cloud:"paired") assistant
  * by removing its lockfile entry + guardian token. Refuses non-paired entries.
  */
 import {
@@ -70,7 +70,7 @@ async function runUnpair(): Promise<{ exited: boolean; errors: string }> {
   return { exited, errors: errors.join("\n") };
 }
 
-describe("vellum unpair", () => {
+describe("cadet unpair", () => {
   beforeEach(() => {
     process.env.VELLUM_LOCKFILE_DIR = testDir;
     process.env.XDG_CONFIG_HOME = testDir;
@@ -142,7 +142,7 @@ describe("vellum unpair", () => {
     const { exited, errors } = await runUnpair();
 
     expect(exited).toBe(true);
-    expect(errors).toContain("vellum retire");
+    expect(errors).toContain("cadet retire");
     expect(findAssistantByName("desk")).not.toBeNull(); // untouched
   });
 

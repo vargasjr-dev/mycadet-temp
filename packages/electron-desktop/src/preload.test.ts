@@ -156,10 +156,7 @@ test("creates the downloads IPC bridge", async () => {
   await bridge.reveal("dl-1");
 
   expect(invoke).toHaveBeenCalledWith("cadet:downloads:reveal", "dl-1");
-  expect(on).toHaveBeenCalledWith(
-    "cadet:downloads:done",
-    expect.any(Function),
-  );
+  expect(on).toHaveBeenCalledWith("cadet:downloads:done", expect.any(Function));
   handler!({}, { id: "dl-1", filename: "report.pdf", state: "completed" });
   expect(received).toEqual([
     { id: "dl-1", filename: "report.pdf", state: "completed" },

@@ -454,7 +454,7 @@ export function useLiveVoiceScreenShare(): void {
         produceFrame: async (filename) => {
           const file = new File([bytes], filename, { type: "image/jpeg" });
           // The marks are drawn here rather than being on the screen
-          // already: a capture excludes Vellum's own windows, so the overlay
+          // already: a capture excludes Cadet's own windows, so the overlay
           // the user drew on is never in the pixels. See
           // `annotate-shared-frame.ts`.
           return drawing === null

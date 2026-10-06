@@ -5,7 +5,7 @@ import { isElectron } from "@/runtime/is-electron";
  * Whether the companion's one-time introduction is being staged on this
  * window.
  *
- * The surface ordinarily steps off the screen while Vellum is frontmost, which
+ * The surface ordinarily steps off the screen while Cadet is frontmost, which
  * is the moment a new user is looking at the app, so a due run holds it in
  * front and stands it in the middle of this window instead
  * (`companion-window.ts`). Main is the side that decides that, and this is how

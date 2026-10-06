@@ -25,12 +25,12 @@ afterEach(() => {
   cleanup();
 });
 
-describe("the card offering Vellum's version of another app's paste", () => {
+describe("the card offering Cadet's version of another app's paste", () => {
   test("shows the words whole with every answer spelled out", () => {
     const { container } = render(<CompanionDictationOffer offer={OFFER} />);
-    expect(container.textContent).toContain("Vellum heard");
+    expect(container.textContent).toContain("Cadet heard");
     expect(container.textContent).toContain("Send me the files.");
-    expect(buttonOf(container, "Use Vellum's")).not.toBeNull();
+    expect(buttonOf(container, "Use Cadet's")).not.toBeNull();
     expect(buttonOf(container, "Quit Wispr Flow")).not.toBeNull();
     expect(buttonOf(container, "Not now")).not.toBeNull();
   });
@@ -45,7 +45,7 @@ describe("the card offering Vellum's version of another app's paste", () => {
         }}
       />,
     );
-    fireEvent.click(buttonOf(container, "Use Vellum's")!);
+    fireEvent.click(buttonOf(container, "Use Cadet's")!);
     fireEvent.click(buttonOf(container, "Quit Wispr Flow")!);
     fireEvent.click(buttonOf(container, "Not now")!);
     expect(answers).toEqual(["use", "quit", "dismiss"]);
@@ -67,7 +67,7 @@ describe("the card offering a dictation nothing would take", () => {
     );
     expect(buttonOf(container, "Copy")).not.toBeNull();
     expect(buttonOf(container, "Discard")).not.toBeNull();
-    expect(buttonOf(container, "Use Vellum's")).toBeNull();
+    expect(buttonOf(container, "Use Cadet's")).toBeNull();
     expect(container.textContent).not.toContain("Quit");
   });
 
@@ -103,6 +103,6 @@ describe("the card offering a dictation whose paste failed", () => {
     expect(container.textContent).not.toContain("Nowhere to put these");
     expect(buttonOf(container, "Copy")).not.toBeNull();
     expect(buttonOf(container, "Discard")).not.toBeNull();
-    expect(buttonOf(container, "Use Vellum's")).toBeNull();
+    expect(buttonOf(container, "Use Cadet's")).toBeNull();
   });
 });

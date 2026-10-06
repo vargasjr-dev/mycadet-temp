@@ -37,7 +37,7 @@ function text(value: string, cacheControl?: { type: string; ttl: string }) {
   };
 }
 
-const SYSTEM_PROMPT = `You are Vellum, a helpful assistant. Follow the user's
+const SYSTEM_PROMPT = `You are Cadet, a helpful assistant. Follow the user's
 instructions carefully and use the available tools when they help you answer
 accurately. Keep responses concise.`;
 

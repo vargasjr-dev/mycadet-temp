@@ -474,7 +474,7 @@ function IntegrationsPanelInner({
           key={item.id}
           plan={plan}
           state={connect.stateFor(item.id, plan.name)}
-          // The choice between the provider's own server, Vellum's hosted
+          // The choice between the provider's own server, Cadet's hosted
           // sign-in, and your own OAuth app is only a real one on a
           // self-hosted assistant.
           showAlternatives={!isPlatformHosted}

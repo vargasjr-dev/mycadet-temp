@@ -2,7 +2,7 @@
  * Drawing the user's marks onto a frame of what they are sharing.
  *
  * **This exists because the overlay is never in the pixels.** The marks are
- * drawn in one of Vellum's own windows, and a capture excludes those
+ * drawn in one of Cadet's own windows, and a capture excludes those
  * deliberately (`ScreenCapture.swift`, `ownWindows`), so a frame taken while
  * a circle is on screen comes back without it. The call would be shown the
  * screen and told "this one", with nothing saying which. So the frame that

@@ -3,7 +3,8 @@ import { REDACTION_VERSION, redactText } from "./redact";
 
 describe("redactText", () => {
   test("redacts Bearer tokens", () => {
-    const input = "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.test+token/value=";
+    const input =
+      "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.test+token/value=";
     expect(redactText(input)).toBe("Authorization: Bearer [REDACTED]");
   });
 
@@ -24,17 +25,19 @@ describe("redactText", () => {
 
   test("redacts /Users/<name>/ paths", () => {
     const input = "Reading /Users/alice/Library/Application Support/config";
-    expect(redactText(input)).toBe("Reading ~/Library/Application Support/config");
+    expect(redactText(input)).toBe(
+      "Reading ~/Library/Application Support/config",
+    );
   });
 
   test("redacts Windows user paths", () => {
-    const input = "Reading C:\\Users\\Alice\\AppData\\Local\\Vellum";
-    expect(redactText(input)).toBe("Reading ~\\AppData\\Local\\Vellum");
+    const input = "Reading C:\\Users\\Alice\\AppData\\Local\\Cadet";
+    expect(redactText(input)).toBe("Reading ~\\AppData\\Local\\Cadet");
   });
 
   test("redacts Windows user paths containing spaces", () => {
-    const input = "Reading C:\\Users\\Example User\\AppData\\Local\\Vellum";
-    expect(redactText(input)).toBe("Reading ~\\AppData\\Local\\Vellum");
+    const input = "Reading C:\\Users\\Example User\\AppData\\Local\\Cadet";
+    expect(redactText(input)).toBe("Reading ~\\AppData\\Local\\Cadet");
   });
 
   test("redacts assigned session tokens", () => {

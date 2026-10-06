@@ -20,9 +20,9 @@ import { ChannelTranscriptPanelView } from "./channel-transcript-panel-view";
  * fixtures, so the pixels are the shipped ones.
  *
  * `referencedEntryId` is the drawer's one piece of interactive state: which
- * row is staged on the Vellum composer. In production it lives in the
+ * row is staged on the Cadet composer. In production it lives in the
  * single-slot `channel-reference-store`; here the arg owns it, written back
- * through `useArgs` so picking "Reference in Vellum" on a row stages it,
+ * through `useArgs` so picking "Reference in Cadet" on a row stages it,
  * picking it again clears it, and the Controls panel stays in sync. For the
  * whole staging round trip against the real store and chip, see the
  * `Chat/ChannelSidecar` stories.
@@ -39,7 +39,7 @@ const meta: Meta<typeof ChannelTranscriptPanelView> = {
     threadName: SLACK_TARGET.threadName,
     sourceHref: SLACK_TARGET.sourceHref,
     entries: SLACK_THREAD_ENTRIES,
-    assistantName: "Vellum",
+    assistantName: "Cadet",
     referencedEntryId: null,
   },
   argTypes: {
@@ -62,7 +62,7 @@ type Story = StoryObj<typeof ChannelTranscriptPanelView>;
 /**
  * A Slack thread with everything Slack reports: named thread, senders,
  * timestamps, per-message links, an assistant reply, and a reaction event.
- * "Reference in Vellum" on a message row stages it (one slot: a second pick
+ * "Reference in Cadet" on a message row stages it (one slot: a second pick
  * replaces, the same pick clears), mirroring the store's toggle semantics.
  * The reaction row is activity rather than content and offers no reference
  * control.
@@ -78,8 +78,7 @@ export const Default: Story = {
         referencedEntryId={referencedEntryId}
         onToggleReference={(entry) =>
           updateArgs({
-            referencedEntryId:
-              referencedEntryId === entry.id ? null : entry.id,
+            referencedEntryId: referencedEntryId === entry.id ? null : entry.id,
           })
         }
       />

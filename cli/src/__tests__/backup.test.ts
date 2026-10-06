@@ -216,7 +216,7 @@ function mockGcsDownload(body: Uint8Array, ok = true, status = 200) {
   }) as unknown as typeof globalThis.fetch;
 }
 
-describe("vellum backup <local>: guardian bootstrap secret", () => {
+describe("cadet backup <local>: guardian bootstrap secret", () => {
   test("passes the lockfile bootstrap secret when leasing a fresh guardian token", async () => {
     const localEntry = {
       assistantId: "local-assistant",
@@ -244,7 +244,7 @@ describe("vellum backup <local>: guardian bootstrap secret", () => {
   });
 });
 
-describe("vellum backup: --export-timeout flag", () => {
+describe("cadet backup: --export-timeout flag", () => {
   test("rejects a non-numeric value before any lookup", async () => {
     setArgv("my-local", "--export-timeout", "soon");
 
@@ -307,7 +307,7 @@ describe("vellum backup: --export-timeout flag", () => {
   });
 });
 
-describe("vellum backup <platform-managed>: GCS happy path", () => {
+describe("cadet backup <platform-managed>: GCS happy path", () => {
   test("requests upload URL → kicks off runtime export → polls → downloads from GCS → writes file", async () => {
     findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
     setArgv("my-platform");
@@ -472,7 +472,7 @@ describe("vellum backup <platform-managed>: GCS happy path", () => {
       result: {},
     }));
     // Make readPlatformToken return a fresh value on the second call,
-    // mimicking the "user re-ran `vellum login` in another terminal"
+    // mimicking the "user re-ran `cadet login` in another terminal"
     // scenario. The helper's pollJobUntilDone calls refreshOn401 only
     // when its own request 401s — for the test we drive the refresh
     // directly by overriding the mock to surface a fresh token at the
@@ -515,8 +515,8 @@ describe("vellum backup <platform-managed>: GCS happy path", () => {
   });
 });
 
-describe("vellum backup <platform-managed>: failure cases", () => {
-  test("not logged in (no platform token) exits with 'Run vellum login'", async () => {
+describe("cadet backup <platform-managed>: failure cases", () => {
+  test("not logged in (no platform token) exits with 'Run cadet login'", async () => {
     findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
     readPlatformTokenMock.mockReturnValue(null);
     setArgv("my-platform");

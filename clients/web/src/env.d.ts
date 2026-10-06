@@ -19,7 +19,7 @@ interface ImportMetaEnv {
    */
   readonly VITE_SESSION_REPLAY_APP_ID?: string;
   /**
-   * Root hostname shared across Vellum subdomains, with a leading dot (e.g.
+   * Root hostname shared across Cadet subdomains, with a leading dot (e.g.
    * `.vellum.ai`). Used as the session-replay cookie scope (`rootHostname`).
    * Defaults to `.vellum.ai` when unset. The Electron main process reads the
    * same var via `process.env` at build time (see `electron.vite.config.ts`).

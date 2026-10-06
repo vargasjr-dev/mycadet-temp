@@ -86,7 +86,7 @@ function formatAuth(auth: AuthInfo): string {
 
 /**
  * Derive the auth object a provider implies via the daemon's shared
- * `deriveAuthForProvider` (one source of truth for the keyless / vellum /
+ * `deriveAuthForProvider` (one source of truth for the keyless / cadet /
  * openai-compatible rules), mapping its credential-required null to a
  * CLI-flavored error message string.
  */

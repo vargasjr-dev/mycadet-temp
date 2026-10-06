@@ -89,7 +89,7 @@ export function ImageGenerationCard() {
       return getLocalSetting(LS_IMAGE_GEN_PROVIDER, "gemini");
     }
     // A config written by the legacy mode toggle marks managed via `mode` —
-    // the daemon routes it to Vellum, so the card renders it as Vellum too.
+    // the daemon routes it to Cadet, so the card renders it as Cadet too.
     if (imageGenService?.mode === "managed") {
       return "vellum";
     }
@@ -175,10 +175,10 @@ export function ImageGenerationCard() {
     try {
       // The provider is written as a pair with `mode`: a stale
       // `mode: "managed"` from the legacy toggle would win over a BYOK choice
-      // unless reset. Only the `vellum` value is unrepresentable on assistants
-      // older than its enum entry. For those a Vellum selection writes the
+      // unless reset. Only the `cadet` value is unrepresentable on assistants
+      // older than its enum entry. For those a Cadet selection writes the
       // legacy managed mode alone (the read bridge renders that pair as
-      // Vellum), while BYOK providers keep their explicit provider write.
+      // Cadet), while BYOK providers keep their explicit provider write.
       await whenAssistantVersionKnown();
       if (hasUserKey) {
         await provisionProviderKey(

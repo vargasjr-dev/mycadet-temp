@@ -66,7 +66,8 @@ export function tunnelHostForPlatformUrl(platformUrl: string): string {
   }
   try {
     return (
-      tunnelHostForPlatformHost(new URL(platformUrl).host) ?? DEFAULT_TUNNEL_HOST
+      tunnelHostForPlatformHost(new URL(platformUrl).host) ??
+      DEFAULT_TUNNEL_HOST
     );
   } catch {
     return DEFAULT_TUNNEL_HOST;
@@ -158,7 +159,7 @@ export async function mintTunnelWsToken(args: {
   } catch (err) {
     throw new TunnelWsTokenError(
       0,
-      `Could not reach the Vellum platform to authorize the voice session: ${
+      `Could not reach the Cadet platform to authorize the voice session: ${
         err instanceof Error ? err.message : String(err)
       }`,
     );
@@ -178,7 +179,7 @@ export async function mintTunnelWsToken(args: {
   if (!token) {
     throw new TunnelWsTokenError(
       response.status,
-      "The Vellum platform returned no voice session token.",
+      "The Cadet platform returned no voice session token.",
     );
   }
   return token;
@@ -187,13 +188,13 @@ export async function mintTunnelWsToken(args: {
 /** Turn a mint rejection into something the user can act on. */
 function describeMintFailure(status: number): string {
   if (status === 401) {
-    return "Not signed in to the Vellum platform. Run 'vellum login' and try again.";
+    return "Not signed in to the Cadet platform. Run 'cadet login' and try again.";
   }
   if (status === 403) {
     return "This account cannot open a voice session on that assistant. Check that it belongs to the organization you are signed in to.";
   }
   if (status === 404) {
-    return "The Vellum platform does not offer voice session tokens. It may be running an older release.";
+    return "The Cadet platform does not offer voice session tokens. It may be running an older release.";
   }
-  return `The Vellum platform refused to authorize the voice session (HTTP ${status}).`;
+  return `The Cadet platform refused to authorize the voice session (HTTP ${status}).`;
 }

@@ -202,7 +202,7 @@ describe("last-tunnel record", () => {
 
   test("every provider the CLI writes is one the shared parser accepts", () => {
     // The daemon reads these records through parseTunnelRecord, so what
-    // `vellum tunnel` writes has to survive that parse for every provider.
+    // `cadet tunnel` writes has to survive that parse for every provider.
     for (const provider of TUNNEL_PROVIDERS) {
       const ws = makeWorkspace();
       saveIngressUrl(ws, `https://${provider}.test`, undefined, provider);

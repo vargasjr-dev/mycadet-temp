@@ -39,7 +39,7 @@ export interface ChatHeaderSupplements {
   hasPersistedMessage: boolean;
   /** Human label for the originating external channel (e.g. a Slack
    *  channel name, a Telegram sender) shown alongside the conversation
-   *  title, or null for native Vellum conversations. */
+   *  title, or null for native Cadet conversations. */
   channelHeaderLabel: string | null;
   /** Origin channel id (`"slack"`, `"telegram"`, …) backing
    *  {@link channelHeaderLabel}, used to pick the channel icon. Null for

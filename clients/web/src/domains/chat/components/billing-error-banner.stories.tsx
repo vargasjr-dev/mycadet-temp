@@ -19,7 +19,7 @@
  * Android consumption-only suppression applies to **purchase** surfaces only.
  * Among these three that is just `LowBalanceBanner`; `DailyLimitBanner` (a
  * settings deep-link) and `ProviderBillingBanner` (the user's own provider is
- * out of funds, so there is nothing for Vellum to sell) keep their copy and CTA
+ * out of funds, so there is nothing for Cadet to sell) keep their copy and CTA
  * on every platform.
  */
 import { useLayoutEffect, useState, type ReactNode } from "react";
@@ -200,7 +200,7 @@ export const RealDailyLimitBannerWithAutoTopUp: Story = {
 
 /**
  * **Bring-your-own-key billing.** The user's own provider is out of funds, so
- * there is nothing for Vellum to sell. The CTA opens AI settings.
+ * there is nothing for Cadet to sell. The CTA opens AI settings.
  */
 export const RealProviderBillingBanner: Story = {
   name: "Real · Provider billing → Open Settings",

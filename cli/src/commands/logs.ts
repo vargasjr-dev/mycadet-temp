@@ -26,7 +26,7 @@ interface LogsArgs {
 }
 
 function printHelp(): void {
-  console.log("Usage: vellum logs [<name>] [options]");
+  console.log("Usage: cadet logs [<name>] [options]");
   console.log("");
   console.log("View logs from an assistant instance.");
   console.log("");
@@ -592,7 +592,7 @@ export async function logs(): Promise<void> {
     if (opts.name) {
       console.error(`No assistant found with name '${opts.name}'.`);
     } else {
-      console.error("No assistant found. Run `vellum hatch` first.");
+      console.error("No assistant found. Run `cadet hatch` first.");
     }
     process.exit(1);
   }
@@ -623,7 +623,7 @@ export async function logs(): Promise<void> {
     case "vellum":
       console.error(
         "Logs for Vellum-managed instances are not yet supported.\n" +
-          "View logs in the Vellum platform dashboard.",
+          "View logs in the Cadet platform dashboard.",
       );
       process.exit(1);
       break;
@@ -631,7 +631,7 @@ export async function logs(): Promise<void> {
     case "apple-container":
       console.error(
         "Logs for Apple Container instances are not yet supported.\n" +
-          `Use 'vellum ssh ${entry.assistantId}' to access the container directly.`,
+          `Use 'cadet ssh ${entry.assistantId}' to access the container directly.`,
       );
       process.exit(1);
       break;

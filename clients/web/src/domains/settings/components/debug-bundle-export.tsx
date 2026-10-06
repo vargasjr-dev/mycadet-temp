@@ -25,7 +25,7 @@ const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * Vellum staff cannot reach a self-hosted assistant, so the owner sends
+ * Cadet staff cannot reach a self-hosted assistant, so the owner sends
  * them a copy instead: the daemon's debug export (workspace, logs, and the
  * gateway's own database, never credentials) uploaded to the platform's
  * debug-bundle bucket, where it is kept for seven days.

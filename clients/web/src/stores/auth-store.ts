@@ -1169,7 +1169,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
 
   /**
    * Connect to a paired assistant: a remote machine's assistant imported via
-   * `vellum connect import`. Primes the host-authorized proxy connection,
+   * `cadet connect import`. Primes the host-authorized proxy connection,
    * selects the assistant, and marks the session
    * logged in, mirroring {@link AuthActions.connectLocalAssistant} with two
    * deliberate differences: it primes through the plain

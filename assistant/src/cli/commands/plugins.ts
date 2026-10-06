@@ -1121,7 +1121,7 @@ function printUntrustedPluginWarning(
   const ref = source.ref === DEFAULT_DIRECT_REF ? "default branch" : source.ref;
   const lines = [
     `⚠ Installing "${name}" from an unreviewed GitHub source: ${location} @ ${ref}.`,
-    "  This plugin is NOT in the Vellum marketplace and has not been reviewed.",
+    "  This plugin is NOT in the Cadet marketplace and has not been reviewed.",
     "  Its hooks and tools run inside the assistant with full access — install it only if you trust the source.",
   ];
   console.error(yellow(lines.join("\n")));

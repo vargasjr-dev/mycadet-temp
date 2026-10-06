@@ -56,9 +56,9 @@ interface CreditRouteEntry {
 }
 
 /**
- * Whether an entry's turns spend managed Vellum credits, mirroring the
+ * Whether an entry's turns spend managed Cadet credits, mirroring the
  * daemon's dispatch rules (`effectiveConnectionAuth` in
- * assistant/src/providers/inference/auth.ts): the `vellum` provider IS the
+ * assistant/src/providers/inference/auth.ts): the `cadet` provider IS the
  * managed route, a bound connection bills by its own auth type, and an
  * unbound entry falls back to a connection of its provider. `null` when the
  * question can't be settled from the loaded data (e.g. the bound connection
@@ -141,7 +141,7 @@ function catalogProviderForModel(model: string): string | undefined {
  * explicit tweak provider replaces the winner's while keeping its binding; a
  * tweak model the winner's provider does not serve stamps the model's
  * catalog owner and drops the binding (the provider-agnostic managed
- * connection survives); and a vellum winner re-gains the managed connection
+ * connection survives); and a cadet winner re-gains the managed connection
  * under a concrete managed-routable provider. The shipped mainAgent
  * call-site default carries only a profile intent, so the workspace entry is
  * the only route-affecting tweak source.
@@ -209,7 +209,7 @@ function composedMainAgentRoute(
 }
 
 /**
- * Whether the assistant's default chat route spends managed Vellum credits.
+ * Whether the assistant's default chat route spends managed Cadet credits.
  *
  * Mirrors the daemon's `mainAgent` single-winner selection
  * (`selectWinningProfile` in assistant/src/config/llm-resolver.ts): the
@@ -335,7 +335,7 @@ function defaultProviderRouteEntry(
 /**
  * The route a stale (unusable) managed default stub actually resolves to:
  * the pure catalog body through `llm.defaultProvider`'s column, or the
- * catalog's own vellum column (managed) when no default provider is set.
+ * catalog's own cadet column (managed) when no default provider is set.
  */
 function classifyStaleDefaultStub(evidence: ChatRouteEvidence): boolean | null {
   const entry = defaultProviderRouteEntry(evidence);

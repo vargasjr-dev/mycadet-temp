@@ -2,7 +2,7 @@
  * Backwards-compat gate: source of truth for the active conversation's
  * "assistant is responding" (processing) state.
  *
- * Vellum Assistant 0.8.8 makes the daemon's `Conversation.isProcessing()`
+ * Cadet Assistant 0.8.8 makes the daemon's `Conversation.isProcessing()`
  * flag the single source of truth on the wire: it ships on every
  * conversation row as `isProcessing`, and the web app keeps that cached
  * value fresh from the SSE turn lifecycle — patched `true` on

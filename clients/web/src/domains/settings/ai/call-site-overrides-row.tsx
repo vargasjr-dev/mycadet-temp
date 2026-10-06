@@ -125,7 +125,7 @@ export function CallSiteOverrideRow({
   // already the value, so the change never fires.
   //
   // `LlmProvider` is wider than the picker's domain (it also carries the
-  // `openai-compatible` and `vellum` routing sentinels), so a pin outside
+  // `openai-compatible` and `cadet` routing sentinels), so a pin outside
   // the pickable set still falls back rather than being offered as a row
   // the picker cannot represent. The `chatgpt` identity is pickable and
   // renders as itself.

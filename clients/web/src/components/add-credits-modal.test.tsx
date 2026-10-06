@@ -85,13 +85,13 @@ mock.module("@/runtime/platform-detection", () => ({
   // Mirrors the real implementation: reads the window bridge, and a legacy
   // bridge without hostOS is a macOS host.
   detectElectronHostOS: () => {
-    const vellum = (
+    const bridge = (
       window as { vellum?: { platform?: string; hostOS?: string } }
     ).vellum;
-    if (vellum?.platform !== "electron") {
+    if (bridge?.platform !== "electron") {
       return null;
     }
-    return vellum.hostOS ?? "macos";
+    return bridge.hostOS ?? "macos";
   },
 }));
 

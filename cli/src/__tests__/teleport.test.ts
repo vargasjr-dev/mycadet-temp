@@ -776,7 +776,7 @@ describe("same-environment rejection", () => {
     );
   });
 
-  test("source vellum, target platform -> error", async () => {
+  test("source cadet, target platform -> error", async () => {
     setArgv("--from", "src", "--platform", "dst");
 
     const srcEntry = makeEntry("src", {
@@ -2958,7 +2958,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
       await teleport();
 
       // Identity was fetched against the platform-managed runtime entry
-      // (cloud=vellum) with the platform token — not via guardian token.
+      // (cloud=cadet) with the platform token — not via guardian token.
       expect(localRuntimeIdentityMock).toHaveBeenCalledWith(
         expect.objectContaining({
           cloud: "vellum",

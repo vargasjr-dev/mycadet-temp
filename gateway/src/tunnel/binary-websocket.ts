@@ -2,7 +2,8 @@ const HEADER_SIZE = 33;
 const connectionIdDecoder = new TextDecoder();
 const connectionIdPattern = /^[0-9a-f]{32}$/;
 
-export const TUNNEL_BINARY_WEBSOCKET_HEADER = "X-Vellum-Tunnel-Binary-WebSocket";
+export const TUNNEL_BINARY_WEBSOCKET_HEADER =
+  "X-Vellum-Tunnel-Binary-WebSocket";
 
 export interface TunnelBinaryWebSocketFrame {
   type: "websocket_binary";

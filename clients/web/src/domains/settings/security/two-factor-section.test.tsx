@@ -42,7 +42,7 @@ const { TwoFactorSection } = await import("./two-factor-section");
 const FACTOR: MfaFactor = {
   id: "auth_factor_01ABC",
   type: "totp",
-  issuer: "Vellum",
+  issuer: "Cadet",
   user: "alice@example.com",
   created_at: "2026-07-01T00:00:00.000Z",
   updated_at: "2026-07-01T00:00:00.000Z",

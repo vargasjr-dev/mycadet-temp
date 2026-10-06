@@ -18,7 +18,7 @@ import { detectElectronHostOS } from "@/runtime/platform-detection";
 
 /**
  * Publish the unread conversation count to the Electron Dock badge.
- * Main formats per Swift Vellum's convention (1–99 pass through, 99+
+ * Main formats per Swift Cadet's convention (1–99 pass through, 99+
  * truncates). Pass `0` to clear.
  *
  * Safe to call from any host — no-op off Electron.

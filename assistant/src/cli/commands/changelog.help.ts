@@ -17,7 +17,7 @@ export const CACHE_STABLE_LIMIT = 5;
 export const changelogHelp: CliCommandHelp = {
   name: "changelog",
   description:
-    "Show release notes of the Vellum Assistant to see what new capabilities you have!",
+    "Show release notes of the Cadet Assistant to see what new capabilities you have!",
   options: [
     {
       flags: "--since <version>",

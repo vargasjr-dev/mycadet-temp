@@ -100,7 +100,7 @@ describe("notifyChannelSetupClosed", () => {
     await notifyChannelSetupClosed({
       channel: "slack",
       assistantId: "a1",
-      assistantName: "Vellum",
+      assistantName: "Cadet",
       conversationId: "c1",
     });
 
@@ -127,7 +127,7 @@ describe("notifyChannelSetupClosed", () => {
     await notifyChannelSetupClosed({
       channel: "slack",
       assistantId: "a1",
-      assistantName: "Vellum",
+      assistantName: "Cadet",
     });
 
     expect(postCalls).toHaveLength(0);
@@ -139,7 +139,7 @@ describe("notifyChannelSetupClosed", () => {
     await notifyChannelSetupClosed({
       channel: "slack",
       assistantId: "a1",
-      assistantName: "Vellum",
+      assistantName: "Cadet",
       conversationId: "c1",
     });
 
@@ -154,7 +154,7 @@ describe("notifyChannelSetupClosed", () => {
     await notifyChannelSetupClosed({
       channel: "slack",
       assistantId: "a1",
-      assistantName: "Vellum",
+      assistantName: "Cadet",
       conversationId: "c1",
     });
 
@@ -169,7 +169,7 @@ describe("notifyChannelSetupClosed", () => {
       notifyChannelSetupClosed({
         channel: "slack",
         assistantId: "a1",
-        assistantName: "Vellum",
+        assistantName: "Cadet",
         conversationId: "c1",
       }),
     ).resolves.toBeUndefined();
@@ -181,7 +181,7 @@ describe("notifyChannelSetupHandedOff", () => {
     await notifyChannelSetupHandedOff({
       channel: "slack",
       assistantId: "a1",
-      assistantName: "Vellum",
+      assistantName: "Cadet",
       conversationId: "c1",
     });
 
@@ -198,7 +198,7 @@ describe("notifyChannelSetupClosed: verify_requested outcome", () => {
   const PAYLOAD = {
     channel: "discord",
     assistantId: "a1",
-    assistantName: "Vellum",
+    assistantName: "Cadet",
     conversationId: "c1",
   } as const;
 

@@ -157,7 +157,7 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
   // new-thread-suggestions feature flag.
   {
     id: "vellum-picks",
-    title: "Vellum picks",
+    title: "Cadet picks",
     source: "vellum-curated",
     suggestions: [
       {
@@ -174,8 +174,8 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
             "copy, and scaffold a clean starting point you can refine.",
           requirements: [
             {
-              id: "vellum-picks:build-website:vellum",
-              label: "Vellum assistant",
+              id: "vellum-picks:build-website:cadet",
+              label: "Cadet assistant",
               status: "ready",
             },
           ],
@@ -203,8 +203,8 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
             "still in flight.",
           requirements: [
             {
-              id: "vellum-picks:summarize-week:vellum",
-              label: "Vellum assistant",
+              id: "vellum-picks:summarize-week:cadet",
+              label: "Cadet assistant",
               status: "ready",
             },
           ],
@@ -229,8 +229,8 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
             "the right tone that you can tweak and send.",
           requirements: [
             {
-              id: "vellum-picks:draft-email:vellum",
-              label: "Vellum assistant",
+              id: "vellum-picks:draft-email:cadet",
+              label: "Cadet assistant",
               status: "ready",
             },
           ],
@@ -257,8 +257,8 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
             "itinerary with places to stay, things to do, and a rough budget.",
           requirements: [
             {
-              id: "vellum-picks:plan-trip:vellum",
-              label: "Vellum assistant",
+              id: "vellum-picks:plan-trip:cadet",
+              label: "Cadet assistant",
               status: "ready",
             },
           ],
@@ -285,8 +285,8 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
             "findings, and cite where each one came from so you can trust it.",
           requirements: [
             {
-              id: "vellum-picks:research-topic:vellum",
-              label: "Vellum assistant",
+              id: "vellum-picks:research-topic:cadet",
+              label: "Cadet assistant",
               status: "ready",
             },
           ],

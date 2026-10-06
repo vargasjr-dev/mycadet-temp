@@ -309,7 +309,7 @@ export function registerMcpCommand(program: Command): void {
         log.info(`Removed MCP server "${name}".`);
         log.info(
           "The running assistant will pick up this change automatically. " +
-            "Or run 'vellum mcp reload' to apply now.",
+            "Or run 'cadet mcp reload' to apply now.",
         );
       });
     },

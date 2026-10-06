@@ -1434,8 +1434,8 @@ describe("cadet:localMode:guardianToken handler", () => {
 
     expect(result.ok).toBe(false);
     expect(result.status).toBe(401);
-    expect(result.error).toContain("vellum hatch");
-    expect(result.error).not.toContain("vellum pair");
+    expect(result.error).toContain("cadet hatch");
+    expect(result.error).not.toContain("cadet pair");
     expect(spawnArgs).toHaveLength(0);
   });
 

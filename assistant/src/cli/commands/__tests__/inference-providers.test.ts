@@ -463,7 +463,7 @@ describe("providers list output", () => {
       },
     };
     const { stdout } = await run(["providers", "list"]);
-    expect(stdout).toContain("vellum  provider=vellum");
+    expect(stdout).toContain("cadet  provider=cadet");
     expect(stdout).toContain("anthropic-personal  provider=anthropic");
     expect(stdout).not.toContain("auth=");
     expect(stdout).not.toContain("api_key");

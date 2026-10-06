@@ -164,7 +164,7 @@ function restoreTerminal(): void {
   process.stdout.write = originalStdoutWrite;
 }
 
-describe("vellum retire", () => {
+describe("cadet retire", () => {
   beforeEach(() => {
     process.env.VELLUM_LOCKFILE_DIR = testDir;
     delete process.env.VELLUM_PLATFORM_TOKEN;

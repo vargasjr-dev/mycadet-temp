@@ -21,7 +21,7 @@ export const WEB_SEARCH_PROVIDER_IDS: readonly string[] = [
 export const WEB_SEARCH_PROVIDER_DISPLAY_NAMES: Readonly<
   Record<string, string>
 > = {
-  vellum: "Vellum",
+  vellum: "Cadet",
   "inference-provider-native": "Provider Native",
   perplexity: "Perplexity",
   brave: "Brave",

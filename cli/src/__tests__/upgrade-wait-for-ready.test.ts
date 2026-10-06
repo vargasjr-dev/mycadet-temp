@@ -5,7 +5,7 @@
  * the status code: the forwarded assistant body is 200 with `ready: false`
  * while DB migrations run (the k8s keep-the-pod contract) and while the
  * gateway's own startup gate is closed. Simplifying this back to
- * `if (resp.ok) return true` would make `vellum upgrade` commit and report
+ * `if (resp.ok) return true` would make `cadet upgrade` commit and report
  * success mid-migration and make the rollback/restore path unreachable —
  * these tests pin the body semantics.
  */

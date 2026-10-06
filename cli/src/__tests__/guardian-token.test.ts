@@ -636,7 +636,7 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
   });
 
   test("persisted default env file (no VELLUM_ENVIRONMENT): resolvers agree", () => {
-    // Mirror `vellum env set dev`: the default-env file lives at the fixed,
+    // Mirror `cadet env set dev`: the default-env file lives at the fixed,
     // env-agnostic path $XDG_CONFIG_HOME/vellum/environment.
     mkdirSync(join(tempHome, "vellum"), { recursive: true });
     writeFileSync(join(tempHome, "vellum", "environment"), "dev\n");

@@ -26,7 +26,7 @@ import { isElectron } from "@/runtime/is-electron";
  * reads/writes, and guardian-token acquisition).
  *
  * Local mode provisions an assistant on the user's own machine by driving the
- * Vellum CLI and reading/writing its lockfile. That work runs in a trusted
+ * Cadet CLI and reading/writing its lockfile. That work runs in a trusted
  * host process, never the renderer: in the Electron desktop shell it runs in
  * the main process behind `window.vellum.localMode.*`; on the web/dev host it
  * runs in the Vite dev server behind `/assistant/__local/*` middleware. This
@@ -154,7 +154,7 @@ function readInjectedConfig(): { mode?: string } | undefined {
 
 /**
  * Whether a local-mode host (the Electron IPC bridge, the Vite dev server, or
- * the `vellum client` CLI server) backs this runtime and can serve
+ * the `cadet client` CLI server) backs this runtime and can serve
  * `/assistant/__local/*`. The managed web build and the remote-web tunnel
  * cannot, yet both still surface local / self-hosted assistants via the platform
  * `is_local` flag — so callers and UI MUST consult this before offering a local
@@ -179,7 +179,7 @@ export function isLocalModeHostAvailable(): boolean {
 
 /**
  * Whether this host serves `/assistant/__local/avatar/{id}`: the Electron main
- * process and the Vite dev server do; the packaged `vellum client` web host
+ * process and the Vite dev server do; the packaged `cadet client` web host
  * deliberately does not (its `.vellum` boundary), and its SPA fallback would
  * answer the request with HTML. `import.meta.env.DEV` is what separates the
  * dev server from a served build.
@@ -232,7 +232,7 @@ async function requestLocalCommand<T extends { ok: boolean }>(
 /**
  * Provision a local assistant.
  *
- * Both hosts spawn the Vellum CLI in a trusted process and return the same
+ * Both hosts spawn the Cadet CLI in a trusted process and return the same
  * `{ ok, assistantId }` contract: the Electron main process behind
  * `window.vellum.localMode.hatch`, the Vite dev server behind the
  * `/assistant/__local/hatch` middleware. Callers reload the lockfile to
@@ -381,7 +381,7 @@ export async function replacePlatformAssistantsHost(
 }
 
 /**
- * Retire a local assistant. Both hosts drive the Vellum CLI's `retire` in a
+ * Retire a local assistant. Both hosts drive the Cadet CLI's `retire` in a
  * trusted process and return the same `{ ok, error }` contract.
  */
 export async function retireLocalAssistantHost(
@@ -510,7 +510,7 @@ const DEVICE_MANAGEMENT_UNSUPPORTED_ERROR =
  * List the devices holding pairing tokens for a local assistant. Device
  * management is host-side only: the gateway's devices routes reject browser
  * origins by design, so the trusted host (Electron main, the Vite dev
- * middleware, or the `vellum client` server) spawns the CLI's `devices
+ * middleware, or the `cadet client` server) spawns the CLI's `devices
  * --json` and returns its result over this seam. Older Electron hosts that
  * predate the IPC channel degrade to a structured unsupported error, which
  * doubles as the UI's visibility gate on those app shells.
@@ -557,7 +557,7 @@ export async function revokePairedDeviceHost(
 }
 
 /**
- * Stop a local assistant's daemon and gateway. Both hosts drive the Vellum
+ * Stop a local assistant's daemon and gateway. Both hosts drive the Cadet
  * CLI's `sleep --force` in a trusted process and return the same `{ ok, error }`
  * contract. Used as the first half of a restart (sleep → wake).
  */
@@ -581,7 +581,7 @@ export async function sleepLocalAssistantHost(
 
 /**
  * Wake (start/restart) a local assistant's daemon and gateway. Both hosts
- * drive the Vellum CLI's `wake` in a trusted process and return the same
+ * drive the Cadet CLI's `wake` in a trusted process and return the same
  * `{ ok, error }` contract.
  *
  * This is the non-destructive repair primitive: it revives a stopped or
@@ -615,7 +615,7 @@ export async function wakeLocalAssistantHost(
   return postLocalCommand<LocalWakeResult>(
     "/assistant/__local/wake",
     { assistantId, repairGuardian: options?.repairGuardian },
-    "Wake failed. Try running vellum wake in your terminal.",
+    "Wake failed. Try running cadet wake in your terminal.",
   );
 }
 

@@ -54,7 +54,7 @@ import { useSttLanguageSelection } from "@/components/speech/use-stt-language-se
  * `services.stt.provider` value (the card id and daemon id differ for
  * Whisper), and `credentialService` is the CES namespace for its key.
  * Client-only providers (macOS native dictation) are absent — they never
- * touch the daemon. `vellum` authenticates via the platform connection, so
+ * touch the daemon. `cadet` authenticates via the platform connection, so
  * it has no credential service of its own.
  */
 const STT_DAEMON_PROVIDER: Record<
@@ -81,7 +81,7 @@ const CARD_ID_BY_DAEMON_PROVIDER: Record<string, string> = {
 /**
  * Fallback provider, as both a card id and a daemon id. Mirrors the daemon's
  * `services.stt.provider` schema default. Deliberately not `providers[0]` —
- * the dropdown leads with Vellum, and an unconfigured client must not claim
+ * the dropdown leads with Cadet, and an unconfigured client must not claim
  * the managed provider on its own.
  */
 const DEFAULT_PROVIDER_ID = "deepgram";
@@ -147,8 +147,8 @@ export function SttProviderForm({
     | { provider?: string; mode?: string }
     | undefined;
   // A config written by the legacy mode toggle marks managed via `mode` while
-  // `provider` holds the BYOK restore value — the daemon routes it to Vellum,
-  // so the form must render it as Vellum too.
+  // `provider` holds the BYOK restore value — the daemon routes it to Cadet,
+  // so the form must render it as Cadet too.
   const daemonSttProvider =
     daemonStt?.mode === "managed" ? "vellum" : daemonStt?.provider;
 
@@ -186,7 +186,7 @@ export function SttProviderForm({
   // the picker binds to that provider and hides while the dropdown holds an
   // unsaved draft of a different one: offering the draft's languages would
   // write a value the still-active provider may ignore (e.g. Multilingual
-  // drafted for Vellum while xAI runs, whose resolver drops "multi"). A
+  // drafted for Cadet while xAI runs, whose resolver drops "multi"). A
   // settled selection with a daemon mapping shows the picker only when that
   // mapping IS the provider the pick steers (the hook's
   // `configuredProviderId`): with no `services.stt` config, a stale
@@ -292,9 +292,9 @@ export function SttProviderForm({
       // may be a provider the dropdown can't represent (e.g. google-gemini via
       // CLI) that the fallback would silently overwrite.
       //
-      // Leaving Vellum for the client-only native choice still has to write:
+      // Leaving Cadet for the client-only native choice still has to write:
       // that choice has no daemon mapping, so without it the daemon would stay
-      // on Vellum and a refetch would snap the dropdown back.
+      // on Cadet and a refetch would snap the dropdown back.
       const leavingVellum =
         daemonSttProvider === "vellum" && draftProvider !== "vellum";
       const writeProvider =

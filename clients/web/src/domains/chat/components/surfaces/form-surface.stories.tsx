@@ -36,7 +36,7 @@ const SETUP_PAGES = [
         id: "appName",
         type: "text",
         label: "App name",
-        placeholder: "Vellum",
+        placeholder: "Cadet",
         required: true,
       },
     ],

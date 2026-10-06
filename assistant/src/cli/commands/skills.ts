@@ -83,7 +83,7 @@ export function registerSkillsCommand(program: Command): void {
             );
           }
           // Source labels the extension a skill ships from. Plugin-resident
-          // skills are intentionally mapped to kind:bundled/origin:vellum for
+          // skills are intentionally mapped to kind:bundled/origin:cadet for
           // older clients, so their real attribution lives on `owner` —
           // surface it as `plugin:<id>` instead of collapsing to "bundled".
           const sourceLabel = (s: {
@@ -251,7 +251,7 @@ export function registerSkillsCommand(program: Command): void {
           const json = opts.json ?? false;
           const limit = parseInt(opts.limit, 10) || 10;
 
-          // Step 1: Vellum catalog (installed + remote available)
+          // Step 1: Cadet catalog (installed + remote available)
           const catalogR = await cliIpcCall<{
             skills: Array<{
               id: string;
@@ -293,7 +293,7 @@ export function registerSkillsCommand(program: Command): void {
             ? communityR.result!.skills.filter((s) => s.origin !== "vellum")
             : [];
 
-          // Deduplicate by id — vellum wins
+          // Deduplicate by id — cadet wins
           const seen = new Set(vellumSkills.map((s) => s.id));
           const dedupedCommunity = communitySkills.filter((s) => {
             if (seen.has(s.id)) {
@@ -331,7 +331,7 @@ export function registerSkillsCommand(program: Command): void {
           if (!hasResults) {
             log.info(`No skills found for "${query}".`);
             if (!catalogR.ok) {
-              log.warn(`(Vellum catalog unavailable: ${catalogR.error})`);
+              log.warn(`(Cadet catalog unavailable: ${catalogR.error})`);
             }
             if (!communityR.ok) {
               log.warn(`(Community registry unavailable: ${communityR.error})`);
@@ -340,7 +340,7 @@ export function registerSkillsCommand(program: Command): void {
           }
 
           if (vellumSkills.length > 0) {
-            log.info(`Vellum catalog (${vellumSkills.length}):\n`);
+            log.info(`Cadet catalog (${vellumSkills.length}):\n`);
             for (const s of vellumSkills) {
               const emoji = s.emoji ? `${s.emoji} ` : "";
               const badge = s.kind === "installed" ? " [installed]" : "";

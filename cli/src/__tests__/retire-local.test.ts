@@ -242,7 +242,7 @@ describe("retireLocal — CES sibling stop", () => {
 
 test("uses a Windows-native archive process", () => {
   const archivePath =
-    "C:\\Users\\Example User\\Vellum\\retired\\assistant & data.tar.gz";
+    "C:\\Users\\Example User\\Cadet\\retired\\assistant & data.tar.gz";
   const stagingDir = `${archivePath}.staging`;
   const archiveCommand = getRetireArchiveCommand(
     archivePath,
@@ -255,7 +255,7 @@ test("uses a Windows-native archive process", () => {
   expect(archiveCommand.args.join(" ")).not.toContain(archivePath);
   expect(archiveCommand.env).toMatchObject({
     VELLUM_RETIRE_ARCHIVE_PATH: archivePath,
-    VELLUM_RETIRE_ARCHIVE_PARENT: "C:\\Users\\Example User\\Vellum\\retired",
+    VELLUM_RETIRE_ARCHIVE_PARENT: "C:\\Users\\Example User\\Cadet\\retired",
     VELLUM_RETIRE_STAGING_NAME: "assistant & data.tar.gz.staging",
     VELLUM_RETIRE_STAGING_DIR: stagingDir,
   });

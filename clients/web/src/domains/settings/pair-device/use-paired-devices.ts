@@ -49,7 +49,7 @@ export interface UsePairedDevicesOptions {
   revalidateKey?: number;
   /**
    * Whether the device rows are on screen. The activity refresh only runs
-   * while they are: each refetch spawns a `vellum` subprocess through the
+   * while they are: each refetch spawns a `cadet` subprocess through the
    * host seam, which is not worth paying to keep a hidden label fresh.
    */
   isExpanded?: boolean;
@@ -164,7 +164,7 @@ export function usePairedDevices({
   // sampled, so an expanded list ages one fixed instant and ends up claiming
   // a device is idle while it is still talking to the gateway. Resample on a
   // slow cadence, but only while the rows are actually expanded: a refetch
-  // costs a `vellum` subprocess on the host, so a collapsed accordion must
+  // costs a `cadet` subprocess on the host, so a collapsed accordion must
   // not pay it. The pairing poll already refreshes faster than this, so stand
   // down whenever it is running.
   const hasDevices = (list?.devices.length ?? 0) > 0;

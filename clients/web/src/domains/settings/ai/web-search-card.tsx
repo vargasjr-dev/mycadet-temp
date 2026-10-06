@@ -85,7 +85,7 @@ export function WebSearchCard() {
       | undefined;
     // A config written by the legacy mode toggle marks managed via `mode`
     // while `provider` holds the BYOK restore value — the daemon routes it to
-    // Vellum, so the card must render it as Vellum too. Provider Native is
+    // Cadet, so the card must render it as Cadet too. Provider Native is
     // exempt: it stays itself under managed mode (see migration 132).
     const daemonProvider =
       wsService?.mode === "managed" &&
@@ -170,10 +170,10 @@ export function WebSearchCard() {
       }
       // The provider is written as a pair with `mode`: a stale
       // `mode: "managed"` from the legacy toggle would win over a BYOK
-      // choice unless reset. Daemons older than the vellum catalog entry
-      // reject the provider value outright, so for them a Vellum selection
+      // choice unless reset. Daemons older than the cadet catalog entry
+      // reject the provider value outright, so for them a Cadet selection
       // writes only the legacy managed mode and lets the deep-merge keep the
-      // stored provider — the read bridge renders that pair as Vellum again.
+      // stored provider — the read bridge renders that pair as Cadet again.
       await whenAssistantVersionKnown();
       const webSearchService: {
         provider?: string;

@@ -96,7 +96,7 @@ export function isRelayableExternalHref(href: unknown): href is string {
 
 const APP_ROUTE_ORIGIN = "https://app-route.invalid";
 
-/** Normalize a root-relative Vellum route received from a sandboxed frame. */
+/** Normalize a root-relative Cadet route received from a sandboxed frame. */
 export function getRelayableAppRoute(href: unknown): string | null {
   if (typeof href !== "string") {
     return null;

@@ -6,7 +6,7 @@ import { isNativePlatform } from "@/runtime/native-auth";
 
 /**
  * Per-capability wrapper for the Electron host's window attention bridge.
- * Vellum windows set `backgroundThrottling: false`, which also disables the
+ * Cadet windows set `backgroundThrottling: false`, which also disables the
  * Page Visibility API, so `document.visibilityState` is pinned to `"visible"`
  * in the desktop renderer and `visibilitychange` never fires. Only the main
  * process can say whether the window is on screen, and it pushes that state

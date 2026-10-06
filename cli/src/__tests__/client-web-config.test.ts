@@ -1,5 +1,5 @@
 /**
- * Tests for the config `vellum client --interface web` serves at
+ * Tests for the config `cadet client --interface web` serves at
  * `/assistant/__config`, the document a caller probes to learn which assistant
  * an origin fronts. This host also serves the `__local` endpoints, so its SPA
  * switches between every assistant in the lockfile and the origin has no single
@@ -16,7 +16,7 @@ const BASE = {
   disablePlatform: true,
 };
 
-describe("vellum client web __config", () => {
+describe("cadet client web __config", () => {
   test("reports no assistant identity for the multi-assistant origin", () => {
     const config = buildWebInterfaceConfig(BASE);
 

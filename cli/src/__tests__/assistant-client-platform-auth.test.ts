@@ -161,7 +161,7 @@ describe("AssistantClient platform-managed auth", () => {
     const client = new AssistantClient({ assistantId: ASSISTANT_ID });
 
     await expect(client.post("/messages/", { content: "hi" })).rejects.toThrow(
-      "Not logged in. Run `vellum login` first to authenticate with the platform.",
+      "Not logged in. Run `cadet login` first to authenticate with the platform.",
     );
     expect(calls).toHaveLength(0);
   });

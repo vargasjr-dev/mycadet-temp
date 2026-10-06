@@ -13,7 +13,7 @@ import { QueryClient } from "@tanstack/react-query";
 
 let lockfileAssistants: Array<{ assistantId: string; cloud?: string }> = [];
 // Entries the next loadLockfile makes visible, standing in for a lockfile
-// change (e.g. `vellum connect import`) the renderer cache hasn't seen.
+// change (e.g. `cadet connect import`) the renderer cache hasn't seen.
 let lockfileAssistantsAfterReload: Array<{
   assistantId: string;
   cloud?: string;
@@ -143,7 +143,7 @@ describe("switchToAssistant", () => {
   });
 
   test("a paired entry the cache hasn't loaded yet connects with credentials after the reload", async () => {
-    // A `vellum connect import` while the app was open: the tray (fed by
+    // A `cadet connect import` while the app was open: the tray (fed by
     // main's watched lockfile) knows the entry, the renderer cache doesn't.
     lockfileAssistantsAfterReload = [{ assistantId: "pr2", cloud: "paired" }];
 
