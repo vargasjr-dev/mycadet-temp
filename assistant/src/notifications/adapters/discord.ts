@@ -131,8 +131,8 @@ export class DiscordAdapter implements ChannelAdapter {
       const message = err instanceof Error ? err.message : String(err);
       // A missing bot token means the operator simply hasn't configured
       // Discord; it is not a code fault, so log it at warn to keep it out
-      // of Sentry. Genuine and transient failures stay at error so they
-      // remain visible.
+      // of error telemetry. Genuine and transient failures stay at error so
+      // they remain visible.
       const logFn = err instanceof ConfigError ? log.warn : log.error;
       logFn(
         { err, sourceEventName: payload.sourceEventName, guardianUserId },

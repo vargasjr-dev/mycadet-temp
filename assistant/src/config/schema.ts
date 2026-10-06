@@ -160,7 +160,7 @@ export const AssistantConfigSchema = z.object({
     .boolean()
     .optional()
     .describe(
-      "Fail-closed diagnostics marker: set for a workspace that had an explicit local sendDiagnostics opt-out before crash reporting moved to platform share_diagnostics consent. While set, Sentry stays disabled regardless of platform consent.",
+      "Fail-closed diagnostics marker: set for a workspace that had an explicit local sendDiagnostics opt-out before crash reporting moved to platform share_diagnostics consent. While set, crash reporting stays disabled regardless of platform consent.",
     ),
   maxStepsPerSession: z
     .number({ error: "maxStepsPerSession must be a number" })

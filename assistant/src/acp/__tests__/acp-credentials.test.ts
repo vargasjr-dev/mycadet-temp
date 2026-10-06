@@ -94,7 +94,7 @@ describe("isAcpClaudeOauthField", () => {
     expect(isAcpClaudeOauthField("acp", "claude_oauth_access_digest")).toBe(
       false,
     );
-    expect(isAcpClaudeOauthField("sentry", "claude_oauth_token")).toBe(false);
+    expect(isAcpClaudeOauthField("stripe", "claude_oauth_token")).toBe(false);
     expect(isAcpClaudeOauthField("openai", "api_key")).toBe(false);
   });
 });

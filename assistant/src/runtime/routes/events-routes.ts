@@ -184,7 +184,7 @@ export type SseShedReporter = (
  * client-side `sse_watchdog_fired` event is achieved via the
  * `client_id` field + timestamp instead.
  */
-export function buildSseShedSentryContext(
+export function buildSseShedReportContext(
   reason: SseShedReason,
   inst: SseSubscriberInstrumentation,
   elDelay: EventLoopDelaySnapshot,
@@ -220,14 +220,14 @@ export function buildSseShedSentryContext(
  */
 const defaultSseShedReporter: SseShedReporter = (reason, inst) => {
   const elDelay = sampleEventLoopDelay();
-  const sentryContext = buildSseShedSentryContext(
+  const reportContext = buildSseShedReportContext(
     reason,
     inst,
     elDelay,
     Date.now(),
   );
   log.warn(
-    { ...sentryContext, conversation_key: inst.conversationKey },
+    { ...reportContext, conversation_key: inst.conversationKey },
     "sse subscriber shed under backpressure",
   );
 };

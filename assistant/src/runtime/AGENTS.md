@@ -50,7 +50,7 @@ These turns are at-most-once BY DESIGN: the sweep's processing lane rebuilds a t
 
 ### SSE backpressure shedding must be observable
 
-SSE handlers built on `ReadableStream` shed slow subscribers when `controller.desiredSize <= 0` to keep daemon memory bounded. Every shed site must emit a log line + Sentry capture so the daemon-side shed can be time-correlated with the client-side idle watchdog (otherwise stalls are invisible from both sides). See [WHATWG Streams — Backpressure](https://streams.spec.whatwg.org/#pipe-chains) and [Node `monitorEventLoopDelay`](https://nodejs.org/api/perf_hooks.html#perf_hooksmonitoreventloopdelayoptions).
+SSE handlers built on `ReadableStream` shed slow subscribers when `controller.desiredSize <= 0` to keep daemon memory bounded. Every shed site must emit a log line + error-report capture so the daemon-side shed can be time-correlated with the client-side idle watchdog (otherwise stalls are invisible from both sides). See [WHATWG Streams — Backpressure](https://streams.spec.whatwg.org/#pipe-chains) and [Node `monitorEventLoopDelay`](https://nodejs.org/api/perf_hooks.html#perf_hooksmonitoreventloopdelayoptions).
 
 ### GET handler idempotency
 

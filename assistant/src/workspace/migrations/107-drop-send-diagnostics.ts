@@ -7,7 +7,8 @@ import type { WorkspaceMigration } from "./types.js";
  * Drops the `sendDiagnostics` config key (crash reporting is governed by the
  * platform `share_diagnostics` consent). An explicit local opt-out
  * (`sendDiagnostics: false`) is preserved as `legacyDiagnosticsOptOut: true` so
- * Sentry stays off regardless of platform consent, which defaults to opt-in and
+ * crash reporting stays off regardless of platform consent, which defaults to
+ * opt-in and
  * cannot be written by the daemon. A `true`/non-false value carries no opt-out
  * intent, so the key is removed without setting the marker. The schema strips
  * unknown keys on the next save, so a stale value is otherwise harmless.

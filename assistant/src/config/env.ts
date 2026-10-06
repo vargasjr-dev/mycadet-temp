@@ -244,7 +244,7 @@ export function setPlatformOrganizationId(value: string | undefined): void {
 
 /**
  * PLATFORM_ORGANIZATION_ID — UUID of the organization this assistant belongs to.
- * Used for Sentry tagging and platform API calls.
+ * Used for platform tagging and API calls.
  */
 export function getPlatformOrganizationId(): string {
   return (

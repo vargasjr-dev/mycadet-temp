@@ -1191,7 +1191,7 @@ function addSanitizedHeader(
  * when the retry loop burned through all attempts against a retryable error
  * (transient network, 5xx, provider-overloaded, mid-stream corruption).
  * Consumers can read it via `(err as { retriesExhausted?: boolean })` to
- * suppress Sentry captures for user-network-flap noise — the retry loop
+ * suppress error-report noise for user-network flaps — the retry loop
  * already did its job, and no engineering action would change the outcome.
  */
 export class RetryProvider implements Provider {
@@ -1631,7 +1631,7 @@ export class RetryProvider implements Provider {
         }
 
         // If we exhausted retries on a retryable error, tag the error so
-        // downstream consumers (Sentry capture, escalation eligibility) can
+        // downstream consumers (error reporting, escalation eligibility) can
         // recognize that the retry loop already tried its best. Control
         // reaches here for two reasons only, and the retryable predicate is
         // what separates them: either the budget is gone, or the error was
@@ -1803,7 +1803,7 @@ export class RetryProvider implements Provider {
           !isRetryableError(error)
         ) {
           // Same tagging contract as the primary loop, so a backup that flapped
-          // its way through the whole budget is recognizable to Sentry capture
+          // its way through the whole budget is recognizable to error reporting
           // as noise no engineering action would change.
           if (didRetry && isRetryableError(error) && error instanceof Error) {
             (error as Error & { retriesExhausted?: boolean }).retriesExhausted =

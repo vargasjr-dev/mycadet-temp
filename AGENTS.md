@@ -329,7 +329,7 @@ When making changes that could affect the cloud platform, review the sibling `..
 
 ## Sentry & Linear Integration
 
-Error reporting uses Sentry. The daemon/runtime (Node) project's DSN is configured via the `SENTRY_DSN_ASSISTANT` environment variable.
+Error reporting uses Sentry on the client surfaces (web, Electron, iOS, Android). The daemon/runtime itself has no Sentry integration.
 
 ### Sentry projects & DSNs
 
@@ -342,7 +342,6 @@ Surfaces map onto Sentry projects as below. The Electron renderer reports to the
 | Electron renderer        | `vellum-assistant-macos`   | `SENTRY_DSN_MACOS` (secret) → `VITE_SENTRY_DSN_MACOS`     | macOS build                                  |
 | iOS webview + native     | `vellum-assistant-ios`     | `SENTRY_DSN_IOS` (secret) → `VITE_SENTRY_DSN_IOS`         | web-SPA build (loaded at runtime on iOS)     |
 | Android webview + native | `vellum-assistant-android` | `SENTRY_DSN_ANDROID` (secret) → `VITE_SENTRY_DSN_ANDROID` | web-SPA build (loaded at runtime on Android) |
-| Assistant daemon         | (unchanged)                | `SENTRY_DSN_ASSISTANT`                                    | runtime env                                  |
 
 Native mobile DSNs are baked into the deployed web SPA bundle rather than the native builds, because the iOS and Android apps run the deployed SPA via `server.url` (see `clients/web/capacitor.config.ts`) and bundle no web assets at `cap sync`.
 

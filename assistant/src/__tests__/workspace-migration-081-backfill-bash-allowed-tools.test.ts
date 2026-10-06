@@ -60,18 +60,18 @@ function readMetadata(): Record<string, unknown> {
 }
 
 /** A credential with injectionTemplates and empty allowedTools (needs backfill). */
-function makeSentryCredential(
+function makeLinearCredential(
   overrides?: Record<string, unknown>,
 ): Record<string, unknown> {
   return {
-    credentialId: "cred-sentry-123",
-    service: "sentry",
+    credentialId: "cred-linear-123",
+    service: "linear",
     field: "auth_token",
     allowedTools: [],
     allowedDomains: [],
     injectionTemplates: [
       {
-        hostPattern: "sentry.io",
+        hostPattern: "api.linear.app",
         injectionType: "header",
         headerName: "Authorization",
         valuePrefix: "Bearer ",
@@ -163,7 +163,7 @@ describe("workspace migration 081-backfill-bash-allowed-tools-for-injection-cred
   test("credential with injectionTemplates and empty allowedTools gets bash added", () => {
     writeMetadata({
       version: 5,
-      credentials: [makeSentryCredential()],
+      credentials: [makeLinearCredential()],
     });
 
     backfillBashAllowedToolsForInjectionCredentialsMigration.run(workspaceDir);
@@ -172,16 +172,16 @@ describe("workspace migration 081-backfill-bash-allowed-tools-for-injection-cred
     const creds = result.credentials as Record<string, unknown>[];
     expect(creds).toHaveLength(1);
 
-    const sentry = creds[0];
-    expect(sentry.service).toBe("sentry");
-    expect(sentry.allowedTools).toEqual(["bash"]);
+    const linear = creds[0];
+    expect(linear.service).toBe("linear");
+    expect(linear.allowedTools).toEqual(["bash"]);
     // injectionTemplates should be preserved (not removed).
-    expect(sentry.injectionTemplates).toBeDefined();
-    expect((sentry.injectionTemplates as unknown[]).length).toBeGreaterThan(0);
+    expect(linear.injectionTemplates).toBeDefined();
+    expect((linear.injectionTemplates as unknown[]).length).toBeGreaterThan(0);
     // updatedAt should have been bumped.
-    expect(sentry.updatedAt).not.toBe(1700000000000);
+    expect(linear.updatedAt).not.toBe(1700000000000);
     // createdAt should be preserved.
-    expect(sentry.createdAt).toBe(1700000000000);
+    expect(linear.createdAt).toBe(1700000000000);
   });
 
   test("credential with injectionTemplates and missing allowedTools gets bash added", () => {
@@ -268,7 +268,7 @@ describe("workspace migration 081-backfill-bash-allowed-tools-for-injection-cred
   test("idempotent: second run on backfilled file is a no-op", () => {
     writeMetadata({
       version: 5,
-      credentials: [makeSentryCredential()],
+      credentials: [makeLinearCredential()],
     });
 
     backfillBashAllowedToolsForInjectionCredentialsMigration.run(workspaceDir);
@@ -286,7 +286,7 @@ describe("workspace migration 081-backfill-bash-allowed-tools-for-injection-cred
     writeMetadata({
       version: 5,
       credentials: [
-        makeSentryCredential(),
+        makeLinearCredential(),
         makeResendCredential(),
         makeHardenedVercelCredential(),
         makeCredentialWithPopulatedAllowedTools(),
@@ -300,10 +300,10 @@ describe("workspace migration 081-backfill-bash-allowed-tools-for-injection-cred
     const creds = result.credentials as Record<string, unknown>[];
     expect(creds).toHaveLength(5);
 
-    // Sentry: should be backfilled.
-    const sentry = creds.find((c) => c.service === "sentry");
-    expect(sentry!.allowedTools).toEqual(["bash"]);
-    expect(sentry!.updatedAt).not.toBe(1700000000000);
+    // linear: should be backfilled.
+    const linear = creds.find((c) => c.service === "linear");
+    expect(linear!.allowedTools).toEqual(["bash"]);
+    expect(linear!.updatedAt).not.toBe(1700000000000);
 
     // Resend: should be backfilled.
     const resend = creds.find((c) => c.service === "resend");
@@ -329,7 +329,7 @@ describe("workspace migration 081-backfill-bash-allowed-tools-for-injection-cred
   test("unrecognized future schema version is a no-op", () => {
     writeMetadata({
       version: 99,
-      credentials: [makeSentryCredential()],
+      credentials: [makeLinearCredential()],
     });
     const before = readFileSync(metadataPath, "utf-8");
 
@@ -357,21 +357,21 @@ describe("workspace migration 081-backfill-bash-allowed-tools-for-injection-cred
 
   test("file with no version field defaults to version 1 and processes", () => {
     writeMetadata({
-      credentials: [makeSentryCredential()],
+      credentials: [makeLinearCredential()],
     });
 
     backfillBashAllowedToolsForInjectionCredentialsMigration.run(workspaceDir);
 
     const result = readMetadata();
     const creds = result.credentials as Record<string, unknown>[];
-    const sentry = creds.find((c) => c.service === "sentry");
-    expect(sentry!.allowedTools).toEqual(["bash"]);
+    const linear = creds.find((c) => c.service === "linear");
+    expect(linear!.allowedTools).toEqual(["bash"]);
   });
 
   test("down() is a no-op", () => {
     writeMetadata({
       version: 5,
-      credentials: [makeSentryCredential()],
+      credentials: [makeLinearCredential()],
     });
     backfillBashAllowedToolsForInjectionCredentialsMigration.run(workspaceDir);
     const after = readFileSync(metadataPath, "utf-8");
@@ -388,10 +388,10 @@ describe("workspace migration 081-backfill-bash-allowed-tools-for-injection-cred
   test("post-080+081 scenario: Vercel has no bash, injection services have bash", () => {
     // Simulate state after migration 080 has already run:
     // - Vercel: hardened (no injectionTemplates, allowedTools = publish tools)
-    // - Sentry: still has injectionTemplates, empty allowedTools
+    // - linear: still has injectionTemplates, empty allowedTools
     writeMetadata({
       version: 5,
-      credentials: [makeHardenedVercelCredential(), makeSentryCredential()],
+      credentials: [makeHardenedVercelCredential(), makeLinearCredential()],
     });
 
     backfillBashAllowedToolsForInjectionCredentialsMigration.run(workspaceDir);
@@ -403,8 +403,8 @@ describe("workspace migration 081-backfill-bash-allowed-tools-for-injection-cred
     const vercel = creds.find((c) => c.service === "vercel");
     expect(vercel!.allowedTools).toEqual(["publish_page", "unpublish_page"]);
 
-    // Sentry: should now have bash.
-    const sentry = creds.find((c) => c.service === "sentry");
-    expect(sentry!.allowedTools).toEqual(["bash"]);
+    // linear: should now have bash.
+    const linear = creds.find((c) => c.service === "linear");
+    expect(linear!.allowedTools).toEqual(["bash"]);
   });
 });

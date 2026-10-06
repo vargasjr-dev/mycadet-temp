@@ -168,9 +168,9 @@ describe("credentials/prompt route", () => {
     // WHEN a prompt request carries a usageDescription
     const result = (await promptRoute!.handler({
       body: {
-        service: "sentry",
+        service: "linear",
         field: "auth_token",
-        label: "Sentry Auth Token",
+        label: "Linear Auth Token",
         usageDescription: "Needed to read issues",
       },
     })) as PromptResponse;

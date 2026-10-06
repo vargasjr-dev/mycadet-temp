@@ -48,8 +48,8 @@
  *      and (because we set `suppressFailureNotifications: true`) does NOT
  *      emit an `activity.failed` notification on transient failures —
  *      consolidation runs on tight intervals, so a network blip or model
- *      hiccup should not spam the home feed. Sentry-side reporting is
- *      unchanged. The prompt body is loaded via `resolveConsolidationPrompt`
+ *      hiccup should not spam the home feed. Error reporting is unchanged. The
+ *      prompt body is loaded via `resolveConsolidationPrompt`
  *      which bounds any operator-provided override to a regular file under
  *      1 MiB before substitution.
  *   6. Consume the pass's entries, and only then. `runResult.ok` only means
@@ -491,7 +491,7 @@ export async function memoryV2ConsolidateJob(
     // `suppressFailureNotifications` — does NOT emit an `activity.failed`
     // notification on transient failures. Consolidation runs on tight
     // intervals; a network blip or model hiccup should not spam the feed.
-    // Sentry-side reporting is unchanged.
+    // Error reporting is unchanged.
     //
     // The prompt body comes from `resolveConsolidationPrompt`, which honors
     // the `consolidation_prompt_path` substrate tunable but bounds

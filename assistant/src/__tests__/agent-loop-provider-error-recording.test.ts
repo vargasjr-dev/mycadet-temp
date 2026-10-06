@@ -18,7 +18,7 @@
  *    if the wrapping `provider.name` is a different default transport.
  *  - The error is still re-thrown internally (the existing `error` event
  *    still fires after the new `provider_error` event), preserving the
- *    outer-catch behavior (abort/Sentry/break).
+ *    outer-catch behavior (abort/error-report/break).
  *  - Skips emission on user-aborted runs — there is no provider rejection
  *    worth recording when the user cancelled.
  */

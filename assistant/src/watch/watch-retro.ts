@@ -164,7 +164,7 @@ The payload:
 
 - \`task\`: the task, named the way the user would name it. Six words at most, and no trailing clause explaining it: it is a card title, not a sentence.
 - \`purpose\`: what it is for, in under twelve words. Skip it when the task already says it; a line restating the title is worse than no line.
-- \`steps\`: the steps in order, as short imperative fragments: "Open the Sentry issue", not "You opened the Sentry issue from the alert email". Three to eight of them. Concrete enough to follow, carrying no purpose of their own.
+- \`steps\`: the steps in order, as short imperative fragments: "Open the Linear issue", not "You opened the Linear issue from the alert email". Three to eight of them. Concrete enough to follow, carrying no purpose of their own.
 - \`eyebrow\`: what the session cost, in the teaching's own words, e.g. "Taught in 4 min" or "Taught in 4 min, 11 screens". Never "watched": the user taught you this, they did not perform for you.
 - \`questions\`: at most three, most consequential first. Fewer is better, and none is a valid answer if the recording settled everything. Each question is \`{ id, kind, prompt }\`: \`prompt\` is the question worded the way you would ask it out loud, and \`id\` is a handle no other question on this card uses. A \`pick\` or a \`gate\` adds \`options\`, each of them \`{ id, label }\` and optionally a \`note\`: \`label\` is the answer as the user reads it, and \`id\` is that option's own handle. Use those names exactly. A question's text is \`prompt\` and never \`question\` or \`text\`; an option's text is \`label\` and never \`value\` or \`title\`. Anything sent under another name is dropped on the way to the card, and the page it belonged to is lost.
 

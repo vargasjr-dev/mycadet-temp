@@ -247,7 +247,7 @@ Examples:
       options: [
         {
           flags: "--service <service>",
-          description: "Service namespace (e.g. sentry)",
+          description: "Service namespace (e.g. linear)",
           required: true,
         },
         {
@@ -309,11 +309,11 @@ The --label and --description text renders inside the prompt itself, so put the
 instructions there rather than in a follow-up message.
 
 Examples:
-  $ assistant credentials prompt --service sentry --field auth_token \\
-      --label "Sentry Auth Token" --placeholder "sntrys_..." \\
-      --usage-description "Read Sentry issues and events" \\
-      --allowed-domains "sentry.io" \\
-      --injection-templates '[{"hostPattern":"sentry.io","injectionType":"header","headerName":"Authorization","valuePrefix":"Bearer "}]'`,
+  $ assistant credentials prompt --service linear --field auth_token \\
+      --label "Linear Auth Token" --placeholder "lin_api_..." \\
+      --usage-description "Read Linear issues and projects" \\
+      --allowed-domains "api.linear.app" \\
+      --injection-templates '[{"hostPattern":"api.linear.app","injectionType":"header","headerName":"Authorization","valuePrefix":"Bearer "}]'`,
     },
   ],
 };

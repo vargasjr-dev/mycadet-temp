@@ -779,11 +779,11 @@ const log = getLogger("plugins-routes");
  *
  * The catalog fetcher (`plugin-catalog-platform.ts`) throws
  * `PluginCatalogUnavailableError` without logging, and the transport adapters
- * return the resulting `RouteError` (a 503) without any Sentry capture — so an
+ * return the resulting `RouteError` (a 503) without logging it — so an
  * outage on the platform-first paths (`search`, `install`, the remote-only
  * detail view) otherwise leaves no trace beyond the daemon access-log status
  * code, and the real upstream status / URL is lost. Log at `error` so the
- * outage is time-correlatable in the daemon log and surfaces in Sentry;
+ * outage is time-correlatable in the daemon log and lands in error telemetry;
  * `upstreamStatus` preserves the true platform status (e.g. 404 / 500 / 503)
  * that the client-facing 503 collapses.
  */

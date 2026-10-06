@@ -606,7 +606,7 @@ export const WatchRetroSurfaceDataSchema = z.object({
   purpose: tolerantString(),
   /**
    * The steps, in order, as imperative fragments rather than sentences:
-   * "Open the Sentry issue", not "You opened the Sentry issue from the alert
+   * "Open the Linear issue", not "You opened the Linear issue from the alert
    * email". It is about to become a procedure, so it reads as one already.
    */
   steps: z.preprocess(

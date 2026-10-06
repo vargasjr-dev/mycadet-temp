@@ -424,8 +424,8 @@ async function handleTranscribeFile({ body }: RouteHandlerArgs) {
     if (err instanceof SttError) {
       // Auth/rate-limit/timeout/invalid-audio are user-config or transient
       // conditions, not daemon defects, so log them at warn to keep them out
-      // of error telemetry. Reserve error level (with the raw err for a Sentry
-      // stack) for genuine provider/unexpected failures.
+      // of error telemetry. Reserve error level (with the raw err attached) for
+      // genuine provider/unexpected failures.
       if (err.category === "provider-error") {
         log.error({ err, filePath }, "File transcription failed");
       } else {

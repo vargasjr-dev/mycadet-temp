@@ -852,22 +852,6 @@
       "updatedAt": "2026-06-03T03:10:07.000Z"
     },
     {
-      "id": "sentry-app-setup",
-      "name": "sentry-app-setup",
-      "description": "Create and configure a Sentry internal integration so the assistant can manage issues, alerts, and releases under its own identity",
-      "metadata": {
-        "icon": "assets/icon.svg",
-        "emoji": "🔺",
-        "vellum": {
-          "category": "development",
-          "display-name": "Sentry App Setup",
-          "user-invocable": "true"
-        }
-      },
-      "compatibility": "Designed for Vellum personal assistants",
-      "updatedAt": "2026-08-28T21:17:09.000Z"
-    },
-    {
       "id": "slack",
       "name": "slack",
       "description": "Send, read, and manage Slack messages",
@@ -928,7 +912,7 @@
         }
       },
       "compatibility": "Needs Python in the assistant's environment with the XlsxWriter package for writing and openpyxl for verifying. Works on desktop and web.",
-      "updatedAt": "2026-09-24T00:15:17.000Z"
+      "updatedAt": "2026-09-24T20:11:20.000Z"
     },
     {
       "id": "start-the-day",

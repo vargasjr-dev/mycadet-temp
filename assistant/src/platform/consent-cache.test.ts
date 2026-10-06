@@ -205,8 +205,9 @@ describe("consent-cache", () => {
     expect(getRawShareAnalytics()).toBe(true);
   });
 
-  // share_diagnostics tracks the same refresh as share_analytics; Sentry's
-  // beforeSend re-reads it per event so a revocation is honored within a cycle.
+  // share_diagnostics tracks the same refresh as share_analytics; the
+  // client's crash-report beforeSend re-reads it per event so a revocation is
+  // honored within a cycle.
   test("diagnostics reads false at boot (unknown collapses to false)", () => {
     expect(getCachedShareDiagnostics()).toBe(false);
   });

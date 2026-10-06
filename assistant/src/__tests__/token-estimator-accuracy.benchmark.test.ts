@@ -199,7 +199,7 @@ function makeSystemPrompt(size: "small" | "production" = "small"): string {
     "- GitHub (repositories, issues, pull requests)",
     "- Linear (project management, issue tracking)",
     "- Notion (documents, databases)",
-    "- Sentry (error tracking, issue management)",
+    "- Figma (design tools, prototyping)",
     "",
     "### OAuth Setup",
     "Most integrations use OAuth for authentication.",

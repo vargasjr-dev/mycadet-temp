@@ -3,14 +3,16 @@
  *
  * Three values are cached, all refreshed from the same owner-consent fetch:
  *  - `share_analytics`: gates usage telemetry collection.
- *  - `share_diagnostics`: gates crash diagnostics (read by Sentry `beforeSend`),
+ *  - `share_diagnostics`: gates crash diagnostics (read by the client's
+ *    crash-reporting `beforeSend`),
  *    and composes the per-turn trace-collection gate alongside the accepted
  *    consent version.
  *  - `share_diagnostics_accepted_version`: the consent version the owner
  *    accepted; the disclosing-version half of the trace-collection gate (see
  *    telemetry/trace-collection-policy.ts).
  *
- * Hot-path gates (record-time telemetry writes, Sentry `beforeSend`) need a
+ * Hot-path gates (record-time telemetry writes, the client crash-report
+ * `beforeSend` filter) need a
  * synchronous, I/O-free read, so this module owns the values and refreshes them
  * periodically in the background. Consent is opt-out — an owner who never made
  * an explicit choice reports as consented (the client maps a never-chose wire
@@ -73,10 +75,10 @@ export function getRawShareAnalytics(): ConsentState {
 }
 
 /**
- * Synchronous hot-path accessor for the `share_diagnostics` consent (read by
- * Sentry `beforeSend`). Never does I/O; returns `false` unless a successful
+ * Synchronous hot-path accessor for the `share_diagnostics` consent (read
+ * by the client's crash-reporting `beforeSend`). Never does I/O; returns `false` unless a successful
  * refresh confirmed an opt-in (`"unknown"` reads as `false`). Because every
- * Sentry event re-reads this, a mid-session opt-out is honored within one
+ * crash report re-reads this, a mid-session opt-out is honored within one
  * refresh cycle.
  */
 export function getCachedShareDiagnostics(): boolean {

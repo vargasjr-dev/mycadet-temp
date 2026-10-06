@@ -944,7 +944,7 @@ describe("the backup's retry budget", () => {
     expect(backup.calls()).toBe(1 + DEFAULT_MAX_RETRIES);
     expect(route.calls()).toBe(1);
     expect(primary.calls()).toBe(0);
-    // Tagged like the primary loop's own exhaustion, so Sentry capture reads a
+    // Tagged like the primary loop's own exhaustion, so error reporting reads a
     // flapping backup as noise rather than an engineering signal.
     expect((thrown as { retriesExhausted?: boolean }).retriesExhausted).toBe(
       true,
@@ -1235,7 +1235,7 @@ describe("retry exhaustion accounting", () => {
   }
 
   test("a probe that spends the whole budget on repairs still reaches the backup", async () => {
-    // Exhaustion decides escalation eligibility, not just Sentry suppression,
+    // Exhaustion decides escalation eligibility, not just error-report suppression,
     // so a request whose budget was consumed inside the probe has to be seen as
     // exhausted. Otherwise the turn this feature exists to rescue fails while a
     // healthy backup sits unused.
@@ -1265,7 +1265,7 @@ describe("retry exhaustion accounting", () => {
 
   test("a probe that spends the whole budget on repairs tags the error as exhausted", async () => {
     // The same sequence with no backup available, so the error surfaces and its
-    // tag can be read. Untagged, this is a Sentry capture for a flap the retry
+    // tag can be read. Untagged, this is an error report for a flap the retry
     // loop already did everything about.
     const { primary, refreshed } = repairedProbeAdapters(() =>
       corruptedStream(),

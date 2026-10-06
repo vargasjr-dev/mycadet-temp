@@ -37,8 +37,9 @@ function loadResvg(): ResvgLoadResult {
     const error = err instanceof Error ? err : new Error(String(err));
     // Log once at warn level (not error) — the daemon should keep running and
     // callers should fall back to a non-native path (ASCII only, or a 503 at
-    // the HTTP layer). Emitting at error level would page Sentry on every
-    // install that skipped the platform-specific optional dependency.
+    // the HTTP layer). Emitting at error level would flag every install
+    // that skipped the platform-specific optional dependency as a daemon
+    // defect.
     log.warn(
       {
         err: error,

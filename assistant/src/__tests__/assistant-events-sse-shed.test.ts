@@ -15,7 +15,7 @@ import { initializeDb } from "../persistence/db-init.js";
 import { buildAssistantEvent } from "../runtime/assistant-event.js";
 import { AssistantEventHub } from "../runtime/assistant-event-hub.js";
 import {
-  buildSseShedSentryContext,
+  buildSseShedReportContext,
   handleSubscribeAssistantEvents,
   type SseShedReason,
   type SseSubscriberInstrumentation,
@@ -192,7 +192,7 @@ describe("SSE route — backpressure shed observability", () => {
   });
 });
 
-describe("buildSseShedSentryContext", () => {
+describe("buildSseShedReportContext", () => {
   const inst: SseSubscriberInstrumentation = {
     subscribedAtMs: 1_000,
     eventsDelivered: 7,
@@ -205,8 +205,8 @@ describe("buildSseShedSentryContext", () => {
   };
   const elDelay = { mean_ms: 1.2, p99_ms: 3.4, max_ms: 5.6 };
 
-  test("omits conversation_key so Sentry contexts do not leak PII", () => {
-    const ctx = buildSseShedSentryContext(
+  test("omits conversation_key so report contexts do not leak PII", () => {
+    const ctx = buildSseShedReportContext(
       "callback_backpressure",
       inst,
       elDelay,
@@ -218,7 +218,7 @@ describe("buildSseShedSentryContext", () => {
   });
 
   test("preserves non-PII per-subscriber and runtime fields", () => {
-    const ctx = buildSseShedSentryContext(
+    const ctx = buildSseShedReportContext(
       "heartbeat_backpressure",
       inst,
       elDelay,
