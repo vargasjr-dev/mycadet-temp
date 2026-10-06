@@ -9,16 +9,6 @@ name: Publish Docs Image
 # repo.
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'clients/docs/**'
-      - 'packages/design-library/**'
-      - 'package.json'
-      - 'bun.lock'
-      - 'patches/**'
-      - '.dockerignore'
-      - '.github/workflows/publish-docs-image.yaml'
   workflow_dispatch:
     inputs:
       environment:

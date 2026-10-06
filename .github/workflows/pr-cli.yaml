@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     # The suite normally finishes in ~1 minute; without a cap, a hung
     # `bun test` occupies a runner for GitHub's 6-hour default.
-    timeout-minutes: 15
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: cli

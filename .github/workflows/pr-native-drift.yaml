@@ -65,7 +65,7 @@ jobs:
     # cross-cutting: an edit to the avatar library or to the web attribution
     # allowlist has to run them, and neither is worth a macOS Xcode build.
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

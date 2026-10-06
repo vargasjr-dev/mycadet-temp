@@ -1,6 +1,3 @@
-name: PR Local Mode Checks
-
-on:
   pull_request:
     types: [synchronize, opened, reopened]
     paths:
@@ -20,6 +17,7 @@ jobs:
   checks:
     name: Type Check & Test
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: packages/local-mode

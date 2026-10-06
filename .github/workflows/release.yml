@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - 'release/v*'
   workflow_dispatch:
     inputs:
       slack_user_id:
