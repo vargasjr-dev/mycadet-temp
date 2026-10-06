@@ -59,10 +59,6 @@ bun run lint
 bun run typecheck
 ```
 
-### Using AI Coding Assistants
-
-If you use Claude Code, see [.claude/README.md](.claude/README.md) for setup (shared slash commands, fast mode, typical workflow).
-
 ## Project Structure
 
 | Directory | What it is |

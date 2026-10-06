@@ -22,7 +22,6 @@ Detailed reference documentation for the Vellum Assistant platform. For an overv
   - [Assistant Events SSE Stream](#assistant-events-sse-stream)
   - [Remote Access](#remote-access)
 - [**Development Workflow**](#development-workflow)
-  - [Claude Code Workflow](#claude-code-workflow)
   - [Release Management](#release-management)
 - [**Telephony STT Architecture**](#telephony-stt-architecture)
   - [Overview](#overview)
@@ -528,77 +527,17 @@ VELLUM_DAEMON_URL=http://localhost:8741 open -a Vellum
 
 ## Development Workflow
 
-### Claude Code Workflow
-
-This repo includes Claude Code slash commands for agent-driven development. Most are shared from the [`claude-skills`](https://github.com/vellum-ai/claude-skills) repo via symlinks; repo-local commands live in `.claude/skills/<name>/` as local skill directories (see `.claude/README.md`). The tables below cover the commands this doc's workflows depend on; the `claude-skills` README is the complete, current reference, and a command listed there but not here is not deprecated.
-
-#### Single-task commands
-
-| Command             | Purpose                                                                                         |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| `/do <description>` | Implement a change in an isolated worktree, create a PR, squash-merge it to main, and clean up. |
-| `/mainline`         | Ship uncommitted changes already in your working tree to main via a squash-merged PR.           |
-
-#### Multi-task / parallel commands
-
-| Command                                                             | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/brainstorm`                                                       | Deep-read the codebase, generate a prioritized list of improvements, and update `.private/TODO.md` after approval.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `/swarm [workers] [max-tasks] [--namespace NAME]`                   | Parallel execution — spawns a pool of agents (default: 12 workers) that work through `.private/TODO.md` concurrently, each in its own worktree. Uses `--namespace` to prefix branch names and avoid collisions with other parallel swarms (auto-generates a random 4-char hex if omitted). When `--namespace` is explicitly provided, only TODO items prefixed with `[<namespace>]` are processed; when auto-generated, all items are processed. PRs are auto-assigned to the current user.                                                                                                                                                                                                                                                                                                                                         |
-| `/blitz <feature>`                                                  | End-to-end feature delivery — plans the feature, creates GitHub issues on a project board, swarm-executes them in parallel, then gates each PR on Codex/Devin review approval before merging (per-PR feedback loops with up to 3 fix cycles). Runs a **recursive sweep loop** (check reviews, swarm to address feedback, review and merge feedback PRs, repeat) until all PRs — including transitive feedback PRs — are fully reviewed with no remaining action items. Merges directly to main. Supports `--auto`, `--workers N`, `--skip-plan`, `--skip-reviews`. Pass `--skip-reviews` to merge PRs immediately without waiting for reviews (opt-in; default is to wait). Derives a namespace from the feature description for branch naming, collision avoidance, and scoping review sweeps/TODO items to only this blitz's PRs. |
-| `/safe-blitz <feature>`                                             | End-to-end feature delivery on a feature branch — plans, creates issues, executes milestones sequentially with per-milestone **direct-push feedback loops** (check reviews, push fixes directly to the milestone branch, re-request reviews, repeat until clean or 3 cycles), then automatically runs a final sweep on the entire feature branch (no user approval prompt). All milestone PRs merge into a feature branch (not main). Creates a final PR for manual review. Does not switch your working tree. Derives a namespace from the feature description for branch naming, collision avoidance, and scoping review sweeps/TODO items to only this blitz's PRs. Supports `--workers N`, `--skip-plan`, `--branch NAME`.                                                                                                      |
-| `/safe-blitz-done [PR\|branch]`                                     | Finalize a safe-blitz — squash-merges the feature branch PR into main, sets the project issue to Done, closes the issue, and deletes the local branch. Auto-detects the PR from current branch, open `feature/*` PRs, or project board "In Review" items.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `/check-reviews-and-swarm [workers] [max-tasks] [--namespace NAME]` | Combined review sweep + execution pass — runs review checks, then swarms on actionable feedback items. When `--namespace` is provided, it is passed to both `/check-reviews` (to filter PRs and prefix TODO items) and `/swarm` (to filter TODO items and namespace branches). When omitted, `/check-reviews` still infers namespaces from PR branch names matching `swarm/<NAME>/...`.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-
-#### Plan execution
-
-| Command                     | Purpose                                                                                                                                                                                            |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/create-plan <feature>`    | Break a feature into a handoff-ready PR-by-PR plan with explicit dependency tracking for parallel execution. Writes a private draft to `.private/plans/<slug>.md`.                                 |
-| `/run-plan <slug>`          | Execute a plan from `.private/plans/<slug>.md` with dependency-aware parallel execution, self-review, and gap remediation. Attaches the full plan to implementation PRs as the durable papertrail. |
-| `/safe-check-review [file]` | Check the active safe-plan PR for review feedback from Codex, Devin, humans, and CI, and address it.                                                                                               |
-
-#### Utility
-
-| Command                | Purpose                                                                                                                                                                                                                       |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/release [bump]`      | Cut a release in two steps: dispatch `create-release-branch.yml` (cuts `release/vX.Y.Z` from main → staging bake), then after the bake is green dispatch `release.yml` on the release branch for the full production release. |
-| `/update`              | Pull latest from `main`, kill stale processes, rebuild and launch the macOS app. The app manages its own assistant and gateway lifecycle (hatching on first launch). Prints a startup summary.                                |
-| `/add-mcp-integration` | Add a vendor's remote MCP server to the bundled integrations catalog: check its OAuth support, add the icon and package files, run the generators and CI checks, and open the PR.                                             |
-
-#### Review
-
-| Command                             | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/check-reviews [--namespace NAME]` | Checks for review feedback on unreviewed PRs, assesses feedback contextually (valid, nonsensical, or regression risk), creates follow-up tasks for valid feedback, and halts for user decision on regression risks. When `--namespace` is provided, only PRs whose head branch starts with `swarm/<namespace>/` are processed, and any TODO items added are prefixed with `[<namespace>]`. When `--namespace` is omitted, all PRs are processed, but TODO items are still namespaced if the PR's branch name matches `swarm/<NAME>/...` (the namespace is inferred from the branch). |
-
-#### Typical flow
-
-1. **`/brainstorm`** — generate ideas, approve them into `TODO.md`
-2. **`/swarm`** — burn through the TODO list in parallel
-3. **`/check-reviews`** — sweep for reviewer feedback
-4. **`/swarm`** again — address the feedback
-
-Or for a focused feature: **`/blitz <feature>`** handles all of the above in one shot (plan, issues, swarm, sweep, report). Use **`/safe-blitz <feature>`** for the same workflow but with a feature branch and a final PR for manual review, then **`/safe-blitz-done`** to merge it when ready.
-
-All workflows use squash-merge (no merge commits), worktree isolation for parallel work, and track state in `.private/TODO.md` and `.private/UNREVIEWED_PRS.md`.
-
-**Validation**: Slash commands do **not** run tests, type-checking (`tsc`), or linting by default. These steps are only performed when the task specifically requires it (e.g., "fix the type errors", "make the tests pass"). This keeps agent-driven workflows fast for well-scoped changes.
-
 ### Release Management
 
-Releases are cut using the `/release` Claude Code command and follow a two-step pipeline: a branch cut with a staging bake, then a production dispatch on the release branch.
+Releases follow a two-step pipeline: a branch cut with a staging bake, then a production dispatch on the release branch.
 
 #### Cutting a release
 
-Run `/release [patch|minor|major|hotfix]` in Claude Code. The command:
+1. Dispatch `create-release-branch.yml` with the bump type (`patch|minor|major|hotfix`). The workflow computes the version from the latest tag, deletes any stale `release/vX.Y.Z` branch, cuts a fresh one from `main` HEAD with the version-bump commit ("Release vX.Y.Z"), and pushes it, which triggers a **staging** `Release` run on the branch (push-triggered and main-dispatched `Release` runs are always staging). The Tue/Thu 7:52am ET cron on `create-release-branch.yml` is disabled, so this runs only from a manual dispatch
+2. Wait for the staging bake to succeed — it is the CI bake for the exact release payload; a failure means fixing `main` and re-cutting
+3. Dispatch `release.yml` on `release/vX.Y.Z` — "manual dispatch on a release branch" is the **full production release**: tags `vX.Y.Z`, publishes npm packages, builds/signs/notarizes and publishes the macOS DMG, pushes Docker Hub images, uploads iOS to TestFlight, creates the GitHub Release, updates the `vellum-assistant-platform` dependency, and merges the release branch back to `main`
 
-1. Pulls the latest `main` branch and shows the commits the release will carry
-2. Dispatches `create-release-branch.yml` with the bump type. The workflow computes the version from the latest tag, deletes any stale `release/vX.Y.Z` branch, cuts a fresh one from `main` HEAD with the version-bump commit ("Release vX.Y.Z"), and pushes it, which triggers a **staging** `Release` run on the branch (push-triggered and main-dispatched `Release` runs are always staging). The Tue/Thu 7:52am ET cron on `create-release-branch.yml` is disabled, so this step runs only from `/release` or a manual dispatch
-3. Waits for the staging bake to succeed — it is the CI bake for the exact release payload; a failure means fixing `main` and re-cutting
-4. Dispatches `release.yml` on `release/vX.Y.Z` — "manual dispatch on a release branch" is the **full production release**: tags `vX.Y.Z`, publishes npm packages, builds/signs/notarizes and publishes the macOS DMG, pushes Docker Hub images, uploads iOS to TestFlight, creates the GitHub Release, updates the `vellum-assistant-platform` dependency, and merges the release branch back to `main`
-
-A lingering `release/vX.Y.Z` branch with no matching GitHub Release means a branch cut was never promoted to production; re-running step 2 refreshes it from current `main`.
+A lingering `release/vX.Y.Z` branch with no matching GitHub Release means a branch cut was never promoted to production; re-running step 1 refreshes it from current `main`.
 
 #### What happens after a release is created
 

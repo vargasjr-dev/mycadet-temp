@@ -11,7 +11,6 @@ Bun + TypeScript monorepo with multiple packages:
 - `packages/` — Shared internal packages (e.g. `service-contracts` for CES wire-protocol schemas)
 - `scripts/` — Utility scripts
 - `skills/` — First-party skill catalog (portable skill packages). See `skills/AGENTS.md` for contribution rules and portability requirements.
-- `.claude/` — Claude Code slash commands and helper scripts (see `.claude/README.md`). Most commands are shared from [`claude-skills`](https://github.com/vellum-ai/claude-skills) via symlinks; repo-local commands (`/update`, `/release`) live in `.claude/skills/<name>/` as local skill directories. The `/update` command uses `vellum ps`, `vellum sleep`, and `vellum wake` to manage assistant lifecycle.
 - Evals have moved to a dedicated repo: [vellum-ai/evals](https://github.com/vellum-ai/evals).
 
 **`meta/` is a parent package, NOT a shared package.** Its purpose is to be the root workspace that all service packages (`gateway/`, `assistant/`, etc.) descend from — it provides workspace-level tooling, CI configuration, and build scripts. It must never contain runtime code, constants, or configuration files that child services import. A gateway or assistant module importing from `../../meta/` is a layering violation. Static config files (e.g. allowlists, registries) that a service consumes at runtime belong in that service's own package directory. Existing `meta/` contents (feature flags, test infra) are either shared build/CI metadata or are being migrated out.
@@ -76,7 +75,7 @@ TestFlight builds are produced by the `release-ios.yaml` reusable workflow in th
 
 ## Cutting Releases
 
-**Never cut or promote a release automatically. Always get explicit manual confirmation from the user first.** This applies to both release steps: dispatching `create-release-branch.yml` (branch cut + staging bake) and dispatching `release.yml` on a `release/v<X.Y.Z>` branch (production deploy). An explicit user request for the release in the current conversation counts as confirmation; otherwise ask and wait. Never dispatch either workflow as a side effect of other work (merging PRs, completing a plan, scheduled or autonomous agent runs), and standing authorizations (e.g. auto-merge) do not extend to releases. The hourly dev-release cron and the Tue/Thu branch-cut cron are disabled. Branch cuts and production promotion both require an explicit workflow_dispatch. Process details: `/release` (`.claude/skills/release/SKILL.md`).
+**Never cut or promote a release automatically. Always get explicit manual confirmation from the user first.** This applies to both release steps: dispatching `create-release-branch.yml` (branch cut + staging bake) and dispatching `release.yml` on a `release/v<X.Y.Z>` branch (production deploy). An explicit user request for the release in the current conversation counts as confirmation; otherwise ask and wait. Never dispatch either workflow as a side effect of other work (merging PRs, completing a plan, scheduled or autonomous agent runs), and standing authorizations (e.g. auto-merge) do not extend to releases. The hourly dev-release cron and the Tue/Thu branch-cut cron are disabled. Branch cuts and production promotion both require an explicit workflow_dispatch.
 
 ## Testing
 
@@ -99,11 +98,10 @@ The full test suite is large and will hang or timeout if run unscoped. **Never r
 
 ### Notes for Vellum team members
 
-When a Vellum [Linear](https://linear.app/) ticket exists for the work, link it in the PR body and include the identifier in the branch name (e.g. `lum-nnn-fix-foo`). Linear's [GitHub integration](https://linear.app/docs/github#link-using-magic-words) recognizes the same closing keywords plus non-closing words like `Part of` and `Related to` — see the linked docs for the full magic-word list and status-sync behavior. Internal slash-command and tracking-file conventions live in [`.claude/`](./.claude/) docs, not here.
+When a Vellum [Linear](https://linear.app/) ticket exists for the work, link it in the PR body and include the identifier in the branch name (e.g. `lum-nnn-fix-foo`). Linear's [GitHub integration](https://linear.app/docs/github#link-using-magic-words) recognizes the same closing keywords plus non-closing words like `Part of` and `Related to` — see the linked docs for the full magic-word list and status-sync behavior.
 
 ## Keep Docs Up to Date
 
-- **Internal reference**: When modifying slash commands in `.claude/skills/`, update the "Claude Code Workflow" section in `docs/internal-reference.md` to match.
 - **Architecture**: When introducing, removing, or significantly modifying a service/module/data flow, update `ARCHITECTURE.md` and impacted domain docs. Mermaid diagrams must reflect current architecture.
 - **AGENTS.md**: When a PR establishes a new mandatory pattern or architectural constraint, update `AGENTS.md`. Only for project-wide rules — use code comments for module-scoped patterns.
 
@@ -331,7 +329,7 @@ When making changes that could affect the cloud platform, review the sibling `..
 
 ## Sentry & Linear Integration
 
-Error reporting uses Sentry. The daemon/runtime (Node) project's DSN is configured via the `SENTRY_DSN_ASSISTANT` environment variable — see `.env.example`.
+Error reporting uses Sentry. The daemon/runtime (Node) project's DSN is configured via the `SENTRY_DSN_ASSISTANT` environment variable.
 
 ### Sentry projects & DSNs
 
