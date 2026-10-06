@@ -1,29 +1,26 @@
 name: PR Assistant Checks
 
 on:
-  # rebrand(cadet): PR triggers disabled for the CI-minute budget.
-  # Vargas re-enables by uncommenting this block.
-  # pull_request:
-  #   types: [labeled, synchronize, opened, reopened]
-  #   paths:
-  #     - "package.json"
-  #     - "bun.lock"
-  #     - "patches/**"
-  #     - "assistant/**"
-  #     - "plugins/marketplace.json"
-  #     - "plugins/mcp-catalog/**"
-  #     - "credential-executor/**"
-  #     - "gateway/**"
-  #     - "packages/**"
-  #     - "scripts/skills/**"
-  #     - "meta/feature-flags/**"
-  #     - "meta/sync-bundled-copies.ts"
-  #     # The daemon LLM catalog parity test reads these files, so hand edits to
-  #     # either catalog JSON must run the assistant tests on the PR that
-  #     # introduces drift.
-  #     - "meta/llm-provider-catalog.json"
-  #     - ".github/workflows/pr-assistant.yaml"
-  #
+  pull_request:
+    types: [labeled, synchronize, opened, reopened]
+    paths:
+      - "package.json"
+      - "bun.lock"
+      - "patches/**"
+      - "assistant/**"
+      - "plugins/marketplace.json"
+      - "plugins/mcp-catalog/**"
+      - "credential-executor/**"
+      - "gateway/**"
+      - "packages/**"
+      - "scripts/skills/**"
+      - "meta/feature-flags/**"
+      - "meta/sync-bundled-copies.ts"
+      # The daemon LLM catalog parity test reads these files, so hand edits to
+      # either catalog JSON must run the assistant tests on the PR that
+      # introduces drift.
+      - "meta/llm-provider-catalog.json"
+      - ".github/workflows/pr-assistant.yaml"
   workflow_dispatch:
 concurrency:
   group: pr-assistant-${{ github.event.pull_request.number }}
