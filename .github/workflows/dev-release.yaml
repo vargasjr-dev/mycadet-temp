@@ -63,7 +63,7 @@ jobs:
   # ── CI Checks (gate image builds) ───────────────────────────────────────
 
   ci-assistant:
-    runs-on: ubuntu-latest-8-cores
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -210,8 +210,10 @@ jobs:
 
   push-assistant-image:
     needs: [compute-version, ci-assistant]
-    runs-on: ubuntu-latest-8-cores
-    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    # 2-core ubuntu-latest builds the assistant image slower than the
+    # 8-core runner this repo no longer has access to.
+    timeout-minutes: 60
     permissions:
       contents: read
       id-token: write
