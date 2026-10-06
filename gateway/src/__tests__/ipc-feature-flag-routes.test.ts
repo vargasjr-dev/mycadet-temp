@@ -39,11 +39,11 @@ const TEST_REGISTRY = {
       defaultEnabled: false,
     },
     {
-      id: "user-hosted-enabled",
+      id: "velvet",
       scope: "client",
-      key: "user-hosted-enabled",
+      key: "velvet",
       label: "User Hosted Enabled",
-      description: "Enable user-hosted onboarding flow",
+      description: "Enable the Velvet design theme.",
       defaultEnabled: false,
     },
     {

@@ -40,11 +40,11 @@ const TEST_REGISTRY = {
       defaultEnabled: false,
     },
     {
-      id: "user-hosted-enabled",
+      id: "velvet",
       scope: "client",
-      key: "user-hosted-enabled",
-      label: "User Hosted Enabled",
-      description: "Enable user-hosted onboarding flow",
+      key: "velvet",
+      label: "Velvet",
+      description: "Enable the Velvet design theme.",
       defaultEnabled: false,
     },
     {
@@ -173,7 +173,7 @@ describe("GET /v1/feature-flags handler", () => {
 
     // The client-scope flag should not appear
     const clientFlag = body.flags.find(
-      (f: { key: string }) => f.key === "user-hosted-enabled",
+      (f: { key: string }) => f.key === "velvet",
     );
     expect(clientFlag).toBeUndefined();
   });

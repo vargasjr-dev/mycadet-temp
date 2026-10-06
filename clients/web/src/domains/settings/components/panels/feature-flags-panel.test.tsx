@@ -80,13 +80,13 @@ describe("FeatureFlagsPanel", () => {
     renderPanel();
 
     const toggle = screen.getByRole("switch", {
-      name: "Backward Releases is off",
+      name: "Rollback Enabled is off",
     });
     fireEvent.click(toggle);
 
     const request = patchMock.mock.calls[0]?.[0];
     expect(request).toMatchObject({
-      path: { assistant_id: "assistant-1", flag_key: "backward-releases" },
+      path: { assistant_id: "assistant-1", flag_key: "rollback-enabled" },
       body: { enabled: true },
       throwOnError: false,
     });
