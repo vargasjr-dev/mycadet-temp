@@ -1,10 +1,7 @@
 name: Dev Release
 
 on:
-  # Hourly cron is off. Run this workflow with workflow_dispatch.
-  # schedule:
-  #   # Every hour on the hour
-  #   - cron: '0 * * * *'
+  # The platform drives releases by dispatching this workflow.
   workflow_dispatch:
     inputs:
       exclude:
@@ -18,9 +15,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ASSISTANT_IMAGE_NAME: vellum-assistant-dev
-  GATEWAY_IMAGE_NAME: vellum-gateway-dev
-  CREDENTIAL_EXECUTOR_IMAGE_NAME: vellum-credential-executor-dev
+  ASSISTANT_IMAGE_NAME: mycadet-assistant-dev
+  GATEWAY_IMAGE_NAME: mycadet-gateway-dev
+  CREDENTIAL_EXECUTOR_IMAGE_NAME: mycadet-credential-executor-dev
 
 jobs:
   # ── Exclude-list parser ────────────────────────────────────────────────
@@ -40,114 +37,7 @@ jobs:
           echo "excluded=$EXCLUDED" >> "$GITHUB_OUTPUT"
           echo "exclude list: $EXCLUDED"
   # ── Skip-if-idle gate ───────────────────────────────────────────────────
-  # A scheduled run fires whether or not the repo moved. Rebuilding an
-  # unchanged HEAD wastes CI minutes and republishes byte-identical images, so
-  # cancel the run when nothing has landed since the last *successful* dev
-  # release. "Successful" is keyed off the register-release job conclusion —
-  # the same anchor notify-dev-release uses for its changelog — so a run that
-  # registered a real release but failed in a later job (e.g. build-electron)
-  # still counts as the last release. Manual workflow_dispatch runs always
-  # proceed: the operator explicitly asked for a build.
-  #
-  # All root jobs (compute-version + the ci-* jobs) gate on this job's
-  # has_new_commits output so they never spin up runners on an idle run. The
-  # job also calls `gh run cancel` so the run shows as cancelled rather than a
-  # misleadingly-green wall of skipped jobs (and the notify jobs, which guard
-  # on !cancelled(), stay quiet for a no-op run).
-  check-for-new-commits:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      actions: write
-    outputs:
-      has_new_commits: ${{ steps.check.outputs.has_new_commits }}
-    steps:
-      - name: Check for new commits since last successful dev release
-        id: check
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          RUN_ID: ${{ github.run_id }}
-          HEAD_SHA: ${{ github.sha }}
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          set -euo pipefail
-
-          # Manual dispatches always run, regardless of commit activity.
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            echo "Manual dispatch — proceeding regardless of commit activity."
-            echo "has_new_commits=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # Walk recent completed runs newest-first and pick the first whose
-          # register-release job succeeded; that run's head SHA is the last
-          # released commit. (See notify-dev-release for why we key off the job
-          # conclusion rather than the overall run conclusion.)
-          #
-          # The jobs listing MUST be paginated: this workflow has >30 jobs and
-          # the API defaults to 30 per page, so register-release lands on page 2
-          # and an unpaginated call silently yields an empty conclusion.
-          #
-          # The runs listing is deliberately NOT --paginate'd: it is a bounded
-          # lookback window, not an exhaustive scan. It must stay comfortably
-          # longer than the longest expected quiet stretch, because every idle
-          # hour adds one cancelled run to it; at 100 the hourly schedule gives
-          # ~4 days of runway, which covers weekends and long holidays. That
-          # bounds the walk below at 100 requests (~1 each, since 42 jobs fit in
-          # one per_page=100 page), well inside this job's 5-minute timeout.
-          PREV_SHA=""
-          while read -r rid rsha; do
-            [ -z "$rid" ] && continue
-            # Best-effort, for the same reason as the cancel call below: a
-            # per-run API failure (purged run, transient 5xx, rate limit) must
-            # not fail this gate job and turn an idle no-op into a workflow
-            # failure. Skip that run and keep walking.
-            if ! CONCL=$(gh api "repos/${REPO}/actions/runs/${rid}/jobs?per_page=100" --paginate \
-              --jq '[.jobs[] | select(.name == "register-release") | .conclusion] | .[0] // empty'); then
-              echo "::warning::Could not read jobs for run ${rid}; skipping it in the dev-release walk-back."
-              continue
-            fi
-            if [ "$CONCL" = "success" ]; then
-              PREV_SHA="$rsha"
-              break
-            fi
-          done < <(gh api \
-            "repos/${REPO}/actions/workflows/dev-release.yaml/runs?branch=main&status=completed&per_page=100&exclude_pull_requests=true" \
-            --jq ".workflow_runs[] | select(.id != ${RUN_ID} and .conclusion != \"cancelled\") | \"\(.id) \(.head_sha)\"")
-
-          echo "Last successful dev release SHA: ${PREV_SHA:-<none>}"
-          echo "Current SHA: ${HEAD_SHA}"
-
-          # No prior successful release found (e.g. first tracked run) — proceed.
-          if [ -z "$PREV_SHA" ]; then
-            echo "No previous successful dev release found — proceeding."
-            echo "has_new_commits=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if [ "$PREV_SHA" = "$HEAD_SHA" ]; then
-            echo "No new commits since the last successful dev release (${PREV_SHA}) — cancelling run."
-            echo "has_new_commits=false" >> "$GITHUB_OUTPUT"
-            # Best-effort: a transient cancel-API failure must not fail this
-            # gate job (that would turn an idle no-op into a workflow failure).
-            # The has_new_commits=false output is the durable backstop — every
-            # root job is gated on it and will be skipped regardless.
-            gh run cancel "$RUN_ID" --repo "$REPO" \
-              || echo "::warning::Failed to cancel run ${RUN_ID}; root jobs are gated on has_new_commits=false and will be skipped anyway."
-            # Give a successful cancellation time to propagate so the gated root
-            # jobs never start.
-            sleep 15
-            exit 0
-          fi
-
-          echo "New commits detected since the last successful dev release — proceeding."
-          echo "has_new_commits=true" >> "$GITHUB_OUTPUT"
-
   compute-version:
-    needs: [check-for-new-commits]
-    if: ${{ needs.check-for-new-commits.outputs.has_new_commits == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
     outputs:
@@ -173,8 +63,6 @@ jobs:
   # ── CI Checks (gate image builds) ───────────────────────────────────────
 
   ci-assistant:
-    needs: [check-for-new-commits]
-    if: ${{ needs.check-for-new-commits.outputs.has_new_commits == 'true' }}
     runs-on: ubuntu-latest-8-cores
     timeout-minutes: 15
     steps:
@@ -214,8 +102,6 @@ jobs:
           TEST_WORKERS: "4"
 
   ci-gateway:
-    needs: [check-for-new-commits]
-    if: ${{ needs.check-for-new-commits.outputs.has_new_commits == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -245,8 +131,6 @@ jobs:
         working-directory: gateway
 
   ci-credential-executor:
-    needs: [check-for-new-commits]
-    if: ${{ needs.check-for-new-commits.outputs.has_new_commits == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -269,8 +153,6 @@ jobs:
         working-directory: credential-executor
 
   ci-cli:
-    needs: [check-for-new-commits]
-    if: ${{ needs.check-for-new-commits.outputs.has_new_commits == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -293,8 +175,8 @@ jobs:
         working-directory: cli
 
   ci-web:
-    needs: [parse-exclude, check-for-new-commits]
-    if: ${{ needs.check-for-new-commits.outputs.has_new_commits == 'true' && !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'web') }}
+    needs: [parse-exclude]
+    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'web') }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -765,7 +647,7 @@ jobs:
   # `if` deliberately uses a status function, which drops the implicit
   # success() check on every `needs` entry: a failed or skipped register-release
   # (backend CI red, a Docker build failure, or a platform registration outage)
-  # no longer strands green web commits outside dev until the next hourly run
+  # no longer strands green web commits outside dev until the next run
   # happens to be fully green.
   #
   # The trade-off is accepted on dev only: a dev SPA can briefly run against the
@@ -773,9 +655,7 @@ jobs:
   # gating in release.yml, where a UI ahead of its backend actually matters.
   #
   # !cancelled() (rather than always()) keeps this quiet when a run is
-  # superseded by the next hourly release via concurrency.cancel-in-progress.
-  # No has_new_commits check is needed: ci-web is itself gated on that job, so
-  # an idle run skips ci-web and this job with it.
+  # superseded by the next release via concurrency.cancel-in-progress.
   deploy-web-spa:
     name: Deploy Web SPA (dev)
     needs: [parse-exclude, ci-web, register-release]
@@ -790,7 +670,7 @@ jobs:
 
   # ── Web SPA (production preview channel) ─────────────────────────────
   # Publishes the preview UI into the PRODUCTION bucket under `/preview/` on
-  # every hourly dev release, leaving the stable root index.html untouched. The
+  # every dev release, leaving the stable root index.html untouched. The
   # bundle self-identifies via VITE_CHANNEL=preview; its version is the commit
   # SHA. Gating matches deploy-web-spa above. The ref guard matches the other
   # production-preview jobs so a release-branch dispatch cannot publish here.
@@ -1091,7 +971,7 @@ jobs:
         deploy-web-spa-preview,
       ]
     # Run on success and failure alike, but not when the run was cancelled
-    # (e.g. superseded by a newer hourly run via cancel-in-progress) — a
+    # (e.g. superseded by a newer run via cancel-in-progress) — a
     # cancelled run is not a real failure and should not alert the channel.
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
@@ -1182,8 +1062,8 @@ jobs:
           # The jobs listing MUST be paginated: this workflow has >30 jobs and
           # the API defaults to 30 per page, so register-release lands on page 2
           # and an unpaginated call silently yields an empty conclusion, which
-          # degrades to the single-commit fallback below. See check-for-new-commits
-          # for why the runs listing is bounded rather than fully paginated.
+          # degrades to the single-commit fallback below. The runs listing is
+          # bounded rather than fully paginated.
           PREV_SHA=""
           while read -r rid rsha; do
             [ -z "$rid" ] && continue
