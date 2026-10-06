@@ -6,6 +6,12 @@ on:
   #   # Every hour on the hour
   #   - cron: '0 * * * *'
   workflow_dispatch:
+    inputs:
+      exclude:
+        description: 'Comma-separated clients to skip for this dispatch (e.g. web,electron,windows,ios,android,chrome-extension)'
+        required: false
+        type: string
+        default: ''
 
 concurrency:
   group: dev-release
@@ -17,6 +23,27 @@ env:
   CREDENTIAL_EXECUTOR_IMAGE_NAME: sandbox-images/credential-executor
 
 jobs:
+  # ── Exclude-input parsing ────────────────────────────────────────────────
+  # `exclude` is a comma-separated list of job names to skip for this dispatch
+  # (workflow inputs cannot be native arrays). Parsed once into a JSON array;
+  # gated jobs check membership via contains(fromJSON(...), '<job>').
+  parse-exclude:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      excluded: ${{ steps.parse.outputs.excluded }}
+    steps:
+      - id: parse
+        env:
+          RAW: ${{ inputs.exclude }}
+        run: |
+          EXCLUDED=$(printf '%s' "$RAW" \
+            | tr ',' '\n' \
+            | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
+            | grep -v '^$' \
+            | jq -R . | jq -sc .)
+          echo "excluded=${EXCLUDED:-[]}" >> "$GITHUB_OUTPUT"
+
   # ── Skip-if-idle gate ───────────────────────────────────────────────────
   # A scheduled run fires whether or not the repo moved. Rebuilding an
   # unchanged HEAD wastes CI minutes and republishes byte-identical images, so
@@ -825,8 +852,8 @@ jobs:
   # an idle run skips ci-web and this job with it.
   deploy-web-spa:
     name: Deploy Web SPA (dev)
-    needs: [ci-web, register-release]
-    if: ${{ !cancelled() && needs.ci-web.result == 'success' }}
+    needs: [parse-exclude, ci-web, register-release]
+    if: ${{ !cancelled() && !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'web') && needs.ci-web.result == 'success' }}
     permissions:
       contents: read
       id-token: write
@@ -843,8 +870,8 @@ jobs:
   # production-preview jobs so a release-branch dispatch cannot publish here.
   deploy-web-spa-preview:
     name: Deploy Web SPA (production /preview)
-    needs: [ci-web, register-preview-release]
-    if: ${{ !cancelled() && github.ref_name == 'main' && needs.ci-web.result == 'success' }}
+    needs: [parse-exclude, ci-web, register-preview-release]
+    if: ${{ !cancelled() && github.ref_name == 'main' && !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'web') && needs.ci-web.result == 'success' }}
     permissions:
       contents: read
       id-token: write
@@ -1678,7 +1705,8 @@ jobs:
   # ── Chrome Extension ────────────────────────────────────────────────────
 
   build-chrome-extension:
-    needs: [compute-version]
+    needs: [parse-exclude, compute-version]
+    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'chrome-extension') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -1711,7 +1739,8 @@ jobs:
 
   build-electron:
     # No publish dep: the bundled CLI floats to the `dev` dist-tag at runtime.
-    needs: [compute-version]
+    needs: [parse-exclude, compute-version]
+    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'electron') }}
     runs-on: macos-26
     timeout-minutes: 30
     # Resolves the environment-scoped STRIPE_PUBLISHABLE_KEY secret baked into
@@ -2346,7 +2375,8 @@ jobs:
   # ── iOS release (same-repo reusable workflow) ────────────────────────
 
   release-ios:
-    needs: [compute-version, register-release, build-chrome-extension]
+    needs: [parse-exclude, compute-version, register-release, build-chrome-extension]
+    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'ios') }}
     uses: ./.github/workflows/release-ios.yaml
     with:
       environment: dev
@@ -2354,8 +2384,8 @@ jobs:
     secrets: inherit
 
   release-android:
-    needs: [compute-version, register-release, build-chrome-extension]
-    if: vars.ANDROID_DEV_RELEASE_ENABLED == 'true'
+    needs: [parse-exclude, compute-version, register-release, build-chrome-extension]
+    if: ${{ vars.ANDROID_DEV_RELEASE_ENABLED == 'true' && !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'android') }}
     permissions:
       contents: read
       id-token: write
@@ -2366,7 +2396,8 @@ jobs:
     secrets: inherit
 
   build-windows:
-    needs: [compute-version]
+    needs: [parse-exclude, compute-version]
+    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'windows') }}
     permissions:
       contents: read
     uses: ./.github/workflows/release-windows.yaml
@@ -2377,7 +2408,8 @@ jobs:
 
   release-windows:
     needs:
-      [build-windows, compute-version, register-release, build-chrome-extension]
+      [parse-exclude, build-windows, compute-version, register-release, build-chrome-extension]
+    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'windows') }}
     permissions:
       contents: read
       id-token: write
