@@ -296,7 +296,7 @@ export async function fetchMarketplaceEntries(
       // Ask for the raw file body rather than the base64-wrapped Contents
       // envelope, so the response text is the manifest JSON directly.
       Accept: "application/vnd.github.raw",
-      "User-Agent": "vellum-assistant-cli",
+      "User-Agent": "cadet-cli",
     },
   });
 

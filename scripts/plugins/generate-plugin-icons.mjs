@@ -217,7 +217,7 @@ function readLocalIconBytes(iconPath) {
 async function fetchIconBytes(fetchImpl, entry, token) {
   const headers = {
     Accept: "application/vnd.github.raw",
-    "User-Agent": "vellum-assistant-cli",
+    "User-Agent": "cadet-cli",
   };
   if (token) {
     headers.Authorization = `Bearer ${token}`;

@@ -1,5 +1,5 @@
 {
-  "name": "vellum-workspace",
+  "name": "cadet-workspace",
   "private": true,
   "workspaces": [
     "assistant",

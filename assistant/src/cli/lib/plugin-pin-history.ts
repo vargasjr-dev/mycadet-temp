@@ -113,7 +113,7 @@ async function listManifestCommits(
   const res = await fetchFn(url, {
     headers: {
       Accept: "application/vnd.github+json",
-      "User-Agent": "vellum-assistant-cli",
+      "User-Agent": "cadet-cli",
     },
   });
   if (res.status === 404) {

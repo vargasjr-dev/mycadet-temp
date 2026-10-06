@@ -1883,7 +1883,7 @@ async function githubFetch(
   return fetchFn(url, {
     headers: {
       Accept: accept,
-      "User-Agent": "vellum-assistant-cli",
+      "User-Agent": "cadet-cli",
     },
   });
 }

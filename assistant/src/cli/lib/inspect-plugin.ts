@@ -298,7 +298,7 @@ export async function fetchCommitDate(
     const res = await fetch(url, {
       headers: {
         Accept: "application/vnd.github+json",
-        "User-Agent": "vellum-assistant-cli",
+        "User-Agent": "cadet-cli",
       },
     });
     if (!res.ok) {

@@ -301,7 +301,7 @@ async function downloadInstallArchive(
     // The platform (Django) 406s a specific `application/gzip` Accept, so ask
     // for anything and sniff the body ourselves (see extractPluginTarball).
     Accept: "*/*",
-    "User-Agent": "vellum-assistant-cli",
+    "User-Agent": "cadet-cli",
   };
   if (deps.apiKey) {
     headers.Authorization = `Api-Key ${deps.apiKey}`;

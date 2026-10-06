@@ -78,7 +78,7 @@ const MAX_LIST_LIMIT = 100;
 const STABLE_BUFFER = 5;
 const MIN_FETCH_PAGE_SIZE = 30;
 const FETCH_TIMEOUT_MS = 10_000;
-const USER_AGENT = "vellum-assistant-cli";
+const USER_AGENT = "cadet-cli";
 
 // ── Cache plumbing ───────────────────────────────────────────────────
 

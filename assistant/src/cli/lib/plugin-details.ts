@@ -482,7 +482,7 @@ function githubFetch(
   fetchFn: FetchLike,
 ): Promise<Response> {
   return fetchFn(url, {
-    headers: { Accept: accept, "User-Agent": "vellum-assistant-cli" },
+    headers: { Accept: accept, "User-Agent": "cadet-cli" },
   });
 }
 

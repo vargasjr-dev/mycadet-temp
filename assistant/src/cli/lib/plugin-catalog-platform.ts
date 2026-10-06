@@ -69,7 +69,7 @@ export async function fetchPluginCatalogFromPlatform(
   try {
     res = await deps.fetch(url, {
       signal: AbortSignal.timeout(10_000),
-      headers: { "User-Agent": "vellum-assistant-cli" },
+      headers: { "User-Agent": "cadet-cli" },
     });
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
