@@ -30,7 +30,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: assistant
@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NODE_OPTIONS: --max-old-space-size=6144
-    timeout-minutes: 10
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: assistant
