@@ -25,10 +25,8 @@ mock.module("../../../security/secure-keys.js", () => ({
   getSecureKeyAsync: async (_key: string) => storedToken,
 }));
 
-const FAKE_WORKSPACE = "/tmp/sanity-routes-test-workspace";
-// The real getWorkspaceDir() reads this at call time — route handlers build
-// paths from it, so re-point it instead of mocking util/platform.js.
-process.env.VELLUM_WORKSPACE_DIR = FAKE_WORKSPACE;
+// The preload's workspace is where route handlers build their paths.
+const FAKE_WORKSPACE = process.env.VELLUM_WORKSPACE_DIR!;
 
 const writtenFiles = new Map<string, string>();
 

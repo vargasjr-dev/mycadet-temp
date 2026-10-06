@@ -11,10 +11,8 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 // Module mocks — must appear before any imports of the module under test
 // ---------------------------------------------------------------------------
 
-const FAKE_WORKSPACE = "/tmp/content-source-routes-test-workspace";
-// The real getWorkspaceDir() reads this at call time — route handlers build
-// sidecar paths from it, so re-point it instead of mocking util/platform.js.
-process.env.VELLUM_WORKSPACE_DIR = FAKE_WORKSPACE;
+// The preload's workspace is where route handlers build sidecar paths.
+const FAKE_WORKSPACE = process.env.VELLUM_WORKSPACE_DIR!;
 
 const writtenFiles = new Map<string, string>();
 

@@ -14,9 +14,7 @@
  * fires.
  */
 
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { mkdirSync, rmSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type {
@@ -26,6 +24,9 @@ import type {
 } from "@mycadet/plugin-api";
 
 import type { ToolDefinition } from "../../llm-helpers.js";
+
+// Captured at module scope: the preload cleans up its env var between suites.
+const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
 
 // ---------------------------------------------------------------------------
 // Mocks (installed before the route module is imported)
@@ -102,9 +103,7 @@ mock.module("@mycadet/plugin-api", () => ({
   getConfiguredProvider: async () => providerStub,
 }));
 
-// Platform helpers. The real getWorkspaceDir() reads VELLUM_WORKSPACE_DIR at
-// call time; beforeEach re-points it at the per-test tmp dir so the route's
-// page index and the config loader's platform reads all resolve there.
+// The preload's workspace is where the route's page index and config reads resolve.
 let workspaceDir = "";
 
 // ---------------------------------------------------------------------------
@@ -164,8 +163,9 @@ function makePage(slug: string, summary: string) {
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "memory-v2-simulate-test-"));
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  workspaceDir = PRELOAD_WS;
+  rmSync(workspaceDir, { recursive: true, force: true });
+  mkdirSync(workspaceDir, { recursive: true });
   recordCalls.length = 0;
   providerCalls.length = 0;
   providerStub = null;
@@ -174,8 +174,6 @@ beforeEach(() => {
 
 afterEach(() => {
   invalidatePageIndex();
-  rmSync(workspaceDir, { recursive: true, force: true });
-  delete process.env.VELLUM_WORKSPACE_DIR;
 });
 
 // ---------------------------------------------------------------------------

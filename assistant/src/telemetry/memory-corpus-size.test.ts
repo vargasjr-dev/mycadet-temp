@@ -1,13 +1,6 @@
-import {
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
 let workspaceDir = "";
 
@@ -15,6 +8,9 @@ import {
   measureMarkdownTree,
   measureMemoryCorpusSize,
 } from "./memory-corpus-size.js";
+
+// Captured at module scope: the preload cleans up its env var between suites.
+const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
 
 function write(relativePath: string, contents: string): void {
   const full = join(workspaceDir, relativePath);
@@ -24,15 +20,10 @@ function write(relativePath: string, contents: string): void {
 
 describe("measureMemoryCorpusSize", () => {
   beforeEach(() => {
-    workspaceDir = mkdtempSync(join(tmpdir(), "corpus-size-"));
-    // The real getWorkspaceDir() reads this at call time — re-point it at the
-    // per-test workspace instead of mocking util/platform.js.
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
-  });
-
-  afterEach(() => {
+    // The preload owns VELLUM_WORKSPACE_DIR; give this test a clean one.
+    workspaceDir = PRELOAD_WS;
     rmSync(workspaceDir, { recursive: true, force: true });
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    mkdirSync(workspaceDir, { recursive: true });
   });
 
   test("an empty workspace measures as all zeros", () => {

@@ -2,8 +2,6 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { setConfig } from "../../__tests__/helpers/set-config.js";
 
-// Silence the logger everywhere this graph reaches.
-
 // ── Mutable mock state ────────────────────────────────────────────────
 // The run-manager mock records the args of the last `start()` call for
 // assertion.

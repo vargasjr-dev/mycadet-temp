@@ -20,7 +20,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
 
-// ── Mocks (must be declared before any imports from the project) ─────────────
+// ── Mocks ────────────────────────────────────────────────────────────────────
 
 // Track inline command runner calls
 interface RunInlineCommandCall {

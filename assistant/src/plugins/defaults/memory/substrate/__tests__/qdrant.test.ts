@@ -1,14 +1,11 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 // Per-suite tmp data dir so the reembed sentinel never lands in the
 // developer's real ~/.vellum workspace. The real getDataDir() is
-// <workspace>/data and reads VELLUM_WORKSPACE_DIR at call time, so re-point
-// the workspace instead of mocking util/platform.js.
-const TEST_DATA_DIR = mkdtempSync(join(tmpdir(), "memory-v2-qdrant-test-"));
-process.env.VELLUM_WORKSPACE_DIR = TEST_DATA_DIR;
+// The preload's workspace already resolves <workspace>/data at call time.
+const TEST_DATA_DIR = process.env.VELLUM_WORKSPACE_DIR!;
 mkdirSync(join(TEST_DATA_DIR, "data"), { recursive: true });
 const REEMBED_SENTINEL_PATH = join(
   TEST_DATA_DIR,

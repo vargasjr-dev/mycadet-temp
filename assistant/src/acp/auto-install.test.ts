@@ -33,10 +33,6 @@ afterAll(() => {
   which.restore();
 });
 
-// Spread the real module so other test files that load logger consumers
-// (e.g. `truncateForLog` importers) after this process-global mock still
-// resolve every named export.
-
 const {
   ensureAdapterInstalled,
   resolveAgentWithAutoInstall,
