@@ -2,7 +2,7 @@
 /**
  * Copies canonical repo files into locations where bundled/compiled builds can
  * resolve them without the repo-root meta/ or plugins/ trees:
- *   - feature-flag-registry.json → assistant/, gateway/, web/
+ *   - feature-flag-registry.json → assistant/, gateway/
  *   - plugins/marketplace.json    → the assistant plugin catalog (offline reader)
  *
  * Usage:
@@ -28,16 +28,6 @@ const PAIRS: { canonical: string; targets: string[] }[] = [
         "feature-flag-registry.json",
       ),
       join(ROOT, "..", "gateway", "src", "feature-flag-registry.json"),
-      join(
-        ROOT,
-        "..",
-        "clients",
-        "web",
-        "src",
-        "lib",
-        "feature-flags",
-        "feature-flag-registry.json",
-      ),
     ],
   },
   {

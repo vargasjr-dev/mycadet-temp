@@ -1,4 +1,4 @@
-import registry from "./feature-flag-registry.json" with { type: "json" };
+import registry from "../../../../../meta/feature-flags/feature-flag-registry.json" with { type: "json" };
 
 export type FlagScope = "client" | "assistant" | "both";
 export type SingleScope = Exclude<FlagScope, "both">;
