@@ -20,6 +20,11 @@ import { initializeDb } from "../persistence/db-init.js";
 import { linkMessage, recordInbound } from "../persistence/delivery-crud.js";
 import { memoryJobs, messages } from "../persistence/schema/index.js";
 import { handleEditIntercept } from "../runtime/routes/inbound-stages/edit-intercept.js";
+// Accelerated clocks: the retry loop's 2s production pacing fires as soon as
+// the current await yields, keeping the same attempt sequence and outcomes
+// without the wall-clock burn.
+import { installFastTimers } from "./fast-timers.js";
+installFastTimers();
 
 await initializeDb();
 

@@ -72,7 +72,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      # tsc on the assistant graph needs ~4GB; the 2GB default heap OOMs (exit 134)
       NODE_OPTIONS: --max-old-space-size=8192
     defaults:
       run:

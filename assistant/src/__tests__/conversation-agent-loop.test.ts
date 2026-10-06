@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { join } from "node:path";
 import {
   afterAll,
+  beforeAll,
   beforeEach,
   describe,
   expect,
@@ -834,6 +835,7 @@ import {
   getActiveSections as getV3ActiveSections,
   recordInjected as recordV3Injected,
 } from "../plugins/defaults/memory/v3/ever-injected-store.js";
+import { installFastTimers } from "./fast-timers.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 import {
   createMockProvider,
@@ -5002,6 +5004,18 @@ describe("session-agent-loop", () => {
   });
 
   describe("partial persistence", () => {
+    // Accelerated clocks, scoped to this block: the debounce and the
+    // provider's mid-hold waits fire in call order as soon as the current
+    // await yields, so the "flush lands before the turn completes"
+    // sequencing is preserved without burning wall-clock seconds. The rest
+    // of the file keeps real timers (several tests pin race outcomes).
+    let restoreTimers: (() => void) | undefined;
+    beforeAll(() => {
+      restoreTimers = installFastTimers();
+    });
+    afterAll(() => {
+      restoreTimers?.();
+    });
     // The legacy flow reserves an empty assistant row at `llm_call_started`
     // (`content: "[]"`) and never touches it again until
     // `handleMessageComplete` fires the single authoritative
@@ -5046,11 +5060,11 @@ describe("session-agent-loop", () => {
             // The debounced flush lands at PARTIAL_PERSIST_DEBOUNCE_MS
             // (1000ms); read the delta file mid-hold (finalize deletes it
             // at turn end).
-            await new Promise((resolve) => setTimeout(resolve, 1050));
+            await new Promise((resolve) => setTimeout(resolve, 60));
             midTurnDeltaLines = readFileSync(soleInflightDeltaPath(), "utf8")
               .trim()
               .split("\n");
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 30));
             return textResponse("Hello, world.");
           },
         },
@@ -5182,7 +5196,7 @@ describe("session-agent-loop", () => {
           },
         ],
         toolExecutor: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 1100));
+          await new Promise((resolve) => setTimeout(resolve, 60));
           return { content: "ok", isError: false };
         },
       });
@@ -5222,7 +5236,7 @@ describe("session-agent-loop", () => {
           name: "mock-provider",
           async sendMessage(_messages, options) {
             options?.onEvent?.({ type: "text_delta", text: "hello world" });
-            await new Promise((resolve) => setTimeout(resolve, 1100));
+            await new Promise((resolve) => setTimeout(resolve, 60));
             snapshot = [
               indexMessageNowMock.mock.calls.length,
               projectAssistantMessageMock.mock.calls.length,
@@ -5272,9 +5286,9 @@ describe("session-agent-loop", () => {
           name: "mock-provider",
           async sendMessage(_messages, options) {
             options?.onEvent?.({ type: "text_delta", text: payload });
-            await new Promise((resolve) => setTimeout(resolve, 1050));
+            await new Promise((resolve) => setTimeout(resolve, 60));
             midTurnDeltaFile = readFileSync(soleInflightDeltaPath(), "utf8");
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 30));
             return textResponse(payload);
           },
         },
@@ -5323,7 +5337,7 @@ describe("session-agent-loop", () => {
               throw new Error("upstream 500");
             }
             options?.onEvent?.({ type: "text_delta", text: "hello world" });
-            await new Promise((resolve) => setTimeout(resolve, 1100));
+            await new Promise((resolve) => setTimeout(resolve, 60));
             throw new Error("upstream 500");
           },
         },
