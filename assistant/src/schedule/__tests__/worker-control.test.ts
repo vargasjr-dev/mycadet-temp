@@ -9,25 +9,10 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-
-import * as realLogger from "../../util/logger.js";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 let tmpDir: string;
 let pidPath: string;
-
-const noopLogger = {
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-  debug: () => {},
-};
-mock.module("../../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () => noopLogger,
-  getCliLogger: () => noopLogger,
-  getCurrentLogFilePath: () => join(tmpDir, "schedule-worker-test.log"),
-}));
 
 const {
   spawnScheduleWorkerProcess,

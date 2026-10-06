@@ -4,7 +4,7 @@
  * prompt build (subagents, calls, live-voice, background workers) is unchanged.
  */
 
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
 const noopLogger: Record<string, unknown> = new Proxy(
   {} as Record<string, unknown>,
@@ -12,17 +12,6 @@ const noopLogger: Record<string, unknown> = new Proxy(
     get: (_target, prop) => (prop === "child" ? () => noopLogger : () => {}),
   },
 );
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const realLogger = require("../../util/logger.js");
-mock.module("../../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () => noopLogger,
-  getCliLogger: () => noopLogger,
-  truncateForLog: (v: string) => v,
-  initLogger: () => {},
-  pruneOldLogFiles: () => 0,
-}));
 
 const { buildSystemPrompt, ensurePromptFiles } =
   await import("../system-prompt.js");

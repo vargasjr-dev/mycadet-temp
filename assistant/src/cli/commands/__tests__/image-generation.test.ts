@@ -21,20 +21,6 @@ mock.module("../../../ipc/cli-client.js", () => ({
 }));
 
 // Also mock the logger to suppress output
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-  getCliLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-}));
 
 // We can set outputDir via --output-dir to avoid needing to mock os.tmpdir
 const TEST_OUTPUT_DIR = "/tmp/test-image-gen";

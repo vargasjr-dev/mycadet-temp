@@ -4,23 +4,6 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // Mocks — must be set up before importing the module under test
 // ---------------------------------------------------------------------------
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-    trace: () => {},
-    fatal: () => {},
-    child: () => ({
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-      debug: () => {},
-    }),
-  }),
-}));
-
 // Track registerPendingCallback calls
 const pendingCallbacks: Map<
   string,

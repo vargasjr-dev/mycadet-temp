@@ -55,13 +55,6 @@ afterAll(() => {
 // Mocks — declared before imports that pull in transitive deps
 // ---------------------------------------------------------------------------
 
-const logProxy = new Proxy({} as Record<string, unknown>, {
-  get: () => () => {},
-});
-mock.module("../util/logger.js", () => ({
-  getLogger: () => logProxy,
-}));
-
 // Vault mock — keyed by credential name.
 const mockVault: Record<string, string | null> = {};
 

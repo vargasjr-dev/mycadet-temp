@@ -149,26 +149,6 @@ mock.module("../../../persistence/external-conversation-store.js", () => ({
   getBindingsForConversations: () => new Map(),
 }));
 
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-  getCliLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-  initLogger: () => {},
-  truncateForLog: (value: string) => value,
-  pruneOldLogFiles: () => 0,
-  LOG_FILE_PATTERN: /^assistant-(\d{4}-\d{2}-\d{2})\.log$/,
-  getCurrentLogFilePath: () => "/tmp/test-assistant.log",
-}));
-
 const { registerConversationsCommand } = await import("../conversations.js");
 const { ROUTES: CONVERSATION_CLI_ROUTES } =
   await import("../../../runtime/routes/conversation-cli-routes.js");

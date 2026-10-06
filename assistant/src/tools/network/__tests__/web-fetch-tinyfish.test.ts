@@ -26,13 +26,6 @@ mock.module("../../../security/secure-keys.js", () => ({
     provider === "tinyfish" ? mockTinyfishSecureKey : undefined,
 }));
 
-const realLogger = await import("../../../util/logger.js");
-mock.module("../../../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, { get: () => () => {} }),
-}));
-
 mock.module("../../../permissions/types.js", () => ({
   RiskLevel: { Low: "low", Medium: "medium", High: "high" },
 }));

@@ -14,23 +14,6 @@ import {
 const originalVellumDev = process.env.VELLUM_DEV;
 process.env.VELLUM_DEV = "1";
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-    trace: () => {},
-    fatal: () => {},
-    child: () => ({
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-      debug: () => {},
-    }),
-  }),
-}));
-
 let oauthConnectionStore: Record<string, { id: string; status: string }> = {};
 
 mock.module("../oauth/manual-token-connection.js", () => ({

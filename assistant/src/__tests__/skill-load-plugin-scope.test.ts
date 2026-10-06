@@ -17,14 +17,6 @@ const noopLogger = new Proxy({} as Record<string, unknown>, {
   get: (_t, prop) => (prop === "child" ? () => noopLogger : () => {}),
 });
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () => noopLogger,
-  getCliLogger: () => noopLogger,
-  truncateForLog: (s: unknown) => String(s),
-  initLogger: () => {},
-  pruneOldLogFiles: () => 0,
-}));
-
 // A real directory so the in-scope load's filesystem reads (reference listing,
 // version hash, tool manifest) succeed.
 const skillDir = mkdtempSync(join(tmpdir(), "skill-plugin-scope-"));

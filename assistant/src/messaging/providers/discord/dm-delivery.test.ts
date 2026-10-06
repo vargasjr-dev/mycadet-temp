@@ -31,10 +31,6 @@ mock.module("../../../persistence/attachments-store.js", () => ({
   getAttachmentContent: () => null,
 }));
 
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () => ({ debug() {}, info() {}, warn() {}, error() {} }),
-}));
-
 const { openDiscordDmChannel, resetDiscordDmChannelCache } =
   await import("./api.js");
 const { discordTransport } = await import("./transport.js");
@@ -153,7 +149,6 @@ describe("openDiscordDmChannel", () => {
       recipient_id: "900000000000000043",
     });
   });
-
 });
 
 describe("discordTransport with dm=1", () => {

@@ -82,9 +82,6 @@ mock.module("../whatsapp/send.js", () => whatsapp);
 mock.module("../a2a/deliver.js", () => a2a);
 const actualDiscordSend = await import("../discord/send.js");
 mock.module("../discord/send.js", () => ({ ...actualDiscordSend, ...discord }));
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () => ({ debug() {}, info() {}, warn() {}, error() {} }),
-}));
 
 const {
   deliverDirect,

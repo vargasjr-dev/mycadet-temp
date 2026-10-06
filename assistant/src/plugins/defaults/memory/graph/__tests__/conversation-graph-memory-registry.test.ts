@@ -5,11 +5,7 @@
  * same in-memory handle the turn's retrieval mutated, without the agent loop
  * threading the handle through its generic context.
  */
-import { describe, expect, mock, test } from "bun:test";
-
-import { createMockLoggerModule } from "../../../../../__tests__/helpers/mock-logger.js";
-
-mock.module("../../../../../util/logger.js", () => createMockLoggerModule());
+import { describe, expect, test } from "bun:test";
 
 const { ConversationGraphMemory, getLiveGraphMemory } =
   await import("../conversation-graph-memory.js");

@@ -35,21 +35,6 @@ mock.module("../platform/client.js", () => ({
   },
 }));
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-  getCliLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-}));
-
 const { requirePlatformConnection } =
   await import("../cli/commands/oauth/shared.js");
 

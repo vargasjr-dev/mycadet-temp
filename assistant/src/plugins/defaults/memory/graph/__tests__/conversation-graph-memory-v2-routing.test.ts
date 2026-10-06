@@ -30,14 +30,11 @@ import {
 import type { Message } from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
-import { createMockLoggerModule } from "../../../../../__tests__/helpers/mock-logger.js";
 import type { AssistantConfig } from "../../../../../config/types.js";
 
 // ---------------------------------------------------------------------------
 // Module mocks (must precede the dynamic imports below)
 // ---------------------------------------------------------------------------
-
-mock.module("../../../../../util/logger.js", () => createMockLoggerModule());
 
 // Stub the v1 retriever so we don't reach Qdrant. Both modes return zero
 // nodes — the v1 injection branch becomes a no-op, isolating the assertion

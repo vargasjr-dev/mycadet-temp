@@ -13,10 +13,6 @@ const noopLogger = {
   child: () => noopLogger,
 };
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () => noopLogger,
-}));
-
 // Conversation store mock
 const mockMessages: Array<{ id: string; role: string; content: string }> = [];
 let mockMessageIdCounter = 0;

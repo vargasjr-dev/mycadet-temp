@@ -58,21 +58,6 @@ mock.module("../../../version.js", () => ({
   APP_VERSION: INSTALLED_CLI_VERSION,
 }));
 
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-  getCliLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-}));
-
 // ---------------------------------------------------------------------------
 // Import module under test (after mocks)
 // ---------------------------------------------------------------------------

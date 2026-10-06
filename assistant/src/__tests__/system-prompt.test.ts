@@ -21,17 +21,6 @@ const noopLogger: Record<string, unknown> = new Proxy(
 );
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const realLogger = require("../util/logger.js");
-mock.module("../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () => noopLogger,
-  getCliLogger: () => noopLogger,
-  truncateForLog: (v: string) => v,
-  initLogger: () => {},
-  pruneOldLogFiles: () => 0,
-}));
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const realUserReference = require("../prompts/user-reference.js");
 mock.module("../prompts/user-reference.js", () => ({
   ...realUserReference,

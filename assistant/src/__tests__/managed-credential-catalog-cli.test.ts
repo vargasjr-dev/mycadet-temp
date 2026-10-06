@@ -6,17 +6,6 @@ import { credentialKey } from "../security/credential-key.js";
 // Mock logger
 // ---------------------------------------------------------------------------
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-  getCliLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-}));
-
 // ---------------------------------------------------------------------------
 // Mutable state for mocks
 // ---------------------------------------------------------------------------

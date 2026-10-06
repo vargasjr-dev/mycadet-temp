@@ -19,10 +19,6 @@ import {
   test,
 } from "bun:test";
 
-import { createMockLoggerModule } from "../../../../../__tests__/helpers/mock-logger.js";
-
-mock.module("../../../../../util/logger.js", () => createMockLoggerModule());
-
 const runBackgroundJobMock = mock(
   async (_opts: Record<string, unknown>) =>
     ({ ok: true, conversationId: "conv-filing-test" }) as const,

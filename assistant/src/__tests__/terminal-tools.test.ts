@@ -3,13 +3,6 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 // ── Mock modules ────────────────────────────────────────────────────────────
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: (_target: Record<string, unknown>, _prop: string) => () => {},
-    }),
-}));
-
 const testTmpDir = process.env.VELLUM_WORKSPACE_DIR!;
 
 const proxyGetOrStartSession = mock(() =>

@@ -17,15 +17,6 @@ const noopLogger: Record<string, unknown> = new Proxy(
   },
 );
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () => noopLogger,
-  getCliLogger: () => noopLogger,
-  truncateForLog: (v: string) => v,
-  initLogger: () => {},
-  pruneOldLogFiles: () => 0,
-  getCurrentLogFilePath: () => "/tmp/test-assistant.log",
-}));
-
 let writeRelationshipStateCalled = false;
 let sidecarPayload: unknown = null;
 let writeOnboardingSectionPayload: unknown = null;

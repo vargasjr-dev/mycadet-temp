@@ -17,23 +17,6 @@ const originalVellumDev = process.env.VELLUM_DEV;
 
 process.env.VELLUM_DEV = "1";
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-    trace: () => {},
-    fatal: () => {},
-    child: () => ({
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-      debug: () => {},
-    }),
-  }),
-}));
-
 // Mock oauth-store (getConnectionByProvider)
 let oauthConnectionStore: Record<
   string,

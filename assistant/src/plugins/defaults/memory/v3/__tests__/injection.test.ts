@@ -100,14 +100,6 @@ const observeTurnSpy = mock(
 );
 
 const logCalls: Array<{ data: unknown; msg: string }> = [];
-mock.module("../../../../../util/logger.js", () => ({
-  getLogger: () => ({
-    info: (data: unknown, msg: string) => logCalls.push({ data, msg }),
-    warn: (data: unknown, msg: string) => logCalls.push({ data, msg }),
-    error: () => {},
-    debug: () => {},
-  }),
-}));
 
 let testSqlite: Database;
 // The section store (the prune valve's candidate set and recency) lives on

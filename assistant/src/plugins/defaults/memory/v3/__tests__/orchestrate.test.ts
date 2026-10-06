@@ -55,13 +55,6 @@ mock.module("@mycadet/plugin-api", () => ({
   getConfiguredProvider: async () => providerStub,
 }));
 
-mock.module("../../../../../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: (_t, prop) => (prop === "child" ? () => ({}) : () => {}),
-    }),
-}));
-
 // The dense lane is stubbed: each test sets `denseHits` to control which
 // articles (+ matched ordinals) the dense lane returns. The stub DELEGATES to
 // the real `denseLane` unless this file's tests are running (`denseMockActive`),

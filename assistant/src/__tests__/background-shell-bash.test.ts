@@ -6,13 +6,6 @@ import type { ToolContext } from "../tools/types.js";
 
 // ── Mock modules ────────────────────────────────────────────────────────────
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: (_target: Record<string, unknown>, _prop: string) => () => {},
-    }),
-}));
-
 mock.module("../tools/network/script-proxy/index.js", () => ({
   getOrStartSession: mock(() =>
     Promise.resolve({ session: { id: "mock-session" } }),

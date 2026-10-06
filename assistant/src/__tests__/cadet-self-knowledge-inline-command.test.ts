@@ -24,14 +24,6 @@ const SKILL_SRC_DIR = join(
 
 // ── Mocks (must be declared before any imports from the project) ──────────
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-  truncateForLog: (s: unknown) => String(s),
-}));
-
 // Mock autoInstallFromCatalog — partial: spread the real module so sibling
 // test files in the same process still see the real exports (getRepoSkillsDir
 // etc.) no matter which file loads first.

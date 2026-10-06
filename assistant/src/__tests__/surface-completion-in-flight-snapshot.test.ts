@@ -17,9 +17,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
-import { createMockLoggerModule } from "./helpers/mock-logger.js";
-
-mock.module("../util/logger.js", () => createMockLoggerModule());
 
 let broadcasts: AssistantEvent[] = [];
 const realEventHub = await import("../runtime/assistant-event-hub.js");

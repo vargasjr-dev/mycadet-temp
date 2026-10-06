@@ -15,17 +15,6 @@ mock.module("../../../ipc/cli-client.js", () => ({
   },
 }));
 
-mock.module("../../logger.js", () => ({
-  log: {
-    info: () => {},
-    warn: () => {},
-    error: (message: string) => {
-      process.stderr.write(`${message}\n`);
-    },
-    debug: () => {},
-  },
-}));
-
 const { registerBashCommand } = await import("../bash.js");
 
 describe("assistant bash", () => {

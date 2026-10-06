@@ -128,13 +128,6 @@ mock.module("@mycadet/plugin-api", () => ({
       : realPluginApi.getConfiguredProvider(...args),
 }));
 
-mock.module("../../../../../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: (_t, prop) => (prop === "child" ? () => ({}) : () => {}),
-    }),
-}));
-
 // The dense lane is inert in this fixture — the needle drives the finder tail.
 mock.module("../dense.js", () => ({
   ...realDense,

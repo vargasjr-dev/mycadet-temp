@@ -6,13 +6,9 @@
  * The gate sits in the persistence claim path rather than the worker loop so
  * the plugin needs no import from outside its own directory.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
 import { eq } from "drizzle-orm";
-
-import { createMockLoggerModule } from "../../../../__tests__/helpers/mock-logger.js";
-
-mock.module("../../../../util/logger.js", () => createMockLoggerModule());
 
 import { setMemoryCheckpoint } from "../../../../persistence/checkpoints.js";
 import { getMemoryDb } from "../../../../persistence/db-connection.js";

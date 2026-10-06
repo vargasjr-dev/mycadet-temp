@@ -31,7 +31,6 @@ import {
   beforeEach,
   describe,
   expect,
-  mock,
   test,
 } from "bun:test";
 
@@ -43,15 +42,6 @@ const TMP_ROOT = mkdtempSync(join(tmpdir(), "changelog-test-"));
 // The real getWorkspaceDir() reads this at call time — re-point it instead
 // of mocking util/platform.js.
 process.env.VELLUM_WORKSPACE_DIR = TMP_ROOT;
-
-mock.module("../../logger.js", () => ({
-  log: {
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  },
-}));
 
 // ── Test fixtures ────────────────────────────────────────────────────
 

@@ -25,13 +25,6 @@ mock.module("../../../ipc/cli-client.js", () => ({
   },
 }));
 
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, { get: () => () => {} }),
-  getCliLogger: () =>
-    new Proxy({} as Record<string, unknown>, { get: () => () => {} }),
-}));
-
 mock.module("../../lib/open-browser.js", () => ({
   openInHostBrowser: (url: string) => {
     openedUrls.push(url);

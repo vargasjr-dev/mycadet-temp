@@ -11,7 +11,6 @@
  */
 import { describe, expect, mock, test } from "bun:test";
 
-import { createMockLoggerModule } from "../../../__tests__/helpers/mock-logger.js";
 import { parseExternalContentEnvelope } from "../../../security/untrusted-content.js";
 import type { ToolContext } from "../../types.js";
 import type { CdpClientKind } from "../cdp-client/types.js";
@@ -144,8 +143,6 @@ mock.module("../runtime-check.js", () => ({
     error: null,
   }),
 }));
-
-mock.module("../../../util/logger.js", () => createMockLoggerModule());
 
 const {
   executeBrowserExtract,

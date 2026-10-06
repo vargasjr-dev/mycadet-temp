@@ -39,23 +39,6 @@ mock.module("../../../ipc/cli-client.js", () => ({
   },
 }));
 
-const fakeLogger = {
-  info: (m: unknown) => loggerCalls.push({ level: "info", msg: String(m) }),
-  warn: () => {},
-  error: (m: unknown) => loggerCalls.push({ level: "error", msg: String(m) }),
-  debug: () => {},
-};
-
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () => fakeLogger,
-  getCliLogger: () => fakeLogger,
-  initLogger: () => {},
-  truncateForLog: (v: string) => v,
-  pruneOldLogFiles: () => 0,
-  LOG_FILE_PATTERN: /^assistant-(\d{4}-\d{2}-\d{2})\.log$/,
-  getCurrentLogFilePath: () => "/tmp/test-assistant.log",
-}));
-
 // Full passthrough mock — spreading the real module avoids a hang in the heavy
 // conversations.js import graph that a partial node:fs mock triggered.
 const realFs = { ...nodeFs };

@@ -43,13 +43,6 @@ const noopLogger = {
   fatal: () => {},
   child: () => noopLogger,
 };
-mock.module("../util/logger.js", () => ({
-  getLogger: () => noopLogger,
-  getCliLogger: () => noopLogger,
-  truncateForLog: (v: string) => v,
-  initLogger: () => {},
-  pruneOldLogFiles: () => 0,
-}));
 
 // ── Mutable mock state ──────────────────────────────────────────────────────
 

@@ -4,17 +4,6 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 // Test isolation: mock logger and IPC client
 // ---------------------------------------------------------------------------
 
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-  getCliLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-}));
-
 // Track cliIpcCall invocations and control responses
 const ipcCalls: Array<{ method: string; params?: Record<string, unknown> }> =
   [];

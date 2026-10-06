@@ -13,9 +13,6 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mock } from "bun:test";
-
-import * as realLogger from "../../../../util/logger.js";
 
 let tmpDir: string;
 let pidPath: string;
@@ -23,19 +20,6 @@ let pidPath: string;
 // Spread the real modules and override only what we need: `mock.module` is
 // global across the test process, so a partial mock missing exports that other
 // co-run files import (e.g. jobs-worker's `getWorkspaceDir`) would break them.
-
-const noopLogger = {
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-  debug: () => {},
-};
-mock.module("../../../../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () => noopLogger,
-  getCliLogger: () => noopLogger,
-  getCurrentLogFilePath: () => join(tmpDir, "worker-control-test.log"),
-}));
 
 const { spawnMemoryWorkerProcess, MemoryWorkerSpawnError, probeMemoryWorker } =
   await import("../worker-control.js");

@@ -1,28 +1,10 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-
-import { setConfig } from "./helpers/set-config.js";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before any imports that depend on them
 // ---------------------------------------------------------------------------
-
-mock.module("../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-    trace: () => {},
-    fatal: () => {},
-    silent: () => {},
-    child: function () {
-      return this;
-    },
-  }),
-}));
-
 import {
   registerPluginSecretPatterns,
   resetPluginSecretPatternsForTests,
@@ -30,6 +12,7 @@ import {
 } from "../security/plugin-secret-patterns.js";
 import { resetAllowlist } from "../security/secret-allowlist.js";
 import { checkIngressForSecrets } from "../security/secret-ingress.js";
+import { setConfig } from "./helpers/set-config.js";
 
 // ---------------------------------------------------------------------------
 // Tests

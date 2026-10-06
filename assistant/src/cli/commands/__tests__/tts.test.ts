@@ -58,17 +58,6 @@ mock.module("../../../ipc/cli-client.js", () => ({
   },
 }));
 
-mock.module("../../logger.js", () => ({
-  log: {
-    error: (msg: string) => {
-      process.stderr.write(String(msg) + "\n");
-    },
-    info: () => {},
-    warn: () => {},
-    debug: () => {},
-  },
-}));
-
 mock.module("node:fs", () => ({
   existsSync: () => true,
   mkdirSync: () => {},

@@ -69,13 +69,6 @@ mock.module("@mycadet/plugin-api", () => ({
     mockActive ? providerStub : realPluginApi.getConfiguredProvider(...args),
 }));
 
-mock.module("../../../../../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: (_t, prop) => (prop === "child" ? () => ({}) : () => {}),
-    }),
-}));
-
 // The dense lane is stubbed to a controllable hit list; it DELEGATES to the
 // real `denseLane` unless this file is running so dense.test.ts still exercises
 // the real lane.

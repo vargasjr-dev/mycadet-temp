@@ -7,12 +7,7 @@
  * local row in local mode, flip `readSource` to `clickhouse`, and assert each
  * mutator leaves the local row untouched.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
-
-mock.module("../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, { get: () => () => {} }),
-}));
+import { beforeEach, describe, expect, test } from "bun:test";
 
 import { setConfig } from "./helpers/set-config.js";
 

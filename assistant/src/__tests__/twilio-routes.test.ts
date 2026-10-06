@@ -156,23 +156,6 @@ mock.module("../config/env.js", () => ({
   },
 }));
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-    trace: () => {},
-    fatal: () => {},
-    child: () => ({
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-      debug: () => {},
-    }),
-  }),
-}));
-
 mock.module("../security/secure-keys.js", () => ({
   setSecureKeyAsync: async (key: string, value: string) => {
     mockSecureKeyStore[key] = value;

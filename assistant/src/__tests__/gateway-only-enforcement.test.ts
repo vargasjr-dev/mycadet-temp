@@ -11,29 +11,6 @@
  */
 import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 
-const logMessages: { level: string; msg: string; args?: unknown }[] = [];
-
-mock.module("../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: (_target, prop: string) => {
-        if (prop === "child") {
-          return () =>
-            new Proxy({} as Record<string, unknown>, {
-              get: () => () => {},
-            });
-        }
-        return (...args: unknown[]) => {
-          if (typeof args[0] === "string") {
-            logMessages.push({ level: prop, msg: args[0] });
-          } else if (typeof args[1] === "string") {
-            logMessages.push({ level: prop, msg: args[1], args: args[0] });
-          }
-        };
-      },
-    }),
-}));
-
 // Mock Twilio provider
 class MockTwilioVoiceProvider {
   static getAuthToken() {

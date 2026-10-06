@@ -1,15 +1,11 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { createMockLoggerModule } from "./helpers/mock-logger.js";
-
 // Default the warm-pool gate to OPEN — these tests probe background-job
 // disk-pressure behavior, not the pre-first-message guard.
 mock.module("../runtime/pre-first-message-gate.js", () => ({
   hasReceivedUserMessage: () => true,
   _resetPreFirstMessageGateCacheForTests: () => {},
 }));
-
-mock.module("../util/logger.js", () => createMockLoggerModule());
 
 mock.module("../daemon/disk-pressure-background-gate.js", () => ({
   checkDiskPressureBackgroundGate: () => ({

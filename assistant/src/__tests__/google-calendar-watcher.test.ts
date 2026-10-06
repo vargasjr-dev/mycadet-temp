@@ -32,15 +32,6 @@ mock.module("../oauth/connection-resolver.js", () => ({
   resolveOAuthConnection: mockResolveOAuthConnection,
 }));
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-}));
-
 // Import module under test after mocks
 const { googleCalendarProvider } =
   await import("../watcher/providers/google-calendar.js");

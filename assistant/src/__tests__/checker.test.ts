@@ -11,7 +11,6 @@ import {
   beforeEach,
   describe,
   expect,
-  mock,
   spyOn,
   test,
 } from "bun:test";
@@ -23,19 +22,6 @@ process.env.GATEWAY_SECURITY_DIR = join(checkerTestDir, "protected");
 
 // Capture logger.warn() calls so tests can assert on deprecation warnings.
 const loggerWarnCalls: string[] = [];
-mock.module("../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: (_target: Record<string, unknown>, prop: string) => {
-        if (prop === "warn") {
-          return (...args: unknown[]) => {
-            loggerWarnCalls.push(String(args[0]));
-          };
-        }
-        return () => {};
-      },
-    }),
-}));
 
 import {
   installIpcMock,

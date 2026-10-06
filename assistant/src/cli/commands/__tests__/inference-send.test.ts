@@ -60,21 +60,6 @@ mock.module("../../../providers/provider-send-message.js", () => ({
   }),
 }));
 
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-  getCliLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-}));
-
 // Stdin is read via fd 0 through the shared helper, never by reopening
 // "/dev/stdin" (which fails ENXIO for pipe read-ends). A null content
 // simulates stdin with no readable data.

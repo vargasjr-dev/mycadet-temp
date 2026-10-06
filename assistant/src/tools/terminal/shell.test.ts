@@ -16,14 +16,6 @@ import type { ToolContext } from "../types.js";
 // ---------------------------------------------------------------------------
 
 // Silence the logger across every module this graph reaches.
-const realLogger = await import("../../util/logger.js");
-mock.module("../../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-}));
 
 // The shell tool reads only `timeouts.shell{Default,Max}TimeoutSec`; seed the
 // non-default bounds the tests exercise.

@@ -14,23 +14,6 @@ function seedQuestionTimeout(): void {
   setConfig("timeouts", { questionResponseTimeoutSec: 0.05 });
 }
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-    trace: () => {},
-    fatal: () => {},
-    child: () => ({
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-      debug: () => {},
-    }),
-  }),
-}));
-
 // Use a real Map so QuestionPrompter can store and retrieve callbacks.
 interface MockInteraction {
   rpcResolve?: (v: unknown) => void;

@@ -1,18 +1,12 @@
-import { mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-
-import { makeMockLogger } from "./helpers/mock-logger.js";
-
-mock.module("../util/logger.js", () => ({
-  LOG_FILE_PATTERN: /^assistant-(\d{4}-\d{2}-\d{2})\.log$/,
-  getCliLogger: () => makeMockLogger(),
-  getLogger: () => makeMockLogger(),
-  initLogger: () => {},
-  pruneOldLogFiles: () => 0,
-  getCurrentLogFilePath: () => "/tmp/test-assistant.log",
-  truncateForLog: (value: string, maxLen = 500) => value.slice(0, maxLen),
-}));
 
 let seededRawText = "";
 let mtimeSeq = 0;

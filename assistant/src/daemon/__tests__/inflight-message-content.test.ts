@@ -5,16 +5,9 @@
  * cleanup, and the stranded-writer fold at the turn seam.
  */
 import { existsSync, readFileSync } from "node:fs";
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
 import pino from "pino";
-
-mock.module("../../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-}));
 
 import {
   createConversation,

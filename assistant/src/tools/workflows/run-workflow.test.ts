@@ -3,14 +3,6 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { setConfig } from "../../__tests__/helpers/set-config.js";
 
 // Silence the logger everywhere this graph reaches.
-const realLogger = await import("../../util/logger.js");
-mock.module("../../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-}));
 
 // ── Mutable mock state ────────────────────────────────────────────────
 // The run-manager mock records the args of the last `start()` call for

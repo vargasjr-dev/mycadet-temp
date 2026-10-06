@@ -9,7 +9,6 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { createMockLoggerModule } from "../../../__tests__/helpers/mock-logger.js";
 import type { ToolContext } from "../../types.js";
 import { CdpError } from "../cdp-client/errors.js";
 import type {
@@ -103,8 +102,6 @@ mock.module("../runtime-check.js", () => ({
     error: null,
   }),
 }));
-
-mock.module("../../../util/logger.js", () => createMockLoggerModule());
 
 // Import under test after all mock.module calls.
 const { executeBrowserAttach } = await import("../browser-execution.js");

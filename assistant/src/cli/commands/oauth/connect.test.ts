@@ -37,15 +37,6 @@ mock.module("../../lib/open-browser.js", () => ({
   },
 }));
 
-mock.module("../../logger.js", () => ({
-  getCliLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-}));
-
 import { Command } from "commander";
 
 import { applyCommandHelp } from "../../lib/cli-command-help.js";

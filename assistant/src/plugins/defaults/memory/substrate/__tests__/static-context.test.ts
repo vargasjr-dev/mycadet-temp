@@ -21,17 +21,6 @@ const noopLogger: Record<string, unknown> = new Proxy(
   },
 );
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const realLogger = require("../../../../../util/logger.js");
-mock.module("../../../../../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () => noopLogger,
-  getCliLogger: () => noopLogger,
-  truncateForLog: (v: string) => v,
-  initLogger: () => {},
-  pruneOldLogFiles: () => 0,
-}));
-
 let configMemoryV2Enabled = true;
 let configMemoryEnabled = true;
 // Mirrors the `memory.v2.consolidation_max_buffer_lines` schema default; the

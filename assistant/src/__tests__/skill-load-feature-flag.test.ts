@@ -4,7 +4,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { setOverridesForTesting } from "./feature-flag-test-helpers.js";
 
@@ -16,17 +16,6 @@ const DECLARED_FLAG_KEY = "a2a-channel";
 const noopLogger = new Proxy({} as Record<string, unknown>, {
   get: (_target, prop) => (prop === "child" ? () => noopLogger : () => {}),
 });
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const realLogger = require("../util/logger.js");
-mock.module("../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () => noopLogger,
-  getCliLogger: () => noopLogger,
-  truncateForLog: (value: string) => value,
-  initLogger: () => {},
-  pruneOldLogFiles: () => 0,
-}));
 
 const { skillLoadTool } = await import("../tools/skills/load.js");
 

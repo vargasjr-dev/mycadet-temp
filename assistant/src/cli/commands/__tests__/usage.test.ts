@@ -22,21 +22,6 @@ mock.module("../../../ipc/cli-client.js", () => ({
   },
 }));
 
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-  getCliLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-}));
-
 const { registerUsageCommand } = await import("../usage.js");
 
 async function runCommand(args: string[]): Promise<{ exitCode: number }> {

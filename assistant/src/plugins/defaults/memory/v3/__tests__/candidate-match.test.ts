@@ -21,7 +21,6 @@
 
 import { describe, expect, mock, test } from "bun:test";
 
-import { makeMockLogger } from "../../../../../__tests__/helpers/mock-logger.js";
 import type { ScoredSlug } from "../candidate-match.js";
 
 // Spread the real logger module so we override ONLY `getLogger`. The matcher's
@@ -29,11 +28,6 @@ import type { ScoredSlug } from "../candidate-match.js";
 // this same module (candidate-match → config/skills → … → cli/program), so a
 // mock that dropped `getCliLogger` would crash module evaluation with
 // "export 'getCliLogger' not found in '../util/logger.js'".
-const realLogger = await import("../../../../../util/logger.js");
-mock.module("../../../../../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () => makeMockLogger(),
-}));
 
 // `simBatch` is the matcher's DEFAULT scorer (used only when the caller does not
 // inject `scoreSlugs`). The retry tests below drive this default path, so the

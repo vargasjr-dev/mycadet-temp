@@ -81,21 +81,6 @@ for (const skillId of testSkillIds) {
   writeFileSync(join(skillDir, "run.sh"), "#!/bin/sh\necho ok");
 }
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-  getCliLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-  truncateForLog: (value: string, maxLen = 500) =>
-    value.length > maxLen ? value.slice(0, maxLen) + "..." : value,
-  initLogger: () => {},
-  pruneOldLogFiles: () => 0,
-}));
-
 mock.module("../tools/watch/watch-state.js", () => ({
   watchSessions: new Map(),
   registerWatchStartNotifier: () => {},

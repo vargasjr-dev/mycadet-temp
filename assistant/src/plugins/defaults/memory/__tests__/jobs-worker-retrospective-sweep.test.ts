@@ -8,13 +8,9 @@
  * the first worker tick and enqueue retrospective LLM work the moment the daemon
  * starts. The seed defers the first sweep by one full interval instead.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
 import { eq } from "drizzle-orm";
-
-import { createMockLoggerModule } from "../../../../__tests__/helpers/mock-logger.js";
-
-mock.module("../../../../util/logger.js", () => createMockLoggerModule());
 
 import { applyNestedDefaults } from "../../../../config/loader.js";
 import type { AssistantConfig } from "../../../../config/types.js";

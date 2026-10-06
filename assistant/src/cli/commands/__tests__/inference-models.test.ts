@@ -19,13 +19,6 @@ mock.module("../../../ipc/cli-client.js", () => ({
   },
 }));
 
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, { get: () => () => {} }),
-  getCliLogger: () =>
-    new Proxy({} as Record<string, unknown>, { get: () => () => {} }),
-}));
-
 const { attachModelsSubcommand } = await import("../inference-models.js");
 const { applyCommandHelp } = await import("../../lib/cli-command-help.js");
 const { inferenceHelp } = await import("../inference.help.js");

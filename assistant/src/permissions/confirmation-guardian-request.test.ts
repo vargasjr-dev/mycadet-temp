@@ -13,13 +13,6 @@ const expireCalls: string[] = [];
 const bridgeCalls: Array<Record<string, unknown>> = [];
 let confirmationPending = true;
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-}));
-
 mock.module("../daemon/conversation-registry.js", () => ({
   findConversation: () =>
     asConversation({

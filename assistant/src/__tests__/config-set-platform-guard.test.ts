@@ -66,21 +66,6 @@ mock.module("../ipc/cli-client.js", () => ({
 // Mocks - util/logger (suppress log output)
 // ---------------------------------------------------------------------------
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-  getCliLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  }),
-}));
-
 // ---------------------------------------------------------------------------
 // Mocks - oauth/oauth-store (transitive dep guard for oauth/shared.ts)
 // ---------------------------------------------------------------------------

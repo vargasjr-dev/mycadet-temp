@@ -8,13 +8,6 @@ const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
 
 // Build a mock that covers every export from platform.ts — any function not
 // explicitly mapped returns a no-op stub so that transitive imports don't fail.
-mock.module("../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-  truncateForLog: (s: unknown) => String(s),
-}));
 
 // Mock autoInstallFromCatalog — default returns false (not found in catalog).
 // Tests can override via `mockAutoInstall.mockImplementation(...)`.

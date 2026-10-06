@@ -74,10 +74,6 @@ mock.module("../../../persistence/attachments-store.js", () => ({
   },
 }));
 
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () => ({ debug() {}, info() {}, warn() {}, error() {} }),
-}));
-
 const { sendWhatsAppAttachments, sendWhatsAppReply } =
   await import("./send.js");
 const { whatsappTransport } = await import("./transport.js");

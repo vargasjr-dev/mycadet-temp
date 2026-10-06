@@ -26,10 +26,6 @@ mock.module("../../../persistence/attachments-store.js", () => ({
     id === "missing" ? null : Buffer.from("file-bytes"),
 }));
 
-mock.module("../../../util/logger.js", () => ({
-  getLogger: () => ({ debug() {}, info() {}, warn() {}, error() {} }),
-}));
-
 const {
   sendDiscordReply,
   sendDiscordAttachments,

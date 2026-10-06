@@ -8,23 +8,6 @@ import { setConfig } from "./helpers/set-config.js";
 setConfig("timeouts", { permissionTimeoutSec: 0.01 });
 setConfig("secretDetection", { allowOneTimeSend: false });
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () => ({
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-    trace: () => {},
-    fatal: () => {},
-    child: () => ({
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-      debug: () => {},
-    }),
-  }),
-}));
-
 let broadcastMessages: AssistantEvent[] = [];
 mock.module("../runtime/assistant-event-hub.js", () => ({
   broadcastMessage: (msg: AssistantEvent) => broadcastMessages.push(msg),

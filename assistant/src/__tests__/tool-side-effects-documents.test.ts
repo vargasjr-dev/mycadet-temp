@@ -10,7 +10,6 @@ import {
   DOCUMENT_MUTATION_TOOL_NAMES,
   REOPENABLE_DOCUMENT_MUTATION_TOOL_NAMES,
 } from "../api/constants/document-tools.js";
-import { createMockLoggerModule } from "./helpers/mock-logger.js";
 
 // ---------------------------------------------------------------------------
 // Mocks. Must be set up before importing the module under test.
@@ -21,8 +20,6 @@ mock.module("../runtime/sync/resource-sync-events.js", () => ({
   publishAppsChanged: mock(() => {}),
   publishDocumentsChanged: mockPublishDocumentsChanged,
 }));
-
-mock.module("../util/logger.js", () => createMockLoggerModule());
 
 // Stub the transitive imports so the module graph under test stops at
 // tool-side-effects.ts and never reaches the real sync publisher.

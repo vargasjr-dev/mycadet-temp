@@ -25,16 +25,6 @@ import {
 
 // ── Module mocks (must come before source imports) ───────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const realLogger = require("../util/logger.js");
-mock.module("../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-}));
-
 // Gateway guardian-request client — in-memory map driven by tests.
 const guardianRequests = new Map<string, GuardianRequestWire>();
 // Spread the actual module so transitive importers of names this

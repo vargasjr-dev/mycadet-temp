@@ -51,21 +51,6 @@ function seedVellumGuardian(userFile: string | null): void {
 
 // ── Mock modules (must precede imports from the module under test) ──
 
-mock.module("../util/logger.js", () => ({
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: (_target, prop) =>
-        prop === "child"
-          ? () =>
-              new Proxy({} as Record<string, unknown>, { get: () => () => {} })
-          : () => {},
-    }),
-  getCliLogger: () => ({}),
-  truncateForLog: (v: string) => v,
-  initLogger: () => {},
-  pruneOldLogFiles: () => 0,
-}));
-
 mock.module("../contacts/contact-store.js", () => ({
   findContactByAddress: (channelType: string, address: string) =>
     mockContactsByAddress[`${channelType}:${address}`] ?? null,

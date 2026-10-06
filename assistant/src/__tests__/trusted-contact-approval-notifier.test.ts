@@ -13,16 +13,6 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 // ── Platform mock ──
 // ── Logger mock ──
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const realLogger = require("../util/logger.js");
-mock.module("../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-  truncateForLog: (value: string) => value,
-}));
 
 // ── Notification signal mock ──
 mock.module("../notifications/emit-signal.js", () => ({

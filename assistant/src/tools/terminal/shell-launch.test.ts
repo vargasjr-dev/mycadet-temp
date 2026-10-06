@@ -45,15 +45,6 @@ mock.module("node:child_process", () => ({
   spawn: spawnSpy,
 }));
 
-const realLogger = await import("../../util/logger.js");
-mock.module("../../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
-}));
-
 setConfig("timeouts", { shellDefaultTimeoutSec: 30, shellMaxTimeoutSec: 60 });
 
 const realHub = await import("../../runtime/assistant-event-hub.js");

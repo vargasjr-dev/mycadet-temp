@@ -10,7 +10,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import * as realLoader from "../../config/loader.js";
-import * as realLogger from "../../util/logger.js";
 import * as realWorkerProcess from "../../util/worker-process.js";
 
 let enabled = false;
@@ -24,17 +23,6 @@ let stopThrows: Error | null = null;
 mock.module("../../config/loader.js", () => ({
   ...realLoader,
   getConfigReadOnly: () => ({ userRoutes: { host: { enabled } } }),
-}));
-
-const noopLogger = {
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-  debug: () => {},
-};
-mock.module("../../util/logger.js", () => ({
-  ...realLogger,
-  getLogger: () => noopLogger,
 }));
 
 mock.module("../../util/worker-process.js", () => ({
