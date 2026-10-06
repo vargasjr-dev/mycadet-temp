@@ -1,5 +1,4 @@
-import { mkdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { BackgroundWakeIntent } from "./next-wake.js";
@@ -16,9 +15,6 @@ const mockClearBackgroundWakeIntent = mock(
   }),
 );
 let computedIntent: BackgroundWakeIntent | null = intentFixture();
-const testWorkspaceDir =
-  process.env.VELLUM_WORKSPACE_DIR ?? "/tmp/vellum-wake-intent-hooks";
-const workspacePath = (...parts: string[]) => join(testWorkspaceDir, ...parts);
 
 mock.module("./next-wake.js", () => ({
   computeNextBackgroundWakeIntent: () => computedIntent,
@@ -38,56 +34,6 @@ const actualSyncEvents =
 mock.module("../runtime/sync/resource-sync-events.js", () => ({
   ...actualSyncEvents,
   publishSchedulesChanged: () => {},
-}));
-
-mock.module("../util/platform.js", () => ({
-  getWorkspaceDir: () => testWorkspaceDir,
-  getWorkspaceDirDisplay: () => testWorkspaceDir,
-  getWorkspacePromptPath: (name: string) => workspacePath(name),
-  getWorkspaceConfigPath: () => workspacePath("config.json"),
-  getWorkspaceSkillsDir: () => workspacePath("skills"),
-  getWorkspaceHooksDir: () => workspacePath("hooks"),
-  getWorkspacePluginsDir: () => workspacePath("plugins"),
-  getWorkspaceRoutesDir: () => workspacePath("routes"),
-  vellumRoot: () => testWorkspaceDir,
-  getDataDir: () => workspacePath("data"),
-  getConfigQuarantineNoticePath: () =>
-    workspacePath("data", "config-quarantine-notice.json"),
-  getConfigValidationResetNoticePath: () =>
-    workspacePath("data", "config-validation-reset-notice.json"),
-  getDbPath: () => workspacePath("data", "db", "assistant.db"),
-  ensureDataDir: () => {
-    mkdirSync(workspacePath("data", "db"), { recursive: true });
-  },
-  getLogsDir: () => workspacePath("data", "logs"),
-  getHistoryPath: () => workspacePath("data", "history"),
-  getProtectedDir: () => workspacePath("protected"),
-  getSignalsDir: () => workspacePath("signals"),
-  getPidPath: () => workspacePath("vellum.pid"),
-  getDaemonStderrLogPath: () => workspacePath("logs", "daemon-stderr.log"),
-  getDaemonStartupLockPath: () => workspacePath("daemon-startup.lock"),
-  getExternalDir: () => workspacePath("external"),
-  getBinDir: () => workspacePath("bin"),
-  getDotEnvPath: () => workspacePath(".env"),
-  getEmbedWorkerPidPath: () => workspacePath("embed-worker.pid"),
-  getDeprecatedDir: () => workspacePath("deprecated"),
-  getConversationsDir: () => workspacePath("conversations"),
-  isMacOS: () => false,
-  isLinux: () => true,
-  isWindows: () => false,
-  getPlatformName: () => "linux",
-  normalizeAssistantId: (id: string) => id,
-  getEmbeddingModelsDir: () => workspacePath("embedding-models"),
-  getSandboxRootDir: () => workspacePath("data", "sandbox"),
-  getSandboxWorkingDir: () => testWorkspaceDir,
-  getSoundsDir: () => workspacePath("data", "sounds"),
-  getAvatarDir: () => workspacePath("data", "avatar"),
-  getAvatarImagePath: () => workspacePath("data", "avatar", "avatar-image.png"),
-  getXdgVellumConfigDirName: () => ".vellum",
-  getProfilerRootDir: () => workspacePath("data", "profiler"),
-  getProfilerRunsDir: () => workspacePath("data", "profiler", "runs"),
-  getProfilerRunDir: (runId: string) =>
-    workspacePath("data", "profiler", "runs", runId),
 }));
 
 const {
