@@ -17,15 +17,15 @@
 ## What It Does
 
 Cadet is a personal AI assistant that learns how you work, remembers what matters, and takes action across your apps.
-| Area                          | Summary |
+| Area | Summary |
 | ----------------------------- | --- |
-| **Memory**                    | Eight types (episodic, semantic, procedural, emotional, prospective, behavioral, narrative, shared), each with its own staleness window, hybrid dense + sparse retrieval, and per-user and per-channel isolation. Structured items (identity, preferences, projects, events) extracted from conversations with source attribution and dedup. Embeddings run locally by default. Not a SQLite + Markdown file you maintain yourself. |
-| **Identity**                  | Behavior lives in SOUL.md. During onboarding the assistant observes how you communicate and writes its own personality files. It keeps a per-user journal of reflections and uses NOW.md as a scratchpad for current focus and active threads. |
-| **Proactivity**               | Every hour the assistant re-reads its notes, looks for anything unfinished or due soon, and messages you if something needs attention. Notifications go to the right channel and won't interrupt an active conversation. |
-| **Security**                  | Actor identity (guardian, trusted, unknown) is resolved once and enforced everywhere; unknown actors can't read memory, trigger tools, or escalate. Credentials live in a separate process and never reach the model. Every tool call runs in a sandbox. The default is to deny. |
-| **Channels**           | macOS, Windows, iOS, Web, Voice, Email, Telegram, Slack, Twilio. One assistant, one memory, every channel. |
-| **OAuth**             | Slack, Notion, Google, HubSpot, Linear, Discord, Twitter, Telegram, Twilio. No hand-rolled token refresh. |
-| **Hosting**      | Managed runtime on Cadet Platform, or self-hosted. Same codebase, same data model. |
+| **Memory** | Eight types (episodic, semantic, procedural, emotional, prospective, behavioral, narrative, shared), each with its own staleness window, hybrid dense + sparse retrieval, and per-user and per-channel isolation. Structured items (identity, preferences, projects, events) extracted from conversations with source attribution and dedup. Embeddings run locally by default. Not a SQLite + Markdown file you maintain yourself. |
+| **Identity** | Behavior lives in SOUL.md. During onboarding the assistant observes how you communicate and writes its own personality files. It keeps a per-user journal of reflections and uses NOW.md as a scratchpad for current focus and active threads. |
+| **Proactivity** | Every hour the assistant re-reads its notes, looks for anything unfinished or due soon, and messages you if something needs attention. Notifications go to the right channel and won't interrupt an active conversation. |
+| **Security** | Actor identity (guardian, trusted, unknown) is resolved once and enforced everywhere; unknown actors can't read memory, trigger tools, or escalate. Credentials live in a separate process and never reach the model. Every tool call runs in a sandbox. The default is to deny. |
+| **Channels** | macOS, Windows, iOS, Web, Voice, Email, Telegram, Slack, Twilio. One assistant, one memory, every channel. |
+| **OAuth** | Slack, Notion, Google, HubSpot, Linear, Discord, Twitter, Telegram, Twilio. No hand-rolled token refresh. |
+| **Hosting** | Managed runtime on Cadet Platform, or self-hosted. Same codebase, same data model. |
 
 ---
 
@@ -105,12 +105,12 @@ All commands target the default assistant. If you have multiple, pass the assist
 
 ## Infra and security
 
-| Area                       | Summary                                                                                                                                                                                                                                                                                                                  |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Computer use**           | The assistant works in its own sandbox, and with your approval reaches your actual machine: reads and edits files, runs commands, drives the browser. Every action is permission-gated, and you can grant once, for ten minutes, or always. |
-| **Skills**                 | Plugins defined by a SKILL.md and a TOOLS.json that add tools and prompt sections at runtime, sandboxed like everything else. Install them from the catalog, bundle them, or drop them in the workspace.                                                                                      |
-| **Channels**               | One assistant with one memory, reachable from the macOS or Windows app, Telegram, or Slack. Start a thought in one channel and pick it up in another.                                                                                                                                                              |
-| **Multi-provider support** | Works with Anthropic, OpenAI, Google Gemini, Fireworks, OpenRouter, MiniMax, [Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=cadet), and any OpenAI-compatible endpoint. Local models run through Ollama. Embeddings run on local ONNX by default and fall back to cloud providers automatically.                                                                                    |
+| Area                       | Summary                                                                                                                                                                                                                                                                                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Computer use**           | The assistant works in its own sandbox, and with your approval reaches your actual machine: reads and edits files, runs commands, drives the browser. Every action is permission-gated, and you can grant once, for ten minutes, or always.                                                                                               |
+| **Skills**                 | Plugins defined by a SKILL.md and a TOOLS.json that add tools and prompt sections at runtime, sandboxed like everything else. Install them from the catalog, bundle them, or drop them in the workspace.                                                                                                                                  |
+| **Channels**               | One assistant with one memory, reachable from the macOS or Windows app, Telegram, or Slack. Start a thought in one channel and pick it up in another.                                                                                                                                                                                     |
+| **Multi-provider support** | Works with Anthropic, OpenAI, Google Gemini, Fireworks, OpenRouter, MiniMax, [Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=cadet), and any OpenAI-compatible endpoint. Local models run through Ollama. Embeddings run on local ONNX by default and fall back to cloud providers automatically. |
 
 ---
 
@@ -127,8 +127,8 @@ The canonical sources for who we are and how we talk about what we're building. 
 
 ## Documentation
 
-| Section                                                                             | What's covered                                                     |
-| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Section                                                                              | What's covered                                                     |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
 | [Architecture](https://mycadet.ai/docs/developer-guide/architecture)                 | Platform domains, repo structure, runtime · clients · gateway      |
 | [Security & Permissions](https://mycadet.ai/docs/developer-guide/security)           | Sandbox, credentials, trust rules, permission modes                |
 | [Features & Capabilities](https://mycadet.ai/docs/developer-guide/features)          | Integrations, dynamic skills, browser, attachments, media embeds   |
@@ -148,13 +148,14 @@ We welcome contributions from everyone.
 
 ## Community
 
+- 💬 [Community](https://mycadet.ai/community)
 - 🐛 [Issues](https://github.com/vargasjr-dev/mycadet-temp/issues)
 
 ## License
 
 MIT. See [License](https://github.com/vargasjr-dev/mycadet-temp?tab=MIT-1-ov-file). Integration logos from [Simple Icons](https://github.com/simple-icons/simple-icons), licensed [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
 
-Cadet is open-source software built by [Vargas JR LLC](https://mycadet.ai). Based on the Vellum Assistant by Vellum AI, used under the MIT license. Free to use and modify under MIT, and we're committed to keeping it that way.
+Cadet is open-source software built by [Vargas JR LLC](https://vargasjr.dev). Based on the Vellum Assistant by Vellum AI, used under the MIT license. Free to use and modify under MIT, and we're committed to keeping it that way.
 
 ---
 
