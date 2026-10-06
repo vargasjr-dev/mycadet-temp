@@ -92,6 +92,10 @@ jobs:
         run: bun run openapi-ts
 
       - name: Type check
+        env:
+          # Same ceiling lift as pr-web.yaml: tsc OOMs at Node's default heap
+          # on this graph once the generated clients exist.
+          NODE_OPTIONS: --max-old-space-size=8192
         run: bun run typecheck
 
   test:
@@ -116,6 +120,10 @@ jobs:
         run: bun run openapi-ts
 
       - name: Test
+        env:
+          # Same per-test ceiling lift as pr-web.yaml: timing-sensitive suites
+          # need more than bun's 5s default under CI load.
+          TEST_TIMEOUT_MS: 15000
         run: bun run test:ci
 
   checks:

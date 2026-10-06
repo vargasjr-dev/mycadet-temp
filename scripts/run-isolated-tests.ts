@@ -54,7 +54,18 @@ export async function runIsolatedTests({
     // https://bun.sh/docs/cli/test#run-specific-tests
     const path =
       file.startsWith("./") || file.startsWith("/") ? file : `./${file}`;
-    const proc = Bun.spawn(["bun", "test", path], {
+    // Bun's default per-test timeout is 5s. Under saturated CI cores, the
+    // RTL `waitFor` loop alone (act-wrapped polling) can stretch past that on
+    // heavy component suites even though the asserted condition settles in
+    // tens of milliseconds, which reads as a hang rather than slowness.
+    // `TEST_TIMEOUT_MS` lifts the ceiling for exactly this; 15s still fails
+    // a genuine hang, just after a slower one.
+    const timeoutMs = Number.parseInt(process.env.TEST_TIMEOUT_MS ?? "", 10);
+    const timeoutArgs =
+      Number.isFinite(timeoutMs) && timeoutMs > 0
+        ? ["--timeout", String(timeoutMs)]
+        : [];
+    const proc = Bun.spawn(["bun", "test", ...timeoutArgs, path], {
       stdout: "pipe",
       stderr: "pipe",
       cwd,
