@@ -1,22 +1,22 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-let velayWebhooksEnabled = false;
+let tunnelWebhooksEnabled = false;
 
 mock.module("../feature-flag-resolver.js", () => ({
   isFeatureFlagEnabled: (flag: string) =>
-    flag === "velay-webhooks" ? velayWebhooksEnabled : false,
+    flag === "tunnel-webhooks" ? tunnelWebhooksEnabled : false,
 }));
 
 const {
-  VELAY_ALLOWED_PATHS,
-  VELAY_ALLOWED_PATHS_HEADER,
-  VELAY_ALLOWED_PATHS_HEADER_VALUE,
-  VELAY_STATIC_ALLOWED_PATHS,
-  buildVelayAllowedPathsHeaderValue,
+  TUNNEL_ALLOWED_PATHS,
+  TUNNEL_ALLOWED_PATHS_HEADER,
+  TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
+  TUNNEL_STATIC_ALLOWED_PATHS,
+  buildTunnelAllowedPathsHeaderValue,
 } = await import("./allowed-paths.js");
 // Imported after the mock is installed, and dynamically for the same reason the
 // module above is, so the bridge reads the same flag resolver these tests drive.
-const { isAllowedVelayWebSocketPath, VELAY_ALLOWED_WEBSOCKET_EXACT_PATHS } =
+const { isAllowedTunnelWebSocketPath, TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS } =
   await import("./bridge-utils.js");
 
 function decode(headerValue: string): string[] {
@@ -24,31 +24,31 @@ function decode(headerValue: string): string[] {
 }
 
 beforeEach(() => {
-  velayWebhooksEnabled = false;
+  tunnelWebhooksEnabled = false;
 });
 
-describe("VELAY_ALLOWED_PATHS", () => {
+describe("TUNNEL_ALLOWED_PATHS", () => {
   it("matches the platform-side header name (must stay in sync with vellum-assistant-platform RegistrationAllowedPathsHeader)", () => {
-    expect(VELAY_ALLOWED_PATHS_HEADER).toBe("X-Vellum-Velay-Allowed-Paths");
+    expect(TUNNEL_ALLOWED_PATHS_HEADER).toBe("X-Vellum-Tunnel-Allowed-Paths");
   });
 
   it("encodes the regex list as a JSON array string for direct use as the header value", () => {
-    expect(VELAY_ALLOWED_PATHS_HEADER_VALUE).toBe(
-      JSON.stringify(VELAY_ALLOWED_PATHS),
+    expect(TUNNEL_ALLOWED_PATHS_HEADER_VALUE).toBe(
+      JSON.stringify(TUNNEL_ALLOWED_PATHS),
     );
-    const decoded = JSON.parse(VELAY_ALLOWED_PATHS_HEADER_VALUE) as unknown;
+    const decoded = JSON.parse(TUNNEL_ALLOWED_PATHS_HEADER_VALUE) as unknown;
     expect(Array.isArray(decoded)).toBe(true);
-    expect(decoded).toEqual([...VELAY_ALLOWED_PATHS]);
+    expect(decoded).toEqual([...TUNNEL_ALLOWED_PATHS]);
   });
 
   it("contains only RE2-portable regex patterns (no JS-specific lookaround / backreferences) that compile in JavaScript too", () => {
     // We can't run Go RE2 here, but every pattern below is plain anchored
     // prefix/exact matching that's a strict subset of both engines.
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     const patterns = [
-      ...VELAY_ALLOWED_PATHS,
+      ...TUNNEL_ALLOWED_PATHS,
       ...decode(
-        buildVelayAllowedPathsHeaderValue(() => [
+        buildTunnelAllowedPathsHeaderValue(() => [
           "/webhooks/plugins/example/realtime",
           "/webhooks/plugins/ex.am+ple/(realtime)",
         ]),
@@ -66,8 +66,8 @@ describe("VELAY_ALLOWED_PATHS", () => {
 
   it("matches the gateway public-surface route shapes", () => {
     // Allowlist coverage check — if you add a public route in
-    // `gateway/src/index.ts` that needs to be reachable through the Velay
-    // tunnel, add a matching regex to VELAY_ALLOWED_PATHS and a sample here.
+    // `gateway/src/index.ts` that needs to be reachable through the Tunnel
+    // tunnel, add a matching regex to TUNNEL_ALLOWED_PATHS and a sample here.
     const samples = {
       "/webhooks/telegram": true,
       "/webhooks/twilio/voice": true,
@@ -80,18 +80,18 @@ describe("VELAY_ALLOWED_PATHS", () => {
       "/webhooks/oauth/callback": true,
       // Plugin-declared webhooks ride the existing `^/webhooks/` entry. Which
       // of them the gateway actually serves is decided by the approval gate,
-      // not by Velay — the tunnel just stops treating the prefix as private.
+      // not by Tunnel — the tunnel just stops treating the prefix as private.
       "/webhooks/plugins/example/realtime": true,
       "/v1/audio/some-uuid.mp3": true,
       "/v1/live-voice": true,
       "/v1/stt/stream": true,
       // Watch sessions on a managed assistant ride the tunnel, the same shape
-      // as live voice: velay validates the browser's minted token on this path
+      // as live voice: tunnel validates the browser's minted token on this path
       // and injects the attested caller, and the gateway's handler admits only
-      // the guardian on it. Self-hosted assistants bypass velay entirely.
+      // the guardian on it. Self-hosted assistants bypass tunnel entirely.
       "/v1/watch/stream": true,
       // The assistant desktop rides the tunnel the same way: a guardian-only RFB
-      // byte pipe the web client dials with a velay-minted token.
+      // byte pipe the web client dials with a tunnel-minted token.
       "/v1/desktop/stream": true,
       "/assistant/credentials/enter": true,
       "/v1/credential-requests/peek": true,
@@ -111,7 +111,7 @@ describe("VELAY_ALLOWED_PATHS", () => {
       "/secret": false,
       "": false,
     };
-    const compiled = VELAY_ALLOWED_PATHS.map((p) => new RegExp(p));
+    const compiled = TUNNEL_ALLOWED_PATHS.map((p) => new RegExp(p));
     for (const [path, expected] of Object.entries(samples)) {
       const matched = compiled.some((re) => re.test(path));
       expect({ path, matched }).toEqual({ path, matched: expected });
@@ -123,8 +123,8 @@ describe("VELAY_ALLOWED_PATHS", () => {
  * The two allowlists a tunnelled WebSocket has to clear, checked against each
  * other.
  *
- * `VELAY_ALLOWED_PATHS` is declared to velay at registration and enforced
- * platform-side; `VELAY_ALLOWED_WEBSOCKET_EXACT_PATHS` in `bridge-utils.ts` is
+ * `TUNNEL_ALLOWED_PATHS` is declared to tunnel at registration and enforced
+ * platform-side; `TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS` in `bridge-utils.ts` is
  * the local second layer, enforced when the bridge dials the gateway's own
  * loopback listener. A route needs both, and their comments have always said
  * to keep them in sync, but nothing checked it.
@@ -132,18 +132,18 @@ describe("VELAY_ALLOWED_PATHS", () => {
  * That gap is not theoretical: `/v1/watch/stream` was added to the
  * registration list alone, and every managed watch session died at the bridge.
  * The bridge answers a path it does not recognize with a `websocket_open_error`
- * frame and no log, velay reports it as an opaque `tunnel_error`, and the
+ * frame and no log, tunnel reports it as an opaque `tunnel_error`, and the
  * gateway records nothing at all — so the one place the omission could have
  * been noticed was a test like this one.
  */
 describe("the registration allowlist and the bridge's WebSocket allowlist", () => {
-  const compiled = () => VELAY_ALLOWED_PATHS.map((p) => new RegExp(p));
+  const compiled = () => TUNNEL_ALLOWED_PATHS.map((p) => new RegExp(p));
 
   /**
    * Every tunnelled WebSocket route, curated rather than derived.
    *
    * There is no single source to derive it from: the registration list is
-   * RE2 regex strings velay compiles platform-side, and the bridge's is exact
+   * RE2 regex strings tunnel compiles platform-side, and the bridge's is exact
    * paths sharing a predicate with the HTTP prefixes. Nothing in either
    * records which entries are WebSocket routes, so that fact lives here.
    *
@@ -163,17 +163,17 @@ describe("the registration allowlist and the bridge's WebSocket allowlist", () =
       expect({
         path,
         registration: compiled().some((re) => re.test(path)),
-        bridge: isAllowedVelayWebSocketPath(path),
+        bridge: isAllowedTunnelWebSocketPath(path),
       }).toEqual({ path, registration: true, bridge: true });
     }
   });
 
-  it("admits nothing at the bridge that velay would refuse anyway", () => {
+  it("admits nothing at the bridge that tunnel would refuse anyway", () => {
     // Derived from the bridge's own list rather than curated, so this half
     // needs no maintenance. The reverse omission is quieter than the one
-    // above: the bridge would dial happily and velay would 404 the upgrade
+    // above: the bridge would dial happily and tunnel would 404 the upgrade
     // before the frame ever reached it.
-    for (const path of VELAY_ALLOWED_WEBSOCKET_EXACT_PATHS) {
+    for (const path of TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS) {
       expect({
         path,
         registration: compiled().some((re) => re.test(path)),
@@ -192,20 +192,20 @@ describe("the registration allowlist and the bridge's WebSocket allowlist", () =
       expect({
         path,
         registration: compiled().some((re) => re.test(path)),
-        bridge: isAllowedVelayWebSocketPath(path),
+        bridge: isAllowedTunnelWebSocketPath(path),
       }).toEqual({ path, registration: false, bridge: false });
     }
   });
 });
 
-describe("buildVelayAllowedPathsHeaderValue", () => {
+describe("buildTunnelAllowedPathsHeaderValue", () => {
   it("advertises the legacy list verbatim while the flag is off", () => {
-    expect(buildVelayAllowedPathsHeaderValue(() => [])).toBe(
-      VELAY_ALLOWED_PATHS_HEADER_VALUE,
+    expect(buildTunnelAllowedPathsHeaderValue(() => [])).toBe(
+      TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
     );
     expect(
-      buildVelayAllowedPathsHeaderValue(() => ["/webhooks/telegram"]),
-    ).toBe(VELAY_ALLOWED_PATHS_HEADER_VALUE);
+      buildTunnelAllowedPathsHeaderValue(() => ["/webhooks/telegram"]),
+    ).toBe(TUNNEL_ALLOWED_PATHS_HEADER_VALUE);
   });
 
   it("does not read the registry while the flag is off", () => {
@@ -215,28 +215,28 @@ describe("buildVelayAllowedPathsHeaderValue", () => {
       return ["/webhooks/telegram"];
     };
 
-    expect(buildVelayAllowedPathsHeaderValue(read)).toBe(
-      VELAY_ALLOWED_PATHS_HEADER_VALUE,
+    expect(buildTunnelAllowedPathsHeaderValue(read)).toBe(
+      TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
     );
     expect(reads).toBe(0);
 
-    velayWebhooksEnabled = true;
-    buildVelayAllowedPathsHeaderValue(read);
+    tunnelWebhooksEnabled = true;
+    buildTunnelAllowedPathsHeaderValue(read);
     expect(reads).toBe(1);
   });
 
   it("drops the webhook wildcard for the statics plus one exact rule per registered path", () => {
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
 
     const rules = decode(
-      buildVelayAllowedPathsHeaderValue(() => [
+      buildTunnelAllowedPathsHeaderValue(() => [
         "/webhooks/telegram",
         "/webhooks/plugins/example/realtime",
       ]),
     );
 
     expect(rules).toEqual([
-      ...VELAY_STATIC_ALLOWED_PATHS,
+      ...TUNNEL_STATIC_ALLOWED_PATHS,
       "^/webhooks/telegram$",
       "^/webhooks/plugins/example/realtime$",
     ]);
@@ -247,18 +247,18 @@ describe("buildVelayAllowedPathsHeaderValue", () => {
   });
 
   it("advertises only the statics when nothing is registered", () => {
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
 
-    expect(decode(buildVelayAllowedPathsHeaderValue(() => []))).toEqual([
-      ...VELAY_STATIC_ALLOWED_PATHS,
+    expect(decode(buildTunnelAllowedPathsHeaderValue(() => []))).toEqual([
+      ...TUNNEL_STATIC_ALLOWED_PATHS,
     ]);
   });
 
   it("escapes regex metacharacters so a generated rule matches only its own path", () => {
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     const path = "/webhooks/plugins/a.b+c*d?e|f(g)h[i]j{k}^l$m\\n";
 
-    const rules = decode(buildVelayAllowedPathsHeaderValue(() => [path]));
+    const rules = decode(buildTunnelAllowedPathsHeaderValue(() => [path]));
     const generated = rules[rules.length - 1];
     const compiled = new RegExp(generated);
 

@@ -157,13 +157,13 @@ describe("synthesizeOverVellumTtsSocket", () => {
     await session;
   });
 
-  test("a velay_error frame fails via the relay-error factory", async () => {
+  test("a tunnel_error frame fails via the relay-error factory", async () => {
     const session = startSession();
     mockWs.simulateOpen();
 
     mockWs.simulateMessage(
       JSON.stringify({
-        type: "velay_error",
+        type: "tunnel_error",
         code: "insufficient_balance",
         detail: "empty",
       }),

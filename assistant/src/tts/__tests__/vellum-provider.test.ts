@@ -28,11 +28,11 @@ mock.module(
   "../../providers/speech-to-text/vellum-speech-relay-connection.js",
   () => ({
     resolveSpeechRelayConnection: async () => mockRelayConnection,
-    mapVelayError: (e: { code: string }) => ({
+    mapTunnelError: (e: { code: string }) => ({
       category: "provider-error",
       message: `mapped:${e.code}`,
     }),
-    probeVelayRejection: async () => mockProbeRejection,
+    probeTunnelRejection: async () => mockProbeRejection,
   }),
 );
 let mockProbeRejection: { code: string; detail?: string } | null = null;

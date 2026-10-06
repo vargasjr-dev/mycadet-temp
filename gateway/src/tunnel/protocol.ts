@@ -4,12 +4,12 @@ import { z } from "zod";
 
 import {
   decodeBinaryWebSocketFrame,
-  type VelayBinaryWebSocketFrame,
+  type TunnelBinaryWebSocketFrame,
 } from "./binary-websocket.js";
 
-export const VELAY_TUNNEL_SUBPROTOCOL = "velay-tunnel-v1";
+export const TUNNEL_TUNNEL_SUBPROTOCOL = "tunnel-tunnel-v1";
 
-export const VELAY_FRAME_TYPES = {
+export const TUNNEL_FRAME_TYPES = {
   registered: "registered",
   httpRequest: "http_request",
   httpResponse: "http_response",
@@ -21,106 +21,106 @@ export const VELAY_FRAME_TYPES = {
   heartbeat: "heartbeat",
 } as const;
 
-export const VELAY_WEBSOCKET_MESSAGE_TYPES = {
+export const TUNNEL_WEBSOCKET_MESSAGE_TYPES = {
   text: "text",
   binary: "binary",
 } as const;
 
-export type VelayHeaders = Record<string, string[]>;
-export type VelayWebSocketMessageType =
-  (typeof VELAY_WEBSOCKET_MESSAGE_TYPES)[keyof typeof VELAY_WEBSOCKET_MESSAGE_TYPES];
+export type TunnelHeaders = Record<string, string[]>;
+export type TunnelWebSocketMessageType =
+  (typeof TUNNEL_WEBSOCKET_MESSAGE_TYPES)[keyof typeof TUNNEL_WEBSOCKET_MESSAGE_TYPES];
 
-export type VelayRegisteredFrame = {
-  type: typeof VELAY_FRAME_TYPES.registered;
+export type TunnelRegisteredFrame = {
+  type: typeof TUNNEL_FRAME_TYPES.registered;
   assistant_id: string;
   public_url: string;
 };
 
-export type VelayHttpRequestFrame = {
-  type: typeof VELAY_FRAME_TYPES.httpRequest;
+export type TunnelHttpRequestFrame = {
+  type: typeof TUNNEL_FRAME_TYPES.httpRequest;
   request_id: string;
   method: string;
   path: string;
   raw_query?: string;
-  headers: VelayHeaders;
+  headers: TunnelHeaders;
   body_base64?: string;
 };
 
-export type VelayHttpResponseFrame = {
-  type: typeof VELAY_FRAME_TYPES.httpResponse;
+export type TunnelHttpResponseFrame = {
+  type: typeof TUNNEL_FRAME_TYPES.httpResponse;
   request_id: string;
   status_code: number;
-  headers?: VelayHeaders;
+  headers?: TunnelHeaders;
   body_base64?: string;
 };
 
-export type VelayWebSocketOpenFrame = {
-  type: typeof VELAY_FRAME_TYPES.websocketOpen;
+export type TunnelWebSocketOpenFrame = {
+  type: typeof TUNNEL_FRAME_TYPES.websocketOpen;
   connection_id: string;
   path: string;
   raw_query?: string;
-  headers: VelayHeaders;
+  headers: TunnelHeaders;
   subprotocol?: string;
   binary_messages?: boolean;
 };
 
-export type VelayWebSocketOpenedFrame = {
-  type: typeof VELAY_FRAME_TYPES.websocketOpened;
+export type TunnelWebSocketOpenedFrame = {
+  type: typeof TUNNEL_FRAME_TYPES.websocketOpened;
   connection_id: string;
 };
 
-export type VelayWebSocketOpenErrorFrame = {
-  type: typeof VELAY_FRAME_TYPES.websocketOpenError;
+export type TunnelWebSocketOpenErrorFrame = {
+  type: typeof TUNNEL_FRAME_TYPES.websocketOpenError;
   connection_id: string;
   reason?: string;
 };
 
-export type VelayWebSocketMessageFrame = {
-  type: typeof VELAY_FRAME_TYPES.websocketMessage;
+export type TunnelWebSocketMessageFrame = {
+  type: typeof TUNNEL_FRAME_TYPES.websocketMessage;
   connection_id: string;
-  message_type: VelayWebSocketMessageType;
+  message_type: TunnelWebSocketMessageType;
   body_base64?: string;
 };
 
-export type VelayWebSocketCloseFrame = {
-  type: typeof VELAY_FRAME_TYPES.websocketClose;
+export type TunnelWebSocketCloseFrame = {
+  type: typeof TUNNEL_FRAME_TYPES.websocketClose;
   connection_id: string;
   code?: number;
   reason?: string;
 };
 
-export type VelayHeartbeatFrame = {
-  type: typeof VELAY_FRAME_TYPES.heartbeat;
+export type TunnelHeartbeatFrame = {
+  type: typeof TUNNEL_FRAME_TYPES.heartbeat;
 };
 
-export type VelayFrame =
-  | VelayBinaryWebSocketFrame
-  | VelayRegisteredFrame
-  | VelayHttpRequestFrame
-  | VelayHttpResponseFrame
-  | VelayWebSocketOpenFrame
-  | VelayWebSocketOpenedFrame
-  | VelayWebSocketOpenErrorFrame
-  | VelayWebSocketMessageFrame
-  | VelayWebSocketCloseFrame
-  | VelayHeartbeatFrame;
+export type TunnelFrame =
+  | TunnelBinaryWebSocketFrame
+  | TunnelRegisteredFrame
+  | TunnelHttpRequestFrame
+  | TunnelHttpResponseFrame
+  | TunnelWebSocketOpenFrame
+  | TunnelWebSocketOpenedFrame
+  | TunnelWebSocketOpenErrorFrame
+  | TunnelWebSocketMessageFrame
+  | TunnelWebSocketCloseFrame
+  | TunnelHeartbeatFrame;
 
-export type VelayWebSocketInboundFrame =
-  | VelayBinaryWebSocketFrame
-  | VelayWebSocketOpenFrame
-  | VelayWebSocketMessageFrame
-  | VelayWebSocketCloseFrame;
+export type TunnelWebSocketInboundFrame =
+  | TunnelBinaryWebSocketFrame
+  | TunnelWebSocketOpenFrame
+  | TunnelWebSocketMessageFrame
+  | TunnelWebSocketCloseFrame;
 
 const headersSchema = z.record(z.string(), z.array(z.string()));
 
 const registeredFrameSchema = z.object({
-  type: z.literal(VELAY_FRAME_TYPES.registered),
+  type: z.literal(TUNNEL_FRAME_TYPES.registered),
   assistant_id: z.string(),
   public_url: z.string(),
 });
 
 const httpRequestFrameSchema = z.object({
-  type: z.literal(VELAY_FRAME_TYPES.httpRequest),
+  type: z.literal(TUNNEL_FRAME_TYPES.httpRequest),
   request_id: z.string(),
   method: z.string(),
   path: z.string(),
@@ -130,7 +130,7 @@ const httpRequestFrameSchema = z.object({
 });
 
 const websocketOpenFrameSchema = z.object({
-  type: z.literal(VELAY_FRAME_TYPES.websocketOpen),
+  type: z.literal(TUNNEL_FRAME_TYPES.websocketOpen),
   connection_id: z.string(),
   path: z.string(),
   raw_query: z.string().optional(),
@@ -140,26 +140,26 @@ const websocketOpenFrameSchema = z.object({
 });
 
 const websocketMessageTypeSchema = z.enum([
-  VELAY_WEBSOCKET_MESSAGE_TYPES.text,
-  VELAY_WEBSOCKET_MESSAGE_TYPES.binary,
+  TUNNEL_WEBSOCKET_MESSAGE_TYPES.text,
+  TUNNEL_WEBSOCKET_MESSAGE_TYPES.binary,
 ]);
 
 const websocketMessageFrameSchema = z.object({
-  type: z.literal(VELAY_FRAME_TYPES.websocketMessage),
+  type: z.literal(TUNNEL_FRAME_TYPES.websocketMessage),
   connection_id: z.string(),
   message_type: websocketMessageTypeSchema,
   body_base64: z.string().optional(),
 });
 
 const websocketCloseFrameSchema = z.object({
-  type: z.literal(VELAY_FRAME_TYPES.websocketClose),
+  type: z.literal(TUNNEL_FRAME_TYPES.websocketClose),
   connection_id: z.string(),
   code: z.number().optional(),
   reason: z.string().optional(),
 });
 
 const heartbeatFrameSchema = z.object({
-  type: z.literal(VELAY_FRAME_TYPES.heartbeat),
+  type: z.literal(TUNNEL_FRAME_TYPES.heartbeat),
 });
 
 const inboundFrameSchema = z.discriminatedUnion("type", [
@@ -171,7 +171,7 @@ const inboundFrameSchema = z.discriminatedUnion("type", [
   heartbeatFrameSchema,
 ]);
 
-export function parseVelayFrame(data: unknown): VelayFrame | undefined {
+export function parseTunnelFrame(data: unknown): TunnelFrame | undefined {
   const bytes =
     data instanceof ArrayBuffer
       ? new Uint8Array(data)

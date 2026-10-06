@@ -18,18 +18,18 @@ import {
   makeFakeWebSocketConstructor,
 } from "./test-fake-websocket.js";
 import {
-  VELAY_FRAME_TYPES,
-  VELAY_TUNNEL_SUBPROTOCOL,
-  VELAY_WEBSOCKET_MESSAGE_TYPES,
-  type VelayFrame,
-  type VelayHttpRequestFrame,
-  type VelayHttpResponseFrame,
-  type VelayWebSocketInboundFrame,
+  TUNNEL_FRAME_TYPES,
+  TUNNEL_TUNNEL_SUBPROTOCOL,
+  TUNNEL_WEBSOCKET_MESSAGE_TYPES,
+  type TunnelFrame,
+  type TunnelHttpRequestFrame,
+  type TunnelHttpResponseFrame,
+  type TunnelWebSocketInboundFrame,
 } from "./protocol.js";
 
 let workspaceDir = "";
 let registeredWebhookPaths: string[] = [];
-let velayWebhooksEnabled = false;
+let tunnelWebhooksEnabled = false;
 let webhookRouteReadError: Error | undefined;
 let webhookRouteReads = 0;
 
@@ -71,15 +71,15 @@ mock.module("../db/webhook-ingress-route-store.js", () => ({
 
 mock.module("../feature-flag-resolver.js", () => ({
   isFeatureFlagEnabled: (flag: string) =>
-    flag === "velay-webhooks" ? velayWebhooksEnabled : false,
+    flag === "tunnel-webhooks" ? tunnelWebhooksEnabled : false,
 }));
 
 const {
-  VELAY_ALLOWED_PATHS_HEADER_VALUE,
-  VELAY_STATIC_ALLOWED_PATHS,
-  buildVelayAllowedPathsHeaderValue,
+  TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
+  TUNNEL_STATIC_ALLOWED_PATHS,
+  buildTunnelAllowedPathsHeaderValue,
 } = await import("./allowed-paths.js");
-const { VelayTunnelClient, createVelayTunnelClient, enablePublicIngress } =
+const { TunnelClient, createTunnelClient, enablePublicIngress } =
   await import("./client.js");
 const { applyPlatformIdentityIds, _resetPlatformIdentityForTests } =
   await import("../platform-identity.js");
@@ -203,11 +203,11 @@ function makeClient(
     configFile?: ConfigFileCache;
     sockets?: FakeWebSocket[];
     httpBridge?: (
-      frame: VelayHttpRequestFrame,
+      frame: TunnelHttpRequestFrame,
       gatewayLoopbackBaseUrl: string,
-    ) => Promise<VelayHttpResponseFrame>;
-    websocketFrames?: VelayWebSocketInboundFrame[];
-    tunnelSend?: { send?: (frame: VelayFrame) => void };
+    ) => Promise<TunnelHttpResponseFrame>;
+    websocketFrames?: TunnelWebSocketInboundFrame[];
+    tunnelSend?: { send?: (frame: TunnelFrame) => void };
     reconnectDelays?: number[];
     refresh?: { afterMs?: number; busyRetryMs?: number };
     timerCallbacks?: Array<() => void>;
@@ -218,8 +218,8 @@ function makeClient(
   const sockets = overrides.sockets ?? [];
   const reconnectDelays = overrides.reconnectDelays ?? [];
   const bridgeConnections = overrides.bridgeConnections;
-  return new VelayTunnelClient({
-    velayBaseUrl: "http://velay.example.test",
+  return new TunnelClient({
+    tunnelBaseUrl: "http://tunnel.example.test",
     gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
     credentials:
       overrides.credentials ??
@@ -241,7 +241,7 @@ function makeClient(
               overrides.tunnelSend.send = _sendFrame;
             }
             return {
-              handleFrame: (frame: VelayWebSocketInboundFrame) => {
+              handleFrame: (frame: TunnelWebSocketInboundFrame) => {
                 overrides.websocketFrames?.push(frame);
               },
               closeAll: () => {},
@@ -259,7 +259,7 @@ function makeClient(
   });
 }
 
-function sendFrame(ws: FakeWebSocket, frame: VelayFrame): void {
+function sendFrame(ws: FakeWebSocket, frame: TunnelFrame): void {
   ws.emit("message", { data: JSON.stringify(frame) });
 }
 
@@ -284,9 +284,9 @@ function restoreEnv(name: string, value: string | undefined): void {
 }
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "velay-client-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "tunnel-client-"));
   registeredWebhookPaths = [];
-  velayWebhooksEnabled = false;
+  tunnelWebhooksEnabled = false;
   webhookRouteReadError = undefined;
   webhookRouteReads = 0;
   fetchImplFn = async () => new Response("not found", { status: 404 });
@@ -338,9 +338,9 @@ describe("enablePublicIngress", () => {
   });
 });
 
-describe("VelayTunnelClient", () => {
-  test("stays disabled when VELAY_BASE_URL is unset", async () => {
-    const client = createVelayTunnelClient(makeConfig(), {
+describe("TunnelClient", () => {
+  test("stays disabled when TUNNEL_BASE_URL is unset", async () => {
+    const client = createTunnelClient(makeConfig(), {
       credentials: makeCredentials({}),
       configFile: makeConfigFileCache({ count: 0 }),
     });
@@ -388,9 +388,9 @@ describe("VelayTunnelClient", () => {
     expect(sockets).toHaveLength(1);
     sockets[0].readyState = WS_OPEN;
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.registered,
-      assistant_id: "asst-from-velay",
-      public_url: "https://velay-public.example.test",
+      type: TUNNEL_FRAME_TYPES.registered,
+      assistant_id: "asst-from-tunnel",
+      public_url: "https://tunnel-public.example.test",
     });
     await flushPromises();
 
@@ -398,14 +398,14 @@ describe("VelayTunnelClient", () => {
     expect(reconnectDelays).toEqual([]);
     expect(readConfig()).toEqual({
       ingress: {
-        publicBaseUrl: "https://velay-public.example.test/",
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrl: "https://tunnel-public.example.test/",
+        publicBaseUrlManagedBy: "tunnel",
       },
     });
     await client.stop();
   });
 
-  test("registers with Velay and publishes the Twilio public URL", async () => {
+  test("registers with Tunnel and publishes the Twilio public URL", async () => {
     const sockets: FakeWebSocket[] = [];
     const invalidations = { count: 0 };
     writeConfig({
@@ -423,29 +423,29 @@ describe("VelayTunnelClient", () => {
     await flushPromises();
 
     expect(sockets).toHaveLength(1);
-    expect(sockets[0].url).toBe("ws://velay.example.test/v1/register");
+    expect(sockets[0].url).toBe("ws://tunnel.example.test/v1/register");
     expect(sockets[0].options).toEqual({
-      protocols: [VELAY_TUNNEL_SUBPROTOCOL],
+      protocols: [TUNNEL_TUNNEL_SUBPROTOCOL],
       headers: {
         Authorization: "Api-Key api-key-123",
-        "X-Vellum-Velay-Binary-WebSocket": "1",
-        "X-Vellum-Velay-Allowed-Paths": VELAY_ALLOWED_PATHS_HEADER_VALUE,
+        "X-Vellum-Tunnel-Binary-WebSocket": "1",
+        "X-Vellum-Tunnel-Allowed-Paths": TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
       },
     });
 
     sockets[0].readyState = WS_OPEN;
     sockets[0].emit("open");
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-123",
-      public_url: "https://velay-public.example.test",
+      public_url: "https://tunnel-public.example.test",
     });
     await flushPromises();
 
     expect(readConfig()).toEqual({
       ingress: {
-        publicBaseUrl: "https://velay-public.example.test/",
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrl: "https://tunnel-public.example.test/",
+        publicBaseUrlManagedBy: "tunnel",
       },
       existing: { preserved: true },
     });
@@ -459,8 +459,8 @@ describe("VelayTunnelClient", () => {
     writeConfig({
       ingress: {
         enabled: false,
-        publicBaseUrl: "https://stale-velay.example.test",
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrl: "https://stale-tunnel.example.test",
+        publicBaseUrlManagedBy: "tunnel",
       },
     });
     const client = makeClient({
@@ -533,9 +533,9 @@ describe("VelayTunnelClient", () => {
     });
     sockets[0].readyState = WS_OPEN;
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-123",
-      public_url: "https://velay-public.example.test",
+      public_url: "https://tunnel-public.example.test",
     });
     await flushPromises();
 
@@ -573,17 +573,17 @@ describe("VelayTunnelClient", () => {
     await flushPromises();
     sockets[0].readyState = WS_OPEN;
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-123",
-      public_url: "https://velay-public.example.test",
+      public_url: "https://tunnel-public.example.test",
     });
     await flushPromises();
 
     writeConfig({
       ingress: {
         enabled: false,
-        publicBaseUrl: "https://velay-public.example.test/",
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrl: "https://tunnel-public.example.test/",
+        publicBaseUrlManagedBy: "tunnel",
       },
     });
     configFile.invalidate();
@@ -601,7 +601,7 @@ describe("VelayTunnelClient", () => {
     expect(invalidations.count).toBe(3);
   });
 
-  test("rejects registration when Velay returns a different assistant ID", async () => {
+  test("rejects registration when Tunnel returns a different assistant ID", async () => {
     const sockets: FakeWebSocket[] = [];
     writeConfig({
       ingress: { publicBaseUrl: "https://ngrok.example.test" },
@@ -612,9 +612,9 @@ describe("VelayTunnelClient", () => {
     await flushPromises();
     sockets[0].readyState = WS_OPEN;
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-other",
-      public_url: "https://velay-public.example.test",
+      public_url: "https://tunnel-public.example.test",
     });
     await flushPromises();
 
@@ -659,9 +659,9 @@ describe("VelayTunnelClient", () => {
     expect(sockets).toHaveLength(1);
     sockets[0].readyState = WS_OPEN;
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-other",
-      public_url: "https://velay-public.example.test",
+      public_url: "https://tunnel-public.example.test",
     });
     await flushPromises();
 
@@ -677,8 +677,8 @@ describe("VelayTunnelClient", () => {
     writeConfig({
       ingress: { publicBaseUrl: "https://ngrok.example.test" },
     });
-    const client = new VelayTunnelClient({
-      velayBaseUrl: "http://velay.example.test",
+    const client = new TunnelClient({
+      tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials: makeCredentials({
         [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
@@ -716,9 +716,9 @@ describe("VelayTunnelClient", () => {
     sockets[2].readyState = WS_OPEN;
     sockets[2].emit("open");
     sendFrame(sockets[2], {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-123",
-      public_url: "https://velay-public.example.test",
+      public_url: "https://tunnel-public.example.test",
     });
     await flushPromises();
     sockets[2].readyState = WS_CLOSED;
@@ -734,8 +734,8 @@ describe("VelayTunnelClient", () => {
     const reconnectCallbacks: Array<() => void> = [];
     const credentialValues: Record<string, string | undefined> = {};
     const credentials = makeCredentials(credentialValues);
-    const client = new VelayTunnelClient({
-      velayBaseUrl: "http://velay.example.test",
+    const client = new TunnelClient({
+      tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials,
       configFile: makeConfigFileCache({ count: 0 }),
@@ -762,11 +762,11 @@ describe("VelayTunnelClient", () => {
 
     expect(sockets).toHaveLength(1);
     expect(sockets[0].options).toEqual({
-      protocols: [VELAY_TUNNEL_SUBPROTOCOL],
+      protocols: [TUNNEL_TUNNEL_SUBPROTOCOL],
       headers: {
         Authorization: "Api-Key api-key-123",
-        "X-Vellum-Velay-Binary-WebSocket": "1",
-        "X-Vellum-Velay-Allowed-Paths": VELAY_ALLOWED_PATHS_HEADER_VALUE,
+        "X-Vellum-Tunnel-Binary-WebSocket": "1",
+        "X-Vellum-Tunnel-Allowed-Paths": TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
       },
     });
     expect(reconnectDelays).toEqual([10]);
@@ -800,8 +800,8 @@ describe("VelayTunnelClient", () => {
       },
       onInvalidate: () => () => {},
     } as unknown as CredentialCache;
-    const client = new VelayTunnelClient({
-      velayBaseUrl: "http://velay.example.test",
+    const client = new TunnelClient({
+      tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials,
       configFile: makeConfigFileCache({ count: 0 }),
@@ -824,18 +824,18 @@ describe("VelayTunnelClient", () => {
 
     expect(sockets).toHaveLength(1);
     expect(sockets[0].options).toEqual({
-      protocols: [VELAY_TUNNEL_SUBPROTOCOL],
+      protocols: [TUNNEL_TUNNEL_SUBPROTOCOL],
       headers: {
         Authorization: "Api-Key api-key-123",
-        "X-Vellum-Velay-Binary-WebSocket": "1",
-        "X-Vellum-Velay-Allowed-Paths": VELAY_ALLOWED_PATHS_HEADER_VALUE,
+        "X-Vellum-Tunnel-Binary-WebSocket": "1",
+        "X-Vellum-Tunnel-Allowed-Paths": TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
       },
     });
     expect(reconnectDelays).toEqual([]);
     await client.stop();
   });
 
-  test("writes only ingress.publicBaseUrl when publishing a Velay URL", async () => {
+  test("writes only ingress.publicBaseUrl when publishing a Tunnel URL", async () => {
     const sockets: FakeWebSocket[] = [];
     writeConfig({
       ingress: {
@@ -852,17 +852,17 @@ describe("VelayTunnelClient", () => {
     await flushPromises();
     sockets[0].readyState = WS_OPEN;
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-123",
-      public_url: "https://velay-public.example.test",
+      public_url: "https://tunnel-public.example.test",
     });
     await flushPromises();
 
     expect(readConfig()).toEqual({
       ingress: {
         otherIngressSetting: "keep-me",
-        publicBaseUrl: "https://velay-public.example.test/",
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrl: "https://tunnel-public.example.test/",
+        publicBaseUrlManagedBy: "tunnel",
       },
       gateway: {
         runtimeProxyRequireAuth: false,
@@ -881,16 +881,16 @@ describe("VelayTunnelClient", () => {
     await flushPromises();
     sockets[0].readyState = WS_OPEN;
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-123",
-      public_url: "  HTTPS://VELAY-PUBLIC.EXAMPLE.TEST/twilio/../twilio  ",
+      public_url: "  HTTPS://TUNNEL-PUBLIC.EXAMPLE.TEST/twilio/../twilio  ",
     });
     await flushPromises();
 
     expect(readConfig()).toEqual({
       ingress: {
-        publicBaseUrl: "https://velay-public.example.test/twilio",
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrl: "https://tunnel-public.example.test/twilio",
+        publicBaseUrlManagedBy: "tunnel",
       },
     });
   });
@@ -913,7 +913,7 @@ describe("VelayTunnelClient", () => {
       await flushPromises();
       sockets[0].readyState = WS_OPEN;
       sendFrame(sockets[0], {
-        type: VELAY_FRAME_TYPES.registered,
+        type: TUNNEL_FRAME_TYPES.registered,
         assistant_id: "asst-123",
         public_url: publicUrl,
       });
@@ -950,9 +950,9 @@ describe("VelayTunnelClient", () => {
     await flushPromises();
     sockets[0].readyState = WS_OPEN;
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-123",
-      public_url: "https://velay-public.example.test",
+      public_url: "https://tunnel-public.example.test",
     });
     await flushPromises();
 
@@ -985,9 +985,9 @@ describe("VelayTunnelClient", () => {
     await flushPromises();
     sockets[0].readyState = WS_OPEN;
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-123",
-      public_url: "https://velay-public.example.test",
+      public_url: "https://tunnel-public.example.test",
     });
     await flushPromises();
 
@@ -1004,7 +1004,7 @@ describe("VelayTunnelClient", () => {
     });
   });
 
-  test("preserves a newer Twilio public URL and clears stale Velay ownership on stale tunnel close", async () => {
+  test("preserves a newer Twilio public URL and clears stale Tunnel ownership on stale tunnel close", async () => {
     const sockets: FakeWebSocket[] = [];
     const invalidations = { count: 0 };
     writeConfig({
@@ -1021,15 +1021,15 @@ describe("VelayTunnelClient", () => {
     await flushPromises();
     sockets[0].readyState = WS_OPEN;
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-123",
-      public_url: "https://velay-public-1.example.test",
+      public_url: "https://tunnel-public-1.example.test",
     });
     await flushPromises();
     writeConfig({
       ingress: {
-        publicBaseUrl: "https://velay-public-2.example.test",
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrl: "https://tunnel-public-2.example.test",
+        publicBaseUrlManagedBy: "tunnel",
       },
     });
 
@@ -1039,13 +1039,13 @@ describe("VelayTunnelClient", () => {
 
     expect(readConfig()).toEqual({
       ingress: {
-        publicBaseUrl: "https://velay-public-2.example.test",
+        publicBaseUrl: "https://tunnel-public-2.example.test",
       },
     });
     expect(invalidations.count).toBe(2);
 
     expect(
-      createVelayTunnelClient(makeConfig(), {
+      createTunnelClient(makeConfig(), {
         credentials: makeCredentials({}),
         configFile: makeConfigFileCache(invalidations),
       }),
@@ -1054,19 +1054,19 @@ describe("VelayTunnelClient", () => {
 
     expect(readConfig()).toEqual({
       ingress: {
-        publicBaseUrl: "https://velay-public-2.example.test",
+        publicBaseUrl: "https://tunnel-public-2.example.test",
       },
     });
     expect(invalidations.count).toBe(2);
   });
 
-  test("clears stale Velay-managed Twilio public URL on startup before connecting", async () => {
+  test("clears stale Tunnel-managed Twilio public URL on startup before connecting", async () => {
     const sockets: FakeWebSocket[] = [];
     const invalidations = { count: 0 };
     writeConfig({
       ingress: {
-        publicBaseUrl: "https://stale-velay.example.test",
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrl: "https://stale-tunnel.example.test",
+        publicBaseUrlManagedBy: "tunnel",
       },
     });
     const client = makeClient({
@@ -1085,17 +1085,17 @@ describe("VelayTunnelClient", () => {
     await client.stop();
   });
 
-  test("disabled Velay cleanup clears stale managed URL and preserves manual Twilio URL", async () => {
+  test("disabled Tunnel cleanup clears stale managed URL and preserves manual Twilio URL", async () => {
     const invalidations = { count: 0 };
     writeConfig({
       ingress: {
-        publicBaseUrl: "https://stale-velay.example.test",
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrl: "https://stale-tunnel.example.test",
+        publicBaseUrlManagedBy: "tunnel",
       },
     });
 
     expect(
-      createVelayTunnelClient(makeConfig(), {
+      createTunnelClient(makeConfig(), {
         credentials: makeCredentials({}),
         configFile: makeConfigFileCache(invalidations),
       }),
@@ -1114,7 +1114,7 @@ describe("VelayTunnelClient", () => {
     });
 
     expect(
-      createVelayTunnelClient(makeConfig(), {
+      createTunnelClient(makeConfig(), {
         credentials: makeCredentials({}),
         configFile: makeConfigFileCache(invalidations),
       }),
@@ -1131,13 +1131,13 @@ describe("VelayTunnelClient", () => {
 
   test("keeps HTTP and WebSocket bridges usable after malformed tunnel messages", async () => {
     const sockets: FakeWebSocket[] = [];
-    const websocketFrames: VelayWebSocketInboundFrame[] = [];
+    const websocketFrames: TunnelWebSocketInboundFrame[] = [];
     const httpBridge = mock(
       async (
-        frame: VelayHttpRequestFrame,
+        frame: TunnelHttpRequestFrame,
         gatewayLoopbackBaseUrl: string,
-      ): Promise<VelayHttpResponseFrame> => ({
-        type: VELAY_FRAME_TYPES.httpResponse,
+      ): Promise<TunnelHttpResponseFrame> => ({
+        type: TUNNEL_FRAME_TYPES.httpResponse,
         request_id: frame.request_id,
         status_code:
           gatewayLoopbackBaseUrl === "http://127.0.0.1:7830" ? 204 : 500,
@@ -1162,7 +1162,7 @@ describe("VelayTunnelClient", () => {
     expect(sockets[0].closes).toEqual([]);
 
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.httpRequest,
+      type: TUNNEL_FRAME_TYPES.httpRequest,
       request_id: "req-123",
       method: "POST",
       path: "/webhooks/twilio/voice",
@@ -1173,41 +1173,41 @@ describe("VelayTunnelClient", () => {
     expect(httpBridge).toHaveBeenCalledTimes(1);
     expect(sockets[0].sent.map((raw) => JSON.parse(raw as string))).toEqual([
       {
-        type: VELAY_FRAME_TYPES.httpResponse,
+        type: TUNNEL_FRAME_TYPES.httpResponse,
         request_id: "req-123",
         status_code: 204,
       },
     ]);
 
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.websocketOpen,
+      type: TUNNEL_FRAME_TYPES.websocketOpen,
       connection_id: "conn-123",
       path: "/webhooks/twilio/media-stream",
       headers: {},
     });
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.websocketMessage,
+      type: TUNNEL_FRAME_TYPES.websocketMessage,
       connection_id: "conn-123",
-      message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.text,
+      message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.text,
       body_base64: "",
     });
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.websocketClose,
+      type: TUNNEL_FRAME_TYPES.websocketClose,
       connection_id: "conn-123",
       code: 1000,
       reason: "done",
     });
 
     expect(websocketFrames.map((frame) => frame.type)).toEqual([
-      VELAY_FRAME_TYPES.websocketOpen,
-      VELAY_FRAME_TYPES.websocketMessage,
-      VELAY_FRAME_TYPES.websocketClose,
+      TUNNEL_FRAME_TYPES.websocketOpen,
+      TUNNEL_FRAME_TYPES.websocketMessage,
+      TUNNEL_FRAME_TYPES.websocketClose,
     ]);
   });
 
   test("writes binary envelopes without JSON while control frames remain JSON", async () => {
     const sockets: FakeWebSocket[] = [];
-    const tunnelSend: { send?: (frame: VelayFrame) => void } = {};
+    const tunnelSend: { send?: (frame: TunnelFrame) => void } = {};
     const client = makeClient({ sockets, websocketFrames: [], tunnelSend });
     client.start();
     await flushPromises();
@@ -1236,7 +1236,7 @@ describe("VelayTunnelClient", () => {
 
   test("dispatches binary tunnel messages and ignores malformed envelopes", async () => {
     const sockets: FakeWebSocket[] = [];
-    const websocketFrames: VelayWebSocketInboundFrame[] = [];
+    const websocketFrames: TunnelWebSocketInboundFrame[] = [];
     const client = makeClient({ sockets, websocketFrames });
     client.start();
     await flushPromises();
@@ -1260,7 +1260,7 @@ describe("VelayTunnelClient", () => {
 
   test("ignores websocket messages with invalid message types", async () => {
     const sockets: FakeWebSocket[] = [];
-    const websocketFrames: VelayWebSocketInboundFrame[] = [];
+    const websocketFrames: TunnelWebSocketInboundFrame[] = [];
     const client = makeClient({ sockets, websocketFrames });
 
     client.start();
@@ -1269,7 +1269,7 @@ describe("VelayTunnelClient", () => {
 
     sockets[0].emit("message", {
       data: JSON.stringify({
-        type: VELAY_FRAME_TYPES.websocketMessage,
+        type: TUNNEL_FRAME_TYPES.websocketMessage,
         connection_id: "conn-123",
         message_type: "json",
         body_base64: "",
@@ -1284,8 +1284,8 @@ describe("VelayTunnelClient", () => {
     const sockets: FakeWebSocket[] = [];
     const reconnectDelays: number[] = [];
     let closeAllCount = 0;
-    const client = new VelayTunnelClient({
-      velayBaseUrl: "http://velay.example.test",
+    const client = new TunnelClient({
+      tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials: makeCredentials({
         [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
@@ -1322,8 +1322,8 @@ describe("VelayTunnelClient", () => {
     const delays: number[] = [];
     const callbacks: Array<() => void> = [];
     writeConfig({ ingress: { publicBaseUrl: "https://ngrok.example.test" } });
-    const client = new VelayTunnelClient({
-      velayBaseUrl: "http://velay.example.test",
+    const client = new TunnelClient({
+      tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials: makeCredentials({
         [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
@@ -1347,7 +1347,7 @@ describe("VelayTunnelClient", () => {
     callbacks[0]();
     await flushPromises();
     expect(sockets[0].sent).toEqual([
-      JSON.stringify({ type: VELAY_FRAME_TYPES.heartbeat }),
+      JSON.stringify({ type: TUNNEL_FRAME_TYPES.heartbeat }),
     ]);
     expect(delays).toEqual([100, 1000, 100]);
 
@@ -1359,8 +1359,8 @@ describe("VelayTunnelClient", () => {
     const delays: number[] = [];
     const callbacks: Array<() => void> = [];
     writeConfig({ ingress: { publicBaseUrl: "https://ngrok.example.test" } });
-    const client = new VelayTunnelClient({
-      velayBaseUrl: "http://velay.example.test",
+    const client = new TunnelClient({
+      tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials: makeCredentials({
         [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
@@ -1382,7 +1382,7 @@ describe("VelayTunnelClient", () => {
 
     callbacks[0]();
     await flushPromises();
-    sendFrame(sockets[0], { type: VELAY_FRAME_TYPES.heartbeat });
+    sendFrame(sockets[0], { type: TUNNEL_FRAME_TYPES.heartbeat });
     await flushPromises();
     expect(delays).toEqual([100, 1000, 100, 1000]);
 
@@ -1400,8 +1400,8 @@ describe("VelayTunnelClient", () => {
     const delays: number[] = [];
     const callbacks: Array<() => void> = [];
     writeConfig({ ingress: { publicBaseUrl: "https://ngrok.example.test" } });
-    const client = new VelayTunnelClient({
-      velayBaseUrl: "http://velay.example.test",
+    const client = new TunnelClient({
+      tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials: makeCredentials({
         [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
@@ -1425,11 +1425,11 @@ describe("VelayTunnelClient", () => {
     await flushPromises();
     expect(delays).toEqual([100, 1000, 100]);
 
-    sendFrame(sockets[0], { type: VELAY_FRAME_TYPES.heartbeat });
+    sendFrame(sockets[0], { type: TUNNEL_FRAME_TYPES.heartbeat });
     await flushPromises();
     expect(delays).toEqual([100, 1000, 100, 1000]);
 
-    sendFrame(sockets[0], { type: VELAY_FRAME_TYPES.heartbeat });
+    sendFrame(sockets[0], { type: TUNNEL_FRAME_TYPES.heartbeat });
     await flushPromises();
 
     expect(delays).toEqual([100, 1000, 100, 1000, 1000]);
@@ -1443,8 +1443,8 @@ describe("VelayTunnelClient", () => {
     const delays: number[] = [];
     const callbacks: Array<() => void> = [];
     writeConfig({ ingress: { publicBaseUrl: "https://ngrok.example.test" } });
-    const client = new VelayTunnelClient({
-      velayBaseUrl: "http://velay.example.test",
+    const client = new TunnelClient({
+      tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials: makeCredentials({
         [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
@@ -1486,9 +1486,9 @@ describe("proactive tunnel refresh", () => {
     sockets[0].readyState = WS_OPEN;
     sockets[0].emit("open");
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-123",
-      public_url: "https://velay-public.example.test",
+      public_url: "https://tunnel-public.example.test",
     });
     await flushPromises();
   }
@@ -1614,7 +1614,7 @@ describe("proactive tunnel refresh", () => {
         new Promise((resolve) => {
           releaseHttp = () =>
             resolve({
-              type: VELAY_FRAME_TYPES.httpResponse,
+              type: TUNNEL_FRAME_TYPES.httpResponse,
               request_id: "req-1",
               status_code: 200,
               headers: {},
@@ -1628,7 +1628,7 @@ describe("proactive tunnel refresh", () => {
     await registerTunnel(sockets);
 
     sendFrame(sockets[0], {
-      type: VELAY_FRAME_TYPES.httpRequest,
+      type: TUNNEL_FRAME_TYPES.httpRequest,
       request_id: "req-1",
       method: "GET",
       path: "/webhooks/twilio/voice",
@@ -1685,20 +1685,20 @@ describe("advertised path rules", () => {
     socket.readyState = WS_OPEN;
     socket.emit("open");
     sendFrame(socket, {
-      type: VELAY_FRAME_TYPES.registered,
+      type: TUNNEL_FRAME_TYPES.registered,
       assistant_id: "asst-123",
-      public_url: "https://velay-public.example.test",
+      public_url: "https://tunnel-public.example.test",
     });
     await flushPromises();
   }
 
   function headerValue(socket: FakeWebSocket): unknown {
     return (socket.options as { headers: Record<string, string> } | undefined)
-      ?.headers["X-Vellum-Velay-Allowed-Paths"];
+      ?.headers["X-Vellum-Tunnel-Allowed-Paths"];
   }
 
   test("advertises the registered routes on connect while the flag is on", async () => {
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     registeredWebhookPaths = ["/webhooks/telegram"];
     const sockets: FakeWebSocket[] = [];
     const client = makeClient({ sockets });
@@ -1707,10 +1707,10 @@ describe("advertised path rules", () => {
     await flushPromises();
 
     expect(headerValue(sockets[0])).toBe(
-      buildVelayAllowedPathsHeaderValue(() => ["/webhooks/telegram"]),
+      buildTunnelAllowedPathsHeaderValue(() => ["/webhooks/telegram"]),
     );
     expect(JSON.parse(headerValue(sockets[0]) as string)).toEqual([
-      ...VELAY_STATIC_ALLOWED_PATHS,
+      ...TUNNEL_STATIC_ALLOWED_PATHS,
       "^/webhooks/telegram$",
     ]);
     await client.stop();
@@ -1724,13 +1724,13 @@ describe("advertised path rules", () => {
     client.start();
     await flushPromises();
 
-    expect(headerValue(sockets[0])).toBe(VELAY_ALLOWED_PATHS_HEADER_VALUE);
+    expect(headerValue(sockets[0])).toBe(TUNNEL_ALLOWED_PATHS_HEADER_VALUE);
     expect(webhookRouteReads).toBe(0);
     await client.stop();
   });
 
   test("still connects with statics-only rules when the registry read fails", async () => {
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     webhookRouteReadError = new Error("database disk image is malformed");
     const sockets: FakeWebSocket[] = [];
     const client = makeClient({ sockets });
@@ -1740,7 +1740,7 @@ describe("advertised path rules", () => {
 
     expect(sockets.length).toBe(1);
     expect(headerValue(sockets[0])).toBe(
-      buildVelayAllowedPathsHeaderValue(() => []),
+      buildTunnelAllowedPathsHeaderValue(() => []),
     );
     await client.stop();
   });
@@ -1765,7 +1765,7 @@ describe("advertised path rules", () => {
     client.requestRulesRefresh("third");
     expect(delays).toEqual([5000]);
 
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     registeredWebhookPaths = ["/webhooks/telegram"];
     callbacks[0]();
     await flushPromises();
@@ -1778,7 +1778,7 @@ describe("advertised path rules", () => {
     await flushPromises();
     expect(sockets).toHaveLength(2);
     expect(JSON.parse(headerValue(sockets[1]) as string)).toEqual([
-      ...VELAY_STATIC_ALLOWED_PATHS,
+      ...TUNNEL_STATIC_ALLOWED_PATHS,
       "^/webhooks/telegram$",
     ]);
     await client.stop();
@@ -1829,14 +1829,14 @@ describe("advertised path rules", () => {
     client.requestRulesRefresh("before start");
     expect(delays).toEqual([]);
 
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     registeredWebhookPaths = ["/webhooks/plugins/example/realtime"];
     client.start();
     await flushPromises();
     await registerTunnel(sockets[0]);
 
     expect(JSON.parse(headerValue(sockets[0]) as string)).toEqual([
-      ...VELAY_STATIC_ALLOWED_PATHS,
+      ...TUNNEL_STATIC_ALLOWED_PATHS,
       "^/webhooks/plugins/example/realtime$",
     ]);
     expect(delays).toEqual([]);
@@ -1844,7 +1844,7 @@ describe("advertised path rules", () => {
   });
 
   test("refreshes the reconnected tunnel when a reconnect races the debounce", async () => {
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     registeredWebhookPaths = ["/webhooks/telegram"];
     const sockets: FakeWebSocket[] = [];
     const delays: number[] = [];
@@ -1887,7 +1887,7 @@ describe("advertised path rules", () => {
     await flushPromises();
     expect(sockets).toHaveLength(3);
     expect(JSON.parse(headerValue(sockets[2]) as string)).toEqual([
-      ...VELAY_STATIC_ALLOWED_PATHS,
+      ...TUNNEL_STATIC_ALLOWED_PATHS,
       "^/webhooks/telegram$",
       "^/webhooks/stripe$",
     ]);

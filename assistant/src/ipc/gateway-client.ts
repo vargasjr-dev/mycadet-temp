@@ -18,9 +18,9 @@ import {
   ListWebhookRoutesIpcResponseSchema,
   type RegisterWebhookRouteIpcParams,
   RegisterWebhookRouteIpcResponseSchema,
+  type TunnelStatusIpcResponse,
+  TunnelStatusIpcResponseSchema,
   UnregisterWebhookRouteIpcResponseSchema,
-  type VelayStatusIpcResponse,
-  VelayStatusIpcResponseSchema,
   type WebhookIngressRoute,
 } from "@mycadet/gateway-client";
 import {
@@ -158,17 +158,17 @@ export async function ipcGetFeatureFlags(
 }
 
 // ---------------------------------------------------------------------------
-// Velay tunnel status
+// Tunnel tunnel status
 // ---------------------------------------------------------------------------
 
 /**
- * Fetch the current Velay tunnel status from the gateway via IPC.
+ * Fetch the current Tunnel tunnel status from the gateway via IPC.
  * Returns `null` when the gateway is unreachable or returns an unexpected
  * response — callers should treat `null` as "gateway not running".
  */
-export async function ipcGetVelayStatus(): Promise<VelayStatusIpcResponse | null> {
-  const parsed = VelayStatusIpcResponseSchema.safeParse(
-    await ipcCall("get_velay_status"),
+export async function ipcGetTunnelStatus(): Promise<TunnelStatusIpcResponse | null> {
+  const parsed = TunnelStatusIpcResponseSchema.safeParse(
+    await ipcCall("get_tunnel_status"),
   );
   return parsed.success ? parsed.data : null;
 }

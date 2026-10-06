@@ -30,7 +30,7 @@ export function buildLlmsText(pages: DocsPageMeta[]): string {
     "",
     "Install: `curl -fsSL https://www.mycadet.ai/install.sh | bash && . ~/.config/vellum/env`",
     "",
-    "Repo: https://github.com/vargasjr-dev/mycadet-temp",
+    "Repo: https://github.com/vargasjr-dev/mycadet",
     "",
     `Docs: ${SITE_URL}/docs`,
     "",

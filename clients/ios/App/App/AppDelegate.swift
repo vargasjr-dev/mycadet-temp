@@ -112,7 +112,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     /// Handle `<scheme>://connect?url=<https-base>&code=<device-code>` (with an
     /// optional `name=<label>`), the custom-scheme QR path that pairs the shell
     /// to a self-hosted assistant. The `url` parameter is the server base (host,
-    /// optionally with a path prefix like `/assistant-123` for Velay-style
+    /// optionally with a path prefix like `/assistant-123` for Tunnel-style
     /// hosting); it is both persisted and the value the pair-page URL is derived
     /// from, so there is one source of truth.
     ///

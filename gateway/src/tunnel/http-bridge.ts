@@ -2,25 +2,25 @@ import { stripHopByHop } from "@mycadet/assistant-client";
 
 import { fetchImpl } from "../fetch.js";
 import {
-  VELAY_FORWARDED_HEADER,
+  TUNNEL_FORWARDED_HEADER,
   buildLoopbackHttpUrl,
   decodeOptionalBase64ArrayBuffer,
   encodeBase64,
-  headersFromVelay,
-  headersToVelay,
+  headersFromTunnel,
+  headersToTunnel,
 } from "./bridge-utils.js";
 import {
-  VELAY_FRAME_TYPES,
-  type VelayHttpRequestFrame,
-  type VelayHttpResponseFrame,
+  TUNNEL_FRAME_TYPES,
+  type TunnelHttpRequestFrame,
+  type TunnelHttpResponseFrame,
 } from "./protocol.js";
 
 const BAD_GATEWAY_BODY = JSON.stringify({ error: "Bad Gateway" });
 
-export async function bridgeVelayHttpRequest(
-  frame: VelayHttpRequestFrame,
+export async function bridgeTunnelHttpRequest(
+  frame: TunnelHttpRequestFrame,
   gatewayLoopbackBaseUrl: string,
-): Promise<VelayHttpResponseFrame> {
+): Promise<TunnelHttpResponseFrame> {
   const url = buildLoopbackHttpUrl(
     gatewayLoopbackBaseUrl,
     frame.path,
@@ -42,32 +42,32 @@ export async function bridgeVelayHttpRequest(
   }
 
   return {
-    type: VELAY_FRAME_TYPES.httpResponse,
+    type: TUNNEL_FRAME_TYPES.httpResponse,
     request_id: frame.request_id,
     status_code: response.status,
-    headers: headersToVelay(stripHopByHop(new Headers(response.headers))),
+    headers: headersToTunnel(stripHopByHop(new Headers(response.headers))),
     body_base64: encodeBase64(await response.arrayBuffer()),
   };
 }
 
 function buildLoopbackRequest(
-  frame: VelayHttpRequestFrame,
+  frame: TunnelHttpRequestFrame,
   url: string,
   body: ArrayBuffer | undefined,
 ): Request | undefined {
   try {
-    const headers = headersFromVelay(frame.headers);
+    const headers = headersFromTunnel(frame.headers);
     if (body !== undefined) {
       headers.set("content-length", String(body.byteLength));
     } else {
       headers.delete("content-length");
     }
 
-    // Inject an unconditional Velay-origin marker. Loopback-only routes use
+    // Inject an unconditional Tunnel-origin marker. Loopback-only routes use
     // this as a secondary guard (in addition to the path allowlist) to reject
     // tunnel-bridged requests regardless of peer IP. Overwrite any
-    // client-supplied value so it cannot be stripped on the Velay side.
-    headers.set(VELAY_FORWARDED_HEADER, "1");
+    // client-supplied value so it cannot be stripped on the Tunnel side.
+    headers.set(TUNNEL_FORWARDED_HEADER, "1");
 
     return new Request(url, {
       method: frame.method,
@@ -79,9 +79,9 @@ function buildLoopbackRequest(
   }
 }
 
-function badGatewayFrame(requestId: string): VelayHttpResponseFrame {
+function badGatewayFrame(requestId: string): TunnelHttpResponseFrame {
   return {
-    type: VELAY_FRAME_TYPES.httpResponse,
+    type: TUNNEL_FRAME_TYPES.httpResponse,
     request_id: requestId,
     status_code: 502,
     headers: { "content-type": ["application/json"] },

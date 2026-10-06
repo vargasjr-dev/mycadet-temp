@@ -2,11 +2,11 @@
  * Vellum managed TTS WebSocket streaming session.
  *
  * Runs a single-utterance synthesis session against the gateway's managed
- * speech relay (`/v1/speech/tts/stream`, gateway → velay → Deepgram; velay
+ * speech relay (`/v1/speech/tts/stream`, gateway → tunnel → Deepgram; tunnel
  * contact is gateway-only). The wire protocol is Deepgram's Speak
  * WebSocket: `Speak` text frames followed by one `Flush`; binary audio
  * frames stream down until a `Flushed` control frame marks the utterance
- * complete. The relay adds one control frame of its own — `velay_error`,
+ * complete. The relay adds one control frame of its own — `tunnel_error`,
  * surfaced through the caller-owned `makeRelayError` factory.
  *
  * Error codes/wording are caller-owned via error factories (stream-read
@@ -52,7 +52,7 @@ interface WsLike {
 
 /**
  * Relay control frames: Deepgram's `Metadata`/`Flushed`/`Warning` plus the
- * relay's own `velay_error`.
+ * relay's own `tunnel_error`.
  */
 interface RelayTtsFrame {
   type?: string;
@@ -95,7 +95,7 @@ export interface VellumTtsSocketOptions extends StreamReadTimeouts {
   makeTimeoutError: (timeoutMs: number) => Error;
   makeStreamError: (detail: string) => Error;
   makeEmptyError: () => Error;
-  /** A `velay_error` control frame arrived — code per the relay contract. */
+  /** A `tunnel_error` control frame arrived — code per the relay contract. */
   makeRelayError: (code: string, detail: string) => Error;
 }
 
@@ -334,7 +334,7 @@ export function synthesizeOverVellumTtsSocket(
           });
           return;
 
-        case "velay_error":
+        case "tunnel_error":
           fail(
             makeRelayError(
               typeof frame.code === "string" ? frame.code : "upstream_error",

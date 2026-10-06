@@ -1,26 +1,17 @@
 /**
- * Map a Vellum platform host onto its environment's velay host, following the
- * deployment naming convention (`platform.vellum.ai` → `velay.vellum.ai`,
- * `{env}-platform.vellum.ai` → `velay-{env}.vellum.ai`). Returns null for
+ * Map a Cadet Cloud host onto its environment's tunnel host, following the
+ * deployment naming convention (`cloud.mycadet.ai` → `tunnel.mycadet.ai`,
+ * `{env}-cloud.mycadet.ai` → `tunnel-{env}.mycadet.ai`). Returns null for
  * hosts outside that convention (localhost, custom domains). Shared by the
  * gateway speech relay and the web live-voice client so the two ends of the
  * managed-speech transport can't drift.
  */
-export function velayHostForPlatformHost(host: string): string | null {
+export function tunnelHostForPlatformHost(host: string): string | null {
   if (host === "cloud.mycadet.ai") {
-    return "velay.mycadet.ai";
+    return "tunnel.mycadet.ai";
   }
-  const cadetMatch = /^([a-z0-9-]+)-cloud\.mycadet\.ai$/.exec(host);
-  if (cadetMatch) {
-    return `velay-${cadetMatch[1]}.mycadet.ai`;
-  }
-  // Legacy Vellum-era platform hosts: existing lockfile entries still carry
-  // these runtimeUrls, so keep them resolvable.
-  if (host === "platform.vellum.ai") {
-    return "velay.vellum.ai";
-  }
-  const match = /^([a-z0-9-]+)-platform\.vellum\.ai$/.exec(host);
-  return match ? `velay-${match[1]}.vellum.ai` : null;
+  const match = /^([a-z0-9-]+)-cloud\.mycadet\.ai$/.exec(host);
+  return match ? `tunnel-${match[1]}.mycadet.ai` : null;
 }
 
 export function normalizePublicBaseUrl(value: unknown): string | undefined {
@@ -30,8 +21,8 @@ export function normalizePublicBaseUrl(value: unknown): string | undefined {
 }
 
 /**
- * Application close code the gateway's velay bridge sends to proxied
- * WebSockets when the tunnel itself is lost (velay disconnect, gateway
+ * Application close code the gateway's tunnel bridge sends to proxied
+ * WebSockets when the tunnel itself is lost (tunnel disconnect, gateway
  * shutdown). A dedicated code because the natural 1001 (going away) cannot
  * be sent through the JS `close()` API (the bridge would remap it to a
  * misleading 4001), and Bun's WebSocket client drops close reasons, so the

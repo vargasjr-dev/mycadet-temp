@@ -19,7 +19,7 @@
  * caller as local. This marker is the reliable signal instead — and crucially
  * it does NOT depend on the spoofable leftmost `X-Forwarded-For` entry.
  *
- * This mirrors the Velay bridge's `VELAY_FORWARDED_HEADER` defense, for the
+ * This mirrors the Tunnel bridge's `TUNNEL_FORWARDED_HEADER` defense, for the
  * self-hosted nginx edge. Only that edge sets this header; platform/vembda
  * ingress does not, so guards may check it unconditionally across deploy modes.
  *

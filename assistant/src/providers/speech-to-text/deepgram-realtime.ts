@@ -125,12 +125,12 @@ export interface DeepgramRealtimeOptions {
   path?: string;
   /**
    * Send the API key as a `?key=` query parameter instead of the
-   * `Authorization: Token` header. The velay speech relay accepts query
+   * `Authorization: Token` header. The tunnel speech relay accepts query
    * auth; it does not accept Deepgram's `Token` scheme. Default: false.
    */
   queryAuth?: boolean;
   /**
-   * Omit the `model` query parameter. The velay relay pins the model
+   * Omit the `model` query parameter. The tunnel relay pins the model
    * server-side and rejects requests that try to choose one. Default: false.
    */
   omitModelParam?: boolean;

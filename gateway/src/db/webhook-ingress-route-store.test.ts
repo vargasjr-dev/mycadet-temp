@@ -17,7 +17,7 @@ import {
 
 import "../__tests__/test-preload.js";
 import { pluginWebhookPath } from "../channels/plugin-ingress.js";
-import { MAX_WEBHOOK_INGRESS_PATH_LENGTH } from "../velay/path-utils.js";
+import { MAX_WEBHOOK_INGRESS_PATH_LENGTH } from "../tunnel/path-utils.js";
 import { getGatewayDb, initGatewayDb, resetGatewayDb } from "./connection.js";
 import { webhookIngressRoutes } from "./schema.js";
 import {

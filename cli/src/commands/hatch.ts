@@ -1,5 +1,5 @@
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
-import { isManagedCloud } from "@vellumai/local-mode/contract";
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import cliPkg from "../../package.json";
 
 import {
@@ -70,7 +70,7 @@ function parseArgs(): HatchArgs {
       console.log("  -d                        Run in detached mode");
       console.log("  --name <name>             Custom instance name");
       console.log(
-        '  --remote <host>           Remote host (local, docker, custom, cloud; "vellum" is the legacy spelling)',
+        "  --remote <host>           Remote host (local, docker, custom, cloud)",
       );
       console.log(
         "  --watch                   Run assistant and gateway in watch mode (hot reload on source changes)",

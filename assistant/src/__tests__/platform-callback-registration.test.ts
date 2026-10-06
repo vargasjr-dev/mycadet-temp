@@ -7,7 +7,7 @@ import type { IpcRegisterWebhookRouteResult } from "../ipc/gateway-client.js";
 import { credentialKey } from "../security/credential-key.js";
 
 let mockIsPlatform = true;
-let mockVelayWebhooksEnabled = false;
+let mockTunnelWebhooksEnabled = false;
 let mockPlatformBaseUrl = "";
 let mockPlatformAssistantId = "";
 let mockSecureKeys: Record<string, string> = {};
@@ -41,10 +41,10 @@ mock.module("../config/env-registry.js", () => ({
   getIsPlatform: () => mockIsPlatform,
 }));
 
-const actualVelayGate = await import("../inbound/velay-webhooks-gate.js");
-mock.module("../inbound/velay-webhooks-gate.js", () => ({
-  ...actualVelayGate,
-  isVelayWebhooksEnabled: () => mockVelayWebhooksEnabled,
+const actualTunnelGate = await import("../inbound/tunnel-webhooks-gate.js");
+mock.module("../inbound/tunnel-webhooks-gate.js", () => ({
+  ...actualTunnelGate,
+  isTunnelWebhooksEnabled: () => mockTunnelWebhooksEnabled,
 }));
 
 const actualEnv = await import("../config/env.js");
@@ -369,7 +369,7 @@ describe("platform callback registration", () => {
 
   test("platform-managed registerCallbackRoute omits callback_base_url even when ingress exists", async () => {
     mockIsPlatform = true;
-    mockConfig = { ingress: { publicBaseUrl: "https://velay.example.com" } };
+    mockConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
     mockSecureKeys[credentialKey("vellum", "platform_base_url")] =
       "https://platform.example.com";
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
@@ -442,7 +442,7 @@ describe("resolveCallbackUrl resolution order", () => {
 
   beforeEach(() => {
     mockIsPlatform = false;
-    mockVelayWebhooksEnabled = false;
+    mockTunnelWebhooksEnabled = false;
     mockPlatformBaseUrl = "";
     mockPlatformAssistantId = "";
     mockSecureKeys = {};
@@ -488,21 +488,21 @@ describe("resolveCallbackUrl resolution order", () => {
     expect(ipcRegisterCalls).toEqual([]);
   });
 
-  test("velay-webhooks on: a pod claims the subpath and uses the published URL", async () => {
+  test("tunnel-webhooks on: a pod claims the subpath and uses the published URL", async () => {
     mockIsPlatform = true;
-    mockVelayWebhooksEnabled = true;
+    mockTunnelWebhooksEnabled = true;
     seedPlatformCredentials();
 
     await expect(
       resolveCallbackUrl(
-        () => "https://velay.example.com/assistant-1/webhooks/twilio/voice",
+        () => "https://tunnel.example.com/assistant-1/webhooks/twilio/voice",
         "webhooks/twilio/voice",
         "twilio_voice",
         { callSessionId: "conv-xyz" },
         "+15555550142",
       ),
     ).resolves.toBe(
-      "https://velay.example.com/assistant-1/webhooks/twilio/voice",
+      "https://tunnel.example.com/assistant-1/webhooks/twilio/voice",
     );
     expect(registerCalls).toBe(0);
     expect(ipcRegisterCalls).toEqual([
@@ -514,15 +514,15 @@ describe("resolveCallbackUrl resolution order", () => {
     ]);
   });
 
-  test("velay-webhooks on: a refused claim falls back to the platform", async () => {
+  test("tunnel-webhooks on: a refused claim falls back to the platform", async () => {
     mockIsPlatform = true;
-    mockVelayWebhooksEnabled = true;
+    mockTunnelWebhooksEnabled = true;
     mockRegisterWebhookRouteResult = { ok: true, disabled: true };
     seedPlatformCredentials();
 
     await expect(
       resolveCallbackUrl(
-        () => "https://velay.example.com/assistant-1/webhooks/twilio/voice",
+        () => "https://tunnel.example.com/assistant-1/webhooks/twilio/voice",
         "webhooks/twilio/voice",
         "twilio_voice",
       ),
@@ -531,15 +531,15 @@ describe("resolveCallbackUrl resolution order", () => {
     expect(ipcRegisterCalls).toHaveLength(1);
   });
 
-  test("velay-webhooks on: an unreachable gateway falls back to the platform", async () => {
+  test("tunnel-webhooks on: an unreachable gateway falls back to the platform", async () => {
     mockIsPlatform = true;
-    mockVelayWebhooksEnabled = true;
+    mockTunnelWebhooksEnabled = true;
     mockRegisterWebhookRouteResult = { ok: false, reason: "no_response" };
     seedPlatformCredentials();
 
     await expect(
       resolveCallbackUrl(
-        () => "https://velay.example.com/assistant-1/webhooks/twilio/voice",
+        () => "https://tunnel.example.com/assistant-1/webhooks/twilio/voice",
         "webhooks/twilio/voice",
         "twilio_voice",
       ),
@@ -548,9 +548,9 @@ describe("resolveCallbackUrl resolution order", () => {
     expect(ipcRegisterCalls).toHaveLength(1);
   });
 
-  test("velay-webhooks on: a pod with no published URL still registers with the platform", async () => {
+  test("tunnel-webhooks on: a pod with no published URL still registers with the platform", async () => {
     mockIsPlatform = true;
-    mockVelayWebhooksEnabled = true;
+    mockTunnelWebhooksEnabled = true;
     seedPlatformCredentials();
 
     await expect(
@@ -560,9 +560,9 @@ describe("resolveCallbackUrl resolution order", () => {
     expect(ipcRegisterCalls).toEqual([]);
   });
 
-  test("velay-webhooks on: a pod with ingress disabled falls back instead of throwing", async () => {
+  test("tunnel-webhooks on: a pod with ingress disabled falls back instead of throwing", async () => {
     mockIsPlatform = true;
-    mockVelayWebhooksEnabled = true;
+    mockTunnelWebhooksEnabled = true;
     seedPlatformCredentials();
 
     await expect(
@@ -576,8 +576,8 @@ describe("resolveCallbackUrl resolution order", () => {
     expect(ipcRegisterCalls).toEqual([]);
   });
 
-  test("velay-webhooks on: self-hosted opt-out still surfaces", async () => {
-    mockVelayWebhooksEnabled = true;
+  test("tunnel-webhooks on: self-hosted opt-out still surfaces", async () => {
+    mockTunnelWebhooksEnabled = true;
     seedPlatformCredentials();
 
     await expect(
@@ -591,8 +591,8 @@ describe("resolveCallbackUrl resolution order", () => {
     expect(ipcRegisterCalls).toEqual([]);
   });
 
-  test("velay-webhooks on: a self-hosted ingress URL is not claimed on the gateway", async () => {
-    mockVelayWebhooksEnabled = true;
+  test("tunnel-webhooks on: a self-hosted ingress URL is not claimed on the gateway", async () => {
+    mockTunnelWebhooksEnabled = true;
     seedPlatformCredentials();
 
     await expect(

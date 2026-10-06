@@ -12,7 +12,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 let isPlatform = false;
-let velayWebhooksEnabled = false;
+let tunnelWebhooksEnabled = false;
 let rawConfig: Record<string, unknown> = {};
 let platformContextEnabled = false;
 
@@ -31,10 +31,10 @@ mock.module("../loader.js", () => ({
   getConfig: () => rawConfig,
 }));
 
-const actualVelayGate = await import("../../inbound/velay-webhooks-gate.js");
-mock.module("../../inbound/velay-webhooks-gate.js", () => ({
-  ...actualVelayGate,
-  isVelayWebhooksEnabled: () => velayWebhooksEnabled,
+const actualTunnelGate = await import("../../inbound/tunnel-webhooks-gate.js");
+mock.module("../../inbound/tunnel-webhooks-gate.js", () => ({
+  ...actualTunnelGate,
+  isTunnelWebhooksEnabled: () => tunnelWebhooksEnabled,
 }));
 
 const actualRegistration =
@@ -57,7 +57,7 @@ const { hasIngressConfigured, hasWebhookRoutingConfigured } =
 describe("hasWebhookRoutingConfigured resolution order", () => {
   beforeEach(() => {
     isPlatform = false;
-    velayWebhooksEnabled = false;
+    tunnelWebhooksEnabled = false;
     rawConfig = {};
     platformContextEnabled = false;
   });
@@ -86,9 +86,9 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
     });
   });
 
-  test("velay-webhooks on: a pod with a published ingress URL reports it", async () => {
+  test("tunnel-webhooks on: a pod with a published ingress URL reports it", async () => {
     isPlatform = true;
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     rawConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
 
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
@@ -97,9 +97,9 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
     });
   });
 
-  test("velay-webhooks on: a pod with no published URL still reports managed", async () => {
+  test("tunnel-webhooks on: a pod with no published URL still reports managed", async () => {
     isPlatform = true;
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
 
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: true,
@@ -107,9 +107,9 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
     });
   });
 
-  test("velay-webhooks on: a pod with ingress disabled falls back to managed", async () => {
+  test("tunnel-webhooks on: a pod with ingress disabled falls back to managed", async () => {
     isPlatform = true;
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     rawConfig = { ingress: { enabled: false } };
 
     // Matches `resolveCallbackUrl` on pods: an owner toggling ingress off

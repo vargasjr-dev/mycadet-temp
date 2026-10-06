@@ -24,7 +24,7 @@ import type { VoiceAudioInterruptionEvent } from "@/runtime/native-audio-session
 // connection module so importing the controller doesn't drag in the SDK client.
 mock.module("@/domains/chat/voice/live-voice/connection", () => ({
   resolveLiveVoiceWsUrl: mock(
-    async () => "wss://velay.vellum.ai/a/v1/live-voice",
+    async () => "wss://tunnel.mycadet.ai/a/v1/live-voice",
   ),
 }));
 
@@ -594,7 +594,7 @@ describe("native audio session", () => {
     await startListeningViaStarter(h);
 
     await act(async () => {
-      useLiveVoiceStore.getState().fail("velay unreachable");
+      useLiveVoiceStore.getState().fail("tunnel unreachable");
       await Promise.resolve();
     });
     await act(async () => {

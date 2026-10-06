@@ -395,17 +395,17 @@ function extractPlatformCallbackAssistantId(
   return assistantId || undefined;
 }
 
-function resolveVelayBaseWssUrl(
+function resolveTunnelBaseWssUrl(
   config: GatewayConfig,
   platformAssistantId?: string,
 ): string | undefined {
-  if (!config.velayBaseUrl || !platformAssistantId) return undefined;
+  if (!config.tunnelBaseUrl || !platformAssistantId) return undefined;
 
   const withPath =
-    config.velayBaseUrl.replace(/\/+$/, "") + "/" + platformAssistantId;
-  const normalizedVelayUrl = normalizePublicBaseUrl(withPath);
-  return normalizedVelayUrl
-    ? toWebSocketBaseUrl(normalizedVelayUrl)
+    config.tunnelBaseUrl.replace(/\/+$/, "") + "/" + platformAssistantId;
+  const normalizedTunnelUrl = normalizePublicBaseUrl(withPath);
+  return normalizedTunnelUrl
+    ? toWebSocketBaseUrl(normalizedTunnelUrl)
     : undefined;
 }
 
@@ -413,12 +413,12 @@ function resolveVelayBaseWssUrl(
  * Resolve the public base URL as a WebSocket URL (`wss://…`).
  *
  * Sources (in priority order):
- * 1. `VELAY_BASE_URL` + the assistant ID from the signed platform callback
+ * 1. `TUNNEL_BASE_URL` + the assistant ID from the signed platform callback
  *    URL.
  * 2. `ingress.publicBaseUrl` from the config file when it is a real public
- *    gateway base URL — written by Velay after tunnel registration, or set
+ *    gateway base URL — written by Tunnel after tunnel registration, or set
  *    manually for self-hosted.
- * 3. `VELAY_BASE_URL` + the platform assistant ID from a configured callback
+ * 3. `TUNNEL_BASE_URL` + the platform assistant ID from a configured callback
  *    URL or credential cache.
  *
  * Returns `undefined` when no source provides a value — the placeholder
@@ -436,7 +436,7 @@ export function resolvePublicBaseWssUrl(
 
   const validatedCallbackAssistantId =
     extractPlatformCallbackAssistantId(validatedPublicUrl);
-  const validatedCallbackWssUrl = resolveVelayBaseWssUrl(
+  const validatedCallbackWssUrl = resolveTunnelBaseWssUrl(
     config,
     validatedCallbackAssistantId,
   );
@@ -448,7 +448,7 @@ export function resolvePublicBaseWssUrl(
     return toWebSocketBaseUrl(normalized);
   }
 
-  return resolveVelayBaseWssUrl(
+  return resolveTunnelBaseWssUrl(
     config,
     configuredCallbackAssistantId ?? platformAssistantId,
   );
@@ -460,11 +460,11 @@ export function resolvePublicBaseWssUrl(
  * browser-facing link (credential-collection links, the A2A agent card).
  *
  * Sources (in priority order):
- * 1. `ingress.publicBaseUrl` from the config file — written by Velay after
+ * 1. `ingress.publicBaseUrl` from the config file — written by Tunnel after
  *    tunnel registration, or set manually for self-hosted.
- * 2. `VELAY_BASE_URL` + the platform assistant ID. This mirrors the Twilio
+ * 2. `TUNNEL_BASE_URL` + the platform assistant ID. This mirrors the Twilio
  *    resolver's fallback and stays valid even while the tunnel is briefly
- *    disconnected (Velay clears the config value on every reconnect), so
+ *    disconnected (Tunnel clears the config value on every reconnect), so
  *    these links no longer break on a tunnel flap.
  *
  * The platform assistant ID is read through a lazy getter so callers that
@@ -483,7 +483,7 @@ export async function resolvePublicHttpBaseUrl(
       configFile?.getString("ingress", "publicBaseUrl"),
     ) ??
     normalizeHttpPublicBaseUrl(
-      await resolveVelayHttpFallback(config, getPlatformAssistantId),
+      await resolveTunnelHttpFallback(config, getPlatformAssistantId),
     );
 
   // Drop a root-path trailing slash so callers can append `/…` without
@@ -492,18 +492,18 @@ export async function resolvePublicHttpBaseUrl(
 }
 
 /**
- * Build the `VELAY_BASE_URL/<platform-assistant-id>` fallback base URL. Only
- * reads the platform assistant ID (via the getter) when `velayBaseUrl` is
+ * Build the `TUNNEL_BASE_URL/<platform-assistant-id>` fallback base URL. Only
+ * reads the platform assistant ID (via the getter) when `tunnelBaseUrl` is
  * configured, so it's skipped entirely on self-hosted deployments.
  */
-async function resolveVelayHttpFallback(
+async function resolveTunnelHttpFallback(
   config: GatewayConfig,
   getPlatformAssistantId?: () => Promise<string | undefined>,
 ): Promise<string | undefined> {
-  if (!config.velayBaseUrl || !getPlatformAssistantId) return undefined;
+  if (!config.tunnelBaseUrl || !getPlatformAssistantId) return undefined;
   const platformAssistantId = await getPlatformAssistantId();
   if (!platformAssistantId) return undefined;
-  return config.velayBaseUrl.replace(/\/+$/, "") + "/" + platformAssistantId;
+  return config.tunnelBaseUrl.replace(/\/+$/, "") + "/" + platformAssistantId;
 }
 
 /**
@@ -573,7 +573,7 @@ export async function forwardTwilioVoiceWebhook(
     } else {
       log.error(
         "TwiML contains public URL placeholder but no public base URL is configured. " +
-          "Twilio will fail to connect. Wait for Velay tunnel registration or set ingress.publicBaseUrl.",
+          "Twilio will fail to connect. Wait for Tunnel tunnel registration or set ingress.publicBaseUrl.",
       );
     }
   }

@@ -10,7 +10,7 @@ let ipcResult: unknown = null;
 let ipcError: Error | undefined;
 let ipcCallCount = 0;
 
-const ipcGetVelayStatusMock = mock(async () => {
+const ipcGetTunnelStatusMock = mock(async () => {
   ipcCallCount += 1;
   if (ipcError) {
     throw ipcError;
@@ -19,7 +19,7 @@ const ipcGetVelayStatusMock = mock(async () => {
 });
 
 mock.module("../../../ipc/gateway-client.js", () => ({
-  ipcGetVelayStatus: ipcGetVelayStatusMock,
+  ipcGetTunnelStatus: ipcGetTunnelStatusMock,
 }));
 
 import { ROUTES } from "../gateway-status-routes.js";
@@ -33,7 +33,7 @@ describe("gateway_status route", () => {
     ipcResult = null;
     ipcError = undefined;
     ipcCallCount = 0;
-    ipcGetVelayStatusMock.mockClear();
+    ipcGetTunnelStatusMock.mockClear();
   });
 
   test("route is registered with correct operationId, method, and endpoint", () => {

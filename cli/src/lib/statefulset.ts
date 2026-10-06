@@ -227,7 +227,7 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
         { kind: "secret", name: "GUARDIAN_BOOTSTRAP_SECRET", secret: "bootstrapSecret" },
         { kind: "host",   name: "VELLUM_ENVIRONMENT" },
         { kind: "host",   name: "VELLUM_PLATFORM_URL" },
-        { kind: "host",   name: "VELAY_BASE_URL" },
+        { kind: "host",   name: "TUNNEL_BASE_URL" },
       ],
       volumeMounts: [
         { volumeName: "assistant-workspace",  mountPath: "/workspace" },

@@ -13,8 +13,8 @@ import { CURRENT_POLICY_EPOCH } from "../auth/policy.js";
 /** The bound guardian's actor principal, which `mintEdgeToken` defaults to. */
 export const GUARDIAN_PRINCIPAL = "test-user";
 
-/** The bound guardian's platform user id, for the velay-attested path. */
-export const VELAY_USER_ID = "11111111-1111-1111-1111-111111111111";
+/** The bound guardian's platform user id, for the tunnel-attested path. */
+export const TUNNEL_USER_ID = "11111111-1111-1111-1111-111111111111";
 
 initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
 

@@ -28,7 +28,7 @@ mock.module("../auth/guardian-bootstrap.js", () => ({
 const { createSttStreamWebsocketHandler, getSttStreamWebsocketHandlers } =
   await import("../http/routes/stt-stream-websocket.js");
 import type { SttStreamSocketData } from "../http/routes/stt-stream-websocket.js";
-import { setVelayBridgeAuthHeader } from "../velay/bridge-auth.js";
+import { setTunnelBridgeAuthHeader } from "../tunnel/bridge-auth.js";
 
 // ---------------------------------------------------------------------------
 // createSttStreamWebsocketHandler — upgrade handler tests
@@ -435,18 +435,18 @@ describe("dictation is not a guardian-only surface", () => {
 });
 
 /**
- * The managed path, where velay validated the browser's own token and
+ * The managed path, where tunnel validated the browser's own token and
  * attested the caller to the bridge. There is no edge JWT on it, so requiring
- * one rejected every managed caller: the socket opened at velay and closed at
+ * one rejected every managed caller: the socket opened at tunnel and closed at
  * the loopback with an open failure, which the browser saw as a 1014.
  *
  * No guardian cross-check, unlike live voice and watch. Dictation admits any
- * valid actor, and velay only mints a token for a user with access to this
+ * valid actor, and tunnel only mints a token for a user with access to this
  * assistant, which is the same standing an actor token proves.
  */
-describe("createSttStreamWebsocketHandler: velay-attested managed auth", () => {
-  const VELAY_USER_ID = "11111111-1111-1111-1111-111111111111";
-  const VELAY_ORG_ID = "22222222-2222-2222-2222-222222222222";
+describe("createSttStreamWebsocketHandler: tunnel-attested managed auth", () => {
+  const TUNNEL_USER_ID = "11111111-1111-1111-1111-111111111111";
+  const TUNNEL_ORG_ID = "22222222-2222-2222-2222-222222222222";
 
   afterEach(() => {
     delete process.env.IS_PLATFORM;
@@ -454,16 +454,16 @@ describe("createSttStreamWebsocketHandler: velay-attested managed auth", () => {
 
   const managedUpgrade = ({
     bridgeProof = true,
-    orgId = VELAY_ORG_ID as string | null,
+    orgId = TUNNEL_ORG_ID as string | null,
     token,
     managed = true,
-    velayBaseUrl,
+    tunnelBaseUrl,
   }: {
     bridgeProof?: boolean;
     orgId?: string | null;
     token?: string;
     managed?: boolean;
-    velayBaseUrl?: string;
+    tunnelBaseUrl?: string;
   }) => {
     if (managed) {
       process.env.IS_PLATFORM = "true";
@@ -472,17 +472,17 @@ describe("createSttStreamWebsocketHandler: velay-attested managed auth", () => {
     }
     const headers = new Headers({
       upgrade: "websocket",
-      "x-velay-user-id": VELAY_USER_ID,
-      "x-velay-actor": "user",
+      "x-tunnel-user-id": TUNNEL_USER_ID,
+      "x-tunnel-actor": "user",
     });
     if (orgId !== null) {
-      headers.set("x-velay-org-id", orgId);
+      headers.set("x-tunnel-org-id", orgId);
     }
     if (bridgeProof) {
-      setVelayBridgeAuthHeader(headers);
+      setTunnelBridgeAuthHeader(headers);
     }
     const handler = createSttStreamWebsocketHandler(
-      makeConfig(velayBaseUrl ? { velayBaseUrl } : {}),
+      makeConfig(tunnelBaseUrl ? { tunnelBaseUrl } : {}),
     );
     const query = token ? `&token=${token}` : "";
     const req = new Request(
@@ -505,7 +505,7 @@ describe("createSttStreamWebsocketHandler: velay-attested managed auth", () => {
    * cannot know the process-local bridge proof, which is what says the request
    * really arrived through this gateway's own loopback bridge.
    */
-  test("ignores spoofed velay headers with no bridge proof", () => {
+  test("ignores spoofed tunnel headers with no bridge proof", () => {
     const { res, server } = managedUpgrade({ bridgeProof: false });
 
     expect(res!.status).toBe(401);
@@ -522,29 +522,29 @@ describe("createSttStreamWebsocketHandler: velay-attested managed auth", () => {
     expect(server.upgrade).toHaveBeenCalledTimes(1);
   });
 
-  /** With no velay tunnel there is no bridge to have come through. */
-  test("ignores velay headers on a gateway with no velay tunnel", () => {
+  /** With no tunnel there is no bridge to have come through. */
+  test("ignores tunnel headers on a gateway with no tunnel", () => {
     const { res, server } = managedUpgrade({ managed: false });
 
     expect(res!.status).toBe(401);
     expect(server.upgrade).not.toHaveBeenCalled();
   });
 
-  /** A locally hosted gateway with a tunnel takes the velay path like a managed pod. */
-  test("admits an attested caller on a locally hosted gateway with a velay tunnel", () => {
+  /** A locally hosted gateway with a tunnel takes the tunnel path like a managed pod. */
+  test("admits an attested caller on a locally hosted gateway with a tunnel", () => {
     const { res, server } = managedUpgrade({
       managed: false,
-      velayBaseUrl: "https://velay.example.test",
+      tunnelBaseUrl: "https://tunnel.example.test",
     });
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
   });
 
-  test("still ignores spoofed headers on a locally hosted gateway with a velay tunnel", () => {
+  test("still ignores spoofed headers on a locally hosted gateway with a tunnel", () => {
     const { res, server } = managedUpgrade({
       managed: false,
-      velayBaseUrl: "https://velay.example.test",
+      tunnelBaseUrl: "https://tunnel.example.test",
       bridgeProof: false,
     });
 

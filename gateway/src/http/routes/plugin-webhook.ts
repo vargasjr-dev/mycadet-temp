@@ -7,7 +7,7 @@
  * approval, so a route that is not yet servable is indistinguishable from
  * one that was never declared.
  *
- * Requests arrive from the public internet through the Velay tunnel, so
+ * Requests arrive from the public internet through the Tunnel tunnel, so
  * approval alone would only decide which paths exist, not who may call them.
  * Every request is therefore signature-checked before it is forwarded, and
  * a route whose secret is missing is refused rather than served unsigned.

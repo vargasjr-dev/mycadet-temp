@@ -5,26 +5,26 @@ import { buildUpstreamUrl, stripHopByHop } from "@mycadet/assistant-client";
 import { hasWebhookIngressRoute } from "../db/webhook-ingress-route-store.js";
 import { isFeatureFlagEnabled } from "../feature-flag-resolver.js";
 import { isSafeOriginRelativePath, WEBHOOK_PATH_PREFIX } from "./path-utils.js";
-import type { VelayHeaders } from "./protocol.js";
+import type { TunnelHeaders } from "./protocol.js";
 
 const MAX_WEBSOCKET_CLOSE_REASON_BYTES = 123;
 
 /**
- * Velay admission is decided across three layers. The webhook ingress route
- * registry is authoritative for `/webhooks/*` once the `velay-webhooks` flag is
+ * Tunnel admission is decided across three layers. The webhook ingress route
+ * registry is authoritative for `/webhooks/*` once the `tunnel-webhooks` flag is
  * on, so an assistant that registers nothing accepts nothing. The static
  * prefixes and exact paths below are authoritative for every other route, and
  * they still carry `/webhooks/twilio/` so Twilio keeps working until it
  * registers its own routes. The rules in `allowed-paths.ts` are the coarse
- * outer filter Velay applies platform-side and never widen what this bridge
+ * outer filter Tunnel applies platform-side and never widen what this bridge
  * admits.
  */
-const VELAY_ALLOWED_HTTP_PATH_PREFIXES = [
+const TUNNEL_ALLOWED_HTTP_PATH_PREFIXES = [
   "/webhooks/twilio/",
   "/v1/audio/",
 ] as const;
 /** Exact-match HTTP paths (no trailing segments). */
-const VELAY_ALLOWED_HTTP_EXACT_PATHS = [
+const TUNNEL_ALLOWED_HTTP_EXACT_PATHS = [
   "/assistant/credentials/enter",
   "/oauth/client-metadata.json",
   "/v1/credential-requests/peek",
@@ -35,7 +35,7 @@ const VELAY_ALLOWED_HTTP_EXACT_PATHS = [
  * registration allowlist it has to agree with. See the guard there for why the
  * two are checked rather than trusted.
  */
-export const VELAY_ALLOWED_WEBSOCKET_EXACT_PATHS = [
+export const TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS = [
   "/v1/live-voice",
   "/v1/stt/stream",
   "/v1/watch/stream",
@@ -45,37 +45,37 @@ export const VELAY_ALLOWED_WEBSOCKET_EXACT_PATHS = [
 /**
  * Injected unconditionally by the HTTP bridge on every request forwarded to
  * the gateway's loopback listener. Loopback-only routes (guardian init, pair,
- * etc.) use this as a secondary "Velay-origin" guard: if the header is present
+ * etc.) use this as a secondary "Tunnel-origin" guard: if the header is present
  * the request arrived via the tunnel bridge and must be rejected regardless of
  * the peer IP. The bridge overwrites any client-supplied value so it cannot be
- * spoofed by stripping or omitting the header on the Velay side.
+ * spoofed by stripping or omitting the header on the Tunnel side.
  */
-export const VELAY_FORWARDED_HEADER = "x-velay-forwarded" as const;
+export const TUNNEL_FORWARDED_HEADER = "x-tunnel-forwarded" as const;
 
-export function isAllowedVelayHttpPath(path: string): boolean {
+export function isAllowedTunnelHttpPath(path: string): boolean {
   if (
     path.startsWith(WEBHOOK_PATH_PREFIX) &&
-    isFeatureFlagEnabled("velay-webhooks") &&
+    isFeatureFlagEnabled("tunnel-webhooks") &&
     hasWebhookIngressRoute(path)
   ) {
     return true;
   }
   return (
-    VELAY_ALLOWED_HTTP_PATH_PREFIXES.some((prefix) =>
+    TUNNEL_ALLOWED_HTTP_PATH_PREFIXES.some((prefix) =>
       path.startsWith(prefix),
     ) ||
-    VELAY_ALLOWED_HTTP_EXACT_PATHS.includes(
-      path as (typeof VELAY_ALLOWED_HTTP_EXACT_PATHS)[number],
+    TUNNEL_ALLOWED_HTTP_EXACT_PATHS.includes(
+      path as (typeof TUNNEL_ALLOWED_HTTP_EXACT_PATHS)[number],
     )
   );
 }
 
 /** A registered webhook route admits a WebSocket upgrade on that same path. */
-export function isAllowedVelayWebSocketPath(path: string): boolean {
+export function isAllowedTunnelWebSocketPath(path: string): boolean {
   return (
-    isAllowedVelayHttpPath(path) ||
-    VELAY_ALLOWED_WEBSOCKET_EXACT_PATHS.includes(
-      path as (typeof VELAY_ALLOWED_WEBSOCKET_EXACT_PATHS)[number],
+    isAllowedTunnelHttpPath(path) ||
+    TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS.includes(
+      path as (typeof TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS)[number],
     )
   );
 }
@@ -90,7 +90,7 @@ export function buildLoopbackHttpUrl(
   path: string,
   rawQuery?: string,
 ): string | undefined {
-  if (!isSafeOriginRelativePath(path) || !isAllowedVelayHttpPath(path)) {
+  if (!isSafeOriginRelativePath(path) || !isAllowedTunnelHttpPath(path)) {
     return undefined;
   }
   return buildUpstreamUrl(
@@ -105,7 +105,7 @@ export function buildLoopbackWebSocketUrl(
   path: string,
   rawQuery?: string,
 ): string | undefined {
-  if (!isSafeOriginRelativePath(path) || !isAllowedVelayWebSocketPath(path)) {
+  if (!isSafeOriginRelativePath(path) || !isAllowedTunnelWebSocketPath(path)) {
     return undefined;
   }
 
@@ -126,7 +126,7 @@ export function buildLoopbackWebSocketUrl(
   }
 }
 
-export function headersToWeb(headers: VelayHeaders): Headers {
+export function headersToWeb(headers: TunnelHeaders): Headers {
   const webHeaders = new Headers();
   for (const [name, values] of Object.entries(headers)) {
     for (const value of values) {
@@ -136,23 +136,23 @@ export function headersToWeb(headers: VelayHeaders): Headers {
   return webHeaders;
 }
 
-export function headersToVelay(headers: Headers): VelayHeaders {
-  const velayHeaders: VelayHeaders = {};
+export function headersToTunnel(headers: Headers): TunnelHeaders {
+  const tunnelHeaders: TunnelHeaders = {};
   for (const [name, value] of headers.entries()) {
-    velayHeaders[name] ??= [];
-    velayHeaders[name].push(value);
+    tunnelHeaders[name] ??= [];
+    tunnelHeaders[name].push(value);
   }
-  return velayHeaders;
+  return tunnelHeaders;
 }
 
-export function headersFromVelay(headers: VelayHeaders): Headers {
+export function headersFromTunnel(headers: TunnelHeaders): Headers {
   return stripHopByHop(headersToWeb(headers));
 }
 
-export function websocketHeadersFromVelay(
-  headers: VelayHeaders,
+export function websocketHeadersFromTunnel(
+  headers: TunnelHeaders,
 ): OutgoingHttpHeaders {
-  const cleaned = headersFromVelay(headers);
+  const cleaned = headersFromTunnel(headers);
   const outgoing: OutgoingHttpHeaders = {};
 
   for (const [name, value] of cleaned.entries()) {

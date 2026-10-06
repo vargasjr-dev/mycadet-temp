@@ -15,34 +15,34 @@ import {
 import { ExponentialBackoff } from "../util/exponential-backoff.js";
 import { listWebhookIngressRoutes } from "../db/webhook-ingress-route-store.js";
 import {
-  VELAY_ALLOWED_PATHS_HEADER,
-  buildVelayAllowedPathsHeaderValue,
+  TUNNEL_ALLOWED_PATHS_HEADER,
+  buildTunnelAllowedPathsHeaderValue,
 } from "./allowed-paths.js";
-import { bridgeVelayHttpRequest } from "./http-bridge.js";
+import { bridgeTunnelHttpRequest } from "./http-bridge.js";
 import { closeWebSocket } from "./bridge-utils.js";
 import {
-  VELAY_FRAME_TYPES,
-  VELAY_TUNNEL_SUBPROTOCOL,
-  parseVelayFrame,
-  type VelayFrame,
-  type VelayHttpRequestFrame,
-  type VelayRegisteredFrame,
+  TUNNEL_FRAME_TYPES,
+  TUNNEL_TUNNEL_SUBPROTOCOL,
+  parseTunnelFrame,
+  type TunnelFrame,
+  type TunnelHttpRequestFrame,
+  type TunnelRegisteredFrame,
 } from "./protocol.js";
 import {
   encodeBinaryWebSocketFrame,
-  VELAY_BINARY_WEBSOCKET_HEADER,
+  TUNNEL_BINARY_WEBSOCKET_HEADER,
 } from "./binary-websocket.js";
-import { VelayWebSocketBridge } from "./websocket-bridge.js";
+import { TunnelWebSocketBridge } from "./websocket-bridge.js";
 
-const log = getLogger("velay-client");
+const log = getLogger("tunnel-client");
 
 const BASE_RECONNECT_DELAY_MS = 500;
 const MAX_RECONNECT_DELAY_MS = 30_000;
 const RECONNECT_JITTER_RATIO = 0.5;
-const VELAY_POLICY_CLOSE_CODE = 4008;
+const TUNNEL_POLICY_CLOSE_CODE = 4008;
 const HEARTBEAT_INTERVAL_MS = 30_000;
 const HEARTBEAT_READ_TIMEOUT_MS = 60_000;
-// Velay's production load balancer terminates every tunnel connection at
+// Tunnel's production load balancer terminates every tunnel connection at
 // exactly 3600s (BackendConfig timeoutSec), killing any proxied call
 // mid-stream. Refresh the tunnel ourselves before that deadline (but only
 // while nothing is proxied through it) so the LB's clock resets without
@@ -63,18 +63,18 @@ export type WebSocketConstructorWithOptions = {
   ): WebSocket;
 };
 
-export type VelayTunnelClientOptions = {
-  velayBaseUrl: string;
+export type TunnelClientOptions = {
+  tunnelBaseUrl: string;
   gatewayLoopbackBaseUrl: string;
   credentials: CredentialCache;
   configFile: ConfigFileCache;
   webSocketConstructor?: WebSocketConstructorWithOptions;
-  httpBridge?: typeof bridgeVelayHttpRequest;
+  httpBridge?: typeof bridgeTunnelHttpRequest;
   webSocketBridgeFactory?: (
     gatewayLoopbackBaseUrl: string,
-    sendFrame: (frame: VelayFrame) => void,
+    sendFrame: (frame: TunnelFrame) => void,
     onIdle?: () => void,
-  ) => VelayWebSocketBridge;
+  ) => TunnelWebSocketBridge;
   reconnect?: {
     baseDelayMs?: number;
     maxDelayMs?: number;
@@ -97,10 +97,10 @@ export type TimerApi = {
   clearTimeout: (timer: unknown) => void;
 };
 
-export class VelayTunnelClient {
+export class TunnelClient {
   private readonly webSocketConstructor: WebSocketConstructorWithOptions;
-  private readonly httpBridge: typeof bridgeVelayHttpRequest;
-  private readonly webSocketBridge: VelayWebSocketBridge;
+  private readonly httpBridge: typeof bridgeTunnelHttpRequest;
+  private readonly webSocketBridge: TunnelWebSocketBridge;
   private readonly backoff: ExponentialBackoff;
   private readonly heartbeatIntervalMs: number;
   private readonly heartbeatReadTimeoutMs: number;
@@ -130,11 +130,11 @@ export class VelayTunnelClient {
   // detect a disabled → enabled transition and wake a waiting reconnect.
   private lastPublicIngressDisabled = false;
 
-  constructor(private readonly options: VelayTunnelClientOptions) {
+  constructor(private readonly options: TunnelClientOptions) {
     this.webSocketConstructor =
       options.webSocketConstructor ??
       (WebSocket as unknown as WebSocketConstructorWithOptions);
-    this.httpBridge = options.httpBridge ?? bridgeVelayHttpRequest;
+    this.httpBridge = options.httpBridge ?? bridgeTunnelHttpRequest;
     this.webSocketBridge = (
       options.webSocketBridgeFactory ?? defaultWebSocketBridgeFactory
     )(
@@ -185,7 +185,7 @@ export class VelayTunnelClient {
     if (ws) {
       log.info(
         { reason },
-        "Restarting Velay tunnel with refreshed credentials",
+        "Restarting Tunnel tunnel with refreshed credentials",
       );
       this.disconnectActiveWebSocket(ws, 1000, "credentials changed");
       return;
@@ -195,7 +195,7 @@ export class VelayTunnelClient {
       this.credentialRefreshPending = true;
       log.info(
         { reason },
-        "Queued Velay credential refresh behind active connect",
+        "Queued Tunnel credential refresh behind active connect",
       );
       return;
     }
@@ -204,7 +204,7 @@ export class VelayTunnelClient {
   }
 
   /**
-   * Reconnect so Velay sees the current path rules. Only a live tunnel needs
+   * Reconnect so Tunnel sees the current path rules. Only a live tunnel needs
    * this: the next connect reads the registry itself, so a client that is
    * stopped or disconnected already picks the change up. Deferred while the
    * tunnel is busy, the same way the load-balancer refresh is. The socket to
@@ -226,7 +226,7 @@ export class VelayTunnelClient {
         this.refreshDue = true;
         return;
       }
-      log.info({ reason }, "Reconnecting Velay tunnel to advertise new rules");
+      log.info({ reason }, "Reconnecting Tunnel tunnel to advertise new rules");
       this.performTunnelRefresh(ws);
     }, RULES_REFRESH_DEBOUNCE_MS);
   }
@@ -242,7 +242,7 @@ export class VelayTunnelClient {
     );
     this.startAsync().catch((err) => {
       this.connecting = false;
-      log.error({ err }, "Failed to start Velay tunnel client");
+      log.error({ err }, "Failed to start Tunnel tunnel client");
       this.scheduleReconnect();
     });
   }
@@ -303,7 +303,7 @@ export class VelayTunnelClient {
     if (this.isPublicIngressDisabled()) {
       this.connecting = false;
       await this.clearPublishedPublicBaseUrl();
-      log.info("Velay tunnel waiting because public ingress is disabled");
+      log.info("Tunnel tunnel waiting because public ingress is disabled");
       this.scheduleReconnect();
       return;
     }
@@ -315,7 +315,7 @@ export class VelayTunnelClient {
       );
     } catch (err) {
       this.connecting = false;
-      log.warn({ err }, "Failed to read Velay tunnel credentials");
+      log.warn({ err }, "Failed to read Tunnel tunnel credentials");
       if (this.consumePendingCredentialRefresh("credentials read failed")) {
         return;
       }
@@ -334,7 +334,7 @@ export class VelayTunnelClient {
       if (this.consumePendingCredentialRefresh("assistant API key missing")) {
         return;
       }
-      log.info("Velay tunnel waiting for assistant API key");
+      log.info("Tunnel tunnel waiting for assistant API key");
       this.scheduleReconnect();
       return;
     }
@@ -343,11 +343,11 @@ export class VelayTunnelClient {
 
     let registerUrl: string;
     try {
-      registerUrl = buildRegisterWebSocketUrl(this.options.velayBaseUrl);
+      registerUrl = buildRegisterWebSocketUrl(this.options.tunnelBaseUrl);
     } catch (err) {
       this.connecting = false;
-      log.error({ err }, "Invalid Velay base URL");
-      if (this.consumePendingCredentialRefresh("Velay base URL invalid")) {
+      log.error({ err }, "Invalid Tunnel base URL");
+      if (this.consumePendingCredentialRefresh("Tunnel base URL invalid")) {
         return;
       }
       this.scheduleReconnect();
@@ -356,16 +356,16 @@ export class VelayTunnelClient {
 
     try {
       const ws = new this.webSocketConstructor(registerUrl, {
-        protocols: [VELAY_TUNNEL_SUBPROTOCOL],
+        protocols: [TUNNEL_TUNNEL_SUBPROTOCOL],
         headers: {
           Authorization: `Api-Key ${apiKey}`,
-          [VELAY_BINARY_WEBSOCKET_HEADER]: "1",
-          // Declares the path allowlist Velay enforces for inbound proxied
+          [TUNNEL_BINARY_WEBSOCKET_HEADER]: "1",
+          // Declares the path allowlist Tunnel enforces for inbound proxied
           // traffic on this tunnel. Read per attempt so a reconnect picks up
           // webhook routes registered since the last one. See
           // ./allowed-paths.ts for the route inventory and the platform-side
           // enforcement (ATL-402).
-          [VELAY_ALLOWED_PATHS_HEADER]: buildVelayAllowedPathsHeaderValue(() =>
+          [TUNNEL_ALLOWED_PATHS_HEADER]: buildTunnelAllowedPathsHeaderValue(() =>
             this.readRegisteredWebhookPaths(),
           ),
         },
@@ -376,14 +376,14 @@ export class VelayTunnelClient {
 
       ws.addEventListener("open", () => {
         if (this.ws !== ws || !this.running) return;
-        log.info("Velay tunnel connected");
+        log.info("Tunnel tunnel connected");
         this.startHeartbeat(ws);
       });
 
       ws.addEventListener("message", (event) => {
         void this.handleMessage(event.data, ws, expectedAssistantId).catch(
           (err) => {
-            log.error({ err }, "Failed to handle Velay frame");
+            log.error({ err }, "Failed to handle Tunnel frame");
           },
         );
       });
@@ -394,7 +394,7 @@ export class VelayTunnelClient {
 
       ws.addEventListener("error", (event) => {
         if (this.ws !== ws || !this.running) return;
-        log.warn({ error: String(event) }, "Velay tunnel WebSocket error");
+        log.warn({ error: String(event) }, "Tunnel tunnel WebSocket error");
         if (ws.readyState === WebSocket.CONNECTING) {
           this.disconnectActiveWebSocket(ws);
         }
@@ -403,14 +403,14 @@ export class VelayTunnelClient {
       if (this.credentialRefreshPending) {
         this.credentialRefreshPending = false;
         log.info(
-          "Restarting Velay tunnel because credentials changed during connect",
+          "Restarting Tunnel tunnel because credentials changed during connect",
         );
         this.disconnectActiveWebSocket(ws, 1000, "credentials changed");
       }
     } catch (err) {
       this.ws = null;
       this.connecting = false;
-      log.warn({ err }, "Failed to connect Velay tunnel");
+      log.warn({ err }, "Failed to connect Tunnel tunnel");
       if (this.consumePendingCredentialRefresh("WebSocket connect failed")) {
         return;
       }
@@ -421,7 +421,7 @@ export class VelayTunnelClient {
   private connectForCredentialRefresh(reason: string): void {
     this.connect().catch((err) => {
       this.connecting = false;
-      log.error({ err, reason }, "Velay credential refresh reconnect failed");
+      log.error({ err, reason }, "Tunnel credential refresh reconnect failed");
       this.scheduleReconnect();
     });
   }
@@ -432,7 +432,7 @@ export class VelayTunnelClient {
     this.credentialRefreshPending = false;
     log.info(
       { reason },
-      "Retrying Velay tunnel connect with refreshed credentials",
+      "Retrying Tunnel tunnel connect with refreshed credentials",
     );
     this.connectForCredentialRefresh(reason);
     return true;
@@ -445,45 +445,45 @@ export class VelayTunnelClient {
   ): Promise<void> {
     if (this.ws !== originWs || !this.running) return;
 
-    const frame = parseVelayFrame(data);
+    const frame = parseTunnelFrame(data);
     if (!frame) {
-      log.warn("Ignoring malformed Velay frame");
+      log.warn("Ignoring malformed Tunnel frame");
       return;
     }
 
     if (
-      frame.type === VELAY_FRAME_TYPES.heartbeat &&
+      frame.type === TUNNEL_FRAME_TYPES.heartbeat &&
       !this.peerHeartbeatConfirmed
     ) {
       this.peerHeartbeatConfirmed = true;
-      log.info("Velay peer confirmed heartbeat support");
+      log.info("Tunnel peer confirmed heartbeat support");
     }
     if (this.peerHeartbeatConfirmed || this.readTimeoutTimer) {
       this.resetReadTimeout(originWs);
     }
 
     switch (frame.type) {
-      case VELAY_FRAME_TYPES.registered:
+      case TUNNEL_FRAME_TYPES.registered:
         await this.handleRegisteredFrame(frame, originWs, platformAssistantId);
         return;
-      case VELAY_FRAME_TYPES.httpRequest:
+      case TUNNEL_FRAME_TYPES.httpRequest:
         await this.handleHttpRequestFrame(frame, originWs);
         return;
       case "websocket_binary":
-      case VELAY_FRAME_TYPES.websocketOpen:
-      case VELAY_FRAME_TYPES.websocketMessage:
-      case VELAY_FRAME_TYPES.websocketClose:
+      case TUNNEL_FRAME_TYPES.websocketOpen:
+      case TUNNEL_FRAME_TYPES.websocketMessage:
+      case TUNNEL_FRAME_TYPES.websocketClose:
         this.webSocketBridge.handleFrame(frame);
         return;
-      case VELAY_FRAME_TYPES.heartbeat:
+      case TUNNEL_FRAME_TYPES.heartbeat:
         return;
       default:
-        log.debug({ type: frame.type }, "Ignoring unsupported Velay frame");
+        log.debug({ type: frame.type }, "Ignoring unsupported Tunnel frame");
     }
   }
 
   private async handleRegisteredFrame(
-    frame: VelayRegisteredFrame,
+    frame: TunnelRegisteredFrame,
     originWs: WebSocket,
     platformAssistantId: string | undefined,
   ): Promise<void> {
@@ -493,11 +493,11 @@ export class VelayTunnelClient {
           expectedAssistantId: platformAssistantId,
           receivedAssistantId: frame.assistant_id,
         },
-        "Velay registered assistant ID mismatch",
+        "Tunnel registered assistant ID mismatch",
       );
       this.disconnectActiveWebSocket(
         originWs,
-        VELAY_POLICY_CLOSE_CODE,
+        TUNNEL_POLICY_CLOSE_CODE,
         "assistant ID mismatch",
       );
       return;
@@ -507,11 +507,11 @@ export class VelayTunnelClient {
     if (!publicUrl) {
       log.error(
         { publicUrl: frame.public_url },
-        "Velay registered invalid public URL",
+        "Tunnel registered invalid public URL",
       );
       this.disconnectActiveWebSocket(
         originWs,
-        VELAY_POLICY_CLOSE_CODE,
+        TUNNEL_POLICY_CLOSE_CODE,
         "invalid public URL",
       );
       return;
@@ -520,7 +520,7 @@ export class VelayTunnelClient {
     if (this.isPublicIngressDisabled()) {
       log.info(
         { publicUrl },
-        "Skipping Velay public URL publish because public ingress is disabled",
+        "Skipping Tunnel public URL publish because public ingress is disabled",
       );
       this.disconnectActiveWebSocket(originWs, 1000, "public ingress disabled");
       return;
@@ -529,12 +529,12 @@ export class VelayTunnelClient {
     await writeManagedPublicBaseUrl(publicUrl, this.options.configFile);
     this.publishedPublicBaseUrl = publicUrl;
     this.backoff.reset();
-    log.info({ publicUrl }, "Velay tunnel registered");
+    log.info({ publicUrl }, "Tunnel tunnel registered");
     this.scheduleTunnelRefresh(originWs, this.refreshAfterMs);
   }
 
   private async handleHttpRequestFrame(
-    frame: VelayHttpRequestFrame,
+    frame: TunnelHttpRequestFrame,
     originWs: WebSocket,
   ): Promise<void> {
     this.inFlightHttpRequests++;
@@ -564,7 +564,7 @@ export class VelayTunnelClient {
     this.webSocketBridge.closeAll();
     log.info(
       { code: event.code, reason: event.reason },
-      "Velay tunnel disconnected",
+      "Tunnel tunnel disconnected",
     );
     this.clearPublishedPublicBaseUrlThenReconnect();
   }
@@ -585,7 +585,7 @@ export class VelayTunnelClient {
   }
 
   /**
-   * Restart the tunnel before velay's load balancer terminates it (see
+   * Restart the tunnel before tunnel's load balancer terminates it (see
    * TUNNEL_REFRESH_AFTER_MS), so proxied calls stop dying at the hourly
    * boundary. Only fires while nothing is proxied through the tunnel; while
    * busy it marks the refresh due, so the tunnel refreshes the moment it
@@ -640,7 +640,7 @@ export class VelayTunnelClient {
   }
 
   private performTunnelRefresh(ws: WebSocket): void {
-    log.info("Refreshing idle Velay tunnel before the load balancer timeout");
+    log.info("Refreshing idle Tunnel tunnel before the load balancer timeout");
     this.backoff.reset();
     this.disconnectActiveWebSocket(ws, 1000, "proactive tunnel refresh");
   }
@@ -652,21 +652,21 @@ export class VelayTunnelClient {
     try {
       await clearManagedPublicBaseUrl(this.options.configFile, publicUrl);
     } catch (err) {
-      log.error({ err }, "Failed to clear Velay public URL");
+      log.error({ err }, "Failed to clear Tunnel public URL");
     }
   }
 
   private clearPublishedPublicBaseUrlThenReconnect(): void {
     void this.clearPublishedPublicBaseUrl()
       .catch((err) => {
-        log.error({ err }, "Failed to clear Velay public URL");
+        log.error({ err }, "Failed to clear Tunnel public URL");
       })
       .finally(() => {
         this.scheduleReconnect();
       });
   }
 
-  private sendFrame(frame: VelayFrame): boolean {
+  private sendFrame(frame: TunnelFrame): boolean {
     const ws = this.ws;
     if (!this.running || !ws || ws.readyState !== WebSocket.OPEN) {
       return false;
@@ -682,7 +682,7 @@ export class VelayTunnelClient {
     } catch (err) {
       log.warn(
         { err },
-        "Velay tunnel WebSocket send failed; forcing reconnect",
+        "Tunnel tunnel WebSocket send failed; forcing reconnect",
       );
       this.disconnectActiveWebSocket(ws, 1000, "websocket send failed");
       return false;
@@ -715,7 +715,7 @@ export class VelayTunnelClient {
       if (this.ws !== ws || !this.running || ws.readyState !== WebSocket.OPEN) {
         return;
       }
-      if (!this.sendFrame({ type: VELAY_FRAME_TYPES.heartbeat })) {
+      if (!this.sendFrame({ type: TUNNEL_FRAME_TYPES.heartbeat })) {
         return;
       }
       this.resetReadTimeout(ws);
@@ -733,7 +733,7 @@ export class VelayTunnelClient {
       if (this.ws !== ws || !this.running) return;
       log.warn(
         { timeoutMs: this.heartbeatReadTimeoutMs },
-        "Velay tunnel heartbeat read-timeout expired; forcing reconnect",
+        "Tunnel tunnel heartbeat read-timeout expired; forcing reconnect",
       );
       this.disconnectActiveWebSocket(ws, 1000, "heartbeat read timeout");
     }, this.heartbeatReadTimeoutMs);
@@ -748,7 +748,7 @@ export class VelayTunnelClient {
       this.reconnectTimer = null;
       this.connect().catch((err) => {
         this.connecting = false;
-        log.error({ err }, "Velay reconnect failed");
+        log.error({ err }, "Tunnel reconnect failed");
         this.scheduleReconnect();
       });
     }, delay);
@@ -763,7 +763,7 @@ export class VelayTunnelClient {
 
     if (disabled) {
       if (ws) {
-        log.info("Closing Velay tunnel because public ingress is disabled");
+        log.info("Closing Tunnel tunnel because public ingress is disabled");
         this.disconnectActiveWebSocket(ws, 1000, "public ingress disabled");
       }
       return;
@@ -782,7 +782,7 @@ export class VelayTunnelClient {
       }
       void this.connect().catch((err) => {
         this.connecting = false;
-        log.error({ err }, "Velay reconnect after ingress enable failed");
+        log.error({ err }, "Tunnel reconnect after ingress enable failed");
         this.scheduleReconnect();
       });
     }
@@ -797,29 +797,29 @@ export class VelayTunnelClient {
   }
 }
 
-export function createVelayTunnelClient(
+export function createTunnelClient(
   config: GatewayConfig,
   deps: {
     credentials: CredentialCache;
     configFile: ConfigFileCache;
   },
-): VelayTunnelClient | undefined {
-  if (!config.velayBaseUrl) {
+): TunnelClient | undefined {
+  if (!config.tunnelBaseUrl) {
     const isPlatform =
       process.env.IS_PLATFORM?.trim().toLowerCase() === "true" ||
       process.env.IS_PLATFORM?.trim() === "1";
     if (isPlatform) {
       log.warn(
-        "VELAY_BASE_URL is not configured on a platform pod — the assistant tunnel will not be established and inbound webhook delivery will fail",
+        "TUNNEL_BASE_URL is not configured on a platform pod — the assistant tunnel will not be established and inbound webhook delivery will fail",
       );
     }
     void clearManagedPublicBaseUrl(deps.configFile).catch((err) => {
-      log.error({ err }, "Failed to clear disabled Velay public URL");
+      log.error({ err }, "Failed to clear disabled Tunnel public URL");
     });
     return undefined;
   }
-  return new VelayTunnelClient({
-    velayBaseUrl: config.velayBaseUrl,
+  return new TunnelClient({
+    tunnelBaseUrl: config.tunnelBaseUrl,
     gatewayLoopbackBaseUrl: config.gatewayInternalBaseUrl,
     credentials: deps.credentials,
     configFile: deps.configFile,
@@ -833,10 +833,10 @@ const defaultTimerApi: TimerApi = {
 
 function defaultWebSocketBridgeFactory(
   gatewayLoopbackBaseUrl: string,
-  sendFrame: (frame: VelayFrame) => void,
+  sendFrame: (frame: TunnelFrame) => void,
   onIdle?: () => void,
-): VelayWebSocketBridge {
-  return new VelayWebSocketBridge(gatewayLoopbackBaseUrl, sendFrame, onIdle);
+): TunnelWebSocketBridge {
+  return new TunnelWebSocketBridge(gatewayLoopbackBaseUrl, sendFrame, onIdle);
 }
 
 async function mutateGatewayConfigFile(
@@ -855,7 +855,7 @@ async function mutateGatewayConfigFile(
   }
 }
 
-const VELAY_MANAGED_BY = "velay";
+const TUNNEL_MANAGED_BY = "tunnel";
 
 async function writeManagedPublicBaseUrl(
   publicUrl: string,
@@ -863,18 +863,18 @@ async function writeManagedPublicBaseUrl(
 ): Promise<void> {
   return mutateGatewayConfigFile(
     configFile,
-    "Cannot publish Velay public URL because config.json is malformed",
+    "Cannot publish Tunnel public URL because config.json is malformed",
     (data) => {
       const ingress = getMutableIngress(data);
       if (
         ingress.publicBaseUrl === publicUrl &&
-        ingress.publicBaseUrlManagedBy === VELAY_MANAGED_BY
+        ingress.publicBaseUrlManagedBy === TUNNEL_MANAGED_BY
       ) {
         return false;
       }
 
       ingress.publicBaseUrl = publicUrl;
-      ingress.publicBaseUrlManagedBy = VELAY_MANAGED_BY;
+      ingress.publicBaseUrlManagedBy = TUNNEL_MANAGED_BY;
       data.ingress = ingress;
       return true;
     },
@@ -887,7 +887,7 @@ async function writeManagedPublicBaseUrl(
  * `false`, so nothing is written).
  *
  * Flipping `enabled` from `false` → `true` triggers the gateway config
- * watcher, which lets the Velay reconnect loop (`connect()` re-checks
+ * watcher, which lets the Tunnel reconnect loop (`connect()` re-checks
  * `isPublicIngressDisabled()` on each attempt) establish the tunnel and
  * publish the public URL.
  */
@@ -915,7 +915,7 @@ export async function clearManagedPublicBaseUrl(
 ): Promise<void> {
   return mutateGatewayConfigFile(
     configFile,
-    "Cannot clear Velay public URL because config.json is malformed",
+    "Cannot clear Tunnel public URL because config.json is malformed",
     (data) => {
       if (
         !data.ingress ||
@@ -926,7 +926,7 @@ export async function clearManagedPublicBaseUrl(
       }
 
       const ingress = { ...(data.ingress as Record<string, unknown>) };
-      if (ingress.publicBaseUrlManagedBy !== VELAY_MANAGED_BY) {
+      if (ingress.publicBaseUrlManagedBy !== TUNNEL_MANAGED_BY) {
         return false;
       }
       if (
@@ -962,7 +962,7 @@ function buildRegisterWebSocketUrl(baseUrl: string): string {
   if (url.protocol === "http:") url.protocol = "ws:";
   if (url.protocol === "https:") url.protocol = "wss:";
   if (url.protocol !== "ws:" && url.protocol !== "wss:") {
-    throw new Error("VELAY_BASE_URL must use http, https, ws, or wss");
+    throw new Error("TUNNEL_BASE_URL must use http, https, ws, or wss");
   }
   return url.toString();
 }

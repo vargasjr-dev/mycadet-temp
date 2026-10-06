@@ -178,7 +178,7 @@ describe("approve", () => {
   });
 
   it("claims both accepted spellings of every route it approves", async () => {
-    // Velay forwards only paths this assistant has claimed, and matches them
+    // Tunnel forwards only paths this assistant has claimed, and matches them
     // exactly, so a grant that wrote no row for the trailing-slash spelling
     // leaves a request the gateway would answer rejected at the edge.
     const routes = [ROUTES[0]!, { ...ROUTES[0]!, path: "events/inbound" }];

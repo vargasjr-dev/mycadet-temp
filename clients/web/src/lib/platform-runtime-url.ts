@@ -4,7 +4,7 @@
  * else the page origin (the platform SPA is served from the platform host).
  *
  * Lives in its own leaf module — not `local-mode` — so transport-level
- * consumers (e.g. the live-voice velay host derivation) don't pull the whole
+ * consumers (e.g. the live-voice tunnel host derivation) don't pull the whole
  * local-mode graph into theirs.
  */
 export function getPlatformRuntimeUrl(): string {

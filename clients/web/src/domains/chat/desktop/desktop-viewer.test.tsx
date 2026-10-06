@@ -254,7 +254,7 @@ describe("DesktopViewer", () => {
     expect(screen.getByRole("button", { name: "Reconnect" })).not.toBeNull();
   });
 
-  test("velay's 1013 tunnel drop is a lost connection with a reconnect", async () => {
+  test("tunnel's 1013 tunnel drop is a lost connection with a reconnect", async () => {
     await mountPanel();
     act(() => rfb().emit("connect"));
 

@@ -27,7 +27,7 @@ const SENSITIVE_HEADERS = new Set([
   "set-cookie",
   "x-api-key",
   "x-auth-token",
-  "x-vellum-velay-bridge-auth",
+  "x-vellum-tunnel-bridge-auth",
 ]);
 
 // ---------------------------------------------------------------------------

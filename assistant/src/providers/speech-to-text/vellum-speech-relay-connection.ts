@@ -3,14 +3,14 @@
  * (`/v1/speech/{stt,tts}/stream`): connection resolution, and mapping the
  * relay's error contract onto SttError categories.
  *
- * The daemon never dials velay itself — velay contact is gateway-only so
+ * The daemon never dials tunnel itself — tunnel contact is gateway-only so
  * deterministic policy stays in a process the agent cannot rewrite. The
  * gateway route authenticates the daemon with a self-minted service JWT
  * (both processes share the HMAC signing key), attaches the Vellum
- * assistant API key on its own upstream leg to velay, and pipes Deepgram
- * wire frames verbatim. The gateway mirrors velay's error contract:
+ * assistant API key on its own upstream leg to tunnel, and pipes Deepgram
+ * wire frames verbatim. The gateway mirrors tunnel's error contract:
  * rejections are JSON `{code, detail}` bodies, and mid-session failures
- * are one `velay_error` text frame followed by an abnormal close.
+ * are one `tunnel_error` text frame followed by an abnormal close.
  */
 
 import { getGatewayInternalBaseUrl } from "../../config/env.js";
@@ -31,7 +31,7 @@ const DAEMON_SERVICE_SUB = "svc:daemon:self";
 /**
  * Per-dial token TTL. Deliberately short: the gateway validates at
  * upgrade time only, and every (re-)dial mints fresh — a session that
- * outlives its token (velay caps at 30 minutes) is fine, but a re-dial
+ * outlives its token (tunnel caps at 30 minutes) is fine, but a re-dial
  * must never reuse one.
  */
 const RELAY_TOKEN_TTL_SECONDS = 300;
@@ -83,19 +83,19 @@ export async function resolveSpeechRelayConnection(): Promise<SpeechRelayConnect
   };
 }
 
-/** The relay's error contract: HTTP reject bodies and velay_error frames. */
-export interface VelayErrorInfo {
+/** The relay's error contract: HTTP reject bodies and tunnel_error frames. */
+export interface TunnelErrorInfo {
   code: string;
   detail?: string;
 }
 
 /**
  * Map a relay error code onto an SttError category and a user-actionable
- * message. Codes are velay's contract plus the gateway route's own
+ * message. Codes are tunnel's contract plus the gateway route's own
  * (`missing_platform_connection`, `invalid_token`) — unknown codes degrade
  * to a provider error carrying the code for diagnosability.
  */
-export function mapVelayError(error: VelayErrorInfo): {
+export function mapTunnelError(error: TunnelErrorInfo): {
   category: SttErrorCategory;
   message: string;
 } {
@@ -104,7 +104,7 @@ export function mapVelayError(error: VelayErrorInfo): {
       return {
         category: "auth",
         message:
-          "The Vellum speech relay rejected this assistant's API key — the assistant's platform environment may not match the relay it is dialing (set VELAY_BASE_URL on the gateway to the matching environment, e.g. https://velay-staging.vellum.ai for staging).",
+          "The Vellum speech relay rejected this assistant's API key — the assistant's platform environment may not match the relay it is dialing (set TUNNEL_BASE_URL on the gateway to the matching environment, e.g. https://tunnel-staging.mycadet.ai for staging).",
       };
     case "missing_platform_connection":
       return {
@@ -143,7 +143,7 @@ export function mapVelayError(error: VelayErrorInfo): {
 /**
  * Diagnose a failed WebSocket dial by replaying the request as a plain
  * HTTP GET. The gateway route runs its whole gate on non-upgrade requests
- * (token, stored credential, then velay's own gate via an upstream probe),
+ * (token, stored credential, then tunnel's own gate via an upstream probe),
  * so a rejected upgrade reproduces as a JSON `{code, detail}` body; a
  * request that passes everything returns a 426 whose body is ignored here
  * (null → the original failure was transient/transport-level).
@@ -152,9 +152,9 @@ export function mapVelayError(error: VelayErrorInfo): {
  * so this probe is the only way to distinguish "bad connection state"
  * from "gateway down".
  */
-export async function probeVelayRejection(
+export async function probeTunnelRejection(
   httpUrl: string,
-): Promise<VelayErrorInfo | null> {
+): Promise<TunnelErrorInfo | null> {
   try {
     const res = await fetch(httpUrl, {
       signal: AbortSignal.timeout(5_000),

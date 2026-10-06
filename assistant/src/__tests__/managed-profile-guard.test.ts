@@ -577,11 +577,11 @@ describe("PATCH /v1/config — managed profile deletion guard", () => {
     expect(result).toHaveProperty("llm");
   });
 
-  test("clears stale Velay ownership when manually patching public base URL", async () => {
+  test("clears stale Tunnel ownership when manually patching public base URL", async () => {
     seedRawConfig({
       ingress: {
-        publicBaseUrl: "https://stale-velay.example.test",
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrl: "https://stale-tunnel.example.test",
+        publicBaseUrlManagedBy: "tunnel",
       },
     });
 
@@ -595,7 +595,7 @@ describe("PATCH /v1/config — managed profile deletion guard", () => {
     expect(committedRaw()).toEqual({
       ingress: {
         publicBaseUrl: "https://manual.example.test",
-        publicBaseUrlManagedBy: "velay",
+        publicBaseUrlManagedBy: "tunnel",
       },
     });
   });

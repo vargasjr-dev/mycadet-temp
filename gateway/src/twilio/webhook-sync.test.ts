@@ -32,7 +32,7 @@ mock.module("../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchImpl(...args),
 }));
 
-let velayWebhooksEnabled = false;
+let tunnelWebhooksEnabled = false;
 let claimedRoutes: { path: string; type: string; source?: string | null }[] =
   [];
 let claimError: Error | undefined;
@@ -60,7 +60,7 @@ const actualFlagResolver = await import("../feature-flag-resolver.js");
 mock.module("../feature-flag-resolver.js", () => ({
   ...actualFlagResolver,
   isFeatureFlagEnabled: (flag: string) =>
-    flag === "velay-webhooks" ? velayWebhooksEnabled : false,
+    flag === "tunnel-webhooks" ? tunnelWebhooksEnabled : false,
 }));
 
 const { syncConfiguredTwilioPhoneNumberWebhooks } =
@@ -68,7 +68,7 @@ const { syncConfiguredTwilioPhoneNumberWebhooks } =
 
 afterEach(() => {
   resetMockFetch();
-  velayWebhooksEnabled = false;
+  tunnelWebhooksEnabled = false;
   claimedRoutes = [];
   claimError = undefined;
 });
@@ -203,7 +203,7 @@ describe("syncConfiguredTwilioPhoneNumberWebhooks", () => {
         phoneNumber: PHONE_NUMBER,
         accountSid: ACCOUNT_SID,
         authToken: AUTH_TOKEN,
-        publicBaseUrl: " https://velay.example.test/twilio/ ",
+        publicBaseUrl: " https://tunnel.example.test/twilio/ ",
       }),
     );
 
@@ -211,11 +211,11 @@ describe("syncConfiguredTwilioPhoneNumberWebhooks", () => {
     expect(calls).toHaveLength(2);
     const body = new URLSearchParams(String(calls[1].init.body));
     expect(body.get("VoiceUrl")).toBe(
-      "https://velay.example.test/twilio/webhooks/twilio/voice",
+      "https://tunnel.example.test/twilio/webhooks/twilio/voice",
     );
     expect(body.get("VoiceMethod")).toBe("POST");
     expect(body.get("StatusCallback")).toBe(
-      "https://velay.example.test/twilio/webhooks/twilio/status",
+      "https://tunnel.example.test/twilio/webhooks/twilio/status",
     );
     expect(body.get("StatusCallbackMethod")).toBe("POST");
     expect(calls[1].init.headers).toEqual({
@@ -296,7 +296,7 @@ describe("syncConfiguredTwilioPhoneNumberWebhooks", () => {
   });
 
   test("claims the voice and status paths before calling Twilio when the flag is on", async () => {
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     mockTwilioLookupAndUpdate();
     let claimedBeforeTwilio: number | undefined;
     const realFetchImpl = fetchImpl;
@@ -310,7 +310,7 @@ describe("syncConfiguredTwilioPhoneNumberWebhooks", () => {
         phoneNumber: PHONE_NUMBER,
         accountSid: ACCOUNT_SID,
         authToken: AUTH_TOKEN,
-        publicBaseUrl: "https://velay.example.test",
+        publicBaseUrl: "https://tunnel.example.test",
       }),
     );
 
@@ -351,7 +351,7 @@ describe("syncConfiguredTwilioPhoneNumberWebhooks", () => {
   });
 
   test("syncs the provider anyway when a path claim fails", async () => {
-    velayWebhooksEnabled = true;
+    tunnelWebhooksEnabled = true;
     claimError = new Error("database disk image is malformed");
     mockTwilioLookupAndUpdate();
 

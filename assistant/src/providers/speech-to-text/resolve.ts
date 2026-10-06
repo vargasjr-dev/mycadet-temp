@@ -657,7 +657,7 @@ async function createStreamingTranscriber(
       });
     }
     case "vellum": {
-      // Managed speech dials the GATEWAY's speech relay (velay contact is
+      // Managed speech dials the GATEWAY's speech relay (tunnel contact is
       // gateway-only); the apiKey argument is unused. Diarization is
       // unsupported (not in the relay's param allowlist) and silently
       // ignored, matching Gemini/Whisper — as is utteranceEndMs (the relay
@@ -685,7 +685,7 @@ async function createStreamingTranscriber(
         // `language` IS in the relay's param allowlist, and the relay pins
         // the STT model to nova-3 server-side, so "multi" code-switching
         // needs nothing from the platform, only this forward. Source:
-        // vellum-assistant-platform: velay/internal/velay/deepgram.go
+        // vellum-assistant-platform: tunnel/internal/tunnel/deepgram.go
         // (deepgramSTTParams allowlist; deepgramSTTModel pin).
         ...(options.language ? { language: options.language } : {}),
         ...(options.utteranceBoundaryFinals

@@ -1,5 +1,5 @@
 /**
- * Path shapes shared by the Velay bridge, the webhook ingress route store, and
+ * Path shapes shared by the Tunnel bridge, the webhook ingress route store, and
  * the plugin declarations whose paths are composed into that registry.
  *
  * This module holds no imports of its own so those sides can agree on what a
@@ -18,7 +18,7 @@ export const PLUGIN_WEBHOOK_PATH_PREFIX = `${WEBHOOK_PATH_PREFIX}plugins/`;
 /**
  * Longest path the webhook ingress registry stores. Anything that composes a
  * path destined for the registry has to fit its longest spelling inside this,
- * because a path the registry refuses is one Velay is never told to forward.
+ * because a path the registry refuses is one Tunnel is never told to forward.
  */
 export const MAX_WEBHOOK_INGRESS_PATH_LENGTH = 512;
 

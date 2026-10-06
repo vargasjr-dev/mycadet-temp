@@ -7,7 +7,7 @@ export const TWILIO_MEDIA_STREAM_WEBHOOK_PATH = "/webhooks/twilio/media-stream";
 /**
  * Sentinel placeholder embedded in TwiML by the assistant where the real
  * public base URL should go. The gateway replaces `wss://__VELLUM_PUBLIC_BASE_URL__/…`
- * with the actual public URL (from Velay registration, config, or the
+ * with the actual public URL (from Tunnel registration, config, or the
  * `X-Vellum-Ingress-URL` header) before returning TwiML to Twilio.
  *
  * The placeholder uses `https://` so that `buildTwilioMediaStreamUrl` can

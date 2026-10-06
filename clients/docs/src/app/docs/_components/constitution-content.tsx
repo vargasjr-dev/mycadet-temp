@@ -674,7 +674,7 @@ export function ConstitutionContent() {
           </SectionHeading>
           <p className="mb-3 text-zinc-600">
             This document lives at <code>CONSTITUTION.md</code> in the{" "}
-            <a href="https://github.com/vargasjr-dev/mycadet" target="_blank" rel="noopener noreferrer" className="text-zinc-800 underline hover:text-zinc-950"><code>cadet-ai/cadet-assistant</code></a> open source repository, alongside <code>GLOSSARY.md</code> and
+            <a href="https://github.com/vargasjr-dev/mycadet" target="_blank" rel="noopener noreferrer" className="text-zinc-800 underline hover:text-zinc-950"><code>vargasjr-dev/mycadet</code></a> open source repository, alongside <code>GLOSSARY.md</code> and
             other foundational materials of comparable weight.
           </p>
           <p className="mb-3 text-zinc-600">Housing it in a repo provides:</p>

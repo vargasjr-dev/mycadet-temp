@@ -1,4 +1,4 @@
-import { isManagedCloud } from "@vellumai/local-mode/contract";
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import { existsSync, unlinkSync } from "fs";
 import { join } from "path";
 

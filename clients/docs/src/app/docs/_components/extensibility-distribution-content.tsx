@@ -357,7 +357,7 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290`}</code>
               href="https://github.com/vargasjr-dev/mycadet"
               className={linkClass}
             >
-              <code>cadet-ai/cadet-assistant</code>
+              <code>vargasjr-dev/mycadet</code>
             </Link>{" "}
             adding your plugin to <code>plugins/marketplace.json</code>. Copy
             this template and fill in your details:

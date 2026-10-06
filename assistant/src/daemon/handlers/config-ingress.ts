@@ -82,19 +82,19 @@ export function loadRecordedAssistantId(): string | null {
 /** Key under `ingress` naming the component that owns `publicBaseUrl`. */
 const INGRESS_MANAGED_BY_KEY = "publicBaseUrlManagedBy";
 
-/** Value that key carries when a self-hosted gateway's Velay tunnel owns it. */
-const VELAY_MANAGED_BY = "velay";
+/** Value that key carries when a self-hosted gateway's Tunnel tunnel owns it. */
+const TUNNEL_MANAGED_BY = "tunnel";
 
 /**
- * True when Velay owns `ingress.publicBaseUrl`.
+ * True when Tunnel owns `ingress.publicBaseUrl`.
  *
- * A gateway started with `VELAY_BASE_URL` writes the URL when its tunnel comes
+ * A gateway started with `TUNNEL_BASE_URL` writes the URL when its tunnel comes
  * up, clears it when the tunnel drops, and reconnects on its own
- * (`gateway/src/velay/client.ts`). Readers must not offer the user a tunnel
+ * (`gateway/src/tunnel/client.ts`). Readers must not offer the user a tunnel
  * command for an ingress they do not own.
  */
-export function isVelayManagedIngress(): boolean {
-  return readIngressSection()[INGRESS_MANAGED_BY_KEY] === VELAY_MANAGED_BY;
+export function isTunnelManagedIngress(): boolean {
+  return readIngressSection()[INGRESS_MANAGED_BY_KEY] === TUNNEL_MANAGED_BY;
 }
 
 /**

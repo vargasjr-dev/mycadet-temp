@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it } from "bun:test";
 import {
   MAX_WEBHOOK_INGRESS_PATH_LENGTH,
   PLUGIN_WEBHOOK_PATH_PREFIX,
-} from "../velay/path-utils.js";
+} from "../tunnel/path-utils.js";
 import {
   PLUGIN_INGRESS_MANIFEST_RELPATH,
   PLUGIN_WEBHOOK_PATH_PATTERN,
@@ -421,7 +421,7 @@ describe("parsePluginIngressManifest", () => {
   });
 
   it("rejects traversal that would clean out of the plugin's namespace", () => {
-    // Velay percent-decodes and path.Cleans before matching its allowlist,
+    // Tunnel percent-decodes and path.Cleans before matching its allowlist,
     // so `../other/steal` would otherwise escape the namespace.
     for (const path of ["../other/steal", "a/../../b", "./hook"]) {
       expect(() =>
@@ -433,7 +433,7 @@ describe("parsePluginIngressManifest", () => {
   });
 
   it("rejects percent-encoded traversal", () => {
-    // Velay decodes before matching, so `%2e%2e/` would escape the
+    // Tunnel decodes before matching, so `%2e%2e/` would escape the
     // declaring plugin's namespace despite passing a literal-segment check.
     for (const path of [
       "%2e%2e/other/hook",

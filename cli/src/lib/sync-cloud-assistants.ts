@@ -13,7 +13,7 @@
  * "Platform: …" status without ever entering the platform fetch path.
  */
 
-import { isManagedCloud } from "@vellumai/local-mode/contract";
+import { isManagedCloud } from "./managed-cloud.js";
 import {
   loadAllAssistants,
   removeAssistantEntry,

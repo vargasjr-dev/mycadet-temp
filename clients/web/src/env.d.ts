@@ -41,12 +41,12 @@ interface ImportMetaEnv {
    */
   readonly VITE_ANDROID_PLAY_STORE_URL?: string;
   /**
-   * Override for the live-voice velay host (no scheme), e.g. `localhost:8501`
-   * for a local `vel up` velay. When unset the host is derived at runtime from
-   * the platform host (`velay.vellum.ai`, `velay-{env}.vellum.ai`). See
+   * Override for the live-voice tunnel host (no scheme), e.g. `localhost:8501`
+   * for a local `vel up` tunnel. When unset the host is derived at runtime from
+   * the platform host (`tunnel.mycadet.ai`, `tunnel-{env}.vellum.ai`). See
    * `domains/chat/voice/live-voice/connection.ts`.
    */
-  readonly VITE_VELAY_HOST?: string;
+  readonly VITE_TUNNEL_HOST?: string;
 
   /** Feature flag overrides via env vars: `VITE_VELLUM_FLAG_<UPPER_SNAKE_KEY>=true|false|string`. */
   readonly [key: `VITE_VELLUM_FLAG_${string}`]: string | undefined;

@@ -4,7 +4,7 @@ import {
   decodeBinaryWebSocketFrame,
   encodeBinaryWebSocketFrame,
 } from "./binary-websocket.js";
-import { parseVelayFrame } from "./protocol.js";
+import { parseTunnelFrame } from "./protocol.js";
 
 const id = "0123456789abcdef0123456789abcdef";
 
@@ -27,10 +27,10 @@ describe("binary desktop envelope", () => {
       ]);
       expect(encodeBinaryWebSocketFrame(frame)).toEqual(expected);
       expect(decodeBinaryWebSocketFrame(expected)).toEqual(frame);
-      expect(parseVelayFrame(expected.buffer)).toEqual(frame);
+      expect(parseTunnelFrame(expected.buffer)).toEqual(frame);
       const padded = new Uint8Array(expected.length + 4);
       padded.set(expected, 2);
-      expect(parseVelayFrame(padded.subarray(2, -2))).toEqual(frame);
+      expect(parseTunnelFrame(padded.subarray(2, -2))).toEqual(frame);
     });
   }
   test("rejects truncated, unknown-version, and invalid-ID frames", () => {

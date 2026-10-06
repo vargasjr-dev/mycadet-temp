@@ -75,17 +75,19 @@ export function DeveloperGuideArchitectureContent() {
           </SectionHeading>
           <pre className="overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
 {`/
+├── .github/              # GitHub Actions workflows
+├── assets/               # Brand assets and images
 ├── assistant/            # Bun-based assistant runtime (runtime, CLI, HTTP API)
-├── clients/              # Native macOS client (menu bar app)
-├── gateway/              # Gateway service (Telegram, Twilio, OAuth, reverse proxy)
-├── credential-executor/  # Credential Execution Service (isolated RPC boundary)
-├── packages/             # Shared private packages (CES contracts, credential storage, egress proxy)
 ├── cli/                  # Cadet CLI
-├── skills/               # Bundled skill definitions
-├── scripts/              # Utility scripts (publishing, tunneling, releases)
+├── clients/              # Native clients (macOS, iOS, Windows, web, docs, Chrome extension)
+├── credential-executor/  # Credential Execution Service (isolated RPC boundary)
+├── docs/                 # Internal engineering docs and proposals
+├── gateway/              # Gateway service (Telegram, Twilio, OAuth, reverse proxy)
 ├── meta/                 # Meta configuration
-├── .claude/              # Claude Code slash commands and workflow tools
-└── .github/              # GitHub Actions workflows`}
+├── packages/             # Shared private packages (CES contracts, credential storage, egress proxy)
+├── plugins/              # Plugin workspace (MCP catalog, marketplace)
+├── scripts/              # Utility scripts (publishing, tunneling, releases)
+└── skills/               # Bundled skill definitions`}
           </pre>
         </section>
 

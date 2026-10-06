@@ -1,4 +1,4 @@
-import { isManagedCloud } from "@vellumai/local-mode/contract";
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import { spawnSync } from "child_process";
 import { writeFileSync } from "fs";
 import { join } from "path";

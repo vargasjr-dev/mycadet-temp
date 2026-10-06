@@ -3,22 +3,22 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/ingress";
 
-import { VELAY_BRIDGE_AUTH_HEADER } from "./bridge-auth.js";
+import { TUNNEL_BRIDGE_AUTH_HEADER } from "./bridge-auth.js";
 import {
-  VELAY_FRAME_TYPES,
-  VELAY_WEBSOCKET_MESSAGE_TYPES,
-  type VelayFrame,
-  type VelayWebSocketOpenFrame,
+  TUNNEL_FRAME_TYPES,
+  TUNNEL_WEBSOCKET_MESSAGE_TYPES,
+  type TunnelFrame,
+  type TunnelWebSocketOpenFrame,
 } from "./protocol.js";
 import { FakeWebSocket } from "./test-fake-websocket.js";
-import { VelayWebSocketBridge } from "./websocket-bridge.js";
+import { TunnelWebSocketBridge } from "./websocket-bridge.js";
 
 const WS_OPEN = WebSocket.OPEN;
 
 const OriginalWebSocket = globalThis.WebSocket;
 let fakeSocket: FakeWebSocket;
-let sentFrames: VelayFrame[];
-let bridge: VelayWebSocketBridge;
+let sentFrames: TunnelFrame[];
+let bridge: TunnelWebSocketBridge;
 let WebSocketMock: ReturnType<typeof mock>;
 
 beforeEach(() => {
@@ -27,7 +27,7 @@ beforeEach(() => {
   WebSocketMock = mock(() => fakeSocket);
   Object.assign(WebSocketMock, FakeWebSocket);
   globalThis.WebSocket = WebSocketMock as unknown as typeof WebSocket;
-  bridge = new VelayWebSocketBridge("http://127.0.0.1:7830", (frame) => {
+  bridge = new TunnelWebSocketBridge("http://127.0.0.1:7830", (frame) => {
     sentFrames.push(frame);
   });
 });
@@ -37,10 +37,10 @@ afterAll(() => {
 });
 
 function makeOpenFrame(
-  overrides: Partial<VelayWebSocketOpenFrame> = {},
-): VelayWebSocketOpenFrame {
+  overrides: Partial<TunnelWebSocketOpenFrame> = {},
+): TunnelWebSocketOpenFrame {
   return {
-    type: VELAY_FRAME_TYPES.websocketOpen,
+    type: TUNNEL_FRAME_TYPES.websocketOpen,
     connection_id: "conn-123",
     path: "/webhooks/twilio/media-stream",
     raw_query: "callSessionId=session-123&token=edge-token",
@@ -58,7 +58,7 @@ async function flushPromises(): Promise<void> {
   await Promise.resolve();
 }
 
-describe("VelayWebSocketBridge", () => {
+describe("TunnelWebSocketBridge", () => {
   test("opens a loopback WebSocket and sends websocket_opened after local open", () => {
     bridge.handleFrame(
       makeOpenFrame({
@@ -68,7 +68,7 @@ describe("VelayWebSocketBridge", () => {
           host: ["public.example.com"],
           "sec-websocket-key": ["client-key"],
           "x-twilio-signature": ["sig-123"],
-          [VELAY_BRIDGE_AUTH_HEADER]: ["spoofed"],
+          [TUNNEL_BRIDGE_AUTH_HEADER]: ["spoofed"],
         },
         subprotocol: "audio.twilio.com",
       }),
@@ -88,8 +88,8 @@ describe("VelayWebSocketBridge", () => {
     expect(options.headers.authorization).toBe("Bearer edge-token");
     expect(options.headers.host).toBe("public.example.com");
     expect(options.headers["x-twilio-signature"]).toBe("sig-123");
-    expect(options.headers[VELAY_BRIDGE_AUTH_HEADER]).toBeString();
-    expect(options.headers[VELAY_BRIDGE_AUTH_HEADER]).not.toBe("spoofed");
+    expect(options.headers[TUNNEL_BRIDGE_AUTH_HEADER]).toBeString();
+    expect(options.headers[TUNNEL_BRIDGE_AUTH_HEADER]).not.toBe("spoofed");
     expect(options.headers.connection).toBeUndefined();
     expect(options.headers["sec-websocket-key"]).toBeUndefined();
 
@@ -98,7 +98,7 @@ describe("VelayWebSocketBridge", () => {
 
     expect(sentFrames).toEqual([
       {
-        type: VELAY_FRAME_TYPES.websocketOpened,
+        type: TUNNEL_FRAME_TYPES.websocketOpened,
         connection_id: "conn-123",
       },
     ]);
@@ -145,21 +145,21 @@ describe("VelayWebSocketBridge", () => {
               payload: desktopBytes,
             }
           : {
-              type: VELAY_FRAME_TYPES.websocketMessage,
+              type: TUNNEL_FRAME_TYPES.websocketMessage,
               connection_id: "stream-0",
-              message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.binary,
+              message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.binary,
               body_base64: base64(desktopBytes),
             },
       );
       expect(sentFrames).toContainEqual({
-        type: VELAY_FRAME_TYPES.websocketMessage,
+        type: TUNNEL_FRAME_TYPES.websocketMessage,
         connection_id: "stream-1",
-        message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.text,
+        message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.text,
         body_base64: base64('{"type":"ready"}'),
       });
 
       bridge.close({
-        type: VELAY_FRAME_TYPES.websocketClose,
+        type: TUNNEL_FRAME_TYPES.websocketClose,
         connection_id: "stream-0",
         code: 4011,
         reason: "Viewer too slow",
@@ -177,15 +177,15 @@ describe("VelayWebSocketBridge", () => {
         sockets[index]!.emit("message", { data: desktopBytes });
         await flushPromises();
         expect(sentFrames.at(-1)).toEqual({
-          type: VELAY_FRAME_TYPES.websocketMessage,
+          type: TUNNEL_FRAME_TYPES.websocketMessage,
           connection_id: `stream-${index}`,
-          message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.binary,
+          message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.binary,
           body_base64: base64(desktopBytes),
         });
         bridge.message({
-          type: VELAY_FRAME_TYPES.websocketMessage,
+          type: TUNNEL_FRAME_TYPES.websocketMessage,
           connection_id: `stream-${index}`,
-          message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.text,
+          message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.text,
           body_base64: base64("still connected"),
         });
         expect(sockets[index]!.closes).toEqual([]);
@@ -201,7 +201,7 @@ describe("VelayWebSocketBridge", () => {
 
     expect(sentFrames).toEqual([
       {
-        type: VELAY_FRAME_TYPES.websocketOpenError,
+        type: TUNNEL_FRAME_TYPES.websocketOpenError,
         connection_id: "conn-123",
         reason: "WebSocket connection failed",
       },
@@ -210,37 +210,37 @@ describe("VelayWebSocketBridge", () => {
     expect(fakeSocket.closes).toEqual([{ code: undefined, reason: undefined }]);
   });
 
-  test("forwards text frames from Velay to the local gateway WebSocket", () => {
+  test("forwards text frames from Tunnel to the local gateway WebSocket", () => {
     bridge.open(makeOpenFrame());
     fakeSocket.readyState = WS_OPEN;
     fakeSocket.emit("open");
 
     bridge.message({
-      type: VELAY_FRAME_TYPES.websocketMessage,
+      type: TUNNEL_FRAME_TYPES.websocketMessage,
       connection_id: "conn-123",
-      message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.text,
+      message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.text,
       body_base64: base64('{"event":"start"}'),
     });
 
     expect(fakeSocket.sent).toEqual(['{"event":"start"}']);
   });
 
-  test("preserves leading UTF-8 BOM bytes in Velay text frames", () => {
+  test("preserves leading UTF-8 BOM bytes in Tunnel text frames", () => {
     bridge.open(makeOpenFrame());
     fakeSocket.readyState = WS_OPEN;
     fakeSocket.emit("open");
 
     bridge.message({
-      type: VELAY_FRAME_TYPES.websocketMessage,
+      type: TUNNEL_FRAME_TYPES.websocketMessage,
       connection_id: "conn-123",
-      message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.text,
+      message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.text,
       body_base64: base64(new Uint8Array([0xef, 0xbb, 0xbf, 0x68, 0x69])),
     });
 
     expect(fakeSocket.sent).toEqual(["\ufeffhi"]);
   });
 
-  test("forwards local text frames back to Velay as websocket_message frames", async () => {
+  test("forwards local text frames back to Tunnel as websocket_message frames", async () => {
     bridge.open(makeOpenFrame());
     fakeSocket.readyState = WS_OPEN;
     fakeSocket.emit("open");
@@ -249,9 +249,9 @@ describe("VelayWebSocketBridge", () => {
     await flushPromises();
 
     expect(sentFrames.at(-1)).toEqual({
-      type: VELAY_FRAME_TYPES.websocketMessage,
+      type: TUNNEL_FRAME_TYPES.websocketMessage,
       connection_id: "conn-123",
-      message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.text,
+      message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.text,
       body_base64: base64("hello from gateway"),
     });
   });
@@ -262,9 +262,9 @@ describe("VelayWebSocketBridge", () => {
     fakeSocket.emit("open");
 
     bridge.message({
-      type: VELAY_FRAME_TYPES.websocketMessage,
+      type: TUNNEL_FRAME_TYPES.websocketMessage,
       connection_id: "conn-123",
-      message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.binary,
+      message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.binary,
       body_base64: base64(new Uint8Array([1, 2, 3])),
     });
 
@@ -274,9 +274,9 @@ describe("VelayWebSocketBridge", () => {
     await flushPromises();
 
     expect(sentFrames.at(-1)).toEqual({
-      type: VELAY_FRAME_TYPES.websocketMessage,
+      type: TUNNEL_FRAME_TYPES.websocketMessage,
       connection_id: "conn-123",
-      message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.binary,
+      message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.binary,
       body_base64: base64(new Uint8Array([4, 5, 6])),
     });
   });
@@ -287,7 +287,7 @@ describe("VelayWebSocketBridge", () => {
     fakeSocket.emit("open");
 
     bridge.close({
-      type: VELAY_FRAME_TYPES.websocketClose,
+      type: TUNNEL_FRAME_TYPES.websocketClose,
       connection_id: "conn-123",
       code: 1000,
       reason: "done",
@@ -299,19 +299,19 @@ describe("VelayWebSocketBridge", () => {
     fakeSocket.emit("close", { code: 1000, reason: "done" });
     expect(
       sentFrames.filter(
-        (frame) => frame.type === VELAY_FRAME_TYPES.websocketClose,
+        (frame) => frame.type === TUNNEL_FRAME_TYPES.websocketClose,
       ),
     ).toEqual([]);
   });
 
-  test("remaps protocol close codes from Velay before closing locally", () => {
+  test("remaps protocol close codes from Tunnel before closing locally", () => {
     bridge.open(makeOpenFrame());
     fakeSocket.readyState = WS_OPEN;
     fakeSocket.emit("open");
 
     expect(() => {
       bridge.close({
-        type: VELAY_FRAME_TYPES.websocketClose,
+        type: TUNNEL_FRAME_TYPES.websocketClose,
         connection_id: "conn-123",
         code: 1008,
         reason: "Policy violation",
@@ -324,14 +324,14 @@ describe("VelayWebSocketBridge", () => {
     expect(bridge.getConnectionCount()).toBe(0);
   });
 
-  test("sanitizes invalid reserved close codes from Velay before closing locally", () => {
+  test("sanitizes invalid reserved close codes from Tunnel before closing locally", () => {
     bridge.open(makeOpenFrame());
     fakeSocket.readyState = WS_OPEN;
     fakeSocket.emit("open");
 
     expect(() => {
       bridge.close({
-        type: VELAY_FRAME_TYPES.websocketClose,
+        type: TUNNEL_FRAME_TYPES.websocketClose,
         connection_id: "conn-123",
         code: 1006,
         reason: "invalid reserved code",
@@ -342,13 +342,13 @@ describe("VelayWebSocketBridge", () => {
     expect(bridge.getConnectionCount()).toBe(0);
   });
 
-  test("truncates overlong close reasons from Velay without splitting UTF-8 characters", () => {
+  test("truncates overlong close reasons from Tunnel without splitting UTF-8 characters", () => {
     bridge.open(makeOpenFrame());
     fakeSocket.readyState = WS_OPEN;
     fakeSocket.emit("open");
 
     bridge.close({
-      type: VELAY_FRAME_TYPES.websocketClose,
+      type: TUNNEL_FRAME_TYPES.websocketClose,
       connection_id: "conn-123",
       code: 1000,
       reason: "🙂".repeat(40),
@@ -369,9 +369,9 @@ describe("VelayWebSocketBridge", () => {
     fakeSocket.emit("open");
 
     bridge.message({
-      type: VELAY_FRAME_TYPES.websocketMessage,
+      type: TUNNEL_FRAME_TYPES.websocketMessage,
       connection_id: "conn-123",
-      message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.text,
+      message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.text,
       body_base64: "",
     });
 
@@ -385,9 +385,9 @@ describe("VelayWebSocketBridge", () => {
     fakeSocket.emit("open");
 
     bridge.message({
-      type: VELAY_FRAME_TYPES.websocketMessage,
+      type: TUNNEL_FRAME_TYPES.websocketMessage,
       connection_id: "conn-123",
-      message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.text,
+      message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.text,
       body_base64: "not base64",
     });
 
@@ -397,13 +397,13 @@ describe("VelayWebSocketBridge", () => {
     expect(bridge.getConnectionCount()).toBe(0);
   });
 
-  test("buffers Velay messages until local open", () => {
+  test("buffers Tunnel messages until local open", () => {
     bridge.open(makeOpenFrame());
 
     bridge.message({
-      type: VELAY_FRAME_TYPES.websocketMessage,
+      type: TUNNEL_FRAME_TYPES.websocketMessage,
       connection_id: "conn-123",
-      message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.text,
+      message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.text,
       body_base64: base64("early"),
     });
 
@@ -425,7 +425,7 @@ describe("VelayWebSocketBridge", () => {
     expect(WebSocketMock).not.toHaveBeenCalled();
     expect(sentFrames).toEqual([
       {
-        type: VELAY_FRAME_TYPES.websocketOpenError,
+        type: TUNNEL_FRAME_TYPES.websocketOpenError,
         connection_id: "conn-123",
         reason: "Invalid WebSocket path",
       },
@@ -453,7 +453,7 @@ describe("VelayWebSocketBridge", () => {
     );
   });
 
-  test("forwards local close frames back to Velay and cleans up", () => {
+  test("forwards local close frames back to Tunnel and cleans up", () => {
     bridge.open(makeOpenFrame());
     fakeSocket.readyState = WS_OPEN;
     fakeSocket.emit("open");
@@ -462,7 +462,7 @@ describe("VelayWebSocketBridge", () => {
 
     expect(bridge.getConnectionCount()).toBe(0);
     expect(sentFrames.at(-1)).toEqual({
-      type: VELAY_FRAME_TYPES.websocketClose,
+      type: TUNNEL_FRAME_TYPES.websocketClose,
       connection_id: "conn-123",
       code: 1001,
       reason: "going away",
@@ -471,7 +471,7 @@ describe("VelayWebSocketBridge", () => {
 
   test("invokes onIdle when the last connection goes away", () => {
     let idleCalls = 0;
-    const idleBridge = new VelayWebSocketBridge(
+    const idleBridge = new TunnelWebSocketBridge(
       "http://127.0.0.1:7830",
       () => {},
       () => {

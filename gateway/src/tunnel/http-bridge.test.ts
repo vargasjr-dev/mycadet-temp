@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import { VELAY_FRAME_TYPES, type VelayHttpRequestFrame } from "./protocol.js";
+import { TUNNEL_FRAME_TYPES, type TunnelHttpRequestFrame } from "./protocol.js";
 
 type FetchFn = (
   input: string | URL | Request,
@@ -16,33 +16,33 @@ mock.module("../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchMock(...args),
 }));
 
-let velayWebhooksFlagEnabled = false;
+let tunnelWebhooksFlagEnabled = false;
 let registeredWebhookPaths = new Set<string>();
 
 mock.module("../feature-flag-resolver.js", () => ({
   isFeatureFlagEnabled: (key: string) =>
-    key === "velay-webhooks" ? velayWebhooksFlagEnabled : false,
+    key === "tunnel-webhooks" ? tunnelWebhooksFlagEnabled : false,
 }));
 
 mock.module("../db/webhook-ingress-route-store.js", () => ({
   hasWebhookIngressRoute: (path: string) => registeredWebhookPaths.has(path),
 }));
 
-const { bridgeVelayHttpRequest } = await import("./http-bridge.js");
+const { bridgeTunnelHttpRequest } = await import("./http-bridge.js");
 
 const TWILIO_EXAMPLE_PATH = "/webhooks/twilio/example";
 
 afterEach(() => {
   fetchMock = mock(async () => new Response());
-  velayWebhooksFlagEnabled = false;
+  tunnelWebhooksFlagEnabled = false;
   registeredWebhookPaths = new Set();
 });
 
 function makeFrame(
-  overrides: Partial<VelayHttpRequestFrame> = {},
-): VelayHttpRequestFrame {
+  overrides: Partial<TunnelHttpRequestFrame> = {},
+): TunnelHttpRequestFrame {
   return {
-    type: VELAY_FRAME_TYPES.httpRequest,
+    type: TUNNEL_FRAME_TYPES.httpRequest,
     request_id: "req-123",
     method: "POST",
     path: TWILIO_EXAMPLE_PATH,
@@ -59,7 +59,7 @@ function decodeBase64(body: string | undefined): string {
   return Buffer.from(body ?? "", "base64").toString("utf8");
 }
 
-describe("Velay HTTP bridge", () => {
+describe("Tunnel HTTP bridge", () => {
   test("forwards JSON body frames to the gateway loopback listener", async () => {
     const captured: {
       url: string;
@@ -80,7 +80,7 @@ describe("Velay HTTP bridge", () => {
       },
     );
 
-    const response = await bridgeVelayHttpRequest(
+    const response = await bridgeTunnelHttpRequest(
       makeFrame({
         path: TWILIO_EXAMPLE_PATH,
         headers: {
@@ -121,7 +121,7 @@ describe("Velay HTTP bridge", () => {
       },
     );
 
-    await bridgeVelayHttpRequest(
+    await bridgeTunnelHttpRequest(
       makeFrame({
         path: "/webhooks/twilio/voice",
         raw_query: "callSessionId=session-123&redirect=%2Fnext%3Fx%3D1",
@@ -145,7 +145,7 @@ describe("Velay HTTP bridge", () => {
     );
   });
 
-  test("converts loopback responses back into Velay response frames", async () => {
+  test("converts loopback responses back into Tunnel response frames", async () => {
     fetchMock = mock(async () => {
       const headers = new Headers({
         "content-type": "text/plain",
@@ -161,13 +161,13 @@ describe("Velay HTTP bridge", () => {
       });
     });
 
-    const response = await bridgeVelayHttpRequest(
+    const response = await bridgeTunnelHttpRequest(
       makeFrame({ request_id: "req-response" }),
       "http://127.0.0.1:7830",
     );
 
     expect(response).toEqual({
-      type: VELAY_FRAME_TYPES.httpResponse,
+      type: TUNNEL_FRAME_TYPES.httpResponse,
       request_id: "req-response",
       status_code: 201,
       headers: {
@@ -180,7 +180,7 @@ describe("Velay HTTP bridge", () => {
   });
 
   test("rejects non-Twilio paths without contacting the loopback listener", async () => {
-    const response = await bridgeVelayHttpRequest(
+    const response = await bridgeTunnelHttpRequest(
       makeFrame({ path: "/v1/guardian/init" }),
       "http://127.0.0.1:7830",
     );
@@ -192,7 +192,7 @@ describe("Velay HTTP bridge", () => {
   test("forwards /v1/audio/ paths to the loopback listener (Twilio TTS fetch)", async () => {
     fetchMock = mock(async () => new Response("audio-bytes", { status: 200 }));
 
-    const response = await bridgeVelayHttpRequest(
+    const response = await bridgeTunnelHttpRequest(
       makeFrame({
         path: "/v1/audio/550e8400-e29b-41d4-a716-446655440000",
         method: "GET",
@@ -213,7 +213,7 @@ describe("Velay HTTP bridge", () => {
       "/v1/credential-requests/submit",
     ]) {
       fetchMock = mock(async () => new Response("ok", { status: 200 }));
-      const response = await bridgeVelayHttpRequest(
+      const response = await bridgeTunnelHttpRequest(
         makeFrame({
           path,
           method:
@@ -237,7 +237,7 @@ describe("Velay HTTP bridge", () => {
       fetchMock = mock(async () => {
         throw new Error("should not fetch");
       });
-      const response = await bridgeVelayHttpRequest(
+      const response = await bridgeTunnelHttpRequest(
         makeFrame({ path }),
         "http://127.0.0.1:7830",
       );
@@ -250,7 +250,7 @@ describe("Velay HTTP bridge", () => {
       throw new Error("should not fetch");
     });
 
-    const response = await bridgeVelayHttpRequest(
+    const response = await bridgeTunnelHttpRequest(
       makeFrame({ path: "https://example.com/webhooks/example" }),
       "http://127.0.0.1:7830",
     );
@@ -261,7 +261,7 @@ describe("Velay HTTP bridge", () => {
   });
 
   test("returns a 502 response frame when the body is not valid base64", async () => {
-    const response = await bridgeVelayHttpRequest(
+    const response = await bridgeTunnelHttpRequest(
       makeFrame({ body_base64: "not base64" }),
       "http://127.0.0.1:7830",
     );
@@ -275,7 +275,7 @@ describe("Velay HTTP bridge", () => {
       throw new Error("connection refused");
     });
 
-    const response = await bridgeVelayHttpRequest(
+    const response = await bridgeTunnelHttpRequest(
       makeFrame(),
       "http://127.0.0.1:7830",
     );
@@ -285,37 +285,37 @@ describe("Velay HTTP bridge", () => {
     expect(response.request_id).toBe("req-123");
   });
 
-  test("injects x-velay-forwarded header on every forwarded request", async () => {
+  test("injects x-tunnel-forwarded header on every forwarded request", async () => {
     const captured: Headers[] = [];
     fetchMock = mock(async (input: string | URL | Request) => {
       captured.push((input as Request).headers);
       return new Response("ok");
     });
 
-    await bridgeVelayHttpRequest(makeFrame(), "http://127.0.0.1:7830");
+    await bridgeTunnelHttpRequest(makeFrame(), "http://127.0.0.1:7830");
 
     expect(captured).toHaveLength(1);
-    expect(captured[0].get("x-velay-forwarded")).toBe("1");
+    expect(captured[0].get("x-tunnel-forwarded")).toBe("1");
   });
 
-  test("overwrites a client-supplied x-velay-forwarded value with 1", async () => {
+  test("overwrites a client-supplied x-tunnel-forwarded value with 1", async () => {
     const captured: Headers[] = [];
     fetchMock = mock(async (input: string | URL | Request) => {
       captured.push((input as Request).headers);
       return new Response("ok");
     });
 
-    await bridgeVelayHttpRequest(
-      makeFrame({ headers: { "x-velay-forwarded": ["spoofed"] } }),
+    await bridgeTunnelHttpRequest(
+      makeFrame({ headers: { "x-tunnel-forwarded": ["spoofed"] } }),
       "http://127.0.0.1:7830",
     );
 
     expect(captured).toHaveLength(1);
-    expect(captured[0].get("x-velay-forwarded")).toBe("1");
+    expect(captured[0].get("x-tunnel-forwarded")).toBe("1");
   });
 });
 
-describe("Velay HTTP bridge webhook ingress registry", () => {
+describe("Tunnel HTTP bridge webhook ingress registry", () => {
   const STATIC_PATHS = [
     TWILIO_EXAMPLE_PATH,
     "/v1/audio/550e8400-e29b-41d4-a716-446655440000",
@@ -331,7 +331,7 @@ describe("Velay HTTP bridge webhook ingress registry", () => {
       throw new Error("should not fetch");
     });
 
-    const response = await bridgeVelayHttpRequest(
+    const response = await bridgeTunnelHttpRequest(
       makeFrame({ path: "/webhooks/telegram" }),
       "http://127.0.0.1:7830",
     );
@@ -341,7 +341,7 @@ describe("Velay HTTP bridge webhook ingress registry", () => {
   });
 
   test("flag on: a registered webhook path is forwarded and its response relayed", async () => {
-    velayWebhooksFlagEnabled = true;
+    tunnelWebhooksFlagEnabled = true;
     registeredWebhookPaths = new Set(["/webhooks/telegram"]);
     const captured: string[] = [];
     fetchMock = mock(async (input: string | URL | Request) => {
@@ -349,7 +349,7 @@ describe("Velay HTTP bridge webhook ingress registry", () => {
       return new Response("handled", { status: 202 });
     });
 
-    const response = await bridgeVelayHttpRequest(
+    const response = await bridgeTunnelHttpRequest(
       makeFrame({ path: "/webhooks/telegram" }),
       "http://127.0.0.1:7830",
     );
@@ -360,7 +360,7 @@ describe("Velay HTTP bridge webhook ingress registry", () => {
   });
 
   test("flag on: an unregistered webhook path is rejected without contacting the loopback listener", async () => {
-    velayWebhooksFlagEnabled = true;
+    tunnelWebhooksFlagEnabled = true;
     registeredWebhookPaths = new Set(["/webhooks/telegram"]);
     fetchMock = mock(async () => {
       throw new Error("should not fetch");
@@ -371,7 +371,7 @@ describe("Velay HTTP bridge webhook ingress registry", () => {
       "/webhooks/telegram/extra",
       "/webhooks/telegramX",
     ]) {
-      const response = await bridgeVelayHttpRequest(
+      const response = await bridgeTunnelHttpRequest(
         makeFrame({ path }),
         "http://127.0.0.1:7830",
       );
@@ -382,12 +382,12 @@ describe("Velay HTTP bridge webhook ingress registry", () => {
 
   test("static allowlist paths are forwarded regardless of the flag", async () => {
     for (const flagEnabled of [false, true]) {
-      velayWebhooksFlagEnabled = flagEnabled;
+      tunnelWebhooksFlagEnabled = flagEnabled;
       registeredWebhookPaths = new Set();
 
       for (const path of STATIC_PATHS) {
         fetchMock = mock(async () => new Response("ok", { status: 200 }));
-        const response = await bridgeVelayHttpRequest(
+        const response = await bridgeTunnelHttpRequest(
           makeFrame({ path }),
           "http://127.0.0.1:7830",
         );

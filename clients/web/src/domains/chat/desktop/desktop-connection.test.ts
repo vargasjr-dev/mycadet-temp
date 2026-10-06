@@ -45,7 +45,7 @@ describe("what a close code means", () => {
     expect(desktopEndReasonForClose(4011)).toBe("failed");
   });
 
-  test("velay's 1013 tunnel drop is a lost connection, not a busy desktop", () => {
+  test("tunnel's 1013 tunnel drop is a lost connection, not a busy desktop", () => {
     expect(desktopEndReasonForClose(1013)).toBe("lost");
   });
 

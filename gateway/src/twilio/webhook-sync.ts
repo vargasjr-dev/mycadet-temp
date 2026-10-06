@@ -49,7 +49,7 @@ function resolveEffectiveTwilioBaseUrl(
  * that fails is logged and the sync continues.
  */
 function claimTwilioWebhookIngressRoutes(phoneNumber: string): void {
-  if (!isFeatureFlagEnabled("velay-webhooks")) {
+  if (!isFeatureFlagEnabled("tunnel-webhooks")) {
     return;
   }
   for (const claim of TWILIO_WEBHOOK_CLAIMS) {

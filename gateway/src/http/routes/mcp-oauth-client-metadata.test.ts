@@ -14,7 +14,7 @@ describe("MCP OAuth client metadata", () => {
     const handle = createMcpOAuthClientMetadataHandler(
       config({
         enabled: true,
-        publicBaseUrl: "https://velay.example/assistant-123/",
+        publicBaseUrl: "https://tunnel.example/assistant-123/",
       }),
     );
 
@@ -24,9 +24,9 @@ describe("MCP OAuth client metadata", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(await response.json()).toEqual({
       client_id:
-        "https://velay.example/assistant-123/oauth/client-metadata.json",
+        "https://tunnel.example/assistant-123/oauth/client-metadata.json",
       redirect_uris: [
-        "https://velay.example/assistant-123/webhooks/oauth/callback",
+        "https://tunnel.example/assistant-123/webhooks/oauth/callback",
       ],
       token_endpoint_auth_method: "none",
       grant_types: ["authorization_code", "refresh_token"],
@@ -40,7 +40,7 @@ describe("MCP OAuth client metadata", () => {
     const handle = createMcpOAuthClientMetadataHandler(
       config({
         enabled: true,
-        publicBaseUrl: "https://VELAY.EXAMPLE:443/a/../assistant-123///",
+        publicBaseUrl: "https://TUNNEL.EXAMPLE:443/a/../assistant-123///",
       }),
     );
 
@@ -49,9 +49,9 @@ describe("MCP OAuth client metadata", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       client_id:
-        "https://velay.example/assistant-123/oauth/client-metadata.json",
+        "https://tunnel.example/assistant-123/oauth/client-metadata.json",
       redirect_uris: [
-        "https://velay.example/assistant-123/webhooks/oauth/callback",
+        "https://tunnel.example/assistant-123/webhooks/oauth/callback",
       ],
     });
   });
@@ -70,7 +70,7 @@ describe("MCP OAuth client metadata", () => {
     const handle = createMcpOAuthClientMetadataHandler(
       config({
         enabled: false,
-        publicBaseUrl: "https://velay.example/assistant-123",
+        publicBaseUrl: "https://tunnel.example/assistant-123",
       }),
     );
 

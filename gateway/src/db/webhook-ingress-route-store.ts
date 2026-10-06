@@ -6,7 +6,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import {
   isValidWebhookIngressPath,
   PLUGIN_WEBHOOK_PATH_PREFIX,
-} from "../velay/path-utils.js";
+} from "../tunnel/path-utils.js";
 import { getGatewayDb } from "./connection.js";
 import { webhookIngressRoutes } from "./schema.js";
 

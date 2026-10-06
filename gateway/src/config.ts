@@ -17,7 +17,7 @@ export type AttachmentByteLimits = {
 export type GatewayConfig = {
   assistantRuntimeBaseUrl: string;
   gatewayInternalBaseUrl: string;
-  velayBaseUrl?: string;
+  tunnelBaseUrl?: string;
   logFile: LogFileConfig;
   maxAttachmentBytes: AttachmentByteLimits;
   maxAttachmentConcurrency: number;
@@ -128,7 +128,7 @@ export function loadConfig(): GatewayConfig {
   const assistantRuntimeBaseUrl = `http://${assistantHost}:${runtimePort}`;
 
   const gatewayInternalBaseUrl = `http://127.0.0.1:${port}`;
-  const velayBaseUrl = process.env.VELAY_BASE_URL?.trim() || undefined;
+  const tunnelBaseUrl = process.env.TUNNEL_BASE_URL?.trim() || undefined;
 
   // Read operational settings from workspace config (Docker) or env vars (CLI).
   const wsConfig = readWorkspaceConfig();
@@ -191,7 +191,7 @@ export function loadConfig(): GatewayConfig {
       assistantRuntimeBaseUrl,
       gatewayInternalBaseUrl,
       routingEntryCount: routingEntries.length,
-      hasVelayBaseUrl: !!velayBaseUrl,
+      hasTunnelBaseUrl: !!tunnelBaseUrl,
       port,
       runtimeProxyRequireAuth,
       runtimeTimeoutMs,
@@ -203,7 +203,7 @@ export function loadConfig(): GatewayConfig {
   return {
     assistantRuntimeBaseUrl,
     gatewayInternalBaseUrl,
-    velayBaseUrl,
+    tunnelBaseUrl,
     logFile,
     maxAttachmentBytes: {
       telegram: 20 * 1024 * 1024, // Telegram Bot API getFile (download) limit

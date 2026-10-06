@@ -694,7 +694,7 @@ describe("DeepgramFluxRealtimeTranscriber", () => {
     });
 
     test("the relay path sends neither model nor hint", async () => {
-      // velay derives both from the language it is sent, and rejects a
+      // tunnel derives both from the language it is sent, and rejects a
       // client-selected model.
       await startSession({ ...RELAY_OPTIONS, language: "es" });
 
@@ -731,7 +731,7 @@ describe("DeepgramFluxRealtimeTranscriber", () => {
     });
 
     test("hands frames the Flux parser makes nothing of to the wrapper", async () => {
-      // This is how velay_error reaches the managed wrapper: it rides the
+      // This is how tunnel_error reaches the managed wrapper: it rides the
       // same socket but is not a Flux frame.
       const unhandled: Record<string, unknown>[] = [];
       await startSession({
@@ -741,14 +741,18 @@ describe("DeepgramFluxRealtimeTranscriber", () => {
 
       mockWs.simulateMessage(
         JSON.stringify({
-          type: "velay_error",
+          type: "tunnel_error",
           code: "insufficient_credits",
           detail: "top up",
         }),
       );
 
       expect(unhandled).toEqual([
-        { type: "velay_error", code: "insufficient_credits", detail: "top up" },
+        {
+          type: "tunnel_error",
+          code: "insufficient_credits",
+          detail: "top up",
+        },
       ]);
     });
 

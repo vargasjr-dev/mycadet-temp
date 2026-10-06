@@ -40,7 +40,7 @@ export const DEFAULT_LIVE_VOICE_CLOSE_TIMEOUT_MS = 10_000;
  *
  * The daemon's WebSocket peer is the gateway, not the client. A half-open
  * transport anywhere further out (a phone that left the network mid-call, a
- * dropped velay tunnel) delivers no close event here, so transport liveness
+ * dropped tunnel) delivers no close event here, so transport liveness
  * proves nothing about whether anyone is still on the call. Inbound frames do:
  * a `server_vad` client streams PCM continuously by construction (muted turns
  * send silence rather than nothing, so the server VAD is never starved), so a

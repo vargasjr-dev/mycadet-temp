@@ -1,4 +1,4 @@
-import { isManagedCloud } from "@vellumai/local-mode/contract";
+import { isManagedCloud } from "./managed-cloud.js";
 import { hostname } from "node:os";
 
 import { getLocalLanIPv4 } from "./local";

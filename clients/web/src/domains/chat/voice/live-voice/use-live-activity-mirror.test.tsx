@@ -789,7 +789,7 @@ describe("ending the activity", () => {
     renderMirror();
     await setPhase("listening");
 
-    await settled(() => useLiveVoiceStore.getState().fail("velay unreachable"));
+    await settled(() => useLiveVoiceStore.getState().fail("tunnel unreachable"));
 
     expect(endVoiceLiveActivity).toHaveBeenCalledTimes(1);
     expect(updateVoiceLiveActivity).not.toHaveBeenCalled();

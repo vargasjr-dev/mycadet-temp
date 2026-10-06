@@ -164,13 +164,13 @@ const HELD_PLAYBACK_TIMEOUT_MS = 6_000;
 // Reconnect (hands-free only)
 // ---------------------------------------------------------------------------
 
-// Retryable close codes (velay 1012/1013) are defined by the transport
+// Retryable close codes (tunnel 1012/1013) are defined by the transport
 // (RETRYABLE_LIVE_VOICE_CLOSE_CODES) and shared here so the transport's
 // pre-`ready` handling and this controller's reconnect gate stay in lockstep.
 
 /**
  * Backoff before each hands-free reconnect attempt. The first delay clears the
- * gateway's velay-tunnel re-registration window (~0.8s observed) so the retry
+ * gateway's tunnel-tunnel re-registration window (~0.8s observed) so the retry
  * doesn't race ahead of the tunnel and fail pre-`ready`; later attempts back
  * off to ride out a longer outage. The array length caps the number of
  * attempts — after the last one the session fails.
@@ -535,7 +535,7 @@ export function useLiveVoice(
   const activePlayerRef = useRef<LiveVoiceAudioPlayer | null>(null);
   // Initial-connect resilience (JARVIS-1282). `hasReadyRef` records whether the
   // current session lifecycle ever reached `ready` — false during the very
-  // first connect, so a transient pre-`ready` connection failure (cold velay
+  // first connect, so a transient pre-`ready` connection failure (cold tunnel
   // tunnel, token-mint blip) is retried within the backoff budget instead of
   // flashing `failed` while the room's avatar is still animating in.
   // `initialConnectAttemptRef` counts those first-connect retries (distinct
@@ -1584,7 +1584,7 @@ export function useLiveVoice(
           }
           // Initial-connect resilience (JARVIS-1282): a hands-free session's
           // very first connect can transiently fail before `ready` — a managed
-          // assistant's velay tunnel is briefly cold, or the token mint blips —
+          // assistant's tunnel is briefly cold, or the token mint blips —
           // and finishing with that error flashes the failure surface while the
           // room's avatar is still animating in. Retry within the backoff
           // budget instead, holding the room in `connecting` (a first connect,
@@ -1650,7 +1650,7 @@ export function useLiveVoice(
           if (!live()) {
             return;
           }
-          // Hands-free resilience: velay tears down a proxied session with a
+          // Hands-free resilience: tunnel tears down a proxied session with a
           // retryable close code (1013 "assistant tunnel disconnected") when
           // its tunnel to the assistant drops mid-conversation (deploy, key
           // rotation, network blip). The runtime session is gone, but the

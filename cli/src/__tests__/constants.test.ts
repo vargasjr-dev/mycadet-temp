@@ -21,7 +21,7 @@ describe("constants", () => {
     expect(VALID_REMOTE_HOSTS).toContain("local");
     expect(VALID_REMOTE_HOSTS).toContain("docker");
     expect(VALID_REMOTE_HOSTS).toContain("custom");
-    expect(VALID_REMOTE_HOSTS).toContain("vellum");
+    expect(VALID_REMOTE_HOSTS).toContain("cloud");
   });
 
   test("VALID_REMOTE_HOSTS excludes cloud provisioning targets", () => {

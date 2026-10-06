@@ -832,7 +832,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     );
 
     const handler = createTwilioVoiceWebhookHandler(
-      makeConfig({ velayBaseUrl: "https://velay-staging.vellum.ai" }),
+      makeConfig({ tunnelBaseUrl: "https://tunnel-staging.mycadet.ai" }),
       makeCaches(),
     );
 
@@ -857,7 +857,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     expect(res.status).toBe(200);
     const body = await res.text();
     expect(body).toContain(
-      `url="wss://velay-staging.vellum.ai/${assistantId}/webhooks/twilio/media-stream/sess-1/`,
+      `url="wss://tunnel-staging.mycadet.ai/${assistantId}/webhooks/twilio/media-stream/sess-1/`,
     );
     expect(body).not.toContain("__VELLUM_PUBLIC_BASE_URL__");
     expect(body).not.toContain("staging-platform.vellum.ai");

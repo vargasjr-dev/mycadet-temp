@@ -2,26 +2,26 @@ import type { OutgoingHttpHeaders } from "node:http";
 
 import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/ingress";
 
-import type { VelayBinaryWebSocketFrame } from "./binary-websocket.js";
-import { addVelayBridgeAuthHeader } from "./bridge-auth.js";
+import type { TunnelBinaryWebSocketFrame } from "./binary-websocket.js";
+import { addTunnelBridgeAuthHeader } from "./bridge-auth.js";
 import {
   binaryLikeToBytes,
   buildLoopbackWebSocketUrl,
   closeWebSocket,
   decodeBase64Bytes,
   encodeBase64,
-  websocketHeadersFromVelay,
+  websocketHeadersFromTunnel,
 } from "./bridge-utils.js";
 import {
-  VELAY_FRAME_TYPES,
-  VELAY_WEBSOCKET_MESSAGE_TYPES,
-  type VelayFrame,
-  type VelayWebSocketCloseFrame,
-  type VelayWebSocketInboundFrame,
-  type VelayWebSocketMessageFrame,
-  type VelayWebSocketOpenErrorFrame,
-  type VelayWebSocketOpenedFrame,
-  type VelayWebSocketOpenFrame,
+  TUNNEL_FRAME_TYPES,
+  TUNNEL_WEBSOCKET_MESSAGE_TYPES,
+  type TunnelFrame,
+  type TunnelWebSocketCloseFrame,
+  type TunnelWebSocketInboundFrame,
+  type TunnelWebSocketMessageFrame,
+  type TunnelWebSocketOpenErrorFrame,
+  type TunnelWebSocketOpenedFrame,
+  type TunnelWebSocketOpenFrame,
 } from "./protocol.js";
 
 const MAX_PENDING_MESSAGES = 100;
@@ -48,34 +48,34 @@ type BridgeConnection = {
   suppressNextCloseFrame: boolean;
 };
 
-type SendVelayFrame = (frame: VelayFrame) => void;
+type SendTunnelFrame = (frame: TunnelFrame) => void;
 
-export class VelayWebSocketBridge {
+export class TunnelWebSocketBridge {
   private readonly connections = new Map<string, BridgeConnection>();
 
   constructor(
     private readonly gatewayLoopbackBaseUrl: string,
-    private readonly sendFrame: SendVelayFrame,
+    private readonly sendFrame: SendTunnelFrame,
     /** Invoked whenever the last bridged connection goes away. */
     private readonly onIdle?: () => void,
   ) {}
 
-  handleFrame(frame: VelayWebSocketInboundFrame): void {
+  handleFrame(frame: TunnelWebSocketInboundFrame): void {
     switch (frame.type) {
-      case VELAY_FRAME_TYPES.websocketOpen:
+      case TUNNEL_FRAME_TYPES.websocketOpen:
         this.open(frame);
         return;
       case "websocket_binary":
-      case VELAY_FRAME_TYPES.websocketMessage:
+      case TUNNEL_FRAME_TYPES.websocketMessage:
         this.message(frame);
         return;
-      case VELAY_FRAME_TYPES.websocketClose:
+      case TUNNEL_FRAME_TYPES.websocketClose:
         this.close(frame);
         return;
     }
   }
 
-  open(frame: VelayWebSocketOpenFrame): void {
+  open(frame: TunnelWebSocketOpenFrame): void {
     this.closeExisting(frame.connection_id);
 
     const url = buildLoopbackWebSocketUrl(
@@ -93,8 +93,8 @@ export class VelayWebSocketBridge {
       const WebSocketWithHeaders =
         WebSocket as unknown as WebSocketConstructorWithHeaders;
       ws = new WebSocketWithHeaders(url, {
-        headers: addVelayBridgeAuthHeader(
-          websocketHeadersFromVelay(frame.headers),
+        headers: addTunnelBridgeAuthHeader(
+          websocketHeadersFromTunnel(frame.headers),
         ),
         ...(frame.subprotocol ? { protocols: [frame.subprotocol] } : {}),
       });
@@ -120,9 +120,9 @@ export class VelayWebSocketBridge {
 
       connection.opened = true;
       this.sendFrame({
-        type: VELAY_FRAME_TYPES.websocketOpened,
+        type: TUNNEL_FRAME_TYPES.websocketOpened,
         connection_id: frame.connection_id,
-      } satisfies VelayWebSocketOpenedFrame);
+      } satisfies TunnelWebSocketOpenedFrame);
 
       for (const message of connection.pendingMessages) {
         ws.send(message);
@@ -152,7 +152,7 @@ export class VelayWebSocketBridge {
     });
   }
 
-  message(frame: VelayWebSocketMessageFrame | VelayBinaryWebSocketFrame): void {
+  message(frame: TunnelWebSocketMessageFrame | TunnelBinaryWebSocketFrame): void {
     const connection = this.connections.get(frame.connection_id);
     if (!connection) return;
 
@@ -162,7 +162,7 @@ export class VelayWebSocketBridge {
     const message =
       frame.type === "websocket_binary"
         ? frame.payload
-        : decodeVelayMessage(frame);
+        : decodeTunnelMessage(frame);
     if (message === undefined) {
       this.closeConnection(
         frame.connection_id,
@@ -190,7 +190,7 @@ export class VelayWebSocketBridge {
     connection.pendingMessages.push(message);
   }
 
-  close(frame: VelayWebSocketCloseFrame): void {
+  close(frame: TunnelWebSocketCloseFrame): void {
     const connection = this.connections.get(frame.connection_id);
     if (!connection) return;
 
@@ -224,7 +224,7 @@ export class VelayWebSocketBridge {
   ): Promise<void> {
     if (this.connections.get(connectionId) !== connection) return;
 
-    const message: VelayFrame =
+    const message: TunnelFrame =
       connection.binaryMessages && typeof data !== "string"
         ? {
             type: "websocket_binary",
@@ -257,11 +257,11 @@ export class VelayWebSocketBridge {
 
     if (!connection.suppressNextCloseFrame) {
       this.sendFrame({
-        type: VELAY_FRAME_TYPES.websocketClose,
+        type: TUNNEL_FRAME_TYPES.websocketClose,
         connection_id: connectionId,
         code: event.code,
         reason: event.reason,
-      } satisfies VelayWebSocketCloseFrame);
+      } satisfies TunnelWebSocketCloseFrame);
     }
     this.notifyIfIdle();
   }
@@ -309,10 +309,10 @@ export class VelayWebSocketBridge {
 
   private sendOpenError(connectionId: string, reason: string): void {
     this.sendFrame({
-      type: VELAY_FRAME_TYPES.websocketOpenError,
+      type: TUNNEL_FRAME_TYPES.websocketOpenError,
       connection_id: connectionId,
       reason,
-    } satisfies VelayWebSocketOpenErrorFrame);
+    } satisfies TunnelWebSocketOpenErrorFrame);
   }
 
   private sendOpenErrorOnce(
@@ -326,16 +326,16 @@ export class VelayWebSocketBridge {
   }
 }
 
-function decodeVelayMessage(
-  frame: VelayWebSocketMessageFrame,
+function decodeTunnelMessage(
+  frame: TunnelWebSocketMessageFrame,
 ): PendingMessage | undefined {
   const bytes = decodeBase64Bytes(frame.body_base64 ?? "");
   if (bytes === undefined) return undefined;
 
-  if (frame.message_type === VELAY_WEBSOCKET_MESSAGE_TYPES.text) {
+  if (frame.message_type === TUNNEL_WEBSOCKET_MESSAGE_TYPES.text) {
     return textFrameDecoder.decode(bytes);
   }
-  if (frame.message_type === VELAY_WEBSOCKET_MESSAGE_TYPES.binary) {
+  if (frame.message_type === TUNNEL_WEBSOCKET_MESSAGE_TYPES.binary) {
     return bytes;
   }
   return undefined;
@@ -344,20 +344,20 @@ function decodeVelayMessage(
 async function encodeLocalMessage(
   connectionId: string,
   data: unknown,
-): Promise<VelayWebSocketMessageFrame> {
+): Promise<TunnelWebSocketMessageFrame> {
   if (typeof data === "string") {
     return {
-      type: VELAY_FRAME_TYPES.websocketMessage,
+      type: TUNNEL_FRAME_TYPES.websocketMessage,
       connection_id: connectionId,
-      message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.text,
+      message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.text,
       body_base64: encodeBase64(data),
     };
   }
 
   return {
-    type: VELAY_FRAME_TYPES.websocketMessage,
+    type: TUNNEL_FRAME_TYPES.websocketMessage,
     connection_id: connectionId,
-    message_type: VELAY_WEBSOCKET_MESSAGE_TYPES.binary,
+    message_type: TUNNEL_WEBSOCKET_MESSAGE_TYPES.binary,
     body_base64: encodeBase64(await binaryLikeToBytes(data)),
   };
 }

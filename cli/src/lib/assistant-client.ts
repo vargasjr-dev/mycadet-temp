@@ -17,7 +17,7 @@
  * `{platformUrl}/v1/assistants/<id>/<rest>` with the stored platform credential.
  */
 
-import { isManagedCloud } from "@vellumai/local-mode/contract";
+import { isManagedCloud } from "./managed-cloud.js";
 import { resolveAssistant } from "./assistant-config.js";
 import { GATEWAY_PORT } from "./constants.js";
 import {

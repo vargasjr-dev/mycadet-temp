@@ -6,7 +6,7 @@
  * resolver without cross-importing commands (per cli/CONTRIBUTING.md).
  */
 
-import { isManagedCloud } from "@vellumai/local-mode/contract";
+import { isManagedCloud } from "./managed-cloud.js";
 import { resolveAssistant } from "./assistant-config.js";
 import { getPlatformUrl, readPlatformToken } from "./platform-client.js";
 import {

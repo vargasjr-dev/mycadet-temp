@@ -523,11 +523,11 @@
       "defaultEnabled": false
     },
     {
-      "id": "velay-webhooks",
+      "id": "tunnel-webhooks",
       "scope": "assistant",
-      "key": "velay-webhooks",
-      "label": "Velay Webhooks",
-      "description": "Platform pods resolve webhook callback URLs from the Velay-published ingress URL instead of registering platform callback routes. Falls back to platform callback registration while no tunnel URL is published.",
+      "key": "tunnel-webhooks",
+      "label": "Tunnel Webhooks",
+      "description": "Platform pods resolve webhook callback URLs from the Tunnel-published ingress URL instead of registering platform callback routes. Falls back to platform callback registration while no tunnel URL is published.",
       "defaultEnabled": false
     },
     {

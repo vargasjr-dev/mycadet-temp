@@ -33,13 +33,13 @@ export type FeatureFlagsIpcResponse = z.infer<
   typeof FeatureFlagsIpcResponseSchema
 >;
 
-export const VelayStatusIpcResponseSchema = z.object({
+export const TunnelStatusIpcResponseSchema = z.object({
   connected: z.boolean(),
   publicUrl: z.string().nullable().catch(null),
 });
 
-export type VelayStatusIpcResponse = z.infer<
-  typeof VelayStatusIpcResponseSchema
+export type TunnelStatusIpcResponse = z.infer<
+  typeof TunnelStatusIpcResponseSchema
 >;
 
 const GatewayLogsTailIpcParamsShape = {

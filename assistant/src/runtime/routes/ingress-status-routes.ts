@@ -14,7 +14,7 @@
  * Platform-hosted assistants receive webhooks through platform callback
  * routing and never run `vellum tunnel`, so they report `unconfigured`
  * rather than a tunnel state they cannot act on. A self-hosted gateway whose
- * Velay tunnel owns the URL is the same story one layer down: that URL
+ * Tunnel tunnel owns the URL is the same story one layer down: that URL
  * carries webhooks alone, so it is `unconfigured` for pairing too, and the
  * gateway publishes and restores it without a tunnel command either way.
  */
@@ -23,7 +23,7 @@ import { z } from "zod";
 
 import {
   getIngressConfigResult,
-  isVelayManagedIngress,
+  isTunnelManagedIngress,
   loadPairingTunnelRecord,
   loadRecordedAssistantId,
   loadRestartTunnelRecord,
@@ -89,15 +89,15 @@ async function handleIngressStatus(): Promise<IngressStatusResponse> {
   // A tunnel published for pairing alone is the address this route reports on:
   // it exists to answer the pairing card, and the `publicBaseUrl` beside it is
   // a webhook callback base that tunnel deliberately left in place. The user
-  // owns and restarts that tunnel even where Velay owns the callback ingress.
+  // owns and restarts that tunnel even where Tunnel owns the callback ingress.
   const pairingTunnel = loadPairingTunnelRecord();
-  // A Velay-managed URL belongs to the gateway, which writes it, clears it,
+  // A Tunnel-managed URL belongs to the gateway, which writes it, clears it,
   // and reconnects on its own, so there is no tunnel for the user to restart.
-  // Velay's allowlist (`gateway/src/velay/allowed-paths.ts`) also exposes
+  // Tunnel's allowlist (`gateway/src/tunnel/allowed-paths.ts`) also exposes
   // neither `/healthz` nor the `/assistant/*` pairing surface, so that URL can
   // only ever probe as dead and prefills a page pairing cannot open. Without a
   // pairing tunnel beside it there is no address to report at all.
-  if (isVelayManagedIngress() && !pairingTunnel) {
+  if (isTunnelManagedIngress() && !pairingTunnel) {
     return { state: "unconfigured" };
   }
   const lastTunnel = loadRestartTunnelRecord();
@@ -172,7 +172,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Get ingress tunnel status",
     description:
-      "Probe the configured public ingress URL and report whether a tunnel is serving this assistant. `unconfigured` means no tunnel has ever been recorded (or the ingress is managed for this assistant, as it is when platform-hosted or fronted by a Velay tunnel), `stopped` means a tunnel ran before and is not running now (callback ingress is explicitly switched off, or its URL is gone), `healthy` means the URL answers and fronts this assistant's web app, `unpairable` means it answers but does not serve that app, so a pairing link minted against it would not open, `unreachable` means it does not answer, and `foreign` means it answers for a different assistant. `lastTunnel` names the tunnel to restart, on the states where a recorded one applies to the configured URL.",
+      "Probe the configured public ingress URL and report whether a tunnel is serving this assistant. `unconfigured` means no tunnel has ever been recorded (or the ingress is managed for this assistant, as it is when platform-hosted or fronted by a Tunnel tunnel), `stopped` means a tunnel ran before and is not running now (callback ingress is explicitly switched off, or its URL is gone), `healthy` means the URL answers and fronts this assistant's web app, `unpairable` means it answers but does not serve that app, so a pairing link minted against it would not open, `unreachable` means it does not answer, and `foreign` means it answers for a different assistant. `lastTunnel` names the tunnel to restart, on the states where a recorded one applies to the configured URL.",
     tags: ["config"],
     handler: handleIngressStatus,
     responseBody: IngressStatusResponseSchema,

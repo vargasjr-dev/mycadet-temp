@@ -13,8 +13,8 @@ Thank you for your interest in Cadet Assistant! We welcome contributions of all 
 ### Getting Started
 
 ```bash
-git clone https://github.com/<your-username>/mycadet-temp.git
-cd mycadet-temp
+git clone https://github.com/<your-username>/mycadet.git
+cd mycadet
 ./setup.sh    # installs Bun (if needed), installs deps, links packages, registers the global cadet CLI
 ```
 

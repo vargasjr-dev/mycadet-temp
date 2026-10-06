@@ -249,7 +249,7 @@ function extractMessage(data: unknown): string | undefined {
  * Uses the same session auth (cookies + Vellum-Organization-Id header) as all
  * other /v1/ routes — no special JWT required.
  *
- * TODO(atlas): Once the Velay WebSocket service supports browser WS upgrades
+ * TODO(atlas): Once the Tunnel WebSocket service supports browser WS upgrades
  * through the managed gateway, replace this batch call with a streaming
  * connection to WS /v1/stt/stream for live interim transcript feedback.
  */

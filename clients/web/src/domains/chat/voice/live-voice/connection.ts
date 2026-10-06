@@ -4,17 +4,17 @@
  * Live voice picks its transport by deployment kind via
  * {@link resolveLiveVoiceWsUrl}:
  *
- * - **Cloud** — streams audio to the platform environment's velay (prod
- *   `velay.vellum.ai`, staging `velay-staging.vellum.ai`, …), which is
+ * - **Cloud** — streams audio to the platform environment's tunnel (prod
+ *   `tunnel.mycadet.ai`, staging `tunnel-staging.mycadet.ai`, …), which is
  *   cross-origin from the `cloud.mycadet.ai` SPA. A same-origin cookie WS
- *   upgrade is NOT viable: velay does no user auth, and the channel gateway
+ *   upgrade is NOT viable: tunnel does no user auth, and the channel gateway
  *   only accepts a local actor edge JWT. So the browser first mints a
  *   short-lived, org+assistant-scoped WS token from the platform and passes it
- *   to velay as a `?token=` query param.
+ *   to tunnel as a `?token=` query param.
  * - **Self-hosted / local** — when {@link getSelfHostedIngressUrl} returns the
  *   user's gateway ingress, the browser connects directly to that gateway's
  *   `/v1/live-voice`, authenticated with the platform actor edge JWT
- *   ({@link getSelfHostedActorToken}) in `?token=`. velay is the cloud ingress
+ *   ({@link getSelfHostedActorToken}) in `?token=`. tunnel is the cloud ingress
  *   only, so there is no token-exchange on this path — it mirrors how the
  *   self-hosted HeyAPI interceptor already routes runtime calls to the gateway.
  *
@@ -31,7 +31,7 @@
  *     Response: { token: string; expiresAt: string }   // expiresAt is ISO-8601
  *
  * The endpoint scopes the minted token to the caller's active org and the
- * requested assistant; velay validates it on the WS upgrade.
+ * requested assistant; tunnel validates it on the WS upgrade.
  *
  * We call the generated platform SDK function `authLiveVoiceTokenCreate`, which
  * routes through the platform `client` — that interceptor attaches the session
@@ -41,7 +41,7 @@
  * watch (`domains/chat/watch`), and the assistant desktop (`domains/chat/desktop`).
  */
 
-import { velayHostForPlatformHost } from "@mycadet/service-contracts/ingress";
+import { tunnelHostForPlatformHost } from "@mycadet/service-contracts/ingress";
 
 import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
 import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
@@ -53,19 +53,19 @@ import {
 import { assertHasResponse } from "@/utils/api-errors";
 
 /**
- * Production velay host (no scheme). Fallback when neither the
- * `VITE_VELAY_HOST` override nor the platform-host derivation applies.
+ * Production tunnel host (no scheme). Fallback when neither the
+ * `VITE_TUNNEL_HOST` override nor the platform-host derivation applies.
  */
-const DEFAULT_VELAY_HOST = "velay.vellum.ai";
+const DEFAULT_TUNNEL_HOST = "tunnel.mycadet.ai";
 
 const LIVE_VOICE_ROUTE = "/v1/live-voice";
 
-export class VelayWsTokenError extends Error {
+export class TunnelWsTokenError extends Error {
   readonly status: number;
 
   constructor(status: number, message: string) {
     super(message);
-    this.name = "VelayWsTokenError";
+    this.name = "TunnelWsTokenError";
     this.status = status;
   }
 }
@@ -75,7 +75,7 @@ export class VelayWsTokenError extends Error {
  * the body is unverified on the wire — narrow defensively rather than trusting
  * the generic.
  */
-function isVelayWsToken(value: unknown): value is LiveVoiceTokenResponse {
+function isTunnelWsToken(value: unknown): value is LiveVoiceTokenResponse {
   if (!value || typeof value !== "object") {
     return false;
   }
@@ -84,56 +84,56 @@ function isVelayWsToken(value: unknown): value is LiveVoiceTokenResponse {
 }
 
 /**
- * Mint a short-lived, user+org+assistant-scoped velay WS token.
+ * Mint a short-lived, user+org+assistant-scoped tunnel WS token.
  *
  * POSTs `/v1/auth/live-voice-token/` through the credentialed platform client
  * so the session cookie, CSRF token, and `Vellum-Organization-Id` ride along
  * automatically (see the module doc comment for the contract).
  *
- * Named for velay rather than for live voice because the token is not a
+ * Named for tunnel rather than for live voice because the token is not a
  * live-voice token in substance: the platform stores it as an opaque random
  * string against a scope of `{user_id, organization_id, assistant_id}` and
  * nothing else (`django/app/auth/live_voice_token.py`). There is no route in
- * the scope, so the same token authorizes any velay WebSocket route that
+ * the scope, so the same token authorizes any tunnel WebSocket route that
  * requires per-user validation, and a second one now does
  * (`/v1/watch/stream`). Only the endpoint's URL still carries the original
  * name, which is a wire compatibility detail rather than a claim about what
  * the token is good for.
  */
-export async function mintVelayWsToken(
+export async function mintTunnelWsToken(
   assistantId: string,
 ): Promise<LiveVoiceTokenResponse> {
   const { data, error, response } = await authLiveVoiceTokenCreate({
     body: { assistantId },
     throwOnError: false,
   });
-  assertHasResponse(response, error, "Failed to mint velay WS token");
+  assertHasResponse(response, error, "Failed to mint tunnel WS token");
   if (!response.ok) {
-    throw new VelayWsTokenError(
+    throw new TunnelWsTokenError(
       response.status,
-      `Velay WS token request failed (HTTP ${response.status})`,
+      `Tunnel WS token request failed (HTTP ${response.status})`,
     );
   }
-  if (!isVelayWsToken(data)) {
-    throw new VelayWsTokenError(0, "Velay WS token response was malformed");
+  if (!isTunnelWsToken(data)) {
+    throw new TunnelWsTokenError(0, "Tunnel WS token response was malformed");
   }
   return data;
 }
 
 /**
- * Resolve the velay host (no scheme). An explicit `VITE_VELAY_HOST` always
- * wins (local `vel up` velay); otherwise derive it from the platform runtime
+ * Resolve the tunnel host (no scheme). An explicit `VITE_TUNNEL_HOST` always
+ * wins (local `vel up` tunnel); otherwise derive it from the platform runtime
  * URL so one renderer build follows whichever platform environment it is
- * connected to — the Electron web bundle is built without `VITE_VELAY_HOST`,
+ * connected to — the Electron web bundle is built without `VITE_TUNNEL_HOST`,
  * and baking the prod default would send a staging assistant's token to prod
- * velay, which rejects it on the WS upgrade.
+ * tunnel, which rejects it on the WS upgrade.
  */
-function getVelayHost(): string {
-  if (import.meta.env.VITE_VELAY_HOST) {
-    return import.meta.env.VITE_VELAY_HOST;
+function getTunnelHost(): string {
+  if (import.meta.env.VITE_TUNNEL_HOST) {
+    return import.meta.env.VITE_TUNNEL_HOST;
   }
   try {
-    const derived = velayHostForPlatformHost(
+    const derived = tunnelHostForPlatformHost(
       new URL(getPlatformRuntimeUrl()).hostname,
     );
     if (derived) {
@@ -142,19 +142,19 @@ function getVelayHost(): string {
   } catch {
     // Unparseable platform URL — fall through to the prod default.
   }
-  return DEFAULT_VELAY_HOST;
+  return DEFAULT_TUNNEL_HOST;
 }
 
 /**
- * Pick the WebSocket scheme for a velay host. Production velay is TLS (`wss`),
- * but the local `vel up` velay is plain HTTP on a loopback port
+ * Pick the WebSocket scheme for a tunnel host. Production tunnel is TLS (`wss`),
+ * but the local `vel up` tunnel is plain HTTP on a loopback port
  * (`localhost:8501`), which a `wss` dial can't reach. Detect a loopback host and
  * downgrade to `ws` so local-dev (incl. cloud assistants tunnelled through the
- * local velay) works without TLS. Everything else stays `wss`.
+ * local tunnel) works without TLS. Everything else stays `wss`.
  *
  * Exported for direct unit testing (the env-driven host resolution is separate).
  */
-export function getVelayWsScheme(host: string): "ws" | "wss" {
+export function getTunnelWsScheme(host: string): "ws" | "wss" {
   let hostname: string;
   try {
     ({ hostname } = new URL(`http://${host}`));
@@ -169,48 +169,48 @@ export function getVelayWsScheme(host: string): "ws" | "wss" {
   return loopback ? "ws" : "wss";
 }
 
-export interface BuildVelayWsUrlArgs {
+export interface BuildTunnelWsUrlArgs {
   assistantId: string;
   /** Gateway route to open, e.g. `/v1/live-voice` or `/v1/watch/stream`. */
   routePath: string;
-  /** Short-lived token from {@link mintVelayWsToken}. */
+  /** Short-lived token from {@link mintTunnelWsToken}. */
   token: string;
   /** Extra query params to append after `token` (e.g. `conversationId`). */
   params?: Record<string, string>;
 }
 
 /**
- * Build a velay WebSocket URL for the cloud path:
+ * Build a tunnel WebSocket URL for the cloud path:
  *
- *   wss://<velayHost>/<assistantId><routePath>?token=<token>[&…]
+ *   wss://<tunnelHost>/<assistantId><routePath>?token=<token>[&…]
  *
  * The cloud counterpart of {@link buildSelfHostedGatewayWsUrl}, and shared by
- * every velay WS the browser opens for the same reason that one is shared: the
+ * every tunnel WS the browser opens for the same reason that one is shared: the
  * transport rules belong in one place rather than once per route.
  *
- * - **The `/<assistantId>` prefix selects the tunnel.** velay strips it to
+ * - **The `/<assistantId>` prefix selects the tunnel.** tunnel strips it to
  *   recover the upstream path, which is what it matches its allowlist and its
  *   per-user token validation against.
- * - **The scheme** is `wss` for the real velay host and `ws` when
- *   `VITE_VELAY_HOST` points at a loopback (local `vel up` velay) — see
- *   {@link getVelayWsScheme}.
- * - **The token is a minted velay token**, not the actor edge JWT the
- *   self-hosted builder uses. velay consumes it on the upgrade and injects the
+ * - **The scheme** is `wss` for the real tunnel host and `ws` when
+ *   `VITE_TUNNEL_HOST` points at a loopback (local `vel up` tunnel) — see
+ *   {@link getTunnelWsScheme}.
+ * - **The token is a minted tunnel token**, not the actor edge JWT the
+ *   self-hosted builder uses. tunnel consumes it on the upgrade and injects the
  *   authenticated user/org downstream; the gateway reads that attestation
  *   rather than the query param.
- * - **Extra params are forwarded upstream** by velay, which is how the gateway
+ * - **Extra params are forwarded upstream** by tunnel, which is how the gateway
  *   sees `conversationId` on live voice and `mimeType`/`sampleRate` on watch.
  *
  * Values are URL-encoded by `URLSearchParams`.
  */
-export function buildVelayWsUrl({
+export function buildTunnelWsUrl({
   assistantId,
   routePath,
   token,
   params,
-}: BuildVelayWsUrlArgs): string {
-  const host = getVelayHost();
-  const scheme = getVelayWsScheme(host);
+}: BuildTunnelWsUrlArgs): string {
+  const host = getTunnelHost();
+  const scheme = getTunnelWsScheme(host);
   const url = new URL(`${scheme}://${host}/${assistantId}${routePath}`);
   url.searchParams.set("token", token);
   for (const [key, value] of Object.entries(params ?? {})) {
@@ -286,7 +286,7 @@ export interface BuildSelfHostedGatewayWsUrlArgs {
  *
  * - **Scheme follows the ingress:** `https`→`wss`, `http`→`ws`, so a plain-HTTP
  *   local gateway is reachable over `ws`.
- * - **The token is the actor edge JWT**, not a minted velay token. It rides in
+ * - **The token is the actor edge JWT**, not a minted tunnel token. It rides in
  *   `?token=` because the browser WebSocket API can't set an `Authorization`
  *   header; the gateway's non-managed auth reads it there.
  * - **Local `/assistant/__gateway/<port>` proxy path → direct loopback dial**
@@ -346,15 +346,15 @@ export interface ResolveGatewayWsUrlArgs {
  * desktop all route through here.
  *
  * - **Self-hosted / local**: when {@link getSelfHostedIngressUrl} is primed,
- *   connect straight to the user's gateway with the actor edge JWT. No velay
- *   token-exchange happens. Throws {@link VelayWsTokenError} if the ingress is
+ *   connect straight to the user's gateway with the actor edge JWT. No tunnel
+ *   token-exchange happens. Throws {@link TunnelWsTokenError} if the ingress is
  *   known but the actor token hasn't been provisioned yet (a brief post-hatch
  *   window), so the caller surfaces a connection failure rather than dialling an
  *   unauthenticated socket. A paired ingress throws
  *   {@link PairedVoiceUnavailableError} first: the paired proxy is HTTP-only,
  *   so no WebSocket transport exists and the caller surfaces the
  *   unavailable reason.
- * - **Cloud**: mint a short-lived velay WS token and build the velay URL.
+ * - **Cloud**: mint a short-lived tunnel WS token and build the tunnel URL.
  */
 export async function resolveGatewayWsUrl({
   assistantId,
@@ -369,7 +369,7 @@ export async function resolveGatewayWsUrl({
     }
     const token = getSelfHostedActorToken();
     if (!token) {
-      throw new VelayWsTokenError(
+      throw new TunnelWsTokenError(
         0,
         `Self-hosted ${label} has no actor token yet; the gateway isn't ready.`,
       );
@@ -382,8 +382,8 @@ export async function resolveGatewayWsUrl({
     });
   }
 
-  const { token } = await mintVelayWsToken(assistantId);
-  return buildVelayWsUrl({ assistantId, routePath, token, params });
+  const { token } = await mintTunnelWsToken(assistantId);
+  return buildTunnelWsUrl({ assistantId, routePath, token, params });
 }
 
 export interface ResolveLiveVoiceWsUrlArgs {

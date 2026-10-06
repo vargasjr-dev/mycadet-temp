@@ -1,4 +1,4 @@
-import { isManagedCloud } from "@vellumai/local-mode/contract";
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import { spawn } from "child_process";
 
 import { extractHostFromUrl, resolveAssistant } from "../lib/assistant-config";

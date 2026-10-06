@@ -176,10 +176,9 @@ export function getPlatformBaseUrl(): string {
 }
 
 /**
- * Returns the environment-level apex domain (e.g. "mycadet.ai",
- * "dev.mycadet.ai", "staging.mycadet.ai"). Never includes the
- * assistant-specific subdomain. Legacy Vellum-era platform hosts still
- * resolve to the vellum.me deep-link family.
+ * Returns the environment-level apex domain (e.g. "mycadet.bot",
+ * "dev.mycadet.bot", "staging.mycadet.bot"). Never includes the
+ * assistant-specific subdomain.
  */
 export function getApexDomain(): string {
   try {
@@ -189,28 +188,20 @@ export function getApexDomain(): string {
     if (host.endsWith("cloud.mycadet.ai")) {
       const prefix = host.replace(/[-.]?cloud\.mycadet\.ai$/, "");
       if (prefix) {
-        return `${prefix}.mycadet.ai`;
+        return `${prefix}.mycadet.bot`;
       }
-      return "mycadet.ai";
-    }
-
-    if (host.endsWith("platform.vellum.ai")) {
-      const prefix = host.replace(/[-.]?platform\.vellum\.ai$/, "");
-      if (prefix) {
-        return `${prefix}.vellum.me`;
-      }
-      return "vellum.me";
+      return "mycadet.bot";
     }
 
     const env = str("VELLUM_ENVIRONMENT")?.trim();
     if (env && env !== "production") {
-      return `${env}.mycadet.ai`;
+      return `${env}.mycadet.bot`;
     }
-    return "local.mycadet.ai";
+    return "local.mycadet.bot";
   } catch {
     // Fall through to default
   }
-  return "mycadet.ai";
+  return "mycadet.bot";
 }
 
 export function getAssistantDomain(): string {

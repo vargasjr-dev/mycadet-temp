@@ -15,14 +15,14 @@
  *
  * Two callers, two shapes, because there are two ways a caller arrives:
  *
- * - **Through velay.** Velay validates the browser's token, strips any
- *   client-supplied copies of the `X-Velay-*` headers, and injects the
+ * - **Through tunnel.** Tunnel validates the browser's token, strips any
+ *   client-supplied copies of the `X-Tunnel-*` headers, and injects the
  *   authenticated caller. That attestation proves the caller is *a* platform
- *   user who traversed velay, so it is cross-checked against the bound
+ *   user who traversed tunnel, so it is cross-checked against the bound
  *   platform user id by {@link requireManagedGuardian}. A gateway takes
- *   this path when {@link acceptsVelayAttestation} says it has a velay tunnel
+ *   this path when {@link acceptsTunnelAttestation} says it has a tunnel
  *   at all: a managed pod, or a locally hosted assistant whose gateway dialed
- *   velay so the mobile app can reach it.
+ *   tunnel so the mobile app can reach it.
  * - **Everything else.** The caller presents an actor edge JWT and its
  *   principal is compared against the binding by {@link requireBoundGuardian}.
  *
@@ -38,15 +38,15 @@ import type { Logger } from "pino";
 import { authorizeRuntimeAudioStream } from "./runtime-audio-stream.js";
 import { findVellumGuardian } from "../../auth/guardian-bootstrap.js";
 import type { GatewayConfig } from "../../config.js";
-import { requestHasVelayBridgeAuth } from "../../velay/bridge-auth.js";
+import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
 import { readStoredPlatformUserId } from "../../platform-user-id.js";
 
-const VELAY_USER_ID_HEADER = "x-velay-user-id";
-const VELAY_ORG_ID_HEADER = "x-velay-org-id";
-const VELAY_ACTOR_HEADER = "x-velay-actor";
+const TUNNEL_USER_ID_HEADER = "x-tunnel-user-id";
+const TUNNEL_ORG_ID_HEADER = "x-tunnel-org-id";
+const TUNNEL_ACTOR_HEADER = "x-tunnel-actor";
 
 /**
- * True when the gateway runs in managed/cloud mode (vembda + velay ingress).
+ * True when the gateway runs in managed/cloud mode (vembda + tunnel ingress).
  * Mirrors the `IS_PLATFORM` check used by the gateway's HTTP edge auth
  * (`src/http/middleware/auth.ts`) and feature-flag resolver.
  */
@@ -56,41 +56,41 @@ export function isPlatformManaged(): boolean {
 }
 
 /**
- * True when a velay-attested caller can reach this gateway at all: a managed
- * pod, or any gateway started with a velay tunnel (`VELAY_BASE_URL`), which is
+ * True when a tunnel-attested caller can reach this gateway at all: a managed
+ * pod, or any gateway started with a tunnel (`TUNNEL_BASE_URL`), which is
  * how a locally hosted assistant is reachable from the mobile app.
  *
  * Only the bridge proof makes an attestation trustworthy; this predicate says
  * whether there is a bridge to have come through. A gateway with no tunnel
- * never sees velay traffic, so its routes go straight to the token path.
+ * never sees tunnel traffic, so its routes go straight to the token path.
  */
-export function acceptsVelayAttestation(
-  config: Pick<GatewayConfig, "velayBaseUrl">,
+export function acceptsTunnelAttestation(
+  config: Pick<GatewayConfig, "tunnelBaseUrl">,
 ): boolean {
-  return isPlatformManaged() || config.velayBaseUrl !== undefined;
+  return isPlatformManaged() || config.tunnelBaseUrl !== undefined;
 }
 
-/** Velay-attested managed caller context, extracted from injected headers. */
-export type VelayAttestedContext = {
+/** Tunnel-attested managed caller context, extracted from injected headers. */
+export type TunnelAttestedContext = {
   userId: string;
   orgId: string;
 };
 
 /**
- * Extract a velay-attested managed caller context from the upgrade request.
+ * Extract a tunnel-attested managed caller context from the upgrade request.
  *
- * Returns null when the request does not carry a complete, well-formed velay
- * attestation (`X-Velay-User-Id` + `X-Velay-Org-Id` both present, with
- * `X-Velay-Actor: user`). Callers MUST only trust the result in managed mode,
+ * Returns null when the request does not carry a complete, well-formed tunnel
+ * attestation (`X-Tunnel-User-Id` + `X-Tunnel-Org-Id` both present, with
+ * `X-Tunnel-Actor: user`). Callers MUST only trust the result in managed mode,
  * and only alongside the process-local bridge proof: a direct request to a
  * reachable gateway can spoof the header names but not the proof value.
  */
-export function extractVelayAttestedContext(
+export function extractTunnelAttestedContext(
   req: Request,
-): VelayAttestedContext | null {
-  const userId = req.headers.get(VELAY_USER_ID_HEADER)?.trim();
-  const orgId = req.headers.get(VELAY_ORG_ID_HEADER)?.trim();
-  const actor = req.headers.get(VELAY_ACTOR_HEADER)?.trim().toLowerCase();
+): TunnelAttestedContext | null {
+  const userId = req.headers.get(TUNNEL_USER_ID_HEADER)?.trim();
+  const orgId = req.headers.get(TUNNEL_ORG_ID_HEADER)?.trim();
+  const actor = req.headers.get(TUNNEL_ACTOR_HEADER)?.trim().toLowerCase();
 
   if (!userId || !orgId || actor !== "user") {
     return null;
@@ -99,14 +99,14 @@ export function extractVelayAttestedContext(
 }
 
 /**
- * Managed-mode guardian check: cross-check a velay-attested caller's platform
+ * Managed-mode guardian check: cross-check a tunnel-attested caller's platform
  * user id against the bound platform user id, the same guard the
  * edge-auth middleware applies to guardian routes under the platform bypass.
  *
  * Returns null when the caller is the guardian, else a 403/503 Response.
  */
 export async function requireManagedGuardian(
-  velayUserId: string,
+  tunnelUserId: string,
   log: Logger,
 ): Promise<Response | null> {
   let storedUserId: string | undefined;
@@ -127,8 +127,8 @@ export async function requireManagedGuardian(
     log.warn("guardian pin: no platform user id bound on this assistant");
     return new Response("Forbidden", { status: 403 });
   }
-  if (storedUserId !== velayUserId) {
-    log.warn("guardian pin: velay caller is not the bound guardian");
+  if (storedUserId !== tunnelUserId) {
+    log.warn("guardian pin: tunnel caller is not the bound guardian");
     return new Response("Forbidden", { status: 403 });
   }
   return null;
@@ -162,7 +162,7 @@ export async function requireBoundGuardian(
 }
 
 /**
- * The whole gate for a guardian-only runtime-stream upgrade: the velay-attested
+ * The whole gate for a guardian-only runtime-stream upgrade: the tunnel-attested
  * managed path first, then the actor-token gate with the pin on top. Returns
  * null when the caller may open the socket, else the Response to send. An
  * incomplete attestation falls through, so managed still accepts an edge JWT.
@@ -179,24 +179,24 @@ export async function authorizeGuardianStream(
     return new Response("Upgrade Required", { status: 426 });
   }
 
-  if (acceptsVelayAttestation(config) && config.runtimeProxyRequireAuth) {
-    const velayContext = extractVelayAttestedContext(req);
-    if (velayContext) {
-      if (requestHasVelayBridgeAuth(req)) {
+  if (acceptsTunnelAttestation(config) && config.runtimeProxyRequireAuth) {
+    const tunnelContext = extractTunnelAttestedContext(req);
+    if (tunnelContext) {
+      if (requestHasTunnelBridgeAuth(req)) {
         const guardianError = await requireManagedGuardian(
-          velayContext.userId,
+          tunnelContext.userId,
           log,
         );
         if (guardianError) {
           return guardianError;
         }
         log.info(
-          { userId: velayContext.userId, orgId: velayContext.orgId },
-          "guardian pin: authenticated via velay-attested managed context",
+          { userId: tunnelContext.userId, orgId: tunnelContext.orgId },
+          "guardian pin: authenticated via tunnel-attested managed context",
         );
         return null;
       }
-      log.warn("guardian pin: ignoring velay context without bridge proof");
+      log.warn("guardian pin: ignoring tunnel context without bridge proof");
     }
   }
 

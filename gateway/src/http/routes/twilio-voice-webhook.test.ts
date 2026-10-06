@@ -388,14 +388,14 @@ describe("resolvePublicBaseWssUrl", () => {
     assistantRuntimeBaseUrl: "http://localhost:3000",
   } as Parameters<typeof resolvePublicBaseWssUrl>[0];
 
-  test("returns undefined when neither velayBaseUrl nor configFile publicBaseUrl is set", () => {
+  test("returns undefined when neither tunnelBaseUrl nor configFile publicBaseUrl is set", () => {
     expect(resolvePublicBaseWssUrl(baseConfig)).toBeUndefined();
   });
 
-  test("uses velayBaseUrl + platformAssistantId when both are present", () => {
+  test("uses tunnelBaseUrl + platformAssistantId when both are present", () => {
     const config = {
       ...baseConfig,
-      velayBaseUrl: "https://velay-dev.vellum.ai",
+      tunnelBaseUrl: "https://tunnel-dev.mycadet.ai",
     };
     const result = resolvePublicBaseWssUrl(
       config,
@@ -403,19 +403,19 @@ describe("resolvePublicBaseWssUrl", () => {
       "abc12345-0000-0000-0000-000000000000",
     );
     expect(result).toBe(
-      "wss://velay-dev.vellum.ai/abc12345-0000-0000-0000-000000000000",
+      "wss://tunnel-dev.mycadet.ai/abc12345-0000-0000-0000-000000000000",
     );
   });
 
-  test("uses configFile publicBaseUrl before velayBaseUrl fallback", () => {
+  test("uses configFile publicBaseUrl before tunnelBaseUrl fallback", () => {
     const config = {
       ...baseConfig,
-      velayBaseUrl: "http://host.docker.internal:8501",
+      tunnelBaseUrl: "http://host.docker.internal:8501",
     };
     const mockConfigFile = {
       getString: (section: string, key: string) =>
         section === "ingress" && key === "publicBaseUrl"
-          ? "https://velay-public.example.test/abc12345-0000-0000-0000-000000000000"
+          ? "https://tunnel-public.example.test/abc12345-0000-0000-0000-000000000000"
           : undefined,
     } as Parameters<typeof resolvePublicBaseWssUrl>[1];
     const result = resolvePublicBaseWssUrl(
@@ -424,31 +424,31 @@ describe("resolvePublicBaseWssUrl", () => {
       "abc12345-0000-0000-0000-000000000000",
     );
     expect(result).toBe(
-      "wss://velay-public.example.test/abc12345-0000-0000-0000-000000000000",
+      "wss://tunnel-public.example.test/abc12345-0000-0000-0000-000000000000",
     );
   });
 
   test("falls back to configFile publicBaseUrl when platformAssistantId is missing", () => {
     const config = {
       ...baseConfig,
-      velayBaseUrl: "https://velay-dev.vellum.ai",
+      tunnelBaseUrl: "https://tunnel-dev.mycadet.ai",
     };
     const mockConfigFile = {
       getString: (section: string, key: string) =>
         section === "ingress" && key === "publicBaseUrl"
-          ? "https://velay-dev.vellum.ai/abc12345-0000-0000-0000-000000000000"
+          ? "https://tunnel-dev.mycadet.ai/abc12345-0000-0000-0000-000000000000"
           : undefined,
     } as Parameters<typeof resolvePublicBaseWssUrl>[1];
     const result = resolvePublicBaseWssUrl(config, mockConfigFile, undefined);
     expect(result).toBe(
-      "wss://velay-dev.vellum.ai/abc12345-0000-0000-0000-000000000000",
+      "wss://tunnel-dev.mycadet.ai/abc12345-0000-0000-0000-000000000000",
     );
   });
 
-  test("uses assistant ID from validated platform callback URL with Velay", () => {
+  test("uses assistant ID from validated platform callback URL with Tunnel", () => {
     const config = {
       ...baseConfig,
-      velayBaseUrl: "https://velay-staging.vellum.ai",
+      tunnelBaseUrl: "https://tunnel-staging.mycadet.ai",
     };
     const result = resolvePublicBaseWssUrl(
       config,
@@ -457,14 +457,14 @@ describe("resolvePublicBaseWssUrl", () => {
       "https://staging-platform.vellum.ai/v1/gateway/callbacks/019e2d0d-f355-744c-a12c-d7e7dcefcf1e/webhooks/twilio/voice/?callSessionId=37b47ade-2eaf-469a-bede-6f2454875e6e",
     );
     expect(result).toBe(
-      "wss://velay-staging.vellum.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
+      "wss://tunnel-staging.mycadet.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
     );
   });
 
   test("prefers validated platform callback URL over stale configFile publicBaseUrl", () => {
     const config = {
       ...baseConfig,
-      velayBaseUrl: "https://velay-staging.vellum.ai",
+      tunnelBaseUrl: "https://tunnel-staging.mycadet.ai",
     };
     const mockConfigFile = {
       getString: (section: string, key: string) =>
@@ -479,14 +479,14 @@ describe("resolvePublicBaseWssUrl", () => {
       "https://staging-platform.vellum.ai/v1/gateway/callbacks/019e2d0d-f355-744c-a12c-d7e7dcefcf1e/webhooks/twilio/voice?callSessionId=sess-1",
     );
     expect(result).toBe(
-      "wss://velay-staging.vellum.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
+      "wss://tunnel-staging.mycadet.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
     );
   });
 
   test("does not use a platform callback URL as the websocket base", () => {
     const config = {
       ...baseConfig,
-      velayBaseUrl: "https://velay-staging.vellum.ai",
+      tunnelBaseUrl: "https://tunnel-staging.mycadet.ai",
     };
     const mockConfigFile = {
       getString: (section: string, key: string) =>
@@ -496,14 +496,14 @@ describe("resolvePublicBaseWssUrl", () => {
     } as Parameters<typeof resolvePublicBaseWssUrl>[1];
     const result = resolvePublicBaseWssUrl(config, mockConfigFile, undefined);
     expect(result).toBe(
-      "wss://velay-staging.vellum.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
+      "wss://tunnel-staging.mycadet.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
     );
   });
 
-  test("strips trailing slash from velayBaseUrl before joining assistant ID", () => {
+  test("strips trailing slash from tunnelBaseUrl before joining assistant ID", () => {
     const config = {
       ...baseConfig,
-      velayBaseUrl: "https://velay-dev.vellum.ai/",
+      tunnelBaseUrl: "https://tunnel-dev.mycadet.ai/",
     };
     const result = resolvePublicBaseWssUrl(
       config,
@@ -511,7 +511,7 @@ describe("resolvePublicBaseWssUrl", () => {
       "abc12345-0000-0000-0000-000000000000",
     );
     expect(result).toBe(
-      "wss://velay-dev.vellum.ai/abc12345-0000-0000-0000-000000000000",
+      "wss://tunnel-dev.mycadet.ai/abc12345-0000-0000-0000-000000000000",
     );
   });
 });

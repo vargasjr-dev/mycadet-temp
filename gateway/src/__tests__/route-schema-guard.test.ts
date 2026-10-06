@@ -222,7 +222,7 @@ const EXCLUDED_FROM_SCHEMA = new Set([
   "/v1/contacts/guardian/channel",
   // BFF token auth — loopback-only, not part of the public gateway API
   "/auth/token",
-  // Managed-speech relay — daemon-only WS egress to velay, rejected on any
+  // Managed-speech relay — daemon-only WS egress to tunnel, rejected on any
   // ingress path; not part of the public gateway API
   "/v1/speech/stt/stream",
   "/v2/speech/stt/stream",

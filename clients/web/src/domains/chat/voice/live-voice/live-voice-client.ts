@@ -2,7 +2,7 @@
  * Browser live-voice channel client (WebSocket transport).
  *
  * One instance drives
- * one live-voice session: it resolves the transport URL (cloud velay token or
+ * one live-voice session: it resolves the transport URL (cloud tunnel token or
  * self-hosted gateway + actor token, via {@link resolveLiveVoiceWsUrl}), opens
  * the WebSocket, sends the `start` frame on open, streams microphone PCM as
  * binary frames, and dispatches parsed server frames as typed events.
@@ -56,7 +56,7 @@ const CONNECT_TIMEOUT_MS = 10_000;
 
 /**
  * WebSocket close codes that are transient and retryable rather than terminal.
- * `1013` ("Try Again Later") is what velay sends when its tunnel to the
+ * `1013` ("Try Again Later") is what tunnel sends when its tunnel to the
  * assistant drops ("assistant tunnel disconnected"); `1012` ("Service Restart")
  * is treated the same. The controller reconnects a hands-free session through
  * these; the transport also uses them to distinguish a retryable close that
@@ -88,10 +88,10 @@ export interface LiveVoiceClientError {
 
 /**
  * Payload of the `closed` event. `code` is the WebSocket close code from the
- * far side (velay/gateway/runtime) when the socket was closed remotely, or
+ * far side (tunnel/gateway/runtime) when the socket was closed remotely, or
  * `null` when this client initiated the close (`close()`/`end()`/`fail()`).
  *
- * The distinction matters for reconnect: velay closes a proxied session with
+ * The distinction matters for reconnect: tunnel closes a proxied session with
  * code 1013 ("Try Again Later") when its tunnel to the assistant drops — a
  * transient, retryable condition the session controller should reconnect
  * through rather than tear down. A local `null` close is deliberate and never
@@ -381,7 +381,7 @@ export class LiveVoiceChannelClient {
   }
 
   /**
-   * Resolve the transport URL (cloud velay token or self-hosted gateway +
+   * Resolve the transport URL (cloud tunnel token or self-hosted gateway +
    * actor token), open the WebSocket, and send the `start` frame on open.
    * Resolves once the socket is opening; session readiness is signalled via the
    * `ready` event (or `error` / `busy` if it never arrives).
@@ -866,7 +866,7 @@ export class LiveVoiceChannelClient {
       return;
     }
     // An unexpected close before `ready` is normally a connection failure — but
-    // a *retryable* close (velay's 1012/1013) can land pre-`ready` when a
+    // a *retryable* close (tunnel's 1012/1013) can land pre-`ready` when a
     // reconnect races the tunnel's re-registration. Forward those as a normal
     // close carrying the code so the controller can spend its remaining
     // reconnect budget instead of failing the session on the first blip;
@@ -883,7 +883,7 @@ export class LiveVoiceChannelClient {
     }
     this.teardown();
     // Forward the far-side close code so the controller can reconnect through a
-    // retryable tunnel drop (velay 1013).
+    // retryable tunnel drop (tunnel 1013).
     this.emit("closed", { code: event.code, reason: event.reason });
   }
 

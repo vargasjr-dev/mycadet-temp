@@ -6,10 +6,10 @@ import type { CredentialCache } from "../credential-cache.js";
 import {
   createSpeechRelayUpgradeHandler,
   getSpeechRelayWebsocketHandlers,
-  velayOriginForPlatformHost,
+  tunnelOriginForPlatformHost,
   type SpeechRelaySocketData,
 } from "../http/routes/speech-relay-websocket.js";
-import { VELAY_FORWARDED_HEADER } from "../velay/bridge-utils.js";
+import { TUNNEL_FORWARDED_HEADER } from "../tunnel/bridge-utils.js";
 import {
   makeConfig as makeGatewayConfig,
   makeFakeServer,
@@ -43,10 +43,10 @@ function mintOverScopedDaemonToken(): string {
   });
 }
 
-/** The relay dials an explicit velay origin; the derivation tests unset it. */
+/** The relay dials an explicit tunnel origin; the derivation tests unset it. */
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   return makeGatewayConfig({
-    velayBaseUrl: "https://velay.test",
+    tunnelBaseUrl: "https://tunnel.test",
     ...overrides,
   });
 }
@@ -73,7 +73,7 @@ function makeKeyedCredentials(
   } as unknown as CredentialCache;
 }
 
-describe("velay origin derivation", () => {
+describe("tunnel origin derivation", () => {
   // getPlatformBaseUrl falls back to this env var; pin it absent so the
   // missing-credential cases below are deterministic on dev machines.
   const savedPlatformUrl = process.env.VELLUM_PLATFORM_URL;
@@ -86,27 +86,27 @@ describe("velay origin derivation", () => {
     }
   });
 
-  test("velayOriginForPlatformHost follows the deployment naming convention", () => {
-    expect(velayOriginForPlatformHost("platform.vellum.ai")).toBe(
-      "https://velay.vellum.ai",
+  test("tunnelOriginForPlatformHost follows the deployment naming convention", () => {
+    expect(tunnelOriginForPlatformHost("platform.vellum.ai")).toBe(
+      "https://tunnel.mycadet.ai",
     );
-    expect(velayOriginForPlatformHost("staging-platform.vellum.ai")).toBe(
-      "https://velay-staging.vellum.ai",
+    expect(tunnelOriginForPlatformHost("staging-platform.vellum.ai")).toBe(
+      "https://tunnel-staging.mycadet.ai",
     );
-    expect(velayOriginForPlatformHost("dev-platform.vellum.ai")).toBe(
-      "https://velay-dev.vellum.ai",
+    expect(tunnelOriginForPlatformHost("dev-platform.vellum.ai")).toBe(
+      "https://tunnel-dev.mycadet.ai",
     );
-    expect(velayOriginForPlatformHost("localhost")).toBeNull();
-    expect(velayOriginForPlatformHost("example.com")).toBeNull();
+    expect(tunnelOriginForPlatformHost("localhost")).toBeNull();
+    expect(tunnelOriginForPlatformHost("example.com")).toBeNull();
     expect(
-      velayOriginForPlatformHost("staging-platform.vellum.ai.evil.com"),
+      tunnelOriginForPlatformHost("staging-platform.vellum.ai.evil.com"),
     ).toBeNull();
   });
 
-  test("derives the velay origin from the stored platform base URL when VELAY_BASE_URL is unset", async () => {
+  test("derives the tunnel origin from the stored platform base URL when TUNNEL_BASE_URL is unset", async () => {
     const server = makeFakeServer();
     const handler = createSpeechRelayUpgradeHandler(
-      makeConfig({ velayBaseUrl: undefined }),
+      makeConfig({ tunnelBaseUrl: undefined }),
       "stt",
       {
         credentials: makeKeyedCredentials({
@@ -124,14 +124,14 @@ describe("velay origin derivation", () => {
     expect(await handler(req, server)).toBeUndefined();
     const data = upgradedData<SpeechRelaySocketData>(server);
     expect(new URL(data.upstreamWsUrl).origin).toBe(
-      "wss://velay-staging.vellum.ai",
+      "wss://tunnel-staging.mycadet.ai",
     );
     expect(new URL(data.upstreamHttpUrl).origin).toBe(
-      "https://velay-staging.vellum.ai",
+      "https://tunnel-staging.mycadet.ai",
     );
   });
 
-  test("falls back to prod velay for an off-convention or missing platform base URL", async () => {
+  test("falls back to prod tunnel for an off-convention or missing platform base URL", async () => {
     for (const platformBaseUrl of [
       "http://localhost:8000",
       "not a url",
@@ -139,7 +139,7 @@ describe("velay origin derivation", () => {
     ]) {
       const server = makeFakeServer();
       const handler = createSpeechRelayUpgradeHandler(
-        makeConfig({ velayBaseUrl: undefined }),
+        makeConfig({ tunnelBaseUrl: undefined }),
         "stt",
         {
           credentials: makeKeyedCredentials({
@@ -155,11 +155,13 @@ describe("velay origin derivation", () => {
 
       expect(await handler(req, server)).toBeUndefined();
       const data = upgradedData<SpeechRelaySocketData>(server);
-      expect(new URL(data.upstreamWsUrl).origin).toBe("wss://velay.vellum.ai");
+      expect(new URL(data.upstreamWsUrl).origin).toBe(
+        "wss://tunnel.mycadet.ai",
+      );
     }
   });
 
-  test("an explicit VELAY_BASE_URL wins over the stored platform base URL", async () => {
+  test("an explicit TUNNEL_BASE_URL wins over the stored platform base URL", async () => {
     const server = makeFakeServer();
     const handler = createSpeechRelayUpgradeHandler(makeConfig(), "stt", {
       credentials: makeKeyedCredentials({
@@ -175,7 +177,7 @@ describe("velay origin derivation", () => {
 
     expect(await handler(req, server)).toBeUndefined();
     const data = upgradedData<SpeechRelaySocketData>(server);
-    expect(new URL(data.upstreamWsUrl).origin).toBe("wss://velay.test");
+    expect(new URL(data.upstreamWsUrl).origin).toBe("wss://tunnel.test");
   });
 });
 
@@ -194,15 +196,15 @@ describe("createSpeechRelayUpgradeHandler — gate", () => {
     expect(server.upgrade).toHaveBeenCalledTimes(1);
     const data = upgradedData<SpeechRelaySocketData>(server);
     const upstream = new URL(data.upstreamWsUrl);
-    expect(upstream.origin).toBe("wss://velay.test");
+    expect(upstream.origin).toBe("wss://tunnel.test");
     expect(upstream.pathname).toBe("/v1/speech/stt/stream");
     expect(upstream.searchParams.get("encoding")).toBe("linear16");
     expect(upstream.searchParams.get("sample_rate")).toBe("16000");
-    // The daemon's gateway token must never be forwarded to velay.
+    // The daemon's gateway token must never be forwarded to tunnel.
     expect(upstream.searchParams.has("key")).toBe(false);
   });
 
-  test("routes managed STT v2 to velay's v2 path with the Flux params", async () => {
+  test("routes managed STT v2 to tunnel's v2 path with the Flux params", async () => {
     const server = makeFakeServer();
     const handler = createSpeechRelayUpgradeHandler(
       makeConfig(),
@@ -246,7 +248,7 @@ describe("createSpeechRelayUpgradeHandler — gate", () => {
     }
   });
 
-  test("routes the tts operation to velay's tts path", async () => {
+  test("routes the tts operation to tunnel's tts path", async () => {
     const server = makeFakeServer();
     const handler = createSpeechRelayUpgradeHandler(makeConfig(), "tts", {
       credentials: makeCredentials("vk-1"),
@@ -261,10 +263,10 @@ describe("createSpeechRelayUpgradeHandler — gate", () => {
     expect(new URL(data.upstreamWsUrl).pathname).toBe("/v1/speech/tts/stream");
   });
 
-  test("forwards the tts voice model to velay", async () => {
+  test("forwards the tts voice model to tunnel", async () => {
     // Regression: the daemon sends the selected managed voice as `model`;
     // a gateway that rejects it silently breaks voice selection (the
-    // daemon's synthesis fails before velay ever sees the session).
+    // daemon's synthesis fails before tunnel ever sees the session).
     const server = makeFakeServer();
     const handler = createSpeechRelayUpgradeHandler(makeConfig(), "tts", {
       credentials: makeCredentials("vk-1"),
@@ -338,13 +340,13 @@ describe("createSpeechRelayUpgradeHandler — gate", () => {
     });
   });
 
-  test("rejects velay-forwarded requests regardless of token", async () => {
+  test("rejects tunnel-forwarded requests regardless of token", async () => {
     const handler = createSpeechRelayUpgradeHandler(makeConfig(), "stt", {
       credentials: makeCredentials("vk-1"),
     });
     const req = new Request(
       `http://127.0.0.1:7830/v1/speech/stt/stream?key=${TOKEN}`,
-      { headers: { upgrade: "websocket", [VELAY_FORWARDED_HEADER]: "1" } },
+      { headers: { upgrade: "websocket", [TUNNEL_FORWARDED_HEADER]: "1" } },
     );
 
     const res = (await handler(req, makeFakeServer()))!;
@@ -367,7 +369,7 @@ describe("createSpeechRelayUpgradeHandler — probe (non-upgrade GET)", () => {
     expect((await bodyOf(res)).code).toBe("missing_platform_connection");
   });
 
-  test("forwards velay's JSON rejection with its status", async () => {
+  test("forwards tunnel's JSON rejection with its status", async () => {
     const fetchImpl = mock(
       async () =>
         new Response(
@@ -389,11 +391,11 @@ describe("createSpeechRelayUpgradeHandler — probe (non-upgrade GET)", () => {
       code: "insufficient_balance",
       detail: "empty",
     });
-    // The probe authenticates to velay with the assistant API key.
+    // The probe authenticates to tunnel with the assistant API key.
     const probeCall = (fetchImpl as unknown as { mock: { calls: unknown[][] } })
       .mock.calls[0]!;
     expect(String(probeCall[0])).toContain(
-      "https://velay.test/v1/speech/stt/stream",
+      "https://tunnel.test/v1/speech/stt/stream",
     );
     expect(
       (probeCall[1] as { headers: Record<string, string> }).headers
@@ -420,7 +422,7 @@ describe("createSpeechRelayUpgradeHandler — probe (non-upgrade GET)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Websocket handlers — velay dial + frame pipe
+// Websocket handlers — tunnel dial + frame pipe
 // ---------------------------------------------------------------------------
 
 type WsListener = (ev?: unknown) => void;
@@ -499,9 +501,9 @@ function makeSocketData(
   return {
     wsType: "speech-relay",
     operation: "stt",
-    upstreamWsUrl: "wss://velay.test/v1/speech/stt/stream?encoding=linear16",
+    upstreamWsUrl: "wss://tunnel.test/v1/speech/stt/stream?encoding=linear16",
     upstreamHttpUrl:
-      "https://velay.test/v1/speech/stt/stream?encoding=linear16",
+      "https://tunnel.test/v1/speech/stt/stream?encoding=linear16",
     deps: {
       credentials: makeCredentials("vk-1"),
       webSocketConstructor:
@@ -514,7 +516,7 @@ function makeSocketData(
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
 
 describe("getSpeechRelayWebsocketHandlers", () => {
-  test("dials velay with the Api-Key header and pipes frames both ways", async () => {
+  test("dials tunnel with the Api-Key header and pipes frames both ways", async () => {
     FakeUpstreamWebSocket.instances = [];
     const handlers = getSpeechRelayWebsocketHandlers();
     const ws = new FakeDownstreamSocket(makeSocketData());
@@ -522,7 +524,7 @@ describe("getSpeechRelayWebsocketHandlers", () => {
     await handlers.open(ws as never);
     const upstream = FakeUpstreamWebSocket.instances[0]!;
     expect(upstream.url).toBe(
-      "wss://velay.test/v1/speech/stt/stream?encoding=linear16",
+      "wss://tunnel.test/v1/speech/stt/stream?encoding=linear16",
     );
     expect(upstream.options?.headers?.Authorization).toBe("Api-Key vk-1");
 
@@ -545,7 +547,7 @@ describe("getSpeechRelayWebsocketHandlers", () => {
     const ws = new FakeDownstreamSocket(makeSocketData());
     await handlers.open(ws as never);
 
-    // The velay leg never opens; pump binary frames up to the 1 MiB cap.
+    // The tunnel leg never opens; pump binary frames up to the 1 MiB cap.
     const frame = new Uint8Array(64 * 1024);
     for (let i = 0; i < 16; i++) {
       handlers.message(ws as never, frame);
@@ -566,11 +568,11 @@ describe("getSpeechRelayWebsocketHandlers", () => {
     const upstream = FakeUpstreamWebSocket.instances[0]!;
     upstream.emitOpen();
     upstream.emitMessage(
-      '{"type":"velay_error","code":"session_duration_exceeded","detail":""}',
+      '{"type":"tunnel_error","code":"session_duration_exceeded","detail":""}',
     );
     upstream.emitClose(1000, "session_duration_exceeded");
 
-    // The velay_error frame passes through untouched, then the close.
+    // The tunnel_error frame passes through untouched, then the close.
     expect(ws.sent[0]).toContain("session_duration_exceeded");
     expect(ws.closeCalled).toEqual({
       code: 1000,
@@ -587,7 +589,7 @@ describe("getSpeechRelayWebsocketHandlers", () => {
     expect(FakeUpstreamWebSocket.instances[0]!.binaryType).toBe("arraybuffer");
   });
 
-  test("a pre-open close waits for the probe's velay_error before closing", async () => {
+  test("a pre-open close waits for the probe's tunnel_error before closing", async () => {
     // A rejected handshake can emit close (or error+close) before the async
     // probe resolves; the raw close must not beat the synthesized frame.
     FakeUpstreamWebSocket.instances = [];
@@ -618,7 +620,7 @@ describe("getSpeechRelayWebsocketHandlers", () => {
     ).toHaveLength(1);
   });
 
-  test("a failed velay dial synthesizes a velay_error from the HTTP probe", async () => {
+  test("a failed tunnel dial synthesizes a tunnel_error from the HTTP probe", async () => {
     FakeUpstreamWebSocket.instances = [];
     const handlers = getSpeechRelayWebsocketHandlers();
     const fetchImpl = mock(
@@ -637,14 +639,14 @@ describe("getSpeechRelayWebsocketHandlers", () => {
 
     expect(ws.sent).toHaveLength(1);
     expect(JSON.parse(ws.sent[0] as string)).toEqual({
-      type: "velay_error",
+      type: "tunnel_error",
       code: "invalid_key",
       detail: "bad",
     });
     expect(ws.closeCalled?.code).toBe(1011);
   });
 
-  test("missing API key closes with a synthesized velay_error, no dial", async () => {
+  test("missing API key closes with a synthesized tunnel_error, no dial", async () => {
     FakeUpstreamWebSocket.instances = [];
     const handlers = getSpeechRelayWebsocketHandlers();
     const data = makeSocketData();
@@ -663,7 +665,7 @@ describe("getSpeechRelayWebsocketHandlers", () => {
   test("a ws:// relay base still yields a fetchable probe URL", async () => {
     const server = makeFakeServer();
     const handler = createSpeechRelayUpgradeHandler(
-      makeConfig({ velayBaseUrl: "wss://velay.test" } as never),
+      makeConfig({ tunnelBaseUrl: "wss://tunnel.test" } as never),
       "stt",
       { credentials: makeCredentials("vk-1") },
     );
@@ -674,11 +676,11 @@ describe("getSpeechRelayWebsocketHandlers", () => {
 
     expect(await handler(req, server)).toBeUndefined();
     const data = upgradedData<SpeechRelaySocketData>(server);
-    expect(data.upstreamWsUrl.startsWith("wss://velay.test/")).toBe(true);
-    expect(data.upstreamHttpUrl.startsWith("https://velay.test/")).toBe(true);
+    expect(data.upstreamWsUrl.startsWith("wss://tunnel.test/")).toBe(true);
+    expect(data.upstreamHttpUrl.startsWith("https://tunnel.test/")).toBe(true);
   });
 
-  test("a daemon close during the credential read prevents the velay dial", async () => {
+  test("a daemon close during the credential read prevents the tunnel dial", async () => {
     FakeUpstreamWebSocket.instances = [];
     const handlers = getSpeechRelayWebsocketHandlers();
     let releaseRead: (v: string) => void = () => {};
@@ -699,7 +701,7 @@ describe("getSpeechRelayWebsocketHandlers", () => {
     expect(FakeUpstreamWebSocket.instances).toHaveLength(0);
   });
 
-  test("daemon close is forwarded to velay", async () => {
+  test("daemon close is forwarded to tunnel", async () => {
     FakeUpstreamWebSocket.instances = [];
     const handlers = getSpeechRelayWebsocketHandlers();
     const ws = new FakeDownstreamSocket(makeSocketData());

@@ -19,7 +19,7 @@ import {
   ipcCallPersistent,
   ipcClassifyRisk,
   ipcGetFeatureFlags,
-  ipcGetVelayStatus,
+  ipcGetTunnelStatus,
   resetPersistentClient,
 } from "./gateway-client.js";
 
@@ -140,18 +140,18 @@ describe("ipcGetFeatureFlags", () => {
   });
 });
 
-describe("ipcGetVelayStatus", () => {
-  test("parses the shared Velay status response", async () => {
+describe("ipcGetTunnelStatus", () => {
+  test("parses the shared Tunnel status response", async () => {
     mockGatewayIpc(null, {
       results: {
-        get_velay_status: {
+        get_tunnel_status: {
           connected: true,
           publicUrl: "https://example.test",
         },
       },
     });
 
-    expect(await ipcGetVelayStatus()).toEqual({
+    expect(await ipcGetTunnelStatus()).toEqual({
       connected: true,
       publicUrl: "https://example.test",
     });
@@ -160,11 +160,11 @@ describe("ipcGetVelayStatus", () => {
   test("keeps connected status when publicUrl is malformed", async () => {
     mockGatewayIpc(null, {
       results: {
-        get_velay_status: { connected: false, publicUrl: 42 },
+        get_tunnel_status: { connected: false, publicUrl: 42 },
       },
     });
 
-    expect(await ipcGetVelayStatus()).toEqual({
+    expect(await ipcGetTunnelStatus()).toEqual({
       connected: false,
       publicUrl: null,
     });
@@ -172,10 +172,10 @@ describe("ipcGetVelayStatus", () => {
 
   test("returns null when connected is missing or malformed", async () => {
     mockGatewayIpc(null, {
-      results: { get_velay_status: { connected: "yes" } },
+      results: { get_tunnel_status: { connected: "yes" } },
     });
 
-    expect(await ipcGetVelayStatus()).toBeNull();
+    expect(await ipcGetTunnelStatus()).toBeNull();
   });
 });
 

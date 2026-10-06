@@ -11,7 +11,7 @@ import {
   isValidWebhookIngressPath,
   MAX_WEBHOOK_INGRESS_PATH_LENGTH,
   PLUGIN_WEBHOOK_PATH_PREFIX,
-} from "../velay/path-utils.js";
+} from "../tunnel/path-utils.js";
 import { IngressInboundSchema } from "./ingress-inbound.js";
 import { IngressVerificationSchema } from "./ingress-verification.js";
 
@@ -22,7 +22,7 @@ export const PLUGIN_INGRESS_MANIFEST_RELPATH = join("channels", "ingress.json");
 
 /**
  * Transport a declared route expects. HTTP and WebSocket are bridged
- * differently (`velay/http-bridge.ts` vs `velay/websocket-bridge.ts`), so
+ * differently (`tunnel/http-bridge.ts` vs `tunnel/websocket-bridge.ts`), so
  * the kind has to be known before a connection arrives.
  */
 export const IngressRouteKindSchema = z.enum(["http", "websocket"]);
@@ -52,7 +52,7 @@ const SAFE_PLUGIN_NAME = /^[a-z0-9][a-z0-9._-]*$/i;
  * A path is canonical when percent-decoding and POSIX normalization both
  * leave it unchanged.
  *
- * Velay percent-decodes and `path.Clean`s an inbound path before matching
+ * Tunnel percent-decodes and `path.Clean`s an inbound path before matching
  * it against the allowlist, so a non-canonical declaration is served under
  * a different path than the one declared: `%2e%2e/other/hook` decodes out
  * of the declaring plugin's namespace, and `a//b` cleans to `a/b`,
@@ -64,7 +64,7 @@ function isCanonicalPath(value: string): boolean {
   try {
     decoded = decodeURIComponent(value);
   } catch {
-    // Malformed percent-encoding — Velay's decode would fail or differ.
+    // Malformed percent-encoding — Tunnel's decode would fail or differ.
     return false;
   }
   return decoded === value && posix.normalize(value) === value;

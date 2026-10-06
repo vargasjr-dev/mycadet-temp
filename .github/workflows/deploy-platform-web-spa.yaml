@@ -71,11 +71,11 @@ jobs:
       #                              Unset keeps Android promotion disabled.
       #   - VITE_STRIPE_PUBLISHABLE_KEY  per-environment secret; publishable keys
       #                              are public, so embedding them is expected
-      #   - VITE_VELAY_HOST          per-environment variable: the live-voice
-      #                              velay host (no scheme), e.g.
-      #                              `velay-dev.vellum.ai` on nonprod. Unset in
+      #   - VITE_TUNNEL_HOST          per-environment variable: the live-voice
+      #                              tunnel host (no scheme), e.g.
+      #                              `tunnel-dev.vellum.ai` on nonprod. Unset in
       #                              prod, where the client defaults to
-      #                              `velay.vellum.ai`. Must match the velay the
+      #                              `tunnel.vellum.ai`. Must match the tunnel the
       #                              environment's assistant gateways tunnel to,
       #                              or the live-voice WS upgrade 503s "offline".
       #   - VITE_APP_VERSION         commit SHA baked into the browser bundle
@@ -90,7 +90,7 @@ jobs:
           VITE_SESSION_REPLAY_APP_ID: ${{ vars.VITE_SESSION_REPLAY_APP_ID }}
           VITE_ANDROID_PLAY_STORE_URL: ${{ vars.VITE_ANDROID_PLAY_STORE_URL }}
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
-          VITE_VELAY_HOST: ${{ vars.VITE_VELAY_HOST }}
+          VITE_TUNNEL_HOST: ${{ vars.VITE_TUNNEL_HOST }}
           VITE_APP_VERSION: ${{ github.sha }}
           VITE_CHANNEL: ${{ inputs.channel }}
         run: bun run build

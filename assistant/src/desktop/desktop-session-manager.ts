@@ -71,7 +71,7 @@ const DESKTOP_ENV_KEYS = [
 
 /**
  * Close codes for `/v1/desktop/stream`. Application-range values cannot
- * collide with velay's own 1013 or be remapped by the gateway's velay bridge.
+ * collide with tunnel's own 1013 or be remapped by the gateway's tunnel bridge.
  */
 export const DESKTOP_CLOSE = {
   goingAway: 1001,

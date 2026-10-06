@@ -1,4 +1,4 @@
-import { isManagedCloud } from "@vellumai/local-mode/contract";
+import { isManagedCloud } from "./managed-cloud.js";
 import type { AssistantEntry } from "./assistant-config.js";
 import {
   authHeaders,

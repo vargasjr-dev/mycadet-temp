@@ -15,7 +15,7 @@ describe("credential entry page", () => {
     const html = await res.text();
     // The page reads the token from the fragment and calls the public
     // credential-request routes with a path prefix derived from its own URL
-    // (Velay-style /<assistantId>/... prefixes included).
+    // (Tunnel-style /<assistantId>/... prefixes included).
     expect(html).toContain("location.hash");
     expect(html).toContain("/v1/credential-requests/peek");
     expect(html).toContain("/v1/credential-requests/submit");

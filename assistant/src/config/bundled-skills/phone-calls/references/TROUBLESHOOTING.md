@@ -16,18 +16,18 @@ First check whether this is a managed/platform assistant:
 assistant platform status --json
 ```
 
-If it reports an available platform assistant, do not install or start ngrok for Twilio. The gateway should use Velay; run `assistant gateway status --json` and confirm it reports a `tunnel` URL (a `{ "tunnel": "..." }` object, not `{}`) after registration. If this is a local/self-hosted assistant without Velay, run the **public-ingress** skill to set up ngrok or another custom tunnel and configure `ingress.publicBaseUrl`.
+If it reports an available platform assistant, do not install or start ngrok for Twilio. The gateway should use Tunnel; run `assistant gateway status --json` and confirm it reports a `tunnel` URL (a `{ "tunnel": "..." }` object, not `{}`) after registration. If this is a local/self-hosted assistant without Tunnel, run the **public-ingress** skill to set up ngrok or another custom tunnel and configure `ingress.publicBaseUrl`.
 
 ## Call fails immediately after initiating
 
 - Check that the phone number is in E.164 format
 - Verify Twilio credentials are correct (wrong auth token causes API errors)
 - On trial accounts, ensure the destination number is verified
-- Check that the configured tunnel is still running. For ngrok, use `curl -s http://127.0.0.1:4040/api/tunnels`. For Velay, run `assistant gateway status --json` and confirm it reports a `tunnel` URL (not `{}`), or check gateway logs for `Velay tunnel registered`.
+- Check that the configured tunnel is still running. For ngrok, use `curl -s http://127.0.0.1:4040/api/tunnels`. For Tunnel, run `assistant gateway status --json` and confirm it reports a `tunnel` URL (not `{}`), or check gateway logs for `Tunnel tunnel registered`.
 
 ## Call connects but no audio / one-way audio
 
-- The media-stream WebSocket may not be connecting. If you are using ngrok or a custom tunnel, check that `ingress.publicBaseUrl` is correct and the tunnel is active. If you are using Velay, check `assistant gateway status --json`; a 503 from `https://velay.../<assistant-id>/...` usually means the assistant tunnel is not connected or the gateway did not complete the WebSocket open, not that ngrok is required.
+- The media-stream WebSocket may not be connecting. If you are using ngrok or a custom tunnel, check that `ingress.publicBaseUrl` is correct and the tunnel is active. If you are using Tunnel, check `assistant gateway status --json`; a 503 from `https://tunnel.../<assistant-id>/...` usually means the assistant tunnel is not connected or the gateway did not complete the WebSocket open, not that ngrok is required.
 - Verify the assistant is running
 
 ## "Number not eligible for caller identity"
@@ -56,20 +56,20 @@ assistant config set ingress.publicBaseUrl "<new-url>"
 
 Or re-run the public-ingress skill to auto-detect and save the new URL.
 
-Do not rotate ngrok to work around a managed Velay WebSocket failure. Fix the Velay tunnel state instead, or restart the assistant/gateway so it re-registers.
+Do not rotate ngrok to work around a managed Tunnel WebSocket failure. Fix the Tunnel tunnel state instead, or restart the assistant/gateway so it re-registers.
 
-## Velay tunnel is not registering
+## Tunnel tunnel is not registering
 
-- Confirm vembda passes the environment-appropriate `VELAY_BASE_URL` to the gateway container.
+- Confirm vembda passes the environment-appropriate `TUNNEL_BASE_URL` to the gateway container.
 - Re-hatch or restart the assistant after changing the environment.
-- Check gateway logs for `Velay tunnel connected` followed by `Velay tunnel registered`.
-- If `VELAY_BASE_URL` is not set on a local/self-hosted assistant, the gateway does not start the Velay client. Use ngrok or another custom tunnel in `ingress.publicBaseUrl`.
+- Check gateway logs for `Tunnel tunnel connected` followed by `Tunnel tunnel registered`.
+- If `TUNNEL_BASE_URL` is not set on a local/self-hosted assistant, the gateway does not start the Tunnel client. Use ngrok or another custom tunnel in `ingress.publicBaseUrl`.
 
-## Local Twilio Velay smoke tests
+## Local Twilio Tunnel smoke tests
 
-- HTTP bridge: request `${VELAY_PUBLIC_BASE_URL}/<assistant-id>/healthz` and `${VELAY_PUBLIC_BASE_URL}/<assistant-id>/schema`. When testing a JSON webhook route under active development, POST a small JSON body through the same Velay public URL and confirm the gateway receives it.
-- Synthetic WebSocket: connect a local WebSocket client to `${VELAY_PUBLIC_BASE_URL}/<assistant-id>/webhooks/twilio/media-stream/session-123/<edge-token>` and confirm the upgrade reaches the gateway.
-- Real Twilio call: wait for the gateway to register with Velay, then place a call and confirm Twilio fetches `/webhooks/twilio/voice` and opens the media-stream WebSocket through the Velay URL.
+- HTTP bridge: request `${TUNNEL_PUBLIC_BASE_URL}/<assistant-id>/healthz` and `${TUNNEL_PUBLIC_BASE_URL}/<assistant-id>/schema`. When testing a JSON webhook route under active development, POST a small JSON body through the same Tunnel public URL and confirm the gateway receives it.
+- Synthetic WebSocket: connect a local WebSocket client to `${TUNNEL_PUBLIC_BASE_URL}/<assistant-id>/webhooks/twilio/media-stream/session-123/<edge-token>` and confirm the upgrade reaches the gateway.
+- Real Twilio call: wait for the gateway to register with Tunnel, then place a call and confirm Twilio fetches `/webhooks/twilio/voice` and opens the media-stream WebSocket through the Tunnel URL.
 
 ## Call drops after 30 seconds of silence
 
@@ -89,7 +89,7 @@ Load `twilio-setup` and follow its Channel Trust Floors section. Change **Who ca
 ## Twilio says "application error" right after answer
 
 - This often means the voice webhook failed or returned invalid TwiML, or the media-stream WebSocket could not connect
-- Check the assistant logs for voice-webhook errors and confirm `ingress.publicBaseUrl` (or the Velay tunnel) is reachable from Twilio
+- Check the assistant logs for voice-webhook errors and confirm `ingress.publicBaseUrl` (or the Tunnel tunnel) is reachable from Twilio
 
 ## Call answers with a spoken "setup required" message and hangs up
 

@@ -2,9 +2,9 @@ const HEADER_SIZE = 33;
 const connectionIdDecoder = new TextDecoder();
 const connectionIdPattern = /^[0-9a-f]{32}$/;
 
-export const VELAY_BINARY_WEBSOCKET_HEADER = "X-Vellum-Velay-Binary-WebSocket";
+export const TUNNEL_BINARY_WEBSOCKET_HEADER = "X-Vellum-Tunnel-Binary-WebSocket";
 
-export interface VelayBinaryWebSocketFrame {
+export interface TunnelBinaryWebSocketFrame {
   type: "websocket_binary";
   connection_id: string;
   payload: Uint8Array;
@@ -12,7 +12,7 @@ export interface VelayBinaryWebSocketFrame {
 
 // Wire format: version byte 1, 32 lowercase hex connection-ID bytes, payload.
 export function encodeBinaryWebSocketFrame(
-  frame: VelayBinaryWebSocketFrame,
+  frame: TunnelBinaryWebSocketFrame,
 ): Uint8Array {
   if (!connectionIdPattern.test(frame.connection_id)) {
     throw new Error("Invalid binary WebSocket connection ID");
@@ -28,7 +28,7 @@ export function encodeBinaryWebSocketFrame(
 
 export function decodeBinaryWebSocketFrame(
   bytes: Uint8Array,
-): VelayBinaryWebSocketFrame | undefined {
+): TunnelBinaryWebSocketFrame | undefined {
   if (bytes.byteLength < HEADER_SIZE || bytes[0] !== 1) {
     return undefined;
   }

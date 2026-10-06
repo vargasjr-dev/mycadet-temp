@@ -34,7 +34,7 @@ import {
   PublicIngressDisabledError,
   tryGetPublicBaseUrl,
 } from "./public-ingress-urls.js";
-import { isVelayWebhooksEnabled } from "./velay-webhooks-gate.js";
+import { isTunnelWebhooksEnabled } from "./tunnel-webhooks-gate.js";
 
 const log = getLogger("platform-callback-registration");
 
@@ -193,7 +193,7 @@ function resolveSelfHostedCallbackBaseUrl(): string | undefined {
 }
 
 /**
- * Claim a webhook subpath on the gateway so the Velay tunnel forwards it.
+ * Claim a webhook subpath on the gateway so the Tunnel tunnel forwards it.
  *
  * The registry matches paths exactly, so query parameters a caller appends to
  * the resolved URL play no part. Returns false when the gateway declines the
@@ -240,9 +240,9 @@ export async function registerLocalWebhookRoute(
  * `runtime/routes/webhook-routes.ts` and `hasWebhookRoutingConfigured` in
  * `config/webhook-routing.ts`:
  *
- *   1. **Platform pods** (`IS_PLATFORM`) with the `velay-webhooks` flag off
+ *   1. **Platform pods** (`IS_PLATFORM`) with the `tunnel-webhooks` flag off
  *      always register with the platform gateway. With the flag on, they try
- *      the direct supplier first — the gateway's Velay client publishes the
+ *      the direct supplier first — the gateway's Tunnel client publishes the
  *      tunnel URL into `ingress.publicBaseUrl` — and fall back to platform
  *      registration on any failure, including an explicit
  *      `ingress.enabled: false`: a pod owner toggling that flag must not
@@ -286,7 +286,7 @@ export async function resolveCallbackUrl(
   sourceIdentifier?: string,
 ): Promise<string> {
   if (getIsPlatform()) {
-    if (isVelayWebhooksEnabled()) {
+    if (isTunnelWebhooksEnabled()) {
       const claimed = await resolveClaimedPodWebhookUrl(directUrl, () =>
         registerLocalWebhookRoute(callbackPath, type, sourceIdentifier),
       );

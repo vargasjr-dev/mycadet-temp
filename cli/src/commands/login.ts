@@ -1,4 +1,4 @@
-import { isManagedCloud } from "@vellumai/local-mode/contract";
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import { randomBytes } from "crypto";
 import { createServer } from "http";
 import type { AddressInfo } from "net";

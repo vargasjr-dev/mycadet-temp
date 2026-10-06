@@ -1,4 +1,4 @@
-import { isManagedCloud } from "@vellumai/local-mode/contract";
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import { resolveAssistantApiKeyForInjection } from "../lib/assistant-api-key-resolution";
 import {
   findAssistantByName,

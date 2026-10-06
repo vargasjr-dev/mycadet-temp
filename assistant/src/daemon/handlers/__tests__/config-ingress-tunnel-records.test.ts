@@ -18,7 +18,7 @@ mock.module("../../../config/loader.js", () => ({
 import {
   dropTunnelRecordsForNewUrl,
   getIngressConfigResult,
-  isVelayManagedIngress,
+  isTunnelManagedIngress,
   loadLastTunnelRecord,
   loadPairingTunnelRecord,
   loadRecordedAssistantId,
@@ -134,14 +134,14 @@ describe("workspace tunnel records", () => {
     expect(config.explicitlyDisabled).toBe(false);
   });
 
-  test("reports Velay ownership of the public base URL", () => {
+  test("reports Tunnel ownership of the public base URL", () => {
     rawConfig = {
-      ingress: { publicBaseUrl: TUNNEL_URL, publicBaseUrlManagedBy: "velay" },
+      ingress: { publicBaseUrl: TUNNEL_URL, publicBaseUrlManagedBy: "tunnel" },
     };
-    expect(isVelayManagedIngress()).toBe(true);
+    expect(isTunnelManagedIngress()).toBe(true);
 
     rawConfig = { ingress: { publicBaseUrl: TUNNEL_URL } };
-    expect(isVelayManagedIngress()).toBe(false);
+    expect(isTunnelManagedIngress()).toBe(false);
   });
 });
 

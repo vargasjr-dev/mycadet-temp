@@ -11,7 +11,7 @@
  * the upload URL, the daemon exports with the debug profile, and this
  * command waits for the job so the result is real.
  */
-import { isManagedCloud } from "@vellumai/local-mode/contract";
+import { isManagedCloud } from "../lib/managed-cloud.js";
 import {
   formatAssistantReference,
   resolveTargetAssistant,
