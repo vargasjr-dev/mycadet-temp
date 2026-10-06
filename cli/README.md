@@ -18,8 +18,8 @@ bun run ./src/index.ts <command> [options]
 
 Day-to-day process management for the assistant and gateway.
 
-| Command        | Description                                                                            |
-| -------------- | -------------------------------------------------------------------------------------- |
+| Command       | Description                                                                            |
+| ------------- | -------------------------------------------------------------------------------------- |
 | `cadet ps`    | List assistants and per-assistant process status (assistant, gateway PIDs and health). |
 | `cadet sleep` | Stop assistant and gateway processes. Directory-agnostic — works from anywhere.        |
 | `cadet wake`  | Start the assistant and gateway from the current checkout.                             |
@@ -47,24 +47,24 @@ cadet hatch [species] [options]
 
 #### Species
 
-| Species    | Description                                       |
-| ---------- | ------------------------------------------------- |
-| `cadet`   | Default. Provisions the Cadet runtime. |
-| `openclaw` | Provisions the OpenClaw runtime with gateway.     |
+| Species    | Description                                   |
+| ---------- | --------------------------------------------- |
+| `cadet`    | Default. Provisions the Cadet runtime.        |
+| `openclaw` | Provisions the OpenClaw runtime with gateway. |
 
 #### Options
 
-| Option              | Description                                                                                          |
-| ------------------- | ---------------------------------------------------------------------------------------------------- |
-| `-d`                | Detached mode. Start the instance in the background without watching startup progress.               |
-| `--name <name>`     | Use a specific instance name instead of an auto-generated one.                                       |
+| Option              | Description                                                                                         |
+| ------------------- | --------------------------------------------------------------------------------------------------- |
+| `-d`                | Detached mode. Start the instance in the background without watching startup progress.              |
+| `--name <name>`     | Use a specific instance name instead of an auto-generated one.                                      |
 | `--remote <target>` | Where to provision the instance. One of: `local`, `docker`, `cadet`, `custom`. Defaults to `local`. |
 
 #### Remote Targets
 
 - **`local`** -- Starts the local assistant and local gateway. Gateway source resolution order is: repo source tree, then installed `@vellumai/vellum-gateway` package.
 - **`docker`** -- Starts the assistant, gateway, and credential service in Docker containers.
-- **`cadet`** -- Hatches an assistant on the Cadet Cloud.
+- **`cadet`** -- Hatches an assistant on the Cadet Platform.
 - **`custom`** -- Recognized but not yet implemented.
 
 #### Environment Variables
@@ -98,7 +98,7 @@ cadet terminal attach <session> [name] [options]
 cadet terminal list [name] [options]
 ```
 
-Only available for managed assistants (those running in a Cadet Cloud container). Local assistants don't have a container to terminal into.
+Only available for managed assistants (those running in a Cadet Platform container). Local assistants don't have a container to terminal into.
 
 #### Subcommands
 
@@ -110,10 +110,10 @@ Only available for managed assistants (those running in a Cadet Cloud container)
 
 #### Options
 
-| Option               | Description                                                                                         |
-| -------------------- | --------------------------------------------------------------------------------------------------- |
+| Option               | Description                                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------------- |
 | `[name]`             | Positional. Name of the assistant to target. Defaults to the active assistant set via `cadet use`. |
-| `--assistant <name>` | Explicit form of the assistant name. Equivalent to the positional argument.                         |
+| `--assistant <name>` | Explicit form of the assistant name. Equivalent to the positional argument.                        |
 
 If no assistant is named and no active assistant is set, the CLI uses the only managed assistant in the lockfile -- or errors out if there's more than one. Use `cadet ps` to see your assistants and `cadet use <name>` to set the active one.
 
