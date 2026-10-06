@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 // realpathSync resolves the macOS /var → /private/var symlink so the paths
 // match what resolveAllowedFileBackedAttachmentPath returns (it canonicalizes
@@ -20,6 +20,10 @@ const testHomeDir = realpathSync(
   mkdtempSync(join(tmpdir(), "attachment-routes-home-")),
 );
 
+// The real getWorkspaceDir() reads this at call time — re-point it instead
+// of mocking util/platform.js.
+process.env.VELLUM_WORKSPACE_DIR = testWorkspaceDir;
+
 const attachmentsDir = join(testWorkspaceDir, "data", "attachments");
 const conversationsDir = join(testWorkspaceDir, "conversations");
 const recordingsDir = join(
@@ -30,10 +34,6 @@ const outsideDir = mkdtempSync(join(tmpdir(), "attachment-routes-outside-"));
 
 const originalHome = process.env.HOME;
 process.env.HOME = testHomeDir;
-
-mock.module("../../util/platform.js", () => ({
-  getWorkspaceDir: () => testWorkspaceDir,
-}));
 
 import { resolveAllowedFileBackedAttachmentPath } from "./attachment-routes.js";
 

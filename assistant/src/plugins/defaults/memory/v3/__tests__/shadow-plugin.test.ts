@@ -26,7 +26,6 @@
  * `memory_v3_selections` migration.
  */
 
-import { join } from "node:path";
 import { Database } from "bun:sqlite";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
@@ -73,7 +72,6 @@ const realSectionDenseStore = {
   ...(await import("../section-dense-store.js")),
 };
 const realLearnedEdges = { ...(await import("../learned-edges.js")) };
-const realPlatform = { ...(await import("../../../../../util/platform.js")) };
 const realPageStore = {
   ...(await import("../../substrate/page-store.js")),
 };
@@ -423,20 +421,6 @@ mock.module("../../substrate/page-store.js", () => ({
       : realPageStore.renderPageContent(
           page as Parameters<typeof realPageStore.renderPageContent>[0],
         ),
-}));
-
-mock.module("../../../../../util/platform.js", () => ({
-  ...realPlatform,
-  getWorkspaceDir: () =>
-    shadowMockActive
-      ? "/tmp/shadow-test-workspace"
-      : realPlatform.getWorkspaceDir(),
-  // The real loader resolves `config.json` via `getWorkspaceConfigPath` →
-  // `getWorkspaceDir`; the stubbed workspace dir above would divert it away
-  // from the per-test workspace `setConfig` seeds into. Pin the config path to
-  // the real workspace so seeded config actually flows to `getConfig()`.
-  getWorkspaceConfigPath: () =>
-    join(realPlatform.getWorkspaceDir(), "config.json"),
 }));
 
 // Capability stores: `renderCapabilityBody` (reached from `initLanes`' pageBody)

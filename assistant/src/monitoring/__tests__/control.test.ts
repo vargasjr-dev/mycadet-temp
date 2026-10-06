@@ -6,21 +6,15 @@
  * memory worker's worker-control tests.
  */
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import * as realLogger from "../../util/logger.js";
-import * as realPlatform from "../../util/platform.js";
 
 let tmpDir: string;
 let pidPath: string;
-
-mock.module("../../util/platform.js", () => ({
-  ...realPlatform,
-  getMonitoringPidPath: () => pidPath,
-}));
 
 const noopLogger = {
   info: () => {},
@@ -90,11 +84,17 @@ function neverExits(): Promise<unknown> {
 
 beforeEach(() => {
   tmpDir = mkdtempSync(join(tmpdir(), "monitoring-control-test-"));
-  pidPath = join(tmpDir, "monitoring.pid");
+  // The real getMonitoringPidPath() is <workspace>/data/monitoring/monitoring.pid,
+  // so re-point the workspace at tmpDir and use the real layout instead of
+  // mocking util/platform.js.
+  process.env.VELLUM_WORKSPACE_DIR = tmpDir;
+  mkdirSync(join(tmpDir, "data", "monitoring"), { recursive: true });
+  pidPath = join(tmpDir, "data", "monitoring", "monitoring.pid");
 });
 
 afterEach(() => {
   rmSync(tmpDir, { recursive: true, force: true });
+  delete process.env.VELLUM_WORKSPACE_DIR;
 });
 
 describe("spawnMonitoringWorkerProcess", () => {

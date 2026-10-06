@@ -53,62 +53,6 @@ mock.module("../../runtime/assistant-event-hub.js", () => ({
 // (e.g. AuthSessionCache constructor) before beforeEach sets workspaceDir.
 // The mock spreads the real module so exports it doesn't override (imported
 // by transitive dependencies of the service under test) keep their real,
-// preload-temp-dir-scoped implementations instead of vanishing — a missing
-// export is an import-time SyntaxError for the whole test file.
-const realPlatform = await import("../../util/platform.js");
-const fallbackDir = join(tmpdir(), "vellum-hb-svc-fallback");
-mock.module("../../util/platform.js", () => ({
-  ...realPlatform,
-  getWorkspaceDir: () => workspaceDir ?? fallbackDir,
-  getWorkspacePromptPath: (name: string) =>
-    join(workspaceDir ?? fallbackDir, name),
-  vellumRoot: () => workspaceDir ?? fallbackDir,
-  getDataDir: () => join(workspaceDir ?? fallbackDir, "data"),
-  getConversationsDir: () => join(workspaceDir ?? fallbackDir, "conversations"),
-  isMacOS: () => false,
-  isLinux: () => true,
-  isWindows: () => false,
-  getPlatformName: () => "linux",
-  normalizeAssistantId: (id: string) => id,
-  getEmbeddingModelsDir: () => join(workspaceDir ?? fallbackDir, "models"),
-  getSandboxRootDir: () => join(workspaceDir ?? fallbackDir, "sandbox"),
-  getSandboxWorkingDir: () => join(workspaceDir ?? fallbackDir, "sandbox/work"),
-  getSoundsDir: () => join(workspaceDir ?? fallbackDir, "sounds"),
-  getAvatarDir: () => join(workspaceDir ?? fallbackDir, "avatar"),
-  getAvatarImagePath: () =>
-    join(workspaceDir ?? fallbackDir, "avatar/avatar-image.png"),
-
-  getXdgVellumConfigDirName: () => ".vellum",
-  getPidPath: () => join(workspaceDir ?? fallbackDir, "assistant.pid"),
-  getDbPath: () => join(workspaceDir ?? fallbackDir, "db/assistant.db"),
-  getLogsDir: () => join(workspaceDir ?? fallbackDir, "logs"),
-  getHistoryPath: () => join(workspaceDir ?? fallbackDir, "history.json"),
-  getProtectedDir: () => join(workspaceDir ?? fallbackDir, "protected"),
-  getSignalsDir: () => join(workspaceDir ?? fallbackDir, "signals"),
-  getDaemonStderrLogPath: () =>
-    join(workspaceDir ?? fallbackDir, "logs/assistant.err.log"),
-  getDaemonStartupLockPath: () =>
-    join(workspaceDir ?? fallbackDir, "assistant.lock"),
-  getExternalDir: () => join(workspaceDir ?? fallbackDir, "external"),
-  getBinDir: () => join(workspaceDir ?? fallbackDir, "bin"),
-  getDotEnvPath: () => join(workspaceDir ?? fallbackDir, ".env"),
-  getEmbedWorkerPidPath: () =>
-    join(workspaceDir ?? fallbackDir, "embed-worker.pid"),
-  getWorkspaceDirDisplay: () => workspaceDir ?? fallbackDir,
-  getWorkspaceConfigPath: () =>
-    join(workspaceDir ?? fallbackDir, "config.json"),
-  getWorkspaceSkillsDir: () => join(workspaceDir ?? fallbackDir, "skills"),
-  getWorkspaceHooksDir: () => join(workspaceDir ?? fallbackDir, ".githooks"),
-  getWorkspacePluginsDir: () => join(workspaceDir ?? fallbackDir, "plugins"),
-  getWorkspaceRoutesDir: () => join(workspaceDir ?? fallbackDir, "routes"),
-  getDeprecatedDir: () => join(workspaceDir ?? fallbackDir, "deprecated"),
-  getProfilerRootDir: () => join(workspaceDir ?? fallbackDir, "profiler"),
-  getProfilerRunsDir: () => join(workspaceDir ?? fallbackDir, "profiler/runs"),
-  getProfilerRunDir: (runId: string) =>
-    join(workspaceDir ?? fallbackDir, "profiler/runs", runId),
-  ensureDataDir: () => {},
-}));
-
 // Stub prompt helpers.
 mock.module("../../prompts/persona-resolver.js", () => ({
   GUARDIAN_PERSONA_TEMPLATE: "",

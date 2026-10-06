@@ -61,12 +61,6 @@ function seedVellumGuardian(userFile: string | null): void {
 
 // ── Mock modules (must precede imports from the module under test) ──
 
-mock.module("../util/platform.js", () => ({
-  getWorkspaceDir: () => mockWorkspaceDir,
-  getWorkspacePromptPath: (filename: string) =>
-    join(mockWorkspaceDir, "prompts", filename),
-}));
-
 mock.module("../contacts/contact-store.js", () => ({
   findContactByAddress: (channelType: string, address: string) =>
     mockContactsByAddress[`${channelType}:${address}`] ?? null,
@@ -124,6 +118,9 @@ afterAll(() => {
 beforeEach(() => {
   // Fresh workspace per test, so filesystem state doesn't leak.
   mockWorkspaceDir = mkdtempSync(join(testRoot, "ws-"));
+  // The real getWorkspaceDir() reads this at call time — re-point it at the
+  // per-test workspace instead of mocking util/platform.js.
+  process.env.VELLUM_WORKSPACE_DIR = mockWorkspaceDir;
   mockGuardianDeliveries = [];
   mockContactsByAddress = {};
   pendingWarmDeliveries = null;
@@ -131,6 +128,7 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(mockWorkspaceDir, { recursive: true, force: true });
+  delete process.env.VELLUM_WORKSPACE_DIR;
 });
 
 // ── resolveGuardianPersonaPath ─────────────────────────────────────

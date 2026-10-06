@@ -12,10 +12,9 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 // ---------------------------------------------------------------------------
 
 const FAKE_WORKSPACE = "/tmp/content-source-routes-test-workspace";
-
-mock.module("../../../util/platform.js", () => ({
-  getWorkspaceDir: () => FAKE_WORKSPACE,
-}));
+// The real getWorkspaceDir() reads this at call time — route handlers build
+// sidecar paths from it, so re-point it instead of mocking util/platform.js.
+process.env.VELLUM_WORKSPACE_DIR = FAKE_WORKSPACE;
 
 const writtenFiles = new Map<string, string>();
 

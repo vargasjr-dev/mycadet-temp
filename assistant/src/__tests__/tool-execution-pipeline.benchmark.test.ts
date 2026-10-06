@@ -18,7 +18,6 @@
 
 import { beforeAll, describe, expect, mock, test } from "bun:test";
 
-import * as realPlatform from "../util/platform.js";
 import { installThresholdReaderMock } from "./gateway-threshold-reader-mock.js";
 
 // Local registry for ToolExecutor tests — the mock delegates to this map
@@ -45,14 +44,6 @@ mock.module("../config/assistant-feature-flags.js", () => ({
 
 mock.module("../config/env-registry.js", () => ({
   getIsContainerized: () => false,
-}));
-
-mock.module("../util/platform.js", () => ({
-  ...realPlatform,
-  getWorkspaceDir: () => "/tmp",
-  getProtectedDir: () => "/tmp/protected",
-  getWorkspaceHooksDir: () => "/tmp/hooks",
-  getDeprecatedDir: () => "/tmp/deprecated",
 }));
 
 // Mock defaults: no threshold, and no cell at any cascade level — the

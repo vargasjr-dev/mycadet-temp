@@ -102,16 +102,10 @@ mock.module("@vellumai/plugin-api", () => ({
   getConfiguredProvider: async () => providerStub,
 }));
 
-// Platform helpers. `getWorkspaceDir` must return the per-test tmp dir so
-// the route's page index points at the test workspace. Spread the real module
-// so the config loader's own platform reads (config path, quarantine notice,
-// data dir) keep resolving against the seeded workspace.
+// Platform helpers. The real getWorkspaceDir() reads VELLUM_WORKSPACE_DIR at
+// call time; beforeEach re-points it at the per-test tmp dir so the route's
+// page index and the config loader's platform reads all resolve there.
 let workspaceDir = "";
-const realPlatform = await import("../../../../../util/platform.js");
-mock.module("../../../../../util/platform.js", () => ({
-  ...realPlatform,
-  getWorkspaceDir: () => workspaceDir,
-}));
 
 // ---------------------------------------------------------------------------
 // Import under test (after all mocks above)
@@ -171,6 +165,7 @@ function makePage(slug: string, summary: string) {
 
 beforeEach(() => {
   workspaceDir = mkdtempSync(join(tmpdir(), "memory-v2-simulate-test-"));
+  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
   recordCalls.length = 0;
   providerCalls.length = 0;
   providerStub = null;
@@ -180,6 +175,7 @@ beforeEach(() => {
 afterEach(() => {
   invalidatePageIndex();
   rmSync(workspaceDir, { recursive: true, force: true });
+  delete process.env.VELLUM_WORKSPACE_DIR;
 });
 
 // ---------------------------------------------------------------------------

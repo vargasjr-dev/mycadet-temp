@@ -40,10 +40,6 @@ mock.module("node:fs", () => ({
   mkdirSync: () => {},
 }));
 
-mock.module("../../../../util/platform.js", () => ({
-  getWorkspaceDir: () => "/tmp/test-workspace",
-}));
-
 mock.module("../v1/jobs/embed-pkb-file.js", () => ({
   enqueuePkbIndexJob: () => {},
 }));

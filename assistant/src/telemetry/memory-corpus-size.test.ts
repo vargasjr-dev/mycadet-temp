@@ -7,13 +7,9 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 let workspaceDir = "";
-
-mock.module("../util/platform.js", () => ({
-  getWorkspaceDir: () => workspaceDir,
-}));
 
 import {
   measureMarkdownTree,
@@ -29,10 +25,14 @@ function write(relativePath: string, contents: string): void {
 describe("measureMemoryCorpusSize", () => {
   beforeEach(() => {
     workspaceDir = mkdtempSync(join(tmpdir(), "corpus-size-"));
+    // The real getWorkspaceDir() reads this at call time — re-point it at the
+    // per-test workspace instead of mocking util/platform.js.
+    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
   });
 
   afterEach(() => {
     rmSync(workspaceDir, { recursive: true, force: true });
+    delete process.env.VELLUM_WORKSPACE_DIR;
   });
 
   test("an empty workspace measures as all zeros", () => {

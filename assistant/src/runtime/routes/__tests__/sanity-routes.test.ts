@@ -26,10 +26,9 @@ mock.module("../../../security/secure-keys.js", () => ({
 }));
 
 const FAKE_WORKSPACE = "/tmp/sanity-routes-test-workspace";
-
-mock.module("../../../util/platform.js", () => ({
-  getWorkspaceDir: () => FAKE_WORKSPACE,
-}));
+// The real getWorkspaceDir() reads this at call time — route handlers build
+// paths from it, so re-point it instead of mocking util/platform.js.
+process.env.VELLUM_WORKSPACE_DIR = FAKE_WORKSPACE;
 
 const writtenFiles = new Map<string, string>();
 

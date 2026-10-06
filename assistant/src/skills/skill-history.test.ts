@@ -21,16 +21,23 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 let repoDir = "";
 
-// The module resolves the workspace through `getWorkspaceDir()`; point it at
-// the temp repository. `getWorkspaceGitService` is left real so the git
-// invocations under test are the ones that ship.
-mock.module("../util/platform.js", () => ({
-  getWorkspaceDir: () => repoDir,
-}));
+// The module resolves the workspace through the real getWorkspaceDir(), which
+// reads VELLUM_WORKSPACE_DIR at call time — setRepoDir re-points both together
+// instead of mocking util/platform.js. `getWorkspaceGitService` is left real
+// so the git invocations under test are the ones that ship.
+function setRepoDir(dir: string): void {
+  repoDir = dir;
+  process.env.VELLUM_WORKSPACE_DIR = dir;
+}
+
+function resetRepoDir(): void {
+  repoDir = "";
+  delete process.env.VELLUM_WORKSPACE_DIR;
+}
 
 import { getSkillHistory } from "./skill-history.js";
 
@@ -61,13 +68,13 @@ function commit(message: string): void {
 }
 
 beforeEach(() => {
-  repoDir = mkdtempSync(join(tmpdir(), "skill-history-"));
+  setRepoDir(mkdtempSync(join(tmpdir(), "skill-history-")));
   git("init", "-b", "main");
 });
 
 afterEach(() => {
   rmSync(repoDir, { recursive: true, force: true });
-  repoDir = "";
+  resetRepoDir();
 });
 
 describe("getSkillHistory", () => {
@@ -250,7 +257,7 @@ describe("getSkillHistory", () => {
   test("a workspace that is not a repository yields empty history, and stays not a repository", async () => {
     const bare = mkdtempSync(join(tmpdir(), "skill-history-norepo-"));
     const previous = repoDir;
-    repoDir = bare;
+    setRepoDir(bare);
     try {
       const history = await getSkillHistory("alpha");
 
@@ -262,7 +269,7 @@ describe("getSkillHistory", () => {
       expect(existsSync(join(bare, ".git"))).toBe(false);
       expect(readdirSync(bare)).toEqual([]);
     } finally {
-      repoDir = previous;
+      setRepoDir(previous);
       rmSync(bare, { recursive: true, force: true });
     }
   });

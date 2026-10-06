@@ -1,26 +1,20 @@
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 // Per-suite tmp data dir so the reembed sentinel never lands in the
-// developer's real ~/.vellum workspace.
+// developer's real ~/.vellum workspace. The real getDataDir() is
+// <workspace>/data and reads VELLUM_WORKSPACE_DIR at call time, so re-point
+// the workspace instead of mocking util/platform.js.
 const TEST_DATA_DIR = mkdtempSync(join(tmpdir(), "memory-v2-qdrant-test-"));
+process.env.VELLUM_WORKSPACE_DIR = TEST_DATA_DIR;
+mkdirSync(join(TEST_DATA_DIR, "data"), { recursive: true });
 const REEMBED_SENTINEL_PATH = join(
   TEST_DATA_DIR,
+  "data",
   ".memory-v2-reembed-required",
 );
-
-// Point the data dir (reembed sentinel) and workspace dir at the per-suite
-// tmp dir. Spread the real module so the config loader's own platform reads
-// (config path, quarantine notice) keep resolving against the seeded
-// workspace once the loader is real.
-const realPlatform = await import("../../../../../util/platform.js");
-mock.module("../../../../../util/platform.js", () => ({
-  ...realPlatform,
-  getDataDir: () => TEST_DATA_DIR,
-  getWorkspaceDir: () => TEST_DATA_DIR,
-}));
 
 mock.module("../../../../../persistence/embeddings/qdrant-client.js", () => ({
   resolveQdrantUrl: () => "http://127.0.0.1:6333",

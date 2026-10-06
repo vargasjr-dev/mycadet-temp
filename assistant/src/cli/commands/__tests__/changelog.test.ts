@@ -40,10 +40,9 @@ import { Command } from "commander";
 // ── Mocks ────────────────────────────────────────────────────────────
 
 const TMP_ROOT = mkdtempSync(join(tmpdir(), "changelog-test-"));
-
-mock.module("../../../util/platform.js", () => ({
-  getWorkspaceDir: () => TMP_ROOT,
-}));
+// The real getWorkspaceDir() reads this at call time — re-point it instead
+// of mocking util/platform.js.
+process.env.VELLUM_WORKSPACE_DIR = TMP_ROOT;
 
 mock.module("../../logger.js", () => ({
   log: {

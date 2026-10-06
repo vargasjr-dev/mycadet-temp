@@ -32,10 +32,6 @@ mock.module("../util/logger.js", () => ({
   }),
 }));
 
-mock.module("../util/platform.js", () => ({
-  getAvatarDir: () => "/tmp/vellum-test-avatar-never-written",
-}));
-
 // Install a throwing @resvg/resvg-js mock at module scope. Bun only calls
 // this factory the first time the module is required within the test worker;
 // later `require` calls return whatever was produced by that first call (or

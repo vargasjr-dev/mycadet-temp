@@ -52,10 +52,6 @@ mock.module("node:fs", () => ({
   existsSync: (_path: string) => socketExists,
 }));
 
-mock.module("../../../util/platform.js", () => ({
-  getWorkspaceDirDisplay: () => "~/.vellum/workspace",
-}));
-
 // Fixed installed CLI version so drift-vs-match is deterministic.
 const INSTALLED_CLI_VERSION = "9.9.9";
 mock.module("../../../version.js", () => ({

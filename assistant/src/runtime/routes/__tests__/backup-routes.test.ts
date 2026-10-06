@@ -81,26 +81,6 @@ mock.module("../../../permissions/trust-store.js", () => ({
   clearCache: () => {},
 }));
 
-// -- Platform paths mock ---------------------------------------------------
-// Spread the real module so the loader's own path helpers
-// (`getWorkspaceConfigPath`, `ensureDataDir`, …) keep resolving to the real
-// per-test workspace; override only the backup-path accessors the handlers use.
-
-const realPlatform = await import("../../../util/platform.js");
-mock.module("../../../util/platform.js", () => ({
-  ...realPlatform,
-  getWorkspaceDir: () => mockWorkspaceDir,
-  getWorkspaceHooksDir: () => join(mockWorkspaceDir, "hooks"),
-  getProtectedDir: () => join(mockWorkspaceDir, "protected"),
-  getDbPath: () => join(mockWorkspaceDir, "data", "db", "assistant.db"),
-  // Keep the loader's config path pinned to the real per-test workspace even
-  // though `getWorkspaceDir` is redirected for backup-path resolution — the
-  // mock rebinds the module's live `getWorkspaceDir` binding, which
-  // `getWorkspaceConfigPath` would otherwise follow to the mock directory.
-  getWorkspaceConfigPath: () =>
-    join(process.env.VELLUM_WORKSPACE_DIR!, "config.json"),
-}));
-
 // -- Memory checkpoint mock ------------------------------------------------
 
 const mockCheckpointStore: Record<string, string | null> = {};
@@ -237,8 +217,13 @@ function writeBackupFile(
 beforeEach(() => {
   ROOT = mkdtempSync(join(tmpdir(), "vellum-backup-routes-"));
   LOCAL_DIR = join(ROOT, "local");
-  setConfig("backup", makeConfig({ localDirectory: LOCAL_DIR }));
   mockWorkspaceDir = join(ROOT, "workspace");
+  // The real getWorkspaceDir()/getWorkspaceConfigPath() read this at call
+  // time (setConfig writes <workspace>/config.json) — re-point the workspace
+  // and create it, instead of mocking util/platform.js.
+  mkdirSync(mockWorkspaceDir, { recursive: true });
+  process.env.VELLUM_WORKSPACE_DIR = mockWorkspaceDir;
+  setConfig("backup", makeConfig({ localDirectory: LOCAL_DIR }));
   for (const key of Object.keys(mockCheckpointStore)) {
     delete mockCheckpointStore[key];
   }
@@ -258,6 +243,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  delete process.env.VELLUM_WORKSPACE_DIR;
   try {
     rmSync(ROOT, { recursive: true, force: true });
   } catch {

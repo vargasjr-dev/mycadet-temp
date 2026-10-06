@@ -66,11 +66,6 @@ mock.module("../util/logger.js", () => ({
   pruneOldLogFiles: () => 0,
 }));
 
-mock.module("../util/platform.js", () => ({
-  getWorkspaceDir: () => mockWorkspaceDir,
-  getWorkspacePromptPath: (file: string) => join(mockWorkspaceDir, file),
-}));
-
 mock.module("../contacts/contact-store.js", () => ({
   findContactByAddress: (channelType: string, address: string) =>
     mockContactsByAddress[`${channelType}:${address}`] ?? null,
@@ -112,12 +107,16 @@ afterAll(() => {
 
 beforeEach(() => {
   mockWorkspaceDir = mkdtempSync(join(testRoot, "ws-"));
+  // The real getWorkspaceDir() reads this at call time — re-point it at the
+  // per-test workspace instead of mocking util/platform.js.
+  process.env.VELLUM_WORKSPACE_DIR = mockWorkspaceDir;
   mockGuardianDeliveries = [];
   mockContactsByAddress = {};
 });
 
 afterEach(() => {
   rmSync(mockWorkspaceDir, { recursive: true, force: true });
+  delete process.env.VELLUM_WORKSPACE_DIR;
 });
 
 // ── Tests ─────────────────────────────────────────────────────────

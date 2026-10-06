@@ -192,10 +192,6 @@ mock.module("../providers/provider-send-message.js", () => ({
   userMessage: () => ({}),
 }));
 
-mock.module("../util/platform.js", () => ({
-  getWorkspaceSkillsDir: () => "/tmp/test-skills-fallback",
-}));
-
 mock.module("../daemon/handlers/shared.js", () => ({
   CONFIG_RELOAD_DEBOUNCE_MS: 100,
   ensureSkillEntry: (_raw: Record<string, unknown>, _id: string) => ({

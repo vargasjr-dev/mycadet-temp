@@ -270,13 +270,6 @@ mock.module("../providers/provider-send-message.js", () => ({
 // Real isTextMimeType — we want actual classification here.
 // No mock needed; let it fall through to the real implementation.
 
-mock.module("../util/platform.js", () => ({
-  getWorkspaceSkillsDir: () => "/tmp/test-skills",
-}));
-mock.module("../util/platform.ts", () => ({
-  getWorkspaceSkillsDir: () => "/tmp/test-skills",
-}));
-
 let mockPlatformBaseUrl = "https://platform.test";
 mock.module("../config/env.js", () => ({
   getPlatformBaseUrl: () => mockPlatformBaseUrl,

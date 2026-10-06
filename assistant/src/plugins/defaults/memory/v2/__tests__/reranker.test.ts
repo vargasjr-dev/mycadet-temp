@@ -11,15 +11,6 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { AssistantConfig } from "../../../../../config/types.js";
 
 // Spread the real module: the reranker reaches the plugin API, whose import
-// graph names more of `util/platform` than the two overrides below, and ESM
-// named-import validation rejects a partial mock.
-const realPlatform = await import("../../../../../util/platform.js");
-mock.module("../../../../../util/platform.js", () => ({
-  ...realPlatform,
-  getWorkspaceDir: () => "/tmp/test-workspace",
-  getLogsDir: () => "/tmp/test-workspace/logs",
-}));
-
 const backendState = {
   scores: [] as number[],
   shouldThrow: false,

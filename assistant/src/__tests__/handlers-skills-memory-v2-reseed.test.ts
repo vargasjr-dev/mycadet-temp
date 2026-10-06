@@ -135,14 +135,6 @@ mock.module("../daemon/skill-memory-refresh.js", () => ({
 }));
 
 // Keep the real platform module (the config loader resolves the workspace
-// config path through it) and only pin the skills directory.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const realPlatform = require("../util/platform.js");
-mock.module("../util/platform.js", () => ({
-  ...realPlatform,
-  getWorkspaceSkillsDir: () => "/tmp/test-skills",
-}));
-
 mock.module("../daemon/handlers/shared.js", () => ({
   CONFIG_RELOAD_DEBOUNCE_MS: 100,
   ensureSkillEntry: () => ({ enabled: false }),

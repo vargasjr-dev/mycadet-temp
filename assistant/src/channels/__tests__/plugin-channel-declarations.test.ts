@@ -8,20 +8,17 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
-const workspacePluginsDir = mkdtempSync(join(tmpdir(), "plugin-channels-"));
+// The real getWorkspacePluginsDir() is <workspace>/plugins and reads
+// VELLUM_WORKSPACE_DIR at call time — re-point the workspace instead of
+// mocking util/platform.js.
+const pluginsRoot = mkdtempSync(join(tmpdir(), "plugin-channels-"));
+const workspacePluginsDir = join(pluginsRoot, "plugins");
+process.env.VELLUM_WORKSPACE_DIR = pluginsRoot;
 
-const realPlatform = await import("../../util/platform.js");
-
-mock.module("../../util/platform.js", () => ({
-  ...realPlatform,
-  getWorkspacePluginsDir: () => workspacePluginsDir,
-}));
-
-const { discoverPluginChannels } = await import(
-  "../plugin-channel-declarations.js"
-);
+const { discoverPluginChannels } =
+  await import("../plugin-channel-declarations.js");
 
 interface PluginOptions {
   /** Contents of `channels/ingress.json`; omit for a plugin with no ingress. */
@@ -53,7 +50,7 @@ beforeEach(() => {
 });
 
 afterAll(() => {
-  rmSync(workspacePluginsDir, { recursive: true, force: true });
+  rmSync(pluginsRoot, { recursive: true, force: true });
 });
 
 describe("discoverPluginChannels", () => {

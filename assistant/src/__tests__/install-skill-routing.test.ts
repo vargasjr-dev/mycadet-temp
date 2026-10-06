@@ -149,9 +149,7 @@ mock.module("../plugins/defaults/memory/graph/capability-seed.js", () => ({
   seedSkillGraphNodes: mockSeedSkillGraphNodes,
   seedUninstalledCatalogSkillMemories: async () => {},
 }));
-mock.module("../util/platform.js", () => ({
-  getWorkspaceSkillsDir: () => TEST_SKILLS_DIR,
-}));
+
 mock.module("../daemon/handlers/shared.js", () => ({
   CONFIG_RELOAD_DEBOUNCE_MS: 100,
   ensureSkillEntry: mockEnsureSkillEntry,

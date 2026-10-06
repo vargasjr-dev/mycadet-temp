@@ -1,3 +1,6 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { promisify } from "node:util";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
@@ -5,7 +8,11 @@ const MIB = 1024 * 1024;
 const GIB = 1024 * MIB;
 
 let existingPaths = new Set<string>();
-const workspaceDir = "/workspace";
+// The real getWorkspaceDir() reads VELLUM_WORKSPACE_DIR at call time — a real
+// tmp dir keeps the ephemeral-path guard happy while the test controls
+// existsSync/statfsSync through the node:fs mock.
+const workspaceDir = mkdtempSync(join(tmpdir(), "disk-usage-test-"));
+process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
 let minikubeStorageSize: string | undefined;
 let isContainerized = false;
 let isPlatform = false;
@@ -23,7 +30,12 @@ let spawnResult: {
 };
 let spawnCalls: Array<{ command: string; args: string[] }> = [];
 
+// Spread the actual node:fs so the real util/platform.ts (no longer mocked)
+// keeps working with mkdirSync/chmodSync, while the disk-usage module's
+// existsSync/statfsSync stay stubbed.
+const actualFs = await import("node:fs");
 mock.module("node:fs", () => ({
+  ...actualFs,
   existsSync: (path: string) => existingPaths.has(path),
   statfsSync: () => statfsResult,
 }));
@@ -49,14 +61,14 @@ mock.module("node:child_process", () => ({
   execFile: execFileMock,
 }));
 
+// Spread the actual module so the real util/platform.ts (no longer mocked)
+// keeps finding getWorkspaceDirOverride on the mocked env-registry.
+const actualEnvRegistry = await import("../config/env-registry.js");
 mock.module("../config/env-registry.js", () => ({
+  ...actualEnvRegistry,
   getMinikubeStorageSize: () => minikubeStorageSize,
   getIsContainerized: () => isContainerized,
   getIsPlatform: () => isPlatform,
-}));
-
-mock.module("../util/platform.js", () => ({
-  getWorkspaceDir: () => workspaceDir,
 }));
 
 const { __resetDiskUsageCacheForTests, getDiskUsageInfo, parseK8sMemoryBytes } =
@@ -86,7 +98,7 @@ describe("disk usage sampler", () => {
     const usage = await getDiskUsageInfo();
 
     expect(usage).toEqual({
-      path: "/workspace",
+      path: workspaceDir,
       totalMb: 100,
       usedMb: 75,
       freeMb: 25,
@@ -107,19 +119,19 @@ describe("disk usage sampler", () => {
     statfsResult = statfsFor(10 * GIB, 8 * GIB);
     spawnResult = {
       status: 0,
-      stdout: `${100 * MIB}\t/workspace\n`,
+      stdout: `${100 * MIB}\t${workspaceDir}\n`,
     };
 
     const usage = await getDiskUsageInfo();
 
     expect(usage).toEqual({
-      path: "/workspace",
+      path: workspaceDir,
       totalMb: 1024,
       usedMb: 100,
       freeMb: 924,
     });
     expect(spawnCalls).toEqual([
-      { command: "du", args: ["-sb", "/workspace"] },
+      { command: "du", args: ["-sb", workspaceDir] },
     ]);
   });
 
@@ -129,14 +141,14 @@ describe("disk usage sampler", () => {
     statfsResult = statfsFor(10 * GIB, 8 * GIB);
     spawnResult = {
       status: 0,
-      stdout: `${100 * MIB}\t/workspace\n${20 * MIB}\t/data\n`,
+      stdout: `${100 * MIB}\t${workspaceDir}\n${20 * MIB}\t/data\n`,
     };
 
     const usage = await getDiskUsageInfo();
 
     expect(usage?.usedMb).toBe(120);
     expect(spawnCalls).toEqual([
-      { command: "du", args: ["-sb", "/workspace", "/data"] },
+      { command: "du", args: ["-sb", workspaceDir, "/data"] },
     ]);
   });
 
@@ -146,7 +158,7 @@ describe("disk usage sampler", () => {
     statfsResult = statfsFor(100 * GIB, 40 * GIB);
     spawnResult = {
       status: 0,
-      stdout: `${2 * GIB}\t/workspace\n`,
+      stdout: `${2 * GIB}\t${workspaceDir}\n`,
     };
 
     const usage = await getDiskUsageInfo();
@@ -154,13 +166,13 @@ describe("disk usage sampler", () => {
     // Used reflects only the workspace (du), free reflects the host headroom
     // the volume can grow into, and total is their sum.
     expect(usage).toEqual({
-      path: "/workspace",
+      path: workspaceDir,
       totalMb: 2048 + 40960,
       usedMb: 2048,
       freeMb: 40960,
     });
     expect(spawnCalls).toEqual([
-      { command: "du", args: ["-sb", "/workspace"] },
+      { command: "du", args: ["-sb", workspaceDir] },
     ]);
   });
 
@@ -172,7 +184,7 @@ describe("disk usage sampler", () => {
     const usage = await getDiskUsageInfo();
 
     expect(usage).toEqual({
-      path: "/workspace",
+      path: workspaceDir,
       totalMb: 10240,
       usedMb: 4096,
       freeMb: 6144,
@@ -189,13 +201,13 @@ describe("disk usage sampler", () => {
     const usage = await getDiskUsageInfo();
 
     expect(usage).toEqual({
-      path: "/workspace",
+      path: workspaceDir,
       totalMb: 102400,
       usedMb: 61440,
       freeMb: 40960,
     });
     expect(spawnCalls).toEqual([
-      { command: "du", args: ["-sb", "/workspace"] },
+      { command: "du", args: ["-sb", workspaceDir] },
     ]);
   });
 
@@ -218,13 +230,13 @@ describe("disk usage sampler", () => {
     const usage = await getDiskUsageInfo();
 
     expect(usage).toEqual({
-      path: "/workspace",
+      path: workspaceDir,
       totalMb: 10240,
       usedMb: 2048,
       freeMb: 8192,
     });
     expect(spawnCalls).toEqual([
-      { command: "du", args: ["-sb", "/workspace"] },
+      { command: "du", args: ["-sb", workspaceDir] },
     ]);
   });
 });

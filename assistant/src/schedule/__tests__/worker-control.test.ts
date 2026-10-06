@@ -12,15 +12,9 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import * as realLogger from "../../util/logger.js";
-import * as realPlatform from "../../util/platform.js";
 
 let tmpDir: string;
 let pidPath: string;
-
-mock.module("../../util/platform.js", () => ({
-  ...realPlatform,
-  getScheduleWorkerPidPath: () => pidPath,
-}));
 
 const noopLogger = {
   info: () => {},
@@ -90,6 +84,9 @@ function neverExits(): Promise<unknown> {
 
 beforeEach(() => {
   tmpDir = mkdtempSync(join(tmpdir(), "schedule-worker-control-test-"));
+  // The real getScheduleWorkerPidPath() is <workspace>/schedule-worker.pid,
+  // so re-point the workspace at tmpDir instead of mocking util/platform.js.
+  process.env.VELLUM_WORKSPACE_DIR = tmpDir;
   pidPath = join(tmpDir, "schedule-worker.pid");
 });
 

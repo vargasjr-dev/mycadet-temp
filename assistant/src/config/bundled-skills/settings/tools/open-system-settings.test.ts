@@ -1,12 +1,14 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import type { ToolContext } from "../../../../tools/types.js";
 
-let windowsHost = true;
+// The real isWindows() reads process.platform, so simulate the host platform
+// directly instead of mocking util/platform.js.
+const originalProcessPlatform = process.platform;
 
-mock.module("../../../../util/platform.js", () => ({
-  isWindows: () => windowsHost,
-}));
+function setProcessPlatform(value: string): void {
+  Object.defineProperty(process, "platform", { value, configurable: true });
+}
 
 const { run } = await import("./open-system-settings.js");
 
@@ -26,7 +28,11 @@ function makeContext(): ToolContext {
 describe("open_system_settings tool", () => {
   beforeEach(() => {
     sentMessages = [];
-    windowsHost = true;
+    setProcessPlatform("win32");
+  });
+
+  afterEach(() => {
+    setProcessPlatform(originalProcessPlatform);
   });
 
   test("opens Windows microphone privacy settings", async () => {

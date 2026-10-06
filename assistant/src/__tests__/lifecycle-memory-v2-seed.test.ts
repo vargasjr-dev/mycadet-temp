@@ -125,15 +125,6 @@ mock.module("../persistence/jobs-store.js", () => ({
   hasActiveJobOfType: (): boolean => false,
 }));
 
-mock.module("../util/platform.js", () => ({
-  getWorkspaceDir: () => "/tmp/test-workspace",
-  // qdrant.ts (mocked away in this file) reads `getDataDir` for the reembed
-  // sentinel path; bun mocks share the same module record across files, so
-  // include it here too so a peer test importing `getDataDir` doesn't see
-  // `undefined` after this mock evaluates.
-  getDataDir: () => "/tmp/test-workspace/data",
-}));
-
 mock.module("../util/logger.js", () => ({
   getLogger: () => ({
     warn: (obj: unknown, msg: unknown) => {

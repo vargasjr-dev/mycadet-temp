@@ -1,23 +1,26 @@
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 // Per-suite tmp data dir so the rebuild sentinel never lands in the
-// developer's real ~/.vellum workspace.
+// developer's real ~/.vellum workspace. The real getDataDir() is
+// <workspace>/data and reads VELLUM_WORKSPACE_DIR at call time, so re-point
+// the workspace instead of mocking util/platform.js.
 const TEST_DATA_DIR = mkdtempSync(join(tmpdir(), "qdrant-v1-migration-test-"));
+process.env.VELLUM_WORKSPACE_DIR = TEST_DATA_DIR;
+mkdirSync(join(TEST_DATA_DIR, "data"), { recursive: true });
 const REBUILD_SENTINEL_PATH = join(
   TEST_DATA_DIR,
+  "data",
   ".memory-v1-rebuild-required",
 );
-
-mock.module("../util/platform.js", () => ({
-  getDataDir: () => TEST_DATA_DIR,
-  // Bun shares mocked modules across test files; peer tests import
-  // `getWorkspaceDir` from this same module, so re-export it here to avoid an
-  // `undefined` if this mock is the one that wins evaluation order.
-  getWorkspaceDir: () => TEST_DATA_DIR,
-}));
 
 // ── Mock Qdrant REST client ───────────────────────────────────────────
 
