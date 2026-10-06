@@ -256,10 +256,7 @@ declare global {
         popup?(id: string, x: number, y: number): Promise<void>;
       };
       localMode: {
-        hatch(
-          species: string,
-          remote?: string,
-        ): Promise<{
+        hatch(remote?: string): Promise<{
           ok: boolean;
           assistantId?: string;
           error?: string;

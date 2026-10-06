@@ -9,8 +9,7 @@ export const createLocalModeBridge = (
 ): VellumBridge["localMode"] => ({
   guardianToken: (assistantId) =>
     ipc.invoke("vellum:localMode:guardianToken", assistantId),
-  hatch: (species, remote) =>
-    ipc.invoke("vellum:localMode:hatch", species, remote),
+  hatch: (remote) => ipc.invoke("vellum:localMode:hatch", remote),
   listDevices: (assistantId) =>
     ipc.invoke("vellum:localMode:listDevices", assistantId),
   pairingCancel: (handle) =>

@@ -630,7 +630,6 @@ describe("connect import", () => {
       name: "Desk",
       runtimeUrl: "http://127.0.0.1:7830",
       cloud: "local",
-      species: "vellum",
     });
     process.argv = [
       "bun",

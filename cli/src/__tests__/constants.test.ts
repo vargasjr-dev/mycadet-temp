@@ -3,8 +3,6 @@ import {
   FIREWALL_TAG,
   GATEWAY_PORT,
   VALID_REMOTE_HOSTS,
-  VALID_SPECIES,
-  SPECIES_CONFIG,
 } from "../lib/constants.js";
 
 describe("constants", () => {
@@ -29,25 +27,5 @@ describe("constants", () => {
   test("VALID_REMOTE_HOSTS excludes cloud provisioning targets", () => {
     expect(VALID_REMOTE_HOSTS).not.toContain("gcp");
     expect(VALID_REMOTE_HOSTS).not.toContain("aws");
-  });
-
-  test("VALID_SPECIES includes expected species", () => {
-    expect(VALID_SPECIES).toContain("openclaw");
-    expect(VALID_SPECIES).toContain("vellum");
-  });
-
-  test("SPECIES_CONFIG has entries for all valid species", () => {
-    for (const species of VALID_SPECIES) {
-      const config = SPECIES_CONFIG[species];
-      expect(config).toBeDefined();
-      expect(typeof config.color).toBe("string");
-      expect(Array.isArray(config.art)).toBe(true);
-      expect(config.art.length).toBeGreaterThan(0);
-      expect(typeof config.hatchedEmoji).toBe("string");
-      expect(Array.isArray(config.waitingMessages)).toBe(true);
-      expect(config.waitingMessages.length).toBeGreaterThan(0);
-      expect(Array.isArray(config.runningMessages)).toBe(true);
-      expect(config.runningMessages.length).toBeGreaterThan(0);
-    }
   });
 });

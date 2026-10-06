@@ -117,7 +117,6 @@ const VELLUM_ENTRY = {
   assistantId: "11111111-2222-3333-4444-555555555555",
   runtimeUrl: "https://platform.vellum.ai",
   cloud: "vellum",
-  species: "vellum",
   hatchedAt: new Date().toISOString(),
 } satisfies assistantConfig.AssistantEntry;
 

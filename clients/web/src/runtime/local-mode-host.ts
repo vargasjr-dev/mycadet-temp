@@ -230,7 +230,7 @@ async function requestLocalCommand<T extends { ok: boolean }>(
 }
 
 /**
- * Provision a local assistant for the requested species.
+ * Provision a local assistant.
  *
  * Both hosts spawn the Vellum CLI in a trusted process and return the same
  * `{ ok, assistantId }` contract: the Electron main process behind
@@ -239,16 +239,15 @@ async function requestLocalCommand<T extends { ok: boolean }>(
  * discover the new assistant regardless of host.
  */
 export async function hatchLocalAssistant(
-  species: string = "vellum",
   remote?: string,
 ): Promise<LocalHatchResult> {
   if (isElectron()) {
-    return window.vellum!.localMode.hatch(species, remote);
+    return window.vellum!.localMode.hatch(remote);
   }
 
   return postLocalCommand<LocalHatchResult>(
     "/assistant/__local/hatch",
-    { species, remote },
+    { remote },
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
 }

@@ -1117,7 +1117,6 @@ export interface LockfileAssistant {
   name?: string;
   cloud?: string;
   runtimeUrl?: string;
-  species?: string;
   hatchedAt?: string;
   onboardedAt?: string;
   organizationId?: string;

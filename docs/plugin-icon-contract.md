@@ -41,7 +41,11 @@ Each entry in [`plugins/marketplace.json`](../plugins/marketplace.json) MAY carr
 {
   "name": "caveman",
   "icon": "🪨",
-  "source": { "source": "github", "repo": "JuliusBrussee/caveman", "ref": "<full-commit-sha>" }
+  "source": {
+    "source": "github",
+    "repo": "JuliusBrussee/caveman",
+    "ref": "<full-commit-sha>"
+  }
 }
 ```
 
@@ -82,27 +86,10 @@ plugins also have a derived compatibility copy at
 independent even when an OAuth provider and an MCP plugin share a brand.
 
 The platform marketing catalog serves icons from the plugin assets bucket, so
-the icon generator also vendors each valid local package icon to
-`plugins/assets/<name>/icon.png` and indexes it in `plugins/plugin-icons.json`.
-It reads the package file from disk and never fetches it. Its check mode fails
-when a vendored copy differs from the package icon.
-
-Generate or verify these copies without network access:
-
-```bash
-node scripts/plugins/sync-local-plugin-icons.mjs
-node scripts/plugins/sync-local-plugin-icons.mjs --check
-node scripts/plugins/generate-plugin-icons.mjs --check
-```
-
-After you change a local package icon, run
-`node scripts/plugins/generate-plugin-icons.mjs` to refresh the vendored copy
-and manifest.
-
-The package icon is the source of truth. The sync command validates it with the
-authoritative PNG contract and writes a byte-identical web copy. Check mode
-also rejects missing, changed, or stale `<name>-mcp.png` files and verifies the
-package path, version match, and marketplace logo filename.
+each valid local package icon is vendored to `plugins/assets/<name>/icon.png`
+and indexed in `plugins/plugin-icons.json` — the package icon is the source of
+truth, and the vendored copy plus manifest entry must stay byte-identical to it
+when either changes.
 
 ## Platform combination and precedence
 
@@ -124,25 +111,14 @@ Vendored PNGs are uploaded to GCS and served publicly, mirroring the skill asset
 
 ## Adding or updating a plugin icon
 
-The one-command path handles all three artifacts (curated emoji, vendored PNG,
-bundled copy) in one shot:
-
-```bash
-# Curate an emoji for a plugin that ships no bundled PNG:
-node scripts/plugins/add-plugin-icon.mjs <plugin-name> --emoji ☕
-
-# Vendor a bundled PNG (the plugin publishes its own icon.png upstream):
-node scripts/plugins/add-plugin-icon.mjs <plugin-name>
-```
-
-It (1) optionally patches the plugin's `icon` field in `plugins/marketplace.json`
-— a surgical, churn-free edit that preserves the file's exact serialization —
-(2) runs the generator to vendor `plugins/assets/<name>/icon.png` and regenerate
-`plugins/plugin-icons.json`, then (3) runs `meta/sync-bundled-copies.ts` so
-`assistant/src/cli/lib/bundled-marketplace.json` stays in lockstep. Set
-`GITHUB_TOKEN` to lift the generator's unauthenticated GitHub rate limit. Then
-commit whatever changed (`marketplace.json`, the vendored asset,
-`plugin-icons.json`, and the bundled copy).
+A plugin gets an icon through either artifact: curate an emoji by setting the
+`icon` field on its `plugins/marketplace.json` entry, or vendor a bundled PNG
+(the plugin publishes its own `icon.png` upstream) into
+`plugins/assets/<name>/icon.png` and regenerate its `plugins/plugin-icons.json`
+entry with the content-hash `iconVersion`. Then run
+`meta/sync-bundled-copies.ts` so `assistant/src/cli/lib/bundled-marketplace.json`
+stays in lockstep, and commit whatever changed (`marketplace.json`, the vendored
+asset, `plugin-icons.json`, and the bundled copy).
 
 The plugin must already exist in `plugins/marketplace.json` — an icon only
 attaches to a catalogued plugin. A plugin whose upstream `icon.png` fails
@@ -161,5 +137,5 @@ If you'd rather run the steps by hand, or need only one of them:
 
 **PNG:**
 
-1. For GitHub marketplace entries, run the generator `scripts/plugins/generate-plugin-icons.mjs`. It fetches the plugin's `icon.png`, validates it against the rules above, vendors the valid bytes to `plugins/assets/<name>/icon.png`, and regenerates `plugins/plugin-icons.json`. Local entries are read from `<source.path>/icon.png` on disk, never fetched, and vendored the same way. Their web copies are handled by `sync-local-plugin-icons.mjs`.
+1. Vendor the plugin's `icon.png` into `plugins/assets/<name>/icon.png` and regenerate its `plugins/plugin-icons.json` entry (fetching the plugin's `icon.png` for GitHub entries, reading `<source.path>/icon.png` from disk for local entries), validating the bytes against the rules above. Keep the derived `<name>-mcp.png` web copies in lockstep.
 2. Commit the vendored asset **and** the regenerated `plugins/plugin-icons.json` together. A plugin whose icon fails validation simply gets no manifest entry (and falls back to emoji or the generic glyph).

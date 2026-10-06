@@ -42,15 +42,8 @@ cadet sleep
 Provision a new assistant instance and bootstrap the Cadet runtime on it.
 
 ```bash
-cadet hatch [species] [options]
+cadet hatch [options]
 ```
-
-#### Species
-
-| Species    | Description                                   |
-| ---------- | --------------------------------------------- |
-| `cadet`    | Default. Provisions the Cadet runtime.        |
-| `openclaw` | Provisions the OpenClaw runtime with gateway. |
 
 #### Options
 

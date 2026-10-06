@@ -36,8 +36,8 @@ ownership, license when known, and any format conversion or background
 treatment.
 
 The `<name>-mcp.png` files in this directory are byte-identical derived copies
-for the web integration catalog. Generate them with
-`node scripts/plugins/sync-local-plugin-icons.mjs`. Do not edit them directly.
+for the web integration catalog, kept in lockstep with each package's canonical
+`icon.png`. Do not edit them directly.
 
 ## Unrecorded provenance
 

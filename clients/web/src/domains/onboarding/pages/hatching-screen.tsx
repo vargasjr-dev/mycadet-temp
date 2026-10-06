@@ -106,7 +106,11 @@ function releaseHatchGuards(): void {
 }
 
 type HatchPhase =
-  "initializing" | "provisioning" | "connecting" | "resizing" | "ready";
+  | "initializing"
+  | "provisioning"
+  | "connecting"
+  | "resizing"
+  | "ready";
 
 const PHASE_TARGET: Record<HatchPhase, number> = {
   initializing: 0,
@@ -143,7 +147,9 @@ export function interpolateSegmentProgress(
 }
 
 export type HatchGateDecision =
-  { kind: "proceed" } | { kind: "wait" } | { kind: "redirect"; to: string };
+  | { kind: "proceed" }
+  | { kind: "wait" }
+  | { kind: "redirect"; to: string };
 
 export function decideHatchGate(): HatchGateDecision {
   const decision = resolveNavigation(buildNavigationState(), {
@@ -415,7 +421,7 @@ export function HatchingScreen() {
           }
           if (!localHatchPromise) {
             localHatchRemote = remote;
-            localHatchPromise = hatchLocalAssistant(undefined, remote);
+            localHatchPromise = hatchLocalAssistant(remote);
           }
           // Keep `localHatchPromise` set through the rest of the flow. The
           // connectLocalAssistant() handoff below remounts this screen (see the

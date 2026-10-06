@@ -27,11 +27,10 @@ export interface RunHatchOptions {
 
 export function runHatch(
   invocation: CliInvocation,
-  species: string,
   options?: RunHatchOptions,
 ): Promise<HatchResult> {
   return new Promise((resolve) => {
-    const args = [...invocation.baseArgs, "hatch", species];
+    const args = [...invocation.baseArgs, "hatch"];
     if (options?.remote) {
       args.push("--remote", options.remote);
     }

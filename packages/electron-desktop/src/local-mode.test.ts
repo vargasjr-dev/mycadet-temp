@@ -189,8 +189,8 @@ const hatch = (species?: unknown): Promise<unknown> =>
   handlers["vellum:localMode:hatch"](allowedEvent, species) as Promise<unknown>;
 
 describe("vellum:localMode:hatch handler", () => {
-  test("dev: spawns `bun run <repo>/cli/src/index.ts hatch <species>` and parses the id from stdout", async () => {
-    const pending = hatch("vellum");
+  test("dev: spawns `bun run <repo>/cli/src/index.ts hatch` and parses the id from stdout", async () => {
+    const pending = hatch();
     await tick();
     lastChild.stdout.emit(
       "data",
@@ -201,7 +201,7 @@ describe("vellum:localMode:hatch handler", () => {
     expect(await pending).toEqual({ ok: true, assistantId: "asst-42" });
     expect(spawnArgs[0]).toEqual([
       "bun",
-      ["run", path.join("/repo", "cli", "src", "index.ts"), "hatch", "vellum"],
+      ["run", path.join("/repo", "cli", "src", "index.ts"), "hatch"],
     ]);
   });
 
@@ -209,7 +209,7 @@ describe("vellum:localMode:hatch handler", () => {
     appState.isPackaged = true;
     cliInstallerState.isInstalled = true;
 
-    const pending = hatch("openclaw");
+    const pending = hatch();
     await tick();
     lastChild.stdout.emit(
       "data",
@@ -220,7 +220,7 @@ describe("vellum:localMode:hatch handler", () => {
     expect(await pending).toEqual({ ok: true, assistantId: "asst-pkg" });
     expect(spawnArgs[0]).toEqual([
       cliInstallerState.bundledBunPath,
-      ["run", cliInstallerState.cliBinPath, "hatch", "openclaw"],
+      ["run", cliInstallerState.cliBinPath, "hatch"],
     ]);
     expect(ensureCliInstalledMock).toHaveBeenCalledTimes(1);
   });
@@ -229,7 +229,7 @@ describe("vellum:localMode:hatch handler", () => {
     appState.isPackaged = true;
     cliInstallerState.isInstalled = false;
 
-    const pending = hatch("openclaw");
+    const pending = hatch();
     await tick();
     lastChild.stdout.emit(
       "data",
@@ -241,7 +241,7 @@ describe("vellum:localMode:hatch handler", () => {
     expect(ensureCliInstalledMock).toHaveBeenCalledTimes(1);
     expect(spawnArgs[0]).toEqual([
       cliInstallerState.bundledBunPath,
-      ["run", cliInstallerState.cliBinPath, "hatch", "openclaw"],
+      ["run", cliInstallerState.cliBinPath, "hatch"],
     ]);
   });
 
@@ -250,7 +250,7 @@ describe("vellum:localMode:hatch handler", () => {
     cliInstallerState.isInstalled = false;
     cliInstallerState.installError = new Error("network timeout");
 
-    const result = (await hatch("openclaw")) as { ok: boolean; error: string };
+    const result = (await hatch()) as { ok: boolean; error: string };
 
     expect(result.ok).toBe(false);
     expect(result.error).toBe("network timeout");
@@ -260,7 +260,7 @@ describe("vellum:localMode:hatch handler", () => {
   test("VELLUM_CLI_PATH env override takes precedence", async () => {
     process.env.VELLUM_CLI_PATH = "/custom/cli/index.ts";
 
-    const pending = hatch("vellum");
+    const pending = hatch();
     await tick();
     lastChild.stdout.emit(
       "data",
@@ -271,26 +271,12 @@ describe("vellum:localMode:hatch handler", () => {
     expect(await pending).toEqual({ ok: true, assistantId: "asst-env" });
     expect(spawnArgs[0]).toEqual([
       "bun",
-      ["run", "/custom/cli/index.ts", "hatch", "vellum"],
+      ["run", "/custom/cli/index.ts", "hatch"],
     ]);
   });
 
-  test("coerces a missing or empty species to the default", async () => {
-    const pending = hatch("");
-    await tick();
-    lastChild.emit("close", 0);
-    await pending;
-    expect(spawnArgs[0][1]).toContain("vellum");
-
-    const pending2 = hatch(undefined);
-    await tick();
-    lastChild.emit("close", 0);
-    await pending2;
-    expect(spawnArgs[1][1]).toContain("vellum");
-  });
-
   test("a non-zero exit resolves to a failure carrying the CLI's stderr", async () => {
-    const pending = hatch("vellum");
+    const pending = hatch();
     await tick();
     lastChild.stderr.emit("data", Buffer.from("daemon already running"));
     lastChild.emit("close", 1);
@@ -302,7 +288,7 @@ describe("vellum:localMode:hatch handler", () => {
   });
 
   test("a non-zero exit with no output carries a descriptive fallback error", async () => {
-    const pending = hatch("vellum");
+    const pending = hatch();
     await tick();
     lastChild.emit("close", 1);
 
@@ -312,7 +298,7 @@ describe("vellum:localMode:hatch handler", () => {
   });
 
   test("a spawn failure resolves to a failure rather than rejecting", async () => {
-    const pending = hatch("vellum");
+    const pending = hatch();
     await tick();
     lastChild.emit("error", new Error("ENOENT"));
 
@@ -322,7 +308,7 @@ describe("vellum:localMode:hatch handler", () => {
   });
 
   test("parses the assistant id from a Docker hatch banner", async () => {
-    const pending = hatch("vellum");
+    const pending = hatch();
     await tick();
     lastChild.stdout.emit(
       "data",
@@ -334,7 +320,7 @@ describe("vellum:localMode:hatch handler", () => {
   });
 
   test("a zero exit whose stdout has no parseable id fails instead of returning a blank id", async () => {
-    const pending = hatch("vellum");
+    const pending = hatch();
     await tick();
     lastChild.stdout.emit("data", Buffer.from("done, but no id line\n"));
     lastChild.emit("close", 0);

@@ -23,74 +23,24 @@ export const VALID_REMOTE_HOSTS = [
   "vellum",
 ] as const;
 export type RemoteHost = (typeof VALID_REMOTE_HOSTS)[number];
-export const VALID_SPECIES = ["openclaw", "vellum"] as const;
-export type Species = (typeof VALID_SPECIES)[number];
-
 const ANSI = {
   reset: "\x1b[0m",
   bold: "\x1b[1m",
-  red: "\x1b[31m",
   magenta: "\x1b[35m",
 } as const;
 
-interface SpeciesConfig {
-  color: string;
-  art: string[];
-  hatchedEmoji: string;
-  waitingMessages: string[];
-  runningMessages: string[];
-}
+/** Hatch identity: the color shown while an assistant hatches. */
+export const HATCH_COLOR = ANSI.magenta;
 
-export const SPECIES_CONFIG: Record<Species, SpeciesConfig> = {
-  openclaw: {
-    color: ANSI.red,
-    art: [
-      `${ANSI.red}     ___${ANSI.reset}`,
-      `${ANSI.red}    / ${ANSI.reset}${ANSI.bold}o${ANSI.reset}${ANSI.red} \\${ANSI.reset}`,
-      `${ANSI.red}   |  ${ANSI.reset}${ANSI.bold}>${ANSI.reset}${ANSI.red}  |${ANSI.reset}`,
-      `${ANSI.red}   /|   |\\${ANSI.reset}`,
-      `${ANSI.red}  / |___| \\${ANSI.reset}`,
-      `${ANSI.red} |  /   \\  |${ANSI.reset}`,
-      `${ANSI.red} |_/     \\_|${ANSI.reset}`,
-      `${ANSI.red}  V       V${ANSI.reset}`,
-      `${ANSI.red}  |_|   |_|${ANSI.reset}`,
-    ],
-    hatchedEmoji: "🦞",
-    waitingMessages: [
-      "Warming up the egg...",
-      "Getting cozy in there...",
-      "Preparing the nest...",
-      "Gathering shell fragments...",
-    ],
-    runningMessages: [
-      "Running startup script...",
-      "Teaching the hatchling to code...",
-      "Growing stronger...",
-      "Almost ready to peek out...",
-    ],
-  },
-  vellum: {
-    color: ANSI.magenta,
-    art: [
-      `${ANSI.magenta}   .-.-.-.${ANSI.reset}`,
-      `${ANSI.magenta}  |${ANSI.reset}${ANSI.bold} o   o ${ANSI.reset}${ANSI.magenta}|${ANSI.reset}`,
-      `${ANSI.magenta}  |${ANSI.reset}${ANSI.bold}  ---  ${ANSI.reset}${ANSI.magenta}|${ANSI.reset}`,
-      `${ANSI.magenta}  |_|_|_|_|${ANSI.reset}`,
-      `${ANSI.magenta}   | | | |${ANSI.reset}`,
-      `${ANSI.magenta}   ^ ^_^ ^${ANSI.reset}`,
-    ],
-    hatchedEmoji: "👾",
-    waitingMessages: [
-      "Warming up the mothership...",
-      "Getting cozy in there...",
-      "Calibrating the antenna...",
-      "Scanning the galaxy...",
-    ],
-    runningMessages: [
-      "Running startup script...",
-      "Teaching the alien to code...",
-      "Powering up...",
-      "Almost ready to beam down...",
-    ],
-  },
-};
+/** Hatch identity: the ASCII art shown while an assistant hatches. */
+export const HATCH_ART = [
+  `${ANSI.magenta}   .-.-.-.${ANSI.reset}`,
+  `${ANSI.magenta}  |${ANSI.reset}${ANSI.bold} o   o ${ANSI.reset}${ANSI.magenta}|${ANSI.reset}`,
+  `${ANSI.magenta}  |${ANSI.reset}${ANSI.bold}  ---  ${ANSI.reset}${ANSI.magenta}|${ANSI.reset}`,
+  `${ANSI.magenta}  |_|_|_|_|${ANSI.reset}`,
+  `${ANSI.magenta}   | | | |${ANSI.reset}`,
+  `${ANSI.magenta}   ^ ^_^ ^${ANSI.reset}`,
+];
+
+/** Hatch identity: emoji shown when an assistant has hatched. */
+export const HATCHED_EMOJI = "👾";

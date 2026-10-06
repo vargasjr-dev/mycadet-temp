@@ -57,8 +57,6 @@ import type { IpcHandle } from "./ipc";
  * subprocess. The Electron app does not supervise any daemon of its own.
  */
 
-const DEFAULT_SPECIES = "vellum";
-
 interface HatchResult {
   ok: boolean;
   assistantId?: string;
@@ -144,18 +142,18 @@ const requireRuntime = (): LocalModeRuntime => {
 };
 
 /**
- * Provision a local assistant for the requested species. Never rejects —
- * failures resolve with `{ ok: false, error }` so the renderer renders the
- * same error UI it shows for the web/dev middleware path.
+ * Provision a local assistant. Never rejects — failures resolve with
+ * `{ ok: false, error }` so the renderer renders the same error UI it shows
+ * for the web/dev middleware path.
  */
-async function hatch(species: string, remote?: string): Promise<HatchResult> {
+async function hatch(remote?: string): Promise<HatchResult> {
   let invocation: CliInvocation;
   try {
     invocation = await requireRuntime().cli.resolveInvocation();
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
-  const result = await runHatch(invocation, species, { remote });
+  const result = await runHatch(invocation, { remote });
   return result.ok
     ? { ok: true, assistantId: result.assistantId }
     : { ok: false, error: result.error };
@@ -402,16 +400,8 @@ export const installLocalMode = (): void => {
   const { configDir, lockfilePaths } = configured.paths;
   const { refreshLockfile } = configured;
 
-  // `species` is optional on the wire so an empty/omitted request
-  // falls back to the default rather than being rejected.
-  ipc(
-    "vellum:localMode:hatch",
-    z.tuple([z.string().optional(), z.string().optional()]),
-    ([species, remote]) =>
-      hatch(
-        species && species.length > 0 ? species : DEFAULT_SPECIES,
-        remote || undefined,
-      ),
+  ipc("vellum:localMode:hatch", z.tuple([z.string().optional()]), ([remote]) =>
+    hatch(remote || undefined),
   );
 
   ipc("vellum:localMode:readLockfile", z.tuple([]), () => {

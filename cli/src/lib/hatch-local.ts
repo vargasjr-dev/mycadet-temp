@@ -21,7 +21,6 @@ import {
   setActiveAssistant,
 } from "./assistant-config.js";
 import type { AssistantEntry } from "./assistant-config.js";
-import type { Species } from "./constants.js";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils.js";
 import {
   generateLocalSigningKey,
@@ -154,7 +153,6 @@ export interface HatchLocalResult {
   assistantId: string;
   runtimeUrl: string;
   localUrl: string;
-  species: Species;
   /**
    * Guardian access token leased during hatch, when the lease succeeded. The
    * full token pair is persisted to disk regardless; this is surfaced so an
@@ -164,7 +162,6 @@ export interface HatchLocalResult {
 }
 
 export async function hatchLocal(
-  species: Species,
   name: string | null,
   watch: boolean = false,
   keepAlive: boolean = false,
@@ -178,7 +175,6 @@ export async function hatchLocal(
     ? resolveHatchProvider(configValues)
     : undefined;
   const instanceName = generateInstanceName(
-    species,
     name ?? process.env.VELLUM_ASSISTANT_NAME,
   );
 
@@ -207,7 +203,6 @@ export async function hatchLocal(
       resetLogFile("hatch.log");
 
       reporter.log(`🥚 Hatching local assistant: ${instanceName}`);
-      reporter.log(`   Species: ${species}`);
       reporter.log("");
 
       const apiKeyCheck = checkProviderApiKey();
@@ -294,7 +289,6 @@ export async function hatchLocal(
         runtimeUrl,
         localUrl: `http://127.0.0.1:${resources.gatewayPort}`,
         cloud: "local",
-        species,
         hatchedAt: new Date().toISOString(),
         resources: { ...resources, signingKey },
         guardianBootstrapSecret: bootstrapSecret,
@@ -377,7 +371,6 @@ export async function hatchLocal(
     assistantId: instanceName,
     runtimeUrl,
     localUrl: `http://127.0.0.1:${resources.gatewayPort}`,
-    species,
     guardianAccessToken,
   };
 

@@ -555,7 +555,6 @@ function formatAssistantListRow(
   infoParts.push(`id: ${entry.assistantId}`);
   if (entry.runtimeUrl) infoParts.push(entry.runtimeUrl);
   if (entry.cloud) infoParts.push(`cloud: ${entry.cloud}`);
-  if (entry.species) infoParts.push(`species: ${entry.species}`);
   if (health.detail) infoParts.push(health.detail);
 
   const prefix = entry.assistantId === activeAssistantId ? "* " : "  ";

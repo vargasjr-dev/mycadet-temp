@@ -23,16 +23,16 @@ describe("generateRandomSuffix", () => {
 
 describe("generateInstanceName", () => {
   test("returns explicit name when provided", () => {
-    expect(generateInstanceName("vellum", "my-custom")).toBe("my-custom");
+    expect(generateInstanceName("my-custom")).toBe("my-custom");
   });
 
-  test("generates species-prefixed name when no explicit name", () => {
-    const result = generateInstanceName("vellum");
-    expect(result).toMatch(/^vellum-[a-z]+-[a-z]+-[a-z0-9]{6}$/);
+  test("generates an adjective-noun-nanoid name when no explicit name", () => {
+    const result = generateInstanceName();
+    expect(result).toMatch(/^[a-z]+-[a-z]+-[a-z0-9]{6}$/);
   });
 
   test("treats null as no explicit name", () => {
-    const result = generateInstanceName("openclaw", null);
-    expect(result).toMatch(/^openclaw-[a-z]+-[a-z]+-[a-z0-9]{6}$/);
+    const result = generateInstanceName(null);
+    expect(result).toMatch(/^[a-z]+-[a-z]+-[a-z0-9]{6}$/);
   });
 });

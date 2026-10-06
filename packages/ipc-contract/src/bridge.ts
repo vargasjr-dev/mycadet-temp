@@ -185,7 +185,8 @@ export type LocalListDevicesResult =
   | { ok: false; error: string };
 
 export type LocalRevokeDeviceResult =
-  { ok: true } | { ok: false; error: string };
+  | { ok: true }
+  | { ok: false; error: string };
 
 /**
  * A local assistant's avatar as read off its workspace by the host. `null`
@@ -416,7 +417,6 @@ export interface VellumBridge {
   };
   localMode: {
     hatch(
-      species: string,
       remote?: string,
     ): Promise<{ ok: boolean; assistantId?: string; error?: string }>;
     /** List the devices holding pairing tokens for a local assistant. */

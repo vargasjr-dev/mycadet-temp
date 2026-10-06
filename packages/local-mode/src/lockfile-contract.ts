@@ -177,7 +177,6 @@ export const LockfileAssistantSchema = z.object({
   name: z.string().optional(),
   cloud: z.string().optional(),
   runtimeUrl: z.string().optional(),
-  species: z.string().optional(),
   hatchedAt: z.string().optional(),
   /**
    * When this assistant finished first-run onboarding. Absent for entries that

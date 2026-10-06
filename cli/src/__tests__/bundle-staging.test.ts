@@ -37,14 +37,15 @@ function makeEntry(overrides: Partial<AssistantEntry> = {}): AssistantEntry {
     assistantId: "assistant-123",
     runtimeUrl: "http://127.0.0.1:7831",
     cloud: "local",
-    species: "vellum",
     hatchedAt: new Date().toISOString(),
     ...overrides,
   } as AssistantEntry;
 }
 
 let tmpRoot: string;
-let fetchSpy: ReturnType<typeof spyOn<typeof loopbackFetch, "loopbackSafeFetch">>;
+let fetchSpy: ReturnType<
+  typeof spyOn<typeof loopbackFetch, "loopbackSafeFetch">
+>;
 let execSpy: ReturnType<typeof spyOn<typeof stepRunner, "exec">>;
 
 beforeEach(() => {
@@ -98,12 +99,7 @@ describe("stageBundleForRestore", () => {
       hostBundle,
     );
 
-    const dest = join(
-      instanceDir,
-      ".vellum",
-      "workspace",
-      staged.relativePath,
-    );
+    const dest = join(instanceDir, ".vellum", "workspace", staged.relativePath);
     expect(staged.relativePath.startsWith(`${RESTORE_STAGING_DIRNAME}/`)).toBe(
       true,
     );

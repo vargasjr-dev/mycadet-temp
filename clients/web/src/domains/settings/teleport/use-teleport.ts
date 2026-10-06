@@ -49,7 +49,10 @@ import {
   type TeleportPhase,
 } from "./teleport-types";
 import { exportManagedBundle } from "./managed-export";
-import { exportLocalBundle, importLocalBundle } from "./teleport-gateway-client";
+import {
+  exportLocalBundle,
+  importLocalBundle,
+} from "./teleport-gateway-client";
 import {
   downloadFromSignedUrl,
   importFromGcs,
@@ -608,7 +611,7 @@ async function resolveLocalTarget(): Promise<{
   assistant: LockfileAssistant;
   createdFresh: boolean;
 }> {
-  const hatched = await hatchLocalAssistant(undefined, undefined);
+  const hatched = await hatchLocalAssistant();
   if (!hatched.ok) {
     throw new TeleportError(
       "local_assistant_not_found",

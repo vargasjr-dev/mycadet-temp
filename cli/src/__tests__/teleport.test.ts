@@ -867,7 +867,6 @@ describe("resolveOrHatchTarget", () => {
 
     const result = await resolveOrHatchTarget("docker", "new-one");
     expect(hatchDockerMock).toHaveBeenCalledWith({
-      species: "vellum",
       detached: false,
       name: "new-one",
       setupProviderCredentials: false,

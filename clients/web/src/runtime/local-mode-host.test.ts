@@ -57,13 +57,13 @@ afterEach(() => {
 });
 
 describe("hatchLocalAssistant", () => {
-  test("web/dev host POSTs the species to the local-mode middleware and returns its JSON", async () => {
+  test("web/dev host POSTs to the local-mode middleware and returns its JSON", async () => {
     const fetchMock = mock(async () => ({
       json: async () => ({ ok: true, assistantId: "web-1" }),
     }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-    const result = await hatchLocalAssistant("openclaw");
+    const result = await hatchLocalAssistant();
 
     expect(result).toEqual({ ok: true, assistantId: "web-1" });
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -73,20 +73,7 @@ describe("hatchLocalAssistant", () => {
     ];
     expect(url).toBe("/assistant/__local/hatch");
     expect(init.method).toBe("POST");
-    expect(JSON.parse(init.body as string)).toEqual({ species: "openclaw" });
-  });
-
-  test('defaults the species to "vellum" when the caller passes none', async () => {
-    const fetchMock = mock(async () => ({ json: async () => ({ ok: true }) }));
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    await hatchLocalAssistant();
-
-    const [, init] = fetchMock.mock.calls[0] as unknown as [
-      string,
-      RequestInit,
-    ];
-    expect(JSON.parse(init.body as string)).toEqual({ species: "vellum" });
+    expect(JSON.parse(init.body as string)).toEqual({ remote: undefined });
   });
 
   test("web/dev host forwards the remote parameter when provided", async () => {
@@ -95,14 +82,13 @@ describe("hatchLocalAssistant", () => {
     }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-    await hatchLocalAssistant(undefined, "docker");
+    await hatchLocalAssistant("docker");
 
     const [, init] = fetchMock.mock.calls[0] as unknown as [
       string,
       RequestInit,
     ];
     expect(JSON.parse(init.body as string)).toEqual({
-      species: "vellum",
       remote: "docker",
     });
   });
@@ -118,10 +104,10 @@ describe("hatchLocalAssistant", () => {
       window as unknown as { vellum: { localMode: { hatch: typeof hatch } } }
     ).vellum = { localMode: { hatch } };
 
-    const result = await hatchLocalAssistant("vellum");
+    const result = await hatchLocalAssistant();
 
     expect(result).toEqual({ ok: true, assistantId: "electron-1" });
-    expect(hatch).toHaveBeenCalledWith("vellum", undefined);
+    expect(hatch).toHaveBeenCalledWith(undefined);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -139,10 +125,10 @@ describe("hatchLocalAssistant", () => {
       window as unknown as { vellum: { localMode: { hatch: typeof hatch } } }
     ).vellum = { localMode: { hatch } };
 
-    const result = await hatchLocalAssistant("vellum", "docker");
+    const result = await hatchLocalAssistant("docker");
 
     expect(result).toEqual({ ok: true, assistantId: "electron-docker-1" });
-    expect(hatch).toHaveBeenCalledWith("vellum", "docker");
+    expect(hatch).toHaveBeenCalledWith("docker");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

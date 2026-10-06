@@ -123,7 +123,6 @@ describe("vellum devices", () => {
       runtimeUrl: "http://127.0.0.1:7830",
       localUrl,
       cloud: "local",
-      species: "vellum",
     });
   }
 
@@ -366,7 +365,6 @@ describe("vellum devices", () => {
       runtimeUrl: "http://10.0.0.9:7830",
       cloud: "paired",
       paired: true,
-      species: "vellum",
     });
 
     process.argv = ["bun", "vellum", "devices", "paired-box"];

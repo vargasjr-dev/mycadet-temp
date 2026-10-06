@@ -200,12 +200,10 @@ const operationalStatusReadMock = mock(async () => {
   };
 });
 
-const hatchLocalAssistantMock = mock(
-  async (_species?: string, _remote?: string) => ({
-    ok: true as const,
-    assistantId: "local-1",
-  }),
-);
+const hatchLocalAssistantMock = mock(async (_remote?: string) => ({
+  ok: true as const,
+  assistantId: "local-1",
+}));
 
 const saveLockfileAssistantMock = mock(
   async (_entry: {
@@ -1015,14 +1013,12 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
 
     // The rejection surfaces as a correctable error, not a completed hatch.
     await waitFor(
-      () =>
-        expect(
-          screen.getByText("Your API key didn't work"),
-        ).toBeTruthy(),
+      () => expect(screen.getByText("Your API key didn't work")).toBeTruthy(),
       { timeout: 5000 },
     );
-    expect(screen.getByText("API key is invalid or expired.", { exact: false }))
-      .toBeTruthy();
+    expect(
+      screen.getByText("API key is invalid or expired.", { exact: false }),
+    ).toBeTruthy();
     expect(navigateMock).not.toHaveBeenCalled();
     // A blind retry would re-apply nothing (the pending key was cleared), so
     // the primary action is the path back to the API-key screen instead.
@@ -1067,14 +1063,11 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     render(<HatchingScreen />);
 
     await waitFor(
-      () =>
-        expect(
-          screen.getByText("Your API key didn't work"),
-        ).toBeTruthy(),
+      () => expect(screen.getByText("Your API key didn't work")).toBeTruthy(),
       { timeout: 5000 },
     );
     expect(hatchLocalAssistantMock).toHaveBeenCalledTimes(1);
-    expect(hatchLocalAssistantMock.mock.calls[0]?.[1]).toBeUndefined();
+    expect(hatchLocalAssistantMock.mock.calls[0]?.[0]).toBeUndefined();
 
     // The user backs out to the hosting screen and picks Docker instead. The
     // held Local promise must not answer for the Docker choice.
@@ -1094,7 +1087,7 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
       { timeout: 5000 },
     );
     expect(hatchLocalAssistantMock).toHaveBeenCalledTimes(2);
-    expect(hatchLocalAssistantMock.mock.calls[1]?.[1]).toBe("docker");
+    expect(hatchLocalAssistantMock.mock.calls[1]?.[0]).toBe("docker");
   }, 15000);
 
   test("a local hatch keeps its gateway session", async () => {

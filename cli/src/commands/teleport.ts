@@ -1016,7 +1016,6 @@ export async function resolveOrHatchTarget(
   if (targetEnv === "local") {
     const beforeIds = new Set(loadAllAssistants().map((e) => e.assistantId));
     await hatchLocal(
-      "vellum",
       targetName ?? null,
       false,
       false,
@@ -1041,7 +1040,6 @@ export async function resolveOrHatchTarget(
   if (targetEnv === "docker") {
     const beforeIds = new Set(loadAllAssistants().map((e) => e.assistantId));
     await hatchDocker({
-      species: "vellum",
       detached: false,
       name: targetName ?? null,
       setupProviderCredentials: false,
@@ -1077,7 +1075,6 @@ export async function resolveOrHatchTarget(
         assistantId: result.id,
         runtimeUrl: getPlatformUrl(),
         cloud: "vellum",
-        species: "vellum",
         hatchedAt: new Date().toISOString(),
       };
       saveAssistantEntry(entry);
@@ -1094,7 +1091,6 @@ export async function resolveOrHatchTarget(
       assistantId: result.id,
       runtimeUrl: getPlatformUrl(),
       cloud: "vellum",
-      species: "vellum",
       hatchedAt: new Date().toISOString(),
     };
     saveAssistantEntry(entry);
@@ -1470,7 +1466,6 @@ export async function teleport(): Promise<void> {
           assistantId: existing.id,
           runtimeUrl: getPlatformUrl(),
           cloud: "vellum",
-          species: "vellum",
           hatchedAt: new Date().toISOString(),
         });
         console.error(

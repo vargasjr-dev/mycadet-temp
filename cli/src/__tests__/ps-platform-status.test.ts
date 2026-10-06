@@ -210,7 +210,6 @@ describe("vellum ps — platform status line", () => {
         name: "Alice",
         runtimeUrl: "https://platform.example",
         cloud: "vellum",
-        species: "vellum",
       },
     ]);
     getActiveAssistantMock.mockReturnValue("assistant-123");
@@ -231,14 +230,12 @@ describe("vellum ps — platform status line", () => {
         name: "Alice",
         runtimeUrl: "https://platform.example/a",
         cloud: "vellum",
-        species: "vellum",
       },
       {
         assistantId: "assistant-456",
         name: "Bob",
         runtimeUrl: "https://platform.example/b",
         cloud: "vellum",
-        species: "vellum",
       },
     ]);
     getActiveAssistantMock.mockReturnValue("assistant-123");

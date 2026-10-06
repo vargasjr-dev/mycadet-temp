@@ -133,7 +133,6 @@ export async function syncCloudAssistants(
         ...nameFields,
         runtimeUrl: getPlatformUrl(),
         cloud: "vellum",
-        species: "vellum",
         hatchedAt: new Date().toISOString(),
       });
       added++;

@@ -6,7 +6,7 @@ test("forwards the complete local-mode namespace through IPC", async () => {
   const invoke = mock(() => Promise.resolve({ ok: true }));
   const bridge = createLocalModeBridge({ invoke } as never);
 
-  await bridge.hatch("vellum", "remote");
+  await bridge.hatch("remote");
   await bridge.readLockfile();
   await bridge.saveLockfileAssistant(
     { assistantId: "assistant-1" },

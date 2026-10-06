@@ -19,7 +19,6 @@ describe("parseLockfile", () => {
           name: "Alice",
           cloud: "vellum",
           runtimeUrl: "http://127.0.0.1:7777",
-          species: "vellum",
           hatchedAt: "2026-01-01T00:00:00.000Z",
           organizationId: "org_1",
           platformAssistantId: "platform-assistant-1",

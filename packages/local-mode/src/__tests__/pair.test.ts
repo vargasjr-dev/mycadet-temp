@@ -213,7 +213,6 @@ describe("pairAssistant", () => {
       runtimeUrl: "http://10.0.0.5:7830",
       cloud: "paired",
       paired: true,
-      species: "vellum",
     });
     expect(Object.keys(entry)).toEqual([
       "assistantId",
@@ -221,7 +220,6 @@ describe("pairAssistant", () => {
       "runtimeUrl",
       "cloud",
       "paired",
-      "species",
     ]);
     // Importing never reassigns the active assistant.
     expect(onDisk.activeAssistant ?? null).toBeNull();

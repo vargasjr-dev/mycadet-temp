@@ -33,7 +33,6 @@ function seedPairedEntry(): void {
     runtimeUrl: "http://10.0.0.9:7830",
     cloud: "paired",
     paired: true,
-    species: "vellum",
   });
 }
 

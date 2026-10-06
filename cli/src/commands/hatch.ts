@@ -5,12 +5,8 @@ import {
   saveAssistantEntry,
   setActiveAssistant,
 } from "../lib/assistant-config";
-import {
-  SPECIES_CONFIG,
-  VALID_REMOTE_HOSTS,
-  VALID_SPECIES,
-} from "../lib/constants";
-import type { RemoteHost, Species } from "../lib/constants";
+import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
+import type { RemoteHost } from "../lib/constants";
 import { hatchDocker } from "../lib/docker";
 import { parseFeatureFlagArgs, readAmbientFlagEnvVars } from "../lib/flag-args";
 import { hatchLocal } from "../lib/hatch-local";
@@ -21,12 +17,9 @@ import {
 } from "../lib/platform-client";
 import { validateAssistantName } from "../lib/retire-archive";
 
-const DEFAULT_SPECIES: Species = "vellum";
-
 const DEFAULT_REMOTE: RemoteHost = "local";
 
 interface HatchArgs {
-  species: Species;
   detached: boolean;
   keepAlive: boolean;
   name: string | null;
@@ -52,7 +45,6 @@ function parseArgs(): HatchArgs {
     process.env.VELLUM_DISABLE_PLATFORM?.trim().toLowerCase();
   let disablePlatform =
     disablePlatformAmbient === "true" || disablePlatformAmbient === "1";
-  let species: Species = DEFAULT_SPECIES;
   let detached = false;
   let keepAlive = false;
   let name: string | null = null;
@@ -69,13 +61,9 @@ function parseArgs(): HatchArgs {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "--help" || arg === "-h") {
-      console.log("Usage: vellum hatch [species] [options]");
+      console.log("Usage: cadet hatch [options]");
       console.log("");
       console.log("Create a new assistant instance.");
-      console.log("");
-      console.log("Species:");
-      console.log("  vellum       Default assistant (default)");
-      console.log("  openclaw     OpenClaw adapter");
       console.log("");
       console.log("Options:");
       console.log("  -d                        Run in detached mode");
@@ -205,18 +193,15 @@ function parseArgs(): HatchArgs {
       }
       assistantCaCert = next;
       i++;
-    } else if (VALID_SPECIES.includes(arg as Species)) {
-      species = arg as Species;
     } else {
       console.error(
-        `Error: Unknown argument '${arg}'. Valid options: ${VALID_SPECIES.join(", ")}, -d, --watch, --source <path>, --preview, --keep-alive, --name <name>, --remote <${VALID_REMOTE_HOSTS.join("|")}>, --config <key=value>, --flag <key=value>, --analyze, --disable-platform, --netns-container <name>, --gateway-port <port>, --assistant-ca-cert <path>`,
+        `Error: Unknown argument '${arg}'. Valid options: -d, --watch, --source <path>, --preview, --keep-alive, --name <name>, --remote <${VALID_REMOTE_HOSTS.join("|")}>, --config <key=value>, --flag <key=value>, --analyze, --disable-platform, --netns-container <name>, --gateway-port <port>, --assistant-ca-cert <path>`,
       );
       process.exit(1);
     }
   }
 
   return {
-    species,
     detached,
     keepAlive,
     name,
@@ -245,7 +230,6 @@ export async function hatch(): Promise<void> {
   console.log(`@vellumai/cli v${cliVersion}`);
 
   const {
-    species,
     detached,
     keepAlive,
     name,
@@ -301,20 +285,12 @@ export async function hatch(): Promise<void> {
   }
 
   if (remote === "local") {
-    await hatchLocal(
-      species,
-      name,
-      watch,
-      keepAlive,
-      configValues,
-      flagEnvVars,
-    );
+    await hatchLocal(name, watch, keepAlive, configValues, flagEnvVars);
     return;
   }
 
   if (remote === "docker") {
     await hatchDocker({
-      species,
       detached,
       name,
       watch,
@@ -346,9 +322,8 @@ async function hatchVellumPlatform(): Promise<void> {
     process.exit(1);
   }
 
-  const config = SPECIES_CONFIG.vellum;
   console.log("");
-  for (const line of config.art) {
+  for (const line of HATCH_ART) {
     console.log(`   ${line}`);
   }
   console.log("");
@@ -363,12 +338,11 @@ async function hatchVellumPlatform(): Promise<void> {
     assistantId: result.id,
     runtimeUrl: platformUrl,
     cloud: "vellum",
-    species: "vellum",
     hatchedAt: new Date().toISOString(),
   });
   setActiveAssistant(result.id);
 
-  console.log(`   ${config.hatchedEmoji}  Your assistant has hatched!`);
+  console.log(`   ${HATCHED_EMOJI}  Your assistant has hatched!`);
   console.log("");
   console.log(`   ID:     ${result.id}`);
   console.log(`   Name:   ${result.name}`);

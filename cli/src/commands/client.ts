@@ -11,11 +11,7 @@ import {
   saveAssistantEntry,
   type AssistantEntry,
 } from "../lib/assistant-config";
-import {
-  DAEMON_INTERNAL_ASSISTANT_ID,
-  GATEWAY_PORT,
-  type Species,
-} from "../lib/constants";
+import { DAEMON_INTERNAL_ASSISTANT_ID, GATEWAY_PORT } from "../lib/constants";
 import {
   loadGuardianToken,
   refreshGuardianToken,
@@ -94,7 +90,6 @@ interface ParsedArgs {
   runtimeUrl: string;
   assistantId: string;
   assistantName?: string;
-  species: Species;
   /** "vellum" for platform-hosted assistants, undefined for local. */
   cloud?: string;
   /** Platform session token (X-Session-Token), set when cloud === "vellum". */
@@ -242,7 +237,6 @@ export function parseArgs(): ParsedArgs {
   let assistantId = entry?.assistantId || DAEMON_INTERNAL_ASSISTANT_ID;
   let assistantName = readAssistantName(entry);
   const cloud = entry?.cloud;
-  const species: Species = (entry?.species as Species) ?? "vellum";
 
   // Ephemeral auth: a handed-over token (e.g. from `vellum pair`) used for this
   // session only. Resolve it BEFORE the credential lookup below so an ephemeral
@@ -311,7 +305,6 @@ export function parseArgs(): ParsedArgs {
     runtimeUrl: normalizeRuntimeUrl(runtimeUrl),
     assistantId,
     assistantName,
-    species,
     cloud,
     platformToken,
     bearerToken,
@@ -605,16 +598,13 @@ async function handleLocalEndpoints(
   if (HATCH_PATTERN.test(pathname)) {
     if (req.method !== "POST") return new Response(null, { status: 405 });
 
-    let species = "vellum";
     let remote: string | undefined;
     const contentType = req.headers.get("content-type") ?? "";
     if (contentType.includes("json")) {
       try {
         const body = (await req.json()) as {
-          species?: string;
           remote?: string;
         };
-        if (body.species) species = body.species;
         if (body.remote) remote = body.remote;
       } catch {
         return Response.json(
@@ -634,11 +624,7 @@ async function handleLocalEndpoints(
       );
     }
 
-    const result = await runHatch(
-      invocation,
-      species,
-      remote ? { remote } : undefined,
-    );
+    const result = await runHatch(invocation, remote ? { remote } : undefined);
     if (result.ok) {
       return Response.json({ ok: true, assistantId: result.assistantId });
     }
@@ -1590,7 +1576,6 @@ export async function client(): Promise<void> {
     runtimeUrl,
     assistantId,
     assistantName: parsedAssistantName,
-    species,
     cloud,
     platformToken,
     bearerToken,
@@ -1626,7 +1611,6 @@ export async function client(): Promise<void> {
   tuiLog.info("session start", {
     runtimeUrl,
     assistantId,
-    species,
     cloud,
     interfaceId,
   });
@@ -1676,7 +1660,6 @@ export async function client(): Promise<void> {
   const app = renderChatApp(
     runtimeUrl,
     assistantId,
-    species,
     () => {
       tuiLog.info("session end (user disconnect)");
       tuiLog.close();

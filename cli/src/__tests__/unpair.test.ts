@@ -96,7 +96,6 @@ describe("vellum unpair", () => {
       runtimeUrl: "http://10.0.0.9:7830",
       cloud: "paired",
       paired: true,
-      species: "vellum",
     });
     seedToken("px");
     expect(findAssistantByName("px")).not.toBeNull();
@@ -118,7 +117,6 @@ describe("vellum unpair", () => {
       runtimeUrl: "http://10.0.0.9:7830",
       cloud: "paired",
       paired: true,
-      species: "vellum",
     });
     seedToken("py");
 
@@ -138,7 +136,6 @@ describe("vellum unpair", () => {
       name: "Desk",
       runtimeUrl: "http://127.0.0.1:7830",
       cloud: "local",
-      species: "vellum",
     });
 
     process.argv = ["bun", "vellum", "unpair", "desk"];
