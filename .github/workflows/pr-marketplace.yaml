@@ -1,20 +1,23 @@
 name: PR Marketplace Checks
 
 on:
-  pull_request:
-    types: [labeled, synchronize, opened, reopened]
-    paths:
-      - "plugins/marketplace.json"
-      - "plugins/mcp-catalog/**"
-      - "scripts/check-marketplace-prefix.mjs"
-      - "meta/feature-flags/feature-flag-registry.json"
-      - "meta/sync-bundled-copies.ts"
-      - "assistant/scripts/bundled-plugin-packages.ts"
-      - "assistant/scripts/generate-bundled-plugin-packages.ts"
-      - "assistant/src/cli/lib/bundled-marketplace.json"
-      - "clients/web/src/lib/feature-flags/feature-flag-registry.json"
-      - ".github/workflows/pr-marketplace.yaml"
-
+  # rebrand(cadet): PR triggers disabled for the CI-minute budget.
+  # Vargas re-enables by uncommenting this block.
+  # pull_request:
+  #   types: [labeled, synchronize, opened, reopened]
+  #   paths:
+  #     - "plugins/marketplace.json"
+  #     - "plugins/mcp-catalog/**"
+  #     - "scripts/check-marketplace-prefix.mjs"
+  #     - "meta/feature-flags/feature-flag-registry.json"
+  #     - "meta/sync-bundled-copies.ts"
+  #     - "assistant/scripts/bundled-plugin-packages.ts"
+  #     - "assistant/scripts/generate-bundled-plugin-packages.ts"
+  #     - "assistant/src/cli/lib/bundled-marketplace.json"
+  #     - "clients/web/src/lib/feature-flags/feature-flag-registry.json"
+  #     - ".github/workflows/pr-marketplace.yaml"
+  #
+  workflow_dispatch:
 concurrency:
   group: pr-marketplace-${{ github.event.pull_request.number }}
   cancel-in-progress: true

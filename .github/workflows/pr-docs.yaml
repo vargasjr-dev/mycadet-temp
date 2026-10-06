@@ -1,13 +1,19 @@
-  pull_request:
-    types: [synchronize, opened, reopened]
-    paths:
-      - "package.json"
-      - "bun.lock"
-      - "patches/**"
-      - "clients/docs/**"
-      - "packages/design-library/**"
-      - ".github/workflows/pr-docs.yaml"
+name: PR Docs Checks
 
+on:
+  # rebrand(cadet): PR triggers disabled for the CI-minute budget.
+  # Vargas re-enables by uncommenting this block.
+  # pull_request:
+  #   types: [synchronize, opened, reopened]
+  #   paths:
+  #     - "package.json"
+  #     - "bun.lock"
+  #     - "patches/**"
+  #     - "clients/docs/**"
+  #     - "packages/design-library/**"
+  #     - ".github/workflows/pr-docs.yaml"
+  #
+  workflow_dispatch:
 concurrency:
   group: pr-docs-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -17,6 +23,7 @@ jobs:
   lint:
     name: "Docs: Lint"
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: clients/docs
@@ -38,6 +45,7 @@ jobs:
   typecheck:
     name: "Docs: Type Check"
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: clients/docs
@@ -81,6 +89,7 @@ jobs:
   build:
     name: "Docs: Build"
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: clients/docs

@@ -6,6 +6,12 @@ on:
   #   # Every hour on the hour
   #   - cron: '0 * * * *'
   workflow_dispatch:
+    inputs:
+      exclude:
+        description: 'Comma-separated clients to skip for this dispatch (e.g. web,electron,windows,ios,android,chrome-extension)'
+        required: false
+        type: string
+        default: ''
 
 concurrency:
   group: dev-release
@@ -17,6 +23,22 @@ env:
   CREDENTIAL_EXECUTOR_IMAGE_NAME: sandbox-images/credential-executor
 
 jobs:
+  # ── Exclude-list parser ────────────────────────────────────────────────
+  # Splits the comma-separated `exclude` dispatch input into a JSON array
+  # other jobs can probe with contains(fromJSON(...)). Instant and cheap so
+  # the gated jobs can decide before spending any real minutes. Empty input
+  # → empty array → nothing is excluded (default behavior unchanged).
+  parse-exclude:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      excluded: ${{ steps.parse.outputs.excluded }}
+    steps:
+      - id: parse
+        run: |
+          EXCLUDED="$(printf '%s' "${{ inputs.exclude }}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed '/^$/d' | jq -R . | jq -s -c .)"
+          echo "excluded=$EXCLUDED" >> "$GITHUB_OUTPUT"
+          echo "exclude list: $EXCLUDED"
   # ── Skip-if-idle gate ───────────────────────────────────────────────────
   # A scheduled run fires whether or not the repo moved. Rebuilding an
   # unchanged HEAD wastes CI minutes and republishes byte-identical images, so
@@ -153,9 +175,7 @@ jobs:
   ci-assistant:
     needs: [check-for-new-commits]
     if: ${{ needs.check-for-new-commits.outputs.has_new_commits == 'true' }}
-    runs-on: ubuntu-latest
-    env:
-      NODE_OPTIONS: --max-old-space-size=6144
+    runs-on: ubuntu-latest-8-cores
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -197,8 +217,6 @@ jobs:
     needs: [check-for-new-commits]
     if: ${{ needs.check-for-new-commits.outputs.has_new_commits == 'true' }}
     runs-on: ubuntu-latest
-    env:
-      NODE_OPTIONS: --max-old-space-size=6144
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -230,8 +248,6 @@ jobs:
     needs: [check-for-new-commits]
     if: ${{ needs.check-for-new-commits.outputs.has_new_commits == 'true' }}
     runs-on: ubuntu-latest
-    env:
-      NODE_OPTIONS: --max-old-space-size=6144
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -256,8 +272,6 @@ jobs:
     needs: [check-for-new-commits]
     if: ${{ needs.check-for-new-commits.outputs.has_new_commits == 'true' }}
     runs-on: ubuntu-latest
-    env:
-      NODE_OPTIONS: --max-old-space-size=6144
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -279,11 +293,9 @@ jobs:
         working-directory: cli
 
   ci-web:
-    needs: [check-for-new-commits]
-    if: ${{ needs.check-for-new-commits.outputs.has_new_commits == 'true' }}
+    needs: [parse-exclude, check-for-new-commits]
+    if: ${{ needs.check-for-new-commits.outputs.has_new_commits == 'true' && !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'web') }}
     runs-on: ubuntu-latest
-    env:
-      NODE_OPTIONS: --max-old-space-size=6144
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -316,7 +328,7 @@ jobs:
 
   push-assistant-image:
     needs: [compute-version, ci-assistant]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-8-cores
     timeout-minutes: 30
     permissions:
       contents: read
@@ -835,8 +847,8 @@ jobs:
   # an idle run skips ci-web and this job with it.
   deploy-web-spa:
     name: Deploy Web SPA (dev)
-    needs: [ci-web, register-release]
-    if: ${{ !cancelled() && needs.ci-web.result == 'success' }}
+    needs: [parse-exclude, ci-web, register-release]
+    if: ${{ !cancelled() && !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'web') && needs.ci-web.result == 'success' }}
     permissions:
       contents: read
       id-token: write
@@ -853,8 +865,8 @@ jobs:
   # production-preview jobs so a release-branch dispatch cannot publish here.
   deploy-web-spa-preview:
     name: Deploy Web SPA (production /preview)
-    needs: [ci-web, register-preview-release]
-    if: ${{ !cancelled() && github.ref_name == 'main' && needs.ci-web.result == 'success' }}
+    needs: [parse-exclude, ci-web, register-preview-release]
+    if: ${{ !cancelled() && github.ref_name == 'main' && !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'web') && needs.ci-web.result == 'success' }}
     permissions:
       contents: read
       id-token: write
@@ -1688,7 +1700,8 @@ jobs:
   # ── Chrome Extension ────────────────────────────────────────────────────
 
   build-chrome-extension:
-    needs: [compute-version]
+    needs: [parse-exclude, compute-version]
+    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'chrome-extension') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -1721,7 +1734,8 @@ jobs:
 
   build-electron:
     # No publish dep: the bundled CLI floats to the `dev` dist-tag at runtime.
-    needs: [compute-version]
+    needs: [parse-exclude, compute-version]
+    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'electron') }}
     runs-on: macos-26
     timeout-minutes: 30
     # Resolves the environment-scoped STRIPE_PUBLISHABLE_KEY secret baked into
@@ -2356,7 +2370,8 @@ jobs:
   # ── iOS release (same-repo reusable workflow) ────────────────────────
 
   release-ios:
-    needs: [compute-version, register-release, build-chrome-extension]
+    needs: [parse-exclude, compute-version, register-release, build-chrome-extension]
+    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'ios') }}
     uses: ./.github/workflows/release-ios.yaml
     with:
       environment: dev
@@ -2364,8 +2379,8 @@ jobs:
     secrets: inherit
 
   release-android:
-    needs: [compute-version, register-release, build-chrome-extension]
-    if: vars.ANDROID_DEV_RELEASE_ENABLED == 'true'
+    needs: [parse-exclude, compute-version, register-release, build-chrome-extension]
+    if: ${{ vars.ANDROID_DEV_RELEASE_ENABLED == 'true' && !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'android') }}
     permissions:
       contents: read
       id-token: write
@@ -2376,7 +2391,8 @@ jobs:
     secrets: inherit
 
   build-windows:
-    needs: [compute-version]
+    needs: [parse-exclude, compute-version]
+    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'windows') }}
     permissions:
       contents: read
     uses: ./.github/workflows/release-windows.yaml
@@ -2387,7 +2403,8 @@ jobs:
 
   release-windows:
     needs:
-      [build-windows, compute-version, register-release, build-chrome-extension]
+      [parse-exclude, build-windows, compute-version, register-release, build-chrome-extension]
+    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'windows') }}
     permissions:
       contents: read
       id-token: write

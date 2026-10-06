@@ -1,6 +1,11 @@
 name: Upload Skill Assets to GCS
 
 on:
+  # rebrand(cadet): main-push trigger disabled for the CI-minute budget.
+  # Vargas re-enables by uncommenting this block.
+  #   branches: [main]
+  #   paths:
+  #     - "skills/*/assets/icon.*"
   workflow_dispatch:
 
 jobs:

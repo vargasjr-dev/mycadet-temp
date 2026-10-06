@@ -1,18 +1,21 @@
 name: PR CLI Checks
 
 on:
-  pull_request:
-    types: [synchronize, opened, reopened]
-    paths:
-      - "package.json"
-      - "bun.lock"
-      - "patches/**"
-      - "cli/**"
-      - "packages/local-mode/**"
-      - "packages/environments/**"
-      - "packages/avatar-manifest/**"
-      - ".github/workflows/pr-cli.yaml"
-
+  # rebrand(cadet): PR triggers disabled for the CI-minute budget.
+  # Vargas re-enables by uncommenting this block.
+  # pull_request:
+  #   types: [synchronize, opened, reopened]
+  #   paths:
+  #     - "package.json"
+  #     - "bun.lock"
+  #     - "patches/**"
+  #     - "cli/**"
+  #     - "packages/local-mode/**"
+  #     - "packages/environments/**"
+  #     - "packages/avatar-manifest/**"
+  #     - ".github/workflows/pr-cli.yaml"
+  #
+  workflow_dispatch:
 concurrency:
   group: pr-cli-${{ github.event.pull_request.number }}
   cancel-in-progress: true

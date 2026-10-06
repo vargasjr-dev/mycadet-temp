@@ -1,16 +1,19 @@
 name: Cherry Pick to Release Branch
 
 on:
-  pull_request:
-    branches:
-      - main
-    types:
-      # 'closed' handles the common case: the label is already on the PR when it
-      # merges. 'labeled' handles applying the label after the PR has merged, so
-      # the cherry-pick can be requested after the fact.
-      - closed
-      - labeled
-
+  # rebrand(cadet): PR triggers disabled for the CI-minute budget.
+  # Vargas re-enables by uncommenting this block.
+  # pull_request:
+  #   branches:
+  #     - main
+  #   types:
+  #     # 'closed' handles the common case: the label is already on the PR when it
+  #     # merges. 'labeled' handles applying the label after the PR has merged, so
+  #     # the cherry-pick can be requested after the fact.
+  #     - closed
+  #     - labeled
+  #
+  workflow_dispatch:
 jobs:
   cherry-pick:
     # Only ever act on merged PRs. Two entry points:

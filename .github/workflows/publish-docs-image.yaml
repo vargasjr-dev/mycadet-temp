@@ -9,6 +9,17 @@ name: Publish Docs Image
 # repo.
 
 on:
+  # rebrand(cadet): main-push trigger disabled for the CI-minute budget.
+  # Vargas re-enables by uncommenting this block.
+  #   branches: [main]
+  #   paths:
+  #     - 'clients/docs/**'
+  #     - 'packages/design-library/**'
+  #     - 'package.json'
+  #     - 'bun.lock'
+  #     - 'patches/**'
+  #     - '.dockerignore'
+  #     - '.github/workflows/publish-docs-image.yaml'
   workflow_dispatch:
     inputs:
       environment:
@@ -26,7 +37,7 @@ env:
 
 jobs:
   push-docs-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-8-cores
     timeout-minutes: 30
     strategy:
       # A failure in one environment (e.g. missing registry vars) must not

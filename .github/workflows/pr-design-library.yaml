@@ -1,12 +1,18 @@
-  pull_request:
-    types: [synchronize, opened, reopened]
-    paths:
-      - "package.json"
-      - "bun.lock"
-      - "patches/**"
-      - "packages/design-library/**"
-      - ".github/workflows/pr-design-library.yaml"
+name: PR Design Library Checks
 
+on:
+  # rebrand(cadet): PR triggers disabled for the CI-minute budget.
+  # Vargas re-enables by uncommenting this block.
+  # pull_request:
+  #   types: [synchronize, opened, reopened]
+  #   paths:
+  #     - "package.json"
+  #     - "bun.lock"
+  #     - "patches/**"
+  #     - "packages/design-library/**"
+  #     - ".github/workflows/pr-design-library.yaml"
+  #
+  workflow_dispatch:
 concurrency:
   group: pr-design-library-${{ github.event.pull_request.number }}
   cancel-in-progress: true

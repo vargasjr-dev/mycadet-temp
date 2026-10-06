@@ -1,18 +1,24 @@
-  pull_request:
-    types: [synchronize, opened, reopened]
-    paths:
-      - "package.json"
-      - "bun.lock"
-      - "patches/**"
-      - "clients/linux/**"
-      - "packages/electron-utils/**"
-      - "packages/electron-desktop/**"
-      - "packages/ipc-contract/**"
-      - "packages/native-sidecar/**"
-      - "packages/local-mode/**"
-      - "packages/environments/**"
-      - ".github/workflows/pr-linux.yaml"
+name: PR Linux Checks
 
+on:
+  # rebrand(cadet): PR triggers disabled for the CI-minute budget.
+  # Vargas re-enables by uncommenting this block.
+  # pull_request:
+  #   types: [synchronize, opened, reopened]
+  #   paths:
+  #     - "package.json"
+  #     - "bun.lock"
+  #     - "patches/**"
+  #     - "clients/linux/**"
+  #     - "packages/electron-utils/**"
+  #     - "packages/electron-desktop/**"
+  #     - "packages/ipc-contract/**"
+  #     - "packages/native-sidecar/**"
+  #     - "packages/local-mode/**"
+  #     - "packages/environments/**"
+  #     - ".github/workflows/pr-linux.yaml"
+  #
+  workflow_dispatch:
 concurrency:
   group: pr-linux-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -21,6 +27,7 @@ jobs:
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: clients/linux
@@ -87,6 +94,7 @@ jobs:
     needs: [typecheck, build, test]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Aggregate results
         env:

@@ -1,36 +1,42 @@
-  pull_request:
-    types: [synchronize, opened, reopened]
-    paths:
-      - "package.json"
-      - "bun.lock"
-      - "patches/**"
-      - "clients/web/**"
-      - "assistant/src/api/**"
-      # `openapi-ts` generates the web's daemon client from this spec, so a
-      # schema change here can break the web build with no web file touched.
-      - "assistant/openapi.yaml"
-      - "packages/design-library/**"
-      # The web imports this contract's types directly, so a change here can
-      # break the web type check with no web file touched.
-      - "packages/ipc-contract/**"
-      - "packages/local-mode/**"
-      - "packages/environments/**"
-      - "packages/avatar-catalog/**"
-      - "packages/avatar-manifest/**"
-      - "packages/service-contracts/**"
-      # The web LLM catalog parity test reads this file, so daemon-side catalog
-      # regenerations must run the web tests on the PR that introduces drift.
-      - "meta/llm-provider-catalog.json"
-      # The app icon row test reads these native color sources off disk, so a
-      # native-only color edit still has to run the web tests.
-      - "clients/android/app/src/dev/res/values/colors.xml"
-      - "clients/android/app/src/staging/res/values/colors.xml"
-      - "clients/android/app/src/production/res/values/colors.xml"
-      - "clients/ios/App/App/AppIcon.icon/**"
-      - "clients/ios/App/App/AppIcon-Dev.icon/**"
-      - "clients/ios/App/App/AppIcon-Staging.icon/**"
-      - ".github/workflows/pr-web.yaml"
+name: PR Web Checks
 
+on:
+  # rebrand(cadet): PR triggers disabled for the CI-minute budget.
+  # Vargas re-enables by uncommenting this block.
+  # pull_request:
+  #   types: [synchronize, opened, reopened]
+  #   paths:
+  #     - "package.json"
+  #     - "bun.lock"
+  #     - "patches/**"
+  #     - "clients/web/**"
+  #     - "assistant/src/api/**"
+  #     # `openapi-ts` generates the web's daemon client from this spec, so a
+  #     # schema change here can break the web build with no web file touched.
+  #     - "assistant/openapi.yaml"
+  #     - "packages/design-library/**"
+  #     # The web imports this contract's types directly, so a change here can
+  #     # break the web type check with no web file touched.
+  #     - "packages/ipc-contract/**"
+  #     - "packages/local-mode/**"
+  #     - "packages/environments/**"
+  #     - "packages/avatar-catalog/**"
+  #     - "packages/avatar-manifest/**"
+  #     - "packages/service-contracts/**"
+  #     # The web LLM catalog parity test reads this file, so daemon-side catalog
+  #     # regenerations must run the web tests on the PR that introduces drift.
+  #     - "meta/llm-provider-catalog.json"
+  #     # The app icon row test reads these native color sources off disk, so a
+  #     # native-only color edit still has to run the web tests.
+  #     - "clients/android/app/src/dev/res/values/colors.xml"
+  #     - "clients/android/app/src/staging/res/values/colors.xml"
+  #     - "clients/android/app/src/production/res/values/colors.xml"
+  #     - "clients/ios/App/App/AppIcon.icon/**"
+  #     - "clients/ios/App/App/AppIcon-Dev.icon/**"
+  #     - "clients/ios/App/App/AppIcon-Staging.icon/**"
+  #     - ".github/workflows/pr-web.yaml"
+  #
+  workflow_dispatch:
 concurrency:
   group: pr-web-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -42,6 +48,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: clients/web
@@ -79,6 +86,7 @@ jobs:
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: clients/web
@@ -173,6 +181,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: clients/web

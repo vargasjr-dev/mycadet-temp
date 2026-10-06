@@ -1,13 +1,16 @@
 name: PR Skills Checks
 
 on:
-  pull_request:
-    types: [synchronize, opened, reopened]
-    paths:
-      - "skills/**"
-      - "scripts/skills/**"
-      - ".github/workflows/pr-skills.yaml"
-
+  # rebrand(cadet): PR triggers disabled for the CI-minute budget.
+  # Vargas re-enables by uncommenting this block.
+  # pull_request:
+  #   types: [synchronize, opened, reopened]
+  #   paths:
+  #     - "skills/**"
+  #     - "scripts/skills/**"
+  #     - ".github/workflows/pr-skills.yaml"
+  #
+  workflow_dispatch:
 concurrency:
   group: pr-skills-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -76,6 +79,7 @@ jobs:
     needs: discover
     if: needs.discover.outputs.changed_skills != '[]'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -93,6 +97,7 @@ jobs:
     needs: discover
     if: needs.discover.outputs.changed_skills != '[]'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -110,6 +115,7 @@ jobs:
     needs: discover
     if: needs.discover.outputs.changed_skills != '[]'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:

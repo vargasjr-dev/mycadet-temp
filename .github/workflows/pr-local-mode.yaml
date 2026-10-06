@@ -1,14 +1,20 @@
-  pull_request:
-    types: [synchronize, opened, reopened]
-    paths:
-      - "package.json"
-      - "bun.lock"
-      - "patches/**"
-      - "packages/local-mode/**"
-      - "packages/environments/**"
-      - "packages/avatar-manifest/**"
-      - ".github/workflows/pr-local-mode.yaml"
+name: PR Local Mode Checks
 
+on:
+  # rebrand(cadet): PR triggers disabled for the CI-minute budget.
+  # Vargas re-enables by uncommenting this block.
+  # pull_request:
+  #   types: [synchronize, opened, reopened]
+  #   paths:
+  #     - "package.json"
+  #     - "bun.lock"
+  #     - "patches/**"
+  #     - "packages/local-mode/**"
+  #     - "packages/environments/**"
+  #     - "packages/avatar-manifest/**"
+  #     - ".github/workflows/pr-local-mode.yaml"
+  #
+  workflow_dispatch:
 concurrency:
   group: pr-local-mode-${{ github.event.pull_request.number }}
   cancel-in-progress: true

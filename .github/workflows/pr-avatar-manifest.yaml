@@ -1,12 +1,18 @@
-  pull_request:
-    types: [synchronize, opened, reopened]
-    paths:
-      - "package.json"
-      - "bun.lock"
-      - "patches/**"
-      - "packages/avatar-manifest/**"
-      - ".github/workflows/pr-avatar-manifest.yaml"
+name: PR Avatar Manifest Checks
 
+on:
+  # rebrand(cadet): PR triggers disabled for the CI-minute budget.
+  # Vargas re-enables by uncommenting this block.
+  # pull_request:
+  #   types: [synchronize, opened, reopened]
+  #   paths:
+  #     - "package.json"
+  #     - "bun.lock"
+  #     - "patches/**"
+  #     - "packages/avatar-manifest/**"
+  #     - ".github/workflows/pr-avatar-manifest.yaml"
+  #
+  workflow_dispatch:
 concurrency:
   group: pr-avatar-manifest-${{ github.event.pull_request.number }}
   cancel-in-progress: true
