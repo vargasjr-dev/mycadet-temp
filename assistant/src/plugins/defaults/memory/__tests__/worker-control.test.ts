@@ -9,13 +9,15 @@
  *   - on timeout, terminates a still-alive child only when asked.
  */
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 import { mock } from "bun:test";
 
 import * as realLogger from "../../../../util/logger.js";
+
+// Captured at module scope: the preload cleans up its env var between suites.
+const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
 
 let tmpDir: string;
 let pidPath: string;
@@ -98,16 +100,9 @@ function neverExits(): Promise<unknown> {
 }
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(join(tmpdir(), "worker-control-test-"));
-  // The real getMemoryWorkerPidPath() is <workspace>/memory-worker.pid,
-  // so re-point the workspace at tmpDir instead of mocking util/platform.js.
-  process.env.VELLUM_WORKSPACE_DIR = tmpDir;
+  // The preload's workspace already resolves <workspace>/memory-worker.pid.
+  tmpDir = PRELOAD_WS;
   pidPath = join(tmpDir, "memory-worker.pid");
-});
-
-afterEach(() => {
-  rmSync(tmpDir, { recursive: true, force: true });
-  delete process.env.VELLUM_WORKSPACE_DIR;
 });
 
 describe("spawnMemoryWorkerProcess", () => {

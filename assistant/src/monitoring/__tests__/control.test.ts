@@ -6,12 +6,14 @@
  * memory worker's worker-control tests.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import * as realLogger from "../../util/logger.js";
+
+// Captured at module scope: the preload cleans up its env var between suites.
+const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
 
 let tmpDir: string;
 let pidPath: string;
@@ -83,18 +85,14 @@ function neverExits(): Promise<unknown> {
 }
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(join(tmpdir(), "monitoring-control-test-"));
-  // The real getMonitoringPidPath() is <workspace>/data/monitoring/monitoring.pid,
-  // so re-point the workspace at tmpDir and use the real layout instead of
-  // mocking util/platform.js.
-  process.env.VELLUM_WORKSPACE_DIR = tmpDir;
+  // The preload's workspace already resolves <workspace>/data/monitoring.
+  tmpDir = PRELOAD_WS;
   mkdirSync(join(tmpDir, "data", "monitoring"), { recursive: true });
   pidPath = join(tmpDir, "data", "monitoring", "monitoring.pid");
 });
 
 afterEach(() => {
-  rmSync(tmpDir, { recursive: true, force: true });
-  delete process.env.VELLUM_WORKSPACE_DIR;
+  rmSync(join(tmpDir, "data", "monitoring"), { recursive: true, force: true });
 });
 
 describe("spawnMonitoringWorkerProcess", () => {

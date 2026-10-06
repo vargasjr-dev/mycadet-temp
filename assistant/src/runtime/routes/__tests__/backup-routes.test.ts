@@ -217,12 +217,10 @@ function writeBackupFile(
 beforeEach(() => {
   ROOT = mkdtempSync(join(tmpdir(), "vellum-backup-routes-"));
   LOCAL_DIR = join(ROOT, "local");
-  mockWorkspaceDir = join(ROOT, "workspace");
-  // The real getWorkspaceDir()/getWorkspaceConfigPath() read this at call
-  // time (setConfig writes <workspace>/config.json) — re-point the workspace
-  // and create it, instead of mocking util/platform.js.
-  mkdirSync(mockWorkspaceDir, { recursive: true });
-  process.env.VELLUM_WORKSPACE_DIR = mockWorkspaceDir;
+  // The preload's workspace is where getWorkspaceDir()/getWorkspaceConfigPath()
+  // resolve (setConfig writes <workspace>/config.json).
+  mockWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR!;
+  mkdirSync(join(mockWorkspaceDir, ".."), { recursive: true });
   setConfig("backup", makeConfig({ localDirectory: LOCAL_DIR }));
   for (const key of Object.keys(mockCheckpointStore)) {
     delete mockCheckpointStore[key];
@@ -243,7 +241,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  delete process.env.VELLUM_WORKSPACE_DIR;
   try {
     rmSync(ROOT, { recursive: true, force: true });
   } catch {

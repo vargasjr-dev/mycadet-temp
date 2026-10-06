@@ -5,17 +5,14 @@
  * files off disk without touching the machine's workspace.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
 // The real getWorkspacePluginsDir() is <workspace>/plugins and reads
-// VELLUM_WORKSPACE_DIR at call time — re-point the workspace instead of
-// mocking util/platform.js.
-const pluginsRoot = mkdtempSync(join(tmpdir(), "plugin-channels-"));
+// The preload's workspace is where plugin channels are discovered.
+const pluginsRoot = process.env.VELLUM_WORKSPACE_DIR!;
 const workspacePluginsDir = join(pluginsRoot, "plugins");
-process.env.VELLUM_WORKSPACE_DIR = pluginsRoot;
 
 const { discoverPluginChannels } =
   await import("../plugin-channel-declarations.js");

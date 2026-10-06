@@ -1,21 +1,14 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { type PathLike, type StatsFs } from "node:fs";
 import { promisify } from "node:util";
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 const MIB = 1024 * 1024;
 const GIB = 1024 * MIB;
 
 let existingPaths = new Set<string>();
-// The real getWorkspaceDir() reads VELLUM_WORKSPACE_DIR at call time — a real
-// tmp dir keeps the ephemeral-path guard happy while the test controls
-// existsSync/statfsSync through the node:fs mock.
-const workspaceDir = mkdtempSync(join(tmpdir(), "disk-usage-test-"));
-process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
-let minikubeStorageSize: string | undefined;
-let isContainerized = false;
-let isPlatform = false;
+// The preload gives every test process a real temp workspace; tests that
+// simulate filesystem state inject it through setDiskUsageFsForTesting.
+const workspaceDir = process.env.VELLUM_WORKSPACE_DIR!;
 let statfsResult = {
   bsize: 4096,
   blocks: 0,
@@ -29,16 +22,6 @@ let spawnResult: {
   stdout: "",
 };
 let spawnCalls: Array<{ command: string; args: string[] }> = [];
-
-// Spread the actual node:fs so the real util/platform.ts (no longer mocked)
-// keeps working with mkdirSync/chmodSync, while the disk-usage module's
-// existsSync/statfsSync stay stubbed.
-const actualFs = await import("node:fs");
-mock.module("node:fs", () => ({
-  ...actualFs,
-  existsSync: (path: string) => existingPaths.has(path),
-  statfsSync: () => statfsResult,
-}));
 
 // The module under test calls `promisify(execFile)`, so the mock only needs
 // to provide the promisified implementation via the promisify.custom symbol.
@@ -61,18 +44,19 @@ mock.module("node:child_process", () => ({
   execFile: execFileMock,
 }));
 
-// Spread the actual module so the real util/platform.ts (no longer mocked)
-// keeps finding getWorkspaceDirOverride on the mocked env-registry.
-const actualEnvRegistry = await import("../config/env-registry.js");
-mock.module("../config/env-registry.js", () => ({
-  ...actualEnvRegistry,
-  getMinikubeStorageSize: () => minikubeStorageSize,
-  getIsContainerized: () => isContainerized,
-  getIsPlatform: () => isPlatform,
-}));
+const {
+  __resetDiskUsageCacheForTests,
+  getDiskUsageInfo,
+  parseK8sMemoryBytes,
+  setDiskUsageFsForTesting,
+} = await import("../util/disk-usage.js");
 
-const { __resetDiskUsageCacheForTests, getDiskUsageInfo, parseK8sMemoryBytes } =
-  await import("../util/disk-usage.js");
+afterAll(() => {
+  setDiskUsageFsForTesting(null);
+  delete process.env.VELLUM_MINIKUBE_STORAGE_SIZE;
+  delete process.env.IS_CONTAINERIZED;
+  delete process.env.IS_PLATFORM;
+});
 
 function statfsFor(totalBytes: number, freeBytes: number) {
   return {
@@ -85,10 +69,14 @@ function statfsFor(totalBytes: number, freeBytes: number) {
 describe("disk usage sampler", () => {
   beforeEach(() => {
     existingPaths = new Set([workspaceDir]);
-    minikubeStorageSize = undefined;
-    isContainerized = false;
-    isPlatform = false;
+    delete process.env.VELLUM_MINIKUBE_STORAGE_SIZE;
+    delete process.env.IS_CONTAINERIZED;
+    delete process.env.IS_PLATFORM;
     statfsResult = statfsFor(100 * MIB, 25 * MIB);
+    setDiskUsageFsForTesting({
+      existsSync: (path: PathLike) => existingPaths.has(String(path)),
+      statfsSync: () => statfsResult as unknown as StatsFs,
+    });
     spawnResult = { status: 0, stdout: "" };
     spawnCalls = [];
     __resetDiskUsageCacheForTests();
@@ -115,7 +103,7 @@ describe("disk usage sampler", () => {
   });
 
   test("uses PVC capacity and du usage when host filesystem is larger", async () => {
-    minikubeStorageSize = "1Gi";
+    process.env.VELLUM_MINIKUBE_STORAGE_SIZE = "1Gi";
     statfsResult = statfsFor(10 * GIB, 8 * GIB);
     spawnResult = {
       status: 0,
@@ -137,7 +125,7 @@ describe("disk usage sampler", () => {
 
   test("includes /data in PVC du usage when it exists separately", async () => {
     existingPaths = new Set([workspaceDir, "/data"]);
-    minikubeStorageSize = "1Gi";
+    process.env.VELLUM_MINIKUBE_STORAGE_SIZE = "1Gi";
     statfsResult = statfsFor(10 * GIB, 8 * GIB);
     spawnResult = {
       status: 0,
@@ -153,8 +141,8 @@ describe("disk usage sampler", () => {
   });
 
   test("measures workspace du usage on a local Docker hatch", async () => {
-    isContainerized = true;
-    isPlatform = false;
+    process.env.IS_CONTAINERIZED = "1";
+    delete process.env.IS_PLATFORM;
     statfsResult = statfsFor(100 * GIB, 40 * GIB);
     spawnResult = {
       status: 0,
@@ -177,8 +165,8 @@ describe("disk usage sampler", () => {
   });
 
   test("does not use du for platform-managed containerized instances", async () => {
-    isContainerized = true;
-    isPlatform = true;
+    process.env.IS_CONTAINERIZED = "1";
+    process.env.IS_PLATFORM = "1";
     statfsResult = statfsFor(10 * GIB, 6 * GIB);
 
     const usage = await getDiskUsageInfo();
@@ -193,8 +181,8 @@ describe("disk usage sampler", () => {
   });
 
   test("falls back to statfs when du fails on a local Docker hatch", async () => {
-    isContainerized = true;
-    isPlatform = false;
+    process.env.IS_CONTAINERIZED = "1";
+    delete process.env.IS_PLATFORM;
     statfsResult = statfsFor(100 * GIB, 40 * GIB);
     spawnResult = { status: 1, stdout: "" };
 
@@ -220,7 +208,7 @@ describe("disk usage sampler", () => {
   });
 
   test("falls back to statfs when du fails in PVC mode", async () => {
-    minikubeStorageSize = "1Gi";
+    process.env.VELLUM_MINIKUBE_STORAGE_SIZE = "1Gi";
     statfsResult = statfsFor(10 * GIB, 8 * GIB);
     spawnResult = {
       status: 1,

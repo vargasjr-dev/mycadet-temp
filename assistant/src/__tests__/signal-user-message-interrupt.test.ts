@@ -8,8 +8,7 @@
  * it, so running the message there would persist a user row after it. Every
  * outcome but `released` takes the queue.
  */
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
@@ -90,12 +89,10 @@ mock.module("../security/secret-ingress.js", () => ({
   checkIngressForSecrets: () => ({ blocked: false }),
 }));
 
-// The real getSignalsDir() is <workspace>/signals and reads VELLUM_WORKSPACE_DIR
-// at call time — re-point the workspace instead of mocking util/platform.js.
-const signalsRoot = mkdtempSync(join(tmpdir(), "vellum-signal-interrupt-"));
+// The preload's workspace is where getSignalsDir() resolves <workspace>/signals.
+const signalsRoot = process.env.VELLUM_WORKSPACE_DIR!;
 const signalsDir = join(signalsRoot, "signals");
 mkdirSync(signalsDir, { recursive: true });
-process.env.VELLUM_WORKSPACE_DIR = signalsRoot;
 
 const { handleUserMessageSignal } = await import("../signals/user-message.js");
 

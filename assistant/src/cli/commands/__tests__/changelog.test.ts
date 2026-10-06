@@ -18,31 +18,19 @@
 import {
   existsSync,
   mkdirSync,
-  mkdtempSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  mock,
-  test,
-} from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
 
 // ── Mocks ────────────────────────────────────────────────────────────
 
-const TMP_ROOT = mkdtempSync(join(tmpdir(), "changelog-test-"));
-// The real getWorkspaceDir() reads this at call time — re-point it instead
-// of mocking util/platform.js.
-process.env.VELLUM_WORKSPACE_DIR = TMP_ROOT;
+// The preload's workspace is where the changelog cache is written.
+const TMP_ROOT = process.env.VELLUM_WORKSPACE_DIR!;
 
 mock.module("../../logger.js", () => ({
   log: {
@@ -143,14 +131,6 @@ afterEach(() => {
   // Wipe any cache that earlier tests wrote.
   try {
     rmSync(join(TMP_ROOT, "data"), { recursive: true, force: true });
-  } catch {
-    // Best effort.
-  }
-});
-
-afterAll(() => {
-  try {
-    rmSync(TMP_ROOT, { recursive: true, force: true });
   } catch {
     // Best effort.
   }

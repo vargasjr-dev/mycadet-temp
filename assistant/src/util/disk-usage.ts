@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { existsSync, statfsSync } from "node:fs";
+import { existsSync, statfsSync, type StatsFs } from "node:fs";
 import { promisify } from "node:util";
 
 import {
@@ -18,13 +18,26 @@ export interface DiskUsageInfo {
   freeMb: number;
 }
 
+// Testing seam: lets tests simulate filesystem state (existing paths, statfs
+// results) without process-global `mock.module` on `node:fs`. Null = real fs.
+let fsOverrides: {
+  existsSync?: typeof existsSync;
+  statfsSync?: (path: Parameters<typeof statfsSync>[0]) => StatsFs;
+} | null = null;
+
+export function setDiskUsageFsForTesting(overrides: typeof fsOverrides): void {
+  fsOverrides = overrides;
+}
+
 /**
  * Measure the on-disk usage of one or more directory paths using `du -sb`.
  * Returns the sum of all paths in bytes, or null on failure.
  */
 async function getDirectorySizeBytes(paths: string[]): Promise<number | null> {
   try {
-    const existing = paths.filter((p) => existsSync(p));
+    const existing = paths.filter((p) =>
+      (fsOverrides?.existsSync ?? existsSync)(p),
+    );
     if (existing.length === 0) {
       return null;
     }
@@ -127,8 +140,10 @@ function classifyWorkspaceVolume(
 export async function getDiskUsageInfo(): Promise<DiskUsageInfo | null> {
   try {
     const wsDir = getWorkspaceDir();
-    const diskPath = existsSync(wsDir) ? wsDir : "/";
-    const stats = statfsSync(diskPath);
+    const diskPath = (fsOverrides?.existsSync ?? existsSync)(wsDir)
+      ? wsDir
+      : "/";
+    const stats = (fsOverrides?.statfsSync ?? statfsSync)(diskPath);
     const fsTotalBytes = stats.bsize * stats.blocks;
     const fsFreeBytes = stats.bsize * stats.bavail;
     const bytesToMb = (b: number) =>
@@ -137,7 +152,10 @@ export async function getDiskUsageInfo(): Promise<DiskUsageInfo | null> {
     const reporting = classifyWorkspaceVolume(fsTotalBytes);
     if (reporting.kind !== "none") {
       const volumePaths = [diskPath];
-      if (diskPath !== "/data" && existsSync("/data")) {
+      if (
+        diskPath !== "/data" &&
+        (fsOverrides?.existsSync ?? existsSync)("/data")
+      ) {
         volumePaths.push("/data");
       }
       const usedBytes = await getCachedDirectorySizeBytes(volumePaths);

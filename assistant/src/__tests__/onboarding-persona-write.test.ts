@@ -19,7 +19,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -27,6 +26,9 @@ import {
   mock,
   test,
 } from "bun:test";
+
+// Captured at module scope: the preload cleans up its env var between suites.
+const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
 
 // ── Mock state ────────────────────────────────────────────────────
 
@@ -106,17 +108,13 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  mockWorkspaceDir = mkdtempSync(join(testRoot, "ws-"));
-  // The real getWorkspaceDir() reads this at call time — re-point it at the
-  // per-test workspace instead of mocking util/platform.js.
-  process.env.VELLUM_WORKSPACE_DIR = mockWorkspaceDir;
+  // The preload owns VELLUM_WORKSPACE_DIR (a real temp workspace); give this
+  // test a clean one by wiping its contents.
+  mockWorkspaceDir = PRELOAD_WS;
+  rmSync(mockWorkspaceDir, { recursive: true, force: true });
+  mkdirSync(mockWorkspaceDir, { recursive: true });
   mockGuardianDeliveries = [];
   mockContactsByAddress = {};
-});
-
-afterEach(() => {
-  rmSync(mockWorkspaceDir, { recursive: true, force: true });
-  delete process.env.VELLUM_WORKSPACE_DIR;
 });
 
 // ── Tests ─────────────────────────────────────────────────────────

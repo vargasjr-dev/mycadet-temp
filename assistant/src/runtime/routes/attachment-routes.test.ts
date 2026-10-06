@@ -13,16 +13,12 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 // realpathSync resolves the macOS /var → /private/var symlink so the paths
 // match what resolveAllowedFileBackedAttachmentPath returns (it canonicalizes
 // via realpathSync internally).
-const testWorkspaceDir = realpathSync(
-  mkdtempSync(join(tmpdir(), "attachment-routes-workspace-")),
-);
+// The preload's workspace is already realpath'd — matching what
+// resolveAllowedFileBackedAttachmentPath canonicalizes to.
+const testWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR!;
 const testHomeDir = realpathSync(
   mkdtempSync(join(tmpdir(), "attachment-routes-home-")),
 );
-
-// The real getWorkspaceDir() reads this at call time — re-point it instead
-// of mocking util/platform.js.
-process.env.VELLUM_WORKSPACE_DIR = testWorkspaceDir;
 
 const attachmentsDir = join(testWorkspaceDir, "data", "attachments");
 const conversationsDir = join(testWorkspaceDir, "conversations");

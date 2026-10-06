@@ -21,25 +21,21 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
 let repoDir = "";
 
-// The module resolves the workspace through the real getWorkspaceDir(), which
-// reads VELLUM_WORKSPACE_DIR at call time — setRepoDir re-points both together
-// instead of mocking util/platform.js. `getWorkspaceGitService` is left real
-// so the git invocations under test are the ones that ship.
+// The preload's workspace doubles as the repo: the module resolves the git
+// service from the real getWorkspaceDir(). `getWorkspaceGitService` is left
+// real so the git invocations under test are the ones that ship.
 function setRepoDir(dir: string): void {
   repoDir = dir;
-  process.env.VELLUM_WORKSPACE_DIR = dir;
-}
-
-function resetRepoDir(): void {
-  repoDir = "";
-  delete process.env.VELLUM_WORKSPACE_DIR;
 }
 
 import { getSkillHistory } from "./skill-history.js";
+
+// Captured at module scope: the preload cleans up its env var between suites.
+const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
 
 function git(...args: string[]): string {
   return execFileSync("git", args, {
@@ -68,13 +64,10 @@ function commit(message: string): void {
 }
 
 beforeEach(() => {
-  setRepoDir(mkdtempSync(join(tmpdir(), "skill-history-")));
-  git("init", "-b", "main");
-});
-
-afterEach(() => {
+  setRepoDir(PRELOAD_WS);
   rmSync(repoDir, { recursive: true, force: true });
-  resetRepoDir();
+  mkdirSync(repoDir, { recursive: true });
+  git("init", "-b", "main");
 });
 
 describe("getSkillHistory", () => {

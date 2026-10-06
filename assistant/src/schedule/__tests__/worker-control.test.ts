@@ -6,12 +6,14 @@
  * worker's worker-control tests.
  */
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import * as realLogger from "../../util/logger.js";
+
+// Captured at module scope: the preload cleans up its env var between suites.
+const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
 
 let tmpDir: string;
 let pidPath: string;
@@ -83,15 +85,9 @@ function neverExits(): Promise<unknown> {
 }
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(join(tmpdir(), "schedule-worker-control-test-"));
-  // The real getScheduleWorkerPidPath() is <workspace>/schedule-worker.pid,
-  // so re-point the workspace at tmpDir instead of mocking util/platform.js.
-  process.env.VELLUM_WORKSPACE_DIR = tmpDir;
+  // The preload's workspace already resolves <workspace>/schedule-worker.pid.
+  tmpDir = PRELOAD_WS;
   pidPath = join(tmpDir, "schedule-worker.pid");
-});
-
-afterEach(() => {
-  rmSync(tmpDir, { recursive: true, force: true });
 });
 
 describe("spawnScheduleWorkerProcess", () => {
