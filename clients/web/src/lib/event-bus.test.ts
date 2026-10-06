@@ -4,7 +4,7 @@ import type { AssistantEventEnvelope } from "@vellumai/assistant-api";
 
 // Registered before the bus is imported so the bus binds to the mock.
 const captureErrorMock = mock(() => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 

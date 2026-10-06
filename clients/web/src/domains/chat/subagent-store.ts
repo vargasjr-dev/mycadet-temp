@@ -21,7 +21,7 @@ import type { SubagentsReconcileGetResponse } from "@/generated/daemon/types.gen
 import { useConversationStore } from "@/stores/conversation-store";
 import { createSelectors } from "@/utils/create-selectors";
 import { recordDiagnostic } from "@/lib/diagnostics";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   AssistantEventSchema,
   SubagentStatusSchema,

@@ -31,11 +31,11 @@ export function isNewAssistantFunnel(
 
 /**
  * Whether this build may skip the research/personality funnel after consent.
- * True everywhere except a production `VITE_SENTRY_ENVIRONMENT` so local, dev,
+ * True everywhere except a production `VITE_ENVIRONMENT` so local, dev,
  * and staging can drop into chat without walking the research steps.
  */
 export function canSkipOnboardingResearch(
-  env: string | undefined = import.meta.env.VITE_SENTRY_ENVIRONMENT,
+  env: string | undefined = import.meta.env.VITE_ENVIRONMENT,
 ): boolean {
   return env !== "production";
 }
@@ -47,7 +47,7 @@ export function canSkipOnboardingResearch(
  */
 export function shouldSkipResearchAfterHatch(
   searchParams: Pick<URLSearchParams, "get">,
-  env: string | undefined = import.meta.env.VITE_SENTRY_ENVIRONMENT,
+  env: string | undefined = import.meta.env.VITE_ENVIRONMENT,
 ): boolean {
   return (
     canSkipOnboardingResearch(env) &&
@@ -64,7 +64,7 @@ export function shouldSkipResearchAfterHatch(
  */
 export function withSkipResearch(
   destination: string,
-  env: string | undefined = import.meta.env.VITE_SENTRY_ENVIRONMENT,
+  env: string | undefined = import.meta.env.VITE_ENVIRONMENT,
 ): string {
   if (!canSkipOnboardingResearch(env)) {
     return destination;
@@ -106,7 +106,7 @@ export function onboardingDestinationAfterConsent({
   skipResearch = false,
   selectedAssistantOnboarded = false,
   newAssistant = false,
-  env = import.meta.env.VITE_SENTRY_ENVIRONMENT,
+  env = import.meta.env.VITE_ENVIRONMENT,
 }: {
   /** A local-hosting onboarding that must run the foreground local hatch. */
   isLocalHatch: boolean;
@@ -125,7 +125,7 @@ export function onboardingDestinationAfterConsent({
    * so it must reach a hatch rather than short-circuit to an existing one.
    */
   newAssistant?: boolean;
-  /** Build environment; defaults to `VITE_SENTRY_ENVIRONMENT`. */
+  /** Build environment; defaults to `VITE_ENVIRONMENT`. */
   env?: string;
 }): string {
   // `isLocalHatch` counts as provisioning on its own: it names a foreground

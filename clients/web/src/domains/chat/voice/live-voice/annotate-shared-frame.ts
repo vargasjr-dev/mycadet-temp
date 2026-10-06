@@ -20,7 +20,7 @@
  * would put a drawing in the transcript in a colour the user never saw.
  */
 
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   COMPANION_ANNOTATION_STROKE,
   type CompanionAnnotationStroke,

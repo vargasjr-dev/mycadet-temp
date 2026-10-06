@@ -11,7 +11,7 @@ import {
   nativeAuthErrorKey,
 } from "@/domains/account/native-auth-error";
 import { buildNavigationState } from "@/lib/navigation/build-state";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { resolveLoginReturnTo } from "@/lib/navigation/navigation-resolver";
 import { isElectron } from "@/runtime/is-electron";
 import { startAuthFlow } from "@/runtime/native-auth";
@@ -30,7 +30,7 @@ import { startAuthFlow } from "@/runtime/native-auth";
 export function useOnboardingLogin(
   returnToOverride?: string | null,
   options: {
-    /** Sentry `context` tag, so each entry point's failures stay separable. */
+    /** Error-report `context` tag, so each entry point's failures stay separable. */
     errorContext?: string;
   } = {},
 ) {

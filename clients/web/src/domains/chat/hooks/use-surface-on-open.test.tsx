@@ -37,11 +37,6 @@ mock.module(
   }),
 );
 
-mock.module("@sentry/react", () => ({
-  captureException: () => {},
-  captureMessage: () => {},
-  addBreadcrumb: () => {},
-}));
 
 const { useSurfaceOnOpen } =
   await import("@/domains/chat/hooks/use-surface-on-open");

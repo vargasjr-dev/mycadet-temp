@@ -1,7 +1,7 @@
 import type { NotificationIdentity } from "@vellumai/ipc-contract";
 
 import { subscribe } from "@/lib/event-bus";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { mintRandomId } from "@/lib/telemetry/random-id";
 
 const STORAGE_KEY = "vellum:browser-notification-deliveries:v1";

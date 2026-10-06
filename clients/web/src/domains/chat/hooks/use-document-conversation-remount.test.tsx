@@ -24,7 +24,7 @@ import { useViewerStore } from "@/stores/viewer-store";
 import type { DocumentContent } from "@/types/document-types";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import type * as OrgReadiness from "@/hooks/use-is-org-ready";
-import type * as ErrorCapture from "@/lib/sentry/capture-error";
+import type * as ErrorCapture from "@/lib/error-reporting/capture-error";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 
 import type * as Editor from "../components/tiptap-document-editor";
@@ -70,7 +70,7 @@ mock.module(
   }),
 );
 mock.module(
-  "@/lib/sentry/capture-error",
+  "@/lib/error-reporting/capture-error",
   (): Partial<typeof ErrorCapture> => ({ captureError: mock(() => {}) }),
 );
 const comments = await import("../api/document-comments");

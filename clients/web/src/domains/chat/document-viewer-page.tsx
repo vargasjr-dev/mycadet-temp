@@ -9,7 +9,7 @@ import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import type { DocumentContent } from "@/types/document-types";

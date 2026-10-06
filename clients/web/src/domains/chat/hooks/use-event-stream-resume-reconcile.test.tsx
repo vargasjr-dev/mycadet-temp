@@ -215,7 +215,7 @@ describe("useEventStream — sse.opened reconcile triggers", () => {
       cause: "watchdog",
     });
     await new Promise((resolve) => setTimeout(resolve, 0));
-    // Watchdog used to double-fetch (non-fresh path AND the Sentry-
+    // Watchdog used to double-fetch (non-fresh path AND the watchdog-
     // instrumented path each fired their own reconcile). After the
     // restructure they share a single reconcile.
     expect(reconcile).toHaveBeenCalledTimes(1);

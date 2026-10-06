@@ -51,7 +51,7 @@ mock.module(
     fetchSubagentHistory: async () => emptyHistory(),
   }),
 );
-mock.module("@/lib/sentry/capture-error", () => ({ captureError: () => {} }));
+mock.module("@/lib/error-reporting/capture-error", () => ({ captureError: () => {} }));
 
 const { useSubagentReconcile } =
   await import("@/domains/chat/hooks/use-subagent-reconcile");

@@ -36,7 +36,7 @@ import {
   useSkillHistory,
 } from "@/hooks/use-skill-history";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { openWorkspaceFile } from "@/utils/open-workspace-file";
 import { invalidateSkillsList, isRemovableSkill } from "@/utils/skills";
 import { Button, Card, Tabs } from "@vellumai/design-library";

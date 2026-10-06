@@ -8,7 +8,7 @@ import {
   inferenceProfilesGetQueryKey,
   useInferenceActiveprofilePutMutation,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useSupportsActiveProfileRoute } from "@/lib/backwards-compat/use-supports-active-profile-route";
 import { badRequestMessage } from "@/utils/api-errors";
 import type { ConfigPatchRequestWritable } from "@/generated/daemon/types.gen";
@@ -107,7 +107,7 @@ export function useProfileActions(assistantId: string): ProfileActions {
     } catch (error) {
       // A 400 is the server's verdict on the selection itself - e.g. a
       // profile whose provider has no connection or key, so it could never
-      // dispatch. Show that verbatim and skip the Sentry report: it's a
+      // dispatch. Show that verbatim and skip the error report: it's a
       // config problem the user can fix, not an app fault.
       const serverMessage = badRequestMessage(error);
       toast.error(serverMessage ?? MAKE_ACTIVE_ERROR_MESSAGE);

@@ -13,11 +13,7 @@ import {
   installFeedbackIpc,
   type FeedbackDependencies,
 } from "@vellumai/electron-desktop/feedback";
-import {
-  configureSentryMain,
-  initSentryMain,
-  setShareDiagnostics,
-} from "@vellumai/electron-desktop/sentry";
+import { writeSetting as writeSharedSetting } from "@vellumai/electron-desktop/settings";
 import { getSessionToken } from "@vellumai/electron-desktop/session-token-store";
 import {
   readSetting,
@@ -28,7 +24,6 @@ import { LINUX_RELEASE_INFO } from "../app-config";
 import { handle, on } from "../ipc.client";
 import { getLogFilePaths } from "../logger";
 
-declare const __SENTRY_DSN_LINUX__: string;
 const { commitSha, releaseChannel } = LINUX_RELEASE_INFO;
 
 const feedback: FeedbackDependencies = {
@@ -50,33 +45,19 @@ const feedback: FeedbackDependencies = {
 
 configureFeedback(feedback);
 
-configureSentryMain({
-  dsn:
-    typeof __SENTRY_DSN_LINUX__ === "string"
-      ? __SENTRY_DSN_LINUX__
-      : "",
-  environment: releaseChannel,
-  release: commitSha,
-  tags: () => ({
-    process: "main",
-    app_version: app.getVersion(),
-    release_channel: releaseChannel,
-    arch: process.arch,
-    os_version: os.release(),
-    electron: process.versions.electron ?? "unknown",
-    packaged: String(app.isPackaged),
-  }),
-});
-
 const diagnosticsFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "diagnostics",
   install: () => {
-    initSentryMain();
     installFeatureFlagsIpc(
       { on },
       { write: (flags) => writeSetting("featureFlags", flags) },
     );
-    installDiagnosticsIpc({ on }, setShareDiagnostics);
+    // Persist the renderer's effective diagnostics consent. Sentry reporting
+    // is gone; this keeps the user's choice durable for the settings surface.
+    installDiagnosticsIpc(
+      { on },
+      (enabled) => writeSharedSetting("shareDiagnostics", enabled),
+    );
     installFeedbackIpc();
   },
 };

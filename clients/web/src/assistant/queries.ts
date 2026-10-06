@@ -20,7 +20,7 @@
  * `MAX_INITIALIZING_RECOVERIES`) that distinguishes recoverable 5xx
  * from terminal errors like capacity kill-switches. Letting TanStack
  * Query retry on top of that would burn the hook's budget twice as
- * fast and double-log to Sentry.
+ * fast and double-log the error.
  *
  * @see {@link https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults}
  */

@@ -40,7 +40,7 @@ import {
   conversationsSeenPost,
   conversationsUnreadPost,
 } from "@/generated/daemon/sdk.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { haptic } from "@/utils/haptics";
 
 import type { Conversation } from "@/types/conversation-types";

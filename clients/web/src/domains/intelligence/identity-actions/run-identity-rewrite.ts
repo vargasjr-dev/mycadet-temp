@@ -14,7 +14,7 @@
  * Unlike onboarding's fire-and-forget `applyPersonality`, callers here drive
  * visible UI (a saving state and a success/failure toast), so this resolves
  * `true` only when the rewrite turn actually settled and `false` on any
- * failure or timeout. Errors are reported to Sentry, never thrown.
+ * failure or timeout. Errors are reported via captureError, never thrown.
  */
 
 import {
@@ -24,7 +24,7 @@ import {
   messagesPost,
 } from "@/generated/daemon/sdk.gen";
 import { shouldSettlePersonalityPoll } from "@/assistant/personality-rewrite";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { buildSideConversationMessageBody } from "@/lib/side-conversation-message";
 import { latestAssistantText } from "@/utils/latest-assistant-text";
 
@@ -41,7 +41,7 @@ export interface RunIdentityRewriteOptions {
   content: string;
   /** Conversation title, surfaced only in logs/inspector. */
   title: string;
-  /** Sentry context tag for failures. */
+  /** Error-report context tag for failures. */
   context: string;
 }
 

@@ -715,8 +715,7 @@
     "sectionsAriaLabel": "Secciones de desarrollador",
     "tabFeatureFlags": "Indicadores de funciones",
     "tabLifecycle": "Ciclo de vida del asistente",
-    "tabMemory": "Memoria",
-    "tabSentry": "Pruebas de Sentry"
+    "tabMemory": "Memoria"
   },
   "doctorChatBlocks": {
     "allowOnce": "Permitir una vez",
@@ -1782,26 +1781,6 @@
     "runsFor": "Ejecuciones de {name} en los últimos 7 días: {runs}",
     "unknownStatus": "desconocido",
     "viewUsageFor": "Ver uso de {name}"
-  },
-  "sentryTestingPanel": {
-    "errorDescription": "Captura una excepción Error de prueba.",
-    "errorLabel": "Evento de error",
-    "errorSentToast": "Evento de error de Sentry enviado.",
-    "fatalDescription": "Envía un evento de nivel fatal a Sentry.",
-    "fatalLabel": "Evento fatal",
-    "fatalSentToast": "Evento fatal de Sentry enviado.",
-    "infoDescription": "Envía un mensaje de nivel info.",
-    "infoLabel": "Evento de info",
-    "infoSentToast": "Evento de info de Sentry enviado.",
-    "performanceDescription": "Inicia y finaliza un span de transacción de prueba.",
-    "performanceLabel": "Transacción de rendimiento",
-    "send": "Enviar",
-    "subtitle": "Dispara eventos de prueba para verificar que la integración de Sentry funciona.",
-    "title": "Pruebas de Sentry",
-    "transactionSentToast": "Transacción de rendimiento de Sentry enviada.",
-    "warningDescription": "Envía un mensaje de nivel warning.",
-    "warningLabel": "Evento de advertencia",
-    "warningSentToast": "Evento de advertencia de Sentry enviado."
   },
   "shortcutsSections": {
     "alreadyUsedBy": "Ya está en uso por {label}",

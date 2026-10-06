@@ -69,7 +69,7 @@ mock.module("@/hooks/use-is-mobile", () => ({
 mock.module("@/hooks/use-is-org-ready", () => ({
   useOrgHeaderReadiness: () => "ready",
 }));
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: mock(() => {}),
 }));
 

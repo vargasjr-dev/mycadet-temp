@@ -13,7 +13,7 @@
  *
  * Distinguishing those two from a production stack alone is not possible, so
  * this module keeps a rolling tally of who is scheduling updates and how
- * tightly commits are packed. `sentry-init` attaches the snapshot to error-185
+ * tightly commits are packed. Boot telemetry attaches the snapshot to error-185
  * events; the next occurrence names the traffic instead of a bystander.
  *
  * Hot-path constraints: recording is a couple of integer writes against two
@@ -39,7 +39,7 @@ const BUCKET_MS = 1000;
 const BACK_TO_BACK_MS = 8;
 
 /** Cap on distinct source keys, so a caller passing dynamic strings can't
- *  grow the Sentry payload without bound. Overflow is tallied as `other`. */
+ *  grow the report payload without bound. Overflow is tallied as `other`. */
 const MAX_SOURCES = 24;
 
 /**

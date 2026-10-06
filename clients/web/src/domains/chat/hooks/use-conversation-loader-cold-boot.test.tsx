@@ -103,7 +103,7 @@ mock.module("@vellumai/design-library", () => ({
   toast: { error: () => {} },
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 

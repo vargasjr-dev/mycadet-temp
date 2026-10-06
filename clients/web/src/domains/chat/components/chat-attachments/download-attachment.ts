@@ -3,7 +3,7 @@ import {
   attachmentsByIdGet,
 } from "@/generated/daemon/sdk.gen";
 import { publish } from "@/lib/event-bus";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { toApiError } from "@/utils/api-errors";
 import type { AttachmentMetadata } from "@/types/attachment-types";
 

@@ -15,7 +15,7 @@
 
 import { postChatMessage } from "@/domains/chat/api/messages";
 import { resolveSupportsChannelSetupCloseNotify } from "@/lib/backwards-compat/channel-setup-close-notify";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import type { ChannelSetupPayload } from "@/stores/viewer-store";
 
 /**

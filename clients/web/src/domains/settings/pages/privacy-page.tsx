@@ -47,9 +47,9 @@ export function PrivacyPage() {
   // The standard gate, matching `AccessConsentSetting`, so the divider
   // shows exactly when that row does.
   const platformGate = usePlatformGate();
-  // The Share toggles control telemetry (browser Sentry, daemon analytics) that
-  // only runs with a probe-confirmed live platform session, so gate both the
-  // visibility and the consent write on it — matching `sentry-control.ts`. A
+  // The Share toggles control telemetry (client diagnostics, daemon analytics)
+  // that only runs with a probe-confirmed live platform session, so gate both
+  // the visibility and the consent write on it. A
   // believed offline restore (LUM-2412) is not live, so the toggles hide and a
   // flip can't stamp version-currency offline.
   const hasPlatformSession = useHasConfirmedPlatformSession();

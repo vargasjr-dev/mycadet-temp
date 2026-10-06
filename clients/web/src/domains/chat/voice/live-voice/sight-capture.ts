@@ -49,7 +49,7 @@ import {
 } from "@/domains/chat/api/messages";
 import { prepareImageAttachmentForUpload } from "@/domains/chat/components/chat-attachments/attachment-image-resize";
 import { recordFrameGateKeep } from "@/lib/camera/frame-gate-debug";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import type { LiveVoiceSightFrameTiming } from "./live-voice-client";
 import type { LiveVoiceSightSource } from "./protocol";

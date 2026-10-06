@@ -39,7 +39,7 @@ import {
   hasRunText,
   type ScheduleRowUsage,
 } from "@/domains/settings/utils/schedule-formatters";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   schedulesByIdRunsGetQueryKey,
   schedulesGetQueryKey,

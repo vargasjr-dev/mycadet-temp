@@ -7,7 +7,6 @@ import {
   useRef,
   useSyncExternalStore,
 } from "react";
-import * as Sentry from "@sentry/react";
 
 import {
   startDictationStream,
@@ -199,42 +198,9 @@ export function errorCodeForReason(reason: SttFailureReason): string {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Session breadcrumbs
-// ---------------------------------------------------------------------------
-
-type DictationSessionOutcome =
-  "completed" | "empty" | "error" | "cancelled" | "aborted";
-
 interface NativeFinalResult {
   text: string | null;
   stopRan: boolean;
-}
-
-/**
- * One breadcrumb per dictation session, emitted when the session reaches a
- * terminal state. Carries only metrics (duration, locale, final transcript
- * length) — never the transcript itself, which is user speech content and
- * must not reach Sentry.
- *
- * @see https://docs.sentry.io/platforms/javascript/enriching-events/breadcrumbs/
- */
-function addDictationSessionBreadcrumb(
-  outcome: DictationSessionOutcome,
-  durationMs: number,
-  finalLength: number,
-): void {
-  Sentry.addBreadcrumb({
-    category: "dictation",
-    level: "info",
-    message: `dictation session ${outcome}`,
-    data: {
-      outcome,
-      durationMs,
-      locale: typeof navigator !== "undefined" ? navigator.language : "unknown",
-      finalLength,
-    },
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -807,7 +773,6 @@ export const VoiceInputButton = forwardRef<
     };
 
     recorder.onstop = () => {
-      const durationMs = Date.now() - sessionStartedAtRef.current;
       mediaRecorderRef.current = null;
       if (useVoiceRecordingStore.getState().phase === "recording") {
         vsStopRecording();
@@ -833,12 +798,10 @@ export const VoiceInputButton = forwardRef<
         // this handler (e.g. the push-to-talk key-up after Esc) can have
         // moved the store to "processing".
         vsReset();
-        addDictationSessionBreadcrumb("cancelled", durationMs, 0);
         return;
       }
 
       if (erroredRef.current) {
-        addDictationSessionBreadcrumb("error", durationMs, 0);
         return;
       }
 
@@ -857,7 +820,6 @@ export const VoiceInputButton = forwardRef<
         !pendingNativeFinal &&
         !holdSession
       ) {
-        addDictationSessionBreadcrumb("empty", durationMs, 0);
         vsReset();
         return;
       }
@@ -1008,33 +970,28 @@ export const VoiceInputButton = forwardRef<
 
         try {
           if (text) {
-            addDictationSessionBreadcrumb("completed", durationMs, text.length);
             await onTranscript(text);
           } else if (nativeSttForced && audioBlob) {
             // Audio was captured but the forced-native recognizer produced
             // nothing — most likely macOS Dictation (and its on-device
             // model) isn't enabled. Surface that instead of resetting
             // silently; there is no daemon failure to report here.
-            addDictationSessionBreadcrumb("error", durationMs, 0);
-            onError?.("native-stt-no-transcript");
+                onError?.("native-stt-no-transcript");
             vsFail("native-stt-no-transcript");
             return;
           } else if (daemonFailure && !nativeFinalStopRan) {
             // The user-cancelled `aborted` reason should not trigger a
             // visible error — it's the expected outcome of stop().
             if (daemonFailure === "aborted") {
-              addDictationSessionBreadcrumb("aborted", durationMs, 0);
               vsReset();
               return;
             }
-            addDictationSessionBreadcrumb("error", durationMs, 0);
-            const code = errorCodeForReason(daemonFailure);
+                const code = errorCodeForReason(daemonFailure);
             onError?.(code);
             vsFail(code);
             return;
           } else {
-            addDictationSessionBreadcrumb("empty", durationMs, 0);
-            vsReset();
+                vsReset();
             return;
           }
         } catch {

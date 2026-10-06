@@ -159,7 +159,7 @@ export function AuthWelcomeScreen({
    */
   returnTo?: string | null;
   secondary: WelcomeSecondaryAction;
-  /** Sentry `context` tag for a failed handoff. */
+  /** Error-report `context` tag for a failed handoff. */
   errorContext?: string;
   /** See `WelcomeScreenShell` — set on routes outside `RootLayout`'s shell. */
   fillsViewport?: boolean;

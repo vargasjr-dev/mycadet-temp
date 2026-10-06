@@ -1666,7 +1666,7 @@ describe("isAppNotFoundError", () => {
   // wraps errors differently (e.g., on a `.data` property of an Error
   // subclass), the matchers below stay correct for the documented contract
   // — production behavior would silently revert to capturing NOT_FOUND noise
-  // in Sentry. The Sentry reopen is the signal to come back here.
+  // in error reports. That contract is the signal to come back here.
 
   it("matches the daemon's nested envelope shape with the appId-suffixed message", () => {
     expect(
@@ -1686,7 +1686,7 @@ describe("isAppNotFoundError", () => {
 
   it("does NOT match a generic route-mismatch 404 (would silently swallow routing regressions)", () => {
     // The daemon's catch-all returns this for unmatched / version-skewed
-    // routes. Those are real telemetry — keep them visible in Sentry.
+    // routes. Those are real telemetry — keep them visible in error reports.
     expect(
       isAppNotFoundError({
         error: { code: "NOT_FOUND", message: "Not found" },

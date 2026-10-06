@@ -1,5 +1,5 @@
 import { ttsSynthesizePost } from "@/generated/daemon/sdk.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 export type MessagePlaybackAudio =
   | { kind: "audio"; blob: Blob }

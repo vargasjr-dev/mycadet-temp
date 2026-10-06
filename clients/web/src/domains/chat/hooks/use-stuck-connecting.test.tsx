@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 
 const captureErrorMock = mock(() => undefined);
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 

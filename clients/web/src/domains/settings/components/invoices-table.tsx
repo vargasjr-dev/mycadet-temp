@@ -16,7 +16,7 @@ import {
   organizationsBillingInvoicesRetrieve,
 } from "@/generated/api/sdk.gen";
 import type { InvoiceListResponse } from "@/generated/api/types.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { openExternalUrl } from "@/runtime/browser";
 import { assertHasResponse, toApiError } from "@/utils/api-errors";
 import { formatFriendlyDate } from "@/utils/format-date";

@@ -7,7 +7,7 @@ mock.module("@vellumai/design-library/components/toast", () => ({
 }));
 
 const captureErrorMock = mock(() => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 

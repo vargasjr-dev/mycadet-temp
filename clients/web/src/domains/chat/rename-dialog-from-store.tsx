@@ -5,7 +5,7 @@ import { useTranslation } from "@/i18n";
 import { NameInputDialog } from "@/domains/chat/components/name-input-dialog";
 import { useRenameRequestStore } from "@/domains/chat/rename-request-store";
 import { conversationsByIdNamePatch } from "@/generated/daemon/sdk.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { patchConversation } from "@/utils/conversation-cache";
 
 /**

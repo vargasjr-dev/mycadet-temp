@@ -347,7 +347,7 @@ describe("parseVellumUrl", () => {
 
   test("legacy auth/callback → unknown with query stripped (no code leak)", () => {
     // The legacy code must not survive into the URL the renderer logs as
-    // a `deeplink.unknown` Sentry breadcrumb.
+    // a `deeplink.unknown` log.
     expect(
       parseVellumUrl("vellum://auth/callback?code=secret&state=xyz"),
     ).toEqual({ kind: "unknown", url: "vellum://auth/callback" });
@@ -444,7 +444,7 @@ describe("parseVellumUrl", () => {
   test("a bare connect link still parses as connect, never unknown", () => {
     // The user clicked a connect link; even with every field missing or
     // malformed the renderer routes them to the connect flow with guidance
-    // instead of Sentry-breadcrumbing an unknown URL.
+    // instead of logging an unknown URL.
     expect(parseVellumUrl("vellum://connect")).toEqual({ kind: "connect" });
     expect(parseVellumUrl("vellum://connect?url=&code=&bundle=")).toEqual({
       kind: "connect",
@@ -477,7 +477,7 @@ describe("parseVellumUrl", () => {
   });
 
   test("a connect link never reaches the unknown echo path, however malformed", () => {
-    // `unknown` carries its URL through to the renderer's Sentry breadcrumb,
+    // `unknown` carries its URL through to the renderer's log,
     // so a device code must never be able to route there. Every connect link
     // stays a connect link, malformed fields and all.
     for (const input of [

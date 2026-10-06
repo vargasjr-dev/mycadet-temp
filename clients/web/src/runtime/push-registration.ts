@@ -27,7 +27,7 @@
  *     conversation id.
  *
  * Native-only and best-effort: no-ops on Electron and browsers;
- * registration/delete failures are reported to Sentry but never thrown into
+ * registration/delete failures are reported via `captureError` but never thrown into
  * the app lifecycle.
  *
  * The upserted row's `apns_environment` tag is resolved by
@@ -48,7 +48,7 @@ import {
 import type { AssistantsPushTokensUpsertData } from "@/generated/api/types.gen";
 import { publish } from "@/lib/event-bus";
 import { resolvePlatformAssistantId } from "@/lib/platform-assistant-id";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { ensureAndroidAlertsChannel } from "@/runtime/android-notification-channels";
 import {
   beginAndroidNotificationOwnershipEnable,

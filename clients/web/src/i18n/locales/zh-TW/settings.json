@@ -715,8 +715,7 @@
     "sectionsAriaLabel": "開發者區塊",
     "tabFeatureFlags": "功能旗標",
     "tabLifecycle": "助理生命週期",
-    "tabMemory": "記憶體",
-    "tabSentry": "Sentry 測試"
+    "tabMemory": "記憶體"
   },
   "doctorChatBlocks": {
     "allowOnce": "允許一次",
@@ -1760,26 +1759,6 @@
     "runsFor": "{name} 在過去 7 天的執行次數：{runs}",
     "unknownStatus": "未知",
     "viewUsageFor": "檢視 {name} 的使用情況"
-  },
-  "sentryTestingPanel": {
-    "errorDescription": "擷取測試錯誤例外狀況。",
-    "errorLabel": "錯誤事件",
-    "errorSentToast": "Sentry 錯誤事件已送出。",
-    "fatalDescription": "傳送嚴重等級事件至 Sentry。",
-    "fatalLabel": "嚴重事件",
-    "fatalSentToast": "Sentry 嚴重事件已送出。",
-    "infoDescription": "傳送資訊等級訊息。",
-    "infoLabel": "資訊事件",
-    "infoSentToast": "Sentry 資訊事件已送出。",
-    "performanceDescription": "開始與結束測試交易範圍。",
-    "performanceLabel": "效能交易",
-    "send": "傳送",
-    "subtitle": "觸發測試事件以驗證 Sentry 整合是否正常運作。",
-    "title": "Sentry 測試",
-    "transactionSentToast": "Sentry 效能交易已送出。",
-    "warningDescription": "傳送警告等級訊息。",
-    "warningLabel": "警告事件",
-    "warningSentToast": "Sentry 警告事件已送出。"
   },
   "shortcutsSections": {
     "alreadyUsedBy": "已被 {label} 使用",

@@ -1,4 +1,4 @@
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { subscribeCapacitorListener } from "@/runtime/capacitor-listener";
 import { isNativeAndroid } from "@/runtime/platform-detection";
 import { useViewerStore } from "@/stores/viewer-store";

@@ -38,7 +38,6 @@
     "wait-on": "8.0.1"
   },
   "dependencies": {
-    "@sentry/electron": "7.13.0",
     "@vellumai/electron-desktop": "workspace:*",
     "@vellumai/electron-utils": "workspace:*",
     "@vellumai/environments": "workspace:*",

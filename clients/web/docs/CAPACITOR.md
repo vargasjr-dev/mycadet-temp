@@ -398,7 +398,7 @@ is no iOS counterpart.
   method to the bridge.
 - **Failures are logged, not reported.** The plugin logs through
   `com.getcapacitor.Logger`, not `NativeFailureGuard`, whose reports the web
-  layer forwards to Sentry. A Play Store that is absent or declines the bind is
+  layer surfaces in the console. A Play Store that is absent or declines the bind is
   the normal path on every sideloaded, `dev`, and `staging` build, so a report
   there is noise, not signal.
 - **No manifest permission.** The Play Install Referrer Library declares its

@@ -80,7 +80,7 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
     return failMessagePost ? notOk() : ok({});
   },
 }));
-mock.module("@/lib/sentry/capture-error", () => ({ captureError: () => {} }));
+mock.module("@/lib/error-reporting/capture-error", () => ({ captureError: () => {} }));
 
 const { useResearchRunner } =
   await import("@/domains/onboarding/research-runner");

@@ -54,7 +54,7 @@ mock.module("@/runtime/native-file", () => ({
   },
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 

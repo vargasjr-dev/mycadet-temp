@@ -10,7 +10,7 @@ import {
   zeroScheduleUsageSummary,
 } from "@/domains/settings/utils/schedule-formatters";
 import { t } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { schedulesListQueryOptions } from "@/utils/schedules";
 import { useEffectiveTimezone } from "@/utils/use-effective-timezone";
 import { toast } from "@vellumai/design-library/components/toast";

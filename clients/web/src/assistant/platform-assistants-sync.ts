@@ -16,7 +16,7 @@ import { listAssistants } from "@/assistant/api";
 import { isGatewayAuthEnabled } from "@/lib/auth/gateway-session";
 import { subscribe } from "@/lib/event-bus";
 import { isLocalClient, isRemoteGatewayMode } from "@/lib/local-mode";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAuthStore } from "@/stores/auth-store";
 import { useOrganizationStore } from "@/stores/organization-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";

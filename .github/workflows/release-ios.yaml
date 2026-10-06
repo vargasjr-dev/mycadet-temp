@@ -139,10 +139,6 @@ jobs:
         working-directory: clients/web
         env:
           VELLUM_ENVIRONMENT: ${{ steps.config.outputs.vellum_env }}
-          # No Sentry DSN here: this build bundles no web assets. The iOS app
-          # runs the deployed web SPA via `server.url`, so native webview DSNs
-          # are baked into the SPA bundle by the web-SPA deploy workflow and
-          # selected at runtime.
         run: bunx cap sync ios
 
       - name: Install XcodeGen

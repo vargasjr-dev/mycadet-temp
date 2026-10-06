@@ -58,7 +58,7 @@ mock.module("@/hooks/use-is-org-ready", () => ({
   useIsOrgReady: () => orgReady,
   getOrgHeaderReadiness: () => (orgReady ? "ready" : "resolving"),
 }));
-mock.module("@/lib/sentry/capture-error", () => ({ captureError: () => {} }));
+mock.module("@/lib/error-reporting/capture-error", () => ({ captureError: () => {} }));
 mock.module("@/stores/organization-store", () => ({
   getActiveOrganizationIdForRequests: () => organizationId,
 }));

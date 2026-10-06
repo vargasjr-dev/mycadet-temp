@@ -1,6 +1,6 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { isNativeAndroid } from "@/runtime/platform-detection";
 
 const AndroidNotificationSettings = registerPlugin<{ open(): Promise<void> }>("AndroidNotificationSettings");

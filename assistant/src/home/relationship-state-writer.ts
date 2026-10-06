@@ -12,9 +12,8 @@
  * and the OAuth connection store (for capability tiers), and writes it
  * to `<workspace>/data/relationship-state.json`.
  *
- * Per assistant/CLAUDE.md the daemon must never block or throw at
- * startup — the public entry points here catch every error and log a
- * warning instead. Internal helpers use a narrow `safeRead` wrapper so
+ * The daemon must never block or throw at startup — the public entry
+ * points here catch every error and log a warning instead. Internal helpers use a narrow `safeRead` wrapper so
  * a missing or unreadable file degrades gracefully to an empty string.
  */
 
@@ -338,9 +337,8 @@ function publishRelationshipStateUpdated(updatedAt: string): void {
  * conversation-complete writer path keeps the snapshot fresh after the
  * first write, so there is no need to re-run the backfill.
  *
- * Callers must treat this as fire-and-forget: per `assistant/CLAUDE.md`
- * the daemon must never block startup, so `writeRelationshipState()`
- * already catches every error. Wrapping this call in
+ * Callers must treat this as fire-and-forget: the daemon must never
+ * block startup, so `writeRelationshipState()` already catches every error. Wrapping this call in
  * `void backfillRelationshipStateIfMissing().catch(() => {})` at the
  * startup site provides a second belt-and-suspenders guarantee for any
  * unexpected throw out of `existsSync`.

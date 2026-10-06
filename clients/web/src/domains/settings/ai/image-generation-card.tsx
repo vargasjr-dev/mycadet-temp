@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
 import { Select } from "@vellumai/design-library/components/select";

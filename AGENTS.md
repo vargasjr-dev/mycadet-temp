@@ -4,13 +4,13 @@
 
 Bun + TypeScript monorepo with multiple packages:
 
-- `clients/`: End-user app surfaces: `clients/web/` (Vite + React Router v7 SPA), `clients/ios/` (Capacitor iOS shell that loads the web app in a WKWebView), `clients/android/` (Capacitor Android shell that loads the web app in a WebView), `clients/macos/` (Electron desktop shell that wraps `clients/web/`; daemon/gateway lifecycle is owned by the `vellum` CLI, which the app invokes as a subprocess; auto-update via `electron-updater`; CI workflows are `pr-macos.yaml` / `ci-main-macos.yaml`), `clients/linux/` (Electron desktop shell around `clients/web/` packaged as an AppImage; CI workflows are `pr-linux.yaml` / `ci-main-linux.yaml`), `clients/windows/` (Electron desktop shell around `clients/web/` at capability parity with macOS, see `clients/windows/docs/parity-matrix.md`; CI workflows are `pr-windows.yaml` / `ci-main-windows.yaml`), and `clients/chrome-extension/` (MV3 Chrome browser extension). See [`clients/README.md`](clients/README.md) and [`clients/AGENTS.md`](clients/AGENTS.md).
+- `clients/`: End-user app surfaces: `clients/web/` (Vite + React Router v7 SPA), `clients/ios/` (Capacitor iOS shell that loads the web app in a WKWebView), `clients/android/` (Capacitor Android shell that loads the web app in a WebView), `clients/macos/` (Electron desktop shell that wraps `clients/web/`; daemon/gateway lifecycle is owned by the `vellum` CLI, which the app invokes as a subprocess; auto-update via `electron-updater`; CI workflows are `pr-macos.yaml` / `ci-main-macos.yaml`), `clients/linux/` (Electron desktop shell around `clients/web/` packaged as an AppImage; CI workflows are `pr-linux.yaml` / `ci-main-linux.yaml`), `clients/windows/` (Electron desktop shell around `clients/web/` at capability parity with macOS, see `clients/windows/docs/parity-matrix.md`; CI workflows are `pr-windows.yaml` / `ci-main-windows.yaml`), and `clients/chrome-extension/` (MV3 Chrome browser extension). See [`clients/README.md`](clients/README.md).
 - `assistant/` — Main backend service (Bun + TypeScript)
-- `cli/` — Multi-assistant management CLI (Bun + TypeScript). See `cli/AGENTS.md`.
+- `cli/` — Multi-assistant management CLI (Bun + TypeScript).
 - `gateway/` — Channel ingress gateway (Bun + TypeScript)
 - `packages/` — Shared internal packages (e.g. `service-contracts` for CES wire-protocol schemas)
 - `scripts/` — Utility scripts
-- `skills/` — First-party skill catalog (portable skill packages). See `skills/AGENTS.md` for contribution rules and portability requirements.
+- `skills/` — First-party skill catalog (portable skill packages).
 - Evals have moved to a dedicated repo: [vellum-ai/evals](https://github.com/vellum-ai/evals).
 
 **`meta/` is a parent package, NOT a shared package.** Its purpose is to be the root workspace that all service packages (`gateway/`, `assistant/`, etc.) descend from — it provides workspace-level tooling, CI configuration, and build scripts. It must never contain runtime code, constants, or configuration files that child services import. A gateway or assistant module importing from `../../meta/` is a layering violation. Static config files (e.g. allowlists, registries) that a service consumes at runtime belong in that service's own package directory. Existing `meta/` contents (feature flags, test infra) are either shared build/CI metadata or are being migrated out.
@@ -23,7 +23,7 @@ Defend technical positions with evidence. Don't flip-flop to placate the user �
 
 - **Bun PATH**: Run `export PATH="$HOME/.bun/bin:$PATH"` before any bun/bunx commands.
 - **Imports**: Packages that compile to JS (`assistant/`, `gateway/`, `cli/`) use NodeNext module resolution with `.js` extensions on all imports. Bundler-only packages (`clients/web/`, `packages/design-library/`) use `moduleResolution: "Bundler"` and omit `.js` extensions.
-- **Package manager**: This is a bun workspace. One root `bun.lock` covers every member (services, `packages/*`, `clients/web`, `clients/macos`, `clients/linux`, `clients/windows`). Run `bun install` anywhere in the tree (it resolves to the workspace root), or scope it with name filters like `--filter=@vellumai/assistant` (path filters resolve against the cwd, so avoid them). Cross-package deps use `workspace:*`; `overrides`, `patchedDependencies`, and `trustedDependencies` are honored only in the root manifest. Non-member `clients/chrome-extension` keeps its own lockfile; skills carry no manifest or lockfile by design, so Bun auto-installs their pinned imports (see `skills/AGENTS.md`).
+- **Package manager**: This is a bun workspace. One root `bun.lock` covers every member (services, `packages/*`, `clients/web`, `clients/macos`, `clients/linux`, `clients/windows`). Run `bun install` anywhere in the tree (it resolves to the workspace root), or scope it with name filters like `--filter=@vellumai/assistant` (path filters resolve against the cwd, so avoid them). Cross-package deps use `workspace:*`; `overrides`, `patchedDependencies`, and `trustedDependencies` are honored only in the root manifest. Non-member `clients/chrome-extension` keeps its own lockfile; skills carry no manifest or lockfile by design, so Bun auto-installs their pinned imports.
 - **Windows subprocesses**: Every subprocess that can run inside the packaged Windows client, local assistant, first-party skills, or `clients/windows` tooling must set `windowsHide: true`. This applies to Node child process APIs and `Bun.spawn` / `Bun.spawnSync`. The terminal-facing launcher in `clients/windows/scripts/launch-cli.ts` is the exception because it must preserve normal CLI console behavior.
 
 ```bash
@@ -208,7 +208,7 @@ When you need shared logic across packages, extract it into a `packages/` shared
 
 ## Public API / Webhook Ingress
 
-All inbound HTTP endpoints must be routed through the gateway (`gateway/`). See `gateway/AGENTS.md` for full rules including gateway-only API consumption, SKILL.md patterns, and channel identity vocabulary. Guard test: `gateway-only-guard.test.ts`.
+All inbound HTTP endpoints must be routed through the gateway (`gateway/`) — API clients may not bypass it to reach the runtime. Guard test: `gateway-only-guard.test.ts`.
 
 ## Assistant Identity Boundary
 
@@ -230,11 +230,11 @@ The `assistant/` module must not import from `skills/` via relative paths (e.g. 
 
 ## Plugin Self-Containment
 
-A plugin owns its state end-to-end: durable data lives in the plugin's storage dir (`InitContext.pluginStorageDir`), schema is created idempotently by the plugin's `init` hook, handles close in `shutdown`, and per-conversation rows are purged in `conversation-deleted`. Plugin state never goes in the main database or the global migration chain (`assistant/src/persistence/migrations/` / `steps.ts`). Full rules, the canonical `image-fallback` example, and the guard test: `assistant/src/plugins/AGENTS.md`. When creating or scaffolding a plugin, follow the `plugin-builder` skill (`skills/plugin-builder/`).
+A plugin owns its state end-to-end: durable data lives in the plugin's storage dir (`InitContext.pluginStorageDir`), schema is created idempotently by the plugin's `init` hook, handles close in `shutdown`, and per-conversation rows are purged in `conversation-deleted`. Plugin state never goes in the main database or the global migration chain (`assistant/src/persistence/migrations/` / `steps.ts`). Canonical example: `defaults/image-fallback`. Guard test: `plugin-state-boundary-guard.test.ts`. When creating or scaffolding a plugin, follow the `plugin-builder` skill (`skills/plugin-builder/`).
 
 ## Tooling Direction
 
-New non-skill tool registrations are strongly discouraged — see `assistant/src/tools/AGENTS.md`.
+New non-skill tool registrations are strongly discouraged.
 
 ## System Prompt Minimalism
 
@@ -248,7 +248,7 @@ Tool routing and tool usage guidance belong in the relevant tool description, in
 
 Only add to the system prompt when the behavior cannot be achieved any other way. When you must, keep additions minimal and look for existing content to condense or remove to offset the addition.
 
-CES tools are the only approved exception — see `assistant/src/tools/AGENTS.md` for details.
+CES tools are the only approved exception.
 
 ## User-Facing Terminology: "daemon" vs "assistant"
 
@@ -260,7 +260,7 @@ Use `QDRANT_HTTP_PORT` (not `QDRANT_URL`) when allocating per-instance Qdrant po
 
 ## Docker Volume Architecture
 
-Docker instances use six per-service volumes enforcing least-privilege at the container level. See `cli/AGENTS.md` for the full volume table, container security posture, meet-bot mount rules, and backup paths.
+Docker instances use six per-service volumes enforcing least-privilege at the container level. The volume definitions and mount rules live in the cli's Docker setup code.
 
 **Top-level invariants:**
 
@@ -294,7 +294,7 @@ There is currently **no release-note surfacing mechanism**. The update-bulletin 
 
 ## No LLM Work at Daemon Startup
 
-The daemon must not invoke LLM providers at startup or on unconditional timers — boot-time generation costs the user money before they have asked for anything. Generated content that clients display (home greeting, suggested prompts, conversation starters, identity intro) is produced on demand: GET handlers serve cached content and trigger a bounded, single-flight, TTL-gated background refresh only when a client actually fetches (see the GET-idempotency exceptions in `assistant/src/runtime/AGENTS.md`). User-facing scheduled work (heartbeat, user-created schedules) is exempt — it is explicit, user-visible, and user-disableable.
+The daemon must not invoke LLM providers at startup or on unconditional timers — boot-time generation costs the user money before they have asked for anything. Generated content that clients display (home greeting, suggested prompts, conversation starters, identity intro) is produced on demand: GET handlers serve cached content and trigger a bounded, single-flight, TTL-gated background refresh only when a client actually fetches (GET handlers may trigger a bounded refresh only; they never generate on every request). User-facing scheduled work (heartbeat, user-created schedules) is exempt — it is explicit, user-visible, and user-disableable.
 
 ## Companion Repos
 
@@ -353,13 +353,10 @@ The Electron renderer uses `@sentry/react` (not `@sentry/electron/renderer`): `@
 
 CLI commands that need to invoke daemon-side state (conversations, wake, in-memory lookups) call into the daemon over the Unix domain socket via `cliIpcCall()` from `assistant/src/ipc/cli-client.ts`. Add a route file in `assistant/src/ipc/routes/` that exports a `*_IPC_METHODS` map, and add that map to the list `AssistantIpcServer` iterates in `assistant/src/ipc/assistant-server.ts` (there is no index file; each map is imported by hand). File-based signals and the daemon HTTP port are deprecated for new CLI→daemon interactions.
 
-For routes shared between HTTP and IPC, and for the current wire-protocol details (length-prefixed binary framing with JSON envelopes, plus binary/chunked response shapes), see `assistant/CLAUDE.md` § Route architecture and § CLI ↔ daemon communication protocol.
+For routes shared between HTTP and IPC, and for the current wire-protocol details (length-prefixed binary framing with JSON envelopes, plus binary/chunked response shapes), the wire protocol is documented in `assistant/src/ipc/` source.
 
 When publishing domain/live events from inside the daemon process, call the `assistantEventHub` singleton directly rather than adding an HTTP endpoint. For persisted multi-client state invalidation, use `publishSyncInvalidation()` (see Multi-Client Assistant State Sync).
 
 ## See Also
 
-- **HTTP API patterns & new endpoints**: `assistant/src/runtime/AGENTS.md`
 - **Error handling conventions**: `assistant/docs/error-handling.md`
-- **Notification pipeline**: `assistant/src/notifications/AGENTS.md`
-- **Trust & guardian invariants**: `assistant/src/approvals/AGENTS.md`

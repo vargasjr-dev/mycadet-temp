@@ -26,7 +26,7 @@
  */
 
 import { useEffect, useMemo, useRef } from "react";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";

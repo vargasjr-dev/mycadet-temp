@@ -1,4 +1,3 @@
-import { sentryVitePlugin } from "@sentry/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import type http from "node:http";
@@ -95,54 +94,11 @@ export default defineConfig(({ mode }) => {
   const gatewayProxyTarget =
     env.GATEWAY_PROXY_TARGET || "http://localhost:7830";
 
-  // Only enable Sentry source map upload for deploy builds.
-  // Reference: https://docs.sentry.io/platforms/javascript/guides/react/sourcemaps/uploading/vite/
-  const sentryUploadEnabled = env.SENTRY_UPLOAD_SOURCE_MAPS === "true";
-  if (sentryUploadEnabled && !env.SENTRY_AUTH_TOKEN) {
-    throw new Error(
-      "SENTRY_AUTH_TOKEN is required to upload Sentry source maps.",
-    );
-  }
-  if (sentryUploadEnabled) {
-    if (!env.VITE_APP_VERSION) {
-      throw new Error(
-        "VITE_APP_VERSION is required to upload Sentry source maps.",
-      );
-    }
-  }
-
   return {
     base: "/assistant/",
     plugins: [
       tailwindcss(),
       react(),
-      sentryVitePlugin({
-        disable: !sentryUploadEnabled,
-        org: env.SENTRY_ORG || "vellum",
-        project: env.SENTRY_PROJECT || "vellum-assistant-web",
-        authToken: env.SENTRY_AUTH_TOKEN,
-        // The plugin fails the build by default when a source-map upload errors.
-        // Builds that set SENTRY_ALLOW_UPLOAD_FAILURE (the Electron release /
-        // dev-release packaging) downgrade that to a warning, so a Sentry outage
-        // or auth-token scope miss ships an unsymbolicated build rather than
-        // breaking the release. Builds without the flag (the web SPA deploy) keep
-        // failing fast so a missing upload is caught before shipping.
-        ...(env.SENTRY_ALLOW_UPLOAD_FAILURE === "true"
-          ? {
-              errorHandler: (err: Error) =>
-                console.warn(
-                  `[sentry-vite-plugin] source map upload failed: ${err.message}`,
-                ),
-            }
-          : {}),
-        release: {
-          name: env.VITE_APP_VERSION,
-          inject: false,
-        },
-        sourcemaps: {
-          filesToDeleteAfterUpload: ["./dist/**/*.map"],
-        },
-      }),
       isPlatformMode(env.VITE_PLATFORM_MODE) ? null : localModePlugin(env),
     ].filter(Boolean),
     resolve: {
@@ -205,11 +161,8 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "dist",
       emptyOutDir: true,
-      // Generate source maps only when Sentry upload is enabled (CI/CD).
-      // The Sentry plugin deletes .map files after upload, so they never
-      // reach the deployed artifact. Without the token, skip generation
-      // entirely to avoid shipping maps in non-Sentry builds.
-      sourcemap: sentryUploadEnabled ? "hidden" : false,
+      // Source maps stay out of the deployed artifact.
+      sourcemap: false,
       // Chunking is tuned for a cold cache on a phone, which is what every
       // deploy hands users: `index.html` modulepreloads the whole boot
       // graph, and hundreds of tiny chunks fetched at once stall a congested

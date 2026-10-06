@@ -10,7 +10,7 @@ import {
   cancelPermissionGuide,
   supportsPermissionSetup,
 } from "@/runtime/permission-setup";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { ensureMainWindowVisible } from "@/runtime/main-window";
 import { frontmostApp } from "@/runtime/running-apps";
 import {

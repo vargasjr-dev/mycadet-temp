@@ -50,7 +50,7 @@ mock.module("@vellumai/design-library", () => ({
   },
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 

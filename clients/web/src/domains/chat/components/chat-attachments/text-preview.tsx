@@ -6,7 +6,7 @@ import { useTranslation } from "@/i18n";
 import { FileMarkdown, isMarkdown } from "@/components/file-markdown";
 import { PreviewMessageCard } from "@/domains/chat/components/chat-attachments/preview-message-card";
 import { decodeBase64Payload } from "@/utils/base64";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 /**
  * Largest text payload rendered inline. Larger files fall back to a download

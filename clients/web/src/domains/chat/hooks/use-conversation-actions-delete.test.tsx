@@ -39,11 +39,6 @@ mock.module("@/utils/haptics", () => ({
   haptic: { medium: () => {}, light: () => {} },
 }));
 
-mock.module("@sentry/react", () => ({
-  captureException: () => {},
-  captureMessage: () => {},
-  addBreadcrumb: () => {},
-}));
 
 const { useConversationActions } =
   await import("@/domains/chat/hooks/use-conversation-actions");

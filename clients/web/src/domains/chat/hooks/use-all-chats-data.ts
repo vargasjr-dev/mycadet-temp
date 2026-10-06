@@ -30,7 +30,7 @@ import {
   useSectionConversationListQuery,
 } from "@/hooks/conversation-queries";
 import { useSupportsGroupFilter } from "@/lib/backwards-compat/use-supports-group-filter";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import type { Conversation } from "@/types/conversation-types";
 import { ApiError } from "@/utils/api-errors";
 import { mergeConversationLists } from "@/utils/conversation-cache";

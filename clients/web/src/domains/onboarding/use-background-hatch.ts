@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -28,7 +27,7 @@ import {
   saveManagedLockfileAssistant,
 } from "@/lib/local-mode";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   getActiveOrganizationIdForRequests,
   useOrganizationStore,
@@ -469,12 +468,9 @@ export function useBackgroundHatch({
         if (outcome === "health_timeout") {
           // The assistant never answered healthz after the resize; completing
           // would hand the user an unreachable assistant.
-          Sentry.captureMessage("Onboarding hatch wait exceeded timeout", {
-            level: "warning",
-            extra: {
-              maxWaitMs: MAX_HATCH_WAIT_MS,
-              stage: "post_resize_health",
-            },
+          console.warn("Onboarding hatch wait exceeded timeout", {
+            maxWaitMs: MAX_HATCH_WAIT_MS,
+            stage: "post_resize_health",
           });
           settleError(TIMEOUT_ERROR);
           return;

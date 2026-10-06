@@ -24,7 +24,7 @@ mock.module("@/runtime/native-auth", () => ({
 }));
 
 const captureErrorMock = mock(() => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 

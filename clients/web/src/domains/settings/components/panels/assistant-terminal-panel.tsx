@@ -10,7 +10,7 @@ import {
   usePlatformGate,
 } from "@/hooks/use-platform-gate";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { toast } from "@vellumai/design-library";
 import { Select } from "@vellumai/design-library/components/select";
 

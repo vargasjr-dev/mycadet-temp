@@ -19,11 +19,10 @@ import { isChunkLoadError } from "@/lib/chunk-errors";
  *     404 route response): renders the full-page "Something went
  *     wrong" treatment.
  *
- * Sentry capture happens once at `RouterProvider.onError` in
+ * Error reporting happens once at `RouterProvider.onError` in
  * `main.tsx`; this boundary only owns the UI. That keeps a single
- * source of truth for tagging (chunk failures get
- * `tags.boundary = "lazy-route"`) and avoids the double-capture you'd
- * get from calling `Sentry.captureException` here too.
+ * source of truth for reporting (chunk failures get the
+ * `tags.boundary = "lazy-route"` tag) and avoids double-reporting here.
  *
  * References:
  *   - https://reactrouter.com/how-to/error-boundary

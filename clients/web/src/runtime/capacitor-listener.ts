@@ -1,4 +1,4 @@
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import type { PluginListenerHandle } from "@capacitor/core";
 
 import { isNativePlatform } from "@/runtime/native-auth";

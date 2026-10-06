@@ -9,7 +9,7 @@ import { toast } from "@vellumai/design-library/components/toast";
  * Pair this with `.mutate()` rather than awaiting `.mutateAsync()` at the
  * call site: `.mutate()` never returns a rejecting promise, so a failed
  * request is reported here instead of escalating to an unhandled promise
- * rejection (`window.onunhandledrejection`, which Sentry logs as a crash).
+ * rejection (`window.onunhandledrejection`, which error reporters log as a crash).
  */
 export function toastOnError(fallback: string) {
   return (err: unknown) => {

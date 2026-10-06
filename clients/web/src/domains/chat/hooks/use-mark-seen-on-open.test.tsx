@@ -34,11 +34,6 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   },
 }));
 
-mock.module("@sentry/react", () => ({
-  captureException: () => {},
-  captureMessage: () => {},
-  addBreadcrumb: () => {},
-}));
 
 const { useMarkSeenOnOpen } =
   await import("@/domains/chat/hooks/use-mark-seen-on-open");

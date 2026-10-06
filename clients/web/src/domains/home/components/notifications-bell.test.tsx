@@ -437,7 +437,7 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
   }),
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 

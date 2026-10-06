@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { CopyButton } from "@/components/copy-button";
 import { useLlmLogPayload } from "@/domains/chat/inspector/inspector-payload-api";
 import { t, useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import type { LLMRequestLogEntry } from "@vellumai/assistant-api";
 import { Button, Card } from "@vellumai/design-library";
 import { toast } from "@vellumai/design-library/components/toast";

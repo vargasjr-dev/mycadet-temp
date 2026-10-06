@@ -49,7 +49,7 @@
  */
 
 import { createAudioContext } from "@/domains/chat/voice/audio-context";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { scheduleTone, type ToneRecipe } from "@/lib/sounds/tone-synth";
 import { isNativeIOS } from "@/runtime/platform-detection";
 

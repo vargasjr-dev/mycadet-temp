@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 /**
  * How long the ChatPage "Connecting…" guard may persist before it is treated
@@ -20,7 +20,7 @@ export const CONNECTING_STUCK_TIMEOUT_MS = 30_000;
  * spinner shows forever with nothing captured to telemetry — the failure is
  * invisible in the field and undiagnosable for the user. After
  * `timeoutMs` of uninterrupted connecting, this flips to `stuck` so the
- * caller can render a retry affordance, and captures one Sentry event per
+ * caller can render a retry affordance, and records one diagnostic per
  * episode so wedges become measurable.
  *
  * `reset` re-arms the watchdog (used by the retry button): a retry that

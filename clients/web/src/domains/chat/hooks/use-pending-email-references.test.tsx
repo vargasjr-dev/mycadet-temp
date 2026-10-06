@@ -3,14 +3,8 @@
  * minted for them is on screen, and dropped when it is not.
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { cleanup, renderHook } from "@testing-library/react";
-
-const sentryBreadcrumbMock = mock((_args: unknown) => undefined);
-mock.module("@sentry/react", () => ({
-  addBreadcrumb: sentryBreadcrumbMock,
-  captureException: () => {},
-}));
 
 import { consumePendingComposerFocus } from "@/domains/chat/composer-focus";
 import {

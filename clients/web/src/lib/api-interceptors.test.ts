@@ -25,7 +25,7 @@ import {
 } from "bun:test";
 import type * as LocalMode from "@/lib/local-mode";
 import type { LockfileAssistant } from "@/runtime/local-mode-host";
-import type * as CaptureError from "@/lib/sentry/capture-error";
+import type * as CaptureError from "@/lib/error-reporting/capture-error";
 import type * as RemoteGatewaySession from "@/lib/auth/remote-gateway-session";
 
 const isLocalClientMock = mock(() => !process.env.VITE_PLATFORM_MODE);
@@ -104,11 +104,11 @@ mock.module("@/lib/auth/hard-navigate", () => ({
   hardNavigate: hardNavigateMock,
 }));
 
-// Sentry capture, stubbed so a failed in-place recovery doesn't touch the
-// real client and the capture can be asserted.
+// Error reporting, stubbed so a failed in-place recovery doesn't touch the
+// real client and the report can be asserted.
 const captureErrorMock = mock((_err: unknown, _ctx?: unknown) => {});
 mock.module(
-  "@/lib/sentry/capture-error",
+  "@/lib/error-reporting/capture-error",
   (): Partial<typeof CaptureError> => ({
     captureError: captureErrorMock,
   }),

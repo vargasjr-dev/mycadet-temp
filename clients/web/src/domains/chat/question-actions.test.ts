@@ -76,7 +76,7 @@ const throwByRequestId = new Set<string>();
 const resultByRequestId = new Map<string, SubmitSecretResponseResult>();
 
 const capturedErrors: Array<{ context?: string; message?: string }> = [];
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: (err: unknown, opts?: { context?: string }) => {
     capturedErrors.push({
       context: opts?.context,
@@ -251,7 +251,7 @@ describe("handleQuestionResponse: stale (404) interaction", () => {
 
     // A real server failure is retryable, so the card stays and the user is
     // told. In copy they can read: the daemon's own message describes a body
-    // the client built, so it goes to Sentry instead of the banner.
+    // the client built, so it goes to the error report instead of the banner.
     expect(useChatSessionStore.getState().error?.message).toBe(
       "Failed to submit response. Please try again.",
     );

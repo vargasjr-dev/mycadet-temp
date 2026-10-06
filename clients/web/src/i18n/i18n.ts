@@ -47,7 +47,7 @@ import {
   negotiateLocale,
   type SupportedLocale,
 } from "@/i18n/supported-locales";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { getDeviceSetting, setDeviceSetting } from "@/utils/device-settings";
 
 /**

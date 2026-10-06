@@ -280,8 +280,8 @@ export function HelpFaqContent() {
           <p className="mb-6 text-zinc-600">
             Only if you opt in. There are two optional toggles in Settings &gt; Privacy: usage
             analytics (anonymized token counts and feature adoption &mdash; no message content) and
-            crash diagnostics (error reports via Sentry &mdash; no personal data). Both are off by
-            default.
+            diagnostics consent (gates what the client may report about itself &mdash; no personal
+            data). Both are off by default.
           </p>
 
           <SectionHeading id="can-my-employer-see-what-i-do-with-vellum" level={3}>

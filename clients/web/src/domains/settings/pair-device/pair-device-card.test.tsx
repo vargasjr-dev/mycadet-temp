@@ -57,7 +57,7 @@ mock.module("@/stores/client-feature-flag-store", () => ({
   },
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 

@@ -38,7 +38,7 @@ const DEVICE_SETTINGS = {
   theme: { key: "device:theme" },
   shareAnalytics: { key: "device:share_analytics" },
   shareDiagnostics: { key: "device:share_diagnostics" },
-  // Effective Sentry reporting gate: tracks the saved diagnostics preference
+  // Effective diagnostics reporting gate: tracks the saved preference
   // with opt-out semantics, closing only for an explicit opt-out; absent reads
   // open once consent has hydrated. Decoupled from `shareDiagnostics` (the
   // saved preference) so consent-resolution paths can write it independently.

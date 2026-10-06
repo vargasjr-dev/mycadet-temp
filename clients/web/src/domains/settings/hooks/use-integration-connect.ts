@@ -7,7 +7,7 @@ import { usePluginUninstall } from "@/hooks/use-plugin-actions";
 import { requiresTenantHost } from "@/hooks/use-tenant-host-requirement";
 import { useTranslation } from "@/i18n";
 import { invalidatePluginQueries } from "@/lib/invalidate-plugin-queries";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import type { ManagedConnectReport } from "../components/managed-connect-controller";
 import type { ConnectAttempt } from "../components/integration-connect-modal";

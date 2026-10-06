@@ -81,7 +81,7 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
 }));
 
 const capturedErrors: unknown[] = [];
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: (error: unknown) => {
     capturedErrors.push(error);
   },

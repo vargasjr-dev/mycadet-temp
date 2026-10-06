@@ -79,8 +79,8 @@ export interface SessionReplayProvider {
  * (`/_sr/cdn/*` and `/_sr/ingest/*`), so ad-blockers and tracking-protection
  * don't silently break recordings.
  *
- * Owns lifecycle state so the control layer stays stateless (mirroring the
- * Sentry flavor's `getClientEnabled()`). The SDK cannot be fully un-init'd
+ * Owns lifecycle state so the control layer stays stateless. The SDK cannot be
+ * fully un-init'd
  * mid-page, so ingestion is gated live on consent via `shouldSendData` — `stop`
  * stays best-effort (it flips `active`, halting re-identify) and a hard reset
  * of the in-memory recorder only takes effect on the next reload.

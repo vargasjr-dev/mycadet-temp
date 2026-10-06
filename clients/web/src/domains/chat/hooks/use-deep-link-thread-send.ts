@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import * as Sentry from "@sentry/react";
 
 import { requestComposerFocus } from "@/domains/chat/composer-focus";
 import { useComposerStore } from "@/domains/chat/composer-store";
@@ -92,30 +91,21 @@ export function useDeepLinkThreadSend({
       return;
     }
     const store = usePendingDeepLinkStore.getState();
-    const breadcrumb = (outcome: string) => {
-      Sentry.addBreadcrumb({
-        category: "deeplink",
-        level: "info",
-        message: `sendToThread ${outcome}`,
-      });
-    };
 
     if (activeConversationId !== pending.threadId) {
       // Moved away mid-resolve: keep the text where the intent aimed it.
       const parked = store.consumePendingThreadSend();
       if (parked !== null) {
         useComposerStore.getState().saveDraft(parked.threadId, parked.message);
-        breadcrumb("saved as the target thread's draft: user navigated away");
       }
       return;
     }
 
-    const demote = (reason: string) => {
+    const demote = (_reason: string) => {
       const parked = store.consumePendingThreadSend();
       if (parked === null) {
         return;
       }
-      breadcrumb(`demoted to pre-fill: ${reason}`);
       store.setPendingComposerMessage(parked.message);
       requestComposerFocus();
     };

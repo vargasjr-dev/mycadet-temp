@@ -2,7 +2,7 @@
  * Once-per-page-load claim set for telemetry failure reporting.
  *
  * A telemetry failure is systemic, not per-event: it means this client emits
- * something a server contract refuses, so one Sentry report per condition
+ * something a server contract refuses, so one report per condition
  * shows it and one per flush would flood. The session-ingest and daemon-relay
  * senders share this set so their dedup semantics cannot drift; conditions
  * are namespaced strings (`rejected:<status>`, `dropped:<reason>`,

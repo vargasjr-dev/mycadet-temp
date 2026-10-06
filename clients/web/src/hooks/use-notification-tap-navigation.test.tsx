@@ -63,12 +63,6 @@ mock.module("@/assistant/switch-service", () => ({
   switchToResolvedAssistant: switchToResolvedAssistantMock,
 }));
 
-const sentryBreadcrumbMock = mock((_args: unknown) => undefined);
-mock.module("@sentry/react", () => ({
-  addBreadcrumb: sentryBreadcrumbMock,
-  captureException: () => {},
-}));
-
 const { useNotificationTapNavigation } =
   await import("./use-notification-tap-navigation");
 
@@ -121,7 +115,6 @@ beforeEach(() => {
   setNotificationTapHandlerMock.mockClear();
   postLocalNotificationMock.mockClear();
   switchToResolvedAssistantMock.mockReset();
-  sentryBreadcrumbMock.mockClear();
   window.history.pushState(null, "", "/");
   useAuthStore.setState({
     sessionStatus: "authenticated",
@@ -203,9 +196,6 @@ describe("useNotificationTapNavigation", () => {
     await sendTap({ sourceEventName: "x" });
 
     expect(received).toEqual([]);
-    expect(sentryBreadcrumbMock).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "tap_without_conversation" }),
-    );
   });
 
   test("switches back to the scoped origin before opening its conversation", async () => {
@@ -490,8 +480,5 @@ describe("useNotificationTapNavigation", () => {
     });
 
     expect(received).toEqual([]);
-    expect(sentryBreadcrumbMock).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "tap_assistant_switch_failed" }),
-    );
   });
 });

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { t } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
 import { publicBaseUrlRejectionMessage } from "@/utils/pairing-address";
 

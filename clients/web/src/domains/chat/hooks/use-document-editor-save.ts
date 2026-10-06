@@ -6,7 +6,7 @@ import {
   trackDocumentSave,
   type DocumentSaveTarget,
 } from "@/domains/chat/api/document-save";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 export interface DocumentEditorSnapshot {
   title: string;

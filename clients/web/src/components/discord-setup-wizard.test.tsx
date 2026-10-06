@@ -23,7 +23,7 @@ mock.module("@vellumai/design-library/components/toast", () => ({
   ...toastModule,
   toast: { ...toastModule.toast, success: () => {}, error: () => {} },
 }));
-mock.module("@/lib/sentry/capture-error", () => ({ captureError: () => {} }));
+mock.module("@/lib/error-reporting/capture-error", () => ({ captureError: () => {} }));
 
 const browserModule = await import("@/runtime/browser");
 let openedUrls: string[] = [];

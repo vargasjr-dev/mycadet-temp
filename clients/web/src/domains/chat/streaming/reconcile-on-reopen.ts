@@ -21,16 +21,14 @@
  *                  `reconcileActive()` to refresh the active
  *                  conversation's messages.
  *                  `"watchdog"` additionally records the rescue
- *                  outcome to Sentry so stalled-turn recoveries are
- *                  observable.
+ *                  outcome so stalled-turn recoveries are observable.
  *
  * Stateless module — every input is passed in via deps. The epoch
  * lives in a caller-owned ref so a later reopen can bump it and
  * stale completions self-cancel.
  */
 
-import * as Sentry from "@sentry/react";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import { useStreamStore } from "@/domains/chat/stream-store";
 import {
@@ -162,7 +160,7 @@ async function runTransportRecoveryReconcile(
   // Stale-epoch guard: two close-together reopens can race — if a
   // newer sse.opened has bumped the epoch while we were awaiting,
   // this completion is for a superseded epoch and must not touch the
-  // reconciliation loop or emit Sentry diagnostics that would mislead
+  // reconciliation loop or emit diagnostics that would mislead
   // the rescue metric. Without this, calling
   // startReconciliationLoop(staleEpoch) would cancel the newer loop
   // and then exit as stale, leaving no active loop running.
@@ -207,19 +205,7 @@ function recordWatchdogRescue(
     messagesAdded: reconcileResult.messagesAdded,
     assistantProgress: reconcileResult.assistantProgress,
   });
-  Sentry.addBreadcrumb({
-    category: "sse.watchdog",
-    level: "info",
-    message: "post_watchdog_reconcile_result",
-    data: {
-      latencyMs,
-      changed: reconcileResult.changed,
-      messagesAdded: reconcileResult.messagesAdded,
-      assistantProgress: reconcileResult.assistantProgress,
-    },
-  });
   // captureMessage removed — 94% of events had rescued=false (watchdog
   // reconnected but no messages were lost), providing no actionable
-  // signal. The breadcrumb above still attaches to any nearby Sentry
-  // event for debugging context. See LUM-2190.
+  // signal. See LUM-2190.
 }

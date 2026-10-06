@@ -2,7 +2,7 @@
  * Tests for the visibility/focus diagnostics-consent refresh.
  *
  * `fetchConsent`, the diagnostics chokepoint, and both stores are mocked so the
- * refresh trigger logic is observable without a server, DOM storage, or Sentry.
+ * refresh trigger logic is observable without a server, DOM storage, or the gate.
  * `resolveServerConsent` runs for real — it's a pure mapping over the fetched
  * record, so asserting what reaches the chokepoint exercises the real shape.
  */

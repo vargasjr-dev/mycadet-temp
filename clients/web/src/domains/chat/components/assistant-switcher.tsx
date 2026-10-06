@@ -26,7 +26,7 @@ import { AssistantNavItem } from "@/domains/chat/components/assistant-nav-item";
 import { AssistantSwitcherRow } from "@/domains/chat/components/assistant-switcher-row";
 import { canFetchRowAvatarViaPlatformProxy } from "@/hooks/use-chooser-row-avatar";
 import { versionSupportsAvatarStateManifest } from "@/lib/backwards-compat/avatar-state-manifest";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useConversationStore } from "@/stores/conversation-store";
 import type { ResolvedAssistant } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";

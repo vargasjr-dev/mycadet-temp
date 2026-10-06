@@ -29,7 +29,7 @@ import {
   channelsReadinessGetQueryKey,
   channelsReadinessRefreshPostMutation,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { extractErrorMessage } from "@/utils/api-errors";
 import { routes } from "@/utils/routes";

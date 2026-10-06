@@ -31,7 +31,7 @@ import {
   useSkillsByIdDeleteMutation,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useSkillDetailFiles } from "@/hooks/use-skill-detail-files";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";
 import {

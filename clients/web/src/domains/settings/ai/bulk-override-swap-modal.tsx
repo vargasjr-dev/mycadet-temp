@@ -28,7 +28,7 @@ import type {
   ConfigLlmCallsitesGetResponse,
 } from "@/generated/daemon/types.gen";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { badRequestMessage } from "@/utils/api-errors";
 
 // ---------------------------------------------------------------------------
@@ -201,7 +201,7 @@ export function BulkOverrideSwapModal({
       onClose();
     } catch (error) {
       // A 400 is the server's verdict on the selection itself (e.g. a
-      // profile that no longer exists). Show it verbatim and skip Sentry.
+      // profile that no longer exists). Show it verbatim and skip the report.
       const serverMessage = badRequestMessage(error);
       toast.error(
         serverMessage ?? t("bulkOverrideSwapModal.updateFailedToast"),

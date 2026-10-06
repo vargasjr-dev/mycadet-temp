@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import * as Sentry from "@sentry/react";
 
 import { requestComposerFocus } from "@/domains/chat/composer-focus";
 import { useComposerStore } from "@/domains/chat/composer-store";
@@ -38,17 +37,9 @@ export function usePendingEmailReferences({
       return;
     }
     const store = usePendingDeepLinkStore.getState();
-    const breadcrumb = (outcome: string) => {
-      Sentry.addBreadcrumb({
-        category: "inbox",
-        level: "info",
-        message: `composerEmails ${outcome}`,
-      });
-    };
 
     if (activeConversationId !== pending.threadId) {
       store.consumePendingComposerEmails();
-      breadcrumb("dropped: user landed in another conversation");
       return;
     }
 
@@ -57,12 +48,10 @@ export function usePendingEmailReferences({
       return;
     }
     if (Date.now() - parked.parkedAt > PENDING_COMPOSER_EMAILS_TTL_MS) {
-      breadcrumb("dropped: park expired");
       return;
     }
 
     useComposerStore.getState().addEmailReferences(parked.emails);
     requestComposerFocus();
-    breadcrumb("staged");
   }, [pending, activeConversationId]);
 }

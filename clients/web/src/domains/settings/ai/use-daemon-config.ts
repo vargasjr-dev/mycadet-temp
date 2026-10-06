@@ -15,7 +15,7 @@ import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { assertProvisionSuccess } from "@/domains/settings/ai/utils";
 import { t } from "@/i18n";
 import { secretsPost } from "@/generated/daemon/sdk.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { toast } from "@vellumai/design-library/components/toast";
 
 // ---------------------------------------------------------------------------

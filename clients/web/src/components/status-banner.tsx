@@ -40,7 +40,7 @@ import { useConnectivityState } from "@/hooks/use-connectivity-state";
 import { useNetworkStatus } from "@/hooks/use-network-status";
 import { useResumeGrace } from "@/hooks/use-resume-grace";
 import { isCliWakeableAssistant } from "@/lib/local-mode";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { isElectron } from "@/runtime/is-electron";
 import {
   isLocalModeHostAvailable,

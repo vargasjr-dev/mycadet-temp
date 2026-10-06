@@ -10,31 +10,8 @@
  * Reference: https://vite.dev/guide/env-and-mode#intellisense-for-typescript
  */
 interface ImportMetaEnv {
-  /**
-   * Sentry DSN for browser error reporting. Injected by CI/CD pipeline.
-   *
-   * DSN-selection contract: the shared clients/web bundle resolves its Sentry
-   * DSN per host — web → `VITE_SENTRY_DSN` (vellum-assistant-web), macOS
-   * Electron → `VITE_SENTRY_DSN_MACOS` (vellum-assistant-macos), Windows
-   * Electron → `VITE_SENTRY_DSN_WINDOWS` (vellum-assistant-windows), Linux
-   * Electron → `VITE_SENTRY_DSN_LINUX` (vellum-assistant-linux), iOS →
-   * `VITE_SENTRY_DSN_IOS` (vellum-assistant-ios), Android →
-   * `VITE_SENTRY_DSN_ANDROID` (vellum-assistant-android). The runtime selector
-   * (`resolveDsn` in `sentry-init.ts`) reads these per host.
-   */
-  readonly VITE_SENTRY_DSN?: string;
-  /** Sentry DSN for the macOS Electron renderer (vellum-assistant-macos). See DSN-selection contract above. */
-  readonly VITE_SENTRY_DSN_MACOS?: string;
-  /** Sentry DSN for the Windows Electron renderer (vellum-assistant-windows). See DSN-selection contract above. */
-  readonly VITE_SENTRY_DSN_WINDOWS?: string;
-  /** Sentry DSN for the Linux Electron renderer (vellum-assistant-linux). See DSN-selection contract above. */
-  readonly VITE_SENTRY_DSN_LINUX?: string;
-  /** Sentry DSN for the iOS webview (vellum-assistant-ios). See DSN-selection contract above. */
-  readonly VITE_SENTRY_DSN_IOS?: string;
-  /** Sentry DSN for the Android webview (vellum-assistant-android). See DSN-selection contract above. */
-  readonly VITE_SENTRY_DSN_ANDROID?: string;
-  /** Sentry environment tag (e.g. "production", "staging"). */
-  readonly VITE_SENTRY_ENVIRONMENT?: string;
+  /** Session-replay environment tag (e.g. "production", "staging"). */
+  readonly VITE_SESSION_REPLAY_ENVIRONMENT?: string;
   /**
    * Session-replay app ID. A single ID across all hosts (web / Electron / iOS):
    * replay records the web DOM, so one project covers every surface and the host

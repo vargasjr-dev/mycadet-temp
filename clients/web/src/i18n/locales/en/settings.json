@@ -722,8 +722,7 @@
     "sectionsAriaLabel": "Developer sections",
     "tabFeatureFlags": "Feature Flags",
     "tabLifecycle": "Assistant Lifecycle",
-    "tabMemory": "Memory",
-    "tabSentry": "Sentry Testing"
+    "tabMemory": "Memory"
   },
   "doctorChatBlocks": {
     "allowOnce": "Allow once",
@@ -1866,26 +1865,6 @@
     "runsFor": "Runs for {name} in the last 7 days: {runs}",
     "unknownStatus": "unknown",
     "viewUsageFor": "View usage for {name}"
-  },
-  "sentryTestingPanel": {
-    "errorDescription": "Capture a test Error exception.",
-    "errorLabel": "Error Event",
-    "errorSentToast": "Sentry error event sent.",
-    "fatalDescription": "Send a fatal-level event to Sentry.",
-    "fatalLabel": "Fatal Event",
-    "fatalSentToast": "Sentry fatal event sent.",
-    "infoDescription": "Send an info-level message.",
-    "infoLabel": "Info Event",
-    "infoSentToast": "Sentry info event sent.",
-    "performanceDescription": "Start and end a test transaction span.",
-    "performanceLabel": "Performance Transaction",
-    "send": "Send",
-    "subtitle": "Fire test events to verify Sentry integration is working.",
-    "title": "Sentry Testing",
-    "transactionSentToast": "Sentry performance transaction sent.",
-    "warningDescription": "Send a warning-level message.",
-    "warningLabel": "Warning Event",
-    "warningSentToast": "Sentry warning event sent."
   },
   "shortcutsSections": {
     "alreadyUsedBy": "Already used by {label}",

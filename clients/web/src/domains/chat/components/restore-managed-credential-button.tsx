@@ -17,7 +17,7 @@ import {
   type LocalPlatformCredentialRecoveryReason,
   recoverLocalAssistantPlatformCredential,
 } from "@/lib/local-platform-identity";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { Button } from "@vellumai/design-library";
 import { toast } from "@vellumai/design-library/components/toast";
 

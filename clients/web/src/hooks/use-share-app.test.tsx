@@ -17,7 +17,7 @@ import {
 import { act, cleanup, renderHook } from "@testing-library/react";
 import * as toastModule from "@vellumai/design-library/components/toast";
 
-import * as captureErrorModule from "@/lib/sentry/capture-error";
+import * as captureErrorModule from "@/lib/error-reporting/capture-error";
 import type { AppSummary } from "@/types/app-types";
 
 interface RaisedToast {
@@ -48,7 +48,7 @@ mock.module("@vellumai/design-library/components/toast", () => ({
   },
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   ...captureErrorModule,
   captureError: (err: unknown, options?: { context?: string }) => {
     captured.push({ err, context: options?.context });
@@ -117,7 +117,7 @@ describe("useShareApp", () => {
     expect(successes).toHaveLength(0);
   });
 
-  test("reports the failure to Sentry as well as the toast", async () => {
+  test("reports the failure as well as the toast", async () => {
     const failure = new Error("no bundle");
     shareResult = Promise.reject(failure);
     const { result } = renderShare();

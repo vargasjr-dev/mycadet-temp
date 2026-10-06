@@ -91,8 +91,7 @@ interface CollectedDeclarations {
 
 async function runReconcilePass(): Promise<void> {
   // The pass is pure DB reads/writes over cron_jobs; refuse to touch a
-  // partially-migrated schema (see assistant/CLAUDE.md, DB migration
-  // readiness gating). A skipped pass is retried by the periodic sweep.
+  // partially-migrated schema. A skipped pass is retried by the periodic sweep.
   if (!getDbMigrationReadiness().ready) {
     return;
   }

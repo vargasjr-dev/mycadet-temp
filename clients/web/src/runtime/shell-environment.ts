@@ -1,7 +1,7 @@
 /**
  * Which build of the native shell is hosting the running web bundle.
  *
- * `VITE_SENTRY_ENVIRONMENT` answers a different question: it names the web
+ * `VITE_ENVIRONMENT` answers a different question: it names the web
  * bundle's own deploy, and any installed shell can load any deploy, so an App
  * Staging build pointed at a dev server reports "dev" while its home screen
  * still holds the Staging icon. Anything depicting the shell itself, rather

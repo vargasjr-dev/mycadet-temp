@@ -74,7 +74,7 @@ src/
   hooks/                     # cross-domain shared hooks
   utils/                     # cross-domain shared utilities (pure functions)
   types/                     # cross-domain shared types
-  lib/                       # configured third-party wrappers (API client, Sentry, CSRF)
+  lib/                       # configured third-party wrappers (API client, CSRF)
     streaming/               #   SSE transport, event parsing, debug tracking
     diagnostics.ts            #   session diagnostics ring buffer
   runtime/                   # framework adapters, platform bridges

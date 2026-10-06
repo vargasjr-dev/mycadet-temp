@@ -13,7 +13,7 @@ import userEvent from "@testing-library/user-event";
 import { toast } from "@vellumai/design-library/components/toast";
 import { createRef } from "react";
 
-import type * as ErrorCapture from "@/lib/sentry/capture-error";
+import type * as ErrorCapture from "@/lib/error-reporting/capture-error";
 import type { OpenedDocumentState } from "@/stores/viewer-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
@@ -47,7 +47,7 @@ mock.module(
   }),
 );
 mock.module(
-  "@/lib/sentry/capture-error",
+  "@/lib/error-reporting/capture-error",
   (): Partial<typeof ErrorCapture> => ({
     captureError,
   }),

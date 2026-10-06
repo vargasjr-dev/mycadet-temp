@@ -15,7 +15,7 @@ import {
   test,
 } from "bun:test";
 
-import * as captureErrorModule from "@/lib/sentry/capture-error";
+import * as captureErrorModule from "@/lib/error-reporting/capture-error";
 import * as daemonSdk from "@/generated/daemon/sdk.gen";
 import { ApiError } from "@/utils/api-errors";
 
@@ -57,7 +57,7 @@ const saveFile = mock(
 );
 mock.module("@/runtime/native-file", () => ({ saveFile }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   ...captureErrorModule,
   captureError: (
     err: unknown,

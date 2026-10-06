@@ -8,11 +8,7 @@ import {
   configureFeedback,
   installFeedbackIpc,
 } from "@vellumai/electron-desktop/feedback";
-import {
-  configureSentryMain,
-  initSentryMain,
-  setShareDiagnostics,
-} from "@vellumai/electron-desktop/sentry";
+import { writeSetting as writeSharedSetting } from "@vellumai/electron-desktop/settings";
 import {
   readSetting,
   writeSetting,
@@ -24,9 +20,7 @@ import { handle, on } from "./ipc";
 import { getLogFilePaths } from "./logger";
 import { getSessionToken } from "./session-token-store.client";
 
-declare const __VELLUM_BUILD_SHA__: string;
 declare const __VELLUM_ENVIRONMENT__: string;
-declare const __SENTRY_DSN_MACOS__: string;
 
 const releaseChannel =
   typeof __VELLUM_ENVIRONMENT__ === "string"
@@ -45,20 +39,6 @@ configureFeedback({
   hasSession: () => getSessionToken() !== null,
 });
 
-configureSentryMain({
-  dsn:
-    typeof __SENTRY_DSN_MACOS__ === "string" ? __SENTRY_DSN_MACOS__ : "",
-  environment: releaseChannel,
-  release:
-    typeof __VELLUM_BUILD_SHA__ === "string"
-      ? __VELLUM_BUILD_SHA__
-      : undefined,
-  tags: () => ({
-    install_location: getInstallLocation(),
-    app_version: app.getVersion(),
-  }),
-});
-
 export const installFeatureFlagsIpc = (): void => {
   installSharedFeatureFlagsIpc(
     { on },
@@ -67,7 +47,12 @@ export const installFeatureFlagsIpc = (): void => {
 };
 
 export const installDiagnosticsIpc = (): void => {
-  installSharedDiagnosticsIpc({ on }, setShareDiagnostics);
+  // Persist the renderer's effective diagnostics consent. Sentry reporting
+  // is gone; this keeps the user's choice durable for the settings surface.
+  installSharedDiagnosticsIpc(
+    { on },
+    (enabled) => writeSharedSetting("shareDiagnostics", enabled),
+  );
 };
 
-export { initSentryMain, installFeedbackIpc };
+export { installFeedbackIpc };

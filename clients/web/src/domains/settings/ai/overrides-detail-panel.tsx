@@ -35,7 +35,7 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useLlmConfigPatch } from "@/domains/settings/ai/use-llm-config-patch";
 import { useSupportsCompleteProfileSnapshots } from "@/lib/backwards-compat/complete-profile-snapshots";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useTranslation } from "@/i18n";
 import { SectionLabel } from "@/components/detail-primitives";
 import { DetailShell, DetailShellLoading } from "@/components/detail-shell";

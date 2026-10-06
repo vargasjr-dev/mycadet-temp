@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, type ComponentProps } from "react";
 import { changeLocale, SUPPORTED_LOCALES, type SupportedLocale } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import { CompanionIntro } from "./companion-intro";
 import { introPermission as permission } from "./companion-intro-fixtures";

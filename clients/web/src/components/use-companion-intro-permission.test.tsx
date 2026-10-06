@@ -61,7 +61,7 @@ mock.module("@/runtime/permission-setup", () => ({
   cancelPermissionGuide: cancelGuide,
 }));
 const reportError = mock(() => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: reportError,
 }));
 mock.module("@/runtime/system-permissions", () => ({

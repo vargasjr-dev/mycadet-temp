@@ -715,8 +715,7 @@
     "sectionsAriaLabel": "开发者部分",
     "tabFeatureFlags": "功能标志",
     "tabLifecycle": "助手生命周期",
-    "tabMemory": "内存",
-    "tabSentry": "Sentry 测试"
+    "tabMemory": "内存"
   },
   "doctorChatBlocks": {
     "allowOnce": "允许一次",
@@ -1760,26 +1759,6 @@
     "runsFor": "{name} 在过去 7 天的运行次数：{runs}",
     "unknownStatus": "未知",
     "viewUsageFor": "查看 {name} 的使用情况"
-  },
-  "sentryTestingPanel": {
-    "errorDescription": "捕获一个测试错误异常。",
-    "errorLabel": "错误事件",
-    "errorSentToast": "Sentry 错误事件已发送。",
-    "fatalDescription": "向 Sentry 发送一个致命级别事件。",
-    "fatalLabel": "致命事件",
-    "fatalSentToast": "Sentry 致命事件已发送。",
-    "infoDescription": "发送一个信息级别消息。",
-    "infoLabel": "信息事件",
-    "infoSentToast": "Sentry 信息事件已发送。",
-    "performanceDescription": "开始和结束一个测试事务跨度。",
-    "performanceLabel": "性能事务",
-    "send": "发送",
-    "subtitle": "触发测试事件以验证 Sentry 集成是否正常工作。",
-    "title": "Sentry 测试",
-    "transactionSentToast": "Sentry 性能事务已发送。",
-    "warningDescription": "发送一个警告级别消息。",
-    "warningLabel": "警告事件",
-    "warningSentToast": "Sentry 警告事件已发送。"
   },
   "shortcutsSections": {
     "alreadyUsedBy": "已被 {label} 使用",

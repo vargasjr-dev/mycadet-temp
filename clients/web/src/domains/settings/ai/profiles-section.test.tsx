@@ -70,7 +70,7 @@ mock.module("@vellumai/design-library/components/toast", () => ({
   ToastContent: () => null,
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: (_error: unknown, options?: { context?: string }) => {
     capturedErrorContexts.push(options?.context ?? "");
   },
@@ -473,7 +473,7 @@ describe("ProfilesSection - Make Default on the validated route", () => {
   test("a refused selection surfaces the daemon's reason verbatim and isn't reported", async () => {
     // The 400 is the daemon's verdict on the selection itself - a config
     // problem the user can fix, so generic retry copy would send them round
-    // the same failing loop and a Sentry report would be noise.
+    // the same failing loop and an error report would be noise.
     activeProfileError = new ApiError(
       400,
       'No API key for provider "gemini". Add one first.',

@@ -113,8 +113,8 @@ stubModule(
 );
 
 stubModule(
-  "@/lib/sentry/capture-error",
-  await import("@/lib/sentry/capture-error"),
+  "@/lib/error-reporting/capture-error",
+  await import("@/lib/error-reporting/capture-error"),
   { captureError: captureErrorMock },
 );
 

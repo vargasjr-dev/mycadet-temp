@@ -52,7 +52,7 @@ export function useSightFrameReclaimer(): void {
           // Logged, not filed. A refusal is the ORDINARY answer here: a
           // session boundary queues every send the assistant never
           // acknowledged, most of those did persist, and the daemon refuses to
-          // delete a row a message links. Filing each one would open a Sentry
+          // delete a row a message links. Filing each one would open a report
           // issue on every call that had the camera open, which buries the
           // failures worth reading.
           console.warn(

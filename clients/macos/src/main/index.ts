@@ -72,7 +72,6 @@ import {
   setDictationRecording,
 } from "./escape-monitor";
 import {
-  initSentryMain,
   installDiagnosticsIpc,
   installFeatureFlagsIpc,
   installFeedbackIpc,
@@ -195,8 +194,6 @@ if (app.isPackaged) {
     app.setPath("userData", `${base}-${env}`);
   }
 }
-
-initSentryMain();
 
 // Single-instance lock: relaunches focus the existing window instead of
 // spawning a parallel main process. The second-instance handler fires on the

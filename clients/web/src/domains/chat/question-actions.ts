@@ -7,7 +7,7 @@
  */
 
 import { t } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { useInteractionStore } from "@/domains/chat/interaction-store";
@@ -120,7 +120,7 @@ export async function handleQuestionResponse(
         return;
       }
       // The assistant's own message describes a body this client built, so it
-      // goes to Sentry rather than in front of the user, who never chose the
+      // goes to the error report rather than in front of the user, who never chose the
       // payload and cannot correct it.
       captureSubmissionRejection("submit_question_response", result);
       reportSubmissionFailure(
@@ -178,7 +178,7 @@ export function handleDismissPendingQuestion(): void {
       // A 404 on close is the expected outcome, not a failure: the card is
       // being dismissed precisely because the user is done with it, and the
       // daemon may already have settled the prompt itself (timeout, abort,
-      // supersession). Reporting it produced steady Sentry noise with no
+      // supersession). Reporting it produced steady noise with no
       // actionable signal. Every other status still reports.
       if (!result.ok && result.status !== 404) {
         captureError(

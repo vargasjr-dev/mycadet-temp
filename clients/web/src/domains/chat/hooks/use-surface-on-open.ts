@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { surfaceConversation } from "@/domains/chat/api/conversations";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import type { AssistantState } from "@/assistant/types";
 import type { Conversation } from "@/types/conversation-types";
 import {

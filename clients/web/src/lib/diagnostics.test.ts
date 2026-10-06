@@ -4,7 +4,7 @@ import { bucketMessagesAdded, bucketTurnAge } from "@/lib/diagnostics";
 
 describe("bucketMessagesAdded", () => {
   // Buckets must stay low-cardinality so the values are aggregable
-  // as Sentry tags. Bands are chosen so 0 (no rescue) and 1 (single
+  // as diagnostic bands. Bands are chosen so 0 (no rescue) and 1 (single
   // missed message — the iOS watchdog shape) are distinguishable, and
   // larger rescues collapse into coarser buckets where the exact
   // count matters less than "this happened."

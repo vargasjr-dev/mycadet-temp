@@ -9,7 +9,7 @@ import { isAuthenticated, isSessionSettled } from "@/stores/session-status";
 import { isLocalClient, hasAssistants } from "@/lib/local-mode";
 import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
 import { buildNavigationState } from "@/lib/navigation/build-state";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { markBoot } from "@/lib/telemetry/boot-telemetry";
 import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";

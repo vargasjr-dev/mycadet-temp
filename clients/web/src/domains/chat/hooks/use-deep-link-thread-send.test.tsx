@@ -31,12 +31,6 @@ mock.module("@/hooks/conversation-queries", () => ({
   }),
 }));
 
-const sentryBreadcrumbMock = mock((_args: unknown) => undefined);
-mock.module("@sentry/react", () => ({
-  addBreadcrumb: sentryBreadcrumbMock,
-  captureException: () => {},
-}));
-
 import { consumePendingComposerFocus } from "@/domains/chat/composer-focus";
 import { useComposerStore } from "@/domains/chat/composer-store";
 import {
@@ -77,7 +71,6 @@ function renderSend(initial: Props) {
 beforeEach(() => {
   __resetPendingDeepLinkForTesting();
   consumePendingComposerFocus();
-  sentryBreadcrumbMock.mockClear();
   listState = { conversations: [], isPending: true, isError: false };
   const composer = useComposerStore.getState();
   composer.setInput("");
@@ -162,7 +155,6 @@ describe("useDeepLinkThreadSend", () => {
     expect(useComposerStore.getState().input).toBe("");
     composer.restoreDraftIfEmpty("abc-123");
     expect(useComposerStore.getState().input).toBe("gym done");
-    expect(sentryBreadcrumbMock).toHaveBeenCalledTimes(1);
   });
 
   it("demotes to a pre-fill when the loaded foreground list does not contain the target", () => {
@@ -187,7 +179,6 @@ describe("useDeepLinkThreadSend", () => {
       "gym done",
     );
     expect(consumePendingComposerFocus()).toBe(true);
-    expect(sentryBreadcrumbMock).toHaveBeenCalledTimes(1);
   });
 
   it("does not treat an errored list as proof of absence", () => {

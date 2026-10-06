@@ -11,7 +11,7 @@ import {
 } from "@/assistant/generated/web-fetch-provider-catalog.gen";
 import { secretPlaceholder } from "@/domains/settings/ai/secret-placeholder";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   getLocalSetting,
   removeLocalSetting,

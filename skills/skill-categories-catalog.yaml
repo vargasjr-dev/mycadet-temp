@@ -90,7 +90,5 @@ categories:
   - slug: integrations
     label: Integrations
     description: >-
-      Connect to third-party services like Linear,
-      GitHub, and Notion. Extend your assistant with powerful
-      integrations.
+      Connect to third-party services.
     icon: link-2

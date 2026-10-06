@@ -21,7 +21,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { conversationsSeenPost } from "@/generated/daemon/sdk.gen";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   cancelConversationQueries,
   findConversation,

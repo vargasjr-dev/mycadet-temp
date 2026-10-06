@@ -8,7 +8,7 @@ import {
   useMemoryWorkerStopPostMutation,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { toast } from "@vellumai/design-library/components/toast";
 import { Toggle } from "@vellumai/design-library/components/toggle";
 

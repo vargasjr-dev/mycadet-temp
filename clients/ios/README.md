@@ -269,7 +269,7 @@ on the bare host lands on the marketing page, whose CTA redirects to
 
 **Do not** switch to a static `vite build` output that bundles web
 assets into the IPA. We deliberately serve from the live web origin
-so SSE streaming, Sentry sourcemaps, auth cookies, and feature flags
+so SSE streaming, auth cookies, and feature flags
 all keep working unchanged.
 
 ### CapacitorHttp is deliberately off

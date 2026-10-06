@@ -1,6 +1,6 @@
 import { toast } from "@vellumai/design-library/components/toast";
 
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 interface CopyToClipboardOptions {
   /**

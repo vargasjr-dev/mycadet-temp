@@ -126,7 +126,7 @@ mock.module("@/assistant/lifecycle-service", () => ({
   },
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 

@@ -29,7 +29,7 @@ mock.module("@vellumai/design-library/components/toast", () => ({
     error: () => {},
   },
 }));
-mock.module("@/lib/sentry/capture-error", () => ({ captureError: () => {} }));
+mock.module("@/lib/error-reporting/capture-error", () => ({ captureError: () => {} }));
 
 const { useCopyToClipboard } = await import("@/hooks/use-copy-to-clipboard");
 

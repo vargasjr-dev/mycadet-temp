@@ -11,7 +11,7 @@ import { paneState } from "@/stores/pane-state";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import { t } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 
 import type { DocumentViewerContainerHandle } from "../components/document-viewer-container";
 import type { ComposerSendPreparation } from "./use-composer-submit";

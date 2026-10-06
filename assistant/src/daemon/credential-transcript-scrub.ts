@@ -182,8 +182,7 @@ function escapeLikeLiteral(literal: string): string {
 
 function sweepDbMessages(targets: readonly string[]): number {
   // Module contract: callers can invoke this at any point in the daemon
-  // lifecycle, so readiness is checked rather than assumed (see
-  // assistant/CLAUDE.md § DB migration readiness gating).
+  // lifecycle, so DB migration readiness is checked rather than assumed.
   if (!getDbMigrationReadiness().ready) {
     log.warn(
       "DB migrations not ready; skipping credential transcript DB sweep",

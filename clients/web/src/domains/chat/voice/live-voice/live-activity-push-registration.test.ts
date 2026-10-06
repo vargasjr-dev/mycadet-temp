@@ -63,7 +63,7 @@ mock.module("@/generated/api/sdk.gen", () => ({
 // ── Sentry capture-error ─────────────────────────────────────────────────────
 
 const captureErrorMock = mock(() => {});
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: captureErrorMock,
 }));
 

@@ -223,13 +223,10 @@ mock.module("react-router", () => ({
   useSearchParams: () => [searchParams],
 }));
 
-mock.module("@/lib/sentry/capture-error", () => ({
+mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 
-mock.module("@sentry/react", () => ({
-  captureMessage: () => {},
-}));
 
 const stableQueryClient = {};
 mock.module("@tanstack/react-query", () => ({
@@ -535,8 +532,8 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
 
   test("skip_research hands off to chat instead of the research funnel", async () => {
     const env = import.meta.env as Record<string, string | undefined>;
-    const previousEnv = env.VITE_SENTRY_ENVIRONMENT;
-    env.VITE_SENTRY_ENVIRONMENT = "staging";
+    const previousEnv = env.VITE_ENVIRONMENT;
+    env.VITE_ENVIRONMENT = "staging";
     searchParams = new URLSearchParams("skip_research=1");
     subscriptionPlanId = "base";
     onboardingData = { max_machine_tier: null, selected_storage_gib: null };
@@ -551,7 +548,7 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
         replace: true,
       });
     } finally {
-      env.VITE_SENTRY_ENVIRONMENT = previousEnv;
+      env.VITE_ENVIRONMENT = previousEnv;
     }
   });
 

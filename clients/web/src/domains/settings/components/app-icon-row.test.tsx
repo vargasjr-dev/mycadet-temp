@@ -324,8 +324,8 @@ function runOnAndroidShell(appId: string) {
 beforeEach(() => {
   // The default thumbnail follows the shell it runs in, so every test that is
   // not about that runs in the one users install.
-  previousBuildEnv = buildEnv.VITE_SENTRY_ENVIRONMENT;
-  buildEnv.VITE_SENTRY_ENVIRONMENT = "production";
+  previousBuildEnv = buildEnv.VITE_ENVIRONMENT;
+  buildEnv.VITE_ENVIRONMENT = "production";
   shellAppId = "ai.vocify-inc.vellum-assistant-ios";
   avatarState = CHARACTER;
   nativeIOS = true;
@@ -338,7 +338,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  buildEnv.VITE_SENTRY_ENVIRONMENT = previousBuildEnv;
+  buildEnv.VITE_ENVIRONMENT = previousBuildEnv;
   restoreDisplayP3Support();
   cleanup();
   getAppIconState.mockClear();
@@ -439,7 +439,7 @@ describe("AppIconRow", () => {
     });
 
     test("keeps a production shell green on a dev web deploy", async () => {
-      buildEnv.VITE_SENTRY_ENVIRONMENT = "dev";
+      buildEnv.VITE_ENVIRONMENT = "dev";
 
       await renderRow();
 
@@ -450,7 +450,7 @@ describe("AppIconRow", () => {
     });
 
     test("falls back to the build environment for an unknown shell", async () => {
-      buildEnv.VITE_SENTRY_ENVIRONMENT = "staging";
+      buildEnv.VITE_ENVIRONMENT = "staging";
       shellAppId = "com.example.some-other-shell";
 
       await renderRow();
@@ -461,7 +461,7 @@ describe("AppIconRow", () => {
     });
 
     test("draws the Dev field for a local build, which runs App Dev", async () => {
-      delete buildEnv.VITE_SENTRY_ENVIRONMENT;
+      delete buildEnv.VITE_ENVIRONMENT;
       shellAppId = null;
 
       await renderRow();
@@ -486,7 +486,7 @@ describe("AppIconRow", () => {
 
     test("paints the sRGB ground off a build environment too", async () => {
       dropDisplayP3Support();
-      buildEnv.VITE_SENTRY_ENVIRONMENT = "staging";
+      buildEnv.VITE_ENVIRONMENT = "staging";
       shellAppId = "com.example.some-other-shell";
 
       await renderRow();

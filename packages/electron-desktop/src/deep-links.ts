@@ -151,7 +151,7 @@ const ACCEPTED_SCHEMES = resolveAcceptedSchemes(currentEnv);
  *     than falling to `unknown`: the user clicked a connect link, so
  *     the renderer routes them to the connect flow with guidance.
  *     `code` is credential material: never logged, and never echoed
- *     on an `unknown` URL (which the renderer breadcrumbs to Sentry).
+ *     on an `unknown` URL (which the renderer logs).
  *   - `vellum://billing/checkout-complete?status=…&session_id=…` →
  *     `{ kind: "billingCheckoutComplete", status, sessionId, flow }`.
  *     The platform bounces a native-initiated Stripe Checkout here
@@ -186,7 +186,7 @@ export const parseVellumUrl = (input: string): DeepLink => {
   }
   if (url.host === "billing") {
     // Never echo the query back on the `unknown` fallbacks — the renderer
-    // logs that URL as a Sentry breadcrumb, and it may carry a session id.
+    // logs that URL, and it may carry a session id.
     const withoutQuery = `${url.protocol}//${url.host}${url.pathname}`;
     const segment = url.pathname.replace(/^\/+/, "").split("/")[0];
     if (segment !== "checkout-complete") {

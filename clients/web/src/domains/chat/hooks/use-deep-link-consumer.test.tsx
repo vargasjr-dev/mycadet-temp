@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
 import { useComposerStore } from "@/domains/chat/composer-store";
@@ -7,12 +7,6 @@ import {
   __resetPendingDeepLinkForTesting,
   usePendingDeepLinkStore,
 } from "@/stores/pending-deep-link-store";
-
-const sentryBreadcrumbMock = mock((_args: unknown) => undefined);
-mock.module("@sentry/react", () => ({
-  addBreadcrumb: sentryBreadcrumbMock,
-  captureException: () => {},
-}));
 
 const { useDeepLinkConsumer } = await import("./use-deep-link-consumer");
 
@@ -28,7 +22,6 @@ beforeEach(() => {
   // fullReset only clears attachments — reset the draft fields this suite drives.
   useComposerStore.setState({ input: "", restoredDraftConversationId: null });
   useConversationStore.setState({ activeConversationId: null });
-  sentryBreadcrumbMock.mockClear();
 });
 
 afterEach(() => {
@@ -51,13 +44,12 @@ describe("pending message consumption", () => {
     );
   });
 
-  test("preserves in-progress typing — drops with a Sentry breadcrumb", () => {
+  test("preserves in-progress typing — drops the link", () => {
     usePendingDeepLinkStore.getState().setPendingComposerMessage("from link");
 
     renderConsumer("user already typing");
 
     expect(useComposerStore.getState().input).toBe("user already typing");
-    expect(sentryBreadcrumbMock).toHaveBeenCalled();
     // Message is consumed (cleared) either way — we don't want it to
     // sit and resurface on the next render.
     expect(usePendingDeepLinkStore.getState().pendingComposerMessage).toBe(
@@ -89,14 +81,12 @@ describe("pending message consumption", () => {
     expect(useComposerStore.getState().input).toBe("from link");
     // The restored-draft notice is retired since the deeplink replaced it.
     expect(useComposerStore.getState().restoredDraftConversationId).toBe(null);
-    expect(sentryBreadcrumbMock).not.toHaveBeenCalled();
   });
 
   test("no-op when no message is pending", () => {
     renderConsumer("");
 
     expect(useComposerStore.getState().input).toBe("");
-    expect(sentryBreadcrumbMock).not.toHaveBeenCalled();
   });
 
   test("a pending message arriving after mount fires the effect on the next render", () => {

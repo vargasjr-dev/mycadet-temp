@@ -235,7 +235,7 @@ export function buildDiagnosticsSnapshot(
 // Event summarization
 // ---------------------------------------------------------------------------
 
-/** Bucket a message count into a low-cardinality Sentry tag band. */
+/** Bucket a message count into a low-cardinality diagnostic band. */
 export function bucketMessagesAdded(count: number): string {
   if (!Number.isFinite(count) || count <= 0) {
     return "0";

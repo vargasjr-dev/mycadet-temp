@@ -701,8 +701,7 @@
     "sectionsAriaLabel": "Разделы для разработчиков",
     "tabFeatureFlags": "Флаги функций",
     "tabLifecycle": "Жизненный цикл ассистента",
-    "tabMemory": "Память",
-    "tabSentry": "Тесты Sentry"
+    "tabMemory": "Память"
   },
   "doctorChatBlocks": {
     "allowOnce": "Разрешить один раз",
@@ -1765,26 +1764,6 @@
     "runsFor": "Запуски {name} за последние 7 дней: {runs}",
     "unknownStatus": "неизвестно",
     "viewUsageFor": "Смотреть использование {name}"
-  },
-  "sentryTestingPanel": {
-    "errorDescription": "Захватить тестовое исключение Error.",
-    "errorLabel": "Событие Error",
-    "errorSentToast": "Событие ошибки Sentry отправлено.",
-    "fatalDescription": "Отправить событие уровня fatal в Sentry.",
-    "fatalLabel": "Событие Fatal",
-    "fatalSentToast": "Событие fatal Sentry отправлено.",
-    "infoDescription": "Отправить сообщение уровня info.",
-    "infoLabel": "Событие Info",
-    "infoSentToast": "Событие info Sentry отправлено.",
-    "performanceDescription": "Начать и завершить тестовый span транзакции.",
-    "performanceLabel": "Транзакция производительности",
-    "send": "Отправить",
-    "subtitle": "Отправка тестовых событий, чтобы проверить, что интеграция Sentry работает.",
-    "title": "Тесты Sentry",
-    "transactionSentToast": "Транзакция производительности Sentry отправлена.",
-    "warningDescription": "Отправить сообщение уровня warning.",
-    "warningLabel": "Событие Warning",
-    "warningSentToast": "Событие warning Sentry отправлено."
   },
   "shortcutsSections": {
     "alreadyUsedBy": "Уже занято: {label}",

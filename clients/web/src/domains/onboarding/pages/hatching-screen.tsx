@@ -1,5 +1,4 @@
-import { captureError } from "@/lib/sentry/capture-error";
-import * as Sentry from "@sentry/react";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -566,9 +565,9 @@ export function HatchingScreen() {
         // 201 = newly created; 200 = an existing assistant was returned.
         createdFreshAssistant = result.ok && result.status === 201;
         if (!result.ok) {
-          Sentry.captureMessage("Onboarding hatch request failed", {
-            level: "warning",
-            extra: { status: result.status, error: result.error },
+          console.warn("Onboarding hatch request failed", {
+            status: result.status,
+            error: result.error,
           });
           if (isPlatformHostedDisabled(result.status, result.error)) {
             setError(PLATFORM_HOSTED_DISABLED_MESSAGE);
@@ -656,9 +655,9 @@ export function HatchingScreen() {
         // The provisioning wait ran its course but the assistant never came
         // back. Completing here would hand the user an unreachable assistant,
         // so surface the same recoverable failure the other hatch timeouts do.
-        Sentry.captureMessage("Onboarding hatch wait exceeded timeout", {
-          level: "warning",
-          extra: { maxWaitMs: MAX_HATCH_WAIT_MS, stage: "post_resize_health" },
+        console.warn("Onboarding hatch wait exceeded timeout", {
+          maxWaitMs: MAX_HATCH_WAIT_MS,
+          stage: "post_resize_health",
         });
         setError(
           "Your assistant is taking longer than expected. Please try again.",
@@ -674,9 +673,8 @@ export function HatchingScreen() {
         return;
       }
       if (Date.now() - pollStartMs >= MAX_HATCH_WAIT_MS) {
-        Sentry.captureMessage("Onboarding hatch wait exceeded timeout", {
-          level: "warning",
-          extra: { maxWaitMs: MAX_HATCH_WAIT_MS },
+        console.warn("Onboarding hatch wait exceeded timeout", {
+          maxWaitMs: MAX_HATCH_WAIT_MS,
         });
         setError(
           "Your assistant is taking longer than expected. Please try again.",

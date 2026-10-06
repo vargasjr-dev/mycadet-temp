@@ -24,7 +24,7 @@ import {
   conversationsByIdUnarchivePost,
 } from "@/generated/daemon/sdk.gen";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import type { Conversation } from "@/types/conversation-types";
 import { invalidateConversationQueries } from "@/utils/conversation-cache";
 import { useDisplayConversationTitle } from "@/utils/conversation-title";

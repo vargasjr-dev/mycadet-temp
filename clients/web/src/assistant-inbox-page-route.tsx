@@ -46,7 +46,7 @@ import {
   channelsReadinessRefreshPostMutation,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { usePendingDeepLinkStore } from "@/stores/pending-deep-link-store";
 import { extractErrorMessage } from "@/utils/api-errors";

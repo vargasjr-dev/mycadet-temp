@@ -6,7 +6,7 @@
  * shape instead of the SDK's pre-schema `unknown` payload.
  */
 
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   WorkflowJournalResponseSchema,
   type WorkflowJournalResponse,

@@ -206,7 +206,7 @@ describe("consent-cache", () => {
   });
 
   // share_diagnostics tracks the same refresh as share_analytics; the
-  // client's crash-report beforeSend re-reads it per event so a revocation is
+  // client's diagnostics consent check re-reads it per report so a revocation is
   // honored within a cycle.
   test("diagnostics reads false at boot (unknown collapses to false)", () => {
     expect(getCachedShareDiagnostics()).toBe(false);

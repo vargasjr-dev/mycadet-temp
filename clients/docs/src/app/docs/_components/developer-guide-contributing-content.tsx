@@ -101,12 +101,11 @@ cd vellum-assistant
 ├── scripts/              # Utility scripts (publishing, tunneling, releases)
 ├── benchmarking/         # Load testing scripts
 ├── meta/                 # Meta configuration
-├── .claude/              # Claude Code slash commands and workflow tools
 └── .github/              # GitHub Actions workflows`}
             </pre>
             <p className="text-sm text-zinc-500">
-              Each top-level package has its own <code className="text-sm">AGENTS.md</code> with package-specific conventions.
-              Check the relevant one before making changes in that area.
+              The root <code className="text-sm">AGENTS.md</code> documents project-wide conventions.
+              Read it before making changes in a new area.
             </p>
           </section>
 

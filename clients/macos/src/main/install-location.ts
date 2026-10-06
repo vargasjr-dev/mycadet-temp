@@ -11,9 +11,9 @@ import { app } from "electron";
  * there ("Cannot update while running on a read-only volume"), so the install
  * can never take one.
  *
- * `move-to-applications.ts` records the outcome and `sentry.ts` reports it as
- * the `install_location` tag. The branches produce an identical downstream
- * error, so the tag is what tells them apart in the field.
+ * `move-to-applications.ts` records the outcome and the feedback/diagnostics
+ * payload reports it as the `install_location` tag. The branches produce an
+ * identical downstream error, so the tag is what tells them apart in the field.
  *
  * This is a leaf: it holds the value and touches only `app`, so the telemetry
  * path can read it without pulling in window or installer code.

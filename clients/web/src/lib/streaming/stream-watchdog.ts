@@ -9,13 +9,8 @@
  * heartbeat comments) arrives within a configurable window.
  *
  * Telemetry is recorded to the durable lifecycle diagnostics ring
- * (via {@link recordLifecycleDiagnostic}) and as a Sentry breadcrumb
- * that attaches to any nearby error event for debugging context.
- *
- * @see https://docs.sentry.io/platforms/javascript/enriching-events/breadcrumbs/
+ * (via {@link recordLifecycleDiagnostic}).
  */
-
-import * as Sentry from "@sentry/react";
 
 import { recordLifecycleDiagnostic } from "@/lib/diagnostics";
 import type { StreamReconnectCause } from "@/lib/streaming/stream-transport";
@@ -30,7 +25,7 @@ export interface StreamWatchdogConfig {
   assistantId: string;
   /**
    * Snapshot whether the caller-owned turn state machine is currently
-   * sending. Forwarded to Sentry as the `wasTurnSending` tag so
+   * sending. Recorded as the `wasTurnSending` diagnostic field so
    * user-harming stalls (during an in-flight turn) can be distinguished
    * from benign ones (idle stream after a turn completed).
    */
@@ -71,7 +66,7 @@ export interface StreamWatchdog {
  * Create a watchdog instance that monitors SSE stream liveness.
  *
  * The returned handle encapsulates the timer, liveness counters, and
- * Sentry telemetry. The transport calls {@link StreamWatchdog.arm}
+ * liveness diagnostics. The transport calls {@link StreamWatchdog.arm}
  * on every SSE chunk and {@link StreamWatchdog.clear} when the
  * read loop exits.
  */
@@ -100,7 +95,7 @@ export function createStreamWatchdog(
       lastAbortCause = "watchdog";
 
       // Snapshot turn-sending state at the moment the watchdog fires.
-      // This is the single most useful Sentry aggregation dimension:
+      // This is the single most useful stall-aggregation dimension:
       // it separates user-harming stalls (in-flight turn) from benign
       // ones (idle stream after turn complete). Defensively wrapped
       // because the caller-supplied snapshot is opaque.
@@ -126,27 +121,9 @@ export function createStreamWatchdog(
         dataFramesReceivedSinceConnect,
       });
 
-      // Breadcrumb-only: attaches to any nearby Sentry error event for
-      // debugging context. No captureMessage — watchdog fires are
-      // expected on iOS (background/foreground cycle) and generate
-      // noise as a standalone Sentry issue. Fleet-wide stall frequency
-      // belongs in an analytics pipeline, not Sentry issues.
-      // @see https://docs.sentry.io/platforms/javascript/enriching-events/breadcrumbs/
-      Sentry.addBreadcrumb({
-        category: "sse.watchdog",
-        level: "warning",
-        message: "watchdog_fired",
-        data: {
-          assistantId,
-          attempt,
-          idleTimeoutMs,
-          wasTurnSending,
-          lastByteAgeMs,
-          keepalivesReceivedSinceConnect,
-          dataFramesReceivedSinceConnect,
-        },
-      });
-
+      // Watchdog fires are expected on iOS (background/foreground cycle);
+      // fleet-wide stall frequency belongs in an analytics pipeline, not
+      // per-fire error reports. The durable diagnostic above is the record.
       controller.abort();
     }, idleTimeoutMs);
   };

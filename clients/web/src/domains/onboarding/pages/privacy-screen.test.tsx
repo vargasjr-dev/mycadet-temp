@@ -619,8 +619,8 @@ describe("PrivacyScreen — Skip to chat", () => {
   let previousEnv: string | undefined;
 
   beforeEach(() => {
-    previousEnv = env.VITE_SENTRY_ENVIRONMENT;
-    env.VITE_SENTRY_ENVIRONMENT = "staging";
+    previousEnv = env.VITE_ENVIRONMENT;
+    env.VITE_ENVIRONMENT = "staging";
     navigateMock.mockClear();
     saveConsentMock.mockClear();
     emitFunnelStepCompletedMock.mockClear();
@@ -630,7 +630,7 @@ describe("PrivacyScreen — Skip to chat", () => {
     takeoverValue = "enabled";
   });
   afterEach(() => {
-    env.VITE_SENTRY_ENVIRONMENT = previousEnv;
+    env.VITE_ENVIRONMENT = previousEnv;
     cleanup();
     nativePlatform = false;
     localMode = false;

@@ -4,7 +4,7 @@ import {
   fetchCharacterTraits,
   saveCharacterTraits,
 } from "@/assistant/avatar-api";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
 import type { CharacterTraits } from "@/types/avatar";
 

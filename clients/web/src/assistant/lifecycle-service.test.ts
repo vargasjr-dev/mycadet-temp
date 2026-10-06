@@ -167,12 +167,6 @@ mock.module("@/runtime/local-mode-host", () => ({
   getLocalAssistantStatusHost: getLocalAssistantStatusHostMock,
 }));
 
-// Sentry is a side-effect-only dep here; silence it.
-mock.module("@sentry/react", () => ({
-  captureException: () => {},
-  captureMessage: () => {},
-  addBreadcrumb: () => {},
-}));
 
 mock.module("@/assistant/lifecycle", () => ({
   buildInitializingTimeoutError,

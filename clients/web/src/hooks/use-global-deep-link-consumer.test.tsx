@@ -40,7 +40,6 @@ import {
 import type { ShareInboxItem } from "@/runtime/share-inbox-parse";
 import { routes } from "@/utils/routes";
 import * as toastModule from "@vellumai/design-library/components/toast";
-import type * as SentryReact from "@sentry/react";
 import { stubViewportAxes } from "@/hooks/viewport-axes.test-helper";
 import {
   restoreStubbedModules,
@@ -99,14 +98,6 @@ stubModule("@vellumai/design-library/components/toast", toastModule, {
     toastModule.toast,
     { success: toastSuccessMock },
   ),
-});
-
-const sentryBreadcrumbMock = mock<typeof SentryReact.addBreadcrumb>(
-  (_breadcrumb) => undefined,
-);
-stubModule("@sentry/react", await import("@sentry/react"), {
-  addBreadcrumb: sentryBreadcrumbMock,
-  captureException: () => "",
 });
 
 // Voice entry runs a readiness preflight before a session opens; stub it ready
@@ -194,7 +185,6 @@ beforeEach(() => {
   });
   navigateMock.mockClear();
   ensureMainWindowVisibleMock.mockClear();
-  sentryBreadcrumbMock.mockClear();
   toastSuccessMock.mockClear();
   consumeShareInboxMock.mockClear();
   consumeShareInboxMock.mockImplementation(async () => null);
@@ -1572,24 +1562,6 @@ describe("deeplink.connect", () => {
   });
 });
 
-describe("deeplink.unknown", () => {
-  test("Sentry breadcrumb only — no navigation or window activation", () => {
-    renderConsumer();
-
-    act(() => {
-      publish("deeplink.unknown", { url: "javascript:alert(1)" });
-    });
-
-    expect(sentryBreadcrumbMock).toHaveBeenCalled();
-    const args = sentryBreadcrumbMock.mock.calls[0]?.[0] as {
-      data?: { url?: string };
-    };
-    expect(args.data?.url).toBe("javascript:alert(1)");
-    expect(navigateMock).not.toHaveBeenCalled();
-    expect(ensureMainWindowVisibleMock).not.toHaveBeenCalled();
-  });
-});
-
 describe("subscription lifecycle", () => {
   test("unmount unsubscribes — published events after unmount have no effect", () => {
     const { unmount } = renderConsumer();
@@ -1610,7 +1582,6 @@ describe("subscription lifecycle", () => {
 
     expect(navigateMock).not.toHaveBeenCalled();
     expect(useConnectDialogStore.getState().open).toBe(false);
-    expect(sentryBreadcrumbMock).not.toHaveBeenCalled();
     expect(usePendingDeepLinkStore.getState().pendingComposerMessage).toBe(
       null,
     );

@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import * as Sentry from "@sentry/react";
 
 import { switchToResolvedAssistant } from "@/assistant/switch-service";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
@@ -189,18 +188,6 @@ function resolveCurrentTapAssistant(
     : null;
 }
 
-function recordDroppedTap(
-  payload: NotificationTapPayload,
-  message: string,
-): void {
-  Sentry.addBreadcrumb({
-    category: "notification",
-    level: "info",
-    message,
-    data: { sourceEventName: payload.sourceEventName },
-  });
-}
-
 /**
  * Routes notification taps to the originating conversation. Mounted at
  * `RootLayout` so a tap arriving on any authenticated route navigates.
@@ -224,7 +211,6 @@ export function useNotificationTapNavigation(): void {
     }
     setNotificationTapHandler(async (payload) => {
       if (!payload.conversationId) {
-        recordDroppedTap(payload, "tap_without_conversation");
         return;
       }
       if (!payload.identity) {
@@ -234,7 +220,6 @@ export function useNotificationTapNavigation(): void {
       await waitForTapResolutionReadiness(payload);
       const assistant = resolveCurrentTapAssistant(payload);
       if (!assistant) {
-        recordDroppedTap(payload, "tap_identity_rejected");
         return;
       }
       const assistantSelection = useResolvedAssistantsStore.getState();
@@ -243,7 +228,6 @@ export function useNotificationTapNavigation(): void {
         assistantSelection.activeAssistantId === assistant.id
       ) {
         if (!resolveCurrentTapAssistant(payload)) {
-          recordDroppedTap(payload, "tap_identity_rejected_before_navigation");
           return;
         }
         publish("deeplink.openThread", { threadId: payload.conversationId });
@@ -254,7 +238,6 @@ export function useNotificationTapNavigation(): void {
       try {
         await switchToResolvedAssistant(assistant);
       } catch {
-        recordDroppedTap(payload, "tap_assistant_switch_failed");
         return;
       }
       if (
@@ -264,7 +247,6 @@ export function useNotificationTapNavigation(): void {
           lifecycleStateBeforeSwitch,
         ))
       ) {
-        recordDroppedTap(payload, "tap_assistant_activation_aborted");
         return;
       }
       const activeSelection = useResolvedAssistantsStore.getState();
@@ -273,7 +255,6 @@ export function useNotificationTapNavigation(): void {
         activeSelection.activeAssistantId !== assistant.id ||
         !resolveCurrentTapAssistant(payload)
       ) {
-        recordDroppedTap(payload, "tap_identity_rejected_before_navigation");
         return;
       }
       publish("deeplink.openThread", { threadId: payload.conversationId });

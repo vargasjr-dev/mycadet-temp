@@ -1292,8 +1292,8 @@ describe("auth store onboarding flag reconciliation", () => {
     // Empty server record, but the user has a current device-side diagnostics
     // ack and an opted-in preference. The chokepoint resolves the unknown
     // server value from the device preference, reopening a gate an earlier
-    // build left closed so a confirmed opted-in user isn't left with Sentry
-    // disabled.
+    // build left closed so a confirmed opted-in user isn't left with client
+    // diagnostics disabled.
     sessionUser = { id: "user-1", email: "user@example.com" };
     mockStoreShareDiagnostics = true;
     localStorage.setItem("device:share_diagnostics", "true");

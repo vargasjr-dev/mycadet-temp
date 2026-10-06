@@ -6,7 +6,6 @@ import { MemoryCard } from "@/domains/settings/components/memory-card";
 import { AssistantLifecyclePanel } from "@/domains/settings/components/panels/assistant-lifecycle-panel";
 import { EnvironmentConfigPanel } from "@/domains/settings/components/panels/environment-config-panel";
 import { FeatureFlagsPanel } from "@/domains/settings/components/panels/feature-flags-panel";
-import { SentryTestingPanel } from "@/domains/settings/components/panels/sentry-testing-panel";
 import { useTranslation } from "@/i18n";
 import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { routes } from "@/utils/routes";
@@ -14,7 +13,6 @@ import { routes } from "@/utils/routes";
 const ALL_TABS = [
   { id: "feature-flags", labelKey: "developerPage.tabFeatureFlags" },
   { id: "lifecycle", labelKey: "developerPage.tabLifecycle" },
-  { id: "sentry", labelKey: "developerPage.tabSentry" },
   { id: "memory", labelKey: "developerPage.tabMemory" },
 ] as const;
 
@@ -81,9 +79,6 @@ export function DeveloperPage() {
         </Tabs.Panel>
         <Tabs.Panel value="lifecycle" className={PANEL_CLASS}>
           <AssistantLifecyclePanel />
-        </Tabs.Panel>
-        <Tabs.Panel value="sentry" className={PANEL_CLASS}>
-          <SentryTestingPanel />
         </Tabs.Panel>
         <Tabs.Panel value="memory" className={PANEL_CLASS}>
           <div className="space-y-4">

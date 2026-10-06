@@ -15,7 +15,7 @@ import { useActiveBackgroundTaskIds } from "@/domains/chat/hooks/use-active-back
 import { MAX_VISIBLE_STACKED_CHIPS } from "@/domains/chat/process-registry/constants";
 import { stopBackgroundTask } from "@/domains/chat/utils/background-task-actions";
 import type { BackgroundProcessDescriptor } from "@/domains/chat/process-registry/types";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useViewerStore } from "@/stores/viewer-store";
 

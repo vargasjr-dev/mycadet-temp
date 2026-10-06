@@ -1,25 +1,8 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 // ---------------------------------------------------------------------------
-// Module mocks — registered before the subject module is imported so the
-// happy-path (mocked Sentry) is exercised.
+// Module mocks — registered before the subject module is imported.
 // ---------------------------------------------------------------------------
-
-interface SentryBreadcrumbCall {
-  category?: string;
-  level?: string;
-  message?: string;
-  data?: Record<string, unknown>;
-}
-const sentryBreadcrumbs: SentryBreadcrumbCall[] = [];
-
-mock.module("@sentry/react", () => ({
-  addBreadcrumb: (crumb: SentryBreadcrumbCall) => {
-    sentryBreadcrumbs.push(crumb);
-  },
-  captureMessage: () => {},
-  captureException: () => {},
-}));
 
 // Controllable reconnect cursor so the reconnect-URL tests can exercise
 // the resumable-stream wiring without a live daemon.
@@ -243,7 +226,6 @@ describe("subscribeEvents idle watchdog", () => {
     ) as unknown as typeof fetch;
 
     const eventCountBefore = getLifecycleDiagnosticsEvents().length;
-    const breadcrumbsBefore = sentryBreadcrumbs.length;
 
     const sub = subscribeEvents(
       "asst-watchdog",
@@ -272,19 +254,6 @@ describe("subscribeEvents idle watchdog", () => {
       // Centralized platform tag is injected by the diagnostics recorder.
       expect(first.details.platform).toBe("web");
 
-      // Breadcrumb attaches to nearby Sentry error events for
-      // debugging context.
-      const newBreadcrumbs = sentryBreadcrumbs.slice(breadcrumbsBefore);
-      const watchdogBreadcrumb = newBreadcrumbs.find(
-        (crumb) =>
-          crumb.category === "sse.watchdog" &&
-          crumb.message === "watchdog_fired",
-      );
-      expect(watchdogBreadcrumb).toBeDefined();
-      expect(watchdogBreadcrumb!.data).toMatchObject({
-        assistantId: "asst-watchdog",
-        idleTimeoutMs: 50,
-      });
     } finally {
       sub.cancel();
     }
@@ -309,7 +278,6 @@ describe("subscribeEvents idle watchdog", () => {
     ) as unknown as typeof fetch;
 
     const eventCountBefore = getLifecycleDiagnosticsEvents().length;
-    const breadcrumbsBefore = sentryBreadcrumbs.length;
 
     const sub = subscribeEvents(
       "asst-aggregation",
@@ -333,8 +301,8 @@ describe("subscribeEvents idle watchdog", () => {
         (event) => event.kind === "sse_watchdog_fired",
       );
       expect(firstFire).toBeDefined();
-      // The diagnostic ring and breadcrumb carry the full context
-      // so both support snapshots and Sentry error events have it.
+      // The diagnostic ring carries the full context so support
+      // snapshots have it.
       expect(firstFire!.details).toMatchObject({
         wasTurnSending: true,
         keepalivesReceivedSinceConnect: 0,
@@ -342,28 +310,14 @@ describe("subscribeEvents idle watchdog", () => {
         lastByteAgeMs: null,
       });
 
-      // Breadcrumb carries the same fields for debugging context.
-      const newBreadcrumbs = sentryBreadcrumbs.slice(breadcrumbsBefore);
-      const watchdogBreadcrumb = newBreadcrumbs.find(
-        (crumb) =>
-          crumb.category === "sse.watchdog" &&
-          crumb.message === "watchdog_fired",
-      );
-      expect(watchdogBreadcrumb).toBeDefined();
-      expect(watchdogBreadcrumb!.data).toMatchObject({
-        wasTurnSending: true,
-        keepalivesReceivedSinceConnect: 0,
-        dataFramesReceivedSinceConnect: 0,
-        lastByteAgeMs: null,
-      });
     } finally {
       sub.cancel();
     }
   });
 
-  test("records wasTurnSending: null in breadcrumb when no getActiveTurnSending snapshot is supplied", async () => {
+  test("records wasTurnSending: null in diagnostics when no getActiveTurnSending snapshot is supplied", async () => {
     // Callers without turn-sending wiring produce wasTurnSending: null
-    // in the breadcrumb, distinguishing "caller didn't provide" from
+    // in the diagnostic, distinguishing "caller didn't provide" from
     // "caller provided false".
     globalThis.fetch = mock(
       async () =>
@@ -377,7 +331,7 @@ describe("subscribeEvents idle watchdog", () => {
         ),
     ) as unknown as typeof fetch;
 
-    const breadcrumbsBefore = sentryBreadcrumbs.length;
+    const eventCountBefore = getLifecycleDiagnosticsEvents().length;
 
     const sub = subscribeEvents(
       "asst-no-snapshot",
@@ -389,14 +343,12 @@ describe("subscribeEvents idle watchdog", () => {
     try {
       await new Promise((r) => setTimeout(r, 200));
 
-      const newBreadcrumbs = sentryBreadcrumbs.slice(breadcrumbsBefore);
-      const watchdogBreadcrumb = newBreadcrumbs.find(
-        (crumb) =>
-          crumb.category === "sse.watchdog" &&
-          crumb.message === "watchdog_fired",
+      const newEvents = getLifecycleDiagnosticsEvents().slice(eventCountBefore);
+      const firstFire = newEvents.find(
+        (event) => event.kind === "sse_watchdog_fired",
       );
-      expect(watchdogBreadcrumb).toBeDefined();
-      expect(watchdogBreadcrumb!.data).toMatchObject({
+      expect(firstFire).toBeDefined();
+      expect(firstFire!.details).toMatchObject({
         wasTurnSending: null,
       });
     } finally {

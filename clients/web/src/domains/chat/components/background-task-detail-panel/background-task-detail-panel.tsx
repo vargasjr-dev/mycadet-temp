@@ -23,7 +23,7 @@ import {
   backgroundTaskTitle,
   isActiveBackgroundTaskStatus,
 } from "@/utils/background-task-status";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import { useTranslation } from "@/i18n";
 
 export interface BackgroundTaskDetailPanelProps {

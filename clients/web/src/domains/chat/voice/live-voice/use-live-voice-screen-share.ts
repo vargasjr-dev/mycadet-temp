@@ -97,7 +97,7 @@ import {
 } from "@/lib/camera/frame-gate";
 import { createFrameGridProducer } from "@/lib/camera/frame-sampler";
 import { stillFrameGrid } from "@/lib/camera/still-frame-grid";
-import { captureError } from "@/lib/sentry/capture-error";
+import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   captureCompanionScreen,
   readCompanionShareTargets,

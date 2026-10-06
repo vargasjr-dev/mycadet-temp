@@ -54,7 +54,7 @@ beforeEach(() => {
 
 /**
  * Asserts the effective gate device bool was written with `value`. The
- * Electron main mirror is NOT synced from here — the `sentry-control` watcher
+ * Electron main mirror is NOT synced from here — the cross-tab watcher
  * pushes the session-composed value on this device-setting change — so the
  * gate writer must never call `syncDiagnosticsToMain` directly.
  */
@@ -309,7 +309,7 @@ describe("failCloseDiagnosticsGateUntilFirstSync", () => {
   }
 
   // A hydrated device keeps its resolved gate — the failed sync says nothing
-  // new, and closing an open gate here would flap Sentry on every outage.
+  // new, and closing an open gate here would flap client diagnostics on every outage.
   for (const stored of ["true", "false"]) {
     test(`already-resolved gate ${stored} is left untouched`, () => {
       storedGate = stored;
