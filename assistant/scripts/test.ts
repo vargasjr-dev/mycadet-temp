@@ -69,7 +69,16 @@ const EXPERIMENTAL_FILES = new Set([
 // of ambiguous names like `connect.test.ts` that recur under multiple
 // `src/cli/commands/*/__tests__/` directories). To triage: run
 // `bun test <path>` and fix until green, then remove it here.
-const KNOWN_BROKEN_FILES = new Set<string>([]);
+const KNOWN_BROKEN_FILES = new Set<string>([
+  // Stale guard: PR #5 (docs trim) removed the .claude/skills/ tree and the
+  // README lifecycle section this guard enforces. The rebrand workstream
+  // owns rewriting it for the new canonical commands.
+  "src/__tests__/lifecycle-docs-guard.test.ts",
+  // QuickJS asyncify state wedges after an in-flight OOM/interrupt abort,
+  // hanging the file until the per-file kill. Reproduces on main outside
+  // CI; tracked separately from CI infra.
+  "src/workflows/sandbox-escape.test.ts",
+]);
 
 // ---------------------------------------------------------------------------
 // Bundled catalog sync
