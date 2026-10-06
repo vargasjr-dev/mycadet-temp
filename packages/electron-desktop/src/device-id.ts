@@ -19,17 +19,20 @@ import { join } from "node:path";
 
 import { resolveConfigDir, resolveEnvironmentName } from "@vellumai/local-mode";
 
+import { ensureCadetHomeAt } from "@vellumai/service-contracts/cadet-home";
+
 let cached: string | undefined;
 
 /**
- * Resolve the directory containing device.json. Production uses the legacy
- * ~/.vellum path (shared with the Swift client and daemon); non-production
- * uses resolveConfigDir from @vellumai/local-mode.
+ * Resolve the directory containing device.json. Production uses the Cadet
+ * home (~/.cadet, adopting a legacy ~/.vellum via copy-not-move; shared with
+ * the daemon); non-production uses resolveConfigDir from
+ * @vellumai/local-mode.
  */
 function resolveDeviceDir(): string {
   const env = resolveEnvironmentName(process.env);
   if (env === "production") {
-    return join(homedir(), ".vellum");
+    return ensureCadetHomeAt(homedir()).dir;
   }
   return resolveConfigDir(process.env);
 }
@@ -60,7 +63,10 @@ export function getDeviceId(): string {
     const raw = JSON.parse(readFileSync(filePath, "utf-8"));
     if (raw && typeof raw === "object" && !Array.isArray(raw)) {
       existing = raw as Record<string, unknown>;
-      if (typeof existing.deviceId === "string" && existing.deviceId.length > 0) {
+      if (
+        typeof existing.deviceId === "string" &&
+        existing.deviceId.length > 0
+      ) {
         cached = existing.deviceId as string;
         return cached;
       }

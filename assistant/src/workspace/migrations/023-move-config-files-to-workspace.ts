@@ -11,7 +11,7 @@ import { existsSync, renameSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 
 import type { WorkspaceMigration } from "./types.js";
-import { getVellumRoot } from "./utils.js";
+import { getCadetRoot } from "./utils.js";
 /** Files to move from root → workspace. */
 const CONFIG_FILES = [
   "dictation-profiles.json",
@@ -25,7 +25,7 @@ export const moveConfigFilesToWorkspaceMigration: WorkspaceMigration = {
     "Move dictation-profiles, email-guardrails, and active-call-leases from root to workspace",
 
   run(workspaceDir: string): void {
-    const rootDir = getVellumRoot();
+    const rootDir = getCadetRoot();
 
     for (const file of CONFIG_FILES) {
       const oldPath = join(rootDir, file);
@@ -55,7 +55,7 @@ export const moveConfigFilesToWorkspaceMigration: WorkspaceMigration = {
   },
 
   down(workspaceDir: string): void {
-    const rootDir = getVellumRoot();
+    const rootDir = getCadetRoot();
 
     for (const file of CONFIG_FILES) {
       const newPath = join(workspaceDir, file);

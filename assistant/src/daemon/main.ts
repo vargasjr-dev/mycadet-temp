@@ -21,7 +21,7 @@ runDaemon().catch((err) => {
   }
   console.error("Failed to start assistant:", err);
   console.error(
-    `Troubleshooting: check if another assistant is already running, verify ${join(homedir(), ".vellum")} permissions, and review logs at ${getDataDir()}/logs/`,
+    `Troubleshooting: check if another assistant is already running, verify ${join(homedir(), ".cadet")} permissions, and review logs at ${getDataDir()}/logs/`,
   );
   // Emit a structured error line as the last line of stderr so consumers
   // (e.g. the macOS app) can parse it reliably.

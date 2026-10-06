@@ -10,7 +10,7 @@ import {
 import { join } from "node:path";
 
 import type { WorkspaceMigration } from "./types.js";
-import { getVellumRoot } from "./utils.js";
+import { getCadetRoot } from "./utils.js";
 
 export const extractFeatureFlagsToProtectedMigration: WorkspaceMigration = {
   id: "016-extract-feature-flags-to-protected",
@@ -20,7 +20,7 @@ export const extractFeatureFlagsToProtectedMigration: WorkspaceMigration = {
   down(workspaceDir: string): void {
     // Reverse: read feature flags from protected directory and write them
     // back to config.json as assistantFeatureFlagValues.
-    const protectedDir = join(getVellumRoot(), "protected");
+    const protectedDir = join(getCadetRoot(), "protected");
     const featureFlagsPath = join(protectedDir, "feature-flags.json");
 
     if (!existsSync(featureFlagsPath)) {
@@ -113,7 +113,7 @@ export const extractFeatureFlagsToProtectedMigration: WorkspaceMigration = {
     }
 
     // Write feature flags to protected directory
-    const protectedDir = join(getVellumRoot(), "protected");
+    const protectedDir = join(getCadetRoot(), "protected");
     mkdirSync(protectedDir, { recursive: true });
 
     const featureFlagsPath = join(protectedDir, "feature-flags.json");

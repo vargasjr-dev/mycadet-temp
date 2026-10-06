@@ -50,10 +50,10 @@ describe("VELLUM_BACKUP_DIR override", () => {
     expect(getBackupRootDir()).toBe("/workspace/.backups");
   });
 
-  test("getBackupRootDir() falls back to ~/.vellum/backups when unset", () => {
+  test("getBackupRootDir() falls back to ~/.cadet/backups when unset", () => {
     delete process.env.VELLUM_BACKUP_DIR;
     const dir = getBackupRootDir();
-    expect(dir).toMatch(/\/\.vellum\/backups$/);
+    expect(dir).toMatch(/\/\.cadet\/backups$/);
   });
 
   test("getLocalBackupsDir() resolves under VELLUM_BACKUP_DIR", () => {
@@ -63,7 +63,7 @@ describe("VELLUM_BACKUP_DIR override", () => {
 
   test("getLocalBackupsDir() falls back to default when env var is unset", () => {
     delete process.env.VELLUM_BACKUP_DIR;
-    expect(getLocalBackupsDir()).toMatch(/\/\.vellum\/backups\/local$/);
+    expect(getLocalBackupsDir()).toMatch(/\/\.cadet\/backups\/local$/);
   });
 
   test("config override still takes precedence over VELLUM_BACKUP_DIR", () => {
@@ -78,8 +78,9 @@ describe("VELLUM_BACKUP_DIR override", () => {
 
   test("getSnapshotLockPath() falls back to default when env var is unset", () => {
     delete process.env.VELLUM_BACKUP_DIR;
+    expect(getSnapshotLockPath()).toMatch(/\/\.cadet\/backups/);
     expect(getSnapshotLockPath()).toMatch(
-      /\/\.vellum\/backups\/\.snapshot\.lock$/,
+      /\/\.cadet\/backups\/\.snapshot\.lock$/,
     );
   });
 });

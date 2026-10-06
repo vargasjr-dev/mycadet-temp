@@ -22,14 +22,14 @@ import {
 import { join } from "node:path";
 
 import type { WorkspaceMigration } from "./types.js";
-import { getVellumRoot } from "./utils.js";
+import { getCadetRoot } from "./utils.js";
 
 export const moveHooksToWorkspaceMigration: WorkspaceMigration = {
   id: "022-move-hooks-to-workspace",
   description: "Move hooks directory from root to workspace",
 
   run(workspaceDir: string): void {
-    const oldHooksDir = join(getVellumRoot(), "hooks");
+    const oldHooksDir = join(getCadetRoot(), "hooks");
     const newHooksDir = join(workspaceDir, "hooks");
 
     mkdirSync(newHooksDir, { recursive: true });
@@ -61,7 +61,7 @@ export const moveHooksToWorkspaceMigration: WorkspaceMigration = {
   },
 
   down(workspaceDir: string): void {
-    const oldHooksDir = join(getVellumRoot(), "hooks");
+    const oldHooksDir = join(getCadetRoot(), "hooks");
     const newHooksDir = join(workspaceDir, "hooks");
 
     mkdirSync(oldHooksDir, { recursive: true });

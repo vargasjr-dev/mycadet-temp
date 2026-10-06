@@ -4,6 +4,7 @@ import { join, win32 } from "node:path";
 import { afterAll, afterEach, describe, expect, test } from "bun:test";
 
 import {
+  cadetRoot,
   ensureDataDir,
   formatHomeRelativePath,
   getDataDir,
@@ -20,7 +21,6 @@ import {
   getWorkspacePromptPath,
   getWorkspaceSkillsDir,
   getXdgVellumConfigDirName,
-  vellumRoot,
 } from "../util/platform.js";
 
 const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
@@ -124,7 +124,7 @@ describe("path characterization", () => {
 
   test("ensureDataDir creates all expected directories", () => {
     // Use a temp VELLUM_WORKSPACE_DIR so ensureDataDir writes to a temp dir
-    // rather than the real ~/.vellum. Root-level dirs still go to ~/.vellum
+    // rather than the real ~/.cadet. Root-level dirs still go to ~/.cadet
     // but we only verify workspace dirs here to avoid side effects.
     const wsDir = join(tmpdir(), `platform-test-ws-${Date.now()}`);
     process.env.VELLUM_WORKSPACE_DIR = wsDir;
@@ -132,7 +132,7 @@ describe("path characterization", () => {
     ensureDataDir();
 
     // Root-level dirs (ensureDataDir always creates these)
-    const root = vellumRoot();
+    const root = cadetRoot();
     expect(existsSync(root)).toBe(true);
 
     // Workspace dirs (in our temp location)

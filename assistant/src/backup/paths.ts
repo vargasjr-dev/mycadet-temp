@@ -1,21 +1,26 @@
 import { homedir, userInfo } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
 
+import { ensureCadetHomeAt } from "@vellumai/service-contracts/cadet-home";
+
 import { getBackupDirOverride } from "../config/env-registry.js";
 import type { BackupDestination } from "../config/schema.js";
 
 /**
- * Returns the backup root directory. Respects the `VELLUM_BACKUP_DIR`
- * environment variable override (used in containerized deployments where
- * backups must be on a persistent volume); falls back to `~/.vellum/backups`.
+ * Returns the backup root directory. Respects the
+ * `CADET_BACKUP_DIR`/`VELLUM_BACKUP_DIR` environment variable override (used
+ * in containerized deployments where backups must be on a persistent
+ * volume); falls back to `~/.cadet/backups`.
  */
 export function getBackupRootDir(): string {
-  return getBackupDirOverride() ?? join(homedir(), ".vellum", "backups");
+  return (
+    getBackupDirOverride() ?? join(ensureCadetHomeAt(homedir()).dir, "backups")
+  );
 }
 
 /**
  * Returns the directory for local (on-device) backups. By default this lives
- * under `~/.vellum/backups/local`; callers can pass an explicit override from
+ * under `~/.cadet/backups/local`; callers can pass an explicit override from
  * config to place backups elsewhere on disk.
  */
 export function getLocalBackupsDir(override?: string | null): string {

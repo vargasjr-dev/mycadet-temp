@@ -14,7 +14,11 @@
  */
 
 import { getLogger } from "../util/logger.js";
-import { checkUnrecognizedEnvVars, getIsPlatform } from "./env-registry.js";
+import {
+  checkUnrecognizedEnvVars,
+  getIsPlatform,
+  readEnv,
+} from "./env-registry.js";
 import { getConfig } from "./loader.js";
 
 const log = getLogger("env");
@@ -23,8 +27,7 @@ const log = getLogger("env");
 
 /** Read an env var as a trimmed non-empty string, or undefined. */
 function str(name: string): string | undefined {
-  const v = process.env[name]?.trim();
-  return v || undefined;
+  return readEnv(name);
 }
 
 /** Read an env var as an integer with fallback. Returns undefined if not set and no fallback given. */

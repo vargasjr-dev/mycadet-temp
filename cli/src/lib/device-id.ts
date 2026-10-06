@@ -1,9 +1,9 @@
 /**
- * Host device ID resolver. Resolution order: `VELLUM_DEVICE_ID` env var,
- * then `device.json`. Production uses the machine-wide shared
- * `~/.vellum/device.json`, matching Electron (`clients/macos/src/main/device-id.ts`)
- * and Swift (`VellumPaths.deviceIdFile`); non-production uses
- * `<configDir>/device.json`.
+ * Host device ID resolver. Resolution order: `CADET_DEVICE_ID` (legacy
+ * `VELLUM_DEVICE_ID` fallback) env var, then `device.json`. Production uses
+ * the machine-wide shared `~/.cadet/device.json` (a legacy ~/.vellum is
+ * adopted via copy-not-move on first run), matching the daemon;
+ * non-production uses `<configDir>/device.json`.
  *
  * Not to be confused with `guardian-token.ts`'s salted-hash Guardian
  * identity (`computeDeviceId` / `getOrCreatePersistedDeviceId`) — do not
@@ -15,6 +15,8 @@ import { mkdirSync, readFileSync, writeFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 
+import { ensureCadetHomeAt } from "@vellumai/service-contracts/cadet-home";
+
 import { getConfigDir } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 
@@ -23,7 +25,9 @@ let cached: string | undefined;
 function resolveDeviceIdPaths(): { dir: string; file: string } {
   const env = getCurrentEnvironment();
   const dir =
-    env.name === "production" ? join(homedir(), ".vellum") : getConfigDir(env);
+    env.name === "production"
+      ? ensureCadetHomeAt(homedir()).dir
+      : getConfigDir(env);
   return { dir, file: join(dir, "device.json") };
 }
 
@@ -38,7 +42,8 @@ export function getOrCreateHostDeviceId(): string {
     return cached;
   }
 
-  const fromEnv = process.env.VELLUM_DEVICE_ID?.trim();
+  const fromEnv =
+    process.env.CADET_DEVICE_ID?.trim() || process.env.VELLUM_DEVICE_ID?.trim();
   if (fromEnv) {
     cached = fromEnv;
     return cached;

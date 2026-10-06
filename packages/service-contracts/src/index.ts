@@ -18,6 +18,7 @@
  * module so that both sides can depend on it without circular references.
  */
 
+export * from "./cadet-home.js";
 export * from "./channels.js";
 export * from "./client-metadata.js";
 export * from "./conversation-handle.js";

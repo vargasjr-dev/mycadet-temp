@@ -42,21 +42,31 @@ export function assertTestDbIsIsolated(): void {
 
   const resolvedWorkspaceDir =
     canonicalizePathThroughExistingParent(workspaceDir);
-  const realWorkspaceDir = canonicalizePathThroughExistingParent(
+  // Guard both the Cadet home and the legacy Vellum home: either could hold
+  // live install state (pre- and post-rebrand layouts).
+  const realWorkspaceDirs = [
     process.env.VELLUM_TEST_REAL_WORKSPACE_DIR?.trim() ||
-      join(homedir(), ".vellum", "workspace"),
-  );
-  if (
-    resolvedWorkspaceDir === realWorkspaceDir ||
-    resolvedWorkspaceDir.startsWith(realWorkspaceDir + sep)
-  ) {
-    throw new Error(
-      [
-        "Refusing to open the real assistant workspace DB during tests.",
-        `VELLUM_WORKSPACE_DIR resolved to ${resolvedWorkspaceDir}.`,
-        "Use a temp workspace for tests instead.",
-      ].join("\n"),
-    );
+      join(homedir(), ".cadet", "workspace"),
+  ]
+    .concat(
+      process.env.VELLUM_TEST_REAL_WORKSPACE_DIR?.trim()
+        ? []
+        : [join(homedir(), ".vellum", "workspace")],
+    )
+    .map(canonicalizePathThroughExistingParent);
+  for (const realWorkspaceDir of realWorkspaceDirs) {
+    if (
+      resolvedWorkspaceDir === realWorkspaceDir ||
+      resolvedWorkspaceDir.startsWith(realWorkspaceDir + sep)
+    ) {
+      throw new Error(
+        [
+          "Refusing to open the real assistant workspace DB during tests.",
+          `VELLUM_WORKSPACE_DIR resolved to ${resolvedWorkspaceDir}.`,
+          "Use a temp workspace for tests instead.",
+        ].join("\n"),
+      );
+    }
   }
 }
 

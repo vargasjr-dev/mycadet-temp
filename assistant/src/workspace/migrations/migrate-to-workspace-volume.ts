@@ -2,7 +2,7 @@
  * Workspace migration: Migrate workspace data from /data to /workspace volume.
  *
  * In the old Docker volume layout, workspace data lived at
- * `<vellumRoot>/workspace`. In the new layout, VELLUM_WORKSPACE_DIR points
+ * `<cadetRoot>/workspace`. In the new layout, CADET_WORKSPACE_DIR points
  * to a dedicated volume (e.g. `/workspace`). On first boot with the new layout,
  * this migration copies existing workspace data from the old location to the
  * new volume so nothing is lost.
@@ -24,7 +24,7 @@ import {
 import { join } from "node:path";
 
 import type { WorkspaceMigration } from "./types.js";
-import { getVellumRoot } from "./utils.js";
+import { getCadetRoot } from "./utils.js";
 
 const SENTINEL_FILENAME = ".workspace-volume-migrated";
 
@@ -73,8 +73,8 @@ export const migrateToWorkspaceVolumeMigration: WorkspaceMigration = {
       return;
     }
 
-    // Resolve the old workspace location: <vellumRoot>/workspace
-    const oldWorkspaceDir = join(getVellumRoot(), "workspace");
+    // Resolve the old workspace location: <cadetRoot>/workspace
+    const oldWorkspaceDir = join(getCadetRoot(), "workspace");
 
     // If the old workspace doesn't exist or is empty, nothing to migrate
     if (!existsSync(oldWorkspaceDir)) {

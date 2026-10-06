@@ -27,7 +27,7 @@ import { installGatewayIpcMock } from "./mock-gateway-ipc.js";
 // --- Phase 1: env override (zero source-module imports above this point) ---
 
 // Layout: <tmpRoot>/workspace as VELLUM_WORKSPACE_DIR. The parent of
-// VELLUM_WORKSPACE_DIR is what `vellumRoot()` resolves to, so a separate
+// VELLUM_WORKSPACE_DIR is what `cadetRoot()` resolves to, so a separate
 // tmpRoot per process gives `getProtectedDir()` and friends per-process
 // isolation without needing an explicit `setStorePathForTesting()`.
 const tmpRoot = realpathSync(mkdtempSync(join(tmpdir(), "vellum-test-")));

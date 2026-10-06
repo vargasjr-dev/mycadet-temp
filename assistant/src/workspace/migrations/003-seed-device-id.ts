@@ -8,6 +8,8 @@ import {
 import { homedir } from "node:os";
 import { join } from "node:path";
 
+import { ensureCadetHomeAt } from "@vellumai/service-contracts/cadet-home";
+
 import type { WorkspaceMigration } from "./types.js";
 
 function deviceIdBaseDir(): string {
@@ -23,8 +25,10 @@ export const seedDeviceIdMigration: WorkspaceMigration = {
     "Seed device.json deviceId from the most recent lockfile installationId for continuity",
   run(_workspaceDir: string): void {
     const base = deviceIdBaseDir();
-    const vellumDir = join(base, ".vellum");
-    const devicePath = join(vellumDir, "device.json");
+    // Adopts a legacy ~/.vellum via copy-not-move on first run; the device
+    // id read below therefore sees the migrated copy, preserving identity.
+    const cadetDir = ensureCadetHomeAt(base).dir;
+    const devicePath = join(cadetDir, "device.json");
 
     // a. If device.json already has a deviceId, nothing to do.
     if (existsSync(devicePath)) {
@@ -111,7 +115,7 @@ export const seedDeviceIdMigration: WorkspaceMigration = {
     existing.deviceId = seedId;
 
     try {
-      mkdirSync(vellumDir, { recursive: true });
+      mkdirSync(cadetDir, { recursive: true });
       writeFileSync(devicePath, JSON.stringify(existing, null, 2) + "\n", {
         mode: 0o644,
       });
@@ -120,11 +124,11 @@ export const seedDeviceIdMigration: WorkspaceMigration = {
     }
   },
   down(_workspaceDir: string): void {
-    // The forward migration seeds deviceId in ~/.vellum/device.json from the
+    // The forward migration seeds deviceId in ~/.cadet/device.json from the
     // lockfile. Reverse by removing device.json entirely — getDeviceId() will
     // generate a fresh one on next startup if needed.
     const base = deviceIdBaseDir();
-    const devicePath = join(base, ".vellum", "device.json");
+    const devicePath = join(ensureCadetHomeAt(base).dir, "device.json");
     if (existsSync(devicePath)) {
       unlinkSync(devicePath);
     }

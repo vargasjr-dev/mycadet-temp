@@ -241,7 +241,9 @@ const SECURITY_DIR_ENV_VARS = [
  *   data flows through the gateway and CES APIs (root AGENTS.md). The
  *   env-based resolution mirrors the owning services', since the
  *   cross-package import boundary bars importing it; the shared bare-metal
- *   default `<home>/.vellum/protected` is always denied. Only absolute
+ *   defaults `<home>/.cadet/protected` (and the legacy pre-rebrand
+ *   `<home>/.vellum/protected`, which may still hold secrets) are always
+ *   denied. Only absolute
  *   overrides join the set — a relative override is unmirrorable and
  *   disables the host fallback outright (see
  *   {@link securityDirConfigMirrorable}).
@@ -250,13 +252,10 @@ const SECURITY_DIR_ENV_VARS = [
  */
 function getProtectedServicePaths(): string[] {
   const paths = new Set<string>();
-  paths.add(
-    join(
-      process.env.HOME || safeUserInfoHomedir() || homedir(),
-      ".vellum",
-      "protected",
-    ),
-  );
+  const home = process.env.HOME || safeUserInfoHomedir() || homedir();
+  paths.add(join(home, ".cadet", "protected"));
+  // Legacy pre-rebrand install — still denied, its secrets outlive the copy.
+  paths.add(join(home, ".vellum", "protected"));
   for (const name of SECURITY_DIR_ENV_VARS) {
     const override = process.env[name]?.trim();
     if (override && isAbsolute(override)) {

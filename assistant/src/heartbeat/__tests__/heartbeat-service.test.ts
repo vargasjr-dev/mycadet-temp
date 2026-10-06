@@ -62,7 +62,7 @@ mock.module("../../util/platform.js", () => ({
   getWorkspaceDir: () => workspaceDir ?? fallbackDir,
   getWorkspacePromptPath: (name: string) =>
     join(workspaceDir ?? fallbackDir, name),
-  vellumRoot: () => workspaceDir ?? fallbackDir,
+  cadetRoot: () => workspaceDir ?? fallbackDir,
   getDataDir: () => join(workspaceDir ?? fallbackDir, "data"),
   getConversationsDir: () => join(workspaceDir ?? fallbackDir, "conversations"),
   isMacOS: () => false,

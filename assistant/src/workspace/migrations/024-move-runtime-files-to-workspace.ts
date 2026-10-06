@@ -28,7 +28,7 @@ import {
 import { join } from "node:path";
 
 import type { WorkspaceMigration } from "./types.js";
-import { getVellumRoot } from "./utils.js";
+import { getCadetRoot } from "./utils.js";
 /** Individual files to move from root → workspace (with optional subdirectory). */
 const FILE_MOVES: Array<{ name: string; subdir?: string }> = [
   { name: "daemon-stderr.log", subdir: "logs" },
@@ -90,7 +90,7 @@ export const moveRuntimeFilesToWorkspaceMigration: WorkspaceMigration = {
     "Move daemon-stderr.log, daemon-startup.lock, embed-worker.pid, external/, and bin/ from root to workspace",
 
   run(workspaceDir: string): void {
-    const rootDir = getVellumRoot();
+    const rootDir = getCadetRoot();
 
     // Move individual files
     for (const { name, subdir } of FILE_MOVES) {
@@ -107,7 +107,7 @@ export const moveRuntimeFilesToWorkspaceMigration: WorkspaceMigration = {
   },
 
   down(workspaceDir: string): void {
-    const rootDir = getVellumRoot();
+    const rootDir = getCadetRoot();
 
     // Move individual files back
     for (const { name, subdir } of FILE_MOVES) {

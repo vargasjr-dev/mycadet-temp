@@ -9,28 +9,36 @@ import {
 } from "@vellumai/avatar-manifest";
 import { SEEDS } from "@vellumai/environments";
 import { assertTestPathIsEphemeral as assertEphemeralInTests } from "@vellumai/environments/test-path-guard";
+import { ensureCadetHomeAt } from "@vellumai/service-contracts/cadet-home";
 
 import { getWorkspaceDirOverride } from "../config/env-registry.js";
 
 /**
- * The daemon's root data directory (`~/.vellum`).
+ * The daemon's per-user home directory (`~/.cadet`).
  *
- * Used as a fallback when `VELLUM_WORKSPACE_DIR` is not set, and as a
- * stable constant for paths (like `.env`) that intentionally live at the
- * host home directory regardless of workspace relocation.
+ * Resolved once per process. On first run after the rebrand, an existing
+ * `~/.vellum` is adopted via copy-not-move (see
+ * @vellumai/service-contracts/cadet-home) — the legacy directory is left
+ * intact for rollback. Platform-managed deployments are unaffected: their
+ * `VELLUM_WORKSPACE_DIR`/`CADET_WORKSPACE_DIR` override takes precedence
+ * below.
  */
-const VELLUM_ROOT = join(homedir(), ".vellum");
+let cachedCadetHome: string | undefined;
+export function cadetHome(): string {
+  cachedCadetHome ??= ensureCadetHomeAt(homedir()).dir;
+  return cachedCadetHome;
+}
 
 /**
- * Returns the Vellum root directory.
+ * Returns the Cadet root directory.
  *
  * Resolution order (mirrors workspace/migrations/utils.ts):
- * 1. Parent of VELLUM_WORKSPACE_DIR — e.g. /data/.vellum/workspace → /data/.vellum
- * 2. If that parent is "/" (workspace at top level), fall back to ~/.vellum
+ * 1. Parent of CADET_WORKSPACE_DIR/VELLUM_WORKSPACE_DIR — e.g. /data/.cadet/workspace → /data/.cadet
+ * 2. If that parent is "/" (workspace at top level), fall back to ~/.cadet
  */
-export function vellumRoot(): string {
+export function cadetRoot(): string {
   const override = getWorkspaceDirOverride();
-  let root = VELLUM_ROOT;
+  let root = cachedCadetHome ?? cadetHome();
   if (override) {
     const parent = dirname(override);
     if (parent !== "/") {
@@ -289,7 +297,7 @@ export function getHistoryPath(): string {
  * - Skipped in containerized mode (credentials via CES, trust via gateway)
  */
 export function getProtectedDir(): string {
-  return join(vellumRoot(), "protected");
+  return join(cadetRoot(), "protected");
 }
 
 /** Returns $VELLUM_WORKSPACE_DIR/signals — the directory for IPC signal files. */
@@ -320,9 +328,9 @@ export function getBinDir(): string {
   return join(getWorkspaceDir(), "bin");
 }
 
-/** Returns the path to the dot-env file (~/.vellum/.env). Stays at root because it contains secrets. */
+/** Returns the path to the dot-env file (~/.cadet/.env). Stays at root because it contains secrets. */
 export function getDotEnvPath(): string {
-  return join(vellumRoot(), ".env");
+  return join(cadetRoot(), ".env");
 }
 
 /** Returns the path to the embed-worker PID file ($VELLUM_WORKSPACE_DIR/embed-worker.pid). */
@@ -421,7 +429,7 @@ function assertTestPathIsEphemeral(dir: string): void {
  * (see the live-workspace guard above); anything else throws.
  */
 export function getWorkspaceDir(): string {
-  const dir = getWorkspaceDirOverride() ?? join(VELLUM_ROOT, "workspace");
+  const dir = getWorkspaceDirOverride() ?? join(cadetHome(), "workspace");
   assertTestPathIsEphemeral(dir);
   return dir;
 }
@@ -432,7 +440,7 @@ export function getWorkspaceDir(): string {
  * so paths stay concise and portable across machines.
  *
  * Examples:
- *   /Users/alice/.vellum/workspace → ~/.vellum/workspace
+ *   /Users/alice/.cadet/workspace → ~/.cadet/workspace
  *   /data/.vellum/workspace        → /data/.vellum/workspace
  */
 export function getWorkspaceDirDisplay(): string {
@@ -595,7 +603,7 @@ export function getProfilerRunDir(runId: string): string {
 }
 
 export function ensureDataDir(): void {
-  const root = vellumRoot();
+  const root = cadetRoot();
   const workspace = getWorkspaceDir();
   const wsData = join(workspace, "data");
   const dirs = [

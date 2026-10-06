@@ -766,7 +766,7 @@ describe("016-extract-feature-flags-to-protected down()", () => {
   let savedWorkspaceDir: string | undefined;
 
   beforeEach(() => {
-    // getVellumRoot() resolves via dirname(VELLUM_WORKSPACE_DIR), so we set
+    // getCadetRoot() resolves via dirname(VELLUM_WORKSPACE_DIR), so we set
     // VELLUM_WORKSPACE_DIR to <mockRootDir>/workspace so dirname gives mockRootDir.
     const baseDir = freshWorkspace();
     mockRootDir = join(baseDir, ".vellum");

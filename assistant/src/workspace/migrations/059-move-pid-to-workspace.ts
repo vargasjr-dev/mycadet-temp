@@ -10,14 +10,14 @@ import { existsSync, renameSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 
 import type { WorkspaceMigration } from "./types.js";
-import { getVellumRoot } from "./utils.js";
+import { getCadetRoot } from "./utils.js";
 
 export const movePidToWorkspaceMigration: WorkspaceMigration = {
   id: "059-move-pid-to-workspace",
   description: "Move vellum.pid from root to workspace",
 
   run(workspaceDir: string): void {
-    const oldPath = join(getVellumRoot(), "vellum.pid");
+    const oldPath = join(getCadetRoot(), "vellum.pid");
     const newPath = join(workspaceDir, "vellum.pid");
     if (!existsSync(oldPath)) {
       return;
@@ -34,7 +34,7 @@ export const movePidToWorkspaceMigration: WorkspaceMigration = {
   },
 
   down(workspaceDir: string): void {
-    const oldPath = join(getVellumRoot(), "vellum.pid");
+    const oldPath = join(getCadetRoot(), "vellum.pid");
     const newPath = join(workspaceDir, "vellum.pid");
     if (!existsSync(newPath)) {
       return;

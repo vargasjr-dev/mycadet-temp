@@ -6,15 +6,16 @@
  * extensible for future per-device metadata.
  *
  * Path resolution:
- *   - All modes: the `VELLUM_DEVICE_ID` env var takes precedence when set
- *     and is never written to device.json (see getDeviceIdOverride in
- *     config/env-registry.ts).
- *   - Containerized (IS_CONTAINERIZED=true): `/home/assistant/.vellum/device.json`
+ *   - All modes: the `CADET_DEVICE_ID`/`VELLUM_DEVICE_ID` env var takes
+ *     precedence when set and is never written to device.json (see
+ *     getDeviceIdOverride in config/env-registry.ts).
+ *   - Containerized (IS_CONTAINERIZED=true): `/home/assistant/.cadet/device.json`
  *     — the assistant user's persistent home dir, kept off the shared data
  *     volume. Not affected by VELLUM_ENVIRONMENT because the container fs
  *     has no cross-process contract with the Swift client.
- *   - Non-containerized production: `~/.vellum/device.json` (legacy, shared
- *     across all local instances on the same machine).
+ *   - Non-containerized production: `~/.cadet/device.json` (legacy, shared
+ *     across all local instances on the same machine). A legacy ~/.vellum
+ *     is adopted via copy-not-move on first run.
  *   - Non-containerized non-production: `$XDG_CONFIG_HOME/vellum-<env>/device.json`,
  *     matching Swift's `VellumPaths.deviceIdFile`.
  *
@@ -26,6 +27,8 @@ import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+
+import { ensureCadetHomeAt } from "@vellumai/service-contracts/cadet-home";
 
 import {
   getDeviceIdOverride,
@@ -42,22 +45,23 @@ let cached: string | undefined;
  * Resolve the directory and file path for `device.json` based on the
  * runtime environment. See the module docblock for the resolution table.
  *
- * Production and containerized modes preserve the legacy `~/.vellum` /
- * `/home/assistant/.vellum` paths. Non-production, non-containerized
- * deployments route through `$XDG_CONFIG_HOME/vellum-<env>` to match
- * the Swift client's `VellumPaths.deviceIdFile`.
+ * Production and containerized modes use the Cadet home (`~/.cadet` /
+ * `/home/assistant/.cadet`), adopting a legacy `~/.vellum` via copy-not-move
+ * on first run. Non-production, non-containerized deployments route through
+ * `$XDG_CONFIG_HOME/vellum-<env>` to match the Swift client's
+ * `VellumPaths.deviceIdFile` (client-parity name, unchanged by the rebrand).
  */
 function resolveDeviceIdPaths(): { dir: string; file: string } {
   if (getIsContainerized()) {
-    const dir = join("/home/assistant", ".vellum");
+    const dir = ensureCadetHomeAt("/home/assistant").dir;
     return { dir, file: join(dir, "device.json") };
   }
 
   const configDirName = getXdgVellumConfigDirName();
   if (configDirName === "vellum") {
-    // Production: device.json lives at ~/.vellum/device.json, shared
+    // Production: device.json lives at ~/.cadet/device.json, shared
     // across all local instances on the same machine.
-    const dir = join(homedir(), ".vellum");
+    const dir = ensureCadetHomeAt(homedir()).dir;
     return { dir, file: join(dir, "device.json") };
   }
 

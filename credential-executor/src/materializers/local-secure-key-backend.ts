@@ -346,7 +346,8 @@ export class StoreUnavailableError extends Error {
  * persisting refreshed OAuth tokens. `delete` removes a key from the
  * encrypted store.
  *
- * @param vellumRoot - The Vellum root directory (e.g. `~/.vellum`).
+ * @param vellumRoot - The Vellum root directory (e.g. `~/.cadet`; local
+ *   callers resolve it via ensureCadetHomeAt).
  * @param options.entropyOverride - If provided, used instead of local
  *   machine entropy for key derivation. In managed mode the CES sidecar
  *   runs in a different container with a different hostname/user, so it

@@ -127,10 +127,7 @@ function createTestServer(handlers: RpcHandlerRegistry = {}) {
 
 describe("managed entrypoint transport isolation", () => {
   test("main.ts uses Bun.serve only for health probes (managed mode)", () => {
-    const src = readFileSync(
-      resolve(__dirname, "..", "main.ts"),
-      "utf-8",
-    );
+    const src = readFileSync(resolve(__dirname, "..", "main.ts"), "utf-8");
     // Bun.serve is used for the health server in managed mode
     const bunServeMatches = src.match(/Bun\.serve\(/g);
     expect(bunServeMatches).not.toBeNull();
@@ -139,10 +136,7 @@ describe("managed entrypoint transport isolation", () => {
   });
 
   test("main.ts uses createNetServer for Unix socket transport", () => {
-    const src = readFileSync(
-      resolve(__dirname, "..", "main.ts"),
-      "utf-8",
-    );
+    const src = readFileSync(resolve(__dirname, "..", "main.ts"), "utf-8");
     // Uses node:net createServer for the socket transport (both modes)
     expect(src).toMatch(/createNetServer/);
     // The net server never listens on a TCP port (only a socket path)
@@ -156,10 +150,7 @@ describe("managed entrypoint transport isolation", () => {
 
 describe("health probes", () => {
   test("main.ts serves /healthz and /readyz in managed mode", () => {
-    const src = readFileSync(
-      resolve(__dirname, "..", "main.ts"),
-      "utf-8",
-    );
+    const src = readFileSync(resolve(__dirname, "..", "main.ts"), "utf-8");
     expect(src).toMatch(/\/healthz/);
     expect(src).toMatch(/\/readyz/);
     // Health server uses Bun.serve on a dedicated port, not the socket
@@ -393,10 +384,10 @@ describe("CES data paths", () => {
     }
   });
 
-  test("local data root is under the Vellum root, not the workspace", () => {
+  test("local data root is under the Cadet root, not the workspace", () => {
     const root = getCesDataRoot("local");
-    // Must be under .vellum/protected/, NOT .vellum/workspace/
-    expect(root).toMatch(/\.vellum[/\\]protected[/\\]/);
+    // Must be under .cadet/protected/, NOT .cadet/workspace/
+    expect(root).toMatch(/\.cadet[/\\]protected[/\\]/);
     expect(root).not.toMatch(/workspace/);
   });
 

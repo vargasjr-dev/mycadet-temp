@@ -49,7 +49,7 @@ mock.module("../util/platform.js", () => ({
   getWorkspaceHooksDir: () => workspacePath("hooks"),
   getWorkspacePluginsDir: () => workspacePath("plugins"),
   getWorkspaceRoutesDir: () => workspacePath("routes"),
-  vellumRoot: () => testWorkspaceDir,
+  cadetRoot: () => testWorkspaceDir,
   getDataDir: () => workspacePath("data"),
   getConfigQuarantineNoticePath: () =>
     workspacePath("data", "config-quarantine-notice.json"),

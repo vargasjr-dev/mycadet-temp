@@ -20,8 +20,11 @@
  * When neither is set, defaults to `~/.vellum/protected/` (local mode).
  */
 
-import { join } from "node:path";
 import { homedir } from "node:os";
+import { join } from "node:path";
+
+import { ensureCadetHomeAt } from "@vellumai/service-contracts/cadet-home";
+
 import { createLocalSecureKeyBackend } from "./materializers/local-secure-key-backend.js";
 
 // ---------------------------------------------------------------------------
@@ -47,7 +50,11 @@ function resolveVellumRoot(): string {
     return join(mount, ".vellum");
   }
 
-  return join(homedir(), ".vellum");
+  // Local fallback: the Cadet home, adopting a legacy ~/.vellum via
+  // copy-not-move (matches the gateway's resolution in util/platform.ts).
+  // The managed branch above keeps the platform-template `.vellum` mount
+  // layout until the platform template itself is rebranded.
+  return ensureCadetHomeAt(homedir()).dir;
 }
 
 // ---------------------------------------------------------------------------

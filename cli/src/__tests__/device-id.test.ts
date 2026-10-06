@@ -12,7 +12,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 
 // Bun's os.homedir() ignores runtime HOME changes, so mock it (via the shared
-// helper) to keep production-path tests off the real ~/.vellum.
+// helper) to keep production-path tests off the real ~/.cadet.
 let fakeHome: string | undefined;
 await mockOsHomedir((realHomedir) => () => fakeHome ?? realHomedir());
 
@@ -30,6 +30,7 @@ const restoreEnv = snapshotEnv([
   "XDG_CONFIG_HOME",
   "VELLUM_ENVIRONMENT",
   "VELLUM_DEVICE_ID",
+  "CADET_DEVICE_ID",
 ]);
 
 describe("getOrCreateHostDeviceId", () => {
@@ -124,11 +125,12 @@ describe("getOrCreateHostDeviceId (production)", () => {
 
   beforeEach(() => {
     delete process.env.VELLUM_DEVICE_ID;
+    delete process.env.CADET_DEVICE_ID;
     tempHome = mkdtempSync(join(tmpdir(), "cli-device-id-prod-test-"));
     fakeHome = tempHome;
     process.env.XDG_CONFIG_HOME = join(tempHome, ".config");
     process.env.VELLUM_ENVIRONMENT = "production";
-    deviceFile = join(tempHome, ".vellum", "device.json");
+    deviceFile = join(tempHome, ".cadet", "device.json");
     resetHostDeviceIdCache();
   });
 
@@ -139,7 +141,7 @@ describe("getOrCreateHostDeviceId (production)", () => {
     resetHostDeviceIdCache();
   });
 
-  test("creates device.json in the shared ~/.vellum dir", () => {
+  test("creates device.json in the shared ~/.cadet dir", () => {
     const id = getOrCreateHostDeviceId();
 
     expect(id).toMatch(UUID_RE);
@@ -147,8 +149,25 @@ describe("getOrCreateHostDeviceId (production)", () => {
     expect(JSON.parse(readFileSync(deviceFile, "utf-8")).deviceId).toBe(id);
   });
 
-  test("reuses an existing ~/.vellum/device.json", () => {
+  test("adopts a legacy ~/.vellum/device.json via copy-not-move", () => {
+    const legacyFile = join(tempHome, ".vellum", "device.json");
     mkdirSync(join(tempHome, ".vellum"), { recursive: true });
+    writeFileSync(legacyFile, JSON.stringify({ deviceId: "legacy-prod-id" }));
+
+    // The legacy identity carries over through the migration...
+    expect(getOrCreateHostDeviceId()).toBe("legacy-prod-id");
+    expect(JSON.parse(readFileSync(deviceFile, "utf-8")).deviceId).toBe(
+      "legacy-prod-id",
+    );
+
+    // ...copy-not-move: the legacy file is left intact for rollback.
+    expect(JSON.parse(readFileSync(legacyFile, "utf-8")).deviceId).toBe(
+      "legacy-prod-id",
+    );
+  });
+
+  test("reuses an existing ~/.cadet/device.json", () => {
+    mkdirSync(join(tempHome, ".cadet"), { recursive: true });
     writeFileSync(deviceFile, JSON.stringify({ deviceId: "shared-prod-id" }));
 
     expect(getOrCreateHostDeviceId()).toBe("shared-prod-id");

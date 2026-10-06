@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
 
+import { ensureCadetHomeAt } from "@vellumai/service-contracts/cadet-home";
 import type { Command } from "commander";
 
 import { cliIpcCall, exitFromIpcResult } from "../../ipc/cli-client.js";
@@ -46,11 +47,15 @@ export function registerAvatarCommand(program: Command): void {
       // ── set ──────────────────────────────────────────────────────────
       subcommand(avatar, "set").action(
         async (opts: { image: string }, cmd: Command) => {
+          // Lazy import: daemon-internal modules stay out of the CLI's
+          // static graph (src/cli/AGENTS.md).
+          const { getWorkspaceDirOverride } =
+            await import("../../config/env-registry.js");
           const resolvedSource = isAbsolute(opts.image)
             ? opts.image
             : join(
-                process.env.VELLUM_WORKSPACE_DIR ||
-                  join(homedir(), ".vellum", "workspace"),
+                getWorkspaceDirOverride() ||
+                  join(ensureCadetHomeAt(homedir()).dir, "workspace"),
                 opts.image,
               );
 

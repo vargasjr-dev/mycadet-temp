@@ -3,6 +3,8 @@
  *
  * This module documents every VELLUM_* and related env var with its type,
  * default, and description, and exports typed accessor functions for each.
+ * Every `VELLUM_X` var is read with the rebrand fallback rule: `CADET_X` is
+ * primary (wins when set), `VELLUM_X` is the legacy fallback (see readEnv).
  *
  * IMPORTANT: This module has NO internal imports (no logger, no platform
  * utilities) so it can be safely imported from bootstrap-level code like
@@ -14,9 +16,30 @@
 
 // ── Helpers (dependency-free) ────────────────────────────────────────────────
 
-function str(name: string): string | undefined {
+const VELLUM_ENV_PREFIX = "VELLUM_";
+const CADET_ENV_PREFIX = "CADET_";
+
+/**
+ * Read an env var with the rebrand fallback rule: for every `VELLUM_X` the
+ * `CADET_X` spelling is primary — when set it wins; otherwise the legacy
+ * `VELLUM_X` value applies. Platform-managed deployments still inject
+ * `VELLUM_*` today, so both spellings keep working during the migration.
+ * Vars without the `VELLUM_` prefix (e.g. `GATEWAY_PORT`) are read as-is.
+ */
+export function readEnv(name: string): string | undefined {
+  if (name.startsWith(VELLUM_ENV_PREFIX)) {
+    const cadetName = CADET_ENV_PREFIX + name.slice(VELLUM_ENV_PREFIX.length);
+    const cadetValue = process.env[cadetName]?.trim();
+    if (cadetValue) {
+      return cadetValue;
+    }
+  }
   const v = process.env[name]?.trim();
   return v || undefined;
+}
+
+function str(name: string): string | undefined {
+  return readEnv(name);
 }
 
 function flag(name: string): boolean {
@@ -250,10 +273,29 @@ const KNOWN_VELLUM_VARS = new Set([
  * logging directly, so it can be called from bootstrap code before the
  * logger is initialized.
  */
+/**
+ * A var is recognized when it is a known `VELLUM_*` var, or the `CADET_*`
+ * spelling of one (the rebrand fallback rule — see `readEnv`).
+ */
+function isRecognizedEnvVar(key: string): boolean {
+  if (KNOWN_VELLUM_VARS.has(key)) {
+    return true;
+  }
+  if (key.startsWith(CADET_ENV_PREFIX)) {
+    return KNOWN_VELLUM_VARS.has(
+      VELLUM_ENV_PREFIX + key.slice(CADET_ENV_PREFIX.length),
+    );
+  }
+  return false;
+}
+
 export function checkUnrecognizedEnvVars(): string[] {
   const warnings: string[] = [];
   for (const key of Object.keys(process.env)) {
-    if (key.startsWith("VELLUM_") && !KNOWN_VELLUM_VARS.has(key)) {
+    if (isRecognizedEnvVar(key)) {
+      continue;
+    }
+    if (key.startsWith("VELLUM_") || key.startsWith("CADET_")) {
       warnings.push(`Unrecognized environment variable: ${key}`);
     }
   }

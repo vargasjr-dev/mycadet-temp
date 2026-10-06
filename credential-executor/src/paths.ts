@@ -22,6 +22,8 @@
 import { join } from "node:path";
 import { homedir } from "node:os";
 
+import { ensureCadetHomeAt } from "@vellumai/service-contracts/cadet-home";
+
 import { resolveIpcEndpoint } from "@vellumai/ipc-server-utils";
 
 // ---------------------------------------------------------------------------
@@ -50,13 +52,14 @@ export function getCesMode(): CesMode {
  * Priority:
  * 1. `CREDENTIAL_SECURITY_DIR` env var (set by the platform template for the
  *    CES container — `/ces-security` in managed mode)
- * 2. Default: `~/.vellum/protected` (local mode shares the filesystem with
- *    the gateway)
+ * 2. Default: `~/.cadet/protected` (local mode shares the filesystem with
+ *    the gateway; a legacy ~/.vellum is adopted via copy-not-move on first
+ *    run)
  */
 export function getSecurityDir(): string {
   return (
     process.env["CREDENTIAL_SECURITY_DIR"]?.trim() ||
-    join(homedir(), ".vellum", "protected")
+    join(ensureCadetHomeAt(homedir()).dir, "protected")
   );
 }
 
