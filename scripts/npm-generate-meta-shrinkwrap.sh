@@ -5,7 +5,7 @@
 # Regenerate meta/npm-shrinkwrap.json from the stamped meta/package.json.
 #
 # npm only honors "overrides" in the root package.json, so they are ignored
-# when end users run `npm install -g @mycadet/meta`. Shipping an npm-shrinkwrap.json
+# when end users run `npm install -g mycadet`. Shipping an npm-shrinkwrap.json
 # generated with the overrides applied makes npm follow the same resolution
 # for installed copies of the package.
 #

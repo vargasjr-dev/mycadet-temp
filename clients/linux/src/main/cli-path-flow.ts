@@ -76,7 +76,7 @@ async function showInstallSuccessDialog(): Promise<void> {
       `The vellum command is installed at ${wrapperPath}, but another ` +
       `"vellum" was found at ${state.shadowedBy} (likely installed via ` +
       "npm) and will take precedence in your terminal. Run " +
-      '"npm uninstall -g @mycadet/meta" to use the app-managed version.';
+      '"npm uninstall -g mycadet" to use the app-managed version.';
     if (!state.inPath) {
       detail += ` Also, ${copyPathExportHelp()}`;
     }

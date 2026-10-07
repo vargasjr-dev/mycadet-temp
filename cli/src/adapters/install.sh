@@ -249,14 +249,14 @@ ENVEOF
 install_cadet() {
     if command -v cadet >/dev/null 2>&1; then
         info "Updating cadet to latest..."
-        bun install -g @mycadet/meta@latest
+        bun install -g mycadet@latest
     else
         info "Installing cadet globally..."
-        bun install -g @mycadet/meta@latest
+        bun install -g mycadet@latest
     fi
 
     if ! command -v cadet >/dev/null 2>&1; then
-        error "cadet installation failed. Please install manually: bun install -g @mycadet/meta"
+        error "cadet installation failed. Please install manually: bun install -g mycadet"
         exit 1
     fi
 

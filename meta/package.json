@@ -1,5 +1,5 @@
 {
-  "name": "@mycadet/meta",
+  "name": "mycadet",
   "version": "0.12.6",
   "license": "MIT",
   "description": "Install the full Cadet stack locally",
