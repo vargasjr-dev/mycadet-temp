@@ -1,31 +1,17 @@
-import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
-// ── Module mocks ─────────────────────────────────────────────────────
-
-let fakeHttpAuthDisabled = false;
-
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => fakeHttpAuthDisabled,
-  hasUngatedHttpAuthDisabled: () => false,
-}));
-
-// ── Real imports (after mocks) ───────────────────────────────────────
-
+// ── Real imports ─────────────────────────────────────────────────────
 import {
   FALLBACK_TURN_TRUST,
   resolveTrustClass,
 } from "../daemon/trust-context.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 
-afterAll(() => {
-  mock.restore();
-});
-
 // ── Tests ────────────────────────────────────────────────────────────
 
 describe("resolveTrustClass", () => {
   beforeEach(() => {
-    fakeHttpAuthDisabled = false;
+    delete process.env.DISABLE_HTTP_AUTH;
   });
 
   test("returns guardian context trust class when auth is enabled", () => {
@@ -44,7 +30,7 @@ describe("resolveTrustClass", () => {
     // so a resolved channel actor's class must survive it — otherwise a
     // non-guardian Slack/phone contact would be treated as the guardian
     // (LUM-2669). Only an unresolved (local/native) turn is elevated; see below.
-    fakeHttpAuthDisabled = true;
+    process.env.DISABLE_HTTP_AUTH = "true";
     expect(
       resolveTrustClass({ trustClass: "trusted_contact" } as TrustContext),
     ).toBe("trusted_contact");
@@ -57,7 +43,7 @@ describe("resolveTrustClass", () => {
     // Local/native turns reach the daemon without a channel-resolved
     // trustContext; in an auth-disabled (local) deployment that actor is the
     // guardian, so control-plane gates don't block local development.
-    fakeHttpAuthDisabled = true;
+    process.env.DISABLE_HTTP_AUTH = "true";
     expect(resolveTrustClass(undefined)).toBe("guardian");
   });
 
@@ -68,7 +54,7 @@ describe("resolveTrustClass", () => {
     // elevate it: the fallback's documented bias-to-unknown has to survive
     // DISABLE_HTTP_AUTH so a missing snapshot can't grant guardian trust. This is
     // the fail-safe sibling to LUM-2665; see LUM-2669.
-    fakeHttpAuthDisabled = true;
+    process.env.DISABLE_HTTP_AUTH = "true";
     expect(resolveTrustClass(FALLBACK_TURN_TRUST)).toBe("unknown");
   });
 });

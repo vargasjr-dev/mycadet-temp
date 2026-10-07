@@ -1,11 +1,6 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
-
-// Stub memory job queue to avoid side effects
-mock.module("../persistence/jobs-store.js", () => ({
-  enqueueMemoryJob: () => {},
-}));
-
 import type { Database } from "bun:sqlite";
+import { beforeEach, describe, expect, test } from "bun:test";
+import { beforeAll } from "bun:test";
 
 import { executePlaybookCreate } from "../config/bundled-skills/playbooks/tools/playbook-create.js";
 import { executePlaybookDelete } from "../config/bundled-skills/playbooks/tools/playbook-delete.js";
@@ -15,7 +10,9 @@ import { getMemorySqlite } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import type { ToolContext } from "../tools/types.js";
 
-await initializeDb();
+beforeAll(async () => {
+  await initializeDb();
+});
 
 function getRawDb(): Database {
   return getMemorySqlite()!;

@@ -10,7 +10,7 @@
  * `conversations` is emptied: an append that beat it is a row it deletes, and
  * one that follows it has no conversation to key itself to.
  */
-import { describe, expect, mock, test } from "bun:test";
+import { beforeAll, describe, expect, mock, spyOn, test } from "bun:test";
 
 // Keep the rest of the module real; only the Qdrant collection drop is
 // replaced, so `clearAll` does not reach for a lexical index that is not
@@ -34,34 +34,16 @@ mock.module("../persistence/job-handlers/message-lexical.js", () => ({
 let appendDuringWipe: { onStatement: string; run: () => void } | null = null;
 
 // Every bulk delete in `clearAll` goes through `runAsyncSqlite`, which spawns
-// a sqlite3 subprocess and yields the event loop. The wrapper runs the real
-// statement and stands in for whatever else the daemon would have done while
-// it was in flight.
-const actualAsyncQuery = await import("../persistence/db-async-query.js");
-const realRunAsyncSqlite = actualAsyncQuery.runAsyncSqlite;
-mock.module("../persistence/db-async-query.js", () => ({
-  ...actualAsyncQuery,
-  runAsyncSqlite: async (
-    sql: string,
-    label: string,
-    options?: Parameters<typeof actualAsyncQuery.runAsyncSqlite>[2],
-  ) => {
-    const result = await realRunAsyncSqlite(sql, label, options);
-    if (appendDuringWipe && appendDuringWipe.onStatement === sql) {
-      const pending = appendDuringWipe;
-      appendDuringWipe = null;
-      pending.run();
-    }
-    return result;
-  },
-}));
-
+// a sqlite3 subprocess and yields the event loop. A pass-through spy on the
+// live module namespace lets the real subprocess run while the race hook below
+// schedules an append onto the statement it is keyed to.
 import {
   clearAll,
   createConversation,
   deleteConversation,
   deleteConversationGently,
 } from "../persistence/conversation-crud.js";
+import * as dbAsyncQuery from "../persistence/db-async-query.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { attachments } from "../persistence/schema/conversations.js";
@@ -73,7 +55,25 @@ import {
   renderWatchTimeline,
 } from "../watch/watch-timeline.js";
 
-await initializeDb();
+beforeAll(async () => {
+  await initializeDb();
+  const realRunAsyncSqlite = dbAsyncQuery.runAsyncSqlite;
+  spyOn(dbAsyncQuery, "runAsyncSqlite").mockImplementation(
+    async (
+      sql: string,
+      label: string,
+      options?: Parameters<typeof realRunAsyncSqlite>[2],
+    ) => {
+      const result = await realRunAsyncSqlite(sql, label, options);
+      if (appendDuringWipe && appendDuringWipe.onStatement === sql) {
+        const pending = appendDuringWipe;
+        appendDuringWipe = null;
+        pending.run();
+      }
+      return result;
+    },
+  );
+});
 
 /** A 1x1 JPEG, the shape the host hands over on every observe. */
 const SCREENSHOT_BASE64 =

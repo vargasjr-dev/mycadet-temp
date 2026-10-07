@@ -8,8 +8,17 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 
+import { getBundledSkillsDir } from "../config/skills.js";
+import {
+  getBundledSkillsRoot,
+  getManagedSkillsRoot,
+  getSkillRoots,
+  isSkillSourcePath,
+  normalizeDirPath,
+  normalizeFilePath,
+} from "../skills/path-classifier.js";
 import {
   hostPolicy,
   resolveRealPath,
@@ -17,30 +26,13 @@ import {
   sandboxPolicyWithHostFallback,
   sandboxReadPolicy,
 } from "../tools/shared/filesystem/path-policy.js";
-import { getDotEnvPath } from "../util/platform.js";
+import { getDotEnvPath, getWorkspaceSkillsDir } from "../util/platform.js";
 
-// ── Mock setup for skill path classifier ────────────────────────────────────
-// The classifier imports getWorkspaceSkillsDir and getBundledSkillsDir, which
-// need stable test directories to avoid depending on the real home directory.
-// We create and realpath the root eagerly so that macOS's /tmp -> /private/tmp
-// symlink doesn't cause prefix mismatches between normalized roots and paths.
-
-const CLASSIFIER_TEST_ROOT = process.env.CADET_WORKSPACE_DIR!;
-const MOCK_MANAGED_DIR = join(CLASSIFIER_TEST_ROOT, "skills");
-const MOCK_BUNDLED_DIR = join(CLASSIFIER_TEST_ROOT, "bundled-skills");
-
-mock.module("../config/skills.js", () => ({
-  getBundledSkillsDir: () => MOCK_BUNDLED_DIR,
-}));
-
-const {
-  isSkillSourcePath,
-  normalizeDirPath,
-  normalizeFilePath,
-  getSkillRoots,
-  getManagedSkillsRoot,
-  getBundledSkillsRoot,
-} = await import("../skills/path-classifier.js");
+// The classifier reads REAL roots: managed = the per-process workspace skills
+// dir (writable, from the test preload), bundled = the repo's bundled-skills
+// dir (read-only — tests only classify existing paths under it).
+const MOCK_MANAGED_DIR = getWorkspaceSkillsDir();
+const MOCK_BUNDLED_DIR = getBundledSkillsDir();
 
 const testDirs: string[] = [];
 
@@ -360,12 +352,7 @@ describe("sandboxPolicyWithHostFallback", () => {
     const boundary = makeTempDir();
 
     const result = sandboxPolicyWithHostFallback(
-      join(
-        process.env.HOME!,
-        ".cadet",
-        "protected",
-        "actor-token-signing-key",
-      ),
+      join(process.env.HOME!, ".cadet", "protected", "actor-token-signing-key"),
       boundary,
       { mustExist: false },
     );
@@ -882,8 +869,8 @@ describe("isSkillSourcePath", () => {
   });
 
   test("returns true for path inside bundled skills dir", () => {
-    mkdirSync(MOCK_BUNDLED_DIR, { recursive: true });
-    const filePath = join(MOCK_BUNDLED_DIR, "web-search", "SKILL.md");
+    // The real bundled dir ships skills — classify one instead of creating it.
+    const filePath = join(MOCK_BUNDLED_DIR, "acp", "SKILL.md");
     expect(isSkillSourcePath(filePath)).toBe(true);
   });
 

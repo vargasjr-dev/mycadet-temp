@@ -1,19 +1,12 @@
-import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
-process.env.DISABLE_HTTP_AUTH = "true";
-
-const mockMarkConversationUnread = mock((_conversationId: string) => true);
-
-mock.module("../persistence/conversation-attention-store.js", () => ({
-  getAttentionStateByConversationIds: () => new Map(),
-  recordConversationSeenSignal: () => ({}),
-  markConversationUnread: mockMarkConversationUnread,
-}));
-
-mock.module("../persistence/conversation-key-store.js", () => ({
-  resolveConversationId: (id: string) => id,
-}));
-
+import { getAttentionStateByConversationIds } from "../persistence/conversation-attention-store.js";
+import {
+  addMessage,
+  ensureConversationExists,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
+import { RuntimeHttpServer } from "../runtime/http-server.js";
 import { ROUTES } from "../runtime/routes/index.js";
 
 /**
@@ -27,18 +20,20 @@ function routePolicy(endpoint: string, method?: string) {
   );
   return route?.policy ?? null;
 }
-import { RuntimeHttpServer } from "../runtime/http-server.js";
-import { UserError } from "../util/errors.js";
 
 describe("POST /v1/conversations/unread", () => {
   let server: RuntimeHttpServer;
   let port: number;
 
-  beforeEach(() => {
-    mockMarkConversationUnread.mockClear();
+  beforeAll(async () => {
+    await initializeDb();
+    // The HTTP adapter only serves unauthenticated local requests when HTTP
+    // auth is disabled (the gateway-fronted deployment posture).
+    process.env.DISABLE_HTTP_AUTH = "true";
   });
 
   afterAll(async () => {
+    delete process.env.DISABLE_HTTP_AUTH;
     await server?.stop();
   });
 
@@ -79,12 +74,14 @@ describe("POST /v1/conversations/unread", () => {
         message: "Missing conversationId",
       },
     });
-    expect(mockMarkConversationUnread).not.toHaveBeenCalled();
 
     await stopServer();
   });
 
   test("marks a conversation unread", async () => {
+    ensureConversationExists("conv-123", "telegram");
+    addMessage("conv-123", "assistant", "the only assistant reply");
+
     await startServer();
 
     const res = await fetch(unreadUrl(), {
@@ -95,18 +92,22 @@ describe("POST /v1/conversations/unread", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
-    expect(mockMarkConversationUnread).toHaveBeenCalledTimes(1);
-    expect(mockMarkConversationUnread).toHaveBeenCalledWith("conv-123");
+
+    // Unread = seen cursor behind the latest assistant message. With a single
+    // assistant message there is no previous one, so the seen cursor is null.
+    const state = getAttentionStateByConversationIds(["conv-123"]).get(
+      "conv-123",
+    );
+    expect(state?.latestAssistantMessageId).not.toBeNull();
+    expect(state?.lastSeenAssistantMessageId).toBeNull();
 
     await stopServer();
   });
 
   test("returns UNPROCESSABLE_ENTITY when the conversation has no assistant message", async () => {
-    mockMarkConversationUnread.mockImplementationOnce(() => {
-      throw new UserError(
-        "Conversation has no assistant message to mark unread",
-      );
-    });
+    // Real store semantics: no assistant message means no cursor to mark
+    // unread against, and markConversationUnread throws this exact UserError.
+    ensureConversationExists("conv-no-assistant", "telegram");
 
     await startServer();
 

@@ -19,56 +19,19 @@
  * registry between cases.
  */
 
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
-// Stub the title-generation service before importing anything that binds
-// to it, so both the default plugin and the hooks capture the stubbed binding.
-const queueGenerateConversationTitleMock = mock(
-  (_params: {
-    conversationId: string;
-    provider?: unknown;
-    userMessage?: string;
-  }): void => undefined,
-);
-const queueRegenerateConversationTitleMock = mock(
-  (_params: {
-    conversationId: string;
-    provider?: unknown;
-    onlyIfReplaceable?: boolean;
-  }): void => undefined,
-);
-mock.module("../persistence/conversation-title-service.js", () => ({
-  AUTO_TITLE_DETERMINISTIC: 2,
-  isReplaceableTitle: (title: string | null) =>
-    title == null ||
-    title === "" ||
-    title === "Generating title..." ||
-    title === "New Conversation" ||
-    title === "Untitled" ||
-    title === "Untitled Conversation" ||
-    title.startsWith("Runtime: "),
-  queueGenerateConversationTitle: queueGenerateConversationTitleMock,
-  queueRegenerateConversationTitle: queueRegenerateConversationTitleMock,
-}));
-
-const mockGetConversation = mock(
-  (_conversationId: string) =>
-    ({
-      title: "Existing Title",
-      isAutoTitle: 1,
-      conversationType: "standard",
-    }) as {
-      title: string;
-      isAutoTitle: number;
-      conversationType: string;
-    },
-);
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  getConversation: mockGetConversation,
-}));
-
+// The title service and conversation CRUD are REAL. The queue functions are
+// pass-through spies on the live module namespace: they record the hook's
+// trigger decision while the real service runs (with no provider configured it
+// settles deterministically — no network). Conversation title/isAutoTitle
+// variants are seeded per test via the real updateConversationTitle setter.
+import {
+  ensureConversationExists,
+  updateConversationTitle,
+} from "../persistence/conversation-crud.js";
+import * as titleService from "../persistence/conversation-title-service.js";
+import { initializeDb } from "../persistence/db-init.js";
 import { HOOKS } from "../plugin-api/constants.js";
 import type {
   PluginLogger,
@@ -78,6 +41,25 @@ import type {
 import { defaultTitleGeneratePlugin } from "../plugins/defaults/index.js";
 import stop from "../plugins/defaults/title-generate/hooks/stop.js";
 import userPromptSubmit from "../plugins/defaults/title-generate/hooks/user-prompt-submit.js";
+
+const queueGenerateConversationTitleMock = spyOn(
+  titleService,
+  "queueGenerateConversationTitle",
+);
+const queueRegenerateConversationTitleMock = spyOn(
+  titleService,
+  "queueRegenerateConversationTitle",
+);
+
+beforeAll(async () => {
+  await initializeDb();
+  ensureConversationExists("conv-1", "telegram");
+});
+
+/** Seed the conversation row the stop hook reads, via the real setter. */
+function seedConversation(title: string, isAutoTitle: number): void {
+  updateConversationTitle("conv-1", title, isAutoTitle);
+}
 import { runHook } from "../plugins/pipeline.js";
 import {
   registerPlugin,
@@ -166,8 +148,7 @@ function makeStopCtx(overrides: Partial<StopContext> = {}): StopContext {
 describe("title-generate user-prompt-submit hook", () => {
   beforeEach(() => {
     resetPluginRegistryForTests();
-    queueGenerateConversationTitleMock.mockReset();
-    queueGenerateConversationTitleMock.mockImplementation(() => undefined);
+    queueGenerateConversationTitleMock.mockClear();
   });
 
   test("queues a title-generation job from the submitted prompt", async () => {
@@ -240,21 +221,8 @@ describe("title-generate user-prompt-submit hook", () => {
 describe("title-generate stop hook", () => {
   beforeEach(() => {
     resetPluginRegistryForTests();
-    queueRegenerateConversationTitleMock.mockReset();
-    queueRegenerateConversationTitleMock.mockImplementation(() => undefined);
-    mockGetConversation.mockReset();
-    mockGetConversation.mockImplementation(
-      (_conversationId: string) =>
-        ({
-          title: "Existing Title",
-          isAutoTitle: 1,
-          conversationType: "standard",
-        }) as {
-          title: string;
-          isAutoTitle: number;
-          conversationType: string;
-        },
-    );
+    queueRegenerateConversationTitleMock.mockClear();
+    seedConversation("Existing Title", 1);
     setSkipAutoRetitling(false);
   });
 
@@ -277,11 +245,7 @@ describe("title-generate stop hook", () => {
   });
 
   test("retries a replaceable fallback title after a successful turn", async () => {
-    mockGetConversation.mockReturnValueOnce({
-      title: "Untitled Conversation",
-      isAutoTitle: 2,
-      conversationType: "standard",
-    });
+    seedConversation("Untitled Conversation", 2);
     const ctx = makeStopCtx({ messages: historyWithUserTurns(1) });
 
     await stop(ctx);
@@ -295,11 +259,7 @@ describe("title-generate stop hook", () => {
   });
 
   test("preserves the third-turn retitle when the title is still replaceable", async () => {
-    mockGetConversation.mockReturnValueOnce({
-      title: "Untitled Conversation",
-      isAutoTitle: 2,
-      conversationType: "standard",
-    });
+    seedConversation("Untitled Conversation", 2);
     const ctx = makeStopCtx({ messages: historyWithUserTurns(3) });
 
     await stop(ctx);
@@ -313,11 +273,7 @@ describe("title-generate stop hook", () => {
 
   test("fallback title retry is not blocked by the retitling opt-out", async () => {
     setSkipAutoRetitling(true);
-    mockGetConversation.mockReturnValueOnce({
-      title: "Generating title...",
-      isAutoTitle: 1,
-      conversationType: "standard",
-    });
+    seedConversation("Generating title...", 1);
     const ctx = makeStopCtx({ messages: historyWithUserTurns(1) });
 
     await stop(ctx);

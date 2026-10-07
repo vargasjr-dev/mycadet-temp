@@ -5,12 +5,14 @@
  * carries the x-cadet-principal-type: svc_gateway header (injected by
  * the HTTP adapter from AuthContext).
  */
-import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
-
-mock.module("../config/env.js", () => ({
-  isHttpAuthDisabled: () => true,
-  getAssistantDomain: () => "mycadet.bot",
-}));
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "bun:test";
 
 import { initializeDb } from "../persistence/db-init.js";
 import {
@@ -52,8 +54,15 @@ describe("attachment upload — trustedSource flag", () => {
   // initializeDb runs the full migration chain (hundreds of steps); under
   // parallel CI load it can exceed bun's default 5s hook timeout, so allow more.
   beforeAll(async () => {
+    // Real env gate: the route only honors trustedSource when HTTP auth is
+    // disabled (the gateway-fronted deployment posture).
+    process.env.DISABLE_HTTP_AUTH = "true";
     await initializeDb();
   }, 30_000);
+
+  afterAll(() => {
+    delete process.env.DISABLE_HTTP_AUTH;
+  });
 
   beforeEach(() => {
     // Each test uploads a fresh attachment with unique filename; no per-test

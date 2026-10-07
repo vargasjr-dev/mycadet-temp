@@ -6,30 +6,31 @@
  * behavior that disables caching entirely.
  */
 
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "bun:test";
 
-// ---------------------------------------------------------------------------
-// Mocks — defined before importing the module under test
-// ---------------------------------------------------------------------------
-
-const checkpointStore = new Map<string, string>();
-
-mock.module("../persistence/checkpoints.js", () => ({
-  getMemoryCheckpoint: (key: string) => checkpointStore.get(key) ?? null,
-  setMemoryCheckpoint: (key: string, value: string) => {
-    checkpointStore.set(key, value);
-  },
-}));
-
-// ---------------------------------------------------------------------------
-// Imports (after mocks)
-// ---------------------------------------------------------------------------
-
+import {
+  getMemoryCheckpoint,
+  setMemoryCheckpoint,
+} from "../persistence/checkpoints.js";
+import { getSqlite } from "../persistence/db-connection.js";
+import { initializeDb } from "../persistence/db-init.js";
 import {
   getCachedEmptyStateGreeting,
   setCachedEmptyStateGreeting,
 } from "../runtime/routes/empty-state-greeting-cache.js";
 import { setConfig } from "./helpers/set-config.js";
+
+// The checkpoint store is real: rows live in the per-process workspace DB.
+beforeAll(async () => {
+  await initializeDb();
+});
 
 /** Seed the cache TTL into the real workspace config. */
 function setCacheTtlMs(ttlMs: number): void {
@@ -43,7 +44,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  checkpointStore.clear();
+  getSqlite().run("DELETE FROM memory_checkpoints");
 });
 
 describe("empty-state greeting cache", () => {
@@ -67,7 +68,7 @@ describe("empty-state greeting cache", () => {
 
   test("returns null once the TTL is exceeded", () => {
     setCachedEmptyStateGreeting("stale");
-    checkpointStore.set(
+    setMemoryCheckpoint(
       TIMESTAMP_KEY,
       String(Date.now() - (4 * 60 + 1) * 60 * 1000),
     );
@@ -76,7 +77,7 @@ describe("empty-state greeting cache", () => {
 
   test("returns the cached value just within the TTL", () => {
     setCachedEmptyStateGreeting("fresh enough");
-    checkpointStore.set(
+    setMemoryCheckpoint(
       TIMESTAMP_KEY,
       String(Date.now() - (3 * 60 + 59) * 60 * 1000),
     );
@@ -86,7 +87,7 @@ describe("empty-state greeting cache", () => {
   test("TTL of 0 disables caching: writes are skipped and reads miss", () => {
     setCacheTtlMs(0);
     setCachedEmptyStateGreeting("should not persist");
-    expect(checkpointStore.size).toBe(0);
+    expect(getMemoryCheckpoint(TIMESTAMP_KEY)).toBeNull();
     expect(getCachedEmptyStateGreeting()).toBeNull();
   });
 
@@ -97,7 +98,7 @@ describe("empty-state greeting cache", () => {
   });
 
   test("returns null when the timestamp checkpoint is missing", () => {
-    checkpointStore.set("empty_state:greeting:text", "orphaned");
+    setMemoryCheckpoint("empty_state:greeting:text", "orphaned");
     expect(getCachedEmptyStateGreeting()).toBeNull();
   });
 });

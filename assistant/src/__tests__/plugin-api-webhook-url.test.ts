@@ -8,17 +8,7 @@
  * registration type it derives, and what it refuses.
  */
 
-import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
-
-let mockIsPlatform = false;
-
-// Bun shares mocked modules across test files in a combined run, so the mock
-// spreads the real module and overrides only what this file drives.
-const actualEnvRegistry = await import("../config/env-registry.js");
-mock.module("../config/env-registry.js", () => ({
-  ...actualEnvRegistry,
-  getIsPlatform: () => mockIsPlatform,
-}));
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
 
 const loader = await import("../config/loader.js");
 const registration =
@@ -29,7 +19,7 @@ const { runInPluginContext } =
 
 describe("resolveWebhookUrl", () => {
   afterEach(() => {
-    mockIsPlatform = false;
+    delete process.env.IS_PLATFORM;
   });
   test("composes the plugin's namespaced path and delegates the tier choice", async () => {
     const spy = spyOn(registration, "resolveCallbackUrl").mockResolvedValue(
@@ -163,7 +153,7 @@ describe("resolveWebhookUrl", () => {
     // The Tunnel forwards the request path verbatim and the gateway
     // admits it only when it matches a claimed path byte for byte. A trailing
     // slash on this URL would be rejected before the gateway ever saw it.
-    mockIsPlatform = true;
+    process.env.IS_PLATFORM = "true";
     const configSpy = spyOn(loader, "getConfig").mockReturnValue({
       ingress: { publicBaseUrl: "https://tunnel.mycadet.ai/assistant-abc" },
     } as ReturnType<typeof loader.getConfig>);

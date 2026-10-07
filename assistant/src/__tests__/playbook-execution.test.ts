@@ -1,10 +1,6 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
-
-mock.module("../persistence/jobs-store.js", () => ({
-  enqueueMemoryJob: () => {},
-}));
-
 import type { Database } from "bun:sqlite";
+import { beforeEach, describe, expect, test } from "bun:test";
+import { beforeAll } from "bun:test";
 
 import { v4 as uuid } from "uuid";
 
@@ -19,7 +15,9 @@ import { parsePlaybookStatement } from "../playbooks/types.js";
 import { getNode } from "../plugins/defaults/memory/graph/store.js";
 import type { ToolContext } from "../tools/types.js";
 
-await initializeDb();
+beforeAll(async () => {
+  await initializeDb();
+});
 
 function getRawDb(): Database {
   return getMemorySqlite()!;

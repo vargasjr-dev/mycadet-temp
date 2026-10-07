@@ -8,8 +8,21 @@
  * queue), and what the repaired history looks like.
  */
 import { readFileSync } from "node:fs";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  spyOn,
+  test,
+} from "bun:test";
 
+import {
+  clearCachedOverrides,
+  setCachedOverrides,
+} from "../config/feature-flag-cache.js";
+import { INTERRUPT_ON_SEND_FLAG_KEY } from "../config/interrupt-on-send-flag.js";
 import type { Conversation } from "../daemon/conversation.js";
 import {
   deleteConversation,
@@ -26,37 +39,18 @@ import {
 } from "../util/abort-reasons.js";
 
 // ---------------------------------------------------------------------------
-// Mocks must precede the module imports so Bun applies them at load time.
+// Real persistence, observed. The repair writes land in the per-process
+// workspace DB; a pass-through spy on the live module namespace records each
+// call so the timing/failure scaffolding below still works.
 // ---------------------------------------------------------------------------
-
-let flagEnabled = true;
-mock.module("../config/interrupt-on-send-gate.js", () => ({
-  isInterruptOnSendEnabled: () => flagEnabled,
-}));
 
 const persisted: Array<{ role: string; content: string }> = [];
 let persistGate: Promise<void> = Promise.resolve();
 let persistShouldFail = false;
 
-// Only the persist seam is replaced; every other CRUD export stays real so the
-// repair module's import graph resolves as it does in production.
-const realConversationCrud =
-  await import("../persistence/conversation-crud.js");
-mock.module("../persistence/conversation-crud.js", () => ({
-  ...realConversationCrud,
-  addMessage: async (
-    _conversationId: string,
-    role: string,
-    content: string,
-  ) => {
-    await persistGate;
-    if (persistShouldFail) {
-      throw new Error("simulated persist failure");
-    }
-    persisted.push({ role, content });
-    return { id: `msg-${persisted.length}` };
-  },
-}));
+import * as conversationCrud from "../persistence/conversation-crud.js";
+import { ensureConversationExists } from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
 
 const {
   classifyInterruptEligibility,
@@ -78,6 +72,23 @@ const {
 // ---------------------------------------------------------------------------
 
 const CONV = "interrupt-on-send-conv";
+
+beforeAll(async () => {
+  await initializeDb();
+  ensureConversationExists(CONV, "telegram");
+  const realAddMessage = conversationCrud.addMessage;
+  spyOn(conversationCrud, "addMessage").mockImplementation(
+    async (...args: Parameters<typeof realAddMessage>) => {
+      await persistGate;
+      if (persistShouldFail) {
+        throw new Error("simulated persist failure");
+      }
+      const result = await realAddMessage(...args);
+      persisted.push({ role: args[1], content: args[2] });
+      return result;
+    },
+  );
+});
 
 const assistantWithToolUse = (...ids: string[]): Message => ({
   role: "assistant",
@@ -276,7 +287,12 @@ function registerBusyTurn(
 }
 
 beforeEach(() => {
-  flagEnabled = true;
+  setCachedOverrides(
+    { [INTERRUPT_ON_SEND_FLAG_KEY]: true },
+    {
+      fromGateway: false,
+    },
+  );
   persisted.length = 0;
   persistGate = Promise.resolve();
   persistShouldFail = false;
@@ -288,10 +304,9 @@ afterEach(() => {
   deleteConversation(CONV);
   pendingInteractions.clear();
   resetTurnFinalizationsForTesting();
-  // `mock.module` is process-wide, so this stub outlives the file. Leave it
-  // reading off, which is the flag's shipped state, so a later file's
-  // flag-off expectations are not answered by this file's last setting.
-  flagEnabled = false;
+  // Drop the override so the flag reads its shipped (off) state — a later
+  // file's flag-off expectations must not be answered by this file's setting.
+  clearCachedOverrides();
 });
 
 describe("interruptRunningTurn", () => {
@@ -496,7 +511,12 @@ describe("interruptRunningTurn", () => {
   });
 
   test("declines when the flag is off, touching nothing", async () => {
-    flagEnabled = false;
+    setCachedOverrides(
+      { [INTERRUPT_ON_SEND_FLAG_KEY]: false },
+      {
+        fromGateway: false,
+      },
+    );
     const turn = registerBusyTurn({
       messages: [assistantWithToolUse("tool-1")],
     });
@@ -787,7 +807,12 @@ describe("classifyInterruptEligibility", () => {
   });
 
   test("names the flag when it is off", () => {
-    flagEnabled = false;
+    setCachedOverrides(
+      { [INTERRUPT_ON_SEND_FLAG_KEY]: false },
+      {
+        fromGateway: false,
+      },
+    );
     const turn = registerBusyTurn();
     expect(classifyInterruptEligibility(turn.conversation, opts)).toBe(
       "flag_off",
