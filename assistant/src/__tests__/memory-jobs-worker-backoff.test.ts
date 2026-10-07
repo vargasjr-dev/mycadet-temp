@@ -5,29 +5,9 @@
  * tick (1.5s -> 3s -> 6s -> ... -> 30s cap), and resets to 1.5s when work
  * is found.
  */
-import { describe, expect, mock, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 
-// ── Mocks (must precede imports of tested module) ──────────────────
-
-// Mock jobs-store (accesses DB)
-mock.module("../persistence/jobs-store.js", () => ({
-  resetRunningJobsToPending: () => 0,
-  claimMemoryJobs: () => [],
-  completeMemoryJob: () => {},
-  deferMemoryJob: () => "deferred",
-  failMemoryJob: () => {},
-  failStalledJobs: () => 0,
-  enqueuePruneOldConversationsJob: () => null,
-}));
-
-// Mock checkpoints (accesses DB) — worker startup seeds the cleanup throttle
-// from persisted checkpoints.
-mock.module("../persistence/checkpoints.js", () => ({
-  getMemoryCheckpoint: () => null,
-  setMemoryCheckpoint: () => {},
-  deleteMemoryCheckpoint: () => {},
-}));
-
+import { initializeDb } from "../persistence/db-init.js";
 import {
   POLL_INTERVAL_MAX_MS,
   POLL_INTERVAL_MIN_MS,
@@ -35,8 +15,12 @@ import {
 } from "../plugins/defaults/memory/jobs-worker.js";
 import { setConfig } from "./helpers/set-config.js";
 
-// Memory disabled so each idle tick stays on the mocked-store fast path.
-setConfig("memory", { enabled: false });
+beforeAll(async () => {
+  await initializeDb();
+  // Memory disabled so each idle tick finds nothing claimable in the real
+  // (empty) memory store — the backoff path is what's under test.
+  setConfig("memory", { enabled: false });
+});
 
 describe("memory jobs worker adaptive poll interval", () => {
   test("exports expected poll interval constants", () => {

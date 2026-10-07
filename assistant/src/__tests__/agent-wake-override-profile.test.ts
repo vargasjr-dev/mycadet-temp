@@ -26,16 +26,17 @@
  *      pinned-profile values.
  */
 
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
-let mockOverrideProfile: string | undefined = undefined;
+import {
+  ensureConversationExists,
+  setConversationInferenceProfile,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  getConversationOverrideProfile: (_id: string) => mockOverrideProfile,
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
+beforeAll(async () => {
+  await initializeDb();
+});
 
 import type { AgentLoopRunOptions } from "../agent/loop.js";
 import type { Conversation } from "../daemon/conversation.js";
@@ -117,15 +118,16 @@ function makeTarget(): {
 beforeEach(() => {
   __resetWakeChainForTests();
   setLlmConfig({});
-});
-
-afterEach(() => {
-  mockOverrideProfile = undefined;
+  // The wake reads the pinned profile from the REAL conversation row; real
+  // rows persist across tests in this file, so reset the pin each test and
+  // let individual tests set their own.
+  ensureConversationExists("conv-wake-override", "cadet");
+  setConversationInferenceProfile("conv-wake-override", null);
 });
 
 describe("wakeAgentForOpportunity — overrideProfile forwarding", () => {
   test("forwards the conversation's pinned overrideProfile + mainAgent callSite to agentLoop.run", async () => {
-    mockOverrideProfile = "frontier";
+    setConversationInferenceProfile("conv-wake-override", "frontier");
     setLlmConfig({
       profiles: {
         // Complete (provider + model) so the pinned profile is a usable
@@ -171,7 +173,7 @@ describe("wakeAgentForOpportunity — overrideProfile forwarding", () => {
     // forced profile (e.g. a fork-based retrospective matching the source
     // conversation) takes its place and, as the override rung of the
     // single-winner chain, beats the call site's own pinned profile.
-    mockOverrideProfile = "pinned-ignored";
+    setConversationInferenceProfile("conv-wake-override", "pinned-ignored");
     setLlmConfig({
       profiles: {
         forced: {
@@ -216,7 +218,7 @@ describe("wakeAgentForOpportunity — overrideProfile forwarding", () => {
   });
 
   test("without forceOverrideProfile the wake never sets the force flag", async () => {
-    mockOverrideProfile = "frontier";
+    setConversationInferenceProfile("conv-wake-override", "frontier");
     setLlmConfig({
       profiles: {
         frontier: { provider: "anthropic", model: "claude-sonnet-4-6" },
@@ -240,7 +242,7 @@ describe("wakeAgentForOpportunity — overrideProfile forwarding", () => {
   });
 
   test("passes undefined overrideProfile when the conversation has no pinned profile, but still forwards mainAgent callSite", async () => {
-    mockOverrideProfile = undefined;
+    setConversationInferenceProfile("conv-wake-override", null);
     const { target, runArgs } = makeTarget();
 
     await wakeAgentForOpportunity(

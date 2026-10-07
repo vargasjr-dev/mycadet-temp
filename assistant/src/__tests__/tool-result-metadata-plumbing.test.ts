@@ -8,24 +8,17 @@
  * Mirrors the mocked-dependency pattern used in tool-preview-lifecycle.test.ts
  * and annotate-risk-options.test.ts.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  addMessage: () => ({ id: "mock-msg-id" }),
-  getMessageById: () => null,
-  updateMessageContent: () => {},
-  provenanceFromTrustContext: () => ({}),
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
+import { ensureConversationExists } from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
+beforeAll(async () => {
+  await initializeDb();
+  // handleToolResult persists the tool_result row against this conversation.
+  ensureConversationExists("conv-meta", "cadet");
+});
 
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-  backfillMessageIdOnLogs: () => {},
-}));
-
-// ── Imports (after mocks) ─────────────────────────────────────────────────────
+// ── Imports ───────────────────────────────────────────────────────────────────
 import type { ToolActivityMetadata } from "../api/events/tool-result.js";
 import type { AssistantEvent } from "../api/index.js";
 import { toolImageFilename } from "../daemon/assistant-attachments.js";

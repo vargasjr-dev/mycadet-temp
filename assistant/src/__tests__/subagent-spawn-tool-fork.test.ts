@@ -1,35 +1,24 @@
-import { describe, expect, test } from "bun:test";
-import { mock } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 
-// Mock conversation-crud before importing tool executors that depend on it.
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  setConversationOriginChannelIfUnset: () => {},
-  updateConversationContextWindow: () => {},
-  deleteMessageById: () => {},
-  updateConversationTitle: () => {},
-  updateConversationUsage: () => {},
-  addMessage: () => ({ id: "mock-msg-id" }),
-  getConversation: () => ({
-    id: "conv-1",
-    contextSummary: null,
-    contextCompactedMessageCount: 0,
-    totalInputTokens: 0,
-    totalOutputTokens: 0,
-    totalEstimatedCost: 0,
-    title: null,
-  }),
-  provenanceFromTrustContext: () => ({
-    source: "user",
-    trustContext: undefined,
-  }),
-  getConversationOriginInterface: () => null,
-  getConversationOriginChannel: () => null,
-  getMessages: () => null,
-  createConversation: () => ({ id: "mock-conv" }),
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
+import { ensureConversationExists } from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
+
+beforeAll(async () => {
+  await initializeDb();
+  // Every parent conversation the tests register in the in-memory store gets
+  // a real row too, so any persistence the spawn path touches has its FK.
+  for (const id of [
+    "parent-conv-1",
+    "parent-conv-role",
+    "parent-conv-no-role",
+    "parent-conv-silent",
+    "parent-conv-visible",
+    "spawn-mode-parent",
+    "parent-conv-copy",
+  ]) {
+    ensureConversationExists(id, "cadet");
+  }
+});
 
 import {
   clearConversations,

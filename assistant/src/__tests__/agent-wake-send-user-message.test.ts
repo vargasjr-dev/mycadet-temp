@@ -17,20 +17,20 @@
 
 import {
   afterEach,
+  beforeAll,
   beforeEach,
   describe,
   expect,
-  mock,
   spyOn,
   test,
 } from "bun:test";
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  getConversationOverrideProfile: () => undefined,
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
+import { ensureConversationExists } from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
+
+beforeAll(async () => {
+  await initializeDb();
+});
 
 import type { AgentLoopRunOptions } from "../agent/loop.js";
 import * as featureFlags from "../config/assistant-feature-flags.js";
@@ -124,6 +124,9 @@ function makeTarget(onRun: (conv: Conversation) => void): {
 beforeEach(() => {
   ensurePromptFiles();
   __resetWakeChainForTests();
+  // The wake path reads the REAL conversations table; keep a row present
+  // (real rows persist across tests in this file — idempotent reseed).
+  ensureConversationExists("conv-wake-sum", "cadet");
   flagSpy = spyOn(
     featureFlags,
     "isAssistantFeatureFlagEnabled",

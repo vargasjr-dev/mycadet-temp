@@ -25,32 +25,17 @@
 // `native-web-search.test.ts`); the web_fetch invariant is exercised through
 // the same `handleToolResult` path an app-executed fetch tool drives.
 
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
 import type { ToolActivityMetadata } from "../api/events/tool-result.js";
+import { ensureConversationExists } from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
+beforeAll(async () => {
+  await initializeDb();
+  // The handler persists tool_result rows against the harness conversation.
+  ensureConversationExists("conv-web-search", "cadet");
+});
 
-// ---------------------------------------------------------------------------
-// Mock the daemon collaborators the handler module imports at load time so the
-// handler can be driven in isolation (mirrors native-web-search.test.ts).
-// `mock.module()` is file-scoped, so the shared harness cannot install these.
-// ---------------------------------------------------------------------------
-
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  addMessage: () => ({ id: "mock-msg-id" }),
-  getMessageById: () => null,
-  updateMessageContent: () => {},
-  provenanceFromTrustContext: () => ({}),
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
-
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-  backfillMessageIdOnLogs: () => {},
-}));
-
-// Import after mocking.
 import {
   createEventHandlerState,
   dispatchAgentEvent,

@@ -1,6 +1,11 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
+import { ensureConversationExists } from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
+beforeAll(async () => {
+  await initializeDb();
+});
 
 let broadcastedMessages: AssistantEvent[] = [];
 setBroadcastOverrideForTesting((msg: AssistantEvent) =>
@@ -8,14 +13,7 @@ setBroadcastOverrideForTesting((msg: AssistantEvent) =>
 );
 
 // These surfaces are shown live and asserted through their client messages, so
-// history holds nothing. Stand in an empty store: the completion path reads
-// persisted `ui_surface` blocks, and this file's DB carries no schema, so the
-// real read would throw and be indistinguishable from a persistence failure.
-const realCrud = await import("../persistence/conversation-crud.js");
-mock.module("../persistence/conversation-crud.js", () => ({
-  ...realCrud,
-  getMessages: () => [],
-}));
+// history holds nothing — the real store starts empty too.
 
 const { createSurfaceMutex, handleSurfaceAction, surfaceProxyResolver } =
   await import("../daemon/conversation-surfaces.js");
@@ -95,6 +93,9 @@ function makeContext(sent: AssistantEvent[] = []): Conversation & {
 
 describe("surface action delivery to assistant", () => {
   beforeEach(() => {
+    // The completion path reads/writes the REAL store; keep the row present
+    // (real rows persist across tests — idempotent reseed).
+    ensureConversationExists("conv-1", "cadet");
     broadcastedMessages = [];
   });
 

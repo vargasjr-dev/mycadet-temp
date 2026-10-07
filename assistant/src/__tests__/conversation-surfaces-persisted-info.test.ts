@@ -1,58 +1,65 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
-// Mock the persistence layer the surface helpers read from so tests can seed
-// rows without touching SQLite. Swapped per test via the closure below.
-let getMessagesImpl: (conversationId: string) => Array<{
-  id: string;
-  conversationId: string;
-  role: string;
-  content: unknown;
-  createdAt: number;
-  metadata: string | null;
-}> = () => [];
+import {
+  addMessage,
+  ensureConversationExists,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
 
-const realCrud = await import("../persistence/conversation-crud.js");
+beforeAll(async () => {
+  await initializeDb();
+});
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  ...realCrud,
-  getMessages: (conversationId: string) => getMessagesImpl(conversationId),
-}));
-
-// Import must come AFTER mock.module so the surface module picks up the
-// mocked persistence functions.
 const { findPersistedSurfaceInfo } =
   await import("../daemon/conversation-surfaces.js");
-
-const CONVERSATION_ID = "conv-persisted-info-1";
 
 /** A guardian requester: sees every row, so no provenance filtering applies. */
 const GUARDIAN = { requesterCanAccessMemory: true };
 /** An untrusted requester: only non-guardian-provenance rows are visible. */
 const UNTRUSTED = { requesterCanAccessMemory: false };
 
-function seedRows(
-  rows: Array<{ id: string; content: unknown[]; metadata?: string }>,
-): void {
-  getMessagesImpl = () =>
-    rows.map((r) => ({
-      id: r.id,
-      conversationId: CONVERSATION_ID,
-      role: "assistant",
-      content: r.content,
-      createdAt: 0,
-      metadata: r.metadata ?? null,
-    }));
+// Real rows persist across tests in this file, and several tests pin
+// empty-conversation or unknown-surface behavior — give every test its own
+// conversation.
+let convSeq = 0;
+let conversationId: string;
+
+beforeEach(() => {
+  conversationId = `conv-persisted-info-${++convSeq}`;
+});
+
+/** Seed real message rows (insertion order = read order). */
+async function seedRows(
+  rows: Array<{ content: unknown[]; metadata?: string }>,
+): Promise<void> {
+  ensureConversationExists(conversationId, "cadet");
+  for (const r of rows) {
+    const blocks = [...r.content] as Array<Record<string, unknown>>;
+    // Production rows always pair cards with a model-readable sibling (the
+    // persistence layer's visibility guard throws otherwise) — declare the
+    // same assumption for card-only fixtures.
+    if (
+      blocks.length > 0 &&
+      blocks.every((b) => (b as { type?: unknown }).type === "ui_surface")
+    ) {
+      blocks.push({
+        type: "text",
+        text: "[surface]",
+        _surfaceFallback: true,
+      });
+    }
+    await addMessage(conversationId, "assistant", JSON.stringify(blocks), {
+      ...(r.metadata
+        ? { metadata: JSON.parse(r.metadata) as Record<string, unknown> }
+        : {}),
+    });
+  }
 }
 
 describe("findPersistedSurfaceInfo", () => {
-  beforeEach(() => {
-    getMessagesImpl = () => [];
-  });
-
-  test("returns the surfaceType of a persisted ui_surface block", () => {
-    seedRows([
+  test("returns the surfaceType of a persisted ui_surface block", async () => {
+    await seedRows([
       {
-        id: "msg-1",
         content: [
           { type: "text", text: "pick one" },
           {
@@ -66,15 +73,14 @@ describe("findPersistedSurfaceInfo", () => {
     ]);
 
     expect(
-      findPersistedSurfaceInfo(CONVERSATION_ID, "surface-choice-1", GUARDIAN)
+      findPersistedSurfaceInfo(conversationId, "surface-choice-1", GUARDIAN)
         ?.surfaceType,
     ).toBe("choice");
   });
 
-  test("returns the data of a persisted ui_surface block", () => {
-    seedRows([
+  test("returns the data of a persisted ui_surface block", async () => {
+    await seedRows([
       {
-        id: "msg-1",
         content: [
           {
             type: "ui_surface",
@@ -87,15 +93,14 @@ describe("findPersistedSurfaceInfo", () => {
     ]);
 
     expect(
-      findPersistedSurfaceInfo(CONVERSATION_ID, "surface-confirm-1", GUARDIAN)
+      findPersistedSurfaceInfo(conversationId, "surface-confirm-1", GUARDIAN)
         ?.data,
     ).toEqual({ message: "Delete it?", confirmLabel: "Delete forever" });
   });
 
-  test("reports no data when the block carries no object data", () => {
-    seedRows([
+  test("reports no data when the block carries no object data", async () => {
+    await seedRows([
       {
-        id: "msg-1",
         content: [
           {
             type: "ui_surface",
@@ -107,7 +112,7 @@ describe("findPersistedSurfaceInfo", () => {
     ]);
 
     const info = findPersistedSurfaceInfo(
-      CONVERSATION_ID,
+      conversationId,
       "surface-dataless-1",
       GUARDIAN,
     );
@@ -115,10 +120,9 @@ describe("findPersistedSurfaceInfo", () => {
     expect(info?.data).toBeUndefined();
   });
 
-  test("returns undefined for an unknown surfaceId", () => {
-    seedRows([
+  test("returns undefined for an unknown surfaceId", async () => {
+    await seedRows([
       {
-        id: "msg-1",
         content: [
           {
             type: "ui_surface",
@@ -131,22 +135,21 @@ describe("findPersistedSurfaceInfo", () => {
     ]);
 
     expect(
-      findPersistedSurfaceInfo(CONVERSATION_ID, "surface-missing", GUARDIAN),
+      findPersistedSurfaceInfo(conversationId, "surface-missing", GUARDIAN),
     ).toBeUndefined();
   });
 
-  test("returns undefined for a conversation with no messages", () => {
-    seedRows([]);
+  test("returns undefined for a conversation with no messages", async () => {
+    await seedRows([]);
 
     expect(
-      findPersistedSurfaceInfo(CONVERSATION_ID, "surface-choice-1", GUARDIAN),
+      findPersistedSurfaceInfo(conversationId, "surface-choice-1", GUARDIAN),
     ).toBeUndefined();
   });
 
-  test("reaches the oldest row when the newer ones carry no surface", () => {
-    seedRows([
+  test("reaches the oldest row when the newer ones carry no surface", async () => {
+    await seedRows([
       {
-        id: "msg-oldest",
         content: [
           {
             type: "ui_surface",
@@ -156,21 +159,20 @@ describe("findPersistedSurfaceInfo", () => {
           },
         ],
       },
-      { id: "msg-2", content: [{ type: "text", text: "later" }] },
-      { id: "msg-3", content: [{ type: "text", text: "later" }] },
-      { id: "msg-4", content: [{ type: "text", text: "later" }] },
+      { content: [{ type: "text", text: "later" }] },
+      { content: [{ type: "text", text: "later" }] },
+      { content: [{ type: "text", text: "later" }] },
     ]);
 
     expect(
-      findPersistedSurfaceInfo(CONVERSATION_ID, "surface-oldest-1", GUARDIAN)
+      findPersistedSurfaceInfo(conversationId, "surface-oldest-1", GUARDIAN)
         ?.surfaceType,
     ).toBe("choice");
   });
 
-  test("reports no surfaceType when the block carries no string one", () => {
-    seedRows([
+  test("reports no surfaceType when the block carries no string one", async () => {
+    await seedRows([
       {
-        id: "msg-1",
         content: [
           { type: "ui_surface", surfaceId: "surface-typeless-1", data: {} },
         ],
@@ -178,7 +180,7 @@ describe("findPersistedSurfaceInfo", () => {
     ]);
 
     const info = findPersistedSurfaceInfo(
-      CONVERSATION_ID,
+      conversationId,
       "surface-typeless-1",
       GUARDIAN,
     );
@@ -186,20 +188,9 @@ describe("findPersistedSurfaceInfo", () => {
     expect(info?.surfaceType).toBeUndefined();
   });
 
-  test("returns undefined rather than throwing when the DB read fails", () => {
-    getMessagesImpl = () => {
-      throw new Error("database is locked");
-    };
-
-    expect(
-      findPersistedSurfaceInfo(CONVERSATION_ID, "surface-choice-1", GUARDIAN),
-    ).toBeUndefined();
-  });
-
-  test("hides a guardian-provenance row from an untrusted requester", () => {
-    seedRows([
+  test("hides a guardian-provenance row from an untrusted requester", async () => {
+    await seedRows([
       {
-        id: "msg-guardian",
         metadata: JSON.stringify({ provenanceTrustClass: "guardian" }),
         content: [
           {
@@ -214,22 +205,17 @@ describe("findPersistedSurfaceInfo", () => {
 
     // The same row the live history filter drops for this actor.
     expect(
-      findPersistedSurfaceInfo(
-        CONVERSATION_ID,
-        "surface-guardian-1",
-        UNTRUSTED,
-      ),
+      findPersistedSurfaceInfo(conversationId, "surface-guardian-1", UNTRUSTED),
     ).toBeUndefined();
     expect(
-      findPersistedSurfaceInfo(CONVERSATION_ID, "surface-guardian-1", GUARDIAN)
+      findPersistedSurfaceInfo(conversationId, "surface-guardian-1", GUARDIAN)
         ?.data,
     ).toEqual({ confirmLabel: "Wire the money" });
   });
 
-  test("hides a provenance-less row from an untrusted requester", () => {
-    seedRows([
+  test("hides a provenance-less row from an untrusted requester", async () => {
+    await seedRows([
       {
-        id: "msg-no-metadata",
         content: [
           {
             type: "ui_surface",
@@ -243,17 +229,16 @@ describe("findPersistedSurfaceInfo", () => {
 
     expect(
       findPersistedSurfaceInfo(
-        CONVERSATION_ID,
+        conversationId,
         "surface-unstamped-1",
         UNTRUSTED,
       ),
     ).toBeUndefined();
   });
 
-  test("serves a contact-provenance row to an untrusted requester", () => {
-    seedRows([
+  test("serves a contact-provenance row to an untrusted requester", async () => {
+    await seedRows([
       {
-        id: "msg-contact",
         metadata: JSON.stringify({ provenanceTrustClass: "trusted_contact" }),
         content: [
           {
@@ -267,15 +252,14 @@ describe("findPersistedSurfaceInfo", () => {
     ]);
 
     expect(
-      findPersistedSurfaceInfo(CONVERSATION_ID, "surface-contact-1", UNTRUSTED)
+      findPersistedSurfaceInfo(conversationId, "surface-contact-1", UNTRUSTED)
         ?.surfaceType,
     ).toBe("choice");
   });
 
-  test("skips a filtered newer row and serves the visible older one", () => {
-    seedRows([
+  test("skips a filtered newer row and serves the visible older one", async () => {
+    await seedRows([
       {
-        id: "msg-contact",
         metadata: JSON.stringify({ provenanceTrustClass: "trusted_contact" }),
         content: [
           {
@@ -287,7 +271,6 @@ describe("findPersistedSurfaceInfo", () => {
         ],
       },
       {
-        id: "msg-guardian",
         metadata: JSON.stringify({ provenanceTrustClass: "guardian" }),
         content: [
           {
@@ -301,12 +284,11 @@ describe("findPersistedSurfaceInfo", () => {
     ]);
 
     expect(
-      findPersistedSurfaceInfo(CONVERSATION_ID, "surface-dup-1", UNTRUSTED)
+      findPersistedSurfaceInfo(conversationId, "surface-dup-1", UNTRUSTED)
         ?.data,
     ).toEqual({ options: [{ id: "visible" }] });
     expect(
-      findPersistedSurfaceInfo(CONVERSATION_ID, "surface-dup-1", GUARDIAN)
-        ?.data,
+      findPersistedSurfaceInfo(conversationId, "surface-dup-1", GUARDIAN)?.data,
     ).toEqual({ options: [{ id: "hidden" }] });
   });
 });

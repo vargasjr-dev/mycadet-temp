@@ -1,34 +1,72 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  spyOn,
+  test,
+} from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
 
 setBroadcastOverrideForTesting(() => {});
 
-// Mock the persistence layer the surface helpers reach into so we can
-// observe writes without touching SQLite. We swap this out per test by
-// re-assigning the spies recorded on the closure below.
-let getMessagesImpl: (conversationId: string) => Array<{
-  id: string;
-  conversationId: string;
-  role: string;
-  content: unknown;
-  createdAt: number;
-  metadata: string | null;
-}> = () => [];
-let updateMessageContentSpy: (id: string, content: string) => void = () => {};
+import {
+  addMessage,
+  ensureConversationExists,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
 
-const realCrud = await import("../persistence/conversation-crud.js");
+beforeAll(async () => {
+  await initializeDb();
+});
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  ...realCrud,
-  getMessages: (conversationId: string) => getMessagesImpl(conversationId),
-  updateMessageContent: (id: string, content: string) =>
-    updateMessageContentSpy(id, content),
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
+// The surface helpers write through the REAL persistence layer. Observe the
+// writes with a pass-through spy on the real module namespace: call counts
+// stay visible (the debounced-write tests pin them) while every write still
+// lands in SQLite.
+const crudModule = await import("../persistence/conversation-crud.js");
+const realUpdateMessageContent = crudModule.updateMessageContent;
+let writes: Array<{ id: string; content: unknown }> = [];
+spyOn(crudModule, "updateMessageContent").mockImplementation(
+  (messageId: string, newContent: string, metadataUpdates?) => {
+    writes.push({ id: messageId, content: JSON.parse(newContent) });
+    return realUpdateMessageContent(messageId, newContent, metadataUpdates);
+  },
+);
 
-// Imports must come AFTER mock.module so the surface module picks up
-// the mocked persistence functions.
+/** Seed real message rows so the surface lookup has something to find. */
+async function seedRows(
+  rows: Array<{ id: string; content: unknown }>,
+  conversationId = "conv-persist-1",
+): Promise<void> {
+  ensureConversationExists(conversationId, "cadet");
+  for (const r of rows) {
+    const blocks = (
+      typeof r.content === "string"
+        ? [{ type: "text", text: r.content }]
+        : r.content
+    ) as Array<Record<string, unknown>>;
+    // Production rows always pair cards with a model-readable sibling (the
+    // persistence layer's visibility guard throws otherwise) — declare the
+    // same assumption for card-only fixtures.
+    if (
+      blocks.length > 0 &&
+      blocks.every((b) => (b as { type?: unknown }).type === "ui_surface")
+    ) {
+      blocks.push({
+        type: "text",
+        text: "[surface]",
+        _surfaceFallback: true,
+      });
+    }
+    await addMessage(conversationId, "assistant", JSON.stringify(blocks), {
+      id: r.id,
+    });
+  }
+}
+
 const {
   cancelPendingSurfaceDataPersists,
   flushPendingSurfaceDataPersists,
@@ -74,30 +112,9 @@ function makeContext(sent: AssistantEvent[] = []): Conversation {
   });
 }
 
-function seedRows(rows: Array<{ id: string; content: unknown }>): void {
-  getMessagesImpl = () =>
-    rows.map((r) => ({
-      id: r.id,
-      conversationId: "conv-persist-1",
-      role: "assistant",
-      content:
-        typeof r.content === "string"
-          ? [{ type: "text", text: r.content }]
-          : r.content,
-      createdAt: 0,
-      metadata: null,
-    }));
-}
-
 describe("ui_surface_update persistence", () => {
-  let writes: Array<{ id: string; content: unknown }> = [];
-
   beforeEach(() => {
     writes = [];
-    updateMessageContentSpy = (id: string, content: string) => {
-      writes.push({ id, content: JSON.parse(content) });
-    };
-    getMessagesImpl = () => [];
     // Make sure module-level pending timers from a previous test don't
     // leak into this one.
     cancelPendingSurfaceDataPersists();
@@ -121,7 +138,7 @@ describe("ui_surface_update persistence", () => {
       templateData: { status: "in_progress", steps: [] },
     };
     ctx.surfaceState.set(surfaceId, { surfaceType: "card", data: initial });
-    seedRows([
+    await seedRows([
       {
         id: "msg-1",
         content: [
@@ -172,7 +189,7 @@ describe("ui_surface_update persistence", () => {
       templateData: { status: "in_progress", steps: [] },
     };
     ctx.surfaceState.set(surfaceId, { surfaceType: "card", data: initial });
-    seedRows([
+    await seedRows([
       {
         id: "msg-2",
         content: [
@@ -216,7 +233,7 @@ describe("ui_surface_update persistence", () => {
       template: "task_progress",
       templateData: { status: "in_progress" },
     };
-    seedRows([
+    await seedRows([
       {
         id: "msg-flush",
         content: [
@@ -252,9 +269,9 @@ describe("ui_surface_update persistence", () => {
     expect(finalSurface.completionSummary).toBe("ok");
   });
 
-  test("flushSurfaceDataPersist fires the latest data immediately", () => {
+  test("flushSurfaceDataPersist fires the latest data immediately", async () => {
     const surfaceId = "surface-flush-2";
-    seedRows([
+    await seedRows([
       {
         id: "msg-flush-2",
         content: [
@@ -284,7 +301,7 @@ describe("ui_surface_update persistence", () => {
   test("update arriving before the message is persisted is safely skipped", async () => {
     const surfaceId = "surface-orphan-1";
     // No rows seeded — simulates mid-stream before message_complete persists.
-    seedRows([]);
+    await seedRows([]);
 
     scheduleSurfaceDataPersist("conv-persist-1", surfaceId, {
       title: "x",
@@ -299,7 +316,7 @@ describe("ui_surface_update persistence", () => {
 
   test("cancelPendingSurfaceDataPersists clears scoped timers without firing", async () => {
     const surfaceId = "surface-cancel-1";
-    seedRows([
+    await seedRows([
       {
         id: "msg-cancel",
         content: [
@@ -326,7 +343,7 @@ describe("ui_surface_update persistence", () => {
 
   test("flushPendingSurfaceDataPersists writes pending updates synchronously and clears timers", async () => {
     const surfaceId = "surface-flush-pending-1";
-    seedRows([
+    await seedRows([
       {
         id: "msg-flush-pending",
         content: [
@@ -366,7 +383,7 @@ describe("ui_surface_update persistence", () => {
   test("flushPendingSurfaceDataPersists scoped to one conversation leaves other conversations' timers alone", async () => {
     const surfaceA = "surface-flush-scoped-a";
     const surfaceB = "surface-flush-scoped-b";
-    seedRows([
+    await seedRows([
       {
         id: "msg-scoped-a",
         content: [
@@ -378,18 +395,23 @@ describe("ui_surface_update persistence", () => {
           },
         ],
       },
-      {
-        id: "msg-scoped-b",
-        content: [
-          {
-            type: "ui_surface",
-            surfaceId: surfaceB,
-            surfaceType: "card",
-            data: { title: "x", body: "" },
-          },
-        ],
-      },
     ]);
+    await seedRows(
+      [
+        {
+          id: "msg-scoped-b",
+          content: [
+            {
+              type: "ui_surface",
+              surfaceId: surfaceB,
+              surfaceType: "card",
+              data: { title: "x", body: "" },
+            },
+          ],
+        },
+      ],
+      "conv-other",
+    );
 
     scheduleSurfaceDataPersist("conv-persist-1", surfaceA, {
       title: "x",
@@ -412,14 +434,8 @@ describe("ui_surface_update persistence", () => {
 });
 
 describe("ui_dismiss persisted-state convergence", () => {
-  let writes: Array<{ id: string; content: unknown }> = [];
-
   beforeEach(() => {
     writes = [];
-    updateMessageContentSpy = (id: string, content: string) => {
-      writes.push({ id, content: JSON.parse(content) });
-    };
-    getMessagesImpl = () => [];
     cancelPendingSurfaceDataPersists();
   });
 
@@ -443,7 +459,7 @@ describe("ui_dismiss persisted-state convergence", () => {
     };
     ctx.surfaceState.set(surfaceId, { surfaceType: "card", data });
     ctx.currentTurnSurfaces.push({ surfaceId, surfaceType: "card", data });
-    seedRows([
+    await seedRows([
       {
         id: "msg-dismiss",
         content: [
@@ -486,7 +502,7 @@ describe("ui_dismiss persisted-state convergence", () => {
       templateData: { status: "in_progress" },
     };
     ctx.surfaceState.set(surfaceId, { surfaceType: "card", data });
-    seedRows([
+    await seedRows([
       {
         id: "msg-dismiss-2",
         content: [{ type: "ui_surface", surfaceId, surfaceType: "card", data }],
@@ -509,14 +525,8 @@ describe("ui_dismiss persisted-state convergence", () => {
 });
 
 describe("standalone surface DB persistence", () => {
-  let writes: Array<{ id: string; content: unknown }> = [];
-
   beforeEach(() => {
     writes = [];
-    updateMessageContentSpy = (id: string, content: string) => {
-      writes.push({ id, content: JSON.parse(content) });
-    };
-    getMessagesImpl = () => [];
     cancelPendingSurfaceDataPersists();
   });
 
@@ -528,7 +538,7 @@ describe("standalone surface DB persistence", () => {
     const ctx = makeContext();
     const surfaceId = "standalone-persist-1";
 
-    seedRows([
+    await seedRows([
       {
         id: "msg-standalone",
         content: [

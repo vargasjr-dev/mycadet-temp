@@ -10,14 +10,14 @@
  * restores the prompt with the rest of what it scoped.
  */
 
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  getConversationOverrideProfile: () => undefined,
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
+import { ensureConversationExists } from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
+
+beforeAll(async () => {
+  await initializeDb();
+});
 
 import type { AgentLoopRunOptions } from "../agent/loop.js";
 import type { Conversation } from "../daemon/conversation.js";
@@ -113,6 +113,9 @@ function makeTarget(onRun: (conv: Conversation) => void): {
 
 beforeEach(() => {
   __resetWakeChainForTests();
+  // The wake path reads the REAL conversations table; keep a row present
+  // (real rows persist across tests in this file — idempotent reseed).
+  ensureConversationExists("conv-wake-delegation", "cadet");
 });
 
 describe("the delegation section on a direct wake", () => {
