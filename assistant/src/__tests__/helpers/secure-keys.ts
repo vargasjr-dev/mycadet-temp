@@ -72,6 +72,72 @@ export function useMemorySecureKeyMap(
   return store;
 }
 
+export interface FaultableSecureKeys {
+  /** Live credential store — seed or mutate freely. */
+  store: Map<string, string>;
+  /** Make one account read as unreachable; `undefined` clears the fault. */
+  setUnreachableKey(key: string | undefined): void;
+  /** Make every read unreachable (a dead vault). */
+  setAllUnreachable(unreachable: boolean): void;
+  /** Make writes fail (set returns false). */
+  setWritesFail(fail: boolean): void;
+}
+
+/**
+ * Map-backed pin with fault injection for tests that simulate an unreachable
+ * or failing credential store. The faults are the test's to toggle — the old
+ * mock bodies did the same through module-scoped lets and Sets.
+ */
+export function useFaultableSecureKeyMap(
+  seed: Array<[string, string]> = [],
+): FaultableSecureKeys {
+  const store = new Map<string, string>(seed);
+  const unreachableKeys = new Set<string>();
+  const state = { allUnreachable: false, writesFail: false };
+  setSecureKeyBackendForTesting({
+    name: "memory-test-faultable",
+    isAvailable: () => true,
+    async get(account) {
+      if (state.allUnreachable || unreachableKeys.has(account)) {
+        return { value: undefined, unreachable: true };
+      }
+      return { value: store.get(account), unreachable: false };
+    },
+    async set(account, value) {
+      if (state.writesFail) {
+        return false;
+      }
+      store.set(account, value);
+      return true;
+    },
+    async delete(account) {
+      return store.delete(account) ? "deleted" : "not-found";
+    },
+    async list() {
+      return {
+        accounts: state.allUnreachable ? [] : [...store.keys()],
+        unreachable: state.allUnreachable,
+      };
+    },
+  });
+  return {
+    store,
+    setUnreachableKey(key) {
+      if (key === undefined) {
+        unreachableKeys.clear();
+      } else {
+        unreachableKeys.add(key);
+      }
+    },
+    setAllUnreachable(unreachable) {
+      state.allUnreachable = unreachable;
+    },
+    setWritesFail(fail) {
+      state.writesFail = fail;
+    },
+  };
+}
+
 /**
  * Repoint the pinned backend at a fresh store — the replacement for the old
  * `mockSecureKeyStore = { ... }` reassignments. Pass a seed to pre-load keys.

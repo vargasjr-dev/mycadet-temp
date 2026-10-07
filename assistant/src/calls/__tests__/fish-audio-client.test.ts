@@ -1,17 +1,12 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
 
 // ---------------------------------------------------------------------------
 // Module mocks — must appear before importing the module under test
 // ---------------------------------------------------------------------------
 
-mock.module("../../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async () => "test-fish-api-key",
-}));
-
-mock.module("../../security/credential-key.js", () => ({
-  credentialKey: (service: string, field: string) =>
-    `credential/${service}/${field}`,
-}));
+useMemorySecureKeys({ "credential/fish-audio/api_key": "test-fish-api-key" });
 
 import type { FishAudioConfig } from "../../config/schemas/fish-audio.js";
 import { synthesizeWithFishAudio } from "../fish-audio-client.js";

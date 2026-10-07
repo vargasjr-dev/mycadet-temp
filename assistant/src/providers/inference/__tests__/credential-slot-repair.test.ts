@@ -1,24 +1,11 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
+
+import { useFaultableSecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 
 // ── Vault mock (must precede imports) ───────────────────────────────────────
 
-let vault: Record<string, string>;
-let vaultUnreachable: boolean;
-const setCalls: Array<{ account: string; value: string }> = [];
-
-mock.module("../../../security/secure-keys.js", () => ({
-  getSecureKeyResultAsync: async (account: string) =>
-    vaultUnreachable
-      ? { value: undefined, unreachable: true }
-      : { value: vault[account], unreachable: false },
-  setSecureKeyAsync: async (account: string, value: string) => {
-    setCalls.push({ account, value });
-    vault[account] = value;
-  },
-  deleteSecureKeyAsync: async (account: string) => {
-    delete vault[account];
-  },
-}));
+const vaultHandle = useFaultableSecureKeyMap();
+const vault = vaultHandle.store;
 
 // ── Real imports (after mocks) ──────────────────────────────────────────────
 
@@ -55,16 +42,17 @@ function refOf(name: string): string | undefined {
 
 beforeEach(() => {
   getDb().delete(providerConnections).run();
-  vault = {};
-  vaultUnreachable = false;
-  setCalls.length = 0;
+  for (const k of Array.from(vault.keys())) {
+    vault.delete(k);
+  }
+  vaultHandle.setAllUnreachable(false);
 });
 
 describe("repairSharedCredentialSlots", () => {
   test("repoints sharing rows to per-connection slots and copies the shared value", async () => {
     seedRow("openai-compatible-personal", LEGACY);
     seedRow("openai-compatible-personal-2", LEGACY);
-    vault[LEGACY] = "sk-last-saved";
+    vault.set(LEGACY, "sk-last-saved");
 
     await repairSharedCredentialSlots(getDb());
 
@@ -76,10 +64,10 @@ describe("repairSharedCredentialSlots", () => {
     );
     // Behavior-preserving: each new slot holds the value the row resolved
     // through the shared slot.
-    expect(vault["credential/openai-compatible-personal/api_key"]).toBe(
+    expect(vault.get("credential/openai-compatible-personal/api_key")).toBe(
       "sk-last-saved",
     );
-    expect(vault["credential/openai-compatible-personal-2/api_key"]).toBe(
+    expect(vault.get("credential/openai-compatible-personal-2/api_key")).toBe(
       "sk-last-saved",
     );
   });
@@ -92,12 +80,12 @@ describe("repairSharedCredentialSlots", () => {
     expect(refOf("openai-compatible-personal")).toBe(
       "credential/openai-compatible-personal/api_key",
     );
-    expect(setCalls).toEqual([]);
+    expect(vault.size).toBe(0);
   });
 
   test("defers everything when the vault is unreachable", async () => {
     seedRow("openai-compatible-personal", LEGACY);
-    vaultUnreachable = true;
+    vaultHandle.setAllUnreachable(true);
 
     await repairSharedCredentialSlots(getDb());
 
@@ -118,17 +106,20 @@ describe("repairSharedCredentialSlots", () => {
       "credential/openai-compatible-personal/api_key",
     );
     expect(refOf("my-endpoint")).toBe("credential/shared-team-key/api_key");
-    expect(setCalls).toEqual([]);
+    expect(vault.size).toBe(0);
   });
 
   test("does not overwrite a value already present in a per-connection slot", async () => {
     seedRow("openai-compatible-personal", LEGACY);
-    vault[LEGACY] = "sk-shared";
-    vault["credential/openai-compatible-personal/api_key"] = "sk-already-mine";
+    vault.set(LEGACY, "sk-shared");
+    vault.set(
+      "credential/openai-compatible-personal/api_key",
+      "sk-already-mine",
+    );
 
     await repairSharedCredentialSlots(getDb());
 
-    expect(vault["credential/openai-compatible-personal/api_key"]).toBe(
+    expect(vault.get("credential/openai-compatible-personal/api_key")).toBe(
       "sk-already-mine",
     );
     expect(refOf("openai-compatible-personal")).toBe(

@@ -1,5 +1,12 @@
 import { readFileSync } from "node:fs";
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
+
+import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
+
+useMemorySecureKeys({
+  "credential/elevenlabs/api_key": "test-api-key",
+  "credential/fish-audio/api_key": "test-api-key",
+});
 
 import {
   _resetTtsProviderOverridesForTests,
@@ -19,10 +26,6 @@ let config = makeConfig();
 
 // Real-catalog tests exercise the actual provider adapters, which read
 // credentials and config through these modules.
-mock.module("../../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async () => "test-api-key",
-  getProviderKeyAsync: async () => "test-api-key",
-}));
 
 const {
   LiveVoiceTtsError,

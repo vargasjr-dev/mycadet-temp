@@ -1,24 +1,13 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
+
+import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
 
 // ── Mutable state for mocks ──────────────────────────────────────────
 
-const secureKeyValues = new Map<string, string>();
-const unreachableKeys = new Set<string>();
+const secureKeyHandle = useFaultableSecureKeyMap();
+const secureKeyValues = secureKeyHandle.store;
 
 // ── Module mocks ─────────────────────────────────────────────────────
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (account: string) => secureKeyValues.get(account),
-  getSecureKeyResultAsync: async (account: string) => ({
-    value: secureKeyValues.get(account),
-    unreachable: unreachableKeys.has(account),
-  }),
-  setSecureKeyAsync: async () => {},
-  deleteSecureKeyAsync: async () => "deleted",
-  listSecureKeysAsync: async () => [],
-  getProviderKeyAsync: async () => undefined,
-  getMaskedProviderKey: () => undefined,
-}));
 
 // ── Import under test ────────────────────────────────────────────────
 
@@ -30,7 +19,7 @@ const { resolveAccessTokenKey, getConnectionAccessTokenResult } =
 describe("credential-token-resolver", () => {
   beforeEach(() => {
     secureKeyValues.clear();
-    unreachableKeys.clear();
+    secureKeyHandle.setUnreachableKey(undefined);
   });
 
   describe("resolveAccessTokenKey", () => {
@@ -108,7 +97,7 @@ describe("credential-token-resolver", () => {
     });
 
     test("returns unreachable when credential backend is down", async () => {
-      unreachableKeys.add("credential/telegram/bot_token");
+      secureKeyHandle.setUnreachableKey("credential/telegram/bot_token");
 
       const result = await getConnectionAccessTokenResult({
         provider: "telegram",

@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
+
 // ── Mutable state for mocks ──────────────────────────────────────────
 
-const secureKeyValues = new Map<string, string>();
-const unreachableKeys = new Set<string>();
+const secureKeyHandle = useFaultableSecureKeyMap();
+const secureKeyValues = secureKeyHandle.store;
 
 let mockProviders: Array<{
   provider: string;
@@ -60,19 +62,6 @@ let assistantKeyVerdict: "valid" | "rejected" | "unknown" = "valid";
 let platformClientAvailable = true;
 
 // ── Module mocks ─────────────────────────────────────────────────────
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (account: string) => secureKeyValues.get(account),
-  getSecureKeyResultAsync: async (account: string) => ({
-    value: secureKeyValues.get(account),
-    unreachable: unreachableKeys.has(account),
-  }),
-  setSecureKeyAsync: async () => {},
-  deleteSecureKeyAsync: async () => "deleted",
-  listSecureKeysAsync: async () => [],
-  getProviderKeyAsync: async () => undefined,
-  getMaskedProviderKey: () => undefined,
-}));
 
 mock.module("../oauth/oauth-store.js", () => ({
   listProviders: () => mockProviders,
@@ -258,7 +247,7 @@ function setToken(connectionId: string, token = "mock-token") {
 }
 
 function markUnreachable(key: string) {
-  unreachableKeys.add(key);
+  secureKeyHandle.setUnreachableKey(key);
 }
 
 // ── Tests ────────────────────────────────────────────────────────────
@@ -266,7 +255,7 @@ function markUnreachable(key: string) {
 describe("credential-health-service", () => {
   beforeEach(() => {
     secureKeyValues.clear();
-    unreachableKeys.clear();
+    secureKeyHandle.setUnreachableKey(undefined);
     mockProviders = [];
     mockConnections = new Map();
     mockFetchResponse = { ok: true, status: 200 };
