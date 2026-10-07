@@ -7,10 +7,7 @@
  */
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: { publish: async () => {} },
-  broadcastMessage: () => {},
-}));
+setHubPublishOverrideForTesting(async () => {});
 
 mock.module("../runtime/assistant-event.js", () => ({
   buildAssistantEvent: (event: unknown) => event,
@@ -35,6 +32,7 @@ import { createConversation } from "../persistence/conversation-crud.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { providerConnections } from "../persistence/schema/inference.js";
+import { setHubPublishOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { ROUTES } from "../runtime/routes/inference-profile-session-routes.js";
 import { resetDbForTesting } from "./db-test-helpers.js";
 

@@ -16,7 +16,12 @@
  *     actor principal reaches nothing, and two same-user clients are
  *     ambiguous rather than fanned out to.
  */
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../assistant-event-hub.js";
 
 // Module mocks (must precede the real imports)
 
@@ -32,20 +37,18 @@ const OTHER_ACTOR = "principal-b";
 const sentMessages: Record<string, unknown>[] = [];
 let mockClients: MockClient[] = [];
 
-mock.module("../assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: Record<string, unknown>) => {
-    sentMessages.push(msg);
-  },
-  assistantEventHub: {
-    getMostRecentClientByCapability: (cap: string) =>
-      mockClients.find((c) => c.capabilities.includes(cap)),
-    listClientsByCapability: (cap: string) =>
-      mockClients.filter((c) => c.capabilities.includes(cap)),
-    getClientById: (id: string) => mockClients.find((c) => c.clientId === id),
-    getActorPrincipalIdForClient: (id: string) =>
-      mockClients.find((c) => c.clientId === id)?.actorPrincipalId,
-  },
-}));
+setBroadcastOverrideForTesting((msg: Record<string, unknown>) => {
+  sentMessages.push(msg);
+});
+setHubClientsForTesting({
+  getClientById: (id: string) => mockClients.find((c) => c.clientId === id),
+  getActorPrincipalIdForClient: (id: string) =>
+    mockClients.find((c) => c.clientId === id)?.actorPrincipalId,
+  listClientsByCapability: (cap: string) =>
+    mockClients.filter((c) => c.capabilities.includes(cap)),
+  getMostRecentClientByCapability: (cap: string) =>
+    mockClients.find((c) => c.capabilities.includes(cap)),
+});
 
 // Real imports (after mocks)
 

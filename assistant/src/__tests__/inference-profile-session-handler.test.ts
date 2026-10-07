@@ -16,10 +16,8 @@ import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 // Exposed as a `mock(...)` so individual tests can assert publish calls.
 const publishMock = mock(async () => {});
 const broadcastMessageMock = mock(() => {});
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: { publish: publishMock },
-  broadcastMessage: broadcastMessageMock,
-}));
+setHubPublishOverrideForTesting(publishMock);
+setBroadcastOverrideForTesting(broadcastMessageMock);
 
 // Stub buildAssistantEvent to be an identity pass-through for the event object
 mock.module("../runtime/assistant-event.js", () => ({
@@ -81,6 +79,10 @@ getDb()
   .onConflictDoNothing()
   .run();
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../runtime/assistant-event-hub.js";
 import {
   closeInferenceProfileSession,
   listInferenceProfileSessionsWithRemaining,

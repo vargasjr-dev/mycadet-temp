@@ -19,6 +19,10 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 // ---------------------------------------------------------------------------
@@ -47,35 +51,29 @@ interface PendingEntry {
 }
 const pending = new Map<string, PendingEntry>();
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: unknown) => {
-    sentMessages.push(msg);
-    const m = msg as Record<string, unknown>;
-    if (
-      m.type === "host_app_control_request" &&
-      typeof m.requestId === "string" &&
-      typeof m.conversationId === "string"
-    ) {
-      pending.set(m.requestId, {
-        conversationId: m.conversationId,
-        kind: "host_app_control",
-      });
-    }
-  },
-  assistantEventHub: {
-    getMostRecentClientByCapability: (cap: string) =>
-      cap === "host_app_control" && mockHasClient
-        ? { id: "mock-client" }
-        : null,
-    // Stubbed for the surfaceProxyResolver's target_client_id resolution
-    // path. The flow tests do not exercise multiple-client scenarios; they
-    // only need the resolver to fall through to proxy.request without
-    // throwing on undefined methods.
-    listClientsByCapability: () => [],
-    getClientById: () => undefined,
-    getActorPrincipalIdForClient: () => undefined,
-  },
-}));
+setBroadcastOverrideForTesting((msg: unknown) => {
+  sentMessages.push(msg);
+  const m = msg as Record<string, unknown>;
+  if (
+    m.type === "host_app_control_request" &&
+    typeof m.requestId === "string" &&
+    typeof m.conversationId === "string"
+  ) {
+    pending.set(m.requestId, {
+      conversationId: m.conversationId,
+      kind: "host_app_control",
+    });
+  }
+});
+setHubClientsForTesting({
+  getClientById: () => undefined,
+  getActorPrincipalIdForClient: () => undefined,
+  listClientsByCapability: () => [],
+  getMostRecentClientByCapability: (cap: string) =>
+    cap === "host_app_control" && mockHasClient
+      ? { id: "mock-client" }
+      : undefined,
+});
 
 mock.module("../runtime/pending-interactions.js", () => ({
   register: (requestId: string, entry: PendingEntry) =>

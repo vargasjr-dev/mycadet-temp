@@ -4,9 +4,13 @@
  * to host_browser because it is the only host capability it implements.
  */
 
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
 import { CONSOLIDATION_ALLOWED_TOOLS } from "../../plugins/defaults/memory/substrate/consolidation-tool-surface.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../../runtime/assistant-event-hub.js";
 import type { Conversation } from "../conversation.js";
 import type { ChannelCapabilities } from "../conversation-runtime-assembly.js";
 
@@ -24,23 +28,21 @@ const mockClientsByCapability = new Map<
   }>
 >();
 
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    listClientsByCapability: (cap: string) => {
-      const clients = mockClientsByCapability.get(cap);
-      if (clients) {
-        return clients;
-      }
-      const count = mockClientCountByCapability.get(cap) ?? 0;
-      return Array.from({ length: count }, (_, i) => ({
-        clientId: `mock-${cap}-client-${i}`,
-        capabilities: [cap],
-        interfaceId: "macos",
-      }));
-    },
+setBroadcastOverrideForTesting(() => {});
+setHubClientsForTesting({
+  listClientsByCapability: (cap: string) => {
+    const clients = mockClientsByCapability.get(cap);
+    if (clients) {
+      return clients;
+    }
+    const count = mockClientCountByCapability.get(cap) ?? 0;
+    return Array.from({ length: count }, (_, i) => ({
+      clientId: `mock-${cap}-client-${i}`,
+      capabilities: [cap],
+      interfaceId: "macos",
+    }));
   },
-  broadcastMessage: () => {},
-}));
+});
 
 // Dynamic imports after mock.module calls so the stubs take effect
 // before the modules under test are loaded.

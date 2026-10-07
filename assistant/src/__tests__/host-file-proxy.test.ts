@@ -1,4 +1,9 @@
-import { afterEach, describe, expect, jest, mock, test } from "bun:test";
+import { afterEach, describe, expect, jest, test } from "bun:test";
+
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 
 const sentMessages: unknown[] = [];
 let mockHasClient = false;
@@ -11,37 +16,33 @@ interface MockClient {
 
 let mockClients: MockClient[] = [];
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: unknown) => {
-    // Skip `interaction_resolved` envelopes — pending-interactions emits one
-    // on every resolve and these tests assert on host-proxy wire messages.
-    if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
-      return;
+setBroadcastOverrideForTesting((msg: unknown) => {
+  // Skip `interaction_resolved` envelopes — pending-interactions emits one
+  // on every resolve and these tests assert on host-proxy wire messages.
+  if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
+    return;
+  }
+  sentMessages.push(msg);
+});
+setHubClientsForTesting({
+  getClientById: (id: string) => mockClients.find((c) => c.clientId === id),
+  getActorPrincipalIdForClient: (id: string) =>
+    mockClients.find((c) => c.clientId === id)?.actorPrincipalId,
+  listClientsByCapability: (cap: string) => {
+    if (mockClients.length > 0) {
+      return mockClients.filter((c) => c.capabilities.includes(cap));
     }
-    sentMessages.push(msg);
+    return cap === "host_file" && mockHasClient
+      ? [{ clientId: "mock-client", capabilities: ["host_file"] }]
+      : [];
   },
-  assistantEventHub: {
-    getMostRecentClientByCapability: (cap: string) => {
-      if (mockClients.length > 0) {
-        return mockClients.find((c) => c.capabilities.includes(cap));
-      }
-      return cap === "host_file" && mockHasClient
-        ? { id: "mock-client" }
-        : null;
-    },
-    listClientsByCapability: (cap: string) => {
-      if (mockClients.length > 0) {
-        return mockClients.filter((c) => c.capabilities.includes(cap));
-      }
-      return cap === "host_file" && mockHasClient
-        ? [{ clientId: "mock-client", capabilities: ["host_file"] }]
-        : [];
-    },
-    getClientById: (id: string) => mockClients.find((c) => c.clientId === id),
-    getActorPrincipalIdForClient: (id: string) =>
-      mockClients.find((c) => c.clientId === id)?.actorPrincipalId,
+  getMostRecentClientByCapability: (cap: string) => {
+    if (mockClients.length > 0) {
+      return mockClients.find((c) => c.capabilities.includes(cap));
+    }
+    return cap === "host_file" && mockHasClient ? { id: "mock-client" } : null;
   },
-}));
+});
 
 // Use the REAL pending-interactions module — the proxy self-registers here.
 const pendingInteractions = await import("../runtime/pending-interactions.js");

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
+import { setHubPublishOverrideForTesting } from "../../runtime/assistant-event-hub.js";
+
 // ─── Mocks ─────────────────────────────────────────────────────────────
 
 const mockIntegrationSummary = "Gmail ✓ | Slack ✓ | Twilio ✗ | Telegram ✗";
@@ -59,10 +61,7 @@ mock.module("../../runtime/assistant-event.js", () => ({
   buildAssistantEvent: (e: unknown) => e,
 }));
 
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: { publish: async () => {} },
-  broadcastMessage: () => {},
-}));
+setHubPublishOverrideForTesting(async () => {});
 
 const { getSuggestedPrompts, refreshAssistantSuggestedPrompts } =
   await import("../suggested-prompts.js");

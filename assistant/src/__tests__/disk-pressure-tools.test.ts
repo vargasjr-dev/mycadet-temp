@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { Conversation } from "../daemon/conversation.js";
 import type { SkillProjectionCache } from "../daemon/conversation-skill-tools.js";
 import type { Message, ToolDefinition } from "../providers/types.js";
+import { setHubPublishOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { sendUserMessageTool } from "../tools/send-user-message/send-user-message-tool.js";
 import type { DiskUsageInfo } from "../util/disk-usage.js";
 import * as realDiskUsage from "../util/disk-usage.js";
@@ -31,15 +32,7 @@ mock.module("../runtime/assistant-event.js", () => ({
   }),
 }));
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  AssistantEventHub: class {},
-  broadcastMessage: () => {},
-  capabilityForMessageType: () => undefined,
-  assistantEventHub: {
-    publish: async () => undefined,
-    listClientsByCapability: () => [],
-  },
-}));
+setHubPublishOverrideForTesting(async () => undefined);
 
 // Spread the real module and override only what we need: `mock.module` is
 // global across the test process, so a partial mock missing exports that

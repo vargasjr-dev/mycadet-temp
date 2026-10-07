@@ -2,30 +2,33 @@ import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, afterEach, describe, expect, test } from "bun:test";
+
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 
 const sentMessages: unknown[] = [];
 let mockHasClient = false;
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: unknown) => {
-    // Skip `interaction_resolved` envelopes — pending-interactions emits one
-    // on every resolve and these tests assert on host-proxy wire messages.
-    if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
-      return;
-    }
-    sentMessages.push(msg);
-  },
-  assistantEventHub: {
-    getMostRecentClientByCapability: (cap: string) =>
-      cap === "host_file" && mockHasClient ? { id: "mock-client" } : null,
-    listClientsByCapability: (_cap: string) =>
-      mockHasClient
-        ? [{ clientId: "mock-client", capabilities: ["host_file"] }]
-        : [],
-    getClientById: (_id: string) => null,
-  },
-}));
+setBroadcastOverrideForTesting((msg: unknown) => {
+  // Skip `interaction_resolved` envelopes — pending-interactions emits one
+  // on every resolve and these tests assert on host-proxy wire messages.
+  if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
+    return;
+  }
+  sentMessages.push(msg);
+});
+setHubClientsForTesting({
+  getClientById: (_id: string) => null,
+  listClientsByCapability: (_cap: string) =>
+    mockHasClient
+      ? [{ clientId: "mock-client", capabilities: ["host_file"] }]
+      : [],
+  getMostRecentClientByCapability: (cap: string) =>
+    cap === "host_file" && mockHasClient ? { id: "mock-client" } : null,
+});
 
 // Use the REAL pending-interactions module — the proxy self-registers here.
 const pendingInteractions = await import("../runtime/pending-interactions.js");

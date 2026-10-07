@@ -13,7 +13,12 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../assistant-event-hub.js";
 
 interface FakeClient {
   clientId: string;
@@ -26,23 +31,21 @@ const broadcasts: Array<{
   targetClientId?: string;
 }> = [];
 
-mock.module("../assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    getMostRecentClientByCapability: () => fakeClient,
-    getActorPrincipalIdForClient: (clientId: string) =>
-      fakeClient?.clientId === clientId
-        ? fakeClient.actorPrincipalId
-        : undefined,
-    getClientById: () => undefined,
-  },
-  broadcastMessage: (
+setBroadcastOverrideForTesting(
+  (
     msg: Record<string, unknown>,
     _conversationId?: string,
     options?: { targetClientId?: string },
   ) => {
     broadcasts.push({ msg, targetClientId: options?.targetClientId });
   },
-}));
+);
+setHubClientsForTesting({
+  getClientById: () => undefined,
+  getActorPrincipalIdForClient: (clientId: string) =>
+    fakeClient?.clientId === clientId ? fakeClient.actorPrincipalId : undefined,
+  getMostRecentClientByCapability: () => fakeClient,
+});
 
 const { ROUTES } = await import("./ui-snapshot-routes.js");
 

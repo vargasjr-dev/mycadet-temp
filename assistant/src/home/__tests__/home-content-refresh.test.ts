@@ -1,5 +1,10 @@
 import { describe, expect, mock, test } from "bun:test";
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../../runtime/assistant-event-hub.js";
+
 // ─── Mocks ─────────────────────────────────────────────────────────────
 
 let greetingRefreshed = false;
@@ -24,12 +29,10 @@ mock.module("../suggested-prompts.js", () => ({
 }));
 
 const publishSpy = mock<(event: unknown) => Promise<void>>(async () => {});
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: { publish: publishSpy },
-  broadcastMessage: (message: unknown) => {
-    void publishSpy(message);
-  },
-}));
+setBroadcastOverrideForTesting((message: unknown) => {
+  void publishSpy(message);
+});
+setHubPublishOverrideForTesting(publishSpy);
 
 mock.module("../../runtime/assistant-event.js", () => ({
   buildAssistantEvent: (e: unknown) => e,

@@ -9,6 +9,10 @@ import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
 
 import { isSessionGroupsEnabled } from "../config/session-groups-gate.js";
 import { ComputerUseModeSessionProducer } from "../daemon/computer-use-mode-session.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 import { setOverridesForTesting } from "./feature-flag-test-helpers.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
@@ -30,28 +34,26 @@ let mockCuClients: Array<{
   },
 ];
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: unknown) => {
-    // `interaction_resolved` envelopes are emitted by the
-    // pending-interactions tracker for every resolution. They are
-    // orthogonal to the surface-proxy wire messages these tests assert
-    // on, so swallow them here.
-    if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
-      return;
-    }
-    sentMessages.push(msg);
-  },
-  assistantEventHub: {
-    getMostRecentClientByCapability: (cap: string) =>
-      cap === "host_cu" && mockHasClient ? { id: "mock-client" } : null,
-    listClientsByCapability: (cap: string) =>
-      cap === "host_cu" ? mockCuClients : [],
-    getClientById: (id: string) =>
-      mockCuClients.find((c) => c.clientId === id) ?? null,
-    getActorPrincipalIdForClient: (id: string) =>
-      mockCuClients.find((c) => c.clientId === id)?.actorPrincipalId,
-  },
-}));
+setBroadcastOverrideForTesting((msg: unknown) => {
+  // `interaction_resolved` envelopes are emitted by the
+  // pending-interactions tracker for every resolution. They are
+  // orthogonal to the surface-proxy wire messages these tests assert
+  // on, so swallow them here.
+  if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
+    return;
+  }
+  sentMessages.push(msg);
+});
+setHubClientsForTesting({
+  getClientById: (id: string) =>
+    mockCuClients.find((c) => c.clientId === id) ?? null,
+  getActorPrincipalIdForClient: (id: string) =>
+    mockCuClients.find((c) => c.clientId === id)?.actorPrincipalId,
+  listClientsByCapability: (cap: string) =>
+    cap === "host_cu" ? mockCuClients : [],
+  getMostRecentClientByCapability: (cap: string) =>
+    cap === "host_cu" && mockHasClient ? { id: "mock-client" } : null,
+});
 
 const { createSurfaceMutex, surfaceProxyResolver } =
   await import("../daemon/conversation-surfaces.js");

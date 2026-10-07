@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { DiskPressureTransitionResult } from "../daemon/disk-pressure-guard.js";
+import { setHubPublishOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import type { DiskUsageInfo } from "../util/disk-usage.js";
 
 let diskSample: DiskUsageInfo | null = null;
@@ -25,14 +26,7 @@ mock.module("../runtime/assistant-event.js", () => ({
   }),
 }));
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  AssistantEventHub: class {},
-  broadcastMessage: () => {},
-  capabilityForMessageType: () => undefined,
-  assistantEventHub: {
-    publish: async () => {},
-  },
-}));
+setHubPublishOverrideForTesting(async () => {});
 
 const {
   DISK_PRESSURE_CLEAR_THRESHOLD_PERCENT,

@@ -68,16 +68,18 @@ mock.module("../daemon/host-bash-proxy.js", () => ({
 // Stored actor-principal-id keyed by clientId, populated by tests.
 const clientActorPrincipals = new Map<string, string>();
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    getActorPrincipalIdForClient: (clientId: string) =>
-      clientActorPrincipals.get(clientId),
-  },
-  broadcastMessage: async () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
+setHubClientsForTesting({
+  getActorPrincipalIdForClient: (clientId: string) =>
+    clientActorPrincipals.get(clientId),
+});
 
 // ── Real imports (after mocks) ───────────────────────────────────────
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 import {
   BadRequestError,
   ConflictError,

@@ -9,6 +9,10 @@
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 const sentMessages: unknown[] = [];
@@ -24,21 +28,16 @@ type MockClient = {
 };
 let mockHubClients: MockClient[] = [];
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: unknown) => sentMessages.push(msg),
-  assistantEventHub: {
-    getMostRecentClientByCapability: (cap: string) =>
-      cap === "host_app_control" && mockHasClient
-        ? { id: "mock-client" }
-        : null,
-    listClientsByCapability: (cap: string) =>
-      mockHubClients.filter((c) => c.capabilities.includes(cap)),
-    getClientById: (id: string) =>
-      mockHubClients.find((c) => c.clientId === id),
-    getActorPrincipalIdForClient: (id: string) =>
-      mockHubClients.find((c) => c.clientId === id)?.actorPrincipalId,
-  },
-}));
+setBroadcastOverrideForTesting((msg: unknown) => sentMessages.push(msg));
+setHubClientsForTesting({
+  getClientById: (id: string) => mockHubClients.find((c) => c.clientId === id),
+  getActorPrincipalIdForClient: (id: string) =>
+    mockHubClients.find((c) => c.clientId === id)?.actorPrincipalId,
+  listClientsByCapability: (cap: string) =>
+    mockHubClients.filter((c) => c.capabilities.includes(cap)),
+  getMostRecentClientByCapability: (cap: string) =>
+    cap === "host_app_control" && mockHasClient ? { id: "mock-client" } : null,
+});
 
 mock.module("../runtime/pending-interactions.js", () => ({
   register: () => undefined,

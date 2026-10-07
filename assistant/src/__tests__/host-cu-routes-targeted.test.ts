@@ -84,17 +84,19 @@ mock.module("../daemon/conversation-registry.js", () => ({
 // Controlled actor-principal map: clientId → actorPrincipalId
 const actorPrincipalByClient = new Map<string, string>();
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    getActorPrincipalIdForClient: (clientId: string) =>
-      actorPrincipalByClient.get(clientId),
-  },
-  broadcastMessage: async () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
+setHubClientsForTesting({
+  getActorPrincipalIdForClient: (clientId: string) =>
+    actorPrincipalByClient.get(clientId),
+});
 
 // ── Real imports (after mocks) ──────────────────────────────────────────────
 // Use dynamic import to ensure the mocks above are applied before loading.
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 import { BadRequestError, ForbiddenError } from "../runtime/routes/errors.js";
 
 const { ROUTES } = await import("../runtime/routes/host-cu-routes.js");

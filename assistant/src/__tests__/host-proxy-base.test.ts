@@ -1,17 +1,20 @@
 import { afterEach, describe, expect, jest, mock, test } from "bun:test";
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
+
 const sentMessages: unknown[] = [];
 const resolvedInteractionIds: string[] = [];
 let mockHasClient = false;
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: unknown) => sentMessages.push(msg),
-  assistantEventHub: {
-    getMostRecentClientByCapability: (cap: string) =>
-      cap === "host_cu" && mockHasClient ? { id: "mock-client" } : null,
-    getActorPrincipalIdForClient: () => undefined,
-  },
-}));
+setBroadcastOverrideForTesting((msg: unknown) => sentMessages.push(msg));
+setHubClientsForTesting({
+  getActorPrincipalIdForClient: () => undefined,
+  getMostRecentClientByCapability: (cap: string) =>
+    cap === "host_cu" && mockHasClient ? { id: "mock-client" } : null,
+});
 
 mock.module("../runtime/pending-interactions.js", () => ({
   register: () => undefined,

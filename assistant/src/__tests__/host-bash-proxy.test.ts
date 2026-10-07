@@ -1,4 +1,9 @@
-import { afterEach, describe, expect, jest, mock, test } from "bun:test";
+import { afterEach, describe, expect, jest, test } from "bun:test";
+
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 
 const sentMessages: unknown[] = [];
 const sentMessageOptions: unknown[] = [];
@@ -11,12 +16,8 @@ type MockClient = {
 let mockCapableClients: Array<MockClient> = [];
 let mockClientRegistry: Map<string, MockClient> = new Map();
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (
-    msg: unknown,
-    _conversationId?: string,
-    options?: unknown,
-  ) => {
+setBroadcastOverrideForTesting(
+  (msg: unknown, _conversationId?: string, options?: unknown) => {
     // `interaction_resolved` envelopes are emitted by the pending-interactions
     // tracker for every resolution. They are orthogonal to the host-proxy
     // wire messages these tests assert on, so swallow them here.
@@ -26,15 +27,15 @@ mock.module("../runtime/assistant-event-hub.js", () => ({
     sentMessages.push(msg);
     sentMessageOptions.push(options);
   },
-  assistantEventHub: {
-    getMostRecentClientByCapability: (cap: string) =>
-      cap === "host_bash" && mockHasClient ? { id: "mock-client" } : null,
-    listClientsByCapability: (_cap: string) => mockCapableClients,
-    getClientById: (clientId: string) => mockClientRegistry.get(clientId),
-    getActorPrincipalIdForClient: (clientId: string) =>
-      mockClientRegistry.get(clientId)?.actorPrincipalId,
-  },
-}));
+);
+setHubClientsForTesting({
+  getClientById: (clientId: string) => mockClientRegistry.get(clientId),
+  getActorPrincipalIdForClient: (clientId: string) =>
+    mockClientRegistry.get(clientId)?.actorPrincipalId,
+  listClientsByCapability: (_cap: string) => mockCapableClients,
+  getMostRecentClientByCapability: (cap: string) =>
+    cap === "host_bash" && mockHasClient ? { id: "mock-client" } : null,
+});
 
 // Use the REAL pending-interactions module — the proxy self-registers here.
 const pendingInteractions = await import("../runtime/pending-interactions.js");

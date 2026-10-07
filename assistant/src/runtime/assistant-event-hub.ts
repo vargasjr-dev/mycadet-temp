@@ -131,7 +131,7 @@ export interface ClientWebPresence extends WebPresenceReport {
   reportedAt: Date;
 }
 
-interface ClientEntry extends BaseSubscriberEntry {
+export interface ClientEntry extends BaseSubscriberEntry {
   type: "client";
   clientId: string;
   interfaceId: InterfaceId;
@@ -360,6 +360,10 @@ export class AssistantEventHub {
     event: AssistantEventEnvelope,
     options?: AssistantEventPublishOptions,
   ): Promise<void> {
+    if (_hubPublishOverrideForTesting) {
+      await _hubPublishOverrideForTesting(event, options);
+      return;
+    }
     // Only the main daemon owns the subscribers real clients connect to. In any
     // other process (a sidecar worker, the route host) this hub has no SSE
     // subscriber, so hand the event to the daemon — it republishes on the hub
@@ -432,6 +436,11 @@ export class AssistantEventHub {
    * `undefined` if no such subscriber exists.
    */
   getClientById(clientId: string): ClientEntry | undefined {
+    if (_hubClientsOverrideForTesting?.getClientById) {
+      return _hubClientsOverrideForTesting.getClientById(clientId) as
+        | ClientEntry
+        | undefined;
+    }
     for (const entry of this.activeClientEntries(clientId)) {
       return entry;
     }
@@ -467,6 +476,11 @@ export class AssistantEventHub {
    * authenticated user identity that opened the target client's SSE stream.
    */
   getActorPrincipalIdForClient(clientId: string): string | undefined {
+    if (_hubClientsOverrideForTesting?.getActorPrincipalIdForClient) {
+      return _hubClientsOverrideForTesting.getActorPrincipalIdForClient(
+        clientId,
+      );
+    }
     return this.getClientById(clientId)?.actorPrincipalId;
   }
 
@@ -578,6 +592,11 @@ export class AssistantEventHub {
    * sorted by `lastActiveAt` descending.
    */
   listClientsByCapability(capability: HostProxyCapability): ClientEntry[] {
+    if (_hubClientsOverrideForTesting?.listClientsByCapability) {
+      return _hubClientsOverrideForTesting.listClientsByCapability(
+        capability,
+      ) as ClientEntry[];
+    }
     return this.clientEntries().filter((c) =>
       c.capabilities.includes(capability),
     );
@@ -590,6 +609,11 @@ export class AssistantEventHub {
   getMostRecentClientByCapability(
     capability: HostProxyCapability,
   ): ClientEntry | undefined {
+    if (_hubClientsOverrideForTesting?.getMostRecentClientByCapability) {
+      return _hubClientsOverrideForTesting.getMostRecentClientByCapability(
+        capability,
+      ) as ClientEntry | undefined;
+    }
     return this.listClientsByCapability(capability)[0];
   }
 
@@ -746,6 +770,57 @@ let _broadcastOverrideForTesting: BroadcastOverride | undefined;
  */
 export function setBroadcastOverrideForTesting(fn?: BroadcastOverride): void {
   _broadcastOverrideForTesting = fn;
+}
+
+/**
+ * Partial override of the hub singleton's connected-client lookups — tests
+ * supply just the methods their SUT reads (getClientById,
+ * getActorPrincipalIdForClient, listClientsByCapability,
+ * getMostRecentClientByCapability); everything else stays real.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LooseClientEntry = Record<string, any> | null;
+
+export interface HubClientsOverride {
+  getClientById?(clientId: string): LooseClientEntry | undefined;
+  getActorPrincipalIdForClient?(clientId: string): string | undefined;
+  listClientsByCapability?(
+    capability: HostProxyCapability,
+  ): LooseClientEntry[] | null;
+  getMostRecentClientByCapability?(
+    capability: HostProxyCapability,
+  ): LooseClientEntry | undefined;
+}
+
+let _hubClientsOverrideForTesting: HubClientsOverride | undefined;
+
+/**
+ * Test seam: intercept the hub's connected-client lookups. Call with no
+ * arguments to restore the real registry. Prefer `beforeEach`/`afterEach`.
+ */
+export function setHubClientsForTesting(override?: HubClientsOverride): void {
+  _hubClientsOverrideForTesting = override;
+}
+
+let _hubPublishOverrideForTesting:
+  | ((
+      event: AssistantEventEnvelope,
+      options?: AssistantEventPublishOptions,
+    ) => void | Promise<void>)
+  | undefined;
+
+/**
+ * Test seam: intercept direct `assistantEventHub.publish` calls (events
+ * published through {@link broadcastMessage} go to the broadcast override
+ * instead). Call with no arguments to restore the real publish.
+ */
+export function setHubPublishOverrideForTesting(
+  fn?: (
+    event: AssistantEventEnvelope,
+    options?: AssistantEventPublishOptions,
+  ) => void | Promise<void>,
+): void {
+  _hubPublishOverrideForTesting = fn;
 }
 
 /** Targeting a caller of {@link broadcastMessage} may request. */

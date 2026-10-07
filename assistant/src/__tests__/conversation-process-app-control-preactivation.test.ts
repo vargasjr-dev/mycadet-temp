@@ -33,12 +33,10 @@ let mockCapabilityClients: Array<{
   actorPrincipalId?: string;
 }> = [];
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    listClientsByCapability: () => mockCapabilityClients,
-  },
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
+setHubClientsForTesting({
+  listClientsByCapability: () => mockCapabilityClients,
+});
 
 mock.module("../persistence/conversation-crud.js", () => ({
   setConversationProcessingStartedAt: () => {},
@@ -87,6 +85,10 @@ import {
   type QueuedMessage,
 } from "../daemon/conversation-queue-manager.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
 
 // ---------------------------------------------------------------------------

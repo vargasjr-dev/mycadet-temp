@@ -18,12 +18,10 @@ const mockBroadcastMessage = mock((msg: Broadcast) => {
   broadcasts.push(msg);
 });
 
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    listClientsByCapability: () => [],
-  },
-  broadcastMessage: mockBroadcastMessage,
-}));
+setBroadcastOverrideForTesting(mockBroadcastMessage);
+setHubClientsForTesting({
+  listClientsByCapability: () => [],
+});
 
 type RegisteredTool = {
   id: string;
@@ -104,6 +102,10 @@ mock.module("../../daemon/host-bash-proxy.js", () => ({
 // Import under test — MUST come after mock.module calls.
 // ---------------------------------------------------------------------------
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../../runtime/assistant-event-hub.js";
 import {
   MAX_OUTPUT_LENGTH,
   OUTPUT_TRUNCATED_TAG,

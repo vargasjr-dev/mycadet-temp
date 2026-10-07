@@ -1,15 +1,9 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { ResourcePressureStatusResponseSchema } from "../api/responses/resource-pressure-status.js";
+import { setHubPublishOverrideForTesting } from "../runtime/assistant-event-hub.js";
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  AssistantEventHub: class {},
-  broadcastMessage: () => {},
-  capabilityForMessageType: () => undefined,
-  assistantEventHub: {
-    publish: async () => {},
-  },
-}));
+setHubPublishOverrideForTesting(async () => {});
 
 mock.module("../util/container-cpu-sampler.js", () => ({
   getCachedContainerCpuPercent: () => 0,

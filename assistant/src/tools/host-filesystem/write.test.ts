@@ -3,6 +3,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../../runtime/assistant-event-hub.js";
 import type { ToolContext } from "../types.js";
 
 // ---------------------------------------------------------------------------
@@ -22,12 +26,10 @@ mock.module("../../daemon/host-file-proxy.js", () => ({
   },
 }));
 
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    listClientsByCapability: () => [],
-  },
-  broadcastMessage: async () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
+setHubClientsForTesting({
+  listClientsByCapability: () => [],
+});
 
 const { hostFileWriteTool } = await import("./write.js");
 

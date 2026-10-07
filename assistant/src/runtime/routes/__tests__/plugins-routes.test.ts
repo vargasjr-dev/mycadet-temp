@@ -356,14 +356,7 @@ mock.module("../../../plugins/mtime-cache.js", () => ({
 // originClientId? }` payload the publisher builds.
 const broadcastMessageSpy = mock((_msg: unknown): void => {});
 
-mock.module("../../assistant-event-hub.js", () => ({
-  broadcastMessage: broadcastMessageSpy,
-  // Stub the hub singleton so the (now dynamically imported) plugins-routes
-  // dependency graph links — some transitive importer statically imports this
-  // binding. No tested path calls it; publishing goes through the mocked
-  // `broadcastMessage` above.
-  assistantEventHub: {},
-}));
+setBroadcastOverrideForTesting(broadcastMessageSpy);
 
 // Make the valid-slug source deterministic: the real `getLocalCategorySlugs`
 // reads the bundled YAML (absent in the test sandbox), so we pin it to the
@@ -405,6 +398,7 @@ const {
   normalizeMarketplaceCategory,
   ROUTES: PLUGINS_ROUTES,
 }: typeof import("../plugins-routes.js") = await import("../plugins-routes.js");
+import { setBroadcastOverrideForTesting } from "../../assistant-event-hub.js";
 import type { RouteDefinition, RouteHandlerArgs } from "../types.js";
 import { RouteResponse } from "../types.js";
 

@@ -6,18 +6,14 @@ let mockHasClient = false;
 // clientId → actorPrincipalId for the hub mock
 const mockActorMap = new Map<string, string>();
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: unknown) => sentMessages.push(msg),
-  assistantEventHub: {
-    getMostRecentClientByCapability: (cap: string) =>
-      cap === "host_app_control" && mockHasClient
-        ? { id: "mock-client" }
-        : null,
-    listClientsByCapability: () => [],
-    getActorPrincipalIdForClient: (clientId: string) =>
-      mockActorMap.get(clientId),
-  },
-}));
+setBroadcastOverrideForTesting((msg: unknown) => sentMessages.push(msg));
+setHubClientsForTesting({
+  getActorPrincipalIdForClient: (clientId: string) =>
+    mockActorMap.get(clientId),
+  listClientsByCapability: () => [],
+  getMostRecentClientByCapability: (cap: string) =>
+    cap === "host_app_control" && mockHasClient ? { id: "mock-client" } : null,
+});
 
 interface RegisteredInteraction {
   conversationId: string;
@@ -49,6 +45,10 @@ const {
 } = await import("../daemon/host-app-control-proxy.js");
 
 import type { HostAppControlResultPayload } from "../daemon/message-types/host-app-control.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 
 /**
  * Build a result payload with stable defaults plus per-test overrides.

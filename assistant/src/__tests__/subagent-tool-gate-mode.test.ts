@@ -28,10 +28,10 @@ import type { ToolContext, ToolExecutionResult } from "../tools/types.js";
 // Module mocks (must precede the import of the module under test)
 // ---------------------------------------------------------------------------
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: mock(() => {}),
-  assistantEventHub: { listClientsByCapability: () => [] },
-}));
+setBroadcastOverrideForTesting(mock(() => {}));
+setHubClientsForTesting({
+  listClientsByCapability: () => [],
+});
 
 mock.module("../daemon/conversation-surfaces.js", () => ({
   refreshSurfacesForApp: mock(() => {}),
@@ -113,6 +113,10 @@ import {
   isRefusedInReadOnlyPass,
   type SubagentToolStats,
 } from "../daemon/conversation-tool-setup.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 import { SUBAGENT_ROLE_REGISTRY } from "../subagent/types.js";
 import {
   __clearRegistryForTesting,

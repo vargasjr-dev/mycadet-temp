@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, jest, mock, test } from "bun:test";
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
+
 const sentMessages: unknown[] = [];
 const sentOptions: unknown[] = [];
 let mockHasClient = false;
@@ -10,12 +15,8 @@ type MockClient = {
 };
 let mockClients: MockClient[] = [];
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (
-    msg: unknown,
-    _conversationId: unknown,
-    options: unknown,
-  ) => {
+setBroadcastOverrideForTesting(
+  (msg: unknown, _conversationId: unknown, options: unknown) => {
     // Skip `interaction_resolved` envelopes — pending-interactions emits one
     // on every resolve and these tests assert on host-proxy wire messages.
     if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
@@ -24,17 +25,17 @@ mock.module("../runtime/assistant-event-hub.js", () => ({
     sentMessages.push(msg);
     sentOptions.push(options);
   },
-  assistantEventHub: {
-    getMostRecentClientByCapability: (cap: string) =>
-      cap === "host_cu" && mockHasClient ? { id: "mock-client" } : null,
-    listClientsByCapability: (cap: string) =>
-      cap === "host_cu" ? mockClients : [],
-    getClientById: (id: string) =>
-      mockClients.find((c) => c.clientId === id) ?? undefined,
-    getActorPrincipalIdForClient: (id: string) =>
-      mockClients.find((c) => c.clientId === id)?.actorPrincipalId,
-  },
-}));
+);
+setHubClientsForTesting({
+  getClientById: (id: string) =>
+    mockClients.find((c) => c.clientId === id) ?? undefined,
+  getActorPrincipalIdForClient: (id: string) =>
+    mockClients.find((c) => c.clientId === id)?.actorPrincipalId,
+  listClientsByCapability: (cap: string) =>
+    cap === "host_cu" ? mockClients : [],
+  getMostRecentClientByCapability: (cap: string) =>
+    cap === "host_cu" && mockHasClient ? { id: "mock-client" } : null,
+});
 
 // Captured `log.info` payloads, so the step-timings line can be asserted on.
 const infoLogs: { payload: Record<string, unknown>; message: string }[] = [];

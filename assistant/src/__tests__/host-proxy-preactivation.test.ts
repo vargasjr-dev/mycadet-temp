@@ -20,15 +20,20 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // Declared before mocks so the lambda captures it by reference.
 // ---------------------------------------------------------------------------
 
-let mockClientsByCapability: Map<string, unknown[]> = new Map();
+let mockClientsByCapability: Map<
+  string,
+  {
+    clientId: string;
+    capabilities: HostProxyCapability[];
+    actorPrincipalId: string;
+  }[]
+> = new Map();
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    listClientsByCapability: (cap: string) =>
-      mockClientsByCapability.get(cap) ?? [],
-  },
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
+setHubClientsForTesting({
+  listClientsByCapability: (cap: string) =>
+    mockClientsByCapability.get(cap) ?? [],
+});
 
 // ---------------------------------------------------------------------------
 // Mock the logger so we can assert on the structured info call.
@@ -81,6 +86,10 @@ mock.module("../util/logger.js", () => ({
 
 import type { HostProxyCapability } from "../channels/types.js";
 import type { HostProxyPreactivationTarget } from "../daemon/host-proxy-preactivation.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 
 const {
   evaluateHostProxyAttachment,

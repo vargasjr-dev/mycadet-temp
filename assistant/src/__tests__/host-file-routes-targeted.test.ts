@@ -65,16 +65,18 @@ mock.module("../daemon/host-file-proxy.js", () => ({
 // each connected client.
 const clientActors = new Map<string, string>();
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    getActorPrincipalIdForClient: (clientId: string) =>
-      clientActors.get(clientId),
-  },
-  broadcastMessage: async () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
+setHubClientsForTesting({
+  getActorPrincipalIdForClient: (clientId: string) =>
+    clientActors.get(clientId),
+});
 
 // ── Real imports (after mocks) ──────────────────────────────────────────────
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
 import { BadRequestError, ForbiddenError } from "../runtime/routes/errors.js";
 import { ROUTES } from "../runtime/routes/host-file-routes.js";
 

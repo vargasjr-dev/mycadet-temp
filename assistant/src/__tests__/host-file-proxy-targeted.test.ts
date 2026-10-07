@@ -10,6 +10,11 @@
  */
 import { afterEach, describe, expect, jest, mock, test } from "bun:test";
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+} from "../runtime/assistant-event-hub.js";
+
 const sentMessages: unknown[] = [];
 const sentMessageOptions: unknown[] = [];
 const resolvedInteractionIds: string[] = [];
@@ -26,24 +31,20 @@ let mockClientRegistry: Map<string, MockClient> = new Map();
 // check added in PR 3 is exercised separately in `host-file-proxy.test.ts`.
 const TEST_PRINCIPAL = "test-user";
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (
-    msg: unknown,
-    _conversationId?: string,
-    options?: unknown,
-  ) => {
+setBroadcastOverrideForTesting(
+  (msg: unknown, _conversationId?: string, options?: unknown) => {
     sentMessages.push(msg);
     sentMessageOptions.push(options);
   },
-  assistantEventHub: {
-    getMostRecentClientByCapability: (cap: string) =>
-      cap === "host_file" && mockHasClient ? { id: "mock-client" } : null,
-    listClientsByCapability: (_cap: string) => mockCapableClients,
-    getClientById: (clientId: string) => mockClientRegistry.get(clientId),
-    getActorPrincipalIdForClient: (clientId: string) =>
-      mockClientRegistry.get(clientId)?.actorPrincipalId,
-  },
-}));
+);
+setHubClientsForTesting({
+  getClientById: (clientId: string) => mockClientRegistry.get(clientId),
+  getActorPrincipalIdForClient: (clientId: string) =>
+    mockClientRegistry.get(clientId)?.actorPrincipalId,
+  listClientsByCapability: (_cap: string) => mockCapableClients,
+  getMostRecentClientByCapability: (cap: string) =>
+    cap === "host_file" && mockHasClient ? { id: "mock-client" } : null,
+});
 
 const pendingInteractionMap = new Map<string, Record<string, unknown>>();
 mock.module("../runtime/pending-interactions.js", () => ({

@@ -22,12 +22,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 // ── Assistant event hub mock ───────────────────────────────────────
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    publish: async () => {},
-  },
-  broadcastMessage: async () => {},
-}));
+setHubPublishOverrideForTesting(async () => {});
 
 mock.module("../runtime/assistant-event.js", () => ({
   buildAssistantEvent: () => ({}),
@@ -73,6 +68,7 @@ import { scopedApprovalGrants } from "../persistence/schema/index.js";
 
 const { createScopedApprovalGrant } = _internal;
 import type { TrustContext } from "../daemon/trust-context-types.js";
+import { setHubPublishOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { computeToolApprovalDigest } from "../security/tool-approval-digest.js";
 
 await initializeDb();
