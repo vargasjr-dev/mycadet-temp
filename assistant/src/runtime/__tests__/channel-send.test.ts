@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { ensureConversationExists } from "../../persistence/conversation-crud.js";
+import { initializeDb } from "../../persistence/db-init.js";
+
+await initializeDb();
+
 import type {
   ChannelTransport,
   ProactiveTarget,
 } from "../../messaging/providers/channel-transport.js";
-import { setConversationCrudOverridesForTesting } from "../../persistence/conversation-crud.js";
 
 // The seam under test is the send function: it must ask the transport for
 // the address, deliver through it, and record only what the channel
@@ -80,12 +84,6 @@ mock.module("../../notifications/conversation-pairing.js", () => ({
 }));
 mock.module("../../notifications/delivered-post-record.js", () => ({
   recordDeliveredChannelPost: recordMock,
-}));
-setConversationCrudOverridesForTesting({
-  getConversation: (id: string) => ({ id, createdAt: 1700000000000 }),
-});
-mock.module("../../persistence/conversation-disk-view.js", () => ({
-  syncMessageToDisk: () => {},
 }));
 let bindCreates = true;
 let bindThrows = false;
@@ -333,6 +331,9 @@ describe("delivery through the transport", () => {
 });
 
 describe("recording after acknowledgement", () => {
+  beforeEach(() => {
+    ensureConversationExists("home-1", undefined);
+  });
   test("records every acknowledged id in the chat's home, cross-posted from the sender", async () => {
     deliverResult = { ok: true, messageIds: ["10", "11", "12"] };
     const result = await sendChannelText({
