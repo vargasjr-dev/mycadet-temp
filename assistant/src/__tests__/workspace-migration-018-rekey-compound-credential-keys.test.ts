@@ -1,27 +1,14 @@
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
+
+import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
 
 // ---------------------------------------------------------------------------
 // Mocks — must precede migration import
 // ---------------------------------------------------------------------------
 
 // In-memory credential store. Using `let` so tests can reset between runs.
-let store = new Map<string, string>();
-let storeUnreachable = false;
-
-mock.module("../security/secure-keys.js", () => ({
-  listSecureKeysAsync: async () => ({
-    accounts: [...store.keys()],
-    unreachable: storeUnreachable,
-  }),
-  getSecureKeyAsync: async (key: string) => store.get(key),
-  setSecureKeyAsync: async (key: string, value: string) => {
-    store.set(key, value);
-    return true;
-  },
-  deleteSecureKeyAsync: async (key: string) => {
-    store.delete(key);
-  },
-}));
+const secureKeys = useFaultableSecureKeyMap();
+const store = secureKeys.store;
 
 import { rekeyCompoundCredentialKeysMigration } from "../workspace/migrations/018-rekey-compound-credential-keys.js";
 
@@ -30,8 +17,11 @@ import { rekeyCompoundCredentialKeysMigration } from "../workspace/migrations/01
 // ---------------------------------------------------------------------------
 
 function resetStore(entries: Record<string, string> = {}): void {
-  store = new Map(Object.entries(entries));
-  storeUnreachable = false;
+  store.clear();
+  for (const [k, v] of Object.entries(entries)) {
+    store.set(k, v);
+  }
+  secureKeys.setAllUnreachable(false);
 }
 
 function storeEntries(): Record<string, string> {
@@ -114,7 +104,7 @@ describe("018-rekey-compound-credential-keys migration", () => {
 
   test("run() throws when credential store is unreachable", async () => {
     resetStore();
-    storeUnreachable = true;
+    secureKeys.setAllUnreachable(true);
 
     await expect(
       rekeyCompoundCredentialKeysMigration.run("/fake"),
@@ -172,7 +162,7 @@ describe("018-rekey-compound-credential-keys migration", () => {
 
   test("down() throws when credential store is unreachable", async () => {
     resetStore();
-    storeUnreachable = true;
+    secureKeys.setAllUnreachable(true);
 
     await expect(
       rekeyCompoundCredentialKeysMigration.down("/fake"),
