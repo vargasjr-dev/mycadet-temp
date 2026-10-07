@@ -129,7 +129,7 @@ describe("package boundary", () => {
     const forbidden = Object.keys(allDeps).filter((dep) =>
       [
         "@mycadet/assistant",
-        "@mycadet/cadet-gateway",
+        "@mycadet/gateway",
         "@mycadet/credential-storage",
         "@mycadet/egress-proxy",
       ].includes(dep),

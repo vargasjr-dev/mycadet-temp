@@ -68,7 +68,7 @@ info "Installing dependencies in scripts/"
 # Link local packages into meta so it resolves to local source
 # ---------------------------------------------------------------------------
 info "Linking local packages into meta/"
-(cd "${REPO_ROOT}/meta" && bun link @mycadet/cli @mycadet/assistant @mycadet/cadet-gateway @mycadet/credential-executor)
+(cd "${REPO_ROOT}/meta" && bun link @mycadet/cli @mycadet/assistant @mycadet/gateway @mycadet/credential-executor)
 
 # ---------------------------------------------------------------------------
 # Link the global `cadet` command to this repo's meta package

@@ -110,7 +110,7 @@ function hasLocalRuntimeComponents(installDir: string): boolean {
   return (
     existsSync(packagePath(installDir, "@mycadet/assistant", "src/index.ts")) &&
     existsSync(
-      packagePath(installDir, "@mycadet/cadet-gateway", "src/index.ts"),
+      packagePath(installDir, "@mycadet/gateway", "src/index.ts"),
     ) &&
     existsSync(
       packagePath(installDir, "@mycadet/credential-executor", "src/main.ts"),
@@ -214,7 +214,7 @@ function localRuntimeGatewayDir(
 ): string | undefined {
   const installDir = resources?.runtimeInstallDir;
   if (!installDir) return undefined;
-  const candidate = packagePath(installDir, "@mycadet/cadet-gateway", "");
+  const candidate = packagePath(installDir, "@mycadet/gateway", "");
   return isGatewaySourceDir(candidate) ? candidate : undefined;
 }
 
@@ -423,7 +423,7 @@ function isGatewaySourceDir(dir: string): boolean {
     return false;
   try {
     const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
-    return pkg.name === "@mycadet/cadet-gateway";
+    return pkg.name === "@mycadet/gateway";
   } catch {
     return false;
   }
@@ -969,7 +969,7 @@ function resolveGatewayDir(resources?: LocalInstanceResources): string {
     return sourceDir;
   }
 
-  // npm-installed: @mycadet/cli and @mycadet/cadet-gateway are siblings
+  // npm-installed: @mycadet/cli and @mycadet/gateway are siblings
   const npmGatewayDir = join(
     import.meta.dir,
     "..",
@@ -993,11 +993,11 @@ function resolveGatewayDir(resources?: LocalInstanceResources): string {
   }
 
   try {
-    const pkgPath = _require.resolve("@mycadet/cadet-gateway/package.json");
+    const pkgPath = _require.resolve("@mycadet/gateway/package.json");
     return dirname(pkgPath);
   } catch {
     throw new Error(
-      "Gateway not found. Ensure @mycadet/cadet-gateway is installed or run from the source tree.",
+      "Gateway not found. Ensure @mycadet/gateway is installed or run from the source tree.",
     );
   }
 }

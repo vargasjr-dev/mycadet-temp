@@ -344,7 +344,7 @@ jobs:
             .dependencies["@mycadet/assistant"] = $v |
             .dependencies["@mycadet/cli"] = $v |
             .dependencies["@mycadet/credential-executor"] = $v |
-            .dependencies["@mycadet/cadet-gateway"] = $v |
+            .dependencies["@mycadet/gateway"] = $v |
             .dependencies["@mycadet/web"] = $v
           ' meta/package.json > tmp && mv tmp meta/package.json
 

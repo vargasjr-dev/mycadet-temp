@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [synchronize, opened, reopened]
     paths:
-      # Only what @mycadet/cadet-gateway actually consumes (its workspace:*
+      # Only what @mycadet/gateway actually consumes (its workspace:*
       # dep closure — kept in lockstep with gateway/package.json), plus the
       # shared inputs its checks read.
       - "package.json"
@@ -46,7 +46,7 @@ jobs:
           bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@mycadet/cadet-gateway
+        run: bun install --frozen-lockfile --filter=@mycadet/gateway
 
       - name: Sync feature flag registry
         run: cd .. && bun run meta/sync-bundled-copies.ts

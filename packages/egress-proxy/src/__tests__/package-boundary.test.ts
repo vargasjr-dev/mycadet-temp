@@ -134,7 +134,7 @@ describe("package boundary", () => {
     const forbidden = [
       "@mycadet/assistant",
       "@mycadet/ces",
-      "@mycadet/cadet-gateway",
+      "@mycadet/gateway",
       "@mycadet/assistant-client",
       "@mycadet/ces-client",
       "@mycadet/ces-contracts",
