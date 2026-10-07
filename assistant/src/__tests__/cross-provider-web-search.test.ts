@@ -220,6 +220,7 @@ import {
   OpenAIChatCompletionsProvider,
   OpenAIResponsesProvider,
 } from "../providers/openai/client.js";
+import { credentialKey } from "../security/credential-key.js";
 // ---------------------------------------------------------------------------
 // App-side web_search provider adapters (Brave/Perplexity/Tavily)
 //
@@ -228,18 +229,19 @@ import {
 // global fetch. The logger is mocked to capture structured warnings so we
 // can assert the `web_search_backend_failure` telemetry (ATL-727).
 // ---------------------------------------------------------------------------
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
 
 setConfig("services", { "web-search": { provider: "brave" } });
 
-let mockProviderKey: string | undefined = "test-key";
-const capturedWarnLogs: Record<string, unknown>[] = [];
+// The REAL secure-keys module pinned to a live memory backend, seeded under
+// the same credential key production reads for the Brave provider.
+const secureKeys = useMemorySecureKeys({
+  [credentialKey("brave", "api_key")]: "test-key",
+});
+const BRAVE_KEY = credentialKey("brave", "api_key");
 
-const realSecureKeys = await import("../security/secure-keys.js");
-mock.module("../security/secure-keys.js", () => ({
-  ...realSecureKeys,
-  getProviderKeyAsync: async () => mockProviderKey,
-}));
+const capturedWarnLogs: Record<string, unknown>[] = [];
 
 const realLogger = await import("../util/logger.js");
 mock.module("../util/logger.js", () => ({
@@ -667,7 +669,7 @@ describe("Cross-Provider Web Search — app-side backend failure normalization",
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
-    mockProviderKey = "test-key";
+    secureKeys[BRAVE_KEY] = "test-key";
     capturedWarnLogs.length = 0;
   });
 

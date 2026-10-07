@@ -1,8 +1,12 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
+import { credentialKey } from "../../../security/credential-key.js";
 
-let mockFastcrwSecureKey: string | undefined;
+// The REAL secure-keys module pinned to a live memory backend.
+const secureKeys = useMemorySecureKeyMap();
+const FASTCRW_KEY = credentialKey("fastcrw", "api_key");
 
 function seedWebFetch(provider: string, apiBase?: string): void {
   const entry: Record<string, string> = { provider };
@@ -11,15 +15,6 @@ function seedWebFetch(provider: string, apiBase?: string): void {
   }
   setConfig("services", { "web-fetch": entry });
 }
-
-mock.module("../../../security/secure-keys.js", () => ({
-  getProviderKeyAsync: async (provider: string) =>
-    provider === "fastcrw" ? mockFastcrwSecureKey : undefined,
-}));
-
-mock.module("../../../permissions/types.js", () => ({
-  RiskLevel: { Low: "low", Medium: "medium", High: "high" },
-}));
 
 let mockResolveAddresses: string[] = [];
 const realUrlSafety = await import("../url-safety.js");
@@ -42,7 +37,7 @@ describe("executeFastcrwScrape", () => {
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
-    mockFastcrwSecureKey = undefined;
+    secureKeys.delete(FASTCRW_KEY);
     mockResolveAddresses = ["93.184.216.34"];
   });
   afterEach(() => {
@@ -109,7 +104,7 @@ describe("webFetchTool fastCRW dispatch", () => {
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
-    mockFastcrwSecureKey = "crw_live_test";
+    secureKeys.set(FASTCRW_KEY, "crw_live_test");
     mockResolveAddresses = ["93.184.216.34"];
   });
   afterEach(() => {
@@ -139,7 +134,7 @@ describe("webFetchTool fastCRW dispatch", () => {
 
   test("routes to fastCRW without a key when a custom API base is set", async () => {
     seedWebFetch("fastcrw", "http://127.0.0.1:3000");
-    mockFastcrwSecureKey = undefined;
+    secureKeys.delete(FASTCRW_KEY);
     let capturedUrl = "";
     let capturedHeaders: any = null;
     globalThis.fetch = (async (url: string, init?: RequestInit) => {

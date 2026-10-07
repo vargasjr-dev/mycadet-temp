@@ -9,7 +9,6 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { UnprocessableEntityError } from "../errors.js";
 import type { RouteDefinition } from "../types.js";
 
-let storedApiKey: string | undefined = "assistant-key";
 let platformBaseUrl = "https://cloud.mycadet.ai";
 
 // Spread the real module: replacing it wholesale strips the other exports the
@@ -20,14 +19,13 @@ mock.module("../../../config/env.js", () => ({
   getPlatformBaseUrl: () => platformBaseUrl,
 }));
 
-const actualSecureKeys = await import("../../../security/secure-keys.js");
-mock.module("../../../security/secure-keys.js", () => ({
-  ...actualSecureKeys,
-  getSecureKeyAsync: async (account: string) =>
-    account === "credential/cadet/assistant_api_key"
-      ? storedApiKey
-      : undefined,
-}));
+import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
+import { credentialKey } from "../../../security/credential-key.js";
+
+// The REAL secure-keys module pinned to a live memory backend, seeded under
+// the credential key the roadmap routes read.
+const secureKeys = useMemorySecureKeys();
+const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
 
 const { ROUTES } = await import("../roadmap-routes.js");
 
@@ -91,7 +89,7 @@ const UPSTREAM_ITEM = {
 };
 
 beforeEach(() => {
-  storedApiKey = "assistant-key";
+  secureKeys[ASSISTANT_API_KEY] = "assistant-key";
   platformBaseUrl = "https://cloud.mycadet.ai";
   calls = [];
   process.env.CADET_MARKETING_URL = "https://marketing.test";
@@ -259,7 +257,7 @@ describe("roadmap reads", () => {
   });
 
   test("a read falls back to anonymous with no key stored", async () => {
-    storedApiKey = undefined;
+    delete secureKeys[ASSISTANT_API_KEY];
     stubFetch({ items: [], total: 0 });
 
     await list({});
@@ -420,7 +418,7 @@ describe("roadmap writes", () => {
   });
 
   test("every write refuses to run unauthenticated", async () => {
-    storedApiKey = undefined;
+    delete secureKeys[ASSISTANT_API_KEY];
     stubFetch(UPSTREAM_ITEM);
 
     const writes = [

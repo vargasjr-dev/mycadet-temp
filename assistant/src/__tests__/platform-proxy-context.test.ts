@@ -1,22 +1,17 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { credentialKey } from "../security/credential-key.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
-// Mutable state for env and secure key stubs
+// The REAL secure-keys module pinned to a live memory backend.
+const secureKeys = useMemorySecureKeyMap();
+const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
+
+// Mutable state for env stubs
 let mockPlatformBaseUrl = "";
-let mockAssistantApiKey: string | null = null;
 
 mock.module("../config/env.js", () => ({
   getPlatformBaseUrl: () => mockPlatformBaseUrl,
-}));
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => {
-    if (key === credentialKey("cadet", "assistant_api_key")) {
-      return mockAssistantApiKey;
-    }
-    return null;
-  },
 }));
 
 import {
@@ -29,12 +24,12 @@ import {
 describe("resolveManagedProxyContext", () => {
   beforeEach(() => {
     mockPlatformBaseUrl = "";
-    mockAssistantApiKey = null;
+    secureKeys.delete(ASSISTANT_API_KEY);
   });
 
   test("returns disabled when platform URL is empty", async () => {
     mockPlatformBaseUrl = "";
-    mockAssistantApiKey = "sk-test-key";
+    secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
 
     const ctx = await resolveManagedProxyContext();
     expect(ctx.enabled).toBe(false);
@@ -43,7 +38,7 @@ describe("resolveManagedProxyContext", () => {
 
   test("returns disabled when assistant API key is missing", async () => {
     mockPlatformBaseUrl = "https://platform.example.com";
-    mockAssistantApiKey = null;
+    secureKeys.delete(ASSISTANT_API_KEY);
 
     const ctx = await resolveManagedProxyContext();
     expect(ctx.enabled).toBe(false);
@@ -57,7 +52,7 @@ describe("resolveManagedProxyContext", () => {
 
   test("returns enabled when both platform URL and API key are present", async () => {
     mockPlatformBaseUrl = "https://platform.example.com/";
-    mockAssistantApiKey = "sk-test-key";
+    secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
 
     const ctx = await resolveManagedProxyContext();
     expect(ctx.enabled).toBe(true);
@@ -67,7 +62,7 @@ describe("resolveManagedProxyContext", () => {
 
   test("strips trailing slashes from platform URL", async () => {
     mockPlatformBaseUrl = "https://platform.example.com///";
-    mockAssistantApiKey = "sk-test-key";
+    secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
 
     const ctx = await resolveManagedProxyContext();
     expect(ctx.platformBaseUrl).toBe("https://platform.example.com");
@@ -77,7 +72,7 @@ describe("resolveManagedProxyContext", () => {
 describe("hasManagedProxyPrereqs", () => {
   beforeEach(() => {
     mockPlatformBaseUrl = "";
-    mockAssistantApiKey = null;
+    secureKeys.delete(ASSISTANT_API_KEY);
   });
 
   test("returns false when prerequisites are missing", async () => {
@@ -86,7 +81,7 @@ describe("hasManagedProxyPrereqs", () => {
 
   test("returns true when prerequisites are satisfied", async () => {
     mockPlatformBaseUrl = "https://platform.example.com";
-    mockAssistantApiKey = "sk-test-key";
+    secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     expect(await hasManagedProxyPrereqs()).toBe(true);
   });
 });
@@ -94,7 +89,7 @@ describe("hasManagedProxyPrereqs", () => {
 describe("buildManagedBaseUrl", () => {
   beforeEach(() => {
     mockPlatformBaseUrl = "https://platform.example.com";
-    mockAssistantApiKey = "sk-test-key";
+    secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
   });
 
   test("builds correct URL for managed providers", async () => {
@@ -126,7 +121,7 @@ describe("buildManagedBaseUrl", () => {
 
   test("returns undefined when prerequisites are missing", async () => {
     mockPlatformBaseUrl = "";
-    mockAssistantApiKey = null;
+    secureKeys.delete(ASSISTANT_API_KEY);
     expect(await buildManagedBaseUrl("anthropic")).toBeUndefined();
     expect(await buildManagedBaseUrl("gemini")).toBeUndefined();
     expect(await buildManagedBaseUrl("openai")).toBeUndefined();
@@ -136,7 +131,7 @@ describe("buildManagedBaseUrl", () => {
 describe("managedFallbackEnabledFor", () => {
   beforeEach(() => {
     mockPlatformBaseUrl = "https://platform.example.com";
-    mockAssistantApiKey = "sk-test-key";
+    secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
   });
 
   test("returns true only for managed fallback providers with prerequisites", async () => {
@@ -155,7 +150,7 @@ describe("managedFallbackEnabledFor", () => {
 
   test("returns false when prerequisites are missing", async () => {
     mockPlatformBaseUrl = "";
-    mockAssistantApiKey = null;
+    secureKeys.delete(ASSISTANT_API_KEY);
     expect(await managedFallbackEnabledFor("anthropic")).toBe(false);
     expect(await managedFallbackEnabledFor("gemini")).toBe(false);
     expect(await managedFallbackEnabledFor("openai")).toBe(false);

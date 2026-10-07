@@ -7,25 +7,11 @@ import {
   ACP_SERVICE,
 } from "../acp/acp-credentials.js";
 import { credentialKey } from "../security/credential-key.js";
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
-let secureKeyStore: Record<string, string | undefined> = {};
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => secureKeyStore[key],
-  getSecureKeyResultAsync: async (key: string) => ({
-    value: secureKeyStore[key],
-    unreachable: false,
-  }),
-  setSecureKeyAsync: async (key: string, value: string) => {
-    secureKeyStore[key] = value;
-    return true;
-  },
-  deleteSecureKeyAsync: async (key: string) => {
-    delete secureKeyStore[key];
-    return "deleted";
-  },
-  getActiveBackendName: () => "test",
-}));
+// The REAL secure-keys module pinned to a live memory backend — the tests
+// index the store directly, same as the old inline fake did.
+const secureKeyStore = useMemorySecureKeys();
 
 mock.module("../tools/credentials/metadata-store.js", () => ({
   assertMetadataWritable: () => {},
@@ -68,7 +54,9 @@ function addAcpOauthToken(value: string) {
 
 describe("secret routes ACP OAuth-token format guard", () => {
   beforeEach(() => {
-    secureKeyStore = {};
+    for (const k of Object.keys(secureKeyStore)) {
+      delete secureKeyStore[k];
+    }
   });
 
   test("rejects an Anthropic API key with a 400 and does not persist it", async () => {

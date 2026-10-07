@@ -3,27 +3,17 @@
  * fail-closed auth token behavior, and caller ID eligibility checks.
  */
 import { createHmac } from "node:crypto";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-
-import { credentialKey } from "../security/credential-key.js";
-
-// Start with a configured auth token
-let mockAuthToken: string | undefined = "test-auth-token-secret";
-let mockAccountSid: string | undefined = "AC_test_account";
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => {
-    if (key === credentialKey("twilio", "auth_token")) {
-      return mockAuthToken;
-    }
-    if (key === credentialKey("twilio", "account_sid")) {
-      return mockAccountSid;
-    }
-    return undefined;
-  },
-}));
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { TwilioVoiceProvider } from "../calls/twilio-provider.js";
+import { credentialKey } from "../security/credential-key.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+
+// The REAL secure-keys module pinned to a live memory backend, seeded under
+// the same credential keys production reads.
+const secureKeys = useMemorySecureKeyMap();
+const TWILIO_AUTH_TOKEN = credentialKey("twilio", "auth_token");
+const TWILIO_ACCOUNT_SID = credentialKey("twilio", "account_sid");
 import { setConfig } from "./helpers/set-config.js";
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -45,9 +35,9 @@ function computeValidSignature(
 
 describe("TwilioVoiceProvider", () => {
   beforeEach(() => {
-    mockAuthToken = "test-auth-token-secret";
-    mockAccountSid = "AC_test_account";
-    setConfig("twilio", { accountSid: mockAccountSid });
+    secureKeys.set(TWILIO_AUTH_TOKEN, "test-auth-token-secret");
+    secureKeys.set(TWILIO_ACCOUNT_SID, "AC_test_account");
+    setConfig("twilio", { accountSid: "AC_test_account" });
   });
 
   describe("verifyWebhookSignature", () => {
@@ -121,13 +111,13 @@ describe("TwilioVoiceProvider", () => {
 
   describe("getAuthToken", () => {
     test("returns the auth token when configured", async () => {
-      mockAuthToken = "my-secret-token";
+      secureKeys.set(TWILIO_AUTH_TOKEN, "my-secret-token");
       const token = await TwilioVoiceProvider.getAuthToken();
       expect(token).toBe("my-secret-token");
     });
 
     test("returns null when auth token is not configured", async () => {
-      mockAuthToken = undefined;
+      secureKeys.delete(TWILIO_AUTH_TOKEN);
       const token = await TwilioVoiceProvider.getAuthToken();
       expect(token).toBeNull();
     });

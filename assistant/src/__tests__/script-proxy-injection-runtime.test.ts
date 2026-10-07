@@ -28,16 +28,11 @@ mock.module("../tools/credentials/metadata-store.js", () => ({
 }));
 
 // Track getSecureKeyAsync return values per storage key
-let secureKeyValues = new Map<string, string | undefined>();
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: (account: string) =>
-    Promise.resolve(secureKeyValues.get(account)),
-  setSecureKeyAsync: () => Promise.resolve(true),
-  deleteSecureKeyAsync: () => Promise.resolve("deleted"),
-  listSecureKeysAsync: async () => ({ accounts: [], unreachable: false }),
-  _resetBackend: () => {},
-}));
+// The REAL secure-keys module pinned to a live memory backend — same Map
+// semantics the old inline fake reimplemented.
+const secureKeyValues = useMemorySecureKeyMap();
 
 // Stub ensureLocalCA / certs so tests never run openssl
 mock.module("../tools/network/script-proxy/certs.js", () => ({
@@ -60,7 +55,7 @@ afterEach(async () => {
   await stopAllSessions();
   resolveByIdResults = new Map();
   resolveByServiceFieldResults = new Map();
-  secureKeyValues = new Map();
+  secureKeyValues.clear();
   credentialMetadataList = [];
 });
 

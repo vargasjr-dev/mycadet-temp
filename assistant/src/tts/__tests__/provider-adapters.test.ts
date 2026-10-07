@@ -38,29 +38,15 @@ let mockXaiConfig = {
 
 // -- Secure keys mock ------------------------------------------------------
 
-let mockApiKey: string | null = "test-elevenlabs-api-key";
-let mockDeepgramApiKey: string | null = "test-deepgram-api-key";
-let mockXaiApiKey: string | null = "test-xai-api-key";
+import { useMemorySecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
+import { credentialKey } from "../../security/credential-key.js";
 
-mock.module("../../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key?: string) => {
-    if (key === "credential/xai/api_key") {
-      return mockXaiApiKey;
-    }
-    return mockApiKey;
-  },
-  getProviderKeyAsync: async (provider: string) => {
-    if (provider === "deepgram") {
-      return mockDeepgramApiKey;
-    }
-    return mockApiKey;
-  },
-}));
-
-mock.module("../../security/credential-key.js", () => ({
-  credentialKey: (service: string, field: string) =>
-    `credential/${service}/${field}`,
-}));
+// The REAL secure-keys module pinned to a live memory backend, seeded under
+// the exact credential keys each provider reads.
+const secureKeys = useMemorySecureKeyMap();
+const ELEVENLABS_KEY = credentialKey("elevenlabs", "api_key");
+const DEEPGRAM_KEY = credentialKey("deepgram", "api_key");
+const XAI_KEY = credentialKey("xai", "api_key");
 
 // -- Fish Audio client mock ------------------------------------------------
 
@@ -146,8 +132,8 @@ let originalFetch: typeof globalThis.fetch;
 
 beforeEach(() => {
   originalFetch = globalThis.fetch;
-  mockApiKey = "test-elevenlabs-api-key";
-  mockDeepgramApiKey = "test-deepgram-api-key";
+  secureKeys.set(ELEVENLABS_KEY, "test-elevenlabs-api-key");
+  secureKeys.set(DEEPGRAM_KEY, "test-deepgram-api-key");
   mockElevenLabsConfig = {
     voiceId: "test-voice-id",
     voiceModelId: "",
@@ -167,7 +153,7 @@ beforeEach(() => {
     model: "aura-asteria-en",
     format: "mp3",
   };
-  mockXaiApiKey = "test-xai-api-key";
+  secureKeys.set(XAI_KEY, "test-xai-api-key");
   mockXaiConfig = {
     voiceId: "eve",
     language: "auto",
@@ -740,7 +726,7 @@ describe("ElevenLabs TTS provider adapter", () => {
   // -- Required config validation ------------------------------------------
 
   test("throws ELEVENLABS_TTS_NO_API_KEY when API key is missing", async () => {
-    mockApiKey = null;
+    secureKeys.delete(ELEVENLABS_KEY);
 
     const provider = createElevenLabsProvider();
 
@@ -1584,7 +1570,7 @@ describe("Deepgram TTS provider adapter", () => {
   // -- Required config validation ------------------------------------------
 
   test("throws DEEPGRAM_TTS_NO_API_KEY when API key is missing", async () => {
-    mockDeepgramApiKey = null;
+    secureKeys.delete(DEEPGRAM_KEY);
 
     const provider = createDeepgramProvider();
 
@@ -1939,7 +1925,7 @@ describe("xAI TTS provider adapter", () => {
   // -- Required config validation ------------------------------------------
 
   test("throws XAI_TTS_NO_API_KEY when API key is missing", async () => {
-    mockXaiApiKey = null;
+    secureKeys.delete(XAI_KEY);
 
     const provider = createXaiProvider();
 
@@ -2130,7 +2116,7 @@ describe("xAI TTS provider adapter", () => {
     });
 
     test("throws XAI_TTS_NO_API_KEY without invoking the socket session", async () => {
-      mockXaiApiKey = null;
+      secureKeys.delete(XAI_KEY);
 
       const provider = createXaiProvider();
 

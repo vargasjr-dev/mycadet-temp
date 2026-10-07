@@ -1,11 +1,11 @@
 import { describe, expect, jest, mock, test } from "bun:test";
 
 // Mock secure-keys so McpOAuthProvider doesn't try to access the credential store
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: jest.fn().mockResolvedValue(null),
-  setSecureKeyAsync: jest.fn().mockResolvedValue(true),
-  deleteSecureKeyAsync: jest.fn().mockResolvedValue("deleted"),
-}));
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+
+// The REAL secure-keys module pinned to an empty memory backend: no
+// credentials configured, no keychain access.
+useMemorySecureKeyMap();
 
 mock.module("../config/env-registry.js", () => ({
   getDebugStdoutLogs: () => false,

@@ -8,24 +8,21 @@ import {
   test,
 } from "bun:test";
 
+import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
+import { credentialKey } from "../../../security/credential-key.js";
 
-// --- Mutable mock state (per test) -----------------------------------------
-let mockFirecrawlSecureKey: string | undefined;
+// --- Mutable secure-key state (per test) -----------------------------------
+// The REAL secure-keys module pinned to a live memory backend: provider keys
+// resolve through the same credentialKey("firecrawl", "api_key") lookup they
+// do in production.
+const secureKeys = useMemorySecureKeyMap();
+const FIRECRAWL_KEY = credentialKey("firecrawl", "api_key");
 
 /** Seed the active web-fetch provider into the workspace config for real. */
 function seedWebFetch(provider: string): void {
   setConfig("services", { "web-fetch": { provider } });
 }
-
-mock.module("../../../security/secure-keys.js", () => ({
-  getProviderKeyAsync: async (provider: string) =>
-    provider === "firecrawl" ? mockFirecrawlSecureKey : undefined,
-}));
-
-mock.module("../../../permissions/types.js", () => ({
-  RiskLevel: { Low: "low", Medium: "medium", High: "high" },
-}));
 
 // Keep real url-safety helpers (parseUrl, sanitize*, isPrivateOrLocalHost,
 // resolveRequestAddress) but stub DNS resolution. The returned address list is
@@ -259,7 +256,7 @@ describe("web_fetch provider dispatch", () => {
   beforeEach(() => {
     originalFetch = globalThis.fetch;
     seedWebFetch("default");
-    mockFirecrawlSecureKey = undefined;
+    secureKeys.delete(FIRECRAWL_KEY);
     mockResolveAddresses = [];
   });
   afterEach(() => {
@@ -268,7 +265,7 @@ describe("web_fetch provider dispatch", () => {
 
   test("routes to Firecrawl when provider=firecrawl and a key is set", async () => {
     seedWebFetch("firecrawl");
-    mockFirecrawlSecureKey = "fc-key";
+    secureKeys.set(FIRECRAWL_KEY, "fc-key");
     mockResolveAddresses = ["93.184.216.34"]; // public → passes the DNS safety gate
     let hitUrl = "";
     globalThis.fetch = (async (url: string) => {
@@ -286,7 +283,7 @@ describe("web_fetch provider dispatch", () => {
 
   test("falls back to the built-in fetcher when provider=firecrawl but no key", async () => {
     seedWebFetch("firecrawl");
-    mockFirecrawlSecureKey = undefined;
+    secureKeys.delete(FIRECRAWL_KEY);
     let firecrawlHit = false;
     globalThis.fetch = (async (url: string) => {
       if (typeof url === "string" && url.includes(SCRAPE_URL)) {
@@ -303,7 +300,7 @@ describe("web_fetch provider dispatch", () => {
 
   test("provider=default never touches Firecrawl", async () => {
     seedWebFetch("default");
-    mockFirecrawlSecureKey = "fc-key";
+    secureKeys.set(FIRECRAWL_KEY, "fc-key");
     let firecrawlHit = false;
     globalThis.fetch = (async (url: string) => {
       if (typeof url === "string" && url.includes(SCRAPE_URL)) {
@@ -319,7 +316,7 @@ describe("web_fetch provider dispatch", () => {
 
   test("private/local targets bypass Firecrawl and use the built-in fetcher", async () => {
     seedWebFetch("firecrawl");
-    mockFirecrawlSecureKey = "fc-key";
+    secureKeys.set(FIRECRAWL_KEY, "fc-key");
     let firecrawlHit = false;
     globalThis.fetch = (async (url: string) => {
       if (typeof url === "string" && url.includes(SCRAPE_URL)) {
@@ -337,7 +334,7 @@ describe("web_fetch provider dispatch", () => {
 
   test("a public host that DNS-resolves to a private IP is not sent to Firecrawl", async () => {
     seedWebFetch("firecrawl");
-    mockFirecrawlSecureKey = "fc-key";
+    secureKeys.set(FIRECRAWL_KEY, "fc-key");
     mockResolveAddresses = ["10.0.0.5"]; // public name, private address → blocked
     let firecrawlHit = false;
     globalThis.fetch = (async (url: string) => {
@@ -357,7 +354,7 @@ describe("web_fetch provider dispatch", () => {
 
   test("non-http(s) schemes are not sent to Firecrawl", async () => {
     seedWebFetch("firecrawl");
-    mockFirecrawlSecureKey = "fc-key";
+    secureKeys.set(FIRECRAWL_KEY, "fc-key");
     mockResolveAddresses = ["93.184.216.34"];
     let firecrawlHit = false;
     globalThis.fetch = (async (url: string) => {

@@ -8,9 +8,13 @@ import {
   test,
 } from "bun:test";
 
+import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
+import { credentialKey } from "../../../security/credential-key.js";
 
-let mockTinyfishSecureKey: string | undefined;
+// The REAL secure-keys module pinned to a live memory backend.
+const secureKeys = useMemorySecureKeyMap();
+const TINYFISH_KEY = credentialKey("tinyfish", "api_key");
 let mockResolveAddresses: string[] = [];
 
 function seedWebFetch(provider: string, apiBase?: string): void {
@@ -20,15 +24,6 @@ function seedWebFetch(provider: string, apiBase?: string): void {
   }
   setConfig("services", { "web-fetch": entry });
 }
-
-mock.module("../../../security/secure-keys.js", () => ({
-  getProviderKeyAsync: async (provider: string) =>
-    provider === "tinyfish" ? mockTinyfishSecureKey : undefined,
-}));
-
-mock.module("../../../permissions/types.js", () => ({
-  RiskLevel: { Low: "low", Medium: "medium", High: "high" },
-}));
 
 const realUrlSafety = await import("../url-safety.js");
 mock.module("../url-safety.js", () => ({
@@ -209,7 +204,7 @@ describe("webFetchTool TinyFish dispatch", () => {
   beforeEach(() => {
     originalFetch = globalThis.fetch;
     seedWebFetch("tinyfish");
-    mockTinyfishSecureKey = "tf_test";
+    secureKeys.set(TINYFISH_KEY, "tf_test");
     mockResolveAddresses = ["93.184.216.34"];
   });
 
@@ -259,7 +254,7 @@ describe("webFetchTool TinyFish dispatch", () => {
   });
 
   test("falls back to the built-in fetcher when no TinyFish key is stored", async () => {
-    mockTinyfishSecureKey = undefined;
+    secureKeys.delete(TINYFISH_KEY);
     mockResolveAddresses = [];
     let tinyfishHit = false;
     globalThis.fetch = (async (url: string) => {

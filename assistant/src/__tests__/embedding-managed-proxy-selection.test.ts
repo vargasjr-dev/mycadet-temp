@@ -8,6 +8,10 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { credentialKey } from "../security/credential-key.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+
+// The REAL secure-keys module pinned to a live memory backend.
+const secureKeys = useMemorySecureKeyMap();
 
 // ---------------------------------------------------------------------------
 // Mocks — must be before importing the module under test
@@ -15,22 +19,12 @@ import { credentialKey } from "../security/credential-key.js";
 
 // Mutable state for managed proxy context
 let mockPlatformBaseUrl = "";
-let mockAssistantApiKey: string | null = null;
-let mockProviderKeys: Record<string, string | null> = {};
+// Managed + provider keys live in the real backend's store now.
+const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
 
 mock.module("../config/env.js", () => ({
   getPlatformBaseUrl: () => mockPlatformBaseUrl,
   getOllamaBaseUrlEnv: () => "",
-}));
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => {
-    if (key === credentialKey("cadet", "assistant_api_key")) {
-      return mockAssistantApiKey;
-    }
-    // Provider keys are looked up by plain name
-    return mockProviderKeys[key] ?? null;
-  },
 }));
 
 // Feature flag mock — always returns true (flag is GA'ed)
@@ -54,12 +48,12 @@ const MANAGED_API_KEY = "ast-managed-key-123";
 
 function enableManagedProxy() {
   mockPlatformBaseUrl = PLATFORM_BASE;
-  mockAssistantApiKey = MANAGED_API_KEY;
+  secureKeys.set(ASSISTANT_API_KEY, MANAGED_API_KEY);
 }
 
 function disableManagedProxy() {
   mockPlatformBaseUrl = "";
-  mockAssistantApiKey = null;
+  secureKeys.delete(ASSISTANT_API_KEY);
 }
 
 function makeConfig(
@@ -95,7 +89,7 @@ function makeConfig(
 
 beforeEach(() => {
   disableManagedProxy();
-  mockProviderKeys = {};
+  secureKeys.clear(); // wipe provider keys; disableManagedProxy already cleared the assistant key
   clearEmbeddingBackendCache();
 });
 
@@ -188,7 +182,7 @@ describe("managed proxy Gemini embedding selection", () => {
 
   test("does not use managed proxy when provider is explicitly openai", async () => {
     enableManagedProxy();
-    mockProviderKeys[credentialKey("openai", "api_key")] = "user-openai-key";
+    secureKeys.set(credentialKey("openai", "api_key"), "user-openai-key");
     const config = makeConfig({ provider: "openai" });
 
     const { backend } = await selectEmbeddingBackend(config);
@@ -199,7 +193,7 @@ describe("managed proxy Gemini embedding selection", () => {
 
   test("direct Gemini key still works without managed proxy", async () => {
     disableManagedProxy();
-    mockProviderKeys[credentialKey("gemini", "api_key")] = "user-gemini-key";
+    secureKeys.set(credentialKey("gemini", "api_key"), "user-gemini-key");
     const config = makeConfig({ provider: "gemini" });
 
     const { backend } = await selectEmbeddingBackend(config);

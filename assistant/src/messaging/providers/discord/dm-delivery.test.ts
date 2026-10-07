@@ -16,14 +16,14 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 const BOT_TOKEN = "discord-bot-token";
 
-const realSecureKeys = await import("../../../security/secure-keys.js");
-mock.module("../../../security/secure-keys.js", () => ({
-  ...realSecureKeys,
-  getSecureKeyResultAsync: async () => ({
-    value: BOT_TOKEN,
-    unreachable: false,
-  }),
-}));
+import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
+import { credentialKey } from "../../../security/credential-key.js";
+
+// The REAL secure-keys module pinned to a live memory backend, seeded under
+// the credential key the Discord transport reads.
+useMemorySecureKeys({
+  [credentialKey("discord_channel", "bot_token")]: BOT_TOKEN,
+});
 
 // Pulled in by `send.js`; stubbed so importing the transport does not reach
 // the attachment store. No test here sends an attachment.

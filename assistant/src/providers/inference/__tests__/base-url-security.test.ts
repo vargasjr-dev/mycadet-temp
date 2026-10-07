@@ -3,6 +3,7 @@ import { describe, expect, mock, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
+import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
 import { migrateCreateProviderConnections } from "../../../persistence/migrations/243-provider-connections.js";
 import { migrateProviderConnectionStatusLabel } from "../../../persistence/migrations/244-provider-connection-status-label.js";
 import { migrateProviderConnectionBaseUrlAndModels } from "../../../persistence/migrations/250-provider-connection-base-url-and-models.js";
@@ -110,10 +111,9 @@ describe("migration 257: strip base_url from non-openai-compatible connections",
 
 describe("resolveAuth defense-in-depth", () => {
   // Mock the secure key store to return a predictable value.
-  mock.module("../../../security/secure-keys.js", () => ({
-    getSecureKeyAsync: async (credential: string) =>
-      credential === "cred-test" ? "sk-test-key" : null,
-  }));
+  // The REAL secure-keys module pinned to a memory backend seeded under the
+  // exact credential name the tests pass to resolveAuth.
+  useMemorySecureKeys({ "cred-test": "sk-test-key" });
 
   // Mock the platform proxy context to avoid real platform calls.
   mock.module("../../platform-proxy/context.js", () => ({

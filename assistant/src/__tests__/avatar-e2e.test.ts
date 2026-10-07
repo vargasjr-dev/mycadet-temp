@@ -4,8 +4,6 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 // Mock state — mutable variables control per-test behavior
 // ---------------------------------------------------------------------------
 
-let mockGeminiKey: string | undefined = "test-gemini-key";
-
 let logInfoCalls: Array<[unknown, string]> = [];
 let logErrorCalls: Array<[unknown, string]> = [];
 
@@ -20,12 +18,13 @@ const geminiGenerateContentFn = mock(async () => geminiGenerateContentResult);
 // Mock modules — must be before importing the module under test
 // ---------------------------------------------------------------------------
 
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (name: string) =>
-    name === "gemini" ? mockGeminiKey : null,
-  getProviderKeyAsync: async (provider: string) =>
-    provider === "gemini" ? mockGeminiKey : undefined,
-}));
+import { credentialKey } from "../security/credential-key.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+
+// The REAL secure-keys module pinned to a live memory backend; the avatar
+// router resolves the Gemini key through getProviderKeyAsync("gemini").
+const secureKeys = useMemorySecureKeyMap();
+const GEMINI_KEY = credentialKey("gemini", "api_key");
 
 mock.module("pino", () => {
   function createLogger() {
@@ -111,7 +110,7 @@ describe("avatar E2E integration", () => {
   const originalGeminiKey = process.env.GEMINI_API_KEY;
 
   beforeEach(() => {
-    mockGeminiKey = "test-gemini-key";
+    secureKeys.set(GEMINI_KEY, "test-gemini-key");
     geminiGenerateContentFn.mockClear();
 
     logInfoCalls = [];
@@ -158,7 +157,7 @@ describe("avatar E2E integration", () => {
   // -----------------------------------------------------------------------
 
   test("no Gemini key — error surfaced", async () => {
-    mockGeminiKey = undefined;
+    secureKeys.delete(GEMINI_KEY);
 
     const result = await executeAvatar("a whimsical owl");
 

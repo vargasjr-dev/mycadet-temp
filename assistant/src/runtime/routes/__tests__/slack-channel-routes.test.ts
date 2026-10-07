@@ -14,16 +14,15 @@ let slackInfoImpl: (channelId: string) => Promise<MockSlackResult> = async () =>
 const syncInvalidations: string[][] = [];
 const originalFetch = globalThis.fetch;
 
-mock.module("../../../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async () => "xoxb-test",
-  // The route's import graph (api.ts -> auth.ts -> oauth/*) also reads the
-  // result-shaped accessor; provide it so the mock stays import-complete
-  // even if these static imports ever become dynamic.
-  getSecureKeyResultAsync: async () => ({
-    value: "xoxb-test",
-    unreachable: false,
-  }),
-}));
+import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
+import { credentialKey } from "../../../security/credential-key.js";
+
+// The REAL secure-keys module pinned to a live memory backend, seeded under
+// both slack_channel credential keys the route's import graph reads.
+useMemorySecureKeys({
+  [credentialKey("slack_channel", "bot_token")]: "xoxb-test",
+  [credentialKey("slack_channel", "user_token")]: "xoxb-test",
+});
 
 mock.module("../../sync/sync-publisher.js", () => ({
   publishSyncInvalidation: async (tags: string[]) => {

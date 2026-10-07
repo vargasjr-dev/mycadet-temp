@@ -16,16 +16,17 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 const proxyState = { prereqs: false };
-const keyState = { anthropicKey: undefined as string | undefined };
 
 mock.module("../providers/platform-proxy/context.js", () => ({
   hasManagedProxyPrereqs: async () => proxyState.prereqs,
 }));
 
-mock.module("../security/secure-keys.js", () => ({
-  getProviderKeyAsync: async (provider: string) =>
-    provider === "anthropic" ? keyState.anthropicKey : undefined,
-}));
+import { credentialKey } from "../security/credential-key.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+
+// The REAL secure-keys module pinned to a live memory backend.
+const secureKeys = useMemorySecureKeyMap();
+const ANTHROPIC_KEY = credentialKey("anthropic", "api_key");
 
 const { ensureDefaultProvider } =
   await import("../workspace/default-provider-ensure.js");
@@ -62,7 +63,7 @@ beforeEach(() => {
   originalIsPlatform = process.env.IS_PLATFORM;
   delete process.env.IS_PLATFORM;
   proxyState.prereqs = false;
-  keyState.anthropicKey = undefined;
+  secureKeys.delete(ANTHROPIC_KEY);
 });
 
 afterEach(() => {
@@ -281,7 +282,7 @@ describe("ensureDefaultProvider", () => {
 
   describe("legacy anthropic schema-default echo", () => {
     test("key present honors anthropic regardless of login state", async () => {
-      keyState.anthropicKey = "sk-ant-test";
+      secureKeys.set(ANTHROPIC_KEY, "sk-ant-test");
       proxyState.prereqs = true;
       writeConfig({ llm: { default: { provider: "anthropic" } } });
 
@@ -327,7 +328,7 @@ describe("ensureDefaultProvider", () => {
 
     test("IS_PLATFORM outranks the anthropic evidence check", async () => {
       process.env.IS_PLATFORM = "true";
-      keyState.anthropicKey = "sk-ant-test";
+      secureKeys.set(ANTHROPIC_KEY, "sk-ant-test");
       writeConfig({ llm: { default: { provider: "anthropic" } } });
 
       await ensureDefaultProvider(workspaceDir);
@@ -336,7 +337,7 @@ describe("ensureDefaultProvider", () => {
     });
 
     test("a valid existing defaultProvider is never overwritten by the echo path", async () => {
-      keyState.anthropicKey = "sk-ant-test";
+      secureKeys.set(ANTHROPIC_KEY, "sk-ant-test");
       writeConfig({
         llm: {
           default: { provider: "anthropic" },

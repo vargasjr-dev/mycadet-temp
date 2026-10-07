@@ -37,9 +37,11 @@ mock.module("./oauth-store.js", () => ({
   },
 }));
 
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async () => mockAccessToken,
-}));
+import { useMemorySecureKeyMap } from "../__tests__/helpers/secure-keys.js";
+
+// Pin an empty memory backend so transitive secure-key reads never touch the
+// keychain; the connection token itself arrives via the resolver mock above.
+useMemorySecureKeyMap();
 
 mock.module("./credential-token-resolver.js", () => ({
   getConnectionAccessTokenResult: async () => ({

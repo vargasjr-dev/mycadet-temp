@@ -30,9 +30,11 @@ mock.module("../calls/twilio-provider.js", () => ({
   TwilioVoiceProvider: MockTwilioVoiceProvider,
 }));
 
-mock.module("../security/secure-keys.js", () => ({
-  getProviderKeyAsync: () => Promise.resolve(null),
-}));
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+
+// The REAL secure-keys module pinned to an empty memory backend: no provider
+// keys configured, no keychain access.
+useMemorySecureKeyMap();
 
 // NOTE: Do NOT mock '../inbound/public-ingress-urls.js' here.
 // Those are pure functions that derive URLs from the config object returned by

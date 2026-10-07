@@ -1,18 +1,16 @@
 import { describe, expect, test } from "bun:test";
+
 // The addressing capability resolves a named chat into exactly what each
 // transport's own operations read: the callback URL `channelForCallback`
 // resolves and the params `deliver` consumes. Resolution is local, so these
 // assertions make no platform call; the tests import the transports'
 // modules, which pull in their provider-API senders, so the senders'
 // credential lookups are stubbed to keep the import inert.
-import { mock } from "bun:test";
+import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 
-const actualSecureKeys = await import("../../../security/secure-keys.js");
-mock.module("../../../security/secure-keys.js", () => ({
-  ...actualSecureKeys,
-  getSecureKeyAsync: async () => null,
-  getSecureKeyResultAsync: async () => ({ value: null }),
-}));
+// The REAL secure-keys module pinned to an empty memory backend: no channel
+// tokens configured, no keychain access.
+useMemorySecureKeyMap();
 
 const { channelForCallback } = await import("../callback-routing.js");
 const { discordTransport } = await import("../discord/transport.js");

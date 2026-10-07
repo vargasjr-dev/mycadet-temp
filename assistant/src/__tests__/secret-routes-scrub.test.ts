@@ -14,8 +14,12 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // ---------------------------------------------------------------------------
 // Mutable mock state (closed over by the mock factories below)
 // ---------------------------------------------------------------------------
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
-let secureStore: Map<string, string>;
+// The REAL secure-keys module pinned to a live memory backend — same Map
+// semantics the old inline fake reimplemented.
+const secureStore = useMemorySecureKeyMap();
+
 let scrubbedValues: string[];
 let scrubRejects: boolean;
 let anthropicKeyValid: boolean;
@@ -24,26 +28,6 @@ let providersRefreshed: number;
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before importing the module under test
 // ---------------------------------------------------------------------------
-
-mock.module("../security/secure-keys.js", () => ({
-  setSecureKeyAsync: mock(async (key: string, value: string) => {
-    secureStore.set(key, value);
-    return true;
-  }),
-  getSecureKeyAsync: mock(async (key: string) => secureStore.get(key)),
-  getSecureKeyResultAsync: mock(async (key: string) => ({
-    value: secureStore.get(key),
-    unreachable: false,
-  })),
-  deleteSecureKeyAsync: mock(async (key: string) =>
-    secureStore.delete(key) ? "deleted" : "not-found",
-  ),
-  listSecureKeysAsync: mock(async () => ({
-    accounts: [...secureStore.keys()],
-    unreachable: false,
-  })),
-  getActiveBackendName: () => "test",
-}));
 
 mock.module("../daemon/credential-transcript-scrub.js", () => ({
   scrubStoredCredentialFromTranscripts: mock(async (value: string) => {
@@ -101,7 +85,7 @@ const API_KEY_VALUE = "test-api-key-value-1234567890";
 
 describe("secrets_add api_key transcript scrub", () => {
   beforeEach(() => {
-    secureStore = new Map();
+    secureStore.clear();
     scrubbedValues = [];
     scrubRejects = false;
     anthropicKeyValid = true;
@@ -173,7 +157,7 @@ const CREDENTIAL_VALUE = "synthetic-credential-value-0987654321";
 
 describe("secrets_add credential transcript scrub", () => {
   beforeEach(() => {
-    secureStore = new Map();
+    secureStore.clear();
     scrubbedValues = [];
     scrubRejects = false;
     anthropicKeyValid = true;

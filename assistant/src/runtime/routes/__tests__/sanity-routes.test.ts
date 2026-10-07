@@ -18,12 +18,13 @@ import {
 // ---------------------------------------------------------------------------
 // Module mocks — must appear before any imports of the module under test
 // ---------------------------------------------------------------------------
+import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
+import { credentialKey } from "../../../security/credential-key.js";
 
-let storedToken: string | undefined = undefined;
-
-mock.module("../../../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (_key: string) => storedToken,
-}));
+// The REAL secure-keys module pinned to a live memory backend, seeded under
+// the credential key the sanity routes read.
+const secureKeys = useMemorySecureKeys();
+const SANITY_TOKEN = credentialKey("sanity", "api_token");
 
 // The preload's workspace is where route handlers build their paths.
 const FAKE_WORKSPACE = process.env.CADET_WORKSPACE_DIR!;
@@ -95,7 +96,7 @@ function mockFetch(url: string | URL | Request): Promise<Response> {
 
 beforeEach(() => {
   writtenFiles.clear();
-  storedToken = undefined;
+  delete secureKeys[SANITY_TOKEN];
   mockFetchImpl = undefined;
 
   (globalThis as any).fetch = mockFetch;
@@ -111,7 +112,7 @@ afterEach(() => {
 
 describe("sanity_discover — no stored token", () => {
   test("returns { error: 'no_token' } when token absent", async () => {
-    storedToken = undefined;
+    delete secureKeys[SANITY_TOKEN];
     const result = await discoverHandler(makeArgs({}));
     expect(result).toEqual({ error: "no_token" });
   });
@@ -123,7 +124,7 @@ describe("sanity_discover — no stored token", () => {
 
 describe("sanity_discover — list projects", () => {
   beforeEach(() => {
-    storedToken = "sk-test-token";
+    secureKeys[SANITY_TOKEN] = "sk-test-token";
   });
 
   test("returns projects when API responds 200", async () => {
@@ -169,7 +170,7 @@ describe("sanity_discover — list projects", () => {
 
 describe("sanity_discover — list datasets", () => {
   beforeEach(() => {
-    storedToken = "sk-test-token";
+    secureKeys[SANITY_TOKEN] = "sk-test-token";
   });
 
   test("returns datasets when API responds 200", async () => {
@@ -207,7 +208,7 @@ describe("sanity_discover — list datasets", () => {
 
 describe("sanity_connect", () => {
   test("writes sidecar when token present and inputs valid", async () => {
-    storedToken = "sk-test-token";
+    secureKeys[SANITY_TOKEN] = "sk-test-token";
 
     const result = await connectHandler(
       makeArgs({ projectId: "my-proj", dataset: "production" }),
@@ -222,7 +223,7 @@ describe("sanity_connect", () => {
   });
 
   test("throws when no token is stored", async () => {
-    storedToken = undefined;
+    delete secureKeys[SANITY_TOKEN];
 
     expect(
       connectHandler(makeArgs({ projectId: "p", dataset: "production" })),
@@ -230,7 +231,7 @@ describe("sanity_connect", () => {
   });
 
   test("throws when projectId is empty", async () => {
-    storedToken = "sk-test-token";
+    secureKeys[SANITY_TOKEN] = "sk-test-token";
 
     expect(
       connectHandler(makeArgs({ projectId: "  ", dataset: "production" })),
@@ -238,7 +239,7 @@ describe("sanity_connect", () => {
   });
 
   test("throws when dataset is empty", async () => {
-    storedToken = "sk-test-token";
+    secureKeys[SANITY_TOKEN] = "sk-test-token";
 
     expect(
       connectHandler(makeArgs({ projectId: "my-proj", dataset: "" })),
@@ -246,7 +247,7 @@ describe("sanity_connect", () => {
   });
 
   test("does not return token in response", async () => {
-    storedToken = "sk-super-secret";
+    secureKeys[SANITY_TOKEN] = "sk-super-secret";
 
     const result = (await connectHandler(
       makeArgs({ projectId: "p", dataset: "d" }),

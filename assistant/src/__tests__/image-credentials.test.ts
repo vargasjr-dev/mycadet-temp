@@ -1,16 +1,18 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useMemorySecureKeyMap } from "../__tests__/helpers/secure-keys.js";
+import { credentialKey } from "../security/credential-key.js";
+
+// The REAL secure-keys module pinned to a live memory backend; tests seed
+// the credential key for whichever provider they exercise.
+const secureKeys = useMemorySecureKeyMap();
+
 // ---------------------------------------------------------------------------
 // Module mocks — must appear before importing the module under test
 // ---------------------------------------------------------------------------
 
-let mockProviderKey: string | undefined;
 let mockPlatformBaseUrl = "";
 let mockAssistantApiKey = "";
-
-mock.module("../security/secure-keys.js", () => ({
-  getProviderKeyAsync: async (_provider: string) => mockProviderKey,
-}));
 
 mock.module("../providers/platform-proxy/context.js", () => ({
   resolveManagedProxyContext: async () => ({
@@ -28,7 +30,7 @@ import {
 
 describe("resolveImageGenCredentials", () => {
   beforeEach(() => {
-    mockProviderKey = undefined;
+    secureKeys.clear(); // no provider keys configured
     mockPlatformBaseUrl = "";
     mockAssistantApiKey = "";
   });
@@ -82,7 +84,7 @@ describe("resolveImageGenCredentials", () => {
 
   describe("your-own mode", () => {
     test("returns direct credentials for gemini when key is present", async () => {
-      mockProviderKey = "gemini-api-key";
+      secureKeys.set(credentialKey("gemini", "api_key"), "gemini-api-key");
 
       const result = await resolveImageGenCredentials({
         provider: "gemini",
@@ -97,7 +99,7 @@ describe("resolveImageGenCredentials", () => {
     });
 
     test("returns errorHint mentioning 'Gemini API key' when no key is set", async () => {
-      mockProviderKey = undefined;
+      secureKeys.clear(); // no provider keys configured
 
       const result = await resolveImageGenCredentials({
         provider: "gemini",
@@ -110,7 +112,7 @@ describe("resolveImageGenCredentials", () => {
     });
 
     test("returns direct credentials for openai when key is present", async () => {
-      mockProviderKey = "openai-api-key";
+      secureKeys.set(credentialKey("openai", "api_key"), "openai-api-key");
 
       const result = await resolveImageGenCredentials({
         provider: "openai",
@@ -125,7 +127,7 @@ describe("resolveImageGenCredentials", () => {
     });
 
     test("returns errorHint mentioning 'OpenAI API key' when no key is set", async () => {
-      mockProviderKey = undefined;
+      secureKeys.clear(); // no provider keys configured
 
       const result = await resolveImageGenCredentials({
         provider: "openai",
@@ -138,7 +140,10 @@ describe("resolveImageGenCredentials", () => {
     });
 
     test("returns direct credentials for openrouter when key is present", async () => {
-      mockProviderKey = "openrouter-api-key";
+      secureKeys.set(
+        credentialKey("openrouter", "api_key"),
+        "openrouter-api-key",
+      );
 
       const result = await resolveImageGenCredentials({
         provider: "openrouter",
@@ -153,7 +158,7 @@ describe("resolveImageGenCredentials", () => {
     });
 
     test("returns errorHint mentioning 'OpenRouter API key' when no key is set", async () => {
-      mockProviderKey = undefined;
+      secureKeys.clear(); // no provider keys configured
 
       const result = await resolveImageGenCredentials({
         provider: "openrouter",
@@ -231,7 +236,10 @@ describe("resolveImageGenRouting", () => {
   test("cadet with an unavailable platform is a hard error, not a BYOK fallback", async () => {
     // Billing rule: an explicit cadet choice never silently spends a stored
     // provider key.
-    mockProviderKey = "gemini-key-should-not-be-used";
+    secureKeys.set(
+      credentialKey("gemini", "api_key"),
+      "gemini-key-should-not-be-used",
+    );
     mockPlatformBaseUrl = "";
 
     const routing = resolveImageGenRouting({

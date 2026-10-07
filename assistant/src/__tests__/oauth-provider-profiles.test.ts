@@ -1,10 +1,10 @@
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
-mock.module("../security/secure-keys.js", () => ({
-  deleteSecureKeyAsync: async () => "deleted" as const,
-  setSecureKeyAsync: async () => true,
-  getSecureKeyAsync: async () => undefined,
-}));
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+
+// The REAL secure-keys module pinned to an empty memory backend: reads come
+// back undefined, writes succeed, deletes report not-found.
+useMemorySecureKeyMap();
 
 import { getProvider } from "../oauth/oauth-store.js";
 import { expectedScopesForStoredToken } from "../oauth/scope-utils.js";

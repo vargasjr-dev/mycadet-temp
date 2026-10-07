@@ -1,36 +1,24 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
+import { credentialKey } from "../../../security/credential-key.js";
 import { WEB_SEARCH_BACKEND_FAILURE_MESSAGE } from "../web-search-error.js";
 
-// Mutable mock state - set per test
-let mockBraveSecureKey: string | undefined;
-let mockPerplexitySecureKey: string | undefined;
-let mockTavilySecureKey: string | undefined;
+// The REAL secure-keys module pinned to a live memory backend: provider keys
+// resolve through the same credentialKey(provider, "api_key") lookups as
+// production.
+const secureKeys = useMemorySecureKeyMap();
+
+// Mutable secure-key state - set per test
+const BRAVE_KEY = credentialKey("brave", "api_key");
+const PERPLEXITY_KEY = credentialKey("perplexity", "api_key");
+const TAVILY_KEY = credentialKey("tavily", "api_key");
 
 /** Seed the active web-search provider into the workspace config for real. */
 function seedWebSearch(provider: string): void {
   setConfig("services", { "web-search": { provider } });
 }
-
-mock.module("../../../security/secure-keys.js", () => ({
-  getProviderKeyAsync: async (provider: string) => {
-    if (provider === "brave") {
-      return mockBraveSecureKey;
-    }
-    if (provider === "perplexity") {
-      return mockPerplexitySecureKey;
-    }
-    if (provider === "tavily") {
-      return mockTavilySecureKey;
-    }
-    return undefined;
-  },
-}));
-
-mock.module("../../../permissions/types.js", () => ({
-  RiskLevel: { Low: "low", Medium: "medium", High: "high" },
-}));
 
 // Import after the mocks above so the module under test sees them.
 const { webSearchTool } = await import("../web-search.js");
@@ -41,9 +29,9 @@ describe("web_search activity metadata", () => {
   beforeEach(() => {
     originalFetch = globalThis.fetch;
     seedWebSearch("perplexity");
-    mockBraveSecureKey = undefined;
-    mockPerplexitySecureKey = undefined;
-    mockTavilySecureKey = undefined;
+    secureKeys.delete(BRAVE_KEY);
+    secureKeys.delete(PERPLEXITY_KEY);
+    secureKeys.delete(TAVILY_KEY);
   });
 
   afterEach(() => {
@@ -60,7 +48,7 @@ describe("web_search activity metadata", () => {
 
   test("Brave populates webSearch metadata on success", async () => {
     seedWebSearch("brave");
-    mockBraveSecureKey = "brave-key";
+    secureKeys.set(BRAVE_KEY, "brave-key");
     globalThis.fetch = (async () =>
       new Response(
         JSON.stringify({
@@ -103,7 +91,7 @@ describe("web_search activity metadata", () => {
 
   test("Brave populates errorMessage and empty results on auth failure", async () => {
     seedWebSearch("brave");
-    mockBraveSecureKey = "bad-key";
+    secureKeys.set(BRAVE_KEY, "bad-key");
     globalThis.fetch = (async () =>
       new Response("Forbidden", { status: 403 })) as any;
 
@@ -119,7 +107,7 @@ describe("web_search activity metadata", () => {
   // ---- Perplexity ---------------------------------------------------------
 
   test("Perplexity populates webSearch metadata from citations", async () => {
-    mockPerplexitySecureKey = "pplx-key";
+    secureKeys.set(PERPLEXITY_KEY, "pplx-key");
     globalThis.fetch = (async () =>
       new Response(
         JSON.stringify({
@@ -147,7 +135,7 @@ describe("web_search activity metadata", () => {
   });
 
   test("Perplexity populates errorMessage on rate-limit exhaustion", async () => {
-    mockPerplexitySecureKey = "pplx-key";
+    secureKeys.set(PERPLEXITY_KEY, "pplx-key");
     globalThis.fetch = (async () =>
       new Response("Too Many Requests", {
         status: 429,
@@ -169,7 +157,7 @@ describe("web_search activity metadata", () => {
 
   test("Tavily populates webSearch metadata with favicon and score", async () => {
     seedWebSearch("tavily");
-    mockTavilySecureKey = "tvly-key";
+    secureKeys.set(TAVILY_KEY, "tvly-key");
     globalThis.fetch = (async () =>
       new Response(
         JSON.stringify({
@@ -214,7 +202,7 @@ describe("web_search activity metadata", () => {
 
   test("Tavily falls back to url for missing title", async () => {
     seedWebSearch("tavily");
-    mockTavilySecureKey = "tvly-key";
+    secureKeys.set(TAVILY_KEY, "tvly-key");
     globalThis.fetch = (async () =>
       new Response(
         JSON.stringify({
@@ -237,7 +225,7 @@ describe("web_search activity metadata", () => {
 
   test("Tavily falls back to url for empty string title", async () => {
     seedWebSearch("tavily");
-    mockTavilySecureKey = "tvly-key";
+    secureKeys.set(TAVILY_KEY, "tvly-key");
     globalThis.fetch = (async () =>
       new Response(
         JSON.stringify({
@@ -260,7 +248,7 @@ describe("web_search activity metadata", () => {
 
   test("Tavily falls back to url for whitespace-only title", async () => {
     seedWebSearch("tavily");
-    mockTavilySecureKey = "tvly-key";
+    secureKeys.set(TAVILY_KEY, "tvly-key");
     globalThis.fetch = (async () =>
       new Response(
         JSON.stringify({
@@ -283,7 +271,7 @@ describe("web_search activity metadata", () => {
 
   test("Tavily populates errorMessage on auth failure", async () => {
     seedWebSearch("tavily");
-    mockTavilySecureKey = "bad-key";
+    secureKeys.set(TAVILY_KEY, "bad-key");
     globalThis.fetch = (async () =>
       new Response("Unauthorized", { status: 401 })) as any;
 
@@ -300,7 +288,7 @@ describe("web_search activity metadata", () => {
 
   test("top-level catch populates activityMetadata with errorMessage", async () => {
     seedWebSearch("perplexity");
-    mockPerplexitySecureKey = "pplx-key";
+    secureKeys.set(PERPLEXITY_KEY, "pplx-key");
     globalThis.fetch = (async () => {
       throw new Error("network down");
     }) as any;

@@ -6,15 +6,19 @@ import { getConfig } from "../config/loader.js";
 import { getDb } from "../persistence/db-connection.js";
 import { providerConnections } from "../persistence/schema/inference.js";
 import { credentialKey } from "../security/credential-key.js";
+import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
+
+// The REAL secure-keys module pinned to a faultable memory backend — the
+// tests index the store directly and toggle write failures, same as the old
+// inline fake did.
+const { store: secureKeyStore, setWritesFail } = useFaultableSecureKeyMap();
 
 let lastGeminiConstructorOpts: Record<string, unknown> | null = null;
-let secureKeyStore: Record<string, string | undefined> = {};
 const metadataUpserts: Array<{ service: string; field: string }> = [];
 const metadataDeletes: Array<{ service: string; field: string }> = [];
 let providerRefreshCalls = 0;
 let identitySyncCalls = 0;
 let avatarSyncCalls = 0;
-let failSecureKeyWrites = false;
 
 const PLATFORM_BASE_URL = "https://platform.example.com";
 const ASSISTANT_API_KEY_PATH = credentialKey("cadet", "assistant_api_key");
@@ -81,25 +85,6 @@ mock.module("../providers/provider-secret-catalog.js", () => ({
     "fireworks",
     "openrouter",
   ],
-}));
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => secureKeyStore[key],
-  getSecureKeyResultAsync: async (key: string) => ({
-    value: secureKeyStore[key],
-    unreachable: false,
-  }),
-  setSecureKeyAsync: async (key: string, value: string) => {
-    if (failSecureKeyWrites) {
-      return false;
-    }
-    secureKeyStore[key] = value;
-    return true;
-  },
-  deleteSecureKeyAsync: async (key: string) => {
-    delete secureKeyStore[key];
-    return "deleted";
-  },
 }));
 
 mock.module("../tools/credentials/metadata-store.js", () => ({
@@ -191,7 +176,8 @@ function deleteApiKey(name: string) {
 
 describe("secret routes managed proxy registry sync", () => {
   beforeEach(async () => {
-    secureKeyStore = {};
+    secureKeyStore.clear();
+    setWritesFail(false);
     metadataUpserts.length = 0;
     metadataDeletes.length = 0;
     lastGeminiConstructorOpts = null;
@@ -202,7 +188,7 @@ describe("secret routes managed proxy registry sync", () => {
     providerRefreshCalls = 0;
     identitySyncCalls = 0;
     avatarSyncCalls = 0;
-    failSecureKeyWrites = false;
+    setWritesFail(false);
     getDb()
       .delete(providerConnections)
       .where(eq(providerConnections.name, "openrouter-connection"))
@@ -219,7 +205,7 @@ describe("secret routes managed proxy registry sync", () => {
     );
 
     expect(result).toEqual(expect.objectContaining({ success: true }));
-    expect(secureKeyStore[ASSISTANT_API_KEY_PATH]).toBe("ast-managed-key");
+    expect(secureKeyStore.get(ASSISTANT_API_KEY_PATH)).toBe("ast-managed-key");
     expect(metadataUpserts).toEqual([
       { service: "cadet", field: "assistant_api_key" },
     ]);
@@ -261,7 +247,7 @@ describe("secret routes managed proxy registry sync", () => {
   test("provider API key writes notify live-conversation refresh listeners", async () => {
     await addApiKey("fireworks", "fw-key");
 
-    expect(secureKeyStore[credentialKey("fireworks", "api_key")]).toBe(
+    expect(secureKeyStore.get(credentialKey("fireworks", "api_key"))).toBe(
       "fw-key",
     );
     expect(providerRefreshCalls).toBe(1);
@@ -272,8 +258,8 @@ describe("secret routes managed proxy registry sync", () => {
   });
 
   test("deleting a cadet credential is rejected without touching the vault", async () => {
-    secureKeyStore[ASSISTANT_API_KEY_PATH] = "ast-managed-key";
-    secureKeyStore[PLATFORM_BASE_URL_PATH] = "https://managed.example.com";
+    secureKeyStore.set(ASSISTANT_API_KEY_PATH, "ast-managed-key");
+    secureKeyStore.set(PLATFORM_BASE_URL_PATH, "https://managed.example.com");
     platformBaseUrlOverride = "https://managed.example.com";
     platformAssistantIdOverride = "asst-1";
     await initializeProviders(getConfig());
@@ -289,8 +275,8 @@ describe("secret routes managed proxy registry sync", () => {
       );
     }
 
-    expect(secureKeyStore[ASSISTANT_API_KEY_PATH]).toBe("ast-managed-key");
-    expect(secureKeyStore[PLATFORM_BASE_URL_PATH]).toBe(
+    expect(secureKeyStore.get(ASSISTANT_API_KEY_PATH)).toBe("ast-managed-key");
+    expect(secureKeyStore.get(PLATFORM_BASE_URL_PATH)).toBe(
       "https://managed.example.com",
     );
     expect(platformBaseUrlOverride).toBe("https://managed.example.com");
@@ -347,10 +333,7 @@ describe("secret routes managed proxy registry sync", () => {
   });
 
   test("storing a platform registration credential enqueues name and avatar syncs", async () => {
-    for (const name of [
-      "cadet:assistant_api_key",
-      "cadet:platform_base_url",
-    ]) {
+    for (const name of ["cadet:assistant_api_key", "cadet:platform_base_url"]) {
       identitySyncCalls = 0;
       avatarSyncCalls = 0;
       await addCredential(name, "value");
@@ -367,7 +350,7 @@ describe("secret routes managed proxy registry sync", () => {
   });
 
   test("a failed cloud credential write does not enqueue platform syncs", async () => {
-    failSecureKeyWrites = true;
+    setWritesFail(true);
 
     await expect(
       addCredential("cadet:platform_base_url", "https://managed.example.com"),
@@ -393,13 +376,13 @@ describe("secret routes managed proxy registry sync", () => {
     ).rejects.toThrow("Unknown cadet credential: platform_user_id");
 
     expect(
-      secureKeyStore[credentialKey("cadet", "platform_assistant_id")],
+      secureKeyStore.get(credentialKey("cadet", "platform_assistant_id")),
     ).toBeUndefined();
     expect(
-      secureKeyStore[credentialKey("cadet", "platform_organization_id")],
+      secureKeyStore.get(credentialKey("cadet", "platform_organization_id")),
     ).toBeUndefined();
     expect(
-      secureKeyStore[credentialKey("cadet", "platform_user_id")],
+      secureKeyStore.get(credentialKey("cadet", "platform_user_id")),
     ).toBeUndefined();
     expect(metadataUpserts).toEqual([]);
     expect(platformAssistantIdOverride).toBe("existing-asst");
@@ -411,14 +394,14 @@ describe("secret routes managed proxy registry sync", () => {
 
   test("an unknown cadet credential does not delete leftover vault copies", async () => {
     const key = credentialKey("cadet", "platform_assistant_id");
-    secureKeyStore[key] = "leftover-asst";
+    secureKeyStore.set(key, "leftover-asst");
     platformAssistantIdOverride = "asst-1";
 
     await expect(
       addCredential("cadet:platform_assistant_id", "   "),
     ).rejects.toThrow("Unknown cadet credential: platform_assistant_id");
 
-    expect(secureKeyStore[key]).toBe("leftover-asst");
+    expect(secureKeyStore.get(key)).toBe("leftover-asst");
     expect(platformAssistantIdOverride).toBe("asst-1");
     expect(metadataDeletes).toEqual([]);
     expect(identitySyncCalls).toBe(0);
@@ -431,7 +414,7 @@ describe("secret routes managed proxy registry sync", () => {
       "https://managed.example.com",
     );
 
-    expect(secureKeyStore[PLATFORM_BASE_URL_PATH]).toBe(
+    expect(secureKeyStore.get(PLATFORM_BASE_URL_PATH)).toBe(
       "https://managed.example.com",
     );
     expect(platformBaseUrlOverride).toBe("https://managed.example.com");
