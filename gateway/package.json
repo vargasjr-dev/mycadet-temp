@@ -18,7 +18,7 @@
     "generate:openapi": "bun run scripts/generate-openapi.ts",
     "db:generate": "drizzle-kit generate --dialect sqlite --schema src/db/schema.ts --out src/db/migrations",
     "start": "bun run src/index.ts",
-    "test": "bash scripts/test.sh",
+    "test": "bun run scripts/test.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint",
