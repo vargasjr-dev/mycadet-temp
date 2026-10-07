@@ -12,7 +12,7 @@
  * conversation's earlier notifications from silencing later runs.
  */
 
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 // Stub the shared runner so the execute path is observable without an LLM.
 let runBackgroundJobShouldFail = false;
@@ -116,6 +116,7 @@ import {
   registerBackgroundTool,
   removeBackgroundTool,
 } from "../tools/background-tool-registry.js";
+import { installFastTimers } from "./fast-timers.js";
 import { setConfig } from "./helpers/set-config.js";
 
 await initializeDb();
@@ -200,6 +201,14 @@ function forceScheduleDue(scheduleId: string): void {
     scheduleId,
   ]);
 }
+
+let restoreFastTimers: (() => void) | undefined;
+beforeAll(() => {
+  restoreFastTimers = installFastTimers();
+});
+afterAll(() => {
+  restoreFastTimers?.();
+});
 
 describe("schedule result notification wiring", () => {
   beforeEach(() => {

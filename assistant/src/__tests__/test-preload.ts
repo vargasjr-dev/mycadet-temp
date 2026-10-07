@@ -35,6 +35,9 @@ const testDir = join(tmpRoot, "workspace");
 mkdirSync(testDir);
 process.env.CADET_WORKSPACE_DIR = testDir;
 process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
+// Cap libvips threads so image conversions don't stampede the shared
+// CI cores when many worker processes run sharp at once.
+process.env.VIPS_CONCURRENCY = "1";
 process.exitCode = 0;
 
 // Seed this workspace from the prebuilt "migrated" fixture (a pre-migrated set
