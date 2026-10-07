@@ -1,14 +1,12 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useMemorySecureKeyMap } from "../../../../__tests__/helpers/secure-keys.js";
+
 // ---------------------------------------------------------------------------
 // Mocks — declared before importing the module under test
 // ---------------------------------------------------------------------------
 
-const secureKeys = new Map<string, string>();
-mock.module("../../../../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => secureKeys.get(key),
-}));
-
+const secureKeys = useMemorySecureKeyMap();
 let connectionByProvider: Record<string, { id: string } | undefined> = {};
 mock.module("../../../../oauth/oauth-store.js", () => ({
   getConnectionByProvider: (provider: string) => connectionByProvider[provider],

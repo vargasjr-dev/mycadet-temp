@@ -3,9 +3,10 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { z } from "zod";
 
 import { credentialKey } from "../security/credential-key.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
 
-const secureKeyValues = new Map<string, string>();
+const secureKeyValues = useMemorySecureKeyMap();
 
 /** Seed `twilio.accountSid` into the workspace config for real. */
 function seedTwilioAccountSid(accountSid: string): void {
@@ -15,10 +16,6 @@ function seedTwilioAccountSid(accountSid: string): void {
 const connectedProviders = new Set<string>();
 const managedProviders = new Set<string>();
 const platformConnectedProviders = new Set<string>();
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (account: string) => secureKeyValues.get(account),
-}));
 
 // `getServiceMode` consults the test's `managedProviders` set. The real
 // `ServicesSchema` is extended with the test-fiction "google"/"slack" keys so

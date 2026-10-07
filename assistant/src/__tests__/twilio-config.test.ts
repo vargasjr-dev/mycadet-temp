@@ -1,12 +1,13 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
+
+import {
+  reseedMemorySecureKeys,
+  useMemorySecureKeys,
+} from "./helpers/secure-keys.js";
 
 // ── Mocks (must come before source imports) ──────────────────────────
 
-let mockSecureKeys: Record<string, string | null> = {};
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => mockSecureKeys[key] ?? null,
-}));
+const mockSecureKeys = useMemorySecureKeys();
 
 import { getTwilioConfig } from "../calls/twilio-config.js";
 import { credentialKey } from "../security/credential-key.js";
@@ -14,9 +15,9 @@ import { setConfig } from "./helpers/set-config.js";
 
 describe("twilio-config", () => {
   beforeEach(() => {
-    mockSecureKeys = {
+    reseedMemorySecureKeys(mockSecureKeys, {
       [credentialKey("twilio", "auth_token")]: "test_auth_token",
-    };
+    });
     setConfig("twilio", {
       accountSid: "AC_test_sid",
       phoneNumber: "+15550123",
@@ -38,7 +39,7 @@ describe("twilio-config", () => {
   });
 
   test("throws ConfigError when auth token is missing", async () => {
-    mockSecureKeys = {};
+    reseedMemorySecureKeys(mockSecureKeys);
     expect(getTwilioConfig()).rejects.toThrow(
       /Twilio credentials not configured/,
     );

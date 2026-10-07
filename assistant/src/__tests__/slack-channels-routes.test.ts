@@ -1,17 +1,13 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { ServiceUnavailableError } from "../runtime/routes/errors.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before any imports that pull in mocked modules
 // ---------------------------------------------------------------------------
 
-const secureKeyValues = new Map<string, string>();
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => secureKeyValues.get(key),
-  setSecureKeyAsync: async () => {},
-}));
-
+const secureKeyValues = useMemorySecureKeyMap();
 let connectionByProvider: Record<string, unknown> = {};
 mock.module("../oauth/oauth-store.js", () => ({
   getConnectionByProvider: (key: string) =>

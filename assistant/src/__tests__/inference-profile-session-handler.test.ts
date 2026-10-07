@@ -6,6 +6,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
+
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before importing the module under test
 // ---------------------------------------------------------------------------
@@ -40,14 +42,7 @@ mock.module("../providers/platform-proxy/context.js", () => ({
 
 // Vault stand-in: tests that exercise BYOK availability drop the credential
 // they need into this map and clean it up after.
-const storedKeys: Record<string, string> = {};
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyResultAsync: async (key: string) => ({
-    value: storedKeys[key],
-    unreachable: false,
-  }),
-}));
-
+const storedKeys = useMemorySecureKeys();
 // The handler reads the real config: the "balanced" and "cost-optimized"
 // profiles used below are code-default catalog entries that always resolve,
 // and llm.profileSession's schema defaults (1800/43200) are what the TTL

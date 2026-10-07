@@ -16,6 +16,8 @@
 
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
+
 // ---------------------------------------------------------------------------
 // Mock hygiene — `mock.module` patches loaded modules in place, and those
 // patches outlive this file in the shared bun test process. Capture the
@@ -56,11 +58,7 @@ afterAll(() => {
 // ---------------------------------------------------------------------------
 
 // Vault mock — keyed by credential name.
-const mockVault: Record<string, string | null> = {};
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => mockVault[key] ?? null,
-}));
+const mockVault = useMemorySecureKeys();
 
 // Managed proxy context — always unavailable in this test (no platform auth).
 mock.module("../providers/platform-proxy/context.js", () => ({

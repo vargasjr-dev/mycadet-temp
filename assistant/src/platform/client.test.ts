@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import {
+  reseedMemorySecureKeys,
+  useMemorySecureKeys,
+} from "../__tests__/helpers/secure-keys.js";
+
 // ---------------------------------------------------------------------------
 // Mutable mock state
 // ---------------------------------------------------------------------------
@@ -10,7 +15,7 @@ let mockManagedProxyCtx = {
   assistantApiKey: "",
 };
 let mockAssistantId = "";
-let mockSecureKeys: Record<string, string | null | undefined> = {};
+const mockSecureKeys = useMemorySecureKeys();
 // Re-pointable so the probe-deadline tests can hang context resolution.
 let mockResolveManagedProxyContext: () => Promise<
   typeof mockManagedProxyCtx
@@ -28,12 +33,6 @@ const actualEnv = await import("../config/env.js");
 mock.module("../config/env.js", () => ({
   ...actualEnv,
   getPlatformAssistantId: () => mockAssistantId,
-}));
-
-// Stub the credential-store fallback so tests stay hermetic and do not
-// read real values from the host credential backend.
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => mockSecureKeys[key] ?? null,
 }));
 
 mock.module("../security/credential-key.js", () => ({
@@ -65,7 +64,7 @@ describe("VellumPlatformClient", () => {
       assistantApiKey: "sk-test-key",
     };
     mockAssistantId = "asst-123";
-    mockSecureKeys = {};
+    reseedMemorySecureKeys(mockSecureKeys);
     mockResolveManagedProxyContext = async () => mockManagedProxyCtx;
     _resetConfiguredProbeCacheForTests();
   });
@@ -116,11 +115,11 @@ describe("VellumPlatformClient", () => {
         assistantApiKey: "",
       };
       mockAssistantId = "stored-assistant-id";
-      mockSecureKeys = {
+      reseedMemorySecureKeys(mockSecureKeys, {
         "vellum:platform_base_url": "https://stored-platform.example.com/",
         "vellum:assistant_api_key": "stored-api-key",
         "vellum:platform_assistant_id": " vault-assistant-id ",
-      };
+      });
 
       const client = await VellumPlatformClient.create();
 
@@ -519,7 +518,7 @@ describe("VellumPlatformClient", () => {
 
     test("returns null without fetching when assistantId is empty", async () => {
       mockAssistantId = "";
-      mockSecureKeys = {};
+      reseedMemorySecureKeys(mockSecureKeys);
 
       const fetchSpy = mock(
         async () =>

@@ -10,11 +10,9 @@
  */
 import { describe, expect, mock, test } from "bun:test";
 
-const SECRET_STORE: Record<string, string | null> = {};
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => SECRET_STORE[key] ?? null,
-}));
+const SECRET_STORE = useMemorySecureKeys();
 
 mock.module("../tools/credentials/metadata-store.js", () => ({
   getCredentialMetadataById: (id: string) =>

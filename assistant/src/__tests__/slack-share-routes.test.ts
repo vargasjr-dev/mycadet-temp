@@ -5,6 +5,7 @@ import {
   NotFoundError,
   ServiceUnavailableError,
 } from "../runtime/routes/errors.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before any imports that pull in mocked modules
@@ -16,12 +17,7 @@ import {
 // level in the routes' token-routing.test.ts, so it is deliberately not
 // re-asserted here.
 
-const secureKeyValues = new Map<string, string>();
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => secureKeyValues.get(key),
-  setSecureKeyAsync: async () => {},
-}));
-
+const secureKeyValues = useMemorySecureKeyMap();
 let connectionByProvider: Record<string, unknown> = {};
 mock.module("../oauth/oauth-store.js", () => ({
   getConnectionByProvider: (key: string) =>

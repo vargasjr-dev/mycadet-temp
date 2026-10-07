@@ -14,6 +14,10 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { CHANNEL_METADATA } from "../channels/types.js";
 import { credentialKey } from "../security/credential-key.js";
+import {
+  reseedMemorySecureKeys,
+  useMemorySecureKeys,
+} from "./helpers/secure-keys.js";
 
 // ---------------------------------------------------------------------------
 // Mock state — flipped per-test
@@ -30,11 +34,7 @@ let mockEmailAddressesResponse: {
   body: { count: 0, results: [] },
 };
 let mockFetchThrows = false;
-let mockSecureKeys: Record<string, string> = {};
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => mockSecureKeys[key] ?? null,
-}));
+const mockSecureKeys = useMemorySecureKeys();
 
 mock.module("../platform/client.js", () => ({
   VellumPlatformClient: {
@@ -89,7 +89,7 @@ describe("channels/available", () => {
       body: { count: 0, results: [] },
     };
     mockFetchThrows = false;
-    mockSecureKeys = {};
+    reseedMemorySecureKeys(mockSecureKeys);
   });
 
   test("base list only when no email address registered", async () => {
