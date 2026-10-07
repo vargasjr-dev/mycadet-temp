@@ -1,10 +1,10 @@
 {
-  "name": "vellum",
+  "name": "@mycadet/meta",
   "version": "0.12.6",
   "license": "MIT",
-  "description": "Install the full Vellum stack locally",
+  "description": "Install the full Cadet stack locally",
   "bin": {
-    "vellum": "./bin/vellum.js",
+    "cadet": "./bin/cadet.js",
     "assistant": "./bin/assistant.js",
     "gateway": "./bin/gateway.js"
   },

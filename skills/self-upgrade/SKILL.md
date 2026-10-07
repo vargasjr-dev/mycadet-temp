@@ -22,7 +22,7 @@ Save this value to report later.
 ## Step 2: Install the latest vellum
 
 ```bash
-bun install -g vellum@latest
+bun install -g @mycadet/meta@latest
 ```
 
 After updating, verify the new version:

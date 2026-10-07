@@ -146,7 +146,7 @@ ensure_bun() {
     success "bun installed ($(bun --version))"
 }
 
-# Ensure ~/.bun/bin is in the user's shell profile so bun and vellum are
+# Ensure ~/.bun/bin is in the user's shell profile so bun and cadet are
 # available in new terminal sessions. The bun installer sometimes skips
 # this (e.g. when stdin is piped via curl | bash).
 configure_shell_profile() {
@@ -225,8 +225,8 @@ symlink_cli() {
     return 0
 }
 
-symlink_vellum() {
-    symlink_cli "vellum"
+symlink_cadet() {
+    symlink_cli "cadet"
     symlink_cli "assistant"
 }
 
@@ -246,21 +246,21 @@ esac
 ENVEOF
 }
 
-install_vellum() {
-    if command -v vellum >/dev/null 2>&1; then
-        info "Updating vellum to latest..."
-        bun install -g vellum@latest
+install_cadet() {
+    if command -v cadet >/dev/null 2>&1; then
+        info "Updating cadet to latest..."
+        bun install -g @mycadet/meta@latest
     else
-        info "Installing vellum globally..."
-        bun install -g vellum@latest
+        info "Installing cadet globally..."
+        bun install -g @mycadet/meta@latest
     fi
 
-    if ! command -v vellum >/dev/null 2>&1; then
-        error "vellum installation failed. Please install manually: bun install -g vellum"
+    if ! command -v cadet >/dev/null 2>&1; then
+        error "cadet installation failed. Please install manually: bun install -g @mycadet/meta"
         exit 1
     fi
 
-    success "vellum installed ($(vellum --version 2>/dev/null || echo 'unknown'))"
+    success "cadet installed ($(cadet --version 2>/dev/null || echo 'unknown'))"
 }
 
 main() {
@@ -271,8 +271,8 @@ main() {
     ensure_git
     ensure_bun
     configure_shell_profile
-    install_vellum
-    symlink_vellum
+    install_cadet
+    symlink_cadet
 
     # Verify the assistant CLI is available
     if ! command -v assistant >/dev/null 2>&1; then
@@ -284,18 +284,18 @@ main() {
     #   curl ... | bash && . ~/.config/vellum/env
     write_env_file
 
-    # Source the shell profile so vellum hatch runs with the correct PATH
+    # Source the shell profile so cadet hatch runs with the correct PATH
     # in this session (the profile changes only take effect in new shells
     # otherwise).
     export BUN_INSTALL="$HOME/.bun"
     export PATH="$BUN_INSTALL/bin:$PATH"
 
-    info "Running vellum hatch..."
+    info "Running cadet hatch..."
     printf "\n"
     if [ -n "${VELLUM_SSH_USER:-}" ] && [ "$(id -u)" = "0" ]; then
-        su - "$VELLUM_SSH_USER" -c "set -a; [ -f \"\$HOME/.config/vellum/env\" ] && . \"\$HOME/.config/vellum/env\"; set +a; export PATH=\"$HOME/.bun/bin:\$PATH\"; vellum hatch"
+        su - "$VELLUM_SSH_USER" -c "set -a; [ -f \"\$HOME/.config/vellum/env\" ] && . \"\$HOME/.config/vellum/env\"; set +a; export PATH=\"$HOME/.bun/bin:\$PATH\"; cadet hatch"
     else
-        vellum hatch
+        cadet hatch
     fi
 }
 
