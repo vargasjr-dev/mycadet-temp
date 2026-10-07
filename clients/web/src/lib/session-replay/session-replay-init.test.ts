@@ -48,7 +48,7 @@ describe("sessionReplayProxyBase", () => {
     expect(
       sessionReplayProxyBase(
         { protocol: "app:", origin: "app://mycadet.ai" },
-        "https://app.mycadet.ai",
+        "https://mycadet.ai",
       ),
     ).toBe("app://mycadet.ai");
   });
@@ -56,16 +56,16 @@ describe("sessionReplayProxyBase", () => {
   test("uses the platform URL on hosted and Electron-dev surfaces", () => {
     expect(
       sessionReplayProxyBase(
-        { protocol: "https:", origin: "https://app.mycadet.ai" },
-        "https://app.mycadet.ai",
+        { protocol: "https:", origin: "https://mycadet.ai" },
+        "https://mycadet.ai",
       ),
-    ).toBe("https://app.mycadet.ai");
+    ).toBe("https://mycadet.ai");
     expect(
       sessionReplayProxyBase(
         { protocol: "http:", origin: "http://localhost:5173" },
-        "https://app.mycadet.ai",
+        "https://mycadet.ai",
       ),
-    ).toBe("https://app.mycadet.ai");
+    ).toBe("https://mycadet.ai");
   });
 });
 

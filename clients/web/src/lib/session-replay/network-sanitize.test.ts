@@ -30,12 +30,12 @@ describe("sanitizeReplayRequest", () => {
     const out = sanitizeReplayRequest({
       // `q` is generic user content (search text), not credential-looking.
       url: "https://cloud.mycadet.ai/v1/search/global?q=secret%20text&page=2",
-      referrer: "https://app.mycadet.ai/cb?code=abc",
+      referrer: "https://mycadet.ai/cb?code=abc",
     });
     expect(out.url).toBe(
       "https://cloud.mycadet.ai/v1/search/global?q=%5BREDACTED%5D&page=%5BREDACTED%5D",
     );
-    expect(out.referrer).toBe("https://app.mycadet.ai/cb?code=%5BREDACTED%5D");
+    expect(out.referrer).toBe("https://mycadet.ai/cb?code=%5BREDACTED%5D");
   });
 
   test("leaves a query-less url untouched", () => {

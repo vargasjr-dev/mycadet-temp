@@ -230,7 +230,7 @@ describe("probeTunnel", () => {
           disablePlatform: true,
           assistantName: "Ada",
           assistantId: "asst_1",
-          hubUrl: "https://app.mycadet.ai",
+          hubUrl: "https://mycadet.ai",
         }),
       },
     });

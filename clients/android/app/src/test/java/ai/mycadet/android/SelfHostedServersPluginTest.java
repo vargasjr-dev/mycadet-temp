@@ -32,7 +32,7 @@ public class SelfHostedServersPluginTest {
         JSObject payload = SelfHostedServersPlugin.listPayload(
             Collections.singletonList(new SelfHostedServer.Entry("Work", "https://work.example.com")),
             "https://work.example.com",
-            "https://app.mycadet.ai"
+            "https://mycadet.ai"
         );
 
         JSONArray servers = payload.getJSONArray("servers");
@@ -41,7 +41,7 @@ public class SelfHostedServersPluginTest {
         assertEquals("Work", entry.getString("name"));
         assertEquals("https://work.example.com", entry.getString("url"));
         assertEquals("https://work.example.com", payload.getString("activeUrl"));
-        assertEquals("https://app.mycadet.ai", payload.getString("bakedUrl"));
+        assertEquals("https://mycadet.ai", payload.getString("bakedUrl"));
     }
 
     @Test
@@ -52,7 +52,7 @@ public class SelfHostedServersPluginTest {
                 new SelfHostedServer.Entry("Two", "https://two.example.com/base")
             ),
             null,
-            "https://app.mycadet.ai"
+            "https://mycadet.ai"
         );
 
         JSONArray servers = payload.getJSONArray("servers");
@@ -64,6 +64,6 @@ public class SelfHostedServersPluginTest {
         assertEquals("Two", named.getString("name"));
         assertEquals("https://two.example.com/base", named.getString("url"));
         assertTrue(payload.isNull("activeUrl"));
-        assertEquals("https://app.mycadet.ai", payload.getString("bakedUrl"));
+        assertEquals("https://mycadet.ai", payload.getString("bakedUrl"));
     }
 }

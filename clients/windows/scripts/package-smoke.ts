@@ -15,7 +15,7 @@ const { productName } = requireCjs("../electron-builder.config.cjs") as {
 };
 const packageName = requireCjs("../package.json").name as string;
 const env = process.env.CADET_ENVIRONMENT || "local";
-const scheme = env === "production" ? "cadet" : `mycadet-${env}`;
+const scheme = env === "production" ? "cadet" : `cadet-${env}`;
 
 const fail = (message: string): never => {
   throw new Error(message);

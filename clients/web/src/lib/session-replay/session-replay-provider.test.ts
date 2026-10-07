@@ -39,7 +39,7 @@ describe("sessionReplayRootHostname", () => {
   });
 
   test("shares https recordings across Cadet subdomains", () => {
-    expect(sessionReplayRootHostname("https://app.mycadet.ai")).toBe(
+    expect(sessionReplayRootHostname("https://mycadet.ai")).toBe(
       ".mycadet.ai",
     );
   });

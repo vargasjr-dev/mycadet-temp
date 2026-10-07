@@ -39,7 +39,7 @@ interface MockWindowOptions {
 }
 
 function setMockWindow({
-  origin = "https://app.mycadet.ai",
+  origin = "https://mycadet.ai",
   open,
   cadet,
 }: MockWindowOptions = {}): void {
@@ -100,7 +100,7 @@ describe("oauth popup links", () => {
   });
 
   test("resolves same-origin app routes for client-side navigation", () => {
-    const origin = "https://app.mycadet.ai";
+    const origin = "https://mycadet.ai";
     setMockWindow({ origin });
 
     expect(
@@ -115,7 +115,7 @@ describe("oauth popup links", () => {
   });
 
   test("normalizes relative HTTP URLs and rejects unsupported schemes", () => {
-    const origin = "https://app.mycadet.ai";
+    const origin = "https://mycadet.ai";
     setMockWindow({ origin });
 
     expect(getHttpUrl(routes.settings.integrations)).toBe(

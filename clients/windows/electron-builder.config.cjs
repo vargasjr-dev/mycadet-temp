@@ -22,7 +22,7 @@ const appId =
 const schemes =
   env === "production"
     ? ["cadet"]
-    : [`mycadet-${env}`];
+    : [`cadet-${env}`];
 
 const iconEnvironment = ["local", "dev", "staging", "production"].includes(env)
   ? env

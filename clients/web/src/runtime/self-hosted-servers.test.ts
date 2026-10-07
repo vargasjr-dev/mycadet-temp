@@ -143,7 +143,7 @@ describe("nativeRememberedOriginsProvider load", () => {
         { url: "HTTPS://Other.Example/" },
       ],
       activeUrl: "https://host.example/assistant-1",
-      bakedUrl: "https://app.mycadet.ai",
+      bakedUrl: "https://mycadet.ai",
     };
 
     expect(await nativeRememberedOriginsProvider().load()).toEqual([
@@ -437,17 +437,17 @@ describe("nativeCadetCloudOrigin", () => {
     listResult = {
       servers: [],
       activeUrl: "https://host.example",
-      bakedUrl: "https://app.mycadet.ai/",
+      bakedUrl: "https://mycadet.ai/",
     };
 
-    expect(await nativeCadetCloudOrigin()).toBe("https://app.mycadet.ai");
+    expect(await nativeCadetCloudOrigin()).toBe("https://mycadet.ai");
   });
 
   test("reports nothing when the shell already serves the baked origin", async () => {
     listResult = {
       servers: [],
       activeUrl: null,
-      bakedUrl: "https://app.mycadet.ai",
+      bakedUrl: "https://mycadet.ai",
     };
 
     expect(await nativeCadetCloudOrigin()).toBeNull();
@@ -472,7 +472,7 @@ describe("nativeCadetCloudOrigin", () => {
     listResult = {
       servers: [],
       activeUrl: "https://host.example",
-      bakedUrl: "https://app.mycadet.ai",
+      bakedUrl: "https://mycadet.ai",
     };
     expect(await nativeCadetCloudOrigin()).toBeNull();
     expect(listMock).toHaveBeenCalledTimes(1);
@@ -500,7 +500,7 @@ describe("installNativeRememberedOrigins", () => {
     listResult = {
       servers: [{ url: "https://host.example", name: "Homelab" }],
       activeUrl: "https://host.example",
-      bakedUrl: "https://app.mycadet.ai",
+      bakedUrl: "https://mycadet.ai",
     };
 
     installNativeRememberedOrigins();

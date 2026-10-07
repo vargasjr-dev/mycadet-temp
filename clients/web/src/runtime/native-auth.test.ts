@@ -352,9 +352,9 @@ describe("startAuthFlow attribution on native", () => {
       writable: true,
       value: {
         protocol: "https:",
-        host: "app.mycadet.ai",
+        host: "mycadet.ai",
         search,
-        href: "https://app.mycadet.ai/account/signup",
+        href: "https://mycadet.ai/account/signup",
       },
     });
   }
@@ -440,7 +440,7 @@ describe("startAuthFlow attribution on native", () => {
       "postAuthDestination",
     ]);
     expect(options).toEqual({
-      baseURL: "https://app.mycadet.ai",
+      baseURL: "https://mycadet.ai",
       intent: "signup",
       postAuthDestination: "/assistant/onboarding/privacy",
     });

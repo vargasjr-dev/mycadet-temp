@@ -56,7 +56,7 @@ const entitlements = provisioningProfile
 const schemes =
   env === "production"
     ? ["cadet"]
-    : [`mycadet-${env}`];
+    : [`cadet-${env}`];
 
 /** @type {import("electron-builder").Configuration} */
 module.exports = {

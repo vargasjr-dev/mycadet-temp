@@ -24,7 +24,7 @@ export const CHECKOUT = "/assistant/checkout?package=super";
 const HOSTILE_DESTINATION = "https://evil.example";
 /** Served by the platform's Next.js app — a `<Navigate>` here dead-ends. */
 const IMPORT_FUNNEL = "/import?foo=1";
-const CADET_URL = "https://app.mycadet.ai/x";
+const CADET_URL = "https://mycadet.ai/x";
 
 interface AuthFlowCall {
   callbackUrl: string;

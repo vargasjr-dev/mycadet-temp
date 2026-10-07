@@ -154,7 +154,7 @@ describe("requiresPlatformSession", () => {
     [routes.account.root],
     ["/import?foo=1"],
     ["/accounts/cli/callback?port=1"],
-    ["https://app.mycadet.ai/x"],
+    ["https://mycadet.ai/x"],
   ])("%s needs a platform session", (destination) => {
     expect(requiresPlatformSession(destination)).toBe(true);
   });

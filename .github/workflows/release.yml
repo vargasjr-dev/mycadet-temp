@@ -3049,7 +3049,6 @@ jobs:
       - name: Build Slack payload
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          RELEASE_TRIGGER_SECRET: ${{ secrets.RELEASE_TRIGGER_SECRET }}
           SLACK_USER_ID: ${{ inputs.slack_user_id }}
         run: |
           VERSION="${{ needs.extract-version.outputs.version }}"
@@ -3241,35 +3240,8 @@ jobs:
             style: "primary"
           }')
 
-          # Build "Go live!" button only for release branch staging deploys (not main dispatches)
-          IS_RELEASE_BRANCH="false"
-          if [[ "${GITHUB_REF_NAME}" == release/v* ]]; then
-            IS_RELEASE_BRANCH="true"
-          fi
-
-          # The go-live button posts to the internal QA service. Its host is
-          # internal-only and intentionally NOT hardcoded in this repo — set the
-          # `QA_GO_LIVE_HOST` repo variable (e.g. the QA console's hostname) to
-          # enable the button on release-branch staging deploys.
-          if [ "$IS_STAGING" = "true" ] && [ "$STAGING_READY" = "true" ] && [ "$IS_RELEASE_BRANCH" = "true" ] && [ -n "$RELEASE_TRIGGER_SECRET" ] && [ -n "${{ vars.QA_GO_LIVE_HOST }}" ]; then
-            RELEASE_BRANCH="release/v${{ needs.extract-version.outputs.base_version }}"
-            GO_LIVE_TS=$(date +%s)
-            GO_LIVE_SIG=$(echo -n "${RELEASE_BRANCH}:${GO_LIVE_TS}" | openssl dgst -sha256 -hmac "$RELEASE_TRIGGER_SECRET" -hex | awk '{print $NF}')
-            GO_LIVE_URL="https://${{ vars.QA_GO_LIVE_HOST }}/api/slack/go-live?branch=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${RELEASE_BRANCH}', safe=''))")&ts=${GO_LIVE_TS}&sig=${GO_LIVE_SIG}"
-            GO_LIVE=$(jq -n --arg url "$GO_LIVE_URL" '{
-              type: "button",
-              text: { type: "plain_text", text: "Go live!" },
-              url: $url,
-              style: "primary"
-            }')
-          fi
-
           if [ "$RELEASE_FAILED" = "true" ] || [ "$IS_STAGING" = "true" ]; then
-            if [ -n "${GO_LIVE:-}" ]; then
-              BUTTONS=$(jq -n --argjson run "$VIEW_RUN" --argjson golive "$GO_LIVE" '[$run, $golive]')
-            else
-              BUTTONS=$(jq -n --argjson run "$VIEW_RUN" '[$run]')
-            fi
+            BUTTONS=$(jq -n --argjson run "$VIEW_RUN" '[$run]')
           else
             BUTTONS=$(jq -n --argjson run "$VIEW_RUN" --argjson release "$VIEW_RELEASE" '[$run, $release]')
           fi

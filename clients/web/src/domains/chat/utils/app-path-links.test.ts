@@ -46,7 +46,7 @@ describe("toAppPathFromHref", () => {
     ).toBe("/assistant/conversations/conv-xyz");
     expect(
       toAppPathFromHref(
-        "https://app.mycadet.ai/assistant/schedules/schedule-1?x=1",
+        "https://mycadet.ai/assistant/schedules/schedule-1?x=1",
       ),
     ).toBe("/assistant/schedules/schedule-1?x=1");
   });
