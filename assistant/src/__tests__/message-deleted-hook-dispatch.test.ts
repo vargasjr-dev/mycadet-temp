@@ -38,12 +38,27 @@ registerPluginHooks("test-message-deleted-spy", {
   },
 } as PluginHooks);
 
-/** Poll until the fire-and-forget hook chain has delivered `count` calls. */
-async function waitForCalls(count: number): Promise<void> {
-  const deadline = Date.now() + 2_000;
-  while (received.length < count && Date.now() < deadline) {
+/** Poll until the fire-and-forget hook chain has delivered `count` calls for
+ * `ids`. Counting (and asserting, below) only these tests' own message ids
+ * keeps the wait honest across CI contention: hook dispatch starts with an
+ * async, DB-backed discovery step, so delivery time is unbounded — a straggler
+ * dispatched for a previous test's rows can cross a `beforeEach` boundary and
+ * land in a later test's `received`. */
+async function waitForCalls(count: number, ids: string[]): Promise<void> {
+  const want = new Set(ids);
+  const deadline = Date.now() + 10_000;
+  while (
+    received.filter((r) => want.has(r.messageId)).length < count &&
+    Date.now() < deadline
+  ) {
     await Bun.sleep(10);
   }
+}
+
+/** `received` scoped to `ids` — the assertions' contention shield. */
+function receivedFor(ids: string[]): typeof received {
+  const want = new Set(ids);
+  return received.filter((r) => want.has(r.messageId));
 }
 
 const text = (t: string) => JSON.stringify([{ type: "text", text: t }]);
@@ -75,9 +90,9 @@ describe("message-deleted hook dispatch", () => {
     )!.createdAt;
 
     deleteMessageById(reply.id);
-    await waitForCalls(1);
+    await waitForCalls(1, [reply.id]);
 
-    expect(received).toEqual([
+    expect(receivedFor([reply.id])).toEqual([
       {
         conversationId: CONV_ID,
         messageId: reply.id,
@@ -94,9 +109,13 @@ describe("message-deleted hook dispatch", () => {
     const byId = new Map(getMessages(CONV_ID).map((m) => [m.id, m.createdAt]));
 
     expect(deleteLastExchange(CONV_ID)).toBe(2);
-    await waitForCalls(2);
+    await waitForCalls(2, [user2.id, reply2.id]);
 
-    expect([...received].sort((a, b) => a.createdAt - b.createdAt)).toEqual([
+    expect(
+      [...receivedFor([user2.id, reply2.id])].sort(
+        (a, b) => a.createdAt - b.createdAt,
+      ),
+    ).toEqual([
       {
         conversationId: CONV_ID,
         messageId: user2.id,
@@ -114,6 +133,8 @@ describe("message-deleted hook dispatch", () => {
     deleteMessageById("no-such-row");
     await Bun.sleep(50);
 
-    expect(received).toEqual([]);
+    // Scoped to the missing row's id: a straggler dispatched for a previous
+    // test's rows may still be in flight, but nothing may ever claim this id.
+    expect(receivedFor(["no-such-row"])).toEqual([]);
   });
 });
