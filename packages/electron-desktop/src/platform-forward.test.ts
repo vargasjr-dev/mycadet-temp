@@ -9,7 +9,7 @@ import {
   PROXY_NETWORK_ERROR_CODE,
 } from "./platform-forward";
 
-const PLATFORM = "https://cloud.cadet.ai";
+const PLATFORM = "https://cloud.mycadet.ai";
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
 const request = (
@@ -45,7 +45,7 @@ describe("planPlatformForward", () => {
     const plan = planPlatformForward(request("/v1/assistants"), PLATFORM);
     expect(plan.kind).toBe("forward");
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("https://cloud.cadet.ai/v1/assistants");
+    expect(plan.url).toBe("https://cloud.mycadet.ai/v1/assistants");
     expect(plan.method).toBe("GET");
     expect(plan.hasBody).toBe(false);
   });
@@ -57,14 +57,14 @@ describe("planPlatformForward", () => {
     );
     if (plan.kind !== "forward") throw new Error("expected forward");
     expect(plan.url).toBe(
-      "https://cloud.cadet.ai/_allauth/browser/v1/auth/session",
+      "https://cloud.mycadet.ai/_allauth/browser/v1/auth/session",
     );
   });
 
   test("forwards /accounts/* requests to platform", () => {
     const plan = planPlatformForward(request("/accounts/login"), PLATFORM);
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("https://cloud.cadet.ai/accounts/login");
+    expect(plan.url).toBe("https://cloud.mycadet.ai/accounts/login");
   });
 
   test("forwards session-replay /_sr/* requests to platform", () => {
@@ -73,7 +73,7 @@ describe("planPlatformForward", () => {
       PLATFORM,
     );
     if (cdn.kind !== "forward") throw new Error("expected forward");
-    expect(cdn.url).toBe("https://cloud.cadet.ai/_sr/cdn/logger.min.js");
+    expect(cdn.url).toBe("https://cloud.mycadet.ai/_sr/cdn/logger.min.js");
     expect(cdn.method).toBe("GET");
     expect(cdn.hasBody).toBe(false);
 
@@ -86,7 +86,7 @@ describe("planPlatformForward", () => {
       { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
     );
     if (ingest.kind !== "forward") throw new Error("expected forward");
-    expect(ingest.url).toBe("https://cloud.cadet.ai/_sr/ingest/i");
+    expect(ingest.url).toBe("https://cloud.mycadet.ai/_sr/ingest/i");
     expect(ingest.hasBody).toBe(true);
   });
 
@@ -99,7 +99,7 @@ describe("planPlatformForward", () => {
   test("forwards exact prefix without trailing slash", () => {
     const plan = planPlatformForward(request("/v1"), PLATFORM);
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("https://cloud.cadet.ai/v1");
+    expect(plan.url).toBe("https://cloud.mycadet.ai/v1");
   });
 
   test("preserves query string on forwarded requests", () => {
@@ -109,7 +109,7 @@ describe("planPlatformForward", () => {
     );
     if (plan.kind !== "forward") throw new Error("expected forward");
     expect(plan.url).toBe(
-      "https://cloud.cadet.ai/v1/assistants?page=2&limit=10",
+      "https://cloud.mycadet.ai/v1/assistants?page=2&limit=10",
     );
   });
 
@@ -119,13 +119,13 @@ describe("planPlatformForward", () => {
       PLATFORM,
     );
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("origin")).toBe("https://cloud.cadet.ai");
+    expect(plan.headers.get("origin")).toBe("https://cloud.mycadet.ai");
   });
 
   test("sets a platform Origin even when the renderer sent none", () => {
     const plan = planPlatformForward(request("/v1/assistants"), PLATFORM);
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("origin")).toBe("https://cloud.cadet.ai");
+    expect(plan.headers.get("origin")).toBe("https://cloud.mycadet.ai");
   });
 
   test("forwards unsafe requests from the trusted app origin", () => {
@@ -138,7 +138,7 @@ describe("planPlatformForward", () => {
       { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
     );
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("origin")).toBe("https://cloud.cadet.ai");
+    expect(plan.headers.get("origin")).toBe("https://cloud.mycadet.ai");
   });
 
   test("rejects platform requests with a foreign Origin", () => {
@@ -182,7 +182,7 @@ describe("planPlatformForward", () => {
     );
 
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("origin")).toBe("https://cloud.cadet.ai");
+    expect(plan.headers.get("origin")).toBe("https://cloud.mycadet.ai");
     expect(plan.headers.get(ELECTRON_RENDERER_ORIGIN_HEADER)).toBeNull();
   });
 
@@ -289,12 +289,12 @@ describe("planPlatformForward", () => {
   test("works with custom platform URL (staging)", () => {
     const plan = planPlatformForward(
       request("/v1/assistants"),
-      "https://staging-cloud.cadet.ai",
+      "https://staging-cloud.mycadet.ai",
     );
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("https://staging-cloud.cadet.ai/v1/assistants");
+    expect(plan.url).toBe("https://staging-cloud.mycadet.ai/v1/assistants");
     expect(plan.headers.get("origin")).toBe(
-      "https://staging-cloud.cadet.ai",
+      "https://staging-cloud.mycadet.ai",
     );
   });
 

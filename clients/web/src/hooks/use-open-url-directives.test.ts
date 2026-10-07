@@ -45,7 +45,7 @@ const originalWindow = globalThis.window;
 let attention: ReturnType<typeof stubBrowserAttention>;
 
 function setMockWindow({
-  origin = "https://app.cadet.ai",
+  origin = "https://app.mycadet.ai",
   open,
   cadet,
 }: {
@@ -164,7 +164,7 @@ describe("handleOpenUrlDirectiveEnvelope", () => {
       { visible: true, focused: false },
     ]) {
       attention.set(state);
-      for (const url of [oauthUrl, "https://app.cadet.ai/settings"]) {
+      for (const url of [oauthUrl, "https://app.mycadet.ai/settings"]) {
         handleOpenUrlDirectiveEnvelope(
           makeEnvelope({ type: "open_url", url }),
           { isNative: false, push },

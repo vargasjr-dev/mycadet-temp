@@ -107,7 +107,7 @@ function makeLocalPoster(
 
 function makeCloudPoster(
   fetchFn: typeof globalThis.fetch,
-  runtimeUrl = "https://cloud.cadet.ai",
+  runtimeUrl = "https://cloud.mycadet.ai",
   assistantId = "asst-123",
   sessionToken = "session-tok",
 ) {
@@ -743,7 +743,7 @@ describe("HostProxyPoster", () => {
       await poster.postBashResult({ requestId: "r1", stdout: "" });
 
       expect(captured[0].url).toBe(
-        "https://cloud.cadet.ai/v1/assistants/asst-123/host-bash-result",
+        "https://cloud.mycadet.ai/v1/assistants/asst-123/host-bash-result",
       );
     });
 
@@ -767,7 +767,7 @@ describe("HostProxyPoster", () => {
       await poster.pullTransferContent("xfer-1");
 
       expect(captured[0].url).toBe(
-        "https://cloud.cadet.ai/v1/assistants/asst-123/transfers/xfer-1/content",
+        "https://cloud.mycadet.ai/v1/assistants/asst-123/transfers/xfer-1/content",
       );
     });
   });

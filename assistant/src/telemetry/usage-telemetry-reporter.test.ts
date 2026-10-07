@@ -68,7 +68,7 @@ mock.module("../platform/client.js", () => ({
   },
 }));
 
-const mockGetPlatformBaseUrl = mock(() => "https://cloud.cadet.ai");
+const mockGetPlatformBaseUrl = mock(() => "https://cloud.mycadet.ai");
 
 const mockGetPlatformOrganizationId = mock(() => "");
 const mockGetPlatformUserId = mock(() => "");
@@ -374,7 +374,7 @@ beforeEach(() => {
 
   // Defaults
   mockGetFlushCheckpoint.mockReturnValue(null);
-  mockGetPlatformBaseUrl.mockReturnValue("https://cloud.cadet.ai");
+  mockGetPlatformBaseUrl.mockReturnValue("https://cloud.mycadet.ai");
 
   mockFetch = mock(() =>
     Promise.resolve(new Response('{"accepted":0}', { status: 200 })),

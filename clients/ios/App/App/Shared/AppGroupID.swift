@@ -26,7 +26,7 @@ import Foundation
 /// `UserDefaults.standard` so in-process Shortcuts still have a picker.
 enum AppGroupID {
     /// Info.plist key carrying the group id, restated from the entitlement.
-    static let infoPlistKey = "CadetAppGroupId"
+    static let infoPlistKey = "CadetGroupId"
 
     /// The group for the currently running bundle, or `nil` when the bundle
     /// declares none. See the type docs for why there is no default.

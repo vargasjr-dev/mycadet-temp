@@ -7,9 +7,9 @@
 
 APP_GROUP_ID = group.ai.mycadet.ios.staging
 ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon-Staging
-ASSOCIATED_DOMAIN = staging.cloud.mycadet.ai
+ASSOCIATED_DOMAIN = staging.mycadet.ai
 BUNDLE_DISPLAY_NAME = Cadet Staging
-BUNDLE_URL_SCHEME = mycadet-staging
+BUNDLE_URL_SCHEME = cadet-staging
 PRODUCT_BUNDLE_IDENTIFIER = ai.mycadet.ios.staging
 
 // Exact portal profile name; must equal release-ios.yaml's `profile_name`.

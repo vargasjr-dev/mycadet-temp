@@ -11,8 +11,8 @@ The Android app loads the web UI from the environment-specific web origin:
 | Environment  | Server                                          |
 | ------------ | ----------------------------------------------- |
 | `production` | `https://mycadet.ai/assistant`               |
-| `staging`    | `https://staging.cloud.mycadet.ai/assistant` |
-| `dev`        | `https://dev.cloud.mycadet.ai/assistant`     |
+| `staging`    | `https://staging.mycadet.ai/assistant` |
+| `dev`        | `https://dev.mycadet.ai/assistant`     |
 
 Set `CADET_ENVIRONMENT` before `bunx cap sync android` to bake the matching
 URL into `app/src/main/assets/capacitor.config.json`. The default is `dev`.
@@ -43,9 +43,9 @@ hosts.
 
 | Flavor       | Application ID                | Display Name   | Auth Scheme                | Auth Host                     |
 | ------------ | ----------------------------- | -------------- | -------------------------- | ----------------------------- |
-| `production` | `ai.mycadet.assistant`         | Cadet         | `mycadet`         | `mycadet.ai`               |
-| `staging`    | `ai.mycadet.assistant.staging` | Cadet Staging | `mycadet-staging` | `staging.cloud.mycadet.ai` |
-| `dev`        | `ai.mycadet.assistant.dev`     | Cadet Dev     | `mycadet-dev`     | `dev.cloud.mycadet.ai`     |
+| `production` | `ai.mycadet.android`         | Cadet         | `mycadet`         | `mycadet.ai`               |
+| `staging`    | `ai.mycadet.android.staging` | Cadet Staging | `mycadet-staging` | `staging.mycadet.ai` |
+| `dev`        | `ai.mycadet.android.dev`     | Cadet Dev     | `mycadet-dev`     | `dev.mycadet.ai`     |
 
 For local development, pick the `devDebug` variant in Android Studio. If you
 sync a different `CADET_ENVIRONMENT`, build the matching flavor so the WebView
@@ -228,7 +228,7 @@ Launcher behavior is physical-device territory; an emulator does not cover it.
 - Turn on themed icons on Android 13 or newer and confirm every alternate draws
   its sclera silhouette rather than a blank tile or a filled square.
 - Set an icon, force-stop the app before it reaches the background
-  (`adb shell am force-stop ai.mycadet.assistant.dev`), and relaunch. `load()`
+  (`adb shell am force-stop ai.mycadet.android.dev`), and relaunch. `load()`
   applies the recorded target.
 - Install on an API 24 or 25 device and confirm the App icon row does not
   render.
@@ -262,7 +262,7 @@ After the Digital Asset Links file is deployed, install the matching build on
 a physical device and check verification with:
 
 ```bash
-adb shell pm get-app-links ai.mycadet.assistant
+adb shell pm get-app-links ai.mycadet.android
 adb shell am start -a android.intent.action.VIEW \
   -c android.intent.category.BROWSABLE \
   -d 'https://mycadet.ai/assistant/conversations/conv-xyz?message=message-123#reply'
@@ -302,7 +302,7 @@ production SSO.
 Android accepts environment-specific connect links in this form:
 
 ```text
-mycadet-dev://connect?url=https%3A%2F%2Fassistant.example.com&code=device-code
+cadet-dev://connect?url=https%3A%2F%2Fassistant.example.com&code=device-code
 ```
 
 The production and staging builds use their matching auth schemes from the
@@ -688,16 +688,16 @@ Complete the following setup before enabling Google Play publishing:
 
 1. Apply the platform Terraform stacks that enable the Android Publisher API
    in the dev, staging, and production GCP projects.
-2. Create Play Console apps for `ai.mycadet.assistant`,
-   `ai.mycadet.assistant.staging`, and
-   `ai.mycadet.assistant.dev`.
+2. Create Play Console apps for `ai.mycadet.android`,
+   `ai.mycadet.android.staging`, and
+   `ai.mycadet.android.dev`.
 3. Enable Play App Signing for each app and create one controlled upload key.
 4. Upload and roll out one signed AAB to each app's internal track manually.
    Google Play requires this initial release before the Publisher API can
    upload a completed release.
 5. In Play Console, grant each environment's `GCP_SERVICE_ACCOUNT` access only
    to its matching app, with **View app information (read-only)** and
-   **Release apps to testing tracks**. For `ai.mycadet.assistant`, also grant the
+   **Release apps to testing tracks**. For `ai.mycadet.android`, also grant the
    production environment's service account **Release to production, exclude
    devices, and use Play App Signing**.
 6. Configure the repository and environment secrets above.
@@ -714,9 +714,9 @@ Create a separate Firebase Android app in each matching Firebase project:
 
 | GitHub environment | Android package ID            |
 | ------------------ | ----------------------------- |
-| `production`       | `ai.mycadet.assistant`         |
-| `staging`          | `ai.mycadet.assistant.staging` |
-| `dev`              | `ai.mycadet.assistant.dev`     |
+| `production`       | `ai.mycadet.android`         |
+| `staging`          | `ai.mycadet.android.staging` |
+| `dev`              | `ai.mycadet.android.dev`     |
 
 For each app, download its `google-services.json`, encode it without line
 breaks, and save the result as the `ANDROID_FIREBASE_CONFIG_B64` secret on the

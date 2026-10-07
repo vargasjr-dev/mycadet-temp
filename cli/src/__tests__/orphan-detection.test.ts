@@ -107,7 +107,7 @@ describe("getKnownPidsFromAssistants", () => {
   test("ignores non-local entries without watcherPid", () => {
     const entry: AssistantEntry = {
       assistantId: "managed-1",
-      runtimeUrl: "https://cloud.cadet.ai/foo",
+      runtimeUrl: "https://cloud.mycadet.ai/foo",
       cloud: "cadet",
     };
     const pids = getKnownPidsFromAssistants([entry]);

@@ -34,7 +34,7 @@ const tmpRoot = realpathSync(mkdtempSync(join(tmpdir(), "cadet-test-")));
 const testDir = join(tmpRoot, "workspace");
 mkdirSync(testDir);
 process.env.CADET_WORKSPACE_DIR = testDir;
-process.env.CADET_PLATFORM_URL = "https://test-cloud.cadet.ai";
+process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
 process.exitCode = 0;
 
 // Seed this workspace from the prebuilt "migrated" fixture (a pre-migrated set

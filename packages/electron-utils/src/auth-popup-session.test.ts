@@ -79,7 +79,7 @@ describe("isFirstPartyAuthHost", () => {
   test("covers Cadet hosts and the loopback callback listener", () => {
     expect(isFirstPartyAuthHost("mycadet.ai")).toBe(true);
     expect(isFirstPartyAuthHost("mycadet.ai")).toBe(true);
-    expect(isFirstPartyAuthHost("staging-cloud.cadet.ai")).toBe(true);
+    expect(isFirstPartyAuthHost("staging-cloud.mycadet.ai")).toBe(true);
     expect(isFirstPartyAuthHost("localhost")).toBe(true);
     expect(isFirstPartyAuthHost("127.0.0.1")).toBe(true);
   });

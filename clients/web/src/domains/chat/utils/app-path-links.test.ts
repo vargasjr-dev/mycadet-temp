@@ -38,15 +38,15 @@ describe("toAppPathFromHref", () => {
     ).toBe("/assistant/schedules/schedule-1?tab=runs#latest");
   });
 
-  test("maps cadet.ai http(s) URLs onto the client path", () => {
+  test("maps mycadet.ai http(s) URLs onto the client path", () => {
     expect(
       toAppPathFromHref(
-        "https://www.cadet.ai/assistant/conversations/conv-xyz",
+        "https://www.mycadet.ai/assistant/conversations/conv-xyz",
       ),
     ).toBe("/assistant/conversations/conv-xyz");
     expect(
       toAppPathFromHref(
-        "https://app.cadet.ai/assistant/schedules/schedule-1?x=1",
+        "https://app.mycadet.ai/assistant/schedules/schedule-1?x=1",
       ),
     ).toBe("/assistant/schedules/schedule-1?x=1");
   });
@@ -60,6 +60,6 @@ describe("toAppPathFromHref", () => {
   test("rejects workspace and empty hrefs", () => {
     expect(toAppPathFromHref("/workspace/scratch/a.png")).toBeNull();
     expect(toAppPathFromHref("")).toBeNull();
-    expect(toAppPathFromHref("https://www.cadet.ai/docs")).toBeNull();
+    expect(toAppPathFromHref("https://www.mycadet.ai/docs")).toBeNull();
   });
 });

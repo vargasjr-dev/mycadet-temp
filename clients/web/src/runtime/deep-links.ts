@@ -3,7 +3,7 @@ import { isElectron } from "@/runtime/is-electron";
 
 /**
  * Per-capability wrapper for the Electron host's deep-link bridge —
- * `cadet://` and `mycadet://` URL schemes routed in by
+ * `cadet://` and `cadet://` URL schemes routed in by
  * Launch Services. Same shape as `power-events.ts`: no-op off
  * Electron (web build, Capacitor iOS), publishes into the event bus
  * via `use-event-bus-init` once it lands, and domain consumers

@@ -85,7 +85,7 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-	<key>CadetAppGroupId</key>
+	<key>CadetGroupId</key>
 	<string>$(APP_GROUP_ID)</string>
 	<key>CadetAssociatedDomain</key>
 	<string>$(ASSOCIATED_DOMAIN)</string>

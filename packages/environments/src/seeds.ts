@@ -70,7 +70,7 @@ export const SEEDS: Record<string, EnvironmentDefinition> = {
   staging: {
     name: "staging",
     platformUrl: "https://staging-cloud.mycadet.ai",
-    webUrl: "https://staging.cloud.mycadet.ai",
+    webUrl: "https://staging.mycadet.ai",
     portsOverride: portBlock(17000),
   },
   test: {
@@ -78,13 +78,13 @@ export const SEEDS: Record<string, EnvironmentDefinition> = {
     // Non-functional URL — used only by unit tests for URL resolution, never
     // hit in production.
     platformUrl: "https://test-cloud.mycadet.ai",
-    webUrl: "https://dev.cloud.mycadet.ai",
+    webUrl: "https://dev.mycadet.ai",
     portsOverride: portBlock(19000),
   },
   dev: {
     name: "dev",
     platformUrl: "https://dev-cloud.mycadet.ai",
-    webUrl: "https://dev.cloud.mycadet.ai",
+    webUrl: "https://dev.mycadet.ai",
     portsOverride: portBlock(18000),
   },
   local: {

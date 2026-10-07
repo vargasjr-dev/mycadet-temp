@@ -60,10 +60,10 @@ afterEach(() => {
 });
 
 const ENTRY = {
-  runtimeUrl: "https://cloud.cadet.ai",
+  runtimeUrl: "https://cloud.mycadet.ai",
   assistantId: "11111111-2222-3333-4444-555555555555",
 };
-const BACKUPS_URL = `https://cloud.cadet.ai/v1/assistants/${ENTRY.assistantId}/backups/`;
+const BACKUPS_URL = `https://cloud.mycadet.ai/v1/assistants/${ENTRY.assistantId}/backups/`;
 const FAST_POLL = { pollIntervalMs: 1, timeoutMs: 200 };
 
 function json(body: unknown, status = 200): () => Response {
@@ -88,7 +88,7 @@ describe("listPlatformBackups", () => {
     expect(fetchCalls[0]).toEqual({ url: BACKUPS_URL, method: "GET" });
     expect(authHeadersSpy).toHaveBeenCalledWith(
       "platform-token",
-      "https://cloud.cadet.ai",
+      "https://cloud.mycadet.ai",
     );
   });
 
@@ -102,7 +102,7 @@ describe("listPlatformBackups", () => {
     expect(fetchCalls).toHaveLength(2);
     expect(invalidateOrgIdCacheSpy).toHaveBeenCalledWith(
       "platform-token",
-      "https://cloud.cadet.ai",
+      "https://cloud.mycadet.ai",
     );
   });
 

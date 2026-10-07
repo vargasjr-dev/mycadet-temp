@@ -10,9 +10,9 @@ import { capabilityToken } from "./capability-registry";
 import type { IpcHandle, IpcOn } from "./ipc";
 
 /**
- * Inbound deep links — `mycadet://` and `mycadet://` URL
- * schemes. The OS routes any user click on a `mycadet://send?message=hi`
- * link (Mail, Slack, browser address bar, `open mycadet://...` shell
+ * Inbound deep links — `cadet://` URL scheme. The OS routes any user
+ * click on a `cadet://send?message=hi`
+ * link (Mail, Slack, browser address bar, `open cadet://...` shell
  * command) to the running Electron app, where we parse it into a
  * typed `DeepLink` and broadcast to the renderer.
  *
@@ -75,7 +75,7 @@ export const configureDeepLinks = (next: DeepLinkRuntime): void => {
   runtime = next;
 };
 
-const PRODUCTION_SCHEME = "mycadet";
+const PRODUCTION_SCHEME = "cadet";
 
 export function resolveAuthCallbackScheme(env: string): string {
   return env === "production"
@@ -84,20 +84,17 @@ export function resolveAuthCallbackScheme(env: string): string {
 }
 
 // Schemes to REGISTER with the OS via `app.setAsDefaultProtocolClient`.
-// Production claims both `cadet` and `mycadet`; non-production
-// claims only the env-specific scheme to avoid hijacking production.
+// Production claims `cadet`; non-production claims only the env-specific
+// scheme to avoid hijacking production.
 export function resolveRegisteredSchemes(env: string): string[] {
-  if (env === "production") {
-    return ["cadet", PRODUCTION_SCHEME];
-  }
   return [resolveAuthCallbackScheme(env)];
 }
 
 // Schemes to ACCEPT when parsing inbound URLs. Superset of registered
-// schemes — always includes `cadet:` and `mycadet:` so URLs
-// routed to this build still parse correctly.
+// schemes — always includes `cadet:` so URLs routed to this build
+// still parse correctly.
 export function resolveAcceptedSchemes(env: string): string[] {
-  const accepted = new Set(["cadet:", `${PRODUCTION_SCHEME}:`]);
+  const accepted = new Set([`${PRODUCTION_SCHEME}:`]);
   if (env !== "production") {
     accepted.add(`${resolveAuthCallbackScheme(env)}:`);
   }
@@ -125,18 +122,18 @@ const ACCEPTED_SCHEMES = resolveAcceptedSchemes(currentEnv);
  *
  * Rules:
  *
- *   - Scheme MUST be in the accepted set (`cadet:`, `mycadet:`,
- *     plus the env-specific scheme like `mycadet-dev:`).
+ *   - Scheme MUST be in the accepted set (`cadet:`,
+ *     plus the env-specific scheme like `cadet-dev:`).
  *     Anything else (`javascript:`, `data:`, `file:`, foreign customs)
  *     is rejected as `kind: "unknown"` — the renderer additionally
  *     defensively validates before dispatching.
- *   - `mycadet://send?message=…` → `{ kind: "send", message }`. Empty
+ *   - `cadet://send?message=…` → `{ kind: "send", message }`. Empty
  *     `message` is preserved (renderer can decide to open an empty
  *     composer).
- *   - `mycadet://thread/<id>` → `{ kind: "openThread", threadId }`.
+ *   - `cadet://thread/<id>` → `{ kind: "openThread", threadId }`.
  *     Trailing slashes / extra path segments are tolerated;
  *     `threadId` is the first non-empty path segment.
- *   - `mycadet://connect?url=…&code=…` → `{ kind: "connect", … }`.
+ *   - `cadet://connect?url=…&code=…` → `{ kind: "connect", … }`.
  *     The pair page's "Open in the Cadet app" button and
  *     `cadet pair --app` QR codes. `url` must parse as https
  *     (dropped otherwise); `code` (the device code) is opaque, so it
@@ -152,7 +149,7 @@ const ACCEPTED_SCHEMES = resolveAcceptedSchemes(currentEnv);
  *     the renderer routes them to the connect flow with guidance.
  *     `code` is credential material: never logged, and never echoed
  *     on an `unknown` URL (which the renderer logs).
- *   - `mycadet://billing/checkout-complete?status=…&session_id=…` →
+ *   - `cadet://billing/checkout-complete?status=…&session_id=…` →
  *     `{ kind: "billingCheckoutComplete", status, sessionId, flow }`.
  *     The platform bounces a native-initiated Stripe Checkout here
  *     once the user finishes in the system browser. `status=success`
@@ -354,7 +351,7 @@ export const installDeepLinks = (): void => {
 
   // Dynamic registration — only claim the schemes this build owns.
   // Non-production builds register only their env-specific scheme
-  // (e.g. `mycadet-dev`) to avoid hijacking production
+  // (e.g. `cadet-dev`) to avoid hijacking production
   // callbacks when both apps coexist.
   for (const scheme of REGISTERED_SCHEMES) {
     if (process.platform === "win32" && !app.isPackaged && process.argv[1]) {

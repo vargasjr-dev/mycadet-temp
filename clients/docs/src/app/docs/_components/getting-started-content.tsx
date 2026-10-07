@@ -89,7 +89,7 @@ export function GettingStartedContent() {
                 href={routes.signup}
                 className="font-semibold text-emerald-700 underline hover:text-emerald-800"
               >
-                cadet.ai/signup
+                mycadet.ai/signup
               </a>{" "}
               and create your account.
             </li>
@@ -215,7 +215,7 @@ export function GettingStartedContent() {
                 href={routes.downloads}
                 className="font-semibold text-emerald-700 underline hover:text-emerald-800"
               >
-                cadet.ai/downloads
+                mycadet.ai/downloads
               </a>
               .
             </li>

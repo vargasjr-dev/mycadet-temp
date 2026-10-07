@@ -527,16 +527,16 @@ describe("cloudWebHubUrl", () => {
       "https://mycadet.ai/assistant",
     );
     expect(cloudWebHubUrl("staging")).toBe(
-      "https://staging.cloud.mycadet.ai/assistant",
+      "https://staging.mycadet.ai/assistant",
     );
     expect(cloudWebHubUrl("dev")).toBe(
-      "https://dev.cloud.mycadet.ai/assistant",
+      "https://dev.mycadet.ai/assistant",
     );
     expect(cloudWebHubUrl("local")).toBe(
-      "https://dev.cloud.mycadet.ai/assistant",
+      "https://dev.mycadet.ai/assistant",
     );
     expect(cloudWebHubUrl(undefined)).toBe(
-      "https://dev.cloud.mycadet.ai/assistant",
+      "https://dev.mycadet.ai/assistant",
     );
   });
 });

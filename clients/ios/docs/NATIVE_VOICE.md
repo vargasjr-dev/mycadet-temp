@@ -615,7 +615,7 @@ activity rather than degrading the image.
 the app and its widget extension both reach, since a widget draws from storage
 rather than from an ActivityKit payload. `App/App/Extension.entitlements`
 declares that group and nothing else, `APP_GROUP_ID` names it per environment
-in every app and extension xcconfig, and the `CadetAppGroupId` Info.plist key
+in every app and extension xcconfig, and the `CadetGroupId` Info.plist key
 carries the identifier into both bundles, because the entitlement that grants
 access is not readable from Swift. Enabling the capability on the six App IDs
 is portal work; see `clients/ios/README.md`.
@@ -736,9 +736,9 @@ expect.
 
 | What | How |
 | --- | --- |
-| Deep-link contract, both modes | `xcrun simctl openurl booted "mycadet-dev://voice?mode=new"` — and `…?mode=resume`, and a `&prompt=` variant with `&`, `#`, and emoji to check the round trip |
+| Deep-link contract, both modes | `xcrun simctl openurl booted "cadet-dev://voice?mode=new"` — and `…?mode=resume`, and a `&prompt=` variant with `&`, `#`, and emoji to check the round trip |
 | Terminated-launch delivery | Force-quit the app in the simulator first, then `openurl`. This is the path that used to drop; a warm-open pass proves nothing about it |
-| Scheme isolation | Open a `mycadet://` link with only the Dev build installed — nothing should happen |
+| Scheme isolation | Open a `cadet://` link with only the Dev build installed — nothing should happen |
 | Live Activity presentations | Start a session, then background the app (`xcrun simctl launch booted com.apple.Preferences`; there is no home key). **The Dynamic Island renders in the simulator** on a Pro device: compact inline, and expanded on a touch and hold. Lock (⌘L) for the Lock Screen presentation, and check both appearances (Features → Toggle Appearance) since the accent is an arbitrary avatar color over a wallpaper |
 | The mic privacy indicator competing for the island | Also reproducible: a session holds the mic for the whole call, muted included, so the island is shared and iOS falls back to the minimal presentation. This is the one that decides whether the compact slots are ever seen during a call |
 | App Intents in the Shortcuts app | The three intents appear under the app with their icons and short titles |

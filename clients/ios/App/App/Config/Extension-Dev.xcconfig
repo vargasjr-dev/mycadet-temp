@@ -9,7 +9,7 @@
 
 APP_GROUP_ID = group.ai.mycadet.ios.dev
 BUNDLE_DISPLAY_NAME = Cadet Dev
-BUNDLE_URL_SCHEME = mycadet-dev
+BUNDLE_URL_SCHEME = cadet-dev
 
 // The ground the app's mark is drawn on, which must equal the
 // `fill-specializations` solid in `App/AppIcon-Dev.icon/icon.json`: the widget

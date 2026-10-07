@@ -10,7 +10,7 @@ bundled `resources/cli-runtime/web-dist` over a privileged `app://` protocol.
 - `src/main/index.ts` boots the hardened shell (single-instance lock,
   per-environment `userData`, `app://` serving with path-traversal protection,
   local, paired, and platform request forwarding, paired-request frame-origin
-  enforcement, CSP, a permission allowlist, and sandboxed `cadetapp://`
+  enforcement, CSP, a permission allowlist, and sandboxed `cadet://`
   serving) and then composes `src/main/features/*`.
 - `src/main/features/*` and `src/preload/features/*` are capability modules
   installed through the registries in `@mycadet/electron-desktop`. Every
@@ -106,7 +106,7 @@ Vite or opening a local development port, run this from PowerShell:
 
 ```powershell
 $env:CADET_ENVIRONMENT="dev"
-$env:CADET_DEV_URL="https://dev.cloud.mycadet.ai/assistant"
+$env:CADET_DEV_URL="https://dev.mycadet.ai/assistant"
 bun run dev:electron-local-web
 ```
 

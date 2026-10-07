@@ -29,18 +29,18 @@ describe("sanitizeReplayRequest", () => {
   test("redacts every query-param value (keys kept) in url and referrer", () => {
     const out = sanitizeReplayRequest({
       // `q` is generic user content (search text), not credential-looking.
-      url: "https://api.cadet.ai/v1/search/global?q=secret%20text&page=2",
-      referrer: "https://app.cadet.ai/cb?code=abc",
+      url: "https://cloud.mycadet.ai/v1/search/global?q=secret%20text&page=2",
+      referrer: "https://app.mycadet.ai/cb?code=abc",
     });
     expect(out.url).toBe(
-      "https://api.cadet.ai/v1/search/global?q=%5BREDACTED%5D&page=%5BREDACTED%5D",
+      "https://cloud.mycadet.ai/v1/search/global?q=%5BREDACTED%5D&page=%5BREDACTED%5D",
     );
-    expect(out.referrer).toBe("https://app.cadet.ai/cb?code=%5BREDACTED%5D");
+    expect(out.referrer).toBe("https://app.mycadet.ai/cb?code=%5BREDACTED%5D");
   });
 
   test("leaves a query-less url untouched", () => {
-    expect(sanitizeReplayRequest({ url: "https://api.cadet.ai/x" }).url).toBe(
-      "https://api.cadet.ai/x",
+    expect(sanitizeReplayRequest({ url: "https://cloud.mycadet.ai/x" }).url).toBe(
+      "https://cloud.mycadet.ai/x",
     );
   });
 
@@ -57,7 +57,7 @@ describe("sanitizeReplayRequest", () => {
 
   test("leaves an absent body untouched", () => {
     expect(
-      sanitizeReplayRequest({ url: "https://api.cadet.ai/x" }).body,
+      sanitizeReplayRequest({ url: "https://cloud.mycadet.ai/x" }).body,
     ).toBeUndefined();
   });
 });
@@ -68,7 +68,7 @@ describe("sanitizeReplayResponse", () => {
       status: 200,
       headers: { "Set-Cookie": "s=1", "X-Request-Id": "abc" },
       body: { ok: true },
-      url: "https://api.cadet.ai/me?token=z",
+      url: "https://cloud.mycadet.ai/me?token=z",
     });
     expect(out.status).toBe(200);
     expect(out.headers).toEqual({
@@ -76,7 +76,7 @@ describe("sanitizeReplayResponse", () => {
       "X-Request-Id": "abc",
     });
     expect(out.body).toBe("[REDACTED]");
-    expect(out.url).toBe("https://api.cadet.ai/me?token=%5BREDACTED%5D");
+    expect(out.url).toBe("https://cloud.mycadet.ai/me?token=%5BREDACTED%5D");
   });
 });
 

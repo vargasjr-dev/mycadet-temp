@@ -454,7 +454,7 @@ describe("resolvePublicBaseWssUrl", () => {
       config,
       undefined,
       undefined,
-      "https://staging-cloud.cadet.ai/v1/gateway/callbacks/019e2d0d-f355-744c-a12c-d7e7dcefcf1e/webhooks/twilio/voice/?callSessionId=37b47ade-2eaf-469a-bede-6f2454875e6e",
+      "https://staging-cloud.mycadet.ai/v1/gateway/callbacks/019e2d0d-f355-744c-a12c-d7e7dcefcf1e/webhooks/twilio/voice/?callSessionId=37b47ade-2eaf-469a-bede-6f2454875e6e",
     );
     expect(result).toBe(
       "wss://tunnel-staging.mycadet.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
@@ -476,7 +476,7 @@ describe("resolvePublicBaseWssUrl", () => {
       config,
       mockConfigFile,
       undefined,
-      "https://staging-cloud.cadet.ai/v1/gateway/callbacks/019e2d0d-f355-744c-a12c-d7e7dcefcf1e/webhooks/twilio/voice?callSessionId=sess-1",
+      "https://staging-cloud.mycadet.ai/v1/gateway/callbacks/019e2d0d-f355-744c-a12c-d7e7dcefcf1e/webhooks/twilio/voice?callSessionId=sess-1",
     );
     expect(result).toBe(
       "wss://tunnel-staging.mycadet.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
@@ -491,7 +491,7 @@ describe("resolvePublicBaseWssUrl", () => {
     const mockConfigFile = {
       getString: (section: string, key: string) =>
         section === "ingress" && key === "publicBaseUrl"
-          ? "https://staging-cloud.cadet.ai/v1/gateway/callbacks/019e2d0d-f355-744c-a12c-d7e7dcefcf1e"
+          ? "https://staging-cloud.mycadet.ai/v1/gateway/callbacks/019e2d0d-f355-744c-a12c-d7e7dcefcf1e"
           : undefined,
     } as Parameters<typeof resolvePublicBaseWssUrl>[1];
     const result = resolvePublicBaseWssUrl(config, mockConfigFile, undefined);

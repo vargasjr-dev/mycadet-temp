@@ -219,7 +219,7 @@ describe("startAuthFlow on Electron", () => {
     Object.defineProperty(window, "location", {
       configurable: true,
       writable: true,
-      value: { href: "app://cadet.ai/assistant/welcome" },
+      value: { href: "app://mycadet.ai/assistant/welcome" },
     });
   });
 
@@ -352,9 +352,9 @@ describe("startAuthFlow attribution on native", () => {
       writable: true,
       value: {
         protocol: "https:",
-        host: "app.cadet.ai",
+        host: "app.mycadet.ai",
         search,
-        href: "https://app.cadet.ai/account/signup",
+        href: "https://app.mycadet.ai/account/signup",
       },
     });
   }
@@ -440,7 +440,7 @@ describe("startAuthFlow attribution on native", () => {
       "postAuthDestination",
     ]);
     expect(options).toEqual({
-      baseURL: "https://app.cadet.ai",
+      baseURL: "https://app.mycadet.ai",
       intent: "signup",
       postAuthDestination: "/assistant/onboarding/privacy",
     });

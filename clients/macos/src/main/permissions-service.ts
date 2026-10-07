@@ -178,8 +178,8 @@ const resolveAppBundleId = (): string => {
   if (!app.isPackaged) return "com.github.Electron";
   const env = process.env.CADET_ENVIRONMENT || "production";
   return env === "production"
-    ? "com.mycadet.mycadet-electron"
-    : `com.mycadet.mycadet-electron-${env}`;
+    ? "ai.mycadet.electron"
+    : `ai.mycadet.electron-${env}`;
 };
 
 const settingsPaneUrl = (kind: PermissionKind): string => {

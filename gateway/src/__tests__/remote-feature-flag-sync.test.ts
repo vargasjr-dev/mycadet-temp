@@ -110,7 +110,7 @@ function fakeCredentialCache(
 
 function defaultCredentials(): Record<string, string> {
   return {
-    "credential/cadet/platform_base_url": "https://cloud.cadet.ai",
+    "credential/cadet/platform_base_url": "https://cloud.mycadet.ai",
     "credential/cadet/assistant_api_key": "test-api-key",
   };
 }
@@ -950,7 +950,7 @@ describe("RemoteFeatureFlagSync", () => {
 
     // Simulate transient API key loss (CES hiccup) — platform URL still present
     cache._setValues({
-      "credential/cadet/platform_base_url": "https://cloud.cadet.ai",
+      "credential/cadet/platform_base_url": "https://cloud.mycadet.ai",
     });
     fetchMock = mock(async () =>
       Response.json({ flags: { "per-assistant-flag": false } }),

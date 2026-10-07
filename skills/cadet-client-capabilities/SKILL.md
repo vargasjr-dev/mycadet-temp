@@ -46,7 +46,7 @@ Tell the user only what is actually downloadable. Do not invent a Linux desktop 
 
 - Web app: https://mycadet.ai
 - iOS: https://apps.apple.com/us/app/mycadet/id6759934423
-- Android: https://play.google.com/store/apps/details?id=ai.mycadet.assistant
+- Android: https://play.google.com/store/apps/details?id=ai.mycadet.android
 - macOS and Windows desktop: https://mycadet.ai/downloads
 - Chrome extension: https://chromewebstore.google.com/detail/mycadet-browser/hphbdmpffeigpcdjkckleobjmhhokpne
 - Linux desktop: not shipped. Use the web app or Chrome extension. The runtime can self-host on Linux; that is the server, not a desktop app.

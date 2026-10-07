@@ -4,7 +4,7 @@ import { CatchUpWidgetPreview } from "./catch-up-widget-preview";
 import { ReplicaNotice } from "./replica-notice";
 import { QuickActionsWidgetPreview } from "./quick-actions-widget-preview";
 import { StatusWidgetPreview } from "./status-widget-preview";
-import { CadetAppIconMark } from "./cadet-app-icon-mark";
+import { CadetIconMark } from "./cadet-app-icon-mark";
 import type { WidgetAppearance } from "./widget-tokens";
 
 /**
@@ -275,11 +275,11 @@ export const AppIconMark: Story = {
   name: "App icon mark / per build",
   render: () => (
     <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-      <CadetAppIconMark size={72} environment="production" />
-      <CadetAppIconMark size={72} environment="staging" />
-      <CadetAppIconMark size={72} environment="dev" />
+      <CadetIconMark size={72} environment="production" />
+      <CadetIconMark size={72} environment="staging" />
+      <CadetIconMark size={72} environment="dev" />
       <span style={{ background: "#141416", padding: 12, borderRadius: 14 }}>
-        <CadetAppIconMark size={72} flattened />
+        <CadetIconMark size={72} flattened />
       </span>
     </div>
   ),

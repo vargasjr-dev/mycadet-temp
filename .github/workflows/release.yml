@@ -2212,7 +2212,7 @@ jobs:
           # electron-builder.config.cjs derives the app id from
           # CADET_ENVIRONMENT, which the pack step below sets from the same
           # staging/production switch.
-          EXPECTED_BUNDLE_ID: ${{ needs.extract-version.outputs.is_staging == 'true' && 'com.mycadet.mycadet-electron-staging' || 'com.mycadet.mycadet-electron' }}
+          EXPECTED_BUNDLE_ID: ${{ needs.extract-version.outputs.is_staging == 'true' && 'ai.mycadet.electron-staging' || 'ai.mycadet.electron' }}
         run: |
           if [ -z "$MAC_PROVISIONING_PROFILE" ]; then
             echo "::warning::MAC_PROVISIONING_PROFILE is unset, so the native notifier ships disabled: notifications post through Electron without the assistant avatar."
@@ -3247,11 +3247,15 @@ jobs:
             IS_RELEASE_BRANCH="true"
           fi
 
-          if [ "$IS_STAGING" = "true" ] && [ "$STAGING_READY" = "true" ] && [ "$IS_RELEASE_BRANCH" = "true" ] && [ -n "$RELEASE_TRIGGER_SECRET" ]; then
+          # The go-live button posts to the internal QA service. Its host is
+          # internal-only and intentionally NOT hardcoded in this repo — set the
+          # `QA_GO_LIVE_HOST` repo variable (e.g. the QA console's hostname) to
+          # enable the button on release-branch staging deploys.
+          if [ "$IS_STAGING" = "true" ] && [ "$STAGING_READY" = "true" ] && [ "$IS_RELEASE_BRANCH" = "true" ] && [ -n "$RELEASE_TRIGGER_SECRET" ] && [ -n "${{ vars.QA_GO_LIVE_HOST }}" ]; then
             RELEASE_BRANCH="release/v${{ needs.extract-version.outputs.base_version }}"
             GO_LIVE_TS=$(date +%s)
             GO_LIVE_SIG=$(echo -n "${RELEASE_BRANCH}:${GO_LIVE_TS}" | openssl dgst -sha256 -hmac "$RELEASE_TRIGGER_SECRET" -hex | awk '{print $NF}')
-            GO_LIVE_URL="https://qa.cadet.ai/api/slack/go-live?branch=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${RELEASE_BRANCH}', safe=''))")&ts=${GO_LIVE_TS}&sig=${GO_LIVE_SIG}"
+            GO_LIVE_URL="https://${{ vars.QA_GO_LIVE_HOST }}/api/slack/go-live?branch=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${RELEASE_BRANCH}', safe=''))")&ts=${GO_LIVE_TS}&sig=${GO_LIVE_SIG}"
             GO_LIVE=$(jq -n --arg url "$GO_LIVE_URL" '{
               type: "button",
               text: { type: "plain_text", text: "Go live!" },

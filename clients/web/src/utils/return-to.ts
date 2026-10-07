@@ -6,7 +6,7 @@ const ABSOLUTE_URL_SCHEME_RE = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//;
  * Sanitize a `returnTo` URL parameter to prevent open-redirect attacks.
  *
  * Relative paths (strings starting with `/`) and absolute URLs whose
- * hostname belongs to the cadet.ai domain family are allowed through.
+ * hostname belongs to the mycadet.ai domain family are allowed through.
  * All other absolute URLs (`https://…`, `//…`), non-path strings,
  * and nullish / empty values resolve to the provided `fallback`.
  */
@@ -18,8 +18,8 @@ export function sanitizeReturnTo(
     return fallback;
   }
 
-  // Allow absolute URLs from any *.cadet.ai domain.
-  // This is safe because we control all cadet.ai subdomains, and works
+  // Allow absolute URLs from any *.mycadet.ai domain.
+  // This is safe because we control all mycadet.ai subdomains, and works
   // in both server and client contexts (no env var dependency).
   //
   // Important: only treat values that START with a URL scheme as absolute.

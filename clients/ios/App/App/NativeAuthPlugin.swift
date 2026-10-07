@@ -48,7 +48,7 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
     /// none, so a misconfigured build still reaches a working callback rather
     /// than failing sign-in; unlike a voice deep link, this is not a cross-app
     /// launch.
-    private static let callbackScheme: String = BundleURLScheme.current ?? "mycadet"
+    private static let callbackScheme: String = BundleURLScheme.current ?? "cadet"
 
     /// The host this build target is allowed to authenticate against,
     /// read from the `CadetAssociatedDomain` Info.plist key (set per
@@ -56,7 +56,7 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
     /// `mycadet.ai` if the plist entry is missing or un-substituted.
     ///
     /// This prevents non-prod builds from driving production SSO:
-    /// a dev build's associated domain is `dev.cloud.mycadet.ai`,
+    /// a dev build's associated domain is `dev.mycadet.ai`,
     /// so `startAuth({ baseURL: "https://mycadet.ai" })` is rejected.
     /// See ATL-425.
     private static let allowedAuthHost: String = {
@@ -428,8 +428,8 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
 
     /// True only if `url`'s host exactly matches this build target's
     /// `ASSOCIATED_DOMAIN` (read from Info.plist at launch). A dev build
-    /// only authenticates against `dev.cloud.mycadet.ai`, staging
-    /// against `staging.cloud.mycadet.ai`, and production against
+    /// only authenticates against `dev.mycadet.ai`, staging
+    /// against `staging.mycadet.ai`, and production against
     /// `mycadet.ai`. This is the primary defense against ATL-425:
     /// non-prod JS cannot drive production SSO because the host check
     /// rejects `mycadet.ai` in non-prod builds.

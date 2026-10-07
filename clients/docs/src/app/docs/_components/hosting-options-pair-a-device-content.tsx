@@ -71,7 +71,7 @@ export function HostingOptionsPairADeviceContent() {
           </ul>
           <p className="mb-0 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200">
             <strong>You connect through your own address, not through
-            cadet.ai.</strong>{" "}
+            mycadet.ai.</strong>{" "}
             The tunnel URL serves the Cadet web app pointed at your assistant,
             so a paired device talks straight to your machine. Conversations
             never pass through Cadet&apos;s servers.

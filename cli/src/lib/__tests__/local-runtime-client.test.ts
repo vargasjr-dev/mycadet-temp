@@ -395,7 +395,7 @@ const CADET_ENTRY: Pick<
   "cloud" | "runtimeUrl" | "assistantId"
 > = {
   cloud: "cadet",
-  runtimeUrl: "https://cloud.cadet.ai",
+  runtimeUrl: "https://cloud.mycadet.ai",
   assistantId: "11111111-2222-3333-4444-555555555555",
 };
 // `vak_` prefix bypasses `fetchOrganizationId` (org-scoped API keys); the
@@ -420,7 +420,7 @@ describe("cadet-cloud routing through wildcard proxy", () => {
 
     expect(result.jobId).toBe("wp-export-1");
     expect(calls[0]!.url).toBe(
-      `https://cloud.cadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/migrations/export-to-gcs`,
+      `https://cloud.mycadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/migrations/export-to-gcs`,
     );
     expect(calls[0]!.method).toBe("POST");
     expect(calls[0]!.headers.Authorization).toBe(`Bearer ${VAK_TOKEN}`);
@@ -444,7 +444,7 @@ describe("cadet-cloud routing through wildcard proxy", () => {
     });
 
     expect(calls[0]!.url).toBe(
-      `https://cloud.cadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/migrations/import-from-gcs`,
+      `https://cloud.mycadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/migrations/import-from-gcs`,
     );
     expect(calls[0]!.headers.Authorization).toBe(`Bearer ${VAK_TOKEN}`);
   });
@@ -470,7 +470,7 @@ describe("cadet-cloud routing through wildcard proxy", () => {
     );
 
     expect(calls[0]!.url).toBe(
-      `https://cloud.cadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/migrations/jobs/wp-export-1`,
+      `https://cloud.mycadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/migrations/jobs/wp-export-1`,
     );
     expect(calls[0]!.headers.Authorization).toBe(`Bearer ${VAK_TOKEN}`);
     expect(status.status).toBe("complete");
@@ -535,7 +535,7 @@ describe("localRuntimeIdentity", () => {
 
     expect(result.version).toBe("0.7.2");
     expect(calls[0]!.url).toBe(
-      `https://cloud.cadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/health`,
+      `https://cloud.mycadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/health`,
     );
     expect(calls[0]!.headers.Authorization).toBe(`Bearer ${VAK_TOKEN}`);
   });
@@ -598,7 +598,7 @@ describe("localRuntimeIdentity", () => {
   test("cadet entry: retries once after 401 with a fresh org-ID lookup", async () => {
     // Use a non-vak session token so authHeaders fetches + caches an org ID.
     const SESSION_TOKEN = "session-abcdef";
-    const PLATFORM_URL = "https://cloud.cadet.ai";
+    const PLATFORM_URL = "https://cloud.mycadet.ai";
     const ASSISTANT_ID = "11111111-2222-3333-4444-555555555555";
 
     let healthCalls = 0;

@@ -115,7 +115,7 @@ describe("connectivity-probe", () => {
           {
             assistantId: "cloud-1",
             cloud: "cadet",
-            runtimeUrl: "https://cloud.cadet.ai",
+            runtimeUrl: "https://cloud.mycadet.ai",
             // No resources.gatewayPort: cloud assistant
           },
         ],
@@ -138,7 +138,7 @@ describe("connectivity-probe", () => {
           {
             assistantId: "cloud-1",
             cloud: "cadet",
-            runtimeUrl: "https://cloud.cadet.ai",
+            runtimeUrl: "https://cloud.mycadet.ai",
             resources: { gatewayPort: 7830 },
           },
         ],
@@ -302,7 +302,7 @@ describe("connectivity-probe", () => {
           {
             assistantId: "cloud-1",
             cloud: "cadet",
-            runtimeUrl: "https://cloud.cadet.ai",
+            runtimeUrl: "https://cloud.mycadet.ai",
           },
         ],
         activeAssistant: "local-1",
@@ -326,7 +326,7 @@ describe("connectivity-probe", () => {
           {
             assistantId: "cloud-1",
             cloud: "cadet",
-            runtimeUrl: "https://cloud.cadet.ai",
+            runtimeUrl: "https://cloud.mycadet.ai",
           },
         ],
         activeAssistant: "cloud-1",

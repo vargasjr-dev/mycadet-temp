@@ -289,7 +289,7 @@ export function PrivacyScreen() {
            * which trips a non-onboarding hatch) — so Back lands on the onboarding
            * `start` welcome screen instead. It must NOT leave the SPA for the
            * marketing host (`/`): on a Capacitor staging/dev shell that host's CTA
-           * points at production `www.cadet.ai/assistant`, so a full-document nav
+           * points at production `www.mycadet.ai/assistant`, so a full-document nav
            * would switch the native app off its own environment. `start` keeps the
            * running environment intact on web and native alike.
            */}

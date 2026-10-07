@@ -27,7 +27,7 @@ export const WINDOWS_RELEASE_INFO = {
   appUserModelId:
     typeof __CADET_APP_USER_MODEL_ID__ === "string"
       ? __CADET_APP_USER_MODEL_ID__
-      : "com.mycadet.mycadet-electron",
+      : "ai.mycadet.electron",
   commitSha:
     typeof __CADET_BUILD_SHA__ === "string" ? __CADET_BUILD_SHA__ : "unknown",
   releaseChannel:

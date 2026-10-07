@@ -784,7 +784,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     // the /v1/gateway/callbacks/{assistantId}/ prefix that the gateway
     // never sees in the request path.
     const platformCallbackUrl =
-      "https://cloud.cadet.ai/v1/gateway/callbacks/abc123/webhooks/twilio/voice";
+      "https://cloud.mycadet.ai/v1/gateway/callbacks/abc123/webhooks/twilio/voice";
     const localUrl =
       "http://localhost:7830/webhooks/twilio/voice?callSessionId=platform-proxy-test";
     const params = { CallSid: "CA-platform-proxy" };
@@ -837,7 +837,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     );
 
     const platformCallbackUrl =
-      `https://staging-cloud.cadet.ai/v1/gateway/callbacks/${assistantId}` +
+      `https://staging-cloud.mycadet.ai/v1/gateway/callbacks/${assistantId}` +
       "/webhooks/twilio/voice?callSessionId=platform-wss-test";
     const localUrl =
       "http://localhost:7830/webhooks/twilio/voice?callSessionId=platform-wss-test";
@@ -860,7 +860,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
       `url="wss://tunnel-staging.mycadet.ai/${assistantId}/webhooks/twilio/media-stream/sess-1/`,
     );
     expect(body).not.toContain("__CADET_PUBLIC_BASE_URL__");
-    expect(body).not.toContain("staging-cloud.cadet.ai");
+    expect(body).not.toContain("staging-cloud.mycadet.ai");
   });
 
   test("platform proxy URL takes priority over configured ingress", async () => {
@@ -879,7 +879,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     );
 
     const platformCallbackUrl =
-      "https://cloud.cadet.ai/v1/gateway/callbacks/abc123/webhooks/twilio/voice";
+      "https://cloud.mycadet.ai/v1/gateway/callbacks/abc123/webhooks/twilio/voice";
     const localUrl =
       "http://localhost:7830/webhooks/twilio/voice?callSessionId=priority-test";
     const params = { CallSid: "CA-priority" };

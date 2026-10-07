@@ -122,8 +122,8 @@ export function HelpGettingHelpContent() {
             Email support
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            <a href="mailto:support@cadet.ai" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
-              support@cadet.ai
+            <a href="mailto:support@mycadet.ai" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
+              support@mycadet.ai
             </a>
           </p>
           <p className="mb-0 text-zinc-600">

@@ -497,7 +497,7 @@ describe("RemoteWebPairingPage", () => {
       name: "Open in the Cadet app",
     });
     const href = link.getAttribute("href") ?? "";
-    expect(href.startsWith("mycadet://connect?")).toBe(true);
+    expect(href.startsWith("cadet://connect?")).toBe(true);
     const query = new URLSearchParams(href.slice(href.indexOf("?") + 1));
     expect(query.get("url")).toBe(window.location.origin);
     expect(query.get("code")).toBe("device-1");
@@ -536,7 +536,7 @@ describe("RemoteWebPairingPage", () => {
     expect(query.get("url")).toBe(window.location.origin);
     expect(query.get("code")).toBe("android-device");
     expect(href.slice(intentIndex)).toContain(
-      "#Intent;scheme=mycadet;package=ai.mycadet.assistant;",
+      "#Intent;scheme=cadet;package=ai.mycadet.android;",
     );
     expect(androidIntentFallback(href)).toBe(window.location.href);
     expect(exchangeRemoteWebPairingTokenMock).not.toHaveBeenCalled();

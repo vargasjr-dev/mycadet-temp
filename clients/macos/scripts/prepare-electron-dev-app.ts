@@ -31,9 +31,9 @@ const DOCK_BUST_MARKER = path.join(
 // makes `new Notification().show()` fail with `UNErrorDomain error 1`
 // (notificationsNotAllowed). Stamp our own owned identifier so the dev app
 // gets a clean authorization prompt, mirroring electron-builder's dev scheme
-// (`com.mycadet.mycadet-electron-${env}`) in electron-builder.config.cjs.
+// (`ai.mycadet.electron-${env}`) in electron-builder.config.cjs.
 const CADET_ENVIRONMENT = process.env.CADET_ENVIRONMENT || "local";
-const DEV_BUNDLE_ID = `com.mycadet.mycadet-electron-${CADET_ENVIRONMENT}`;
+const DEV_BUNDLE_ID = `ai.mycadet.electron-${CADET_ENVIRONMENT}`;
 
 const REQUIRED_PLIST_STRINGS: Record<string, string> = {
   CFBundleDisplayName: "Cadet Electron",

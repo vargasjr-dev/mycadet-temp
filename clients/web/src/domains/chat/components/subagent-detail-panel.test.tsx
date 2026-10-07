@@ -603,8 +603,8 @@ describe("SubagentDetailPanel: nested detail reads the live call", () => {
               {
                 rank: 1,
                 title: "Cadet",
-                url: "https://cadet.ai",
-                domain: "cadet.ai",
+                url: "https://mycadet.ai",
+                domain: "mycadet.ai",
               },
             ],
           },

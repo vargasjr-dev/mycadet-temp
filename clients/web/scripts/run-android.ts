@@ -535,7 +535,7 @@ async function main(): Promise<void> {
       "am",
       "start",
       "-n",
-      "ai.mycadet.assistant.dev/ai.mycadet.assistant.MainActivity",
+      "ai.mycadet.android.dev/ai.mycadet.android.MainActivity",
     ],
     env,
   );

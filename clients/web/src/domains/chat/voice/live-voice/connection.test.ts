@@ -132,7 +132,7 @@ describe("buildTunnelWsUrl", () => {
 
   test("derives the tunnel host from the injected platform URL (Electron shell)", () => {
     window.__CADET_CONFIG__ = {
-      platformUrl: "https://staging-platform.cadet.ai",
+      platformUrl: "https://staging-cloud.mycadet.ai",
     };
     const url = new URL(buildTunnelWsUrl({ ...args, token: "tok-abc" }));
     expect(url.protocol).toBe("wss:");
@@ -162,7 +162,7 @@ describe("getTunnelWsScheme", () => {
   });
 
   test("uses wss for a non-loopback host without a scheme", () => {
-    expect(getTunnelWsScheme("tunnel.staging.cadet.ai")).toBe("wss");
+    expect(getTunnelWsScheme("tunnel.staging.mycadet.ai")).toBe("wss");
   });
 });
 

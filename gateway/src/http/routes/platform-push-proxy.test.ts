@@ -135,7 +135,7 @@ describe("platform push proxy", () => {
     const payload = {
       token: "device-token",
       platform: "ios",
-      bundle_id: "ai.mycadet.assistant",
+      bundle_id: "ai.mycadet.android",
     };
 
     const res = await handler.handleUpsertPushToken(
@@ -170,7 +170,7 @@ describe("platform push proxy", () => {
 
     const res = await handler.handleDeletePushToken(
       new Request(
-        "http://localhost:7830/v1/assistants/self/push-tokens/device-token/?bundle_id=ai.mycadet.assistant",
+        "http://localhost:7830/v1/assistants/self/push-tokens/device-token/?bundle_id=ai.mycadet.android",
         { method: "DELETE" },
       ),
       "device-token",
@@ -179,7 +179,7 @@ describe("platform push proxy", () => {
     expect(res.status).toBe(204);
     const upstream = capturedFetch();
     expect(upstream.url).toBe(
-      `${PLATFORM_BASE_URL}/v1/assistants/${PLATFORM_ASSISTANT_ID}/push-tokens/device-token/?bundle_id=ai.mycadet.assistant`,
+      `${PLATFORM_BASE_URL}/v1/assistants/${PLATFORM_ASSISTANT_ID}/push-tokens/device-token/?bundle_id=ai.mycadet.android`,
     );
     expect(upstream.method).toBe("DELETE");
     expect(upstream.headers.get("Authorization")).toBe(

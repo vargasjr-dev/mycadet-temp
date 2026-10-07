@@ -17,7 +17,7 @@ const {
   resolvePlatformAssistantId,
 } = await import("../platform-identity.js");
 
-const BASE_URL = "https://cloud.cadet.ai";
+const BASE_URL = "https://cloud.mycadet.ai";
 const ASSISTANT_ID = "11111111-2222-4333-8444-555555555555";
 const ORG_ID = "22222222-3333-4444-8555-666666666666";
 const USER_ID = "33333333-4444-4555-8666-777777777777";

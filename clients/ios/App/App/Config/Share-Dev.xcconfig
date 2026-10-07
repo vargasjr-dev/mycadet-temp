@@ -6,7 +6,7 @@
 
 APP_GROUP_ID = group.ai.mycadet.ios.dev
 BUNDLE_DISPLAY_NAME = Cadet Dev
-BUNDLE_URL_SCHEME = mycadet-dev
+BUNDLE_URL_SCHEME = cadet-dev
 PRODUCT_BUNDLE_IDENTIFIER = ai.mycadet.ios.dev.Share
 
 PROVISIONING_PROFILE_SPECIFIER_Manual = Cadet Assistant iOS Dev Share Distribution

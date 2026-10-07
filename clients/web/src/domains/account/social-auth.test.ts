@@ -6,7 +6,7 @@ import {
   withPreservedAttribution,
 } from "@/domains/account/social-auth";
 
-const ORIGIN = "https://www.cadet.ai";
+const ORIGIN = "https://www.mycadet.ai";
 const CALLBACK = "/account/provider/callback";
 
 function fields(attribution?: Record<string, string>) {

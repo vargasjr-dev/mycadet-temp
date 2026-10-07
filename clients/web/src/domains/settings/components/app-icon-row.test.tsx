@@ -428,7 +428,7 @@ describe("AppIconRow", () => {
     });
 
     test("reads an Android shell's flavor suffix too", async () => {
-      shellAppId = "ai.mycadet.assistant.dev";
+      shellAppId = "ai.mycadet.android.dev";
 
       await renderRow();
 
@@ -517,7 +517,7 @@ describe("AppIconRow", () => {
   // for the primary icon reads the shell's platform as well as its build.
   describe("the default thumbnail follows the Android flavor", () => {
     test("draws the dev flavor's pink field", async () => {
-      runOnAndroidShell("ai.mycadet.assistant.dev");
+      runOnAndroidShell("ai.mycadet.android.dev");
 
       await renderRow();
 
@@ -532,7 +532,7 @@ describe("AppIconRow", () => {
     });
 
     test("draws the staging flavor's yellow field", async () => {
-      runOnAndroidShell("ai.mycadet.assistant.staging");
+      runOnAndroidShell("ai.mycadet.android.staging");
 
       await renderRow();
 
@@ -546,7 +546,7 @@ describe("AppIconRow", () => {
     });
 
     test("leaves the production flavor on the catalog green", async () => {
-      runOnAndroidShell("ai.mycadet.assistant");
+      runOnAndroidShell("ai.mycadet.android");
 
       await renderRow();
 
@@ -566,7 +566,7 @@ describe("AppIconRow", () => {
   // drop a pinned shortcut on the way.
   describe("the picker's copy follows the shell", () => {
     test("names the deferred apply and the pinned shortcut on Android", async () => {
-      runOnAndroidShell("ai.mycadet.assistant");
+      runOnAndroidShell("ai.mycadet.android");
       await renderRow();
       await waitFor(() => {
         expect(buttonByText("Change")).toBeDefined();
@@ -582,7 +582,7 @@ describe("AppIconRow", () => {
 
     test("names Android as the shell that kept the old icon", async () => {
       swapSucceeds = false;
-      runOnAndroidShell("ai.mycadet.assistant");
+      runOnAndroidShell("ai.mycadet.android");
       await renderRow();
       await waitFor(() => {
         expect(buttonByText("Change")).toBeDefined();

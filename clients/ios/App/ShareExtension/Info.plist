@@ -41,7 +41,7 @@
 			</dict>
 		</dict>
 	</dict>
-	<key>CadetAppGroupId</key>
+	<key>CadetGroupId</key>
 	<string>$(APP_GROUP_ID)</string>
 	<key>CadetURLScheme</key>
 	<string>$(BUNDLE_URL_SCHEME)</string>

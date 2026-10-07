@@ -316,7 +316,7 @@ describe("isVerificationControlPlaneInvocation", () => {
       test(`detects ${path}`, () => {
         expect(
           isVerificationControlPlaneInvocation("network_request", {
-            url: `https://api.cadet.ai${path}`,
+            url: `https://cloud.mycadet.ai${path}`,
           }),
         ).toBe(true);
       });

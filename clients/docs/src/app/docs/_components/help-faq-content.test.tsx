@@ -14,7 +14,7 @@ describe("HelpFaqContent", () => {
   test("lists Android next to iOS and links the stores", () => {
     expect(html).toContain("Android app");
     expect(html).toContain("Google Play");
-    expect(html).toContain("play.google.com/store/apps/details?id=ai.mycadet.assistant");
+    expect(html).toContain("play.google.com/store/apps/details?id=ai.mycadet.android");
     expect(html).toContain("apps.apple.com/us/app/mycadet/id6759934423");
   });
 

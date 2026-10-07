@@ -55,7 +55,7 @@ const prod: EnvironmentDefinition = {
 const dev: EnvironmentDefinition = {
   name: "dev",
   platformUrl: "https://dev-cloud.mycadet.ai",
-  webUrl: "https://dev.cloud.mycadet.ai",
+  webUrl: "https://dev.mycadet.ai",
 };
 
 const XDG_ENV_VARS = ["XDG_DATA_HOME", "XDG_CONFIG_HOME", "APPDATA"] as const;

@@ -1157,7 +1157,7 @@ export function ShareFeedbackModal({
                     components={{
                       roadmapLink: (
                         <ExternalAnchor
-                          href="https://cadet.ai/roadmap"
+                          href="https://mycadet.ai/roadmap"
                           tone="quiet"
                           className="text-[var(--content-default)]"
                           glyph={false}

@@ -24,7 +24,7 @@ export const routes = {
   downloads: `https://${WWW_DOMAIN}/downloads`,
   iosAppStore: "https://apps.apple.com/us/app/mycadet/id6759934423",
   androidPlayStore:
-    "https://play.google.com/store/apps/details?id=ai.mycadet.assistant",
+    "https://play.google.com/store/apps/details?id=ai.mycadet.android",
   chromeWebStore:
     "https://chromewebstore.google.com/detail/mycadet-browser/hphbdmpffeigpcdjkckleobjmhhokpne",
 } as const;

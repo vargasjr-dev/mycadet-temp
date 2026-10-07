@@ -45,7 +45,7 @@ const readPlatformTokenMock = spyOn(
 const getPlatformUrlMock = spyOn(
   platformClient,
   "getPlatformUrl",
-).mockReturnValue("https://cloud.cadet.ai");
+).mockReturnValue("https://cloud.mycadet.ai");
 
 const platformRequestSignedUrlMock = spyOn(
   platformClient,
@@ -115,7 +115,7 @@ let exitMock: ReturnType<typeof mock>;
 
 const CADET_ENTRY = {
   assistantId: "11111111-2222-3333-4444-555555555555",
-  runtimeUrl: "https://cloud.cadet.ai",
+  runtimeUrl: "https://cloud.mycadet.ai",
   cloud: "cadet",
   hatchedAt: new Date().toISOString(),
 } satisfies assistantConfig.AssistantEntry;
@@ -136,7 +136,7 @@ beforeEach(() => {
   readPlatformTokenMock.mockReset();
   readPlatformTokenMock.mockReturnValue("platform-token");
   getPlatformUrlMock.mockReset();
-  getPlatformUrlMock.mockReturnValue("https://cloud.cadet.ai");
+  getPlatformUrlMock.mockReturnValue("https://cloud.mycadet.ai");
   platformRequestSignedUrlMock.mockReset();
   platformRequestSignedUrlMock.mockImplementation(async (params) => ({
     url:
@@ -325,7 +325,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
         maxRuntimeVersion: null,
       }),
       "platform-token",
-      "https://cloud.cadet.ai",
+      "https://cloud.mycadet.ai",
     );
 
     // Runtime export-to-gcs kicked off via the entry-aware helper. URL
@@ -334,7 +334,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     expect(localRuntimeExportToGcsMock).toHaveBeenCalledWith(
       expect.objectContaining({
         cloud: "cadet",
-        runtimeUrl: "https://cloud.cadet.ai",
+        runtimeUrl: "https://cloud.mycadet.ai",
         assistantId: "11111111-2222-3333-4444-555555555555",
       }),
       "platform-token",
@@ -363,7 +363,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
         bundleKey: "uploads/org-1/bundle-abc.vbundle",
       }),
       "platform-token",
-      "https://cloud.cadet.ai",
+      "https://cloud.mycadet.ai",
     );
     const downloadCall = platformRequestSignedUrlMock.mock.calls.find(
       (c) => (c[0] as { operation: string }).operation === "download",
@@ -423,10 +423,10 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     // signed URLs would target the wrong GCS bucket.
     const stagingEntry = {
       ...CADET_ENTRY,
-      runtimeUrl: "https://staging-cloud.cadet.ai",
+      runtimeUrl: "https://staging-cloud.mycadet.ai",
     };
     findAssistantByNameMock.mockReturnValue(stagingEntry);
-    getPlatformUrlMock.mockReturnValue("https://cloud.cadet.ai");
+    getPlatformUrlMock.mockReturnValue("https://cloud.mycadet.ai");
     setArgv("my-platform");
 
     mockGcsDownload(new Uint8Array([9]));
@@ -443,17 +443,17 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
         maxRuntimeVersion: null,
       }),
       "platform-token",
-      "https://staging-cloud.cadet.ai",
+      "https://staging-cloud.mycadet.ai",
     );
     expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
       expect.objectContaining({ operation: "download" }),
       "platform-token",
-      "https://staging-cloud.cadet.ai",
+      "https://staging-cloud.mycadet.ai",
     );
     // No call should have used the default platform URL.
     const calls = platformRequestSignedUrlMock.mock.calls;
     for (const call of calls) {
-      expect(call[2]).toBe("https://staging-cloud.cadet.ai");
+      expect(call[2]).toBe("https://staging-cloud.mycadet.ai");
     }
   });
 
@@ -651,7 +651,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
         maxRuntimeVersion: null,
       }),
       "platform-token",
-      "https://cloud.cadet.ai",
+      "https://cloud.mycadet.ai",
     );
   });
 
@@ -666,7 +666,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
     expect(localRuntimeIdentityMock).toHaveBeenCalledWith(
       expect.objectContaining({
         cloud: "cadet",
-        runtimeUrl: "https://cloud.cadet.ai",
+        runtimeUrl: "https://cloud.mycadet.ai",
         assistantId: "11111111-2222-3333-4444-555555555555",
       }),
       "platform-token",

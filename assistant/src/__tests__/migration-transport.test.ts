@@ -92,7 +92,7 @@ function runtimeConfig(overrides?: Partial<TransportConfig>): TransportConfig {
 
 function managedConfig(overrides?: Partial<TransportConfig>): TransportConfig {
   return {
-    baseURL: "https://cloud.cadet.ai",
+    baseURL: "https://cloud.mycadet.ai",
     target: "managed",
     authHeader: "test-session-token",
     fetchFn: mockFetch(200, {}),
@@ -127,7 +127,7 @@ describe("URL construction", () => {
     });
     await validateBundle(managedConfig({ fetchFn }), sampleFileData);
     expect(captured[0].url).toBe(
-      "https://cloud.cadet.ai/v1/migrations/validate/",
+      "https://cloud.mycadet.ai/v1/migrations/validate/",
     );
   });
 
@@ -684,7 +684,7 @@ describe("pollExportStatus", () => {
     const config = managedConfig({ fetchFn });
     await pollExportStatus(config, "job/special");
     expect(captured[0].url).toBe(
-      "https://cloud.cadet.ai/v1/migrations/export/job%2Fspecial/status/",
+      "https://cloud.mycadet.ai/v1/migrations/export/job%2Fspecial/status/",
     );
     expect(captured[0].init.method).toBe("GET");
   });

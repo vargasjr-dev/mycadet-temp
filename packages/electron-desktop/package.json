@@ -80,7 +80,7 @@
     "./status-icon": "./src/status-icon.ts",
     "./text-context-menu": "./src/text-context-menu.ts",
     "./tray-model": "./src/tray-model.ts",
-    "./cadetapp-protocol": "./src/cadetapp-protocol.ts",
+    "./cadet-protocol": "./src/cadet-protocol.ts",
     "./window-attention": "./src/window-attention.ts",
     "./window-readiness": "./src/window-readiness.ts",
     "./window-state": "./src/window-state.ts",

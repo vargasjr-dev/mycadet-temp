@@ -43,14 +43,14 @@ describe("ChatMarkdownMessage (in-app path links)", () => {
     expect(html).not.toContain('target="_blank"');
   });
 
-  test("a cadet.ai conversation URL becomes an in-app path", () => {
+  test("a mycadet.ai conversation URL becomes an in-app path", () => {
     const html = renderToStaticMarkup(
       createElement(
         MemoryRouter,
         { initialEntries: ["/assistant"] },
         createElement(ChatMarkdownMessage, {
           content:
-            "[Project Launch](https://www.cadet.ai/assistant/conversations/conv-xyz)",
+            "[Project Launch](https://www.mycadet.ai/assistant/conversations/conv-xyz)",
         }),
       ),
     );

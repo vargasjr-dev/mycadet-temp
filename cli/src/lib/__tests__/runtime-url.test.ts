@@ -52,28 +52,28 @@ describe("resolveRuntimeMigrationUrl", () => {
   test("cadet (platform-managed) cloud uses wildcard-proxy /v1/assistants/<id>/migrations/<subpath>", () => {
     const entry = makeEntry({
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
       assistantId: "11111111-2222-3333-4444-555555555555",
     });
     expect(resolveRuntimeMigrationUrl(entry, "export-to-gcs")).toBe(
-      "https://cloud.cadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/migrations/export-to-gcs",
+      "https://cloud.mycadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/migrations/export-to-gcs",
     );
     expect(resolveRuntimeMigrationUrl(entry, "import-from-gcs")).toBe(
-      "https://cloud.cadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/migrations/import-from-gcs",
+      "https://cloud.mycadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/migrations/import-from-gcs",
     );
     expect(resolveRuntimeMigrationUrl(entry, "jobs/job-xyz")).toBe(
-      "https://cloud.cadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/migrations/jobs/job-xyz",
+      "https://cloud.mycadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/migrations/jobs/job-xyz",
     );
   });
 
   test("dev platform URL still routes through the wildcard prefix", () => {
     const entry = makeEntry({
       cloud: "cadet",
-      runtimeUrl: "https://dev-cloud.cadet.ai",
+      runtimeUrl: "https://dev-cloud.mycadet.ai",
       assistantId: "ast-dev-1",
     });
     expect(resolveRuntimeMigrationUrl(entry, "export-to-gcs")).toBe(
-      "https://dev-cloud.cadet.ai/v1/assistants/ast-dev-1/migrations/export-to-gcs",
+      "https://dev-cloud.mycadet.ai/v1/assistants/ast-dev-1/migrations/export-to-gcs",
     );
   });
 
@@ -115,11 +115,11 @@ describe("resolveRuntimeUrl", () => {
   test("cadet cloud uses wildcard-proxy /v1/assistants/<id>/<subpath>", () => {
     const entry = makeEntry({
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
       assistantId: "11111111-2222-3333-4444-555555555555",
     });
     expect(resolveRuntimeUrl(entry, "identity")).toBe(
-      "https://cloud.cadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/identity",
+      "https://cloud.mycadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/identity",
     );
   });
 });

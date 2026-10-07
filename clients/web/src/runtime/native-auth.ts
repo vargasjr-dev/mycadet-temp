@@ -282,7 +282,7 @@ export function installSessionCookies(sessionToken: string): void {
   // expires at the end of the session, and users will be required to
   // login again.
   const cookieAttrs =
-    "path=/; domain=.cadet.ai; secure; samesite=lax; max-age=1209600";
+    "path=/; domain=.mycadet.ai; secure; samesite=lax; max-age=1209600";
   document.cookie = `sessionid=${sessionToken}; ${cookieAttrs}`;
   document.cookie = `__Secure-sessionid=${sessionToken}; ${cookieAttrs}`;
 }

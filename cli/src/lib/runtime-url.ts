@@ -12,7 +12,7 @@ import type { AssistantEntry } from "./assistant-config.js";
  *   the runtime serves `/v1/migrations/<subpath>` directly. The CLI hits
  *   that path with guardian-token bearer auth.
  * - For platform-managed (cloud="cadet") assistants, `runtimeUrl` is the
- *   platform host (e.g. `https://cloud.cadet.ai`). The platform's
+ *   platform host (e.g. `https://cloud.mycadet.ai`). The platform's
  *   `MigrationViewSet` does NOT expose `export-to-gcs` or arbitrary runtime
  *   migration paths under `/v1/migrations/...`. The wildcard runtime proxy
  *   at `/v1/assistants/<id>/<path:rest>` is what forwards arbitrary runtime

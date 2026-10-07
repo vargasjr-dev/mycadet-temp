@@ -509,7 +509,7 @@ const REPAIR_COPY =
  * What a shell reports as its baked Cadet Cloud origin. It is the Capacitor
  * `server.url`, which is the hub's `/assistant` root rather than a bare base.
  */
-const BAKED_CLOUD_URL = "https://www.cadet.ai/assistant";
+const BAKED_CLOUD_URL = "https://www.mycadet.ai/assistant";
 
 function makeOrigin(
   overrides: Partial<RememberedOrigin> = {},

@@ -84,7 +84,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       },
     );
     launchUrl =
-      "mycadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2";
+      "cadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2";
     capacitorPlatform = "android";
 
     try {
@@ -108,7 +108,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       },
     );
     launchUrl =
-      "mycadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2";
+      "cadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2";
 
     try {
       publishCapacitorDeepLinksSource();
@@ -141,7 +141,7 @@ describe("publishCapacitorDeepLinksSource", () => {
         oauthCode: "code-abc",
       };
       urlOpenHandler!({
-        url: buildOAuthCompleteDeepLink("mycadet", payload),
+        url: buildOAuthCompleteDeepLink("cadet", payload),
       });
 
       expect(received).toEqual([payload]);
@@ -167,7 +167,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "mycadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
+        url: "cadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
       });
 
       // No `flow` param: released clients and current Pro links omit it, so
@@ -194,7 +194,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "mycadet://billing/checkout-complete?status=cancel",
+        url: "cadet://billing/checkout-complete?status=cancel",
       });
 
       expect(received).toEqual([
@@ -219,10 +219,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "mycadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2&flow=top_up",
+        url: "cadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2&flow=top_up",
       });
       urlOpenHandler!({
-        url: "mycadet://billing/checkout-complete?status=cancel&flow=top_up",
+        url: "cadet://billing/checkout-complete?status=cancel&flow=top_up",
       });
 
       expect(received).toEqual([
@@ -248,7 +248,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "mycadet://billing/checkout-complete?status=cancel&flow=bogus",
+        url: "cadet://billing/checkout-complete?status=cancel&flow=bogus",
       });
 
       expect(received).toEqual([
@@ -274,14 +274,14 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "mycadet://billing/checkout-complete?status=success&session_id=not-a-session",
+        url: "cadet://billing/checkout-complete?status=success&session_id=not-a-session",
       });
 
       expect(checkouts).toEqual([]);
       // The query is stripped on the fallback, so the bad id can't reach
       // telemetry.
       expect(unknowns).toEqual([
-        { url: "mycadet://billing/checkout-complete" },
+        { url: "cadet://billing/checkout-complete" },
       ]);
     } finally {
       unsubCheckout();
@@ -303,7 +303,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       publishCapacitorDeepLinksSource();
       await flushAsyncWork();
 
-      urlOpenHandler!({ url: "mycadet://voice?mode=resume" });
+      urlOpenHandler!({ url: "cadet://voice?mode=resume" });
 
       expect(starts).toEqual([
         { mode: "resume", prompt: null, provenance: null },
@@ -358,7 +358,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "mycadet://thread/abc-123?message=gym%20done",
+        url: "cadet://thread/abc-123?message=gym%20done",
       });
 
       expect(sends).toEqual([
@@ -387,10 +387,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       publishCapacitorDeepLinksSource();
       await flushAsyncWork();
 
-      urlOpenHandler!({ url: "mycadet://thread/abc-123" });
+      urlOpenHandler!({ url: "cadet://thread/abc-123" });
       // Whitespace-only fails sanitization; opening the chat still wins.
       urlOpenHandler!({
-        url: "mycadet://thread/abc-123?message=%20%20",
+        url: "cadet://thread/abc-123?message=%20%20",
       });
 
       expect(sends).toEqual([]);
@@ -417,10 +417,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "mycadet://thread/abc-123?message=gym%20done&src=intent",
+        url: "cadet://thread/abc-123?message=gym%20done&src=intent",
       });
       urlOpenHandler!({
-        url: "mycadet://voice?mode=new&prompt=hi&src=intent",
+        url: "cadet://voice?mode=new&prompt=hi&src=intent",
       });
 
       expect(sends).toEqual([
@@ -451,10 +451,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "mycadet://thread/abc-123?message=gym%20done&src=intent",
+        url: "cadet://thread/abc-123?message=gym%20done&src=intent",
       });
       urlOpenHandler!({
-        url: "mycadet://voice?mode=new&prompt=hi&src=intent",
+        url: "cadet://voice?mode=new&prompt=hi&src=intent",
       });
 
       // Same commands, same text, but a forged marker buys nothing.
@@ -486,8 +486,8 @@ describe("publishCapacitorDeepLinksSource", () => {
       publishCapacitorDeepLinksSource();
       await flushAsyncWork();
 
-      urlOpenHandler!({ url: "mycadet://camera?src=intent" });
-      urlOpenHandler!({ url: "mycadet://new-chat" });
+      urlOpenHandler!({ url: "cadet://camera?src=intent" });
+      urlOpenHandler!({ url: "cadet://new-chat" });
 
       // The marker is honored here because the mocked platform is iOS.
       expect(cameras).toEqual([{ provenance: "intent" }]);
@@ -514,13 +514,13 @@ describe("publishCapacitorDeepLinksSource", () => {
       publishCapacitorDeepLinksSource();
       await flushAsyncWork();
 
-      urlOpenHandler!({ url: "mycadet://conversations" });
+      urlOpenHandler!({ url: "cadet://conversations" });
       // A path makes it a different link that merely shares the host.
-      urlOpenHandler!({ url: "mycadet://conversations/abc-123" });
+      urlOpenHandler!({ url: "cadet://conversations/abc-123" });
 
       expect(lists).toEqual([{ provenance: null }]);
       expect(unknowns).toEqual([
-        { url: "mycadet://conversations/abc-123" },
+        { url: "cadet://conversations/abc-123" },
       ]);
     } finally {
       unsubList();
@@ -567,14 +567,14 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "mycadet://share/A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
+        url: "cadet://share/A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
       });
-      urlOpenHandler!({ url: "mycadet://share/../x" });
+      urlOpenHandler!({ url: "cadet://share/../x" });
 
       expect(shares).toEqual([
         { inboxId: "A1B2C3D4-E5F6-7890-ABCD-EF1234567890" },
       ]);
-      expect(unknowns).toEqual([{ url: "mycadet://share/../x" }]);
+      expect(unknowns).toEqual([{ url: "cadet://share/../x" }]);
     } finally {
       unsubShare();
       unsubUnknown();
@@ -591,10 +591,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       publishCapacitorDeepLinksSource();
       await flushAsyncWork();
 
-      urlOpenHandler!({ url: "mycadet://some-future-link" });
+      urlOpenHandler!({ url: "cadet://some-future-link" });
 
       expect(received).toEqual([
-        { url: "mycadet://some-future-link" },
+        { url: "cadet://some-future-link" },
       ]);
     } finally {
       unsubscribeBus();
@@ -612,10 +612,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "mycadet://oauth-done/path?oauth_code=secret-code&x=1#frag-token",
+        url: "cadet://oauth-done/path?oauth_code=secret-code&x=1#frag-token",
       });
 
-      expect(received).toEqual([{ url: "mycadet://oauth-done/path" }]);
+      expect(received).toEqual([{ url: "cadet://oauth-done/path" }]);
     } finally {
       unsubscribeBus();
     }

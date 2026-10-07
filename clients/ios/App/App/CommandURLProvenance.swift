@@ -20,7 +20,7 @@ import Foundation
 /// shared delivery seam (`ApplicationDelegateProxy` → Capacitor `appUrlOpen`),
 /// the marker is present exactly when an intent produced it (LUM-3281).
 ///
-/// Two paths look like a third way in and are not. A `mycadet://`
+/// Two paths look like a third way in and are not. A `cadet://`
 /// navigation started by *web content inside the WebView* reaches Capacitor's
 /// `WebViewDelegationHandler.webView(_:decidePolicyFor:)` (our
 /// `NavigationDelegateProxy` forwards anything off the self-hosted origin to

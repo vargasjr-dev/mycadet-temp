@@ -24260,8 +24260,8 @@ paths:
                   type: string
                 profile:
                   description:
-                    "Export profile. 'migration' (default) builds a teleport bundle. 'debug' builds a bundle for Cadet staff
-                    to open on a debug clone: no credentials, plus the gateway's database and logs under gateway/."
+                    "Export profile. 'migration' (default) builds a teleport bundle. 'debug' builds a bundle for Cadet staff to
+                    open on a debug clone: no credentials, plus the gateway's database and logs under gateway/."
                   type: string
                   enum:
                     - migration
@@ -24540,8 +24540,8 @@ paths:
       summary: Dry-run import analysis from a signed GCS URL
       description:
         Fetch a .vbundle archive from a signed GCS download URL and return a preflight report — what would change
-        if the bundle were imported — without writing anything to disk. Enables `cadet teleport --dry-run` against
-        local and docker targets.
+        if the bundle were imported — without writing anything to disk. Enables `cadet teleport --dry-run` against local
+        and docker targets.
       tags:
         - migrations
       requestBody:
@@ -34492,9 +34492,7 @@ paths:
                   description: Replace an existing install. Defaults to true for back-compat with the legacy in-process API.
                   type: boolean
                 catalogOnly:
-                  description:
-                    When true, restrict to bundled and Cadet catalog skills only — do not fall through to community
-                    registries.
+                  description: When true, restrict to bundled and Cadet catalog skills only — do not fall through to community registries.
                   type: boolean
       responses:
         "200":

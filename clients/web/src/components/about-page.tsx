@@ -87,5 +87,5 @@ const FALLBACK: AppVersionInfo = {
   version: "—",
   commitSha: "—",
   copyright: `© ${new Date().getFullYear()} Cadet`,
-  website: "https://cadet.ai",
+  website: "https://mycadet.ai",
 };

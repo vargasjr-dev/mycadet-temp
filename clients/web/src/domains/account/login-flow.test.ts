@@ -120,7 +120,7 @@ describe("login flow routing", () => {
       ),
     ).toBe(true);
     expect(requiresFullPageNavigation("/v1/some-api")).toBe(true);
-    expect(requiresFullPageNavigation("https://www.cadet.ai/assistant")).toBe(
+    expect(requiresFullPageNavigation("https://www.mycadet.ai/assistant")).toBe(
       true,
     );
     expect(requiresFullPageNavigation("/assistant")).toBe(false);
@@ -154,7 +154,7 @@ describe("requiresPlatformSession", () => {
     [routes.account.root],
     ["/import?foo=1"],
     ["/accounts/cli/callback?port=1"],
-    ["https://app.cadet.ai/x"],
+    ["https://app.mycadet.ai/x"],
   ])("%s needs a platform session", (destination) => {
     expect(requiresPlatformSession(destination)).toBe(true);
   });

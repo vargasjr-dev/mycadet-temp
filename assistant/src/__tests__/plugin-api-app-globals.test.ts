@@ -24,7 +24,7 @@ describe("plugin-api app-side globals", () => {
     // Augments the DOM `Window` with the bridge.
     expect(src).toContain("declare global");
     expect(src).toContain("interface Window");
-    expect(src).toContain("cadet: CadetAppBridge");
+    expect(src).toContain("cadet: CadetBridge");
 
     // `fetch` is the only exposed member for now.
     expect(src).toContain("fetch(");

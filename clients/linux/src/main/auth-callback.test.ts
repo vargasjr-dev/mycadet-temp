@@ -23,18 +23,18 @@ describe("startLinuxAuthCallback", () => {
   test("accepts a state-matched code on the registered app scheme", async () => {
     const harness = callbackHarness();
     const callback = await startLinuxAuthCallback("expected", {
-      scheme: "mycadet-dev",
+      scheme: "cadet-dev",
       subscribe: harness.subscribe,
     });
 
-    expect(callback.redirectUri).toBe("mycadet-dev://auth/callback");
+    expect(callback.redirectUri).toBe("cadet-dev://auth/callback");
 
     harness.emit(
-      "mycadet-dev://auth/callback?code=wrong&state=unexpected",
+      "cadet-dev://auth/callback?code=wrong&state=unexpected",
     );
     harness.emit("https://example.com/callback?code=wrong&state=expected");
     harness.emit(
-      "mycadet-dev://auth/callback?code=good&state=expected",
+      "cadet-dev://auth/callback?code=good&state=expected",
     );
 
     expect(await callback.waitForCode).toBe("good");
@@ -44,13 +44,13 @@ describe("startLinuxAuthCallback", () => {
   test("surfaces a state-matched provider error", async () => {
     const harness = callbackHarness();
     const callback = await startLinuxAuthCallback("expected", {
-      scheme: "mycadet-dev",
+      scheme: "cadet-dev",
       subscribe: harness.subscribe,
     });
     const result = callback.waitForCode.catch((error: Error) => error);
 
     harness.emit(
-      "mycadet-dev://auth/callback?error=access_denied&error_description=Denied&state=expected",
+      "cadet-dev://auth/callback?error=access_denied&error_description=Denied&state=expected",
     );
 
     await expect(result).resolves.toMatchObject({
@@ -62,7 +62,7 @@ describe("startLinuxAuthCallback", () => {
   test("close cancels the pending callback and unsubscribes", async () => {
     const harness = callbackHarness();
     const callback = await startLinuxAuthCallback("expected", {
-      scheme: "mycadet-dev",
+      scheme: "cadet-dev",
       subscribe: harness.subscribe,
     });
     const result = callback.waitForCode.catch((error: Error) => error);

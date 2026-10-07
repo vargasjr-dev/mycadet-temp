@@ -92,7 +92,7 @@ const originalWindow = globalThis.window;
 let attention: ReturnType<typeof stubBrowserAttention>;
 
 function setMockWindow({
-  origin = "https://app.cadet.ai",
+  origin = "https://app.mycadet.ai",
   open,
   cadet,
 }: {
@@ -238,7 +238,7 @@ describe("handleOpenUrl", () => {
     const { ctx, push } = makeOpenUrlCtx();
 
     handleOpenUrl(
-      makeOpenUrlEvent("https://app.cadet.ai/settings?tab=x"),
+      makeOpenUrlEvent("https://app.mycadet.ai/settings?tab=x"),
       ctx,
     );
 
@@ -330,7 +330,7 @@ describe("handleOpenUrl", () => {
     ]) {
       attention.set(state);
       handleOpenUrl(makeOpenUrlEvent(oauthUrl), ctx);
-      handleOpenUrl(makeOpenUrlEvent("https://app.cadet.ai/settings"), ctx);
+      handleOpenUrl(makeOpenUrlEvent("https://app.mycadet.ai/settings"), ctx);
     }
 
     expect(open).not.toHaveBeenCalled();

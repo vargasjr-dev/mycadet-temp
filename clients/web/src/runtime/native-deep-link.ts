@@ -36,10 +36,10 @@ declare global {
  * sets an `ASSOCIATED_DOMAIN` and `BUNDLE_URL_SCHEME` pair in its xcconfig.
  */
 const NATIVE_URL_SCHEME_BY_HOST: Record<string, string> = {
-  "www.cadet.ai": "mycadet",
-  "cadet.ai": "mycadet",
-  "staging-assistant.cadet.ai": "mycadet-staging",
-  "dev-assistant.cadet.ai": "mycadet-dev",
+  "www.mycadet.ai": "cadet",
+  "mycadet.ai": "cadet",
+  "staging.mycadet.ai": "cadet-staging",
+  "dev.mycadet.ai": "cadet-dev",
 };
 
 const ALLOWED_NATIVE_URL_PROTOCOLS = new Set(
@@ -65,7 +65,7 @@ export type BillingCheckoutCompleteDeepLinkPayload =
   | { status: "cancel"; sessionId: null; flow: BillingCheckoutFlow };
 
 /**
- * Parse a `mycadet://billing/checkout-complete?status=…&session_id=…`
+ * Parse a `cadet://billing/checkout-complete?status=…&session_id=…`
  * deep link, the hand-off the platform bounces a `return_target=native`
  * Checkout to (`checkout_native_return.py`). An optional `flow=top_up` marks
  * a credit top-up checkout; anything else is a subscription checkout.
@@ -245,7 +245,7 @@ function sanitizeDeepLinkText(
 }
 
 /**
- * Parse a `mycadet://voice?mode=new|resume&prompt=...` deep link — the
+ * Parse a `cadet://voice?mode=new|resume&prompt=...` deep link — the
  * single native→SPA channel for "start talking".
  *
  * Every native producer targets this one URL shape: App Intents (Siri and the
@@ -332,7 +332,7 @@ export const MAX_OPEN_THREAD_MESSAGE_LENGTH = 2000;
 const OPEN_THREAD_ID_RE = /^[A-Za-z0-9._-]{1,128}$/;
 
 /**
- * Parse a `mycadet://thread/<id>?message=...` deep link, produced by
+ * Parse a `cadet://thread/<id>?message=...` deep link, produced by
  * the iOS `SendMessageToChatIntent` (LUM-3230) and shaped after the macOS
  * shell's `cadet://thread/<id>` link so the two schemes stay mirror images.
  *
@@ -445,7 +445,7 @@ function parseCommandDeepLink(
 }
 
 /**
- * Parse a `mycadet://camera` deep link, produced by the Home Screen
+ * Parse a `cadet://camera` deep link, produced by the Home Screen
  * widget's camera button (`CameraDeepLink.swift`). The consumer parks the
  * request and the composer's attachment layer opens the camera once it is on
  * screen, so a cold launch works the same as a tap into a running app.
@@ -458,7 +458,7 @@ export function parseOpenCameraDeepLink(
 }
 
 /**
- * Parse a `mycadet://new-chat` deep link, produced by the Home Screen
+ * Parse a `cadet://new-chat` deep link, produced by the Home Screen
  * widgets' New Chat buttons (`NewChatDeepLink.swift`). The consumer navigates
  * to a fresh draft conversation.
  */
@@ -470,7 +470,7 @@ export function parseNewChatDeepLink(
 }
 
 /**
- * Parse a `mycadet://conversations` deep link, produced by the Home
+ * Parse a `cadet://conversations` deep link, produced by the Home
  * Screen widgets' unread affordances (`ConversationsDeepLink.swift`). The
  * consumer brings up the conversation list.
  */
@@ -501,7 +501,7 @@ export interface ShareDeepLinkPayload {
 }
 
 /**
- * Parse a `mycadet://share/<id>` deep link, produced by the iOS
+ * Parse a `cadet://share/<id>` deep link, produced by the iOS
  * share extension after it writes the App Group inbox. Strict like the
  * sibling parsers: exact scheme allowlist, exact host, and a single
  * well-formed path segment for the id.
@@ -557,7 +557,7 @@ export function buildOAuthCompleteDeepLink(
 }
 
 /**
- * Parse a `mycadet://oauth-complete?…` deep link payload.
+ * Parse a `cadet://oauth-complete?…` deep link payload.
  * Returns `null` for any URL that is not an OAuth-complete deep link.
  */
 export function parseOAuthCompleteDeepLink(

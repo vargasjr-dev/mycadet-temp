@@ -524,7 +524,7 @@ export default function PrivacyPolicyPage() {
       <h2>Contact Us</h2>
       <p>
         If you have any questions about this Privacy Notice, please contact us
-        at <a href="mailto:legal@cadet.ai">legal@cadet.ai</a>.
+        at <a href="mailto:legal@mycadet.ai">legal@mycadet.ai</a>.
       </p>
     </DocsContent>
   );

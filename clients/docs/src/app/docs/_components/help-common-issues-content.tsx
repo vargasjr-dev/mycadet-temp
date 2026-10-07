@@ -59,8 +59,8 @@ export function HelpCommonIssuesContent() {
             <li>
               <strong>Try a different surface.</strong> If the iPhone app is
               acting up, try the web at{" "}
-              <a href="https://cadet.ai" className={linkClass}>
-                cadet.ai
+              <a href="https://mycadet.ai" className={linkClass}>
+                mycadet.ai
               </a>
               . If web is acting up, try the iPhone app or desktop. The same
               assistant lives on each surface.
@@ -169,7 +169,7 @@ export function HelpCommonIssuesContent() {
             </li>
             <li>
               Open Console.app and filter on{" "}
-              <code>com.mycadet.mycadet</code> for crash logs.
+              <code>ai.mycadet.electron</code> for crash logs.
             </li>
             <li>As a last resort, delete the app and reinstall.</li>
           </ol>
@@ -359,7 +359,7 @@ export function HelpCommonIssuesContent() {
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
               <strong>Web</strong>: confirm your browser has microphone
-              permission for cadet.ai. The first time you use voice in a
+              permission for mycadet.ai. The first time you use voice in a
               browser, you&apos;ll get a permission prompt.
             </li>
             <li>

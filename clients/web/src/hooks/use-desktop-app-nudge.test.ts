@@ -35,11 +35,11 @@ describe("desktop app download link", () => {
     openDesktopAppDownload();
 
     expect(open).toHaveBeenCalledWith(
-      "https://www.cadet.ai/downloads",
+      "https://www.mycadet.ai/downloads",
       "_blank",
       "noopener,noreferrer",
     );
-    expect(CADET_DOWNLOADS_URL).toBe("https://www.cadet.ai/downloads");
+    expect(CADET_DOWNLOADS_URL).toBe("https://www.mycadet.ai/downloads");
   });
 
   test("tags Windows clicks and dismissals with the Windows target", () => {

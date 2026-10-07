@@ -38,17 +38,17 @@ jobs:
           case "$ENVIRONMENT" in
             production)
               echo "flavor=Production" >> "$GITHUB_OUTPUT"
-              echo "package_id=ai.mycadet.assistant" >> "$GITHUB_OUTPUT"
+              echo "package_id=ai.mycadet.android" >> "$GITHUB_OUTPUT"
               echo "track=production" >> "$GITHUB_OUTPUT"
               ;;
             staging)
               echo "flavor=Staging" >> "$GITHUB_OUTPUT"
-              echo "package_id=ai.mycadet.assistant.staging" >> "$GITHUB_OUTPUT"
+              echo "package_id=ai.mycadet.android.staging" >> "$GITHUB_OUTPUT"
               echo "track=internal" >> "$GITHUB_OUTPUT"
               ;;
             dev)
               echo "flavor=Dev" >> "$GITHUB_OUTPUT"
-              echo "package_id=ai.mycadet.assistant.dev" >> "$GITHUB_OUTPUT"
+              echo "package_id=ai.mycadet.android.dev" >> "$GITHUB_OUTPUT"
               echo "track=internal" >> "$GITHUB_OUTPUT"
               ;;
             *)

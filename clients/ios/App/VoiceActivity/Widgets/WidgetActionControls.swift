@@ -43,7 +43,7 @@ enum WidgetFlattenedFill {
 /// The app's own mark, at the size a control wears it: this build's icon
 /// ground with the icon's own eyes on it.
 ///
-/// The eyes are `CadetAppIconEyes`, the same `eyes.svg` the three Icon
+/// The eyes are `CadetIconEyes`, the same `eyes.svg` the three Icon
 /// Composer bundles embed, pinned to the avatar component library's quirky
 /// style by `clients/ios/scripts/__tests__/ios-default-icon-geometry.test.ts`.
 /// Drawing the widget's own ``WidgetAvatarEyes`` here would be a different
@@ -56,7 +56,7 @@ enum WidgetFlattenedFill {
 /// Both go away once the system flattens the widget. A solid ground survives
 /// flattening as a solid block, which would swallow the eyes on it, and the
 /// control underneath already supplies a ground of its own.
-struct CadetAppIconMark: View {
+struct CadetIconMark: View {
     let size: CGFloat
 
     /// The artwork's canvas is mostly empty: the pair occupies the middle
@@ -87,7 +87,7 @@ struct CadetAppIconMark: View {
     }
 
     private var eyes: some View {
-        Image("CadetAppIconEyes")
+        Image("CadetIconEyes")
             .resizable()
             .scaledToFit()
             .frame(width: size * Self.artworkScale, height: size * Self.artworkScale)
@@ -121,7 +121,7 @@ struct WidgetActionTile<ActionIntent: AppIntent>: View {
     let intent: ActionIntent
 
     /// The symbol a tile standing for an action draws. Absent on the tile that
-    /// stands for the app itself, which draws ``CadetAppIconMark``.
+    /// stands for the app itself, which draws ``CadetIconMark``.
     var icon: Image? = nil
 
     let title: String
@@ -200,7 +200,7 @@ struct WidgetActionTile<ActionIntent: AppIntent>: View {
         if let avatarImage {
             WidgetAvatarImageView(image: avatarImage, size: Self.iconSize * scale)
         } else if showsAppIcon {
-            CadetAppIconMark(size: Self.iconSize * scale)
+            CadetIconMark(size: Self.iconSize * scale)
         } else if let icon {
             icon
                 .font(.system(size: Self.iconSize * scale))
@@ -351,7 +351,7 @@ struct PillActionButton<ActionIntent: AppIntent>: View {
         if let avatarImage {
             WidgetAvatarImageView(image: avatarImage, size: iconSize)
         } else if showsAppIcon {
-            CadetAppIconMark(size: iconSize)
+            CadetIconMark(size: iconSize)
         } else if let icon {
             icon
                 .font(.system(size: iconSize))

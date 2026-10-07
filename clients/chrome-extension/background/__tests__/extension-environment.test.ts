@@ -121,18 +121,18 @@ describe('cloudUrlsForEnvironment', () => {
   }> = [
     {
       env: 'production',
-      expectedApiBaseUrl: 'https://cloud.cadet.ai',
+      expectedApiBaseUrl: 'https://cloud.mycadet.ai',
       expectedWebBaseUrl: 'https://mycadet.ai',
     },
     {
       env: 'staging',
-      expectedApiBaseUrl: 'https://staging-cloud.cadet.ai',
-      expectedWebBaseUrl: 'https://staging.cloud.mycadet.ai',
+      expectedApiBaseUrl: 'https://staging-cloud.mycadet.ai',
+      expectedWebBaseUrl: 'https://staging.mycadet.ai',
     },
     {
       env: 'dev',
-      expectedApiBaseUrl: 'https://dev-cloud.cadet.ai',
-      expectedWebBaseUrl: 'https://dev.cloud.mycadet.ai',
+      expectedApiBaseUrl: 'https://dev-cloud.mycadet.ai',
+      expectedWebBaseUrl: 'https://dev.mycadet.ai',
     },
     {
       env: 'local',
@@ -155,7 +155,7 @@ describe('cloudUrlsForEnvironment', () => {
 
   test('production parity: "prod" alias and "production" resolve to same URLs', () => {
     const fromProd = cloudUrlsForEnvironment('production');
-    expect(fromProd.apiBaseUrl).toBe('https://cloud.cadet.ai');
+    expect(fromProd.apiBaseUrl).toBe('https://cloud.mycadet.ai');
     expect(fromProd.webBaseUrl).toBe('https://mycadet.ai');
   });
 });
@@ -163,8 +163,8 @@ describe('cloudUrlsForEnvironment', () => {
 describe('createFirstAssistantUrl', () => {
   const cases: Array<{ env: ExtensionEnvironment; webBaseUrl: string }> = [
     { env: 'production', webBaseUrl: 'https://mycadet.ai' },
-    { env: 'staging', webBaseUrl: 'https://staging.cloud.mycadet.ai' },
-    { env: 'dev', webBaseUrl: 'https://dev.cloud.mycadet.ai' },
+    { env: 'staging', webBaseUrl: 'https://staging.mycadet.ai' },
+    { env: 'dev', webBaseUrl: 'https://dev.mycadet.ai' },
     { env: 'local', webBaseUrl: 'http://localhost:3000' },
   ];
 

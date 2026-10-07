@@ -3,7 +3,7 @@ import type { AuthUser } from "@/stores/auth-store";
 /**
  * Whether a session belongs to Cadet staff.
  *
- * The platform's `isStaff` bit is the primary signal. A `@cadet.ai` address
+ * The platform's `isStaff` bit is the primary signal. A `@mycadet.ai` address
  * is the fallback for sessions whose snapshot carries no staff bit. Local
  * gateway sessions have neither, so they are never staff.
  *
@@ -13,6 +13,6 @@ import type { AuthUser } from "@/stores/auth-store";
 export function isCadetStaff(user: AuthUser | null): boolean {
   return (
     user?.isStaff === true ||
-    user?.email?.toLowerCase().endsWith("@cadet.ai") === true
+    user?.email?.toLowerCase().endsWith("@mycadet.ai") === true
   );
 }

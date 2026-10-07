@@ -29,8 +29,8 @@ def buildValue = { String name, String fallback = '' ->
 def buildText = { String name, String fallback = '' -> buildValue(name, fallback).trim() }
 def appLinkHosts = [
     production: "mycadet.ai",
-    staging: "staging.cloud.mycadet.ai",
-    dev: "dev.cloud.mycadet.ai",
+    staging: "staging.mycadet.ai",
+    dev: "dev.mycadet.ai",
 ]
 
 def versionCodeInput = buildText('CADET_ANDROID_VERSION_CODE', '1')
@@ -55,10 +55,10 @@ if (!signingConfigured && (requireSigning || signingValues.values().any { !it.is
 }
 
 android {
-    namespace = "ai.mycadet.assistant"
+    namespace = "ai.mycadet.android"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "ai.mycadet.assistant"
+        applicationId "ai.mycadet.android"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode versionCodeInput.toInteger()
@@ -76,30 +76,30 @@ android {
             dimension "environment"
             manifestPlaceholders = [
                 cadetAppLinkHost: appLinkHosts.production,
-                cadetAuthScheme: "mycadet"
+                cadetAuthScheme: "cadet"
             ]
             resValue "string", "cadet_auth_host", appLinkHosts.production
-            resValue "string", "cadet_auth_scheme", "mycadet"
+            resValue "string", "cadet_auth_scheme", "cadet"
         }
         staging {
             dimension "environment"
             applicationIdSuffix ".staging"
             manifestPlaceholders = [
                 cadetAppLinkHost: appLinkHosts.staging,
-                cadetAuthScheme: "mycadet-staging"
+                cadetAuthScheme: "cadet-staging"
             ]
             resValue "string", "cadet_auth_host", appLinkHosts.staging
-            resValue "string", "cadet_auth_scheme", "mycadet-staging"
+            resValue "string", "cadet_auth_scheme", "cadet-staging"
         }
         dev {
             dimension "environment"
             applicationIdSuffix ".dev"
             manifestPlaceholders = [
                 cadetAppLinkHost: appLinkHosts.dev,
-                cadetAuthScheme: "mycadet-dev"
+                cadetAuthScheme: "cadet-dev"
             ]
             resValue "string", "cadet_auth_host", appLinkHosts.dev
-            resValue "string", "cadet_auth_scheme", "mycadet-dev"
+            resValue "string", "cadet_auth_scheme", "cadet-dev"
         }
     }
     signingConfigs {

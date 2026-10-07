@@ -1,7 +1,7 @@
 /**
  * Read seam for the `marketing-pricing-takeover` client flag — the kill switch
  * over the marketing pricing funnel. One flag covers both halves: the rebuilt
- * `www.cadet.ai/pricing` takeover (served by the platform) and the
+ * `www.mycadet.ai/pricing` takeover (served by the platform) and the
  * `/assistant/checkout?package=<slug>` deep link its package CTAs target.
  */
 

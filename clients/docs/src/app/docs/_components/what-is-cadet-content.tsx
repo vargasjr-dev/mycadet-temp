@@ -360,7 +360,7 @@ export function WhatIsCadetContent() {
               isolated to your account.
             </p>
             <ul className="list-disc space-y-1 pl-6 text-zinc-600">
-              <li>Use it instantly in your browser at cadet.ai</li>
+              <li>Use it instantly in your browser at mycadet.ai</li>
               <li>Always-on availability, even when your laptop is closed</li>
               <li>Encrypted, isolated workspace tied to your account</li>
               <li>

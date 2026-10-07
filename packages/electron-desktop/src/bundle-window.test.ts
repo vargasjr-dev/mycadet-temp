@@ -110,16 +110,16 @@ mock.module("electron", () => ({
   },
 }));
 
-const createCadetAppHandlerMock = mock(
+const createCadetHandlerMock = mock(
   (_bundlesRoot: string) => async (_req: Request) => new Response("ok"),
 );
 
-mock.module("./cadetapp-protocol", () => ({
-  createCadetAppHandler: createCadetAppHandlerMock,
+mock.module("./cadet-protocol", () => ({
+  createCadetHandler: createCadetHandlerMock,
 }));
 
 mock.module("./bundle-platform", () => ({
-  CADETAPP_PROTOCOL: "cadetapp",
+  CADET_PROTOCOL: "cadet",
   getBundlePlatform: () => ({
     bundlesRoot: () => "/fake/user-data/bundles",
     denyAllPermissions: (targetSession: {
@@ -156,7 +156,7 @@ beforeEach(() => {
   sessionProtocolHandleMock.mockClear();
   setPermissionRequestHandlerMock.mockClear();
   setPermissionCheckHandlerMock.mockClear();
-  createCadetAppHandlerMock.mockClear();
+  createCadetHandlerMock.mockClear();
 });
 
 afterEach(() => {
@@ -217,20 +217,20 @@ describe("openBundleWindow", () => {
     const checkHandler = setPermissionCheckHandlerMock.mock.calls[0]![0] as (
       ...args: unknown[]
     ) => boolean;
-    expect(checkHandler({}, "clipboard-read", "cadetapp://example")).toBe(
+    expect(checkHandler({}, "clipboard-read", "cadet://example")).toBe(
       false,
     );
   });
 
-  test("registers the cadetapp:// handler on the bundle session", () => {
+  test("registers the cadet:// handler on the bundle session", () => {
     openBundleWindow(UUID, "index.html", "Test Bundle");
     expect(sessionProtocolHandleMock).toHaveBeenCalledTimes(1);
-    expect(sessionProtocolHandleMock.mock.calls[0]?.[0]).toBe("cadetapp");
+    expect(sessionProtocolHandleMock.mock.calls[0]?.[0]).toBe("cadet");
   });
 
-  test("loads the correct cadetapp:// URL", () => {
+  test("loads the correct cadet:// URL", () => {
     openBundleWindow(UUID, "index.html", "Test Bundle");
-    expect(loadURLMock).toHaveBeenCalledWith(`cadetapp://${UUID}/index.html`);
+    expect(loadURLMock).toHaveBeenCalledWith(`cadet://${UUID}/index.html`);
   });
 
   test("focuses the existing window when opening the same UUID twice", () => {
@@ -247,7 +247,7 @@ describe("openBundleWindow", () => {
 
     const handler = win.webContents.willNavigateListeners[0]!;
     const preventDefault = mock(() => undefined);
-    handler({ preventDefault }, `cadetapp://${UUID}/page2.html`);
+    handler({ preventDefault }, `cadet://${UUID}/page2.html`);
     expect(preventDefault).not.toHaveBeenCalled();
   });
 
@@ -257,7 +257,7 @@ describe("openBundleWindow", () => {
 
     const handler = win.webContents.willNavigateListeners[0]!;
     const preventDefault = mock(() => undefined);
-    handler({ preventDefault }, `cadetapp://${UUID_2}/index.html`);
+    handler({ preventDefault }, `cadet://${UUID_2}/index.html`);
     expect(preventDefault).toHaveBeenCalledTimes(1);
   });
 

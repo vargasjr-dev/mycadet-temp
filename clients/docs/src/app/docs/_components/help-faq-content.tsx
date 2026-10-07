@@ -89,10 +89,10 @@ export function HelpFaqContent() {
           <p className="mb-6 text-zinc-600">
             On Cadet Cloud, you can reach your assistant from any modern browser at{" "}
             <Link
-              href="https://cadet.ai"
+              href="https://mycadet.ai"
               className="font-semibold text-emerald-700 underline hover:text-emerald-800"
             >
-              cadet.ai
+              mycadet.ai
             </Link>
             , the iPhone and iPad app, the Android app, the macOS and Windows desktop
             apps, and a command-line interface. There is no shipped Linux desktop client.
@@ -103,7 +103,7 @@ export function HelpFaqContent() {
               href={routes.downloads}
               className="font-semibold text-emerald-700 underline hover:text-emerald-800"
             >
-              cadet.ai/downloads
+              mycadet.ai/downloads
             </Link>
             . Beyond those first-party surfaces, channels include Telegram, Slack, email,
             and phone calls.
@@ -205,14 +205,14 @@ export function HelpFaqContent() {
               href={routes.downloads}
               className="font-semibold text-emerald-700 underline hover:text-emerald-800"
             >
-              cadet.ai/downloads
+              mycadet.ai/downloads
             </Link>
             . You can also open{" "}
             <Link
-              href="https://cadet.ai"
+              href="https://mycadet.ai"
               className="font-semibold text-emerald-700 underline hover:text-emerald-800"
             >
-              cadet.ai
+              mycadet.ai
             </Link>{" "}
             in a browser, or install the{" "}
             <Link

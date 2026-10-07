@@ -15,14 +15,14 @@ describe("cloudAssistantHubUrl", () => {
       "https://mycadet.ai/assistant",
     );
     expect(cloudAssistantHubUrl("staging")).toBe(
-      "https://staging.cloud.mycadet.ai/assistant",
+      "https://staging.mycadet.ai/assistant",
     );
   });
 
   test("every other environment falls back to the dev SPA", () => {
     for (const name of ["dev", "test", "local", "unknown-env", undefined]) {
       expect(cloudAssistantHubUrl(name)).toBe(
-        "https://dev.cloud.mycadet.ai/assistant",
+        "https://dev.mycadet.ai/assistant",
       );
     }
   });

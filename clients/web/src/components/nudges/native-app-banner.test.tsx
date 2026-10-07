@@ -14,7 +14,7 @@ afterEach(cleanup);
 const ANDROID_PROMOTION: NativeAppPromotion = {
   target: "android",
   appName: getNativeAppName("android"),
-  storeUrl: "https://play.google.com/store/apps/details?id=ai.mycadet.assistant",
+  storeUrl: "https://play.google.com/store/apps/details?id=ai.mycadet.android",
 };
 
 function renderBanner(promotion: NativeAppPromotion) {

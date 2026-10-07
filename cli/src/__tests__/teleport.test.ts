@@ -107,7 +107,7 @@ const readPlatformTokenMock = mock<typeof platformClient.readPlatformToken>(
 );
 
 const getPlatformUrlMock = mock<typeof platformClient.getPlatformUrl>(
-  () => "https://cloud.cadet.ai",
+  () => "https://cloud.mycadet.ai",
 );
 
 const hatchAssistantMock = mock<typeof platformClient.hatchAssistant>(
@@ -464,7 +464,7 @@ beforeEach(() => {
   readPlatformTokenMock.mockReset();
   readPlatformTokenMock.mockReturnValue("platform-token");
   getPlatformUrlMock.mockReset();
-  getPlatformUrlMock.mockReturnValue("https://cloud.cadet.ai");
+  getPlatformUrlMock.mockReturnValue("https://cloud.mycadet.ai");
   hatchAssistantMock.mockReset();
   hatchAssistantMock.mockResolvedValue({
     assistant: {
@@ -781,11 +781,11 @@ describe("same-environment rejection", () => {
 
     const srcEntry = makeEntry("src", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const dstEntry = makeEntry("dst", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -893,7 +893,7 @@ describe("resolveOrHatchTarget", () => {
   test("platform with existing ID -> returns existing without hatching", async () => {
     const platformEntry = makeEntry("uuid-123", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     findAssistantByNameMock.mockImplementation((name: string) => {
       if (name === "uuid-123") return platformEntry;
@@ -986,7 +986,7 @@ describe("unified GCS flow — four directions", () => {
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://cloud.cadet.ai",
+        "https://cloud.mycadet.ai",
       );
 
       // Runtime export-to-gcs kicked off with the signed upload URL.
@@ -1030,7 +1030,7 @@ describe("unified GCS flow — four directions", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", {
       cloud: "local",
@@ -1077,7 +1077,7 @@ describe("unified GCS flow — four directions", () => {
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://cloud.cadet.ai",
+        "https://cloud.mycadet.ai",
       );
       // For platform sources, export-to-gcs is reached via the platform's
       // wildcard runtime proxy. The helper builds the assistant-scoped URL
@@ -1086,7 +1086,7 @@ describe("unified GCS flow — four directions", () => {
       expect(localRuntimeExportToGcsMock).toHaveBeenCalledWith(
         expect.objectContaining({
           cloud: "cadet",
-          runtimeUrl: "https://cloud.cadet.ai",
+          runtimeUrl: "https://cloud.mycadet.ai",
           assistantId: "my-platform",
         }),
         "platform-token",
@@ -1102,7 +1102,7 @@ describe("unified GCS flow — four directions", () => {
       expect(localRuntimePollJobStatusMock).toHaveBeenCalledWith(
         expect.objectContaining({
           cloud: "cadet",
-          runtimeUrl: "https://cloud.cadet.ai",
+          runtimeUrl: "https://cloud.mycadet.ai",
         }),
         "platform-token",
         "local-export-job-1",
@@ -1124,7 +1124,7 @@ describe("unified GCS flow — four directions", () => {
           targetRuntimeVersion: "0.6.5",
         }),
         "platform-token",
-        "https://cloud.cadet.ai",
+        "https://cloud.mycadet.ai",
       );
       expect(localRuntimeIdentityMock).toHaveBeenCalledWith(
         expect.objectContaining({ cloud: "local" }),
@@ -1186,7 +1186,7 @@ describe("unified GCS flow — four directions", () => {
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://cloud.cadet.ai",
+        "https://cloud.mycadet.ai",
       );
       expect(localRuntimeExportToGcsMock).toHaveBeenCalled();
 
@@ -1200,7 +1200,7 @@ describe("unified GCS flow — four directions", () => {
           targetRuntimeVersion: "0.6.5",
         }),
         "platform-token",
-        "https://cloud.cadet.ai",
+        "https://cloud.mycadet.ai",
       );
       expect(localRuntimeIdentityMock).toHaveBeenCalledWith(
         expect.objectContaining({ cloud: "docker" }),
@@ -1264,7 +1264,7 @@ describe("unified GCS flow — four directions", () => {
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://cloud.cadet.ai",
+        "https://cloud.mycadet.ai",
       );
       expect(localRuntimeExportToGcsMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -1310,7 +1310,7 @@ describe("signed-URL request targets the bundle-owning platform", () => {
     // return value — this is the regression case Codex flagged.
     const platformEntry = makeEntry("existing-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://staging-cloud.cadet.ai",
+      runtimeUrl: "https://staging-cloud.mycadet.ai",
     });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -1332,20 +1332,20 @@ describe("signed-URL request targets the bundle-owning platform", () => {
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://staging-cloud.cadet.ai",
+        "https://staging-cloud.mycadet.ai",
       );
 
       // And the import must run against the same platform.
       expect(platformImportBundleFromGcsMock).toHaveBeenCalledWith(
         "bundle-key-123",
         "platform-token",
-        "https://staging-cloud.cadet.ai",
+        "https://staging-cloud.mycadet.ai",
       );
 
       // Assert none of the signed-URL calls used the default URL — if any
       // did, upload and download would hit different platforms.
       for (const call of platformRequestSignedUrlMock.mock.calls) {
-        expect(call[2]).toBe("https://staging-cloud.cadet.ai");
+        expect(call[2]).toBe("https://staging-cloud.mycadet.ai");
       }
     } finally {
       restoreFetch();
@@ -1357,7 +1357,7 @@ describe("signed-URL request targets the bundle-owning platform", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://dev-cloud.cadet.ai",
+      runtimeUrl: "https://dev-cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1400,7 +1400,7 @@ describe("signed-URL request targets the bundle-owning platform", () => {
           targetRuntimeVersion: "0.6.5",
         }),
         "platform-token",
-        "https://dev-cloud.cadet.ai",
+        "https://dev-cloud.mycadet.ai",
       );
     } finally {
       restoreFetch();
@@ -1450,7 +1450,7 @@ describe("CLI never buffers bundle bytes", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1553,7 +1553,7 @@ describe("polling", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1650,7 +1650,7 @@ describe("MigrationInProgressError handling", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1708,7 +1708,7 @@ describe("VersionMismatchError handling", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1815,7 +1815,7 @@ describe("VersionMismatchError handling", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1864,7 +1864,7 @@ describe("target runtime version fetch", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1916,7 +1916,7 @@ describe("target runtime version fetch", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -2001,7 +2001,7 @@ describe("dry-run", () => {
     const localEntry = makeEntry("my-local", { cloud: "local" });
     const platformEntry = makeEntry("existing-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -2016,7 +2016,7 @@ describe("dry-run", () => {
       expect(platformImportPreflightFromGcsMock).toHaveBeenCalledWith(
         "bundle-key-123",
         "platform-token",
-        "https://cloud.cadet.ai",
+        "https://cloud.mycadet.ai",
       );
       expect(hatchAssistantMock).not.toHaveBeenCalled();
     } finally {
@@ -2029,7 +2029,7 @@ describe("dry-run", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -2182,7 +2182,7 @@ describe("pre-export source backup", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -2210,7 +2210,7 @@ describe("pre-export source backup", () => {
     expect(listPlatformBackupsMock).toHaveBeenCalledWith(
       expect.objectContaining({
         assistantId: "my-platform",
-        runtimeUrl: "https://cloud.cadet.ai",
+        runtimeUrl: "https://cloud.mycadet.ai",
       }),
       "platform-token",
     );
@@ -2226,7 +2226,7 @@ describe("pre-export source backup", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -2276,7 +2276,7 @@ describe("pre-export source backup", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -2357,7 +2357,7 @@ describe("version guard", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -2368,7 +2368,7 @@ describe("version guard", () => {
     });
 
     fetchCurrentVersionMock.mockImplementation((url: string) => {
-      if (url === "https://cloud.cadet.ai") return Promise.resolve("0.7.0");
+      if (url === "https://cloud.mycadet.ai") return Promise.resolve("0.7.0");
       return Promise.resolve("0.6.0");
     });
 
@@ -2388,7 +2388,7 @@ describe("version guard", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -2422,7 +2422,7 @@ describe("version guard", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const newLocalEntry = makeEntry("new-local", { cloud: "local" });
 
@@ -2445,7 +2445,7 @@ describe("version guard", () => {
     });
 
     fetchCurrentVersionMock.mockImplementation((url: string) => {
-      if (url === "https://cloud.cadet.ai") return Promise.resolve("0.7.0");
+      if (url === "https://cloud.mycadet.ai") return Promise.resolve("0.7.0");
       return Promise.resolve("0.6.0");
     });
 
@@ -2536,7 +2536,7 @@ describe("platform credential injection", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", {
       cloud: "local",
@@ -2574,7 +2574,7 @@ describe("platform credential injection", () => {
         bearerToken: "local-bearer",
         assistantApiKey: "api-key-123",
         platformAssistantId: "platform-assistant-1",
-        platformBaseUrl: "https://cloud.cadet.ai",
+        platformBaseUrl: "https://cloud.mycadet.ai",
         organizationId: "org-1",
         userId: "user-1",
         webhookSecret: "webhook-secret-123",
@@ -2583,7 +2583,7 @@ describe("platform credential injection", () => {
         expect.objectContaining({
           assistantId: "my-local",
           platformAssistantId: "platform-assistant-1",
-          platformBaseUrl: "https://cloud.cadet.ai",
+          platformBaseUrl: "https://cloud.mycadet.ai",
           platformOrganizationId: "org-1",
         }),
       );
@@ -2672,7 +2672,7 @@ describe("auth + transient-error resilience", () => {
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -2894,7 +2894,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://cloud.cadet.ai",
+        "https://cloud.mycadet.ai",
       );
     } finally {
       restoreFetch();
@@ -2934,7 +2934,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -2962,7 +2962,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
       expect(localRuntimeIdentityMock).toHaveBeenCalledWith(
         expect.objectContaining({
           cloud: "cadet",
-          runtimeUrl: "https://cloud.cadet.ai",
+          runtimeUrl: "https://cloud.mycadet.ai",
           assistantId: "my-platform",
         }),
         "platform-token",
@@ -2976,7 +2976,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://cloud.cadet.ai",
+        "https://cloud.mycadet.ai",
       );
     } finally {
       restoreFetch();
@@ -2988,7 +2988,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
 
     const platformEntry = makeEntry("my-platform", {
       cloud: "cadet",
-      runtimeUrl: "https://cloud.cadet.ai",
+      runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 

@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ASSISTANT_IMAGE_NAME: mymycadet-dev
+  ASSISTANT_IMAGE_NAME: mycadet-assistant-dev
   GATEWAY_IMAGE_NAME: mycadet-gateway-dev
   CREDENTIAL_EXECUTOR_IMAGE_NAME: mycadet-credential-executor-dev
 
@@ -1256,7 +1256,7 @@ jobs:
           MAC_PROVISIONING_PROFILE: ${{ secrets.MAC_PROVISIONING_PROFILE }}
           # electron-builder.config.cjs derives the app id from
           # CADET_ENVIRONMENT, and the pack step below runs --environment dev.
-          EXPECTED_BUNDLE_ID: com.mycadet.mycadet-electron-dev
+          EXPECTED_BUNDLE_ID: ai.mycadet.electron-dev
         run: |
           if [ -z "$MAC_PROVISIONING_PROFILE" ]; then
             echo "::warning::MAC_PROVISIONING_PROFILE is unset, so the native notifier ships disabled: notifications post through Electron without the assistant avatar."

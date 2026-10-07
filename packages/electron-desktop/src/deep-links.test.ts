@@ -132,59 +132,59 @@ afterEach(() => {
 });
 
 describe("parseCadetUrl", () => {
-  test("mycadet://send?message=hi → send with the message", () => {
-    expect(parseCadetUrl("mycadet://send?message=hi")).toEqual({
+  test("cadet://send?message=hi → send with the message", () => {
+    expect(parseCadetUrl("cadet://send?message=hi")).toEqual({
       kind: "send",
       message: "hi",
     });
   });
 
-  test("mycadet://send?message=hi → same shape under the alternate scheme", () => {
-    expect(parseCadetUrl("mycadet://send?message=hi")).toEqual({
+  test("cadet://send?message=hi → same shape under the alternate scheme", () => {
+    expect(parseCadetUrl("cadet://send?message=hi")).toEqual({
       kind: "send",
       message: "hi",
     });
   });
 
-  test("mycadet://send → empty message (preserved, renderer decides)", () => {
-    expect(parseCadetUrl("mycadet://send")).toEqual({
+  test("cadet://send → empty message (preserved, renderer decides)", () => {
+    expect(parseCadetUrl("cadet://send")).toEqual({
       kind: "send",
       message: "",
     });
   });
 
-  test("mycadet://send decodes percent-encoded query parameters", () => {
-    expect(parseCadetUrl("mycadet://send?message=hello%20world")).toEqual({
+  test("cadet://send decodes percent-encoded query parameters", () => {
+    expect(parseCadetUrl("cadet://send?message=hello%20world")).toEqual({
       kind: "send",
       message: "hello world",
     });
   });
 
-  test("mycadet://thread/abc-123 → openThread with the id", () => {
-    expect(parseCadetUrl("mycadet://thread/abc-123")).toEqual({
+  test("cadet://thread/abc-123 → openThread with the id", () => {
+    expect(parseCadetUrl("cadet://thread/abc-123")).toEqual({
       kind: "openThread",
       threadId: "abc-123",
     });
   });
 
-  test("mycadet://thread/abc-123/extra → openThread on first segment, extras ignored", () => {
-    expect(parseCadetUrl("mycadet://thread/abc-123/extra")).toEqual({
+  test("cadet://thread/abc-123/extra → openThread on first segment, extras ignored", () => {
+    expect(parseCadetUrl("cadet://thread/abc-123/extra")).toEqual({
       kind: "openThread",
       threadId: "abc-123",
     });
   });
 
-  test("mycadet://thread → unknown (no id)", () => {
-    expect(parseCadetUrl("mycadet://thread")).toEqual({
+  test("cadet://thread → unknown (no id)", () => {
+    expect(parseCadetUrl("cadet://thread")).toEqual({
       kind: "unknown",
-      url: "mycadet://thread",
+      url: "cadet://thread",
     });
   });
 
-  test("mycadet://billing/checkout-complete?status=success&session_id=… → billingCheckoutComplete", () => {
+  test("cadet://billing/checkout-complete?status=success&session_id=… → billingCheckoutComplete", () => {
     expect(
       parseCadetUrl(
-        "mycadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
+        "cadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
       ),
     ).toEqual({
       kind: "billingCheckoutComplete",
@@ -197,7 +197,7 @@ describe("parseCadetUrl", () => {
   test("checkout-complete under the alternate scheme parses the same", () => {
     expect(
       parseCadetUrl(
-        "mycadet://billing/checkout-complete?status=success&session_id=cs_live_XYZ",
+        "cadet://billing/checkout-complete?status=success&session_id=cs_live_XYZ",
       ),
     ).toEqual({
       kind: "billingCheckoutComplete",
@@ -209,7 +209,7 @@ describe("parseCadetUrl", () => {
 
   test("status=cancel → cancel with no session id", () => {
     expect(
-      parseCadetUrl("mycadet://billing/checkout-complete?status=cancel"),
+      parseCadetUrl("cadet://billing/checkout-complete?status=cancel"),
     ).toEqual({
       kind: "billingCheckoutComplete",
       status: "cancel",
@@ -221,7 +221,7 @@ describe("parseCadetUrl", () => {
   test("status=cancel ignores any session id that rides along", () => {
     expect(
       parseCadetUrl(
-        "mycadet://billing/checkout-complete?status=cancel&session_id=cs_test_a1B2",
+        "cadet://billing/checkout-complete?status=cancel&session_id=cs_test_a1B2",
       ),
     ).toEqual({
       kind: "billingCheckoutComplete",
@@ -234,7 +234,7 @@ describe("parseCadetUrl", () => {
   test("flow=top_up is carried through on both statuses", () => {
     expect(
       parseCadetUrl(
-        "mycadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2&flow=top_up",
+        "cadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2&flow=top_up",
       ),
     ).toEqual({
       kind: "billingCheckoutComplete",
@@ -244,7 +244,7 @@ describe("parseCadetUrl", () => {
     });
     expect(
       parseCadetUrl(
-        "mycadet://billing/checkout-complete?status=cancel&flow=top_up",
+        "cadet://billing/checkout-complete?status=cancel&flow=top_up",
       ),
     ).toEqual({
       kind: "billingCheckoutComplete",
@@ -257,7 +257,7 @@ describe("parseCadetUrl", () => {
   test("an unrecognized flow value degrades to the subscription flow", () => {
     expect(
       parseCadetUrl(
-        "mycadet://billing/checkout-complete?status=cancel&flow=bogus",
+        "cadet://billing/checkout-complete?status=cancel&flow=bogus",
       ),
     ).toEqual({
       kind: "billingCheckoutComplete",
@@ -269,44 +269,44 @@ describe("parseCadetUrl", () => {
 
   test("success without a session id → unknown (never a success state with nothing to open)", () => {
     expect(
-      parseCadetUrl("mycadet://billing/checkout-complete?status=success"),
+      parseCadetUrl("cadet://billing/checkout-complete?status=success"),
     ).toEqual({
       kind: "unknown",
-      url: "mycadet://billing/checkout-complete",
+      url: "cadet://billing/checkout-complete",
     });
   });
 
   test("success with a malformed session id → unknown, query stripped", () => {
     expect(
       parseCadetUrl(
-        "mycadet://billing/checkout-complete?status=success&session_id=../../etc/passwd",
+        "cadet://billing/checkout-complete?status=success&session_id=../../etc/passwd",
       ),
     ).toEqual({
       kind: "unknown",
-      url: "mycadet://billing/checkout-complete",
+      url: "cadet://billing/checkout-complete",
     });
   });
 
   test("missing / unrecognized status → unknown, query stripped (no session-id leak)", () => {
     expect(
       parseCadetUrl(
-        "mycadet://billing/checkout-complete?session_id=cs_test_a1B2",
+        "cadet://billing/checkout-complete?session_id=cs_test_a1B2",
       ),
-    ).toEqual({ kind: "unknown", url: "mycadet://billing/checkout-complete" });
+    ).toEqual({ kind: "unknown", url: "cadet://billing/checkout-complete" });
     expect(
       parseCadetUrl(
-        "mycadet://billing/checkout-complete?status=bogus&session_id=cs_test_a1B2",
+        "cadet://billing/checkout-complete?status=bogus&session_id=cs_test_a1B2",
       ),
-    ).toEqual({ kind: "unknown", url: "mycadet://billing/checkout-complete" });
+    ).toEqual({ kind: "unknown", url: "cadet://billing/checkout-complete" });
   });
 
   test("unrecognized billing path → unknown, query stripped", () => {
     expect(
-      parseCadetUrl("mycadet://billing/other?session_id=cs_test_a1B2"),
-    ).toEqual({ kind: "unknown", url: "mycadet://billing/other" });
-    expect(parseCadetUrl("mycadet://billing")).toEqual({
+      parseCadetUrl("cadet://billing/other?session_id=cs_test_a1B2"),
+    ).toEqual({ kind: "unknown", url: "cadet://billing/other" });
+    expect(parseCadetUrl("cadet://billing")).toEqual({
       kind: "unknown",
-      url: "mycadet://billing",
+      url: "cadet://billing",
     });
   });
 
@@ -338,10 +338,10 @@ describe("parseCadetUrl", () => {
     });
   });
 
-  test("unrecognized mycadet://… host → unknown", () => {
-    expect(parseCadetUrl("mycadet://garbage")).toEqual({
+  test("unrecognized cadet://… host → unknown", () => {
+    expect(parseCadetUrl("cadet://garbage")).toEqual({
       kind: "unknown",
-      url: "mycadet://garbage",
+      url: "cadet://garbage",
     });
   });
 
@@ -349,17 +349,17 @@ describe("parseCadetUrl", () => {
     // The legacy code must not survive into the URL the renderer logs as
     // a `deeplink.unknown` log.
     expect(
-      parseCadetUrl("mycadet://auth/callback?code=secret&state=xyz"),
-    ).toEqual({ kind: "unknown", url: "mycadet://auth/callback" });
+      parseCadetUrl("cadet://auth/callback?code=secret&state=xyz"),
+    ).toEqual({ kind: "unknown", url: "cadet://auth/callback" });
     expect(
-      parseCadetUrl("mycadet://auth/callback?code=secret"),
-    ).toEqual({ kind: "unknown", url: "mycadet://auth/callback" });
+      parseCadetUrl("cadet://auth/callback?code=secret"),
+    ).toEqual({ kind: "unknown", url: "cadet://auth/callback" });
   });
 
-  test("mycadet://connect?url=…&code=… → connect carrying the base and the device code", () => {
+  test("cadet://connect?url=…&code=… → connect carrying the base and the device code", () => {
     expect(
       parseCadetUrl(
-        "mycadet://connect?url=https%3A%2F%2Fassistant.example.com%2Fassistant-1&code=ABCD-1234",
+        "cadet://connect?url=https%3A%2F%2Fassistant.example.com%2Fassistant-1&code=ABCD-1234",
       ),
     ).toEqual({
       kind: "connect",
@@ -374,7 +374,7 @@ describe("parseCadetUrl", () => {
     // drop an approved code and drop the user into a fresh approval flow.
     expect(
       parseCadetUrl(
-        "mycadet://connect?url=https%3A%2F%2Fh.example&code=a%2Bb%2Fc%3D",
+        "cadet://connect?url=https%3A%2F%2Fh.example&code=a%2Bb%2Fc%3D",
       ),
     ).toEqual({ kind: "connect", url: "https://h.example", code: "a+b/c=" });
   });
@@ -382,17 +382,17 @@ describe("parseCadetUrl", () => {
   test("connect drops a code that cannot have come from a gateway", () => {
     expect(
       parseCadetUrl(
-        "mycadet://connect?url=https%3A%2F%2Fh.example&code=has%20a%20space",
+        "cadet://connect?url=https%3A%2F%2Fh.example&code=has%20a%20space",
       ),
     ).toEqual({ kind: "connect", url: "https://h.example" });
     expect(
       parseCadetUrl(
-        "mycadet://connect?url=https%3A%2F%2Fh.example&code=%00control",
+        "cadet://connect?url=https%3A%2F%2Fh.example&code=%00control",
       ),
     ).toEqual({ kind: "connect", url: "https://h.example" });
     expect(
       parseCadetUrl(
-        `mycadet://connect?url=https%3A%2F%2Fh.example&code=${"a".repeat(257)}`,
+        `cadet://connect?url=https%3A%2F%2Fh.example&code=${"a".repeat(257)}`,
       ),
     ).toEqual({ kind: "connect", url: "https://h.example" });
   });
@@ -400,16 +400,16 @@ describe("parseCadetUrl", () => {
   test("connect drops a code with no base to exchange it against", () => {
     // Nothing can be done with a device code alone, so it is not carried
     // across the bridge just to be discarded there.
-    expect(parseCadetUrl("mycadet://connect?code=ABCD-1234")).toEqual({
+    expect(parseCadetUrl("cadet://connect?code=ABCD-1234")).toEqual({
       kind: "connect",
     });
     expect(
-      parseCadetUrl("mycadet://connect?url=http%3A%2F%2Fevil.example&code=SEC"),
+      parseCadetUrl("cadet://connect?url=http%3A%2F%2Fevil.example&code=SEC"),
     ).toEqual({ kind: "connect" });
   });
 
-  test("mycadet://connect?bundle=… → the legacy signal, never the payload", () => {
-    const link = parseCadetUrl("mycadet://connect?bundle=eyJnYXRld2F5");
+  test("cadet://connect?bundle=… → the legacy signal, never the payload", () => {
+    const link = parseCadetUrl("cadet://connect?bundle=eyJnYXRld2F5");
     expect(link).toEqual({ kind: "connect", legacy: true });
     expect(JSON.stringify(link)).not.toContain("eyJnYXRld2F5");
   });
@@ -417,7 +417,7 @@ describe("parseCadetUrl", () => {
   test("a bundle rides alongside a usable base without displacing it", () => {
     expect(
       parseCadetUrl(
-        "mycadet://connect?url=https%3A%2F%2Fh.example&code=ABCD&bundle=eyJnYXRld2F5",
+        "cadet://connect?url=https%3A%2F%2Fh.example&code=ABCD&bundle=eyJnYXRld2F5",
       ),
     ).toEqual({
       kind: "connect",
@@ -430,14 +430,14 @@ describe("parseCadetUrl", () => {
   test("connect drops a non-https url param but keeps the rest of the link", () => {
     expect(
       parseCadetUrl(
-        "mycadet://connect?url=http%3A%2F%2Fevil.example&bundle=eyJnYXRld2F5",
+        "cadet://connect?url=http%3A%2F%2Fevil.example&bundle=eyJnYXRld2F5",
       ),
     ).toEqual({ kind: "connect", legacy: true });
   });
 
   test("connect drops an unparseable url param", () => {
     expect(
-      parseCadetUrl("mycadet://connect?url=not%20a%20url&bundle=eyJnYXRld2F5"),
+      parseCadetUrl("cadet://connect?url=not%20a%20url&bundle=eyJnYXRld2F5"),
     ).toEqual({ kind: "connect", legacy: true });
   });
 
@@ -445,8 +445,8 @@ describe("parseCadetUrl", () => {
     // The user clicked a connect link; even with every field missing or
     // malformed the renderer routes them to the connect flow with guidance
     // instead of logging an unknown URL.
-    expect(parseCadetUrl("mycadet://connect")).toEqual({ kind: "connect" });
-    expect(parseCadetUrl("mycadet://connect?url=&code=&bundle=")).toEqual({
+    expect(parseCadetUrl("cadet://connect")).toEqual({ kind: "connect" });
+    expect(parseCadetUrl("cadet://connect?url=&code=&bundle=")).toEqual({
       kind: "connect",
     });
   });
@@ -461,7 +461,7 @@ describe("parseCadetUrl", () => {
     ).map((method) => spyOn(console, method));
     try {
       handleDeepLink(
-        "mycadet://connect?url=https%3A%2F%2Fh.example&code=SECRET-CODE&bundle=U0VDUkVUYnVuZGxl",
+        "cadet://connect?url=https%3A%2F%2Fh.example&code=SECRET-CODE&bundle=U0VDUkVUYnVuZGxl",
       );
       for (const spy of consoleSpies) {
         for (const call of spy.mock.calls) {
@@ -481,10 +481,10 @@ describe("parseCadetUrl", () => {
     // so a device code must never be able to route there. Every connect link
     // stays a connect link, malformed fields and all.
     for (const input of [
-      "mycadet://connect?url=https%3A%2F%2Fh.example&code=SECRET-CODE",
-      "mycadet://connect?url=nonsense&code=SECRET-CODE",
-      "mycadet://connect?code=SECRET-CODE",
-      "mycadet://connect/extra/path?code=SECRET-CODE",
+      "cadet://connect?url=https%3A%2F%2Fh.example&code=SECRET-CODE",
+      "cadet://connect?url=nonsense&code=SECRET-CODE",
+      "cadet://connect?code=SECRET-CODE",
+      "cadet://connect/extra/path?code=SECRET-CODE",
     ]) {
       const link = parseCadetUrl(input);
       expect(link.kind).toBe("connect");
@@ -496,25 +496,25 @@ describe("parseCadetUrl", () => {
     // A scheme that doesn't match any known environment is always
     // rejected, regardless of which env this test suite runs under.
     const url =
-      "mycadet-nonexistent://auth/callback?code=abc&state=xyz";
+      "cadet-nonexistent://auth/callback?code=abc&state=xyz";
     expect(parseCadetUrl(url)).toEqual({ kind: "unknown", url });
   });
 });
 
 describe("extractDeepLinkFromArgv", () => {
-  test("returns the first mycadet:// URL in argv", () => {
+  test("returns the first cadet:// URL in argv", () => {
     const argv = [
       "/usr/local/bin/electron",
       "--inspect=9229",
-      "mycadet://send?message=hi",
+      "cadet://send?message=hi",
       "--unrelated",
     ];
-    expect(extractDeepLinkFromArgv(argv)).toBe("mycadet://send?message=hi");
+    expect(extractDeepLinkFromArgv(argv)).toBe("cadet://send?message=hi");
   });
 
   test("matches the alternate scheme too", () => {
-    expect(extractDeepLinkFromArgv(["mycadet://thread/x"])).toBe(
-      "mycadet://thread/x",
+    expect(extractDeepLinkFromArgv(["cadet://thread/x"])).toBe(
+      "cadet://thread/x",
     );
   });
 
@@ -525,9 +525,9 @@ describe("extractDeepLinkFromArgv", () => {
   });
 
   test.each([
-    "mycadet://send?message=hello",
-    "mycadet://thread/thread-123",
-    "mycadet://billing/checkout-complete?status=cancel",
+    "cadet://send?message=hello",
+    "cadet://thread/thread-123",
+    "cadet://billing/checkout-complete?status=cancel",
   ])("extracts supported Windows launch URL %s", (url) => {
     expect(extractDeepLinkFromArgv(["Cadet.exe", url])).toBe(url);
   });
@@ -535,7 +535,7 @@ describe("extractDeepLinkFromArgv", () => {
 
 describe("installDeepLinks", () => {
   test("delivers a cold-start argv link exactly once", () => {
-    configureTestRuntime(["Cadet.exe", "mycadet://send?message=cold"]);
+    configureTestRuntime(["Cadet.exe", "cadet://send?message=cold"]);
     installDeepLinks();
 
     const drain = ipcHandleMock.mock.calls.find(
@@ -549,8 +549,8 @@ describe("installDeepLinks", () => {
     installDeepLinks();
     appListeners.get("second-instance")?.({}, [
       "Cadet.exe",
-      "mycadet://thread/warm",
-      "mycadet://thread/ignored",
+      "cadet://thread/warm",
+      "cadet://thread/ignored",
     ]);
 
     const drain = ipcHandleMock.mock.calls.find(
@@ -617,7 +617,7 @@ describe("installDeepLinks", () => {
     expect(openUrl).toBeDefined();
 
     const preventDefault = mock(() => undefined);
-    openUrl?.({ preventDefault } as unknown, "mycadet://send?message=hi");
+    openUrl?.({ preventDefault } as unknown, "cadet://send?message=hi");
 
     expect(preventDefault).toHaveBeenCalled();
   });
@@ -625,8 +625,8 @@ describe("installDeepLinks", () => {
   test("registers the cadet:deepLinks:drain IPC handler returning + clearing the buffer", () => {
     installDeepLinks();
 
-    handleDeepLink("mycadet://send?message=one");
-    handleDeepLink("mycadet://thread/abc");
+    handleDeepLink("cadet://send?message=one");
+    handleDeepLink("cadet://thread/abc");
 
     // Find the registered handler.
     const drainCall = ipcHandleMock.mock.calls.find(
@@ -650,7 +650,7 @@ describe("installDeepLinks", () => {
     )![1] as (event: unknown) => unknown[];
 
     // Backlog before any subscriber.
-    handleDeepLink("mycadet://send?message=backlog");
+    handleDeepLink("cadet://send?message=backlog");
 
     // Renderer mounts: subscribes, drains.
     const s1 = makeSender();
@@ -660,7 +660,7 @@ describe("installDeepLinks", () => {
     ]);
 
     // Live link arrives while subscribed — broadcasts only.
-    handleDeepLink("mycadet://thread/live");
+    handleDeepLink("cadet://thread/live");
 
     // Renderer hard-navigates: unsubscribe, then a new renderer
     // mounts and drains. The live link must NOT be replayed.
@@ -682,7 +682,7 @@ describe("installDeepLinks", () => {
 
     unsubscribeWith(s1);
 
-    handleDeepLink("mycadet://thread/post-logout");
+    handleDeepLink("cadet://thread/post-logout");
 
     const s2 = makeSender();
     subscribeWith(s2);
@@ -701,7 +701,7 @@ describe("installDeepLinks", () => {
     unsubscribeWith(s);
     unsubscribeWith(s);
 
-    handleDeepLink("mycadet://send?message=should-buffer");
+    handleDeepLink("cadet://send?message=should-buffer");
     expect(drainHandler(allowedEvent)).toEqual([
       { kind: "send", message: "should-buffer" },
     ]);
@@ -714,7 +714,7 @@ describe("installDeepLinks", () => {
 
     const w = makeWindow();
     windows = [w];
-    handleDeepLink("mycadet://send?message=live");
+    handleDeepLink("cadet://send?message=live");
 
     expect(w.webContents.send).toHaveBeenCalledWith("cadet:deepLinks:event", {
       kind: "send",
@@ -742,7 +742,7 @@ describe("installDeepLinks", () => {
     s.fireDestroyed();
 
     // No subscribers now → next link is buffered.
-    handleDeepLink("mycadet://send?message=after-crash");
+    handleDeepLink("cadet://send?message=after-crash");
     expect(drainHandler(allowedEvent)).toEqual([
       { kind: "send", message: "after-crash" },
     ]);
@@ -755,7 +755,7 @@ describe("handleDeepLink — broadcast", () => {
     const w2 = makeWindow();
     windows = [w1, w2];
 
-    handleDeepLink("mycadet://send?message=broadcast");
+    handleDeepLink("cadet://send?message=broadcast");
 
     const expected = { kind: "send", message: "broadcast" };
     expect(w1.webContents.send).toHaveBeenCalledWith(
@@ -773,7 +773,7 @@ describe("handleDeepLink — broadcast", () => {
     const dead = makeWindow(true);
     windows = [alive, dead];
 
-    handleDeepLink("mycadet://send?message=skip");
+    handleDeepLink("cadet://send?message=skip");
 
     expect(alive.webContents.send).toHaveBeenCalled();
     expect(dead.webContents.send).not.toHaveBeenCalled();
@@ -794,24 +794,24 @@ describe("handleDeepLink — broadcast", () => {
 
 describe("handleDeepLink — window activation", () => {
   test("brings the main window forward for `send` (covers the no-renderer case on Darwin)", () => {
-    handleDeepLink("mycadet://send?message=hi");
+    handleDeepLink("cadet://send?message=hi");
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
   test("brings the main window forward for `openThread`", () => {
-    handleDeepLink("mycadet://thread/abc");
+    handleDeepLink("cadet://thread/abc");
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
   test("brings the main window forward for `billingCheckoutComplete`", () => {
     handleDeepLink(
-      "mycadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
+      "cadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
     );
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
   test("brings the main window forward for `connect`", () => {
-    handleDeepLink("mycadet://connect?url=https%3A%2F%2Fh.example&code=ABCD");
+    handleDeepLink("cadet://connect?url=https%3A%2F%2Fh.example&code=ABCD");
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
@@ -823,36 +823,36 @@ describe("handleDeepLink — window activation", () => {
     expect(ensureMainWindowVisibleMock).not.toHaveBeenCalled();
   });
 
-  test("defers activation when app is not yet ready (cold-launch via mycadet://)", () => {
+  test("defers activation when app is not yet ready (cold-launch via cadet://)", () => {
     // Cold launch path: `will-finish-launching` → `open-url` fires
     // BEFORE `app.whenReady()`. `new BrowserWindow()` pre-ready
     // would race Electron init; the link is buffered above and the
     // initial `installMainWindow` in the whenReady chain creates
     // the window which drains it on mount.
     appIsReady = false;
-    handleDeepLink("mycadet://send?message=cold-launch");
+    handleDeepLink("cadet://send?message=cold-launch");
 
     expect(ensureMainWindowVisibleMock).not.toHaveBeenCalled();
   });
 
   test("activates after app becomes ready (warm path: subsequent links)", () => {
     appIsReady = false;
-    handleDeepLink("mycadet://send?message=cold");
+    handleDeepLink("cadet://send?message=cold");
     expect(ensureMainWindowVisibleMock).not.toHaveBeenCalled();
 
     // Simulate whenReady having fired.
     appIsReady = true;
-    handleDeepLink("mycadet://thread/warm");
+    handleDeepLink("cadet://thread/warm");
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
   test("buffers the link AND activates so the renderer-on-mount drain still delivers it", () => {
     // Simulating the macOS path: app alive, main window closed,
-    // user clicks mycadet://send → main handles it. The link must
+    // user clicks cadet://send → main handles it. The link must
     // both (a) be parked in the buffer for the freshly-created
     // renderer to drain, and (b) trigger window creation so the
     // renderer actually mounts.
-    handleDeepLink("mycadet://send?message=delivered");
+    handleDeepLink("cadet://send?message=delivered");
 
     // Activation fired.
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
@@ -876,73 +876,68 @@ describe("handleDeepLink — window activation", () => {
 });
 
 describe("resolveRegisteredSchemes", () => {
-  test("production registers cadet and mycadet", () => {
+  test("production registers cadet", () => {
     expect(resolveRegisteredSchemes("production")).toEqual([
       "cadet",
-      "mycadet",
     ]);
   });
 
-  test("dev registers only mycadet-dev", () => {
-    expect(resolveRegisteredSchemes("dev")).toEqual(["mycadet-dev"]);
+  test("dev registers only cadet-dev", () => {
+    expect(resolveRegisteredSchemes("dev")).toEqual(["cadet-dev"]);
   });
 
-  test("staging registers only mycadet-staging", () => {
+  test("staging registers only cadet-staging", () => {
     expect(resolveRegisteredSchemes("staging")).toEqual([
-      "mycadet-staging",
+      "cadet-staging",
     ]);
   });
 
-  test("local registers only mycadet-local", () => {
+  test("local registers only cadet-local", () => {
     expect(resolveRegisteredSchemes("local")).toEqual([
-      "mycadet-local",
+      "cadet-local",
     ]);
   });
 
   test("unknown env derives scheme from env name", () => {
-    expect(resolveRegisteredSchemes("test")).toEqual(["mycadet-test"]);
+    expect(resolveRegisteredSchemes("test")).toEqual(["cadet-test"]);
   });
 });
 
 describe("resolveAuthCallbackScheme", () => {
   test("uses the app-specific production scheme", () => {
-    expect(resolveAuthCallbackScheme("production")).toBe("mycadet");
+    expect(resolveAuthCallbackScheme("production")).toBe("cadet");
   });
 
   test("uses the environment-specific non-production scheme", () => {
-    expect(resolveAuthCallbackScheme("dev")).toBe("mycadet-dev");
+    expect(resolveAuthCallbackScheme("dev")).toBe("cadet-dev");
   });
 });
 
 describe("resolveAcceptedSchemes", () => {
-  test("production accepts cadet: and mycadet:", () => {
+  test("production accepts cadet:", () => {
     const accepted = resolveAcceptedSchemes("production");
     expect(accepted).toContain("cadet:");
-    expect(accepted).toContain("mycadet:");
+    expect(accepted).toHaveLength(1);
+  });
+
+  test("dev accepts cadet: and cadet-dev:", () => {
+    const accepted = resolveAcceptedSchemes("dev");
+    expect(accepted).toContain("cadet:");
+    expect(accepted).toContain("cadet-dev:");
     expect(accepted).toHaveLength(2);
   });
 
-  test("dev accepts cadet:, mycadet:, and mycadet-dev:", () => {
-    const accepted = resolveAcceptedSchemes("dev");
-    expect(accepted).toContain("cadet:");
-    expect(accepted).toContain("mycadet:");
-    expect(accepted).toContain("mycadet-dev:");
-    expect(accepted).toHaveLength(3);
-  });
-
-  test("staging accepts cadet:, mycadet:, and mycadet-staging:", () => {
+  test("staging accepts cadet: and cadet-staging:", () => {
     const accepted = resolveAcceptedSchemes("staging");
     expect(accepted).toContain("cadet:");
-    expect(accepted).toContain("mycadet:");
-    expect(accepted).toContain("mycadet-staging:");
-    expect(accepted).toHaveLength(3);
+    expect(accepted).toContain("cadet-staging:");
+    expect(accepted).toHaveLength(2);
   });
 
-  test("local accepts cadet:, mycadet:, and mycadet-local:", () => {
+  test("local accepts cadet: and cadet-local:", () => {
     const accepted = resolveAcceptedSchemes("local");
     expect(accepted).toContain("cadet:");
-    expect(accepted).toContain("mycadet:");
-    expect(accepted).toContain("mycadet-local:");
-    expect(accepted).toHaveLength(3);
+    expect(accepted).toContain("cadet-local:");
+    expect(accepted).toHaveLength(2);
   });
 });

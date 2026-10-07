@@ -7,14 +7,14 @@
  * preload script so there is no `window.cadet` bridge; the renderer runs
  * in full sandbox mode with only the web-platform APIs available.
  *
- * Navigation is restricted to the bundle's own `cadetapp://{uuid}/`
+ * Navigation is restricted to the bundle's own `cadet://{uuid}/`
  * origin, and `window.open` is blocked outright, so a bundle cannot
  * reach another bundle's content or escape into arbitrary web pages.
  */
 import { BrowserWindow, session } from "electron";
 
-import { getBundlePlatform, CADETAPP_PROTOCOL } from "./bundle-platform";
-import { createCadetAppHandler } from "./cadetapp-protocol";
+import { getBundlePlatform, CADET_PROTOCOL } from "./bundle-platform";
+import { createCadetHandler } from "./cadet-protocol";
 import { hardenedWebPreferences } from "./windows";
 
 const openBundleWindows = new Map<string, BrowserWindow>();
@@ -37,8 +37,8 @@ export const openBundleWindow = (
   platform.denyAllPermissions(bundleSession);
 
   bundleSession.protocol.handle(
-    CADETAPP_PROTOCOL,
-    createCadetAppHandler(platform.bundlesRoot()),
+    CADET_PROTOCOL,
+    createCadetHandler(platform.bundlesRoot()),
   );
 
   const win = new BrowserWindow({
@@ -52,7 +52,7 @@ export const openBundleWindow = (
     },
   });
 
-  const allowedPrefix = `${CADETAPP_PROTOCOL}://${uuid}/`;
+  const allowedPrefix = `${CADET_PROTOCOL}://${uuid}/`;
 
   win.webContents.on("will-navigate", (event, url) => {
     if (!url.startsWith(allowedPrefix)) {
@@ -62,7 +62,7 @@ export const openBundleWindow = (
 
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
 
-  void win.loadURL(`${CADETAPP_PROTOCOL}://${uuid}/${entry}`);
+  void win.loadURL(`${CADET_PROTOCOL}://${uuid}/${entry}`);
 
   openBundleWindows.set(uuid, win);
   win.on("closed", () => {

@@ -5,7 +5,7 @@ import Foundation
 ///
 /// The active value lives in `UserDefaults` under `self_hosted_server_url`,
 /// written either from the native Settings pane (`Settings.bundle`), a
-/// confirmed `mycadet://connect` deep link, or the `SelfHostedServers` plugin.
+/// confirmed `cadet://connect` deep link, or the `SelfHostedServers` plugin.
 /// An empty or absent value means the shell uses its baked default (Cadet
 /// Cloud), which is the unchanged default experience. Alongside the active
 /// slot, `self_hosted_servers` remembers every paired origin as a

@@ -25,7 +25,7 @@ export const NATIVE_APP_BANNER_MIN_TURNS = 5;
 export const IOS_APP_STORE_URL =
   "https://apps.apple.com/us/app/mycadet/id6759934423";
 
-const ANDROID_PACKAGE_ID = "ai.mycadet.assistant";
+const ANDROID_PACKAGE_ID = "ai.mycadet.android";
 
 /** Verbatim value Android's `getInstallReferrer()` returns after install. */
 const ANDROID_INSTALL_REFERRER =

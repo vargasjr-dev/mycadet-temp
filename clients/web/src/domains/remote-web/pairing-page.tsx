@@ -142,16 +142,16 @@ function clearDeviceCodeFromUrl(): void {
 
 /**
  * Custom URL scheme registered by the shipped mobile apps. Dev and staging app
- * builds register suffixed schemes (e.g. `mycadet-dev`), so this
+ * builds register suffixed schemes (e.g. `cadet-dev`), so this
  * handoff link intentionally targets the production app — the common case for
  * a phone that scanned a pairing QR with its camera.
  */
-const CADET_APP_SCHEME = "mycadet";
-const CADET_ANDROID_PACKAGE = "ai.mycadet.assistant";
+const CADET_APP_SCHEME = "cadet";
+const CADET_ANDROID_PACKAGE = "ai.mycadet.android";
 type AppHandoffPlatform = "ios" | "android";
 
 /**
- * Build the `mycadet://connect?url=<base>&code=<device-code>` deep
+ * Build the `cadet://connect?url=<base>&code=<device-code>` deep
  * link the mobile app consumes to persist this server and finish pairing inside
  * the app. `url` is the page's own public base (origin + served path prefix)
  * so the app reconnects to the same self-hosted assistant this browser is

@@ -24,16 +24,16 @@
  * `tsconfig.json`. Either way the app no longer needs its own `cadet.d.ts`.
  *
  * The named types below are also exported, so app code that wants to annotate
- * a variable can `import type { CadetAppBridge } from "@mycadet/plugin-api/app"`.
+ * a variable can `import type { CadetBridge } from "@mycadet/plugin-api/app"`.
  */
 
 /**
- * Request init accepted by {@link CadetAppBridge.fetch}. A subset of the DOM
+ * Request init accepted by {@link CadetBridge.fetch}. A subset of the DOM
  * `RequestInit`: the bridge serializes the request across `postMessage`, so
  * `headers` must be a plain object and `body` a string (not a `Headers`
  * instance, `FormData`, or a stream).
  */
-export interface CadetAppFetchInit {
+export interface CadetFetchInit {
   /** HTTP method. Defaults to `"GET"`. */
   method?: string;
   /** Request headers as a plain object. */
@@ -43,11 +43,11 @@ export interface CadetAppFetchInit {
 }
 
 /**
- * Response returned by {@link CadetAppBridge.fetch}. A `fetch`-like subset,
+ * Response returned by {@link CadetBridge.fetch}. A `fetch`-like subset,
  * not a full DOM `Response`: the body is delivered as text across the bridge,
  * so only `json()` and `text()` are available (no `blob()`, `body`, etc.).
  */
-export interface CadetAppFetchResponse {
+export interface CadetFetchResponse {
   /** True when `status` is in the 2xx range. */
   ok: boolean;
   status: number;
@@ -64,7 +64,7 @@ export interface CadetAppFetchResponse {
  * The `window.cadet` bridge the host injects into a plugin app's sandboxed
  * iframe. Mirrors the runtime built by the assistant's `sandbox-bridge`.
  */
-export interface CadetAppBridge {
+export interface CadetBridge {
   /**
    * Authenticated `fetch` to the app's own custom routes under `/v1/x/` (a
    * leading `/x/` is accepted and normalized). Proxied through the host so the
@@ -73,12 +73,12 @@ export interface CadetAppBridge {
    */
   fetch(
     path: string,
-    options?: CadetAppFetchInit,
-  ): Promise<CadetAppFetchResponse>;
+    options?: CadetFetchInit,
+  ): Promise<CadetFetchResponse>;
 }
 
 declare global {
   interface Window {
-    cadet: CadetAppBridge;
+    cadet: CadetBridge;
   }
 }

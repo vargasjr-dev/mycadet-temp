@@ -33,9 +33,9 @@ import { installAbout, openAboutWindow } from "./about.client";
 import { installAutoUpdate } from "./auto-update.client";
 import {
   BUNDLES_DIR_NAME,
-  CADETAPP_PROTOCOL,
+  CADET_PROTOCOL,
 } from "@mycadet/electron-desktop/bundle-platform";
-import { registerCadetAppProtocol } from "@mycadet/electron-desktop/cadetapp-protocol";
+import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
 import { APP_HOST, APP_PROTOCOL } from "./app-config";
 import { resolveAllowedOrigin } from "./app-origin";
 import { writeCliLocator } from "./cli-installer";
@@ -215,7 +215,7 @@ protocol.registerSchemesAsPrivileged([
     },
   },
   {
-    scheme: CADETAPP_PROTOCOL,
+    scheme: CADET_PROTOCOL,
     privileges: {
       standard: true,
       secure: true,
@@ -228,7 +228,7 @@ protocol.registerSchemesAsPrivileged([
 
 // Deep-link plumbing — register at module top-level so the
 // `will-finish-launching` subscription captures URLs delivered AT
-// launch (the OS opens the app via a `mycadet://` click → `open-url`
+// launch (the OS opens the app via a `cadet://` click → `open-url`
 // can fire before `whenReady`). Registering in `whenReady` misses
 // the launching URL — the #1 deep-link bug in Electron apps.
 installDeepLinks();
@@ -406,7 +406,7 @@ app
         resolveAllowedOrigin,
       });
     }
-    registerCadetAppProtocol(
+    registerCadetProtocol(
       path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
     );
     installMacBundleWorkflow();

@@ -360,7 +360,7 @@ describe("registerForRemotePush", () => {
 
   test("creates the Android channel before registering and omits APNs fields", async () => {
     platform = "android";
-    bundleId = "ai.mycadet.assistant.dev";
+    bundleId = "ai.mycadet.android.dev";
     const handler = mock(() => {});
     setForegroundPushHandler(handler);
     androidRegisterMock.mockImplementationOnce(async () => {
@@ -375,7 +375,7 @@ describe("registerForRemotePush", () => {
     expect(lastUpsertArg?.body).toEqual({
       token: "fcm-token-abc",
       platform: "android",
-      bundle_id: "ai.mycadet.assistant.dev",
+      bundle_id: "ai.mycadet.android.dev",
       capabilities: ["native-notification-render"],
     });
     expect(resolveSignedApnsEnvironmentMock).not.toHaveBeenCalled();
@@ -758,7 +758,7 @@ describe("unregisterFromRemotePush", () => {
 
   test("replaces a rotated token and unregisters FCM on logout", async () => {
     platform = "android";
-    bundleId = "ai.mycadet.assistant.dev";
+    bundleId = "ai.mycadet.android.dev";
     await registerForRemotePush("11111111-1111-4111-8111-111111111111");
     registrationHandler?.({ value: "fcm-old" });
     await flushMicrotasks();

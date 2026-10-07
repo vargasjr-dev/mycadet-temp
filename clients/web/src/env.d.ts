@@ -20,8 +20,8 @@ interface ImportMetaEnv {
   readonly VITE_SESSION_REPLAY_APP_ID?: string;
   /**
    * Root hostname shared across Cadet subdomains, with a leading dot (e.g.
-   * `.cadet.ai`). Used as the session-replay cookie scope (`rootHostname`).
-   * Defaults to `.cadet.ai` when unset. The Electron main process reads the
+   * `.mycadet.ai`). Used as the session-replay cookie scope (`rootHostname`).
+   * Defaults to `.mycadet.ai` when unset. The Electron main process reads the
    * same var via `process.env` at build time (see `electron.vite.config.ts`).
    */
   readonly VITE_ROOT_HOSTNAME?: string;
@@ -36,14 +36,14 @@ interface ImportMetaEnv {
   /** When truthy ("1", "true", "yes"), disables platform connectivity in local mode. */
   readonly VITE_CADET_DISABLE_PLATFORM?: string;
   /**
-   * Live Google Play listing for ai.mycadet.assistant. Android install
+   * Live Google Play listing for ai.mycadet.android. Android install
    * promotion remains hidden when this is unset or invalid.
    */
   readonly VITE_ANDROID_PLAY_STORE_URL?: string;
   /**
    * Override for the live-voice tunnel host (no scheme), e.g. `localhost:8501`
    * for a local `vel up` tunnel. When unset the host is derived at runtime from
-   * the platform host (`tunnel.mycadet.ai`, `tunnel-{env}.cadet.ai`). See
+   * the platform host (`tunnel.mycadet.ai`, `tunnel-{env}.mycadet.ai`). See
    * `domains/chat/voice/live-voice/connection.ts`.
    */
   readonly VITE_TUNNEL_HOST?: string;

@@ -1,11 +1,11 @@
 /** Apex domain that redirects to the canonical www host. */
-export const APEX_DOMAIN = "cadet.ai";
+export const APEX_DOMAIN = "mycadet.ai";
 
 /** Canonical marketing site domain. */
-export const WWW_DOMAIN = "www.cadet.ai";
+export const WWW_DOMAIN = "www.mycadet.ai";
 
 /** The eTLD+1 shared by all Cadet domains. Cookie domain uses a leading dot. */
-export const CADET_COOKIE_DOMAIN = ".cadet.ai";
+export const CADET_COOKIE_DOMAIN = ".mycadet.ai";
 
 /**
  * Hostnames where the assistant is platform-hosted (not local daemon).
@@ -21,7 +21,7 @@ export function hostMatchesDomain(host: string, domain: string): boolean {
   return host === domain || host.endsWith(`.${domain}`);
 }
 
-/** Check if a hostname belongs to the cadet.ai domain family. */
+/** Check if a hostname belongs to the mycadet.ai domain family. */
 export function isCadetDomain(host: string): boolean {
   return hostMatchesDomain(host, APEX_DOMAIN);
 }

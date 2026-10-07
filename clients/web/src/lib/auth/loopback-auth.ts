@@ -9,7 +9,7 @@
  * its platform proxy can authenticate — no browser session cookie is used.
  */
 
-const FALLBACK_WEB_URL = "https://www.cadet.ai";
+const FALLBACK_WEB_URL = "https://www.mycadet.ai";
 const LOOPBACK_STATE_KEY = "cadet:loopback:state";
 const LOOPBACK_RETURN_TO_KEY = "cadet:loopback:returnTo";
 

@@ -42,18 +42,18 @@ const CORNER_RADIUS_RATIO = 0.28;
 const ARTWORK_SCALE = 1.94;
 const ARTWORK_OFFSET_X_RATIO = 0.074;
 
-interface CadetAppIconMarkProps {
+interface CadetIconMarkProps {
   size: number;
   /** Which build's icon to draw. Defaults to the one users install. */
   environment?: AppIconEnvironment;
   flattened?: boolean;
 }
 
-export function CadetAppIconMark({
+export function CadetIconMark({
   size,
   environment = "production",
   flattened = false,
-}: CadetAppIconMarkProps) {
+}: CadetIconMarkProps) {
   if (QUIRKY === undefined) {
     return null;
   }

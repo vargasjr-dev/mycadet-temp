@@ -27,7 +27,7 @@ describe("isCadetStaff", () => {
 
   test("rejects a lookalike domain", () => {
     // Suffix matching includes the "@", so a domain that merely ends in
-    // "cadet.ai" does not qualify.
+    // "mycadet.ai" does not qualify.
     expect(isCadetStaff(user({ email: "eve@notcadet.ai" }))).toBe(false);
   });
 

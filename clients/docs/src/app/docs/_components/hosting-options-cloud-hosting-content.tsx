@@ -268,10 +268,10 @@ export function HostingOptionsCloudHostingContent() {
             <li>
               <strong>Web app.</strong> Sign in at{" "}
               <Link
-                href="https://cadet.ai"
+                href="https://mycadet.ai"
                 className="font-semibold text-emerald-700 underline hover:text-emerald-800"
               >
-                cadet.ai
+                mycadet.ai
               </Link>{" "}
               from any browser. Full chat, voice, approvals, and
               workspace browsing. No install required.
@@ -338,10 +338,10 @@ export function HostingOptionsCloudHostingContent() {
             <li>
               Sign in at{" "}
               <Link
-                href="https://cadet.ai"
+                href="https://mycadet.ai"
                 className="font-semibold text-emerald-700 underline hover:text-emerald-800"
               >
-                cadet.ai
+                mycadet.ai
               </Link>
               . Your cloud assistant is provisioned automatically.
             </li>

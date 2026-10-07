@@ -29,7 +29,7 @@ const SSE_RECONNECT_MAX_MS = 30_000;
 
 /**
  * Connection mode for cloud assistants. The `runtimeUrl` is the
- * gateway base URL (e.g. `https://api.cadet.ai`); the `token` is the
+ * gateway base URL (e.g. `https://cloud.mycadet.ai`); the `token` is the
  * bearer token for the gateway edge auth (WorkOS session JWT).
  */
 export type SseMode =

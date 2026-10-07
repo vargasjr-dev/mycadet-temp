@@ -100,7 +100,7 @@ The bus integration means the same subscriber code works whether the signal came
 
 ### When signals can arrive before the renderer exists
 
-A subset of push signals — inbound deep links being the canonical case — can arrive at the main process BEFORE the renderer has loaded (the OS launches the app via a `mycadet://` click → `open-url` fires before `whenReady`). The renderer wrapper grows a second surface for these:
+A subset of push signals — inbound deep links being the canonical case — can arrive at the main process BEFORE the renderer has loaded (the OS launches the app via a `cadet://` click → `open-url` fires before `whenReady`). The renderer wrapper grows a second surface for these:
 
 - **`subscribe<X>(callback)`** — live subscription for post-mount signals.
 - **`drainPending<X>()`** — returns and clears the main-side buffer of signals that arrived during startup.

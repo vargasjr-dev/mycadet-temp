@@ -336,7 +336,7 @@ describe("getRelayableAppRoute", () => {
     expect(getRelayableAppRoute("https://example.com/assistant")).toBeNull();
     expect(getRelayableAppRoute("//example.com/assistant")).toBeNull();
     expect(
-      getRelayableAppRoute("mycadet://thread/conversation-1"),
+      getRelayableAppRoute("cadet://thread/conversation-1"),
     ).toBeNull();
     expect(getRelayableAppRoute("/account/login")).toBeNull();
     expect(getRelayableAppRoute("javascript:alert(1)")).toBeNull();

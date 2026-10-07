@@ -118,8 +118,8 @@ OPTIONS:
                     fallback for devices without the app.
     --app-scheme <scheme>
                     URL scheme for --app links; requires --app (default:
-                    mycadet; dev and staging app builds register
-                    mycadet-dev and mycadet-staging).
+                    cadet; dev and staging app builds register
+                    cadet-dev and cadet-staging).
     --web-approve <code>
                     Approve a pairing code another device is showing, in
                     ABCD-EFGH form, e.g. from 'cadet connect import <url>' or
@@ -138,7 +138,7 @@ EXAMPLES:
 }
 
 /** Default URL scheme registered by production builds of the iOS app. */
-const DEFAULT_APP_CONNECT_SCHEME = "mycadet";
+const DEFAULT_APP_CONNECT_SCHEME = "cadet";
 
 /**
  * Compose the custom-scheme link the iOS app's connect handler accepts:

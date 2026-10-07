@@ -24,7 +24,7 @@
 // APP_GROUP_ID: a container is shared only between bundles naming the
 // identical group, so the appex restates the app's value verbatim. It
 // reaches the entitlement below and, so Swift can read it at runtime,
-// the CadetAppGroupId Info.plist key, which exists because the
+// the CadetGroupId Info.plist key, which exists because the
 // entitlement itself is not readable from Swift.
 //
 // BUNDLE_URL_SCHEME: the Live Activity's widgetURL has to deep-link into

@@ -96,11 +96,11 @@ describe("tunnel origin derivation", () => {
     expect(tunnelOriginForPlatformHost("dev-cloud.mycadet.ai")).toBe(
       "https://tunnel-dev.mycadet.ai",
     );
-    expect(tunnelOriginForPlatformHost("cloud.cadet.ai")).toBeNull();
+    expect(tunnelOriginForPlatformHost("cloud.mycadet.ai")).toBeNull();
     expect(tunnelOriginForPlatformHost("localhost")).toBeNull();
     expect(tunnelOriginForPlatformHost("example.com")).toBeNull();
     expect(
-      tunnelOriginForPlatformHost("staging-cloud.cadet.ai.evil.com"),
+      tunnelOriginForPlatformHost("staging-cloud.mycadet.ai.evil.com"),
     ).toBeNull();
   });
 
@@ -168,7 +168,7 @@ describe("tunnel origin derivation", () => {
       credentials: makeKeyedCredentials({
         "credential/cadet/assistant_api_key": "vk-1",
         "credential/cadet/platform_base_url":
-          "https://staging-cloud.cadet.ai",
+          "https://staging-cloud.mycadet.ai",
       }),
     });
     const req = new Request(

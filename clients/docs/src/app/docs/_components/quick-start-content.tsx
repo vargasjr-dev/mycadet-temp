@@ -88,8 +88,8 @@ export function QuickStartContent() {
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
               <strong>Web</strong>: open{" "}
-              <a href="https://cadet.ai" className={linkClass}>
-                cadet.ai
+              <a href="https://mycadet.ai" className={linkClass}>
+                mycadet.ai
               </a>{" "}
               in any browser. No install needed.
             </li>

@@ -472,7 +472,7 @@ describe("HostProxySseClient", () => {
     }) as unknown as typeof globalThis.fetch;
 
     client = new HostProxySseClient({
-      eventsUrl: "https://cloud.cadet.ai/v1/assistants/asst-123/events",
+      eventsUrl: "https://cloud.mycadet.ai/v1/assistants/asst-123/events",
       authHeaders: () => ({ "X-Session-Token": "session-tok-abc" }),
       clientHeaders,
       fetch: fakeFetch,
@@ -481,7 +481,7 @@ describe("HostProxySseClient", () => {
     await flush(50);
 
     expect(capturedUrl).toBe(
-      "https://cloud.cadet.ai/v1/assistants/asst-123/events",
+      "https://cloud.mycadet.ai/v1/assistants/asst-123/events",
     );
     expect(capturedHeaders["X-Session-Token"]).toBe("session-tok-abc");
     expect(capturedHeaders["Authorization"]).toBeUndefined();
@@ -508,7 +508,7 @@ describe("HostProxySseClient", () => {
     }) as unknown as typeof globalThis.fetch;
 
     client = new HostProxySseClient({
-      eventsUrl: "https://cloud.cadet.ai/v1/assistants/asst-123/events",
+      eventsUrl: "https://cloud.mycadet.ai/v1/assistants/asst-123/events",
       authHeaders: () => ({ "X-Session-Token": "session-token" }),
       clientHeaders: () => ({ "X-Cadet-Interface-Id": "windows" }),
       fallbackClientHeaders: () => ({
@@ -535,7 +535,7 @@ describe("HostProxySseClient", () => {
     }) as unknown as typeof globalThis.fetch;
 
     client = new HostProxySseClient({
-      eventsUrl: "https://cloud.cadet.ai/v1/assistants/asst-123/events",
+      eventsUrl: "https://cloud.mycadet.ai/v1/assistants/asst-123/events",
       authHeaders: () => ({ "X-Session-Token": "session-token" }),
       clientHeaders: () => ({ "X-Cadet-Interface-Id": "windows" }),
       fallbackClientHeaders: () => ({

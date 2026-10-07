@@ -9,7 +9,7 @@ import { Command } from "commander";
 let mockCalls: Array<[string, Record<string, unknown>]> = [];
 let mockResponse: unknown = {
   ok: true,
-  result: { disconnected: true, previousBaseUrl: "https://cloud.cadet.ai" },
+  result: { disconnected: true, previousBaseUrl: "https://cloud.mycadet.ai" },
 };
 
 // ---------------------------------------------------------------------------
@@ -49,7 +49,7 @@ describe("assistant platform disconnect", () => {
       ok: true,
       result: {
         disconnected: true,
-        previousBaseUrl: "https://cloud.cadet.ai",
+        previousBaseUrl: "https://cloud.mycadet.ai",
       },
     };
     process.exitCode = 0;
@@ -76,7 +76,7 @@ describe("assistant platform disconnect", () => {
     const parsed = JSON.parse(stdoutChunks.join(""));
     expect(parsed.ok).toBe(true);
     expect(parsed.disconnected).toBe(true);
-    expect(parsed.previousBaseUrl).toBe("https://cloud.cadet.ai");
+    expect(parsed.previousBaseUrl).toBe("https://cloud.mycadet.ai");
   });
 
   test("rejects with error when running on a platform-hosted assistant", async () => {

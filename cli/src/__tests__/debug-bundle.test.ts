@@ -73,7 +73,7 @@ const LOCAL_ENTRY = {
   cloud: "local",
   hatchedAt: new Date().toISOString(),
   platformAssistantId: "11111111-2222-3333-4444-555555555555",
-  platformBaseUrl: "https://cloud.cadet.ai",
+  platformBaseUrl: "https://cloud.mycadet.ai",
   platformOrganizationId: "org-1",
 } as unknown as assistantConfig.AssistantEntry;
 
@@ -136,7 +136,7 @@ describe("cadet debug-bundle", () => {
 
     expect(fetchCalls).toHaveLength(1);
     expect(fetchCalls[0].url).toBe(
-      "https://cloud.cadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/debug-bundle-upload-url/",
+      "https://cloud.mycadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/debug-bundle-upload-url/",
     );
     expect(fetchCalls[0].init?.method).toBe("POST");
     expect(

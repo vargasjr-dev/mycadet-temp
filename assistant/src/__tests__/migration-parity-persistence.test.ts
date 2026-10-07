@@ -110,7 +110,7 @@ function runtimeConfig(overrides?: Partial<TransportConfig>): TransportConfig {
 
 function managedConfig(overrides?: Partial<TransportConfig>): TransportConfig {
   return {
-    baseURL: "https://cloud.cadet.ai",
+    baseURL: "https://cloud.mycadet.ai",
     target: "managed",
     authHeader: "session-token-abc",
     fetchFn: mockFetch(200, {}),
@@ -894,7 +894,7 @@ describe("full end-to-end — managed-to-self-hosted migration", () => {
           JSON.stringify({
             job_id: "exp-m2sh",
             status: "complete",
-            download_url: "https://cloud.cadet.ai/downloads/exp-m2sh",
+            download_url: "https://cloud.mycadet.ai/downloads/exp-m2sh",
           }),
           {
             status: 200,

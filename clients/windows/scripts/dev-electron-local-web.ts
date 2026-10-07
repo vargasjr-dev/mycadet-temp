@@ -29,7 +29,7 @@ const main = async (): Promise<void> => {
   const remoteUrl = process.env.CADET_DEV_URL;
   if (!remoteUrl) {
     throw new Error(
-      "Set CADET_DEV_URL to the remote platform URL, for example https://dev.cloud.mycadet.ai/assistant",
+      "Set CADET_DEV_URL to the remote platform URL, for example https://dev.mycadet.ai/assistant",
     );
   }
 

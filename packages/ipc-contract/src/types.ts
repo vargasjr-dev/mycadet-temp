@@ -527,8 +527,8 @@ export interface DownloadDoneEvent {
 // ---------------------------------------------------------------------------
 
 /**
- * Typed deep-link variants parsed from `mycadet://` and
- * `mycadet://` URL schemes.
+ * Typed deep-link variants parsed from `cadet://` and
+ * `cadet://` URL schemes.
  *
  * `authCallback` is intentionally omitted — it is intercepted in main
  * before the bridge and never reaches the renderer.

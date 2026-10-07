@@ -93,7 +93,7 @@ function runtimeConfig(overrides?: Partial<TransportConfig>): TransportConfig {
 
 function managedConfig(overrides?: Partial<TransportConfig>): TransportConfig {
   return {
-    baseURL: "https://cloud.cadet.ai",
+    baseURL: "https://cloud.mycadet.ai",
     target: "managed",
     authHeader: "test-session-token",
     fetchFn: mockFetch(200, {}),

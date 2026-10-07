@@ -132,7 +132,7 @@ function installChromeMock(stores: MockStores): void {
 const TEST_EMAIL = "user@example.com";
 
 function makeEnv(): EnvironmentContext {
-  return { environment: "dev", apiBaseUrl: "https://dev-cloud.cadet.ai" };
+  return { environment: "dev", apiBaseUrl: "https://dev-cloud.mycadet.ai" };
 }
 
 function seedStorage(stores: MockStores, opts: {
@@ -269,7 +269,7 @@ describe("feedback.collectDiagnosticBundle", () => {
 
     expect(bundle.extension.version).toBe("1.2.3");
     expect(bundle.extension.environment).toBe("dev");
-    expect(bundle.extension.apiBaseUrl).toBe("https://dev-cloud.cadet.ai");
+    expect(bundle.extension.apiBaseUrl).toBe("https://dev-cloud.mycadet.ai");
     expect(bundle.mode).toBe("cloud");
     expect(bundle.sse).toEqual({ state: "connected", detail: { reason: "ok" } });
     expect(bundle.assistant).toEqual({ id: "asst_1", name: "Jaxon" });
@@ -370,7 +370,7 @@ describe("feedback.submitFeedback", () => {
 
     expect(calls.length).toBe(1);
     expect(calls[0]!.url).toBe(
-      "https://dev-cloud.cadet.ai/v1/upload/feedback/",
+      "https://dev-cloud.mycadet.ai/v1/upload/feedback/",
     );
     expect(calls[0]!.init.method).toBe("POST");
     expect(calls[0]!.init.body).toBeInstanceOf(FormData);

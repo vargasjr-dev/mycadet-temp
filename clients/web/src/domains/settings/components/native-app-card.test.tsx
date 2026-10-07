@@ -117,7 +117,7 @@ describe("NativeAppCard", () => {
   test("opens a configured Android listing and records the action", () => {
     setUserAgent(ANDROID_UA);
     env.VITE_ANDROID_PLAY_STORE_URL =
-      "https://play.google.com/store/apps/details?id=ai.mycadet.assistant";
+      "https://play.google.com/store/apps/details?id=ai.mycadet.android";
     const open = mock(() => null);
     window.open = open as typeof window.open;
     render(<NativeAppCard />);
@@ -150,7 +150,7 @@ describe("NativeAppCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Download" }));
 
     expect(open).toHaveBeenCalledWith(
-      "https://www.cadet.ai/downloads",
+      "https://www.mycadet.ai/downloads",
       "_blank",
       "noopener,noreferrer",
     );

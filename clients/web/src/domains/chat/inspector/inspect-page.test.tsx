@@ -62,7 +62,7 @@ interface AuthUserStub {
 }
 
 let authUserStub: AuthUserStub | null = {
-  email: "dev@cadet.ai",
+  email: "dev@mycadet.ai",
   isStaff: false,
 };
 let sessionInitializingStub = false;
@@ -207,7 +207,7 @@ beforeEach(() => {
   paramsStub = { conversationId: "conv-default" };
   searchParamsMap = new Map();
   assistantStub = { assistantId: "asst-1" };
-  authUserStub = { email: "dev@cadet.ai", isStaff: false };
+  authUserStub = { email: "dev@mycadet.ai", isStaff: false };
   sessionInitializingStub = false;
   // Hydrated, flag-on baseline: most tests exercise the allowed branch;
   // gating tests flip the flag keys off to reach the denial branch.

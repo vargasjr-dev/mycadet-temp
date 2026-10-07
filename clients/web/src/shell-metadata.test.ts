@@ -51,7 +51,7 @@ function nameTag(name: string): string | null {
 }
 
 const EXPECTED_TITLE = "Cadet: Your Personal Intelligence";
-const EXPECTED_IMAGE = "https://www.cadet.ai/og-cover-v2.jpg";
+const EXPECTED_IMAGE = "https://www.mycadet.ai/og-cover-v2.jpg";
 
 describe("SPA shell: Open Graph metadata", () => {
   test("declares the tags an unfurler needs for a large image card", () => {
@@ -85,7 +85,7 @@ describe("SPA shell: Open Graph metadata", () => {
 
   // This file is also served from assistant.* hosts and loaded inside the
   // Capacitor WKWebView, where a relative path resolves against a host with no
-  // such asset. The apex cadet.ai 308-redirects and some unfurlers drop a
+  // such asset. The apex mycadet.ai 308-redirects and some unfurlers drop a
   // redirecting image.
   test("image URLs are absolute and on the canonical www host", () => {
     for (const url of [ogTag("og:image"), nameTag("twitter:image")]) {

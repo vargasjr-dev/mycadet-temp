@@ -59,7 +59,7 @@ const config: CapacitorConfig = {
   // NOTE: Capacitor's CLI requires Java-package form here because Android
   // uses this value as its application namespace. The real iOS bundle IDs are
   // set via `PRODUCT_BUNDLE_IDENTIFIER` in the Xcode project.
-  appId: "ai.mycadet.assistant",
+  appId: "ai.mycadet.android",
   appName: "Cadet",
   webDir: "capacitor-shell",
   server: {

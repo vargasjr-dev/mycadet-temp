@@ -32,8 +32,8 @@ function getPlatformTokenPath(): string {
  *      know which instance to read from without first consulting the
  *      lockfile anyway.
  *   2. `CADET_PLATFORM_URL` env var (explicit override, e.g. in CI).
- *   3. The current environment's seed URL (e.g. `https://dev-cloud.cadet.ai`
- *      for `CADET_ENVIRONMENT=dev`, `https://cloud.cadet.ai` for prod).
+ *   3. The current environment's seed URL (e.g. `https://dev-cloud.mycadet.ai`
+ *      for `CADET_ENVIRONMENT=dev`, `https://cloud.mycadet.ai` for prod).
  *      This makes the CLI environment-aware when no lockfile entry exists yet.
  */
 export function getPlatformUrl(): string {

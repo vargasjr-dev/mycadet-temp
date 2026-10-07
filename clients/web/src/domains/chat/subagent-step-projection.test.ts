@@ -407,7 +407,7 @@ describe("createIncrementalStepProjection — per-diff-class", () => {
         type: "tool_result",
         toolName: "web_search",
         toolUseId: "ws-1",
-        result: "Cadet\nhttps://cadet.ai",
+        result: "Cadet\nhttps://mycadet.ai",
         timestamp: NOW + 900,
       }),
     );

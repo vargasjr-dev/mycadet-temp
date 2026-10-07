@@ -211,7 +211,7 @@ describe("classifyMarkdownHref", () => {
     });
     expect(
       classifyMarkdownHref(
-        "https://www.cadet.ai/assistant/conversations/conv-xyz",
+        "https://www.mycadet.ai/assistant/conversations/conv-xyz",
       ),
     ).toEqual({
       kind: "app",

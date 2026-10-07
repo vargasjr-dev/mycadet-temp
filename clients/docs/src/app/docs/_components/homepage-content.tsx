@@ -317,7 +317,7 @@ export function HomepageContent() {
           </p>
           <ol className="mb-6 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>
-              <strong>Sign up</strong> at <a href={routes.signup}>cadet.ai</a>. Free, no credit
+              <strong>Sign up</strong> at <a href={routes.signup}>mycadet.ai</a>. Free, no credit
               card.
             </li>
             <li>

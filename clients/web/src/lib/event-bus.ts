@@ -190,7 +190,7 @@ export interface BusEventMap {
     state: "completed" | "interrupted";
   };
   /**
-   * Inbound deep links — `cadet://` / `mycadet://` URLs
+   * Inbound deep links — `cadet://` / `cadet://` URLs
    * the OS routed to us, plus notification taps that resolve to a
    * conversation. Domain consumers (chat composer, conversation
    * router) subscribe here to take action.

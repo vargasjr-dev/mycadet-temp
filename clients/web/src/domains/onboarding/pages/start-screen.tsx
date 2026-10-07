@@ -15,7 +15,7 @@ import { Button } from "@mycadet/design-library/components/button";
  * happy-path predecessor (hosting) is local-only, so before this screen a
  * platform Back had nowhere in-SPA to go — sending it to the marketing host
  * (`/`) would have navigated a Capacitor staging/dev shell onto production
- * (its CTA points at `www.cadet.ai/assistant`). Keeping Back inside the SPA
+ * (its CTA points at `www.mycadet.ai/assistant`). Keeping Back inside the SPA
  * preserves the running environment on every platform.
  *
  * It is deliberately a single-CTA welcome: the button re-enters the funnel at

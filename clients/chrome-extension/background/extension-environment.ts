@@ -94,7 +94,7 @@ export function resolveBuildDefaultEnvironment(): ExtensionEnvironment {
 // ── Cloud URL mapping ───────────────────────────────────────────────
 
 export interface CloudUrls {
-  /** Gateway / API base URL (e.g. `https://api.cadet.ai`). */
+  /** Gateway / API base URL (e.g. `https://cloud.mycadet.ai`). */
   apiBaseUrl: string;
   /** Web app base URL for browser-facing pages (e.g. `https://mycadet.ai`). */
   webBaseUrl: string;
@@ -105,7 +105,7 @@ export interface CloudUrls {
  *
  * Production uses the canonical Cadet production hosts. Non-production
  * environments use environment-prefixed subdomains following the
- * convention `<env>-api.cadet.ai` / `<env>-assistant.mycadet.ai`, with
+ * convention `<env>-cloud.mycadet.ai` (API) / `<env>.mycadet.ai` (web), with
  * `local` using `localhost` origins for both.
  */
 export function cloudUrlsForEnvironment(env: ExtensionEnvironment): CloudUrls {
@@ -118,12 +118,12 @@ export function cloudUrlsForEnvironment(env: ExtensionEnvironment): CloudUrls {
     case 'staging':
       return {
         apiBaseUrl: 'https://staging-cloud.mycadet.ai',
-        webBaseUrl: 'https://staging.cloud.mycadet.ai',
+        webBaseUrl: 'https://staging.mycadet.ai',
       };
     case 'dev':
       return {
         apiBaseUrl: 'https://dev-cloud.mycadet.ai',
-        webBaseUrl: 'https://dev.cloud.mycadet.ai',
+        webBaseUrl: 'https://dev.mycadet.ai',
       };
     case 'local':
       return {

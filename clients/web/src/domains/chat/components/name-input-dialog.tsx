@@ -14,7 +14,7 @@ import {
 /**
  * In-app dialog for entering or editing a name — used to rename a conversation,
  * create a group ("New group"), and rename a group. Replaces the browser's
- * native `window.prompt`, which renders as an OS-themed "www.cadet.ai says"
+ * native `window.prompt`, which renders as an OS-themed "www.mycadet.ai says"
  * alert that doesn't match the app's chrome, has no consistent keyboard / focus
  * behavior on macOS Safari + iOS, and is disabled entirely in the Electron
  * desktop client.

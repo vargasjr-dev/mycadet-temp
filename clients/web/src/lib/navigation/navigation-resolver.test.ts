@@ -1567,7 +1567,7 @@ describe("resolveNavigation", () => {
       expect(
         intercept(
           s({ tosAccepted: false, privacyConsent: false }),
-          "https://assistant.cadet.ai/assistant",
+          "https://mycadet.ai/assistant",
         ),
       ).toEqual({ action: "redirect", to: "/assistant/onboarding/privacy" });
     });
@@ -1576,7 +1576,7 @@ describe("resolveNavigation", () => {
       expect(
         intercept(
           s({ tosAccepted: false, privacyConsent: false }),
-          "//assistant.cadet.ai/assistant",
+          "//mycadet.ai/assistant",
         ),
       ).toEqual({ action: "redirect", to: "/assistant/onboarding/privacy" });
     });
@@ -1585,7 +1585,7 @@ describe("resolveNavigation", () => {
       expect(
         intercept(
           s({ tosAccepted: false, privacyConsent: false }),
-          "https://cadet.ai/account",
+          "https://mycadet.ai/account",
         ),
       ).toEqual(ALLOW);
     });

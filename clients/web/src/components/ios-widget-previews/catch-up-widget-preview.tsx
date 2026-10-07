@@ -23,7 +23,7 @@ import {
   WidgetActionTile,
   WIDGET_TILE_ICON_SIZE,
 } from "./widget-action-controls";
-import { CadetAppIconMark } from "./cadet-app-icon-mark";
+import { CadetIconMark } from "./cadet-app-icon-mark";
 import { WidgetCard } from "./widget-card";
 import {
   FLATTENED_CARD_GROUND,
@@ -157,7 +157,7 @@ export function CatchUpWidgetPreview({
                   }}
                 />
               ) : (
-                <CadetAppIconMark
+                <CadetIconMark
                   size={WIDGET_TILE_ICON_SIZE * scale}
                   flattened={flattened}
                 />

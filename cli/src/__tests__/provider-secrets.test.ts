@@ -117,7 +117,7 @@ describe("provider secret helpers", () => {
 
     await expect(
       readGatewayApiKey(
-        "https://cloud.cadet.ai",
+        "https://cloud.mycadet.ai",
         "anthropic",
         undefined,
         fetchImpl,

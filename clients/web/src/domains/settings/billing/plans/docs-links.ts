@@ -4,7 +4,7 @@
  * page that explain each picker.
  */
 
-export const PRICING_DOCS_URL = "https://www.cadet.ai/docs/pricing";
+export const PRICING_DOCS_URL = "https://www.mycadet.ai/docs/pricing";
 
 export const MACHINE_DOCS_URL = `${PRICING_DOCS_URL}#machine-sizes`;
 export const STORAGE_DOCS_URL = `${PRICING_DOCS_URL}#storage`;

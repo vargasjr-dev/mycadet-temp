@@ -6,7 +6,7 @@ import path from "node:path";
 
 import {
   BUNDLES_DIR_NAME,
-  CADETAPP_PROTOCOL,
+  CADET_PROTOCOL,
 } from "@mycadet/electron-desktop/bundle-platform";
 import { installCsp } from "@mycadet/electron-desktop/csp";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
@@ -23,7 +23,7 @@ import {
   executePlatformForwardPlan,
   planPlatformForward,
 } from "@mycadet/electron-desktop/platform-forward";
-import { registerCadetAppProtocol } from "@mycadet/electron-desktop/cadetapp-protocol";
+import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
   pairedGatewayTargetsFromLockfile,
@@ -100,7 +100,7 @@ protocol.registerSchemesAsPrivileged([
     },
   },
   {
-    scheme: CADETAPP_PROTOCOL,
+    scheme: CADET_PROTOCOL,
     privileges: {
       standard: true,
       secure: true,
@@ -257,7 +257,7 @@ app
         resolveAllowedOrigin,
       });
     }
-    registerCadetAppProtocol(
+    registerCadetProtocol(
       path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
     );
     installPermissionHandler(resolveAllowedOrigin);

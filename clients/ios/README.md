@@ -424,7 +424,7 @@ There's a deliberate mismatch:
 | Where                             | Value                                           |
 | --------------------------------- | ----------------------------------------------- |
 | Xcode `PRODUCT_BUNDLE_IDENTIFIER` | `ai.mycadet.ios` ← real one |
-| `capacitor.config.ts` `appId`     | `ai.mycadet.assistant`                           |
+| `capacitor.config.ts` `appId`     | `ai.mycadet.android`                           |
 
 Capacitor requires `appId` to use Java package form because Android uses it as
 the application namespace. The iOS project is generated from `project.yml`

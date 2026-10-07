@@ -1880,7 +1880,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     // GIVEN the response URL does not match the gateway ingress
     const platformResponse = makeResponse(
       401,
-      "https://api.cadet.ai/v1/some-platform-endpoint",
+      "https://cloud.mycadet.ai/v1/some-platform-endpoint",
     );
 
     // WHEN the interceptor processes the 401
@@ -2079,7 +2079,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     sessionStorage.setItem(GW_401_ATTEMPTS_KEY, String(GW_401_MAX_ATTEMPTS));
 
     await localGatewayAuthRecoveryInterceptor(
-      makeResponse(200, "https://api.cadet.ai/v1/whatever"),
+      makeResponse(200, "https://cloud.mycadet.ai/v1/whatever"),
     );
 
     expect(sessionStorage.getItem(GW_401_ATTEMPTS_KEY)).toBe(

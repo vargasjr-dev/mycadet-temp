@@ -41,7 +41,7 @@ const meta: Meta<typeof EmailManagedContent> = {
   args: {
     assistantId: "story-assistant",
     assistantHandle: "ada",
-    emailRootDomain: "cadet.ai",
+    emailRootDomain: "mycadet.ai",
   },
   decorators: [
     (Story) => {

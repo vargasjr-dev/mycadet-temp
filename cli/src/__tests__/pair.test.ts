@@ -287,7 +287,7 @@ describe("pair command", () => {
       "cadet",
       "pair",
       "--app-scheme",
-      "mycadet-dev",
+      "cadet-dev",
       "--url",
       PUBLIC_URL,
     ];
@@ -831,45 +831,45 @@ describe("pair command", () => {
   test("buildAppConnectUrl composes and encodes the connect link", () => {
     expect(
       buildAppConnectUrl(
-        "mycadet",
+        "cadet",
         "https://pair.example.ts.net",
         "device-code",
       ),
     ).toBe(
-      "mycadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code",
+      "cadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code",
     );
     // Path prefixes and fragment-hostile characters survive the encoding.
     expect(
       buildAppConnectUrl(
-        "mycadet-dev",
+        "cadet-dev",
         "https://host.example.ts.net/assistant-123",
         "a+b/c=",
       ),
     ).toBe(
-      "mycadet-dev://connect?url=https%3A%2F%2Fhost.example.ts.net%2Fassistant-123&code=a%2Bb%2Fc%3D",
+      "cadet-dev://connect?url=https%3A%2F%2Fhost.example.ts.net%2Fassistant-123&code=a%2Bb%2Fc%3D",
     );
     // A label rides along as an encoded `name` param (spaces percent-encoded,
     // not form-encoded, for the app's URLComponents parser); an empty one is
     // omitted.
     expect(
       buildAppConnectUrl(
-        "mycadet",
+        "cadet",
         "https://pair.example.ts.net",
         "device-code",
         "My Homelab",
       ),
     ).toBe(
-      "mycadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code&name=My%20Homelab",
+      "cadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code&name=My%20Homelab",
     );
     expect(
       buildAppConnectUrl(
-        "mycadet",
+        "cadet",
         "https://pair.example.ts.net",
         "device-code",
         "",
       ),
     ).toBe(
-      "mycadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code",
+      "cadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code",
     );
   });
 
@@ -914,7 +914,7 @@ describe("pair command", () => {
       "pair",
       "--app",
       "--app-scheme",
-      "mycadet-dev",
+      "cadet-dev",
       "--url",
       "https://pair.example.ts.net",
       "--json",
@@ -930,7 +930,7 @@ describe("pair command", () => {
     // Without --label the connect link names the assistant after its lockfile
     // display name (the id here, since the entry has no name).
     expect(out.appUrl).toBe(
-      "mycadet-dev://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code&name=pair-test",
+      "cadet-dev://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code&name=pair-test",
     );
     // The browser URL stays available as the no-app fallback.
     expect(out.pairUrl).toBe(
@@ -994,7 +994,7 @@ describe("pair command", () => {
 
     const out = JSON.parse(logs.join("\n"));
     expect(out.appUrl).toBe(
-      "mycadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code&name=Homelab",
+      "cadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code&name=Homelab",
     );
   });
 

@@ -103,7 +103,7 @@ describe("assistant platform connect", () => {
       ok: true,
       result: {
         alreadyConnected: true,
-        baseUrl: "https://cloud.cadet.ai",
+        baseUrl: "https://cloud.mycadet.ai",
       },
     };
 
@@ -124,7 +124,7 @@ describe("assistant platform connect", () => {
     const parsed = JSON.parse(stdoutChunks.join(""));
     expect(parsed.ok).toBe(true);
     expect(parsed.alreadyConnected).toBe(true);
-    expect(parsed.baseUrl).toBe("https://cloud.cadet.ai");
+    expect(parsed.baseUrl).toBe("https://cloud.mycadet.ai");
   });
 
   test("calls exitFromIpcResult on error", async () => {

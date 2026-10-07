@@ -16,12 +16,12 @@ const productName =
 
 const appId =
   env === "production"
-    ? "com.mycadet.mycadet-electron"
-    : `com.mycadet.mycadet-electron-${env}`;
+    ? "ai.mycadet.electron"
+    : `ai.mycadet.electron-${env}`;
 
 const schemes =
   env === "production"
-    ? ["cadet", "mycadet"]
+    ? ["cadet"]
     : [`mycadet-${env}`];
 
 const iconEnvironment = ["local", "dev", "staging", "production"].includes(env)

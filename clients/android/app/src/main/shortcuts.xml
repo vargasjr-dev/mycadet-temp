@@ -2,9 +2,9 @@
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <capability android:name="actions.intent.OPEN_APP_FEATURE">
         <intent
-            android:action="ai.mycadet.assistant.action.OPEN_FEATURE"
+            android:action="ai.mycadet.android.action.OPEN_FEATURE"
             android:targetPackage="__APPLICATION_ID__"
-            android:targetClass="ai.mycadet.assistant.MainActivity">
+            android:targetClass="ai.mycadet.android.MainActivity">
             <parameter
                 android:name="feature"
                 android:key="feature"
@@ -18,9 +18,9 @@
         android:shortcutShortLabel="@string/new_chat_shortcut_label"
         android:shortcutLongLabel="@string/new_chat_shortcut_long_label">
         <intent
-            android:action="ai.mycadet.assistant.action.NEW_CHAT"
+            android:action="ai.mycadet.android.action.NEW_CHAT"
             android:targetPackage="__APPLICATION_ID__"
-            android:targetClass="ai.mycadet.assistant.MainActivity" />
+            android:targetClass="ai.mycadet.android.MainActivity" />
         <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
             <parameter-binding
                 android:key="feature"
@@ -35,9 +35,9 @@
         android:shortcutShortLabel="@string/voice_shortcut_label"
         android:shortcutLongLabel="@string/voice_shortcut_long_label">
         <intent
-            android:action="ai.mycadet.assistant.action.START_VOICE"
+            android:action="ai.mycadet.android.action.START_VOICE"
             android:targetPackage="__APPLICATION_ID__"
-            android:targetClass="ai.mycadet.assistant.MainActivity" />
+            android:targetClass="ai.mycadet.android.MainActivity" />
         <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
             <parameter-binding
                 android:key="feature"

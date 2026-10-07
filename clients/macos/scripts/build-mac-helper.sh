@@ -37,11 +37,11 @@ fi
 # grants persist.
 ENV="${CADET_ENVIRONMENT:-local}"
 if [ "$ENV" = "production" ]; then
-  HELPER_BUNDLE_ID="ai.mycadet.assistant.mac-helper"
+  HELPER_BUNDLE_ID="ai.mycadet.android.mac-helper"
   HELPER_DISPLAY_NAME="Cadet Helper"
 else
   ENV_CAP="$(printf '%s' "${ENV:0:1}" | tr '[:lower:]' '[:upper:]')${ENV:1}"
-  HELPER_BUNDLE_ID="ai.mycadet.assistant-${ENV}.mac-helper"
+  HELPER_BUNDLE_ID="ai.mycadet.android-${ENV}.mac-helper"
   HELPER_DISPLAY_NAME="Cadet Helper ${ENV_CAP}"
 fi
 
@@ -87,7 +87,7 @@ BUILD_ARGS+=(
 # Clear any bare binary / `cadet-mac-helper.app` outputs so a rebuild never
 # leaves an orphan bundle on disk next to the per-env one; the corresponding
 # TCC row in Settings persists until manually toggled off (or
-# `tccutil reset Accessibility ai.mycadet.assistant.mac-helper`).
+# `tccutil reset Accessibility ai.mycadet.android.mac-helper`).
 rm -f "$OUTPUT_DIR/hotkey-helper" "$OUTPUT_DIR/cadet-mac-helper" "$OUTPUT_DIR/Info.plist"
 rm -rf "$OUTPUT_DIR/cadet-mac-helper.app"
 xcrun swift build "${BUILD_ARGS[@]}"

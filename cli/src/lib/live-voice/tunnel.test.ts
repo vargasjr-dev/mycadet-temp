@@ -58,7 +58,7 @@ describe("buildTunnelLiveVoiceUrl", () => {
     delete process.env.CADET_TUNNEL_HOST;
     const url = new URL(
       buildTunnelLiveVoiceUrl({
-        platformUrl: "https://cloud.cadet.ai",
+        platformUrl: "https://cloud.mycadet.ai",
         assistantId: "01a02514-e452-7019-88d5-30828f42cf17",
         token: "tok_abc",
       }),
@@ -76,7 +76,7 @@ describe("buildTunnelLiveVoiceUrl", () => {
     delete process.env.CADET_TUNNEL_HOST;
     const url = new URL(
       buildTunnelLiveVoiceUrl({
-        platformUrl: "https://cloud.cadet.ai",
+        platformUrl: "https://cloud.mycadet.ai",
         assistantId: "a1",
         token: "a+b/c=&d",
       }),

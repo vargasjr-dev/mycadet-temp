@@ -758,7 +758,7 @@ final class NavigationDelegateProxy: NSObject, WKNavigationDelegate {
 final class QuoteReplyWebView: WKWebView {
     /// Identifier for the injected "Reply" edit-menu group.
     private static let quoteReplyMenuIdentifier = UIMenu.Identifier(
-        "ai.mycadet.assistant.quoteReply"
+        "ai.mycadet.android.quoteReply"
     )
 
     /// Whether the current (or imminent) web selection is inside an assistant

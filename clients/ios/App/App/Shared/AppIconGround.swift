@@ -20,7 +20,7 @@ import UIKit
 /// appex.
 enum AppIconGround {
     /// Info.plist key carrying the ground, populated from `$(APP_ICON_GROUND)`.
-    static let infoPlistKey = "CadetAppIconGround"
+    static let infoPlistKey = "CadetIconGround"
 
     /// The ground for the currently running bundle, or `nil` when the bundle
     /// declares none or declares one this cannot read.

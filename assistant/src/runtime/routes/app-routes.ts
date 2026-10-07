@@ -101,7 +101,7 @@ function serveCompiledApp(
 
   // Rewrite relative asset paths to absolute HTTP routes so browsers and
   // HTTP-based consumers (e.g. /pages/:appId) can resolve them. The macOS
-  // WebView uses the cadetapp:// scheme handler which resolves on disk,
+  // WebView uses the cadet:// scheme handler which resolves on disk,
   // but HTTP clients need the /v1/apps/:appId/dist/ route.
   let html = readFileSync(indexPath, "utf-8");
   html = html.replace(

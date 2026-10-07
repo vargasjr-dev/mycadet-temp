@@ -17,20 +17,20 @@ import {
 /**
  * Capacitor shell deep-link routing.
  *
- * OAuth-complete URLs (`mycadet://oauth-complete?…`) dispatch
+ * OAuth-complete URLs (`cadet://oauth-complete?…`) dispatch
  * the `OAUTH_COMPLETE_DEEP_LINK_EVENT` window CustomEvent that
  * `useOAuthCompleteDeepLinkListener` already consumes;
- * `mycadet://billing/checkout-complete?…` publishes
+ * `cadet://billing/checkout-complete?…` publishes
  * `deeplink.billingCheckoutComplete` (the same event the Electron shell
  * emits, consumed by `useGlobalDeepLinkConsumer`);
- * `mycadet://voice?mode=…` publishes `deeplink.startVoice`;
- * `mycadet://thread/<id>?message=…` publishes
+ * `cadet://voice?mode=…` publishes `deeplink.startVoice`;
+ * `cadet://thread/<id>?message=…` publishes
  * `deeplink.sendToThread` (or `deeplink.openThread` when it carries no
- * usable message); the Home Screen widgets' `mycadet://camera`
- * and `mycadet://new-chat` publish `deeplink.openCamera` /
+ * usable message); the Home Screen widgets' `cadet://camera`
+ * and `cadet://new-chat` publish `deeplink.openCamera` /
  * `deeplink.newChat`, the unread chip and unread line send
- * `mycadet://conversations` (`deeplink.openConversations`),
- * and the share extension's `mycadet://share/<id>` publishes
+ * `cadet://conversations` (`deeplink.openConversations`),
+ * and the share extension's `cadet://share/<id>` publishes
  * `deeplink.share`; any other URL publishes `deeplink.unknown { url }`
  * on the bus (query/fragment stripped).
  *
