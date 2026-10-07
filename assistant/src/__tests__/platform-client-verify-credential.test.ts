@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
+
 let platformAssistantId = "asst_123";
 let fetchImpl: (
   url: string,
@@ -25,10 +27,7 @@ mock.module("../config/env.js", () => ({
   getPlatformAssistantId: () => platformAssistantId,
 }));
 
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async () => null,
-}));
-
+useMemorySecureKeys();
 const { VellumPlatformClient } = await import("../platform/client.js");
 
 const originalFetch = globalThis.fetch;

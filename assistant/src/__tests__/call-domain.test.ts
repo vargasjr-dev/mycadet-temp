@@ -9,6 +9,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
+
 // Track whether the Twilio provider's initiateCall should succeed or throw
 let twilioInitiateCallBehavior: "success" | "error" = "success";
 let twilioInitiateCallCount = 0;
@@ -47,10 +49,7 @@ mock.module("../calls/twilio-provider.js", () => ({
   },
 }));
 
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async () => null,
-}));
-
+useMemorySecureKeys();
 /**
  * Fires on each callback-URL resolution. Lets a test land a cancel inside the
  * async setup that runs after the call session and its lease already exist.

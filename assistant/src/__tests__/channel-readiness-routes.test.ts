@@ -11,18 +11,18 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // Mocks — must be set up before importing the service
 // ---------------------------------------------------------------------------
 import type { RegisteredInboxState } from "../email/registered-inbox.js";
+import {
+  reseedMemorySecureKeys,
+  useMemorySecureKeys,
+} from "./helpers/secure-keys.js";
 
-let mockSecureKeys: Record<string, string>;
+const mockSecureKeys = useMemorySecureKeys();
 let mockHasTwilioCredentials: boolean;
 let mockRegisteredInbox: RegisteredInboxState;
 
 mock.module("../calls/twilio-rest.js", () => ({
   hasTwilioCredentials: () => mockHasTwilioCredentials,
   getPhoneNumberSid: async () => null,
-}));
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => mockSecureKeys[key] ?? null,
 }));
 
 mock.module("../email/registered-inbox.js", () => ({
@@ -48,7 +48,7 @@ describe("channel readiness routes — email and WhatsApp probes", () => {
     setConfig("ingress", {});
     setConfig("whatsapp", {});
     setConfig("email", {});
-    mockSecureKeys = {};
+    reseedMemorySecureKeys(mockSecureKeys);
     mockHasTwilioCredentials = false;
     mockRegisteredInbox = { status: "none" };
   });
@@ -264,12 +264,12 @@ describe("channel readiness routes — email and WhatsApp probes", () => {
     });
 
     test("reports ready when all Meta credentials and display number are configured", async () => {
-      mockSecureKeys = {
+      reseedMemorySecureKeys(mockSecureKeys, {
         [credentialKey("whatsapp", "phone_number_id")]: "123456789",
         [credentialKey("whatsapp", "access_token")]: "EAAxxxxxx",
         [credentialKey("whatsapp", "app_secret")]: "abc123",
         [credentialKey("whatsapp", "webhook_verify_token")]: "my-verify-token",
-      };
+      });
       setConfig("whatsapp", { phoneNumber: "+15555550123" });
       setConfig("ingress", {
         publicBaseUrl: "https://example.com",
@@ -283,12 +283,12 @@ describe("channel readiness routes — email and WhatsApp probes", () => {
     });
 
     test("reports not ready when display phone number is missing", async () => {
-      mockSecureKeys = {
+      reseedMemorySecureKeys(mockSecureKeys, {
         [credentialKey("whatsapp", "phone_number_id")]: "123456789",
         [credentialKey("whatsapp", "access_token")]: "EAAxxxxxx",
         [credentialKey("whatsapp", "app_secret")]: "abc123",
         [credentialKey("whatsapp", "webhook_verify_token")]: "my-verify-token",
-      };
+      });
       setConfig("ingress", {
         publicBaseUrl: "https://example.com",
         enabled: true,
@@ -305,12 +305,12 @@ describe("channel readiness routes — email and WhatsApp probes", () => {
     });
 
     test("checks each Meta credential individually", async () => {
-      mockSecureKeys = {
+      reseedMemorySecureKeys(mockSecureKeys, {
         [credentialKey("whatsapp", "phone_number_id")]: "123456789",
         // access_token missing
         [credentialKey("whatsapp", "app_secret")]: "abc123",
         [credentialKey("whatsapp", "webhook_verify_token")]: "my-verify-token",
-      };
+      });
       setConfig("ingress", {
         publicBaseUrl: "https://example.com",
         enabled: true,
@@ -342,12 +342,12 @@ describe("channel readiness routes — email and WhatsApp probes", () => {
     });
 
     test("checks invite policy", async () => {
-      mockSecureKeys = {
+      reseedMemorySecureKeys(mockSecureKeys, {
         [credentialKey("whatsapp", "phone_number_id")]: "123456789",
         [credentialKey("whatsapp", "access_token")]: "EAAxxxxxx",
         [credentialKey("whatsapp", "app_secret")]: "abc123",
         [credentialKey("whatsapp", "webhook_verify_token")]: "my-verify-token",
-      };
+      });
       setConfig("whatsapp", { phoneNumber: "+15555550123" });
       setConfig("ingress", {
         publicBaseUrl: "https://example.com",
@@ -364,12 +364,12 @@ describe("channel readiness routes — email and WhatsApp probes", () => {
     });
 
     test("checks ingress configuration", async () => {
-      mockSecureKeys = {
+      reseedMemorySecureKeys(mockSecureKeys, {
         [credentialKey("whatsapp", "phone_number_id")]: "123456789",
         [credentialKey("whatsapp", "access_token")]: "EAAxxxxxx",
         [credentialKey("whatsapp", "app_secret")]: "abc123",
         [credentialKey("whatsapp", "webhook_verify_token")]: "my-verify-token",
-      };
+      });
       setConfig("whatsapp", { phoneNumber: "+15555550123" });
       const service = createReadinessService();
       const [snapshot] = await service.getReadiness("whatsapp");

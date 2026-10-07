@@ -9,12 +9,11 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
-mock.module("../util/secure-keys.js", () => ({
-  getSecureKeyAsync: async () => undefined,
-}));
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
+useMemorySecureKeys();
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { llmUsageEvents } from "../persistence/schema/index.js";

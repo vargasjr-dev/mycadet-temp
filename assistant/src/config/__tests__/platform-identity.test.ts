@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
 import {
   getPlatformBaseUrl,
   setPlatformAssistantId,
@@ -8,12 +9,7 @@ import {
   setPlatformUserId,
 } from "../env.js";
 
-const actualSecureKeys = await import("../../security/secure-keys.js");
-mock.module("../../security/secure-keys.js", () => ({
-  ...actualSecureKeys,
-  getSecureKeyAsync: async () => undefined,
-}));
-
+useMemorySecureKeys();
 const {
   _resetPlatformIdentityEnsureForTests,
   fetchPlatformIdentityIds,

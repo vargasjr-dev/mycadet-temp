@@ -5,16 +5,11 @@
  * same outcome must be idempotent.
  */
 
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
-// Prevent channel adapters (imported transitively via contact-routes) from
-// reading real credentials.
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async () => undefined,
-  setSecureKeyAsync: async () => {},
-  deleteSecureKeyAsync: async () => {},
-}));
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
+useMemorySecureKeys();
 import { findContactChannel, getContact } from "../contacts/contact-store.js";
 import { handleInviteRedeemed } from "../ipc/routes/invite-ipc-routes.js";
 import { getSqlite } from "../persistence/db-connection.js";

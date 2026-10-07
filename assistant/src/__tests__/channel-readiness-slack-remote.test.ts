@@ -1,30 +1,15 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { credentialKey } from "../security/credential-key.js";
+import {
+  reseedMemorySecureKeys,
+  useMemorySecureKeys,
+} from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
 
-let mockSecureKeys: Record<string, string>;
+const mockSecureKeys = useMemorySecureKeys();
 
 // Spread the real module: mocks are shared across files in a combined run,
-// and a wholesale replacement drops the exports peer modules import.
-const actualSecureKeys = await import("../security/secure-keys.js");
-mock.module("../security/secure-keys.js", () => ({
-  ...actualSecureKeys,
-  getSecureKeyAsync: async (key: string) => mockSecureKeys[key] ?? null,
-  getSecureKeyResultAsync: async (key: string) => ({
-    value: mockSecureKeys[key] ?? undefined,
-    unreachable: false,
-  }),
-  setSecureKeyAsync: async (key: string, value: string) => {
-    mockSecureKeys[key] = value;
-    return true;
-  },
-  deleteSecureKeyAsync: async (key: string) => {
-    delete mockSecureKeys[key];
-    return true;
-  },
-}));
-
 mock.module("../calls/twilio-rest.js", () => ({
   hasTwilioCredentials: () => false,
 }));
@@ -61,7 +46,7 @@ let fetchHandler: (
 ) => { ok: boolean; body: unknown; scopes?: string };
 
 beforeEach(() => {
-  mockSecureKeys = {};
+  reseedMemorySecureKeys(mockSecureKeys);
   // Reset the seeded slack section to its empty (all-defaults) state.
   setConfig("slack", {});
   fetchCalls = [];

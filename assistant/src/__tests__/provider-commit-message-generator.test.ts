@@ -8,18 +8,16 @@ import type {
   SendMessageOptions,
 } from "../providers/types.js";
 import type { CommitContext } from "../workspace/commit-message-provider.js";
+import {
+  reseedMemorySecureKeys,
+  useMemorySecureKeys,
+} from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
 
 // ---------------------------------------------------------------------------
 // Mock secure keys — controls what getSecureKeyAsync returns per provider
 // ---------------------------------------------------------------------------
-let mockSecureKeys: Record<string, string> = {};
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (name: string) => mockSecureKeys[name] ?? undefined,
-  setSecureKeyAsync: async () => true,
-  deleteSecureKeyAsync: async () => "deleted" as const,
-}));
-
+const mockSecureKeys = useMemorySecureKeys();
 // ---------------------------------------------------------------------------
 // Seed the LLM commit-message settings for real. `setConfig` replaces the
 // whole `workspaceGit` key, so every seed spells out the full block; tests
@@ -128,7 +126,7 @@ describe("ProviderCommitMessageGenerator", () => {
     // Anchor call-site resolution on anthropic so the resolved provider for
     // `commitMessage` (and thus the API-key preflight) targets anthropic.
     setConfig("llm", { defaultProvider: { provider: "anthropic" } });
-    mockSecureKeys = { anthropic: "sk-test-key" };
+    reseedMemorySecureKeys(mockSecureKeys, { anthropic: "sk-test-key" });
     mockSendMessage.mockReset();
     resolvedProvider = {
       provider: mockProvider,
@@ -149,7 +147,7 @@ describe("ProviderCommitMessageGenerator", () => {
 
   // 3. missing API key
   test('missing API key → returns deterministic, reason "missing_provider_api_key"', async () => {
-    mockSecureKeys = {};
+    reseedMemorySecureKeys(mockSecureKeys);
     const gen = getCommitMessageGenerator();
     const result = await gen.generateCommitMessage(baseContext, {
       changedFiles: baseContext.changedFiles,
@@ -161,7 +159,7 @@ describe("ProviderCommitMessageGenerator", () => {
 
   // 3b. No resolvable provider and no keys
   test('no resolvable provider + no keys → returns deterministic, reason "missing_provider_api_key"', async () => {
-    mockSecureKeys = {};
+    reseedMemorySecureKeys(mockSecureKeys);
     resolvedProvider = null;
     const gen = getCommitMessageGenerator();
     const result = await gen.generateCommitMessage(baseContext, {
@@ -174,7 +172,7 @@ describe("ProviderCommitMessageGenerator", () => {
 
   // 3c. No resolvable provider despite keys
   test('no resolvable provider with keys present → returns deterministic, reason "provider_not_initialized"', async () => {
-    mockSecureKeys = { anthropic: "sk-test-key" };
+    reseedMemorySecureKeys(mockSecureKeys, { anthropic: "sk-test-key" });
     resolvedProvider = null;
     const gen = getCommitMessageGenerator();
     const result = await gen.generateCommitMessage(baseContext, {
@@ -317,7 +315,7 @@ describe("ProviderCommitMessageGenerator", () => {
     setConfig("llm", {
       callSites: { commitMessage: { provider: "ollama" } },
     });
-    mockSecureKeys = {};
+    reseedMemorySecureKeys(mockSecureKeys);
     resolvedProvider = {
       provider: mockProvider,
       configuredProviderName: "ollama",
@@ -339,7 +337,7 @@ describe("ProviderCommitMessageGenerator", () => {
   // the preflight skips it because resolution already verified the
   // connection credential.
   test("routing identity (cadet) — skips the API-key preflight", async () => {
-    mockSecureKeys = {};
+    reseedMemorySecureKeys(mockSecureKeys);
     resolvedProvider = {
       provider: mockProvider,
       configuredProviderName: "vellum",
@@ -357,7 +355,7 @@ describe("ProviderCommitMessageGenerator", () => {
   // 14. Entry-routed profile — the row's own credential signed resolution,
   // so no generic per-vendor key needs to exist for the preflight to pass.
   test("entry-routed result — skips the vendor API-key preflight", async () => {
-    mockSecureKeys = {};
+    reseedMemorySecureKeys(mockSecureKeys);
     resolvedProvider = {
       provider: mockProvider,
       configuredProviderName: "anthropic",

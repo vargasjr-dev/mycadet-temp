@@ -4,6 +4,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
+
 mock.module("../calls/twilio-config.js", () => ({
   getTwilioConfig: () => ({
     accountSid: "AC_test",
@@ -23,8 +25,7 @@ mock.module("../calls/twilio-provider.js", () => ({
   },
 }));
 
-mock.module("../security/secure-keys.js", () => ({}));
-
+useMemorySecureKeys();
 process.env.DISABLE_HTTP_AUTH = "true";
 
 mock.module("../inbound/public-ingress-urls.js", () => ({

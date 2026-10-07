@@ -20,17 +20,15 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
+
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 // Set up temp directories before mocking
 const testWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR!;
 mkdirSync(testWorkspaceDir, { recursive: true });
 
-// Mock getSecureKeyAsync to avoid credential store access during tests
-mock.module("../util/secure-keys.js", () => ({
-  getSecureKeyAsync: async () => undefined,
-}));
-
+useMemorySecureKeys();
 import { getDb, getLogsDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import {

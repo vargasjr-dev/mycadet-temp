@@ -7,17 +7,15 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 // ---------------------------------------------------------------------------
 // Mocks — must precede the migration import
 // ---------------------------------------------------------------------------
 
-mock.module("../security/secure-keys.js", () => ({
-  getProviderKeyAsync: async () => null,
-  getSecureKeyAsync: async () => null,
-}));
-
+useMemorySecureKeys();
 import { servicesConfigMigration } from "../workspace/migrations/006-services-config.js";
 
 // ---------------------------------------------------------------------------

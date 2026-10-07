@@ -13,6 +13,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { auth } from "@modelcontextprotocol/sdk/client/auth.js";
 
+import { useMemorySecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
+
 const CALLBACK_URL =
   "https://platform.example/v1/gateway/callbacks/abc/webhooks/oauth/callback/";
 const PUBLIC_BASE_URL = "https://tunnel.example/assistant-123";
@@ -37,17 +39,7 @@ mock.module("../../config/loader.js", () => ({
 }));
 
 /** In-memory stand-in for the credential store. */
-const store = new Map<string, string>();
-
-mock.module("../../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (k: string) => store.get(k) ?? null,
-  setSecureKeyAsync: async (k: string, v: string) => {
-    store.set(k, v);
-    return true;
-  },
-  deleteSecureKeyAsync: async (k: string) =>
-    store.delete(k) ? "deleted" : "not-found",
-}));
+const store = useMemorySecureKeyMap();
 
 mock.module("../../daemon/identity-helpers.js", () => ({
   getAssistantName: () => "Jarvis",

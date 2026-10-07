@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { credentialKey } from "../security/credential-key.js";
+import {
+  reseedMemorySecureKeys,
+  useMemorySecureKeys,
+} from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
 
-let mockSecureKeys: Record<string, string>;
+const mockSecureKeys = useMemorySecureKeys();
 let mockHasTwilioCredentials: boolean;
 let mockGetIsPlatform: boolean;
 /** Platform credentials present: base URL + assistant ID + assistant API key. */
@@ -37,10 +41,6 @@ mock.module("../inbound/platform-callback-registration.js", () => ({
     authHeader: mockPlatformConnected ? "Api-Key secret" : null,
     enabled: mockPlatformConnected,
   }),
-}));
-
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => mockSecureKeys[key] ?? null,
 }));
 
 mock.module("../runtime/channel-invite-transports/whatsapp.js", () => ({
@@ -95,7 +95,7 @@ describe("ChannelReadinessService", () => {
     // Reset the seeded config sections to their empty (all-defaults) state.
     setConfig("twilio", {});
     setConfig("ingress", {});
-    mockSecureKeys = {};
+    reseedMemorySecureKeys(mockSecureKeys);
     mockHasTwilioCredentials = false;
     mockGetIsPlatform = false;
     mockPlatformConnected = false;

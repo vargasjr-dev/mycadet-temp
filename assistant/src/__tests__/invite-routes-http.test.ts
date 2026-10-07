@@ -1,13 +1,8 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-// Prevent ensureTelegramBotUsernameResolved() from reading real credentials
-// and calling the Telegram API.
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async () => undefined,
-  setSecureKeyAsync: async () => {},
-  deleteSecureKeyAsync: async () => {},
-}));
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
+useMemorySecureKeys();
 // Mock getTelegramBotUsername — the env var fallback was removed so we
 // control the return value directly via a mutable variable.
 let mockTelegramBotUsername: string | undefined;

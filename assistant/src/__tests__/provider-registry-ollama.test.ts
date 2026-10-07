@@ -1,13 +1,8 @@
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
-// Mock secure-keys so tests don't depend on the developer's local secure storage.
-const actualSecureKeys = await import("../security/secure-keys.js");
-mock.module("../security/secure-keys.js", () => ({
-  ...actualSecureKeys,
-  getSecureKeyAsync: async () => undefined,
-  getProviderKeyAsync: async () => undefined,
-}));
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
+useMemorySecureKeys();
 import { LLMSchema } from "../config/schemas/llm.js";
 import {
   getProvider,

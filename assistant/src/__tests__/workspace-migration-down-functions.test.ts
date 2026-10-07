@@ -18,16 +18,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
+
 // ---------------------------------------------------------------------------
 // Mocks — must precede all migration imports
 // ---------------------------------------------------------------------------
 
-// Mock secure-keys (used by 006-services-config)
-mock.module("../security/secure-keys.js", () => ({
-  getProviderKeyAsync: async () => null,
-  getSecureKeyAsync: async () => null,
-}));
-
+useMemorySecureKeys();
 mock.module("../security/credential-key.js", () => ({
   credentialKey: (...args: string[]) => args.join(":"),
 }));

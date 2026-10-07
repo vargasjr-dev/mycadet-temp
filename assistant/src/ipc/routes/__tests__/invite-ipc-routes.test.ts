@@ -8,12 +8,9 @@
 
 import { describe, expect, mock, test } from "bun:test";
 
-mock.module("../../../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async () => undefined,
-  setSecureKeyAsync: async () => {},
-  deleteSecureKeyAsync: async () => {},
-}));
+import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
 
+useMemorySecureKeys();
 // Wiring-only: the real composition (guardian-name resolution, contact
 // lookups) needs a migrated DB and is unit-tested in invite-routes-http.
 // A passthrough keeps this suite asserting envelope + payload retention.
