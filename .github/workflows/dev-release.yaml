@@ -291,9 +291,8 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Log in to Docker Hub
         env:
-          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
           DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
 
@@ -303,7 +302,7 @@ jobs:
       - name: Compute image name
         id: image
         run: |
-          echo "image=docker.io/${{ secrets.DOCKERHUB_USER }}/${{ env.ASSISTANT_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "image=docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
       - name: Stamp dev version into package.json
         run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' assistant/package.json > assistant/package.json.tmp && mv assistant/package.json.tmp assistant/package.json
@@ -357,9 +356,8 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Log in to Docker Hub
         env:
-          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
           DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
         with:
@@ -377,7 +375,7 @@ jobs:
         run: |
           VERSION="${{ needs.compute-version.outputs.version }}"
           SHORT_SHA="${{ needs.compute-version.outputs.short_sha }}"
-          IMAGE_REF="docker.io/${{ secrets.DOCKERHUB_USER }}/${{ env.ASSISTANT_IMAGE_NAME }}"
+          IMAGE_REF="docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}"
           IMAGE_TAGS="${IMAGE_REF}:${GITHUB_SHA}"
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:${VERSION}")
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:dev")
@@ -437,9 +435,8 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Log in to Docker Hub
         env:
-          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
           DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
 
@@ -449,7 +446,7 @@ jobs:
       - name: Compute image name
         id: image
         run: |
-          echo "image=docker.io/${{ secrets.DOCKERHUB_USER }}/${{ env.GATEWAY_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "image=docker.io/mycadet/${{ env.GATEWAY_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
       - name: Stamp dev version into package.json
         run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' gateway/package.json > gateway/package.json.tmp && mv gateway/package.json.tmp gateway/package.json
@@ -503,9 +500,8 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Log in to Docker Hub
         env:
-          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
           DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
         with:
@@ -522,7 +518,7 @@ jobs:
         id: tags
         run: |
           VERSION="${{ needs.compute-version.outputs.version }}"
-          IMAGE_REF="docker.io/${{ secrets.DOCKERHUB_USER }}/${{ env.GATEWAY_IMAGE_NAME }}"
+          IMAGE_REF="docker.io/mycadet/${{ env.GATEWAY_IMAGE_NAME }}"
           IMAGE_TAGS="${IMAGE_REF}:${GITHUB_SHA}"
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:${VERSION}")
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:dev")
@@ -582,9 +578,8 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Log in to Docker Hub
         env:
-          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
           DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
 
@@ -594,7 +589,7 @@ jobs:
       - name: Compute image name
         id: image
         run: |
-          echo "image=docker.io/${{ secrets.DOCKERHUB_USER }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "image=docker.io/mycadet/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
       - name: Stamp dev version into package.json
         run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' credential-executor/package.json > credential-executor/package.json.tmp && mv credential-executor/package.json.tmp credential-executor/package.json
@@ -645,9 +640,8 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Log in to Docker Hub
         env:
-          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
           DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
         with:
@@ -664,7 +658,7 @@ jobs:
         id: tags
         run: |
           VERSION="${{ needs.compute-version.outputs.version }}"
-          IMAGE_REF="docker.io/${{ secrets.DOCKERHUB_USER }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}"
+          IMAGE_REF="docker.io/mycadet/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}"
           IMAGE_TAGS="${IMAGE_REF}:${GITHUB_SHA}"
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:${VERSION}")
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:dev")

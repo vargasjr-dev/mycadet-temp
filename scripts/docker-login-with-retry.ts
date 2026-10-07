@@ -4,8 +4,7 @@
  * attempts and backoff.
  *
  * Required environment variables:
- *   DOCKERHUB_USER            — Docker Hub username
- *   DOCKERHUB_ACCESS_TOKEN    — Docker Hub access token / password
+ *   DOCKERHUB_ACCESS_TOKEN    — Docker Hub access token for the mycadet account
  *
  * Optional environment variables:
  *   MAX_ATTEMPTS              — Number of login attempts (default: 3)
@@ -14,13 +13,10 @@
 
 import { execSync } from "node:child_process";
 
-const DOCKERHUB_USER = process.env.DOCKERHUB_USER;
 const DOCKERHUB_ACCESS_TOKEN = process.env.DOCKERHUB_ACCESS_TOKEN;
 
-if (!DOCKERHUB_USER || !DOCKERHUB_ACCESS_TOKEN) {
-  console.error(
-    "ERROR: DOCKERHUB_USER and DOCKERHUB_ACCESS_TOKEN must be set"
-  );
+if (!DOCKERHUB_ACCESS_TOKEN) {
+  console.error("ERROR: DOCKERHUB_ACCESS_TOKEN must be set");
   process.exit(1);
 }
 
@@ -31,7 +27,7 @@ for (let attempt = 1; attempt <= maxAttempts; attempt++) {
   console.log(`Docker Hub login attempt ${attempt}/${maxAttempts}...`);
   try {
     execSync(
-      `echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin`,
+      `echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin`,
       { stdio: "inherit", env: process.env }
     );
     console.log(`Docker Hub login succeeded on attempt ${attempt}`);

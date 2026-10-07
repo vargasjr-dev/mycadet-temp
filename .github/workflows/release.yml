@@ -1055,7 +1055,6 @@ jobs:
 
       - name: Login to Docker Hub
         env:
-          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
           DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
         run: bun scripts/docker-login-with-retry.ts
 
