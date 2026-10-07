@@ -1006,7 +1006,7 @@ export class RuntimeHttpServer {
       return httpError("UNAUTHORIZED", "Unauthorized", 401);
     }
 
-    const jwtResult = verifyToken(token, "vellum-daemon");
+    const jwtResult = verifyToken(token, "cadet-daemon");
     if (!jwtResult.ok) {
       return httpError("UNAUTHORIZED", "Unauthorized", 401);
     }
@@ -1213,7 +1213,7 @@ let instance: RuntimeHttpServer | null = null;
  *
  * An occupied address (`EADDRINUSE`) aborts startup: whatever holds the port
  * owns every HTTP client of this workspace, including the gateway proxy that
- * fronts `/v1/*`. Continuing would leave a daemon that answers IPC (so `vellum
+ * fronts `/v1/*`. Continuing would leave a daemon that answers IPC (so `cadet
  * ps` and platform status read healthy) while every proxied HTTP route 502s
  * against a foreign listener. Any other bind failure (permission denied, fd
  * exhaustion) is non-fatal, logged with the singleton left unset.

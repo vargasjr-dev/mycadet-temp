@@ -3,7 +3,7 @@
  * adapter.
  *
  * The HTTP adapter must derive the actor identity headers
- * (`x-vellum-actor-principal-id`, `x-vellum-principal-type`) exclusively from
+ * (`x-cadet-actor-principal-id`, `x-cadet-principal-type`) exclusively from
  * the verified AuthContext, never from caller-supplied request headers. A
  * caller whose token carries no actorPrincipalId (svc_gateway / svc_daemon /
  * local principals) must not be able to spoof another principal — e.g. the
@@ -26,8 +26,8 @@ const ECHO_ROUTE: RouteDefinition = {
   method: "POST",
   policy: null,
   handler: ({ headers }) => ({
-    actorPrincipalId: headers?.["x-vellum-actor-principal-id"] ?? null,
-    principalType: headers?.["x-vellum-principal-type"] ?? null,
+    actorPrincipalId: headers?.["x-cadet-actor-principal-id"] ?? null,
+    principalType: headers?.["x-cadet-principal-type"] ?? null,
   }),
 };
 
@@ -54,10 +54,10 @@ async function invokeEcho(params: {
     "content-type": "application/json",
   };
   if (params.spoofedPrincipalId !== undefined) {
-    reqHeaders["x-vellum-actor-principal-id"] = params.spoofedPrincipalId;
+    reqHeaders["x-cadet-actor-principal-id"] = params.spoofedPrincipalId;
   }
   if (params.spoofedPrincipalType !== undefined) {
-    reqHeaders["x-vellum-principal-type"] = params.spoofedPrincipalType;
+    reqHeaders["x-cadet-principal-type"] = params.spoofedPrincipalType;
   }
 
   const req = new Request("http://daemon.local/v1/test/echo-identity", {

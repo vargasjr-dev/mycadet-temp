@@ -290,7 +290,7 @@ describe("AgentLoop result-time spooling", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const filePath = getToolResultFilePath(convDir, "tu_1");
@@ -330,7 +330,7 @@ describe("AgentLoop result-time spooling", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls).toHaveLength(3);
@@ -369,7 +369,7 @@ describe("AgentLoop result-time spooling", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const filePath = getToolResultFilePath(convDir, "tu_1");
@@ -401,7 +401,7 @@ describe("AgentLoop result-time spooling", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // The second provider call carries the full requested window, not a stub;
@@ -428,7 +428,7 @@ describe("AgentLoop result-time spooling", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const sentResult = calls[1].messages[2].content[0] as { content: string };

@@ -22,7 +22,7 @@ import { _resetBackend, getProviderKeyAsync } from "../secure-keys.js";
 
 const TEST_DIR = join(
   tmpdir(),
-  `vellum-provkey-envfallback-${randomBytes(4).toString("hex")}`,
+  `cadet-provkey-envfallback-${randomBytes(4).toString("hex")}`,
 );
 const STORE_PATH = join(TEST_DIR, "keys.enc");
 

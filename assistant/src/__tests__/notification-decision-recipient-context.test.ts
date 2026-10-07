@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // ── Mocks (must precede imports from mocked modules) ──────────────────
 
 mock.module("../channels/config.js", () => ({
-  getDeliverableChannels: () => ["vellum"],
+  getDeliverableChannels: () => ["cadet"],
 }));
 
 mock.module("../notifications/decisions-store.js", () => ({
@@ -126,7 +126,7 @@ function setupLLMProvider() {
     name: "record_notification_decision",
     input: {
       shouldNotify: true,
-      selectedChannels: ["vellum"],
+      selectedChannels: ["cadet"],
       reasoningSummary: "LLM decision with recipient context",
       renderedCopy: {
         cadet: {
@@ -155,7 +155,7 @@ describe("recipient context in notification decision engine", () => {
     setupLLMProvider();
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["vellum"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).toContain("<recipient-context>");
@@ -170,7 +170,7 @@ describe("recipient context in notification decision engine", () => {
     setupLLMProvider();
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["vellum"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).not.toContain("<recipient-context>");
@@ -182,7 +182,7 @@ describe("recipient context in notification decision engine", () => {
     setupLLMProvider();
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["vellum"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).not.toContain("<recipient-context>");
@@ -194,7 +194,7 @@ describe("recipient context in notification decision engine", () => {
     setupLLMProvider();
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["vellum"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).not.toContain("<recipient-context>");
@@ -206,7 +206,7 @@ describe("recipient context in notification decision engine", () => {
     setupLLMProvider();
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["vellum"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).toContain("<recipient-context>");
@@ -232,13 +232,13 @@ describe("recipient context in notification decision engine", () => {
 
     const signal = makeSignal();
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     expect(decision.fallbackUsed).toBe(true);
     expect(decision.shouldNotify).toBe(true);
-    expect(decision.renderedCopy.vellum?.title).toBeDefined();
-    expect(decision.renderedCopy.vellum?.body).toBeDefined();
+    expect(decision.renderedCopy.cadet?.title).toBeDefined();
+    expect(decision.renderedCopy.cadet?.body).toBeDefined();
     // No LLM call, so no system prompt captured
     expect(capturedSystemPrompt).toBeUndefined();
   });
@@ -250,7 +250,7 @@ describe("recipient context in notification decision engine", () => {
     const signal = makeSignal();
     await evaluateSignal(
       signal,
-      ["vellum"] as NotificationChannel[],
+      ["cadet"] as NotificationChannel[],
       "Notify only for urgent items",
     );
 

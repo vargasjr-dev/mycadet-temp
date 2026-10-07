@@ -16,7 +16,7 @@ let workspaceDir: string;
 function freshWorkspace(): string {
   return join(
     tmpdir(),
-    `vellum-list-all-apps-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-list-all-apps-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
 }
 
@@ -62,7 +62,7 @@ function bundleApp(pluginDir: string, app: string): void {
 
 beforeEach(() => {
   workspaceDir = freshWorkspace();
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
 });
 
 afterEach(() => {

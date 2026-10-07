@@ -23,7 +23,7 @@ export function mintEdgeToken(
   actorPrincipalId: string = GUARDIAN_PRINCIPAL,
 ): string {
   return mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub: `actor:test-assistant:${actorPrincipalId}`,
     scope_profile: "actor_client_v1",
     policy_epoch: CURRENT_POLICY_EPOCH,
@@ -34,7 +34,7 @@ export function mintEdgeToken(
 /** Mint a service-style token (no actor principal). */
 export function mintServiceEdgeToken(): string {
   return mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub: "svc:gateway:self",
     scope_profile: "gateway_service_v1",
     policy_epoch: CURRENT_POLICY_EPOCH,

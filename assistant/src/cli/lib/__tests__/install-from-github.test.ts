@@ -41,7 +41,7 @@ import {
 } from "../install-from-github.js";
 import { readValidatedPluginIcon } from "../plugin-icon-file.js";
 
-const CANON_REPO = "vellum-ai/vellum-assistant";
+const CANON_REPO = "vargasjr-dev/mycadet";
 /** Synthetic host the fixtures use for Contents API `download_url`s. */
 const DOWNLOAD_HOST = "https://files.test/";
 
@@ -226,7 +226,7 @@ function readRealCavemanStub(): Record<string, string> {
 const CAVEMAN_SHA = "63a91ecadbf4c4719a4602a5abb00883f9966034";
 
 const CAVEMAN_MANIFEST = {
-  name: "vellum-assistant",
+  name: "mycadet",
   plugins: [
     {
       name: "caveman",
@@ -245,7 +245,7 @@ describe("installPlugin — install lifecycle", () => {
   let pluginsDir: string;
 
   beforeEach(() => {
-    ws = mkdtempSync(join(tmpdir(), "vellum-plugins-install-"));
+    ws = mkdtempSync(join(tmpdir(), "cadet-plugins-install-"));
     pluginsDir = join(ws, "plugins");
     mkdirSync(pluginsDir, { recursive: true });
   });
@@ -508,7 +508,7 @@ describe("installPlugin - staged-install consent", () => {
   let pluginsDir: string;
 
   beforeEach(() => {
-    ws = mkdtempSync(join(tmpdir(), "vellum-plugins-consent-"));
+    ws = mkdtempSync(join(tmpdir(), "cadet-plugins-consent-"));
     pluginsDir = join(ws, "plugins");
     mkdirSync(pluginsDir, { recursive: true });
   });
@@ -586,7 +586,7 @@ describe("installPlugin — marketplace resolution", () => {
   let pluginsDir: string;
 
   beforeEach(() => {
-    ws = mkdtempSync(join(tmpdir(), "vellum-plugins-mkt-"));
+    ws = mkdtempSync(join(tmpdir(), "cadet-plugins-mkt-"));
     pluginsDir = join(ws, "plugins");
     mkdirSync(pluginsDir, { recursive: true });
   });
@@ -670,7 +670,7 @@ describe("installPlugin — marketplace resolution", () => {
     // (a monorepo that ships several plugins) rather than the repo root.
     const NESTED_SHA = "0f".repeat(20);
     const NESTED_MANIFEST = {
-      name: "vellum-assistant",
+      name: "mycadet",
       plugins: [
         {
           name: "nested-plugin",
@@ -734,7 +734,7 @@ describe("installPlugin — marketplace resolution", () => {
     // GIVEN an entry pinning a directory the cloned ref doesn't contain
     const MISSING_SHA = "1a".repeat(20);
     const MISSING_PATH_MANIFEST = {
-      name: "vellum-assistant",
+      name: "mycadet",
       plugins: [
         {
           name: "nested-plugin",
@@ -1281,7 +1281,7 @@ describe("installPlugin — direct (untrusted) install", () => {
   let pluginsDir: string;
 
   beforeEach(() => {
-    ws = mkdtempSync(join(tmpdir(), "vellum-plugins-direct-"));
+    ws = mkdtempSync(join(tmpdir(), "cadet-plugins-direct-"));
     pluginsDir = join(ws, "plugins");
     mkdirSync(pluginsDir, { recursive: true });
   });
@@ -1579,7 +1579,7 @@ describe("installPlugin — direct (untrusted) install", () => {
     // GIVEN a marketplace entry whose upstream tree ships no package.json
     const NO_PKG_SHA = "5e".repeat(20);
     const NO_PKG_MANIFEST = {
-      name: "vellum-assistant",
+      name: "mycadet",
       plugins: [
         {
           name: "manifest-less",
@@ -1626,7 +1626,7 @@ describe("installPlugin — dependency installation", () => {
   let pluginsDir: string;
 
   beforeEach(() => {
-    ws = mkdtempSync(join(tmpdir(), "vellum-plugins-deps-"));
+    ws = mkdtempSync(join(tmpdir(), "cadet-plugins-deps-"));
     pluginsDir = join(ws, "plugins");
     mkdirSync(pluginsDir, { recursive: true });
   });
@@ -1728,10 +1728,10 @@ describe("sanitizePluginName", () => {
     "default-memory",
     "default-",
     "default-x",
-    "vellum-db",
-    "vellum-memory",
-    "vellum-",
-    "vellum-x",
+    "cadet-db",
+    "cadet-memory",
+    "cadet-",
+    "cadet-x",
   ])("rejects reserved prefix name %p", (reserved) => {
     expect(() => sanitizePluginName(reserved)).toThrow(InvalidPluginNameError);
   });
@@ -1764,12 +1764,12 @@ describe("resolveTreeRefPath", () => {
     const result = await resolveTreeRefPath(
       "ZeebBoyBlue",
       "virlo-integrations",
-      ["feat", "results-viewer", "integrations", "vellum"],
+      ["feat", "results-viewer", "integrations", "cadet"],
       lsRemoteRunner(["main", "feat/results-viewer"]),
     );
     expect(result).toEqual({
       ref: "feat/results-viewer",
-      path: "integrations/vellum",
+      path: "integrations/cadet",
     });
   });
 

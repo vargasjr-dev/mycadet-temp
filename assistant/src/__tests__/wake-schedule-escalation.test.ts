@@ -48,7 +48,7 @@ function guardianRows() {
   }
   return [
     {
-      channelType: "vellum",
+      channelType: "cadet",
       contactId: "guardian-contact",
       principalId: boundGuardianPrincipalId,
       address: boundGuardianPrincipalId,
@@ -78,16 +78,16 @@ const TARGET = "conv-guardian-owned";
 
 /** A device token that is not the currently bound guardian. */
 const STALE_ACTOR = {
-  "x-vellum-principal-type": "actor",
-  "x-vellum-actor-principal-id": "revoked-or-rebound-principal",
+  "x-cadet-principal-type": "actor",
+  "x-cadet-actor-principal-id": "revoked-or-rebound-principal",
 };
 /** The guardian's own web/desktop client. */
 const CURRENT_GUARDIAN = {
-  "x-vellum-principal-type": "actor",
-  "x-vellum-actor-principal-id": "guardian-principal",
+  "x-cadet-principal-type": "actor",
+  "x-cadet-actor-principal-id": "guardian-principal",
 };
 /** The guardian's CLI, over the local IPC socket. */
-const LOCAL_CALLER = { "x-vellum-principal-type": "local" };
+const LOCAL_CALLER = { "x-cadet-principal-type": "local" };
 
 function routeFor(operationId: string) {
   const route = SCHEDULE_ROUTES.find((r) => r.operationId === operationId);

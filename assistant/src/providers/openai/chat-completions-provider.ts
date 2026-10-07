@@ -176,7 +176,7 @@ export interface OpenAIChatCompletionsProviderOptions {
   extraCreateParams?: Record<string, unknown>;
   /** Upper bound for `reasoning_effort` sent on the wire. Defaults to "xhigh"
    *  (OpenAI's current ceiling). Compatibility providers whose APIs only
-   *  document `low|medium|high` should set this to "high" so Vellum's
+   *  document `low|medium|high` should set this to "high" so Cadet's
    *  `xhigh`/`max` tiers don't 4xx upstream. Set to "max" for providers like
    *  Fireworks DeepSeek V4 that accept the full effort range. Subclasses can
    *  override {@link OpenAIChatCompletionsProvider.resolveMaxReasoningEffort}

@@ -10,7 +10,7 @@
  * listing and detail responses agree on `isInstalled`.
  *
  * Coverage:
- *   - Uninstalled catalog skill: returns `{ skill: catalog/vellum/available, files }` with `content: null` for every entry.
+ *   - Uninstalled catalog skill: returns `{ skill: catalog/cadet/available, files }` with `content: null` for every entry.
  *   - Neither installed nor handled by any provider: returns 404.
  *   - Installed skill: preserves the disk-read behavior with inline `content`.
  *   - Installed skill with missing directory: returns 404 without consulting providers.
@@ -43,7 +43,7 @@ type ResolvedSkillEntry = {
 let mockResolvedStates: ResolvedSkillEntry[] = [];
 
 // Per-provider mock state
-let mockVellumProvider: SkillFileProvider;
+let mockCadetProvider: SkillFileProvider;
 let mockSkillsshProvider: SkillFileProvider;
 let mockClawhubProvider: SkillFileProvider;
 
@@ -112,12 +112,12 @@ mock.module("../skills/catalog-cache.js", () => ({
 // method call to the CURRENT value of the mutable mock variable.
 mock.module("../skills/catalog-files.js", () => ({
   catalogSkillToSlim: () => ({}),
-  createVellumCatalogProvider: () => ({
-    canHandle: (id: string) => mockVellumProvider.canHandle(id),
-    listFiles: (id: string) => mockVellumProvider.listFiles(id),
+  createCadetCatalogProvider: () => ({
+    canHandle: (id: string) => mockCadetProvider.canHandle(id),
+    listFiles: (id: string) => mockCadetProvider.listFiles(id),
     readFileContent: (id: string, p: string) =>
-      mockVellumProvider.readFileContent(id, p),
-    toSlimSkill: (id: string) => mockVellumProvider.toSlimSkill(id),
+      mockCadetProvider.readFileContent(id, p),
+    toSlimSkill: (id: string) => mockCadetProvider.toSlimSkill(id),
   }),
   hasHiddenOrSkippedSegment: () => false,
   readCatalogSkillFiles: async () => null,
@@ -249,7 +249,7 @@ describe("getSkillFiles — provider chain fallback", () => {
   beforeEach(() => {
     mockResolvedStates = [];
     providerCalls.length = 0;
-    mockVellumProvider = makeNoopProvider("cadet");
+    mockCadetProvider = makeNoopProvider("cadet");
     mockSkillsshProvider = makeNoopProvider("skillssh");
     mockClawhubProvider = makeNoopProvider("clawhub");
     // Force provider chain re-creation from the (mocked) factory functions
@@ -276,7 +276,7 @@ describe("getSkillFiles — provider chain fallback", () => {
       },
     ];
 
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => true,
       listFiles: async () => mockFiles,
       readFileContent: async () => null,
@@ -336,7 +336,7 @@ describe("getSkillFiles — provider chain fallback", () => {
   });
 
   test("returns 404 with 'files unavailable' when cadet provider canHandle returns true but listFiles returns null", async () => {
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => true,
       listFiles: async () => null,
       readFileContent: async () => null,
@@ -357,7 +357,7 @@ describe("getSkillFiles — provider chain fallback", () => {
   test("installed skill returns inline disk content (no provider fallback)", async () => {
     // Create a real temp directory for the installed-skill path to read.
     const workspaceRoot = mkdtempSync(
-      join(tmpdir(), "vellum-skill-files-test-"),
+      join(tmpdir(), "cadet-skill-files-test-"),
     );
     const installedDir = join(workspaceRoot, "installed-skill");
     mkdirSync(installedDir, { recursive: true });
@@ -427,7 +427,7 @@ describe("getSkillFiles — provider chain fallback", () => {
     ];
     // Even if a provider would handle this id, the handler must NOT
     // fall through — return 404 instead.
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => true,
       listFiles: async () => [
         {
@@ -463,7 +463,7 @@ describe("getSkillFiles — provider chain fallback", () => {
   });
 
   test("catalogSkillToSlim falls back to cs.name when metadata.cadet.display-name is absent", async () => {
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => true,
       listFiles: async () => [],
       readFileContent: async () => null,
@@ -491,7 +491,7 @@ describe("getSkillFiles — provider chain fallback", () => {
   });
 
   test("catalogSkillToSlim prefers metadata.cadet.display-name over cs.name", async () => {
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => true,
       listFiles: async () => [],
       readFileContent: async () => null,
@@ -517,7 +517,7 @@ describe("getSkillFiles — provider chain fallback", () => {
 
   test("skills.sh-shaped ID not in cadet catalog returns files from skills.sh provider", async () => {
     // Cadet provider doesn't handle this ID
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => false,
       listFiles: async () => null,
       readFileContent: async () => null,
@@ -565,7 +565,7 @@ describe("getSkillFiles — provider chain fallback", () => {
 
   test("clawhub-shaped ID not in cadet catalog returns files from clawhub provider", async () => {
     // Cadet and skills.sh providers don't handle this ID
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => false,
       listFiles: async () => null,
       readFileContent: async () => null,
@@ -629,7 +629,7 @@ describe("getSkillFiles — provider chain fallback", () => {
 
   test("ID that no provider handles returns 404", async () => {
     // All providers return canHandle=false
-    mockVellumProvider = makeNoopProvider("cadet");
+    mockCadetProvider = makeNoopProvider("cadet");
     mockSkillsshProvider = makeNoopProvider("skillssh");
     mockClawhubProvider = makeNoopProvider("clawhub");
 
@@ -644,14 +644,14 @@ describe("getSkillFiles — provider chain fallback", () => {
 
   test("provider priority — cadet provider is tried before skills.sh and clawhub", async () => {
     // All three providers claim to handle this ID, but cadet should win
-    const vellumListFilesCalls: string[] = [];
+    const cadetListFilesCalls: string[] = [];
     const skillsshListFilesCalls: string[] = [];
     const clawhubListFilesCalls: string[] = [];
 
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => true,
       listFiles: async (skillId: string) => {
-        vellumListFilesCalls.push(skillId);
+        cadetListFilesCalls.push(skillId);
         return [
           {
             path: "SKILL.md",
@@ -728,7 +728,7 @@ describe("getSkillFiles — provider chain fallback", () => {
     expect(result.skill.origin).toBe("cadet");
     expect(result.skill.name).toBe("Cadet Contested");
     // Cadet was called, but skills.sh and clawhub were NOT called
-    expect(vellumListFilesCalls).toEqual(["contested-skill"]);
+    expect(cadetListFilesCalls).toEqual(["contested-skill"]);
     expect(skillsshListFilesCalls).toEqual([]);
     expect(clawhubListFilesCalls).toEqual([]);
   });

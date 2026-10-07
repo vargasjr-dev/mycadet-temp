@@ -33,7 +33,7 @@ describe.skip("install.sh", () => {
 
     // GIVEN the recommended install.sh script
     // WHEN we run the install script (which includes cadet hatch)
-    execSync(`bash "${INSTALL_SCRIPT}" && . ~/.config/vellum/env`, {
+    execSync(`bash "${INSTALL_SCRIPT}" && . ~/.config/cadet/env`, {
       stdio: "inherit",
       timeout: 300_000,
       shell: "/bin/bash",

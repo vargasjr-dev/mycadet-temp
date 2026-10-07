@@ -18,7 +18,7 @@ describe("decideNavigation", () => {
   });
 
   test("blocks non-http schemes", () => {
-    expect(decideNavigation("mailto:hi@vellum.ai", APP)).toEqual({
+    expect(decideNavigation("mailto:hi@mycadet.ai", APP)).toEqual({
       kind: "block",
     });
     expect(decideNavigation("file:///etc/passwd", APP)).toEqual({

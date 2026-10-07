@@ -18,7 +18,7 @@ import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
-const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 const { applyBootstrapTemplate } = await import("../prompts/system-prompt.js");
 const { isActivationSession } =

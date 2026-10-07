@@ -42,7 +42,7 @@ export function configureDesktopChromeFrame(profileDir: string): void {
   preferences.browser = { ...browser, custom_chrome_frame: true };
   const directory = dirname(path);
   mkdirSync(directory, { recursive: true });
-  const staging = mkdtempSync(join(directory, ".vellum-frame-"));
+  const staging = mkdtempSync(join(directory, ".cadet-frame-"));
   try {
     const temporaryPath = join(staging, "Preferences");
     writeFileSync(temporaryPath, JSON.stringify(preferences) + "\n", {

@@ -315,14 +315,14 @@ fine answer; more of the film is coming either way."""
 
 def write_signal(session_dir, conversation_key, content, attachments, request_id):
     signals_dir = (
-        Path(os.environ.get("VELLUM_WORKSPACE_DIR", str(Path.home() / ".vellum/workspace")))
+        Path(os.environ.get("CADET_WORKSPACE_DIR", str(Path.home() / ".cadet/workspace")))
         / "signals"
     )
     signals_dir.mkdir(parents=True, exist_ok=True)
     signal = {
         "conversationKey": conversation_key,
         "content": content,
-        "sourceChannel": "vellum",
+        "sourceChannel": "cadet",
         "interface": "cli",
         "requestId": request_id,
         "bypassSecretCheck": True,

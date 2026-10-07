@@ -630,7 +630,7 @@ export async function classifyRisk(
 //   - procedural-memory-as-skills is active (`policyContext.procToSkillsActive`,
 //     precomputed by buildPolicyContext: the v3 tier is active — memory is on
 //     and memory-v3 is live),
-//   - the turn is the retrospective background source — guardian trust, `vellum`
+//   - the turn is the retrospective background source — guardian trust, `cadet`
 //     source channel, `memory_retrospective` origin (set in
 //     memory-retrospective-job.ts).
 //
@@ -646,7 +646,7 @@ function isRetrospectiveSkillAuthoringGrant(
     policyContext?.procToSkillsActive !== true ||
     policyContext.requestOrigin !== MEMORY_RETROSPECTIVE_ORIGIN ||
     policyContext.trustClass !== "guardian" ||
-    policyContext.sourceChannel !== "vellum"
+    policyContext.sourceChannel !== "cadet"
   ) {
     return false;
   }

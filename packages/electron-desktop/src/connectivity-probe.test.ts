@@ -114,8 +114,8 @@ describe("connectivity-probe", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
             // No resources.gatewayPort: cloud assistant
           },
         ],
@@ -137,8 +137,8 @@ describe("connectivity-probe", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
             resources: { gatewayPort: 7830 },
           },
         ],
@@ -301,8 +301,8 @@ describe("connectivity-probe", () => {
           },
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
           },
         ],
         activeAssistant: "local-1",
@@ -325,8 +325,8 @@ describe("connectivity-probe", () => {
           },
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
           },
         ],
         activeAssistant: "cloud-1",

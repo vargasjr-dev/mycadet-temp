@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 // Mock platform to use a temp directory
-const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 import { mock } from "bun:test";
 
@@ -111,22 +111,22 @@ describe("buildSystemPrompt", () => {
   test("uses IDENTITY.md when it exists", () => {
     writeFileSync(
       join(TEST_DIR, "IDENTITY.md"),
-      "# My Identity\n\nI am Vellum.",
+      "# My Identity\n\nI am Cadet.",
     );
     const result = buildSystemPrompt();
     // IDENTITY.md renders as the `08-identity` workspace-backed section.
-    expect(result).toContain("# My Identity\n\nI am Vellum.");
+    expect(result).toContain("# My Identity\n\nI am Cadet.");
   });
 
   test("composes IDENTITY.md + SOUL.md when both exist", () => {
-    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "# Identity\n\nI am Vellum.");
+    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "# Identity\n\nI am Cadet.");
     writeFileSync(join(TEST_DIR, "SOUL.md"), "# Soul\n\nBe thoughtful.");
     const result = buildSystemPrompt();
     // IDENTITY renders before SOUL (sections `08-identity` then
     // `09-soul`).
-    expect(result).toContain("# Identity\n\nI am Vellum.");
+    expect(result).toContain("# Identity\n\nI am Cadet.");
     expect(result).toContain("# Soul\n\nBe thoughtful.");
-    const identityIdx = result.indexOf("# Identity\n\nI am Vellum.");
+    const identityIdx = result.indexOf("# Identity\n\nI am Cadet.");
     const soulIdx = result.indexOf("# Soul\n\nBe thoughtful.");
     expect(identityIdx).toBeLessThan(soulIdx);
   });
@@ -153,7 +153,7 @@ describe("buildSystemPrompt", () => {
   });
 
   test("side-chain prompt options still include IDENTITY.md and SOUL.md", () => {
-    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "# Identity\n\nI am Vellum.");
+    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "# Identity\n\nI am Cadet.");
     writeFileSync(join(TEST_DIR, "SOUL.md"), "# Soul\n\nBe thoughtful.");
 
     const result = buildSystemPrompt({
@@ -161,17 +161,17 @@ describe("buildSystemPrompt", () => {
       excludeCustomPrefix: true,
     });
 
-    expect(result).toContain("# Identity\n\nI am Vellum.");
+    expect(result).toContain("# Identity\n\nI am Cadet.");
     expect(result).toContain("# Soul\n\nBe thoughtful.");
   });
 
   test("ignores empty SOUL.md", () => {
     writeFileSync(join(TEST_DIR, "SOUL.md"), "   \n  \n  ");
-    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "# Identity\n\nI am Vellum.");
+    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "# Identity\n\nI am Cadet.");
     const result = buildSystemPrompt();
     // IDENTITY renders but SOUL is gated off by the renderer's
     // empty-body check; no SOUL content should appear.
-    expect(result).toContain("# Identity\n\nI am Vellum.");
+    expect(result).toContain("# Identity\n\nI am Cadet.");
     expect(result).not.toContain("   \n  \n  ");
   });
 
@@ -357,10 +357,10 @@ describe("buildSystemPrompt", () => {
 
   test("includes channel persona from channels/<channelSlug>.md", () => {
     // Channel persona flows through the `11-channel-persona` section.
-    // Default channel is "vellum" when no channelCapabilities passed.
+    // Default channel is "cadet" when no channelCapabilities passed.
     mkdirSync(join(TEST_DIR, "channels"), { recursive: true });
     writeFileSync(
-      join(TEST_DIR, "channels", "vellum.md"),
+      join(TEST_DIR, "channels", "cadet.md"),
       "# Channel persona\n\nThis is the Cadet channel.",
     );
     const result = buildSystemPrompt();
@@ -566,12 +566,12 @@ describe("buildSystemPrompt", () => {
   test("strips comment lines starting with _ from prompt files", () => {
     writeFileSync(
       join(TEST_DIR, "IDENTITY.md"),
-      "# Identity\n_ This is a comment\nI am Vellum.\n_ Another comment",
+      "# Identity\n_ This is a comment\nI am Cadet.\n_ Another comment",
     );
     const result = buildSystemPrompt();
     // IDENTITY.md renders in the static prefix via the 08-identity section,
     // so we assert against the full prompt rather than basePrompt.
-    expect(result).toContain("# Identity\nI am Vellum.");
+    expect(result).toContain("# Identity\nI am Cadet.");
     expect(result).not.toContain("_ This is a comment");
     expect(result).not.toContain("_ Another comment");
   });
@@ -591,12 +591,12 @@ describe("buildSystemPrompt", () => {
 
   test("file with only comment lines is treated as empty", () => {
     writeFileSync(join(TEST_DIR, "SOUL.md"), "_ All comments\n_ Nothing else");
-    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "# Identity\n\nI am Vellum.");
+    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "# Identity\n\nI am Cadet.");
     const result = buildSystemPrompt();
     // Comment-only SOUL.md gets stripped down to "" by
     // `stripCommentLines` and is then gated off by the renderer's
     // empty-body check; only IDENTITY contributes content here.
-    expect(result).toContain("# Identity\n\nI am Vellum.");
+    expect(result).toContain("# Identity\n\nI am Cadet.");
     expect(result).not.toContain("_ All comments");
     expect(result).not.toContain("_ Nothing else");
   });
@@ -703,13 +703,13 @@ describe("buildSystemPrompt", () => {
     test("workspace file content still appears after prefix", () => {
       mkdirSync(SYSTEM_PROMPTS_DIR, { recursive: true });
       writeFileSync(PREFIX_FILE, PREFIX_FRONTMATTER + "Custom prefix\n");
-      writeFileSync(join(TEST_DIR, "IDENTITY.md"), "I am Vellum.");
+      writeFileSync(join(TEST_DIR, "IDENTITY.md"), "I am Cadet.");
       const result = buildSystemPrompt();
       expect(result.startsWith("Custom prefix")).toBe(true);
       // IDENTITY.md renders via 08-identity in the static prefix after
       // the 00-prefix slot.
       const prefixIdx = result.indexOf("Custom prefix");
-      const identityIdx = result.indexOf("I am Vellum.");
+      const identityIdx = result.indexOf("I am Cadet.");
       expect(prefixIdx).toBeGreaterThan(-1);
       expect(identityIdx).toBeGreaterThan(prefixIdx);
     });
@@ -1125,11 +1125,11 @@ describe("buildSystemPrompt", () => {
         mkdirSync(SYSTEM_PROMPTS_DIR, { recursive: true });
         writeFileSync(
           ATTACHMENT_FILE,
-          "## Sending Files to the User\n\nUse the `<vellum-attachment />` tag.\n",
+          "## Sending Files to the User\n\nUse the `<cadet-attachment />` tag.\n",
         );
         const result = buildSystemPrompt();
         expect(result).toContain("## Sending Files to the User");
-        expect(result).toContain("Use the `<vellum-attachment />` tag.");
+        expect(result).toContain("Use the `<cadet-attachment />` tag.");
         expect(result).toContain("## Sending Files to the User");
       });
 
@@ -1157,7 +1157,7 @@ describe("buildSystemPrompt", () => {
         mkdirSync(SYSTEM_PROMPTS_DIR, { recursive: true });
         const result = buildSystemPrompt();
         expect(result).toContain("## Sending Files to the User");
-        expect(result).toContain("vellum://");
+        expect(result).toContain("cadet://");
       });
     });
 

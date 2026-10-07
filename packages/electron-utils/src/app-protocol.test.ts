@@ -13,18 +13,18 @@ import {
 // `path.sep` at runtime. On Linux CI / dev macOS that's `/`.
 const ROOT = "/app/renderer";
 const INDEX_HTML = path.join(ROOT, "index.html");
-const APP_ORIGIN = { protocol: "app:", host: "vellum.ai" };
+const APP_ORIGIN = { protocol: "app:", host: "mycadet.ai" };
 
 describe("resolveAppProtocolPath - allowed paths", () => {
   test("resolves the empty pathname to the root itself", () => {
-    expect(resolveAppProtocolPath(ROOT, "app://vellum.ai/")).toEqual({
+    expect(resolveAppProtocolPath(ROOT, "app://mycadet.ai/")).toEqual({
       kind: "ok",
       resolved: ROOT,
     });
   });
 
   test("resolves a top-level file inside the root", () => {
-    expect(resolveAppProtocolPath(ROOT, "app://vellum.ai/index.html")).toEqual({
+    expect(resolveAppProtocolPath(ROOT, "app://mycadet.ai/index.html")).toEqual({
       kind: "ok",
       resolved: path.join(ROOT, "index.html"),
     });
@@ -32,13 +32,13 @@ describe("resolveAppProtocolPath - allowed paths", () => {
 
   test("resolves nested asset paths inside the root", () => {
     expect(
-      resolveAppProtocolPath(ROOT, "app://vellum.ai/assets/app.css"),
+      resolveAppProtocolPath(ROOT, "app://mycadet.ai/assets/app.css"),
     ).toEqual({ kind: "ok", resolved: path.join(ROOT, "assets/app.css") });
   });
 
   test("strips leading slashes so the join doesn't escape the root", () => {
     expect(
-      resolveAppProtocolPath(ROOT, "app://vellum.ai///index.html"),
+      resolveAppProtocolPath(ROOT, "app://mycadet.ai///index.html"),
     ).toEqual({ kind: "ok", resolved: path.join(ROOT, "index.html") });
   });
 });
@@ -53,7 +53,7 @@ describe("resolveAppProtocolPath - allowed paths", () => {
 describe("resolveAppProtocolPath - URL parser collapses `..` segments", () => {
   test("literal `..` resolves to a safe in-root path", () => {
     expect(
-      resolveAppProtocolPath(ROOT, "app://vellum.ai/../etc/passwd"),
+      resolveAppProtocolPath(ROOT, "app://mycadet.ai/../etc/passwd"),
     ).toEqual({ kind: "ok", resolved: path.join(ROOT, "etc/passwd") });
   });
 
@@ -65,7 +65,7 @@ describe("resolveAppProtocolPath - URL parser collapses `..` segments", () => {
 
   test("percent-encoded `..` (`%2e%2e`) resolves to a safe in-root path", () => {
     expect(
-      resolveAppProtocolPath(ROOT, "app://vellum.ai/%2e%2e/etc/passwd"),
+      resolveAppProtocolPath(ROOT, "app://mycadet.ai/%2e%2e/etc/passwd"),
     ).toEqual({ kind: "ok", resolved: path.join(ROOT, "etc/passwd") });
   });
 });
@@ -75,7 +75,7 @@ describe("resolveAppProtocolPath - malformed input handling", () => {
     // `decodeURIComponent("/%ZZ")` throws `URIError`. The wrapper
     // converts that to a clean 403 so the protocol handler doesn't
     // surface a 500 to the renderer.
-    expect(resolveAppProtocolPath(ROOT, "app://vellum.ai/%ZZ")).toEqual({
+    expect(resolveAppProtocolPath(ROOT, "app://mycadet.ai/%ZZ")).toEqual({
       kind: "forbidden",
     });
   });
@@ -149,7 +149,7 @@ describe("resolveRelativePath - startsWith guard", () => {
 describe("resolveAppProtocolPath - mount-prefix stripping", () => {
   test("maps `/assistant` to the root itself", () => {
     expect(
-      resolveAppProtocolPath(ROOT, "app://vellum.ai/assistant", "/assistant"),
+      resolveAppProtocolPath(ROOT, "app://mycadet.ai/assistant", "/assistant"),
     ).toEqual({ kind: "ok", resolved: ROOT });
   });
 
@@ -157,7 +157,7 @@ describe("resolveAppProtocolPath - mount-prefix stripping", () => {
     expect(
       resolveAppProtocolPath(
         ROOT,
-        "app://vellum.ai/assistant/assets/index.js",
+        "app://mycadet.ai/assistant/assets/index.js",
         "/assistant",
       ),
     ).toEqual({ kind: "ok", resolved: path.join(ROOT, "assets/index.js") });
@@ -167,7 +167,7 @@ describe("resolveAppProtocolPath - mount-prefix stripping", () => {
     expect(
       resolveAppProtocolPath(
         ROOT,
-        "app://vellum.ai/assistant/assets/css/app.css",
+        "app://mycadet.ai/assistant/assets/css/app.css",
         "/assistant",
       ),
     ).toEqual({
@@ -180,7 +180,7 @@ describe("resolveAppProtocolPath - mount-prefix stripping", () => {
     // `/favicon.ico` lives at the bare protocol root. Stays under
     // `rendererRoot/favicon.ico` (where Vite emits favicon).
     expect(
-      resolveAppProtocolPath(ROOT, "app://vellum.ai/favicon.ico", "/assistant"),
+      resolveAppProtocolPath(ROOT, "app://mycadet.ai/favicon.ico", "/assistant"),
     ).toEqual({ kind: "ok", resolved: path.join(ROOT, "favicon.ico") });
   });
 
@@ -191,7 +191,7 @@ describe("resolveAppProtocolPath - mount-prefix stripping", () => {
     expect(
       resolveAppProtocolPath(
         ROOT,
-        "app://vellum.ai/assistantfoo/bar",
+        "app://mycadet.ai/assistantfoo/bar",
         "/assistant",
       ),
     ).toEqual({
@@ -207,7 +207,7 @@ describe("resolveAppProtocolPath - mount-prefix stripping", () => {
     expect(
       resolveAppProtocolPath(
         ROOT,
-        "app://vellum.ai/assistant/../etc/passwd",
+        "app://mycadet.ai/assistant/../etc/passwd",
         "/assistant",
       ),
     ).toEqual({ kind: "ok", resolved: path.join(ROOT, "etc/passwd") });
@@ -228,13 +228,13 @@ describe("planAppProtocolAssetRequest - packaged routes", () => {
   test("classifies packaged assets, routes, and missing files", async () => {
     const asset = path.join(ROOT, "assets/index.js");
     expect(
-      await plan("app://vellum.ai/assistant/assets/index.js", [asset]),
+      await plan("app://mycadet.ai/assistant/assets/index.js", [asset]),
     ).toEqual({ kind: "fetch", path: asset });
-    expect(await plan("app://vellum.ai/assistant/settings/general")).toEqual({
+    expect(await plan("app://mycadet.ai/assistant/settings/general")).toEqual({
       kind: "fetch",
       path: INDEX_HTML,
     });
-    expect(await plan("app://vellum.ai/assistant/assets/missing.js")).toEqual({
+    expect(await plan("app://mycadet.ai/assistant/assets/missing.js")).toEqual({
       kind: "not-found",
     });
   });

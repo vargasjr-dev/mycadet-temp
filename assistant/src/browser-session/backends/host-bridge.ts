@@ -5,7 +5,7 @@ import type { BrowserBackend, CdpCommand, CdpResult } from "../types.js";
  * `sendCdp` transport that routes raw CDP commands through the daemon's
  * HostBrowserProxy to the desktop client's SSE bridge, which executes
  * them against the user's Chrome via its local remote-debugging port.
- * Unlike the extension backend, the bridge has no `Vellum.*`
+ * Unlike the extension backend, the bridge has no `Cadet.*`
  * pseudo-method support. The factory in
  * `assistant/src/tools/browser/cdp-client/factory.ts` constructs one
  * per tool invocation.

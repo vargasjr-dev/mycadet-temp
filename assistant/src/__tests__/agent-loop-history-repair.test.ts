@@ -71,7 +71,7 @@ describe("agent loop — built-in history-repair recovery", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Initial call rejected → deep-repair → one retry that succeeded.
@@ -99,7 +99,7 @@ describe("agent loop — built-in history-repair recovery", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Initial call + exactly one deep-repair retry, then the rejection surfaces.
@@ -162,7 +162,7 @@ describe("agent loop — built-in history-repair recovery", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // The hook observed the rejection (contract preserved).

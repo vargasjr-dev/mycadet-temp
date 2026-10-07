@@ -58,7 +58,7 @@ mock.module("../config/env.js", () => ({
 
 import {
   catalogSkillToSlim,
-  createVellumCatalogProvider,
+  createCadetCatalogProvider,
   readCatalogSkillFileContent,
   readCatalogSkillFiles,
   sanitizeRelativePath,
@@ -865,26 +865,26 @@ describe("catalogSkillToSlim", () => {
 });
 
 // ---------------------------------------------------------------------------
-// createVellumCatalogProvider
+// createCadetCatalogProvider
 // ---------------------------------------------------------------------------
 
-describe("createVellumCatalogProvider", () => {
+describe("createCadetCatalogProvider", () => {
   test("canHandle returns true when skill is in the cached catalog", () => {
     mockCatalog = [skill("my-skill"), skill("other-skill")];
-    const provider = createVellumCatalogProvider();
+    const provider = createCadetCatalogProvider();
     expect(provider.canHandle("my-skill")).toBe(true);
     expect(provider.canHandle("other-skill")).toBe(true);
   });
 
   test("canHandle returns false when skill is NOT in the cached catalog", () => {
     mockCatalog = [skill("my-skill")];
-    const provider = createVellumCatalogProvider();
+    const provider = createCadetCatalogProvider();
     expect(provider.canHandle("unknown-skill")).toBe(false);
   });
 
   test("canHandle returns false when catalog cache is empty", () => {
     mockCatalog = [];
-    const provider = createVellumCatalogProvider();
+    const provider = createCadetCatalogProvider();
     expect(provider.canHandle("any-skill")).toBe(false);
   });
 
@@ -898,7 +898,7 @@ describe("createVellumCatalogProvider", () => {
     mockCatalog = [skill("my-skill")];
     installFetchForbidden();
 
-    const provider = createVellumCatalogProvider();
+    const provider = createCadetCatalogProvider();
     const entries = await provider.listFiles("my-skill");
     expect(entries).not.toBeNull();
     const paths = entries!.map((e) => e.path).sort();
@@ -909,7 +909,7 @@ describe("createVellumCatalogProvider", () => {
     mockCatalog = [];
     installFetchForbidden();
 
-    const provider = createVellumCatalogProvider();
+    const provider = createCadetCatalogProvider();
     expect(await provider.listFiles("unknown")).toBeNull();
   });
 
@@ -920,7 +920,7 @@ describe("createVellumCatalogProvider", () => {
     mockCatalog = [skill("my-skill")];
     installFetchForbidden();
 
-    const provider = createVellumCatalogProvider();
+    const provider = createCadetCatalogProvider();
     const entry = await provider.readFileContent("my-skill", "SKILL.md");
     expect(entry).not.toBeNull();
     expect(entry!.content).toBe("# hello world\n");
@@ -931,7 +931,7 @@ describe("createVellumCatalogProvider", () => {
     mockCatalog = [];
     installFetchForbidden();
 
-    const provider = createVellumCatalogProvider();
+    const provider = createCadetCatalogProvider();
     expect(await provider.readFileContent("unknown", "SKILL.md")).toBeNull();
   });
 
@@ -946,7 +946,7 @@ describe("createVellumCatalogProvider", () => {
       },
     ];
 
-    const provider = createVellumCatalogProvider();
+    const provider = createCadetCatalogProvider();
     const slim = await provider.toSlimSkill("my-skill");
     expect(slim).not.toBeNull();
     expect(slim!.id).toBe("my-skill");
@@ -961,7 +961,7 @@ describe("createVellumCatalogProvider", () => {
   test("toSlimSkill returns null for unknown skill", async () => {
     mockCatalog = [];
 
-    const provider = createVellumCatalogProvider();
+    const provider = createCadetCatalogProvider();
     expect(await provider.toSlimSkill("unknown")).toBeNull();
   });
 });

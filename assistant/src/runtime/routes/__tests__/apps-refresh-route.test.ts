@@ -102,12 +102,12 @@ let workspaceDir: string;
 let previousWorkspaceDir: string | undefined;
 
 beforeEach(() => {
-  previousWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
+  previousWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
   workspaceDir = join(
     tmpdir(),
-    `vellum-apps-refresh-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-apps-refresh-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
   compileApp.mockClear();
   notifyAppSurfacesChanged.mockClear();
   compileApp.mockResolvedValue({
@@ -121,9 +121,9 @@ beforeEach(() => {
 afterEach(() => {
   rmSync(workspaceDir, { recursive: true, force: true });
   if (previousWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = previousWorkspaceDir;
   }
 });
 

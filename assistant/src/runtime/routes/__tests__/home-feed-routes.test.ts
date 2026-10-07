@@ -215,9 +215,9 @@ let workspaceDir: string;
 let origWorkspaceDir: string | undefined;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-hfr-"));
-  origWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-hfr-"));
+  origWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
   publishSpy.mockClear();
   createdConversations.length = 0;
   addedMessages.length = 0;
@@ -226,9 +226,9 @@ beforeEach(() => {
 
 afterEach(() => {
   if (origWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = origWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = origWorkspaceDir;
   }
   try {
     rmSync(workspaceDir, { recursive: true, force: true });

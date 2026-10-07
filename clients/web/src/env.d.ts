@@ -34,9 +34,9 @@ interface ImportMetaEnv {
   /** When set, the app runs in platform (cloud-hosted) mode. Unset = local mode. */
   readonly VITE_PLATFORM_MODE?: string;
   /** When truthy ("1", "true", "yes"), disables platform connectivity in local mode. */
-  readonly VITE_VELLUM_DISABLE_PLATFORM?: string;
+  readonly VITE_CADET_DISABLE_PLATFORM?: string;
   /**
-   * Live Google Play listing for ai.cadet.assistant. Android install
+   * Live Google Play listing for ai.mycadet.assistant. Android install
    * promotion remains hidden when this is unset or invalid.
    */
   readonly VITE_ANDROID_PLAY_STORE_URL?: string;
@@ -48,8 +48,8 @@ interface ImportMetaEnv {
    */
   readonly VITE_TUNNEL_HOST?: string;
 
-  /** Feature flag overrides via env vars: `VITE_VELLUM_FLAG_<UPPER_SNAKE_KEY>=true|false|string`. */
-  readonly [key: `VITE_VELLUM_FLAG_${string}`]: string | undefined;
+  /** Feature flag overrides via env vars: `VITE_CADET_FLAG_<UPPER_SNAKE_KEY>=true|false|string`. */
+  readonly [key: `VITE_CADET_FLAG_${string}`]: string | undefined;
 }
 
 interface ImportMeta {

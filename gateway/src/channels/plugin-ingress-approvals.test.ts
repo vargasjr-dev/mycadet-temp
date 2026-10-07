@@ -118,7 +118,7 @@ describe("ingressDeclarationDigest", () => {
     // Switching signer changes whose key opens the route, so an approval for
     // one must not carry over to the other.
     expect(
-      ingressDeclarationDigest([route({ path: "a", signer: "vellum" })]),
+      ingressDeclarationDigest([route({ path: "a", signer: "cadet" })]),
     ).not.toBe(ingressDeclarationDigest([route({ path: "a" })]));
   });
 
@@ -133,7 +133,7 @@ describe("ingressDeclarationDigest", () => {
       ]),
     ).toBe("a32e2511180b489c31e147ebb926e72b");
     expect(
-      ingressDeclarationDigest([route({ path: "hook", signer: "vellum" })]),
+      ingressDeclarationDigest([route({ path: "hook", signer: "cadet" })]),
     ).toBe("db809d978434fd3804c8faad82851069");
   });
 
@@ -358,7 +358,7 @@ describe("resolvePluginIngress", () => {
 });
 
 describe("findServableRoute", () => {
-  const http = (signer: "plugin" | "vellum") => ({
+  const http = (signer: "plugin" | "cadet") => ({
     path: "hook",
     kind: "http" as const,
     signer,
@@ -398,21 +398,21 @@ describe("findServableRoute", () => {
     expect(findServableRoute(res, "p", "hook", "http")).toBeUndefined();
   });
 
-  it("serves a vellum-signed route without approval", () => {
+  it("serves a cadet-signed route without approval", () => {
     // Only a caller holding the platform secret can open it, and that trust
     // was already given when the account was connected.
     const res = resolution({
       pending: [
-        { plugin: "p", routes: [http("vellum")], digest: "d".repeat(32) },
+        { plugin: "p", routes: [http("cadet")], digest: "d".repeat(32) },
       ],
     });
-    expect(findServableRoute(res, "p", "hook", "http")?.signer).toBe("vellum");
+    expect(findServableRoute(res, "p", "hook", "http")?.signer).toBe("cadet");
   });
 
   it("still matches on kind and path exactly", () => {
     const res = resolution({
       pending: [
-        { plugin: "p", routes: [http("vellum")], digest: "d".repeat(32) },
+        { plugin: "p", routes: [http("cadet")], digest: "d".repeat(32) },
       ],
     });
     // The exemption is about approval, not about widening reach.
@@ -455,7 +455,7 @@ describe("findServableRoute", () => {
 describe("listServablePluginWebhookPaths", () => {
   const MIXED = [
     route({ path: "hook" }),
-    route({ path: "platform", signer: "vellum" }),
+    route({ path: "platform", signer: "cadet" }),
   ];
 
   function servable(workspaceDir: string): string[] {

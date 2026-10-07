@@ -7,7 +7,7 @@ import log from "./logger";
  * so every RPC fails closed and capability modules report unavailable.
  */
 export const getLinuxHelperPath = (): string =>
-  "/nonexistent/vellum-linux-helper";
+  "/nonexistent/cadet-linux-helper";
 
 let client: NativeSidecarClient | null = null;
 

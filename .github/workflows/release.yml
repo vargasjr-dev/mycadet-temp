@@ -36,8 +36,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -294,7 +294,7 @@ jobs:
         working-directory: clients/chrome-extension
         env:
           VERSION: ${{ needs.extract-version.outputs.version }}
-          VELLUM_ENVIRONMENT: ${{ needs.extract-version.outputs.is_staging == 'true' && 'staging' || 'production' }}
+          CADET_ENVIRONMENT: ${{ needs.extract-version.outputs.is_staging == 'true' && 'staging' || 'production' }}
         run: bash build.sh
 
       - name: Verify manifest version
@@ -315,26 +315,26 @@ jobs:
         run: rm -f clients/chrome-extension/privatekey.pem
 
       - name: Upload extension CRX
-        if: hashFiles('clients/chrome-extension/vellum-browser-relay.crx') != ''
+        if: hashFiles('clients/chrome-extension/cadet-browser-relay.crx') != ''
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: chrome-extension-crx
-          path: clients/chrome-extension/vellum-browser-relay.crx
+          path: clients/chrome-extension/cadet-browser-relay.crx
           retention-days: 90
 
       - name: Upload extension CRX (zipped for download)
-        if: hashFiles('clients/chrome-extension/vellum-browser-relay.crx.zip') != ''
+        if: hashFiles('clients/chrome-extension/cadet-browser-relay.crx.zip') != ''
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: chrome-extension-crx-zip
-          path: clients/chrome-extension/vellum-browser-relay.crx.zip
+          path: clients/chrome-extension/cadet-browser-relay.crx.zip
           retention-days: 90
 
       - name: Upload extension zip
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: chrome-extension-zip
-          path: clients/chrome-extension/vellum-browser-relay.zip
+          path: clients/chrome-extension/cadet-browser-relay.zip
           retention-days: 90
 
   publish-chrome-extension:
@@ -427,8 +427,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -505,8 +505,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - name: Fail if image build failed
         if: needs.push-assistant-image.result != 'success'
@@ -627,8 +627,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -710,8 +710,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -785,8 +785,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - name: Fail if image build failed
         if: needs.push-gateway-image.result != 'success'
@@ -902,8 +902,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - name: Fail if image build failed
         if: needs.push-credential-executor-image.result != 'success'
@@ -1019,19 +1019,19 @@ jobs:
         include:
           - service: assistant
             runs_on: ubuntu-latest-8-cores
-            dockerhub_image_name: vellum-assistant
+            dockerhub_image_name: mycadet
             context: .
             dockerfile: assistant/Dockerfile
             feature_flag_path: assistant/src/config/feature-flag-registry.json
           - service: gateway
             runs_on: ubuntu-latest
-            dockerhub_image_name: vellum-gateway
+            dockerhub_image_name: cadet-gateway
             context: .
             dockerfile: gateway/Dockerfile
             feature_flag_path: gateway/src/feature-flag-registry.json
           - service: credential-executor
             runs_on: ubuntu-latest
-            dockerhub_image_name: vellum-credential-executor
+            dockerhub_image_name: cadet-credential-executor
             context: .
             dockerfile: credential-executor/Dockerfile
             feature_flag_path: ""
@@ -1040,8 +1040,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -1071,7 +1071,7 @@ jobs:
         id: tags
         run: |
           IMAGE_NAME="${{ matrix.dockerhub_image_name }}"
-          IMAGE="vellumai/${IMAGE_NAME}"
+          IMAGE="mycadet/${IMAGE_NAME}"
           VERSION="${{ needs.extract-version.outputs.version }}"
           TAGS="${IMAGE}:v${VERSION}"
           TAGS=$(printf "%s\n%s" "$TAGS" "${IMAGE}:latest")
@@ -1127,8 +1127,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -1518,7 +1518,7 @@ jobs:
         run: |
           cd cli
           bun pm pack
-          TARBALL=$(ls vellumai-cli-*.tgz)
+          TARBALL=$(ls mycadet-cli-*.tgz)
           bun ../scripts/strip-bundled-field-from-tarball.mjs "$TARBALL"
           echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
           echo "Packed: $TARBALL"
@@ -1541,17 +1541,17 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
-          owner: vellum-ai
-          repositories: vellum-assistant-platform
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          owner: cadet-ai
+          repositories: mycadet-platform
 
       - name: Trigger platform QA
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh workflow run qa-cli-staging.yaml \
-            --repo vellum-ai/vellum-assistant-platform \
+            --repo vargasjr-dev/mycadet-platform \
             --field version="${{ needs.extract-version.outputs.version }}" \
             --field run_id="${{ github.run_id }}"
 
@@ -1866,7 +1866,7 @@ jobs:
             .dependencies["@mycadet/assistant"] = $v |
             .dependencies["@mycadet/cli"] = $v |
             .dependencies["@mycadet/credential-executor"] = $v |
-            .dependencies["@mycadet/vellum-gateway"] = $v |
+            .dependencies["@mycadet/cadet-gateway"] = $v |
             .dependencies["@mycadet/web"] = $v
           ' package.json > tmp && mv tmp package.json
       - name: Wait for dependencies to propagate
@@ -2133,11 +2133,11 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            dmg_name: vellum-assistant-electron.dmg
+            dmg_name: mycadet-electron.dmg
             artifact_name: macos-build-electron
             update_artifact_name: macos-electron-update-arm64
           - arch: x64
-            dmg_name: vellum-assistant-electron-x64.dmg
+            dmg_name: mycadet-electron-x64.dmg
             artifact_name: macos-build-electron-x64
             update_artifact_name: macos-electron-update-x64
     defaults:
@@ -2210,17 +2210,17 @@ jobs:
         env:
           MAC_PROVISIONING_PROFILE: ${{ secrets.MAC_PROVISIONING_PROFILE }}
           # electron-builder.config.cjs derives the app id from
-          # VELLUM_ENVIRONMENT, which the pack step below sets from the same
+          # CADET_ENVIRONMENT, which the pack step below sets from the same
           # staging/production switch.
-          EXPECTED_BUNDLE_ID: ${{ needs.extract-version.outputs.is_staging == 'true' && 'com.vellum.vellum-assistant-electron-staging' || 'com.vellum.vellum-assistant-electron' }}
+          EXPECTED_BUNDLE_ID: ${{ needs.extract-version.outputs.is_staging == 'true' && 'com.mycadet.mycadet-electron-staging' || 'com.mycadet.mycadet-electron' }}
         run: |
           if [ -z "$MAC_PROVISIONING_PROFILE" ]; then
             echo "::warning::MAC_PROVISIONING_PROFILE is unset, so the native notifier ships disabled: notifications post through Electron without the assistant avatar."
             exit 0
           fi
-          PROFILE_PATH="$RUNNER_TEMP/vellum-communication.provisionprofile"
+          PROFILE_PATH="$RUNNER_TEMP/cadet-communication.provisionprofile"
           echo "$MAC_PROVISIONING_PROFILE" | base64 -D > "$PROFILE_PATH"
-          DECODED_PATH="$RUNNER_TEMP/vellum-communication-profile.plist"
+          DECODED_PATH="$RUNNER_TEMP/cadet-communication-profile.plist"
           # A truncated or mis-encoded secret decodes to a file that codesign
           # accepts and macOS then rejects at launch, so prove it parses here.
           if ! security cms -D -i "$PROFILE_PATH" > "$DECODED_PATH"; then
@@ -2254,7 +2254,7 @@ jobs:
               exit 1
               ;;
           esac
-          echo "VELLUM_MAC_PROVISIONING_PROFILE=$PROFILE_PATH" >> "$GITHUB_ENV"
+          echo "CADET_MAC_PROVISIONING_PROFILE=$PROFILE_PATH" >> "$GITHUB_ENV"
 
       - name: Build and package Electron app
         env:
@@ -2449,7 +2449,7 @@ jobs:
       - name: Upload Electron update artifacts to GCS
         run: |
           ENVIRONMENT=${{ needs.extract-version.outputs.is_staging == 'true' && 'staging' || 'production' }}
-          BUCKET=${{ needs.extract-version.outputs.is_staging == 'true' && 'vellum-ai-staging-releases' || 'vellum-ai-prod-releases' }}
+          BUCKET=${{ needs.extract-version.outputs.is_staging == 'true' && 'mycadet-staging-releases' || 'mycadet-prod-releases' }}
           MANIFEST_NAME="${ENVIRONMENT}-mac.yml"
 
           for ARCH in arm64 x64; do
@@ -2493,10 +2493,10 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
-          owner: vellum-ai
-          repositories: vellum-assistant
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          owner: cadet-ai
+          repositories: mycadet
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -2565,41 +2565,41 @@ jobs:
 
           # The Electron DMGs are required. A missing DMG here fails the
           # release rather than publishing without it.
-          # The arm64 build is published under the canonical vellum-assistant.dmg
+          # The arm64 build is published under the canonical mycadet.dmg
           # name — the production desktop download URL and scripts/production-release.sh
           # both resolve the release asset by that exact name.
-          ELECTRON_DMG=$(find electron-artifacts -name "vellum-assistant-electron.dmg" -type f | grep -m1 .)
+          ELECTRON_DMG=$(find electron-artifacts -name "mycadet-electron.dmg" -type f | grep -m1 .)
           if [ -z "$ELECTRON_DMG" ]; then
             echo "::error::Electron arm64 DMG missing"
             exit 1
           fi
-          ASSETS+=("$ELECTRON_DMG#vellum-assistant.dmg")
-          ELECTRON_X64_DMG=$(find electron-artifacts-x64 -name "vellum-assistant-electron-x64.dmg" -type f | grep -m1 .)
+          ASSETS+=("$ELECTRON_DMG#mycadet.dmg")
+          ELECTRON_X64_DMG=$(find electron-artifacts-x64 -name "mycadet-electron-x64.dmg" -type f | grep -m1 .)
           if [ -z "$ELECTRON_X64_DMG" ]; then
             echo "::error::Electron x64 DMG missing"
             exit 1
           fi
-          ASSETS+=("$ELECTRON_X64_DMG#vellum-assistant-electron-x64.dmg")
+          ASSETS+=("$ELECTRON_X64_DMG#mycadet-electron-x64.dmg")
 
           INSTALL_SH="cli/src/adapters/install.sh"
           [ -f "$INSTALL_SH" ] && ASSETS+=("$INSTALL_SH#install.sh")
 
           # Add Chrome extension artifacts if available
           if [ -d "chrome-extension-artifacts" ]; then
-            CRX_ZIP=$(find chrome-extension-artifacts -name "vellum-browser-relay.zip" -type f | head -1)
-            [ -n "$CRX_ZIP" ] && ASSETS+=("$CRX_ZIP#vellum-browser-relay-${VERSION}.zip")
-            CRX_FILE_ZIP=$(find chrome-extension-artifacts -name "vellum-browser-relay.crx.zip" -type f | head -1)
-            [ -n "$CRX_FILE_ZIP" ] && ASSETS+=("$CRX_FILE_ZIP#vellum-browser-relay-${VERSION}.crx.zip")
+            CRX_ZIP=$(find chrome-extension-artifacts -name "cadet-browser-relay.zip" -type f | head -1)
+            [ -n "$CRX_ZIP" ] && ASSETS+=("$CRX_ZIP#cadet-browser-relay-${VERSION}.zip")
+            CRX_FILE_ZIP=$(find chrome-extension-artifacts -name "cadet-browser-relay.crx.zip" -type f | head -1)
+            [ -n "$CRX_FILE_ZIP" ] && ASSETS+=("$CRX_FILE_ZIP#cadet-browser-relay-${VERSION}.crx.zip")
           fi
 
           echo "Release assets: ${ASSETS[*]}"
 
-          # Create release on vellum-assistant (this repo)
+          # Create release on mycadet (this repo)
           if ! gh release view "$VERSION_TAG" --repo "${{ github.repository }}" &>/dev/null; then
             gh release create "$VERSION_TAG" \
               "${ASSETS[@]}" \
               --repo "${{ github.repository }}" \
-              --title "Vellum $VERSION" \
+              --title "Cadet $VERSION" \
               --notes-file "$NOTES_FILE" \
               --latest
             echo "Release created at https://github.com/${{ github.repository }}/releases/tag/$VERSION_TAG"
@@ -2621,8 +2621,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -2651,8 +2651,8 @@ jobs:
           if ! gh pr merge "$PR_URL" --squash --admin --delete-branch; then
             echo "Merge failed - rebasing with -X ours to keep main on conflicts"
 
-            git config user.name "vellum-automation[bot]"
-            git config user.email "192048195+vellum-automation[bot]@users.noreply.github.com"
+            git config user.name "cadet-automation[bot]"
+            git config user.email "192048195+cadet-automation[bot]@users.noreply.github.com"
 
             git fetch origin main
             git rebase -X ours origin/main
@@ -2678,15 +2678,15 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
-          owner: vellum-ai
-          repositories: vellum-assistant-platform
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          owner: cadet-ai
+          repositories: mycadet-platform
 
       - name: Checkout platform repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          repository: vellum-ai/vellum-assistant-platform
+          repository: vargasjr-dev/mycadet-platform
           token: ${{ steps.app-token.outputs.token }}
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -2714,7 +2714,7 @@ jobs:
           git commit -m "Bump @mycadet/cli to ${NEW_VERSION} in vel"
           git push origin "$BRANCH"
           PR_URL=$(gh pr create \
-            --repo vellum-ai/vellum-assistant-platform \
+            --repo vargasjr-dev/mycadet-platform \
             --title "Bump @mycadet/cli to ${NEW_VERSION} in vel" \
             --body "Auto-generated PR to update @mycadet/cli to ${NEW_VERSION}." \
             --base main \
@@ -2857,7 +2857,7 @@ jobs:
           bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/vellum-gateway
+        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/cadet-gateway
         working-directory: assistant
 
       - name: Lint
@@ -2925,7 +2925,7 @@ jobs:
           bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@mycadet/vellum-gateway
+        run: bun install --frozen-lockfile --filter=@mycadet/cadet-gateway
         working-directory: gateway
 
       - name: Lint
@@ -3043,8 +3043,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - name: Build Slack payload
         env:
@@ -3251,7 +3251,7 @@ jobs:
             RELEASE_BRANCH="release/v${{ needs.extract-version.outputs.base_version }}"
             GO_LIVE_TS=$(date +%s)
             GO_LIVE_SIG=$(echo -n "${RELEASE_BRANCH}:${GO_LIVE_TS}" | openssl dgst -sha256 -hmac "$RELEASE_TRIGGER_SECRET" -hex | awk '{print $NF}')
-            GO_LIVE_URL="https://qa.vellum.ai/api/slack/go-live?branch=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${RELEASE_BRANCH}', safe=''))")&ts=${GO_LIVE_TS}&sig=${GO_LIVE_SIG}"
+            GO_LIVE_URL="https://qa.cadet.ai/api/slack/go-live?branch=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${RELEASE_BRANCH}', safe=''))")&ts=${GO_LIVE_TS}&sig=${GO_LIVE_SIG}"
             GO_LIVE=$(jq -n --arg url "$GO_LIVE_URL" '{
               type: "button",
               text: { type: "plain_text", text: "Go live!" },

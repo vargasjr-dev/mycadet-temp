@@ -97,7 +97,7 @@ const EXPECTED_SUMMARY = 'User chose: "Clean up my inbox"';
 function makeContext(): Conversation {
   return {
     conversationId: CONVERSATION_ID,
-    trustContext: { trustClass: "guardian", sourceChannel: "vellum" },
+    trustContext: { trustClass: "guardian", sourceChannel: "cadet" },
     sendToClient: () => {},
     emit: () => {},
     pendingSurfaceActions: new Map<string, { surfaceType: SurfaceType }>(),
@@ -155,8 +155,8 @@ function makeHandlerDeps(ctx: Conversation): EventHandlerDeps {
       get: () => () => {},
     }) as unknown as EventHandlerDeps["rlog"],
     turnChannelContext: {
-      userMessageChannel: "vellum",
-      assistantMessageChannel: "vellum",
+      userMessageChannel: "cadet",
+      assistantMessageChannel: "cadet",
     } as unknown as EventHandlerDeps["turnChannelContext"],
     turnInterfaceContext: {
       userMessageInterface: "web",

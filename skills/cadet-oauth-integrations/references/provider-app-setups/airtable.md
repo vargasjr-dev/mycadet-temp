@@ -37,7 +37,7 @@ Open: `https://airtable.com/create/oauth`
 
 Then:
 
-> Set the name to **Vellum Assistant**. Then click **Register integration**.
+> Set the name to **Cadet Assistant**. Then click **Register integration**.
 
 **Known issues:**
 
@@ -87,7 +87,7 @@ Wait for the user to confirm all 3 scopes are added.
 
 Follow the `cadet-oauth-integrations` workflow to collect credentials, register the OAuth app, connect, and verify.
 
-> I'll start the Airtable authorization flow now. You should see a consent page asking you to allow **Vellum Assistant** to access your Airtable data.
+> I'll start the Airtable authorization flow now. You should see a consent page asking you to allow **Cadet Assistant** to access your Airtable data.
 >
 > Review the permissions and click **Grant access**.
 

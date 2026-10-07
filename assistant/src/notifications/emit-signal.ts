@@ -23,7 +23,7 @@ import { broadcastMessage } from "../runtime/assistant-event-hub.js";
 import { getLogger } from "../util/logger.js";
 import { withSqliteRetry } from "../util/sqlite-retry.js";
 import { DiscordAdapter } from "./adapters/discord.js";
-import { VellumAdapter } from "./adapters/macos.js";
+import { CadetAdapter } from "./adapters/macos.js";
 import { PlatformPushAdapter } from "./adapters/platform.js";
 import { SlackAdapter } from "./adapters/slack.js";
 import { TelegramAdapter } from "./adapters/telegram.js";
@@ -68,7 +68,7 @@ let broadcasterInstance: NotificationBroadcaster | null = null;
 export function getBroadcaster(): NotificationBroadcaster {
   if (!broadcasterInstance) {
     broadcasterInstance = new NotificationBroadcaster([
-      new VellumAdapter(broadcastMessage),
+      new CadetAdapter(broadcastMessage),
       new TelegramAdapter(),
       new SlackAdapter(),
       new DiscordAdapter(),
@@ -76,10 +76,10 @@ export function getBroadcaster(): NotificationBroadcaster {
     ]);
 
     // Wire the conversation-created callback so the event goes out as soon
-    // as a vellum notification conversation is paired, before slower channel
+    // as a cadet notification conversation is paired, before slower channel
     // deliveries (e.g. Telegram) run.
     // A guardian-sensitive conversation's title reaches only the guardian's
-    // own connections, the same scoping the vellum adapter applies to the
+    // own connections, the same scoping the cadet adapter applies to the
     // notification itself.
     broadcasterInstance.setOnConversationCreated((info) => {
       broadcastMessage(
@@ -134,15 +134,15 @@ export async function getConnectedChannels(): Promise<NotificationChannel[]> {
 
   for (const channel of getDeliverableChannels()) {
     switch (channel) {
-      case "vellum":
-        // Vellum is always considered connected (the local transport is
+      case "cadet":
+        // Cadet is always considered connected (the local transport is
         // always available when the assistant is running).
         channels.push(channel);
         break;
       case "platform":
         // Platform push is treated as connected at the decision-engine
         // layer; the actual delivery path lazily resolves
-        // `VellumPlatformClient.create()` in `PlatformPushAdapter.send()`
+        // `CadetPlatformClient.create()` in `PlatformPushAdapter.send()`
         // and reports a delivery failure when credentials are absent.
         channels.push(channel);
         break;
@@ -216,7 +216,7 @@ export interface EmitSignalParams<TEventName extends string = string> {
   /** Optional deduplication key. */
   dedupeKey?: string;
   /**
-   * Optional callback invoked immediately when the broadcaster pairs a vellum
+   * Optional callback invoked immediately when the broadcaster pairs a cadet
    * conversation and emits `notification_conversation_created`.
    */
   onConversationCreated?: (info: ConversationCreatedInfo) => void;
@@ -238,7 +238,7 @@ export interface EmitSignalParams<TEventName extends string = string> {
     conversationType?: ConversationCreateType;
   };
   /**
-   * When true, the vellum-channel delivery materializes a fresh conversation
+   * When true, the cadet-channel delivery materializes a fresh conversation
    * to host the notification (and any follow-up interaction). Set this only
    * for flows where the conversation IS the interaction surface — e.g.
    * guardian.question, tool grant requests, ingress access requests. Passive
@@ -268,7 +268,7 @@ export interface EmitSignalResult {
 const PROVIDER_RECEIPT_CHANNELS = new Set(["telegram", "slack", "discord"]);
 
 /**
- * Strongest proof the emit path can report from adapter results. A vellum
+ * Strongest proof the emit path can report from adapter results. A cadet
  * `sent` row means the assistant broadcast a `notification_intent`; it is
  * not a client ACK that the OS posted a banner.
  */
@@ -452,7 +452,7 @@ export async function emitNotificationSignal<TEventName extends string>(
       (platformConfigured ??= isPlatformClientConfigured());
 
     // Step 2.5a: High/critical urgency signals always get both the in-app
-    // system notification (vellum) and the remote push (platform),
+    // system notification (cadet) and the remote push (platform),
     // regardless of what the decision engine selected. macOS surfaces a
     // banner even when the app is focused, and a suspended iOS device is
     // only reachable via APNs. Platform is only forced when the daemon has
@@ -461,7 +461,7 @@ export async function emitNotificationSignal<TEventName extends string>(
     // signal. The probe is deadline-bounded internally, so a slow credential
     // backend cannot stall the urgent dispatch.
     //
-    // Vellum PREPENDS and platform APPENDS: the broadcaster re-sorts by
+    // Cadet PREPENDS and platform APPENDS: the broadcaster re-sorts by
     // dispatch rank, so selection order only matters to single_channel
     // enforcement's first-selected fallback (step 2.5b), which must keep
     // the in-app banner rather than a push the server may skip.
@@ -497,9 +497,9 @@ export async function emitNotificationSignal<TEventName extends string>(
         ...decision.selectedChannels,
       ];
       const forcedChannels: NotificationChannel[] = [];
-      if (!selectedChannels.includes("vellum")) {
-        selectedChannels.unshift("vellum");
-        forcedChannels.push("vellum");
+      if (!selectedChannels.includes("cadet")) {
+        selectedChannels.unshift("cadet");
+        forcedChannels.push("cadet");
       }
       if (
         !selectedChannels.includes("platform") &&
@@ -545,23 +545,23 @@ export async function emitNotificationSignal<TEventName extends string>(
 
     // Step 2.5c: Access-request signals carry a decisionable canonical
     // guardian request created before this emit, and that row suppresses
-    // re-prompts for the same sender. A suppressed or vellum-less decision
+    // re-prompts for the same sender. A suppressed or cadet-less decision
     // would strand the card with no way to re-surface it, so always deliver
-    // at least the in-app vellum card (a free local broadcast), whatever
+    // at least the in-app cadet card (a free local broadcast), whatever
     // the urgency. Runs after routing-intent enforcement — a
     // `single_channel` cap must not strip the in-app card — and before the
     // re-persist below so the stored decision matches what is dispatched.
     if (
       signal.sourceEventName === "ingress.access_request" &&
-      (!decision.shouldNotify || !decision.selectedChannels.includes("vellum"))
+      (!decision.shouldNotify || !decision.selectedChannels.includes("cadet"))
     ) {
       decision = {
         ...decision,
         shouldNotify: true,
-        selectedChannels: decision.selectedChannels.includes("vellum")
+        selectedChannels: decision.selectedChannels.includes("cadet")
           ? decision.selectedChannels
-          : ["vellum", ...decision.selectedChannels],
-        reasoningSummary: `${decision.reasoningSummary} (vellum forced: decisionable access request)`,
+          : ["cadet", ...decision.selectedChannels],
+        reasoningSummary: `${decision.reasoningSummary} (cadet forced: decisionable access request)`,
       };
     }
 
@@ -569,7 +569,7 @@ export async function emitNotificationSignal<TEventName extends string>(
     if (
       assistantInitiatedThread.isCandidate &&
       decision.shouldNotify &&
-      decision.selectedChannels.includes("vellum") &&
+      decision.selectedChannels.includes("cadet") &&
       !decision.selectedChannels.includes("platform") &&
       !(
         "quiet" in signal.contextPayload && signal.contextPayload.quiet === true
@@ -587,7 +587,7 @@ export async function emitNotificationSignal<TEventName extends string>(
     }
 
     // Re-persist the decision if any policy step changed it (urgency channel
-    // forcing, routing intent enforcement, the access-request vellum floor,
+    // forcing, routing intent enforcement, the access-request cadet floor,
     // or the From me push default), so the audit matches the dispatch.
     if (decision !== prePolicyDecision && decision.persistedDecisionId) {
       try {
@@ -650,7 +650,7 @@ export async function emitNotificationSignal<TEventName extends string>(
 
     // Step 4: Dispatch through the broadcaster
     // Note: notification_conversation_created events are emitted eagerly inside
-    // the broadcaster as soon as vellum conversation pairing succeeds, rather
+    // the broadcaster as soon as cadet conversation pairing succeeds, rather
     // than after all channel deliveries complete, so a slow Telegram delivery
     // cannot delay it.
     const broadcaster = getBroadcaster();
@@ -671,15 +671,15 @@ export async function emitNotificationSignal<TEventName extends string>(
     // Step 5: Mirror background-origin signals into the home activity feed.
     // The helper itself decides whether to write (background filter); we
     // catch and log so a feed-write failure cannot poison the dispatch result.
-    // Pass the vellum delivery outcome so producers whose `sourceContextId` is
+    // Pass the cadet delivery outcome so producers whose `sourceContextId` is
     // a sentinel string (e.g. heartbeat startup, credential health, watcher
     // emits, scheduler retries-exhausted) still get a "Go to Convo" button
     // pointing at the conversation the broadcaster paired, and so the feed can
     // tell whether that delivery left a conversation row an edit can reach.
-    const vellumDelivery = dispatchResult.deliveryResults.find(
-      (r) => r.channel === "vellum",
+    const cadetDelivery = dispatchResult.deliveryResults.find(
+      (r) => r.channel === "cadet",
     );
-    await writeHomeFeedItemForSignal(signal, decision, vellumDelivery).catch(
+    await writeHomeFeedItemForSignal(signal, decision, cadetDelivery).catch(
       (err) => {
         log.warn({ err, signalId }, "writeHomeFeedItemForSignal threw");
       },

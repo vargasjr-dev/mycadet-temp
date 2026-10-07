@@ -1,7 +1,7 @@
 ---
 name: followups
 description: Track sent messages awaiting responses across communication channels
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "📨"
   cadet:

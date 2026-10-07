@@ -80,7 +80,7 @@ function buildMockContext(
     trustContext:
       trustGuardianPrincipalId != null
         ? {
-            sourceChannel: "vellum",
+            sourceChannel: "cadet",
             trustClass: "guardian",
             guardianPrincipalId: trustGuardianPrincipalId,
           }
@@ -148,7 +148,7 @@ describe("surfaceProxyResolver — app-control tool routing", () => {
       expect(result.content).toContain(
         "The Cadet desktop app is needed to control apps on your computer",
       );
-      expect(result.content).toContain("https://www.vellum.ai/downloads");
+      expect(result.content).toContain("https://mycadet.ai/downloads");
       // No envelope dispatched.
       expect(sentMessages).toHaveLength(0);
     });
@@ -167,7 +167,7 @@ describe("surfaceProxyResolver — app-control tool routing", () => {
       expect(result.content).toContain(
         "The Cadet desktop app is needed to control apps on your computer",
       );
-      expect(result.content).toContain("https://www.vellum.ai/downloads");
+      expect(result.content).toContain("https://mycadet.ai/downloads");
       expect(sentMessages).toHaveLength(0);
 
       proxy.dispose();

@@ -19,7 +19,7 @@
  *   - Partial write failure: the reindex fan-out still runs for committed
  *     pages while the write error propagates.
  *
- * Tests use temp workspaces (mkdtemp) and never touch `~/.vellum/`. Sample
+ * Tests use temp workspaces (mkdtemp) and never touch `~/.cadet/`. Sample
  * content uses generic placeholders (Alice).
  */
 import {

@@ -19,7 +19,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-const testDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testDir = process.env.CADET_WORKSPACE_DIR!;
 
 // ---------------------------------------------------------------------------
 // Mocks — must be set before any production imports
@@ -1252,7 +1252,7 @@ describe("(g) access_request resolver: requester code delivery", () => {
       action: "approve_once",
       // Desktop decision: no channelDeliveryContext, actor on the cadet channel.
       actorContext: guardianActor({
-        channel: "vellum",
+        channel: "cadet",
         actorExternalUserId: undefined,
       }),
     });
@@ -1288,7 +1288,7 @@ describe("(g) access_request resolver: requester code delivery", () => {
       requestId: req.id,
       action: "approve_once",
       actorContext: guardianActor({
-        channel: "vellum",
+        channel: "cadet",
         actorExternalUserId: undefined,
       }),
     });
@@ -1321,7 +1321,7 @@ describe("(g) access_request resolver: requester code delivery", () => {
       requestId: req.id,
       action: "approve_once",
       actorContext: guardianActor({
-        channel: "vellum",
+        channel: "cadet",
         actorExternalUserId: undefined,
       }),
     });
@@ -1432,7 +1432,7 @@ describe("(g) access_request resolver: requester code delivery", () => {
       action: "approve_once",
       // Desktop decision → resolver returns guardianReplyText for assertion.
       actorContext: guardianActor({
-        channel: "vellum",
+        channel: "cadet",
         actorExternalUserId: undefined,
       }),
     });

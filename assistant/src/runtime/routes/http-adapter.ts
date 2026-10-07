@@ -125,20 +125,20 @@ export function routeDefinitionsToHTTPRoutes(
         // action `apr:*` guardian decisions, guardian actions, host proxies)
         // would then apply a decision as the impersonated principal. Mirrors
         // the gateway IPC proxy (gateway/src/http/routes/ipc-runtime-proxy.ts).
-        delete headers["x-vellum-actor-principal-id"];
-        delete headers["x-vellum-principal-type"];
-        delete headers["x-vellum-subject"];
+        delete headers["x-cadet-actor-principal-id"];
+        delete headers["x-cadet-principal-type"];
+        delete headers["x-cadet-subject"];
 
         // Inject auth context fields so transport-agnostic handlers can
         // resolve trust context without importing auth internals.
         if (authContext?.actorPrincipalId) {
-          headers["x-vellum-actor-principal-id"] = authContext.actorPrincipalId;
+          headers["x-cadet-actor-principal-id"] = authContext.actorPrincipalId;
         }
         if (authContext?.principalType) {
-          headers["x-vellum-principal-type"] = authContext.principalType;
+          headers["x-cadet-principal-type"] = authContext.principalType;
         }
         if (authContext?.subject) {
-          headers["x-vellum-subject"] = authContext.subject;
+          headers["x-cadet-subject"] = authContext.subject;
         }
 
         const result = await r.handler({

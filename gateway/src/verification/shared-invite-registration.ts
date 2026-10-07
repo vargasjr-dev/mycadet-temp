@@ -1,5 +1,5 @@
 /**
- * Registers a `vellum-shared` invite with the platform, which routes the
+ * Registers a `cadet-shared` invite with the platform, which routes the
  * invitee's redemption back to this assistant. The platform receives only the
  * link-token hash and the invite's expiry, never the token itself.
  */
@@ -17,10 +17,10 @@ import { getLogger } from "../logger.js";
 
 const log = getLogger("shared-invite-registration");
 
-const SHARED_INVITE_CHANNEL = "vellum-shared";
+const SHARED_INVITE_CHANNEL = "cadet-shared";
 const SHARED_INVITE_REGISTRATION_PATH = "/v1/internal/shared-invites/";
 
-const TRUSTED_CONTACTS_FLAG = "vellum-trusted-contacts";
+const TRUSTED_CONTACTS_FLAG = "cadet-trusted-contacts";
 const REGISTRATION_TIMEOUT_MS = 10_000;
 
 export type SharedInviteRegistrationResult =
@@ -51,7 +51,7 @@ async function readPlatformCredential(
 /**
  * Register the invite's link-token hash and expiry with the platform.
  *
- * Skipped for any channel other than `vellum-shared`, while the
+ * Skipped for any channel other than `cadet-shared`, while the
  * trusted-contacts flag is off, when platform features are disabled, and when
  * no platform credentials are configured.
  */
@@ -69,7 +69,7 @@ export async function registerSharedInvite(params: {
   }
 
   const [baseUrl, apiKey] = await Promise.all([
-    readPlatformCredential("platform_base_url", "VELLUM_PLATFORM_URL"),
+    readPlatformCredential("platform_base_url", "CADET_PLATFORM_URL"),
     readPlatformCredential("assistant_api_key", "ASSISTANT_API_KEY"),
   ]);
   if (baseUrl.unreachable || apiKey.unreachable) {

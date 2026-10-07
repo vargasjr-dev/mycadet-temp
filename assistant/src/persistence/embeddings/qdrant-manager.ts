@@ -202,12 +202,12 @@ export interface QdrantManagerConfig {
 /**
  * Manages the Qdrant sidecar process lifecycle.
  *
- * Desktop: spawns ~/.vellum/bin/qdrant as a child process.
+ * Desktop: spawns ~/.cadet/bin/qdrant as a child process.
  * K8s / external: connects to an existing Qdrant at the configured URL.
  *
  * Detection logic:
  * - If QDRANT_URL env var is set → external mode (don't spawn)
- * - If qdrant binary exists at ~/.vellum/bin/qdrant → local spawn mode
+ * - If qdrant binary exists at ~/.cadet/bin/qdrant → local spawn mode
  * - Otherwise → external mode (assume sidecar or remote)
  */
 export class QdrantManager {
@@ -265,7 +265,7 @@ export class QdrantManager {
       }
     }
 
-    const spawnPath = this.ensureVellumSymlink(binaryPath);
+    const spawnPath = this.ensureCadetSymlink(binaryPath);
 
     log.info(
       { binaryPath: spawnPath, storagePath: this.storagePath, port: this.port },
@@ -628,15 +628,15 @@ export class QdrantManager {
   }
 
   /**
-   * Ensures a `vellum-qdrant` symlink exists next to the real binary so that
-   * `lsof` reports "vellum-qdrant" in the COMMAND column, making the process
-   * discoverable by tools that scan for "vellum" in process names.
+   * Ensures a `cadet-qdrant` symlink exists next to the real binary so that
+   * `lsof` reports "cadet-qdrant" in the COMMAND column, making the process
+   * discoverable by tools that scan for "cadet" in process names.
    */
-  private ensureVellumSymlink(binaryPath: string): string {
+  private ensureCadetSymlink(binaryPath: string): string {
     if (platform() === "win32") {
       return binaryPath;
     }
-    const symlinkPath = join(dirname(binaryPath), "vellum-qdrant");
+    const symlinkPath = join(dirname(binaryPath), "cadet-qdrant");
     const expectedTarget = realpathSync(binaryPath);
 
     if (existsSync(symlinkPath)) {
@@ -653,7 +653,7 @@ export class QdrantManager {
       }
       log.warn(
         { symlinkPath },
-        "Existing vellum-qdrant is not a valid symlink to the Qdrant binary; ignoring it",
+        "Existing cadet-qdrant is not a valid symlink to the Qdrant binary; ignoring it",
       );
       return binaryPath;
     }

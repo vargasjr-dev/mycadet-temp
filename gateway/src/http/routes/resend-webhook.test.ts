@@ -31,7 +31,7 @@ mock.module("../../runtime/client.js", () => ({
 }));
 
 // Import after mocks are registered
-const { createResendWebhookHandler, normalizeResendToVellumPayload } =
+const { createResendWebhookHandler, normalizeResendToCadetPayload } =
   await import("./resend-webhook.js");
 
 // --- Sender authentication -------------------------------------------------
@@ -72,9 +72,9 @@ function makeContent(authResults: string | null): {
   };
 }
 
-describe("normalizeResendToVellumPayload sender authentication", () => {
+describe("normalizeResendToCadetPayload sender authentication", () => {
   it("sets senderAuthenticated=true for a DMARC-authenticated sender", () => {
-    const payload = normalizeResendToVellumPayload(
+    const payload = normalizeResendToCadetPayload(
       makeEvent(),
       makeContent("mx.resend.com; dmarc=pass header.from=example.com"),
     );
@@ -82,7 +82,7 @@ describe("normalizeResendToVellumPayload sender authentication", () => {
   });
 
   it("sets senderAuthenticated=false for a forged (DMARC-failed) sender", () => {
-    const payload = normalizeResendToVellumPayload(
+    const payload = normalizeResendToCadetPayload(
       makeEvent(),
       makeContent(
         "mx.resend.com; spf=fail smtp.mailfrom=attacker.net; dmarc=fail header.from=example.com",
@@ -94,13 +94,13 @@ describe("normalizeResendToVellumPayload sender authentication", () => {
   it("omits senderAuthenticated when the content fetch failed (no content)", () => {
     // No API key / fetch failure → content is null → signal omitted so
     // handleInbound preserves existing behavior on missing data.
-    const payload = normalizeResendToVellumPayload(makeEvent(), null);
+    const payload = normalizeResendToCadetPayload(makeEvent(), null);
     expect(payload).not.toBeNull();
     expect(payload?.senderAuthenticated).toBeUndefined();
   });
 
   it("omits senderAuthenticated when headers carry no Authentication-Results", () => {
-    const payload = normalizeResendToVellumPayload(
+    const payload = normalizeResendToCadetPayload(
       makeEvent(),
       makeContent(null),
     );

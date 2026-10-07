@@ -158,7 +158,7 @@ async function processEnrollment(
     source: "sequence",
     prompt,
     systemHint: `Sequence: ${sequence.name} — Step ${step.index + 1}`,
-    trustContext: { sourceChannel: "vellum", trustClass: "guardian" },
+    trustContext: { sourceChannel: "cadet", trustClass: "guardian" },
     callSite: "mainAgent",
     timeoutMs: STEP_TIMEOUT_MS,
     origin: "sequence",

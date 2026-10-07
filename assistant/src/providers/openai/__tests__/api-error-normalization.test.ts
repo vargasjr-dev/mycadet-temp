@@ -33,14 +33,14 @@ describe("normalizeOpenAIAPIError", () => {
     const n = normalizeOpenAIAPIError(
       apiError(400),
       JSON.stringify({
-        detail: "Model 'MiniMax-M3' is not yet supported on Vellum.",
+        detail: "Model 'MiniMax-M3' is not yet supported on Cadet.",
       }),
     );
     expect(n.message).toBe(
-      "Model 'MiniMax-M3' is not yet supported on Vellum.",
+      "Model 'MiniMax-M3' is not yet supported on Cadet.",
     );
     expect(formatNormalizedOpenAIAPIError("Together AI", 400, n)).toBe(
-      "Together AI API error (400): Model 'MiniMax-M3' is not yet supported on Vellum.",
+      "Together AI API error (400): Model 'MiniMax-M3' is not yet supported on Cadet.",
     );
   });
 
@@ -251,7 +251,7 @@ describe("captureRawErrorBodyFetch", () => {
     try {
       const res = await captureRawErrorBodyFetch("https://x/v1/chat", {});
       const headerNames = [...res.headers.keys()];
-      expect(headerNames.some((h) => h.includes("vellum"))).toBe(false);
+      expect(headerNames.some((h) => h.includes("cadet"))).toBe(false);
     } finally {
       globalThis.fetch = original;
     }

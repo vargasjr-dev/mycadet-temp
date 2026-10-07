@@ -41,7 +41,7 @@ After the user clicks:
 >
 > 1. **Choose an API:** Select **Scoped access**
 > 2. **Choose the type of access:** Select **Full Dropbox**
-> 3. **Name your app:** Enter **Vellum Assistant**
+> 3. **Name your app:** Enter **Cadet Assistant**
 
 Then:
 
@@ -49,7 +49,7 @@ Then:
 
 **Known issues:**
 
-- App names must be globally unique on Dropbox - if "Vellum Assistant" is taken, suggest adding a suffix like "Vellum Assistant - Personal"
+- App names must be globally unique on Dropbox - if "Cadet Assistant" is taken, suggest adding a suffix like "Cadet Assistant - Personal"
 - If the user sees "You have reached the limit for the number of apps," they'll need to delete an unused app first
 
 **Milestone (2 of 8):** "App created - now let's set the permissions."
@@ -107,7 +107,7 @@ Wait for the user to confirm all 4 scopes are enabled.
 
 Follow the `cadet-oauth-integrations` workflow to collect credentials, register the OAuth app, connect, and verify.
 
-> I'll start the Dropbox authorization flow now. You should see a Dropbox consent page asking you to allow **Vellum Assistant** to access your Dropbox.
+> I'll start the Dropbox authorization flow now. You should see a Dropbox consent page asking you to allow **Cadet Assistant** to access your Dropbox.
 >
 > Review the permissions and click **Allow**.
 

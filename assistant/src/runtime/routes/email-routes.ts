@@ -1,7 +1,7 @@
 /**
  * Route handlers for the email management API.
  *
- * Delegates to the Vellum platform API for register/unregister/send/list/status/download.
+ * Delegates to the Cadet platform API for register/unregister/send/list/status/download.
  * All handlers require a valid platform client (UnauthorizedError if not).
  */
 
@@ -14,7 +14,7 @@ import {
   listEmailAddresses,
   type RegisteredEmailAddress,
 } from "../../email/registered-inbox.js";
-import { VellumPlatformClient } from "../../platform/client.js";
+import { CadetPlatformClient } from "../../platform/client.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import {
   BadRequestError,
@@ -26,8 +26,8 @@ import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-async function requireClient(): Promise<VellumPlatformClient> {
-  const client = await VellumPlatformClient.create();
+async function requireClient(): Promise<CadetPlatformClient> {
+  const client = await CadetPlatformClient.create();
   if (!client) {
     throw new UnauthorizedError(
       "Platform credentials not configured. Run: assistant platform connect",
@@ -95,7 +95,7 @@ function invalidateEmailReadinessState(): void {
  * failure maps to LIST_FAILED with the platform's status when it sent one.
  */
 async function requireEmailAddressList(
-  client: VellumPlatformClient,
+  client: CadetPlatformClient,
 ): Promise<RegisteredEmailAddress[]> {
   const list = await listEmailAddresses(client);
   if (!list.ok) {
@@ -429,7 +429,7 @@ export const ROUTES: RouteDefinition[] = [
     handler: handleEmailRegister,
     summary: "Register an email address",
     description:
-      "Register a new email address on the Vellum platform for the current assistant.",
+      "Register a new email address on the Cadet platform for the current assistant.",
     tags: ["email"],
     requestBody: z.object({
       username: z
@@ -557,7 +557,7 @@ export const ROUTES: RouteDefinition[] = [
     handler: handleEmailSend,
     summary: "Send an email",
     description:
-      "Send an email from the assistant's registered email address via the Vellum runtime proxy.",
+      "Send an email from the assistant's registered email address via the Cadet runtime proxy.",
     tags: ["email"],
     requestBody: z.object({
       to: z.array(z.string()).min(1).describe("Recipient email address(es)"),

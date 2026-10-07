@@ -6,7 +6,7 @@
  *
  * The agent process is replaced with a fake whose capabilities and replay
  * behavior are scripted per test; the client handler is the real
- * VellumAcpClientHandler so replay suppression is exercised end to end.
+ * CadetAcpClientHandler so replay suppression is exercised end to end.
  */
 
 import { tmpdir } from "node:os";
@@ -588,7 +588,7 @@ describe("AcpSessionManager.resumeFromHistory", () => {
     expect(cwd).toBeDefined();
     expect(cwd!.startsWith(tmpdir())).toBe(true);
     expect(cwd).not.toBe(process.cwd());
-    expect(cwd).toContain("vellum-acp-install-");
+    expect(cwd).toContain("cadet-acp-install-");
     expect(env!.CLAUDE_CODE_OAUTH_TOKEN).toBeUndefined();
     expect(env!.GEMINI_API_KEY).toBeUndefined();
 

@@ -313,7 +313,7 @@ describe("m0016-drop-assistant-guardian-tables", () => {
     });
 
     expect(await m0016Up()).toBe("done");
-    expect(gatewayRequest("req-desktop")!.source_channel).toBe("vellum");
+    expect(gatewayRequest("req-desktop")!.source_channel).toBe("cadet");
     expect(gatewayRequest("req-voice")!.source_channel).toBe("phone");
   });
 

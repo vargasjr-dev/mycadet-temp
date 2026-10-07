@@ -1,6 +1,6 @@
 # @mycadet/design-library
 
-Shared UI component library for Vellum web applications. Built with React 19 and Tailwind CSS v4.
+Shared UI component library for Cadet web applications. Built with React 19 and Tailwind CSS v4.
 
 ## Component authoring conventions
 
@@ -154,8 +154,8 @@ border-radius scale, shadows, color ramps like Moss/Stone/Forest/Amber) that
 have not been brought into the design library yet. These should be added
 incrementally as components that need them are migrated. When adding them, follow
 the same three-step pattern above and keep values in sync with the platform's
-[`appTheme.css`](<https://github.com/vellum-ai/vellum-assistant-platform/blob/main/web/src/app/(app)/appTheme.css>)
-and [`globals.css`](https://github.com/vellum-ai/vellum-assistant-platform/blob/main/web/src/app/globals.css).
+[`appTheme.css`](<https://github.com/vargasjr-dev/mycadet-platform/blob/main/web/src/app/(app)/appTheme.css>)
+and [`globals.css`](https://github.com/vargasjr-dev/mycadet-platform/blob/main/web/src/app/globals.css).
 
 ## Customization
 
@@ -190,8 +190,8 @@ References:
 
 Both Storybooks are published off `main` and cross-link to each other from the toolbar above the canvas:
 
-- Design library: <https://storybook.vellum.ai/design-library/main/>
-- Web (`clients/web`): <https://storybook.vellum.ai/web/main/>
+- Design library: <https://storybook.mycadet.ai/design-library/main/>
+- Web (`clients/web`): <https://storybook.mycadet.ai/web/main/>
 
 ```bash
 cd packages/design-library

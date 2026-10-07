@@ -3,7 +3,7 @@
  *
  * Local connections come from the native app via local HTTP sessions.
  * No actor token is sent over the connection; instead, the daemon assigns a
- * deterministic local actor identity server-side by looking up the vellum
+ * deterministic local actor identity server-side by looking up the cadet
  * channel guardian binding — the same gateway-owned binding
  * `resolveLocalPrincipalTrustContext` maps trust from.
  */
@@ -44,13 +44,13 @@ export function buildLocalAuthContext(conversationId: string): AuthContext {
 }
 
 /**
- * Resolve the local vellum guardian's principalId from the gateway.
+ * Resolve the local cadet guardian's principalId from the gateway.
  *
  * The gateway owns guardian binding; this reads it through the cached
  * `getGuardianDelivery` reader (PR-3 TTL + single-flight) so hot paths don't
  * storm the IPC.
  *
- * Returns `undefined` when no vellum guardian binding exists (e.g. fresh
+ * Returns `undefined` when no cadet guardian binding exists (e.g. fresh
  * install before bootstrap, or the gateway is unreachable). Callers should
  * treat that case as "not yet available" and proceed without a principalId.
  *
@@ -64,17 +64,17 @@ export async function findLocalGuardianPrincipalId(options?: {
   forceRefresh?: boolean;
 }): Promise<string | undefined> {
   const list = options?.forceRefresh
-    ? await getGuardianDeliveryFresh({ channelTypes: ["vellum"] })
-    : await getGuardianDelivery({ channelTypes: ["vellum"] });
+    ? await getGuardianDeliveryFresh({ channelTypes: ["cadet"] })
+    : await getGuardianDelivery({ channelTypes: ["cadet"] });
   if (!list) {
     return undefined;
   }
-  return guardianForChannel(list, "vellum")?.principalId ?? undefined;
+  return guardianForChannel(list, "cadet")?.principalId ?? undefined;
 }
 
 /**
  * Resolve a decidable guardian principal for guardian-request
- * creation: the channel binding's principal when present, else the vellum
+ * creation: the channel binding's principal when present, else the cadet
  * anchor principal (the adopt/repair path for guardian rows that carry no
  * principal). A falsy binding principal (`null` or `""`) is unresolved by
  * contract — decisionable requests must never be created with an empty
@@ -87,7 +87,7 @@ export async function resolveDecidableGuardianPrincipalId(
 }
 
 /**
- * Eagerly warm the gateway guardian-delivery cache for the vellum channel.
+ * Eagerly warm the gateway guardian-delivery cache for the cadet channel.
  *
  * The SSE eager-subscribe path resolves the actor principal synchronously via
  * {@link findLocalGuardianPrincipalIdFromStore}, which reads only the IO-free
@@ -106,7 +106,7 @@ export async function warmLocalGuardianPrincipalCache(): Promise<void> {
 }
 
 /**
- * Synchronous read of the vellum guardian's principalId for paths that cannot
+ * Synchronous read of the cadet guardian's principalId for paths that cannot
  * await {@link findLocalGuardianPrincipalId} — namely the SSE eager-subscribe
  * path (`events-routes`), which registers before the stream is created.
  *
@@ -118,11 +118,11 @@ export async function warmLocalGuardianPrincipalCache(): Promise<void> {
  * (`fillClientActorPrincipalId`).
  */
 export function findLocalGuardianPrincipalIdFromStore(): string | undefined {
-  const cached = peekCachedGuardianDelivery({ channelTypes: ["vellum"] });
+  const cached = peekCachedGuardianDelivery({ channelTypes: ["cadet"] });
   if (!cached) {
     return undefined;
   }
-  return guardianForChannel(cached, "vellum")?.principalId ?? undefined;
+  return guardianForChannel(cached, "cadet")?.principalId ?? undefined;
 }
 
 /**
@@ -163,7 +163,7 @@ export async function resolveActorPrincipalIdForLocalGuardian(
   }
 
   log.warn(
-    "dev-bypass actor principal received but no vellum guardian binding found; returning undefined",
+    "dev-bypass actor principal received but no cadet guardian binding found; returning undefined",
   );
   return undefined;
 }
@@ -190,7 +190,7 @@ export function resolveActorPrincipalIdForLocalGuardianSync(
   }
 
   log.warn(
-    "dev-bypass actor principal received but no vellum guardian binding found; returning undefined",
+    "dev-bypass actor principal received but no cadet guardian binding found; returning undefined",
   );
   return undefined;
 }
@@ -200,7 +200,7 @@ export function resolveActorPrincipalIdForLocalGuardianSync(
  *
  * Produces the same AuthContext shape that HTTP routes receive from JWT
  * verification, using the `local_v1` scope profile. The `actorPrincipalId`
- * is populated from the vellum guardian binding when available, enabling
+ * is populated from the cadet guardian binding when available, enabling
  * downstream code to resolve guardian context using the same
  * `authContext.actorPrincipalId` path as HTTP sessions.
  */
@@ -215,7 +215,7 @@ export async function resolveLocalAuthContext(
   }
 
   log.warn(
-    "No vellum guardian binding found — gateway may not have started yet; returning without actorPrincipalId",
+    "No cadet guardian binding found — gateway may not have started yet; returning without actorPrincipalId",
   );
   return authContext;
 }

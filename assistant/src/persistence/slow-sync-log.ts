@@ -17,7 +17,7 @@
  *    structured warning naming the call site and records a `watchdog`
  *    telemetry event. The threshold is deliberately below the watchdog's own
  *    5s floor so sub-watchdog contributors are still named. Override with
- *    `VELLUM_SLOW_SYNC_THRESHOLD_MS`.
+ *    `CADET_SLOW_SYNC_THRESHOLD_MS`.
  *
  * 2. **Section trail** — a small in-memory ring of the most recently entered
  *    instrumented sections ({@link markSection} / {@link traceAsyncSection};
@@ -40,7 +40,7 @@ const log = getLogger("slow-sync");
  * unparseable value.
  */
 export const SLOW_SYNC_THRESHOLD_MS = ((): number => {
-  const raw = Number(process.env.VELLUM_SLOW_SYNC_THRESHOLD_MS);
+  const raw = Number(process.env.CADET_SLOW_SYNC_THRESHOLD_MS);
   return Number.isFinite(raw) && raw > 0 ? raw : 1000;
 })();
 

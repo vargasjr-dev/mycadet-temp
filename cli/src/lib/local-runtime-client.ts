@@ -49,7 +49,7 @@ function bearerHeaders(token: string): Record<string, string> {
  * - For `isManagedCloud(cloud)` we go through the platform's wildcard runtime
  *   proxy, which authenticates user-session / vak_ tokens via DRF's default
  *   authentication classes — `authHeaders()` produces the right combination
- *   (`X-Session-Token` + `Vellum-Organization-Id`, or `Authorization: Bearer
+ *   (`X-Session-Token` + `Cadet-Organization-Id`, or `Authorization: Bearer
  *   vak_...`).
  * - For local/docker the runtime endpoint expects a guardian-token bearer.
  */
@@ -105,7 +105,7 @@ async function throwIfInProgress(
  *
  * For local/docker assistants this POSTs to
  * `{runtimeUrl}/v1/migrations/export-to-gcs` with guardian-token bearer
- * auth. For platform-managed (cloud="vellum") assistants the URL is rewritten
+ * auth. For platform-managed (cloud="cadet") assistants the URL is rewritten
  * to the wildcard-runtime-proxy shape
  * `{platformUrl}/v1/assistants/<assistantId>/migrations/export-to-gcs` and
  * authenticated via the platform-token header set the platform's DRF auth
@@ -168,7 +168,7 @@ export async function localRuntimeExportToGcs(
  *
  * For local/docker assistants this POSTs to
  * `{runtimeUrl}/v1/migrations/import-from-gcs` with guardian-token bearer
- * auth. For platform-managed (cloud="vellum") assistants the URL is rewritten
+ * auth. For platform-managed (cloud="cadet") assistants the URL is rewritten
  * to the wildcard-runtime-proxy shape
  * `{platformUrl}/v1/assistants/<assistantId>/migrations/import-from-gcs` and
  * authenticated via the platform token. On 409 throws
@@ -309,19 +309,19 @@ export interface RuntimeIdentity {
  * (no filesystem reads), so it's safe to call against any running runtime.
  *
  * For local/docker assistants this GETs `{runtimeUrl}/v1/health` with
- * guardian-token bearer auth. For platform-managed (cloud="vellum")
+ * guardian-token bearer auth. For platform-managed (cloud="cadet")
  * assistants the URL is rewritten to the wildcard runtime proxy shape
  * `{platformUrl}/v1/assistants/<assistantId>/health` and authenticated via
  * the platform token.
  *
  * For the cadet target this is the FIRST network call in the
- * teleport/backup export flow, so a stale `Vellum-Organization-Id` cache
+ * teleport/backup export flow, so a stale `Cadet-Organization-Id` cache
  * entry would surface as a hard abort before any retry-friendly call (like
  * `platformRequestSignedUrl`) gets a chance to recover. Mirror that helper's
  * one-shot 401-retry: invalidate the org-ID cache and retry once. Local /
  * docker entries do not use the org-ID cache and are wrapped in
  * `callRuntimeWithAuthRetry` by callers for guardian-token refresh, so the
- * retry is intentionally vellum-only.
+ * retry is intentionally cadet-only.
  *
  * The function name is intentionally retained ("identity-ish info about the
  * runtime") even though the implementation now hits `/v1/health` — renaming
@@ -343,7 +343,7 @@ export async function localRuntimeIdentity(
 
   let response = await doRequest();
   if (response.status === 401 && isManagedCloud(entry.cloud)) {
-    // `entry.runtimeUrl` is the platform host for vellum-cloud entries
+    // `entry.runtimeUrl` is the platform host for cadet-cloud entries
     // (the wildcard runtime proxy lives there). Pass it as the cache key
     // platformUrl so we invalidate the same entry that authHeaders cached.
     invalidateOrgIdCache(token, entry.runtimeUrl);

@@ -169,7 +169,7 @@ export async function handleApprovalInterception(
   // A guardian-class decision must be authorized by principal, not merely by
   // the same-channel address match that produced the trust class: the acting
   // principal (the channel binding's principal carried on the trust context)
-  // must be present and, when the assistant's vellum anchor resolves, equal
+  // must be present and, when the assistant's cadet anchor resolves, equal
   // it. This runs BEFORE any decision is applied (callback, text engine, NL
   // parser). An unresolvable anchor read (transient gateway miss) defers to
   // the gateway-stamped verdict — the gateway is the ACL source of truth and

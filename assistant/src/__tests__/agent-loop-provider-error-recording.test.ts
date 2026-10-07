@@ -97,7 +97,7 @@ describe("AgentLoop provider_error event emission", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls).toHaveLength(1);
@@ -119,7 +119,7 @@ describe("AgentLoop provider_error event emission", () => {
     };
     const thrown = new ProviderError(
       "Cadet API error (400): directions are not loaded",
-      "vellum",
+      "cadet",
       400,
       {
         rawRequest: wirePayload,
@@ -141,7 +141,7 @@ describe("AgentLoop provider_error event emission", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const providerErrorEvent = events.find((e) => e.type === "provider_error");
@@ -149,14 +149,14 @@ describe("AgentLoop provider_error event emission", () => {
     if (providerErrorEvent?.type !== "provider_error") {
       throw new Error("type narrowing");
     }
-    expect(providerErrorEvent.actualProvider).toBe("vellum");
+    expect(providerErrorEvent.actualProvider).toBe("cadet");
     expect(providerErrorEvent.rawRequest).toEqual(wirePayload);
   });
 
   test("actualProvider uses ProviderError.provider, not the wrapper name", async () => {
     const thrown = new ProviderError(
       "Cadet API error (400): directions are not loaded",
-      "vellum",
+      "cadet",
       400,
     );
     const { provider } = makeThrowingProvider("fireworks", () => thrown);
@@ -174,7 +174,7 @@ describe("AgentLoop provider_error event emission", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const providerErrorEvent = events.find((e) => e.type === "provider_error");
@@ -182,7 +182,7 @@ describe("AgentLoop provider_error event emission", () => {
     if (providerErrorEvent?.type !== "provider_error") {
       throw new Error("type narrowing");
     }
-    expect(providerErrorEvent.actualProvider).toBe("vellum");
+    expect(providerErrorEvent.actualProvider).toBe("cadet");
     expect(providerErrorEvent.rawRequest).toBeUndefined();
   });
 
@@ -207,7 +207,7 @@ describe("AgentLoop provider_error event emission", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const providerErrorIdx = events.findIndex(
@@ -239,7 +239,7 @@ describe("AgentLoop provider_error event emission", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const providerErrorEvent = events.find((e) => e.type === "provider_error");
@@ -277,7 +277,7 @@ describe("AgentLoop provider_error event emission", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       signal: controller.signal,
     });
 

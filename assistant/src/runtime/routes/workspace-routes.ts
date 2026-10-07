@@ -374,7 +374,7 @@ function handleWorkspaceWrite({ body, headers }: RouteHandlerArgs) {
   writeWorkspaceFile(path, buffer);
   publishSoundsConfigUpdatedForPaths(
     [path],
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
 
   return { path, size: buffer.byteLength };
@@ -405,7 +405,7 @@ function handleWorkspaceMkdir({ body, headers }: RouteHandlerArgs) {
   mkdirSync(resolved, { recursive: true });
   publishSoundsConfigUpdatedForPaths(
     [path],
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
   return { path };
 }
@@ -471,7 +471,7 @@ function handleWorkspaceRename({ body, headers }: RouteHandlerArgs) {
   renameSync(resolvedOld, resolvedNew);
   publishSoundsConfigUpdatedForPaths(
     [oldPath, newPath],
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
   return { oldPath, newPath };
 }
@@ -502,7 +502,7 @@ function handleWorkspaceDelete({ body, headers }: RouteHandlerArgs) {
   rmSync(resolved, { recursive: true, force: true });
   publishSoundsConfigUpdatedForPaths(
     [path],
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
   return { success: true };
 }

@@ -20,7 +20,7 @@ let workspaceDir: string;
 function freshWorkspace(): void {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-136-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-136-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 }
@@ -66,7 +66,7 @@ describe("136-repair-stale-fireworks-kimi-model-id migration", () => {
           malformed: STALE,
         },
         profiles: {
-          "cost-optimized": { provider: "vellum", model: STALE },
+          "cost-optimized": { provider: "cadet", model: STALE },
           legacy: { model: STALE },
         },
       },
@@ -81,7 +81,7 @@ describe("136-repair-stale-fireworks-kimi-model-id migration", () => {
     // Non-exact matches and malformed leaves are untouched.
     expect(llm.callSites.heartbeat.model).toBe(`${STALE}-tuned`);
     expect(llm.callSites.malformed).toBe(STALE);
-    // Managed profiles stamped provider "vellum" carry Fireworks model IDs.
+    // Managed profiles stamped provider "cadet" carry Fireworks model IDs.
     expect(llm.profiles["cost-optimized"].model).toBe(REPLACEMENT);
     expect(llm.profiles.legacy.model).toBe(REPLACEMENT);
   });

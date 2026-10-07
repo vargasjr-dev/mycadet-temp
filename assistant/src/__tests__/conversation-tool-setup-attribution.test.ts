@@ -317,7 +317,7 @@ test("desktop routing honors the pinned interface when the live client changes",
         toolContextPin: { hasNoClient: false, transportInterface },
         getTurnActorPrincipalId: () => "user-123",
         currentTurnTrustContext: {
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           trustClass: "guardian",
         },
       }),
@@ -458,7 +458,7 @@ describe("createToolExecutor channel-permission coordinate threading", () => {
   });
 
   test("internal turns carry no channel id and skip the binding lookup", async () => {
-    // "vellum" is the internal control-plane channel (and the fallback trust
+    // "cadet" is the internal control-plane channel (and the fallback trust
     // context); it never has an external conversation binding.
     mockBindingExternalChatId = "should-not-appear";
     const { executor, calls } = makeCapturingExecutor();
@@ -466,7 +466,7 @@ describe("createToolExecutor channel-permission coordinate threading", () => {
       executor,
       makeCtx({
         currentTurnTrustContext: {
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           trustClass: "guardian",
         },
       }),
@@ -506,7 +506,7 @@ describe("createToolExecutor source-actor threading", () => {
       makeCtx({
         getTurnActorPrincipalId: () => "actor-1",
         currentTurnTrustContext: {
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           trustClass: "guardian",
           guardianPrincipalId: "guardian-1",
         },
@@ -526,7 +526,7 @@ describe("createToolExecutor source-actor threading", () => {
       makeCtx({
         getTurnActorPrincipalId: () => "actor-1",
         currentTurnTrustContext: {
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           trustClass: "unknown",
         },
       }),
@@ -542,7 +542,7 @@ describe("createToolExecutor source-actor threading", () => {
       makeCtx({
         getTurnActorPrincipalId: () => undefined,
         currentTurnTrustContext: {
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           trustClass: "guardian",
           guardianPrincipalId: "guardian-1",
         },

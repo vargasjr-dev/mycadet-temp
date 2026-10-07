@@ -26,14 +26,14 @@ The Assistant also hooks into Lifecycle Events that sit outside the Agent Loop: 
 
 ## Hooks reference
 
-These are the lifecycle hooks. The full set of wired hook names lives in the [`HOOKS` constant](https://github.com/vellum-ai/vellum-assistant/blob/main/assistant/src/plugin-api/constants.ts).
+These are the lifecycle hooks. The full set of wired hook names lives in the [`HOOKS` constant](https://github.com/vargasjr-dev/mycadet/blob/main/assistant/src/plugin-api/constants.ts).
 
 ### `init`
 
 **Context:** `InitContext`
 **When:** Once, when the plugin is first registered (on boot or install).
 **Use it to:** Validate config and open resources. This is where plugin-owned storage is set up: create data files under `pluginStorageDir` and apply the plugin's own schema, idempotently — `init` runs on every boot. Throwing aborts the plugin's load.
-**Example:** [image-fallback](https://github.com/vellum-ai/vellum-assistant/blob/main/assistant/src/plugins/defaults/image-fallback/hooks/init.ts)
+**Example:** [image-fallback](https://github.com/vargasjr-dev/mycadet/blob/main/assistant/src/plugins/defaults/image-fallback/hooks/init.ts)
 
 | Field              | Type           | Access    | Description                                                                                            |
 | ------------------ | -------------- | --------- | ------------------------------------------------------------------------------------------------------ |
@@ -47,7 +47,7 @@ These are the lifecycle hooks. The full set of wired hook names lives in the [`H
 **Context:** `UserPromptSubmitContext`
 **When:** Once per user turn, after messages are assembled and before the agent loop runs.
 **Use it to:** Read or rewrite the message list the model is about to see.
-**Example:** [advisor](https://github.com/vellum-ai/vellum-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/user-prompt-submit.ts)
+**Example:** [advisor](https://github.com/vargasjr-dev/mycadet/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/user-prompt-submit.ts)
 
 | Field              | Type                     | Access    | Description                                                                                                                                                                                                                             |
 | ------------------ | ------------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -67,7 +67,7 @@ These are the lifecycle hooks. The full set of wired hook names lives in the [`H
 **Context:** `PostCompactContext`
 **When:** After the loop compacts a conversation mid-turn, before the turn resumes. It fires on a compaction event rather than a fixed turn boundary, so it branches off the loop rather than sitting on a turn edge.
 **Use it to:** Re-apply context that compaction dropped (for example memory injections) onto the compacted history before the next model call.
-**Example:** [memory-v3-shadow](https://github.com/vellum-ai/vellum-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/memory-v3-shadow/hooks/post-compact.ts)
+**Example:** [memory-v3-shadow](https://github.com/vargasjr-dev/mycadet/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/memory-v3-shadow/hooks/post-compact.ts)
 
 | Field              | Type                  | Access    | Description                                                                                                                                                                                                                             |
 | ------------------ | --------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -85,7 +85,7 @@ These are the lifecycle hooks. The full set of wired hook names lives in the [`H
 **Context:** `PreModelCallContext`
 **When:** Immediately before every provider call within a turn, including tool-result follow-ups.
 **Use it to:** Edit the outbound request (for example the system prompt), route the call to a chosen inference profile, or defer this turn's live output stream.
-**Example:** [advisor](https://github.com/vellum-ai/vellum-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/pre-model-call.ts)
+**Example:** [advisor](https://github.com/vargasjr-dev/mycadet/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/pre-model-call.ts)
 
 | Field                  | Type                  | Access    | Description                                                                                                                                                                                                                                                                                                                                                      |
 | ---------------------- | --------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -102,7 +102,7 @@ These are the lifecycle hooks. The full set of wired hook names lives in the [`H
 **Context:** `PostModelCallContext`
 **When:** At every model-call outcome: a finalized assistant message, or a provider rejection. Fires once per model call, before a finalized reply is persisted and streamed.
 **Use it to:** Transform the reply's text blocks (leave tool_use intact), and own the continue decision. On a degenerate no-tool reply or a recoverable rejection, repair the history and set decision to continue to re-query the model. Use `isMaxTokensStopReason()` from `@mycadet/plugin-api` on `ctx.stopReason` to detect truncated replies that may need continuation.
-**Example:** [advisor](https://github.com/vellum-ai/vellum-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/post-model-call.ts)
+**Example:** [advisor](https://github.com/vargasjr-dev/mycadet/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/advisor/hooks/post-model-call.ts)
 
 | Field            | Type                    | Access    | Description                                                                                                                                                                                                                                                       |
 | ---------------- | ----------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -121,7 +121,7 @@ These are the lifecycle hooks. The full set of wired hook names lives in the [`H
 **Context:** `PostToolUseContext`
 **When:** After each tool returns, before the result rejoins the history sent to the provider.
 **Use it to:** Transform the tool result, for example truncating oversized output to fit the context window.
-**Example:** [tool-result-truncate](https://github.com/vellum-ai/vellum-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/tool-result-truncate/hooks/post-tool-use.ts)
+**Example:** [tool-result-truncate](https://github.com/vargasjr-dev/mycadet/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/tool-result-truncate/hooks/post-tool-use.ts)
 
 | Field               | Type                     | Access    | Description                                                                                                                                                                                                                             |
 | ------------------- | ------------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -138,7 +138,7 @@ These are the lifecycle hooks. The full set of wired hook names lives in the [`H
 **Context:** `StopContext`
 **When:** Once per run, when the loop has committed to ending the turn. Fires on every terminal exit (a no-tool reply, max tokens, a yield to the user, exhausted overflow recovery, an abort, or an error) and on a checkpoint handoff.
 **Use it to:** Run teardown: release per-turn resources or clear per-turn state, knowing nothing will re-enter the loop this run. It cannot continue the loop; the retry decision lives in post-model-call.
-**Example:** [max-tokens-continue](https://github.com/vellum-ai/vellum-assistant/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/max-tokens-continue/hooks/stop.ts)
+**Example:** [max-tokens-continue](https://github.com/vargasjr-dev/mycadet/blob/5a79f009573790dd085223a0133135410a6fe41d/assistant/src/plugins/defaults/max-tokens-continue/hooks/stop.ts)
 
 | Field            | Type                     | Access    | Description                                                                                                                                                                                                                             |
 | ---------------- | ------------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -154,7 +154,7 @@ These are the lifecycle hooks. The full set of wired hook names lives in the [`H
 **Context:** `ConversationDeletedContext`
 **When:** Once per deleted conversation, after its rows are removed. Fires from the shared delete primitives, so every delete caller (route, retrospective cleanup, GC) dispatches it.
 **Use it to:** Clean up per-conversation state your plugin keeps (caches, queued work, external records) keyed by the conversation id. Fire-and-forget: hooks run async with no ordering guarantee relative to the caller, and by the time a hook runs the conversation's rows are gone.
-**Example:** [memory](https://github.com/vellum-ai/vellum-assistant/blob/main/assistant/src/plugins/defaults/memory/hooks/conversation-deleted.ts)
+**Example:** [memory](https://github.com/vargasjr-dev/mycadet/blob/main/assistant/src/plugins/defaults/memory/hooks/conversation-deleted.ts)
 
 | Field            | Type            | Access    | Description                                                                                                                                                                                                                             |
 | ---------------- | --------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -167,7 +167,7 @@ These are the lifecycle hooks. The full set of wired hook names lives in the [`H
 **Context:** `MessageDeletedContext`
 **When:** Once per deleted message row, after the row is removed. Fires from the shared single-message delete primitive, so every caller that removes individual rows (a regenerated reply, an undone exchange, turn consolidation, an in-flight row discarded on failure) dispatches it, once per row. Whole-conversation deletes dispatch `conversation-deleted` instead.
 **Use it to:** Settle state your plugin keyed on that row. The context carries the row's `createdAt` alongside its id because the row is gone by the time the hook runs; together they are the `(createdAt, id)` position the row held. Fire-and-forget, like `conversation-deleted`.
-**Example:** [memory](https://github.com/vellum-ai/vellum-assistant/blob/main/assistant/src/plugins/defaults/memory/hooks/message-deleted.ts)
+**Example:** [memory](https://github.com/vargasjr-dev/mycadet/blob/main/assistant/src/plugins/defaults/memory/hooks/message-deleted.ts)
 
 | Field            | Type            | Access    | Description                                                                                                                                                                                                                             |
 | ---------------- | --------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -182,7 +182,7 @@ These are the lifecycle hooks. The full set of wired hook names lives in the [`H
 **Context:** `ShutdownContext`
 **When:** Once, when the Assistant tears down the plugin (process exit, unload).
 **Use it to:** Best-effort cleanup: close storage handles opened in `init` and release other resources. Do not rely on it for critical writes; persist durably during normal operation instead.
-**Example:** [image-fallback](https://github.com/vellum-ai/vellum-assistant/blob/main/assistant/src/plugins/defaults/image-fallback/hooks/shutdown.ts)
+**Example:** [image-fallback](https://github.com/vargasjr-dev/mycadet/blob/main/assistant/src/plugins/defaults/image-fallback/hooks/shutdown.ts)
 
 | Field              | Type     | Access    | Description                                        |
 | ------------------ | -------- | --------- | -------------------------------------------------- |
@@ -201,7 +201,7 @@ Within a single plugin, hooks for the same name are not duplicated: each plugin 
 
 ## @mycadet/plugin-api exports for hooks
 
-These are the hook-related exports from [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api). Each context type's full field contract is documented in the hook sections above.
+These are the hook-related exports from [`@mycadet/plugin-api`](https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api). Each context type's full field contract is documented in the hook sections above.
 
 | Export                              | Kind  | Purpose                                                                                                                                                                                                                  |
 | ----------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -251,4 +251,4 @@ export default async function preModelCall(
 }
 ```
 
-Context types and constants come from [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api), the only supported contract.
+Context types and constants come from [`@mycadet/plugin-api`](https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api), the only supported contract.

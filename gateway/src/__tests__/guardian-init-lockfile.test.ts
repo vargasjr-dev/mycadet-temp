@@ -34,13 +34,13 @@ mock.module("../fetch.js", () => ({
 let testAssistantDb: Database | null = null;
 
 mock.module("../db/assistant-db-proxy.js", () => ({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   async assistantDbQuery(sql: string, bind?: any[]) {
     if (!testAssistantDb) throw new Error("test assistant DB not initialized");
     const stmt = testAssistantDb.prepare(sql);
     return bind ? stmt.all(...bind) : stmt.all();
   },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   async assistantDbRun(sql: string, bind?: any[]) {
     if (!testAssistantDb) throw new Error("test assistant DB not initialized");
     const stmt = testAssistantDb.prepare(sql);
@@ -146,7 +146,7 @@ async function setupTestDirs(): Promise<void> {
   testAssistantDb = db;
 
   // Point gateway at temp dirs
-  process.env.VELLUM_WORKSPACE_DIR = testRoot;
+  process.env.CADET_WORKSPACE_DIR = testRoot;
   process.env.GATEWAY_SECURITY_DIR = securityDir;
 
   // Initialize gateway DB so token operations can write to it
@@ -273,7 +273,7 @@ describe("guardian/init bootstrap secret", () => {
 
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.guardianPrincipalId).toMatch(/^vellum-principal-/);
+    expect(body.guardianPrincipalId).toMatch(/^cadet-principal-/);
     expect(body.accessToken).toBeTruthy();
     expect(body.refreshToken).toBeTruthy();
     expect(body.isNew).toBe(true);
@@ -304,7 +304,7 @@ describe("guardian/init edge-proxy guard", () => {
   // Every hop in that chain is loopback, so clientIp is the legitimate-looking
   // 127.0.0.1 — the marker is the unspoofable proof the request was forwarded
   // by the edge and must be rejected, regardless of deploy mode.
-  const EDGE_HEADER = "x-vellum-edge-forwarded";
+  const EDGE_HEADER = "x-cadet-edge-forwarded";
 
   function makeEdgeForwardedRequest(secret?: string): Request {
     const headers: Record<string, string> = {
@@ -393,7 +393,7 @@ describe("guardian/init one-time-use lockfile", () => {
 
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.guardianPrincipalId).toMatch(/^vellum-principal-/);
+    expect(body.guardianPrincipalId).toMatch(/^cadet-principal-/);
     expect(body.accessToken).toBeTruthy();
     expect(body.refreshToken).toBeTruthy();
     expect(lockFileExists()).toBe(true);
@@ -468,7 +468,7 @@ describe("guardian/init one-time-use lockfile", () => {
     expect(mirrorApplyOps).toHaveLength(1);
     const op = mirrorApplyOps[0][0] as Record<string, unknown>;
     expect(op.op).toBe("upsert_channel");
-    expect(op.type).toBe("vellum");
+    expect(op.type).toBe("cadet");
     expect(op.isPrimary).toBe(true);
     expect(op.contactId).toBeTruthy();
     expect(op.channelId).toBeTruthy();
@@ -492,7 +492,7 @@ describe("guardian/init one-time-use lockfile", () => {
       .query<
         { status: string; policy: string },
         []
-      >("SELECT status, policy FROM contact_channels WHERE type = 'vellum'")
+      >("SELECT status, policy FROM contact_channels WHERE type = 'cadet'")
       .get();
     expect(gwChannel).toBeTruthy();
     expect(gwChannel!.status).toBe("active");

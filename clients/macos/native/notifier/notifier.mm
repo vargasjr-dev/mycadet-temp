@@ -163,7 +163,7 @@ NSString *ToNSString(const std::string &value) {
 // Delegate
 // ---------------------------------------------------------------------------
 
-@interface VellumNotifierDelegate : NSObject <UNUserNotificationCenterDelegate>
+@interface CadetNotifierDelegate : NSObject <UNUserNotificationCenterDelegate>
 // Strong: every response this addon does not own is forwarded here, and the
 // notification center itself holds its delegate weakly, so a weak reference
 // would leave responses going nowhere the moment the displaced delegate lost
@@ -172,7 +172,7 @@ NSString *ToNSString(const std::string &value) {
     id<UNUserNotificationCenterDelegate> previousDelegate;
 @end
 
-@implementation VellumNotifierDelegate
+@implementation CadetNotifierDelegate
 
 - (void)userNotificationCenter:(UNUserNotificationCenter *)center
        willPresentNotification:(UNNotification *)notification
@@ -245,7 +245,7 @@ NSString *ToNSString(const std::string &value) {
 
 namespace {
 
-VellumNotifierDelegate *g_delegate = nil;
+CadetNotifierDelegate *g_delegate = nil;
 NSMutableDictionary<NSString *, UNNotificationCategory *> *g_categories = nil;
 
 bool IsBundled() { return NSBundle.mainBundle.bundleIdentifier != nil; }
@@ -254,7 +254,7 @@ void EnsureDelegateInstalled() {
   UNUserNotificationCenter *center =
       [UNUserNotificationCenter currentNotificationCenter];
   if (g_delegate == nil) {
-    g_delegate = [[VellumNotifierDelegate alloc] init];
+    g_delegate = [[CadetNotifierDelegate alloc] init];
   }
   id<UNUserNotificationCenterDelegate> current = center.delegate;
   if (current == g_delegate) {
@@ -420,7 +420,7 @@ struct SenderContent {
 };
 
 SenderContent Degraded(UNNotificationContent *content, std::string reason) {
-  os_log_error(OS_LOG_DEFAULT, "vellum-notifier: %{public}s", reason.c_str());
+  os_log_error(OS_LOG_DEFAULT, "cadet-notifier: %{public}s", reason.c_str());
   return {content, std::move(reason)};
 }
 
@@ -501,7 +501,7 @@ void PostNotification(const ShowRequest &request) {
   if (categoryId.length > 0 && !hasCategory) {
     degraded = "the category " + request.categoryId +
                " is not registered, so the action buttons are missing";
-    os_log_error(OS_LOG_DEFAULT, "vellum-notifier: %{public}s",
+    os_log_error(OS_LOG_DEFAULT, "cadet-notifier: %{public}s",
                  degraded.c_str());
   }
 
@@ -622,7 +622,7 @@ Napi::Value RequestAuthorization(const Napi::CallbackInfo &info) {
   if (hasCallback) {
     Napi::ThreadSafeFunction created =
         Napi::ThreadSafeFunction::New(env, info[0].As<Napi::Function>(),
-                                      "vellum-notifier-authorization", 0, 1);
+                                      "cadet-notifier-authorization", 0, 1);
     // The prompt waits on the user, so it must not hold the process open.
     created.Unref(env);
     tsfn = std::shared_ptr<Napi::ThreadSafeFunction>(
@@ -755,7 +755,7 @@ Napi::Value Show(const Napi::CallbackInfo &info) {
   }
 
   Napi::ThreadSafeFunction tsfn = Napi::ThreadSafeFunction::New(
-      env, info[1].As<Napi::Function>(), "vellum-notifier", 0, 1);
+      env, info[1].As<Napi::Function>(), "cadet-notifier", 0, 1);
   // A notification awaiting a click must not hold the process open at quit.
   tsfn.Unref(env);
   RememberCallback(request.id, tsfn);
@@ -812,4 +812,4 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
 
 }  // namespace
 
-NODE_API_MODULE(vellum_notifier, Init)
+NODE_API_MODULE(cadet_notifier, Init)

@@ -1,7 +1,7 @@
 ---
 name: media-processing
 description: "Ingest and process media files (video, audio, image)"
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🎬"
   cadet:

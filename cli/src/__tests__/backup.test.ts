@@ -17,7 +17,7 @@ import { join } from "node:path";
 // ---------------------------------------------------------------------------
 
 const testDir = mkdtempSync(join(tmpdir(), "cli-backup-test-"));
-process.env.VELLUM_LOCKFILE_DIR = testDir;
+process.env.CADET_LOCKFILE_DIR = testDir;
 
 // ---------------------------------------------------------------------------
 // Mocks set up before importing the module under test
@@ -45,7 +45,7 @@ const readPlatformTokenMock = spyOn(
 const getPlatformUrlMock = spyOn(
   platformClient,
   "getPlatformUrl",
-).mockReturnValue("https://platform.vellum.ai");
+).mockReturnValue("https://cloud.cadet.ai");
 
 const platformRequestSignedUrlMock = spyOn(
   platformClient,
@@ -113,15 +113,15 @@ const writeFileSyncMock = spyOn(fs, "writeFileSync").mockImplementation(
 let originalFetch: typeof globalThis.fetch;
 let exitMock: ReturnType<typeof mock>;
 
-const VELLUM_ENTRY = {
+const CADET_ENTRY = {
   assistantId: "11111111-2222-3333-4444-555555555555",
-  runtimeUrl: "https://platform.vellum.ai",
-  cloud: "vellum",
+  runtimeUrl: "https://cloud.cadet.ai",
+  cloud: "cadet",
   hatchedAt: new Date().toISOString(),
 } satisfies assistantConfig.AssistantEntry;
 
 function setArgv(...rest: string[]) {
-  process.argv = ["bun", "vellum", "backup", ...rest];
+  process.argv = ["bun", "cadet", "backup", ...rest];
 }
 
 beforeEach(() => {
@@ -136,7 +136,7 @@ beforeEach(() => {
   readPlatformTokenMock.mockReset();
   readPlatformTokenMock.mockReturnValue("platform-token");
   getPlatformUrlMock.mockReset();
-  getPlatformUrlMock.mockReturnValue("https://platform.vellum.ai");
+  getPlatformUrlMock.mockReturnValue("https://cloud.cadet.ai");
   platformRequestSignedUrlMock.mockReset();
   platformRequestSignedUrlMock.mockImplementation(async (params) => ({
     url:
@@ -309,7 +309,7 @@ describe("cadet backup: --export-timeout flag", () => {
 
 describe("cadet backup <platform-managed>: GCS happy path", () => {
   test("requests upload URL → kicks off runtime export → polls → downloads from GCS → writes file", async () => {
-    findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
+    findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     setArgv("my-platform");
 
     const bytes = new Uint8Array([1, 2, 3, 4]);
@@ -325,7 +325,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
         maxRuntimeVersion: null,
       }),
       "platform-token",
-      "https://platform.vellum.ai",
+      "https://cloud.cadet.ai",
     );
 
     // Runtime export-to-gcs kicked off via the entry-aware helper. URL
@@ -333,8 +333,8 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     // assert the helper got the right entry + token + params.
     expect(localRuntimeExportToGcsMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        cloud: "vellum",
-        runtimeUrl: "https://platform.vellum.ai",
+        cloud: "cadet",
+        runtimeUrl: "https://cloud.cadet.ai",
         assistantId: "11111111-2222-3333-4444-555555555555",
       }),
       "platform-token",
@@ -347,7 +347,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     // Poll uses the entry-aware helper (wildcard URL, NOT the dedicated
     // platform jobs/{id}/ endpoint).
     expect(localRuntimePollJobStatusMock).toHaveBeenCalledWith(
-      expect.objectContaining({ cloud: "vellum" }),
+      expect.objectContaining({ cloud: "cadet" }),
       "platform-token",
       "platform-export-job-1",
     );
@@ -363,7 +363,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
         bundleKey: "uploads/org-1/bundle-abc.vbundle",
       }),
       "platform-token",
-      "https://platform.vellum.ai",
+      "https://cloud.cadet.ai",
     );
     const downloadCall = platformRequestSignedUrlMock.mock.calls.find(
       (c) => (c[0] as { operation: string }).operation === "download",
@@ -389,7 +389,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
   });
 
   test("--output override is respected", async () => {
-    findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
+    findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     setArgv("my-platform", "--output", "/custom/path/backup.vbundle");
 
     mockGcsDownload(new Uint8Array([7, 7, 7]));
@@ -403,7 +403,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
   });
 
   test("default output path is getBackupsDir() + name-timestamp.vbundle", async () => {
-    findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
+    findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     setArgv("my-platform");
 
     mockGcsDownload(new Uint8Array([1]));
@@ -422,11 +422,11 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     // `getPlatformUrl()` still returns the default — picking it up for
     // signed URLs would target the wrong GCS bucket.
     const stagingEntry = {
-      ...VELLUM_ENTRY,
-      runtimeUrl: "https://staging-platform.vellum.ai",
+      ...CADET_ENTRY,
+      runtimeUrl: "https://staging-cloud.cadet.ai",
     };
     findAssistantByNameMock.mockReturnValue(stagingEntry);
-    getPlatformUrlMock.mockReturnValue("https://platform.vellum.ai");
+    getPlatformUrlMock.mockReturnValue("https://cloud.cadet.ai");
     setArgv("my-platform");
 
     mockGcsDownload(new Uint8Array([9]));
@@ -443,22 +443,22 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
         maxRuntimeVersion: null,
       }),
       "platform-token",
-      "https://staging-platform.vellum.ai",
+      "https://staging-cloud.cadet.ai",
     );
     expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
       expect.objectContaining({ operation: "download" }),
       "platform-token",
-      "https://staging-platform.vellum.ai",
+      "https://staging-cloud.cadet.ai",
     );
     // No call should have used the default platform URL.
     const calls = platformRequestSignedUrlMock.mock.calls;
     for (const call of calls) {
-      expect(call[2]).toBe("https://staging-platform.vellum.ai");
+      expect(call[2]).toBe("https://staging-cloud.cadet.ai");
     }
   });
 
   test("download-URL request uses the refreshed platform token if polling re-authed mid-export", async () => {
-    findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
+    findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     setArgv("my-platform");
 
     // Simulate a poll-loop refresh: the helper fires `refreshOn401`
@@ -517,7 +517,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
 
 describe("cadet backup <platform-managed>: failure cases", () => {
   test("not logged in (no platform token) exits with 'Run cadet login'", async () => {
-    findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
+    findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     readPlatformTokenMock.mockReturnValue(null);
     setArgv("my-platform");
 
@@ -535,7 +535,7 @@ describe("cadet backup <platform-managed>: failure cases", () => {
   });
 
   test("MigrationInProgressError on kickoff exits with 'Another backup or teleport export'", async () => {
-    findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
+    findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     localRuntimeExportToGcsMock.mockRejectedValue(
       new MigrationInProgressError("export_in_progress", "existing-job-99"),
     );
@@ -561,7 +561,7 @@ describe("cadet backup <platform-managed>: failure cases", () => {
   });
 
   test("terminal=failed exits with 'Export failed: <reason>'", async () => {
-    findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
+    findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     localRuntimePollJobStatusMock.mockResolvedValue({
       jobId: "platform-export-job-1",
       type: "export",
@@ -584,7 +584,7 @@ describe("cadet backup <platform-managed>: failure cases", () => {
   });
 
   test("GCS fetch !ok exits with 'Failed to fetch bundle from GCS (<status>)'", async () => {
-    findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
+    findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     setArgv("my-platform");
 
     mockGcsDownload(new Uint8Array(), false, 403);
@@ -620,7 +620,7 @@ describe("cadet backup <platform-managed>: failure cases", () => {
 // ---------------------------------------------------------------------------
 describe("upload signed-URL records source runtime version (not CLI version)", () => {
   test("identity is fetched BEFORE the upload signed-URL request", async () => {
-    findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
+    findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     setArgv("my-platform");
 
     const callOrder: string[] = [];
@@ -651,12 +651,12 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
         maxRuntimeVersion: null,
       }),
       "platform-token",
-      "https://platform.vellum.ai",
+      "https://cloud.cadet.ai",
     );
   });
 
   test("identity is fetched against the platform-managed runtime entry with the platform token", async () => {
-    findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
+    findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     setArgv("my-platform");
 
     mockGcsDownload(new Uint8Array([1]));
@@ -665,8 +665,8 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
 
     expect(localRuntimeIdentityMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        cloud: "vellum",
-        runtimeUrl: "https://platform.vellum.ai",
+        cloud: "cadet",
+        runtimeUrl: "https://cloud.cadet.ai",
         assistantId: "11111111-2222-3333-4444-555555555555",
       }),
       "platform-token",
@@ -674,7 +674,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
   });
 
   test("identity fetch failure aborts before signed-URL request", async () => {
-    findAssistantByNameMock.mockReturnValue(VELLUM_ENTRY);
+    findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     setArgv("my-platform");
 
     localRuntimeIdentityMock.mockRejectedValue(

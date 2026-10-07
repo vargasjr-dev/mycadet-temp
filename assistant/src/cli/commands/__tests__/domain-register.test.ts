@@ -89,7 +89,7 @@ describe("assistant domain register", () => {
         ok: true,
         result: {
           id: "550e8400-e29b-41d4-a716-446655440000",
-          domain: "becky.vellum.me",
+          domain: "becky.mycadet.bot",
           status: "active",
           verified: true,
           created_at: "2026-04-15T19:00:00Z",
@@ -111,7 +111,7 @@ describe("assistant domain register", () => {
         ok: true,
         result: {
           id: "550e8400-e29b-41d4-a716-446655440000",
-          domain: "my-assistant.vellum.me",
+          domain: "my-assistant.mycadet.bot",
           status: "active",
           verified: true,
           created_at: "2026-04-15T19:00:00Z",
@@ -133,7 +133,7 @@ describe("assistant domain register", () => {
         ok: true,
         result: {
           id: "550e8400-e29b-41d4-a716-446655440000",
-          domain: "becky.vellum.me",
+          domain: "becky.mycadet.bot",
           status: "active",
           verified: true,
           created_at: "2026-04-15T19:00:00Z",
@@ -149,7 +149,7 @@ describe("assistant domain register", () => {
     );
 
     const parsed = JSON.parse(output.trim());
-    expect(parsed.domain).toBe("becky.vellum.me");
+    expect(parsed.domain).toBe("becky.mycadet.bot");
     expect(parsed.verified).toBe(true);
     expect(process.exitCode).toBe(0);
   });
@@ -194,7 +194,7 @@ describe("assistant domain register", () => {
         ok: true,
         result: {
           id: "550e8400-e29b-41d4-a716-446655440000",
-          domain: "velly.vellum.me",
+          domain: "velly.mycadet.bot",
           status: "active",
           verified: true,
         },
@@ -221,7 +221,7 @@ describe("assistant domain register", () => {
         ok: true,
         result: {
           id: "550e8400-e29b-41d4-a716-446655440000",
-          domain: "velly.vellum.me",
+          domain: "velly.mycadet.bot",
           status: "active",
           verified: true,
           email_error: {
@@ -249,7 +249,7 @@ describe("assistant domain register", () => {
         ok: true,
         result: {
           id: "550e8400-e29b-41d4-a716-446655440000",
-          domain: "velly.vellum.me",
+          domain: "velly.mycadet.bot",
           status: "active",
           verified: true,
           email_error: {
@@ -283,7 +283,7 @@ describe("assistant domain register", () => {
         ok: true,
         result: {
           id: "550e8400-e29b-41d4-a716-446655440000",
-          domain: "velly.vellum.me",
+          domain: "velly.mycadet.bot",
           status: "active",
           verified: true,
         },

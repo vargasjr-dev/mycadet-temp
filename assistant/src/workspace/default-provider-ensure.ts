@@ -103,7 +103,7 @@ async function resolveProvider(llm: Record<string, unknown>): Promise<string> {
   // routing choice, and honoring it would pin the install to a personal
   // connection.
   if (getIsPlatform()) {
-    return "vellum";
+    return "cadet";
   }
 
   const legacyProvider = readObject(llm.default)?.provider;
@@ -150,7 +150,7 @@ async function resolveProvider(llm: Record<string, unknown>): Promise<string> {
 
 async function loginFallback(): Promise<string> {
   if (await hasManagedProxyPrereqs()) {
-    return "vellum";
+    return "cadet";
   }
   return "anthropic";
 }

@@ -46,7 +46,7 @@ const PIN_BY_REF: Record<string, string> = {
 
 function manifest(pin: string): string {
   return JSON.stringify({
-    name: "vellum",
+    name: "cadet",
     plugins: [
       {
         name: "level-up",

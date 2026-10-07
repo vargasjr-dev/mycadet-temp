@@ -45,7 +45,7 @@ export function provisionCliForCurrentUser(options: CliPathFlowOptions) {
   const runtime = provisionCliRuntime(
     resolveCliRuntimePaths(userDataDir, resourcesDir, version),
   );
-  const sourcePath = path.join(runtime.installDir, "vellum.exe");
+  const sourcePath = path.join(runtime.installDir, "cadet.exe");
   const paths = resolveCliLauncherPaths(localAppData, releaseChannel);
   const launcherState = installCliLauncher(
     sourcePath,
@@ -79,7 +79,7 @@ const installResultDialog = (
         message: "Cadet CLI installed",
         detail:
           `The cadet command is installed at ${launcherPath}. ` +
-          'Open a new terminal and run "vellum".',
+          'Open a new terminal and run "cadet".',
       };
     case "shadowed":
       return {
@@ -87,14 +87,14 @@ const installResultDialog = (
         message: "Cadet CLI installed",
         detail:
           `The cadet command is installed at ${launcherPath}, but another ` +
-          '"vellum" earlier in your PATH will take precedence in your terminal.',
+          '"cadet" earlier in your PATH will take precedence in your terminal.',
       };
     case "foreign":
       return {
         type: "warning",
         message: "Cadet CLI not installed",
         detail:
-          `A "vellum" file already exists at ${launcherPath} but wasn't ` +
+          `A "cadet" file already exists at ${launcherPath} but wasn't ` +
           "installed by Cadet, so it was left in place.",
       };
     default:

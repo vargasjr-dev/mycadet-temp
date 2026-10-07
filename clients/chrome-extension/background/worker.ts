@@ -2,7 +2,7 @@
  * Chrome MV3 service worker — SSE bridge.
  *
  * Connects to the SSE `/v1/events` endpoint for both self-hosted and
- * vellum-cloud assistants. Self-hosted hits the local gateway directly
+ * cadet-cloud assistants. Self-hosted hits the local gateway directly
  * (loopback peers are trusted without a JWT); cloud mode hits the
  * platform API with session credentials.
  *
@@ -72,7 +72,7 @@ import {
 // ── Self-hosted gateway URL storage ──────────────────────────────────
 // Inlined from the removed self-hosted-auth module. The gateway URL is
 // stored in chrome.storage.local so the popup settings page can read/write it.
-const GATEWAY_URL_STORAGE_KEY = "vellum.selfHostedGatewayUrl";
+const GATEWAY_URL_STORAGE_KEY = "cadet.selfHostedGatewayUrl";
 const DEFAULT_GATEWAY_URL = "http://127.0.0.1:7830";
 
 async function getStoredGatewayUrl(): Promise<string> {
@@ -88,7 +88,7 @@ async function setStoredGatewayUrl(url: string): Promise<void> {
 }
 // ─────────────────────────────────────────────────────────────────────
 
-const ENVIRONMENT_OVERRIDE_KEY = "vellum.environmentOverride";
+const ENVIRONMENT_OVERRIDE_KEY = "cadet.environmentOverride";
 
 /**
  * Resolve the effective environment by checking for a popup-persisted
@@ -137,7 +137,7 @@ async function setOverrideEnvironment(
 async function invalidateAuthTokens(): Promise<void> {
   const all = await chrome.storage.local.get(null);
   const keysToRemove = Object.keys(all).filter((k) =>
-    k.startsWith("vellum.localCapabilityToken"),
+    k.startsWith("cadet.localCapabilityToken"),
   );
   if (keysToRemove.length > 0) {
     await chrome.storage.local.remove(keysToRemove);
@@ -178,11 +178,11 @@ const AUTO_CONNECT_KEY = "autoConnect";
 // to the popup. The popup reads this on open and shows it next to the
 // sign-in button. Cleared on a successful connect so stale errors
 // don't linger after the user re-signs in.
-const RELAY_AUTH_ERROR_KEY = "vellum.relayAuthError";
+const RELAY_AUTH_ERROR_KEY = "cadet.relayAuthError";
 
 interface RelayAuthError {
   message: string;
-  mode: "self-hosted" | "vellum-cloud";
+  mode: "self-hosted" | "cadet-cloud";
   at: number;
   debugDetails?: string;
 }
@@ -191,7 +191,7 @@ async function setRelayAuthError(error: RelayAuthError): Promise<void> {
   try {
     await chrome.storage.local.set({ [RELAY_AUTH_ERROR_KEY]: error });
   } catch (err) {
-    console.warn("[vellum-relay] Failed to persist relay auth error", err);
+    console.warn("[cadet-relay] Failed to persist relay auth error", err);
   }
 }
 
@@ -199,7 +199,7 @@ async function clearRelayAuthError(): Promise<void> {
   try {
     await chrome.storage.local.remove(RELAY_AUTH_ERROR_KEY);
   } catch (err) {
-    console.warn("[vellum-relay] Failed to clear relay auth error", err);
+    console.warn("[cadet-relay] Failed to clear relay auth error", err);
   }
 }
 
@@ -221,7 +221,7 @@ async function setAutoConnect(enabled: boolean): Promise<void> {
   try {
     await chrome.storage.local.set({ [AUTO_CONNECT_KEY]: enabled });
   } catch (err) {
-    console.warn("[vellum-relay] Failed to persist autoConnect flag", err);
+    console.warn("[cadet-relay] Failed to persist autoConnect flag", err);
   }
 }
 
@@ -307,7 +307,7 @@ function setConnectionHealth(
 // ── Connection state ───────────────────────────────────────────────
 //
 // Both modes use SSE. `self-hosted` connects to the local gateway
-// (loopback peers are trusted); `vellum-cloud` uses WorkOS session auth.
+// (loopback peers are trusted); `cadet-cloud` uses WorkOS session auth.
 
 /**
  * The auth profile of the currently connected (or last-attempted)
@@ -398,9 +398,9 @@ async function dispatchHostBrowserResult(
       // Identifies this extension to the daemon's actor-binding check.
       // The daemon validates this matches the client recorded at request
       // time before resolving the pending host_browser interaction.
-      "X-Vellum-Client-Id": await getClientId(),
+      "X-Cadet-Client-Id": await getClientId(),
     };
-    if (mode.kind === "vellum-cloud") {
+    if (mode.kind === "cadet-cloud") {
       if (mode.token) {
         headers["authorization"] = `Bearer ${mode.token}`;
       }
@@ -409,7 +409,7 @@ async function dispatchHostBrowserResult(
         headers["X-Session-Token"] = freshSession.sessionToken;
       }
       if (mode.organizationId) {
-        headers["Vellum-Organization-Id"] = mode.organizationId;
+        headers["Cadet-Organization-Id"] = mode.organizationId;
       }
     } else if (selfHostedPairToken) {
       headers["authorization"] = `Bearer ${selfHostedPairToken}`;
@@ -419,13 +419,13 @@ async function dispatchHostBrowserResult(
         method: "POST",
         headers,
         body: JSON.stringify(result),
-        credentials: mode.kind === "vellum-cloud" ? "include" : "omit",
+        credentials: mode.kind === "cadet-cloud" ? "include" : "omit",
       });
       if (!resp.ok) {
         const body = await safeReadBody(resp);
         recordCallbackFailure(result.requestId, resp.status, body);
         console.warn(
-          "[vellum] host-browser-result POST failed",
+          "[cadet] host-browser-result POST failed",
           resp.status,
           body,
         );
@@ -434,7 +434,7 @@ async function dispatchHostBrowserResult(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       recordCallbackFailure(result.requestId, 0, `fetch threw: ${msg}`);
-      console.warn("[vellum] host-browser-result POST threw", err);
+      console.warn("[cadet] host-browser-result POST threw", err);
     }
     return;
   }
@@ -447,7 +447,7 @@ async function dispatchHostBrowserResult(
     try {
       const fallbackHeaders: Record<string, string> = {
         "content-type": "application/json",
-        "X-Vellum-Client-Id": await getClientId(),
+        "X-Cadet-Client-Id": await getClientId(),
       };
       if (selfHostedPairToken) {
         fallbackHeaders["authorization"] = `Bearer ${selfHostedPairToken}`;
@@ -464,7 +464,7 @@ async function dispatchHostBrowserResult(
         const body = await safeReadBody(resp);
         recordCallbackFailure(result.requestId, resp.status, `fallback: ${body}`);
         console.warn(
-          "[vellum] host-browser-result fallback POST failed",
+          "[cadet] host-browser-result fallback POST failed",
           resp.status,
           body,
         );
@@ -473,7 +473,7 @@ async function dispatchHostBrowserResult(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       recordCallbackFailure(result.requestId, 0, `fallback fetch threw: ${msg}`);
-      console.warn("[vellum] host-browser-result fallback POST threw", err);
+      console.warn("[cadet] host-browser-result fallback POST threw", err);
       return;
     }
   }
@@ -483,7 +483,7 @@ async function dispatchHostBrowserResult(
     0,
     "dropped: no active SSE connection and no self-hosted fallback available",
   );
-  console.warn("[vellum] host_browser_result dropped: no active connection");
+  console.warn("[cadet] host_browser_result dropped: no active connection");
 }
 
 /**
@@ -532,7 +532,7 @@ function maybeReconnectOnActorBindingRejection(
   lastActorBindingReconnectAt = now;
 
   console.warn(
-    "[vellum] host-browser-result rejected by the actor binding check; re-registering the SSE connection",
+    "[cadet] host-browser-result rejected by the actor binding check; re-registering the SSE connection",
   );
   appendEvent("outbound", "actor_binding_reconnect", {
     summary: "re-registering after a 403 from the actor binding check",
@@ -542,7 +542,7 @@ function maybeReconnectOnActorBindingRejection(
   disconnect();
   void connect({ interactive: false }).catch((err) => {
     console.warn(
-      "[vellum] reconnect after actor-binding rejection failed",
+      "[cadet] reconnect after actor-binding rejection failed",
       err,
     );
   });
@@ -574,12 +574,12 @@ function dispatchHostBrowserEvent(envelope: HostBrowserEventEnvelope): void {
       ? `${baseUrl}/v1/host-browser-event`
       : `${baseUrl}/v1/assistants/${encodeURIComponent(mode.assistantId)}/host-browser-event`;
   const headers: Record<string, string> = { "content-type": "application/json" };
-  if (mode.kind === "vellum-cloud") {
+  if (mode.kind === "cadet-cloud") {
     if (mode.token) {
       headers["authorization"] = `Bearer ${mode.token}`;
     }
     if (mode.organizationId) {
-      headers["Vellum-Organization-Id"] = mode.organizationId;
+      headers["Cadet-Organization-Id"] = mode.organizationId;
     }
     void getStoredSession().then((freshSession) => {
       if (freshSession?.sessionToken) {
@@ -621,12 +621,12 @@ function dispatchHostBrowserSessionInvalidated(
       ? `${baseUrl}/v1/host-browser-session-invalidated`
       : `${baseUrl}/v1/assistants/${encodeURIComponent(mode.assistantId)}/host-browser-session-invalidated`;
   const headers: Record<string, string> = { "content-type": "application/json" };
-  if (mode.kind === "vellum-cloud") {
+  if (mode.kind === "cadet-cloud") {
     if (mode.token) {
       headers["authorization"] = `Bearer ${mode.token}`;
     }
     if (mode.organizationId) {
-      headers["Vellum-Organization-Id"] = mode.organizationId;
+      headers["Cadet-Organization-Id"] = mode.organizationId;
     }
     void getStoredSession().then((freshSession) => {
       if (freshSession?.sessionToken) {
@@ -696,7 +696,7 @@ const hostBrowserDispatcher: HostBrowserDispatcher =
 // ── Storage helpers ─────────────────────────────────────────────────
 
 /** Storage key for the user's chosen connection mode (welcome screen). */
-const USER_MODE_KEY = "vellum.userMode";
+const USER_MODE_KEY = "cadet.userMode";
 
 async function getStoredUserMode(): Promise<"self-hosted" | "cloud" | null> {
   try {
@@ -728,13 +728,13 @@ function createSseConnection(mode: SseMode): SseConnection {
   return new SseConnection({
     mode,
     onOpen: () => {
-      console.log(`[vellum-sse] Connected (${label})`);
+      console.log(`[cadet-sse] Connected (${label})`);
       setConnectionHealth("connected");
       void clearRelayAuthError();
     },
     onIdleTimeout: () => {
       console.warn(
-        "[vellum-sse] Idle watchdog fired; no SSE traffic (including heartbeats) within the idle window",
+        "[cadet-sse] Idle watchdog fired; no SSE traffic (including heartbeats) within the idle window",
       );
       appendEvent("outbound", "sse_idle_reconnect", {
         summary: "reconnecting after a silent SSE stall",
@@ -743,12 +743,12 @@ function createSseConnection(mode: SseMode): SseConnection {
     },
     onMessage: (data) => {
       void handleSseMessage(data).catch((err) => {
-        console.warn("[vellum-sse] handleSseMessage failed", err);
+        console.warn("[cadet-sse] handleSseMessage failed", err);
       });
     },
     onClose: (authError) => {
       console.log(
-        `[vellum-sse] Disconnected${authError ? ` (auth: ${authError})` : ""}`,
+        `[cadet-sse] Disconnected${authError ? ` (auth: ${authError})` : ""}`,
       );
       if (authError) {
         shouldConnect = false;
@@ -761,7 +761,7 @@ function createSseConnection(mode: SseMode): SseConnection {
         });
         void setRelayAuthError({
           message: authError,
-          mode: "vellum-cloud",
+          mode: "cadet-cloud",
           at: Date.now(),
         });
         sseConnection = null;
@@ -771,7 +771,7 @@ function createSseConnection(mode: SseMode): SseConnection {
     },
     onNotFound: () => {
       console.warn(
-        "[vellum-sse] 404 — assistant not found, attempting recovery",
+        "[cadet-sse] 404 — assistant not found, attempting recovery",
       );
       void handleAssistantGone();
     },
@@ -796,7 +796,7 @@ async function handleAssistantGone(): Promise<void> {
     assistants = await fetchAssistants(env);
   } catch (err) {
     console.error(
-      "[vellum-sse] Failed to fetch assistants during 404 recovery",
+      "[cadet-sse] Failed to fetch assistants during 404 recovery",
       err,
     );
     setConnectionHealth("error", {
@@ -811,7 +811,7 @@ async function handleAssistantGone(): Promise<void> {
     // A different sole assistant is available — auto-switch and reconnect.
     const only = assistants[0]!;
     console.log(
-      `[vellum-sse] Auto-switching to sole assistant: ${only.name} (${only.id})`,
+      `[cadet-sse] Auto-switching to sole assistant: ${only.name} (${only.id})`,
     );
     await storeSelectedAssistant({ id: only.id, name: only.name });
     shouldConnect = true;
@@ -825,7 +825,7 @@ async function handleAssistantGone(): Promise<void> {
 }
 
 /**
- * Handle an incoming SSE event payload from a vellum-cloud assistant.
+ * Handle an incoming SSE event payload from a cadet-cloud assistant.
  * The /events endpoint emits AssistantEvent envelopes; the
  * `host_browser_request` / `host_browser_cancel` events are dispatched
  * to the CDP proxy dispatcher.
@@ -951,7 +951,7 @@ async function doConnect(_options: ConnectOptions): Promise<void> {
 
   if (userMode === "cloud") {
     // Cloud mode: connect via SSE to the platform API.
-    currentAuthProfile = "vellum-cloud";
+    currentAuthProfile = "cadet-cloud";
     const session = await getStoredSession();
     const selectedAssistant = await getSelectedAssistant();
     if (!session || !selectedAssistant) {
@@ -964,7 +964,7 @@ async function doConnect(_options: ConnectOptions): Promise<void> {
     const { apiBaseUrl } = cloudUrlsForEnvironment(env);
     if (!shouldConnect) return;
     sseConnection = createSseConnection({
-      kind: "vellum-cloud",
+      kind: "cadet-cloud",
       runtimeUrl: apiBaseUrl,
       assistantId: selectedAssistant.id,
       token: null,
@@ -989,7 +989,7 @@ async function doConnect(_options: ConnectOptions): Promise<void> {
           method: "POST",
           headers: {
             "content-type": "application/json",
-            "x-vellum-interface-id": "chrome-extension",
+            "x-cadet-interface-id": "chrome-extension",
           },
         },
       );
@@ -997,13 +997,13 @@ async function doConnect(_options: ConnectOptions): Promise<void> {
         const body = (await pairResp.json()) as { token?: string };
         selfHostedPairToken = body.token ?? null;
       } else {
-        console.warn("[vellum] pair failed:", pairResp.status);
+        console.warn("[cadet] pair failed:", pairResp.status);
       }
     } catch (err) {
       // A thrown fetch (not a non-ok status) means the gateway is
       // unreachable — surface a terminal error instead of looping
       // silently in "reconnecting". The keepalive alarm keeps retrying.
-      console.warn("[vellum] pair request error:", err);
+      console.warn("[cadet] pair request error:", err);
       if (shouldConnect) {
         setConnectionHealth("error", {
           lastErrorMessage: `Couldn't reach the gateway at ${gatewayUrl}. Check the gateway URL and make sure your assistant is running.`,
@@ -1044,7 +1044,7 @@ function disconnect(): void {
 
 // ── Keep-alive (MV3 service-worker liveness) ─────────────────────────
 
-const KEEPALIVE_ALARM_NAME = "vellum-relay-keepalive";
+const KEEPALIVE_ALARM_NAME = "cadet-relay-keepalive";
 const KEEPALIVE_PERIOD_MIN = 0.5;
 
 async function ensureKeepaliveAlarm(): Promise<void> {
@@ -1064,7 +1064,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (shouldConnect && !(sseConnection?.isOpen() ?? false)) {
     void connect({ interactive: false }).catch((err) => {
       const detail = err instanceof Error ? err.message : String(err);
-      console.warn(`[vellum-relay] Keepalive reconnect failed: ${detail}`);
+      console.warn(`[cadet-relay] Keepalive reconnect failed: ${detail}`);
     });
   }
 });
@@ -1222,7 +1222,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponseFn) => {
           shouldConnect = false;
           const errorMessage = err instanceof Error ? err.message : String(err);
           console.warn(
-            `[vellum-relay] Gateway URL switch left disconnected: ${errorMessage}`,
+            `[cadet-relay] Gateway URL switch left disconnected: ${errorMessage}`,
           );
           if (err instanceof MissingTokenError) {
             setConnectionHealth("auth_required", {
@@ -1259,7 +1259,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponseFn) => {
           method: "POST",
           headers: {
             "content-type": "application/json",
-            "x-vellum-interface-id": "chrome-extension",
+            "x-cadet-interface-id": "chrome-extension",
           },
         },
       );
@@ -1622,7 +1622,7 @@ async function bootstrap(): Promise<void> {
     shouldConnect = false;
     void clearKeepaliveAlarm();
     if (err instanceof MissingTokenError) {
-      console.warn(`[vellum-relay] Skipping auto-connect: ${err.message}`);
+      console.warn(`[cadet-relay] Skipping auto-connect: ${err.message}`);
       setConnectionHealth("auth_required", {
         lastErrorMessage: err.message,
       });
@@ -1638,7 +1638,7 @@ async function bootstrap(): Promise<void> {
     // popup shows disconnected rather than crashing the worker with
     // an unhandled rejection.
     const detail = err instanceof Error ? err.message : String(err);
-    console.warn(`[vellum-relay] Auto-connect failed: ${detail}`);
+    console.warn(`[cadet-relay] Auto-connect failed: ${detail}`);
     setConnectionHealth("error", {
       lastErrorMessage: detail,
     });

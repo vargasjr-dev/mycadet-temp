@@ -102,7 +102,7 @@ const meta: Meta<ActionMenuStoryArgs> = {
           <ActionMenu.Item
             icon={ArrowUp}
             label="Share"
-            description="Export as .vellum file"
+            description="Export as .cadet file"
           />
           <ActionMenu.Separator />
           <ActionMenu.Item

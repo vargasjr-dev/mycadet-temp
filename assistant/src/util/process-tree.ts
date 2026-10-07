@@ -103,7 +103,7 @@ function scriptName(scriptPath: string): string {
  * without a script file (`bun run dev`, `bun x prettier`, `bun repl`) the bare
  * interpreter name says nothing about what is running, so surface the arguments
  * — what was actually run — alongside it (e.g. `bun run dev`). Plain binaries
- * (`/…/vellum-qdrant`) keep their bare executable name.
+ * (`/…/cadet-qdrant`) keep their bare executable name.
  */
 export function deriveName(command: string): string {
   const tokens = splitCommand(command.trim());

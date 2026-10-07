@@ -1,5 +1,5 @@
 /**
- * User-owned MCP servers in `$VELLUM_WORKSPACE_DIR/mcp.json`.
+ * User-owned MCP servers in `$CADET_WORKSPACE_DIR/mcp.json`.
  *
  * The file is an Agent Plugins 1.0.0 document (`$schema` + `mcpServers`).
  * This module is the only reader and writer of that file. Presence of a

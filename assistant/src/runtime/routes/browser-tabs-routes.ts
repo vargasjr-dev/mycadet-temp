@@ -140,7 +140,7 @@ async function handleBrowserTabs({
       const result = await cdp.send<{
         tabId?: number | string;
         clientId?: string;
-      }>("Vellum.createTab", {});
+      }>("Cadet.createTab", {});
       // Normalise to string for internal use (setCdpSessionId / setPinnedTab)
       // and keep the numeric form for the API response.
       const newTabIdStr: string | undefined =

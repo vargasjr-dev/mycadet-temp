@@ -14,7 +14,7 @@ test("the unavailable runtime preserves the structured bridge contract", async (
 
   const invoke = (name: string, ...args: unknown[]) =>
     handlers[`cadet:localMode:${name}`]!(...args);
-  expect(await invoke("hatch", "vellum")).toEqual({ ok: false, error });
+  expect(await invoke("hatch", "cadet")).toEqual({ ok: false, error });
   expect(await invoke("listDevices", "assistant-1")).toEqual({
     ok: false,
     error,

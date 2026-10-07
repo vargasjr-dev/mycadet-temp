@@ -9,7 +9,7 @@
  * the origin is synthetic on every transport, so a handler resolving a relative
  * URL against `request.url` reads the same host everywhere. And audience: the
  * verified
- * `x-vellum-subject` is daemon-side authorization material and stays out of
+ * `x-cadet-subject` is daemon-side authorization material and stays out of
  * workspace code, while the identity the handler has always seen, and every
  * other header, still reaches it.
  */
@@ -31,10 +31,10 @@ const ECHO_HANDLER = `export function GET(request) {
     origin: url.origin,
     pathname: url.pathname,
     tags: url.searchParams.getAll("tag"),
-    subject: request.headers.get("x-vellum-subject"),
-    principalType: request.headers.get("x-vellum-principal-type"),
-    actorPrincipalId: request.headers.get("x-vellum-actor-principal-id"),
-    clientId: request.headers.get("x-vellum-client-id"),
+    subject: request.headers.get("x-cadet-subject"),
+    principalType: request.headers.get("x-cadet-principal-type"),
+    actorPrincipalId: request.headers.get("x-cadet-actor-principal-id"),
+    clientId: request.headers.get("x-cadet-client-id"),
   });
 }
 `;
@@ -53,10 +53,10 @@ const getHandler = ROUTES.find((r) => r.operationId === "user_route_get")!
   .handler as (args: RouteHandlerArgs) => Promise<RouteResponse>;
 
 const IDENTITY_HEADERS_IN: Record<string, string> = {
-  "x-vellum-principal-type": "actor",
-  "x-vellum-actor-principal-id": "user-123",
-  "x-vellum-subject": "actor:self:user-123",
-  "x-vellum-client-id": "client-abc",
+  "x-cadet-principal-type": "actor",
+  "x-cadet-actor-principal-id": "user-123",
+  "x-cadet-subject": "actor:self:user-123",
+  "x-cadet-client-id": "client-abc",
 };
 
 async function echo(args: RouteHandlerArgs): Promise<EchoBody> {

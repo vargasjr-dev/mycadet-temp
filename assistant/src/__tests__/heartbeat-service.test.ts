@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { hasSetConstructs } from "../schedule/recurrence-engine.js";
 
-const testWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testWorkspaceDir = process.env.CADET_WORKSPACE_DIR!;
 
 // Default the warm-pool gate to OPEN for existing tests — they predate
 // the gate and expect heartbeat/filing/etc. to run on every tick. Tests
@@ -300,8 +300,8 @@ mock.module("../daemon/process-message.js", () => ({
     return { messageId: `mock-msg-${Date.now()}` };
   },
   processMessageInBackground: async () => ({ messageId: "mock-bg" }),
-  resolveTurnChannel: () => "vellum",
-  resolveTurnInterface: () => "vellum",
+  resolveTurnChannel: () => "cadet",
+  resolveTurnInterface: () => "cadet",
   prepareConversationForMessage: async () => ({}),
 }));
 
@@ -753,7 +753,7 @@ describe("HeartbeatService", () => {
     expect(processMessageCalls).toHaveLength(1);
     expect(processMessageCalls[0].options).toMatchObject({
       callSite: "heartbeatAgent",
-      trustContext: { sourceChannel: "vellum", trustClass: "guardian" },
+      trustContext: { sourceChannel: "cadet", trustClass: "guardian" },
     });
   });
 

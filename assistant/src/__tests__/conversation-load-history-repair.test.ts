@@ -105,7 +105,7 @@ function makeConversation(): Conversation {
   );
   // Default to guardian trust so history repair tests load all messages.
   // Tests that exercise untrusted-actor filtering override this explicitly.
-  conv.setTrustContext({ trustClass: "guardian", sourceChannel: "vellum" });
+  conv.setTrustContext({ trustClass: "guardian", sourceChannel: "cadet" });
   return conv;
 }
 

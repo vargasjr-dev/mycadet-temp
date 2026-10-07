@@ -7,7 +7,7 @@ import type { OutgoingHttpHeaders } from "node:http";
  * Tunnel bridge. Direct callers can know the header name, but not the
  * per-process value.
  */
-export const TUNNEL_BRIDGE_AUTH_HEADER = "x-vellum-tunnel-bridge-auth" as const;
+export const TUNNEL_BRIDGE_AUTH_HEADER = "x-cadet-tunnel-bridge-auth" as const;
 
 const bridgeAuthValue = randomBytes(32).toString("base64url");
 

@@ -38,7 +38,7 @@ const runDevicesRevokeMock = mock(
 mock.module("@mycadet/local-mode", () => {
   const mocked: Partial<typeof import("@mycadet/local-mode")> = {
     ...actualLocalMode,
-    resolveDevCliInvocation: () => ({ command: "vellum", baseArgs: [] }),
+    resolveDevCliInvocation: () => ({ command: "cadet", baseArgs: [] }),
     runDevicesList: runDevicesListMock,
     runDevicesRevoke: runDevicesRevokeMock,
   };
@@ -49,13 +49,13 @@ import { localModePlugin } from "./vite-plugin-local-mode";
 
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "vite-local-mode-"));
 const env = {
-  VELLUM_ENVIRONMENT: "production",
-  VELLUM_LOCKFILE_DIR: tempDir,
+  CADET_ENVIRONMENT: "production",
+  CADET_LOCKFILE_DIR: tempDir,
   XDG_CONFIG_HOME: tempDir,
   XDG_DATA_HOME: path.join(tempDir, "data-home"),
 };
-const configDir = path.join(tempDir, "vellum");
-const lockfilePath = path.join(tempDir, ".vellum.lock.json");
+const configDir = path.join(tempDir, "cadet");
+const lockfilePath = path.join(tempDir, ".cadet.lock.json");
 
 // Capture the plugin's middleware chain from a fake dev server so requests
 // can be dispatched through it without booting Vite.
@@ -189,8 +189,8 @@ describe("guardian-token middleware", () => {
 
     expect(result.status).toBe(401);
     const { error } = JSON.parse(result.body) as { error: string };
-    expect(error).toContain("vellum hatch");
-    expect(error).not.toContain("vellum pair");
+    expect(error).toContain("cadet hatch");
+    expect(error).not.toContain("cadet pair");
   });
 
   test("never returns a paired credential to the renderer", async () => {
@@ -221,7 +221,7 @@ describe("guardian-token middleware", () => {
 describe("avatar middleware", () => {
   const instanceDir = path.join(tempDir, "instances", "asst-a");
   const avatarDir = resolveAvatarDir(
-    path.join(instanceDir, ".vellum", "workspace"),
+    path.join(instanceDir, ".cadet", "workspace"),
   );
   const traits = { bodyShape: "round", eyeStyle: "dot", color: "#123456" };
 
@@ -328,10 +328,10 @@ describe("avatar middleware", () => {
     const defaultAvatarDir = resolveAvatarDir(
       path.join(
         env.XDG_DATA_HOME,
-        "vellum",
+        "cadet",
         "assistants",
         "asst-a",
-        ".vellum",
+        ".cadet",
         "workspace",
       ),
     );
@@ -476,7 +476,7 @@ describe("devices middleware", () => {
       expect(result.status).toBe(200);
       expect(JSON.parse(result.body)).toEqual({ ok: true, devices: [DEVICE] });
       expect(runDevicesListMock).toHaveBeenCalledWith(
-        { command: "vellum", baseArgs: [] },
+        { command: "cadet", baseArgs: [] },
         "asst-1",
       );
     });
@@ -571,7 +571,7 @@ describe("devices middleware", () => {
       expect(result.status).toBe(200);
       expect(JSON.parse(result.body)).toEqual({ ok: true });
       expect(runDevicesRevokeMock).toHaveBeenCalledWith(
-        { command: "vellum", baseArgs: [] },
+        { command: "cadet", baseArgs: [] },
         "asst-1",
         "hash-a",
       );

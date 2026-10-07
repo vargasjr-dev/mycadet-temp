@@ -8,7 +8,7 @@ metadata:
     category: "development"
     display-name: "Headless Claude Code"
     avoid-when:
-      - "Setting up or authenticating Claude Code inside a Vellum assistant: the ACP skill owns that path"
+      - "Setting up or authenticating Claude Code inside a Cadet assistant: the ACP skill owns that path"
 ---
 
 # Headless Claude Code

@@ -83,9 +83,9 @@ const openRouterConnection: ProviderConnection = {
   isManaged: false,
 };
 
-const vellumConnection: ProviderConnection = {
-  name: "vellum",
-  provider: "vellum",
+const cadetConnection: ProviderConnection = {
+  name: "cadet",
+  provider: "cadet",
   auth: { type: "platform" },
   label: "Cadet",
   baseUrl: null,
@@ -180,29 +180,29 @@ describe("resolveProviderFromConnection cadet GPU upstream", () => {
 
   test("a GPU model with providerOverride cadet builds an adapter", async () => {
     const adapter = await resolveProviderFromConnection(
-      vellumConnection,
+      cadetConnection,
       makeConfig(),
-      { model: "qwen/qwen3-8b", providerOverride: "vellum" },
+      { model: "qwen/qwen3-8b", providerOverride: "cadet" },
     );
     expect(adapter).not.toBeNull();
     expect(adapterCalls).toHaveLength(1);
     expect(adapterCalls[0].opts).toMatchObject({
       model: "qwen/qwen3-8b",
-      provider: "vellum",
+      provider: "cadet",
     });
   });
 
   test("providerOverride cadet is a factory id, not an unresolved identity", async () => {
     const adapter = await resolveProviderFromConnection(
-      vellumConnection,
+      cadetConnection,
       makeConfig(),
-      { model: "claude-opus-4-8", providerOverride: "vellum" },
+      { model: "claude-opus-4-8", providerOverride: "cadet" },
     );
     expect(adapter).not.toBeNull();
     expect(adapterCalls).toHaveLength(1);
     expect(adapterCalls[0].opts).toMatchObject({
       model: "claude-opus-4-8",
-      provider: "vellum",
+      provider: "cadet",
     });
   });
 });

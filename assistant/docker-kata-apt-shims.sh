@@ -8,9 +8,9 @@
 # of the chroot bin dirs so shims shadow the broken wrappers.
 set -eu
 
-DATA_ROOT="${VELLUM_APT_DATA_ROOT:-/data/system}"
+DATA_ROOT="${CADET_APT_DATA_ROOT:-/data/system}"
 SHIM_DIR="${DATA_ROOT}/.host-shims"
-MARKER="# vellum-apt-shim:"
+MARKER="# cadet-apt-shim:"
 # dpkg-managed dirs that can hold trampolines (Debian policy keeps packages
 # out of /usr/local; /bin and /sbin are usrmerge symlinks into these).
 SCAN_DIRS="usr/bin usr/sbin usr/games"

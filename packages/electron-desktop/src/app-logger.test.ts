@@ -8,7 +8,7 @@ const logStub = {
       maxSize: 0,
       fileName: "",
       format: "",
-      getFile: () => ({ path: "/tmp/vellum.log" }),
+      getFile: () => ({ path: "/tmp/cadet.log" }),
     },
   },
 };
@@ -54,8 +54,8 @@ describe("main-process logger", () => {
   });
 
   test("the file transport stays configured as the surviving sink", () => {
-    expect(logStub.transports.file.fileName).toBe("vellum.log");
+    expect(logStub.transports.file.fileName).toBe("cadet.log");
     expect(logStub.transports.file.maxSize).toBe(10 * 1024 * 1024);
-    expect(getLogFilePaths()).toEqual(["/tmp/vellum.log"]);
+    expect(getLogFilePaths()).toEqual(["/tmp/cadet.log"]);
   });
 });

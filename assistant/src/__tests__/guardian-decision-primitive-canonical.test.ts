@@ -255,7 +255,7 @@ describe("applyGuardianDecision", () => {
   test("matching principal authorizes decision (cross-channel same principal)", async () => {
     const req = sim.seedRequest({
       kind: "tool_approval",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       sourceConversationId: "conv-1",
       guardianExternalUserId: "guardian-1",
       guardianPrincipalId: TEST_PRINCIPAL_ID,
@@ -690,7 +690,7 @@ describe("mintGuardianRequestGrant", () => {
 
     const result = mintGuardianRequestGrant({
       request: req,
-      actorChannel: "vellum",
+      actorChannel: "cadet",
       effectiveAction: "approve_once",
     });
 

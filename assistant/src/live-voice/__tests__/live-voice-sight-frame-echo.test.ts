@@ -46,7 +46,7 @@ function createHarness() {
   );
   conversation.setTrustContext({
     trustClass: "guardian",
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
   });
   setConversation(row.id, conversation);
 

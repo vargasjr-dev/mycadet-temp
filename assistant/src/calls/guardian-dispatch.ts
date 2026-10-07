@@ -97,9 +97,9 @@ async function dispatchGuardianQuestionInner(
     // applyGuardianDecision requires strict equality with
     // request.guardianPrincipalId; sharing this gateway source guarantees the
     // stamped principal == the submitting principal.
-    const guardians = await getGuardianDelivery({ channelTypes: ["vellum"] });
+    const guardians = await getGuardianDelivery({ channelTypes: ["cadet"] });
     const guardianPrincipalId = guardians
-      ? (guardianForChannel(guardians, "vellum")?.principalId ?? undefined)
+      ? (guardianForChannel(guardians, "cadet")?.principalId ?? undefined)
       : undefined;
 
     if (!guardianPrincipalId) {
@@ -147,12 +147,12 @@ async function dispatchGuardianQuestionInner(
       (r) => r.status === "pending" && r.callSessionId === callSessionId,
     ).length;
 
-    // Look up the vellum conversation used for the first guardian question
+    // Look up the cadet conversation used for the first guardian question
     // delivery in this call session. When found, pass it as an affinity hint
     // so the notification pipeline deterministically routes to the same
     // conversation instead of letting the LLM choose a different conversation.
     // Find earlier guardian requests for this call session and check their
-    // deliveries for a vellum destination conversation ID.
+    // deliveries for a cadet destination conversation ID.
     let existingGuardianConversationId: string | null = null;
     const priorRequests = voiceRequests.filter(
       (r) => r.callSessionId === callSessionId && r.id !== request.id,
@@ -161,17 +161,17 @@ async function dispatchGuardianQuestionInner(
       const deliveries = await listGuardianRequestDeliveriesOrEmpty(
         priorReq.id,
       );
-      const vellumDelivery = deliveries.find(
-        (d) => d.destinationChannel === "vellum" && d.destinationConversationId,
+      const cadetDelivery = deliveries.find(
+        (d) => d.destinationChannel === "cadet" && d.destinationConversationId,
       );
-      if (vellumDelivery?.destinationConversationId) {
+      if (cadetDelivery?.destinationConversationId) {
         existingGuardianConversationId =
-          vellumDelivery.destinationConversationId;
+          cadetDelivery.destinationConversationId;
         break;
       }
     }
     const conversationAffinityHint = existingGuardianConversationId
-      ? { vellum: existingGuardianConversationId }
+      ? { cadet: existingGuardianConversationId }
       : undefined;
 
     if (existingGuardianConversationId) {
@@ -181,9 +181,9 @@ async function dispatchGuardianQuestionInner(
       );
     }
 
-    // Route through the canonical notification pipeline. The paired vellum
+    // Route through the canonical notification pipeline. The paired cadet
     // conversation from this pipeline is the guardian conversation.
-    let vellumDeliveryIdPromise: Promise<string | undefined> | undefined;
+    let cadetDeliveryIdPromise: Promise<string | undefined> | undefined;
     const requestCode =
       request.requestCode ?? request.id.slice(0, 6).toUpperCase();
     const signalResult = await emitNotificationSignal({
@@ -215,34 +215,34 @@ async function dispatchGuardianQuestionInner(
       onConversationCreated: (info) => {
         if (
           info.sourceEventName !== "guardian.question" ||
-          vellumDeliveryIdPromise
+          cadetDeliveryIdPromise
         ) {
           return;
         }
-        vellumDeliveryIdPromise = recordApprovalCardDelivery({
+        cadetDeliveryIdPromise = recordApprovalCardDelivery({
           requestId: request.id,
-          channel: "vellum",
+          channel: "cadet",
           conversationId: info.conversationId,
         }).then((delivery) => delivery?.id);
-        return vellumDeliveryIdPromise.then(() => undefined);
+        return cadetDeliveryIdPromise.then(() => undefined);
       },
     });
 
-    const vellumDeliveryId = await recordGuardianRequestDeliveries({
+    const cadetDeliveryId = await recordGuardianRequestDeliveries({
       requestId: request.id,
       deliveryResults: signalResult.deliveryResults,
-      vellumDeliveryId: await vellumDeliveryIdPromise,
+      cadetDeliveryId: await cadetDeliveryIdPromise,
     });
 
-    if (!vellumDeliveryId) {
+    if (!cadetDeliveryId) {
       await recordApprovalCardDelivery({
         requestId: request.id,
-        channel: "vellum",
+        channel: "cadet",
         status: "failed",
       });
       log.warn(
         { requestId: request.id, reason: signalResult.reason },
-        "Notification pipeline did not produce a vellum delivery result",
+        "Notification pipeline did not produce a cadet delivery result",
       );
     }
   } catch (err) {

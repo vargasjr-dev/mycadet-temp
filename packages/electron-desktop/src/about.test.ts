@@ -129,7 +129,7 @@ describe("getVersionInfo", () => {
     const info = getVersionInfo();
     expect(info.appName).toBe("Cadet");
     expect(info.version).toBe("1.2.3");
-    expect(info.website).toBe("https://vellum.ai");
+    expect(info.website).toBe("https://mycadet.ai");
     expect(info.copyright).toContain("Cadet");
     expect(info.copyright).toContain(String(new Date().getFullYear()));
     // SHA isn't defined off the build pipeline; the module falls back
@@ -162,7 +162,7 @@ describe("installAbout", () => {
     };
     expect(opts.applicationName).toBe("Cadet");
     expect(opts.applicationVersion).toBe("1.2.3");
-    expect(opts.website).toBe("https://vellum.ai");
+    expect(opts.website).toBe("https://mycadet.ai");
   });
 });
 

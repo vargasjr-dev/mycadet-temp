@@ -132,7 +132,7 @@ afterEach(() => {
 
 describe("handleBundleFile", () => {
   test("shows error when the assistant is unavailable", async () => {
-    await handleBundleFile("/tmp/test.vellum");
+    await handleBundleFile("/tmp/test.cadet");
 
     expect(showErrorBoxMock).toHaveBeenCalledTimes(1);
     expect(showErrorBoxMock.mock.calls[0]?.[0]).toBe("Cannot open bundle");
@@ -143,7 +143,7 @@ describe("handleBundleFile", () => {
     resolveActiveGatewayMock.mockReturnValue({ assistantId: "a1", port: 9000 });
     netFetchMock.mockResolvedValue(new Response(null, { status: 500 }));
 
-    await handleBundleFile("/tmp/test.vellum");
+    await handleBundleFile("/tmp/test.cadet");
 
     expect(showErrorBoxMock).toHaveBeenCalledTimes(1);
     expect(showErrorBoxMock.mock.calls[0]?.[1]).toContain("Failed to scan");
@@ -167,7 +167,7 @@ describe("handleBundleFile", () => {
       }),
     );
 
-    await handleBundleFile("/tmp/test.vellum");
+    await handleBundleFile("/tmp/test.cadet");
 
     expect(showErrorBoxMock).toHaveBeenCalledTimes(1);
     expect(showErrorBoxMock.mock.calls[0]?.[0]).toBe("Bundle blocked");
@@ -181,7 +181,7 @@ describe("handleBundleFile", () => {
     resolveActiveGatewayMock.mockReturnValue({ assistantId: "a1", port: 9000 });
     openBundleConfirmationMock.mockResolvedValue(false);
 
-    await handleBundleFile("/tmp/test.vellum");
+    await handleBundleFile("/tmp/test.cadet");
 
     expect(openBundleConfirmationMock).toHaveBeenCalledTimes(1);
     expect(unpackBundleMock).not.toHaveBeenCalled();
@@ -192,7 +192,7 @@ describe("handleBundleFile", () => {
     resolveActiveGatewayMock.mockReturnValue({ assistantId: "a1", port: 9000 });
     unpackBundleMock.mockRejectedValue(new Error("disk full"));
 
-    await handleBundleFile("/tmp/test.vellum");
+    await handleBundleFile("/tmp/test.cadet");
 
     expect(showErrorBoxMock).toHaveBeenCalledTimes(1);
     expect(showErrorBoxMock.mock.calls[0]?.[1]).toContain("disk full");
@@ -202,7 +202,7 @@ describe("handleBundleFile", () => {
   test("sends auth token in scan request", async () => {
     resolveActiveGatewayMock.mockReturnValue({ assistantId: "a1", port: 9000 });
 
-    await handleBundleFile("/tmp/test.vellum");
+    await handleBundleFile("/tmp/test.cadet");
 
     const fetchCall = netFetchMock.mock.calls[0];
     const opts = fetchCall?.[1] as RequestInit | undefined;
@@ -213,7 +213,7 @@ describe("handleBundleFile", () => {
   test("success flow: scans, confirms, unpacks, opens window", async () => {
     resolveActiveGatewayMock.mockReturnValue({ assistantId: "a1", port: 9000 });
 
-    await handleBundleFile("/tmp/test.vellum");
+    await handleBundleFile("/tmp/test.cadet");
 
     expect(netFetchMock).toHaveBeenCalledTimes(1);
     expect(openBundleConfirmationMock).toHaveBeenCalledWith(SAMPLE_SCAN);

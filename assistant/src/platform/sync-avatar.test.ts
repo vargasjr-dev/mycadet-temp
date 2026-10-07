@@ -60,7 +60,7 @@ let rasterCalls = 0;
 
 function installMocks(): void {
   mock.module("./client.js", () => ({
-    VellumPlatformClient: { create: async () => mockClient },
+    CadetPlatformClient: { create: async () => mockClient },
   }));
 
   mock.module("../avatar/avatar-manifest.js", () => ({
@@ -161,17 +161,17 @@ const dir = mkdtempSync(join(tmpdir(), "sync-avatar-test-"));
 const workspaceDir = join(dir, "workspace");
 const avatarDir = join(workspaceDir, "data", "avatar");
 const syncStatePath = join(dir, "protected", "platform-sync", "avatar.json");
-const prevWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+const prevWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+process.env.CADET_WORKSPACE_DIR = workspaceDir;
 beforeAll(() => {
   installMocks();
 });
 afterAll(() => {
   restoreRealModules();
   if (prevWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = prevWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = prevWorkspaceDir;
   }
   rmSync(dir, { recursive: true, force: true });
 });

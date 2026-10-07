@@ -70,7 +70,7 @@ export function parseK8sCpuCores(value: string): number | null {
  * Read the container's CPU core limit.
  *
  * Resolution order:
- * 1. VELLUM_CPU_LIMIT env var (K8s resource format, e.g. "2000m" or "2").
+ * 1. CADET_CPU_LIMIT env var (K8s resource format, e.g. "2000m" or "2").
  *    In platform mode the container runs under gVisor where cgroup files may
  *    report the node's CPU count rather than the sandbox limit.
  * 2. cgroups v2 cpu.max (quota / period → fractional cores).

@@ -21,7 +21,7 @@ import { join } from "node:path";
 
 // Point lockfile operations at a temp directory
 const testDir = mkdtempSync(join(tmpdir(), "cli-assistant-config-test-"));
-process.env.VELLUM_LOCKFILE_DIR = testDir;
+process.env.CADET_LOCKFILE_DIR = testDir;
 
 import {
   loadLatestAssistant,
@@ -41,12 +41,12 @@ import {
 
 afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
-  delete process.env.VELLUM_LOCKFILE_DIR;
+  delete process.env.CADET_LOCKFILE_DIR;
 });
 
 function writeLockfile(data: unknown): void {
   writeFileSync(
-    join(testDir, ".vellum.lock.json"),
+    join(testDir, ".cadet.lock.json"),
     JSON.stringify(data, null, 2),
   );
 }
@@ -66,12 +66,12 @@ describe("assistant-config", () => {
   beforeEach(() => {
     // Reset lockfile between tests
     try {
-      rmSync(join(testDir, ".vellum.lock.json"));
+      rmSync(join(testDir, ".cadet.lock.json"));
     } catch {
       // file may not exist
     }
     try {
-      rmSync(join(testDir, ".vellum.lockfile.json"));
+      rmSync(join(testDir, ".cadet.lockfile.json"));
     } catch {
       // file may not exist
     }
@@ -82,7 +82,7 @@ describe("assistant-config", () => {
   });
 
   test("loadAllAssistants returns empty array for malformed lockfile", () => {
-    writeFileSync(join(testDir, ".vellum.lock.json"), "not json");
+    writeFileSync(join(testDir, ".cadet.lock.json"), "not json");
     expect(loadAllAssistants()).toEqual([]);
   });
 
@@ -103,11 +103,11 @@ describe("assistant-config", () => {
     saveAssistantEntry(makeEntry("locked-1"));
     expect(loadAllAssistants()).toHaveLength(1);
     // The shared `${lockfilePath}.lock` key hosts contend on is released.
-    expect(existsSync(join(testDir, ".vellum.lock.json.lock"))).toBe(false);
+    expect(existsSync(join(testDir, ".cadet.lock.json.lock"))).toBe(false);
   });
 
   test("saveAssistantEntry breaks a stale lock and still lands the write", () => {
-    const lockDir = join(testDir, ".vellum.lock.json.lock");
+    const lockDir = join(testDir, ".cadet.lock.json.lock");
     mkdirSync(lockDir);
     const past = new Date(Date.now() - 60_000);
     utimesSync(lockDir, past, past);
@@ -118,7 +118,7 @@ describe("assistant-config", () => {
   });
 
   test("saveAssistantEntry fails fast without writing when another holder is fresh", () => {
-    const lockDir = join(testDir, ".vellum.lock.json.lock");
+    const lockDir = join(testDir, ".cadet.lock.json.lock");
     mkdirSync(lockDir);
     try {
       const start = Date.now();
@@ -352,7 +352,7 @@ describe("migrateLegacyEntry", () => {
       assistantId: "my-assistant",
       runtimeUrl: "http://localhost:7830",
       cloud: "local",
-      baseDataDir: "/home/user/.local/share/vellum/assistants/my-assistant",
+      baseDataDir: "/home/user/.local/share/cadet/assistants/my-assistant",
     };
 
     // WHEN we migrate the entry
@@ -367,7 +367,7 @@ describe("migrateLegacyEntry", () => {
     // AND resources.instanceDir should contain the old baseDataDir value
     const resources = entry.resources as Record<string, unknown>;
     expect(resources.instanceDir).toBe(
-      "/home/user/.local/share/vellum/assistants/my-assistant",
+      "/home/user/.local/share/cadet/assistants/my-assistant",
     );
   });
 
@@ -580,7 +580,7 @@ describe("migrateLegacyEntry", () => {
 describe("legacy migration via loadAllAssistants", () => {
   beforeEach(() => {
     try {
-      rmSync(join(testDir, ".vellum.lock.json"));
+      rmSync(join(testDir, ".cadet.lock.json"));
     } catch {
       // file may not exist
     }
@@ -599,7 +599,7 @@ describe("legacy migration via loadAllAssistants", () => {
           assistantId: "legacy-bot",
           runtimeUrl: "http://localhost:7830",
           cloud: "local",
-          baseDataDir: "/home/user/.local/share/vellum/assistants/legacy-bot",
+          baseDataDir: "/home/user/.local/share/cadet/assistants/legacy-bot",
         },
       ],
     });
@@ -611,29 +611,29 @@ describe("legacy migration via loadAllAssistants", () => {
     expect(all).toHaveLength(1);
     expect(all[0].resources).toBeDefined();
     expect(all[0].resources!.instanceDir).toBe(
-      "/home/user/.local/share/vellum/assistants/legacy-bot",
+      "/home/user/.local/share/cadet/assistants/legacy-bot",
     );
     expect(all[0].resources!.gatewayPort).toBe(7830);
 
     // AND the lockfile on disk should reflect the migration
     const rawDisk = JSON.parse(
-      readFileSync(join(testDir, ".vellum.lock.json"), "utf-8"),
+      readFileSync(join(testDir, ".cadet.lock.json"), "utf-8"),
     );
     const diskEntry = rawDisk.assistants[0];
     expect(diskEntry.baseDataDir).toBeUndefined();
     expect(diskEntry.resources.instanceDir).toBe(
-      "/home/user/.local/share/vellum/assistants/legacy-bot",
+      "/home/user/.local/share/cadet/assistants/legacy-bot",
     );
   });
 });
 
 describe("env-scoped lockfile and migration", () => {
   test("migrateLegacyEntry uses env-scoped multi-instance dir in non-prod", () => {
-    // GIVEN VELLUM_ENVIRONMENT=dev and an XDG_DATA_HOME override
-    const prevEnv = process.env.VELLUM_ENVIRONMENT;
+    // GIVEN CADET_ENVIRONMENT=dev and an XDG_DATA_HOME override
+    const prevEnv = process.env.CADET_ENVIRONMENT;
     const prevXdg = process.env.XDG_DATA_HOME;
     const xdgDataHome = mkdtempSync(join(tmpdir(), "cli-xdg-data-"));
-    process.env.VELLUM_ENVIRONMENT = "dev";
+    process.env.CADET_ENVIRONMENT = "dev";
     process.env.XDG_DATA_HOME = xdgDataHome;
     try {
       // AND a legacy local entry with no resources
@@ -650,13 +650,13 @@ describe("env-scoped lockfile and migration", () => {
       expect(changed).toBe(true);
       const resources = entry.resources as Record<string, unknown>;
       expect(resources.instanceDir).toBe(
-        join(xdgDataHome, "vellum-dev", "assistants", "dev-bot"),
+        join(xdgDataHome, "cadet-dev", "assistants", "dev-bot"),
       );
     } finally {
       if (prevEnv !== undefined) {
-        process.env.VELLUM_ENVIRONMENT = prevEnv;
+        process.env.CADET_ENVIRONMENT = prevEnv;
       } else {
-        delete process.env.VELLUM_ENVIRONMENT;
+        delete process.env.CADET_ENVIRONMENT;
       }
       if (prevXdg !== undefined) {
         process.env.XDG_DATA_HOME = prevXdg;
@@ -667,18 +667,18 @@ describe("env-scoped lockfile and migration", () => {
     }
   });
 
-  test("readLockfile/writeLockfile use $XDG_CONFIG_HOME/vellum-<env>/lockfile.json in non-prod", () => {
+  test("readLockfile/writeLockfile use $XDG_CONFIG_HOME/cadet-<env>/lockfile.json in non-prod", () => {
     // The env package's xdgConfigHome() reads process.env.XDG_CONFIG_HOME
     // fresh on every call, so redirecting via that env var works without
-    // mocking `os`. We temporarily unset VELLUM_LOCKFILE_DIR so the env
+    // mocking `os`. We temporarily unset CADET_LOCKFILE_DIR so the env
     // package falls through to getConfigDir(env).
-    const prevEnv = process.env.VELLUM_ENVIRONMENT;
+    const prevEnv = process.env.CADET_ENVIRONMENT;
     const prevXdgConfig = process.env.XDG_CONFIG_HOME;
-    const prevLockDir = process.env.VELLUM_LOCKFILE_DIR;
+    const prevLockDir = process.env.CADET_LOCKFILE_DIR;
     const xdgConfigHome = mkdtempSync(join(tmpdir(), "cli-xdg-config-"));
-    process.env.VELLUM_ENVIRONMENT = "dev";
+    process.env.CADET_ENVIRONMENT = "dev";
     process.env.XDG_CONFIG_HOME = xdgConfigHome;
-    delete process.env.VELLUM_LOCKFILE_DIR;
+    delete process.env.CADET_LOCKFILE_DIR;
     try {
       // WHEN we save an assistant entry (which triggers writeLockfile)
       saveAssistantEntry({
@@ -688,7 +688,7 @@ describe("env-scoped lockfile and migration", () => {
       });
 
       // THEN the lockfile lives at the env-scoped XDG config path
-      const expectedPath = join(xdgConfigHome, "vellum-dev", "lockfile.json");
+      const expectedPath = join(xdgConfigHome, "cadet-dev", "lockfile.json");
       const raw = JSON.parse(readFileSync(expectedPath, "utf-8"));
       expect(raw.assistants).toHaveLength(1);
       expect(raw.assistants[0].assistantId).toBe("dev-env-bot");
@@ -699,9 +699,9 @@ describe("env-scoped lockfile and migration", () => {
       expect(all[0].assistantId).toBe("dev-env-bot");
     } finally {
       if (prevEnv !== undefined) {
-        process.env.VELLUM_ENVIRONMENT = prevEnv;
+        process.env.CADET_ENVIRONMENT = prevEnv;
       } else {
-        delete process.env.VELLUM_ENVIRONMENT;
+        delete process.env.CADET_ENVIRONMENT;
       }
       if (prevXdgConfig !== undefined) {
         process.env.XDG_CONFIG_HOME = prevXdgConfig;
@@ -709,24 +709,24 @@ describe("env-scoped lockfile and migration", () => {
         delete process.env.XDG_CONFIG_HOME;
       }
       if (prevLockDir !== undefined) {
-        process.env.VELLUM_LOCKFILE_DIR = prevLockDir;
+        process.env.CADET_LOCKFILE_DIR = prevLockDir;
       }
       rmSync(xdgConfigHome, { recursive: true, force: true });
     }
   });
 
-  test("production lockfile path is unchanged — uses .vellum.lock.json", () => {
-    // With VELLUM_ENVIRONMENT unset, the env package resolves production,
-    // whose canonical lockfile filename is `.vellum.lock.json`. This test
-    // uses the existing VELLUM_LOCKFILE_DIR=testDir override to route the
+  test("production lockfile path is unchanged — uses .cadet.lock.json", () => {
+    // With CADET_ENVIRONMENT unset, the env package resolves production,
+    // whose canonical lockfile filename is `.cadet.lock.json`. This test
+    // uses the existing CADET_LOCKFILE_DIR=testDir override to route the
     // lockfile to a scratch directory but verifies the FILENAME matches
     // the production convention (not the non-prod "lockfile.json").
-    const prevEnv = process.env.VELLUM_ENVIRONMENT;
-    delete process.env.VELLUM_ENVIRONMENT;
+    const prevEnv = process.env.CADET_ENVIRONMENT;
+    delete process.env.CADET_ENVIRONMENT;
     try {
       // Clear any existing lockfile from earlier tests
       try {
-        rmSync(join(testDir, ".vellum.lock.json"));
+        rmSync(join(testDir, ".cadet.lock.json"));
       } catch {
         // ignore
       }
@@ -737,15 +737,15 @@ describe("env-scoped lockfile and migration", () => {
         cloud: "local",
       });
 
-      // The file should land at testDir/.vellum.lock.json — the production
+      // The file should land at testDir/.cadet.lock.json — the production
       // filename — rather than testDir/lockfile.json.
-      const prodPath = join(testDir, ".vellum.lock.json");
+      const prodPath = join(testDir, ".cadet.lock.json");
       const raw = JSON.parse(readFileSync(prodPath, "utf-8"));
       expect(raw.assistants).toHaveLength(1);
       expect(raw.assistants[0].assistantId).toBe("prod-bot");
     } finally {
       if (prevEnv !== undefined) {
-        process.env.VELLUM_ENVIRONMENT = prevEnv;
+        process.env.CADET_ENVIRONMENT = prevEnv;
       }
     }
   });
@@ -758,15 +758,15 @@ describe("cross-environment hint on resolution failure", () => {
 
   beforeEach(() => {
     prevXdg = process.env.XDG_DATA_HOME;
-    prevEnv = process.env.VELLUM_ENVIRONMENT;
+    prevEnv = process.env.CADET_ENVIRONMENT;
     dataHome = mkdtempSync(join(tmpdir(), "cli-config-xdg-"));
     process.env.XDG_DATA_HOME = dataHome;
     // Pin the current env to production so the detector skips it and the hint
     // copy is deterministic. The current-env lockfile is emptied so resolution
     // genuinely finds nothing.
-    process.env.VELLUM_ENVIRONMENT = "production";
-    rmSync(join(testDir, ".vellum.lock.json"), { force: true });
-    rmSync(join(testDir, ".vellum.lockfile.json"), { force: true });
+    process.env.CADET_ENVIRONMENT = "production";
+    rmSync(join(testDir, ".cadet.lock.json"), { force: true });
+    rmSync(join(testDir, ".cadet.lockfile.json"), { force: true });
   });
 
   afterEach(() => {
@@ -776,9 +776,9 @@ describe("cross-environment hint on resolution failure", () => {
       process.env.XDG_DATA_HOME = prevXdg;
     }
     if (prevEnv === undefined) {
-      delete process.env.VELLUM_ENVIRONMENT;
+      delete process.env.CADET_ENVIRONMENT;
     } else {
-      process.env.VELLUM_ENVIRONMENT = prevEnv;
+      process.env.CADET_ENVIRONMENT = prevEnv;
     }
     rmSync(dataHome, { recursive: true, force: true });
   });
@@ -786,7 +786,7 @@ describe("cross-environment hint on resolution failure", () => {
   // A dev-env assistant lives under the dev data dir, invisible to this
   // production CLI — the exact split the hint explains.
   function seedDevAssistant(): void {
-    mkdirSync(join(dataHome, "vellum-dev", "assistants", "dev-bot"), {
+    mkdirSync(join(dataHome, "cadet-dev", "assistants", "dev-bot"), {
       recursive: true,
     });
   }
@@ -817,7 +817,7 @@ describe("cross-environment hint on resolution failure", () => {
     const msg = formatAssistantLookupError("ghost", { status: "not_found" });
     expect(msg).toContain("No assistant found with name or ID 'ghost'.");
     expect(msg).toContain("Install cadet Command");
-    expect(msg).toContain("VELLUM_ENVIRONMENT=dev");
+    expect(msg).toContain("CADET_ENVIRONMENT=dev");
   });
 
   test("formatAssistantLookupError stays bare when no other env has assistants", () => {

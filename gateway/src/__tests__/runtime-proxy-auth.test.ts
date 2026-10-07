@@ -26,10 +26,10 @@ const { createRuntimeProxyHandler } =
 const TEST_SIGNING_KEY = Buffer.from("test-signing-key-at-least-32-bytes-long");
 initSigningKey(TEST_SIGNING_KEY);
 
-/** Mint a valid edge JWT (aud=vellum-gateway) for test requests. */
+/** Mint a valid edge JWT (aud=cadet-gateway) for test requests. */
 function mintEdgeToken(): string {
   return mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub: "actor:test-assistant:test-user",
     scope_profile: "actor_client_v1",
     policy_epoch: CURRENT_POLICY_EPOCH,
@@ -134,7 +134,7 @@ describe("runtime proxy auth enforcement", () => {
 
     const upstreamAuth = capturedHeaders!.get("authorization");
     expect(upstreamAuth).toBeTruthy();
-    // The upstream should receive an exchange token (aud=vellum-daemon),
+    // The upstream should receive an exchange token (aud=cadet-daemon),
     // NOT the original edge token.
     expect(upstreamAuth).toStartWith("Bearer ");
     expect(upstreamAuth).not.toBe(`Bearer ${TOKEN}`);
@@ -177,7 +177,7 @@ const PROXY_GRANT_SUB = "local:self:oauth-proxy.stripe_link";
 
 function mintProxyGrant(): string {
   return mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub: PROXY_GRANT_SUB,
     scope_profile: "oauth_proxy_v1",
     policy_epoch: CURRENT_POLICY_EPOCH,
@@ -209,7 +209,7 @@ async function forwardedHeaders(
 function forwardedClaims(headers: Headers): TokenClaims {
   const auth = headers.get("authorization") ?? "";
   expect(auth).toStartWith("Bearer ");
-  const result = verifyToken(auth.slice(7), "vellum-daemon");
+  const result = verifyToken(auth.slice(7), "cadet-daemon");
   expect(result.ok).toBe(true);
   return (result as { ok: true; claims: TokenClaims }).claims;
 }
@@ -248,7 +248,7 @@ describe("runtime proxy without client-facing auth", () => {
 
   test("mints a service token for an expired grant", async () => {
     const expired = mintToken({
-      aud: "vellum-gateway",
+      aud: "cadet-gateway",
       sub: PROXY_GRANT_SUB,
       scope_profile: "oauth_proxy_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -306,7 +306,7 @@ const GOOGLE_PROXY_SUB = "local:self:oauth-proxy.google";
 
 function mintGoogleProxyGrant(): string {
   return mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub: GOOGLE_PROXY_SUB,
     scope_profile: "oauth_proxy_v1",
     policy_epoch: CURRENT_POLICY_EPOCH,

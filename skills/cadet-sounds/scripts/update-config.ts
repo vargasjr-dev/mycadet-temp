@@ -2,7 +2,7 @@
 /**
  * CLI for cadet-sounds skill: `bun run scripts/update-config.ts`
  *
- * Safely reads and writes $VELLUM_WORKSPACE_DIR/data/sounds/config.json,
+ * Safely reads and writes $CADET_WORKSPACE_DIR/data/sounds/config.json,
  * the configuration file consumed by the macOS app's SoundManager. Validates
  * inputs, creates the file with defaults if missing, and writes atomically.
  *
@@ -240,10 +240,10 @@ function parseArgs(argv: string[]): ParsedArgs {
 }
 
 function resolveSoundsDir(): string {
-  const workspace = process.env.VELLUM_WORKSPACE_DIR;
+  const workspace = process.env.CADET_WORKSPACE_DIR;
   if (!workspace) {
     fail(
-      "VELLUM_WORKSPACE_DIR is not set. This script must run inside the Vellum skill sandbox.",
+      "CADET_WORKSPACE_DIR is not set. This script must run inside the Cadet skill sandbox.",
     );
   }
   return join(workspace, "data", "sounds");

@@ -16,7 +16,7 @@ let workspaceDir: string;
 function freshWorkspace(): void {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-099-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-099-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 }
@@ -34,11 +34,11 @@ function readConfig(): Record<string, unknown> {
 
 beforeEach(() => {
   freshWorkspace();
-  delete process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
+  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
 });
 
 afterEach(() => {
-  delete process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
+  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
   if (existsSync(workspaceDir)) {
     rmSync(workspaceDir, { recursive: true, force: true });
   }

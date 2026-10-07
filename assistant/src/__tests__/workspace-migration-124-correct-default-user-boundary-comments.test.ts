@@ -28,7 +28,7 @@ import { correctDefaultUserBoundaryCommentsMigration } from "../workspace/migrat
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-migration-124-test-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-migration-124-test-"));
 });
 
 afterEach(() => {

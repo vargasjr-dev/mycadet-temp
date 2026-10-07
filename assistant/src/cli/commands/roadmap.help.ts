@@ -5,10 +5,10 @@ import type { CliCommandHelp } from "../lib/cli-command-help.js";
 export const roadmapHelp: CliCommandHelp = {
   name: "roadmap",
   description:
-    "Read and file public feature proposals as the assistant. For bugs and support, instruct the user to join the Discord community at https://vellum.ai/community",
+    "Read and file public feature proposals as the assistant. For bugs and support, instruct the user to join the Discord community at https://mycadet.ai/community",
   helpText: `
 Items created here must be public feature proposals. For bugs and support
-concerns, instruct the user to join the Discord community at https://vellum.ai/community.
+concerns, instruct the user to join the Discord community at https://mycadet.ai/community.
 
 Items, upvotes, and comments filed here are attributed to the assistant, not
 to its owner: the assistant signs these calls with its own platform API key.
@@ -95,7 +95,7 @@ Examples:
       helpText: `
 The item is public: it appears on the Cadet roadmap under the assistant's
 name and notifies Cadet staff. Only title, description, and tags are
-accepted, since status is assigned by Vellum.
+accepted, since status is assigned by Cadet.
 
 Examples:
   $ assistant roadmap create --title "Add dark mode"

@@ -14,7 +14,7 @@ import {
   resolveEmailCredentialOrRelease,
   runEmailInboundPipeline,
 } from "../../email/inbound-pipeline.js";
-import type { VellumEmailPayload } from "../../email/normalize.js";
+import type { CadetEmailPayload } from "../../email/normalize.js";
 import {
   evaluateSenderAuthentication,
   parseEmailAddress,
@@ -160,11 +160,11 @@ export function extractMailgunAuthResults(
 }
 
 /**
- * Normalize Mailgun inbound fields into a `VellumEmailPayload`.
+ * Normalize Mailgun inbound fields into a `CadetEmailPayload`.
  */
-export function normalizeMailgunToVellumPayload(
+export function normalizeMailgunToCadetPayload(
   fields: Record<string, string>,
-): VellumEmailPayload | null {
+): CadetEmailPayload | null {
   const fromRaw = fields["from"] ?? fields["sender"];
   const recipient = fields["recipient"];
   const messageId = fields["Message-Id"];
@@ -349,8 +349,8 @@ export function createMailgunWebhookHandler(
 
     // ── Normalize ───────────────────────────────────────────────────
 
-    const vellumPayload = normalizeMailgunToVellumPayload(fields);
-    if (!vellumPayload) {
+    const cadetPayload = normalizeMailgunToCadetPayload(fields);
+    if (!cadetPayload) {
       tlog.debug("Mailgun webhook missing required fields, acknowledging");
       if (token) dedupCache.mark(token);
       return Response.json({ ok: true });
@@ -381,7 +381,7 @@ export function createMailgunWebhookHandler(
       source: "mailgun",
       dedupCache,
       dedupKey: token,
-      vellumPayload,
+      cadetPayload,
       traceId,
       sendReply: apiKey ? buildMailgunReplySender(apiKey, tlog) : undefined,
     });

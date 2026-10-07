@@ -80,7 +80,7 @@
     "./status-icon": "./src/status-icon.ts",
     "./text-context-menu": "./src/text-context-menu.ts",
     "./tray-model": "./src/tray-model.ts",
-    "./vellumapp-protocol": "./src/vellumapp-protocol.ts",
+    "./cadetapp-protocol": "./src/cadetapp-protocol.ts",
     "./window-attention": "./src/window-attention.ts",
     "./window-readiness": "./src/window-readiness.ts",
     "./window-state": "./src/window-state.ts",

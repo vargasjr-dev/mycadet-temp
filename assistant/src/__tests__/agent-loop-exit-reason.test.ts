@@ -151,7 +151,7 @@ function fakeCompaction(
     manager.maybeCompact = (async () =>
       result) as unknown as typeof manager.maybeCompact;
   }
-  return { trust: { sourceChannel: "vellum", trustClass: "unknown" } };
+  return { trust: { sourceChannel: "cadet", trustClass: "unknown" } };
 }
 
 function lastExitEvent(
@@ -208,7 +208,7 @@ describe("AgentLoop exit-reason instrumentation", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(countExitEvents(events)).toBe(1);
@@ -231,7 +231,7 @@ describe("AgentLoop exit-reason instrumentation", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(events.length).toBeGreaterThan(0);
@@ -265,7 +265,7 @@ describe("AgentLoop exit-reason instrumentation", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(countExitEvents(events)).toBe(1);
@@ -290,7 +290,7 @@ describe("AgentLoop exit-reason instrumentation", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // The mock provider returns its content without streaming any text_delta
@@ -340,7 +340,7 @@ describe("AgentLoop exit-reason instrumentation", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(events.some((e) => e.type === "tool_use")).toBe(false);
@@ -368,7 +368,7 @@ describe("AgentLoop exit-reason instrumentation", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       signal: controller.signal,
     });
 
@@ -400,7 +400,7 @@ describe("AgentLoop exit-reason instrumentation", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(countExitEvents(events)).toBe(1);
@@ -431,7 +431,7 @@ describe("AgentLoop exit-reason instrumentation", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       onCheckpoint,
     });
 
@@ -459,7 +459,7 @@ describe("AgentLoop exit-reason instrumentation", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       modelProfileKey: "balanced",
       resolveContextWindow: () => ({
         maxInputTokens: 10,
@@ -543,7 +543,7 @@ describe("AgentLoop exit-reason instrumentation", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(countExitEvents(events)).toBe(1);
@@ -577,7 +577,7 @@ describe("AgentLoop exit-reason instrumentation", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(countExitEvents(events)).toBe(1);
@@ -609,7 +609,7 @@ describe("AgentLoop exit-reason instrumentation", () => {
       onEvent: (e) => {
         events.push(e);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       signal: controller.signal,
     });
 

@@ -140,7 +140,7 @@ beforeEach(() => {
   created.length = 0;
   createWindowMock.mockClear();
   appState.isPackaged = false;
-  delete process.env.VELLUM_DEV_URL;
+  delete process.env.CADET_DEV_URL;
 });
 
 afterEach(() => {
@@ -151,7 +151,7 @@ afterEach(() => {
 
 describe("createFloatingWindow", () => {
   test("creates floating panels with the shared defaults and deny-all navigation", () => {
-    process.env.VELLUM_DEV_URL = "http://localhost:4242/assistant/";
+    process.env.CADET_DEV_URL = "http://localhost:4242/assistant/";
 
     const win = createFloatingWindow({
       kind: kind("defaults"),
@@ -199,7 +199,7 @@ describe("createFloatingWindow", () => {
     }) as unknown as StubWindow;
 
     expect(win.loadURL.mock.calls[0]?.[0]).toBe(
-      "app://vellum.ai/assistant/command-palette",
+      "app://mycadet.ai/assistant/command-palette",
     );
   });
 

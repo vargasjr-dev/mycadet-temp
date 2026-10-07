@@ -5,7 +5,7 @@ import type { ChannelCapabilities } from "../daemon/conversation-runtime-assembl
  * email, a plugin channel) rather than the app itself.
  *
  * `resolveChannelCapabilities` folds every first-party client (macOS, web,
- * iOS, CLI, the HTTP API) onto the `vellum` channel, and a prompt built
+ * iOS, CLI, the HTTP API) onto the `cadet` channel, and a prompt built
  * outside a turn carries no capabilities at all, so those two cases are the
  * app and everything else is a channel the gateway delivers to over a reply
  * callback.
@@ -14,7 +14,7 @@ export function isExternalChannelTurn(
   capabilities: ChannelCapabilities | undefined,
 ): boolean {
   const channel = capabilities?.channel;
-  return channel !== undefined && channel !== "vellum";
+  return channel !== undefined && channel !== "cadet";
 }
 
 /** The two inputs the delegation section's gate reads. */

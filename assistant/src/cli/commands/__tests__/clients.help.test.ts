@@ -30,6 +30,6 @@ describe("clients help capability matrix", () => {
   });
 
   test("points at the canonical downloads page", () => {
-    expect(helpText).toContain("https://www.vellum.ai/downloads");
+    expect(helpText).toContain("https://mycadet.ai/downloads");
   });
 });

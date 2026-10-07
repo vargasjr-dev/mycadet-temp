@@ -401,7 +401,7 @@ describe("normalizeTelegramUpdate — malformed input is validated, not trusted"
   });
 });
 
-const BOT = { userId: "123456789", username: "Vellum_Bot" };
+const BOT = { userId: "123456789", username: "Cadet_Bot" };
 const GROUP_CHAT = { id: -1001234567890, type: "supergroup" };
 
 function makeGroupMessage(overrides: Record<string, unknown> = {}) {
@@ -422,7 +422,7 @@ describe("normalizeTelegramUpdate: rooms", () => {
     const result = eventOf(
       normalizeTelegramUpdate(
         makeGroupMessage({
-          text: "@vellum_bot what is the plan",
+          text: "@cadet_bot what is the plan",
           entities: [{ type: "mention", offset: 0, length: 11 }],
         }),
         { bot: BOT },
@@ -449,7 +449,7 @@ describe("normalizeTelegramUpdate: rooms", () => {
     const result = eventOf(
       normalizeTelegramUpdate(
         makeGroupMessage({
-          text: "/summary@Vellum_Bot last week",
+          text: "/summary@Cadet_Bot last week",
           entities: [{ type: "bot_command", offset: 0, length: 19 }],
         }),
         { bot: BOT },
@@ -464,7 +464,7 @@ describe("normalizeTelegramUpdate: rooms", () => {
     const result = eventOf(
       normalizeTelegramUpdate(
         makeGroupMessage({
-          text: "/stats@other_bot cc @vellum_bot",
+          text: "/stats@other_bot cc @cadet_bot",
           entities: [
             { type: "bot_command", offset: 0, length: 16 },
             { type: "mention", offset: 20, length: 11 },
@@ -473,14 +473,14 @@ describe("normalizeTelegramUpdate: rooms", () => {
         { bot: BOT },
       ),
     );
-    expect(result.message.content).toBe("/stats@other_bot cc @vellum_bot");
+    expect(result.message.content).toBe("/stats@other_bot cc @cadet_bot");
   });
 
   it("a mention inside a photo caption counts", () => {
     const result = normalizeTelegramUpdate(
       makeGroupMessage({
         text: undefined,
-        caption: "look @vellum_bot",
+        caption: "look @cadet_bot",
         caption_entities: [{ type: "mention", offset: 5, length: 11 }],
         photo: [{ file_id: "p1", file_unique_id: "u1", width: 1, height: 1 }],
       }),
@@ -526,7 +526,7 @@ describe("normalizeTelegramUpdate: rooms", () => {
     const result = eventOf(
       normalizeTelegramUpdate(
         makeGroupMessage({
-          text: "@vellum_bot hi",
+          text: "@cadet_bot hi",
           entities: [{ type: "mention", offset: 0, length: 11 }],
           message_thread_id: 555,
           is_topic_message: true,
@@ -543,7 +543,7 @@ describe("normalizeTelegramUpdate: rooms", () => {
     const result = eventOf(
       normalizeTelegramUpdate(
         makeGroupMessage({
-          text: "@vellum_bot hi",
+          text: "@cadet_bot hi",
           entities: [{ type: "mention", offset: 0, length: 11 }],
           message_thread_id: 12,
         }),

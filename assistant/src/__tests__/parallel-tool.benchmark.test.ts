@@ -141,7 +141,7 @@ describe("Parallel tool execution benchmarks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
     const elapsed = Date.now() - start;
 
@@ -190,7 +190,7 @@ describe("Parallel tool execution benchmarks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
     const elapsed = Date.now() - start;
 
@@ -252,7 +252,7 @@ describe("Parallel tool execution benchmarks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
     const elapsed = Date.now() - start;
 
@@ -326,7 +326,7 @@ describe("Parallel tool execution benchmarks", () => {
         requestId: "test-request",
         messages: [userMessage],
         onEvent: () => {},
-        trust: { sourceChannel: "vellum", trustClass: "unknown" },
+        trust: { sourceChannel: "cadet", trustClass: "unknown" },
         signal: controller.signal,
       });
       const elapsed = Date.now() - start;

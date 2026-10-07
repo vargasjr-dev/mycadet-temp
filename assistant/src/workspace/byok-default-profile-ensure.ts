@@ -33,7 +33,7 @@ const log = getLogger("byok-default-profile-ensure");
 // repointed at the bare key. A `custom-*` copy the user edited is kept
 // untouched as an ordinary user profile, references included.
 //
-// The pass also runs on installs whose default provider is now `vellum`
+// The pass also runs on installs whose default provider is now `cadet`
 // (hatched BYOK, later platform-connected): the copy is compared against
 // the provider recorded in its own body, with corroboration that the
 // provider is hatch provenance and not a user re-provision (see
@@ -304,7 +304,7 @@ export function ensureByokDefaultProfiles(workspaceDir: string): void {
   const completionBase = LLMConfigBase.safeParse(llm.default ?? {}).data;
 
   // The default provider on a BYOK default, or the uniform hatch provider
-  // across the complete copy set on a routing-identity default (vellum,
+  // across the complete copy set on a routing-identity default (cadet,
   // chatgpt); null converts nothing.
   const candidateProvider = ROUTING_IDENTITY_PROVIDERS.has(
     parsedDefault.data.provider,
@@ -439,7 +439,7 @@ function isKnownUneditedBody(
 
 /**
  * One hatch wrote all three copies from one provider, so only the complete
- * uniform set corroborates hatch provenance for a vellum default. An
+ * uniform set corroborates hatch provenance for a cadet default. An
  * absent copy means the user curated the set, and a lone surviving copy
  * would otherwise count as trivially uniform and retire even when
  * re-provisioned; both return null and keep everything.

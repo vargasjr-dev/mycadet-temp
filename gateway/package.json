@@ -1,5 +1,5 @@
 {
-  "name": "@mycadet/vellum-gateway",
+  "name": "@mycadet/cadet-gateway",
   "version": "0.12.6",
   "license": "MIT",
   "type": "module",

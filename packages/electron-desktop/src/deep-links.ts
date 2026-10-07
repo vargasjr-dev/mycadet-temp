@@ -10,9 +10,9 @@ import { capabilityToken } from "./capability-registry";
 import type { IpcHandle, IpcOn } from "./ipc";
 
 /**
- * Inbound deep links — `vellum://` and `vellum-assistant://` URL
- * schemes. The OS routes any user click on a `vellum://send?message=hi`
- * link (Mail, Slack, browser address bar, `open vellum://...` shell
+ * Inbound deep links — `mycadet://` and `mycadet://` URL
+ * schemes. The OS routes any user click on a `mycadet://send?message=hi`
+ * link (Mail, Slack, browser address bar, `open mycadet://...` shell
  * command) to the running Electron app, where we parse it into a
  * typed `DeepLink` and broadcast to the renderer.
  *
@@ -75,7 +75,7 @@ export const configureDeepLinks = (next: DeepLinkRuntime): void => {
   runtime = next;
 };
 
-const PRODUCTION_SCHEME = "vellum-assistant";
+const PRODUCTION_SCHEME = "mycadet";
 
 export function resolveAuthCallbackScheme(env: string): string {
   return env === "production"
@@ -84,20 +84,20 @@ export function resolveAuthCallbackScheme(env: string): string {
 }
 
 // Schemes to REGISTER with the OS via `app.setAsDefaultProtocolClient`.
-// Production claims both `cadet` and `vellum-assistant`; non-production
+// Production claims both `cadet` and `mycadet`; non-production
 // claims only the env-specific scheme to avoid hijacking production.
 export function resolveRegisteredSchemes(env: string): string[] {
   if (env === "production") {
-    return ["vellum", PRODUCTION_SCHEME];
+    return ["cadet", PRODUCTION_SCHEME];
   }
   return [resolveAuthCallbackScheme(env)];
 }
 
 // Schemes to ACCEPT when parsing inbound URLs. Superset of registered
-// schemes — always includes `vellum:` and `vellum-assistant:` so URLs
+// schemes — always includes `cadet:` and `mycadet:` so URLs
 // routed to this build still parse correctly.
 export function resolveAcceptedSchemes(env: string): string[] {
-  const accepted = new Set(["vellum:", `${PRODUCTION_SCHEME}:`]);
+  const accepted = new Set(["cadet:", `${PRODUCTION_SCHEME}:`]);
   if (env !== "production") {
     accepted.add(`${resolveAuthCallbackScheme(env)}:`);
   }
@@ -125,18 +125,18 @@ const ACCEPTED_SCHEMES = resolveAcceptedSchemes(currentEnv);
  *
  * Rules:
  *
- *   - Scheme MUST be in the accepted set (`vellum:`, `vellum-assistant:`,
- *     plus the env-specific scheme like `vellum-assistant-dev:`).
+ *   - Scheme MUST be in the accepted set (`cadet:`, `mycadet:`,
+ *     plus the env-specific scheme like `mycadet-dev:`).
  *     Anything else (`javascript:`, `data:`, `file:`, foreign customs)
  *     is rejected as `kind: "unknown"` — the renderer additionally
  *     defensively validates before dispatching.
- *   - `vellum://send?message=…` → `{ kind: "send", message }`. Empty
+ *   - `mycadet://send?message=…` → `{ kind: "send", message }`. Empty
  *     `message` is preserved (renderer can decide to open an empty
  *     composer).
- *   - `vellum://thread/<id>` → `{ kind: "openThread", threadId }`.
+ *   - `mycadet://thread/<id>` → `{ kind: "openThread", threadId }`.
  *     Trailing slashes / extra path segments are tolerated;
  *     `threadId` is the first non-empty path segment.
- *   - `vellum://connect?url=…&code=…` → `{ kind: "connect", … }`.
+ *   - `mycadet://connect?url=…&code=…` → `{ kind: "connect", … }`.
  *     The pair page's "Open in the Cadet app" button and
  *     `cadet pair --app` QR codes. `url` must parse as https
  *     (dropped otherwise); `code` (the device code) is opaque, so it
@@ -152,7 +152,7 @@ const ACCEPTED_SCHEMES = resolveAcceptedSchemes(currentEnv);
  *     the renderer routes them to the connect flow with guidance.
  *     `code` is credential material: never logged, and never echoed
  *     on an `unknown` URL (which the renderer logs).
- *   - `vellum://billing/checkout-complete?status=…&session_id=…` →
+ *   - `mycadet://billing/checkout-complete?status=…&session_id=…` →
  *     `{ kind: "billingCheckoutComplete", status, sessionId, flow }`.
  *     The platform bounces a native-initiated Stripe Checkout here
  *     once the user finishes in the system browser. `status=success`
@@ -164,7 +164,7 @@ const ACCEPTED_SCHEMES = resolveAcceptedSchemes(currentEnv);
  *   - Malformed URL (unparseable, percent-encoding throws) →
  *     `kind: "unknown"`.
  */
-export const parseVellumUrl = (input: string): DeepLink => {
+export const parseCadetUrl = (input: string): DeepLink => {
   let url: URL;
   try {
     url = new URL(input);
@@ -321,7 +321,7 @@ const broadcast = (link: DeepLink): void => {
  * on an already-visible main window.
  */
 export const handleDeepLink = (input: string): void => {
-  const link = parseVellumUrl(input);
+  const link = parseCadetUrl(input);
 
   if (subscribers.size === 0) {
     pending.push(link);
@@ -354,7 +354,7 @@ export const installDeepLinks = (): void => {
 
   // Dynamic registration — only claim the schemes this build owns.
   // Non-production builds register only their env-specific scheme
-  // (e.g. `vellum-assistant-dev`) to avoid hijacking production
+  // (e.g. `mycadet-dev`) to avoid hijacking production
   // callbacks when both apps coexist.
   for (const scheme of REGISTERED_SCHEMES) {
     if (process.platform === "win32" && !app.isPackaged && process.argv[1]) {

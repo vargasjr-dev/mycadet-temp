@@ -124,7 +124,7 @@ export const ROUTES: RouteDefinition[] = [
     handler: handleGetDefaultProvider,
     summary: "Get the default provider and its availability",
     description:
-      "Returns `llm.defaultProvider`, the connection name it resolves to, and whether that connection is currently usable (connection exists, credential stored, Vellum authenticated). Availability is informational — a broken default is a valid persisted state that surfaces explainable errors at resolution time.",
+      "Returns `llm.defaultProvider`, the connection name it resolves to, and whether that connection is currently usable (connection exists, credential stored, Cadet authenticated). Availability is informational — a broken default is a valid persisted state that surfaces explainable errors at resolution time.",
     tags: ["config"],
     responseBody: defaultProviderStatusSchema,
   },

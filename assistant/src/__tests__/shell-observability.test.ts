@@ -104,7 +104,7 @@ mock.module("../tools/background-tool-registry.js", () => ({
 let shellTool: (typeof import("../tools/terminal/shell.js"))["shellTool"];
 
 const baseContext = {
-  workingDir: process.env.VELLUM_WORKSPACE_DIR ?? "/tmp",
+  workingDir: process.env.CADET_WORKSPACE_DIR ?? "/tmp",
   conversationId: "conv-obs-test",
   trustClass: "guardian" as const,
   onOutput: () => {},

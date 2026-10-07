@@ -35,7 +35,7 @@ import * as metadataStore from "../tools/credentials/metadata-store.js";
 
 const TEST_DIR = join(
   tmpdir(),
-  `vellum-plugin-resolvecred-${randomBytes(4).toString("hex")}`,
+  `cadet-plugin-resolvecred-${randomBytes(4).toString("hex")}`,
 );
 const META_PATH = join(TEST_DIR, "metadata.json");
 
@@ -152,7 +152,7 @@ describe("resolveCredential", () => {
       ).resolves.toBe("proj-id");
     });
 
-    test("scopes resolution from VELLUM_PLUGIN_NAME when ALS is empty", async () => {
+    test("scopes resolution from CADET_PLUGIN_NAME when ALS is empty", async () => {
       seedCredential("sms", "account_sid", "sid-secret");
       process.env[PLUGIN_NAME_ENV] = "sms";
       await expect(resolveCredential("sms/account_sid")).resolves.toBe(
@@ -160,7 +160,7 @@ describe("resolveCredential", () => {
       );
     });
 
-    test("blocks another service when identity comes from VELLUM_PLUGIN_NAME", async () => {
+    test("blocks another service when identity comes from CADET_PLUGIN_NAME", async () => {
       seedCredential("openai", "api_key", "sk-secret");
       process.env[PLUGIN_NAME_ENV] = "sms";
       await expect(resolveCredential("openai/api_key")).rejects.toThrow(

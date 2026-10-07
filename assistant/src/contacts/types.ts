@@ -4,9 +4,9 @@ export type ContactRole = "guardian" | "contact";
 
 export type ContactType = "human" | "assistant";
 
-export type AssistantSpecies = "vellum" | "openclaw";
+export type AssistantSpecies = "cadet" | "openclaw";
 
-export interface VellumAssistantMetadata {
+export interface CadetAssistantMetadata {
   assistantId: string;
   gatewayUrl: string;
 }
@@ -18,8 +18,8 @@ export interface OpenClawAssistantMetadata {
 export type AssistantContactMetadata =
   | {
       contactId: string;
-      species: "vellum";
-      metadata: VellumAssistantMetadata | null;
+      species: "cadet";
+      metadata: CadetAssistantMetadata | null;
     }
   | {
       contactId: string;
@@ -74,5 +74,5 @@ export type ChannelType =
   | "phone"
   | "telegram"
   | "discord"
-  | "vellum-shared"
+  | "cadet-shared"
   | "other";

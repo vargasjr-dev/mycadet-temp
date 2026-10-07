@@ -1,13 +1,13 @@
 /**
  * Parse a plugin's prebuilt client-artifact descriptor from its
- * `package.json` `vellum.artifact` block.
+ * `package.json` `cadet.artifact` block.
  *
  * Some plugins ship a native companion the assistant cannot build itself —
  * e.g. a macOS app whose Swift toolchain is absent from the Linux container
  * the daemon runs in. Those plugins publish a prebuilt, author-signed binary
  * out-of-band (a GitHub Release) and point at it from their manifest:
  *
- *     "vellum": {
+ *     "cadet": {
  *       "artifact": {
  *         "url": "https://github.com/owner/repo/releases/download/v1.0.0/App.dmg",
  *         "sha256": "<64-hex>",
@@ -76,7 +76,7 @@ const PluginArtifactSchema = z
     label ? { ...artifact, label } : artifact,
   );
 
-/** Upper bound on `vellum.icon`, in Unicode code points. */
+/** Upper bound on `cadet.icon`, in Unicode code points. */
 const MAX_ICON_CODE_POINTS = 16;
 
 const PluginIconSchema = z
@@ -109,7 +109,7 @@ export const PluginPackageJsonSchema = z
       .record(z.string(), z.string())
       .optional()
       .catch(undefined),
-    vellum: z
+    cadet: z
       .object({
         artifact: PluginArtifactSchema.optional().catch(undefined),
         icon: PluginIconSchema.optional().catch(undefined),
@@ -117,14 +117,14 @@ export const PluginPackageJsonSchema = z
       .optional()
       .catch(undefined),
   })
-  .transform(({ vellum, ...packageJson }) => ({
+  .transform(({ cadet, ...packageJson }) => ({
     ...packageJson,
-    artifact: vellum?.artifact,
-    icon: vellum?.icon,
+    artifact: cadet?.artifact,
+    icon: cadet?.icon,
   }));
 
 /**
- * Read `vellum.artifact` from an already-parsed `package.json` value and
+ * Read `cadet.artifact` from an already-parsed `package.json` value and
  * return it only when it is a complete, well-formed descriptor. Any shape
  * problem — missing block, wrong types, non-https URL, placeholder/empty
  * `sha256` — yields `null` rather than throwing, so callers can union this
@@ -138,7 +138,7 @@ export function parsePluginArtifact(
 }
 
 /**
- * Read `vellum.icon` from an already-parsed `package.json` value and return
+ * Read `cadet.icon` from an already-parsed `package.json` value and return
  * it only when it is a short, non-empty glyph (an emoji or similar). The
  * value is trimmed and bounded to {@link MAX_ICON_CODE_POINTS} code points so
  * it can never carry markup or a URL. Any other shape — missing block, wrong

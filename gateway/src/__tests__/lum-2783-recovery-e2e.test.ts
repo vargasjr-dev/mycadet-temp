@@ -9,7 +9,7 @@
  *
  *   1. the canonical classifier `resolveTrustVerdict` BEFORE recovery, to
  *      confirm the reported symptom (`trust_class: unknown`), then
- *   2. the boot backfill `ensureVellumGuardianBinding({ recoverFromActorTokens })`
+ *   2. the boot backfill `ensureCadetGuardianBinding({ recoverFromActorTokens })`
  *      that runs post-assistant-ready, then
  *   3. `resolveTrustVerdict` AGAIN, to confirm a new cadet turn now classifies
  *      the guardian and carries a real canonical identity.
@@ -24,8 +24,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import "./test-preload.js";
 
 import {
-  ensureVellumGuardianBinding,
-  VellumGuardianMintRefusedError,
+  ensureCadetGuardianBinding,
+  CadetGuardianMintRefusedError,
 } from "../auth/guardian-bootstrap.js";
 import { bustGuardianIntegrityCache } from "../auth/guardian-integrity.js";
 import { initSigningKey } from "../auth/token-service.js";
@@ -43,7 +43,7 @@ import { resolveTrustVerdict } from "../risk/trust-verdict-resolver.js";
 
 initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
 
-const PRINCIPAL = "vellum-principal-0aafaf2";
+const PRINCIPAL = "cadet-principal-0aafaf2";
 
 function seedActiveActorToken(guardianPrincipalId: string): void {
   const now = Date.now();
@@ -63,11 +63,11 @@ function seedActiveActorToken(guardianPrincipalId: string): void {
     .run();
 }
 
-async function vellumVerdictFor(principal: string) {
+async function cadetVerdictFor(principal: string) {
   // A fresh classification, as a new thread would trigger.
   bustGuardianIntegrityCache();
   return resolveTrustVerdict({
-    channelType: "vellum",
+    channelType: "cadet",
     actorExternalId: principal,
   });
 }
@@ -99,17 +99,17 @@ describe("LUM-2783 end-to-end: broken state → boot recovery → trust resolves
     seedActiveActorToken(PRINCIPAL);
 
     // The reported symptom, straight from the canonical classifier.
-    const before = await vellumVerdictFor(PRINCIPAL);
+    const before = await cadetVerdictFor(PRINCIPAL);
     expect(before.trustClass).toBe("unknown");
 
     // Boot backfill (post-assistant-ready) self-heals from the token.
-    const recovered = await ensureVellumGuardianBinding({
+    const recovered = await ensureCadetGuardianBinding({
       recoverFromActorTokens: true,
     });
     expect(recovered).toBe(PRINCIPAL);
 
     // A new thread now classifies the guardian with a real canonical identity.
-    const after = await vellumVerdictFor(PRINCIPAL);
+    const after = await cadetVerdictFor(PRINCIPAL);
     expect(after.trustClass).toBe("guardian");
     expect(after.canonicalSenderId).toBe(PRINCIPAL); // no longer `unknown`
   });
@@ -134,7 +134,7 @@ describe("LUM-2783 end-to-end: broken state → boot recovery → trust resolves
       .values({
         id: "stub-channel",
         contactId: "stub-contact",
-        type: "vellum",
+        type: "cadet",
         address: "stub-addr",
         isPrimary: true,
         status: "unverified",
@@ -146,14 +146,14 @@ describe("LUM-2783 end-to-end: broken state → boot recovery → trust resolves
       .run();
     seedActiveActorToken(PRINCIPAL);
 
-    expect((await vellumVerdictFor(PRINCIPAL)).trustClass).toBe("unknown");
+    expect((await cadetVerdictFor(PRINCIPAL)).trustClass).toBe("unknown");
 
-    const recovered = await ensureVellumGuardianBinding({
+    const recovered = await ensureCadetGuardianBinding({
       recoverFromActorTokens: true,
     });
     expect(recovered).toBe(PRINCIPAL);
 
-    const after = await vellumVerdictFor(PRINCIPAL);
+    const after = await cadetVerdictFor(PRINCIPAL);
     expect(after.trustClass).toBe("guardian");
     expect(after.canonicalSenderId).toBe(PRINCIPAL);
   });
@@ -179,10 +179,10 @@ describe("LUM-2783 end-to-end: broken state → boot recovery → trust resolves
       .run();
 
     await expect(
-      ensureVellumGuardianBinding({ recoverFromActorTokens: true }),
-    ).rejects.toBeInstanceOf(VellumGuardianMintRefusedError);
+      ensureCadetGuardianBinding({ recoverFromActorTokens: true }),
+    ).rejects.toBeInstanceOf(CadetGuardianMintRefusedError);
 
-    const after = await vellumVerdictFor(PRINCIPAL);
+    const after = await cadetVerdictFor(PRINCIPAL);
     expect(after.trustClass).toBe("unknown");
     // No guardian was fabricated.
     expect(getGatewayDb().select().from(contacts).all()).toHaveLength(0);

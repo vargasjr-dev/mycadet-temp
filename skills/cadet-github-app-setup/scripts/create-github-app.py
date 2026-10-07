@@ -30,7 +30,7 @@ import time
 import socket
 
 parser = argparse.ArgumentParser(description="Create a GitHub App via the manifest flow")
-parser.add_argument("--org", required=True, help="GitHub org to create the app under (e.g. vellum-ai)")
+parser.add_argument("--org", required=True, help="GitHub org to create the app under (e.g. cadet-ai)")
 parser.add_argument("--name", required=True, help="App name (e.g. Credence)")
 parser.add_argument("--description", default="AI assistant bot", help="App description")
 parser.add_argument("--url", default="https://github.com", help="Homepage URL for the app")

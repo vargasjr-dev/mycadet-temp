@@ -271,7 +271,7 @@ function formatDiskPressureBlockedMessage(): string {
  * to a custom plugin reading `ctx.trust`.
  */
 const FALLBACK_TURN_TRUST: TrustContext = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "unknown",
 };
 
@@ -916,14 +916,14 @@ export async function runAgentLoopImpl(
       return { userMessageChannel: origin, assistantMessageChannel: origin };
     }
     return {
-      userMessageChannel: "vellum" as ChannelId,
-      assistantMessageChannel: "vellum" as ChannelId,
+      userMessageChannel: "cadet" as ChannelId,
+      assistantMessageChannel: "cadet" as ChannelId,
     };
   })();
 
   // Capture interface context with the same anti-race snapshot pattern.
   // Interface and channel are orthogonal dimensions, so when interface
-  // context is missing we default explicitly to 'vellum' instead of
+  // context is missing we default explicitly to 'cadet' instead of
   // deriving from channel.
   const capturedTurnInterfaceContext: TurnInterfaceContext = (() => {
     const live = ctx.getTurnInterfaceContext();

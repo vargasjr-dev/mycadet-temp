@@ -107,8 +107,8 @@ mock.module("../../../../persistence/db-maintenance.js", () => ({
 const tmpWorkspace = mkdtempSync(
   join(tmpdir(), "jobs-worker-v1-graph-substrate-noop-"),
 );
-const previousWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-process.env.VELLUM_WORKSPACE_DIR = tmpWorkspace;
+const previousWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+process.env.CADET_WORKSPACE_DIR = tmpWorkspace;
 
 const { setConfig } =
   await import("../../../../__tests__/helpers/set-config.js");
@@ -201,9 +201,9 @@ describe("v1 graph jobs under concept-page memory", () => {
 
   afterAll(() => {
     if (previousWorkspaceEnv === undefined) {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     } else {
-      process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceEnv;
+      process.env.CADET_WORKSPACE_DIR = previousWorkspaceEnv;
     }
     assertNotLiveDb(tmpWorkspace);
     rmSync(tmpWorkspace, { recursive: true, force: true });

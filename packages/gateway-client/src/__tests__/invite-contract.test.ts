@@ -106,7 +106,7 @@ describe("invite-code channel gating", () => {
     for (const channel of ["telegram", "whatsapp", "slack", "email"]) {
       expect(isInviteCodeRedemptionEnabled(channel)).toBe(true);
     }
-    for (const channel of ["vellum", "platform", "phone", "a2a", "nope"]) {
+    for (const channel of ["cadet", "platform", "phone", "a2a", "nope"]) {
       expect(isInviteCodeRedemptionEnabled(channel)).toBe(false);
     }
   });

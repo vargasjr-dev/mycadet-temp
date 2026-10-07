@@ -71,7 +71,7 @@ jobs:
         working-directory: clients/windows
     env:
       ELECTRON_TARGET_ARCH: ${{ matrix.arch }}
-      VELLUM_ENVIRONMENT: ${{ inputs.environment }}
+      CADET_ENVIRONMENT: ${{ inputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -143,7 +143,7 @@ jobs:
             !clients/windows/.build-tools/vcpkg/*/buildtrees
             !clients/windows/.build-tools/vcpkg/*/packages
             ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          key: windows-vcpkg-v1-${{ runner.os }}-${{ matrix.runner }}-${{ runner.arch }}-${{ matrix.arch }}-${{ steps.msbuild.outputs.image-version }}-${{ hashFiles('clients/windows/native/Vellum.PreviewHandler/vcpkg.json', 'clients/windows/scripts/build-preview-handler.ts') }}
+          key: windows-vcpkg-v1-${{ runner.os }}-${{ matrix.runner }}-${{ runner.arch }}-${{ matrix.arch }}-${{ steps.msbuild.outputs.image-version }}-${{ hashFiles('clients/windows/native/Cadet.PreviewHandler/vcpkg.json', 'clients/windows/scripts/build-preview-handler.ts') }}
 
       - name: Build preview handler
         env:
@@ -166,8 +166,8 @@ jobs:
             package.json \
             resources/cli-runtime \
             "resources/native-helper/$ELECTRON_TARGET_ARCH" \
-            native/Vellum.PreviewHandler/build/*/Release/Vellum.PreviewHandler.dll \
-            native/Vellum.PreviewHandler/build/*/Release/registration.json
+            native/Cadet.PreviewHandler/build/*/Release/Cadet.PreviewHandler.dll \
+            native/Cadet.PreviewHandler/build/*/Release/registration.json
 
       - name: Upload native payload
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -195,7 +195,7 @@ jobs:
         working-directory: clients/windows
     env:
       ELECTRON_TARGET_ARCH: ${{ matrix.arch }}
-      VELLUM_ENVIRONMENT: ${{ inputs.environment }}
+      CADET_ENVIRONMENT: ${{ inputs.environment }}
       WINDOWS_SIGNING_PUBLISHER_NAME: Vocify Inc.
     steps:
       - name: Checkout
@@ -230,8 +230,8 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_TRUSTED_SIGNING_ENDPOINT: https://cus.codesigning.azure.net/
-          AZURE_TRUSTED_SIGNING_ACCOUNT: vellum-assistant
-          AZURE_TRUSTED_SIGNING_PROFILE: vellum-assistant
+          AZURE_TRUSTED_SIGNING_ACCOUNT: mycadet
+          AZURE_TRUSTED_SIGNING_PROFILE: mycadet
         run: bunx electron-builder --win --config electron-builder.config.cjs --publish never
 
       - name: Verify signatures

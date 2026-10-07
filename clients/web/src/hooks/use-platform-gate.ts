@@ -85,13 +85,13 @@ export interface PlatformGateOptions {
    * | none resolved (loading etc) | yes              | `"full"`     |
    * | none resolved               | no               | `"disabled"` |
    *
-   * `VELLUM_DISABLE_PLATFORM` does NOT apply to this branch — that
+   * `CADET_DISABLE_PLATFORM` does NOT apply to this branch — that
    * env var gates daemon-side platform-API interception in local mode,
    * which is orthogonal to whether the active assistant is
    * platform-hosted.
    *
    * Defaults to `false` — the standard `"full" / "disabled" / "gated"`
-   * behavior gated on `VELLUM_DISABLE_PLATFORM` and the platform
+   * behavior gated on `CADET_DISABLE_PLATFORM` and the platform
    * session.
    */
   platformHostedOnly?: boolean;
@@ -221,12 +221,12 @@ export function useActiveAssistantLifecycleIsLoading(): boolean {
  *
  *   - **Default** (most surfaces): gate on whether the app can reach the
  *     platform at all. `"gated"` only when the app is in local mode AND
- *     `VELLUM_DISABLE_PLATFORM` is set (the platform API is turned off);
+ *     `CADET_DISABLE_PLATFORM` is set (the platform API is turned off);
  *     otherwise the platform session decides:
  *
  *     | App mode                          | Platform session | Result       |
  *     | --------------------------------- | ---------------- | ------------ |
- *     | local + `VELLUM_DISABLE_PLATFORM` | any              | `"gated"`    |
+ *     | local + `CADET_DISABLE_PLATFORM` | any              | `"gated"`    |
  *     | otherwise                         | no               | `"disabled"` |
  *     | otherwise                         | yes              | `"full"`     |
  *
@@ -305,7 +305,7 @@ function usePlatformGateDecision(
 
   // Platform-hosted-only branch is fully self-contained: it only depends
   // on the active assistant's hosting and the platform session. The
-  // VELLUM_DISABLE_PLATFORM env var does NOT apply — it gates the
+  // CADET_DISABLE_PLATFORM env var does NOT apply — it gates the
   // daemon-side API interceptor in local mode, which is orthogonal to
   // "is this UI's target assistant platform-hosted?"
   if (options.platformHostedOnly) {

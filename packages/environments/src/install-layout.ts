@@ -1,5 +1,5 @@
 /**
- * Reading the layout a Vellum runtime is installed in.
+ * Reading the layout a Cadet runtime is installed in.
  *
  * The daemon is started either from a developer's repo checkout or from an
  * installed npm package (`<install>/node_modules/@mycadet/assistant/src/

@@ -56,14 +56,14 @@ describe("isValidReleaseVersion", () => {
       "npm:@attacker/evil@1.0.0",
       "https://evil.example/x.tgz",
       "git+https://evil.example/x.git",
-      "github:attacker/vellum",
+      "github:attacker/cadet",
       "file:/tmp/evil",
       "../../../../tmp/evil",
       "1.2.3-..", // no consecutive dots (would be a traversal segment)
       "1.2.3-a..b",
       "..",
       "",
-      "vellum@1.2.3",
+      "cadet@1.2.3",
     ]) {
       expect(isValidReleaseVersion(version)).toBe(false);
     }

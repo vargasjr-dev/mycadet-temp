@@ -6,11 +6,11 @@ import { resolveRemoteWebPairingPlatform } from "@mycadet/service-contracts/remo
 
 import type { RefreshableTokenPair } from "../../auth/guardian-bootstrap.js";
 import {
-  ensureVellumGuardianBinding,
+  ensureCadetGuardianBinding,
   getExternalAssistantId,
   mintAndRecordBrowserTokenPair,
   mintAndRecordDeviceBoundTokenPair,
-  VellumGuardianMintRefusedError,
+  CadetGuardianMintRefusedError,
 } from "../../auth/guardian-bootstrap.js";
 import {
   claimRemoteWebPairingChallengeExchange,
@@ -113,7 +113,7 @@ export async function handleRemoteWebPairingToken(
   // token in the body, so there is no cookie to scope.
   let refreshCookiePath: string | undefined;
   try {
-    guardianPrincipalId = await ensureVellumGuardianBinding();
+    guardianPrincipalId = await ensureCadetGuardianBinding();
     if (deviceBound) {
       pair = mintAndRecordDeviceBoundTokenPair({
         guardianPrincipalId,
@@ -136,7 +136,7 @@ export async function handleRemoteWebPairingToken(
     // Release so the approved code stays exchangeable after the failure is
     // repaired (mint refusal) or retried (transient DB error).
     releaseRemoteWebPairingChallengeExchange(deviceCode);
-    if (err instanceof VellumGuardianMintRefusedError) {
+    if (err instanceof CadetGuardianMintRefusedError) {
       // Guardian rows lost but the DB shows prior onboarding: minting here
       // would diverge from prior clients' tokens. Fail closed with an
       // explicit repair-required response instead of an unhandled 500.

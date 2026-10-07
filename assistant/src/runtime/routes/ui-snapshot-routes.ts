@@ -186,10 +186,10 @@ async function handleHostUiSnapshotResult({ body, headers }: RouteHandlerArgs) {
   if (peeked.targetClientId != null) {
     const headerMap = headers ?? {};
     const submittingClientId =
-      headerMap["x-vellum-client-id"]?.trim() || undefined;
+      headerMap["x-cadet-client-id"]?.trim() || undefined;
     if (!submittingClientId) {
       throw new BadRequestError(
-        "x-vellum-client-id header is missing for a targeted UI-snapshot request.",
+        "x-cadet-client-id header is missing for a targeted UI-snapshot request.",
       );
     }
     if (submittingClientId !== peeked.targetClientId) {
@@ -199,7 +199,7 @@ async function handleHostUiSnapshotResult({ body, headers }: RouteHandlerArgs) {
     }
     const submittingActorPrincipalId =
       await resolveActorPrincipalIdForLocalGuardian(
-        headerMap["x-vellum-actor-principal-id"]?.trim() || undefined,
+        headerMap["x-cadet-actor-principal-id"]?.trim() || undefined,
       );
     enforceSameActorOrThrow({
       sourceActorPrincipalId: submittingActorPrincipalId,
@@ -303,7 +303,7 @@ export const ROUTES: RouteDefinition[] = [
     additionalResponses: {
       "400": {
         description:
-          "x-vellum-client-id header is missing for a targeted UI-snapshot request.",
+          "x-cadet-client-id header is missing for a targeted UI-snapshot request.",
       },
       "403": {
         description: SAME_ACTOR_FORBIDDEN_DESCRIPTION,

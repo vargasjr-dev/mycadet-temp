@@ -456,8 +456,8 @@ function makeCtx(
     },
     getTurnInterfaceContext: () => null,
     getTurnChannelContext: () => ({
-      userMessageChannel: "vellum" as const,
-      assistantMessageChannel: "vellum" as const,
+      userMessageChannel: "cadet" as const,
+      assistantMessageChannel: "cadet" as const,
     }),
 
     buildCurrentSystemPrompt: () => "system prompt",

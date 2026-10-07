@@ -1,7 +1,7 @@
 # clients/web
 
 Vite + [React Router v7](https://reactrouter.com/) SPA for the
-Vellum assistant web app (chat, settings, library, docs).
+Cadet assistant web app (chat, settings, library, docs).
 
 ## Stack
 
@@ -90,8 +90,8 @@ Storybook (`packages/design-library`, port 6006).
 Both Storybooks are published off `main` and cross-link to each other
 from the toolbar above the canvas:
 
-- Web: <https://storybook.vellum.ai/web/main/>
-- Design library: <https://storybook.vellum.ai/design-library/main/>
+- Web: <https://storybook.mycadet.ai/web/main/>
+- Design library: <https://storybook.mycadet.ai/design-library/main/>
 
 ```bash
 cd clients/web
@@ -110,7 +110,7 @@ with the same `data-theme` tokens they get in the running app. A
 
 The Storybook also runs automatically as part of `vel up` (alongside
 the design library Storybook on `:6006`) — see the
-[`vel` README](https://github.com/vellum-ai/vellum-assistant-platform/blob/main/vel/README.md)
+[`vel` README](https://github.com/vargasjr-dev/mycadet-platform/blob/main/vel/README.md)
 for the multi-service workflow.
 
 ## Testing

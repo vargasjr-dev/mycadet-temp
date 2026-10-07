@@ -86,7 +86,7 @@ describe("isInteractiveCliSession", () => {
   test("repo paths containing cadet do not match", () => {
     expect(
       isInteractiveCliSession(
-        "node /Users/runner/work/vellum-assistant/vellum-assistant/scripts/build.js",
+        "node /Users/runner/work/mycadet/mycadet/scripts/build.js",
       ),
     ).toBe(false);
   });
@@ -120,14 +120,14 @@ describe("classifyProcess", () => {
 
   test("macOS desktop app processes stay excluded", () => {
     expect(
-      classifyProcess("/Applications/Vellum.app/Contents/MacOS/Vellum"),
+      classifyProcess("/Applications/Cadet.app/Contents/MacOS/Cadet"),
     ).toBe("unknown");
   });
 
   test("repo paths containing cadet do not match", () => {
     expect(
       classifyProcess(
-        "node /Users/runner/work/vellum-assistant/vellum-assistant/scripts/build.js",
+        "node /Users/runner/work/mycadet/mycadet/scripts/build.js",
       ),
     ).toBe("unknown");
   });

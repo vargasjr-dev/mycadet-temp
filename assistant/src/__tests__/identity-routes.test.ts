@@ -40,11 +40,11 @@ import {
 let savedEnv: Record<string, string | undefined>;
 
 const PROFILER_ENV_KEYS = [
-  "VELLUM_PROFILER_RUN_ID",
-  "VELLUM_PROFILER_MODE",
-  "VELLUM_PROFILER_MAX_BYTES",
-  "VELLUM_PROFILER_MAX_RUNS",
-  "VELLUM_PROFILER_MIN_FREE_MB",
+  "CADET_PROFILER_RUN_ID",
+  "CADET_PROFILER_MODE",
+  "CADET_PROFILER_MAX_BYTES",
+  "CADET_PROFILER_MAX_RUNS",
+  "CADET_PROFILER_MIN_FREE_MB",
 ] as const;
 
 function clearProfilerEnv(): void {
@@ -58,16 +58,16 @@ function setProfilerEnv(
   runId: string,
   opts?: { maxBytes?: number; maxRuns?: number; minFreeMb?: number },
 ): void {
-  process.env.VELLUM_PROFILER_RUN_ID = runId;
-  process.env.VELLUM_PROFILER_MODE = mode;
+  process.env.CADET_PROFILER_RUN_ID = runId;
+  process.env.CADET_PROFILER_MODE = mode;
   if (opts?.maxBytes !== undefined) {
-    process.env.VELLUM_PROFILER_MAX_BYTES = String(opts.maxBytes);
+    process.env.CADET_PROFILER_MAX_BYTES = String(opts.maxBytes);
   }
   if (opts?.maxRuns !== undefined) {
-    process.env.VELLUM_PROFILER_MAX_RUNS = String(opts.maxRuns);
+    process.env.CADET_PROFILER_MAX_RUNS = String(opts.maxRuns);
   }
   if (opts?.minFreeMb !== undefined) {
-    process.env.VELLUM_PROFILER_MIN_FREE_MB = String(opts.minFreeMb);
+    process.env.CADET_PROFILER_MIN_FREE_MB = String(opts.minFreeMb);
   }
 }
 

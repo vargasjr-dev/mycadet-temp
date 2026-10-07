@@ -39,15 +39,15 @@ beforeEach(() => {
     `skills-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(join(tempDir, "skills"), { recursive: true });
-  originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = tempDir;
+  originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = tempDir;
 });
 
 afterEach(() => {
   if (originalWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
   }
   rmSync(tempDir, { recursive: true, force: true });
 });

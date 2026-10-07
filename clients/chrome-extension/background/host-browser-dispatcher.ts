@@ -110,7 +110,7 @@ export interface HostBrowserSessionInvalidatedEnvelope {
 export interface HostBrowserDispatcherDeps {
   /**
    * Target resolver. `cdpSessionId` is a required tab/target binding for
-   * raw CDP and for Vellum.attach / Vellum.detach. The worker treats the
+   * raw CDP and for Cadet.attach / Cadet.detach. The worker treats the
    * sentinel `active` as an explicit focused-tab request.
    */
   resolveTarget(
@@ -367,18 +367,18 @@ export function createHostBrowserDispatcher(
         });
         return;
       }
-      // Handle synthetic Vellum.* methods that use chrome extension APIs
+      // Handle synthetic Cadet.* methods that use chrome extension APIs
       // directly instead of routing through chrome.debugger. These methods
       // do not require a resolved CDP target, so they must be dispatched
       // BEFORE `resolveTarget()`.
-      // Synthetic Vellum.createTab — open a fresh browser tab and return
+      // Synthetic Cadet.createTab — open a fresh browser tab and return
       // its tabId. Used by `assistant browser navigate --new-tab` so the
       // executor can pin subsequent CDP commands to the new tab via
       // `cdpSessionId`, leaving the user's currently-active tab (often
       // the tab they're chatting with the assistant from) undisturbed.
       // Does not require a resolved CDP target, so dispatched before
       // `resolveTarget()`.
-      if (envelope.cdpMethod === 'Vellum.createTab') {
+      if (envelope.cdpMethod === 'Cadet.createTab') {
         if (!deps.createTab) {
           // Honour the cancel contract: don't post an error envelope
           // for a request that's already been cancelled.
@@ -387,7 +387,7 @@ export function createHostBrowserDispatcher(
             requestId,
             content: JSON.stringify({
               code: -32601,
-              message: 'Vellum.createTab is not supported by this extension build',
+              message: 'Cadet.createTab is not supported by this extension build',
             }),
             isError: true,
           });
@@ -438,7 +438,7 @@ export function createHostBrowserDispatcher(
         return;
       }
 
-      if (envelope.cdpMethod === 'Vellum.findTab') {
+      if (envelope.cdpMethod === 'Cadet.findTab') {
         const urlPattern = (envelope.cdpParams as { urlPattern?: string } | undefined)?.urlPattern;
         if (!urlPattern) {
           await deps.postResult({
@@ -467,7 +467,7 @@ export function createHostBrowserDispatcher(
         return;
       }
 
-      if (envelope.cdpMethod === 'Vellum.listTabs') {
+      if (envelope.cdpMethod === 'Cadet.listTabs') {
         try {
           const allTabs = await chrome.tabs.query({});
           if (abort.signal.aborted || cancelledRequestIds.has(requestId)) return;
@@ -496,7 +496,7 @@ export function createHostBrowserDispatcher(
         return;
       }
 
-      if (envelope.cdpMethod === 'Vellum.selectTab') {
+      if (envelope.cdpMethod === 'Cadet.selectTab') {
         const rawTabId = (envelope.cdpParams as { tabId?: unknown } | undefined)?.tabId;
         const tabId =
           typeof rawTabId === 'number'
@@ -543,7 +543,7 @@ export function createHostBrowserDispatcher(
         return;
       }
 
-      if (envelope.cdpMethod === 'Vellum.closeTab') {
+      if (envelope.cdpMethod === 'Cadet.closeTab') {
         const rawTabId = (envelope.cdpParams as { tabId?: unknown } | undefined)?.tabId;
         const tabId =
           typeof rawTabId === 'number'
@@ -589,10 +589,10 @@ export function createHostBrowserDispatcher(
         return;
       }
 
-      // Synthetic Vellum.attach — explicitly establish the debugger session
+      // Synthetic Cadet.attach — explicitly establish the debugger session
       // without requiring a CDP command to be sent first. Resolves the
       // target, attaches if not already cached, and returns a success payload.
-      if (envelope.cdpMethod === 'Vellum.attach') {
+      if (envelope.cdpMethod === 'Cadet.attach') {
         const target = await deps.resolveTarget(envelope.cdpSessionId);
         if (abort.signal.aborted || cancelledRequestIds.has(requestId)) return;
         const key = targetKey(target);
@@ -620,10 +620,10 @@ export function createHostBrowserDispatcher(
         return;
       }
 
-      // Synthetic Vellum.detach — explicitly detach the debugger from the
+      // Synthetic Cadet.detach — explicitly detach the debugger from the
       // resolved target so the Chrome debugging banner clears. Idempotent:
       // tolerates already-detached / not-attached errors.
-      if (envelope.cdpMethod === 'Vellum.detach') {
+      if (envelope.cdpMethod === 'Cadet.detach') {
         const target = await deps.resolveTarget(envelope.cdpSessionId);
         if (abort.signal.aborted || cancelledRequestIds.has(requestId)) return;
         const key = targetKey(target);

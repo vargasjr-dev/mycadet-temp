@@ -156,10 +156,10 @@ References:
 
 ## Deep links (Capacitor `appUrlOpen`)
 
-Native OAuth completion auto-dismisses `SFSafariViewController` by redirecting to a registered custom URL scheme (`vellum-assistant://`, `-dev`, `-staging`) and routing the URL via the `@capacitor/app` plugin's `appUrlOpen` listener. The router is mounted globally for the app routes; pure utilities and the typed `WindowEventMap` augmentation live in [`src/runtime/native-deep-link.ts`](../src/runtime/native-deep-link.ts).
+Native OAuth completion auto-dismisses `SFSafariViewController` by redirecting to a registered custom URL scheme (`mycadet://`, `-dev`, `-staging`) and routing the URL via the `@capacitor/app` plugin's `appUrlOpen` listener. The router is mounted globally for the app routes; pure utilities and the typed `WindowEventMap` augmentation live in [`src/runtime/native-deep-link.ts`](../src/runtime/native-deep-link.ts).
 
 - **Build deep links via `buildOAuthCompleteDeepLink()`.** Don't hand-construct URLs — the helper picks the right scheme per host (`getNativeUrlSchemeForHost`) and encodes the payload consistently.
-- **Parse via `parseOAuthCompleteDeepLink()`.** It exact-matches the scheme against the apex allow-list, rejects look-alikes (e.g. `vellum-assistant-evil://`), requires the `oauth-complete` host, and enforces a non-empty `requestId`. Adding a new scheme means adding it to the allow-list — do not loosen the matcher to a `startsWith` check.
+- **Parse via `parseOAuthCompleteDeepLink()`.** It exact-matches the scheme against the apex allow-list, rejects look-alikes (e.g. `mycadet-evil://`), requires the `oauth-complete` host, and enforces a non-empty `requestId`. Adding a new scheme means adding it to the allow-list — do not loosen the matcher to a `startsWith` check.
 - **Consume via a typed window-event listener hook** that registers for the `"cadet:oauth-complete-deeplink"` event and cleans up on unmount.
 - **Pair the deep-link listener with a `browserFinished` poll fallback** when the consumer must work on builds where the listener doesn't fire (e.g. iOS dispatch hiccups, user-cancel paths). Today's UX must remain the worst case in every failure mode.
 - **Read `App.getLaunchUrl()` only on Android.** The iOS `AppDelegate` replays cold-launch URLs through `appUrlOpen`, while Capacitor retains its last iOS URL for the process. Reading it again would duplicate the deep link.
@@ -288,9 +288,9 @@ the native side is
 [`SelfHostedServersPlugin.swift`](../../../clients/ios/App/App/SelfHostedServersPlugin.swift)
 over [`SelfHostedServer.swift`](../../../clients/ios/App/App/SelfHostedServer.swift)
 on iOS, and
-[`SelfHostedServersPlugin.java`](../../../clients/android/app/src/main/java/ai/vellum/assistant/SelfHostedServersPlugin.java)
+[`SelfHostedServersPlugin.java`](../../../clients/android/app/src/main/java/ai/cadet/assistant/SelfHostedServersPlugin.java)
 over
-[`SelfHostedServer.java`](../../../clients/android/app/src/main/java/ai/vellum/assistant/SelfHostedServer.java)
+[`SelfHostedServer.java`](../../../clients/android/app/src/main/java/ai/cadet/assistant/SelfHostedServer.java)
 on Android.
 
 The bridge contract:
@@ -355,7 +355,7 @@ and retry forever.
 **No availability probe.** There is no `isAvailable` and there must not be one:
 a probe can itself be absent, and the failure of the call the caller wanted to
 make is the same answer one turn earlier. `nativeSwitchToOrigin` resolving
-`false` and `nativeVellumCloudOrigin` resolving `null` already cover every
+`false` and `nativeCadetCloudOrigin` resolving `null` already cover every
 reason there is no native side.
 
 The module is a plain static import from both the chooser and
@@ -373,7 +373,7 @@ Proxy.
 A user who taps a campaign link, lands in Play, and installs arrives with no
 URL params, so the Play install referrer is the only attribution that install
 carries. The Android shell exposes it as the `InstallReferrer` plugin
-([`InstallReferrerPlugin.java`](../../../clients/android/app/src/main/java/ai/vellum/assistant/InstallReferrerPlugin.java));
+([`InstallReferrerPlugin.java`](../../../clients/android/app/src/main/java/ai/cadet/assistant/InstallReferrerPlugin.java));
 the web side is
 [`src/runtime/install-referrer.ts`](../src/runtime/install-referrer.ts). There
 is no iOS counterpart.

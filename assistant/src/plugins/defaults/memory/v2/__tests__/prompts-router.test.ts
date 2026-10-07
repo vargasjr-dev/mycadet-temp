@@ -215,7 +215,7 @@ describe("resolveRouterPrompt — override path", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "vellum-router-prompt-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "cadet-router-prompt-"));
   });
 
   afterEach(() => {

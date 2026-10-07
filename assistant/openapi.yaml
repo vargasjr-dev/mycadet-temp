@@ -2,9 +2,9 @@
 # Regenerate: cd assistant && bun run generate:openapi
 openapi: 3.1.0
 info:
-  title: Vellum Assistant API
+  title: Cadet Assistant API
   version: 0.12.6
-  description: Auto-generated OpenAPI specification for the Vellum Assistant runtime HTTP server.
+  description: Auto-generated OpenAPI specification for the Cadet Assistant runtime HTTP server.
 servers:
   - url: http://127.0.0.1:7821
     description: Local assistant (default port)
@@ -4841,7 +4841,7 @@ paths:
                     enum:
                       - telegram
                       - phone
-                      - vellum
+                      - cadet
                       - whatsapp
                       - slack
                       - email
@@ -4849,7 +4849,7 @@ paths:
                       - a2a
                       - discord
                       - plugin
-                      - vellum-shared
+                      - cadet-shared
                   assistantId:
                     type: string
                   hasPendingChallenge:
@@ -5272,7 +5272,7 @@ paths:
                           enum:
                             - telegram
                             - phone
-                            - vellum
+                            - cadet
                             - whatsapp
                             - slack
                             - email
@@ -5280,7 +5280,7 @@ paths:
                             - a2a
                             - discord
                             - plugin
-                            - vellum-shared
+                            - cadet-shared
                         ready:
                           type: boolean
                         setupStatus:
@@ -5397,7 +5397,7 @@ paths:
                   enum:
                     - telegram
                     - phone
-                    - vellum
+                    - cadet
                     - whatsapp
                     - slack
                     - email
@@ -5405,7 +5405,7 @@ paths:
                     - a2a
                     - discord
                     - plugin
-                    - vellum-shared
+                    - cadet-shared
                 includeRemote:
                   description: Include remote checks (default true)
                   type: boolean
@@ -5429,7 +5429,7 @@ paths:
                           enum:
                             - telegram
                             - phone
-                            - vellum
+                            - cadet
                             - whatsapp
                             - slack
                             - email
@@ -5437,7 +5437,7 @@ paths:
                             - a2a
                             - discord
                             - plugin
-                            - vellum-shared
+                            - cadet-shared
                         ready:
                           type: boolean
                         setupStatus:
@@ -5563,7 +5563,7 @@ paths:
                   enum:
                     - telegram
                     - phone
-                    - vellum
+                    - cadet
                     - whatsapp
                     - slack
                     - email
@@ -5571,7 +5571,7 @@ paths:
                     - a2a
                     - discord
                     - plugin
-                    - vellum-shared
+                    - cadet-shared
                   description: Channel to send on
                 target:
                   type: object
@@ -5614,7 +5614,7 @@ paths:
                     enum:
                       - telegram
                       - phone
-                      - vellum
+                      - cadet
                       - whatsapp
                       - slack
                       - email
@@ -5622,7 +5622,7 @@ paths:
                       - a2a
                       - discord
                       - plugin
-                      - vellum-shared
+                      - cadet-shared
                   chatId:
                     type: string
                   threadId:
@@ -5767,7 +5767,7 @@ paths:
     post:
       operationId: clients_presence_post
       summary: Report desktop presence
-      description: Record the desktop presence state reported by the client identified by the X-Vellum-Client-Id header.
+      description: Record the desktop presence state reported by the client identified by the X-Cadet-Client-Id header.
       tags:
         - clients
       requestBody:
@@ -5806,7 +5806,7 @@ paths:
       summary: Report web tab visibility and focused conversation
       description:
         Record the visibility and focused conversation reported by the web client identified by the
-        X-Vellum-Client-Id header.
+        X-Cadet-Client-Id header.
       tags:
         - clients
       requestBody:
@@ -6118,7 +6118,7 @@ paths:
       summary: Get the default provider and its availability
       description:
         Returns `llm.defaultProvider`, the connection name it resolves to, and whether that connection is currently
-        usable (connection exists, credential stored, Vellum authenticated). Availability is informational — a broken
+        usable (connection exists, credential stored, Cadet authenticated). Availability is informational — a broken
         default is a valid persisted state that surfaces explainable errors at resolution time.
       tags:
         - config
@@ -8201,7 +8201,7 @@ paths:
             enum:
               - telegram
               - phone
-              - vellum
+              - cadet
               - whatsapp
               - slack
               - email
@@ -8209,7 +8209,7 @@ paths:
               - a2a
               - discord
               - plugin
-              - vellum-shared
+              - cadet-shared
           description:
             Filter by origin channel. When provided, only conversations with this exact origin_channel value are
             returned. Omit to include all channels.
@@ -8366,7 +8366,7 @@ paths:
                               enum:
                                 - telegram
                                 - phone
-                                - vellum
+                                - cadet
                                 - whatsapp
                                 - slack
                                 - email
@@ -8374,7 +8374,7 @@ paths:
                                 - a2a
                                 - discord
                                 - plugin
-                                - vellum-shared
+                                - cadet-shared
                             - type: "null"
                         assistantAttention:
                           type: object
@@ -8504,8 +8504,8 @@ paths:
               properties:
                 conversationKey:
                   description:
-                    Optional external key. Echoed back in the response. Non-vellum channels (Telegram, WhatsApp) use this to
-                    scope to a logical channel thread; vellum-web clients can omit it and rely on the assistant-minted
+                    Optional external key. Echoed back in the response. Non-cadet channels (Telegram, WhatsApp) use this to
+                    scope to a logical channel thread; cadet-web clients can omit it and rely on the assistant-minted
                     `id`.
                   type: string
                 conversationType:
@@ -8737,7 +8737,7 @@ paths:
                             enum:
                               - telegram
                               - phone
-                              - vellum
+                              - cadet
                               - whatsapp
                               - slack
                               - email
@@ -8745,7 +8745,7 @@ paths:
                               - a2a
                               - discord
                               - plugin
-                              - vellum-shared
+                              - cadet-shared
                           - type: "null"
                       assistantAttention:
                         type: object
@@ -9952,7 +9952,7 @@ paths:
                             enum:
                               - telegram
                               - phone
-                              - vellum
+                              - cadet
                               - whatsapp
                               - slack
                               - email
@@ -9960,7 +9960,7 @@ paths:
                               - a2a
                               - discord
                               - plugin
-                              - vellum-shared
+                              - cadet-shared
                           - type: "null"
                       assistantAttention:
                         type: object
@@ -13657,7 +13657,7 @@ paths:
     post:
       operationId: email_register_post
       summary: Register an email address
-      description: Register a new email address on the Vellum platform for the current assistant.
+      description: Register a new email address on the Cadet platform for the current assistant.
       tags:
         - email
       requestBody:
@@ -13696,7 +13696,7 @@ paths:
     post:
       operationId: email_send_post
       summary: Send an email
-      description: Send an email from the assistant's registered email address via the Vellum runtime proxy.
+      description: Send an email from the assistant's registered email address via the Cadet runtime proxy.
       tags:
         - email
       requestBody:
@@ -13858,7 +13858,7 @@ paths:
           schema:
             type: string
           description:
-            Scope to a single conversation by an external key (non-vellum channels) or the web idempotency key.
+            Scope to a single conversation by an external key (non-cadet channels) or the web idempotency key.
             Materializes a row on first use. Ignored when conversationId is also provided.
         - name: lastSeenSeq
           in: query
@@ -16331,7 +16331,7 @@ paths:
                   - accepted
                 additionalProperties: false
         "400":
-          description: x-vellum-client-id header is missing for a targeted host app-control request.
+          description: x-cadet-client-id header is missing for a targeted host app-control request.
         "403":
           description:
             Submitting client does not match the targeted client, or the submitting actor's principal does not match
@@ -16381,7 +16381,7 @@ paths:
                   - accepted
                 additionalProperties: false
         "400":
-          description: x-vellum-client-id header is missing for a targeted host bash request.
+          description: x-cadet-client-id header is missing for a targeted host bash request.
         "403":
           description:
             Submitting client does not match the targeted client, or the submitting actor's principal does not match
@@ -16464,7 +16464,7 @@ paths:
                   - accepted
                 additionalProperties: false
         "400":
-          description: x-vellum-client-id header is missing for a targeted host browser request.
+          description: x-cadet-client-id header is missing for a targeted host browser request.
         "403":
           description:
             Submitting client does not match the targeted client, or the submitting actor's principal does not match
@@ -16575,7 +16575,7 @@ paths:
                   - accepted
                 additionalProperties: false
         "400":
-          description: x-vellum-client-id header is missing for a targeted host CU request.
+          description: x-cadet-client-id header is missing for a targeted host CU request.
         "403":
           description:
             Submitting client does not match the targeted client, or the submitting actor's principal does not match
@@ -16633,7 +16633,7 @@ paths:
                   - accepted
                 additionalProperties: false
         "400":
-          description: x-vellum-client-id header is missing for a targeted host file request.
+          description: x-cadet-client-id header is missing for a targeted host file request.
         "403":
           description:
             Submitting client does not match the targeted client, or the submitting actor's principal does not match
@@ -16681,7 +16681,7 @@ paths:
                   - accepted
                 additionalProperties: false
         "400":
-          description: x-vellum-client-id header is missing for a targeted host transfer request.
+          description: x-cadet-client-id header is missing for a targeted host transfer request.
         "403":
           description:
             Submitting client does not match the targeted client, or the submitting actor's principal does not match
@@ -16732,7 +16732,7 @@ paths:
                   - accepted
                 additionalProperties: false
         "400":
-          description: x-vellum-client-id header is missing for a targeted UI-snapshot request.
+          description: x-cadet-client-id header is missing for a targeted UI-snapshot request.
         "403":
           description:
             Submitting client does not match the targeted client, or the submitting actor's principal does not match
@@ -23340,10 +23340,10 @@ paths:
                   description: Ids of previously uploaded attachments to attach
                 sourceChannel:
                   type: string
-                  description: Originating channel id (e.g. "vellum")
+                  description: Originating channel id (e.g. "cadet")
                 interface:
                   type: string
-                  description: Originating interface id (e.g. "vellum")
+                  description: Originating interface id (e.g. "cadet")
                 conversationType:
                   type: string
                 slashCommand:
@@ -24260,7 +24260,7 @@ paths:
                   type: string
                 profile:
                   description:
-                    "Export profile. 'migration' (default) builds a teleport bundle. 'debug' builds a bundle for Vellum staff
+                    "Export profile. 'migration' (default) builds a teleport bundle. 'debug' builds a bundle for Cadet staff
                     to open on a debug clone: no credentials, plus the gateway's database and logs under gateway/."
                   type: string
                   enum:
@@ -24540,7 +24540,7 @@ paths:
       summary: Dry-run import analysis from a signed GCS URL
       description:
         Fetch a .vbundle archive from a signed GCS download URL and return a preflight report — what would change
-        if the bundle were imported — without writing anything to disk. Enables `vellum teleport --dry-run` against
+        if the bundle were imported — without writing anything to disk. Enables `cadet teleport --dry-run` against
         local and docker targets.
       tags:
         - migrations
@@ -25359,7 +25359,7 @@ paths:
                   type: string
                   enum:
                     - assistant_tool
-                    - vellum
+                    - cadet
                     - phone
                     - telegram
                     - whatsapp
@@ -25369,7 +25369,7 @@ paths:
                     - a2a
                     - discord
                     - plugin
-                    - vellum-shared
+                    - cadet-shared
                     - scheduler
                     - watcher
                 sourceContextId:
@@ -26995,7 +26995,7 @@ paths:
   /v1/platform/connect:
     post:
       operationId: platform_connect_post
-      summary: Connect to the Vellum Platform
+      summary: Connect to the Cadet Platform
       description:
         Checks whether the stored platform credentials still connect. Reports a stored key the platform rejects as
         credentialRejected, so the caller can direct the user to sign in again and replace it.
@@ -27152,7 +27152,7 @@ paths:
   /v1/platform/disconnect:
     post:
       operationId: platform_disconnect_post
-      summary: Disconnect from the Vellum Platform
+      summary: Disconnect from the Cadet Platform
       description: Deletes stored platform credentials and emits platform_disconnected signal to connected clients.
       tags:
         - platform
@@ -27486,7 +27486,7 @@ paths:
   /v1/platform/verify-credential:
     post:
       operationId: platform_verifycredential_post
-      summary: Verify the Vellum-managed credential against the platform
+      summary: Verify the Cadet-managed credential against the platform
       description:
         Asks the platform whether the stored assistant API key authenticates. POST because it performs a check; the
         result is returned, not stored.
@@ -27647,7 +27647,7 @@ paths:
                             - type: string
                             - type: "null"
                         icon:
-                          description: Author-declared emoji icon from the plugin's package.json vellum.icon; absent when none.
+                          description: Author-declared emoji icon from the plugin's package.json cadet.icon; absent when none.
                           type: string
                         hasIcon:
                           description:
@@ -27850,13 +27850,13 @@ paths:
                         additionalProperties: false
                       - type: "null"
                     description:
-                      Prebuilt client artifact from `package.json` `vellum.artifact`, or null when the plugin ships none or its
+                      Prebuilt client artifact from `package.json` `cadet.artifact`, or null when the plugin ships none or its
                       descriptor is incomplete (e.g. a placeholder sha256).
                   icon:
                     anyOf:
                       - type: string
                       - type: "null"
-                    description: Author-declared emoji icon from the plugin's `package.json` `vellum.icon`, or null when none.
+                    description: Author-declared emoji icon from the plugin's `package.json` `cadet.icon`, or null when none.
                   hasIcon:
                     type: boolean
                     description:
@@ -28719,7 +28719,7 @@ paths:
           schema:
             type: string
           description:
-            Accepted for backward compatibility. The catalog is resolved from the Vellum platform (or the bundled
+            Accepted for backward compatibility. The catalog is resolved from the Cadet platform (or the bundled
             manifest when platform features are disabled); this ref does not select a git revision — it is echoed back
             and used as the cache key. Defaults to the CLI's `DEFAULT_PLUGIN_REF` (typically `main`).
       responses:
@@ -29666,7 +29666,7 @@ paths:
       operationId: roadmap_get
       summary: List public roadmap items
       description:
-        Lists items from the public Vellum roadmap. Authenticated as the assistant when a platform API key is
+        Lists items from the public Cadet roadmap. Authenticated as the assistant when a platform API key is
         stored, which fills in viewerUpvoted; anonymous otherwise.
       tags:
         - roadmap
@@ -32900,7 +32900,7 @@ paths:
             type: string
             enum:
               - catalog
-          description: Optional inclusion flag. Use 'catalog' to merge available Vellum catalog skills into the response.
+          description: Optional inclusion flag. Use 'catalog' to merge available Cadet catalog skills into the response.
         - name: origin
           in: query
           required: false
@@ -34493,7 +34493,7 @@ paths:
                   type: boolean
                 catalogOnly:
                   description:
-                    When true, restrict to bundled and Vellum catalog skills only — do not fall through to community
+                    When true, restrict to bundled and Cadet catalog skills only — do not fall through to community
                     registries.
                   type: boolean
       responses:
@@ -36505,7 +36505,7 @@ paths:
         "200":
           description: Successful response
         "400":
-          description: x-vellum-client-id header is missing for a targeted transfer.
+          description: x-cadet-client-id header is missing for a targeted transfer.
         "403":
           description:
             Submitting client does not match the targeted client, or the submitting actor's principal does not match
@@ -36526,7 +36526,7 @@ paths:
         "200":
           description: Successful response
         "400":
-          description: x-vellum-client-id header is missing for a targeted transfer.
+          description: x-cadet-client-id header is missing for a targeted transfer.
         "403":
           description:
             Submitting client does not match the targeted client, or the submitting actor's principal does not match
@@ -36749,7 +36749,7 @@ paths:
       operationId: tts_managedvoices_get
       summary: List managed TTS voices
       description:
-        Return the voices offered by Vellum managed TTS, fetched live from the platform. Only currently-usable
+        Return the voices offered by Cadet managed TTS, fetched live from the platform. Only currently-usable
         voices are returned; defaultModel is always one of them (null when none are offered).
       tags:
         - tts

@@ -1,8 +1,8 @@
 /**
- * Durable conversation handles: the external provider conversation a Vellum
+ * Durable conversation handles: the external provider conversation a Cadet
  * conversation is bound to, in a serializable, schema-validated form.
  *
- * A handle answers "which provider conversation, reached through which Vellum
+ * A handle answers "which provider conversation, reached through which Cadet
  * channel connection". The same handle is usable for inbound conversation
  * binding and for later outbound delivery, so it carries exactly two things:
  * the connection identity needed to recover the correct provider credentials,
@@ -10,7 +10,7 @@
  * ids, reply-to relationships), actors, and content are per-event data and are
  * deliberately not part of the handle.
  *
- * The handle names the provider-side conversation only. Vellum's internal
+ * The handle names the provider-side conversation only. Cadet's internal
  * `conversationId` is a separate identity and never appears inside a handle;
  * the binding between the two lives wherever handles are persisted.
  *
@@ -31,7 +31,7 @@ import type { ChannelId } from "./channels.js";
 const MAX_FIELD_LENGTH = 256;
 
 /**
- * The Vellum channel connection (installation) the conversation belongs to.
+ * The Cadet channel connection (installation) the conversation belongs to.
  * Opaque to this contract: it identifies which stored provider credentials
  * and provider account reach the conversation, not any provider object.
  */

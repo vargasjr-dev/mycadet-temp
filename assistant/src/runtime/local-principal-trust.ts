@@ -27,7 +27,7 @@ export async function resolveLocalPrincipalTrustContext(
 
   // Fail closed: a null read means the gateway is unreachable — never grant
   // guardian on a miss.
-  const guardians = await getGuardianDelivery({ channelTypes: ["vellum"] });
+  const guardians = await getGuardianDelivery({ channelTypes: ["cadet"] });
   if (!guardians) {
     return unknownContext;
   }
@@ -48,7 +48,7 @@ export async function resolveLocalPrincipalTrustContext(
       undefined,
     guardianPrincipalId: guardian.principalId ?? undefined,
     // Mirror toTrustContext: with no username the requester identifier is the
-    // canonical sender id, which for a vellum principal is actorPrincipalId.
+    // canonical sender id, which for a cadet principal is actorPrincipalId.
     requesterIdentifier: input.actorPrincipalId,
     requesterExternalUserId: input.actorPrincipalId,
     requesterChatId: input.conversationExternalId,

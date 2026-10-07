@@ -345,5 +345,5 @@ S2 excels at dynamic emotional shifts. Use this for natural-feeling monologues:
 - **Add 1-1.5s silence between clips** when combining for natural pacing
 - **Listen and iterate** — generate a few takes with different temperatures if the first one does not hit right
 - **The voice carries context** — `condition_on_previous_chunks: true` (default) helps maintain consistency within a single API call
-- Always deliver the final audio to the user with `<vellum-attachment>` tags
+- Always deliver the final audio to the user with `<cadet-attachment>` tags
 - Only use `[bracket]` syntax inside text passed to the Fish Audio API, not in regular text responses

@@ -20,7 +20,7 @@ type SpawnCli = (
 ) => { error?: Error; status: number | null };
 
 export function resolveOwnedCliTarget(execPath: string): string {
-  const ownershipPath = path.join(path.dirname(execPath), ".vellum-owned.json");
+  const ownershipPath = path.join(path.dirname(execPath), ".cadet-owned.json");
   let ownership: LauncherOwnership;
   try {
     ownership = JSON.parse(

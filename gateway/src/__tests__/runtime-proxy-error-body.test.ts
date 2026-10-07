@@ -62,7 +62,7 @@ const TEST_SIGNING_KEY = Buffer.from("test-signing-key-at-least-32-bytes-long");
 initSigningKey(TEST_SIGNING_KEY);
 
 const TOKEN = mintToken({
-  aud: "vellum-gateway",
+  aud: "cadet-gateway",
   sub: "actor:test-assistant:test-user",
   scope_profile: "actor_client_v1",
   policy_epoch: CURRENT_POLICY_EPOCH,

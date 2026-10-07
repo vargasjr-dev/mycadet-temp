@@ -68,80 +68,80 @@ afterEach(() => {
 });
 
 describe("readEnvFeatureFlagOverrides", () => {
-  test("maps VELLUM_FLAG_NEAT_FEATURE=true to { 'neat-feature': true }", () => {
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "true");
+  test("maps CADET_FLAG_NEAT_FEATURE=true to { 'neat-feature': true }", () => {
+    setEnv("CADET_FLAG_NEAT_FEATURE", "true");
     expect(readEnvFeatureFlagOverrides()).toEqual({ "neat-feature": true });
   });
 
   test("parses truthy values: 1, yes, on -> true", () => {
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "1");
+    setEnv("CADET_FLAG_NEAT_FEATURE", "1");
     expect(readEnvFeatureFlagOverrides()).toEqual({ "neat-feature": true });
 
     resetEnvOverridesCache();
-    delete process.env.VELLUM_FLAG_NEAT_FEATURE;
+    delete process.env.CADET_FLAG_NEAT_FEATURE;
 
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "yes");
+    setEnv("CADET_FLAG_NEAT_FEATURE", "yes");
     expect(readEnvFeatureFlagOverrides()).toEqual({ "neat-feature": true });
 
     resetEnvOverridesCache();
-    delete process.env.VELLUM_FLAG_NEAT_FEATURE;
+    delete process.env.CADET_FLAG_NEAT_FEATURE;
 
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "on");
+    setEnv("CADET_FLAG_NEAT_FEATURE", "on");
     expect(readEnvFeatureFlagOverrides()).toEqual({ "neat-feature": true });
   });
 
   test("parses falsy values: false, 0, no, off -> false", () => {
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "false");
+    setEnv("CADET_FLAG_NEAT_FEATURE", "false");
     expect(readEnvFeatureFlagOverrides()).toEqual({ "neat-feature": false });
 
     resetEnvOverridesCache();
-    delete process.env.VELLUM_FLAG_NEAT_FEATURE;
+    delete process.env.CADET_FLAG_NEAT_FEATURE;
 
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "0");
+    setEnv("CADET_FLAG_NEAT_FEATURE", "0");
     expect(readEnvFeatureFlagOverrides()).toEqual({ "neat-feature": false });
 
     resetEnvOverridesCache();
-    delete process.env.VELLUM_FLAG_NEAT_FEATURE;
+    delete process.env.CADET_FLAG_NEAT_FEATURE;
 
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "no");
+    setEnv("CADET_FLAG_NEAT_FEATURE", "no");
     expect(readEnvFeatureFlagOverrides()).toEqual({ "neat-feature": false });
 
     resetEnvOverridesCache();
-    delete process.env.VELLUM_FLAG_NEAT_FEATURE;
+    delete process.env.CADET_FLAG_NEAT_FEATURE;
 
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "off");
+    setEnv("CADET_FLAG_NEAT_FEATURE", "off");
     expect(readEnvFeatureFlagOverrides()).toEqual({ "neat-feature": false });
   });
 
   test("preserves arbitrary string values", () => {
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "some-custom-value");
+    setEnv("CADET_FLAG_NEAT_FEATURE", "some-custom-value");
     expect(readEnvFeatureFlagOverrides()).toEqual({
       "neat-feature": "some-custom-value",
     });
   });
 
   test("discards unknown keys not in registry", () => {
-    setEnv("VELLUM_FLAG_NONEXISTENT_FLAG", "true");
+    setEnv("CADET_FLAG_NONEXISTENT_FLAG", "true");
     expect(readEnvFeatureFlagOverrides()).toEqual({});
   });
 
   test("caches result across calls", () => {
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "true");
+    setEnv("CADET_FLAG_NEAT_FEATURE", "true");
     const first = readEnvFeatureFlagOverrides();
     expect(first).toEqual({ "neat-feature": true });
 
     // Mutate env after first call
-    setEnv("VELLUM_FLAG_COOL_FEATURE", "true");
+    setEnv("CADET_FLAG_COOL_FEATURE", "true");
     const second = readEnvFeatureFlagOverrides();
     expect(second).toEqual({ "neat-feature": true });
     expect(second).toBe(first);
   });
 
   test("resetEnvOverridesCache allows re-read", () => {
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "true");
+    setEnv("CADET_FLAG_NEAT_FEATURE", "true");
     expect(readEnvFeatureFlagOverrides()).toEqual({ "neat-feature": true });
 
-    setEnv("VELLUM_FLAG_COOL_FEATURE", "true");
+    setEnv("CADET_FLAG_COOL_FEATURE", "true");
     resetEnvOverridesCache();
     expect(readEnvFeatureFlagOverrides()).toEqual({
       "neat-feature": true,
@@ -149,18 +149,18 @@ describe("readEnvFeatureFlagOverrides", () => {
     });
   });
 
-  test("returns empty object when no VELLUM_FLAG_* keys exist", () => {
+  test("returns empty object when no CADET_FLAG_* keys exist", () => {
     expect(readEnvFeatureFlagOverrides()).toEqual({});
   });
 
   test("value parsing is case-insensitive", () => {
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "TRUE");
+    setEnv("CADET_FLAG_NEAT_FEATURE", "TRUE");
     expect(readEnvFeatureFlagOverrides()).toEqual({ "neat-feature": true });
 
     resetEnvOverridesCache();
-    delete process.env.VELLUM_FLAG_NEAT_FEATURE;
+    delete process.env.CADET_FLAG_NEAT_FEATURE;
 
-    setEnv("VELLUM_FLAG_NEAT_FEATURE", "False");
+    setEnv("CADET_FLAG_NEAT_FEATURE", "False");
     expect(readEnvFeatureFlagOverrides()).toEqual({ "neat-feature": false });
   });
 });

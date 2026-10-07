@@ -52,7 +52,7 @@ import {
 
 const ROOT = join(
   tmpdir(),
-  `vellum-mtime-cache-test-${process.pid}-${Date.now()}`,
+  `cadet-mtime-cache-test-${process.pid}-${Date.now()}`,
 );
 
 const PLUGINS_DIR = join(ROOT, "plugins");
@@ -146,7 +146,7 @@ async function applySourceChangesNow(): Promise<void> {
 // ─── Setup / teardown ────────────────────────────────────────────────────────
 
 beforeAll(() => {
-  process.env.VELLUM_WORKSPACE_DIR = ROOT;
+  process.env.CADET_WORKSPACE_DIR = ROOT;
 });
 
 beforeEach(() => {

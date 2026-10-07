@@ -302,7 +302,7 @@ describe("ClickHouseLlmRequestLogSource", () => {
     );
   });
 
-  test("missing vellum:platform_assistant_id surfaces a clear error", async () => {
+  test("missing cadet:platform_assistant_id surfaces a clear error", async () => {
     const src = new ClickHouseLlmRequestLogSource(DEFAULT_CONFIG, {
       resolveUrl: async () => "https://ch.example.test",
       resolvePassword: async () => "x",
@@ -310,7 +310,7 @@ describe("ClickHouseLlmRequestLogSource", () => {
       fetchImpl: fakeFetchReturning(""),
     });
     await expect(src.getRequestLogById("log-1")).rejects.toThrow(
-      /vellum:platform_assistant_id credential is required/,
+      /cadet:platform_assistant_id credential is required/,
     );
   });
 });

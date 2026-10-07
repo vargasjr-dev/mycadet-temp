@@ -102,7 +102,7 @@ describe("handleContactsInfoBatch", () => {
     insertContact({ id: "c2", contactType: "assistant" });
     insertMetadata({
       contactId: "c2",
-      species: "vellum",
+      species: "cadet",
       metadata: { model: "opus" },
     });
 
@@ -119,14 +119,14 @@ describe("handleContactsInfoBatch", () => {
     const c2 = result.infos.find((i) => i.contactId === "c2")!;
     expect(c2.contactType).toBe("assistant");
     expect(c2.assistantMetadata).toEqual({
-      species: "vellum",
+      species: "cadet",
       metadata: { model: "opus" },
     });
   });
 
   test("does not emit metadata for human contact with stale species row", () => {
     insertContact({ id: "c1", contactType: "human" });
-    insertMetadata({ contactId: "c1", species: "vellum", metadata: { x: 1 } });
+    insertMetadata({ contactId: "c1", species: "cadet", metadata: { x: 1 } });
 
     const result = handleContactsInfoBatch({
       body: { contactIds: ["c1"] },
@@ -138,14 +138,14 @@ describe("handleContactsInfoBatch", () => {
     insertContact({ id: "c1", contactType: "assistant" });
     getSqlite().run(
       "INSERT INTO assistant_contact_metadata (contact_id, species, metadata) VALUES (?, ?, ?)",
-      ["c1", "vellum", "{not valid json"],
+      ["c1", "cadet", "{not valid json"],
     );
 
     const result = handleContactsInfoBatch({
       body: { contactIds: ["c1"] },
     }) as { infos: Array<Record<string, unknown>> };
     expect(result.infos[0].assistantMetadata).toEqual({
-      species: "vellum",
+      species: "cadet",
       metadata: null,
     });
   });
@@ -290,7 +290,7 @@ describe("handleContactMirrorProbe", () => {
       contactType: "assistant",
     });
     insertChannel({ id: "ch1", contactId: "c1", address: "addr" });
-    insertMetadata({ contactId: "c1", species: "vellum" });
+    insertMetadata({ contactId: "c1", species: "cadet" });
 
     const result = handleContactMirrorProbe({
       body: { contactId: "c1" },

@@ -28,8 +28,8 @@ import { and, eq } from "drizzle-orm";
 import { assertNotLiveDb } from "../../../../__tests__/assert-not-live-db.js";
 
 const tmpWorkspace = mkdtempSync(join(tmpdir(), "capability-seed-embed-gate-"));
-const previousWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-process.env.VELLUM_WORKSPACE_DIR = tmpWorkspace;
+const previousWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+process.env.CADET_WORKSPACE_DIR = tmpWorkspace;
 
 /** Identity the stubbed embedding backend reports for every lookup. */
 const TEST_PROVIDER = "local";
@@ -119,9 +119,9 @@ beforeAll(async () => {
 
 afterAll(() => {
   if (previousWorkspaceEnv === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceEnv;
+    process.env.CADET_WORKSPACE_DIR = previousWorkspaceEnv;
   }
   assertNotLiveDb(tmpWorkspace);
   rmSync(tmpWorkspace, { recursive: true, force: true });

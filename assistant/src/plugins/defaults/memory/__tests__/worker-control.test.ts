@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import {} from "bun:test";
 
 // Captured at module scope: the preload cleans up its env var between suites.
-const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
+const PRELOAD_WS = process.env.CADET_WORKSPACE_DIR!;
 
 let tmpDir: string;
 let pidPath: string;

@@ -130,11 +130,11 @@ jobs:
           const exported = ["isSupported", "requestAuthorization", "registerCategories", "ensureDelegate", "restoreDelegate", "show"];
           for (const name of exported) {
             if (typeof addon.exports[name] !== "function") {
-              console.error(`vellum-notifier: missing export ${name}`);
+              console.error(`cadet-notifier: missing export ${name}`);
               process.exit(1);
             }
           }
-          console.log("vellum-notifier loaded; isSupported =", addon.exports.isSupported());
+          console.log("cadet-notifier loaded; isSupported =", addon.exports.isSupported());
           process.exit(0);
           JS
           # build-notifier.sh writes one architecture and clears the rest, so
@@ -142,7 +142,7 @@ jobs:
           # the smoke load honest about the arch the build actually produced,
           # and a second arch directory has to fail here rather than be smoke
           # loaded as a two-line path.
-          ADDONS=(resources/notifier/*/vellum-notifier.node)
+          ADDONS=(resources/notifier/*/cadet-notifier.node)
           if [ "${#ADDONS[@]}" -ne 1 ] || [ ! -f "${ADDONS[0]}" ]; then
             echo "::error::expected exactly one built notifier addon under resources/notifier, found: ${ADDONS[*]}"
             exit 1

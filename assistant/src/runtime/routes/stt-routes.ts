@@ -139,7 +139,7 @@ async function splitAudio(
 
 /** Convert source to 16kHz mono WAV for consistent processing. */
 async function toWav(inputPath: string, isVideo: boolean): Promise<string> {
-  const wavPath = join(tmpdir(), `vellum-transcribe-${randomUUID()}.wav`);
+  const wavPath = join(tmpdir(), `cadet-transcribe-${randomUUID()}.wav`);
   const args = ["ffmpeg", "-y", "-i", inputPath];
   if (isVideo) {
     args.push("-vn");
@@ -187,7 +187,7 @@ async function transcribeWithProvider(
   }
 
   // Split into chunks for large files
-  const chunkDir = join(tmpdir(), `vellum-transcribe-chunks-${randomUUID()}`);
+  const chunkDir = join(tmpdir(), `cadet-transcribe-chunks-${randomUUID()}`);
   await mkdir(chunkDir, { recursive: true });
 
   try {

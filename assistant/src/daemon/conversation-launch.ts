@@ -85,7 +85,7 @@ export async function launchConversation(
   );
 
   processMessageInBackground(conversationId, params.seedPrompt, {
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
     sourceInterface: "cli",
   }).catch((err) => {
     log.error(

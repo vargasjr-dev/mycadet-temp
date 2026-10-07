@@ -125,13 +125,13 @@ async function runMcp(
   }) as typeof process.exit;
 
   // Point workspace dir at the test data dir
-  process.env.VELLUM_WORKSPACE_DIR = testDataDir;
+  process.env.CADET_WORKSPACE_DIR = testDataDir;
 
   try {
     const program = new Command();
     program.exitOverride();
     registerMcpCommand(program);
-    await program.parseAsync(["node", "vellum", "mcp", subcommand, ...args]);
+    await program.parseAsync(["node", "cadet", "mcp", subcommand, ...args]);
   } catch (e: unknown) {
     // Commander exitOverride throws on parse errors
     if (e && typeof e === "object" && "exitCode" in e) {
@@ -167,7 +167,7 @@ describe("assistant mcp list", () => {
   beforeAll(() => {
     testDataDir = join(
       tmpdir(),
-      `vellum-mcp-cli-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      `cadet-mcp-cli-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     );
     mkdirSync(testDataDir, { recursive: true });
   });
@@ -306,7 +306,7 @@ describe("assistant mcp add", () => {
   beforeAll(() => {
     testDataDir = join(
       tmpdir(),
-      `vellum-mcp-add-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      `cadet-mcp-add-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     );
     mkdirSync(testDataDir, { recursive: true });
   });
@@ -437,7 +437,7 @@ describe("assistant mcp remove", () => {
   beforeAll(() => {
     testDataDir = join(
       tmpdir(),
-      `vellum-mcp-remove-test-${Date.now()}-${Math.random()
+      `cadet-mcp-remove-test-${Date.now()}-${Math.random()
         .toString(36)
         .slice(2)}`,
     );
@@ -488,7 +488,7 @@ describe("assistant mcp reload", () => {
   beforeAll(() => {
     testDataDir = join(
       tmpdir(),
-      `vellum-mcp-reload-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      `cadet-mcp-reload-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     );
     mkdirSync(testDataDir, { recursive: true });
   });
@@ -531,7 +531,7 @@ describe("assistant mcp auth — IPC path", () => {
   beforeAll(() => {
     testDataDir = join(
       tmpdir(),
-      `vellum-mcp-auth-ipc-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      `cadet-mcp-auth-ipc-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     );
     mkdirSync(testDataDir, { recursive: true });
   });

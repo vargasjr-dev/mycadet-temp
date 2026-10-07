@@ -22,9 +22,9 @@ export const routes = {
   assistant: `https://${WWW_DOMAIN}/assistant`,
   plugins: `https://${WWW_DOMAIN}/plugins`,
   downloads: `https://${WWW_DOMAIN}/downloads`,
-  iosAppStore: "https://apps.apple.com/us/app/vellum-assistant/id6759934423",
+  iosAppStore: "https://apps.apple.com/us/app/mycadet/id6759934423",
   androidPlayStore:
-    "https://play.google.com/store/apps/details?id=ai.vellum.assistant",
+    "https://play.google.com/store/apps/details?id=ai.mycadet.assistant",
   chromeWebStore:
-    "https://chromewebstore.google.com/detail/vellum-assistant-browser/hphbdmpffeigpcdjkckleobjmhhokpne",
+    "https://chromewebstore.google.com/detail/mycadet-browser/hphbdmpffeigpcdjkckleobjmhhokpne",
 } as const;

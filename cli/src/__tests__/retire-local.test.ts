@@ -20,7 +20,7 @@ import { getLockfilePath } from "../lib/environments/paths.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "retire-local-test-"));
-const originalLockfileDir = process.env.VELLUM_LOCKFILE_DIR;
+const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
 
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // below can restore them. Bun runs every test file in one process with a
@@ -76,7 +76,7 @@ afterAll(() => {
 import { getRetireArchiveCommand, retireLocal } from "../lib/retire-local.js";
 
 const instanceDir = join(testDir, "test-instance");
-const vellumDir = join(instanceDir, ".vellum");
+const cadetDir = join(instanceDir, ".cadet");
 
 function makeEntry(assistantId: string): AssistantEntry {
   return {
@@ -102,7 +102,7 @@ function writeLockfile(entries: AssistantEntry[]): void {
 
 describe("retireLocal — CES sibling stop", () => {
   beforeAll(() => {
-    process.env.VELLUM_LOCKFILE_DIR = testDir;
+    process.env.CADET_LOCKFILE_DIR = testDir;
   });
 
   beforeEach(() => {
@@ -115,7 +115,7 @@ describe("retireLocal — CES sibling stop", () => {
 
     rmSync(instanceDir, { recursive: true, force: true });
     rmSync(join(testDir, "retired"), { recursive: true, force: true });
-    mkdirSync(vellumDir, { recursive: true });
+    mkdirSync(cadetDir, { recursive: true });
     writeLockfile([makeEntry("test-assistant")]);
 
     // Suppress console output from the lifecycle reporter.
@@ -125,9 +125,9 @@ describe("retireLocal — CES sibling stop", () => {
 
   afterAll(() => {
     if (originalLockfileDir === undefined) {
-      delete process.env.VELLUM_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
     } else {
-      process.env.VELLUM_LOCKFILE_DIR = originalLockfileDir;
+      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
     }
     rmSync(testDir, { recursive: true, force: true });
   });
@@ -144,7 +144,7 @@ describe("retireLocal — CES sibling stop", () => {
     // Verify CES PID file is among the stop calls.
     const cesStopCall = stopProcessByPidFileMock.mock.calls.find(
       ([pidFile, label]) =>
-        pidFile === join(vellumDir, "ces.pid") &&
+        pidFile === join(cadetDir, "ces.pid") &&
         label === "credential-executor",
     );
     expect(cesStopCall).toBeDefined();
@@ -205,7 +205,7 @@ describe("retireLocal — CES sibling stop", () => {
     // The CES stop was attempted (PID file checked) but returned false.
     const cesStopCall = stopProcessByPidFileMock.mock.calls.find(
       ([pidFile, label]) =>
-        pidFile === join(vellumDir, "ces.pid") &&
+        pidFile === join(cadetDir, "ces.pid") &&
         label === "credential-executor",
     );
     expect(cesStopCall).toBeDefined();
@@ -217,7 +217,7 @@ describe("retireLocal — CES sibling stop", () => {
     otherEntry.resources!.instanceDir = otherInstanceDir;
     const otherPid = "4242";
     const otherPidFile = getDaemonPidPath(otherEntry.resources);
-    mkdirSync(join(otherInstanceDir, ".vellum", "workspace"), {
+    mkdirSync(join(otherInstanceDir, ".cadet", "workspace"), {
       recursive: true,
     });
     writeFileSync(otherPidFile, otherPid);
@@ -254,9 +254,9 @@ test("uses a Windows-native archive process", () => {
   expect(archiveCommand.args.join(" ")).toContain("tar.exe");
   expect(archiveCommand.args.join(" ")).not.toContain(archivePath);
   expect(archiveCommand.env).toMatchObject({
-    VELLUM_RETIRE_ARCHIVE_PATH: archivePath,
-    VELLUM_RETIRE_ARCHIVE_PARENT: "C:\\Users\\Example User\\Cadet\\retired",
-    VELLUM_RETIRE_STAGING_NAME: "assistant & data.tar.gz.staging",
-    VELLUM_RETIRE_STAGING_DIR: stagingDir,
+    CADET_RETIRE_ARCHIVE_PATH: archivePath,
+    CADET_RETIRE_ARCHIVE_PARENT: "C:\\Users\\Example User\\Cadet\\retired",
+    CADET_RETIRE_STAGING_NAME: "assistant & data.tar.gz.staging",
+    CADET_RETIRE_STAGING_DIR: stagingDir,
   });
 });

@@ -31,7 +31,7 @@ import { handle } from "./ipc";
  * reclaims `$TMPDIR` regardless.
  */
 
-const SHARE_TMP_PREFIX = "vellum-share-";
+const SHARE_TMP_PREFIX = "cadet-share-";
 
 // A share temp dir older than this can't belong to an in-flight share — even a
 // large AirDrop over a slow link finishes well within an hour — so it's safe to

@@ -170,7 +170,7 @@ function makeConversation(
     makeProvider(),
     "system prompt",
     sendToClient ?? (() => {}),
-    process.env.VELLUM_WORKSPACE_DIR!,
+    process.env.CADET_WORKSPACE_DIR!,
     { maxTokens: 4096 },
   );
 }

@@ -36,7 +36,7 @@ import { ensureVisible } from "../main-window";
  * the attribution line.
  */
 
-const HELPER_EXECUTABLE = "Vellum.WindowsHelper.exe";
+const HELPER_EXECUTABLE = "Cadet.WindowsHelper.exe";
 
 // Bound on toasts a user could still interact with.
 const MAX_TRACKED_TOASTS = 200;
@@ -53,7 +53,7 @@ const SHOW_RESULT_SCHEMA = z.object({
 });
 
 export const resolveHelperPath = (): string | null => {
-  const override = process.env["VELLUM_WINDOWS_HELPER_PATH"];
+  const override = process.env["CADET_WINDOWS_HELPER_PATH"];
   // `resourcesPath` (the packaged install's resources dir) is only set under
   // an Electron runtime; the app-path candidate is the dev publish dir.
   const resourcesPath: string | undefined = process.resourcesPath;

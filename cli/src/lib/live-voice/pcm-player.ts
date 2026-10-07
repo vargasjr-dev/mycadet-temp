@@ -294,7 +294,7 @@ export class PcmPlayer {
     const sampleRate = this.activeSampleRate ?? 24000;
 
     if (!this.tempDir) {
-      this.tempDir = mkdtempSync(join(tmpdir(), "vellum-voice-"));
+      this.tempDir = mkdtempSync(join(tmpdir(), "cadet-voice-"));
     }
     const filePath = join(this.tempDir, `turn-${this.tempSeq++}.wav`);
     writeFileSync(filePath, wrapPcmAsWav(pcm, sampleRate));

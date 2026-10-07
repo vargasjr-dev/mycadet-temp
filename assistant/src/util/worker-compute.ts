@@ -24,7 +24,7 @@ import { getContainerCpuCores } from "./cgroup-cpu.js";
  * worker is a standalone bun process that reads this and passes it to ONNX as
  * `session_options.intraOpNumThreads`.
  */
-export const ONNX_INTRA_OP_THREADS_ENV = "VELLUM_ONNX_INTRA_OP_THREADS";
+export const ONNX_INTRA_OP_THREADS_ENV = "CADET_ONNX_INTRA_OP_THREADS";
 
 /**
  * Fraction of available cores one ML worker's intra-op pool may use. The

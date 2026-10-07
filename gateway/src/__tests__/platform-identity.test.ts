@@ -57,7 +57,7 @@ const ASSISTANT_ID_ACCOUNT = credentialKey("cadet", "platform_assistant_id");
 const ORG_ID_ACCOUNT = credentialKey("cadet", "platform_organization_id");
 
 const originalAssistantApiKey = process.env.ASSISTANT_API_KEY;
-const originalPlatformUrl = process.env.VELLUM_PLATFORM_URL;
+const originalPlatformUrl = process.env.CADET_PLATFORM_URL;
 const originalPlatformAssistantId = process.env.PLATFORM_ASSISTANT_ID;
 const originalPlatformOrgId = process.env.PLATFORM_ORGANIZATION_ID;
 const originalPlatformUserId = process.env.PLATFORM_USER_ID;
@@ -91,7 +91,7 @@ beforeEach(() => {
   fetchCalls.length = 0;
   fetchImplFn = async () => new Response("not found", { status: 404 });
   delete process.env.ASSISTANT_API_KEY;
-  delete process.env.VELLUM_PLATFORM_URL;
+  delete process.env.CADET_PLATFORM_URL;
   delete process.env.PLATFORM_ASSISTANT_ID;
   delete process.env.PLATFORM_ORGANIZATION_ID;
   delete process.env.PLATFORM_USER_ID;
@@ -100,7 +100,7 @@ beforeEach(() => {
 
 afterEach(() => {
   restoreEnv("ASSISTANT_API_KEY", originalAssistantApiKey);
-  restoreEnv("VELLUM_PLATFORM_URL", originalPlatformUrl);
+  restoreEnv("CADET_PLATFORM_URL", originalPlatformUrl);
   restoreEnv("PLATFORM_ASSISTANT_ID", originalPlatformAssistantId);
   restoreEnv("PLATFORM_ORGANIZATION_ID", originalPlatformOrgId);
   restoreEnv("PLATFORM_USER_ID", originalPlatformUserId);
@@ -170,7 +170,7 @@ describe("resolvePlatformAssistantId", () => {
 
   test("loads ids from validate when the in-memory override is empty", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.VELLUM_PLATFORM_URL = BASE_URL;
+    process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
     await expect(resolvePlatformAssistantId()).resolves.toBe(ASSISTANT_ID);
@@ -182,7 +182,7 @@ describe("resolvePlatformAssistantId", () => {
 
   test("does not retry validate during the cooldown after a failure", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.VELLUM_PLATFORM_URL = BASE_URL;
+    process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => new Response("down", { status: 503 });
 
     await expect(resolvePlatformAssistantId()).resolves.toBe("");
@@ -192,7 +192,7 @@ describe("resolvePlatformAssistantId", () => {
 
   test("retries validate after a failed attempt once the cooldown is cleared", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.VELLUM_PLATFORM_URL = BASE_URL;
+    process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => new Response("down", { status: 503 });
 
     await expect(resolvePlatformAssistantId()).resolves.toBe("");
@@ -205,7 +205,7 @@ describe("resolvePlatformAssistantId", () => {
 
   test("concurrent resolves share one in-flight validate", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.VELLUM_PLATFORM_URL = BASE_URL;
+    process.env.CADET_PLATFORM_URL = BASE_URL;
     let release!: (value: Response) => void;
     let notifyFetchStarted!: () => void;
     const fetchStarted = new Promise<void>((resolve) => {
@@ -245,7 +245,7 @@ describe("readStoredPlatformUserId", () => {
 
   test("loads the owner id from validate and keeps it when validate later fails", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.VELLUM_PLATFORM_URL = BASE_URL;
+    process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
     await expect(readStoredPlatformUserId()).resolves.toEqual({
@@ -320,7 +320,7 @@ describe("readStoredPlatformUserId", () => {
     const nextAssistantId = "44444444-5555-4666-8777-888888888888";
     const nextUserId = "55555555-6666-4777-8888-999999999999";
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.VELLUM_PLATFORM_URL = BASE_URL;
+    process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
     await expect(readStoredPlatformUserId()).resolves.toEqual({
@@ -348,7 +348,7 @@ describe("readStoredPlatformUserId", () => {
 
   test("drops bound identity when credentials change and validate fails", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.VELLUM_PLATFORM_URL = BASE_URL;
+    process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
     await expect(readStoredPlatformUserId()).resolves.toEqual({
@@ -368,7 +368,7 @@ describe("readStoredPlatformUserId", () => {
 
   test("keeps bound identity when the vault is down and the new API key cannot be read", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.VELLUM_PLATFORM_URL = BASE_URL;
+    process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
     await expect(readStoredPlatformUserId()).resolves.toEqual({
@@ -392,7 +392,7 @@ describe("readStoredPlatformUserId", () => {
 
   test("does not read platform identity ids from the credential store", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.VELLUM_PLATFORM_URL = BASE_URL;
+    process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
     await readStoredPlatformUserId();

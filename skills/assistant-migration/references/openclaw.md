@@ -1,6 +1,6 @@
-# OpenClaw → Vellum
+# OpenClaw → Cadet
 
-OpenClaw is a separately-installed CLI-based agent runtime. Vellum and OpenClaw share a number of primitives; some artifacts port directly, others are best extracted via the OpenClaw CLI before bundling.
+OpenClaw is a separately-installed CLI-based agent runtime. Cadet and OpenClaw share a number of primitives; some artifacts port directly, others are best extracted via the OpenClaw CLI before bundling.
 
 ## Data directory location
 
@@ -24,13 +24,13 @@ openclaw gateway status --json > /tmp/openclaw-gateway-status.json
 
 ## What's inside (and how it maps)
 
-| Path / source                             | Vellum destination            | Bucket             |
+| Path / source                             | Cadet destination            | Bucket             |
 | ----------------------------------------- | ----------------------------- | ------------------ |
 | `openclaw-config.json` (CLI dump)         | Settings + Inference Profiles | Port + Review      |
 | `openclaw-health.json` (CLI dump)         | Reference only                | Disregard          |
 | `openclaw-gateway-status.json` (CLI dump) | Channels (URL/account refs)   | Review             |
 | `~/.openclaw/agents/<name>/AGENTS.md`     | Identity / `SOUL.md`          | Port               |
-| `~/.openclaw/skills/<name>/SKILL.md`      | Vellum skills (same standard) | Port               |
+| `~/.openclaw/skills/<name>/SKILL.md`      | Cadet skills (same standard) | Port               |
 | `~/.openclaw/memory.db` (SQLite)          | Memory                        | Review (see below) |
 | `~/.openclaw/schedules.json`              | Schedules                     | Port               |
 | `~/.openclaw/mcp.json` (URLs only)        | MCP setup tasks               | Re-setup           |
@@ -106,4 +106,4 @@ Identical to Hermes: attach `openclaw-migration.tar.gz` directly to the conversa
 - **Inference providers** (entries in `openclaw-config.json` under `agents.defaults.model.*`): `assistant oauth connect <provider>` for managed providers, or vault prompt per provider for raw keys.
 - **MCP servers**: per entry in `mcp.json`, walk the connect flow; bearer tokens go through the secure prompt.
 - **Channel bindings** (per `gateway/<channel>/account`): re-OAuth or paste token via secure prompt.
-- **`SPECIES` env var**: not migrated. Vellum sets `process.env.SPECIES` on its own daemon; the OpenClaw value is informational only.
+- **`SPECIES` env var**: not migrated. Cadet sets `process.env.SPECIES` on its own daemon; the OpenClaw value is informational only.

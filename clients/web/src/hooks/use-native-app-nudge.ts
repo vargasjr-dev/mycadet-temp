@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { emitNativeAppNudgeEvent } from "@/utils/native-app-nudge-telemetry";
-import { VELLUM_DOWNLOADS_URL } from "@/utils/external-urls";
+import { CADET_DOWNLOADS_URL } from "@/utils/external-urls";
 import {
   getLocalBool,
   getLocalNumber,
@@ -23,9 +23,9 @@ export const NATIVE_APP_BANNER_MIN_TURNS = 5;
 
 /** App Store listing for Cadet (id6759934423). */
 export const IOS_APP_STORE_URL =
-  "https://apps.apple.com/us/app/cadet-assistant/id6759934423";
+  "https://apps.apple.com/us/app/mycadet/id6759934423";
 
-const ANDROID_PACKAGE_ID = "ai.cadet.assistant";
+const ANDROID_PACKAGE_ID = "ai.mycadet.assistant";
 
 /** Verbatim value Android's `getInstallReferrer()` returns after install. */
 const ANDROID_INSTALL_REFERRER =
@@ -109,7 +109,7 @@ export function resolveMobilePromotion(
   return {
     target: "generic",
     appName: null,
-    storeUrl: VELLUM_DOWNLOADS_URL,
+    storeUrl: CADET_DOWNLOADS_URL,
   };
 }
 

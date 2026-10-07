@@ -2,7 +2,7 @@
  * Tests for the self-hosted A2A invite accept broker (acceptA2AInvite).
  *
  * Uses the real DB (via `initializeDb()`) and the test preload which sets
- * `VELLUM_WORKSPACE_DIR` to a per-file temp directory. Global `fetch` is
+ * `CADET_WORKSPACE_DIR` to a per-file temp directory. Global `fetch` is
  * mocked to simulate the outbound call to the sender's gateway.
  */
 
@@ -287,7 +287,7 @@ describe("acceptA2AInvite", () => {
       senderAssistantId: SENDER_ASSISTANT_ID,
       acceptor: {
         assistantId: RECEIVER_GATEWAY_URL,
-        displayName: "Vellum Assistant",
+        displayName: "Cadet Assistant",
         gatewayUrl: RECEIVER_GATEWAY_URL,
       },
     });

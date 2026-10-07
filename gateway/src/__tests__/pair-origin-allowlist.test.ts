@@ -31,7 +31,7 @@ const LOOPBACK_IP = "127.0.0.1";
 
 // A valid Cadet extension origin (production).
 const PROD_ORIGIN = "chrome-extension://hphbdmpffeigpcdjkckleobjmhhokpne";
-// A non-Vellum extension origin.
+// A non-Cadet extension origin.
 const MALICIOUS_ORIGIN =
   "chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
@@ -59,13 +59,13 @@ function makePairRequest(
     headers["origin"] = origin ?? PROD_ORIGIN;
   }
   if (interfaceId !== null) {
-    headers["x-vellum-interface-id"] = interfaceId;
+    headers["x-cadet-interface-id"] = interfaceId;
   }
   if (xForwardedFor) {
     headers["x-forwarded-for"] = xForwardedFor;
   }
   if (edgeForwarded) {
-    headers["x-vellum-edge-forwarded"] = "1";
+    headers["x-cadet-edge-forwarded"] = "1";
   }
   return new Request("http://localhost:7830/v1/pair", { method, headers });
 }
@@ -119,22 +119,22 @@ describe("extension CORS headers", () => {
     const headers = extensionCorsHeaders(origin);
     const allowHeaders =
       headers["Access-Control-Allow-Headers"]?.toLowerCase() ?? "";
-    expect(allowHeaders).toContain("x-vellum-client-version");
-    expect(allowHeaders).toContain("x-vellum-sse-watchdog");
+    expect(allowHeaders).toContain("x-cadet-client-version");
+    expect(allowHeaders).toContain("x-cadet-sse-watchdog");
   });
 });
 
 describe("webview CORS headers", () => {
   test("Access-Control-Allow-Headers includes client version and watchdog fingerprints", () => {
-    const headers = corsHeaders("https://app.vellum.local");
+    const headers = corsHeaders("https://app.cadet.local");
     const allowHeaders =
       headers["Access-Control-Allow-Headers"]?.toLowerCase() ?? "";
-    expect(allowHeaders).toContain("x-vellum-client-version");
-    expect(allowHeaders).toContain("x-vellum-sse-watchdog");
+    expect(allowHeaders).toContain("x-cadet-client-version");
+    expect(allowHeaders).toContain("x-cadet-sse-watchdog");
   });
 
   test("Access-Control-Allow-Headers includes every client-metadata header", () => {
-    const headers = corsHeaders("https://app.vellum.local");
+    const headers = corsHeaders("https://app.cadet.local");
     const allowHeaders =
       headers["Access-Control-Allow-Headers"]?.toLowerCase() ?? "";
     for (const header of Object.values(CLIENT_METADATA_HEADERS)) {

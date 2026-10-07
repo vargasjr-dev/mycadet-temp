@@ -311,7 +311,7 @@ describe("contacts_mirror_upsert_full", () => {
         contactType: "assistant",
         notes: null,
         assistantMetadata: {
-          species: "vellum",
+          species: "cadet",
           metadata: { assistantId: "a1" },
         },
         channels: [
@@ -329,7 +329,7 @@ describe("contacts_mirror_upsert_full", () => {
         contactType: "assistant",
         notes: null,
         assistantMetadata: {
-          species: "vellum",
+          species: "cadet",
           metadata: { assistantId: "a1" },
         },
         channels: [

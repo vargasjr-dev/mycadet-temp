@@ -53,7 +53,7 @@ export const ROUTES: RouteDefinition[] = [
     method: "POST",
     // Requires settings.write, not a read scope: the handler runs
     // maybeDefaultSpeechToManaged(), which can persist config changes
-    // (switching services.stt/tts.provider to "vellum"). This matches the
+    // (switching services.stt/tts.provider to "cadet"). This matches the
     // secret/settings config writers, which all require settings.write.
     policy: {
       requiredScopes: ["settings.write"],

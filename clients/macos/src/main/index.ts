@@ -33,9 +33,9 @@ import { installAbout, openAboutWindow } from "./about.client";
 import { installAutoUpdate } from "./auto-update.client";
 import {
   BUNDLES_DIR_NAME,
-  VELLUMAPP_PROTOCOL,
+  CADETAPP_PROTOCOL,
 } from "@mycadet/electron-desktop/bundle-platform";
-import { registerVellumAppProtocol } from "@mycadet/electron-desktop/vellumapp-protocol";
+import { registerCadetAppProtocol } from "@mycadet/electron-desktop/cadetapp-protocol";
 import { APP_HOST, APP_PROTOCOL } from "./app-config";
 import { resolveAllowedOrigin } from "./app-origin";
 import { writeCliLocator } from "./cli-installer";
@@ -124,7 +124,7 @@ import { installWebContentsSecurity } from "./windows";
 // Dev-only: override the workspace `name` (`@mycadet/macos`) so the
 // menu bar's first submenu reads "Cadet Electron", and — more
 // importantly — so `app.getPath("userData")` resolves to
-// `~/Library/Application Support/Vellum Electron/`, cleanly separate
+// `~/Library/Application Support/Cadet Electron/`, cleanly separate
 // from the other app installs (current and legacy) the developer may
 // also be running.
 //
@@ -180,11 +180,11 @@ if (isDev) {
 // when multiple environment builds (dev, staging, production) run side-by-side.
 // Append an environment suffix for non-production builds; production keeps the
 // original path for backwards compatibility.
-declare const __VELLUM_ENVIRONMENT__: string;
+declare const __CADET_ENVIRONMENT__: string;
 if (app.isPackaged) {
   const env =
-    typeof __VELLUM_ENVIRONMENT__ === "string"
-      ? __VELLUM_ENVIRONMENT__
+    typeof __CADET_ENVIRONMENT__ === "string"
+      ? __CADET_ENVIRONMENT__
       : "production";
   if (env !== "production") {
     const base = app.getPath("userData");
@@ -215,7 +215,7 @@ protocol.registerSchemesAsPrivileged([
     },
   },
   {
-    scheme: VELLUMAPP_PROTOCOL,
+    scheme: CADETAPP_PROTOCOL,
     privileges: {
       standard: true,
       secure: true,
@@ -228,13 +228,13 @@ protocol.registerSchemesAsPrivileged([
 
 // Deep-link plumbing — register at module top-level so the
 // `will-finish-launching` subscription captures URLs delivered AT
-// launch (the OS opens the app via a `vellum://` click → `open-url`
+// launch (the OS opens the app via a `mycadet://` click → `open-url`
 // can fire before `whenReady`). Registering in `whenReady` misses
 // the launching URL — the #1 deep-link bug in Electron apps.
 installDeepLinks();
 installFileOpen();
 
-// Serve clients/web/dist/ as static files via `app://vellum.ai/...`. Route-like
+// Serve clients/web/dist/ as static files via `app://mycadet.ai/...`. Route-like
 // paths (no file extension, or `.html`) fall back to index.html so React
 // Router can handle client-side routes on reload / deep-link; requests for
 // missing static assets return 404 so a stale or partial deploy surfaces as
@@ -332,7 +332,7 @@ handleSync("cadet:config:get", () => ({
   platformUrl: resolvedConfig.platformUrl,
   disablePlatform:
     ["true", "1"].includes(
-      (process.env.VELLUM_DISABLE_PLATFORM ?? "").toLowerCase(),
+      (process.env.CADET_DISABLE_PLATFORM ?? "").toLowerCase(),
     ) || undefined,
   deviceId: getDeviceId(),
 }));
@@ -406,7 +406,7 @@ app
         resolveAllowedOrigin,
       });
     }
-    registerVellumAppProtocol(
+    registerCadetAppProtocol(
       path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
     );
     installMacBundleWorkflow();

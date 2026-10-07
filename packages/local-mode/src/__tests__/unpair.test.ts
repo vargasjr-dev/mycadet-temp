@@ -11,7 +11,7 @@ let lockfilePath: string;
 let configDir: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "vellum-unpair-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-unpair-"));
   lockfilePath = path.join(tmpDir, "lockfile.json");
   configDir = path.join(tmpDir, "config");
 });

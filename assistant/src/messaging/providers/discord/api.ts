@@ -29,7 +29,7 @@ export const DISCORD_API_BASE_URL = "https://discord.com/api/v10";
  * of this documented form (`https://docs.discord.com/developers/reference`).
  */
 const DISCORD_USER_AGENT =
-  "DiscordBot (https://github.com/vellum-ai/vellum-assistant, 1.0)";
+  "DiscordBot (https://github.com/vargasjr-dev/mycadet, 1.0)";
 
 const DISCORD_DEFAULT_MAX_RETRIES = 3;
 const DISCORD_DEFAULT_INITIAL_BACKOFF_MS = 1000;

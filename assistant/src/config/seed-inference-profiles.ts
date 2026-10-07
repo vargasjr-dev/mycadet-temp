@@ -75,7 +75,7 @@ export function seedInferenceProfiles(
     process.env.IS_PLATFORM === "true" || process.env.IS_PLATFORM === "1";
 
   // A hatch overlay that explicitly selected a managed connection routes the
-  // default provider through vellum rather than the entered BYOK key.
+  // default provider through cadet rather than the entered BYOK key.
   const hatchSelectedManagedConnection = didHatchSelectManagedConnection(
     llm,
     profiles,
@@ -271,9 +271,9 @@ function resolveHatchDefaultProvider(
   hatchProvider: string | undefined,
 ): string {
   // Platform mode and an explicit managed-connection selection both route
-  // through vellum.
+  // through cadet.
   if (isPlatform || selectedManagedConnection) {
-    return "vellum";
+    return "cadet";
   }
   if (hatchProvider !== undefined && isDefaultProviderChoice(hatchProvider)) {
     return hatchProvider;
@@ -419,8 +419,8 @@ function didHatchSelectManagedConnection(
   }
 
   // A default-profile name with no explicit connection selects the managed
-  // route: the vellum column IS the managed column, and its profiles route
-  // through the canonical vellum row.
+  // route: the cadet column IS the managed column, and its profiles route
+  // through the canonical cadet row.
   return MANAGED_PROFILE_TEMPLATES[activeProfile] !== undefined;
 }
 

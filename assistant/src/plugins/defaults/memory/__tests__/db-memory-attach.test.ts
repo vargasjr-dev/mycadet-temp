@@ -106,7 +106,7 @@ describe("memory database connection", () => {
     async () => {
       const targetPath = join(
         tmpdir(),
-        `vellum-async-memory-dbpath-${Date.now()}.db`,
+        `cadet-async-memory-dbpath-${Date.now()}.db`,
       );
       try {
         const result = await runAsyncSqlite(

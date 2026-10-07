@@ -61,7 +61,7 @@ import type {
   ImportedFileReport,
   ImportFileAction,
 } from "./vbundle-importer.js";
-import { mergeMetadataPreservingVellum } from "./vbundle-metadata-merge.js";
+import { mergeMetadataPreservingCadet } from "./vbundle-metadata-merge.js";
 import {
   createHashVerifier,
   readAndValidateManifest,
@@ -1058,13 +1058,13 @@ export async function streamCommitImport(
     log.warn({ err }, "resetDb threw before swap; continuing");
   }
 
-  // Preserve the target's `vellum:*` credential metadata entries across
+  // Preserve the target's `cadet:*` credential metadata entries across
   // the swap. Django's post-hatch provisioning on the platform writes
-  // `vellum:platform_base_url` / `assistant_api_key` / `platform_assistant_id`
+  // `cadet:platform_base_url` / `assistant_api_key` / `platform_assistant_id`
   // / `webhook_secret` via POST /v1/secrets, which upserts into the live
   // workspace's `data/credentials/metadata.json`. Without this merge the
   // swap would replace that file with the source's copy (which has no
-  // vellum entries on local sources), and the gateway's
+  // cadet entries on local sources), and the gateway's
   // `readServiceCredentials` would stop finding the platform API key.
   //
   // Executes in the temp workspace only — no effect on the live workspace
@@ -1096,7 +1096,7 @@ export async function streamCommitImport(
       "Credential metadata merge failed before swap",
     );
     warnings.push(
-      `Credential metadata merge failed: ${errMessage(err)}; vellum:* entries may not survive the import`,
+      `Credential metadata merge failed: ${errMessage(err)}; cadet:* entries may not survive the import`,
     );
   }
 
@@ -1471,13 +1471,13 @@ async function promoteLegacyStagedFiles(
 
 /**
  * Rewrite the temp workspace's `data/credentials/metadata.json` so the
- * target's live `vellum:*` entries survive the swap. Exits silently if
+ * target's live `cadet:*` entries survive the swap. Exits silently if
  * there is nothing to merge.
  *
  * Four cases:
  *   - No live metadata, no temp metadata → no-op.
  *   - Live metadata present, temp metadata missing → if the live metadata
- *     contains vellum entries, synthesize a minimal v5 metadata file in
+ *     contains cadet entries, synthesize a minimal v5 metadata file in
  *     the temp tree containing only those preserved entries. If it has
  *     none, no-op (no entries to preserve).
  *   - Live metadata missing, temp metadata present → no-op (nothing to
@@ -1515,16 +1515,16 @@ async function mergeCredentialMetadataIntoTemp(
   }
 
   if (tempJson != null) {
-    const merged = mergeMetadataPreservingVellum(tempJson, liveJson);
+    const merged = mergeMetadataPreservingCadet(tempJson, liveJson);
     if (merged !== tempJson) {
       await writeFile(tempMetadataPath, merged, { mode: 0o600 });
     }
     return;
   }
 
-  // Live-only path: synthesize a v5 file with just the preserved vellum
+  // Live-only path: synthesize a v5 file with just the preserved cadet
   // entries so the gateway can still locate them after the swap.
-  const synthesized = mergeMetadataPreservingVellum(
+  const synthesized = mergeMetadataPreservingCadet(
     JSON.stringify({ version: 5, credentials: [] }),
     liveJson,
   );
@@ -1532,7 +1532,7 @@ async function mergeCredentialMetadataIntoTemp(
     credentials?: unknown[];
   };
   if (!parsed.credentials || parsed.credentials.length === 0) {
-    // Live file exists but had no vellum entries worth preserving.
+    // Live file exists but had no cadet entries worth preserving.
     return;
   }
 
@@ -1541,7 +1541,7 @@ async function mergeCredentialMetadataIntoTemp(
     await writeFile(tempMetadataPath, synthesized, { mode: 0o600 });
   } catch (err) {
     warnings.push(
-      `Failed to write preserved vellum:* metadata into temp workspace: ${errMessage(err)}`,
+      `Failed to write preserved cadet:* metadata into temp workspace: ${errMessage(err)}`,
     );
   }
 }

@@ -25,15 +25,15 @@ test("creates a Linux runtime with only the committed portable executors", () =>
     "host_ui_snapshot",
   ]);
   expect(runtime.sseClientHeaders()).toMatchObject({
-    "X-Vellum-Client-Id": "client-123",
-    "X-Vellum-Interface-Id": "linux",
+    "X-Cadet-Client-Id": "client-123",
+    "X-Cadet-Interface-Id": "linux",
   });
   expect(runtime.posterClientHeaders()).toEqual({
-    "X-Vellum-Client-Id": "client-123",
+    "X-Cadet-Client-Id": "client-123",
   });
   expect(runtime.sseFallbackClientHeaders?.()).toMatchObject({
-    "X-Vellum-Client-Id": "client-123",
-    "X-Vellum-Interface-Id": "macos",
+    "X-Cadet-Client-Id": "client-123",
+    "X-Cadet-Interface-Id": "macos",
   });
   expect(() => runtime.teardownExecutors?.()).not.toThrow();
 });

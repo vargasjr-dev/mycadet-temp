@@ -407,13 +407,13 @@ describe("SubagentManager.spawnAndAwait", () => {
     // already been cleared at spawn time).
     await manager.spawnAndAwait(
       makeConfig({
-        trustContext: { sourceChannel: "vellum", trustClass: "guardian" },
+        trustContext: { sourceChannel: "cadet", trustClass: "guardian" },
       }),
       () => {},
     );
 
     expect(lastTrustContext).toMatchObject({
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     });
   });

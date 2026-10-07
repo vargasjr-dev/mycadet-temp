@@ -46,7 +46,7 @@ function fakeProvider(
 
 const managed = (label: string, status?: "disabled"): ProfileEntry => ({
   source: "managed",
-  provider: "vellum",
+  provider: "cadet",
   model: "m",
   label,
   ...(status ? { status } : {}),

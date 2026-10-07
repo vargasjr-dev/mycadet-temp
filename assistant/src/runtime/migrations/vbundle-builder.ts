@@ -3,7 +3,7 @@
  *
  * A .vbundle is a gzip-compressed tar archive containing:
  * - manifest.json: metadata with schema_version, checksums, and bundle info
- * - workspace/: the entire $VELLUM_WORKSPACE_DIR/ directory tree (DB, config,
+ * - workspace/: the entire $CADET_WORKSPACE_DIR/ directory tree (DB, config,
  *   skills, prompts, attachments, etc.) — excluding large/regenerable
  *   dirs (embedding-models/, data/qdrant/)
  */
@@ -76,7 +76,7 @@ export interface VBundleExportOptions {
   include_memory_vectors: boolean;
   /**
    * Debug profile: the bundle carries `gateway/export.tar.gz`, the gateway's
-   * database and recent logs, for Vellum staff to inspect. Absent on
+   * database and recent logs, for Cadet staff to inspect. Absent on
    * ordinary migration bundles.
    */
   include_gateway?: boolean;
@@ -696,7 +696,7 @@ export interface BuildExportVBundleOptions {
   /** Whether secrets were stripped from the bundle before archiving. */
   secretsRedacted: boolean;
   /**
-   * Absolute path to the workspace directory ($VELLUM_WORKSPACE_DIR/).
+   * Absolute path to the workspace directory ($CADET_WORKSPACE_DIR/).
    * When provided and exists, the entire directory tree is walked and
    * included in the archive under the "workspace/" prefix, skipping
    * large/regenerable dirs (embedding-models/, data/qdrant/).
@@ -730,7 +730,7 @@ export interface BuildExportVBundleOptions {
 /**
  * Build a .vbundle archive populated with real assistant data.
  *
- * Walks the entire workspace directory ($VELLUM_WORKSPACE_DIR/) and includes
+ * Walks the entire workspace directory ($CADET_WORKSPACE_DIR/) and includes
  * all files in the archive, skipping only large/regenerable directories
  * (embedding-models/, data/qdrant/). Binary files (SQLite DB, attachments)
  * are included.

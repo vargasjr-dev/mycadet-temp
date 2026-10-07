@@ -30,7 +30,7 @@ import {
 const ANDROID_PROMOTION: NativeAppPromotion = {
   target: "android",
   appName: getNativeAppName("android"),
-  storeUrl: "https://play.google.com/store/apps/details?id=ai.cadet.assistant",
+  storeUrl: "https://play.google.com/store/apps/details?id=ai.mycadet.assistant",
 };
 
 const meta: Meta<typeof NativeAppCardView> = {

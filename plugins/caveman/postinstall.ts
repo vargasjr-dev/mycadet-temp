@@ -1,16 +1,16 @@
 /**
  * Postinstall adapter that massages the upstream `caveman` Claude Code plugin
- * into a plugin the Vellum loader can run.
+ * into a plugin the Cadet loader can run.
  *
  * Why this exists: `caveman` (https://github.com/JuliusBrussee/caveman) ships a
  * Claude Code plugin layout — a `.claude-plugin/plugin.json` manifest whose
  * behavior lives in `SessionStart`/`UserPromptSubmit` hooks that shell out to
  * bundled `node` scripts, plus the ruleset prose in `skills/caveman/SKILL.md`.
- * Vellum's loader expects hooks as `hooks/<hook-name>.ts` modules (default
+ * Cadet's loader expects hooks as `hooks/<hook-name>.ts` modules (default
  * export = the hook function). Installed verbatim, caveman therefore loads with
- * no Vellum hooks, so it does nothing.
+ * no Cadet hooks, so it does nothing.
  *
- * This adapter is curated, reviewed Vellum code (it lives in our repo, not the
+ * This adapter is curated, reviewed Cadet code (it lives in our repo, not the
  * upstream clone) and is invoked via npm's native `scripts.postinstall` after
  * the installer overlays it onto the freshly cloned tree. It never executes
  * caveman's own lifecycle scripts. It performs a deterministic, file-only

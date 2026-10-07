@@ -1,17 +1,17 @@
-# Vellum Assistant — Agent Instructions
+# Cadet Assistant — Agent Instructions
 
 ## Project Structure
 
 Bun + TypeScript monorepo with multiple packages:
 
-- `clients/`: End-user app surfaces: `clients/web/` (Vite + React Router v7 SPA), `clients/ios/` (Capacitor iOS shell that loads the web app in a WKWebView), `clients/android/` (Capacitor Android shell that loads the web app in a WebView), `clients/macos/` (Electron desktop shell that wraps `clients/web/`; daemon/gateway lifecycle is owned by the `vellum` CLI, which the app invokes as a subprocess; auto-update via `electron-updater`; CI workflows are `pr-macos.yaml` / `ci-main-macos.yaml`), `clients/linux/` (Electron desktop shell around `clients/web/` packaged as an AppImage; CI workflows are `pr-linux.yaml` / `ci-main-linux.yaml`), `clients/windows/` (Electron desktop shell around `clients/web/` at capability parity with macOS, see `clients/windows/docs/parity-matrix.md`; CI workflows are `pr-windows.yaml` / `ci-main-windows.yaml`), and `clients/chrome-extension/` (MV3 Chrome browser extension). See [`clients/README.md`](clients/README.md).
+- `clients/`: End-user app surfaces: `clients/web/` (Vite + React Router v7 SPA), `clients/ios/` (Capacitor iOS shell that loads the web app in a WKWebView), `clients/android/` (Capacitor Android shell that loads the web app in a WebView), `clients/macos/` (Electron desktop shell that wraps `clients/web/`; daemon/gateway lifecycle is owned by the `cadet` CLI, which the app invokes as a subprocess; auto-update via `electron-updater`; CI workflows are `pr-macos.yaml` / `ci-main-macos.yaml`), `clients/linux/` (Electron desktop shell around `clients/web/` packaged as an AppImage; CI workflows are `pr-linux.yaml` / `ci-main-linux.yaml`), `clients/windows/` (Electron desktop shell around `clients/web/` at capability parity with macOS, see `clients/windows/docs/parity-matrix.md`; CI workflows are `pr-windows.yaml` / `ci-main-windows.yaml`), and `clients/chrome-extension/` (MV3 Chrome browser extension). See [`clients/README.md`](clients/README.md).
 - `assistant/` — Main backend service (Bun + TypeScript)
 - `cli/` — Multi-assistant management CLI (Bun + TypeScript).
 - `gateway/` — Channel ingress gateway (Bun + TypeScript)
 - `packages/` — Shared internal packages (e.g. `service-contracts` for CES wire-protocol schemas)
 - `scripts/` — Utility scripts
 - `skills/` — First-party skill catalog (portable skill packages).
-- Evals have moved to a dedicated repo: [vellum-ai/evals](https://github.com/vellum-ai/evals).
+- Evals have moved to a dedicated repo: [vargasjr-dev/evals](https://github.com/vargasjr-dev/evals).
 
 **`meta/` is a parent package, NOT a shared package.** Its purpose is to be the root workspace that all service packages (`gateway/`, `assistant/`, etc.) descend from — it provides workspace-level tooling, CI configuration, and build scripts. It must never contain runtime code, constants, or configuration files that child services import. A gateway or assistant module importing from `../../meta/` is a layering violation. Static config files (e.g. allowlists, registries) that a service consumes at runtime belong in that service's own package directory. Existing `meta/` contents (feature flags, test infra) are either shared build/CI metadata or are being migrated out.
 
@@ -96,9 +96,9 @@ The full test suite is large and will hang or timeout if run unscoped. **Never r
 - **Human attention comments**: After creating a PR with non-routine changes (architectural decisions, security, complex logic, deletions, low confidence), leave a `gh pr comment` highlighting where to focus review and the risk level. Skip for routine changes.
 - **Open-source hygiene**: This repo is public. Before opening a PR, review your diff for internal URLs, hardcoded credentials, proprietary infrastructure details, or references to internal services that should not be publicly visible. Generated files (OpenAPI specs, API clients) must be regenerated from committed sources — verify with `bun run generate:openapi` in `assistant/`.
 
-### Notes for Vellum team members
+### Notes for Cadet team members
 
-When a Vellum [Linear](https://linear.app/) ticket exists for the work, link it in the PR body and include the identifier in the branch name (e.g. `lum-nnn-fix-foo`). Linear's [GitHub integration](https://linear.app/docs/github#link-using-magic-words) recognizes the same closing keywords plus non-closing words like `Part of` and `Related to` — see the linked docs for the full magic-word list and status-sync behavior.
+When a Cadet [Linear](https://linear.app/) ticket exists for the work, link it in the PR body and include the identifier in the branch name (e.g. `lum-nnn-fix-foo`). Linear's [GitHub integration](https://linear.app/docs/github#link-using-magic-words) recognizes the same closing keywords plus non-closing words like `Part of` and `Related to` — see the linked docs for the full magic-word list and status-sync behavior.
 
 ## Keep Docs Up to Date
 
@@ -175,7 +175,7 @@ We have real users — maintain backwards compatibility for all interfaces, pers
 
 | What changed                                                                    | Migration type      | Location                                                                                                                                  |
 | ------------------------------------------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Workspace files (renames, moves, format changes under `$VELLUM_WORKSPACE_DIR/`) | Workspace migration | `assistant/src/workspace/migrations/` — append to `WORKSPACE_MIGRATIONS` in `registry.ts`                                                 |
+| Workspace files (renames, moves, format changes under `$CADET_WORKSPACE_DIR/`) | Workspace migration | `assistant/src/workspace/migrations/` — append to `WORKSPACE_MIGRATIONS` in `registry.ts`                                                 |
 | Database schema or data (columns, indexes, backfills)                           | DB migration        | `assistant/src/persistence/migrations/` — add function and register in the `migrationSteps` array in `assistant/src/persistence/steps.ts` |
 
 Migrations must be **idempotent** (safe to re-run if interrupted) and **append-only** (never reorder or remove existing entries). Each new DB migration file takes a fresh numeric prefix — never reuse one; the historical duplicate prefixes are frozen in `assistant/src/persistence/migrations/__tests__/migration-prefix-guard.test.ts`. Test migrations — see `assistant/src/__tests__/workspace-migration-*.test.ts` and `assistant/src/__tests__/db-*.test.ts` for patterns. Flag breaking changes in PR descriptions. If a migration is infeasible, call it out explicitly for human review.
@@ -286,7 +286,7 @@ custom protocols because Chromium omits Origin, Referer, and Fetch Metadata.
 - **Local mode**: Use the credential store (`assistant credentials`) or `GATEWAY_SECURITY_DIR` (resolved by `getGatewaySecurityDir()` in `gateway/src/paths.ts`) for sensitive data. Do **not** create new secrets in the daemon's `protected/` directory — that directory is being phased out; all new security-sensitive files belong in the gateway security dir or CES.
 - **Docker mode**: Sensitive files are isolated on dedicated security volumes that only the owning service can access. Trust rules (`trust.json`, `actor-token-signing-key`), capability-token secrets, and other gateway-owned security material live on the gateway security volume (`/gateway-security`). Credential keys (`keys.enc`, `store.key`) live on the CES security volume (`/ces-security`). The assistant and gateway access credentials via the CES HTTP API (`CES_CREDENTIAL_URL`), and the assistant accesses trust rules via the gateway's trust HTTP API. Neither the assistant nor the gateway has direct filesystem access to the other service's security volume.
 - **The daemon must never read from `GATEWAY_SECURITY_DIR`** or any gateway-owned directory. Any data the daemon needs from the gateway (e.g. capability token verification, feature flags, trust rules) must flow through IPC or HTTP APIs.
-- **Do not access the user's `~/.vellum` directory from client packages** (`clients/chrome-extension/`). Clients should read configuration from their own package directory or from `GATEWAY_SECURITY_DIR`. Existing `~/.vellum` references in client code are legacy and should be removed.
+- **Do not access the user's `~/.cadet` directory from client packages** (`clients/chrome-extension/`). Clients should read configuration from their own package directory or from `GATEWAY_SECURITY_DIR`. Existing `~/.cadet` references in client code are legacy and should be removed.
 
 ## Release Notes
 
@@ -298,18 +298,18 @@ The daemon must not invoke LLM providers at startup or on unconditional timers �
 
 ## Companion Repos
 
-- **[`vellum-assistant-platform`](../vellum-assistant-platform)** — Django backend that manages platform-hosted ("managed") assistants. Handles authentication (WorkOS OIDC), organization management, assistant lifecycle, and runtime proxying. The desktop app authenticates against it and proxies all runtime traffic through it. Stack: Python 3.14, Django, DRF, PostgreSQL, Redis/Valkey. See `../vellum-assistant-platform/AGENTS.md` for development instructions.
+- **[`mycadet-platform`](../mycadet-platform)** — Django backend that manages platform-hosted ("managed") assistants. Handles authentication (WorkOS OIDC), organization management, assistant lifecycle, and runtime proxying. The desktop app authenticates against it and proxies all runtime traffic through it. Stack: Python 3.14, Django, DRF, PostgreSQL, Redis/Valkey. See `../mycadet-platform/AGENTS.md` for development instructions.
 
-When making changes that could affect the cloud platform, review the sibling `../vellum-assistant-platform` repo for compatibility and required follow-up updates. High-risk change areas include:
+When making changes that could affect the cloud platform, review the sibling `../mycadet-platform` repo for compatibility and required follow-up updates. High-risk change areas include:
 
 - HTTP server behavior and API contracts.
 - Stored file and directory structure changes (workspace paths, on-disk formats, exports/imports, migrations).
 - Dockerfile or container runtime/build changes.
-- **Feature flags**: Adding a flag to `meta/feature-flags/feature-flag-registry.json` requires a companion PR in `vellum-assistant-platform` to provision the flag in Terraform. See the [Assistant Feature Flags](#assistant-feature-flags) section.
+- **Feature flags**: Adding a flag to `meta/feature-flags/feature-flag-registry.json` requires a companion PR in `mycadet-platform` to provision the flag in Terraform. See the [Assistant Feature Flags](#assistant-feature-flags) section.
 
-## Build Environment (`VELLUM_ENVIRONMENT`)
+## Build Environment (`CADET_ENVIRONMENT`)
 
-`VELLUM_ENVIRONMENT` identifies the runtime environment for all clients (Electron macOS app, CLI, Chrome extension). It's embedded at build time by each platform's build tooling, or injected via `--define` for the Chrome-ext bundler. CI/devs can override by exporting it before building; per-client default-resolution logic lives in each client's build script.
+`CADET_ENVIRONMENT` identifies the runtime environment for all clients (Electron macOS app, CLI, Chrome extension). It's embedded at build time by each platform's build tooling, or injected via `--define` for the Chrome-ext bundler. CI/devs can override by exporting it before building; per-client default-resolution logic lives in each client's build script.
 
 | Value        | Use cases                                                                        |
 | ------------ | -------------------------------------------------------------------------------- |
@@ -335,15 +335,15 @@ Surfaces map onto Sentry projects as below. The Electron renderer reports to the
 
 | Surface                  | Project                    | DSN source                                                | Delivered via                                |
 | ------------------------ | -------------------------- | --------------------------------------------------------- | -------------------------------------------- |
-| Web SPA                  | `vellum-assistant-web`     | `VITE_SENTRY_DSN` (vars)                                  | web build                                    |
-| Electron main            | `vellum-assistant-macos`   | `SENTRY_DSN_MACOS` (secret) → `__SENTRY_DSN_MACOS__`      | macOS build define                           |
-| Electron renderer        | `vellum-assistant-macos`   | `SENTRY_DSN_MACOS` (secret) → `VITE_SENTRY_DSN_MACOS`     | macOS build                                  |
-| iOS webview + native     | `vellum-assistant-ios`     | `SENTRY_DSN_IOS` (secret) → `VITE_SENTRY_DSN_IOS`         | web-SPA build (loaded at runtime on iOS)     |
-| Android webview + native | `vellum-assistant-android` | `SENTRY_DSN_ANDROID` (secret) → `VITE_SENTRY_DSN_ANDROID` | web-SPA build (loaded at runtime on Android) |
+| Web SPA                  | `mycadet-web`     | `VITE_SENTRY_DSN` (vars)                                  | web build                                    |
+| Electron main            | `mycadet-macos`   | `SENTRY_DSN_MACOS` (secret) → `__SENTRY_DSN_MACOS__`      | macOS build define                           |
+| Electron renderer        | `mycadet-macos`   | `SENTRY_DSN_MACOS` (secret) → `VITE_SENTRY_DSN_MACOS`     | macOS build                                  |
+| iOS webview + native     | `mycadet-ios`     | `SENTRY_DSN_IOS` (secret) → `VITE_SENTRY_DSN_IOS`         | web-SPA build (loaded at runtime on iOS)     |
+| Android webview + native | `mycadet-android` | `SENTRY_DSN_ANDROID` (secret) → `VITE_SENTRY_DSN_ANDROID` | web-SPA build (loaded at runtime on Android) |
 
 Native mobile DSNs are baked into the deployed web SPA bundle rather than the native builds, because the iOS and Android apps run the deployed SPA via `server.url` (see `clients/web/capacitor.config.ts`) and bundle no web assets at `cap sync`.
 
-The Electron renderer uses `@sentry/react` (not `@sentry/electron/renderer`): `@sentry/electron` pins `@sentry/core` 10.50 while `@sentry/capacitor` pins `@sentry/react`/`@sentry/browser` 10.52, and Sentry's current-client carrier is version-specific, so an `@sentry/electron/renderer` client couldn't see `@sentry/react` captures. Renderer native crashes still reach `vellum-assistant-macos` via `@sentry/electron/main` (separate process).
+The Electron renderer uses `@sentry/react` (not `@sentry/electron/renderer`): `@sentry/electron` pins `@sentry/core` 10.50 while `@sentry/capacitor` pins `@sentry/react`/`@sentry/browser` 10.52, and Sentry's current-client carrier is version-specific, so an `@sentry/electron/renderer` client couldn't see `@sentry/react` captures. Renderer native crashes still reach `mycadet-macos` via `@sentry/electron/main` (separate process).
 
 **Version pins**: `@sentry/react`/`@sentry/browser` are pinned to 10.52.0 to satisfy `@sentry/capacitor`'s exact peer; `@sentry/electron` (Electron main process only) is on its own 10.50 line. Bumping any one requires checking the others.
 

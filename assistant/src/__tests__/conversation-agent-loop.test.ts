@@ -996,8 +996,8 @@ function makeCtx(
     },
     getTurnInterfaceContext: () => null,
     getTurnChannelContext: () => ({
-      userMessageChannel: "vellum" as const,
-      assistantMessageChannel: "vellum" as const,
+      userMessageChannel: "cadet" as const,
+      assistantMessageChannel: "cadet" as const,
     }),
 
     buildCurrentSystemPrompt: () => "system prompt",
@@ -2013,7 +2013,7 @@ describe("session-agent-loop", () => {
       expect(classifyDiskPressureTurnPolicyMock).toHaveBeenCalledWith(
         mockDiskPressureStatus,
         expect.objectContaining({
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           sourceInterface: "web",
           trustContext: null,
         }),

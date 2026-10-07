@@ -6,7 +6,7 @@ Usage:
     python3 audit.py <domain> [--json] [--no-color] [--timeout N]
 
 Examples:
-    python3 audit.py vellum.ai
+    python3 audit.py mycadet.ai
     python3 audit.py https://stripe.com --json
 """
 
@@ -28,7 +28,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field, asdict
 from typing import Callable
 
-UA = "Mozilla/5.0 (geo-audit/1.0; +https://vellum.ai)"
+UA = "Mozilla/5.0 (geo-audit/1.0; +https://mycadet.ai)"
 TIMEOUT_DEFAULT = 10
 
 AI_AGENTS = [
@@ -869,10 +869,10 @@ HTML_TEMPLATE = """<!doctype html>
 
   <div class="handoff">
     <div class="title">Next step</div>
-    <p>Now that you know what's broken, fix it with content. Load the <code>geo-article-writer</code> skill in Vellum and we'll start filling the topical gaps the audit just surfaced. Tell it your category and your top 2 competitors when it asks.</p>
+    <p>Now that you know what's broken, fix it with content. Load the <code>geo-article-writer</code> skill in Cadet and we'll start filling the topical gaps the audit just surfaced. Tell it your category and your top 2 competitors when it asks.</p>
   </div>
 
-  <div class="footer">geo-audit · run any domain · part of the Vellum GEO toolkit</div>
+  <div class="footer">geo-audit · run any domain · part of the Cadet GEO toolkit</div>
 </div>
 </body>
 </html>
@@ -976,7 +976,7 @@ def write_and_open_html(host: str, results: list[CheckResult], no_open: bool = F
 
 def main():
     parser = argparse.ArgumentParser(description="One-command technical GEO audit.")
-    parser.add_argument("domain", help="Domain or URL to audit (e.g. vellum.ai)")
+    parser.add_argument("domain", help="Domain or URL to audit (e.g. mycadet.ai)")
     parser.add_argument("--json", action="store_true", help="Emit JSON instead of streaming markdown")
     parser.add_argument("--no-color", action="store_true", help="Strip ANSI color codes")
     parser.add_argument("--timeout", type=int, default=TIMEOUT_DEFAULT, help="Per-request timeout (seconds)")

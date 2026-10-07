@@ -195,10 +195,10 @@ describe("avatar set", () => {
   test("resolves relative path to absolute before calling avatar_set", async () => {
     mockIpcResult = { ok: true, result: { ok: true } };
 
-    // avatar.ts resolves relative paths against VELLUM_WORKSPACE_DIR.
+    // avatar.ts resolves relative paths against CADET_WORKSPACE_DIR.
     // Point the workspace root at cwd so a real file (./package.json) is reachable.
-    const originalWsDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = process.cwd();
+    const originalWsDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = process.cwd();
     try {
       const { existsSync } = await import("node:fs");
       const { resolve } = await import("node:path");
@@ -222,9 +222,9 @@ describe("avatar set", () => {
       // If the file doesn't exist we skip — the test is about path resolution
     } finally {
       if (originalWsDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = originalWsDir;
+        process.env.CADET_WORKSPACE_DIR = originalWsDir;
       }
     }
   });
@@ -304,7 +304,7 @@ describe("avatar get", () => {
       ok: true,
       result: {
         exists: true,
-        path: "/home/user/.vellum/workspace/data/avatar/avatar-image.png",
+        path: "/home/user/.cadet/workspace/data/avatar/avatar-image.png",
       },
     };
 

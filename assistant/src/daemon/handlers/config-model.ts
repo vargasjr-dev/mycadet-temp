@@ -98,8 +98,8 @@ export function setImageGenModel(modelId: string, ctx: ModelSetContext): void {
   // Keep the derived provider in sync with the selected model so downstream
   // routing never sends a Gemini request to an OpenAI model (or vice versa).
   // The prefix logic is shared with workspace migration 006-services-config
-  // via providerForImageModelPrefix(). Providers "vellum" and "openrouter"
-  // are exempt: vellum is managed for every model, and openrouter owns every
+  // via providerForImageModelPrefix(). Providers "cadet" and "openrouter"
+  // are exempt: cadet is managed for every model, and openrouter owns every
   // selected slug (including google/ and openai/ prefixes). Rewriting either
   // would silently move the user onto a BYOK provider they may hold no key
   // for.
@@ -107,7 +107,7 @@ export function setImageGenModel(modelId: string, ctx: ModelSetContext): void {
     | Record<string, { provider?: string }>
     | undefined;
   const currentProvider = services?.["image-generation"]?.provider;
-  if (currentProvider !== "vellum" && currentProvider !== "openrouter") {
+  if (currentProvider !== "cadet" && currentProvider !== "openrouter") {
     setServiceField(
       raw,
       "image-generation",

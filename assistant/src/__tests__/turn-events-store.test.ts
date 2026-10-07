@@ -213,7 +213,7 @@ describe("queryUnreportedTurnEvents", () => {
     const macOsMsg = await addMessage(conv.id, "user", "hi from desktop", {
       metadata: {
         userMessageInterface: "macos",
-        userMessageChannel: "vellum",
+        userMessageChannel: "cadet",
         client: {
           os: "darwin",
           interface_version: "0.8.2",
@@ -233,7 +233,7 @@ describe("queryUnreportedTurnEvents", () => {
 
     expect(byId[macOsMsg.id]).toBeDefined();
     expect(byId[macOsMsg.id].interfaceId).toBe("macos");
-    expect(byId[macOsMsg.id].channelId).toBe("vellum");
+    expect(byId[macOsMsg.id].channelId).toBe("cadet");
     // clientMetadata is returned as raw JSON text -- the reporter parses it.
     // We verify it round-trips back to the input object.
     expect(byId[macOsMsg.id].clientMetadata).not.toBeNull();
@@ -259,7 +259,7 @@ describe("queryUnreportedTurnEvents", () => {
   test("projects turn-outcome stamps from messages.metadata", async () => {
     const conv = createConversation({ conversationType: "standard" });
     const head = await addMessage(conv.id, "user", "first of a burst", {
-      metadata: { userMessageInterface: "web", userMessageChannel: "vellum" },
+      metadata: { userMessageInterface: "web", userMessageChannel: "cadet" },
     });
     const final = await addMessage(conv.id, "user", "second of a burst");
     const failed = await addMessage(conv.id, "user", "doomed turn");
@@ -281,7 +281,7 @@ describe("queryUnreportedTurnEvents", () => {
     // The stamp shallow-merges into existing metadata: attribution keys
     // written at persist time survive.
     expect(byId[head.id].interfaceId).toBe("web");
-    expect(byId[head.id].channelId).toBe("vellum");
+    expect(byId[head.id].channelId).toBe("cadet");
 
     expect(byId[failed.id].outcome).toBe("failed");
     expect(byId[failed.id].failureCode).toBe("PROVIDER_RATE_LIMIT");

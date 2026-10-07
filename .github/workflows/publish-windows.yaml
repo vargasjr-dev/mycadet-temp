@@ -44,15 +44,15 @@ jobs:
 
       # Versioned installers and blockmaps land before the channel manifest so
       # a client never reads a manifest that points at a missing installer.
-      # Feed layout: vellum-ai-<env>-releases/win-electron/<arch>/<env>.yml,
+      # Feed layout: mycadet-<env>-releases/win-electron/<arch>/<env>.yml,
       # matching resolveUpdateFeedUrl and autoUpdater.channel in the app.
       - name: Upload Windows release artifacts to GCS
         env:
           ENVIRONMENT: ${{ inputs.environment }}
         run: |
           case "$ENVIRONMENT" in
-            production) BUCKET=vellum-ai-prod-releases ;;
-            *) BUCKET="vellum-ai-${ENVIRONMENT}-releases" ;;
+            production) BUCKET=mycadet-prod-releases ;;
+            *) BUCKET="mycadet-${ENVIRONMENT}-releases" ;;
           esac
           for ARCH in x64 arm64; do
             ARCH_DIR="windows-artifacts/${ARCH}"
@@ -71,7 +71,7 @@ jobs:
             gcloud storage cp "$INSTALLER" "gs://${BUCKET}/${PREFIX}/$(basename "$INSTALLER")"
             gcloud storage cp "$BLOCKMAP" "gs://${BUCKET}/${PREFIX}/$(basename "$BLOCKMAP")"
             if [ "$ENVIRONMENT" = "dev" ]; then
-              gcloud storage cp "$INSTALLER" "gs://${BUCKET}/${PREFIX}/vellum-assistant-dev-${ARCH}.exe"
+              gcloud storage cp "$INSTALLER" "gs://${BUCKET}/${PREFIX}/mycadet-dev-${ARCH}.exe"
             fi
             gcloud storage cp "$YML" "gs://${BUCKET}/${PREFIX}/${ENVIRONMENT}.yml"
           done

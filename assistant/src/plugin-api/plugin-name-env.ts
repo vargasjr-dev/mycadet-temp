@@ -4,7 +4,7 @@
  * In-process plugin hooks, tools, and routes use AsyncLocalStorage
  * ({@link getCurrentPluginName}). A bash or skill-sandbox child does not
  * inherit that store. Those children recover the install-directory basename
- * from `VELLUM_PLUGIN_NAME` (injected after env sanitization) or from the
+ * from `CADET_PLUGIN_NAME` (injected after env sanitization) or from the
  * entry script path under `plugins/<service>/skills/<skill>/{scripts,tools}/`.
  */
 
@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import { getCurrentPluginName } from "../plugins/plugin-execution-context.js";
 import { getWorkspacePluginsDir } from "../util/platform.js";
 
-export const PLUGIN_NAME_ENV = "VELLUM_PLUGIN_NAME";
+export const PLUGIN_NAME_ENV = "CADET_PLUGIN_NAME";
 
 const SKILL_SCRIPT_ROOTS = new Set(["scripts", "tools"]);
 

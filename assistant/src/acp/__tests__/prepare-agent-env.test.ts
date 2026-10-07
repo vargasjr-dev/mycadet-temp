@@ -77,7 +77,7 @@ const ACP_SPAWN_TOOL = "acp_spawn";
 
 const TEST_DIR = join(
   tmpdir(),
-  `vellum-prepare-agent-env-test-${randomBytes(4).toString("hex")}`,
+  `cadet-prepare-agent-env-test-${randomBytes(4).toString("hex")}`,
 );
 
 beforeEach(() => {

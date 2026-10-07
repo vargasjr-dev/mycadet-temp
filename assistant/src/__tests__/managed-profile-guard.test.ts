@@ -35,7 +35,7 @@ let mtimeSeq = 0;
 let initializeProvidersCalls = 0;
 
 function configJsonPath(): string {
-  return join(process.env.VELLUM_WORKSPACE_DIR!, "config.json");
+  return join(process.env.CADET_WORKSPACE_DIR!, "config.json");
 }
 
 /**

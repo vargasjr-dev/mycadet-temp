@@ -12,7 +12,7 @@ Usage: pack.sh [flags]
 Build and package the Electron app for the target architecture.
 
 Flags:
-  --environment, --env <name>  Set VELLUM_ENVIRONMENT (default: local)
+  --environment, --env <name>  Set CADET_ENVIRONMENT (default: local)
   --open                       Launch the built AppImage when done
   --help, -h                   Show this help
 
@@ -26,11 +26,11 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --environment|--env)
       [ $# -ge 2 ] || { echo "ERROR: $1 requires a value" >&2; exit 1; }
-      export VELLUM_ENVIRONMENT="$2"
+      export CADET_ENVIRONMENT="$2"
       shift 2
       ;;
     --environment=*|--env=*)
-      export VELLUM_ENVIRONMENT="${1#*=}"
+      export CADET_ENVIRONMENT="${1#*=}"
       shift
       ;;
     --open)
@@ -49,7 +49,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-export VELLUM_ENVIRONMENT="${VELLUM_ENVIRONMENT:-local}"
+export CADET_ENVIRONMENT="${CADET_ENVIRONMENT:-local}"
 
 ARCH="${ELECTRON_TARGET_ARCH:-x64}"
 case "$ARCH" in
@@ -65,7 +65,7 @@ cd "$APP_DIR"
 
 # Local builds run the repo CLI source at runtime (see getLocalCliEntry in
 # src/main/cli-installer.ts); install its deps so the checkout is runnable.
-if [ "$VELLUM_ENVIRONMENT" = "local" ]; then
+if [ "$CADET_ENVIRONMENT" = "local" ]; then
   (cd "$APP_DIR/../../cli" && bun install)
 fi
 

@@ -102,7 +102,7 @@ export function DeveloperGuideGetStartedContent() {
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
             Most developer work happens in{" "}
-            <strong>cadet-assistant</strong>, the open-source repo that
+            <strong>mycadet</strong>, the open-source repo that
             holds the assistant daemon and everything that ships with
             it:
           </p>
@@ -162,7 +162,7 @@ export function DeveloperGuideGetStartedContent() {
                 desktop app
               </Link>{" "}
               and walk through onboarding. Your workspace will live at{" "}
-              <code>~/.vellum/</code>.
+              <code>~/.cadet/</code>.
             </li>
             <li>
               Clone <code>mycadet</code> alongside it. Use the

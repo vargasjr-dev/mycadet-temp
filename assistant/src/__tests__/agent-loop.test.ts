@@ -75,7 +75,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // History should contain original user message + assistant response
@@ -114,7 +114,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Tool executor was called with correct args
@@ -170,7 +170,7 @@ describe("AgentLoop", () => {
     await loop.run({
       messages: [userMessage],
       onEvent: collectEvents([]),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       requestId: "req-1",
       callSite: "mainAgent",
       resolveOverrideProfile: () => overrideProfile,
@@ -203,7 +203,7 @@ describe("AgentLoop", () => {
     await loop.run({
       messages: [userMessage],
       onEvent: collectEvents([]),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       requestId: "req-1",
       callSite: "mainAgent",
       overrideProfile: "quality-optimized",
@@ -240,7 +240,7 @@ describe("AgentLoop", () => {
       await loop.run({
         messages: [userMessage],
         onEvent: collectEvents([]),
-        trust: { sourceChannel: "vellum", trustClass: "unknown" },
+        trust: { sourceChannel: "cadet", trustClass: "unknown" },
         requestId: "req-1",
         callSite: "mainAgent",
         overrideProfile: "quality-optimized",
@@ -281,7 +281,7 @@ describe("AgentLoop", () => {
     await loop.run({
       messages: [userMessage],
       onEvent: collectEvents([]),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       requestId: "req-1",
       callSite: "mainAgent",
       modelProfileKey: "balanced",
@@ -329,7 +329,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Provider called 3 times (two tool rounds + final text)
@@ -359,7 +359,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Should stop after first response (no executor to handle tool use)
@@ -387,7 +387,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Only the original message remains (no assistant message added on error)
@@ -443,7 +443,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN it surfaced the error on the first call without retrying
@@ -478,7 +478,7 @@ describe("AgentLoop", () => {
     const { history } = await loop.run({
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       requestId: "test-request",
     });
 
@@ -508,7 +508,7 @@ describe("AgentLoop", () => {
     await loop.run({
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       requestId: "test-request",
     });
 
@@ -546,7 +546,7 @@ describe("AgentLoop", () => {
     const { history, newMessages } = await loop.run({
       messages: [leadingAssistantMessage, userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       requestId: "test-request",
     });
 
@@ -585,7 +585,7 @@ describe("AgentLoop", () => {
     await firstLoop.run({
       messages: [userMessage],
       onEvent: collectEvents(firstEvents),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       requestId: "test-request",
     });
     expect(firstCalls).toHaveLength(2);
@@ -612,7 +612,7 @@ describe("AgentLoop", () => {
     const { history } = await secondLoop.run({
       messages: [userMessage],
       onEvent: collectEvents(secondEvents),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       requestId: "test-request",
     });
 
@@ -657,7 +657,7 @@ describe("AgentLoop", () => {
       .run({
         messages: [userMessage],
         onEvent: collectEvents(events),
-        trust: { sourceChannel: "vellum", trustClass: "unknown" },
+        trust: { sourceChannel: "cadet", trustClass: "unknown" },
         requestId: "test-request",
       })
       .catch(() => {
@@ -716,7 +716,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       onCheckpoint,
     });
 
@@ -743,7 +743,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       signal: controller.signal,
     });
 
@@ -781,7 +781,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       signal: controller.signal,
     });
 
@@ -835,7 +835,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       signal: controller.signal,
     });
     const elapsed = Date.now() - start;
@@ -916,7 +916,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       signal: controller.signal,
     });
 
@@ -990,7 +990,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       signal: controller.signal,
     });
 
@@ -1035,7 +1035,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       signal: controller.signal,
     });
 
@@ -1062,7 +1062,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const textDeltas = events.filter((e) => e.type === "text_delta");
@@ -1085,7 +1085,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const usageEvents = events.filter((e) => e.type === "usage");
@@ -1112,7 +1112,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const completeEvents = events.filter((e) => e.type === "message_complete");
@@ -1143,7 +1143,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const toolUseEvents = events.filter((e) => e.type === "tool_use");
@@ -1194,7 +1194,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const secondCallMessages = calls[1].messages;
@@ -1237,7 +1237,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const chunkEvents = events.filter((e) => e.type === "tool_output_chunk");
@@ -1266,7 +1266,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls[0].systemPrompt).toBe("My system prompt");
@@ -1286,7 +1286,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls[0].tools).toBeUndefined();
@@ -1352,7 +1352,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // All 3 tools should have been called
@@ -1457,7 +1457,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       signal: controller.signal,
     });
 
@@ -1538,7 +1538,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Collect tool_result events in order
@@ -1584,7 +1584,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       onCheckpoint,
     });
 
@@ -1621,7 +1621,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       onCheckpoint,
     });
 
@@ -1655,7 +1655,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       onCheckpoint,
     });
 
@@ -1687,7 +1687,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Normal behavior: 2 provider calls, full history
@@ -1724,7 +1724,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       onCheckpoint,
     });
 
@@ -1756,7 +1756,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       onCheckpoint,
     });
 
@@ -1819,7 +1819,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       onCheckpoint,
     });
 
@@ -1861,7 +1861,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       onCheckpoint,
     });
 
@@ -1934,7 +1934,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       onCheckpoint,
     });
 
@@ -1962,7 +1962,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls[0].tools).toEqual(dummyTools);
@@ -2005,7 +2005,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // resolveTools should be called once per provider turn (2 turns total)
@@ -2045,7 +2045,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Provider should receive the dynamically resolved tools, not the static ones
@@ -2091,7 +2091,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // One observation per provider call, each the array that call sent.
@@ -2130,7 +2130,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // The resolver never saw web_search; the observer sees the wire array.
@@ -2169,7 +2169,7 @@ describe("AgentLoop", () => {
         requestId: "test-request",
         messages: [userMessage],
         onEvent: () => {},
-        trust: { sourceChannel: "vellum", trustClass: "unknown" },
+        trust: { sourceChannel: "cadet", trustClass: "unknown" },
         signal: controller.signal,
       })
       .catch(() => {});
@@ -2234,7 +2234,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Provider should have been called 3 times
@@ -2265,7 +2265,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Empty array should result in undefined tools (same as no-tools behavior)
@@ -2303,7 +2303,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // The tool result user message is at index 2 in history
@@ -2360,7 +2360,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // The tool result user message is at index 2 in history
@@ -2394,7 +2394,7 @@ describe("AgentLoop", () => {
   // 32. Tool results with sensitiveBindings populate substitution map and
   //     final assistant message text is resolved with real values.
   test("resolves sensitive output placeholders in final assistant message", async () => {
-    const placeholder = "VELLUM_ASSISTANT_INVITE_CODE_TEST1234";
+    const placeholder = "CADET_ASSISTANT_INVITE_CODE_TEST1234";
     const realToken = "realInviteToken999";
 
     const { provider, calls } = createMockProvider([
@@ -2425,7 +2425,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // The final assistant message in HISTORY should retain placeholders
@@ -2470,7 +2470,7 @@ describe("AgentLoop", () => {
 
   // 33. Streamed text_delta events have placeholders resolved to real values
   test("resolves sensitive output placeholders in streamed text_delta events", async () => {
-    const placeholder = "VELLUM_ASSISTANT_INVITE_CODE_STRM5678";
+    const placeholder = "CADET_ASSISTANT_INVITE_CODE_STRM5678";
     const realToken = "streamedRealToken";
 
     const { provider } = createMockProvider([
@@ -2499,7 +2499,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Collect all text_delta events from the final turn (after tool result)
@@ -2539,7 +2539,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const lastAssistant = history[history.length - 1];
@@ -2590,7 +2590,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Provider should have been called 3 times (error -> retry -> final text)
@@ -2671,7 +2671,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls).toHaveLength(2);
@@ -2739,7 +2739,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage, mixedTurn, answeredWithText],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls).toHaveLength(2);
@@ -2791,7 +2791,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls).toHaveLength(5);
@@ -2846,7 +2846,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
     });
 
@@ -2930,7 +2930,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
     });
 
@@ -2998,7 +2998,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
     });
 
@@ -3050,7 +3050,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Should NOT retry — this is the first turn with no tool use history
@@ -3090,7 +3090,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN the loop calls the provider once: the refusal is rewritten in place
@@ -3158,7 +3158,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN no fallback text is emitted or persisted — the real answer stands
@@ -3223,7 +3223,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collectEvents(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN the provider is called once (no nudge for a non-refusal turn) and
@@ -3258,7 +3258,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "heartbeatAgent",
     });
 
@@ -3278,7 +3278,7 @@ describe("AgentLoop", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls).toHaveLength(1);

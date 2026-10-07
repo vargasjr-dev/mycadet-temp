@@ -35,7 +35,7 @@ function setRepoDir(dir: string): void {
 import { getSkillHistory } from "./skill-history.js";
 
 // Captured at module scope: the preload cleans up its env var between suites.
-const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
+const PRELOAD_WS = process.env.CADET_WORKSPACE_DIR!;
 
 function git(...args: string[]): string {
   return execFileSync("git", args, {

@@ -36,7 +36,7 @@
 import type { Logger } from "pino";
 
 import { authorizeRuntimeAudioStream } from "./runtime-audio-stream.js";
-import { findVellumGuardian } from "../../auth/guardian-bootstrap.js";
+import { findCadetGuardian } from "../../auth/guardian-bootstrap.js";
 import type { GatewayConfig } from "../../config.js";
 import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
 import { readStoredPlatformUserId } from "../../platform-user-id.js";
@@ -149,9 +149,9 @@ export async function requireBoundGuardian(
 ): Promise<Response | null> {
   let guardian: { principalId: string } | null;
   try {
-    guardian = await findVellumGuardian();
+    guardian = await findCadetGuardian();
   } catch (err) {
-    log.error({ err }, "guardian pin: findVellumGuardian failed");
+    log.error({ err }, "guardian pin: findCadetGuardian failed");
     return new Response("Service Unavailable", { status: 503 });
   }
   if (!guardian || guardian.principalId !== actorPrincipalId) {

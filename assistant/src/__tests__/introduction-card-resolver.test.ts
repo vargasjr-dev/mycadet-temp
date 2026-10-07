@@ -80,7 +80,7 @@ function desktopGuardian(): ActorContext {
   return {
     actorPrincipalId: TEST_PRINCIPAL_ID,
     actorExternalUserId: undefined,
-    channel: "vellum",
+    channel: "cadet",
     guardianPrincipalId: TEST_PRINCIPAL_ID,
   };
 }
@@ -355,7 +355,7 @@ describe("introduction card decisions", () => {
   test("block without a channel identity aborts before any status write", async () => {
     const req = sim.seedRequest({
       kind: "access_request",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       sourceConversationId: "access-req-conv",
       guardianPrincipalId: TEST_PRINCIPAL_ID,
       expiresAt: Date.now() + 60_000,

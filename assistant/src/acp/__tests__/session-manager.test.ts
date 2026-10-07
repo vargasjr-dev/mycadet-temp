@@ -16,7 +16,7 @@ import type { AssistantEvent } from "../../api/index.js";
 import { initializeDb } from "../../persistence/db-init.js";
 import { claudeCredentialRefused } from "../acp-auth-marker-store.js";
 import { AcpAuthRequiredError, isAcpAuthRequired } from "../auth-required.js";
-import type { VellumAcpClientHandler } from "../client-handler.js";
+import type { CadetAcpClientHandler } from "../client-handler.js";
 import type { AcpSessionState } from "../types.js";
 import { AcpConfigOptionRefusedError } from "../types.js";
 import { installAcpConfigStub } from "./helpers/acp-config-stub.js";
@@ -714,10 +714,10 @@ describe("AcpSessionManager: model selection at spawn", () => {
 function clientHandlerFor(
   manager: Manager,
   acpSessionId: string,
-): VellumAcpClientHandler {
+): CadetAcpClientHandler {
   const entry = (
     manager as unknown as {
-      sessions: Map<string, { clientHandler: VellumAcpClientHandler }>;
+      sessions: Map<string, { clientHandler: CadetAcpClientHandler }>;
     }
   ).sessions.get(acpSessionId);
   if (!entry) {
@@ -1014,7 +1014,7 @@ describe("AcpSessionManager: a resumed id and the process it replaced", () => {
       parentConversationId: "conv-resumed",
       cwd: "/tmp",
       startedAt: Date.now(),
-      sendToVellum: () => {},
+      sendToCadet: () => {},
     });
     replacement.state.status = "running";
     sent.length = 0;

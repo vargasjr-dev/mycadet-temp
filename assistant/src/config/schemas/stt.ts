@@ -36,7 +36,7 @@ const STT_PROVIDER_ALIASES: Record<
 
 /**
  * Normalizes a user/config-supplied provider id to its canonical form
- * (legacy rebrand ids like `vellum` map to `cadet`). Exported for tooling
+ * (forgiving aliases like `whisper` map to `openai-whisper`). Exported for tooling
  * that validates provider ids outside the schema parse.
  */
 export function normalizeSttProviderId(
@@ -184,7 +184,7 @@ export { STT_ROLE_REQUIREMENTS, STT_ROLES, type SttRole };
  * Canonical STT service configuration.
  *
  * `provider` is the only axis: `"cadet"` transcribes through the platform,
- * billed to Vellum credits; any other provider uses the user's own API key.
+ * billed to Cadet credits; any other provider uses the user's own API key.
  */
 export const SttServiceSchema = z
   .object({

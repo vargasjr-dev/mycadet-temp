@@ -39,7 +39,7 @@ interface Session {
   completedAt: string;
 }
 
-const DATA_DIR = join(process.env.VELLUM_WORKSPACE_DIR!, "data");
+const DATA_DIR = join(process.env.CADET_WORKSPACE_DIR!, "data");
 const DATA_FILE = join(DATA_DIR, "focus-sessions.json");
 
 function loadSessions(): Session[] {

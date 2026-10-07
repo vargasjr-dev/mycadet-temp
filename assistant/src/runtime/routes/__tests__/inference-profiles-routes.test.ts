@@ -32,7 +32,7 @@ mock.module("../../../persistence/embeddings/embedding-backend.js", () => ({
   clearEmbeddingBackendCache: () => {},
 }));
 
-// The availability guard judges the Vellum-managed route and the credential
+// The availability guard judges the Cadet-managed route and the credential
 // store for real; both are stood in for here so tests can pick a state.
 let managedProxyEnabled = true;
 mock.module("../../../providers/platform-proxy/context.js", () => ({
@@ -116,9 +116,9 @@ function seedKeyedConnection(provider: string): void {
   });
 }
 
-/** The Vellum-managed row every routing-identity profile resolves to. */
-function seedVellumConnection(): void {
-  seedConnection("vellum", "vellum", { type: "platform" });
+/** The Cadet-managed row every routing-identity profile resolves to. */
+function seedCadetConnection(): void {
+  seedConnection("cadet", "cadet", { type: "platform" });
 }
 
 function persistedProfiles(): Record<string, unknown> {
@@ -196,31 +196,31 @@ describe("POST inference/profiles (create) validation", () => {
   });
 
   test("creates a cadet profile for a managed-routable model", async () => {
-    seedVellumConnection();
+    seedCadetConnection();
     const result = (await call("inference_profiles_create", {
       body: {
         name: "my-managed",
-        provider: "vellum",
+        provider: "cadet",
         model: "claude-opus-4-8",
       },
     })) as { entry: Record<string, unknown>; verify: string };
-    expect(result.entry.provider).toBe("vellum");
+    expect(result.entry.provider).toBe("cadet");
     expect(result.entry.model).toBe("claude-opus-4-8");
     expect(result.verify).toBe(
       'assistant inference send --profile my-managed "Reply with OK"',
     );
     expect(loadRawConfig().llm).toMatchObject({
-      profiles: { "my-managed": { provider: "vellum" } },
+      profiles: { "my-managed": { provider: "cadet" } },
     });
   });
 
   test("rejects a cadet profile whose maxTokens exceeds the routed model's limits", async () => {
-    seedVellumConnection();
+    seedCadetConnection();
     await expect(
       call("inference_profiles_create", {
         body: {
           name: "my-managed-big",
-          provider: "vellum",
+          provider: "cadet",
           model: "claude-opus-4-8",
           maxTokens: 999999999,
         },
@@ -233,7 +233,7 @@ describe("POST inference/profiles (create) validation", () => {
       call("inference_profiles_create", {
         body: {
           name: "my-managed",
-          provider: "vellum",
+          provider: "cadet",
           model: "not-a-real-model",
         },
       }),
@@ -247,7 +247,7 @@ describe("POST inference/profiles (create) validation", () => {
       call("inference_profiles_create", {
         body: {
           name: "my-managed",
-          provider: "vellum",
+          provider: "cadet",
           model: "fireworks/accounts/fireworks/models/glm-5p2",
         },
       }),
@@ -386,7 +386,7 @@ describe("inference-profile writes are availability-aware", () => {
       /Provider "gemini" is a valid provider id, but no gemini connection\/API key is configured/,
     );
     await expect(promise).rejects.toThrow(
-      /Recreate with --provider vellum --model gemini-3\.6-flash/,
+      /Recreate with --provider cadet --model gemini-3\.6-flash/,
     );
     await expect(promise).rejects.toThrow(/allowUnavailable/);
     expect(persistedProfiles()).toEqual({});
@@ -491,7 +491,7 @@ describe("inference-profile writes are availability-aware", () => {
     });
     await expect(promise).rejects.toBeInstanceOf(BadRequestError);
     await expect(promise).rejects.toThrow(
-      /Update it with --provider vellum --model gemini-3\.6-flash/,
+      /Update it with --provider cadet --model gemini-3\.6-flash/,
     );
     expect(persistedProfiles()).toMatchObject({
       "my-fast": { provider: "anthropic" },
@@ -787,10 +787,10 @@ describe("GET inference/profiles honors llm.defaultProvider", () => {
 
 describe("POST inference/profiles/:name/validate billing guards", () => {
   test("gives no verdict for a mix whose winning arm rides the managed route", async () => {
-    seedVellumConnection();
+    seedCadetConnection();
     setConfig("llm", {
       profiles: {
-        "managed-arm": { provider: "vellum", model: "claude-opus-4-8" },
+        "managed-arm": { provider: "cadet", model: "claude-opus-4-8" },
         "my-mix": {
           mix: [
             { profile: "managed-arm", weight: 1 },
@@ -806,13 +806,13 @@ describe("POST inference/profiles/:name/validate billing guards", () => {
   });
 
   test("gives no verdict when a call-site override routes the probe onto the managed identity", async () => {
-    seedVellumConnection();
+    seedCadetConnection();
     setConfig("llm", {
       profiles: {
         "my-byok": { provider: "openai", model: "gpt-5.2" },
       },
       callSites: {
-        inference: { provider: "vellum", model: "claude-opus-4-8" },
+        inference: { provider: "cadet", model: "claude-opus-4-8" },
       },
     });
     const result = (await call("inference_profiles_validate", {
@@ -984,7 +984,7 @@ describe("PUT inference/active-profile validation", () => {
       /no gemini connection\/API key is configured/,
     );
     await expect(promise).rejects.toThrow(
-      /assistant inference profiles update my-gemini --provider vellum --model gemini-3\.6-flash/,
+      /assistant inference profiles update my-gemini --provider cadet --model gemini-3\.6-flash/,
     );
     await expect(promise).rejects.toThrow(
       /assistant inference send --profile my-gemini "Reply with OK"/,

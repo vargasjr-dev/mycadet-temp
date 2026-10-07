@@ -40,7 +40,7 @@ import type { RouteDefinition } from "../types.js";
 
 await initializeDb();
 
-// Open the memory connection now, while VELLUM_WORKSPACE_DIR still points at the
+// Open the memory connection now, while CADET_WORKSPACE_DIR still points at the
 // migrated per-process workspace. The per-test blocks below swap it to a fresh
 // dir for config isolation; without pinning here, resetTables()'s first
 // getMemorySqlite() would lazily open assistant-memory.db in the swapped (empty)
@@ -157,9 +157,9 @@ interface ListRunsResponse {
 
 describe("listConsolidationRuns handler", () => {
   beforeEach(() => {
-    workspaceDir = mkdtempSync(join(tmpdir(), "vellum-consolidation-routes-"));
-    origWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    workspaceDir = mkdtempSync(join(tmpdir(), "cadet-consolidation-routes-"));
+    origWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
     configPath = join(workspaceDir, "config.json");
     invalidateConfigCache();
     resetTables();
@@ -167,9 +167,9 @@ describe("listConsolidationRuns handler", () => {
 
   afterEach(() => {
     if (origWorkspaceDir === undefined) {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     } else {
-      process.env.VELLUM_WORKSPACE_DIR = origWorkspaceDir;
+      process.env.CADET_WORKSPACE_DIR = origWorkspaceDir;
     }
     invalidateConfigCache();
     rmSync(workspaceDir, { recursive: true, force: true });
@@ -403,9 +403,9 @@ describe("listConsolidationRuns handler", () => {
 
 describe("consolidation config and run-now handlers", () => {
   beforeEach(() => {
-    workspaceDir = mkdtempSync(join(tmpdir(), "vellum-consolidation-routes-"));
-    origWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    workspaceDir = mkdtempSync(join(tmpdir(), "cadet-consolidation-routes-"));
+    origWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
     configPath = join(workspaceDir, "config.json");
     invalidateConfigCache();
     resetTables();
@@ -413,9 +413,9 @@ describe("consolidation config and run-now handlers", () => {
 
   afterEach(() => {
     if (origWorkspaceDir === undefined) {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     } else {
-      process.env.VELLUM_WORKSPACE_DIR = origWorkspaceDir;
+      process.env.CADET_WORKSPACE_DIR = origWorkspaceDir;
     }
     invalidateConfigCache();
     rmSync(workspaceDir, { recursive: true, force: true });

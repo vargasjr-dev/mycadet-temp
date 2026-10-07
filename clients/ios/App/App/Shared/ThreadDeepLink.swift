@@ -6,7 +6,7 @@ import UIKit
 /// The `<scheme>://thread/<id>?message=…` command that opens a conversation,
 /// with `message` staged in its composer when one is supplied.
 ///
-/// Mirrors the macOS shell's `vellum://thread/<id>` link (see
+/// Mirrors the macOS shell's `mycadet://thread/<id>` link (see
 /// `clients/macos/src/main/deep-links.ts`) with a `message` query parameter
 /// on top, and rides the same delivery seam as `VoiceModeDeepLink`, so the
 /// SPA keeps a single custom-scheme parser

@@ -51,7 +51,7 @@ conflict handling is outside this document-chat feature's scope. Streamed
 assistant edits merge with local revisions (see Prepare, then use normal chat);
 a save from another client still reaches a mounted editor only through a later
 load.
-Tracking: [mounted cross-client document invalidation](https://github.com/vellum-ai/vellum-assistant/pull/42599#discussion_r3994417269).
+Tracking: [mounted cross-client document invalidation](https://github.com/vargasjr-dev/mycadet/pull/42599#discussion_r3994417269).
 Reopening the associated document from Chat Info or a chat card uses that same
 presentation action, retaining the editor, original return destination and history
 state on both viewport layouts. An in-progress session load remains owned by the route.

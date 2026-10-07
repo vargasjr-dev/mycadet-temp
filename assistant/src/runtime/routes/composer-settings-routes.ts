@@ -19,7 +19,7 @@ const ResponseSchema = z.object({
 
 async function principalFor(args: RouteHandlerArgs): Promise<string> {
   const id = await resolveActorPrincipalIdForLocalGuardian(
-    args.headers?.["x-vellum-actor-principal-id"]?.trim() || undefined,
+    args.headers?.["x-cadet-actor-principal-id"]?.trim() || undefined,
   );
   if (!id) {
     throw new UnauthorizedError(
@@ -68,7 +68,7 @@ export const ROUTES: RouteDefinition[] = [
       updateComposerPreferences(principalId, patch.data);
       await publishSyncInvalidation(
         [SYNC_TAGS.assistantComposerPreferences],
-        args.headers?.["x-vellum-client-id"],
+        args.headers?.["x-cadet-client-id"],
       );
       return responseFor(principalId);
     },

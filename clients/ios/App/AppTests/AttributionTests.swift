@@ -55,7 +55,7 @@ final class AttributionTests: XCTestCase {
     /// A `+` must survive as a literal plus: Django decodes an unencoded one
     /// back to a space.
     func testQueryRoundTripsThroughURLComponents() {
-        var components = URLComponents(string: "https://www.vellum.ai/x")!
+        var components = URLComponents(string: "https://mycadet.ai/x")!
         components.percentEncodedQuery = Attribution.query(from: [
             "utm_campaign": "spring sale",
             "utm_term": "a+b",

@@ -93,7 +93,7 @@ function desktopGuardian(): ActorContext {
   return {
     actorPrincipalId: TEST_PRINCIPAL_ID,
     actorExternalUserId: undefined,
-    channel: "vellum",
+    channel: "cadet",
     guardianPrincipalId: TEST_PRINCIPAL_ID,
   };
 }

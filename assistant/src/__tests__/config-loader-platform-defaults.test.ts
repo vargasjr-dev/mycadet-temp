@@ -31,7 +31,7 @@ import {
 // Mocks — declared before imports that depend on platform/logger
 // ---------------------------------------------------------------------------
 
-const WORKSPACE_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
 const CONFIG_PATH = join(WORKSPACE_DIR, "config.json");
 
 afterAll(() => {
@@ -79,8 +79,8 @@ function readConfig(): Record<string, unknown> {
 // resolve to "managed" (per JARVIS-966), the rest resolve to "your-own".
 // web-search is deliberately absent: `provider` is its only axis, so the
 // platform context injects no mode for it. image-generation is also absent:
-// its managed axis is the provider ("vellum" proxies through the platform),
-// so the platform context fills `provider: "vellum"` rather than a mode.
+// its managed axis is the provider ("cadet" proxies through the platform),
+// so the platform context fills `provider: "cadet"` rather than a mode.
 const MANAGED_SERVICES = [
   "google-oauth",
   "outlook-oauth",
@@ -152,7 +152,7 @@ describe("platform-managed config defaults", () => {
       "inference-provider-native",
     );
     // image-generation's managed axis is its provider: the platform context
-    // fills "vellum" and never injects a managed mode (the persisted mode is
+    // fills "cadet" and never injects a managed mode (the persisted mode is
     // the schema default).
     const imageGen = services["image-generation"] as {
       provider?: string;
@@ -308,7 +308,7 @@ describe("platform-managed config defaults", () => {
     process.env.IS_PLATFORM = "true";
 
     // User has an explicit BYOK image-generation provider on disk. The fill
-    // pass targets exactly that leaf (`provider: "vellum"`), so the explicit
+    // pass targets exactly that leaf (`provider: "cadet"`), so the explicit
     // value must win and no mode is injected — the effective mode is the
     // schema default.
     writeFileSync(
@@ -487,7 +487,7 @@ describe("GET /v1/config handler — context-default fill on raw response", () =
     process.env.IS_PLATFORM = "true";
 
     // User set image-generation.provider explicitly. The fill targets that
-    // same leaf (`provider: "vellum"`), so the explicit value wins and no
+    // same leaf (`provider: "cadet"`), so the explicit value wins and no
     // mode is injected.
     const raw: Record<string, unknown> = {
       services: {

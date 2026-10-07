@@ -258,7 +258,7 @@ export class ClickHouseLlmRequestLogSink implements LlmRequestLogWriter {
     const val = await this.resolveAssistantId();
     if (!val) {
       throw new Error(
-        "vellum:platform_assistant_id credential is required when readSource=clickhouse",
+        "cadet:platform_assistant_id credential is required when readSource=clickhouse",
       );
     }
     this.cachedAssistantId = val;

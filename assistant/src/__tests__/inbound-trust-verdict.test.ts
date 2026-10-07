@@ -125,7 +125,7 @@ describe("inbound trust verdict → TrustContext", () => {
     const verdict = memberVerdict("guardian", {
       guardianExternalUserId: "user-1",
       guardianDeliveryChatId: "guardian-chat-1",
-      guardianPrincipalId: "vellum-principal-1",
+      guardianPrincipalId: "cadet-principal-1",
     });
 
     const captured: { ctx?: TrustContext } = {};
@@ -145,7 +145,7 @@ describe("inbound trust verdict → TrustContext", () => {
     expect(captured.ctx?.trustClass).toBe("guardian");
     expect(captured.ctx?.guardianExternalUserId).toBe("user-1");
     expect(captured.ctx?.guardianChatId).toBe("guardian-chat-1");
-    expect(captured.ctx?.guardianPrincipalId).toBe("vellum-principal-1");
+    expect(captured.ctx?.guardianPrincipalId).toBe("cadet-principal-1");
   });
 
   test("trusted_contact admitted under a trusted_contacts floor", async () => {

@@ -171,9 +171,9 @@ const { HeartbeatService } = await import("../heartbeat-service.js");
 let origWorkspaceDir: string | undefined;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-hb-svc-"));
-  origWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-hb-svc-"));
+  origWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
   publishSpy.mockClear();
   broadcastedMessages.length = 0;
   onBroadcast = null;
@@ -191,9 +191,9 @@ beforeEach(() => {
 
 afterEach(() => {
   if (origWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = origWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = origWorkspaceDir;
   }
   try {
     rmSync(workspaceDir, { recursive: true, force: true });
@@ -219,7 +219,7 @@ describe("HeartbeatService", () => {
     expect(call.groupId).toBeUndefined();
     expect(call.timeoutMs).toBeGreaterThan(0);
     expect(call.trustContext).toEqual({
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     });
     expect(call.prompt).toContain("<heartbeat-checklist>");

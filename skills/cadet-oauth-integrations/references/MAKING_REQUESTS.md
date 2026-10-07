@@ -98,17 +98,17 @@ eval "$(assistant oauth proxy-url <provider-key> --export)"
 
 That mints a short-lived grant and exports:
 
-- `VELLUM_OAUTH_PROXY_BASE_URL`: the base URL to point the tool at
-- `VELLUM_OAUTH_PROXY_TOKEN`: the grant, to use as the tool's bearer token
-- `VELLUM_OAUTH_PROXY_EXPIRES_AT`: when the grant stops working
-- `VELLUM_OAUTH_PROXY_ACCOUNT`: the account it resolved to (omitted when the connection carries none)
+- `CADET_OAUTH_PROXY_BASE_URL`: the base URL to point the tool at
+- `CADET_OAUTH_PROXY_TOKEN`: the grant, to use as the tool's bearer token
+- `CADET_OAUTH_PROXY_EXPIRES_AT`: when the grant stops working
+- `CADET_OAUTH_PROXY_ACCOUNT`: the account it resolved to (omitted when the connection carries none)
 
 Map them onto whatever the tool reads:
 
 ```bash
 eval "$(assistant oauth proxy-url stripe_link --export)"
-LINK_API_BASE_URL="$VELLUM_OAUTH_PROXY_BASE_URL" \
-  LINK_ACCESS_TOKEN="$VELLUM_OAUTH_PROXY_TOKEN" \
+LINK_API_BASE_URL="$CADET_OAUTH_PROXY_BASE_URL" \
+  LINK_ACCESS_TOKEN="$CADET_OAUTH_PROXY_TOKEN" \
   LINK_NO_REFRESH=1 \
   link-cli payment-methods list --format json
 ```
@@ -119,9 +119,9 @@ An unlabeled connection can be selected with `--account <connection-id>`. For br
 
 A side-effect request made through the proxy still needs the `assistant ui confirm` gate described above.
 
-**Fidelity depends on the connection's mode.** On a bring-your-own connection the passthrough is byte-exact: the provider's response bytes and the query string arrive as written. A managed connection is proxied by the Vellum platform, which parses the response and rebuilds the query, so duplicate JSON keys and integers past 2^53 can change, `%20` becomes `+`, a valueless `?flag` becomes `flag=`, redirects are followed server-side instead of handed back, and HEAD is rejected. A provider that signs its own query string therefore works only on a bring-your-own connection. Check the mode with `assistant oauth mode <provider-key>`.
+**Fidelity depends on the connection's mode.** On a bring-your-own connection the passthrough is byte-exact: the provider's response bytes and the query string arrive as written. A managed connection is proxied by the Cadet platform, which parses the response and rebuilds the query, so duplicate JSON keys and integers past 2^53 can change, `%20` becomes `+`, a valueless `?flag` becomes `flag=`, redirects are followed server-side instead of handed back, and HEAD is rejected. A provider that signs its own query string therefore works only on a bring-your-own connection. Check the mode with `assistant oauth mode <provider-key>`.
 
-A 3xx that does reach you keeps its status, but its target moves to the `x-vellum-proxy-location` response header, so nothing follows it automatically while carrying the grant. A tool that must follow one reads that header.
+A 3xx that does reach you keeps its status, but its target moves to the `x-cadet-proxy-location` response header, so nothing follows it automatically while carrying the grant. A tool that must follow one reads that header.
 
 Managed connections forward only `Content-Type`, `Accept`, `User-Agent`, and `X-Request-Id`. Requests with other headers, including `If-Match`, `Idempotency-Key`, and provider-version headers, return 400 before reaching the provider. Node fetch defaults `Accept-Language: *` and `Sec-Fetch-Mode: cors` are discarded. Use a bring-your-own connection when the CLI requires unsupported headers; do not remove write safeguards to bypass the rejection. Non-redirect responses, including `201 Created`, preserve `Location` on bring-your-own connections.
 

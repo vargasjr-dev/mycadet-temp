@@ -74,12 +74,12 @@ const { tunnel } = await import("../commands/tunnel.js");
 
 const originalArgv = [...process.argv];
 const originalFetch = globalThis.fetch;
-const originalLockfileDir = process.env.VELLUM_LOCKFILE_DIR;
-const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
+const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
+const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 const tempDirs: string[] = [];
 
 function makeLocalEntry(assistantId = "assistant-1"): AssistantEntry {
-  const instanceDir = mkdtempSync(join(tmpdir(), "vellum-tunnel-test-"));
+  const instanceDir = mkdtempSync(join(tmpdir(), "cadet-tunnel-test-"));
   tempDirs.push(instanceDir);
   return {
     assistantId,
@@ -99,7 +99,7 @@ function makeCloudEntry(assistantId = "cloud-1"): AssistantEntry {
   return {
     assistantId,
     runtimeUrl: `https://runtime.example.com/${assistantId}`,
-    cloud: "vellum",
+    cloud: "cadet",
   };
 }
 
@@ -128,7 +128,7 @@ function writeEntryWorkspaceConfig(
 ): string {
   const workspaceDir = join(
     entry.resources!.instanceDir,
-    ".vellum",
+    ".cadet",
     "workspace",
   );
   mkdirSync(workspaceDir, { recursive: true });
@@ -141,9 +141,9 @@ function writeEntryWorkspaceConfig(
 
 /** Point the default workspace dir at a temp dir; returns that dir. */
 function useTempDefaultWorkspaceDir(): string {
-  const workspaceDir = mkdtempSync(join(tmpdir(), "vellum-tunnel-ws-"));
+  const workspaceDir = mkdtempSync(join(tmpdir(), "cadet-tunnel-ws-"));
   tempDirs.push(workspaceDir);
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
   return workspaceDir;
 }
 
@@ -154,12 +154,12 @@ function writeLockfile(
   const entries = Array.isArray(entryOrEntries)
     ? entryOrEntries
     : [entryOrEntries];
-  const lockfileDir = mkdtempSync(join(tmpdir(), "vellum-tunnel-lockfile-"));
+  const lockfileDir = mkdtempSync(join(tmpdir(), "cadet-tunnel-lockfile-"));
   tempDirs.push(lockfileDir);
-  process.env.VELLUM_LOCKFILE_DIR = lockfileDir;
+  process.env.CADET_LOCKFILE_DIR = lockfileDir;
   mkdirSync(lockfileDir, { recursive: true });
   writeFileSync(
-    join(lockfileDir, ".vellum.lock.json"),
+    join(lockfileDir, ".cadet.lock.json"),
     JSON.stringify(
       {
         activeAssistant: activeAssistant ?? entries[0].assistantId,
@@ -216,7 +216,7 @@ async function runTunnelCapturingLogs(): Promise<string> {
 
 describe("tunnel edge targeting", () => {
   beforeEach(() => {
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "tailscale"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "tailscale"];
     writeLockfile(makeLocalEntry());
     globalThis.fetch = (async () => {
       throw new Error("gateway unavailable");
@@ -239,14 +239,14 @@ describe("tunnel edge targeting", () => {
     process.argv = originalArgv;
     globalThis.fetch = originalFetch;
     if (originalLockfileDir === undefined) {
-      delete process.env.VELLUM_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
     } else {
-      process.env.VELLUM_LOCKFILE_DIR = originalLockfileDir;
+      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
     }
     if (originalWorkspaceDir === undefined) {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     } else {
-      process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+      process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
     }
     for (const dir of tempDirs.splice(0)) {
       rmSync(dir, { recursive: true, force: true });
@@ -264,13 +264,13 @@ describe("tunnel edge targeting", () => {
     const entry = makeLocalEntry();
     entry.runtimeUrl = "https://stale-tunnel.ngrok-free.dev";
     writeLockfile(entry);
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
 
     const logs = await runTunnelCapturingLogs();
 
     const workspaceDir = join(
       entry.resources!.instanceDir,
-      ".vellum",
+      ".cadet",
       "workspace",
     );
     expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
@@ -292,13 +292,13 @@ describe("tunnel edge targeting", () => {
     const cloud = makeCloudEntry();
     const local = makeLocalEntry();
     writeLockfile([cloud, local], cloud.assistantId);
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
 
     const logs = await runTunnelCapturingLogs();
 
     const workspaceDir = join(
       local.resources!.instanceDir,
-      ".vellum",
+      ".cadet",
       "workspace",
     );
     expect(logs).toContain(
@@ -323,7 +323,7 @@ describe("tunnel edge targeting", () => {
     writeLockfile([local, makeDockerEntry()], local.assistantId);
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "docker-1",
       "--provider",
@@ -348,7 +348,7 @@ describe("tunnel edge targeting", () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const docker = makeDockerEntry();
     writeLockfile(docker, docker.assistantId);
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
 
     await runTunnelCapturingLogs();
 
@@ -368,7 +368,7 @@ describe("tunnel edge targeting", () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const cloud = makeCloudEntry();
     writeLockfile([cloud, makeDockerEntry()], cloud.assistantId);
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
 
     const logs = await runTunnelCapturingLogs();
 
@@ -385,7 +385,7 @@ describe("tunnel edge targeting", () => {
 
   test("an active cloud assistant with no local entries exits with an error", async () => {
     writeLockfile(makeCloudEntry());
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -404,7 +404,7 @@ describe("tunnel edge targeting", () => {
       [cloud, makeLocalEntry("assistant-a"), makeLocalEntry("assistant-b")],
       cloud.assistantId,
     );
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -424,7 +424,7 @@ describe("tunnel edge targeting", () => {
     writeLockfile([makeCloudEntry(), local], local.assistantId);
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "cloud-1",
       "--provider",
@@ -448,13 +448,13 @@ describe("tunnel edge targeting", () => {
     const local = makeLocalEntry();
     local.name = "Ada";
     writeLockfile([makeCloudEntry(), local], "cloud-1");
-    process.argv = ["bun", "vellum", "tunnel", "Ada", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "Ada", "--provider", "ngrok"];
 
     await runTunnelCapturingLogs();
 
     const workspaceDir = join(
       local.resources!.instanceDir,
-      ".vellum",
+      ".cadet",
       "workspace",
     );
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
@@ -470,7 +470,7 @@ describe("tunnel edge targeting", () => {
     writeLockfile([makeCloudEntry(), local], "cloud-1");
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "Ada",
       "Lovelace",
@@ -482,7 +482,7 @@ describe("tunnel edge targeting", () => {
 
     const workspaceDir = join(
       local.resources!.instanceDir,
-      ".vellum",
+      ".cadet",
       "workspace",
     );
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
@@ -498,7 +498,7 @@ describe("tunnel edge targeting", () => {
     writeLockfile([local, makeAppleContainerEntry()], local.assistantId);
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "apple-1",
       "--provider",
@@ -523,7 +523,7 @@ describe("tunnel edge targeting", () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const cloud = makeCloudEntry();
     writeLockfile([cloud, makeAppleContainerEntry()], cloud.assistantId);
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
 
     const logs = await runTunnelCapturingLogs();
 
@@ -550,7 +550,7 @@ describe("tunnel edge targeting", () => {
     writeLockfile([decoy, target], "assistant-a");
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "assistant-b",
       "--provider",
@@ -569,7 +569,7 @@ describe("tunnel edge targeting", () => {
     cloud.name = "Cloudy";
     const local = makeLocalEntry();
     writeLockfile([cloud, local], local.assistantId);
-    process.argv = ["bun", "vellum", "tunnel", "Cloudy", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "Cloudy", "--provider", "ngrok"];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -590,7 +590,7 @@ describe("tunnel edge targeting", () => {
     const second = makeLocalEntry("assistant-b");
     second.name = "Ada";
     writeLockfile([first, second], "assistant-a");
-    process.argv = ["bun", "vellum", "tunnel", "Ada", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "Ada", "--provider", "ngrok"];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -603,7 +603,7 @@ describe("tunnel edge targeting", () => {
   });
 
   test("an unknown positional name errors", async () => {
-    process.argv = ["bun", "vellum", "tunnel", "nope", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "nope", "--provider", "ngrok"];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -616,14 +616,14 @@ describe("tunnel edge targeting", () => {
   test("targets the edge port for cloudflare", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "cloudflare"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "cloudflare"];
 
     await runTunnelCapturingLogs();
 
     expect(runCloudflareTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(entry.resources!.instanceDir, ".vellum", "workspace"),
+      workspaceDir: join(entry.resources!.instanceDir, ".cadet", "workspace"),
     });
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
@@ -631,7 +631,7 @@ describe("tunnel edge targeting", () => {
   test("targets the edge port for tailscale and notes a reused webhooks-only edge", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "tailscale"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "tailscale"];
     ensureTunnelEdgeMock.mockResolvedValue({
       port: EDGE_PORT,
       started: false,
@@ -643,7 +643,7 @@ describe("tunnel edge targeting", () => {
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(entry.resources!.instanceDir, ".vellum", "workspace"),
+      workspaceDir: join(entry.resources!.instanceDir, ".cadet", "workspace"),
     });
     expect(logs).toContain(`Reusing the nginx edge on 127.0.0.1:${EDGE_PORT}`);
     expect(logs).toContain("serves webhooks only");
@@ -651,7 +651,7 @@ describe("tunnel edge targeting", () => {
 
   test("a bare invocation exits listing the providers to choose from", async () => {
     writeLockfile(makeLocalEntry());
-    process.argv = ["bun", "vellum", "tunnel"];
+    process.argv = ["bun", "cadet", "tunnel"];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -669,7 +669,7 @@ describe("tunnel edge targeting", () => {
 
   test("a named assistant without --provider exits before resolving it", async () => {
     writeLockfile(makeLocalEntry());
-    process.argv = ["bun", "vellum", "tunnel", "Ada"];
+    process.argv = ["bun", "cadet", "tunnel", "Ada"];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -684,7 +684,7 @@ describe("tunnel edge targeting", () => {
 
   test("a shell-sensitive assistant name is quoted in the suggestions", async () => {
     writeLockfile(makeLocalEntry());
-    process.argv = ["bun", "vellum", "tunnel", "Bob&Alice"];
+    process.argv = ["bun", "cadet", "tunnel", "Bob&Alice"];
 
     const { errors } = await runTunnelExpectingExit1();
 
@@ -697,7 +697,7 @@ describe("tunnel edge targeting", () => {
     const workspaceDir = writeEntryWorkspaceConfig(entry, {
       telegram: { botUsername: "example_bot" },
     });
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "tailscale"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "tailscale"];
 
     const warnings: string[] = [];
     const warnSpy = spyOn(console, "warn").mockImplementation(
@@ -728,7 +728,7 @@ describe("tunnel edge targeting", () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
     const workspaceDir = writeEntryWorkspaceConfig(entry, {});
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "tailscale"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "tailscale"];
 
     await runTunnelCapturingLogs();
 
@@ -745,7 +745,7 @@ describe("tunnel edge targeting", () => {
     const workspaceDir = writeEntryWorkspaceConfig(entry, {
       telegram: { botUsername: "example_bot" },
     });
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
 
     await runTunnelCapturingLogs();
 
@@ -757,7 +757,7 @@ describe("tunnel edge targeting", () => {
   });
 
   test("missing nginx aborts before any provider spawn", async () => {
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
     ensureTunnelEdgeMock.mockRejectedValue(
       new Error(
         "nginx is not installed, so the tunnel edge cannot start. " +
@@ -776,7 +776,7 @@ describe("tunnel edge targeting", () => {
   });
 
   test("rejects an unknown --provider with a stale-CLI hint", async () => {
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "bogus"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "bogus"];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -793,7 +793,7 @@ describe("tunnel edge targeting", () => {
     try {
       for (const provider of TUNNEL_PROVIDERS) {
         writeLockfile(makeLocalEntry());
-        process.argv = ["bun", "vellum", "tunnel", "--provider", provider];
+        process.argv = ["bun", "cadet", "tunnel", "--provider", provider];
 
         const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -810,7 +810,7 @@ describe("tunnel edge targeting", () => {
     writeLockfile(entry);
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "--provider",
       "ngrok",
@@ -823,7 +823,7 @@ describe("tunnel edge targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(entry.resources!.instanceDir, ".vellum", "workspace"),
+      workspaceDir: join(entry.resources!.instanceDir, ".cadet", "workspace"),
       domain: "foo.ngrok.app",
     });
   });
@@ -831,7 +831,7 @@ describe("tunnel edge targeting", () => {
   test("rejects --domain with a non-ngrok provider", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "--provider",
       "cloudflare",
@@ -854,7 +854,7 @@ describe("tunnel edge targeting", () => {
     writeLockfile(entry);
     const workspaceDir = join(
       entry.resources!.instanceDir,
-      ".vellum",
+      ".cadet",
       "workspace",
     );
     mkdirSync(workspaceDir, { recursive: true });
@@ -864,7 +864,7 @@ describe("tunnel edge targeting", () => {
     );
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "--provider",
       "ngrok",
@@ -889,7 +889,7 @@ describe("tunnel edge targeting", () => {
   test("rejects --clear-domain combined with --domain", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "--provider",
       "ngrok",
@@ -908,7 +908,7 @@ describe("tunnel edge targeting", () => {
   test("rejects --clear-domain with a non-ngrok provider", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "--provider",
       "cloudflare",
@@ -928,7 +928,7 @@ describe("tunnel edge targeting", () => {
   test("errors when --domain is missing its value", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "--provider",
       "ngrok",
@@ -945,7 +945,7 @@ describe("tunnel edge targeting", () => {
   test("a not-yet-implemented provider error carries the stale-CLI hint", async () => {
     // `cadet` stays valid-but-unimplemented, so it hits this path rather
     // than the unknown-provider one.
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "vellum"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "cadet"];
 
     let err: Error | undefined;
     try {
@@ -1013,7 +1013,7 @@ describe("ngrok --domain spawn args", () => {
   });
 
   function makeWorkspace(config: Record<string, unknown>): string {
-    const ws = mkdtempSync(join(tmpdir(), "vellum-ngrok-domain-test-"));
+    const ws = mkdtempSync(join(tmpdir(), "cadet-ngrok-domain-test-"));
     tempDirs.push(ws);
     writeFileSync(join(ws, "config.json"), JSON.stringify(config, null, 2));
     return ws;
@@ -1051,10 +1051,10 @@ describe("ngrok --domain spawn args", () => {
     assistantId: string,
     fn: () => Promise<T>,
   ): Promise<T> {
-    const lockfileDir = mkdtempSync(join(tmpdir(), "vellum-ngrok-lockfile-"));
+    const lockfileDir = mkdtempSync(join(tmpdir(), "cadet-ngrok-lockfile-"));
     tempDirs.push(lockfileDir);
     writeFileSync(
-      join(lockfileDir, ".vellum.lock.json"),
+      join(lockfileDir, ".cadet.lock.json"),
       JSON.stringify({
         activeAssistant: assistantId,
         assistants: [
@@ -1062,13 +1062,13 @@ describe("ngrok --domain spawn args", () => {
         ],
       }),
     );
-    const previous = process.env.VELLUM_LOCKFILE_DIR;
-    process.env.VELLUM_LOCKFILE_DIR = lockfileDir;
+    const previous = process.env.CADET_LOCKFILE_DIR;
+    process.env.CADET_LOCKFILE_DIR = lockfileDir;
     try {
       return await fn();
     } finally {
-      if (previous === undefined) delete process.env.VELLUM_LOCKFILE_DIR;
-      else process.env.VELLUM_LOCKFILE_DIR = previous;
+      if (previous === undefined) delete process.env.CADET_LOCKFILE_DIR;
+      else process.env.CADET_LOCKFILE_DIR = previous;
     }
   }
 
@@ -1498,7 +1498,7 @@ describe("tunnel --detach", () => {
 
   beforeEach(() => {
     spawnMock.mockClear();
-    const configHome = mkdtempSync(join(tmpdir(), "vellum-tunnel-xdg-"));
+    const configHome = mkdtempSync(join(tmpdir(), "cadet-tunnel-xdg-"));
     tempDirs.push(configHome);
     process.env.XDG_CONFIG_HOME = configHome;
     writeLockfile(makeLocalEntry());
@@ -1518,7 +1518,7 @@ describe("tunnel --detach", () => {
   test("--detach re-invokes without the flag as a detached child and reports readiness", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "--provider",
       "ngrok",
@@ -1561,7 +1561,7 @@ describe("tunnel --detach", () => {
   });
 
   test("-d is equivalent to --detach", async () => {
-    process.argv = ["bun", "vellum", "tunnel", "--provider", "tailscale", "-d"];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "tailscale", "-d"];
     spawnMock.mockImplementationOnce(() => {
       appendFileSync(
         detachedLogPath(),
@@ -1580,7 +1580,7 @@ describe("tunnel --detach", () => {
   test("reports an early child exit instead of hanging", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "--provider",
       "ngrok",
@@ -1604,7 +1604,7 @@ describe("tunnel --detach", () => {
   test("an adopted ngrok tunnel gets an accurate stop message, not a false kill claim", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "tunnel",
       "--provider",
       "ngrok",

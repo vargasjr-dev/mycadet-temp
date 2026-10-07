@@ -77,14 +77,14 @@ const log = getLogger("runtime-http");
 const CES_READY_POLL_INTERVAL_MS = 500;
 const CES_READY_POLL_TIMEOUT_MS = 30_000;
 
-const WRITABLE_VELLUM_CREDENTIAL_FIELDS = [
+const WRITABLE_CADET_CREDENTIAL_FIELDS = [
   "assistant_api_key",
   "webhook_secret",
   "platform_base_url",
 ] as const;
 
-function isWritableVellumCredentialField(field: string): boolean {
-  return (WRITABLE_VELLUM_CREDENTIAL_FIELDS as readonly string[]).includes(
+function isWritableCadetCredentialField(field: string): boolean {
+  return (WRITABLE_CADET_CREDENTIAL_FIELDS as readonly string[]).includes(
     field,
   );
 }
@@ -356,18 +356,13 @@ async function handleAddSecret({ body }: RouteHandlerArgs) {
           'For credential type, name must be in "service:field" format (e.g. "github:api_token")',
         );
       }
-      let service = name.slice(0, colonIdx);
+      const service = name.slice(0, colonIdx);
       const field = name.slice(colonIdx + 1);
 
-      // The platform still pushes the pre-rebrand display name; storage is
-      // the canonical cadet key.
-      if (service === "vellum") {
-        service = "cadet";
-      }
       if (service === "cadet") {
-        if (!isWritableVellumCredentialField(field)) {
+        if (!isWritableCadetCredentialField(field)) {
           throw new BadRequestError(
-            `Unknown cadet credential: ${field}. Allowed fields: ${WRITABLE_VELLUM_CREDENTIAL_FIELDS.join(", ")}`,
+            `Unknown cadet credential: ${field}. Allowed fields: ${WRITABLE_CADET_CREDENTIAL_FIELDS.join(", ")}`,
           );
         }
         assertMetadataWritable();
@@ -605,12 +600,7 @@ async function handleDeleteSecret({ body }: RouteHandlerArgs) {
           'For credential type, name must be in "service:field" format (e.g. "github:api_token")',
         );
       }
-      let service = name.slice(0, colonIdx);
-      // The platform still pushes the pre-rebrand display name; storage is
-      // the canonical cadet key.
-      if (service === "vellum") {
-        service = "cadet";
-      }
+      const service = name.slice(0, colonIdx);
       if (service === "cadet") {
         throw new BadRequestError("Cadet credentials cannot be deleted");
       }

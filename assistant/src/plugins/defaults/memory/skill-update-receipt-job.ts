@@ -99,7 +99,7 @@ export function skillUpdateReceiptDedupeKey(jobId: string): string {
 
 /**
  * The `sourceContextId` a receipt is announced with. The home feed's "Go to
- * Conversation" and the vellum delivery's body append both resolve it to a
+ * Conversation" and the cadet delivery's body append both resolve it to a
  * conversation, so a receipt whose rewrites all came from one conversation
  * names it; one spanning several, or with a rewrite of unknown lineage,
  * passes a sentinel that resolves to nothing, and the receipt's own entries

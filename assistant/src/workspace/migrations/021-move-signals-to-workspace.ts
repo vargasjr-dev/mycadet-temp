@@ -1,8 +1,8 @@
 /**
  * Workspace migration 021: Move signals directory from root to workspace.
  *
- * Previously, `~/.vellum/signals/` lived directly under the Vellum root. This
- * migration moves any existing signal files into `$VELLUM_WORKSPACE_DIR/signals/`
+ * Previously, `~/.cadet/signals/` lived directly under the Cadet root. This
+ * migration moves any existing signal files into `$CADET_WORKSPACE_DIR/signals/`
  * so that getSignalsDir() resolves correctly under the workspace.
  *
  * Signal files are ephemeral IPC artifacts (written, read once, then stale),
@@ -16,14 +16,14 @@ import { existsSync, mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join } from "node:path";
 
 import type { WorkspaceMigration } from "./types.js";
-import { getVellumRoot } from "./utils.js";
+import { getCadetRoot } from "./utils.js";
 
 export const moveSignalsToWorkspaceMigration: WorkspaceMigration = {
   id: "021-move-signals-to-workspace",
   description: "Move signals directory from root to workspace",
 
   run(workspaceDir: string): void {
-    const oldSignalsDir = join(getVellumRoot(), "signals");
+    const oldSignalsDir = join(getCadetRoot(), "signals");
     const newSignalsDir = join(workspaceDir, "signals");
 
     mkdirSync(newSignalsDir, { recursive: true });
@@ -52,7 +52,7 @@ export const moveSignalsToWorkspaceMigration: WorkspaceMigration = {
   },
 
   down(workspaceDir: string): void {
-    const oldSignalsDir = join(getVellumRoot(), "signals");
+    const oldSignalsDir = join(getCadetRoot(), "signals");
     const newSignalsDir = join(workspaceDir, "signals");
 
     mkdirSync(oldSignalsDir, { recursive: true });

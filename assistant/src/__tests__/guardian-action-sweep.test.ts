@@ -107,7 +107,7 @@ describe("sendGuardianExpiryNotices", () => {
     await sendGuardianExpiryNotices(
       [
         makeDelivery({
-          destinationChannel: "vellum",
+          destinationChannel: "cadet",
           destinationConversationId: "guardian-conv",
           destinationChatId: null,
         }),

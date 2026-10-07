@@ -1,7 +1,7 @@
 {
   "name": "@mycadet/cli",
   "version": "0.12.6",
-  "description": "CLI tools for vellum-assistant",
+  "description": "CLI tools for mycadet",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -26,7 +26,7 @@
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit"
   },
-  "author": "Vellum AI",
+  "author": "Cadet AI",
   "license": "MIT",
   "dependencies": {
     "@mycadet/avatar-manifest": "workspace:*",

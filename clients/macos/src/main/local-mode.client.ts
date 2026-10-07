@@ -24,7 +24,7 @@ import { refreshLockfileNow } from "./lockfile-watcher.client";
 import { getSessionToken } from "./session-token-store.client";
 
 export const resolveCliInvocation = async (): Promise<CliInvocation> => {
-  const envPath = process.env.VELLUM_CLI_PATH;
+  const envPath = process.env.CADET_CLI_PATH;
   if (envPath) {
     return { command: "bun", baseArgs: ["run", envPath] };
   }

@@ -7,7 +7,7 @@
  *
  * Access requests are a special case: they always create a guardian request
  * and emit a notification signal, even when no same-channel guardian binding
- * exists. Guardian identity resolution is anchored on the assistant's vellum
+ * exists. Guardian identity resolution is anchored on the assistant's cadet
  * principal so access requests cannot bind to stale/cross-assistant contacts.
  */
 
@@ -23,13 +23,13 @@ import type { ChannelId } from "../channels/types.js";
 import { getGuardianDelivery } from "../contacts/guardian-delivery-reader.js";
 import { isKeptOutStatus } from "../contacts/member-status.js";
 import type { ChannelStatus } from "../contacts/types.js";
+import { buildCadetCardAffinity } from "../notifications/cadet-card-affinity.js";
 import { emitNotificationSignal } from "../notifications/emit-signal.js";
 import {
   recordApprovalCardDelivery,
   recordGuardianRequestDeliveries,
 } from "../notifications/guardian-delivery-recorder.js";
 import type { GuardianResolutionSource } from "../notifications/signal.js";
-import { buildVellumCardAffinity } from "../notifications/vellum-card-affinity.js";
 import { IntegrityError } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
 import { resolveAnchoredGuardian } from "./anchored-guardian.js";
@@ -70,7 +70,7 @@ export interface AccessRequestParams {
   /** Defaults to `denied` — see {@link AccessRequestTrigger}. */
   trigger?: AccessRequestTrigger;
   /**
-   * Internal conversation the in-app (vellum) approval card should be attached
+   * Internal conversation the in-app (cadet) approval card should be attached
    * to, instead of minting a fresh standalone "Chat". Set by ingress paths that
    * already created a conversation for the inbound message (e.g. the admission
    * floor deny path, which records the originating Slack/Telegram conversation)
@@ -165,7 +165,7 @@ export async function isApprovalHandshakeInProgress(params: {
  * Returns a result indicating whether the guardian was notified and whether
  * a new request was created or an existing one was deduped.
  *
- * Guardian identity resolution uses the assistant's vellum principal as the
+ * Guardian identity resolution uses the assistant's cadet principal as the
  * trust anchor and only accepts source-channel contacts that match it. This
  * prevents stale or cross-assistant contacts from being bound to the request.
  *
@@ -196,7 +196,7 @@ export async function notifyGuardianOfAccessRequest(
   }
 
   // Resolve guardian identity with the assistant-anchored strategy (gateway
-  // source-channel match validated against the vellum anchor, else the vellum
+  // source-channel match validated against the cadet anchor, else the cadet
   // anchor).
   const anchored = resolveAnchoredGuardian({
     guardians: await getGuardianDelivery(),
@@ -325,7 +325,7 @@ export async function notifyGuardianOfAccessRequest(
     expiresAt: Date.now() + GUARDIAN_APPROVAL_TTL_MS,
   });
 
-  let vellumDeliveryIdPromise: Promise<string | undefined> | undefined;
+  let cadetDeliveryIdPromise: Promise<string | undefined> | undefined;
   // Where the card goes:
   // - Slack or Telegram with the guardian verified on that same channel: only
   //   that channel, where the card is answered in place.
@@ -345,10 +345,10 @@ export async function notifyGuardianOfAccessRequest(
     TEXT_CHANNELS_WITH_DELIVERY.has(sourceChannel) &&
     guardianResolutionSource === "source-channel-contact";
 
-  // Pin the in-app (vellum) card to the originating conversation when the
+  // Pin the in-app (cadet) card to the originating conversation when the
   // caller supplied one, so the card lands inside it instead of a fresh
   // standalone "Chat".
-  const vellumConversationAffinity = buildVellumCardAffinity(
+  const cadetConversationAffinity = buildCadetCardAffinity(
     destinationConversationId,
   );
 
@@ -357,7 +357,7 @@ export async function notifyGuardianOfAccessRequest(
     sourceChannel,
     sourceContextId: `access-req-${sourceChannel}-${actorExternalId}`,
     requiresConversation: true,
-    ...(vellumConversationAffinity ?? {}),
+    ...(cadetConversationAffinity ?? {}),
     ...(sameChannelOnly
       ? { routingIntent: "single_channel" as const }
       : sourceChannel === "email" && trigger === "denied"
@@ -397,34 +397,34 @@ export async function notifyGuardianOfAccessRequest(
     onConversationCreated: (info) => {
       if (
         info.sourceEventName !== "ingress.access_request" ||
-        vellumDeliveryIdPromise
+        cadetDeliveryIdPromise
       ) {
         return;
       }
-      vellumDeliveryIdPromise = recordApprovalCardDelivery({
+      cadetDeliveryIdPromise = recordApprovalCardDelivery({
         requestId: guardianRequest.id,
-        channel: "vellum",
+        channel: "cadet",
         conversationId: info.conversationId,
       }).then((delivery) => delivery?.id);
-      return vellumDeliveryIdPromise.then(() => undefined);
+      return cadetDeliveryIdPromise.then(() => undefined);
     },
   })
     .then(async (signalResult) => {
-      const vellumDeliveryId = await recordGuardianRequestDeliveries({
+      const cadetDeliveryId = await recordGuardianRequestDeliveries({
         requestId: guardianRequest.id,
         deliveryResults: signalResult.deliveryResults,
-        vellumDeliveryId: await vellumDeliveryIdPromise,
+        cadetDeliveryId: await cadetDeliveryIdPromise,
       });
 
-      if (!vellumDeliveryId && !sameChannelOnly) {
+      if (!cadetDeliveryId && !sameChannelOnly) {
         await recordApprovalCardDelivery({
           requestId: guardianRequest.id,
-          channel: "vellum",
+          channel: "cadet",
           status: "failed",
         });
         log.warn(
           { requestId: guardianRequest.id, reason: signalResult.reason },
-          "Notification pipeline did not produce a vellum delivery result for access request",
+          "Notification pipeline did not produce a cadet delivery result for access request",
         );
       }
     })

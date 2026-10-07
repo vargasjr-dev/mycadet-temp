@@ -431,7 +431,7 @@ describe("assistant switcher", () => {
   const managedEntry = {
     assistantId: "managed-1",
     name: "Managed One",
-    cloud: "vellum",
+    cloud: "cadet",
   };
   const pairedEntry = {
     assistantId: "paired-1",

@@ -307,7 +307,7 @@ describe("derefToolResultReReads", () => {
         role: "assistant",
         content: [
           makeToolUse(toolUseId, "file_read", {
-            path: `/home/user/.vellum/workspace/conversations/abc/${TOOL_RESULT_DIR}/abc123.txt`,
+            path: `/home/user/.cadet/workspace/conversations/abc/${TOOL_RESULT_DIR}/abc123.txt`,
           }),
         ],
       },
@@ -335,7 +335,7 @@ describe("derefToolResultReReads", () => {
         role: "assistant",
         content: [
           makeToolUse(toolUseId, "host_file_read", {
-            path: `/home/user/.local/share/vellum/conversations/abc/${TOOL_RESULT_DIR}/abc123.txt`,
+            path: `/home/user/.local/share/cadet/conversations/abc/${TOOL_RESULT_DIR}/abc123.txt`,
           }),
         ],
       },

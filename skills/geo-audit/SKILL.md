@@ -51,12 +51,12 @@ python3 {baseDir}/scripts/audit.py <domain>
 Examples:
 
 ```bash
-python3 {baseDir}/scripts/audit.py vellum.ai
+python3 {baseDir}/scripts/audit.py mycadet.ai
 python3 {baseDir}/scripts/audit.py https://stripe.com
 python3 {baseDir}/scripts/audit.py example.com --json
 ```
 
-The script accepts a bare domain (`vellum.ai`), a full URL (`https://vellum.ai`), or anything in between. It normalizes.
+The script accepts a bare domain (`mycadet.ai`), a full URL (`https://mycadet.ai`), or anything in between. It normalizes.
 
 **If the script runs cleanly → stream the output and summarize (default).**
 **If the domain is unreachable / DNS fails / times out →** report the specific failure plainly, suggest the user double-check the domain or bump `--timeout`, and do not invent a score.

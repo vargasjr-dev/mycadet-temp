@@ -64,7 +64,7 @@ async function registerManagedTelegramCallbackRoute(
   // matching the daemon's resolvePlatformCallbackRegistrationContext().
   const platformBaseUrl = (
     platformBaseUrlRaw?.trim() ||
-    process.env.VELLUM_PLATFORM_URL?.trim() ||
+    process.env.CADET_PLATFORM_URL?.trim() ||
     ""
   ).replace(/\/+$/, "");
 

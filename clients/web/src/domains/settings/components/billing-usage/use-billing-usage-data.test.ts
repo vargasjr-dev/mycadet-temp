@@ -54,8 +54,8 @@ describe("isBillingUsageDataEnabled", () => {
     expect(isBillingUsageDataEnabled("full", "full", false)).toBe(false);
   });
 
-  test("stays disabled when the platform API is unreachable (VELLUM_DISABLE_PLATFORM)", () => {
-    // platformHostedOnly ignores VELLUM_DISABLE_PLATFORM and can report "full"
+  test("stays disabled when the platform API is unreachable (CADET_DISABLE_PLATFORM)", () => {
+    // platformHostedOnly ignores CADET_DISABLE_PLATFORM and can report "full"
     // for a platform-hosted assistant even when platformFeaturesGate aborts the
     // request. The reachability gate ("gated") is what prevents the doomed
     // fetch and keeps the chart hidden, matching how the Billing tab hides

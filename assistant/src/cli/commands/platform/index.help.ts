@@ -53,7 +53,7 @@ the current platform deployment context and connection state.
 
 Fields:
   isPlatform          Whether IS_PLATFORM is set (boolean)
-  baseUrl             VELLUM_PLATFORM_URL — the platform gateway base URL
+  baseUrl             CADET_PLATFORM_URL — the platform gateway base URL
   assistantId         This assistant's platform UUID
   hasAssistantApiKey  Whether a stored assistant API key is available; null
                       when the credential store could not be read
@@ -110,7 +110,7 @@ is the earliest expiry across all grants, plan-included or not, and
 'assistant platform subscription' gives the billing cycle boundary.
 
 Requires platform credentials (run 'assistant platform connect' first or
-ensure VELLUM_PLATFORM_URL is set and credentials are stored).
+ensure CADET_PLATFORM_URL is set and credentials are stored).
 
 Examples:
   $ assistant platform credits
@@ -142,7 +142,7 @@ For the credit balance (not the plan), use 'assistant platform credits'. For
 plan pricing, use 'assistant platform plans'.
 
 Requires platform credentials (run 'assistant platform connect' first or
-ensure VELLUM_PLATFORM_URL is set and credentials are stored).
+ensure CADET_PLATFORM_URL is set and credentials are stored).
 
 Examples:
   $ assistant platform subscription
@@ -163,7 +163,7 @@ For the org's OWN plan (not the catalog), use 'assistant platform
 subscription'. For the credit balance, use 'assistant platform credits'.
 
 Requires platform credentials (run 'assistant platform connect' first or
-ensure VELLUM_PLATFORM_URL is set and credentials are stored).
+ensure CADET_PLATFORM_URL is set and credentials are stored).
 
 Examples:
   $ assistant platform plans
@@ -183,7 +183,7 @@ the response's 'has_more' is true, pass the last invoice's id via
 --starting-after to fetch the next (older) page.
 
 Requires platform credentials (run 'assistant platform connect' first or
-ensure VELLUM_PLATFORM_URL is set and credentials are stored).
+ensure CADET_PLATFORM_URL is set and credentials are stored).
 
 Examples:
   $ assistant platform invoices list --json
@@ -229,7 +229,7 @@ Fields:
                       fetch them with --starting-after
 
 Requires platform credentials (run 'assistant platform connect' first or
-ensure VELLUM_PLATFORM_URL is set and credentials are stored).
+ensure CADET_PLATFORM_URL is set and credentials are stored).
 
 Examples:
   $ assistant platform invoices list --json
@@ -252,7 +252,7 @@ searches the most recent 2,500 invoices (25 pages) and errors if the ID
 is not found within that range.
 
 Requires platform credentials (run 'assistant platform connect' first or
-ensure VELLUM_PLATFORM_URL is set and credentials are stored).
+ensure CADET_PLATFORM_URL is set and credentials are stored).
 
 Examples:
   $ assistant platform invoices get in_1AbCdEfGh
@@ -330,7 +330,7 @@ Known callback path/type combinations:
   --path oauth/callback             --type oauth
 
 Works for both platform-managed and self-hosted assistants. Requires
-VELLUM_PLATFORM_URL and a platform assistant ID. Returns the platform-provided
+CADET_PLATFORM_URL and a platform assistant ID. Returns the platform-provided
 stable callback URL that external services should use.
 
 Examples:
@@ -345,7 +345,7 @@ Lists all callback routes registered with the platform for this assistant.
 Shows the route type, callback URL, and path for each registered webhook.
 
 Requires platform credentials (run 'assistant platform connect' first or
-ensure IS_PLATFORM and VELLUM_PLATFORM_URL are set and credentials are stored).
+ensure IS_PLATFORM and CADET_PLATFORM_URL are set and credentials are stored).
 
 Examples:
   $ assistant platform callback-routes list

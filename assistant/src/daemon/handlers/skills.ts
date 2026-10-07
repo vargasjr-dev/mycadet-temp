@@ -38,7 +38,7 @@ import {
 import type { SkillFileEntry } from "../../skills/catalog-files.js";
 import {
   catalogSkillToSlim,
-  createVellumCatalogProvider,
+  createCadetCatalogProvider,
   hasHiddenOrSkippedSegment,
   sanitizeRelativePath,
   SKIP_DIRS,
@@ -93,7 +93,7 @@ import { refreshSkillCapabilityMemories } from "../skill-memory-refresh.js";
 import { CONFIG_RELOAD_DEBOUNCE_MS, ensureSkillEntry, log } from "./shared.js";
 
 // ─── Provider chain for uninstalled skill file preview ───────────────────────
-// Ordered by priority: vellum first (most common and cheapest to check),
+// Ordered by priority: cadet first (most common and cheapest to check),
 // then skills.sh, then clawhub.
 //
 // Lazy-initialized on first access so that mock modules (in tests) can
@@ -104,7 +104,7 @@ let _fileProviders: SkillFileProvider[] | null = null;
 function getFileProviders(): SkillFileProvider[] {
   if (!_fileProviders) {
     _fileProviders = [
-      createVellumCatalogProvider(),
+      createCadetCatalogProvider(),
       createSkillsShProvider(),
       createClawhubProvider(),
     ];
@@ -481,7 +481,7 @@ async function listSkillsWithCatalog(): Promise<SlimSkillResponse[]> {
     return installed;
   }
 
-  // All entries from the Vellum platform API are first-party.
+  // All entries from the Cadet platform API are first-party.
   // Create SlimSkillResponses for catalog skills not already installed.
   const available: SlimSkillResponse[] = filterSkillsByPlatform(catalogSkills)
     .filter((cs) => !installedIds.has(cs.id))
@@ -509,7 +509,7 @@ interface SkillListFilter {
 function originDisplayLabel(origin: string): string {
   switch (origin) {
     case "cadet":
-      return "Vellum";
+      return "Cadet";
     case "clawhub":
       return "Clawhub";
     case "skillssh":
@@ -778,8 +778,8 @@ export async function getSkill(
     return { skill: detail };
   }
 
-  // vellum or custom origin — base fields plus owner attribution. Plugin-
-  // resident skills are mapped to the vellum origin, so `owner` is how their
+  // cadet or custom origin — base fields plus owner attribution. Plugin-
+  // resident skills are mapped to the cadet origin, so `owner` is how their
   // `{ kind: "plugin", id }` provenance is surfaced on the detail response.
   const detail: SkillDetailResponse = {
     id: slim.id,
@@ -976,7 +976,7 @@ function readDirRecursive(dir: string, rootDir: string): SkillFileEntry[] {
  * realpath containment checks for defense in depth.
  *
  * Provider chain fallback: when the skill id is not backed by a local
- * directory, iterates the file-provider chain (vellum catalog,
+ * directory, iterates the file-provider chain (cadet catalog,
  * skills.sh, clawhub) until one returns content.
  */
 export async function getSkillFileContent(
@@ -1282,14 +1282,14 @@ export async function installSkill(spec: {
       return { success: true, skillId: spec.slug };
     }
 
-    // Check the Vellum catalog (first-party skills hosted on the platform).
+    // Check the Cadet catalog (first-party skills hosted on the platform).
     // Skip when the caller explicitly specified a community origin — this
     // prevents slug collisions where a catalog skill shadows a community
     // skill the user selected from search results.
     if (spec.origin !== "clawhub" && spec.origin !== "skillssh") {
       try {
-        const vellumCatalog = await getCatalog();
-        const catalogEntry = vellumCatalog.find((s) => s.id === spec.slug);
+        const cadetCatalog = await getCatalog();
+        const catalogEntry = cadetCatalog.find((s) => s.id === spec.slug);
         if (catalogEntry) {
           if (!isSkillCompatibleWithPlatform(catalogEntry)) {
             return {
@@ -1320,7 +1320,7 @@ export async function installSkill(spec: {
         }
         log.warn(
           { err, skillId: spec.slug },
-          "Vellum catalog install failed, falling back to community registry",
+          "Cadet catalog install failed, falling back to community registry",
         );
       }
     }
@@ -1328,7 +1328,7 @@ export async function installSkill(spec: {
     if (spec.catalogOnly) {
       return {
         success: false,
-        error: `Skill "${spec.slug}" not found in the Vellum catalog`,
+        error: `Skill "${spec.slug}" not found in the Cadet catalog`,
       };
     }
 

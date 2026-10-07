@@ -13,7 +13,7 @@ import { beforeAll, describe, expect, mock, test } from "bun:test";
 
 mock.module("../config/env.js", () => ({
   isHttpAuthDisabled: () => true,
-  getAssistantDomain: () => "vellum.me",
+  getAssistantDomain: () => "mycadet.bot",
 }));
 
 const FAKE_JPEG = Buffer.from("fake-jpeg-master-bytes");
@@ -193,7 +193,7 @@ describe("HEIC upload normalization wiring", () => {
   });
 
   test("JSON file-path upload converts the daemon-owned copy", async () => {
-    const sourceDir = mkdtempSync(join(tmpdir(), "vellum-heic-src-"));
+    const sourceDir = mkdtempSync(join(tmpdir(), "cadet-heic-src-"));
     const sourcePath = join(sourceDir, "IMG_4.HEIC");
     writeFileSync(sourcePath, HEIC_BYTES);
 

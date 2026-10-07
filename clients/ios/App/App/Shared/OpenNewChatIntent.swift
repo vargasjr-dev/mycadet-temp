@@ -1,9 +1,9 @@
 import AppIntents
 
-/// "New chat": open Vellum on a fresh draft conversation.
+/// "New chat": open Cadet on a fresh draft conversation.
 ///
 /// The action behind the New Chat buttons on the Home Screen widgets. Unlike
-/// `OpenVellumIntent`, which lands wherever the user left off, this one asks
+/// `OpenCadetIntent`, which lands wherever the user left off, this one asks
 /// for a specific destination, so it carries `NewChatDeepLink` rather than
 /// just launching the app.
 ///
@@ -14,7 +14,7 @@ import AppIntents
 struct OpenNewChatIntent: AppIntent {
     static var title: LocalizedStringResource = "New chat"
     static var description = IntentDescription(
-        "Open Vellum and start a new chat."
+        "Open Cadet and start a new chat."
     )
 
     /// Both launch-mode declarations are load-bearing; do not "clean this up".

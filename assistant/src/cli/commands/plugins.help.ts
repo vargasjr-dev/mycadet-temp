@@ -206,7 +206,7 @@ Examples:
 Validates the plugin in the current directory (or --path), resolves the
 git commit SHA and GitHub remote, and submits the entry to the Cadet
 platform API. The platform creates a pull request against
-vellum-ai/vellum-assistant adding the plugin to the marketplace catalog.
+vargasjr-dev/mycadet adding the plugin to the marketplace catalog.
 
 Requires a connected Cadet Cloud account (run \`assistant platform connect\`).
 Use --print to validate and print the entry without submitting.

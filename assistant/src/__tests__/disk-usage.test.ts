@@ -11,7 +11,7 @@ import { promisify } from "node:util";
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
 // Captured at module scope: the preload cleans up its env var between suites.
-const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
+const PRELOAD_WS = process.env.CADET_WORKSPACE_DIR!;
 
 const MIB = 1024 * 1024;
 const round2 = (b: number) => Math.round((b / MIB) * 100) / 100;
@@ -86,7 +86,7 @@ const { __resetDiskUsageCacheForTests, getDiskUsageInfo, parseK8sMemoryBytes } =
 
 // Env knobs the sampler reads at call time; no module mocking needed.
 const ENV_VARS = [
-  "VELLUM_MINIKUBE_STORAGE_SIZE",
+  "CADET_MINIKUBE_STORAGE_SIZE",
   "IS_CONTAINERIZED",
   "IS_PLATFORM",
 ] as const;
@@ -106,7 +106,7 @@ describe("disk usage sampler", () => {
     for (const v of ENV_VARS) {
       delete process.env[v];
     }
-    process.env.VELLUM_WORKSPACE_DIR = PRELOAD_WS;
+    process.env.CADET_WORKSPACE_DIR = PRELOAD_WS;
     writeFileSync(PAYLOAD, Buffer.alloc(512 * 1024));
     __resetDiskUsageCacheForTests();
   });
@@ -121,21 +121,21 @@ describe("disk usage sampler", () => {
   });
 
   test("falls back to root when the workspace path does not exist", async () => {
-    process.env.VELLUM_WORKSPACE_DIR = "/tmp/does-not-exist-disk-usage-test";
+    process.env.CADET_WORKSPACE_DIR = "/tmp/does-not-exist-disk-usage-test";
     try {
       const usage = await getDiskUsageInfo();
       expect(usage?.path).toBe("/");
     } finally {
       // Restore rather than delete: the sampler reads the workspace at call
       // time and later tests still need the preload's workspace.
-      process.env.VELLUM_WORKSPACE_DIR = PRELOAD_WS;
+      process.env.CADET_WORKSPACE_DIR = PRELOAD_WS;
     }
   });
 
   test("uses PVC capacity and du usage when the host filesystem is larger", async () => {
     // A 1MiB PVC is always smaller than the real host filesystem, so the
     // hostPath detection fires and capacity is the quota, usage is `du`.
-    process.env.VELLUM_MINIKUBE_STORAGE_SIZE = "1Mi";
+    process.env.CADET_MINIKUBE_STORAGE_SIZE = "1Mi";
 
     const before = statfsSnapshot(PRELOAD_WS);
     const usage = await getDiskUsageInfo();
@@ -156,7 +156,7 @@ describe("disk usage sampler", () => {
   });
 
   test("adds /data to du usage when it exists separately", async () => {
-    process.env.VELLUM_MINIKUBE_STORAGE_SIZE = "1Mi";
+    process.env.CADET_MINIKUBE_STORAGE_SIZE = "1Mi";
     const workspaceOnly = round2(await duBytes([PRELOAD_WS]));
 
     const before = statfsSnapshot(PRELOAD_WS);
@@ -177,7 +177,7 @@ describe("disk usage sampler", () => {
   test("a PVC at least as large as the filesystem reports statfs directly", async () => {
     // 1TiB is larger than any test filesystem: the hostPath detection must
     // NOT fire, so the sampler trusts statfs instead of `du`.
-    process.env.VELLUM_MINIKUBE_STORAGE_SIZE = "1Ti";
+    process.env.CADET_MINIKUBE_STORAGE_SIZE = "1Ti";
     const before = statfsSnapshot(PRELOAD_WS);
     const usage = await getDiskUsageInfo();
     const after = statfsSnapshot(PRELOAD_WS);
@@ -227,7 +227,7 @@ describe("disk usage sampler", () => {
     // An empty workspace du's to 0, which the sampler cannot report as usage.
     const emptyWs = mkdtempSync(join("/tmp", "disk-usage-empty-"));
     process.env.IS_CONTAINERIZED = "1";
-    process.env.VELLUM_WORKSPACE_DIR = emptyWs;
+    process.env.CADET_WORKSPACE_DIR = emptyWs;
     try {
       const before = statfsSnapshot(emptyWs);
       const usage = await getDiskUsageInfo();
@@ -236,7 +236,7 @@ describe("disk usage sampler", () => {
       expect(usage).not.toBeNull();
       expectWithinStatfsWindow(usage!, emptyWs, before, after);
     } finally {
-      process.env.VELLUM_WORKSPACE_DIR = PRELOAD_WS;
+      process.env.CADET_WORKSPACE_DIR = PRELOAD_WS;
       rmSync(emptyWs, { recursive: true, force: true });
     }
   });

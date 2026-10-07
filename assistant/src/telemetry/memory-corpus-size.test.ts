@@ -10,7 +10,7 @@ import {
 } from "./memory-corpus-size.js";
 
 // Captured at module scope: the preload cleans up its env var between suites.
-const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
+const PRELOAD_WS = process.env.CADET_WORKSPACE_DIR!;
 
 function write(relativePath: string, contents: string): void {
   const full = join(workspaceDir, relativePath);
@@ -20,7 +20,7 @@ function write(relativePath: string, contents: string): void {
 
 describe("measureMemoryCorpusSize", () => {
   beforeEach(() => {
-    // The preload owns VELLUM_WORKSPACE_DIR; give this test a clean one.
+    // The preload owns CADET_WORKSPACE_DIR; give this test a clean one.
     workspaceDir = PRELOAD_WS;
     rmSync(workspaceDir, { recursive: true, force: true });
     mkdirSync(workspaceDir, { recursive: true });

@@ -4,7 +4,7 @@
  * {@link resolveTrustContext} wraps {@link resolveActorTrust} (a sync,
  * IO-free guardian-or-unknown view — see `actor-trust-resolver.ts`) and
  * converts the result to a {@link TrustContext}. Its sole production caller
- * is the vellum reset-drift re-resolution in `guardian-vellum-migration.ts`,
+ * is the cadet reset-drift re-resolution in `guardian-cadet-migration.ts`,
  * which runs exactly when the gateway verdict came back `unknown` and so
  * cannot consume a verdict. Verdict-stamped ingress uses
  * `trustContextFromVerdict` in `trust-verdict-consumer.ts` instead.
@@ -120,7 +120,7 @@ export function resolveRoutingStateFromRuntime(
  * Override the sourceChannel on a resolved TrustContext.
  *
  * The HTTP /messages endpoint resolves trust against a fixed internal
- * channel ('vellum') but the request body carries the actual sourceChannel
+ * channel ('cadet') but the request body carries the actual sourceChannel
  * (e.g. the channel the gateway routed the request through). This helper
  * copies the context with the caller-supplied sourceChannel.
  */

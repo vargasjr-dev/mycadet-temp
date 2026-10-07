@@ -1,6 +1,6 @@
 import AppIntents
 
-/// "Open conversations": open Vellum on the list of conversations.
+/// "Open conversations": open Cadet on the list of conversations.
 ///
 /// The action behind the unread chip on the Quick Actions widget and the
 /// unread line on the Status widget. Like `OpenNewChatIntent` it asks for a
@@ -14,7 +14,7 @@ import AppIntents
 struct OpenConversationsIntent: AppIntent {
     static var title: LocalizedStringResource = "Open conversations"
     static var description = IntentDescription(
-        "Open Vellum and show the list of conversations."
+        "Open Cadet and show the list of conversations."
     )
 
     /// Both launch-mode declarations are load-bearing; do not "clean this up".

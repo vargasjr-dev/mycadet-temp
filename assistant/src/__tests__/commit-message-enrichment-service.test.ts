@@ -30,7 +30,7 @@ describe("CommitEnrichmentService", () => {
     _resetEnrichmentService();
     testDir = join(
       tmpdir(),
-      `vellum-enrichment-test-${Date.now()}-${Math.random()
+      `cadet-enrichment-test-${Date.now()}-${Math.random()
         .toString(36)
         .slice(2)}`,
     );

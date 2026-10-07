@@ -1,7 +1,7 @@
 /**
  * Transactional identity-mirror IPC (`contacts_mirror_apply`) against the REAL
  * assistant DB (via `initializeDb()`; the test preload points
- * VELLUM_WORKSPACE_DIR at a per-file temp dir).
+ * CADET_WORKSPACE_DIR at a per-file temp dir).
  *
  * Covers the guardian-bootstrap-shaped upsert end to end, a multi-op batch
  * committing together, and the re-auth rebind (an existing channel id rebound
@@ -65,8 +65,8 @@ describe("contacts_mirror_apply", () => {
             op: "upsert_channel",
             contactId: "guardian-co",
             channelId: "guardian-ch",
-            type: "vellum",
-            address: "vellum-principal-abc",
+            type: "cadet",
+            address: "cadet-principal-abc",
             externalChatId: "local",
             displayName: "Owner",
             isPrimary: true,
@@ -119,7 +119,7 @@ describe("contacts_mirror_apply", () => {
       .prepare(
         "INSERT INTO contact_channels (id, contact_id, type, address, is_primary, created_at) VALUES (?, ?, ?, ?, 1, ?)",
       )
-      .run("g-ch", "g-co", "vellum", "OLD-principal", 1);
+      .run("g-ch", "g-co", "cadet", "OLD-principal", 1);
 
     // The gateway rebinds the SAME channel id to a NEW address (re-auth). The op
     // must update row g-ch in place, not collide on its id and silently keep the
@@ -131,7 +131,7 @@ describe("contacts_mirror_apply", () => {
             op: "upsert_channel",
             contactId: "g-co",
             channelId: "g-ch",
-            type: "vellum",
+            type: "cadet",
             address: "NEW-principal",
             externalChatId: "local",
             displayName: "Owner",
@@ -173,14 +173,14 @@ describe("contacts_mirror_apply", () => {
       .prepare(
         "INSERT INTO contact_channels (id, contact_id, type, address, is_primary, created_at) VALUES (?, ?, ?, ?, 1, ?)",
       )
-      .run("g2-ch", "g2-co", "vellum", "OLD-2", 1);
+      .run("g2-ch", "g2-co", "cadet", "OLD-2", 1);
 
     // The single-row handler shares the same applier/primitive as the apply op.
     handleContactsMirrorUpsertChannel({
       body: {
         contactId: "g2-co",
         channelId: "g2-ch",
-        type: "vellum",
+        type: "cadet",
         address: "NEW-2",
         displayName: "Owner",
         isPrimary: true,
@@ -211,7 +211,7 @@ describe("contacts_mirror_apply", () => {
       .prepare(
         "INSERT INTO contact_channels (id, contact_id, type, address, is_primary, created_at) VALUES (?, ?, ?, ?, 1, ?)",
       )
-      .run("g3-ch", "g3-co", "vellum", "OLD-3", 1);
+      .run("g3-ch", "g3-co", "cadet", "OLD-3", 1);
     // A DIFFERENT row (different contact) already holds (cadet, NEW-3) — the
     // address the guardian is about to rebind to. idx_contact_channels_type_address
     // would reject a naive address move.
@@ -224,7 +224,7 @@ describe("contacts_mirror_apply", () => {
       .prepare(
         "INSERT INTO contact_channels (id, contact_id, type, address, is_primary, created_at) VALUES (?, ?, ?, ?, 0, ?)",
       )
-      .run("stale-ch", "stale-co", "vellum", "NEW-3", 1);
+      .run("stale-ch", "stale-co", "cadet", "NEW-3", 1);
 
     // reassignConflictingChannels:true (guardian) → adopt the identity onto the
     // gateway-keyed row: remove the stale duplicate, land g3-ch on NEW-3, no throw.
@@ -235,7 +235,7 @@ describe("contacts_mirror_apply", () => {
             op: "upsert_channel",
             contactId: "g3-co",
             channelId: "g3-ch",
-            type: "vellum",
+            type: "cadet",
             address: "NEW-3",
             displayName: "Owner",
             isPrimary: true,

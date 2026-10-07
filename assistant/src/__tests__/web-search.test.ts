@@ -996,7 +996,7 @@ async function executeTavilySearchHelper(
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
-          "X-Client-Name": "vellum-assistant",
+          "X-Client-Name": "mycadet",
         },
         body: JSON.stringify(body),
       });

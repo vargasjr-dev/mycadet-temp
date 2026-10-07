@@ -69,8 +69,8 @@ mock.module("../../../../persistence/db-maintenance.js", () => ({
 const tmpWorkspace = mkdtempSync(
   join(tmpdir(), "jobs-worker-outcome-contract-"),
 );
-const previousWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-process.env.VELLUM_WORKSPACE_DIR = tmpWorkspace;
+const previousWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+process.env.CADET_WORKSPACE_DIR = tmpWorkspace;
 
 import { getMemoryDb } from "../../../../persistence/db-connection.js";
 import { initializeDb } from "../../../../persistence/db-init.js";
@@ -100,9 +100,9 @@ describe("job outcome truthfulness", () => {
 
   afterAll(() => {
     if (previousWorkspaceEnv === undefined) {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     } else {
-      process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceEnv;
+      process.env.CADET_WORKSPACE_DIR = previousWorkspaceEnv;
     }
     rmSync(tmpWorkspace, { recursive: true, force: true });
   });

@@ -57,7 +57,7 @@ describe("usePlatformGate — default (standard pattern)", () => {
     expect(result.current).toBe("full");
   });
 
-  test('returns "gated" in local mode when VELLUM_DISABLE_PLATFORM is set', () => {
+  test('returns "gated" in local mode when CADET_DISABLE_PLATFORM is set', () => {
     isLocalClientMock.mockImplementation(() => true);
     useAuthStore.setState({ platformSession: "present" });
     isPlatformDisabledMock.mockImplementation(() => true);
@@ -102,7 +102,7 @@ describe("usePlatformGate — five documented user states (CONVENTIONS.md)", () 
     expect(result.current).toBe("disabled");
   });
 
-  test('5. self-hosted + platform OFF (VELLUM_DISABLE_PLATFORM) → "gated"', () => {
+  test('5. self-hosted + platform OFF (CADET_DISABLE_PLATFORM) → "gated"', () => {
     isLocalClientMock.mockImplementation(() => true);
     isPlatformDisabledMock.mockImplementation(() => true);
     // Session value is irrelevant once platform features are off; assert both.
@@ -282,7 +282,7 @@ describe("usePlatformGate — { platformHostedOnly: true }", () => {
     expect(result.current).toBe("full");
   });
 
-  test("ignores VELLUM_DISABLE_PLATFORM when active assistant is platform-hosted", () => {
+  test("ignores CADET_DISABLE_PLATFORM when active assistant is platform-hosted", () => {
     // The env var gates the daemon-side API interceptor in local mode —
     // it has no bearing on UI that targets a platform-hosted assistant.
     isLocalClientMock.mockImplementation(() => true);

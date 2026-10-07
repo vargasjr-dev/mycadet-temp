@@ -166,7 +166,7 @@ describe("rotateCredentials principal role", () => {
       return;
     }
 
-    const verified = verifyToken(result.result.accessToken, "vellum-gateway");
+    const verified = verifyToken(result.result.accessToken, "cadet-gateway");
     expect(verified.ok).toBe(true);
     if (!verified.ok) {
       return;
@@ -200,7 +200,7 @@ describe("rotateCredentials principal role", () => {
       return;
     }
 
-    const verified = verifyToken(result.result.accessToken, "vellum-gateway");
+    const verified = verifyToken(result.result.accessToken, "cadet-gateway");
     expect(verified.ok).toBe(true);
     if (!verified.ok) {
       return;
@@ -398,7 +398,7 @@ describe("rotateCredentials activity history", () => {
 describe("rotateCredentials device identity carry-forward", () => {
   // pairingUserAgent and clientReportedName survive rotation the same way
   // platform does.
-  const USER_AGENT = "Vellum-CLI/1.2.3 (Macintosh; Darwin)";
+  const USER_AGENT = "Cadet-CLI/1.2.3 (Macintosh; Darwin)";
   const REPORTED_NAME = "Alice's MacBook Pro";
 
   function findActorTokenRow(rawToken: string) {

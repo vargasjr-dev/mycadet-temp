@@ -1,0 +1,498 @@
+import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+// ── Mocks: declared before imports that depend on them ──────────────
+
+let updateMessageContentShouldThrow = false;
+let assistantName: string | null = null;
+
+mock.module("../daemon/identity-helpers.js", () => ({
+  getAssistantName: () => assistantName,
+}));
+
+const updateMessageContentMock = mock(
+  (_messageId: string, _content: string) => {
+    if (updateMessageContentShouldThrow) {
+      throw new Error("DB write failed");
+    }
+  },
+);
+
+mock.module("../persistence/conversation-crud.js", () => ({
+  updateMessageContent: updateMessageContentMock,
+}));
+
+const messagesInvalidated: string[] = [];
+
+mock.module("../runtime/sync/resource-sync-events.js", () => ({
+  publishConversationMessagesChanged: (conversationId: string) => {
+    messagesInvalidated.push(conversationId);
+  },
+}));
+
+import type { AssistantEvent } from "../api/index.js";
+import { CadetAdapter } from "../notifications/adapters/macos.js";
+import type {
+  ChannelDeliveryPayload,
+  ChannelDestination,
+} from "../notifications/types.js";
+import type { BroadcastMessageOptions } from "../runtime/assistant-event-hub.js";
+
+function makePayload(
+  overrides?: Partial<ChannelDeliveryPayload>,
+): ChannelDeliveryPayload {
+  return {
+    deliveryId: "delivery-uuid-1",
+    sourceEventName: "schedule.notify",
+    copy: { title: "Reminder", body: "Hello" },
+    urgency: "medium",
+    ...overrides,
+  };
+}
+
+function makeDestination(
+  overrides?: Partial<ChannelDestination>,
+): ChannelDestination {
+  return {
+    channel: "cadet",
+    ...overrides,
+  };
+}
+
+function captureBroadcast(): {
+  adapter: CadetAdapter;
+  sent: AssistantEvent[];
+  conversationIds: Array<string | undefined>;
+} {
+  const sent: AssistantEvent[] = [];
+  const conversationIds: Array<string | undefined> = [];
+  const adapter = new CadetAdapter((msg, conversationId) => {
+    sent.push(msg);
+    conversationIds.push(conversationId);
+  });
+  return { adapter, sent, conversationIds };
+}
+
+beforeEach(() => {
+  assistantName = null;
+});
+
+describe("CadetAdapter silent flag", () => {
+  test("non-urgent (low) urgency broadcasts silent: true", async () => {
+    const { adapter, sent } = captureBroadcast();
+    const result = await adapter.send(
+      makePayload({ urgency: "low" }),
+      makeDestination(),
+    );
+
+    expect(result.success).toBe(true);
+    expect(sent).toHaveLength(1);
+    const intent = sent[0] as Extract<
+      AssistantEvent,
+      { type: "notification_intent" }
+    >;
+    expect(intent.type).toBe("notification_intent");
+    expect(intent.silent).toBe(true);
+  });
+
+  test("non-urgent (medium) urgency broadcasts silent: true", async () => {
+    const { adapter, sent } = captureBroadcast();
+    await adapter.send(makePayload({ urgency: "medium" }), makeDestination());
+
+    const intent = sent[0] as Extract<
+      AssistantEvent,
+      { type: "notification_intent" }
+    >;
+    expect(intent.silent).toBe(true);
+  });
+
+  test("urgent (high) urgency broadcasts silent: false", async () => {
+    const { adapter, sent } = captureBroadcast();
+    await adapter.send(makePayload({ urgency: "high" }), makeDestination());
+
+    const intent = sent[0] as Extract<
+      AssistantEvent,
+      { type: "notification_intent" }
+    >;
+    expect(intent.silent).toBe(false);
+  });
+
+  test("critical urgency broadcasts silent: false", async () => {
+    const { adapter, sent } = captureBroadcast();
+    await adapter.send(makePayload({ urgency: "critical" }), makeDestination());
+
+    const intent = sent[0] as Extract<
+      AssistantEvent,
+      { type: "notification_intent" }
+    >;
+    expect(intent.silent).toBe(false);
+  });
+
+  test("broadcasts title, body, deepLinkTarget, and deliveryId verbatim", async () => {
+    const { adapter, sent } = captureBroadcast();
+    await adapter.send(
+      makePayload({
+        deliveryId: "delivery-xyz",
+        copy: { title: "T", body: "B" },
+        deepLinkTarget: { conversationId: "conv-abc" },
+        urgency: "high",
+      }),
+      makeDestination(),
+    );
+
+    const intent = sent[0] as Extract<
+      AssistantEvent,
+      { type: "notification_intent" }
+    >;
+    expect(intent.deliveryId).toBe("delivery-xyz");
+    expect(intent.title).toBe("T");
+    expect(intent.body).toBe("B");
+    expect(intent.deepLinkMetadata).toEqual({ conversationId: "conv-abc" });
+    expect(intent.silent).toBe(false);
+  });
+});
+
+describe("CadetAdapter remotePushDispatched pass-through", () => {
+  test("broadcasts remote push acceptance fields verbatim", async () => {
+    const { adapter, sent } = captureBroadcast();
+    await adapter.send(
+      makePayload({
+        remotePushDispatched: true,
+        remotePushPlatforms: ["ios"],
+      }),
+      makeDestination(),
+    );
+
+    const intent = sent[0] as Extract<
+      AssistantEvent,
+      { type: "notification_intent" }
+    >;
+    expect(intent.remotePushDispatched).toBe(true);
+    expect(intent.remotePushPlatforms).toEqual(["ios"]);
+  });
+
+  test("broadcasts remotePushDispatched: false verbatim", async () => {
+    const { adapter, sent } = captureBroadcast();
+    await adapter.send(
+      makePayload({ remotePushDispatched: false }),
+      makeDestination(),
+    );
+
+    const intent = sent[0] as Extract<
+      AssistantEvent,
+      { type: "notification_intent" }
+    >;
+    expect(intent.remotePushDispatched).toBe(false);
+  });
+
+  test("leaves remotePushDispatched undefined when absent from the payload", async () => {
+    const { adapter, sent } = captureBroadcast();
+    await adapter.send(makePayload(), makeDestination());
+
+    const intent = sent[0] as Extract<
+      AssistantEvent,
+      { type: "notification_intent" }
+    >;
+    expect(intent.remotePushDispatched).toBeUndefined();
+  });
+});
+
+describe("CadetAdapter assistant name", () => {
+  test("broadcasts the current verified assistant name after trimming it", async () => {
+    assistantName = "  Example Assistant  ";
+    const { adapter, sent } = captureBroadcast();
+
+    await adapter.send(makePayload(), makeDestination());
+
+    const intent = sent[0] as Extract<
+      AssistantEvent,
+      { type: "notification_intent" }
+    >;
+    expect(intent.assistantName).toBe("Example Assistant");
+  });
+
+  test("omits the assistant name when it is unavailable", async () => {
+    const { adapter, sent } = captureBroadcast();
+
+    await adapter.send(makePayload(), makeDestination());
+
+    const intent = sent[0] as Extract<
+      AssistantEvent,
+      { type: "notification_intent" }
+    >;
+    expect(intent.assistantName).toBeUndefined();
+    expect("assistantName" in intent).toBe(false);
+  });
+
+  test("omits a blank assistant name", async () => {
+    assistantName = " \t\n ";
+    const { adapter, sent } = captureBroadcast();
+
+    await adapter.send(makePayload(), makeDestination());
+
+    const intent = sent[0] as Extract<
+      AssistantEvent,
+      { type: "notification_intent" }
+    >;
+    expect(intent.assistantName).toBeUndefined();
+    expect("assistantName" in intent).toBe(false);
+  });
+
+  test("reflects a renamed assistant on the next intent", async () => {
+    assistantName = "Assistant A";
+    const { adapter, sent } = captureBroadcast();
+    await adapter.send(makePayload(), makeDestination());
+
+    assistantName = "Assistant B";
+    await adapter.send(makePayload(), makeDestination());
+
+    const intents = sent as Array<
+      Extract<AssistantEvent, { type: "notification_intent" }>
+    >;
+    expect(intents.map((intent) => intent.assistantName)).toEqual([
+      "Assistant A",
+      "Assistant B",
+    ]);
+  });
+
+  test("keeps notification intents outside conversation replay scope", async () => {
+    assistantName = "Example Assistant";
+    const { adapter, sent, conversationIds } = captureBroadcast();
+
+    await adapter.send(makePayload(), makeDestination());
+
+    expect(conversationIds).toEqual([undefined]);
+    expect("conversationId" in sent[0]!).toBe(false);
+  });
+});
+
+describe("CadetAdapter update", () => {
+  beforeEach(() => {
+    updateMessageContentMock.mockClear();
+    updateMessageContentShouldThrow = false;
+    messagesInvalidated.length = 0;
+  });
+
+  test("rewrites the persisted conversation message with the new body", async () => {
+    const { adapter } = captureBroadcast();
+
+    const result = await adapter.update!(
+      {
+        deliveryId: "delivery-1",
+        destination: "cadet",
+        messageId: "msg-1",
+        conversationId: "conv-1",
+      },
+      { title: "Daily Briefing", body: "Revised briefing text." },
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.messageId).toBe("msg-1");
+    expect(updateMessageContentMock).toHaveBeenCalledTimes(1);
+    expect(updateMessageContentMock.mock.calls[0]).toEqual([
+      "msg-1",
+      "Revised briefing text.",
+    ]);
+    // A client holding the conversation open refetches on this tag alone.
+    expect(messagesInvalidated).toEqual(["conv-1"]);
+  });
+
+  test("rewrites without a conversation to invalidate", async () => {
+    // Deliveries recorded before the pairing carried a conversation have none
+    // to name, and the rewrite still stands on its own.
+    const { adapter } = captureBroadcast();
+
+    const result = await adapter.update!(
+      { deliveryId: "delivery-1", destination: "cadet", messageId: "msg-1" },
+      { body: "Revised briefing text." },
+    );
+
+    expect(result.success).toBe(true);
+    expect(updateMessageContentMock).toHaveBeenCalledTimes(1);
+    expect(messagesInvalidated).toHaveLength(0);
+  });
+
+  test("leaves the message untouched on a title-only edit", async () => {
+    // The feed rewrites its summary only when the patch carries a body, so
+    // writing the title here would put the conversation out of step with the
+    // card it is supposed to match.
+    const { adapter } = captureBroadcast();
+
+    const result = await adapter.update!(
+      { deliveryId: "delivery-1", destination: "cadet", messageId: "msg-1" },
+      { title: "Daily Briefing" },
+    );
+
+    expect(result.success).toBe(true);
+    expect(updateMessageContentMock).not.toHaveBeenCalled();
+  });
+
+  test("writes an empty body through, matching the feed summary patch", async () => {
+    const { adapter } = captureBroadcast();
+
+    await adapter.update!(
+      { deliveryId: "delivery-1", destination: "cadet", messageId: "msg-1" },
+      { title: "Daily Briefing", body: "" },
+    );
+
+    expect(updateMessageContentMock.mock.calls[0]![1]).toBe("");
+  });
+
+  test("skips deliveries that persisted no conversation message", async () => {
+    const { adapter } = captureBroadcast();
+
+    const result = await adapter.update!(
+      { deliveryId: "delivery-1", destination: "cadet", messageId: null },
+      { body: "Revised briefing text." },
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("missing_message_id");
+    expect(updateMessageContentMock).not.toHaveBeenCalled();
+  });
+
+  test("reports failure without throwing when the write fails", async () => {
+    const { adapter } = captureBroadcast();
+    updateMessageContentShouldThrow = true;
+
+    const result = await adapter.update!(
+      { deliveryId: "delivery-1", destination: "cadet", messageId: "msg-1" },
+      { body: "Revised briefing text." },
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("DB write failed");
+  });
+});
+
+describe("CadetAdapter guardian scoping", () => {
+  function captureOptions(): {
+    adapter: CadetAdapter;
+    options: Array<BroadcastMessageOptions | undefined>;
+    intents: AssistantEvent[];
+  } {
+    const options: Array<BroadcastMessageOptions | undefined> = [];
+    const intents: AssistantEvent[] = [];
+    const adapter = new CadetAdapter((msg, _conversationId, opts) => {
+      options.push(opts);
+      intents.push(msg);
+    });
+    return { adapter, options, intents };
+  }
+
+  test("a guardian-sensitive intent is delivered only to the guardian's connections", async () => {
+    const { adapter, options, intents } = captureOptions();
+    await adapter.send(
+      makePayload({ sourceEventName: "guardian.question", urgency: "high" }),
+      makeDestination({ metadata: { guardianPrincipalId: "principal-g" } }),
+    );
+
+    expect(options).toEqual([{ targetActorPrincipalId: "principal-g" }]);
+    expect(intents[0]).toMatchObject({
+      targetGuardianPrincipalId: "principal-g",
+    });
+  });
+
+  test("an ordinary intent is broadcast to every connection", async () => {
+    const { adapter, options } = captureOptions();
+    await adapter.send(
+      makePayload({ sourceEventName: "schedule.notify" }),
+      makeDestination({ metadata: { guardianPrincipalId: "principal-g" } }),
+    );
+
+    expect(options).toEqual([{ targetActorPrincipalId: undefined }]);
+  });
+
+  test.each(["chat.assistant_reply", "schedule.result", "activity.complete"])(
+    "%s remains recipient-scoped without the legacy guardian-card marker",
+    async (sourceEventName) => {
+      const intents: AssistantEvent[] = [];
+      const scopes: Array<BroadcastMessageOptions | undefined> = [];
+      const adapter = new CadetAdapter((message, _conversationId, options) => {
+        intents.push(message);
+        scopes.push(options);
+      });
+      const result = await adapter.send(
+        makePayload({
+          sourceEventName,
+          urgency: "medium",
+          contextPayload: {
+            completion: {
+              workId: "task-1",
+              conversationId: "conv-result",
+              recipientPrincipalId: "principal-g",
+              owner: "parent_continuation",
+            },
+          },
+        }),
+        makeDestination({ metadata: { guardianPrincipalId: "principal-g" } }),
+      );
+
+      expect(result.success).toBe(true);
+      expect(scopes).toEqual([{ targetActorPrincipalId: "principal-g" }]);
+      expect(intents[0]).toMatchObject({
+        silent: false,
+        targetGuardianPrincipalId: undefined,
+      });
+    },
+  );
+
+  test("a completion with no resolved recipient sends no preview", async () => {
+    const { adapter, sent } = captureBroadcast();
+    const result = await adapter.send(
+      makePayload({ sourceEventName: "chat.assistant_reply" }),
+      makeDestination(),
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: "completion recipient unavailable",
+    });
+    expect(sent).toEqual([]);
+  });
+
+  test.each([
+    null,
+    {},
+    {
+      workId: "task-1",
+      conversationId: "conv-private",
+      recipientPrincipalId: "principal-1",
+      owner: "unknown",
+    },
+  ])(
+    "malformed ownership %j never broadcasts a private preview",
+    async (completion) => {
+      const { adapter, options, intents } = captureOptions();
+      const result = await adapter.send(
+        makePayload({
+          sourceEventName: "activity.complete",
+          urgency: "high",
+          copy: { title: "Private result", body: "Sensitive result preview." },
+          contextPayload: { completion },
+        }),
+        makeDestination({ metadata: { guardianPrincipalId: "principal-1" } }),
+      );
+
+      expect(result).toEqual({
+        success: false,
+        error: "completion recipient unavailable",
+      });
+      expect(intents).toEqual([]);
+      expect(options).toEqual([]);
+    },
+  );
+
+  test("honors broadcaster presentation independently of urgency", async () => {
+    const { adapter, sent } = captureBroadcast();
+    await adapter.send(
+      makePayload({
+        sourceEventName: "chat.assistant_reply",
+        urgency: "medium",
+        silent: true,
+      }),
+      makeDestination({ metadata: { guardianPrincipalId: "principal-g" } }),
+    );
+
+    expect(sent[0]).toMatchObject({ silent: true });
+  });
+});

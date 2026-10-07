@@ -38,7 +38,7 @@ Open: `https://linear.app/settings/api`
 
 After the user clicks:
 
-> Set the **Application name** to **Vellum Assistant**.
+> Set the **Application name** to **Cadet Assistant**.
 
 > For the **Redirect URL**, enter `http://localhost:17324/oauth/callback`.
 
@@ -46,7 +46,7 @@ After the user clicks:
 
 **Known issues:**
 
-- If the user sees an error about duplicate application names, suggest a variant like "Vellum Assistant (Personal)"
+- If the user sees an error about duplicate application names, suggest a variant like "Cadet Assistant (Personal)"
 
 **Milestone (2 of 7):** "App created - now let's grab the credentials."
 
@@ -92,7 +92,7 @@ If the user missed it:
 
 Follow the `cadet-oauth-integrations` workflow to collect credentials, register the OAuth app, connect, and verify.
 
-> I'll start the Linear authorization flow now. You should see a Linear consent page asking you to allow **Vellum Assistant** to access your workspace.
+> I'll start the Linear authorization flow now. You should see a Linear consent page asking you to allow **Cadet Assistant** to access your workspace.
 >
 > Review the permissions and click **Authorize**.
 

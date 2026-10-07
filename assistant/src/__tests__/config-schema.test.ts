@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 // Mocks — declared before imports that depend on platform/logger
 // ---------------------------------------------------------------------------
 
-const WORKSPACE_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
 const CONFIG_PATH = join(WORKSPACE_DIR, "config.json");
 
 function ensureTestDir(): void {
@@ -433,7 +433,7 @@ describe("AssistantConfigSchema", () => {
     const inProfile = AssistantConfigSchema.safeParse({
       llm: {
         profiles: {
-          custom: { provider: "vellum", model: "claude-opus-4-8" },
+          custom: { provider: "cadet", model: "claude-opus-4-8" },
         },
       },
     });

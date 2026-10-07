@@ -29,7 +29,7 @@ let originalIsPlatform: string | undefined;
 function freshWorkspace(): void {
   workspaceDir = join(
     tmpdir(),
-    `vellum-byok-default-profile-ensure-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-byok-default-profile-ensure-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 }
@@ -736,10 +736,10 @@ describe("ensureByokDefaultProfiles", () => {
     expect(readFileSync(configPath(), "utf-8")).toBe(before);
   });
 
-  test("a vellum-default install (hatched BYOK, later platform-connected) converts fully", () => {
+  test("a cadet-default install (hatched BYOK, later platform-connected) converts fully", () => {
     const config = uneditedByokConfig();
     (config.llm as Record<string, unknown>).defaultProvider = {
-      provider: "vellum",
+      provider: "cadet",
     };
     writeConfig(config);
 
@@ -761,17 +761,17 @@ describe("ensureByokDefaultProfiles", () => {
     const resolved = resolveDefaultProfileForProvider(
       profiles() as Record<string, ProfileEntry>,
       "balanced",
-      { provider: "vellum" },
+      { provider: "cadet" },
     );
     expect(resolved?.source).toBe("managed");
     expect(resolved?.status).toBeUndefined();
     expectSecondRunNoop();
   });
 
-  test("a vellum-default install keeps a user-edited copy untouched", () => {
+  test("a cadet-default install keeps a user-edited copy untouched", () => {
     const config = uneditedByokConfig();
     const llmConfig = config.llm as Record<string, unknown>;
-    llmConfig.defaultProvider = { provider: "vellum" };
+    llmConfig.defaultProvider = { provider: "cadet" };
     const profileMap = llmConfig.profiles as Record<
       string,
       Record<string, unknown>
@@ -842,14 +842,14 @@ describe("ensureByokDefaultProfiles", () => {
     expect(readFileSync(configPath(), "utf-8")).toBe(before);
   });
 
-  test("a real vellum-default workspace with re-enabled stubs and mixed connection stamps converts (specimen shape)", () => {
+  test("a real cadet-default workspace with re-enabled stubs and mixed connection stamps converts (specimen shape)", () => {
     // Mirrors a live 2026-07 workspace: hatched BYOK anthropic, later
     // platform-connected, stubs re-enabled through the UI, the
     // onboarding-authored copy stamped with the bare "anthropic" connection,
     // and call sites pinned at custom-balanced.
     writeConfig({
       llm: {
-        defaultProvider: { provider: "vellum", connectionName: "vellum" },
+        defaultProvider: { provider: "cadet", connectionName: "cadet" },
         activeProfile: "balanced",
         advisorProfile: "quality-optimized",
         profileOrder: [
@@ -984,7 +984,7 @@ describe("ensureByokDefaultProfiles", () => {
     // requirement keeps it.
     const config = uneditedByokConfig();
     const llmConfig = config.llm as Record<string, unknown>;
-    llmConfig.defaultProvider = { provider: "vellum" };
+    llmConfig.defaultProvider = { provider: "cadet" };
     const profileMap = llmConfig.profiles as Record<
       string,
       Record<string, unknown>
@@ -1007,7 +1007,7 @@ describe("ensureByokDefaultProfiles", () => {
     // set; the stubs still delete.
     const config = uneditedByokConfig();
     const llmConfig = config.llm as Record<string, unknown>;
-    llmConfig.defaultProvider = { provider: "vellum" };
+    llmConfig.defaultProvider = { provider: "cadet" };
     const profileMap = llmConfig.profiles as Record<
       string,
       Record<string, unknown>

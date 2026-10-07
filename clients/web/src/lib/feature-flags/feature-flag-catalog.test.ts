@@ -204,54 +204,54 @@ describe("getEnvFlagOverridesForScope", () => {
 
   test("keeps booleanish Vite env values as strings for string-valued flags", () => {
     (globalThis as Record<string, unknown>).window = undefined;
-    process.env.VITE_VELLUM_FLAG_VISION_MODE = "on";
+    process.env.VITE_CADET_FLAG_VISION_MODE = "on";
     try {
       const result = getEnvFlagOverridesForScope("client");
       expect(result.str.visionMode).toBe("on");
       expect(result.bool).not.toHaveProperty("visionMode");
 
-      process.env.VITE_VELLUM_FLAG_VISION_MODE = "off";
+      process.env.VITE_CADET_FLAG_VISION_MODE = "off";
       expect(getEnvFlagOverridesForScope("client").str.visionMode).toBe("off");
     } finally {
-      delete process.env.VITE_VELLUM_FLAG_VISION_MODE;
+      delete process.env.VITE_CADET_FLAG_VISION_MODE;
     }
   });
 
   test("matches string-flag env arms case-insensitively and stores the canonical arm", () => {
     (globalThis as Record<string, unknown>).window = undefined;
-    process.env.VITE_VELLUM_FLAG_VISION_MODE = "ON";
+    process.env.VITE_CADET_FLAG_VISION_MODE = "ON";
     try {
       expect(getEnvFlagOverridesForScope("client").str.visionMode).toBe("on");
 
-      process.env.VITE_VELLUM_FLAG_VISION_MODE = "On";
+      process.env.VITE_CADET_FLAG_VISION_MODE = "On";
       expect(getEnvFlagOverridesForScope("client").str.visionMode).toBe("on");
     } finally {
-      delete process.env.VITE_VELLUM_FLAG_VISION_MODE;
+      delete process.env.VITE_CADET_FLAG_VISION_MODE;
     }
   });
 
   test("drops string-flag env values that match no declared arm", () => {
     (globalThis as Record<string, unknown>).window = undefined;
-    process.env.VITE_VELLUM_FLAG_VISION_MODE = "bogus";
+    process.env.VITE_CADET_FLAG_VISION_MODE = "bogus";
     try {
       const result = getEnvFlagOverridesForScope("client");
       expect(result.str).not.toHaveProperty("visionMode");
       expect(result.bool).not.toHaveProperty("visionMode");
     } finally {
-      delete process.env.VITE_VELLUM_FLAG_VISION_MODE;
+      delete process.env.VITE_CADET_FLAG_VISION_MODE;
     }
   });
 
   test("boolean flags keep case-insensitive env coercion", () => {
     (globalThis as Record<string, unknown>).window = undefined;
     for (const raw of ["on", "ON"]) {
-      process.env.VITE_VELLUM_FLAG_VELVET = raw;
+      process.env.VITE_CADET_FLAG_VELVET = raw;
       try {
         const result = getEnvFlagOverridesForScope("client");
         expect(result.bool.velvet).toBe(true);
         expect(result.str).not.toHaveProperty("velvet");
       } finally {
-        delete process.env.VITE_VELLUM_FLAG_VELVET;
+        delete process.env.VITE_CADET_FLAG_VELVET;
       }
     }
   });

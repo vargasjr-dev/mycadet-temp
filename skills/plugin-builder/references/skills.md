@@ -19,11 +19,11 @@ These are the fields the `SKILL.md` frontmatter can set. Only `name` and `descri
 | `name`                             | `string`   | Yes      | Skill display name used in skill lists and matching. The canonical identifier is the directory basename (the folder name under `skills/`), not this field. Keep them aligned to avoid confusion, but note that the runtime uses the directory name for deduplication and collision resolution. |
 | `description`                      | `string`   | Yes      | What the skill does and when to use it. The Assistant matches against this to decide whether to load the skill, so write it for the model, not for a human reader.                                                                                                                             |
 | `metadata.emoji`                   | `string`   | No       | Glyph shown next to the skill in clients that render a skill list.                                                                                                                                                                                                                             |
-| `metadata.vellum.display-name`     | `string`   | No       | Human-friendly label for the skill. Falls back to name when omitted.                                                                                                                                                                                                                           |
-| `metadata.vellum.activation-hints` | `string[]` | No       | Plain-language situations where the skill should activate. These sharpen the match beyond the description.                                                                                                                                                                                     |
-| `metadata.vellum.avoid-when`       | `string[]` | No       | Situations where the skill should not activate, used to keep it from firing on adjacent-but-wrong requests.                                                                                                                                                                                    |
-| `metadata.vellum.category`         | `string`   | No       | Grouping used when the skill is listed in a client. Defaults to "system".                                                                                                                                                                                                                      |
-| `metadata.vellum.platforms`        | `string[]` | No       | Host operating systems where the skill may be offered and loaded. Supported values are `macos`, `windows`, and `linux`; omission means all platforms.                                                                                                                                          |
+| `metadata.cadet.display-name`     | `string`   | No       | Human-friendly label for the skill. Falls back to name when omitted.                                                                                                                                                                                                                           |
+| `metadata.cadet.activation-hints` | `string[]` | No       | Plain-language situations where the skill should activate. These sharpen the match beyond the description.                                                                                                                                                                                     |
+| `metadata.cadet.avoid-when`       | `string[]` | No       | Situations where the skill should not activate, used to keep it from firing on adjacent-but-wrong requests.                                                                                                                                                                                    |
+| `metadata.cadet.category`         | `string`   | No       | Grouping used when the skill is listed in a client. Defaults to "system".                                                                                                                                                                                                                      |
+| `metadata.cadet.platforms`        | `string[]` | No       | Host operating systems where the skill may be offered and loaded. Supported values are `macos`, `windows`, and `linux`; omission means all platforms.                                                                                                                                          |
 
 ## Resolution order
 
@@ -63,7 +63,7 @@ description: >-
   Draft a daily standup update from recent activity. Use when the user
   asks for their standup, daily update, or what they did yesterday.
 metadata:
-  vellum:
+  cadet:
     display-name: "Standup Notes"
     activation-hints:
       - "User asks for their standup or daily update"
@@ -87,7 +87,7 @@ Keep each section to a few short bullet points.
 
 The `scripts/` and `references/` directories are optional companions to `SKILL.md`. The body invokes them by relative path:
 
-- **Scripts:** Reference a script by its path relative to the skill directory. Scripts that call `resolveCredential` should live under `scripts/` or `tools/` so the path itself identifies the plugin: `plugins/<service>/skills/<skill>/{scripts,tools}/<file>`. The assistant's bash tool also injects `VELLUM_PLUGIN_NAME` when exactly one plugin skill is active. Raw `bun` is fine for those scripts.
+- **Scripts:** Reference a script by its path relative to the skill directory. Scripts that call `resolveCredential` should live under `scripts/` or `tools/` so the path itself identifies the plugin: `plugins/<service>/skills/<skill>/{scripts,tools}/<file>`. The assistant's bash tool also injects `CADET_PLUGIN_NAME` when exactly one plugin skill is active. Raw `bun` is fine for those scripts.
 - **References:** Cite a reference file by relative path when the body needs to defer detail. For example, "See `references/api-fields.md` for the full field contract" tells the assistant to read that file when it needs the details, rather than inlining them in the body. This keeps the body short and loads the detail only when relevant.
 
 ## Skill-scoped tools (`TOOLS.json`)
@@ -115,12 +115,12 @@ A skill can carry real, schema-validated tools that exist only while the skill i
 }
 ```
 
-The executor is a module inside the skill directory exporting `run(input, context)` that returns `{ content: string, isError: boolean }`. It executes in the skill sandbox, a subprocess with a sanitized environment (`VELLUM_WORKSPACE_DIR` is available for locating plugin data). A plugin-resident skill tool also receives a short-lived invocation grant so `resolveCredential()` can read credentials under the owning plugin's service. Keep the executor self-contained: node stdlib and `@mycadet/plugin-api` only, no imports from outside the skill directory, no shared module state with hooks.
+The executor is a module inside the skill directory exporting `run(input, context)` that returns `{ content: string, isError: boolean }`. It executes in the skill sandbox, a subprocess with a sanitized environment (`CADET_WORKSPACE_DIR` is available for locating plugin data). A plugin-resident skill tool also receives a short-lived invocation grant so `resolveCredential()` can read credentials under the owning plugin's service. Keep the executor self-contained: node stdlib and `@mycadet/plugin-api` only, no imports from outside the skill directory, no shared module state with hooks.
 
 Rules the host enforces:
 
 - **Sandbox only.** Plugin skills must declare `execution_target: "sandbox"`; `"host"` is refused for anything that is not a first-party bundled skill.
-- **One owner per tool name.** Registering the same tool name from two different skills throws. When several sibling skills need one tool, put it in a single carrier skill and list that skill in each sibling's `metadata.vellum.includes` — loading any parent projects the child's tools automatically.
+- **One owner per tool name.** Registering the same tool name from two different skills throws. When several sibling skills need one tool, put it in a single carrier skill and list that skill in each sibling's `metadata.cadet.includes` — loading any parent projects the child's tools automatically.
 - **Dispatch via `skill_execute`.** The tools are not sent as top-level wire tools; `skill_load` renders their schemas into its output and the model calls them as `{"tool": "<name>", "input": {...}, "activity": "..."}` through `skill_execute`. Tools register when the skill activates and unregister when it deactivates, and execution is blocked if the skill directory changed since it was loaded (version-hash guard).
 
 The `admin-copilot` marketplace plugin's `admin-copilot-prefs` skill is the reference implementation.

@@ -1,5 +1,5 @@
 /**
- * Tests for SSE client registration via X-Vellum-Client-Id / X-Vellum-Interface-Id
+ * Tests for SSE client registration via X-Cadet-Client-Id / X-Cadet-Interface-Id
  * headers on the /events endpoint.
  *
  * Validates:
@@ -34,8 +34,8 @@ describe("events client registration", () => {
     const stream = handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "test-mac-001",
-          "x-vellum-interface-id": "macos",
+          "x-cadet-client-id": "test-mac-001",
+          "x-cadet-interface-id": "macos",
         },
         abortSignal: ac.signal,
       },
@@ -61,8 +61,8 @@ describe("events client registration", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "test-windows-001",
-          "x-vellum-interface-id": "windows",
+          "x-cadet-client-id": "test-windows-001",
+          "x-cadet-interface-id": "windows",
         },
         abortSignal: ac.signal,
       },
@@ -99,7 +99,7 @@ describe("events client registration", () => {
 
     handleSubscribeAssistantEvents(
       {
-        headers: { "x-vellum-interface-id": "macos" },
+        headers: { "x-cadet-interface-id": "macos" },
         abortSignal: ac.signal,
       },
       { hub },
@@ -118,7 +118,7 @@ describe("events client registration", () => {
     expect(() =>
       handleSubscribeAssistantEvents(
         {
-          headers: { "x-vellum-client-id": "test-mac-001" },
+          headers: { "x-cadet-client-id": "test-mac-001" },
         },
         { hub },
       ),
@@ -133,8 +133,8 @@ describe("events client registration", () => {
       handleSubscribeAssistantEvents(
         {
           headers: {
-            "x-vellum-client-id": "test-bad-001",
-            "x-vellum-interface-id": "not-a-valid-interface",
+            "x-cadet-client-id": "test-bad-001",
+            "x-cadet-interface-id": "not-a-valid-interface",
           },
         },
         { hub },
@@ -152,8 +152,8 @@ describe("events client registration", () => {
     const stream = handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "test-mac-002",
-          "x-vellum-interface-id": "macos",
+          "x-cadet-client-id": "test-mac-002",
+          "x-cadet-interface-id": "macos",
         },
         abortSignal: ac.signal,
       },
@@ -183,8 +183,8 @@ describe("events client registration", () => {
     const stream = handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "test-mac-003",
-          "x-vellum-interface-id": "macos",
+          "x-cadet-client-id": "test-mac-003",
+          "x-cadet-interface-id": "macos",
         },
         abortSignal: ac.signal,
       },
@@ -211,8 +211,8 @@ describe("events client registration", () => {
     const stream = handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "test-mac-004",
-          "x-vellum-interface-id": "macos",
+          "x-cadet-client-id": "test-mac-004",
+          "x-cadet-interface-id": "macos",
         },
         abortSignal: ac.signal,
       },
@@ -245,8 +245,8 @@ describe("events client registration", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "evict-me",
-          "x-vellum-interface-id": "macos",
+          "x-cadet-client-id": "evict-me",
+          "x-cadet-interface-id": "macos",
         },
         abortSignal: ac1.signal,
       },
@@ -259,8 +259,8 @@ describe("events client registration", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "i-stay",
-          "x-vellum-interface-id": "ios",
+          "x-cadet-client-id": "i-stay",
+          "x-cadet-interface-id": "ios",
         },
         abortSignal: ac2.signal,
       },
@@ -285,8 +285,8 @@ describe("events client registration", () => {
       handleSubscribeAssistantEvents(
         {
           headers: {
-            "x-vellum-client-id": "no-room",
-            "x-vellum-interface-id": "macos",
+            "x-cadet-client-id": "no-room",
+            "x-cadet-interface-id": "macos",
           },
         },
         { hub },
@@ -305,8 +305,8 @@ describe("events client registration", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "dedup-001",
-          "x-vellum-interface-id": "chrome-extension",
+          "x-cadet-client-id": "dedup-001",
+          "x-cadet-interface-id": "chrome-extension",
         },
         abortSignal: ac1.signal,
       },
@@ -319,8 +319,8 @@ describe("events client registration", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "dedup-001",
-          "x-vellum-interface-id": "chrome-extension",
+          "x-cadet-client-id": "dedup-001",
+          "x-cadet-interface-id": "chrome-extension",
         },
         abortSignal: ac2.signal,
       },
@@ -357,8 +357,8 @@ describe("events client registration", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "evict-cb-001",
-          "x-vellum-interface-id": "chrome-extension",
+          "x-cadet-client-id": "evict-cb-001",
+          "x-cadet-interface-id": "chrome-extension",
         },
         abortSignal: ac2.signal,
       },
@@ -380,8 +380,8 @@ describe("events client registration", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "client-A",
-          "x-vellum-interface-id": "chrome-extension",
+          "x-cadet-client-id": "client-A",
+          "x-cadet-interface-id": "chrome-extension",
         },
         abortSignal: ac1.signal,
       },
@@ -391,8 +391,8 @@ describe("events client registration", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "client-B",
-          "x-vellum-interface-id": "macos",
+          "x-cadet-client-id": "client-B",
+          "x-cadet-interface-id": "macos",
         },
         abortSignal: ac2.signal,
       },
@@ -407,16 +407,16 @@ describe("events client registration", () => {
 
   // ── actorPrincipalId capture ──────────────────────────────────────────────
 
-  test("captures actorPrincipalId from x-vellum-actor-principal-id header", () => {
+  test("captures actorPrincipalId from x-cadet-actor-principal-id header", () => {
     const ac = new AbortController();
     const hub = new AssistantEventHub();
 
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "principal-client-001",
-          "x-vellum-interface-id": "macos",
-          "x-vellum-actor-principal-id": "user-A",
+          "x-cadet-client-id": "principal-client-001",
+          "x-cadet-interface-id": "macos",
+          "x-cadet-actor-principal-id": "user-A",
         },
         abortSignal: ac.signal,
       },
@@ -439,8 +439,8 @@ describe("events client registration", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "principal-client-002",
-          "x-vellum-interface-id": "macos",
+          "x-cadet-client-id": "principal-client-002",
+          "x-cadet-interface-id": "macos",
         },
         abortSignal: ac.signal,
       },

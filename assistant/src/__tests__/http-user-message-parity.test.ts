@@ -50,10 +50,10 @@ mock.module("../runtime/guardian-reply-router.js", () => ({
 
 // Stub for the shared reset-drift helper. handleSendMessage only consumes its
 // result (a guardian TrustContext or null) on a first-pass-unknown actor; the
-// gate itself is covered in runtime/__tests__/guardian-vellum-migration.test.ts.
+// gate itself is covered in runtime/__tests__/guardian-cadet-migration.test.ts.
 const reResolveCalls: string[] = [];
 let mockReResolve: { trustClass: string; sourceChannel: string } | null = null;
-mock.module("../runtime/guardian-vellum-migration.js", () => ({
+mock.module("../runtime/guardian-cadet-migration.js", () => ({
   reResolveTrustOnResetDrift: async (
     incomingPrincipalId: string,
     _sourceChannel: string,
@@ -90,7 +90,7 @@ mock.module("../persistence/conversation-crud.js", () => ({
 mock.module("../runtime/local-actor-identity.js", () => ({
   findLocalGuardianPrincipalId: async () =>
     mockGuardians?.find(
-      (g) => g.channelType === "vellum" && g.status === "active",
+      (g) => g.channelType === "cadet" && g.status === "active",
     )?.principalId as string | undefined,
 }));
 
@@ -134,7 +134,7 @@ mock.module("../daemon/host-proxy-preactivation.js", () => ({
 
 let mockGuardians: Array<Record<string, unknown>> | null = [
   {
-    channelType: "vellum",
+    channelType: "cadet",
     contactId: "guardian-contact",
     principalId: "test-user",
     address: "test-user",
@@ -229,14 +229,14 @@ function makeRequest(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-vellum-actor-principal-id": "test-user",
-      "x-vellum-principal-type": "actor",
+      "x-cadet-actor-principal-id": "test-user",
+      "x-cadet-principal-type": "actor",
       ...headers,
     },
     body: JSON.stringify({
       conversationKey: "parity-test-key",
       content,
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       interface: "macos",
       ...extra,
     }),
@@ -375,7 +375,7 @@ describe("HTTP POST /v1/messages clientTimezone transport metadata", () => {
     expect(res.status).toBe(202);
     expect(capturedOptions).toEqual({
       transport: {
-        channelId: "vellum",
+        channelId: "cadet",
         interfaceId: "macos",
         clientTimezone: "America/New_York",
       },
@@ -405,7 +405,7 @@ describe("HTTP POST /v1/messages clientTimezone transport metadata", () => {
     expect(res.status).toBe(202);
     expect(capturedOptions).toEqual({
       transport: {
-        channelId: "vellum",
+        channelId: "cadet",
         interfaceId: "ios",
         clientTimezone: "Europe/London",
       },
@@ -435,7 +435,7 @@ describe("HTTP POST /v1/messages clientTimezone transport metadata", () => {
     expect(res.status).toBe(202);
     expect(capturedOptions).toEqual({
       transport: {
-        channelId: "vellum",
+        channelId: "cadet",
         interfaceId: "macos",
       },
     });
@@ -474,7 +474,7 @@ describe("HTTP POST /v1/messages visibleAppId transport metadata", () => {
 
   test("carries the reported visible app onto the transport", async () => {
     expect(await captureTransport({ visibleAppId: "app-abc" })).toEqual({
-      channelId: "vellum",
+      channelId: "cadet",
       interfaceId: "macos",
       visibleAppId: "app-abc",
     });
@@ -482,7 +482,7 @@ describe("HTTP POST /v1/messages visibleAppId transport metadata", () => {
 
   test("omits visibleAppId when no app is in view", async () => {
     expect(await captureTransport({})).toEqual({
-      channelId: "vellum",
+      channelId: "cadet",
       interfaceId: "macos",
     });
   });
@@ -494,7 +494,7 @@ describe("HTTP POST /v1/messages visibleAppId transport metadata", () => {
     const longPluginAppId = `plugins~${"p".repeat(255)}~${"a".repeat(255)}`;
 
     expect(await captureTransport({ visibleAppId: longPluginAppId })).toEqual({
-      channelId: "vellum",
+      channelId: "cadet",
       interfaceId: "macos",
       visibleAppId: longPluginAppId,
     });
@@ -504,14 +504,14 @@ describe("HTTP POST /v1/messages visibleAppId transport metadata", () => {
     expect(
       await captureTransport({ visibleAppId: "../../etc/passwd" }),
     ).toEqual({
-      channelId: "vellum",
+      channelId: "cadet",
       interfaceId: "macos",
     });
   });
 });
 
 // ============================================================================
-// CLIENT METADATA — sanitized x-vellum-* headers persisted under
+// CLIENT METADATA — sanitized x-cadet-* headers persisted under
 // metadata.client for turn analytics
 // ============================================================================
 describe("HTTP POST /v1/messages client metadata headers", () => {
@@ -521,10 +521,10 @@ describe("HTTP POST /v1/messages client metadata headers", () => {
   });
 
   const clientMetadataHeaders = {
-    "x-vellum-browser-family": "safari",
-    "x-vellum-browser-version": "17",
-    "x-vellum-client-os": "ios",
-    "x-vellum-interface-version": "1.2.3",
+    "x-cadet-browser-family": "safari",
+    "x-cadet-browser-version": "17",
+    "x-cadet-client-os": "ios",
+    "x-cadet-interface-version": "1.2.3",
   };
 
   test("persists client metadata on immediate user messages", async () => {
@@ -618,9 +618,9 @@ describe("HTTP POST /v1/messages client metadata headers", () => {
       {
         headers: {
           // Uppercase + space + disallowed chars → normalized or dropped.
-          "x-vellum-browser-family": "  SAFARI  ",
-          "x-vellum-browser-version": "not allowed!",
-          "x-vellum-client-os": "a".repeat(65),
+          "x-cadet-browser-family": "  SAFARI  ",
+          "x-cadet-browser-version": "not allowed!",
+          "x-cadet-client-os": "a".repeat(65),
         },
       },
     );
@@ -705,7 +705,7 @@ describe("HTTP POST /v1/messages trust context from the gateway binding", () => 
   beforeEach(() => {
     mockGuardians = [
       {
-        channelType: "vellum",
+        channelType: "cadet",
         contactId: "guardian-contact",
         principalId: "test-user",
         address: "test-user",
@@ -716,13 +716,13 @@ describe("HTTP POST /v1/messages trust context from the gateway binding", () => 
     mockReResolve = null;
   });
 
-  function requestAs(principalId: string, sourceChannel = "vellum") {
+  function requestAs(principalId: string, sourceChannel = "cadet") {
     return new Request("http://localhost/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-vellum-actor-principal-id": principalId,
-        "x-vellum-principal-type": "actor",
+        "x-cadet-actor-principal-id": principalId,
+        "x-cadet-principal-type": "actor",
       },
       body: JSON.stringify({
         conversationKey: "trust-test-key",
@@ -735,7 +735,7 @@ describe("HTTP POST /v1/messages trust context from the gateway binding", () => 
 
   async function trustContextFor(
     principalId: string,
-    sourceChannel = "vellum",
+    sourceChannel = "cadet",
   ): Promise<Record<string, unknown>> {
     let captured: Record<string, unknown> | undefined;
     const conversation = makeConversation({
@@ -771,39 +771,39 @@ describe("HTTP POST /v1/messages trust context from the gateway binding", () => 
 
   test("non-guardian principal: helper consulted, null result stays unknown", async () => {
     mockReResolve = null;
-    expect(await trustClassFor("vellum-principal-stranger")).toBe("unknown");
-    expect(reResolveCalls).toEqual(["vellum-principal-stranger"]);
+    expect(await trustClassFor("cadet-principal-stranger")).toBe("unknown");
+    expect(reResolveCalls).toEqual(["cadet-principal-stranger"]);
   });
 
   test("reset drift: helper returns guardian → route adopts it", async () => {
     mockGuardians = [
       {
-        channelType: "vellum",
+        channelType: "cadet",
         contactId: "guardian-contact",
-        principalId: "vellum-principal-stale",
-        address: "vellum-principal-stale",
+        principalId: "cadet-principal-stale",
+        address: "cadet-principal-stale",
         status: "active",
       },
     ];
-    mockReResolve = { trustClass: "guardian", sourceChannel: "vellum" };
+    mockReResolve = { trustClass: "guardian", sourceChannel: "cadet" };
 
-    expect(await trustClassFor("vellum-principal-healed")).toBe("guardian");
-    expect(reResolveCalls).toEqual(["vellum-principal-healed"]);
+    expect(await trustClassFor("cadet-principal-healed")).toBe("guardian");
+    expect(reResolveCalls).toEqual(["cadet-principal-healed"]);
   });
 
   test("helper returns an unknown-class ctx → trust stays unknown (not adopted)", async () => {
     mockGuardians = [
       {
-        channelType: "vellum",
+        channelType: "cadet",
         contactId: "guardian-contact",
-        principalId: "vellum-principal-stale",
-        address: "vellum-principal-stale",
+        principalId: "cadet-principal-stale",
+        address: "cadet-principal-stale",
         status: "active",
       },
     ];
-    mockReResolve = { trustClass: "unknown", sourceChannel: "vellum" };
+    mockReResolve = { trustClass: "unknown", sourceChannel: "cadet" };
 
-    expect(await trustClassFor("vellum-principal-healed")).toBe("unknown");
+    expect(await trustClassFor("cadet-principal-healed")).toBe("unknown");
   });
 
   test("dev-bypass maps the gateway guardian principal to guardian", async () => {
@@ -844,13 +844,13 @@ describe("HTTP POST /v1/messages trust context from the gateway binding", () => 
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-vellum-actor-principal-id": "dev-bypass",
-          "x-vellum-principal-type": "actor",
+          "x-cadet-actor-principal-id": "dev-bypass",
+          "x-cadet-principal-type": "actor",
         },
         body: JSON.stringify({
           conversationKey: "cu-attach-key",
           content: "hi",
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           interface: "web",
         }),
       }),
@@ -887,13 +887,13 @@ describe("HTTP POST /v1/messages trust context from the gateway binding", () => 
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-vellum-actor-principal-id": "real-jwt-principal",
-          "x-vellum-principal-type": "actor",
+          "x-cadet-actor-principal-id": "real-jwt-principal",
+          "x-cadet-principal-type": "actor",
         },
         body: JSON.stringify({
           conversationKey: "cu-attach-real-key",
           content: "hi",
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           interface: "web",
         }),
       }),

@@ -9,7 +9,7 @@
  * runs coalesce to one pending job per slug; reserved meta-file slugs are
  * never enqueued.
  *
- * Tests use temp workspaces (mkdtemp) — never `~/.vellum/`. Sample content
+ * Tests use temp workspaces (mkdtemp) — never `~/.cadet/`. Sample content
  * uses generic placeholders (Alice, Bob, user@example.com).
  */
 
@@ -98,15 +98,15 @@ let previousWorkspaceEnv: string | undefined;
 beforeAll(() => {
   tmpWorkspace = mkdtempSync(join(tmpdir(), "memory-substrate-reembed-test-"));
   mkdirSync(join(tmpWorkspace, "memory", "concepts"), { recursive: true });
-  previousWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = tmpWorkspace;
+  previousWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = tmpWorkspace;
 });
 
 afterAll(() => {
   if (previousWorkspaceEnv === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceEnv;
+    process.env.CADET_WORKSPACE_DIR = previousWorkspaceEnv;
   }
   rmSync(tmpWorkspace, { recursive: true, force: true });
 });

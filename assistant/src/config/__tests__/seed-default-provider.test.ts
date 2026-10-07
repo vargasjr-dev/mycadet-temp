@@ -16,7 +16,7 @@ import {
   test,
 } from "bun:test";
 
-const WORKSPACE_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
 const CONFIG_PATH = join(WORKSPACE_DIR, "config.json");
 
 function ensureTestDir(): void {
@@ -89,7 +89,7 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
       { llm: { default: { provider: "anthropic" } } },
       { isHatch: true },
     );
-    expect(llm.defaultProvider).toEqual({ provider: "vellum" });
+    expect(llm.defaultProvider).toEqual({ provider: "cadet" });
   });
 
   test("BYOK hatch with an anthropic key writes anthropic", () => {
@@ -147,7 +147,7 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
       },
       { isHatch: true, preserveActiveProfile: true },
     );
-    expect(llm.defaultProvider).toEqual({ provider: "vellum" });
+    expect(llm.defaultProvider).toEqual({ provider: "cadet" });
   });
 
   test("a pre-existing defaultProvider survives a platform hatch untouched", () => {

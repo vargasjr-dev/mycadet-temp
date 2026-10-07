@@ -1030,7 +1030,7 @@ export function buildPersistedAssistantContent(
   /**
    * Give a delivered message the same cleaning a top-level text block gets:
    * the projection turns it into this row's text, so a legacy
-   * `<vellum-attachment />` tag left inside it renders to the user verbatim.
+   * `<cadet-attachment />` tag left inside it renders to the user verbatim.
    * Running it through `cleanAssistantContent` rather than re-implementing the
    * strip keeps the two from drifting as the directive syntax evolves.
    *
@@ -1039,7 +1039,7 @@ export function buildPersistedAssistantContent(
    * attachment it names is still resolved and linked to the row.
    */
   const stripDirectiveMarkup = (message: string): string => {
-    if (!message.includes("<vellum-attachment")) {
+    if (!message.includes("<cadet-attachment")) {
       return message;
     }
     const [cleaned] = cleanAssistantContent([{ type: "text", text: message }])
@@ -1104,7 +1104,7 @@ export function buildPersistedAssistantContent(
  * Stamp `_startedAt`/`_completedAt` onto the content's thinking blocks from the
  * per-block timing captured while streaming, matched by position: the `i`-th
  * thinking block in `content` takes `timings[i]`. The `_`-prefixed fields are
- * vellum-internal metadata (never sent to providers), mirroring how tool calls
+ * cadet-internal metadata (never sent to providers), mirroring how tool calls
  * persist timing; `renderHistoryContent` reads them back onto the wire schema's
  * `startedAt`/`completedAt`.
  *
@@ -1562,8 +1562,8 @@ function buildAssistantChannelMetadata(
   };
 
   const channel = deps.turnChannelContext.assistantMessageChannel;
-  if (channel === "vellum") {
-    // A vellum turn is not a provider message: no envelope.
+  if (channel === "cadet") {
+    // A cadet turn is not a provider message: no envelope.
     return metadata;
   }
   // Every channel row describes itself in the neutral envelope
@@ -2754,7 +2754,7 @@ export async function handleToolResult(
 }
 
 /**
- * Stamp vellum-internal metadata onto an in-flight tool_use block in the
+ * Stamp cadet-internal metadata onto an in-flight tool_use block in the
  * persisted assistant message, ahead of the turn's end-of-turn annotation. The
  * block is already durable (message_complete precedes tool events), so without
  * an early stamp a `/messages` snapshot fetched mid-turn carries none of it and
@@ -3255,7 +3255,7 @@ export async function handleMessageComplete(
   // On a row whose plain text is private working notes, the text a user reads
   // is what `send_user_message` carried, so that is where an attachment
   // directive has to be found: scanning the raw blocks would miss a
-  // `vellum://` link the model put in its message and the file would never be
+  // `cadet://` link the model put in its message and the file would never be
   // attached to the delivered reply.
   const { directives: msgDirectives, warnings: msgWarnings } =
     cleanAssistantContent(

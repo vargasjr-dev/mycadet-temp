@@ -148,7 +148,7 @@ export async function startCli(): Promise<void> {
         JSON.stringify({
           conversationKey,
           content,
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           interface: "cli",
           requestId,
           ...(options?.bypassSecretCheck

@@ -169,7 +169,7 @@ export function HelpCommonIssuesContent() {
             </li>
             <li>
               Open Console.app and filter on{" "}
-              <code>com.vellum.vellum-assistant</code> for crash logs.
+              <code>com.mycadet.mycadet</code> for crash logs.
             </li>
             <li>As a last resort, delete the app and reinstall.</li>
           </ol>

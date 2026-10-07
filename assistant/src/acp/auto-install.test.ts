@@ -98,7 +98,7 @@ describe("ensureAdapterInstalled", () => {
     expect(cwd).toBeDefined();
     expect(cwd!.startsWith(tmpdir())).toBe(true);
     expect(cwd).not.toBe(process.cwd());
-    expect(cwd).toContain("vellum-acp-install-");
+    expect(cwd).toContain("cadet-acp-install-");
 
     // Secrets stripped, registry pinned.
     expect(env).toBeDefined();

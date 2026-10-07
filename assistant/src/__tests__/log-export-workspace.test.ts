@@ -25,7 +25,7 @@ import { describe, expect, test } from "bun:test";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 // Set up temp directories before mocking
-const testWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testWorkspaceDir = process.env.CADET_WORKSPACE_DIR!;
 mkdirSync(testWorkspaceDir, { recursive: true });
 
 useMemorySecureKeys();
@@ -183,7 +183,7 @@ writeFileSync(
   "log entry from Jan 25\n",
 );
 // Non-dated log file — should always be included regardless of time filter
-writeFileSync(join(logsDir, "vellum.log"), "non-dated log content\n");
+writeFileSync(join(logsDir, "cadet.log"), "non-dated log content\n");
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -310,7 +310,7 @@ describe("POST /v1/export — daemon log date filtering", () => {
     const dir = await extractArchive(res);
     try {
       const logFiles = readdirSync(join(dir, "daemon-logs"));
-      expect(logFiles).toContain("vellum.log");
+      expect(logFiles).toContain("cadet.log");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -325,7 +325,7 @@ describe("POST /v1/export — daemon log date filtering", () => {
       expect(logFiles).toContain("assistant-2025-01-15.log");
       expect(logFiles).toContain("assistant-2025-01-20.log");
       expect(logFiles).toContain("assistant-2025-01-25.log");
-      expect(logFiles).toContain("vellum.log");
+      expect(logFiles).toContain("cadet.log");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -455,7 +455,7 @@ describe("POST /v1/export — workspace allowlist", () => {
       expect(content).toBe('{"role":"user","content":"jan 15"}\n');
       // Clean daemon log files must also ship byte-identical — the secret
       // sweep does no gratuitous rewrites.
-      for (const logFile of ["assistant-2025-01-10.log", "vellum.log"]) {
+      for (const logFile of ["assistant-2025-01-10.log", "cadet.log"]) {
         expect(readFileSync(join(dir, "daemon-logs", logFile), "utf-8")).toBe(
           readFileSync(join(logsDir, logFile), "utf-8"),
         );

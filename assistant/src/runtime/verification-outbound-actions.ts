@@ -61,7 +61,7 @@ export const DESTINATION_RATE_WINDOW_MS = 3_600_000;
 /** Session TTL in seconds (matches challenge TTL of 10 minutes). */
 const SESSION_TTL_SECONDS = 600;
 
-const EMAIL_VERIFICATION_SUBJECT = "Vellum Assistant Guardian Verification";
+const EMAIL_VERIFICATION_SUBJECT = "Cadet Assistant Guardian Verification";
 
 // ---------------------------------------------------------------------------
 // Telegram destination classification
@@ -566,8 +566,8 @@ export function deliverVerificationEmail(
 ): void {
   (async () => {
     try {
-      const { VellumPlatformClient } = await import("../platform/client.js");
-      const client = await VellumPlatformClient.create();
+      const { CadetPlatformClient } = await import("../platform/client.js");
+      const client = await CadetPlatformClient.create();
       if (!client?.platformAssistantId) {
         log.error(
           "Cannot deliver verification email: platform client not configured",

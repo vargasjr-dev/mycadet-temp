@@ -47,7 +47,7 @@ import { isElectron } from "@/runtime/is-electron";
 import { saveFile } from "@/runtime/native-file";
 import { Trans, useTranslation } from "@/i18n";
 import { useAuthStore } from "@/stores/auth-store";
-import { VELLUM_COMMUNITY_URL } from "@/utils/external-urls";
+import { CADET_COMMUNITY_URL } from "@/utils/external-urls";
 import { Button } from "@mycadet/design-library/components/button";
 import {
   Select,
@@ -1138,7 +1138,7 @@ export function ShareFeedbackModal({
                     components={{
                       discordLink: (
                         <ExternalAnchor
-                          href={VELLUM_COMMUNITY_URL}
+                          href={CADET_COMMUNITY_URL}
                           tone="quiet"
                           className="text-[var(--content-default)]"
                           glyph={false}

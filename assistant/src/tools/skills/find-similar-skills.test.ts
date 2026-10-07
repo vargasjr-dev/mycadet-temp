@@ -226,7 +226,7 @@ describe("find_similar_skills — enrichment", () => {
 
 describe("find_similar_skills: current skill for a refinable hit", () => {
   afterEach(() => {
-    rmSync(join(process.env.VELLUM_WORKSPACE_DIR!, "skills"), {
+    rmSync(join(process.env.CADET_WORKSPACE_DIR!, "skills"), {
       recursive: true,
       force: true,
     });
@@ -368,7 +368,7 @@ describe("find_similar_skills: current skill for a refinable hit", () => {
     // The real reader, against a real SKILL.md: a body opening with an
     // indented code block must come back indented, or a refinement that
     // copies it turns the block into prose.
-    const skillsDir = join(process.env.VELLUM_WORKSPACE_DIR!, "skills");
+    const skillsDir = join(process.env.CADET_WORKSPACE_DIR!, "skills");
     mkdirSync(join(skillsDir, "indented"), { recursive: true });
     writeFileSync(
       join(skillsDir, "indented", "SKILL.md"),

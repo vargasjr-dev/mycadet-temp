@@ -16,11 +16,11 @@ const catalog = {
   matches: [
     {
       name: "imessage",
-      path: "github:vellum-ai/imessage@abc123",
+      path: "github:vargasjr-dev/imessage@abc123",
       category: "productivity",
       source: {
         kind: "github" as const,
-        repo: "vellum-ai/imessage",
+        repo: "vargasjr-dev/imessage",
         ref: "abc123",
       },
     },
@@ -46,7 +46,7 @@ describe("plugins search", () => {
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("imessage");
-    expect(stdout).toContain("github:vellum-ai/imessage@abc123");
+    expect(stdout).toContain("github:vargasjr-dev/imessage@abc123");
     expect(stdout).toContain('1 match for "imessage".');
     expect(stdout.trimEnd().endsWith(PLUGINS_SEARCH_INSTALL_HINT)).toBe(true);
     expect(PLUGINS_SEARCH_INSTALL_HINT).toContain(

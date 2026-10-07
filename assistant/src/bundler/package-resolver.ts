@@ -1,7 +1,7 @@
 /**
  * Third-party package resolver with an allowlist for app builds.
  *
- * Maintains a shared cache at ~/.vellum/package-cache/ so packages are
+ * Maintains a shared cache at ~/.cadet/package-cache/ so packages are
  * installed once and reused across all app compilations.
  */
 
@@ -112,7 +112,7 @@ async function installPackage(
     const { writeFile } = await import("node:fs/promises");
     await writeFile(
       pkgJsonPath,
-      JSON.stringify({ name: "vellum-pkg-cache", private: true }),
+      JSON.stringify({ name: "cadet-pkg-cache", private: true }),
     );
   }
 

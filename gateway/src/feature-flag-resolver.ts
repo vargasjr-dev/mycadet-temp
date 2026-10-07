@@ -47,6 +47,6 @@ export function isPlatformMode(): boolean {
 
 export function arePlatformFeaturesEnabled(): boolean {
   if (isPlatformMode()) return true;
-  const v = process.env.VELLUM_DISABLE_PLATFORM?.trim().toLowerCase();
+  const v = process.env.CADET_DISABLE_PLATFORM?.trim().toLowerCase();
   return !(v === "true" || v === "1");
 }

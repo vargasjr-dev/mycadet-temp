@@ -26,7 +26,7 @@ import { seedDefaultUserGuardrailsMigration } from "../workspace/migrations/121-
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-migration-121-test-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-migration-121-test-"));
 });
 
 afterEach(() => {

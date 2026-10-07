@@ -23,7 +23,7 @@ mock.module("../platform/feature-gate.js", () => ({
 const fetchCalls: Array<{ path: string; body: string }> = [];
 let clientAvailable = true;
 mock.module("../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: async () =>
       clientAvailable
         ? {

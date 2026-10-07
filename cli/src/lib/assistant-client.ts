@@ -52,7 +52,7 @@ export interface AssistantClientOpts {
    * When provided alongside `orgId`, the client authenticates with a
    * session token instead of a guardian token.  The session token is
    * sent as `X-Session-Token: <sessionToken>` and the org id is
-   * sent via the `Vellum-Organization-Id` header.
+   * sent via the `Cadet-Organization-Id` header.
    *
    * Platform-managed assistants do NOT need this: they are detected from the
    * lockfile entry and authenticated from the stored platform token.
@@ -131,7 +131,7 @@ export class AssistantClient {
         );
 
     if (opts?.sessionToken) {
-      // Caller supplied the credential: X-Session-Token + Vellum-Organization-Id.
+      // Caller supplied the credential: X-Session-Token + Cadet-Organization-Id.
       this.token = opts.sessionToken;
       this.authMode = "session";
       this.orgId = opts.orgId;
@@ -167,7 +167,7 @@ export class AssistantClient {
   /**
    * Auth headers for the current mode. `authHeaders` picks the right scheme for
    * the platform credential (`Authorization: Bearer` for `vak_` API keys,
-   * `X-Session-Token` + `Vellum-Organization-Id` for session tokens) and caches
+   * `X-Session-Token` + `Cadet-Organization-Id` for session tokens) and caches
    * the org-id lookup, so the result is memoized per client and a failure is
    * never cached.
    */
@@ -182,7 +182,7 @@ export class AssistantClient {
         }
       }
       if (this.orgId) {
-        headers["Vellum-Organization-Id"] = this.orgId;
+        headers["Cadet-Organization-Id"] = this.orgId;
       }
       return headers;
     }
@@ -332,7 +332,7 @@ export class AssistantClient {
 
     const response = await doFetch();
 
-    // A stale cached Vellum-Organization-Id is the usual cause of a 401 on the
+    // A stale cached Cadet-Organization-Id is the usual cause of a 401 on the
     // platform path (e.g. the user switched orgs elsewhere). Drop it and retry
     // once. Mirrors localRuntimeIdentity in local-runtime-client.ts.
     if (response.status === 401 && this.authMode === "platform" && this.token) {

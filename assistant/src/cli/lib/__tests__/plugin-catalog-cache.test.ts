@@ -70,7 +70,7 @@ function failingFetch(): { fetch: FetchLike; calls: () => number } {
 
 const ORIGINAL_ENV = {
   IS_PLATFORM: process.env.IS_PLATFORM,
-  VELLUM_DISABLE_PLATFORM: process.env.VELLUM_DISABLE_PLATFORM,
+  CADET_DISABLE_PLATFORM: process.env.CADET_DISABLE_PLATFORM,
 };
 
 describe("getPluginCatalog", () => {
@@ -78,7 +78,7 @@ describe("getPluginCatalog", () => {
     invalidatePluginCatalogCache();
     // Default: platform features enabled (neither flag set).
     delete process.env.IS_PLATFORM;
-    delete process.env.VELLUM_DISABLE_PLATFORM;
+    delete process.env.CADET_DISABLE_PLATFORM;
   });
 
   afterEach(() => {
@@ -158,7 +158,7 @@ describe("getPluginCatalog", () => {
 
   test("reads the bundled catalog with zero network when platform is disabled", async () => {
     // GIVEN platform features disabled (offline / self-hosted)
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
     delete process.env.IS_PLATFORM;
 
     const { fetch, calls } = platformFetch(["ignored"]);
@@ -179,7 +179,7 @@ describe("getPluginCatalog", () => {
   });
 
   test("applies feature-flag visibility to bundled catalog entries", async () => {
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
     delete process.env.IS_PLATFORM;
 
     const { fetch } = platformFetch(["ignored"]);
@@ -193,7 +193,7 @@ describe("getPluginCatalog", () => {
   });
 
   test("preserves hidden entries for installed-plugin metadata", async () => {
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
     delete process.env.IS_PLATFORM;
 
     const { fetch } = platformFetch(["ignored"]);

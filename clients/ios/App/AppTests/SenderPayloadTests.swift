@@ -15,7 +15,7 @@ final class SenderPayloadTests: XCTestCase {
         let parsed = SenderPayload.parse(
             userInfo: userInfo(sender: [
                 "id": "asst-123",
-                "name": "Vellum",
+                "name": "Cadet",
                 "avatar_url": "https://storage.example.com/avatar.png",
                 "avatar_hash": avatarHash,
             ])
@@ -25,7 +25,7 @@ final class SenderPayloadTests: XCTestCase {
             parsed,
             SenderPayload(
                 id: "asst-123",
-                name: "Vellum",
+                name: "Cadet",
                 avatarURL: .url(url),
                 avatarHash: avatarHash
             )
@@ -36,7 +36,7 @@ final class SenderPayloadTests: XCTestCase {
         let parsed = SenderPayload.parse(
             userInfo: userInfo(sender: [
                 "id": "asst-123",
-                "name": "Vellum",
+                "name": "Cadet",
                 "avatar_hash": avatarHash,
             ])
         )
@@ -52,7 +52,7 @@ final class SenderPayloadTests: XCTestCase {
         let parsed = SenderPayload.parse(
             userInfo: userInfo(sender: [
                 "id": "asst-123",
-                "name": "Vellum",
+                "name": "Cadet",
                 "avatar_url": "https://[::1",
                 "avatar_hash": avatarHash,
             ])
@@ -66,7 +66,7 @@ final class SenderPayloadTests: XCTestCase {
 
     func testReturnsNilForPartialOrEmptyFields() {
         XCTAssertNil(
-            SenderPayload.parse(userInfo: userInfo(sender: ["id": "asst-123", "name": "Vellum"]))
+            SenderPayload.parse(userInfo: userInfo(sender: ["id": "asst-123", "name": "Cadet"]))
         )
         XCTAssertNil(
             SenderPayload.parse(
@@ -75,12 +75,12 @@ final class SenderPayloadTests: XCTestCase {
         )
         XCTAssertNil(
             SenderPayload.parse(
-                userInfo: userInfo(sender: ["id": "", "name": "Vellum", "avatar_hash": avatarHash])
+                userInfo: userInfo(sender: ["id": "", "name": "Cadet", "avatar_hash": avatarHash])
             )
         )
         XCTAssertNil(
             SenderPayload.parse(
-                userInfo: userInfo(sender: ["id": "asst-123", "name": "Vellum", "avatar_hash": ""])
+                userInfo: userInfo(sender: ["id": "asst-123", "name": "Cadet", "avatar_hash": ""])
             )
         )
     }

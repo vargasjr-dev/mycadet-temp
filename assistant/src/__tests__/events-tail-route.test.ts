@@ -157,12 +157,12 @@ describe("GET events/tail", () => {
     // WHEN the excluded client fetches the tail
     const excluded = callTail(
       { conversationId: CONV, fromSeq: "0" },
-      { "x-vellum-client-id": "client-1", "x-vellum-interface-id": "web" },
+      { "x-cadet-client-id": "client-1", "x-cadet-interface-id": "web" },
     );
     // AND a different client fetches the same tail
     const other = callTail(
       { conversationId: CONV, fromSeq: "0" },
-      { "x-vellum-client-id": "client-2", "x-vellum-interface-id": "web" },
+      { "x-cadet-client-id": "client-2", "x-cadet-interface-id": "web" },
     );
 
     // THEN the targeted event is withheld only from its excluded client
@@ -177,16 +177,16 @@ describe("GET events/tail", () => {
     }); // seq 2
 
     const client = {
-      "x-vellum-client-id": "c",
-      "x-vellum-interface-id": "web",
+      "x-cadet-client-id": "c",
+      "x-cadet-interface-id": "web",
     };
     const guardian = callTail(
       { conversationId: CONV, fromSeq: "0" },
-      { ...client, "x-vellum-actor-principal-id": "principal-g" },
+      { ...client, "x-cadet-actor-principal-id": "principal-g" },
     );
     const other = callTail(
       { conversationId: CONV, fromSeq: "0" },
-      { ...client, "x-vellum-actor-principal-id": "principal-x" },
+      { ...client, "x-cadet-actor-principal-id": "principal-x" },
     );
     const anonymous = callTail({ conversationId: CONV, fromSeq: "0" });
 

@@ -47,7 +47,7 @@ const { listConversationSurfaceSnapshots } =
 const CONVERSATION_ID = "conv-xyz";
 
 const GUARDIAN_TRUST: TrustContext = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "guardian",
 };
 

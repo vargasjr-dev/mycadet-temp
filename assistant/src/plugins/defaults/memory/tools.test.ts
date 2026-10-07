@@ -71,8 +71,8 @@ mock.module("./context-search/agent-runner.js", () => ({
 
 beforeAll(() => {
   tmpWorkspace = mkdtempSync(join(tmpdir(), "remember-tool-test-"));
-  previousWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = tmpWorkspace;
+  previousWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = tmpWorkspace;
   // Remember writes the memory/ buffer regardless of the injection engine;
   // seed with the v2 flag off to prove the write path does not depend on it.
   setConfig("memory", { v2: { enabled: false } });
@@ -80,9 +80,9 @@ beforeAll(() => {
 
 afterAll(() => {
   if (previousWorkspaceEnv === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceEnv;
+    process.env.CADET_WORKSPACE_DIR = previousWorkspaceEnv;
   }
   rmSync(tmpWorkspace, { recursive: true, force: true });
 });

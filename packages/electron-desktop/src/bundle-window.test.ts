@@ -110,16 +110,16 @@ mock.module("electron", () => ({
   },
 }));
 
-const createVellumAppHandlerMock = mock(
+const createCadetAppHandlerMock = mock(
   (_bundlesRoot: string) => async (_req: Request) => new Response("ok"),
 );
 
-mock.module("./vellumapp-protocol", () => ({
-  createVellumAppHandler: createVellumAppHandlerMock,
+mock.module("./cadetapp-protocol", () => ({
+  createCadetAppHandler: createCadetAppHandlerMock,
 }));
 
 mock.module("./bundle-platform", () => ({
-  VELLUMAPP_PROTOCOL: "vellumapp",
+  CADETAPP_PROTOCOL: "cadetapp",
   getBundlePlatform: () => ({
     bundlesRoot: () => "/fake/user-data/bundles",
     denyAllPermissions: (targetSession: {
@@ -156,7 +156,7 @@ beforeEach(() => {
   sessionProtocolHandleMock.mockClear();
   setPermissionRequestHandlerMock.mockClear();
   setPermissionCheckHandlerMock.mockClear();
-  createVellumAppHandlerMock.mockClear();
+  createCadetAppHandlerMock.mockClear();
 });
 
 afterEach(() => {
@@ -217,20 +217,20 @@ describe("openBundleWindow", () => {
     const checkHandler = setPermissionCheckHandlerMock.mock.calls[0]![0] as (
       ...args: unknown[]
     ) => boolean;
-    expect(checkHandler({}, "clipboard-read", "vellumapp://example")).toBe(
+    expect(checkHandler({}, "clipboard-read", "cadetapp://example")).toBe(
       false,
     );
   });
 
-  test("registers the vellumapp:// handler on the bundle session", () => {
+  test("registers the cadetapp:// handler on the bundle session", () => {
     openBundleWindow(UUID, "index.html", "Test Bundle");
     expect(sessionProtocolHandleMock).toHaveBeenCalledTimes(1);
-    expect(sessionProtocolHandleMock.mock.calls[0]?.[0]).toBe("vellumapp");
+    expect(sessionProtocolHandleMock.mock.calls[0]?.[0]).toBe("cadetapp");
   });
 
-  test("loads the correct vellumapp:// URL", () => {
+  test("loads the correct cadetapp:// URL", () => {
     openBundleWindow(UUID, "index.html", "Test Bundle");
-    expect(loadURLMock).toHaveBeenCalledWith(`vellumapp://${UUID}/index.html`);
+    expect(loadURLMock).toHaveBeenCalledWith(`cadetapp://${UUID}/index.html`);
   });
 
   test("focuses the existing window when opening the same UUID twice", () => {
@@ -247,7 +247,7 @@ describe("openBundleWindow", () => {
 
     const handler = win.webContents.willNavigateListeners[0]!;
     const preventDefault = mock(() => undefined);
-    handler({ preventDefault }, `vellumapp://${UUID}/page2.html`);
+    handler({ preventDefault }, `cadetapp://${UUID}/page2.html`);
     expect(preventDefault).not.toHaveBeenCalled();
   });
 
@@ -257,7 +257,7 @@ describe("openBundleWindow", () => {
 
     const handler = win.webContents.willNavigateListeners[0]!;
     const preventDefault = mock(() => undefined);
-    handler({ preventDefault }, `vellumapp://${UUID_2}/index.html`);
+    handler({ preventDefault }, `cadetapp://${UUID_2}/index.html`);
     expect(preventDefault).toHaveBeenCalledTimes(1);
   });
 

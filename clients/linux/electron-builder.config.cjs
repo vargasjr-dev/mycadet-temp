@@ -1,6 +1,6 @@
 // @ts-check
 
-const env = process.env.VELLUM_ENVIRONMENT || "local";
+const env = process.env.CADET_ENVIRONMENT || "local";
 const bucketEnv = env === "production" ? "prod" : env;
 const targetArch =
   process.env.ELECTRON_TARGET_ARCH ||
@@ -8,18 +8,18 @@ const targetArch =
 
 const productName =
   env === "production"
-    ? "Vellum"
-    : `Vellum ${env.charAt(0).toUpperCase() + env.slice(1)}`;
+    ? "Cadet"
+    : `Cadet ${env.charAt(0).toUpperCase() + env.slice(1)}`;
 
 const appId =
   env === "production"
-    ? "com.vellum.vellum-assistant-electron"
-    : `com.vellum.vellum-assistant-electron-${env}`;
+    ? "com.mycadet.mycadet-electron"
+    : `com.mycadet.mycadet-electron-${env}`;
 
 const schemes =
   env === "production"
-    ? ["vellum", "vellum-assistant"]
-    : [`vellum-assistant-${env}`];
+    ? ["cadet", "mycadet"]
+    : [`mycadet-${env}`];
 
 /** @type {import("electron-builder").Configuration} */
 module.exports = {
@@ -27,7 +27,7 @@ module.exports = {
   productName,
   publish: {
     provider: "generic",
-    url: `https://storage.googleapis.com/vellum-ai-${bucketEnv}-releases/linux-electron/${targetArch}/`,
+    url: `https://storage.googleapis.com/mycadet-${bucketEnv}-releases/linux-electron/${targetArch}/`,
   },
   directories: {
     output: "dist",
@@ -48,20 +48,20 @@ module.exports = {
         arch: [targetArch],
       },
     ],
-    maintainer: "Vellum AI",
-    vendor: "Vellum AI",
-    executableName: "vellum-linux",
+    maintainer: "Cadet AI",
+    vendor: "Cadet AI",
+    executableName: "cadet-linux",
   },
   protocols: [
     {
-      name: "Vellum Deep Links",
+      name: "Cadet Deep Links",
       schemes,
     },
   ],
   fileAssociations: [
     {
-      ext: "vellum",
-      name: "Vellum Bundle",
+      ext: "cadet",
+      name: "Cadet Bundle",
     },
   ],
 };

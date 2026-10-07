@@ -76,9 +76,9 @@ let workspaceDir: string;
 let origWorkspaceDir: string | undefined;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-gfp-"));
-  origWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-gfp-"));
+  origWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
   listGuardianRequestsStub = async () => [];
   getGuardianRequestStub = async () => null;
   checkpointStore.clear();
@@ -86,9 +86,9 @@ beforeEach(() => {
 
 afterEach(() => {
   if (origWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = origWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = origWorkspaceDir;
   }
   rmSync(workspaceDir, { recursive: true, force: true });
 });

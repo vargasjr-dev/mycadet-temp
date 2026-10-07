@@ -35,7 +35,7 @@ export async function resolveBrowserExecutionContext(
     : undefined;
   const actor = await resolveActorPrincipalIdForLocalGuardian(
     conversation?.getTurnActorPrincipalId() ??
-      headers["x-vellum-actor-principal-id"]?.trim(),
+      headers["x-cadet-actor-principal-id"]?.trim(),
   );
   const signals = [abortSignal, conversation?.abortController?.signal].filter(
     (signal): signal is AbortSignal => signal !== undefined,

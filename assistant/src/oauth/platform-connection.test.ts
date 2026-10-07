@@ -8,8 +8,8 @@ mock.module("../util/retry.js", () => ({
   sleep: () => Promise.resolve(),
 }));
 
-import type { VellumPlatformClient } from "../platform/client.js";
-import { BackendError, VellumError } from "../util/errors.js";
+import type { CadetPlatformClient } from "../platform/client.js";
+import { BackendError, CadetError } from "../util/errors.js";
 import {
   CredentialRequiredError,
   InsufficientBalanceError,
@@ -20,7 +20,7 @@ import {
 
 function makeMockClient(
   fetchImpl?: typeof globalThis.fetch,
-): VellumPlatformClient {
+): CadetPlatformClient {
   const mockFetchFn =
     fetchImpl ??
     (mock(async () => {
@@ -40,7 +40,7 @@ function makeMockClient(
       headers.set("Authorization", "Bearer test-api-key");
       return mockFetchFn(url, { ...init, headers });
     }),
-  } as unknown as VellumPlatformClient;
+  } as unknown as CadetPlatformClient;
 }
 
 const DEFAULT_OPTIONS = {
@@ -262,18 +262,18 @@ describe("PlatformOAuthConnection", () => {
     await conn.request({ method: "GET", path: "/some/path" });
   });
 
-  test("error classes extend VellumError hierarchy", () => {
+  test("error classes extend CadetError hierarchy", () => {
     const credErr = new CredentialRequiredError();
     expect(credErr).toBeInstanceOf(BackendError);
-    expect(credErr).toBeInstanceOf(VellumError);
+    expect(credErr).toBeInstanceOf(CadetError);
 
     const provErr = new ProviderUnreachableError();
     expect(provErr).toBeInstanceOf(BackendError);
-    expect(provErr).toBeInstanceOf(VellumError);
+    expect(provErr).toBeInstanceOf(CadetError);
 
     const balErr = new InsufficientBalanceError();
     expect(balErr).toBeInstanceOf(BackendError);
-    expect(balErr).toBeInstanceOf(VellumError);
+    expect(balErr).toBeInstanceOf(CadetError);
   });
 
   test("402 response throws InsufficientBalanceError", async () => {

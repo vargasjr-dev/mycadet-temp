@@ -27,7 +27,7 @@ const SHA_B = "b".repeat(40);
 /** A marketplace manifest object with a single entry for `name`. */
 function manifestWith(name: string, ref: string): unknown {
   return {
-    name: "vellum",
+    name: "cadet",
     plugins: [
       {
         name,
@@ -129,7 +129,7 @@ function installPlugin(
     writeFileSync(
       join(dir, "install-meta.json"),
       JSON.stringify({
-        origin: "vellum",
+        origin: "cadet",
         name,
         source: {
           kind: "github",
@@ -336,9 +336,9 @@ describe("inspectPlugin", () => {
   });
 
   test("previews an uninstalled bundled provider offline without fetching GitHub", async () => {
-    const savedDisablePlatform = process.env.VELLUM_DISABLE_PLATFORM;
+    const savedDisablePlatform = process.env.CADET_DISABLE_PLATFORM;
     const savedIsPlatform = process.env.IS_PLATFORM;
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
     delete process.env.IS_PLATFORM;
     let fetchCalls = 0;
     const fetch = (async () => {
@@ -376,9 +376,9 @@ describe("inspectPlugin", () => {
       expect(fetchCalls).toBe(0);
     } finally {
       if (savedDisablePlatform === undefined) {
-        delete process.env.VELLUM_DISABLE_PLATFORM;
+        delete process.env.CADET_DISABLE_PLATFORM;
       } else {
-        process.env.VELLUM_DISABLE_PLATFORM = savedDisablePlatform;
+        process.env.CADET_DISABLE_PLATFORM = savedDisablePlatform;
       }
       if (savedIsPlatform === undefined) {
         delete process.env.IS_PLATFORM;

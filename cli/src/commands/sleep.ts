@@ -36,11 +36,11 @@ function getAssistantRootDir(entry: AssistantEntry): string {
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
   }
-  return join(entry.resources.instanceDir, ".vellum");
+  return join(entry.resources.instanceDir, ".cadet");
 }
 
-function readActiveCallLeases(vellumDir: string): ActiveCallLease[] {
-  const path = join(vellumDir, ACTIVE_CALL_LEASES_FILE);
+function readActiveCallLeases(cadetDir: string): ActiveCallLease[] {
+  const path = join(cadetDir, ACTIVE_CALL_LEASES_FILE);
   if (!existsSync(path)) {
     return [];
   }
@@ -174,14 +174,14 @@ export async function sleep(): Promise<void> {
   }
   const resources = entry.resources;
   const assistantPidFile = getDaemonPidPath(resources);
-  const vellumDir = getAssistantRootDir(entry);
-  const gatewayPidFile = join(vellumDir, "gateway.pid");
+  const cadetDir = getAssistantRootDir(entry);
+  const gatewayPidFile = join(cadetDir, "gateway.pid");
 
   if (!force) {
     const assistantAlive = isProcessAlive(assistantPidFile).alive;
     if (assistantAlive) {
       try {
-        const activeCallLeases = readActiveCallLeases(vellumDir);
+        const activeCallLeases = readActiveCallLeases(cadetDir);
         if (activeCallLeases.length > 0) {
           const activeIds = activeCallLeases.map(
             (lease) => lease.callSessionId,
@@ -240,7 +240,7 @@ export async function sleep(): Promise<void> {
 
   // Stop the CES sibling — it is stopped by its PID file, a no-op when the
   // PID file is absent (e.g. the sibling was never started or already exited).
-  const cesPidFile = join(vellumDir, "ces.pid");
+  const cesPidFile = join(cadetDir, "ces.pid");
   const cesStopped = await stopProcessByPidFile(
     cesPidFile,
     "credential-executor",
@@ -251,7 +251,7 @@ export async function sleep(): Promise<void> {
 
   // Stop the nginx ingress if one is fronting this gateway — otherwise it
   // keeps running against a dead upstream and serves 502s.
-  const ingressStopped = await stopIngressNginx(join(vellumDir, "workspace"));
+  const ingressStopped = await stopIngressNginx(join(cadetDir, "workspace"));
   if (ingressStopped) {
     console.log("nginx ingress stopped.");
   }

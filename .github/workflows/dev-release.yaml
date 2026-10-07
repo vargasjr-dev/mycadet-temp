@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ASSISTANT_IMAGE_NAME: mycadet-assistant-dev
+  ASSISTANT_IMAGE_NAME: mymycadet-dev
   GATEWAY_IMAGE_NAME: mycadet-gateway-dev
   CREDENTIAL_EXECUTOR_IMAGE_NAME: mycadet-credential-executor-dev
 
@@ -78,7 +78,7 @@ jobs:
           bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/vellum-gateway
+        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/cadet-gateway
         working-directory: assistant
 
       - name: Install bundled skill dependencies
@@ -106,7 +106,7 @@ jobs:
           bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/vellum-gateway
+        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/cadet-gateway
         working-directory: assistant
 
       - name: Install bundled skill dependencies
@@ -140,7 +140,7 @@ jobs:
           bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/vellum-gateway
+        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/cadet-gateway
         working-directory: assistant
 
       - name: Install bundled skill dependencies
@@ -172,7 +172,7 @@ jobs:
           bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@mycadet/vellum-gateway
+        run: bun install --frozen-lockfile --filter=@mycadet/cadet-gateway
         working-directory: gateway
 
       - name: Sync feature flag registry
@@ -1149,14 +1149,14 @@ jobs:
         working-directory: clients/chrome-extension
         env:
           VERSION: ${{ needs.compute-version.outputs.version }}
-          VELLUM_ENVIRONMENT: dev
+          CADET_ENVIRONMENT: dev
         run: bash build.sh
 
       - name: Upload extension zip
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dev-chrome-extension
-          path: clients/chrome-extension/vellum-browser-relay.zip
+          path: clients/chrome-extension/cadet-browser-relay.zip
           retention-days: 30
 
   # ── Electron DMG ──────────────────────────────────────────────────────
@@ -1176,12 +1176,12 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            dmg_name: vellum-assistant-electron-dev.dmg
+            dmg_name: mycadet-electron-dev.dmg
             artifact_name: dev-electron-dmg
             update_artifact_name: dev-electron-update-arm64
             experimental: false
           - arch: x64
-            dmg_name: vellum-assistant-electron-dev-x64.dmg
+            dmg_name: mycadet-electron-dev-x64.dmg
             artifact_name: dev-electron-dmg-x64
             update_artifact_name: dev-electron-update-x64
             experimental: true
@@ -1255,16 +1255,16 @@ jobs:
         env:
           MAC_PROVISIONING_PROFILE: ${{ secrets.MAC_PROVISIONING_PROFILE }}
           # electron-builder.config.cjs derives the app id from
-          # VELLUM_ENVIRONMENT, and the pack step below runs --environment dev.
-          EXPECTED_BUNDLE_ID: com.vellum.vellum-assistant-electron-dev
+          # CADET_ENVIRONMENT, and the pack step below runs --environment dev.
+          EXPECTED_BUNDLE_ID: com.mycadet.mycadet-electron-dev
         run: |
           if [ -z "$MAC_PROVISIONING_PROFILE" ]; then
             echo "::warning::MAC_PROVISIONING_PROFILE is unset, so the native notifier ships disabled: notifications post through Electron without the assistant avatar."
             exit 0
           fi
-          PROFILE_PATH="$RUNNER_TEMP/vellum-communication.provisionprofile"
+          PROFILE_PATH="$RUNNER_TEMP/cadet-communication.provisionprofile"
           echo "$MAC_PROVISIONING_PROFILE" | base64 -D > "$PROFILE_PATH"
-          DECODED_PATH="$RUNNER_TEMP/vellum-communication-profile.plist"
+          DECODED_PATH="$RUNNER_TEMP/cadet-communication-profile.plist"
           # A truncated or mis-encoded secret decodes to a file that codesign
           # accepts and macOS then rejects at launch, so prove it parses here.
           if ! security cms -D -i "$PROFILE_PATH" > "$DECODED_PATH"; then
@@ -1298,7 +1298,7 @@ jobs:
               exit 1
               ;;
           esac
-          echo "VELLUM_MAC_PROVISIONING_PROFILE=$PROFILE_PATH" >> "$GITHUB_ENV"
+          echo "CADET_MAC_PROVISIONING_PROFILE=$PROFILE_PATH" >> "$GITHUB_ENV"
 
       - name: Build and package Electron app
         env:
@@ -1774,7 +1774,7 @@ jobs:
             .dependencies["@mycadet/assistant"] = $v |
             .dependencies["@mycadet/cli"] = $v |
             .dependencies["@mycadet/credential-executor"] = $v |
-            .dependencies["@mycadet/vellum-gateway"] = $v |
+            .dependencies["@mycadet/cadet-gateway"] = $v |
             .dependencies["@mycadet/web"] = $v
           ' package.json > tmp && mv tmp package.json
       - name: Wait for dependencies to propagate

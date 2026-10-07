@@ -13,8 +13,8 @@ const errorSvg = `<svg class="icon" viewBox="0 0 56 56" fill="none" xmlns="http:
 export function renderLoginCompletionPage(success: boolean): string {
   const title = success ? "You're all set" : "Sign-in failed";
   const subtitle = success
-    ? "You can close this tab and return to Vellum."
-    : "You can close this tab and try again from Vellum.";
+    ? "You can close this tab and return to Cadet."
+    : "You can close this tab and try again from Cadet.";
 
   return `<!DOCTYPE html>
 <html lang="en"><head>

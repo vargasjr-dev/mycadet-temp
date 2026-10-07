@@ -207,22 +207,22 @@ final class ShareInboxTests: XCTestCase {
 final class ShareDeepLinkTests: XCTestCase {
     func testBuildsShareHostURL() {
         let url = ShareDeepLink(inboxId: "A1B2C3D4-E5F6-7890-ABCD-EF1234567890")
-            .url(scheme: "vellum-assistant")
+            .url(scheme: "mycadet")
         XCTAssertEqual(
             url?.absoluteString,
-            "vellum-assistant://share/A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+            "mycadet://share/A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
         )
     }
 
     func testRejectsUnsafeId() {
-        XCTAssertNil(ShareDeepLink(inboxId: "../x").url(scheme: "vellum-assistant"))
+        XCTAssertNil(ShareDeepLink(inboxId: "../x").url(scheme: "mycadet"))
         XCTAssertNil(ShareDeepLink(inboxId: "ok").url(scheme: nil))
     }
 }
 
 final class RecentChatsStoreTests: XCTestCase {
     func testMigratesLegacyStandardSuiteIntoAppGroup() {
-        let group = UserDefaults(suiteName: "ai.vellum.assistant.AppTests.recent.\(UUID().uuidString)")!
+        let group = UserDefaults(suiteName: "ai.mycadet.assistant.AppTests.recent.\(UUID().uuidString)")!
         let chats = [RecentChat(id: "conv-xyz", title: "Gym")]
         let encoded = try! JSONEncoder().encode(chats)
         UserDefaults.standard.set(encoded, forKey: RecentChatsStore.defaultsKey)
@@ -237,7 +237,7 @@ final class RecentChatsStoreTests: XCTestCase {
     }
 
     func testSaveDropsLegacyStandardCopy() {
-        let group = UserDefaults(suiteName: "ai.vellum.assistant.AppTests.recent.\(UUID().uuidString)")!
+        let group = UserDefaults(suiteName: "ai.mycadet.assistant.AppTests.recent.\(UUID().uuidString)")!
         UserDefaults.standard.set(Data([1, 2, 3]), forKey: RecentChatsStore.defaultsKey)
         defer {
             UserDefaults.standard.removeObject(forKey: RecentChatsStore.defaultsKey)

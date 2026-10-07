@@ -1,7 +1,7 @@
 ---
 name: image-studio
 description: Create images from a text description, or edit photos and graphics the user provides (remove backgrounds or watermarks, retouch, restyle, in-paint). Can produce multiple variants when the user wants options to choose from.
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🎨"
   cadet:
@@ -85,8 +85,8 @@ Edits on large photos are slow (1 to 2 minutes). If the tool reports a timeout (
 
 Each generated image is saved into the workspace under `media/generated/` and the tool result lists the saved paths. The images also come back as inline content blocks so you can judge the result before presenting it.
 
-- Present an image to the user by embedding its saved path in your reply: `![short description](vellum://workspace/media/generated/<file>.png)`. The app renders it inline where your text refers to it, and chat channels (Slack, Telegram, WhatsApp) deliver it as a native image upload.
-- Label a plain image link "View image", for example `[View image](vellum://workspace/media/generated/<file>.png)`. The link opens a preview; do not call it "Download" or promise a download in the surrounding text. To save the image, the user can choose Download in the preview.
+- Present an image to the user by embedding its saved path in your reply: `![short description](cadet://workspace/media/generated/<file>.png)`. The app renders it inline where your text refers to it, and chat channels (Slack, Telegram, WhatsApp) deliver it as a native image upload.
+- Label a plain image link "View image", for example `[View image](cadet://workspace/media/generated/<file>.png)`. The link opens a preview; do not call it "Download" or promise a download in the surrounding text. To save the image, the user can choose Download in the preview.
 - If you do not embed it, the image is still auto-attached to your reply as a file, so it is never lost. Prefer embedding: an attachment chip at the end of the message is a worse presentation than the image inline.
 - To iterate on a result, pass its saved path via `source_paths` with `mode: "edit"`.
 
@@ -104,4 +104,4 @@ Do NOT rephrase the prompt and retry on the same model, even if the error sugges
 
 ## Complete when
 
-The tool has returned at least one image and your reply presents it to the user, preferably as an inline `![description](vellum://workspace/...)` embed of the saved path. An error report counts as complete only after the retry path in Error handling has been exhausted.
+The tool has returned at least one image and your reply presents it to the user, preferably as an inline `![description](cadet://workspace/...)` embed of the saved path. An error report counts as complete only after the retry path in Error handling has been exhausted.

@@ -45,7 +45,7 @@ export function resolveLocalHatchLockPath(): string {
   return join(
     userInfo().homedir,
     ".cache",
-    "vellum",
+    "cadet",
     "runtime",
     machineKey,
     "local-hatch.lock",

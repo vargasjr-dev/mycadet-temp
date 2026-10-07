@@ -56,7 +56,7 @@ export const PLATFORM_PROVIDER_META: Record<string, ManagedProviderMeta> = {
     managed: true,
     // Wire contract with the platform's runtime proxy — the route segment
     // is renamed in coordination with the platform deploy, not here.
-    proxyPath: "/v1/runtime-proxy/vellum",
+    proxyPath: "/v1/runtime-proxy/cadet",
   },
   typesafe: {
     name: "typesafe",

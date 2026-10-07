@@ -6,12 +6,12 @@ Two databases hold this state — pick the right one before reaching for SQL:
 
 | Data                                                                                                                                                                                          | Database                      | Location                                                                                                                |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Contact ACL (`contacts` role, `contact_channels` status/policy/reasons), guardian requests (`guardian_requests` + `guardian_request_deliveries`), verification sessions, rate limits, invites | Gateway DB (`gateway.sqlite`) | `$GATEWAY_SECURITY_DIR/gateway.sqlite` (Docker: the `/gateway-security` volume; local fallback: `~/.vellum/protected/`) |
-| Notification pipeline, contact info/identity mirror                                                                                                                                           | Assistant DB (`assistant.db`) | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db` (local fallback: `~/.vellum/workspace/`)                                   |
+| Contact ACL (`contacts` role, `contact_channels` status/policy/reasons), guardian requests (`guardian_requests` + `guardian_request_deliveries`), verification sessions, rate limits, invites | Gateway DB (`gateway.sqlite`) | `$GATEWAY_SECURITY_DIR/gateway.sqlite` (Docker: the `/gateway-security` volume; local fallback: `~/.cadet/protected/`) |
+| Notification pipeline, contact info/identity mirror                                                                                                                                           | Assistant DB (`assistant.db`) | `$CADET_WORKSPACE_DIR/data/db/assistant.db` (local fallback: `~/.cadet/workspace/`)                                   |
 
 Prefer the CLI and HTTP surfaces below over raw SQL — they go through the gateway's validation (status vocabulary, revoke-of-blocked guard) and emit the change events clients rely on. Raw SQL is break-glass only.
 
-**Break-glass SQLite rules:** the running gateway holds a live connection to `gateway.sqlite` (and the daemon to `assistant.db`). Open read-only for inspection (`sqlite3 "file:$GW_DB?mode=ro"`). For writes, stop the services first (`vellum sleep`), run the statement, then `vellum wake` — a write against a live DB races the owning process and can hit SQLite lock contention.
+**Break-glass SQLite rules:** the running gateway holds a live connection to `gateway.sqlite` (and the daemon to `assistant.db`). Open read-only for inspection (`sqlite3 "file:$GW_DB?mode=ro"`). For writes, stop the services first (`cadet sleep`), run the statement, then `cadet wake` — a write against a live DB races the owning process and can hit SQLite lock contention.
 
 ## Prerequisites
 
@@ -24,8 +24,8 @@ BASE=http://localhost:7830
 TOKEN=<your-bearer-token>
 
 # Break-glass DB paths (fall back to the services' defaults when the env vars are unset)
-GW_DB="${GATEWAY_SECURITY_DIR:-$HOME/.vellum/protected}/gateway.sqlite"
-AST_DB="${VELLUM_WORKSPACE_DIR:-$HOME/.vellum/workspace}/data/db/assistant.db"
+GW_DB="${GATEWAY_SECURITY_DIR:-$HOME/.cadet/protected}/gateway.sqlite"
+AST_DB="${CADET_WORKSPACE_DIR:-$HOME/.cadet/workspace}/data/db/assistant.db"
 ```
 
 ## 1. Inspect Trusted Contacts
@@ -105,7 +105,7 @@ Response shape (ACL fields come from the gateway DB; info fields like `notes` ar
 
 ## 2. Inspect Pending Access Requests
 
-Access requests live in the **gateway DB** table `guardian_requests` (`kind = 'access_request'`, `tool_name = 'ingress_access_request'`). There is no `source_type` column — derive it from `source_channel` (`phone` → voice, `vellum` → desktop, anything else → channel); the requester-side conversation is `source_conversation_id`. Delivered approval cards are tracked per surface in `guardian_request_deliveries` (`request_id` → `guardian_requests.id`).
+Access requests live in the **gateway DB** table `guardian_requests` (`kind = 'access_request'`, `tool_name = 'ingress_access_request'`). There is no `source_type` column — derive it from `source_channel` (`phone` → voice, `cadet` → desktop, anything else → channel); the requester-side conversation is `source_conversation_id`. Delivered approval cards are tracked per surface in `guardian_request_deliveries` (`request_id` → `guardian_requests.id`).
 
 ```bash
 sqlite3 "file:$GW_DB?mode=ro" \
@@ -149,7 +149,7 @@ sqlite3 "file:$GW_DB?mode=ro" \
 Contact writes are gateway-owned, and they reach it two ways. An operator ACL
 write (a risk ceiling) goes through the gateway CLI directly, not through
 `assistant contacts`. From the host, run the same command via
-`vellum exec --service gateway --`. A write that changes the contact graph
+`cadet exec --service gateway --`. A write that changes the contact graph
 itself (the record, or a channel binding) goes through `assistant contacts`,
 which opens a form in the guardian's app and writes nothing until they submit
 it; the gateway still performs the write.

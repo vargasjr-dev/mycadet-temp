@@ -62,7 +62,7 @@ function clearRegisteredConversations(): void {
 function freshTempDir(): string {
   return join(
     tmpdir(),
-    `vellum-app-conv-id-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-app-conv-id-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
 }
 
@@ -80,7 +80,7 @@ function makeAppParams(name: string) {
 
 beforeEach(() => {
   testDataDir = freshTempDir();
-  process.env.VELLUM_WORKSPACE_DIR = testDataDir;
+  process.env.CADET_WORKSPACE_DIR = testDataDir;
 });
 
 afterEach(() => {

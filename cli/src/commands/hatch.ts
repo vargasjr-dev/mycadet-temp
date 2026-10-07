@@ -43,7 +43,7 @@ function parseArgs(): HatchArgs {
   );
   const flagEnvVars = { ...readAmbientFlagEnvVars(), ...cliFlagVars };
   const disablePlatformAmbient =
-    process.env.VELLUM_DISABLE_PLATFORM?.trim().toLowerCase();
+    process.env.CADET_DISABLE_PLATFORM?.trim().toLowerCase();
   let disablePlatform =
     disablePlatformAmbient === "true" || disablePlatformAmbient === "1";
   let detached = false;
@@ -77,7 +77,7 @@ function parseArgs(): HatchArgs {
       );
       console.log(
         "  --source <path>           Build images from a local source tree at <path> (no watcher). Useful for callers (e.g. evals) that want each run to pick up local CLI changes.",
-        "  --preview                 When pulling published images (no local source), resolve from the preview channel (latest preview release) instead of latest-stable. Also settable via VELLUM_HATCH_CHANNEL=preview.",
+        "  --preview                 When pulling published images (no local source), resolve from the preview channel (latest preview release) instead of latest-stable. Also settable via CADET_HATCH_CHANNEL=preview.",
       );
       console.log(
         "  --keep-alive              Stay alive after hatch, exit when gateway stops",
@@ -86,7 +86,7 @@ function parseArgs(): HatchArgs {
         "  --config <key=value>      Set a workspace config value (repeatable)",
       );
       console.log(
-        "  --flag <key=value>        Set a feature flag override as VELLUM_FLAG_<KEY> env var (repeatable)",
+        "  --flag <key=value>        Set a feature flag override as CADET_FLAG_<KEY> env var (repeatable)",
       );
       console.log(
         "  --analyze                 Emit a structured hatch-timing log line on stdout",
@@ -248,8 +248,8 @@ export async function hatch(): Promise<void> {
   } = parseArgs();
 
   if (disablePlatform) {
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
-    flagEnvVars.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
+    flagEnvVars.CADET_DISABLE_PLATFORM = "true";
   }
 
   if (watch && remote !== "local" && remote !== "docker") {
@@ -308,7 +308,7 @@ export async function hatch(): Promise<void> {
   }
 
   if (isManagedCloud(remote)) {
-    await hatchVellumPlatform();
+    await hatchCadetPlatform();
     return;
   }
 
@@ -316,7 +316,7 @@ export async function hatch(): Promise<void> {
   process.exit(1);
 }
 
-async function hatchVellumPlatform(): Promise<void> {
+async function hatchCadetPlatform(): Promise<void> {
   const token = readPlatformToken();
   if (!token) {
     console.error("Not logged in. Run `cadet login --token <token>` first.");

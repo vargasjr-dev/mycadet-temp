@@ -10,8 +10,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const ORIGINAL_XDG = process.env.XDG_CONFIG_HOME;
-const ORIGINAL_ENV = process.env.VELLUM_ENVIRONMENT;
-const ORIGINAL_LOCKFILE_DIR = process.env.VELLUM_LOCKFILE_DIR;
+const ORIGINAL_ENV = process.env.CADET_ENVIRONMENT;
+const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { maybeRefreshAuthHeaders } from "../components/DefaultMainScreen";
@@ -80,10 +80,10 @@ describe("maybeRefreshAuthHeaders", () => {
     tempHome = mkdtempSync(join(tmpdir(), "tui-midsession-test-"));
     process.env.XDG_CONFIG_HOME = tempHome;
     // Isolate the lockfile too — saveAssistantEntry writes the prod lockfile
-    // (~/.vellum.lock.json) unless VELLUM_LOCKFILE_DIR is set, which would
+    // (~/.cadet.lock.json) unless CADET_LOCKFILE_DIR is set, which would
     // mutate the real user/CI lockfile.
-    process.env.VELLUM_LOCKFILE_DIR = tempHome;
-    delete process.env.VELLUM_ENVIRONMENT;
+    process.env.CADET_LOCKFILE_DIR = tempHome;
+    delete process.env.CADET_ENVIRONMENT;
   });
 
   afterEach(() => {
@@ -91,10 +91,10 @@ describe("maybeRefreshAuthHeaders", () => {
     if (ORIGINAL_XDG === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = ORIGINAL_XDG;
     if (ORIGINAL_LOCKFILE_DIR === undefined)
-      delete process.env.VELLUM_LOCKFILE_DIR;
-    else process.env.VELLUM_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
-    if (ORIGINAL_ENV === undefined) delete process.env.VELLUM_ENVIRONMENT;
-    else process.env.VELLUM_ENVIRONMENT = ORIGINAL_ENV;
+      delete process.env.CADET_LOCKFILE_DIR;
+    else process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
+    if (ORIGINAL_ENV === undefined) delete process.env.CADET_ENVIRONMENT;
+    else process.env.CADET_ENVIRONMENT = ORIGINAL_ENV;
     rmSync(tempHome, { recursive: true, force: true });
   });
 

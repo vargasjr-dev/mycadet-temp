@@ -99,7 +99,7 @@ describe("AgentLoop — call-site precedence", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
     });
 
@@ -131,7 +131,7 @@ describe("AgentLoop — call-site precedence", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
     });
 
@@ -166,7 +166,7 @@ describe("AgentLoop — call-site precedence", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
     });
 
@@ -222,7 +222,7 @@ describe("AgentLoop — call-site precedence", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
     });
 
@@ -253,7 +253,7 @@ describe("AgentLoop — call-site precedence", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
     });
 
@@ -292,7 +292,7 @@ describe("AgentLoop — call-site precedence", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const config = lastConfig()!;

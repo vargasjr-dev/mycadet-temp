@@ -9,7 +9,7 @@ import type { NotificationSignal } from "./signal.js";
  * this plus two checks only it can make (a guardian request always mirrors;
  * a delivery that materialized an assistant-initiated thread never does).
  *
- * The one other reader is the passive vellum append: a notification the
+ * The one other reader is the passive cadet append: a notification the
  * bell carries is bookkeeping about the conversation it is appended to, so
  * that append must not resurface a Done chat, while a notification the bell
  * does not carry has the transcript as its only home and must.
@@ -17,7 +17,7 @@ import type { NotificationSignal } from "./signal.js";
  * Recipient-owned completions never mirror: the feed has no recipient ACL.
  * Other `assistant_tool` signals mirror because the documented
  * `notifications send` skill (and background-job failure emits) deliberately
- * target the home feed, unless an exclusive channel allowlist leaves vellum
+ * target the home feed, unless an exclusive channel allowlist leaves cadet
  * out; `chat.assistant_reply` follows the same rule. An async-background
  * hint or a background-typed source conversation mirrors as well.
  */
@@ -33,7 +33,7 @@ export function signalMirrorsToHomeFeed(
     signal.sourceEventName === "chat.assistant_reply"
   ) {
     const allowlist = readChannelAllowlist(signal.contextPayload);
-    if (!allowlist || allowlist.includes("vellum")) {
+    if (!allowlist || allowlist.includes("cadet")) {
       return true;
     }
   }

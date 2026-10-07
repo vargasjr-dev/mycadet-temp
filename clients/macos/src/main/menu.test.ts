@@ -106,9 +106,9 @@ const getCliPathInstallStateMock = mock(
 // Full `./cli-path-installer` surface so this mock — which leaks into co-run
 // test files via the global module registry — doesn't break sibling modules.
 mock.module("./cli-path-installer", () => ({
-  WRAPPER_MARKER: "# vellum-cli-wrapper v1",
+  WRAPPER_MARKER: "# cadet-cli-wrapper v1",
   getWrapperDir: () => "/tmp/.local/bin",
-  getWrapperPath: () => "/tmp/.local/bin/vellum",
+  getWrapperPath: () => "/tmp/.local/bin/cadet",
   buildWrapperScript: () => "",
   readWrapperOwnership: () => "absent",
   installWrapper: () => "installed",
@@ -239,7 +239,7 @@ describe("CLI path menu items", () => {
   test("shows Repair when shadowed with a missing runtime", async () => {
     await setStateAndRefresh({
       kind: "shadowed",
-      shadowedBy: "/usr/local/bin/vellum",
+      shadowedBy: "/usr/local/bin/cadet",
       inPath: true,
       runtimeReady: false,
     });
@@ -269,7 +269,7 @@ describe("CLI path menu items", () => {
   test("shows Uninstall plus a disabled shadowed indicator when shadowed", async () => {
     await setStateAndRefresh({
       kind: "shadowed",
-      shadowedBy: "/usr/local/bin/vellum",
+      shadowedBy: "/usr/local/bin/cadet",
       inPath: true,
       runtimeReady: true,
     });

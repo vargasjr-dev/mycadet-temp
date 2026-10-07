@@ -175,7 +175,7 @@ async function fetchApplication(token: string): Promise<DiscordApplication> {
   const res = await fetch(`${DISCORD_API}/oauth2/applications/@me`, {
     headers: {
       Authorization: `Bot ${token}`,
-      "User-Agent": "VellumAssistant (discord-app-setup, 1.0)",
+      "User-Agent": "CadetAssistant (discord-app-setup, 1.0)",
     },
   });
   if (!res.ok) {
@@ -187,7 +187,7 @@ async function fetchApplication(token: string): Promise<DiscordApplication> {
   return readApplication(await res.json());
 }
 
-async function printVellum(): Promise<void> {
+async function printCadet(): Promise<void> {
   const token = await revealCredential("discord_channel", "bot_token");
   if (!token) {
     throw new Error(
@@ -315,9 +315,9 @@ export function permissionWarnings(permissions: string | undefined): string[] {
 
 async function main(): Promise<void> {
   switch (species) {
-    case "vellum":
+    case "cadet":
       try {
-        await printVellum();
+        await printCadet();
       } catch (err) {
         console.error(err instanceof Error ? err.message : String(err));
         process.exitCode = 1;
@@ -325,7 +325,7 @@ async function main(): Promise<void> {
       break;
     default:
       console.error(
-        `Unsupported species: ${species ?? "(not set)"}. This skill currently only supports species=vellum.`,
+        `Unsupported species: ${species ?? "(not set)"}. This skill currently only supports species=cadet.`,
       );
       process.exitCode = 1;
   }

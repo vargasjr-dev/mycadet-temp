@@ -1,7 +1,7 @@
 ---
 name: app-control
 description: Drive a specific named macOS app via raw input bypassing the Accessibility tree
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🎯"
   cadet:

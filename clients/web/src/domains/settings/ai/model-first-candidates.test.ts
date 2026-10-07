@@ -62,7 +62,7 @@ function providersOf(candidates: readonly ProviderCandidate[]): string[] {
   return candidates.map((candidate) => candidate.provider);
 }
 
-const VELLUM_CONNECTION = connection("cadet", "cadet", {
+const CADET_CONNECTION = connection("cadet", "cadet", {
   auth: { type: "platform" },
 });
 
@@ -193,11 +193,11 @@ describe("resolveModelFirstOptions", () => {
   });
 
   test("holds a flagged catalog entry back until hosted inference is on", () => {
-    const hidden = resolveModelFirstOptions(input([VELLUM_CONNECTION])).map(
+    const hidden = resolveModelFirstOptions(input([CADET_CONNECTION])).map(
       (option) => option.displayName,
     );
     const shown = resolveModelFirstOptions(
-      input([VELLUM_CONNECTION], { hostedInference: true }),
+      input([CADET_CONNECTION], { hostedInference: true }),
     ).map((option) => option.displayName);
     expect(hidden).not.toContain("Qwen3 8B");
     expect(shown).toContain("Qwen3 8B");
@@ -212,7 +212,7 @@ describe("resolveModelFirstOptions", () => {
   });
 
   test("surfaces the managed route as one entry rather than its upstreams", () => {
-    const option = optionFor([VELLUM_CONNECTION], "Claude Opus 4.8");
+    const option = optionFor([CADET_CONNECTION], "Claude Opus 4.8");
     expect(option.candidates[0]).toMatchObject({
       provider: "cadet",
       value: "cadet",

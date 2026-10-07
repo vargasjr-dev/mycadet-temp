@@ -259,7 +259,7 @@ effects, since resuming restarts the unfinished side-effecting leaves:
 - **Conversationally** (`manage_workflows` action `resume`): full access bypasses;
   normal posture re-prompts for fresh approval.
 - **Over HTTP** (`POST /v1/workflows/runs/:id/resume`, and the
-  `vellum workflows resume` CLI on top of it): full access proceeds; normal
+  `cadet workflows resume` CLI on top of it): full access proceeds; normal
   posture is **refused** (403) and the caller is directed to resume through the
   assistant, since the route has no prompt channel.
 
@@ -453,11 +453,11 @@ Reached via the skill (`skill_load` then `skill_execute`), not as always-on tool
 ### CLI
 
 ```
-vellum workflows list              # saved (named) workflows
-vellum workflows runs              # recent runs  (--limit, --status)
-vellum workflows show <run-id>     # one run's status + counts
-vellum workflows abort <run-id>    # abort an in-flight run
-vellum workflows resume <run-id>   # resume an interrupted run
+cadet workflows list              # saved (named) workflows
+cadet workflows runs              # recent runs  (--limit, --status)
+cadet workflows show <run-id>     # one run's status + counts
+cadet workflows abort <run-id>    # abort an in-flight run
+cadet workflows resume <run-id>   # resume an interrupted run
 ```
 
 All subcommands accept `--assistant <name>` to target a specific instance.
@@ -504,7 +504,7 @@ explicitly resume it:
 
 - **From the assistant**: `manage_workflows` with `action: "resume"` and the
   `run_id`.
-- **From the CLI**: `vellum workflows resume <run-id>`.
+- **From the CLI**: `cadet workflows resume <run-id>`.
 
 Resuming re-invokes the engine with the same `runId`: it replays the completed
 prefix from the journal and continues from the first unfinished leaf, under the

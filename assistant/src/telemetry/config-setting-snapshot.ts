@@ -134,12 +134,12 @@ function recordBootSnapshotOnceConsentKnown(): void {
 /**
  * Start the config-setting snapshot loop in the resource monitor process:
  * record the tracked settings once at boot, then hourly. No-op in dev mode
- * (VELLUM_DEV=1) and idempotent if already started. Mirrors
+ * (CADET_DEV=1) and idempotent if already started. Mirrors
  * {@link import("./usage-telemetry-reporter.js").startMonitorUsageTelemetryReporter}
  * — the snapshot feeds the same config_setting pipeline the monitor flushes.
  */
 export function startConfigSnapshotReporter(): void {
-  if (process.env.VELLUM_DEV === "1") {
+  if (process.env.CADET_DEV === "1") {
     return;
   }
   if (snapshotTimer) {

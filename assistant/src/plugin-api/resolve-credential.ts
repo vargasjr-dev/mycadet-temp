@@ -16,7 +16,7 @@
  *
  * 1. In-process AsyncLocalStorage from `runInPluginContext` (hooks, plugin
  *    tools, plugin routes).
- * 2. `VELLUM_PLUGIN_NAME` on a bash or skill-sandbox child.
+ * 2. `CADET_PLUGIN_NAME` on a bash or skill-sandbox child.
  * 3. The process entry path, when it sits under
  *    `plugins/<service>/skills/<skill>/{scripts,tools}/`.
  *

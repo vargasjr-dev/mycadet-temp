@@ -13,7 +13,7 @@ import { basename, delimiter, dirname, join, resolve } from "node:path";
 
 const API_LEVEL = "36";
 const BUILD_TOOLS_VERSION = "36.0.0";
-const AVD_NAME = "vellum-api-36";
+const AVD_NAME = "cadet-api-36";
 const IMAGE_TAG = "google_apis_playstore";
 const IMAGE_ABI = process.arch === "arm64" ? "arm64-v8a" : "x86_64";
 const SYSTEM_IMAGE = `system-images;android-${API_LEVEL};${IMAGE_TAG};${IMAGE_ABI}`;
@@ -407,7 +407,7 @@ async function main(): Promise<void> {
     ...process.env,
     ANDROID_HOME: sdkRoot,
     ANDROID_SDK_ROOT: sdkRoot,
-    VELLUM_ENVIRONMENT: "dev",
+    CADET_ENVIRONMENT: "dev",
   };
 
   ensureJava(env);
@@ -451,17 +451,17 @@ async function main(): Promise<void> {
     ? enableAvdKeyboard(AVD_NAME, env)
     : false;
   let devices = connectedDevices(adb, env);
-  const runningVellumEmulator = devices.find((serial) => {
+  const runningCadetEmulator = devices.find((serial) => {
     if (!serial.startsWith("emulator-")) {
       return false;
     }
     const runningAvd = capture(adb, ["-s", serial, "emu", "avd", "name"], env);
     return runningAvd?.split(/\r?\n/)[0] === AVD_NAME;
   });
-  if (keyboardUpdated && runningVellumEmulator) {
+  if (keyboardUpdated && runningCadetEmulator) {
     console.log(`Restarting ${AVD_NAME} to enable keyboard input.`);
-    run(adb, ["-s", runningVellumEmulator, "emu", "kill"], env);
-    await waitForDeviceToStop(adb, runningVellumEmulator, env);
+    run(adb, ["-s", runningCadetEmulator, "emu", "kill"], env);
+    await waitForDeviceToStop(adb, runningCadetEmulator, env);
     devices = connectedDevices(adb, env);
   }
 
@@ -535,7 +535,7 @@ async function main(): Promise<void> {
       "am",
       "start",
       "-n",
-      "ai.vellum.assistant.dev/ai.vellum.assistant.MainActivity",
+      "ai.mycadet.assistant.dev/ai.mycadet.assistant.MainActivity",
     ],
     env,
   );

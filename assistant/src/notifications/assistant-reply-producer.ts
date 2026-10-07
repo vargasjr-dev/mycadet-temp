@@ -114,14 +114,14 @@ function flattenTitleWhitespace(value: string): string {
  * flattened away.
  *
  * Two sources, counted together so a reply mixing them is not undercounted.
- * Attachment rows cover generated files, `<vellum-attachment />` directives,
- * and `vellum://` embeds alike; they are linked to the assistant row by
+ * Attachment rows cover generated files, `<cadet-attachment />` directives,
+ * and `cadet://` embeds alike; they are linked to the assistant row by
  * `resolveAssistantAttachments` before the turn's terminal SSE and exposed
  * separately from its content blocks. Remote embeds leave no row, so their alt
  * text is the only label they have.
  *
  * Tracked embeds are dropped from the second source rather than added twice:
- * a `vellum://` embed is already one of the attachment rows.
+ * a `cadet://` embed is already one of the attachment rows.
  *
  * Reads attachment metadata only (no base64), and the caller invokes this only
  * once the text preview has come up empty.
@@ -308,7 +308,7 @@ export async function emitAssistantReplyNotification(params: {
 
     await emitNotificationSignal({
       sourceEventName: "chat.assistant_reply",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       // Deep-link target; the broadcaster validates it and merges it into
       // `deepLinkTarget.conversationId`.
       sourceContextId: conversationId,

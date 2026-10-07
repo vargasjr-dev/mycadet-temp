@@ -69,10 +69,10 @@ RUN mkdir -p /ces-security && chown ces:ces /ces-security
 
 COPY packages/block-volume-bootstrap/scripts/*.sh /usr/local/bin/
 RUN chmod +x \
-    /usr/local/bin/vellum-block-volume-common.sh \
-    /usr/local/bin/vellum-block-volume-init.sh \
-    /usr/local/bin/vellum-block-volume-mount.sh \
-    /usr/local/bin/vellum-block-volume-resize.sh
+    /usr/local/bin/cadet-block-volume-common.sh \
+    /usr/local/bin/cadet-block-volume-init.sh \
+    /usr/local/bin/cadet-block-volume-mount.sh \
+    /usr/local/bin/cadet-block-volume-resize.sh
 
 USER ces
 

@@ -14,7 +14,7 @@ import type { AcpSessionUpdateEvent } from "../../api/events/acp-session-update.
 import type { AssistantEvent } from "../../api/index.js";
 import { getSqlite } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
-import { VellumAcpClientHandler } from "../client-handler.js";
+import { CadetAcpClientHandler } from "../client-handler.js";
 import { AcpSessionManager } from "../session-manager.js";
 import type { AcpUsageSnapshot } from "../types.js";
 import {
@@ -48,7 +48,7 @@ function buildSessionWithFakeProcess(opts: {
 } {
   const manager = new AcpSessionManager(1);
   const sent: AssistantEvent[] = [];
-  const sendToVellum = (msg: AssistantEvent) => sent.push(msg);
+  const sendToCadet = (msg: AssistantEvent) => sent.push(msg);
 
   type PromptResolution = {
     stopReason: string;
@@ -93,10 +93,10 @@ function buildSessionWithFakeProcess(opts: {
         }
       ).appendToBuffer(opts.id, msg);
     }
-    sendToVellum(msg);
+    sendToCadet(msg);
   };
 
-  const clientHandler = new VellumAcpClientHandler(
+  const clientHandler = new CadetAcpClientHandler(
     opts.id,
     wrappedSend,
     opts.parentConversationId,
@@ -115,7 +115,7 @@ function buildSessionWithFakeProcess(opts: {
       latestUsage: opts.latestUsage,
     },
     clientHandler,
-    sendToVellum: wrappedSend,
+    sendToCadet: wrappedSend,
     currentPrompt: null as Promise<unknown> | null,
     parentConversationId: opts.parentConversationId,
     cwd: opts.cwd ?? "/tmp",
@@ -137,7 +137,7 @@ function buildSessionWithFakeProcess(opts: {
   entry.currentPrompt = bgPromise;
 
   // Helper that pushes an update through the wrapped sender — exactly
-  // matching what VellumAcpClientHandler.sessionUpdate does.
+  // matching what CadetAcpClientHandler.sessionUpdate does.
   const emitUpdate = (update: AcpSessionUpdateEvent) => {
     wrappedSend(update);
   };
@@ -482,11 +482,11 @@ describe("AcpSessionManager — terminal persistence", () => {
     // Capture the usage event emitted at turn end.
     const captureSend = (
       handles.manager as unknown as {
-        sessions: Map<string, { sendToVellum: (m: AssistantEvent) => void }>;
+        sessions: Map<string, { sendToCadet: (m: AssistantEvent) => void }>;
       }
     ).sessions.get(id);
-    const originalSend = captureSend!.sendToVellum;
-    captureSend!.sendToVellum = (msg: AssistantEvent) => {
+    const originalSend = captureSend!.sendToCadet;
+    captureSend!.sendToCadet = (msg: AssistantEvent) => {
       sent.push(msg);
       originalSend(msg);
     };
@@ -529,11 +529,11 @@ describe("AcpSessionManager — terminal persistence", () => {
 
     const entry = (
       handles.manager as unknown as {
-        sessions: Map<string, { sendToVellum: (m: AssistantEvent) => void }>;
+        sessions: Map<string, { sendToCadet: (m: AssistantEvent) => void }>;
       }
     ).sessions.get(id);
-    const originalSend = entry!.sendToVellum;
-    entry!.sendToVellum = (msg: AssistantEvent) => {
+    const originalSend = entry!.sendToCadet;
+    entry!.sendToCadet = (msg: AssistantEvent) => {
       sent.push(msg);
       originalSend(msg);
     };

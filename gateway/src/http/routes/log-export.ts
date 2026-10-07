@@ -100,7 +100,7 @@ export function createLogExportHandler(config: GatewayConfig) {
     // Create a temporary staging directory
     const stagingDir = join(
       tmpdir(),
-      `vellum-log-export-${randomBytes(8).toString("hex")}`,
+      `cadet-log-export-${randomBytes(8).toString("hex")}`,
     );
     mkdirSync(stagingDir, { recursive: true });
 
@@ -185,7 +185,7 @@ export function createLogExportHandler(config: GatewayConfig) {
         headers: {
           "Content-Type": "application/gzip",
           "Content-Disposition":
-            "attachment; filename=vellum-logs-export.tar.gz",
+            "attachment; filename=cadet-logs-export.tar.gz",
         },
       });
     } finally {

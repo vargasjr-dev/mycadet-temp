@@ -158,7 +158,7 @@ mock.module("../../../../persistence/conversation-crud.js", () => ({
 
 mock.module("../../../../daemon/trust-context.js", () => ({
   INTERNAL_GUARDIAN_TRUST_CONTEXT: {
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
     trustClass: "guardian",
   },
 }));

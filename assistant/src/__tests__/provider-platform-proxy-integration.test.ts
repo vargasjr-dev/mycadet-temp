@@ -451,11 +451,11 @@ describe("managed proxy integration — credential precedence", () => {
         usageAttributionHeaders?: Record<string, string>;
       };
       expect(sentConfig.httpOptions?.headers).toEqual({
-        "X-Vellum-LLM-Call-Site": "mainAgent",
-        "X-Vellum-Inference-Profile": "conversation-profile",
-        "X-Vellum-Inference-Profile-Source": "conversation",
-        "X-Vellum-Resolved-Provider": "gemini",
-        "X-Vellum-Resolved-Model": "gemini-3.1-flash",
+        "X-Cadet-LLM-Call-Site": "mainAgent",
+        "X-Cadet-Inference-Profile": "conversation-profile",
+        "X-Cadet-Inference-Profile-Source": "conversation",
+        "X-Cadet-Resolved-Provider": "gemini",
+        "X-Cadet-Resolved-Model": "gemini-3.1-flash",
       });
       expect(sentConfig.usageAttributionHeaders).toBeUndefined();
 
@@ -746,7 +746,7 @@ describe("managed proxy integration — constants integrity", () => {
     // The proxy path is the platform's wire contract — renamed in
     // coordination with the platform deploy, not here.
     expect(PLATFORM_PROVIDER_META.cadet.proxyPath).toBe(
-      "/v1/runtime-proxy/vellum",
+      "/v1/runtime-proxy/cadet",
     );
   });
 

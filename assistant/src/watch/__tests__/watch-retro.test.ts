@@ -38,7 +38,7 @@ function recordSession(narrations: string[]): WatchSessionSummary {
     title: "Teach session",
     conversationType: "background",
     source: "watch",
-    origin: "vellum",
+    origin: "cadet",
   }).id;
   const sessionId = randomUUID();
 
@@ -70,7 +70,7 @@ function recordObservation(axTree: string): {
     title: "Teach session",
     conversationType: "background",
     source: "watch",
-    origin: "vellum",
+    origin: "cadet",
   }).id;
   const sessionId = randomUUID();
   appendObservation(sessionId, {

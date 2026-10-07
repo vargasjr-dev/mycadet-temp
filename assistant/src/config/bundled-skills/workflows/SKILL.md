@@ -1,7 +1,7 @@
 ---
 name: workflows
 description: Delegate a big or high-stakes job to a fleet of parallel subagents, orchestrated deterministically; runs unattended and reports back
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "⚙️"
   cadet:

@@ -37,7 +37,7 @@ import { conversations } from "../persistence/schema/index.js";
 await initializeDb();
 
 const TEST_PRINCIPAL = "test-principal-id";
-const CHANNEL = "vellum" as NotificationChannel;
+const CHANNEL = "cadet" as NotificationChannel;
 
 function resetTables(): void {
   const db = getDb();

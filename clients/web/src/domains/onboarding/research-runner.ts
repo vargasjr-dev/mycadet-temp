@@ -116,7 +116,7 @@ export function resolveResearchCompletionStatus({
  * marketplace repos — so a new user is never offered (or silently handed)
  * community code during onboarding.
  */
-const VELLUM_PLUGIN_OWNER = "cadet-ai";
+const CADET_PLUGIN_OWNER = "cadet-ai";
 
 /**
  * Cadet-hosted plugins that are still infrastructure/meta rather than a
@@ -176,7 +176,7 @@ export function selectRecommendableCapabilities(
     }
     if (
       m.source?.kind !== "github" ||
-      repoOwner(m.source.repo) !== VELLUM_PLUGIN_OWNER
+      repoOwner(m.source.repo) !== CADET_PLUGIN_OWNER
     ) {
       continue;
     }

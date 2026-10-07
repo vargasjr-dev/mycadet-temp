@@ -608,7 +608,7 @@ export async function selectEmbeddingBackend(
   }
 
   // When managed proxy prerequisites are satisfied, insert managed-proxy Gemini
-  // at the front of the auto chain so platform assistants use Vellum-managed
+  // at the front of the auto chain so platform assistants use Cadet-managed
   // Gemini embeddings.
   if (requested === "auto" || requested === "gemini") {
     const managed = await tryGetManagedGeminiBackend(config);

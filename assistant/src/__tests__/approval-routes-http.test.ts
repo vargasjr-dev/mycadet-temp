@@ -764,7 +764,7 @@ describe("standalone approval endpoints — HTTP layer", () => {
         body: JSON.stringify({
           conversationKey: "conv-auto",
           content: "Run ls",
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           interface: "macos",
         }),
       });

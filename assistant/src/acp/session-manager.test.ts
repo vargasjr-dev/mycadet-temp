@@ -42,7 +42,7 @@ mock.module("./prepare-agent-env.js", () => ({
 
 import { createAbortReason } from "../util/abort-reasons.js";
 import { modelOption } from "./__tests__/helpers/acp-model-option.js";
-import { VellumAcpClientHandler } from "./client-handler.js";
+import { CadetAcpClientHandler } from "./client-handler.js";
 import { AcpSessionManager } from "./session-manager.js";
 
 // Parent conversations registered per test; torn down in afterEach so the
@@ -109,10 +109,10 @@ function injectSession(
   parentConversationId: string,
   process: ReturnType<typeof fakeProcess>,
 ) {
-  const sendToVellum = mock(() => {});
-  const clientHandler = new VellumAcpClientHandler(
+  const sendToCadet = mock(() => {});
+  const clientHandler = new CadetAcpClientHandler(
     acpSessionId,
-    sendToVellum,
+    sendToCadet,
     parentConversationId,
   );
   const entry = {
@@ -126,7 +126,7 @@ function injectSession(
       startedAt: Date.now(),
     },
     clientHandler,
-    sendToVellum,
+    sendToCadet,
     currentPrompt: null as unknown,
     parentConversationId,
     cwd: "/tmp",
@@ -400,7 +400,7 @@ describe("AcpSessionManager auth-required recovery surface", () => {
     }
 
     const events = (
-      entry.sendToVellum as ReturnType<typeof mock>
+      entry.sendToCadet as ReturnType<typeof mock>
     ).mock.calls.map((c) => c[0] as { type: string } & Record<string, unknown>);
     const firstPersist = persistUserMessage.mock.calls[0] as unknown as
       | [{ content: string }]
@@ -630,7 +630,7 @@ describe("AcpSessionManager: teardown during the credential read", () => {
     resolveGate = undefined;
 
     const events = (
-      entry.sendToVellum as ReturnType<typeof mock>
+      entry.sendToCadet as ReturnType<typeof mock>
     ).mock.calls.map((c) => c[0] as { type: string });
     expect(events.find((e) => e.type === "acp_auth_required")).toBeUndefined();
   });
@@ -834,7 +834,7 @@ describe("AcpSessionManager.spawn: a stopped turn leaves no agent running", () =
     ).rejects.toThrow();
 
     expect(setConfigOption).toHaveBeenCalled();
-    expect(injected?.sendToVellum).not.toHaveBeenCalled();
+    expect(injected?.sendToCadet).not.toHaveBeenCalled();
     expect(prompt).not.toHaveBeenCalled();
     expect(proc.kill).toHaveBeenCalled();
     expect(internals.sessions.size).toBe(0);

@@ -8,7 +8,7 @@ let assistantInitiatedCandidate = false;
 const resolveAssistantInitiatedThreadMock = mock(
   (signal: NotificationSignal) => ({
     isCandidate: assistantInitiatedCandidate,
-    vellumSignal: assistantInitiatedCandidate
+    cadetSignal: assistantInitiatedCandidate
       ? {
           ...signal,
           requiresConversation: true,
@@ -39,7 +39,7 @@ mock.module("../notifications/home-feed-side-effect.js", () => ({
 }));
 
 mock.module("../channels/config.js", () => ({
-  getDeliverableChannels: () => ["vellum", "telegram"],
+  getDeliverableChannels: () => ["cadet", "telegram"],
 }));
 
 // Guardian connectivity is resolved from the gateway pull. No active guardian
@@ -52,7 +52,7 @@ mock.module("../contacts/guardian-delivery-reader.js", () => ({
 }));
 
 mock.module("../notifications/adapters/macos.js", () => ({
-  VellumAdapter: class {
+  CadetAdapter: class {
     constructor(_broadcastFn: unknown) {}
   },
 }));
@@ -116,7 +116,7 @@ mock.module("../notifications/runtime-dispatch.js", () => ({
 mock.module("../platform/client.js", () => ({
   // The adapter import graph needs the class symbol; nothing in these tests
   // dispatches through it.
-  VellumPlatformClient: class {
+  CadetPlatformClient: class {
     static async create(): Promise<null> {
       return null;
     }
@@ -165,7 +165,7 @@ describe("emitNotificationSignal chat reply preference", () => {
     async (initial, enabled) => {
       saveRawConfig({ notifications: { newMessageEnabled: initial } });
       const selectedChannels: NotificationChannel[] = [
-        "vellum",
+        "cadet",
         "platform",
         "telegram",
       ];
@@ -190,7 +190,7 @@ describe("emitNotificationSignal chat reply preference", () => {
       });
       const result = await emitNotificationSignal({
         sourceEventName: "chat.assistant_reply",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         sourceContextId: "conv-1",
         attentionHints: {
           urgency: "high",
@@ -228,7 +228,7 @@ describe("emitNotificationSignal chat reply preference", () => {
     saveRawConfig({ notifications: { newMessageEnabled: false } });
     evaluateSignalMock.mockResolvedValue({
       shouldNotify: true,
-      selectedChannels: ["vellum", "platform"],
+      selectedChannels: ["cadet", "platform"],
       reasoningSummary: "Urgent delivery",
       renderedCopy: { cadet: { title: "Alert", body: "Action required." } },
       dedupeKey: "alert-1",
@@ -238,7 +238,7 @@ describe("emitNotificationSignal chat reply preference", () => {
     });
     const result = await emitNotificationSignal({
       sourceEventName,
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       sourceContextId: "conv-1",
       attentionHints: {
         urgency: "critical",
@@ -247,7 +247,7 @@ describe("emitNotificationSignal chat reply preference", () => {
         visibleInSourceNow: false,
       },
     });
-    expect(result.selectedChannels).toEqual(["vellum", "platform"]);
+    expect(result.selectedChannels).toEqual(["cadet", "platform"]);
     expect(updateDecisionMock).not.toHaveBeenCalled();
   });
 });
@@ -256,7 +256,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
   test("re-persists selectedChannels/reasoningSummary when enforcement changes the decision", async () => {
     const preDecision = {
       shouldNotify: true,
-      selectedChannels: ["vellum"],
+      selectedChannels: ["cadet"],
       reasoningSummary: "LLM selected cadet only",
       renderedCopy: {
         cadet: { title: "Reminder", body: "Take out trash" },
@@ -269,7 +269,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
 
     const enforcedDecision = {
       ...preDecision,
-      selectedChannels: ["vellum", "telegram"],
+      selectedChannels: ["cadet", "telegram"],
       reasoningSummary: `${preDecision.reasoningSummary} [routing_intent=all_channels enforced: cadet, telegram]`,
     };
 
@@ -293,7 +293,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
     expect(result.dispatched).toBe(true);
     expect(updateDecisionMock).toHaveBeenCalledTimes(1);
     expect(updateDecisionMock).toHaveBeenCalledWith("dec-1", {
-      selectedChannels: ["vellum", "telegram"],
+      selectedChannels: ["cadet", "telegram"],
       reasoningSummary: `${preDecision.reasoningSummary} [routing_intent=all_channels enforced: cadet, telegram]`,
       validationResults: {
         dedupeKey: "dedupe-rem-1",
@@ -306,7 +306,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
   test("does not re-persist when enforcement leaves the decision unchanged", async () => {
     const decision = {
       shouldNotify: true,
-      selectedChannels: ["vellum"],
+      selectedChannels: ["cadet"],
       reasoningSummary: "No routing override needed",
       renderedCopy: {
         cadet: { title: "Reminder", body: "Drink water" },
@@ -342,7 +342,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
   test("excludes unverified binding channels from connected channel candidates", async () => {
     const decision = {
       shouldNotify: true,
-      selectedChannels: ["vellum"],
+      selectedChannels: ["cadet"],
       reasoningSummary: "Local only",
       renderedCopy: {
         cadet: { title: "Reminder", body: "Check this" },
@@ -375,7 +375,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
     expect(evaluateSignalMock).toHaveBeenCalled();
     const callArgs = evaluateSignalMock.mock.calls[0];
     expect(callArgs).toBeDefined();
-    expect(callArgs?.[1]).toEqual(["vellum"]);
+    expect(callArgs?.[1]).toEqual(["cadet"]);
   });
 });
 
@@ -484,9 +484,9 @@ describe("access-request cadet floor", () => {
       reasoningSummary: string;
     };
     expect(dispatched.shouldNotify).toBe(true);
-    expect(dispatched.selectedChannels).toContain("vellum");
+    expect(dispatched.selectedChannels).toContain("cadet");
     expect(dispatched.reasoningSummary).toContain(
-      "vellum forced: decisionable access request",
+      "cadet forced: decisionable access request",
     );
   });
 
@@ -536,7 +536,7 @@ describe("access-request cadet floor", () => {
         actorUsername: null,
         senderIdentifier: "stranger@example.com",
         guardianBindingChannel: null,
-        guardianResolutionSource: "vellum-anchor",
+        guardianResolutionSource: "cadet-anchor",
         previousMemberStatus: null,
         messagePreview: null,
       },
@@ -549,13 +549,13 @@ describe("access-request cadet floor", () => {
     const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
       selectedChannels: string[];
     };
-    expect(dispatched.selectedChannels).toContain("vellum");
+    expect(dispatched.selectedChannels).toContain("cadet");
   });
 
   test("re-adds cadet when single_channel routing enforcement strips it", async () => {
     evaluateSignalMock.mockResolvedValue({
       shouldNotify: true,
-      selectedChannels: ["vellum", "telegram"],
+      selectedChannels: ["cadet", "telegram"],
       reasoningSummary: "LLM selected cadet + telegram",
       renderedCopy: {},
       dedupeKey: "dedupe-ar-2",
@@ -602,13 +602,13 @@ describe("access-request cadet floor", () => {
     const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
       selectedChannels: string[];
     };
-    expect(dispatched.selectedChannels).toContain("vellum");
+    expect(dispatched.selectedChannels).toContain("cadet");
     expect(dispatched.selectedChannels).toContain("telegram");
     // The floor's change is re-persisted alongside enforcement's.
     expect(updateDecisionMock).toHaveBeenCalledWith(
       "dec-ar-2",
       expect.objectContaining({
-        selectedChannels: expect.arrayContaining(["vellum", "telegram"]),
+        selectedChannels: expect.arrayContaining(["cadet", "telegram"]),
       }),
     );
   });
@@ -648,7 +648,7 @@ describe("access-request cadet floor", () => {
       reasoningSummary: string;
     };
     expect(dispatched.shouldNotify).toBe(false);
-    expect(dispatched.reasoningSummary).not.toContain("vellum forced");
+    expect(dispatched.reasoningSummary).not.toContain("cadet forced");
   });
 });
 
@@ -692,11 +692,11 @@ describe("high/critical urgency channel force", () => {
       selectedChannels: string[];
       reasoningSummary: string;
     };
-    expect(dispatched.selectedChannels).toContain("vellum");
+    expect(dispatched.selectedChannels).toContain("cadet");
     expect(dispatched.selectedChannels).toContain("platform");
     expect(dispatched.selectedChannels).toContain("telegram");
     expect(dispatched.reasoningSummary).toContain(
-      "(vellum, platform forced: high urgency)",
+      "(cadet, platform forced: high urgency)",
     );
   });
 
@@ -710,9 +710,9 @@ describe("high/critical urgency channel force", () => {
     // row must still be synced to the dispatched channels.
     expect(updateDecisionMock).toHaveBeenCalledTimes(1);
     expect(updateDecisionMock).toHaveBeenCalledWith("dec-urg-1", {
-      selectedChannels: ["vellum", "telegram", "platform"],
+      selectedChannels: ["cadet", "telegram", "platform"],
       reasoningSummary:
-        "LLM selected telegram only (vellum, platform forced: high urgency)",
+        "LLM selected telegram only (cadet, platform forced: high urgency)",
       validationResults: {
         dedupeKey: "dedupe-urg-1",
         channelCount: 3,
@@ -723,7 +723,7 @@ describe("high/critical urgency channel force", () => {
 
   test("forces only the missing channel when the other is already selected", async () => {
     evaluateSignalMock.mockResolvedValue(
-      makeDecision({ selectedChannels: ["vellum"] }),
+      makeDecision({ selectedChannels: ["cadet"] }),
     );
 
     await emitWithUrgency("critical");
@@ -732,7 +732,7 @@ describe("high/critical urgency channel force", () => {
       selectedChannels: string[];
       reasoningSummary: string;
     };
-    expect(dispatched.selectedChannels).toEqual(["vellum", "platform"]);
+    expect(dispatched.selectedChannels).toEqual(["cadet", "platform"]);
     expect(dispatched.reasoningSummary).toContain(
       "(platform forced: critical urgency)",
     );
@@ -740,7 +740,7 @@ describe("high/critical urgency channel force", () => {
 
   test("leaves a high-urgency decision untouched when both channels are already selected", async () => {
     evaluateSignalMock.mockResolvedValue(
-      makeDecision({ selectedChannels: ["vellum", "platform"] }),
+      makeDecision({ selectedChannels: ["cadet", "platform"] }),
     );
 
     await emitWithUrgency("high");
@@ -749,7 +749,7 @@ describe("high/critical urgency channel force", () => {
       selectedChannels: string[];
       reasoningSummary: string;
     };
-    expect(dispatched.selectedChannels).toEqual(["vellum", "platform"]);
+    expect(dispatched.selectedChannels).toEqual(["cadet", "platform"]);
     expect(dispatched.reasoningSummary).not.toContain("forced");
     expect(updateDecisionMock).not.toHaveBeenCalled();
   });
@@ -816,7 +816,7 @@ describe("high/critical urgency channel force", () => {
       selectedChannels: string[];
     };
     expect(enforcedInput.selectedChannels).toEqual([
-      "vellum",
+      "cadet",
       "telegram",
       "platform",
     ]);
@@ -837,9 +837,9 @@ describe("high/critical urgency channel force", () => {
       selectedChannels: string[];
       reasoningSummary: string;
     };
-    expect(dispatched.selectedChannels).toEqual(["vellum", "telegram"]);
+    expect(dispatched.selectedChannels).toEqual(["cadet", "telegram"]);
     expect(dispatched.reasoningSummary).toContain(
-      "(vellum forced: high urgency)",
+      "(cadet forced: high urgency)",
     );
   });
 
@@ -874,17 +874,17 @@ describe("high/critical urgency channel force", () => {
 
     test("cadet survives the cap when the decision selected only cadet", async () => {
       evaluateSignalMock.mockResolvedValue(
-        makeDecision({ selectedChannels: ["vellum"] }),
+        makeDecision({ selectedChannels: ["cadet"] }),
       );
 
       await emitHighUrgencySingleChannel("watcher");
 
-      // Force-add appends platform: ["vellum", "platform"]. The source
+      // Force-add appends platform: ["cadet", "platform"]. The source
       // channel is not connected, so the cap falls back to index 0.
       const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
         selectedChannels: string[];
       };
-      expect(dispatched.selectedChannels).toEqual(["vellum"]);
+      expect(dispatched.selectedChannels).toEqual(["cadet"]);
     });
 
     test("the cap picks the prepended cadet when the decision selected another channel", async () => {
@@ -894,12 +894,12 @@ describe("high/critical urgency channel force", () => {
 
       await emitHighUrgencySingleChannel("assistant_tool");
 
-      // Force-add yields ["vellum", "telegram", "platform"]; the
+      // Force-add yields ["cadet", "telegram", "platform"]; the
       // non-connected source channel makes the cap take index 0.
       const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
         selectedChannels: string[];
       };
-      expect(dispatched.selectedChannels).toEqual(["vellum"]);
+      expect(dispatched.selectedChannels).toEqual(["cadet"]);
     });
   });
 });
@@ -921,7 +921,7 @@ describe("exclusive channelAllowlist policy", () => {
 
   test("skips urgent cadet and platform force", async () => {
     evaluateSignalMock.mockResolvedValue(
-      makeDecision({ selectedChannels: ["vellum"] }),
+      makeDecision({ selectedChannels: ["cadet"] }),
     );
 
     const result = await emitNotificationSignal({
@@ -936,7 +936,7 @@ describe("exclusive channelAllowlist policy", () => {
       },
       contextPayload: {
         requestedMessage: "telegram only",
-        channelAllowlist: ["vellum"],
+        channelAllowlist: ["cadet"],
       },
     });
 
@@ -945,15 +945,15 @@ describe("exclusive channelAllowlist policy", () => {
       selectedChannels: string[];
       reasoningSummary: string;
     };
-    expect(dispatched.selectedChannels).toEqual(["vellum"]);
+    expect(dispatched.selectedChannels).toEqual(["cadet"]);
     expect(dispatched.reasoningSummary).not.toContain("forced");
-    expect(result.selectedChannels).toEqual(["vellum"]);
+    expect(result.selectedChannels).toEqual(["cadet"]);
     expect(result.receiptClass).toBe("unknown");
   });
 
   test("replaces an LLM selection with the connected allowlist", async () => {
     evaluateSignalMock.mockResolvedValue(
-      makeDecision({ selectedChannels: ["vellum", "telegram", "platform"] }),
+      makeDecision({ selectedChannels: ["cadet", "telegram", "platform"] }),
     );
 
     await emitNotificationSignal({
@@ -966,7 +966,7 @@ describe("exclusive channelAllowlist policy", () => {
         isAsyncBackground: false,
         visibleInSourceNow: false,
       },
-      contextPayload: { channelAllowlist: ["vellum"] },
+      contextPayload: { channelAllowlist: ["cadet"] },
     });
 
     const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
@@ -974,9 +974,9 @@ describe("exclusive channelAllowlist policy", () => {
       shouldNotify: boolean;
       reasoningSummary: string;
     };
-    expect(dispatched.selectedChannels).toEqual(["vellum"]);
+    expect(dispatched.selectedChannels).toEqual(["cadet"]);
     expect(dispatched.shouldNotify).toBe(true);
-    expect(dispatched.reasoningSummary).toContain("channelAllowlist: vellum");
+    expect(dispatched.reasoningSummary).toContain("channelAllowlist: cadet");
   });
 
   test("access-request floor still adds cadet when the allowlist omitted it", async () => {
@@ -1007,9 +1007,9 @@ describe("exclusive channelAllowlist policy", () => {
       reasoningSummary: string;
     };
     expect(dispatched.shouldNotify).toBe(true);
-    expect(dispatched.selectedChannels).toContain("vellum");
+    expect(dispatched.selectedChannels).toContain("cadet");
     expect(dispatched.reasoningSummary).toContain(
-      "vellum forced: decisionable access request",
+      "cadet forced: decisionable access request",
     );
   });
 });
@@ -1019,7 +1019,7 @@ describe("classifyNotificationReceipt", () => {
     expect(
       classifyNotificationReceipt([
         { channel: "telegram", destination: "chat-1", status: "sent" },
-        { channel: "vellum", destination: "vellum", status: "sent" },
+        { channel: "cadet", destination: "cadet", status: "sent" },
       ]),
     ).toBe("provider_accepted");
   });
@@ -1035,7 +1035,7 @@ describe("classifyNotificationReceipt", () => {
   test("does not claim client_os_posted from a cadet sent row", () => {
     expect(
       classifyNotificationReceipt([
-        { channel: "vellum", destination: "vellum", status: "sent" },
+        { channel: "cadet", destination: "cadet", status: "sent" },
       ]),
     ).toBe("unknown");
   });
@@ -1053,7 +1053,7 @@ describe("emitNotificationSignal From me push defaults", () => {
       visibleInSourceNow: false,
     },
   };
-  const decision = (selectedChannels: NotificationChannel[] = ["vellum"]) => ({
+  const decision = (selectedChannels: NotificationChannel[] = ["cadet"]) => ({
     shouldNotify: true,
     selectedChannels,
     reasoningSummary: "Assistant-authored share",
@@ -1071,12 +1071,12 @@ describe("emitNotificationSignal From me push defaults", () => {
 
   test("adds configured platform after routing and persists the final decision", async () => {
     const result = await emitNotificationSignal(params);
-    expect(result.selectedChannels).toEqual(["vellum", "platform"]);
+    expect(result.selectedChannels).toEqual(["cadet", "platform"]);
     expect(resolveAssistantInitiatedThreadMock).toHaveBeenCalledTimes(1);
     expect(updateDecisionMock).toHaveBeenCalledWith(
       "decision-share",
       expect.objectContaining({
-        selectedChannels: ["vellum", "platform"],
+        selectedChannels: ["cadet", "platform"],
       }),
     );
     expect(dispatchDecisionMock.mock.calls[0]?.[0]).toMatchObject({
@@ -1087,7 +1087,7 @@ describe("emitNotificationSignal From me push defaults", () => {
         platformAdded: true,
         resolution: {
           isCandidate: true,
-          vellumSignal: {
+          cadetSignal: {
             requiresConversation: true,
             conversationMetadata: { source: "assistant_initiated" },
           },
@@ -1103,14 +1103,14 @@ describe("emitNotificationSignal From me push defaults", () => {
     "suppressed",
     "single_channel",
     "external_only",
-    "vellum_allowlist",
+    "cadet_allowlist",
   ])("respects %s policy without adding platform", async (scenario) => {
     assistantInitiatedCandidate = scenario !== "noncandidate";
     isPlatformClientConfiguredMock.mockResolvedValue(
       scenario !== "unconfigured",
     );
     evaluateSignalMock.mockResolvedValue({
-      ...decision(scenario === "external_only" ? ["telegram"] : ["vellum"]),
+      ...decision(scenario === "external_only" ? ["telegram"] : ["cadet"]),
       shouldNotify: scenario !== "suppressed",
     });
     const result = await emitNotificationSignal({
@@ -1119,8 +1119,8 @@ describe("emitNotificationSignal From me push defaults", () => {
         scenario === "single_channel" ? "single_channel" : undefined,
       contextPayload: {
         quiet: scenario === "quiet",
-        ...(scenario === "vellum_allowlist"
-          ? { channelAllowlist: ["vellum"] }
+        ...(scenario === "cadet_allowlist"
+          ? { channelAllowlist: ["cadet"] }
           : {}),
       },
     });
@@ -1132,13 +1132,13 @@ describe("emitNotificationSignal From me push defaults", () => {
 
   test("keeps existing platform and external selections independent of this feature", async () => {
     evaluateSignalMock.mockResolvedValue(
-      decision(["vellum", "platform", "telegram"]),
+      decision(["cadet", "platform", "telegram"]),
     );
     const result = await emitNotificationSignal({
       ...params,
       contextPayload: { quiet: true },
     });
-    expect(result.selectedChannels).toEqual(["vellum", "platform", "telegram"]);
+    expect(result.selectedChannels).toEqual(["cadet", "platform", "telegram"]);
     expect(isPlatformClientConfiguredMock).not.toHaveBeenCalled();
     expect(dispatchDecisionMock.mock.calls[0]?.[3]).toMatchObject({
       assistantInitiatedThread: { platformAdded: false },
@@ -1151,14 +1151,14 @@ describe("emitNotificationSignal From me push defaults", () => {
       ...params,
       attentionHints: { ...params.attentionHints, urgency: "high" },
     });
-    expect(result.selectedChannels).toEqual(["vellum"]);
+    expect(result.selectedChannels).toEqual(["cadet"]);
     expect(isPlatformClientConfiguredMock).toHaveBeenCalledTimes(1);
   });
 
   test("preserves preferred external selections while adding the platform default", async () => {
-    evaluateSignalMock.mockResolvedValue(decision(["vellum", "telegram"]));
+    evaluateSignalMock.mockResolvedValue(decision(["cadet", "telegram"]));
     const result = await emitNotificationSignal(params);
-    expect(result.selectedChannels).toEqual(["vellum", "telegram", "platform"]);
+    expect(result.selectedChannels).toEqual(["cadet", "telegram", "platform"]);
   });
 
   test.each(["deduplicated", "source_active"])(

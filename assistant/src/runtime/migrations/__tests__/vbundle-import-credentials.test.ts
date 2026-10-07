@@ -149,34 +149,34 @@ describe("extractCredentialsFromBundle", () => {
     });
   });
 
-  test("extracts vellum:-prefixed credentials (filtering happens in migration-routes)", () => {
+  test("extracts cadet:-prefixed credentials (filtering happens in migration-routes)", () => {
     const entries = new Map<string, VBundleTarEntry>();
     entries.set(
-      "credentials/vellum:assistant_api_key",
+      "credentials/cadet:assistant_api_key",
       makeTarEntry("key-123"),
     );
     entries.set(
-      "credentials/vellum:platform_assistant_id",
+      "credentials/cadet:platform_assistant_id",
       makeTarEntry("asst-456"),
     );
     entries.set("credentials/openai-key", makeTarEntry("sk-user-789"));
 
     const manifest = makeManifest([
-      "credentials/vellum:assistant_api_key",
-      "credentials/vellum:platform_assistant_id",
+      "credentials/cadet:assistant_api_key",
+      "credentials/cadet:platform_assistant_id",
       "credentials/openai-key",
     ]);
     const credentials = extractCredentialsFromBundle(entries, manifest);
 
     // extractCredentialsFromBundle does NOT filter — it returns all credentials.
-    // Filtering of vellum:* platform credentials is done in migration-routes.ts.
+    // Filtering of cadet:* platform credentials is done in migration-routes.ts.
     expect(credentials).toHaveLength(3);
     expect(credentials).toContainEqual({
-      account: "vellum:assistant_api_key",
+      account: "cadet:assistant_api_key",
       value: "key-123",
     });
     expect(credentials).toContainEqual({
-      account: "vellum:platform_assistant_id",
+      account: "cadet:platform_assistant_id",
       value: "asst-456",
     });
     expect(credentials).toContainEqual({

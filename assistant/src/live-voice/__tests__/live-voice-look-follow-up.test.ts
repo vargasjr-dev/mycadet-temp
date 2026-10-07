@@ -107,7 +107,7 @@ function createHarness(options: {
   );
   activeConversation.setTrustContext({
     trustClass: "guardian",
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
   });
   setConversation(conversation.id, activeConversation);
 

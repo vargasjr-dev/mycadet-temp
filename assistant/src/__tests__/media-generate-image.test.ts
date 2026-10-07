@@ -41,7 +41,7 @@ let mockGenerateDelayMs = 0;
  */
 function seedImageGenService(
   overrides: {
-    provider?: "vellum" | "gemini" | "openai" | "openrouter";
+    provider?: "cadet" | "gemini" | "openai" | "openrouter";
     model?: string;
   } = {},
 ): void {
@@ -187,7 +187,7 @@ describe("image-studio skill script wrapper", () => {
   });
 
   test("provider cadet uses managed proxy credentials", async () => {
-    seedImageGenService({ provider: "vellum" });
+    seedImageGenService({ provider: "cadet" });
     mockManagedBaseUrl = "https://platform.example.com/v1/runtime-proxy/gemini";
     mockManagedProxyContext = {
       enabled: true,
@@ -208,7 +208,7 @@ describe("image-studio skill script wrapper", () => {
   });
 
   test("provider cadet routes managed to the gemini proxy for gemini models", async () => {
-    seedImageGenService({ provider: "vellum" });
+    seedImageGenService({ provider: "cadet" });
     mockManagedProxyContext = {
       enabled: true,
       platformBaseUrl: "https://platform.example.com",
@@ -227,7 +227,7 @@ describe("image-studio skill script wrapper", () => {
   });
 
   test("provider cadet routes a gpt model to the openai proxy", async () => {
-    seedImageGenService({ provider: "vellum", model: "gpt-image-2" });
+    seedImageGenService({ provider: "cadet", model: "gpt-image-2" });
     mockManagedProxyContext = {
       enabled: true,
       platformBaseUrl: "https://platform.example.com",
@@ -248,7 +248,7 @@ describe("image-studio skill script wrapper", () => {
   test("provider cadet with no platform is a hard error, not a BYOK fallback", async () => {
     // Billing rule: an explicit cadet choice never silently spends a stored
     // provider key.
-    seedImageGenService({ provider: "vellum" });
+    seedImageGenService({ provider: "cadet" });
     mockGeminiKey = "gemini-key-should-not-be-used";
 
     const result = await run({ prompt: "a hippo" }, fakeContext);
@@ -259,7 +259,7 @@ describe("image-studio skill script wrapper", () => {
   });
 
   test("provider cadet returns error when managed proxy is unavailable", async () => {
-    seedImageGenService({ provider: "vellum" });
+    seedImageGenService({ provider: "cadet" });
     mockGeminiKey = "direct-key"; // should be ignored in managed mode
     mockManagedBaseUrl = undefined;
 
@@ -498,7 +498,7 @@ describe("image-studio skill script wrapper", () => {
   });
 
   test("provider cadet credential error includes guidance not to change service config", async () => {
-    seedImageGenService({ provider: "vellum" });
+    seedImageGenService({ provider: "cadet" });
     mockManagedBaseUrl = undefined;
 
     const result = await run({ prompt: "a cat" }, fakeContext);
@@ -535,7 +535,7 @@ describe("image-studio skill script wrapper", () => {
     expect(result.isError).toBe(false);
     expect(result.content).toContain("Saved to media/generated/a-sunset.png");
     expect(result.content).toContain(
-      "![description](vellum://workspace/media/generated/a-sunset.png)",
+      "![description](cadet://workspace/media/generated/a-sunset.png)",
     );
     const saved = Bun.file(
       join(fakeContext.workingDir, "media/generated/a-sunset.png"),
@@ -605,7 +605,7 @@ describe("image-studio skill script wrapper", () => {
 
     expect(result.isError).toBe(false);
     expect(result.content).toContain("Could not save to the workspace");
-    expect(result.content).not.toContain("vellum://workspace/");
+    expect(result.content).not.toContain("cadet://workspace/");
     expect(readdirSync(outside)).toEqual([]);
   });
 
@@ -621,7 +621,7 @@ describe("image-studio skill script wrapper", () => {
     expect(result.content).toContain(
       "will be attached to your reply automatically",
     );
-    expect(result.content).not.toContain("vellum://workspace/");
+    expect(result.content).not.toContain("cadet://workspace/");
     expect(result.contentBlocks).toHaveLength(1);
   });
 

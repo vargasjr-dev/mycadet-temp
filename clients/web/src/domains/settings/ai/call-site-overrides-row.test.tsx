@@ -175,7 +175,7 @@ const SUBSCRIPTION_CONNECTION_366 = {
   auth: { type: "oauth_subscription", credential: "credential/chatgpt" },
 };
 
-const VELLUM_CONNECTION = {
+const CADET_CONNECTION = {
   name: "cadet",
   provider: "cadet",
   auth: { type: "platform" },
@@ -265,7 +265,7 @@ describe("CallSiteOverrideRow model picker under a ChatGPT subscription", () => 
   test("a cadet-managed connection lifts the restriction (openai routes through the managed proxy)", () => {
     renderRow({ provider: "openai", model: "gpt-5.6-luna" }, [
       SUBSCRIPTION_CONNECTION_366,
-      VELLUM_CONNECTION,
+      CADET_CONNECTION,
     ]);
 
     fireEvent.click(modelTrigger());

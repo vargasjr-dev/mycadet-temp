@@ -9,7 +9,7 @@
 
 const species = process.env.SPECIES;
 
-async function storeVellum(): Promise<void> {
+async function storeCadet(): Promise<void> {
   const args = [
     "credentials",
     "prompt",
@@ -52,12 +52,12 @@ async function storeVellum(): Promise<void> {
 
 async function main(): Promise<void> {
   switch (species) {
-    case "vellum":
-      await storeVellum();
+    case "cadet":
+      await storeCadet();
       break;
     default:
       console.error(
-        `Unsupported species: ${species ?? "(not set)"}. This skill currently only supports species=vellum.`,
+        `Unsupported species: ${species ?? "(not set)"}. This skill currently only supports species=cadet.`,
       );
       process.exitCode = 1;
   }

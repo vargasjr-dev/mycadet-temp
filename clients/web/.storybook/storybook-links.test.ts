@@ -31,7 +31,7 @@ describe("resolveStorybookUrl", () => {
       expect(
         resolveStorybookUrl(
           target,
-          at(`https://storybook.vellum.ai/${siblingOf(target)}/main/`),
+          at(`https://storybook.mycadet.ai/${siblingOf(target)}/main/`),
         ),
       ).toBe(`/${target}/main/`);
     }
@@ -41,7 +41,7 @@ describe("resolveStorybookUrl", () => {
     expect(
       resolveStorybookUrl(
         "design-library",
-        at("https://storybook.vellum.ai/web/0.3.0/"),
+        at("https://storybook.mycadet.ai/web/0.3.0/"),
       ),
     ).toBe("/design-library/0.3.0/");
   });
@@ -50,7 +50,7 @@ describe("resolveStorybookUrl", () => {
     expect(
       resolveStorybookUrl(
         "design-library",
-        at("https://storybook.vellum.ai/web/main/iframe.html"),
+        at("https://storybook.mycadet.ai/web/main/iframe.html"),
       ),
     ).toBe("/design-library/main/");
   });
@@ -79,7 +79,7 @@ describe("resolveStorybookUrl", () => {
   test("falls back to the hosted origin for an unrecognized location", () => {
     for (const target of targets) {
       expect(resolveStorybookUrl(target, at("https://example.com/"))).toBe(
-        `https://storybook.vellum.ai/${target}/main/`,
+        `https://storybook.mycadet.ai/${target}/main/`,
       );
       expect(
         resolveStorybookUrl(target, {
@@ -87,7 +87,7 @@ describe("resolveStorybookUrl", () => {
           hostname: "",
           pathname: "/Users/dev/storybook-static/index.html",
         }),
-      ).toBe(`https://storybook.vellum.ai/${target}/main/`);
+      ).toBe(`https://storybook.mycadet.ai/${target}/main/`);
     }
   });
 

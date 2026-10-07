@@ -2,7 +2,7 @@
  * Cross-surface withdrawal of guardian approval cards.
  *
  * A single guardian request is projected onto every surface it was delivered
- * to — the in-app Vellum card, a Slack message, etc. When the request reaches a
+ * to — the in-app Cadet card, a Slack message, etc. When the request reaches a
  * terminal status its cards must stop offering live actions on *all* surfaces,
  * not just the one the guardian acted on. This is the withdrawal counterpart to
  * the unified card *rendering* dispatcher (`notifications/approval-card-data.ts`):
@@ -72,12 +72,12 @@ export interface WithdrawGuardianCardsParams {
   originChannel?: string;
   /**
    * Conversation the in-app decision was made from, when `originChannel` is
-   * `vellum`. A request can project a card into more than one conversation
-   * (the vellum card, plus any legacy channel rows that paired one), and
+   * `cadet`. A request can project a card into more than one conversation
+   * (the cadet card, plus any legacy channel rows that paired one), and
    * only the acting conversation's client holds the optimistic completion
    * the broadcast suppression exists to protect; every sibling projection
    * still needs its live `ui_surface_complete`. Absent, every in-app projection is
-   * treated as the acting one: a vellum-origin decision then suppresses the
+   * treated as the acting one: a cadet-origin decision then suppresses the
    * broadcast on all of them and only persists their completions.
    */
   originConversationId?: string;
@@ -164,7 +164,7 @@ export async function withdrawGuardianRequestCards(
       // A delivery can carry two projections of the same card: the
       // channel-native message, and the in-app rendering of any paired
       // conversation (`destinationConversationId`). New channel guardian
-      // deliveries pair no conversation, so only the vellum delivery and
+      // deliveries pair no conversation, so only the cadet delivery and
       // legacy channel rows carry one; where a row does, withdrawal must
       // settle both projections, or the paired conversation keeps live
       // Approve/Reject buttons after the decision (LUM-3489).
@@ -176,7 +176,7 @@ export async function withdrawGuardianRequestCards(
         originConversationId,
         decidedAction,
       );
-      if (delivery.destinationChannel === "vellum") {
+      if (delivery.destinationChannel === "cadet") {
         withdrawn = inAppWithdrawn;
       } else if (delivery.destinationChannel === "slack") {
         await withdrawSlackCard(request, delivery, status, decidedAction);
@@ -236,7 +236,7 @@ export async function withdrawGuardianRequestCards(
 /**
  * Complete a delivery's in-app card projection so it stops offering live
  * actions while keeping its content. Applies to any delivery whose row
- * records a paired conversation: the vellum card, and legacy channel rows
+ * records a paired conversation: the cadet card, and legacy channel rows
  * written before channel deliveries stopped pairing, whose paired
  * conversation renders the same actionable card in-app (the channel edit
  * alone would leave that projection clickable). No-ops (successfully) when
@@ -275,7 +275,7 @@ function completeInAppProjection(
   // block would revert to a pending, clickable card, so it must hold the
   // expiry sweep's receipt back and be retried.
   if (
-    originChannel === "vellum" &&
+    originChannel === "cadet" &&
     (!originConversationId ||
       delivery.destinationConversationId === originConversationId)
   ) {

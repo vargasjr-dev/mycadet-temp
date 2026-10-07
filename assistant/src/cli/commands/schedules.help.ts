@@ -183,13 +183,13 @@ Arguments:
 Behavior:
   Defaults to 'execute' mode (requires --message). Pass --mode script with
   --script to run a shell command on each fire with no LLM call; the script's
-  env includes $VELLUM_WORKSPACE_DIR and $__SCHEDULE_ID (this schedule's id).
+  env includes $CADET_WORKSPACE_DIR and $__SCHEDULE_ID (this schedule's id).
   notify/wake schedules remain reachable only through the schedule_create tool.
 
 Examples:
   $ assistant schedules create "GitHub watcher" \\
       --mode script \\
-      --script 'cd "$VELLUM_WORKSPACE_DIR/schedules/$__SCHEDULE_ID" && bun poll.ts' \\
+      --script 'cd "$CADET_WORKSPACE_DIR/schedules/$__SCHEDULE_ID" && bun poll.ts' \\
       --expression '*/15 * * * *' \\
       --description 'Polls GitHub notifications' --json
   $ assistant schedules create "Heartbeat" \\

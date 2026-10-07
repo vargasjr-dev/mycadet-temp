@@ -9,20 +9,20 @@
  * the .app folder name — not CFBundleName/CFBundleDisplayName, and not the
  * binary's filename — when listing the helper's grants, so the runtime
  * resolves the folder from the sidecar that build-mac-helper.sh writes
- * alongside the bundle (`.vellum-mac-helper.bundle-name`).
+ * alongside the bundle (`.cadet-mac-helper.bundle-name`).
  *
  * When the sidecar is absent, discovery walks `<bin>/` for any `.app` folder
  * whose Info.plist matches the expected CFBundleExecutable, then falls back
- * to `vellum-mac-helper.app`.
+ * to `cadet-mac-helper.app`.
  */
 
 import { app } from "electron";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-const SIDECAR_NAME = ".vellum-mac-helper.bundle-name";
-const DEFAULT_HELPER_BUNDLE_NAME = "vellum-mac-helper";
-const DEFAULT_HELPER_EXECUTABLE = "vellum-mac-helper";
+const SIDECAR_NAME = ".cadet-mac-helper.bundle-name";
+const DEFAULT_HELPER_BUNDLE_NAME = "cadet-mac-helper";
+const DEFAULT_HELPER_EXECUTABLE = "cadet-mac-helper";
 
 const readSidecarBundleName = (binDir: string): string | null => {
   const sidecarPath = path.join(binDir, SIDECAR_NAME);

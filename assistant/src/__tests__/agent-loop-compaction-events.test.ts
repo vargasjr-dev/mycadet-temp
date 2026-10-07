@@ -112,7 +112,7 @@ function fakeCompaction(
     manager.maybeCompact = (async () =>
       result) as unknown as typeof manager.maybeCompact;
   }
-  return { trust: { sourceChannel: "vellum", trustClass: "unknown" } };
+  return { trust: { sourceChannel: "cadet", trustClass: "unknown" } };
 }
 
 type StartEvent = Extract<AgentEvent, { type: "context_compacting" }>;

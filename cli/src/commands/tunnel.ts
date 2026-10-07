@@ -35,7 +35,7 @@ import { runTailscaleTunnel } from "../lib/tailscale-tunnel.js";
 // `cadet` is the managed option this command owns; the local providers come
 // from the shared registry so validation here cannot drift from what the
 // workspace config accepts.
-const VALID_PROVIDERS = ["vellum", ...TUNNEL_PROVIDERS] as const;
+const VALID_PROVIDERS = ["cadet", ...TUNNEL_PROVIDERS] as const;
 type TunnelProvider = (typeof VALID_PROVIDERS)[number];
 
 // How far each provider's URL reaches, for the chooser a missing `--provider`
@@ -270,7 +270,7 @@ function toLocalTunnelTarget(entry: AssistantEntry): LocalTunnelTarget | null {
     return {
       entry,
       gatewayPort: entry.resources.gatewayPort,
-      workspaceDir: join(entry.resources.instanceDir, ".vellum", "workspace"),
+      workspaceDir: join(entry.resources.instanceDir, ".cadet", "workspace"),
     };
   }
   if (isLocalContainerEntry(entry)) {
@@ -448,7 +448,7 @@ export async function tunnel(): Promise<void> {
     return;
   }
 
-  if (provider === "vellum") {
+  if (provider === "cadet") {
     throw new Error(
       `Tunnel provider '${provider}' is not yet implemented. ` +
         `If this provider is documented, ${STALE_CLI_UPDATE_HINT}`,

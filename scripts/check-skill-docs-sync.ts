@@ -6,7 +6,7 @@
  * (assistant/src/config/bundled-skills/<skill>/SKILL.md). The public reference
  * page for that skill lives in this repo at
  * clients/docs/src/app/docs/_components/skills-reference-<slug>-content.tsx
- * (served at https://www.vellum.ai/docs/skills-reference/<slug>). The two are
+ * (served at https://mycadet.ai/docs/skills-reference/<slug>). The two are
  * authored by hand and drift silently.
  *
  * This check records a content fingerprint of each documented skill's SKILL.md
@@ -40,7 +40,7 @@ const BUNDLED_SKILLS_DIR = join(
   "config",
   "bundled-skills",
 );
-const DOCS_BASE_URL = "https://www.vellum.ai/docs/skills-reference";
+const DOCS_BASE_URL = "https://mycadet.ai/docs/skills-reference";
 
 interface SkillEntry {
   /** Slug of the public docs page (path segment under /skills-reference/). */

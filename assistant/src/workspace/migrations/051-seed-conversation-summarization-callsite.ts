@@ -23,7 +23,7 @@ import type { WorkspaceMigration } from "./types.js";
  * still needs `effort` / `thinking` defaults to avoid the same fallthrough
  * to the expensive default.
  *
- *   - Skip entirely when `VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH` is set
+ *   - Skip entirely when `CADET_DEFAULT_WORKSPACE_CONFIG_PATH` is set
  *     (platform overlay owns call-site seeds).
  *   - Skip when the resolved provider is not Anthropic / OpenRouter (the
  *     seeded model IDs are Anthropic-shaped; mixing with another provider
@@ -38,7 +38,7 @@ export const seedConversationSummarizationCallsiteMigration: WorkspaceMigration 
     description:
       "Seed conversationSummarization LLM call-site defaults so summary runs stay inside the agent-loop budget",
     run(workspaceDir: string): void {
-      if (process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH) {
+      if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
         return;
       }
 

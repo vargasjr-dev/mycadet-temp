@@ -33,7 +33,7 @@ import type { WorkspaceMigration } from "./types.js";
  */
 const FLUX_PROVIDER_PARENTS: Record<string, string> = {
   "deepgram-flux": "deepgram",
-  "vellum-flux": "vellum",
+  "cadet-flux": "cadet",
 };
 
 /**
@@ -47,7 +47,7 @@ const FLUX_PROVIDER_PARENTS: Record<string, string> = {
  */
 const KNOWN_MODEL_FAMILIES: Record<string, readonly string[]> = {
   deepgram: ["nova-3", "flux"],
-  vellum: ["nova-3", "flux"],
+  cadet: ["nova-3", "flux"],
 };
 
 export const sttFluxProviderToModelFamilyMigration: WorkspaceMigration = {

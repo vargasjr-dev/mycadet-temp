@@ -92,7 +92,7 @@ beforeEach(async () => {
   await initGatewayDb();
   getGatewayDb().delete(channelVerificationSessions).run();
 
-  socketDir = mkdtempSync(join(tmpdir(), "vellum-ipc-test-"));
+  socketDir = mkdtempSync(join(tmpdir(), "cadet-ipc-test-"));
   prevEnv = process.env.GATEWAY_IPC_SOCKET_DIR;
   process.env.GATEWAY_IPC_SOCKET_DIR = socketDir;
   // Disable the watchdog so the test has a single deterministic listener.

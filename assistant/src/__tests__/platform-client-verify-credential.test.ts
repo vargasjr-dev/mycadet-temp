@@ -28,7 +28,7 @@ mock.module("../config/env.js", () => ({
 }));
 
 useMemorySecureKeys();
-const { VellumPlatformClient } = await import("../platform/client.js");
+const { CadetPlatformClient } = await import("../platform/client.js");
 
 const originalFetch = globalThis.fetch;
 
@@ -48,14 +48,14 @@ afterEach(() => {
 });
 
 async function createClient() {
-  const client = await VellumPlatformClient.create();
+  const client = await CadetPlatformClient.create();
   if (!client) {
     throw new Error("client prerequisites were not satisfied");
   }
   return client;
 }
 
-describe("VellumPlatformClient.verifyCredential", () => {
+describe("CadetPlatformClient.verifyCredential", () => {
   test("an accepted request is a valid credential, asked on the owner-consent carrier with the stored key", async () => {
     const client = await createClient();
 

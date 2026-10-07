@@ -33,7 +33,7 @@ async function handleOpenInferenceProfileSession({
     profile: body.profile,
     ttlSeconds: body.ttlSeconds as number | null | undefined,
     sessionId: body.sessionId as string | undefined,
-    originClientId: headers?.["x-vellum-client-id"]?.trim() || undefined,
+    originClientId: headers?.["x-cadet-client-id"]?.trim() || undefined,
   });
 }
 
@@ -43,7 +43,7 @@ async function handleCloseInferenceProfileSession({
 }: RouteHandlerArgs) {
   return closeInferenceProfileSession(
     body.conversationId as string,
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
 }
 

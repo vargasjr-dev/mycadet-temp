@@ -226,7 +226,7 @@ describe("notifyExpiredGuardianRequest", () => {
 
   test("non-deliverable channel: no notice", async () => {
     await notifyExpiredGuardianRequest(
-      makeRequest({ kind: "access_request", sourceChannel: "vellum" }),
+      makeRequest({ kind: "access_request", sourceChannel: "cadet" }),
     );
 
     expect(deliveredReplies).toHaveLength(0);

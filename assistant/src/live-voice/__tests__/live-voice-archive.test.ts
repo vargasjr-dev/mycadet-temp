@@ -43,9 +43,9 @@ async function createMessage(role: "user" | "assistant" = "user") {
     {
       metadata:
         role === "user"
-          ? { userMessageChannel: "vellum", userMessageInterface: "macos" }
+          ? { userMessageChannel: "cadet", userMessageInterface: "macos" }
           : {
-              assistantMessageChannel: "vellum",
+              assistantMessageChannel: "cadet",
               assistantMessageInterface: "macos",
             },
       skipIndexing: true,
@@ -389,7 +389,7 @@ describe("live voice audio archive", () => {
       "Example source utterance",
       {
         metadata: {
-          userMessageChannel: "vellum",
+          userMessageChannel: "cadet",
           userMessageInterface: "macos",
         },
         skipIndexing: true,
@@ -401,7 +401,7 @@ describe("live voice audio archive", () => {
       "Example target utterance",
       {
         metadata: {
-          userMessageChannel: "vellum",
+          userMessageChannel: "cadet",
           userMessageInterface: "macos",
         },
         skipIndexing: true,

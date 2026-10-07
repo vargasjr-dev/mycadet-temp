@@ -49,10 +49,10 @@ describe("guardian-token paths are env-scoped", () => {
 
   beforeEach(() => {
     savedXdg = process.env.XDG_CONFIG_HOME;
-    savedEnv = process.env.VELLUM_ENVIRONMENT;
+    savedEnv = process.env.CADET_ENVIRONMENT;
     tempHome = mkdtempSync(join(tmpdir(), "cli-guardian-token-test-"));
     process.env.XDG_CONFIG_HOME = tempHome;
-    delete process.env.VELLUM_ENVIRONMENT;
+    delete process.env.CADET_ENVIRONMENT;
   });
 
   afterEach(() => {
@@ -62,20 +62,20 @@ describe("guardian-token paths are env-scoped", () => {
       process.env.XDG_CONFIG_HOME = savedXdg;
     }
     if (savedEnv === undefined) {
-      delete process.env.VELLUM_ENVIRONMENT;
+      delete process.env.CADET_ENVIRONMENT;
     } else {
-      process.env.VELLUM_ENVIRONMENT = savedEnv;
+      process.env.CADET_ENVIRONMENT = savedEnv;
     }
     rmSync(tempHome, { recursive: true, force: true });
   });
 
-  test("prod: guardian token lands at $XDG_CONFIG_HOME/vellum/assistants/<id>/guardian-token.json", () => {
+  test("prod: guardian token lands at $XDG_CONFIG_HOME/cadet/assistants/<id>/guardian-token.json", () => {
     const data = makeTokenData("prod");
     saveGuardianToken("alpha", data);
 
     const prodPath = join(
       tempHome,
-      "vellum",
+      "cadet",
       "assistants",
       "alpha",
       "guardian-token.json",
@@ -89,14 +89,14 @@ describe("guardian-token paths are env-scoped", () => {
     expect(loaded!.guardianPrincipalId).toBe("principal-prod");
   });
 
-  test("dev: guardian token lands at $XDG_CONFIG_HOME/vellum-dev/assistants/<id>/guardian-token.json", () => {
-    process.env.VELLUM_ENVIRONMENT = "dev";
+  test("dev: guardian token lands at $XDG_CONFIG_HOME/cadet-dev/assistants/<id>/guardian-token.json", () => {
+    process.env.CADET_ENVIRONMENT = "dev";
     const data = makeTokenData("dev");
     saveGuardianToken("alpha", data);
 
     const devPath = join(
       tempHome,
-      "vellum-dev",
+      "cadet-dev",
       "assistants",
       "alpha",
       "guardian-token.json",
@@ -106,7 +106,7 @@ describe("guardian-token paths are env-scoped", () => {
     // Prod directory must NOT have this token
     const prodPath = join(
       tempHome,
-      "vellum",
+      "cadet",
       "assistants",
       "alpha",
       "guardian-token.json",
@@ -120,11 +120,11 @@ describe("guardian-token paths are env-scoped", () => {
 
   test("same assistant id in prod and dev is isolated on disk", () => {
     // Write prod token for assistant 'alpha'
-    delete process.env.VELLUM_ENVIRONMENT;
+    delete process.env.CADET_ENVIRONMENT;
     saveGuardianToken("alpha", makeTokenData("prod"));
 
     // Write dev token for assistant 'alpha'
-    process.env.VELLUM_ENVIRONMENT = "dev";
+    process.env.CADET_ENVIRONMENT = "dev";
     saveGuardianToken("alpha", makeTokenData("dev"));
 
     // Dev load returns dev
@@ -133,7 +133,7 @@ describe("guardian-token paths are env-scoped", () => {
     );
 
     // Back to prod — prod token is unchanged
-    delete process.env.VELLUM_ENVIRONMENT;
+    delete process.env.CADET_ENVIRONMENT;
     expect(loadGuardianToken("alpha")!.guardianPrincipalId).toBe(
       "principal-prod",
     );
@@ -141,14 +141,14 @@ describe("guardian-token paths are env-scoped", () => {
     // Both files exist at distinct paths
     const prodPath = join(
       tempHome,
-      "vellum",
+      "cadet",
       "assistants",
       "alpha",
       "guardian-token.json",
     );
     const devPath = join(
       tempHome,
-      "vellum-dev",
+      "cadet-dev",
       "assistants",
       "alpha",
       "guardian-token.json",
@@ -158,30 +158,30 @@ describe("guardian-token paths are env-scoped", () => {
     expect(prodPath).not.toBe(devPath);
   });
 
-  test("prod: persisted device id lands at $XDG_CONFIG_HOME/vellum/device-id", () => {
+  test("prod: persisted device id lands at $XDG_CONFIG_HOME/cadet/device-id", () => {
     const id = getOrCreatePersistedDeviceId();
     expect(id.length).toBeGreaterThan(0);
 
-    const prodPath = join(tempHome, "vellum", "device-id");
+    const prodPath = join(tempHome, "cadet", "device-id");
     expect(existsSync(prodPath)).toBe(true);
     expect(readFileSync(prodPath, "utf-8").trim()).toBe(id);
   });
 
-  test("dev: persisted device id lands at $XDG_CONFIG_HOME/vellum-dev/device-id", () => {
-    process.env.VELLUM_ENVIRONMENT = "dev";
+  test("dev: persisted device id lands at $XDG_CONFIG_HOME/cadet-dev/device-id", () => {
+    process.env.CADET_ENVIRONMENT = "dev";
     const id = getOrCreatePersistedDeviceId();
     expect(id.length).toBeGreaterThan(0);
 
-    const devPath = join(tempHome, "vellum-dev", "device-id");
+    const devPath = join(tempHome, "cadet-dev", "device-id");
     expect(existsSync(devPath)).toBe(true);
     expect(readFileSync(devPath, "utf-8").trim()).toBe(id);
 
-    const prodPath = join(tempHome, "vellum", "device-id");
+    const prodPath = join(tempHome, "cadet", "device-id");
     expect(existsSync(prodPath)).toBe(false);
   });
 
   test("device id is stable across repeated calls in the same env", () => {
-    delete process.env.VELLUM_ENVIRONMENT;
+    delete process.env.CADET_ENVIRONMENT;
     const first = getOrCreatePersistedDeviceId();
     const second = getOrCreatePersistedDeviceId();
     expect(first).toBe(second);
@@ -189,11 +189,11 @@ describe("guardian-token paths are env-scoped", () => {
 
   test("seedGuardianTokenFromSiblingEnv copies a dev token into the current local env", () => {
     // Write a token under the dev env.
-    process.env.VELLUM_ENVIRONMENT = "dev";
+    process.env.CADET_ENVIRONMENT = "dev";
     saveGuardianToken("alpha", makeTokenData("dev"));
 
     // Switch to local env — no token present yet.
-    process.env.VELLUM_ENVIRONMENT = "local";
+    process.env.CADET_ENVIRONMENT = "local";
     expect(loadGuardianToken("alpha")).toBeNull();
 
     const seeded = seedGuardianTokenFromSiblingEnv("alpha");
@@ -201,7 +201,7 @@ describe("guardian-token paths are env-scoped", () => {
 
     const localPath = join(
       tempHome,
-      "vellum-local",
+      "cadet-local",
       "assistants",
       "alpha",
       "guardian-token.json",
@@ -216,22 +216,22 @@ describe("guardian-token paths are env-scoped", () => {
   });
 
   test("seedGuardianTokenFromSiblingEnv returns false when no sibling token exists", () => {
-    process.env.VELLUM_ENVIRONMENT = "local";
+    process.env.CADET_ENVIRONMENT = "local";
     expect(seedGuardianTokenFromSiblingEnv("nonexistent")).toBe(false);
     expect(loadGuardianToken("nonexistent")).toBeNull();
   });
 
   test("seedGuardianTokenFromSiblingEnv does not overwrite an existing token", () => {
     // Token already present in the current env.
-    process.env.VELLUM_ENVIRONMENT = "local";
+    process.env.CADET_ENVIRONMENT = "local";
     saveGuardianToken("alpha", makeTokenData("local"));
 
     // And a different sibling token in dev.
-    process.env.VELLUM_ENVIRONMENT = "dev";
+    process.env.CADET_ENVIRONMENT = "dev";
     saveGuardianToken("alpha", makeTokenData("dev"));
 
     // Back to local — seed should no-op because a token is already present.
-    process.env.VELLUM_ENVIRONMENT = "local";
+    process.env.CADET_ENVIRONMENT = "local";
     expect(seedGuardianTokenFromSiblingEnv("alpha")).toBe(false);
     expect(loadGuardianToken("alpha")!.guardianPrincipalId).toBe(
       "principal-local",
@@ -248,7 +248,7 @@ describe("refreshGuardianToken", () => {
   const future = () => new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
   function lockPath(id: string): string {
-    return join(tempHome, "vellum", "assistants", id, "refresh.lock");
+    return join(tempHome, "cadet", "assistants", id, "refresh.lock");
   }
 
   function seed(refreshExpiresAt: string | number): void {
@@ -268,18 +268,18 @@ describe("refreshGuardianToken", () => {
 
   beforeEach(() => {
     savedXdg = process.env.XDG_CONFIG_HOME;
-    savedEnv = process.env.VELLUM_ENVIRONMENT;
+    savedEnv = process.env.CADET_ENVIRONMENT;
     tempHome = mkdtempSync(join(tmpdir(), "cli-refresh-test-"));
     process.env.XDG_CONFIG_HOME = tempHome;
-    delete process.env.VELLUM_ENVIRONMENT;
+    delete process.env.CADET_ENVIRONMENT;
   });
 
   afterEach(() => {
     globalThis.fetch = ORIGINAL_FETCH;
     if (savedXdg === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = savedXdg;
-    if (savedEnv === undefined) delete process.env.VELLUM_ENVIRONMENT;
-    else process.env.VELLUM_ENVIRONMENT = savedEnv;
+    if (savedEnv === undefined) delete process.env.CADET_ENVIRONMENT;
+    else process.env.CADET_ENVIRONMENT = savedEnv;
     rmSync(tempHome, { recursive: true, force: true });
   });
 
@@ -587,17 +587,17 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
 
   beforeEach(() => {
     savedXdg = process.env.XDG_CONFIG_HOME;
-    savedEnv = process.env.VELLUM_ENVIRONMENT;
+    savedEnv = process.env.CADET_ENVIRONMENT;
     tempHome = mkdtempSync(join(tmpdir(), "cli-guardian-parity-test-"));
     process.env.XDG_CONFIG_HOME = tempHome;
-    delete process.env.VELLUM_ENVIRONMENT;
+    delete process.env.CADET_ENVIRONMENT;
   });
 
   afterEach(() => {
     if (savedXdg === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = savedXdg;
-    if (savedEnv === undefined) delete process.env.VELLUM_ENVIRONMENT;
-    else process.env.VELLUM_ENVIRONMENT = savedEnv;
+    if (savedEnv === undefined) delete process.env.CADET_ENVIRONMENT;
+    else process.env.CADET_ENVIRONMENT = savedEnv;
     rmSync(tempHome, { recursive: true, force: true });
   });
 
@@ -617,8 +617,8 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     ).toBe(true);
   });
 
-  test("VELLUM_ENVIRONMENT=dev: resolvers agree and token lands there", () => {
-    process.env.VELLUM_ENVIRONMENT = "dev";
+  test("CADET_ENVIRONMENT=dev: resolvers agree and token lands there", () => {
+    process.env.CADET_ENVIRONMENT = "dev";
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("dev"));
     expect(
@@ -626,8 +626,8 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     ).toBe(true);
   });
 
-  test("VELLUM_ENVIRONMENT=local: resolvers agree and token lands there", () => {
-    process.env.VELLUM_ENVIRONMENT = "local";
+  test("CADET_ENVIRONMENT=local: resolvers agree and token lands there", () => {
+    process.env.CADET_ENVIRONMENT = "local";
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("local"));
     expect(
@@ -635,11 +635,11 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     ).toBe(true);
   });
 
-  test("persisted default env file (no VELLUM_ENVIRONMENT): resolvers agree", () => {
+  test("persisted default env file (no CADET_ENVIRONMENT): resolvers agree", () => {
     // Mirror `cadet env set dev`: the default-env file lives at the fixed,
-    // env-agnostic path $XDG_CONFIG_HOME/vellum/environment.
-    mkdirSync(join(tempHome, "vellum"), { recursive: true });
-    writeFileSync(join(tempHome, "vellum", "environment"), "dev\n");
+    // env-agnostic path $XDG_CONFIG_HOME/cadet/environment.
+    mkdirSync(join(tempHome, "cadet"), { recursive: true });
+    writeFileSync(join(tempHome, "cadet", "environment"), "dev\n");
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("default-dev"));
     expect(

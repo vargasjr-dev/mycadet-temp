@@ -37,7 +37,7 @@ let originalIsPlatform: string | undefined;
 function freshWorkspace(): void {
   workspaceDir = join(
     tmpdir(),
-    `vellum-default-provider-ensure-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-default-provider-ensure-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 }
@@ -120,7 +120,7 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "vellum" });
+    expect(llm().defaultProvider).toEqual({ provider: "cadet" });
   });
 
   test("IS_PLATFORM outranks a legacy provider signal", async () => {
@@ -129,7 +129,7 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "vellum" });
+    expect(llm().defaultProvider).toEqual({ provider: "cadet" });
   });
 
   test("a legacy BYOK signal outranks the login fallback off-platform", async () => {
@@ -147,7 +147,7 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "vellum" });
+    expect(llm().defaultProvider).toEqual({ provider: "cadet" });
   });
 
   test("falls back to anthropic when not on platform and not logged in", async () => {
@@ -198,7 +198,7 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "vellum" });
+    expect(llm().defaultProvider).toEqual({ provider: "cadet" });
   });
 
   test("a valid object with a connectionName is left untouched", async () => {
@@ -250,7 +250,7 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "vellum" });
+    expect(llm().defaultProvider).toEqual({ provider: "cadet" });
     expect(
       (llm().defaultProvider as Record<string, unknown>).connectionName,
     ).toBeUndefined();
@@ -296,7 +296,7 @@ describe("ensureDefaultProvider", () => {
 
       await ensureDefaultProvider(workspaceDir);
 
-      expect(llm().defaultProvider).toEqual({ provider: "vellum" });
+      expect(llm().defaultProvider).toEqual({ provider: "cadet" });
     });
 
     test("no key + not logged in falls through to the anthropic login fallback", async () => {
@@ -332,7 +332,7 @@ describe("ensureDefaultProvider", () => {
 
       await ensureDefaultProvider(workspaceDir);
 
-      expect(llm().defaultProvider).toEqual({ provider: "vellum" });
+      expect(llm().defaultProvider).toEqual({ provider: "cadet" });
     });
 
     test("a valid existing defaultProvider is never overwritten by the echo path", async () => {

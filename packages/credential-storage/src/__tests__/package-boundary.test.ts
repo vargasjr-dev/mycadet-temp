@@ -44,14 +44,14 @@ function collectSourceFiles(dir: string): string[] {
  */
 const FORBIDDEN_IMPORT_PATTERNS = [
   // Assistant daemon internals (blocks both sub-path and root entrypoint imports)
-  /from\s+["'](?:\.\.\/)*(?:assistant|@vellumai\/assistant)(?:\/|["'])/,
-  /require\s*\(\s*["'](?:\.\.\/)*(?:assistant|@vellumai\/assistant)(?:\/|["'])/,
+  /from\s+["'](?:\.\.\/)*(?:assistant|@mycadet\/assistant)(?:\/|["'])/,
+  /require\s*\(\s*["'](?:\.\.\/)*(?:assistant|@mycadet\/assistant)(?:\/|["'])/,
 
   // CES modules (credential execution service)
   /from\s+["'].*\/ces\//,
   /require\s*\(\s*["'].*\/ces\//,
-  /from\s+["']@vellumai\/ces/,
-  /require\s*\(\s*["']@vellumai\/ces/,
+  /from\s+["']@mycadet\/ces/,
+  /require\s*\(\s*["']@mycadet\/ces/,
 
   // Direct runtime/daemon imports
   /from\s+["'].*\/runtime\//,
@@ -66,19 +66,19 @@ const FORBIDDEN_IMPORT_PATTERNS = [
   /from\s+["'].*\/security\/secure-keys/,
 
   // x-client packages (must not depend on any typed service client)
-  /from\s+["']@vellumai\/assistant-client(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/assistant-client(?:\/|["'])/,
-  /from\s+["']@vellumai\/ces-client(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/ces-client(?:\/|["'])/,
-  /from\s+["']@vellumai\/gateway-client(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/gateway-client(?:\/|["'])/,
+  /from\s+["']@mycadet\/assistant-client(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/assistant-client(?:\/|["'])/,
+  /from\s+["']@mycadet\/ces-client(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/ces-client(?:\/|["'])/,
+  /from\s+["']@mycadet\/gateway-client(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/gateway-client(?:\/|["'])/,
 
   // service-contracts aggregate root or internal subpaths
   // credential-storage is a lower-layer package and must not depend on
   // service-contracts (which sits at the same layer but deals with RPC
   // protocol types, not storage abstractions).
-  /from\s+["']@vellumai\/service-contracts(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/service-contracts(?:\/|["'])/,
+  /from\s+["']@mycadet\/service-contracts(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/service-contracts(?:\/|["'])/,
 ];
 
 describe("package boundary", () => {

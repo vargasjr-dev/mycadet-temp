@@ -17,7 +17,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const testDir = mkdtempSync(join(tmpdir(), "client-refresh-test-"));
-const ORIGINAL_LOCKFILE_DIR = process.env.VELLUM_LOCKFILE_DIR;
+const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_FETCH = globalThis.fetch;
 
@@ -92,15 +92,15 @@ function refreshResponse(): Response {
 
 describe("AssistantClient 401 -> refresh -> retry", () => {
   beforeEach(() => {
-    process.env.VELLUM_LOCKFILE_DIR = testDir;
+    process.env.CADET_LOCKFILE_DIR = testDir;
     process.env.XDG_CONFIG_HOME = testDir;
   });
 
   afterEach(() => {
     globalThis.fetch = ORIGINAL_FETCH;
     if (ORIGINAL_LOCKFILE_DIR === undefined)
-      delete process.env.VELLUM_LOCKFILE_DIR;
-    else process.env.VELLUM_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
+    else process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
     if (ORIGINAL_CONFIG_HOME === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = ORIGINAL_CONFIG_HOME;
   });

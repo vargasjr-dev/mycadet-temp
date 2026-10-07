@@ -51,7 +51,7 @@ export class TunnelWsTokenError extends Error {
 /**
  * The tunnel host serving a given platform base URL.
  *
- * `VELLUM_TUNNEL_HOST` wins when set, which is how a local `vel up` stack is
+ * `CADET_TUNNEL_HOST` wins when set, which is how a local `vel up` stack is
  * reached: its tunnel is a loopback port that no naming convention predicts.
  * Otherwise the deployment convention maps the platform host onto its sibling
  * (`cloud.mycadet.ai` to `tunnel.mycadet.ai`, `dev-cloud.mycadet.ai` to
@@ -60,7 +60,7 @@ export class TunnelWsTokenError extends Error {
  * worse than dialing the one host that certainly exists.
  */
 export function tunnelHostForPlatformUrl(platformUrl: string): string {
-  const override = process.env.VELLUM_TUNNEL_HOST?.trim();
+  const override = process.env.CADET_TUNNEL_HOST?.trim();
   if (override) {
     return override;
   }
@@ -143,7 +143,7 @@ export async function mintTunnelWsToken(args: {
   sessionToken: string;
 }): Promise<string> {
   const url = `${args.platformUrl.replace(/\/+$/, "")}/v1/auth/live-voice-token/`;
-  // `authHeaders` resolves `Vellum-Organization-Id`, which the endpoint needs
+  // `authHeaders` resolves `Cadet-Organization-Id`, which the endpoint needs
   // to scope the token, and which is cached per token so a session does not
   // pay for an extra round trip.
   const headers = await authHeaders(args.sessionToken, args.platformUrl);

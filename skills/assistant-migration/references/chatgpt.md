@@ -1,4 +1,4 @@
-# ChatGPT → Vellum
+# ChatGPT → Cadet
 
 ChatGPT is a hosted assistant. There is **no local workspace or data directory** to tar — the portable source of truth is the official account export, an emailed ZIP. This reference covers locating that export and mapping the **non-conversation** material. Conversation history itself is handled by the separate `chatgpt-import` skill (see Inspect).
 
@@ -35,11 +35,11 @@ For non-conversation material that is not in the export (or that the creator pre
 
 (`<skill-dir>` is the installed skill directory. The runnable form lives in SKILL.md Memory Import Guidance, whose `{baseDir}` placeholder the skill loader substitutes at load time; substitution does not apply to reference files, so resolve the path yourself when running from here.)
 
-The parser emits `MemoryImportItem[]` JSON on stdout (with `source: import:chatgpt` and `origin_date` where the export carries timestamps) and an entry-by-entry inventory on stderr showing what was and was not recognized. Route the results per the Vellum Primitive Map in SKILL.md:
+The parser emits `MemoryImportItem[]` JSON on stdout (with `source: import:chatgpt` and `origin_date` where the export carries timestamps) and an entry-by-entry inventory on stderr showing what was and was not recognized. Route the results per the Cadet Primitive Map in SKILL.md:
 
 - Custom instructions / "what ChatGPT should know about you" / "how ChatGPT should respond" → Identity, Personality, durable Memory instructions.
 - Saved memories → memory candidates. Follow SKILL.md's Memory Import Guidance from the review step onward: creator review (ChatGPT memories can be inferred or stale), staged v3 pages (`source: import:chatgpt`), and the `assistant memory ingest` run.
-- GPT configs (names, descriptions, instructions, knowledge files) → Skills, recreated as portable Vellum skills. Connected actions become MCP / integration setup tasks, not direct imports.
+- GPT configs (names, descriptions, instructions, knowledge files) → Skills, recreated as portable Cadet skills. Connected actions become MCP / integration setup tasks, not direct imports.
 
 Classify everything that is not a clean structured export per the Internals Salvage Guidance (high/medium/low confidence) rather than assuming a schema.
 
@@ -47,8 +47,8 @@ Classify everything that is not a clean structured export per the Internals Salv
 
 ChatGPT account credentials and connected-app tokens are **never** imported:
 
-- **ChatGPT / OpenAI account login**: not migrated. The creator signs into Vellum independently.
-- **Connected apps and custom-GPT actions** (Google Drive, GitHub, third-party action OAuth): reconnect through Vellum's vault / OAuth connect flows. Tokens from the export or from any pasted config are ignored.
+- **ChatGPT / OpenAI account login**: not migrated. The creator signs into Cadet independently.
+- **Connected apps and custom-GPT actions** (Google Drive, GitHub, third-party action OAuth): reconnect through Cadet's vault / OAuth connect flows. Tokens from the export or from any pasted config are ignored.
 - **API keys** referenced in GPT actions or instructions: rebind via `assistant credentials prompt`, never via chat text.
 
 When in doubt, pause and ask before sending any production message on a newly reconnected integration.

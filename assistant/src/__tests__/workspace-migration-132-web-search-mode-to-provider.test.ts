@@ -32,7 +32,7 @@ let workspaceDir: string;
 function freshWorkspace(): void {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-132-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-132-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 }
@@ -93,7 +93,7 @@ describe("132-web-search-mode-to-provider", () => {
 
     webSearchModeToProviderMigration.run(workspaceDir);
 
-    expect(webSearch(readConfig())).toEqual({ provider: "vellum" });
+    expect(webSearch(readConfig())).toEqual({ provider: "cadet" });
   });
 
   test("keeps the BYOK provider and drops mode for your-own", () => {
@@ -108,7 +108,7 @@ describe("132-web-search-mode-to-provider", () => {
 
   // The platform default config. Provider Native is a distinct user-facing
   // option (native hosted search with its own managed fallback), so it must
-  // survive managed mode verbatim rather than becoming vellum.
+  // survive managed mode verbatim rather than becoming cadet.
   test("preserves inference-provider-native under managed mode", () => {
     writeConfig({
       services: {
@@ -189,7 +189,7 @@ describe("132-web-search-mode-to-provider", () => {
       // overwritten with cadet on the way up.
       expect(webSearch(readConfig())).toEqual({
         mode: "managed",
-        provider: "vellum",
+        provider: "cadet",
       });
     });
 

@@ -363,8 +363,8 @@ export async function runConversationTurn(
 
   // The channel this turn speaks on. Runtime assembly reads the per-turn
   // context first and falls back to the conversation's `originChannel`, then
-  // to `vellum`, so a turn into a conversation carrying no origin runs as
-  // `vellum` without this: the wrong channel for the message row and for the
+  // to `cadet`, so a turn into a conversation carrying no origin runs as
+  // `cadet` without this: the wrong channel for the message row and for the
   // channel-permission cascade the tools are approved against. Null when the
   // caller names no channel, which both restores that fallback and clears any
   // context left by a previous turn.

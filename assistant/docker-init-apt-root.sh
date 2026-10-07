@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-DATA_ROOT="${VELLUM_APT_DATA_ROOT:-/data/system}"
+DATA_ROOT="${CADET_APT_DATA_ROOT:-/data/system}"
 ROOT_PARENT="$(dirname "${DATA_ROOT}")"
 SENTINEL="${DATA_ROOT}/.rootfs-initialized"
 BOOTSTRAP_ROOT="${DATA_ROOT}.bootstrap.$$"
@@ -12,13 +12,13 @@ HOST_PATH="/usr/sbin:/usr/bin:/sbin:/bin"
 
 . /app/assistant/docker-kata-runtime-family.sh
 
-if ! vellum_is_kata_family_runtime; then
+if ! cadet_is_kata_family_runtime; then
   exit 0
 fi
 
 case "${DATA_ROOT}" in
   ''|/)
-    echo "Warning: invalid VELLUM_APT_DATA_ROOT '${DATA_ROOT}'; falling back to image-root apt installs" >&2
+    echo "Warning: invalid CADET_APT_DATA_ROOT '${DATA_ROOT}'; falling back to image-root apt installs" >&2
     exit 0
     ;;
 esac
@@ -148,7 +148,7 @@ if [ -x "${DATA_ROOT}/bin/sh" ] && [ -x "${DATA_ROOT}/usr/bin/apt-get" ]; then
   exit 0
 fi
 
-SUITE="${VELLUM_APT_DATA_SUITE:-}"
+SUITE="${CADET_APT_DATA_SUITE:-}"
 if [ -z "${SUITE}" ] && [ -r /etc/os-release ]; then
   # shellcheck disable=SC1091
   . /etc/os-release
@@ -158,7 +158,7 @@ if [ -z "${SUITE}" ]; then
   SUITE="trixie"
 fi
 
-MIRROR="${VELLUM_APT_DATA_MIRROR:-http://deb.debian.org/debian}"
+MIRROR="${CADET_APT_DATA_MIRROR:-http://deb.debian.org/debian}"
 ARCH="$(/usr/bin/dpkg --print-architecture)"
 
 rm -rf "${BOOTSTRAP_ROOT}"

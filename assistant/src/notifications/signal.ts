@@ -17,7 +17,7 @@ import { UrgencySchema } from "./urgency.js";
 
 export const NOTIFICATION_SOURCE_CHANNELS = [
   { id: "assistant_tool", description: "Assistant skill/tool invocation" },
-  { id: "vellum", description: "Vellum native client (macOS/iOS)" },
+  { id: "cadet", description: "Cadet native client (macOS/iOS)" },
   { id: "phone", description: "Phone call pipeline" },
   { id: "telegram", description: "Telegram channel" },
   { id: "whatsapp", description: "WhatsApp channel" },
@@ -28,7 +28,7 @@ export const NOTIFICATION_SOURCE_CHANNELS = [
   { id: "discord", description: "Discord channel" },
   { id: "plugin", description: "Channel brought by an installed plugin" },
   {
-    id: "vellum-shared",
+    id: "cadet-shared",
     description: "Conversation a guardian shared with a contact",
   },
   { id: "scheduler", description: "Scheduled task runner (reminders, cron)" },
@@ -169,8 +169,8 @@ export type RoutingIntent = z.infer<typeof RoutingIntentSchema>;
  *
  * - `"source-channel-contact"` — Guardian was found via the originating channel's
  *   contact store and their principalId matches the assistant's anchor.
- * - `"vellum-anchor"` — No same-channel guardian matched; fell back to the
- *   assistant's vellum guardian principal.
+ * - `"cadet-anchor"` — No same-channel guardian matched; fell back to the
+ *   assistant's cadet guardian principal.
  * - `"none"` — No guardian binding could be resolved at all.
  *
  * Downstream consumers (notification copy, routing) use this to decide whether
@@ -180,7 +180,7 @@ export type RoutingIntent = z.infer<typeof RoutingIntentSchema>;
  */
 export const GuardianResolutionSourceSchema = z.enum([
   "source-channel-contact",
-  "vellum-anchor",
+  "cadet-anchor",
   "none",
 ]);
 export type GuardianResolutionSource = z.infer<
@@ -272,7 +272,7 @@ export interface NotificationSignal<TEventName extends string = string> {
     conversationType?: ConversationCreateType;
   };
   /**
-   * When true, the vellum-channel delivery materializes a fresh conversation
+   * When true, the cadet-channel delivery materializes a fresh conversation
    * to host the notification (and any follow-up interaction). Set this only
    * for flows where the conversation IS the interaction surface — e.g.
    * guardian.question, tool grant requests, ingress access requests. Passive

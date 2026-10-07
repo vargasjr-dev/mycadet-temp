@@ -95,7 +95,7 @@ describe("loadPromptOverride — usable override", () => {
   test("honors a ~/ path that resolves inside the workspace", () => {
     let wsUnderHome: string;
     try {
-      wsUnderHome = mkdtempSync(join(homedir(), ".vellum-prompt-override-ws-"));
+      wsUnderHome = mkdtempSync(join(homedir(), ".cadet-prompt-override-ws-"));
     } catch {
       // Home directory not writable on this platform — skip without failing.
       return;
@@ -144,7 +144,7 @@ describe("loadPromptOverride — workspace containment", () => {
   });
 
   test("a ~/ path outside the workspace is rejected", () => {
-    const filename = `.vellum-prompt-override-test-${process.pid}.md`;
+    const filename = `.cadet-prompt-override-test-${process.pid}.md`;
     const p = join(homedir(), filename);
     writeFileSync(p, "home body\n");
     try {

@@ -70,8 +70,8 @@ function createWebTurnContext(
   clientOs: string | undefined,
 ): MessagingConversationContext {
   const channel: TurnChannelContext = {
-    userMessageChannel: "vellum",
-    assistantMessageChannel: "vellum",
+    userMessageChannel: "cadet",
+    assistantMessageChannel: "cadet",
   };
   const iface: TurnInterfaceContext = {
     userMessageInterface: "web",

@@ -106,9 +106,9 @@ describe("selection chain", () => {
   test("a null defaultProvider falls back to the cadet catalog bodies", () => {
     const llm = LLMSchema.parse({});
     const resolved = resolveCallSiteConfig("conversationSummarization", llm);
-    const vellumBody = CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"];
-    expect(resolved.model).toBe(vellumBody.model as string);
-    expect(resolved.provider_connection).toBe(vellumBody.provider_connection);
+    const cadetBody = CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"];
+    expect(resolved.model).toBe(cadetBody.model as string);
+    expect(resolved.provider_connection).toBe(cadetBody.provider_connection);
   });
 });
 
@@ -231,7 +231,7 @@ describe("shipped call-site tuning", () => {
       LLMSchema.parse({}),
     );
 
-    expect(resolved.provider).toBe("vellum");
+    expect(resolved.provider).toBe("cadet");
     expect(resolved.provider_connection).toBeUndefined();
     expect(resolved.model).toBe("jev-latest");
   });
@@ -442,14 +442,14 @@ describe("composition", () => {
           model: "claude-opus-4-6",
         },
       },
-      defaultProvider: { provider: "vellum" },
+      defaultProvider: { provider: "cadet" },
     });
     const resolved = resolveCallSiteConfig("conversationSummarization", llm);
     // The tweak wins the fields it sets; the identity winner contributes its
     // routing through the provider-agnostic managed connection.
     expect(resolved.provider).toBe("anthropic");
     expect(resolved.model).toBe("claude-opus-4-6");
-    expect(resolved.provider_connection).toBe("vellum");
+    expect(resolved.provider_connection).toBe("cadet");
   });
 
   test("a model-only tweak on the cadet default keeps the identity provider", () => {
@@ -457,12 +457,12 @@ describe("composition", () => {
       callSites: {
         conversationSummarization: { model: "claude-haiku-4-5-20251001" },
       },
-      defaultProvider: { provider: "vellum" },
+      defaultProvider: { provider: "cadet" },
     });
     const resolved = resolveCallSiteConfig("conversationSummarization", llm);
-    // provider "vellum" + the tweaked model is the complete dispatch shape:
+    // provider "cadet" + the tweaked model is the complete dispatch shape:
     // the upstream derives from the model, no connection stamp needed.
-    expect(resolved.provider).toBe("vellum");
+    expect(resolved.provider).toBe("cadet");
     expect(resolved.provider_connection).toBeUndefined();
   });
 
@@ -587,14 +587,14 @@ describe("explicit default-profile references resolve through the default provid
   test("a cadet default provider keeps the cadet bodies", () => {
     const llm = LLMSchema.parse({
       profiles: managedStubs,
-      defaultProvider: { provider: "vellum" },
+      defaultProvider: { provider: "cadet" },
     });
     const pinned = resolveCallSiteConfig("mainAgent", llm, {
       overrideProfile: "cost-optimized",
     });
-    const vellumBody = CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"];
-    expect(pinned.model).toBe(vellumBody.model as string);
-    expect(pinned.provider_connection).toBe(vellumBody.provider_connection);
+    const cadetBody = CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"];
+    expect(pinned.model).toBe(cadetBody.model as string);
+    expect(pinned.provider_connection).toBe(cadetBody.provider_connection);
   });
 
   test("a mix arm naming a default key expands through the default provider", () => {

@@ -24,7 +24,7 @@ import {
  * gateway-facing contract; when an `assistantId` is supplied, the URL is also
  * mirrored onto the lockfile entry (`ingressUrl`) — the CLI-owned contract
  * that CLI features (e.g. remote-web pairing defaults) read, per the
- * no-`.vellum/`-reads boundary in cli/AGENTS.md.
+ * no-`.cadet/`-reads boundary in cli/AGENTS.md.
  */
 
 function parsePortFromUrl(url: unknown): number | undefined {
@@ -57,11 +57,11 @@ export function parseGatewayPortFromEntryUrls(
   );
 }
 
-/** Default workspace dir: `$VELLUM_WORKSPACE_DIR` or `~/.vellum/workspace`. */
+/** Default workspace dir: `$CADET_WORKSPACE_DIR` or `~/.cadet/workspace`. */
 export function getDefaultWorkspaceDir(): string {
   return (
-    process.env.VELLUM_WORKSPACE_DIR?.trim() ||
-    join(homedir(), ".vellum", "workspace")
+    process.env.CADET_WORKSPACE_DIR?.trim() ||
+    join(homedir(), ".cadet", "workspace")
   );
 }
 

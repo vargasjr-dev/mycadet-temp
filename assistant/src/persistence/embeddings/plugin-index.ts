@@ -46,10 +46,10 @@ import {
 } from "./embedding-types.js";
 import { withQdrantBreaker } from "./qdrant-circuit-breaker.js";
 import {
+  type CadetQdrantClient,
   getQdrantClient,
   initQdrantClient,
   resolveQdrantUrl,
-  type VellumQdrantClient,
 } from "./qdrant-client.js";
 
 const log = getLogger("plugin-index");
@@ -58,7 +58,7 @@ const log = getLogger("plugin-index");
 const PLUGIN_INDEX_TARGET_TYPE = "plugin_index" as const;
 
 /**
- * Namespace-qualified Qdrant point id for a plugin document. `VellumQdrantClient`
+ * Namespace-qualified Qdrant point id for a plugin document. `CadetQdrantClient`
  * dedupes points by (target_type, target_id), so the plugin name must be part of
  * the target_id: otherwise two plugins that pick the same documentId would map
  * to one point and clobber each other. Plugin manifest names are kebab-case and
@@ -133,7 +133,7 @@ export interface IndexedDocument {
 
 /**
  * Config fingerprint of the client {@link resolveQdrant} last built, so a live
- * config change is not served by a stale client. `VellumQdrantClient` captures
+ * config change is not served by a stale client. `CadetQdrantClient` captures
  * its collection, dimension, and model identity at construction, so a client
  * built before the change would keep writing at the old dimension (rejected by
  * a resized collection) or quietly mix vectors from two models into one
@@ -165,7 +165,7 @@ let clientConfigIdentity: string | null = null;
  * model or dimension change recreates the collection, which is the durability
  * contract documented at the top of this file.
  */
-async function resolveQdrant(): Promise<VellumQdrantClient> {
+async function resolveQdrant(): Promise<CadetQdrantClient> {
   const config = getConfig();
   const url = resolveQdrantUrl(config);
   const { collection, vectorSize, onDisk, quantization } = config.memory.qdrant;

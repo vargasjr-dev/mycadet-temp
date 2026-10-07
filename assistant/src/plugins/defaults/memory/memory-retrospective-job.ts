@@ -509,7 +509,7 @@ export async function runForkBasedRetrospective(
   // fix on its own); the tool-context pin resolves the fork's execution-side
   // tool inventory under the source's client context and carries the wire
   // surface when the source has no recorded one (`sourceToolSurface` below).
-  // Warm both guardian-delivery cache keys (vellum + unfiltered) so the sync
+  // Warm both guardian-delivery cache keys (cadet + unfiltered) so the sync
   // slug resolution inside resolveSourceParityPins (resolveUserSlug(undefined)),
   // including its any-channel fallback, hits fresh keys instead of falling
   // back to "default" on a cold/TTL-expired cache.
@@ -796,14 +796,14 @@ interface SourceParityPins {
  * Derive the fork wake's parity pins from the source conversation.
  *
  * Persona slugs — local/desktop sources (`originChannel` null or
- * `"vellum"`): live turns resolve the guardian contact's userFile — either
+ * `"cadet"`): live turns resolve the guardian contact's userFile — either
  * via the undefined-trust-context branch of `resolveUserFilename`
  * (desktop/native, no gateway) or via its guardian-class
- * `findGuardianForChannel("vellum")` fallback (managed desktop, whose
+ * `findGuardianForChannel("cadet")` fallback (managed desktop, whose
  * JWT-principal `requesterExternalUserId` never matches a contact channel
  * row). `resolveUserSlug(undefined)` reproduces both, falling back to
  * `"default"` exactly as the live prompt build does when no guardian
- * resolves. Channel persona is `"vellum"`. Channel-routed sources: live-turn
+ * resolves. Channel persona is `"cadet"`. Channel-routed sources: live-turn
  * persona resolution keys off the requester's `requesterExternalUserId`
  * (contact lookup per actor, possibly different across turns), which is not
  * stored on the conversation row — the slugs are omitted so the wake keeps
@@ -835,7 +835,7 @@ function resolveSourceParityPins(
   sliceMessages: Array<{ role: string; metadata: string | null }>,
 ): SourceParityPins {
   const channel = source.originChannel;
-  const channelRouted = channel != null && channel !== "vellum";
+  const channelRouted = channel != null && channel !== "cadet";
   const recovered = resolveSourceLiveInterface(source, sliceMessages);
   if (recovered === undefined && !channelRouted) {
     // No per-turn interface stamp and no originInterface, so the pin falls
@@ -865,7 +865,7 @@ function resolveSourceParityPins(
     ? { hasNoClient }
     : {
         userSlug: resolveUserSlug(undefined) ?? "default",
-        channelSlug: "vellum",
+        channelSlug: "cadet",
         hasNoClient,
       };
   return {
@@ -893,7 +893,7 @@ function resolveSourceParityPins(
  * then falls back to the conversation row's `originInterface` (sticky
  * first-interface column), then to the origin channel id where it doubles as
  * an interface id (telegram/slack/whatsapp/email/phone; the legacy
- * `"vellum"` alias maps to `"web"`). Every input is persisted state, so for
+ * `"cadet"` alias maps to `"web"`). Every input is persisted state, so for
  * a given cutoff the result is deterministic — it cannot flap between
  * retries of the same slice.
  */

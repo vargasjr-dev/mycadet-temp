@@ -11,12 +11,12 @@ import {
 } from "../workspace-mcp-config.js";
 
 function mcpPath(): string {
-  return join(process.env.VELLUM_WORKSPACE_DIR!, "mcp.json");
+  return join(process.env.CADET_WORKSPACE_DIR!, "mcp.json");
 }
 
 describe("workspace mcp.json", () => {
   beforeEach(() => {
-    mkdirSync(process.env.VELLUM_WORKSPACE_DIR!, { recursive: true });
+    mkdirSync(process.env.CADET_WORKSPACE_DIR!, { recursive: true });
     rmSync(mcpPath(), { force: true });
   });
 
@@ -99,7 +99,7 @@ describe("workspace mcp.json", () => {
   });
 
   test("invalid file does not throw on read and refuses a later write", () => {
-    mkdirSync(process.env.VELLUM_WORKSPACE_DIR!, { recursive: true });
+    mkdirSync(process.env.CADET_WORKSPACE_DIR!, { recursive: true });
     writeFileSync(mcpPath(), "{ not json");
 
     expect(loadWorkspaceMcpConfig()).toEqual({ servers: {} });

@@ -23,18 +23,18 @@ describe("startLinuxAuthCallback", () => {
   test("accepts a state-matched code on the registered app scheme", async () => {
     const harness = callbackHarness();
     const callback = await startLinuxAuthCallback("expected", {
-      scheme: "vellum-assistant-dev",
+      scheme: "mycadet-dev",
       subscribe: harness.subscribe,
     });
 
-    expect(callback.redirectUri).toBe("vellum-assistant-dev://auth/callback");
+    expect(callback.redirectUri).toBe("mycadet-dev://auth/callback");
 
     harness.emit(
-      "vellum-assistant-dev://auth/callback?code=wrong&state=unexpected",
+      "mycadet-dev://auth/callback?code=wrong&state=unexpected",
     );
     harness.emit("https://example.com/callback?code=wrong&state=expected");
     harness.emit(
-      "vellum-assistant-dev://auth/callback?code=good&state=expected",
+      "mycadet-dev://auth/callback?code=good&state=expected",
     );
 
     expect(await callback.waitForCode).toBe("good");
@@ -44,13 +44,13 @@ describe("startLinuxAuthCallback", () => {
   test("surfaces a state-matched provider error", async () => {
     const harness = callbackHarness();
     const callback = await startLinuxAuthCallback("expected", {
-      scheme: "vellum-assistant-dev",
+      scheme: "mycadet-dev",
       subscribe: harness.subscribe,
     });
     const result = callback.waitForCode.catch((error: Error) => error);
 
     harness.emit(
-      "vellum-assistant-dev://auth/callback?error=access_denied&error_description=Denied&state=expected",
+      "mycadet-dev://auth/callback?error=access_denied&error_description=Denied&state=expected",
     );
 
     await expect(result).resolves.toMatchObject({
@@ -62,7 +62,7 @@ describe("startLinuxAuthCallback", () => {
   test("close cancels the pending callback and unsubscribes", async () => {
     const harness = callbackHarness();
     const callback = await startLinuxAuthCallback("expected", {
-      scheme: "vellum-assistant-dev",
+      scheme: "mycadet-dev",
       subscribe: harness.subscribe,
     });
     const result = callback.waitForCode.catch((error: Error) => error);

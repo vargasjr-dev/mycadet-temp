@@ -37,7 +37,7 @@ const build = (
   );
 
 beforeEach(() => {
-  userDataDir = mkdtempSync(path.join(tmpdir(), "vellum-helper-toast-"));
+  userDataDir = mkdtempSync(path.join(tmpdir(), "cadet-helper-toast-"));
   warnings = [];
 });
 

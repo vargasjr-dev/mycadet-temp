@@ -23,10 +23,10 @@ type RawTrustClass = TrustClass | (string & {}) | undefined;
 
 /**
  * Channels that are themselves privileged document surfaces. Actors on these get
- * privileged document access regardless of trust class — the `vellum` first-party
+ * privileged document access regardless of trust class — the `cadet` first-party
  * console is the operator's own surface, not an external contact channel.
  */
-const PRIVILEGED_DOCUMENT_CHANNELS = new Set<string>(["vellum"]);
+const PRIVILEGED_DOCUMENT_CHANNELS = new Set<string>(["cadet"]);
 
 /**
  * Whether an actor may perform privileged (non-conversation-scoped) document

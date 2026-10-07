@@ -25,9 +25,9 @@ let testDir: string;
 beforeEach(() => {
   testDir = join(
     tmpdir(),
-    `vellum-app-asset-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-app-asset-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
-  process.env.VELLUM_WORKSPACE_DIR = testDir;
+  process.env.CADET_WORKSPACE_DIR = testDir;
 });
 
 afterEach(() => {

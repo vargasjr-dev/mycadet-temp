@@ -6,7 +6,7 @@
  * escalations, voice questions, trusted-contact confirmations) emit a
  * notification signal and then record one delivery row per surface the card
  * reached. Capturing the surface address here — the conversation id for the
- * in-app vellum card, or the channel-native message id (e.g. Slack `ts`) for a
+ * in-app cadet card, or the channel-native message id (e.g. Slack `ts`) for a
  * channel card — is what lets a delivered card be addressed back to its request
  * later, to withdraw it in place when the request resolves
  * (`approvals/guardian-card-withdrawal.ts`).
@@ -33,14 +33,14 @@ const log = getLogger("guardian-delivery-recorder");
  * Where an approval card was delivered. Exactly one addressing modality is
  * meaningful per channel:
  *
- *   - vellum (in-app): addressed by `conversationId` + the card's surface id.
+ *   - cadet (in-app): addressed by `conversationId` + the card's surface id.
  *   - channels (slack/telegram/...): addressed by `chatId` + the channel-native
  *     `messageId` (Slack `ts`).
  */
 export interface ApprovalCardDeliveryAddress {
   requestId: string;
   channel: string;
-  /** In-app vellum addressing: the conversation the card was posted to. */
+  /** In-app cadet addressing: the conversation the card was posted to. */
   conversationId?: string;
   /** Channel addressing: the chat the card was delivered to. */
   chatId?: string;
@@ -85,12 +85,12 @@ export async function recordApprovalCardDelivery(
  * results, persisting each delivery's terminal status.
  *
  * This is the shared post-broadcast recording loop for the signal-based
- * producers. The vellum row is normally created up front in the signal's
+ * producers. The cadet row is normally created up front in the signal's
  * `onConversationCreated` callback so the in-app client sees it immediately; pass
- * that row's id as `vellumDeliveryId` and it is reused (only its status applied)
- * — otherwise the vellum row is created here from the result.
+ * that row's id as `cadetDeliveryId` and it is reused (only its status applied)
+ * — otherwise the cadet row is created here from the result.
  *
- * The vellum result records the internal `conversationId` its card is shown
+ * The cadet result records the internal `conversationId` its card is shown
  * in. Channel guardian cards pair no conversation (they are delivery
  * projections; see `conversation-pairing.ts`), so their rows carry no
  * `conversationId`. Platform push results are skipped entirely: a push
@@ -104,16 +104,16 @@ export async function recordApprovalCardDelivery(
  *
  * Best-effort like the create: a status-patch failure is logged, not thrown.
  *
- * Returns the vellum delivery id (passed in, or created here) so a caller can
- * record its own "pipeline produced no vellum delivery" fallback.
+ * Returns the cadet delivery id (passed in, or created here) so a caller can
+ * record its own "pipeline produced no cadet delivery" fallback.
  */
 export async function recordGuardianRequestDeliveries(params: {
   requestId: string;
   deliveryResults: NotificationDeliveryResult[];
-  vellumDeliveryId?: string;
+  cadetDeliveryId?: string;
 }): Promise<string | undefined> {
   const { requestId, deliveryResults } = params;
-  let vellumDeliveryId = params.vellumDeliveryId;
+  let cadetDeliveryId = params.cadetDeliveryId;
 
   for (const result of deliveryResults) {
     if (result.channel === "platform") {
@@ -121,17 +121,17 @@ export async function recordGuardianRequestDeliveries(params: {
       continue;
     }
     let deliveryId: string | undefined;
-    if (result.channel === "vellum") {
-      if (!vellumDeliveryId) {
-        vellumDeliveryId = (
+    if (result.channel === "cadet") {
+      if (!cadetDeliveryId) {
+        cadetDeliveryId = (
           await recordApprovalCardDelivery({
             requestId,
-            channel: "vellum",
+            channel: "cadet",
             conversationId: result.conversationId,
           })
         )?.id;
       }
-      deliveryId = vellumDeliveryId;
+      deliveryId = cadetDeliveryId;
     } else {
       deliveryId = (
         await recordApprovalCardDelivery({
@@ -164,7 +164,7 @@ export async function recordGuardianRequestDeliveries(params: {
 
   await withdrawIfRequestAlreadyTerminal(requestId);
 
-  return vellumDeliveryId;
+  return cadetDeliveryId;
 }
 
 /**

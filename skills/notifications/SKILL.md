@@ -40,8 +40,8 @@ assistant notifications send --title "..." --message "..." --urgent
 | `--message <message>`  | Yes             | Notification body. Markdown (GFM) renders in the detail panel; the OS banner shows plain text.                                                       |
 | `--title <title>`      | Yes in practice | Short headline (≤ 8 words). Omitting it triggers a body-truncation fallback that shows up as a duplicate of `--message` — always write a real title. |
 | `--urgent`             | No              | Mark as needing attention now/soon                                                                                                                   |
-| `--preferred-channels` | No              | Additive channel hints. Vellum stays selected.                                                                                                       |
-| `--channels`           | No              | Exclusive allowlist (e.g. `telegram`). Replaces the default set. Urgent delivery does not add vellum or platform. Wins over `--preferred-channels`.  |
+| `--preferred-channels` | No              | Additive channel hints. Cadet stays selected.                                                                                                       |
+| `--channels`           | No              | Exclusive allowlist (e.g. `telegram`). Replaces the default set. Urgent delivery does not add cadet or platform. Wins over `--preferred-channels`.  |
 | `--json`               | No              | Output machine-readable JSON                                                                                                                         |
 
 ### Title
@@ -71,7 +71,7 @@ Use `--urgent` for items needing attention now/soon (blocked work, broken auth, 
 
 ### Channel routing
 
-`--preferred-channels` adds extra surfaces on top of the default set (vellum stays selected). `--channels` is exclusive: only those connected channels are selected. Use `--channels telegram` when the user asked for Telegram only. Home does not mirror an exclusive send unless `vellum` is in the list. When both flags are set, `--channels` wins.
+`--preferred-channels` adds extra surfaces on top of the default set (cadet stays selected). `--channels` is exclusive: only those connected channels are selected. Use `--channels telegram` when the user asked for Telegram only. Home does not mirror an exclusive send unless `cadet` is in the list. When both flags are set, `--channels` wins.
 
 ### Examples
 
@@ -109,7 +109,7 @@ assistant notifications send \
 assistant notifications list --json
 ```
 
-Reads from the user's home feed (`$VELLUM_WORKSPACE_DIR/data/home-feed.json`) — the inbox that mirrors background and async notifications surfaced via the unified pipeline. Real-time chat pushes that did not mirror to the feed (direct Telegram/Slack/Vellum-chat sends without `--is-async-background`) will not appear here.
+Reads from the user's home feed (`$CADET_WORKSPACE_DIR/data/home-feed.json`) — the inbox that mirrors background and async notifications surfaced via the unified pipeline. Real-time chat pushes that did not mirror to the feed (direct Telegram/Slack/Cadet-chat sends without `--is-async-background`) will not appear here.
 
 ### When to call
 

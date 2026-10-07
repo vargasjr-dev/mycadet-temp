@@ -2,9 +2,9 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 const MOCK_DEVICE_ID = "test-device-00000000-0000-0000-0000-000000000000";
 const clientHeaders = () => ({
-  "X-Vellum-Client-Id": MOCK_DEVICE_ID,
-  "X-Vellum-Interface-Id": "macos",
-  "X-Vellum-Machine-Name": "Example Mac",
+  "X-Cadet-Client-Id": MOCK_DEVICE_ID,
+  "X-Cadet-Interface-Id": "macos",
+  "X-Cadet-Machine-Name": "Example Mac",
 });
 
 const { HostProxySseClient } = await import("./sse");
@@ -449,9 +449,9 @@ describe("HostProxySseClient", () => {
     expect(capturedHeaders["Accept"]).toBe(
       "text/event-stream, application/json",
     );
-    expect(capturedHeaders["X-Vellum-Client-Id"]).toBe(MOCK_DEVICE_ID);
-    expect(capturedHeaders["X-Vellum-Interface-Id"]).toBe("macos");
-    expect(capturedHeaders["X-Vellum-Machine-Name"]).toBeTruthy();
+    expect(capturedHeaders["X-Cadet-Client-Id"]).toBe(MOCK_DEVICE_ID);
+    expect(capturedHeaders["X-Cadet-Interface-Id"]).toBe("macos");
+    expect(capturedHeaders["X-Cadet-Machine-Name"]).toBeTruthy();
   });
 
   test("sends correct headers for cloud connection", async () => {
@@ -472,7 +472,7 @@ describe("HostProxySseClient", () => {
     }) as unknown as typeof globalThis.fetch;
 
     client = new HostProxySseClient({
-      eventsUrl: "https://platform.vellum.ai/v1/assistants/asst-123/events",
+      eventsUrl: "https://cloud.cadet.ai/v1/assistants/asst-123/events",
       authHeaders: () => ({ "X-Session-Token": "session-tok-abc" }),
       clientHeaders,
       fetch: fakeFetch,
@@ -481,12 +481,12 @@ describe("HostProxySseClient", () => {
     await flush(50);
 
     expect(capturedUrl).toBe(
-      "https://platform.vellum.ai/v1/assistants/asst-123/events",
+      "https://cloud.cadet.ai/v1/assistants/asst-123/events",
     );
     expect(capturedHeaders["X-Session-Token"]).toBe("session-tok-abc");
     expect(capturedHeaders["Authorization"]).toBeUndefined();
-    expect(capturedHeaders["X-Vellum-Client-Id"]).toBe(MOCK_DEVICE_ID);
-    expect(capturedHeaders["X-Vellum-Interface-Id"]).toBe("macos");
+    expect(capturedHeaders["X-Cadet-Client-Id"]).toBe(MOCK_DEVICE_ID);
+    expect(capturedHeaders["X-Cadet-Interface-Id"]).toBe("macos");
   });
 
   test("retries with compatibility headers when the interface is rejected", async () => {
@@ -497,7 +497,7 @@ describe("HostProxySseClient", () => {
       init?: RequestInit,
     ) => {
       const headers = init?.headers as Record<string, string>;
-      capturedInterfaces.push(headers["X-Vellum-Interface-Id"]!);
+      capturedInterfaces.push(headers["X-Cadet-Interface-Id"]!);
       if (capturedInterfaces.length === 1) {
         return new Response(null, { status: 400 });
       }
@@ -508,11 +508,11 @@ describe("HostProxySseClient", () => {
     }) as unknown as typeof globalThis.fetch;
 
     client = new HostProxySseClient({
-      eventsUrl: "https://platform.vellum.ai/v1/assistants/asst-123/events",
+      eventsUrl: "https://cloud.cadet.ai/v1/assistants/asst-123/events",
       authHeaders: () => ({ "X-Session-Token": "session-token" }),
-      clientHeaders: () => ({ "X-Vellum-Interface-Id": "windows" }),
+      clientHeaders: () => ({ "X-Cadet-Interface-Id": "windows" }),
       fallbackClientHeaders: () => ({
-        "X-Vellum-Interface-Id": "macos",
+        "X-Cadet-Interface-Id": "macos",
       }),
       fetch: fakeFetch,
     });
@@ -530,16 +530,16 @@ describe("HostProxySseClient", () => {
       init?: RequestInit,
     ) => {
       const headers = init?.headers as Record<string, string>;
-      capturedInterfaces.push(headers["X-Vellum-Interface-Id"]!);
+      capturedInterfaces.push(headers["X-Cadet-Interface-Id"]!);
       return new Response(null, { status: 401 });
     }) as unknown as typeof globalThis.fetch;
 
     client = new HostProxySseClient({
-      eventsUrl: "https://platform.vellum.ai/v1/assistants/asst-123/events",
+      eventsUrl: "https://cloud.cadet.ai/v1/assistants/asst-123/events",
       authHeaders: () => ({ "X-Session-Token": "session-token" }),
-      clientHeaders: () => ({ "X-Vellum-Interface-Id": "windows" }),
+      clientHeaders: () => ({ "X-Cadet-Interface-Id": "windows" }),
       fallbackClientHeaders: () => ({
-        "X-Vellum-Interface-Id": "macos",
+        "X-Cadet-Interface-Id": "macos",
       }),
       fetch: fakeFetch,
     });

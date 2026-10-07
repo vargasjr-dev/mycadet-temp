@@ -1,5 +1,5 @@
 /**
- * Lifecycle drain endpoints backing `vellum sleep --wait`.
+ * Lifecycle drain endpoints backing `cadet sleep --wait`.
  *
  * The quiesce lease pauses the STARTING of new background LLM work (heartbeat
  * beats, schedule/watcher/sequence claims, memory-job claims) across the

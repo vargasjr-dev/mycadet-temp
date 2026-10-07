@@ -34,7 +34,7 @@ import { current } from "../main-window";
 import { getWindowsHelperClient } from "../windows-helper";
 
 /**
- * Provider backed by the Vellum.WindowsHelper sidecar (`permissions.state`
+ * Provider backed by the Cadet.WindowsHelper sidecar (`permissions.state`
  * and `text.insert` RPC methods). Registered at composition time; until
  * then helper-backed kinds are unavailable instead of faking a status.
  */
@@ -274,7 +274,7 @@ const insertIntoFrontApp = async (
   text: string,
 ): Promise<TextInsertionResult> => {
   if (BrowserWindow.getFocusedWindow() !== null) {
-    return { status: "vellum-focused" };
+    return { status: "cadet-focused" };
   }
   if (!nativeProvider) {
     log.warn("[text-insertion] no native insertion provider registered");

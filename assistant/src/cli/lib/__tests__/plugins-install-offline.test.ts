@@ -1,7 +1,7 @@
 /**
  * Install-by-name in disable-platform (air-gapped / self-hosted) mode.
  *
- * With `VELLUM_DISABLE_PLATFORM=true` there is no platform to serve a verified
+ * With `CADET_DISABLE_PLATFORM=true` there is no platform to serve a verified
  * tarball, so `assistant plugins install <name>` resolves the pin from the
  * bundled marketplace catalog and installs through the trusted GitHub path
  * (`trustedSource`, which preserves the curated adapter stub) — with zero
@@ -104,7 +104,7 @@ async function runInstall(name: string): Promise<void> {
 }
 
 describe("plugins install by name — disable-platform mode", () => {
-  const savedDisable = process.env.VELLUM_DISABLE_PLATFORM;
+  const savedDisable = process.env.CADET_DISABLE_PLATFORM;
   const savedIsPlatform = process.env.IS_PLATFORM;
   const savedExitCode = process.exitCode;
 
@@ -123,9 +123,9 @@ describe("plugins install by name — disable-platform mode", () => {
 
   afterEach(() => {
     if (savedDisable === undefined) {
-      delete process.env.VELLUM_DISABLE_PLATFORM;
+      delete process.env.CADET_DISABLE_PLATFORM;
     } else {
-      process.env.VELLUM_DISABLE_PLATFORM = savedDisable;
+      process.env.CADET_DISABLE_PLATFORM = savedDisable;
     }
     if (savedIsPlatform === undefined) {
       delete process.env.IS_PLATFORM;
@@ -137,7 +137,7 @@ describe("plugins install by name — disable-platform mode", () => {
   });
 
   test("installs a bundled plugin via the trusted GitHub path with no platform call", async () => {
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
     delete process.env.IS_PLATFORM;
 
     await runInstall(BUNDLED_PLUGIN);
@@ -159,7 +159,7 @@ describe("plugins install by name — disable-platform mode", () => {
   });
 
   test("errors clearly for a name absent from the bundled catalog", async () => {
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
     delete process.env.IS_PLATFORM;
     const errSpy = spyOn(console, "error").mockImplementation(() => {});
 
@@ -173,7 +173,7 @@ describe("plugins install by name — disable-platform mode", () => {
   });
 
   test("does not install a feature-gated bundled integration", async () => {
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
     delete process.env.IS_PLATFORM;
 
     await runInstall("gamma");
@@ -184,7 +184,7 @@ describe("plugins install by name — disable-platform mode", () => {
   });
 
   test("uses the platform install endpoint when platform features are enabled", async () => {
-    delete process.env.VELLUM_DISABLE_PLATFORM;
+    delete process.env.CADET_DISABLE_PLATFORM;
     delete process.env.IS_PLATFORM;
 
     await runInstall(BUNDLED_PLUGIN);
@@ -196,7 +196,7 @@ describe("plugins install by name — disable-platform mode", () => {
   });
 
   test("does not install a name absent from a successful platform catalog", async () => {
-    delete process.env.VELLUM_DISABLE_PLATFORM;
+    delete process.env.CADET_DISABLE_PLATFORM;
     delete process.env.IS_PLATFORM;
     const errSpy = spyOn(console, "error").mockImplementation(() => {});
 
@@ -211,7 +211,7 @@ describe("plugins install by name — disable-platform mode", () => {
   });
 
   test("installs a platform-visible local package without the platform tar endpoint", async () => {
-    delete process.env.VELLUM_DISABLE_PLATFORM;
+    delete process.env.CADET_DISABLE_PLATFORM;
     delete process.env.IS_PLATFORM;
     platformCatalogSource = {
       kind: "local",

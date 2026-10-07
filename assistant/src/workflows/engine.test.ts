@@ -35,7 +35,7 @@ async function waitUntil(predicate: () => boolean): Promise<void> {
   throw new Error("Timed out waiting for condition");
 }
 
-const TRUST: TrustContext = { sourceChannel: "vellum", trustClass: "guardian" };
+const TRUST: TrustContext = { sourceChannel: "cadet", trustClass: "guardian" };
 
 const CAPABILITIES: ResolvedCapabilities = {
   tools: [],
@@ -961,15 +961,15 @@ describe("executeWorkflow — nested workflow()", () => {
   beforeEach(() => {
     resetTables();
     workspaceDir = mkdtempSync(join(tmpdir(), "wf-nest-"));
-    prevOverride = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    prevOverride = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
   });
 
   afterEach(() => {
     if (prevOverride === undefined) {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     } else {
-      process.env.VELLUM_WORKSPACE_DIR = prevOverride;
+      process.env.CADET_WORKSPACE_DIR = prevOverride;
     }
     rmSync(workspaceDir, { recursive: true, force: true });
   });

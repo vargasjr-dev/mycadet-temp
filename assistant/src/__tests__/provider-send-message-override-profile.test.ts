@@ -270,7 +270,7 @@ describe("SendMessageOptions.config.overrideProfile", () => {
       defaultProvider,
       async (connectionName) =>
         connectionName === "openai-conn" ? altProvider : null,
-      { connectionName: "vellum", isManagedRoute: true },
+      { connectionName: "cadet", isManagedRoute: true },
     );
 
     await expect(

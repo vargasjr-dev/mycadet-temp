@@ -25,7 +25,7 @@ import {
 
 const ROOT = join(
   tmpdir(),
-  `vellum-external-plugin-loader-test-${process.pid}-${Date.now()}`,
+  `cadet-external-plugin-loader-test-${process.pid}-${Date.now()}`,
 );
 
 function freshPluginDir(name: string): string {

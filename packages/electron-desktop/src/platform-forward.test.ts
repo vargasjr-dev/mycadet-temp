@@ -9,8 +9,8 @@ import {
   PROXY_NETWORK_ERROR_CODE,
 } from "./platform-forward";
 
-const PLATFORM = "https://platform.vellum.ai";
-const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Vellum-Electron-Renderer-Origin";
+const PLATFORM = "https://cloud.cadet.ai";
+const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
 const request = (
   pathname: string,
@@ -20,7 +20,7 @@ const request = (
     headers?: Record<string, string>;
   } = {},
 ) => ({
-  url: `app://vellum.ai${pathname}`,
+  url: `app://mycadet.ai${pathname}`,
   method: init.method ?? "GET",
   headers: new Headers({
     ...(init.origin !== undefined ? { origin: init.origin } : {}),
@@ -45,7 +45,7 @@ describe("planPlatformForward", () => {
     const plan = planPlatformForward(request("/v1/assistants"), PLATFORM);
     expect(plan.kind).toBe("forward");
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("https://platform.vellum.ai/v1/assistants");
+    expect(plan.url).toBe("https://cloud.cadet.ai/v1/assistants");
     expect(plan.method).toBe("GET");
     expect(plan.hasBody).toBe(false);
   });
@@ -57,14 +57,14 @@ describe("planPlatformForward", () => {
     );
     if (plan.kind !== "forward") throw new Error("expected forward");
     expect(plan.url).toBe(
-      "https://platform.vellum.ai/_allauth/browser/v1/auth/session",
+      "https://cloud.cadet.ai/_allauth/browser/v1/auth/session",
     );
   });
 
   test("forwards /accounts/* requests to platform", () => {
     const plan = planPlatformForward(request("/accounts/login"), PLATFORM);
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("https://platform.vellum.ai/accounts/login");
+    expect(plan.url).toBe("https://cloud.cadet.ai/accounts/login");
   });
 
   test("forwards session-replay /_sr/* requests to platform", () => {
@@ -73,20 +73,20 @@ describe("planPlatformForward", () => {
       PLATFORM,
     );
     if (cdn.kind !== "forward") throw new Error("expected forward");
-    expect(cdn.url).toBe("https://platform.vellum.ai/_sr/cdn/logger.min.js");
+    expect(cdn.url).toBe("https://cloud.cadet.ai/_sr/cdn/logger.min.js");
     expect(cdn.method).toBe("GET");
     expect(cdn.hasBody).toBe(false);
 
     const ingest = planPlatformForward(
       request("/_sr/ingest/i", {
         method: "POST",
-        origin: "app://vellum.ai",
+        origin: "app://mycadet.ai",
       }),
       PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "vellum.ai" } },
+      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
     );
     if (ingest.kind !== "forward") throw new Error("expected forward");
-    expect(ingest.url).toBe("https://platform.vellum.ai/_sr/ingest/i");
+    expect(ingest.url).toBe("https://cloud.cadet.ai/_sr/ingest/i");
     expect(ingest.hasBody).toBe(true);
   });
 
@@ -99,7 +99,7 @@ describe("planPlatformForward", () => {
   test("forwards exact prefix without trailing slash", () => {
     const plan = planPlatformForward(request("/v1"), PLATFORM);
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("https://platform.vellum.ai/v1");
+    expect(plan.url).toBe("https://cloud.cadet.ai/v1");
   });
 
   test("preserves query string on forwarded requests", () => {
@@ -109,36 +109,36 @@ describe("planPlatformForward", () => {
     );
     if (plan.kind !== "forward") throw new Error("expected forward");
     expect(plan.url).toBe(
-      "https://platform.vellum.ai/v1/assistants?page=2&limit=10",
+      "https://cloud.cadet.ai/v1/assistants?page=2&limit=10",
     );
   });
 
   test("rewrites Origin from app:// to platform origin", () => {
     const plan = planPlatformForward(
-      request("/v1/assistants", { origin: "app://vellum.ai" }),
+      request("/v1/assistants", { origin: "app://mycadet.ai" }),
       PLATFORM,
     );
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("origin")).toBe("https://platform.vellum.ai");
+    expect(plan.headers.get("origin")).toBe("https://cloud.cadet.ai");
   });
 
   test("sets a platform Origin even when the renderer sent none", () => {
     const plan = planPlatformForward(request("/v1/assistants"), PLATFORM);
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("origin")).toBe("https://platform.vellum.ai");
+    expect(plan.headers.get("origin")).toBe("https://cloud.cadet.ai");
   });
 
   test("forwards unsafe requests from the trusted app origin", () => {
     const plan = planPlatformForward(
       request("/_allauth/browser/v1/auth/session", {
         method: "POST",
-        origin: "app://vellum.ai",
+        origin: "app://mycadet.ai",
       }),
       PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "vellum.ai" } },
+      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
     );
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("origin")).toBe("https://platform.vellum.ai");
+    expect(plan.headers.get("origin")).toBe("https://cloud.cadet.ai");
   });
 
   test("rejects platform requests with a foreign Origin", () => {
@@ -148,7 +148,7 @@ describe("planPlatformForward", () => {
         origin: "https://evil.example",
       }),
       PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "vellum.ai" } },
+      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
     );
 
     expect(plan).toEqual({
@@ -165,7 +165,7 @@ describe("planPlatformForward", () => {
         headers: { referer: "https://evil.example/form" },
       }),
       PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "vellum.ai" } },
+      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
     );
 
     expect(plan.kind).toBe("reject");
@@ -175,14 +175,14 @@ describe("planPlatformForward", () => {
     const plan = planPlatformForward(
       request("/v1/assistants", {
         method: "POST",
-        headers: { [ELECTRON_RENDERER_ORIGIN_HEADER]: "app://vellum.ai" },
+        headers: { [ELECTRON_RENDERER_ORIGIN_HEADER]: "app://mycadet.ai" },
       }),
       PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "vellum.ai" } },
+      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
     );
 
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("origin")).toBe("https://platform.vellum.ai");
+    expect(plan.headers.get("origin")).toBe("https://cloud.cadet.ai");
     expect(plan.headers.get(ELECTRON_RENDERER_ORIGIN_HEADER)).toBeNull();
   });
 
@@ -193,7 +193,7 @@ describe("planPlatformForward", () => {
         headers: { "sec-fetch-site": "same-origin" },
       }),
       PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "vellum.ai" } },
+      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
     );
 
     if (plan.kind !== "forward") throw new Error("expected forward");
@@ -206,7 +206,7 @@ describe("planPlatformForward", () => {
         headers: { "sec-fetch-site": "cross-site" },
       }),
       PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "vellum.ai" } },
+      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
     );
 
     expect(plan.kind).toBe("reject");
@@ -216,7 +216,7 @@ describe("planPlatformForward", () => {
     const plan = planPlatformForward(
       request("/v1/assistants", { method: "POST" }),
       PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "vellum.ai" } },
+      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
     );
 
     expect(plan.kind).toBe("reject");
@@ -228,11 +228,11 @@ describe("planPlatformForward", () => {
         url: "app://evil.example/v1/assistants",
         method: "POST",
         headers: new Headers({
-          [ELECTRON_RENDERER_ORIGIN_HEADER]: "app://vellum.ai",
+          [ELECTRON_RENDERER_ORIGIN_HEADER]: "app://mycadet.ai",
         }),
       },
       PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "vellum.ai" } },
+      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
     );
 
     expect(plan.kind).toBe("reject");
@@ -242,7 +242,7 @@ describe("planPlatformForward", () => {
     const plan = planPlatformForward(
       request("/v1/assistants", { method: "GET" }),
       PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "vellum.ai" } },
+      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
     );
 
     expect(plan.kind).toBe("forward");
@@ -252,7 +252,7 @@ describe("planPlatformForward", () => {
     const plan = planPlatformForward(
       request("/_allauth/browser/v1/auth/session", {
         method: "POST",
-        origin: "app://vellum.ai",
+        origin: "app://mycadet.ai",
         headers: {
           authorization: "Bearer api-token",
           "content-type": "application/json",
@@ -289,12 +289,12 @@ describe("planPlatformForward", () => {
   test("works with custom platform URL (staging)", () => {
     const plan = planPlatformForward(
       request("/v1/assistants"),
-      "https://staging-platform.vellum.ai",
+      "https://staging-cloud.cadet.ai",
     );
     if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("https://staging-platform.vellum.ai/v1/assistants");
+    expect(plan.url).toBe("https://staging-cloud.cadet.ai/v1/assistants");
     expect(plan.headers.get("origin")).toBe(
-      "https://staging-platform.vellum.ai",
+      "https://staging-cloud.cadet.ai",
     );
   });
 

@@ -46,13 +46,13 @@ export { findWebDistDir } from "./web-dist.js";
 
 export const DEFAULT_NGINX_INGRESS_PORT = 7840;
 
-/** Listen port for nginx ingress, from VELLUM_NGINX_INGRESS_PORT. */
+/** Listen port for nginx ingress, from CADET_NGINX_INGRESS_PORT. */
 export function getNginxIngressPort(): number {
-  const raw = process.env.VELLUM_NGINX_INGRESS_PORT;
+  const raw = process.env.CADET_NGINX_INGRESS_PORT;
   if (!raw) return DEFAULT_NGINX_INGRESS_PORT;
   const value = Number(raw);
   if (!Number.isInteger(value) || value < 1 || value > 65535) {
-    throw new Error("VELLUM_NGINX_INGRESS_PORT must be a valid TCP port");
+    throw new Error("CADET_NGINX_INGRESS_PORT must be a valid TCP port");
   }
   return value;
 }
@@ -96,8 +96,8 @@ function gatewayProxyBlock(gatewayPort: number): string {
       proxy_buffering off;
       proxy_read_timeout 1h;
       proxy_set_header Host $host;
-      proxy_set_header X-Vellum-Edge-Forwarded "1";
-      proxy_set_header X-Vellum-Client-Ip $vellum_edge_client_ip;
+      proxy_set_header X-Cadet-Edge-Forwarded "1";
+      proxy_set_header X-Cadet-Client-Ip $cadet_edge_client_ip;
       proxy_set_header Upgrade $http_upgrade;
       proxy_set_header Connection $connection_upgrade;`;
 }
@@ -349,16 +349,16 @@ http {
   }
 
   # Edge-observed client address, stamped onto every proxied request as
-  # X-Vellum-Client-Ip. proxy_set_header overwrites any inbound value, so a
+  # X-Cadet-Client-Ip. proxy_set_header overwrites any inbound value, so a
   # remote client cannot smuggle one. Every caller reaches this loopback-only
   # listener through the TLS-terminating front (tunnel agent), so the raw peer
   # is always 127.0.0.1; the front records the real client as the RIGHTMOST
   # X-Forwarded-For entry (ngrok/cloudflared append, tailscale serve sets it),
   # which the remote client cannot control. Fall back to the raw peer when the
   # front sets no X-Forwarded-For.
-  map $http_x_forwarded_for $vellum_edge_client_ip {
+  map $http_x_forwarded_for $cadet_edge_client_ip {
     default $remote_addr;
-    "~,?\\s*(?<vellum_last_xff>[^,\\s]+)\\s*$" $vellum_last_xff;
+    "~,?\\s*(?<cadet_last_xff>[^,\\s]+)\\s*$" $cadet_last_xff;
   }
 
   server {
@@ -484,9 +484,9 @@ export function getNginxVersion(): string | null {
 
 /*
  * PID handling is deliberately self-contained rather than reusing the
- * process.ts helpers: stopProcessByPidFile's isVellumProcess() guard only
+ * process.ts helpers: stopProcessByPidFile's isCadetProcess() guard only
  * matches command lines containing a cadet path, which fails for a custom
- * VELLUM_WORKSPACE_DIR and would silently leave nginx running (the same
+ * CADET_WORKSPACE_DIR and would silently leave nginx running (the same
  * reason local.ts kills ngrok directly). This module is also imported by
  * sleep/retire, whose tests mock.module() process.js process-globally —
  * depending on it here would couple this lib's behavior to those mocks.
@@ -1154,7 +1154,7 @@ export async function ensureTunnelEdge(opts: {
         `nginx edge exited on startup, most likely because 127.0.0.1:${result.listenPort} ` +
           "is already in use (for example by another assistant's tunnel edge). " +
           "Stop whatever is bound to that port, or pick a different edge port by " +
-          "setting the VELLUM_NGINX_INGRESS_PORT environment variable, then retry. " +
+          "setting the CADET_NGINX_INGRESS_PORT environment variable, then retry. " +
           `Check the nginx log: ${result.logPath}`,
       );
   }

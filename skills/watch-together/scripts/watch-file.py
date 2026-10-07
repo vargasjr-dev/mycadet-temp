@@ -356,7 +356,7 @@ def main():
     subs = load_subtitles(media, session_dir)
 
     if os.name == "nt":
-        ipc_endpoint = rf"\\.\pipe\vellum-watch-{os.getpid()}"
+        ipc_endpoint = rf"\\.\pipe\cadet-watch-{os.getpid()}"
     else:
         ipc_endpoint = session_dir / "mpv.sock"
         ipc_endpoint.unlink(missing_ok=True)

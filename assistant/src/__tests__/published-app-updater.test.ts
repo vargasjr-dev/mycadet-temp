@@ -112,7 +112,7 @@ describe("updatePublishedAppDeployment", () => {
     mockApp = makeApp({ formatVersion: 2 });
     mockEffectiveHtml = "<p>App compilation failed.</p>";
     // A nonexistent app dir → dist/index.html is absent.
-    mockAppDir = "/tmp/__vellum_test_nonexistent__/app-1";
+    mockAppDir = "/tmp/__cadet_test_nonexistent__/app-1";
 
     await updatePublishedAppDeployment("app-1");
 

@@ -191,7 +191,7 @@ describe("document write routes publish documents:list", () => {
           content: "hello world",
           wordCount: 2,
         },
-        headers: { "x-vellum-client-id": "client-abc" },
+        headers: { "x-cadet-client-id": "client-abc" },
       }),
     );
 
@@ -207,7 +207,7 @@ describe("document write routes publish documents:list", () => {
     const events = await captureSyncEvents(() =>
       invoke("createDocument", {
         body: { conversationId: CONVERSATION_ID },
-        headers: { "x-vellum-client-id": "client-abc" },
+        headers: { "x-cadet-client-id": "client-abc" },
       }),
     );
 
@@ -237,7 +237,7 @@ describe("document write routes publish documents:list", () => {
       invoke("linkDocumentConversation", {
         pathParams: { id: "doc-sync" },
         body: { conversationId: OTHER_CONVERSATION_ID },
-        headers: { "x-vellum-client-id": "client-abc" },
+        headers: { "x-cadet-client-id": "client-abc" },
       }),
     );
 

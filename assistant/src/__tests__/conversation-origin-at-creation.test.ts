@@ -40,9 +40,9 @@ beforeEach(() => {
 
 describe("stating the origin at creation", () => {
   test("stamps a native conversation", () => {
-    const conv = createConversation({ title: "in-app", origin: "vellum" });
+    const conv = createConversation({ title: "in-app", origin: "cadet" });
 
-    expect(rawOriginChannel(conv.id)).toBe("vellum");
+    expect(rawOriginChannel(conv.id)).toBe("cadet");
   });
 
   test("stamps an external channel", () => {
@@ -73,14 +73,14 @@ describe("inheriting the origin from a parent", () => {
   });
 
   test("inheriting from a native parent stays native", () => {
-    const parent = createConversation({ title: "parent", origin: "vellum" });
+    const parent = createConversation({ title: "parent", origin: "cadet" });
 
     const fork = createConversation({
       title: "fork",
       origin: { inheritFrom: parent.id },
     });
 
-    expect(rawOriginChannel(fork.id)).toBe("vellum");
+    expect(rawOriginChannel(fork.id)).toBe("cadet");
   });
 
   test("a parent whose own origin is unset yields an unset origin", () => {
@@ -120,7 +120,7 @@ describe("inheriting the origin from a parent", () => {
       origin: { inheritFrom: parent.id },
     });
 
-    expect(rawOriginChannel(fork.id)).not.toBe("vellum");
+    expect(rawOriginChannel(fork.id)).not.toBe("cadet");
     expect(rawOriginChannel(fork.id)).toBe("slack");
   });
 });

@@ -2,7 +2,7 @@
 
 /**
  * Local JSON caching for Slack channel and user resolution.
- * Caches are stored under $VELLUM_WORKSPACE_DIR/data/slack-skill/.
+ * Caches are stored under $CADET_WORKSPACE_DIR/data/slack-skill/.
  */
 
 import { homedir } from "node:os";
@@ -11,7 +11,7 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { slackRequest } from "./slack-client.js";
 
 const CACHE_DIR = join(
-  process.env.VELLUM_WORKSPACE_DIR ?? join(homedir(), ".vellum", "workspace"),
+  process.env.CADET_WORKSPACE_DIR ?? join(homedir(), ".cadet", "workspace"),
   "data",
   "slack-skill",
 );

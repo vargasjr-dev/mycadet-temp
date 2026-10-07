@@ -11,7 +11,7 @@
  *   - activation-recompute: walks conversations with rows, runs the pipeline
  *     end-to-end against the real activation module, persists fresh state.
  *
- * Tests use temp workspaces (mkdtemp) — never `~/.vellum/`. Sample content
+ * Tests use temp workspaces (mkdtemp) — never `~/.cadet/`. Sample content
  * uses generic placeholders (Alice, Bob, user@example.com).
  */
 
@@ -83,7 +83,7 @@ mock.module("../migration.js", () => ({
 // `qdrant.ts#ensureConceptPageCollection` reads its vector size via
 // `getConfig().memory.qdrant.vectorSize`, and the activation pipeline reads the
 // `memory.v2` tuning knobs. Seed the exact block below into the test workspace
-// (in `beforeAll`, after `VELLUM_WORKSPACE_DIR` is overridden).
+// (in `beforeAll`, after `CADET_WORKSPACE_DIR` is overridden).
 const SEEDED_MEMORY_CONFIG = {
   qdrant: {
     url: "http://127.0.0.1:6333",
@@ -179,16 +179,16 @@ beforeAll(() => {
   mkdirSync(join(tmpWorkspace, "memory", "concepts"), { recursive: true });
   mkdirSync(join(tmpWorkspace, "memory", "archive"), { recursive: true });
   mkdirSync(join(tmpWorkspace, "memory", ".v2-state"), { recursive: true });
-  previousWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = tmpWorkspace;
+  previousWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = tmpWorkspace;
   setConfig("memory", SEEDED_MEMORY_CONFIG);
 });
 
 afterAll(() => {
   if (previousWorkspaceEnv === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceEnv;
+    process.env.CADET_WORKSPACE_DIR = previousWorkspaceEnv;
   }
   rmSync(tmpWorkspace, { recursive: true, force: true });
 });

@@ -71,7 +71,7 @@ describe("deriveOrigin", () => {
   test("tags a user plugin with its name", () => {
     expect(
       deriveOrigin(
-        "bun --smol run /home/u/.vellum/workspace/plugins/cognee/server.ts",
+        "bun --smol run /home/u/.cadet/workspace/plugins/cognee/server.ts",
       ),
     ).toBe("plugin:cognee");
   });
@@ -101,7 +101,7 @@ describe("deriveOrigin", () => {
   test("does not match the plugins-data state directory", () => {
     expect(
       deriveOrigin(
-        "bun run /home/u/.vellum/workspace/plugins-data/foo/index.ts",
+        "bun run /home/u/.cadet/workspace/plugins-data/foo/index.ts",
       ),
     ).toBe("workspace");
   });

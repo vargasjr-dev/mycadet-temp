@@ -244,7 +244,7 @@ describe("POST /v1/conversations/summarize", () => {
           beforeMessageId: "msg-42",
         },
         // A real initiating client id — the card must still surface here.
-        { "X-Vellum-Client-Id": "web-client-xyz" },
+        { "X-Cadet-Client-Id": "web-client-xyz" },
       ),
       undefined,
       202,
@@ -288,8 +288,8 @@ describe("POST /v1/conversations/summarize", () => {
     // interface keys are omitted because the route receives no interface id.
     expect(options?.metadata).toEqual({
       provenanceTrustClass: "unknown",
-      userMessageChannel: "vellum",
-      assistantMessageChannel: "vellum",
+      userMessageChannel: "cadet",
+      assistantMessageChannel: "cadet",
       messageKind: "system_card",
     });
     expect(ctx.messages).toHaveLength(1);
@@ -310,7 +310,7 @@ describe("POST /v1/conversations/summarize", () => {
       "persisted-assistant-id",
     );
     // The card's messages-changed invalidation carries no origin client id
-    // despite the request's `X-Vellum-Client-Id`: the origin materializes the
+    // despite the request's `X-Cadet-Client-Id`: the origin materializes the
     // bodyless-`message_complete` card only by refetching, so suppressing its
     // own invalidation would hide the card until a reload.
     expect(publishConversationMessagesChangedMock).toHaveBeenCalledTimes(1);

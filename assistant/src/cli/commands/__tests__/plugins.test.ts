@@ -273,7 +273,7 @@ function runCommand(args: string[]): Promise<CliCommandRunResult> {
   return runCliCommand(registerPluginsCommand, args);
 }
 
-const savedDisablePlatform = process.env.VELLUM_DISABLE_PLATFORM;
+const savedDisablePlatform = process.env.CADET_DISABLE_PLATFORM;
 const savedIsPlatform = process.env.IS_PLATFORM;
 
 beforeEach(() => {
@@ -293,7 +293,7 @@ beforeEach(() => {
   installTarget = null;
   // Platform features on by default, so a plain name install takes the
   // platform-tarball branch.
-  delete process.env.VELLUM_DISABLE_PLATFORM;
+  delete process.env.CADET_DISABLE_PLATFORM;
   delete process.env.IS_PLATFORM;
 });
 
@@ -303,9 +303,9 @@ afterEach(() => {
   }
   installTargetDirs.length = 0;
   if (savedDisablePlatform === undefined) {
-    delete process.env.VELLUM_DISABLE_PLATFORM;
+    delete process.env.CADET_DISABLE_PLATFORM;
   } else {
-    process.env.VELLUM_DISABLE_PLATFORM = savedDisablePlatform;
+    process.env.CADET_DISABLE_PLATFORM = savedDisablePlatform;
   }
   if (savedIsPlatform === undefined) {
     delete process.env.IS_PLATFORM;
@@ -451,7 +451,7 @@ describe("plugins install - declared-schedules consent", () => {
   });
 
   test("a bundled-catalog install (platform disabled) is gated too", async () => {
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
     stageFixture = writeScheduleFixture;
     confirmResults = ["confirmed"];
 
@@ -637,8 +637,8 @@ describe("plugins upgrade - declared-schedules consent (local fallback)", () => 
     // plus a newly declared one.
     const workspaceDir = mkdtempSync(join(tmpdir(), "plugins-cmd-ws-"));
     const upgradedDir = mkdtempSync(join(tmpdir(), "plugins-cmd-upgraded-"));
-    const savedWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    const savedWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
     try {
       const installedDir = join(workspaceDir, "plugins", "example");
       stageSchedule("daily-report", "0 9 * * *")(installedDir);
@@ -669,9 +669,9 @@ describe("plugins upgrade - declared-schedules consent (local fallback)", () => 
       expect(r.exitCode).toBe(0);
     } finally {
       if (savedWorkspaceDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = savedWorkspaceDir;
+        process.env.CADET_WORKSPACE_DIR = savedWorkspaceDir;
       }
       rmSync(workspaceDir, { recursive: true, force: true });
       rmSync(upgradedDir, { recursive: true, force: true });

@@ -101,7 +101,7 @@ export async function handleOAuthProxyGrant({
   // same subject and profile; the daemon middleware also accepts this audience
   // directly.
   const token = mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub: proxyGrantSubject(provider, pinnedAccount ?? undefined),
     scope_profile: "oauth_proxy_v1",
     policy_epoch: CURRENT_POLICY_EPOCH,

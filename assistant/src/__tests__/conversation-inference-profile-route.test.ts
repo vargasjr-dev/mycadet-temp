@@ -31,12 +31,12 @@ import { waitFor } from "./helpers/wait-for.js";
 
 await initializeDb();
 
-// The Vellum-managed connection row the managed presets resolve to.
+// The Cadet-managed connection row the managed presets resolve to.
 getDb()
   .insert(providerConnections)
   .values({
-    name: "vellum",
-    provider: "vellum",
+    name: "cadet",
+    provider: "cadet",
     auth: JSON.stringify({ type: "platform" }),
     createdAt: Date.now(),
     updatedAt: Date.now(),

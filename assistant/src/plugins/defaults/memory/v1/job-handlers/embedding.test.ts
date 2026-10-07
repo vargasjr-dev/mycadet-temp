@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-const testDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testDir = process.env.CADET_WORKSPACE_DIR!;
 
 // Track calls to embedAndUpsert
 const embedAndUpsertCalls: Array<{

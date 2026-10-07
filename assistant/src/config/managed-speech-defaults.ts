@@ -80,7 +80,7 @@ async function ttsByokCredentialsResolve(provider: string): Promise<boolean> {
  * did not resolve.
  *
  * Managed speech has two STT entries, and they are not interchangeable:
- * `vellum-flux` decides end-of-turn itself, `vellum` leaves it to the
+ * `cadet-flux` decides end-of-turn itself, `cadet` leaves it to the
  * session's silence timer. Substituting the plain one for a provider that had
  * provider turn detection would keep live voice working while quietly
  * changing how it takes turns, which reads as "Flux is no better" rather than
@@ -158,7 +158,7 @@ export async function resolveEffectiveSpeechProviders(
  * cannot ask for it: the provider picker offers no model family, so `cadet`
  * is as specific as they can be. Deciding it here rather than persisting a
  * `services.stt.roles.liveVoice` entry keeps managed opinionated without
- * writing config on anyone's behalf, and reaches installs already on `vellum`
+ * writing config on anyone's behalf, and reaches installs already on `cadet`
  * that a substitution rule never sees.
  *
  * Two things still win over it. A family the user named is honoured, because
@@ -188,7 +188,7 @@ function managedLiveVoiceModelFamily(
  * Whether a provider can serve every consumer, or only the one that chose it.
  *
  * `cadet` covers every boundary, so substituting it is safe everywhere. A
- * narrowing row like `vellum-flux` streams and nothing else, and the roles it
+ * narrowing row like `cadet-flux` streams and nothing else, and the roles it
  * fails are exactly the consumers that must not be moved onto it.
  */
 function servesEveryRole(provider: SttProviderId): boolean {
@@ -204,7 +204,7 @@ function servesEveryRole(provider: SttProviderId): boolean {
  * The family is always written, including the base one. Substituting away
  * from a variant leaves its `model` behind otherwise, and the next load
  * resolves straight back to the variant this substitution just rejected: the
- * provider would read as plain vellum while running Flux, with batch and
+ * provider would read as plain cadet while running Flux, with batch and
  * telephony quietly unavailable. A provider with no families has no name to
  * write, and no variant to have left a stale value behind either.
  */
@@ -288,7 +288,7 @@ export async function maybeDefaultSpeechToManaged(): Promise<void> {
     invalidateConfigCache();
     log.info(
       { defaulted: updates.map(({ path }) => path) },
-      "Defaulted unconfigured speech services to the Vellum provider after connection",
+      "Defaulted unconfigured speech services to the Cadet provider after connection",
     );
   } catch (err) {
     // Convenience defaulting must never break credential storage.

@@ -47,7 +47,7 @@ export interface TurnEvent {
   interfaceId: string | null;
   /**
    * Canonical `ChannelId` enum value identifying the messaging fabric the
-   * user message arrived on (`"vellum"` for in-app messaging from
+   * user message arrived on (`"cadet"` for in-app messaging from
    * macos/ios/web/cli; `"slack"`/`"telegram"`/`"whatsapp"`/`"email"`/
    * `"phone"` for channel-based interfaces). Sourced from
    * `messages.metadata.userMessageChannel`.

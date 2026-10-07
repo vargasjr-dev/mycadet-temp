@@ -131,7 +131,7 @@ function runLoop(provider: Provider, callSite: LLMCallSite = "mainAgent") {
       onEvent: (event) => {
         events.push(event);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     })
     .then((result) => ({ ...result, events }));
 }

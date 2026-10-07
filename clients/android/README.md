@@ -10,11 +10,11 @@ The Android app loads the web UI from the environment-specific web origin:
 
 | Environment  | Server                                          |
 | ------------ | ----------------------------------------------- |
-| `production` | `https://www.vellum.ai/assistant`               |
-| `staging`    | `https://staging-assistant.vellum.ai/assistant` |
-| `dev`        | `https://dev-assistant.vellum.ai/assistant`     |
+| `production` | `https://mycadet.ai/assistant`               |
+| `staging`    | `https://staging.cloud.mycadet.ai/assistant` |
+| `dev`        | `https://dev.cloud.mycadet.ai/assistant`     |
 
-Set `VELLUM_ENVIRONMENT` before `bunx cap sync android` to bake the matching
+Set `CADET_ENVIRONMENT` before `bunx cap sync android` to bake the matching
 URL into `app/src/main/assets/capacitor.config.json`. The default is `dev`.
 No web assets are bundled beyond the placeholder `capacitor-shell/` page.
 
@@ -30,7 +30,7 @@ bun run android:run
 `android:run` syncs the dev configuration, builds `devDebug`, starts or reuses
 a connected device or available emulator, installs the app, and launches it.
 If no emulator exists, the command installs the API 36 system image and creates
-`vellum-api-36`. On macOS it installs missing Android command-line tools through
+`cadet-api-36`. On macOS it installs missing Android command-line tools through
 Homebrew. The first run may prompt you to accept Android SDK licenses.
 Use `bun run android:open` to work in Android Studio or `bun run android:sync`
 when you only need to refresh native generated files.
@@ -43,15 +43,15 @@ hosts.
 
 | Flavor       | Application ID                | Display Name   | Auth Scheme                | Auth Host                     |
 | ------------ | ----------------------------- | -------------- | -------------------------- | ----------------------------- |
-| `production` | `ai.vellum.assistant`         | Vellum         | `vellum-assistant`         | `www.vellum.ai`               |
-| `staging`    | `ai.vellum.assistant.staging` | Vellum Staging | `vellum-assistant-staging` | `staging-assistant.vellum.ai` |
-| `dev`        | `ai.vellum.assistant.dev`     | Vellum Dev     | `vellum-assistant-dev`     | `dev-assistant.vellum.ai`     |
+| `production` | `ai.mycadet.assistant`         | Cadet         | `mycadet`         | `mycadet.ai`               |
+| `staging`    | `ai.mycadet.assistant.staging` | Cadet Staging | `mycadet-staging` | `staging.cloud.mycadet.ai` |
+| `dev`        | `ai.mycadet.assistant.dev`     | Cadet Dev     | `mycadet-dev`     | `dev.cloud.mycadet.ai`     |
 
 For local development, pick the `devDebug` variant in Android Studio. If you
-sync a different `VELLUM_ENVIRONMENT`, build the matching flavor so the WebView
+sync a different `CADET_ENVIRONMENT`, build the matching flavor so the WebView
 origin and native auth host agree.
 
-The launch screen uses a centered white Vellum wordmark on black. The Android
+The launch screen uses a centered white Cadet wordmark on black. The Android
 12 system splash stays visible until the native loading overlay is attached.
 Both surfaces share the same drawable and colors. Android 11 and older skip the
 OS preview window so the native overlay is the first app frame.
@@ -228,7 +228,7 @@ Launcher behavior is physical-device territory; an emulator does not cover it.
 - Turn on themed icons on Android 13 or newer and confirm every alternate draws
   its sclera silhouette rather than a blank tile or a filled square.
 - Set an icon, force-stop the app before it reaches the background
-  (`adb shell am force-stop ai.vellum.assistant.dev`), and relaunch. `load()`
+  (`adb shell am force-stop ai.mycadet.assistant.dev`), and relaunch. `load()`
   applies the recorded target.
 - Install on an API 24 or 25 device and confirm the App icon row does not
   render.
@@ -245,8 +245,8 @@ Other paths stay in the browser. Incoming links navigate the existing WebView
 with their query string and fragment intact.
 
 A shell paired to a self-hosted assistant keeps its current server when a
-Vellum Cloud App Link arrives. App Links do not interrupt pairing or switch a
-self-hosted WebView to Vellum Cloud.
+Cadet Cloud App Link arrives. App Links do not interrupt pairing or switch a
+self-hosted WebView to Cadet Cloud.
 
 Android verifies a claim only after the matching host serves
 `/.well-known/assetlinks.json` with HTTP 200, `application/json`, and no
@@ -262,10 +262,10 @@ After the Digital Asset Links file is deployed, install the matching build on
 a physical device and check verification with:
 
 ```bash
-adb shell pm get-app-links ai.vellum.assistant
+adb shell pm get-app-links ai.mycadet.assistant
 adb shell am start -a android.intent.action.VIEW \
   -c android.intent.category.BROWSABLE \
-  -d 'https://www.vellum.ai/assistant/conversations/conv-xyz?message=message-123#reply'
+  -d 'https://mycadet.ai/assistant/conversations/conv-xyz?message=message-123#reply'
 ```
 
 Use the suffixed application ID and matching host when checking staging or dev.
@@ -293,7 +293,7 @@ returns a platform session token to the web app. The web app installs the
 session cookie and navigates to the requested destination.
 
 The plugin rejects auth attempts whose `baseURL` host does not match the
-current Gradle flavor's `vellum_auth_host` resource. This mirrors the iOS
+current Gradle flavor's `cadet_auth_host` resource. This mirrors the iOS
 target-level host guard and prevents a non-production shell from driving
 production SSO.
 
@@ -302,7 +302,7 @@ production SSO.
 Android accepts environment-specific connect links in this form:
 
 ```text
-vellum-assistant-dev://connect?url=https%3A%2F%2Fassistant.example.com&code=device-code
+mycadet-dev://connect?url=https%3A%2F%2Fassistant.example.com&code=device-code
 ```
 
 The production and staging builds use their matching auth schemes from the
@@ -341,7 +341,7 @@ Capacitor plugin exposes the list to it and handles switch and forget
 activity so Capacitor starts on a configuration rebuilt around the new
 `server.url`; that configuration loads `<base>/assistant`, so a hosting path
 prefix survives the ingress redirect that would otherwise drop it. Forgetting
-the active server returns the shell to Vellum Cloud the same way.
+the active server returns the shell to Cadet Cloud the same way.
 
 If Android terminates the app before the pairing page loads, scan the connect
 link again. The shell intentionally does not save the one-time code for process
@@ -350,7 +350,7 @@ restoration.
 If a saved or newly scanned server cannot load, whether the connection is
 refused outright or a tunnel provider answers on the server's behalf with its
 own error page, the native recovery dialog offers Retry or Choose Assistant.
-Choose Assistant clears the active slot and recreates onto the Vellum Cloud
+Choose Assistant clears the active slot and recreates onto the Cadet Cloud
 chooser, which lists every remembered server including the one that just
 failed. A failed new server is never promoted over the last server that loaded
 successfully.
@@ -406,7 +406,7 @@ flavor, so side-by-side installations cannot receive one another's shortcuts.
 The only registered Google Assistant App Action is the official
 `OPEN_APP_FEATURE` built-in intent, with New chat and Voice mode as its inline
 inventory. Android has no supported built-in intent whose semantics match
-asking Vellum a free-form question or managing a live voice session, so those
+asking Cadet a free-form question or managing a live voice session, so those
 Assistant surfaces are intentionally not advertised.
 
 Physical-device validation is still required for Android 16 promotion,
@@ -416,7 +416,7 @@ voice launches.
 
 ## Native notifications
 
-Android registers FCM on the `vellum-alerts` channel and handles pushes and
+Android registers FCM on the `cadet-alerts` channel and handles pushes and
 taps. FCM needs Play services and an untracked `google-services.json`;
 failures retry on resume.
 
@@ -467,7 +467,7 @@ Only a native process restart clears the bounded coordinator memory.
 `NativePushRenderer` posts the native notification. With a sender it is a
 `MessagingStyle` conversation: the avatar is the large icon, the assistant's
 name is the message line, and the conversation title is the header. Without a
-sender it matches what Firebase would have rendered. `vellum-alerts` is the only
+sender it matches what Firebase would have rendered. `cadet-alerts` is the only
 channel a payload may name: it is created if it is missing, because from API 26
 posting to a channel that does not exist is a silent no-op, and any other name
 posts here anyway and is logged once. Existing is not enough, since the voice
@@ -536,7 +536,7 @@ gates. Verify:
 - A push arriving while a self-hosted origin is configured posts its banner and
   publishes no launcher shortcut.
 - On API 24 or 25 the notification plays the default sound.
-- A push naming an unknown channel still arrives, on `vellum-alerts`.
+- A push naming an unknown channel still arrives, on `cadet-alerts`.
 - Focused delivery suppresses both FCM-first and SSE-first orders while the
   matching conversation route is visible, without losing the original SSE
   acknowledgment id.
@@ -558,7 +558,7 @@ clients/
     │   ├── build.gradle          # Product flavors and Capacitor app module
     │   └── src/main/
     │       ├── AndroidManifest.xml
-    │       ├── java/ai/vellum/assistant/
+    │       ├── java/ai/cadet/assistant/
     │       │   ├── Attribution.java
     │       │   ├── ConnectDeepLink.java
     │       │   ├── InstallReferrerPlugin.java
@@ -575,7 +575,7 @@ clients/
     │       │   ├── VoiceModeService.java
     │       │   ├── VoiceQuickSettingsTileService.java
     │       │   └── WorkOSAuth.java
-    │       └── res/              # Vellum icon, splash, colors, file paths
+    │       └── res/              # Cadet icon, splash, colors, file paths
     ├── build.gradle
     ├── settings.gradle
     └── variables.gradle
@@ -594,7 +594,7 @@ bun run android:run
 
 ```bash
 cd clients/web
-VELLUM_ENVIRONMENT=dev bun run android:sync
+CADET_ENVIRONMENT=dev bun run android:sync
 ```
 
 ### Build From the Command Line
@@ -613,13 +613,13 @@ environment variables:
 
 | Input                              | Purpose                                              |
 | ---------------------------------- | ---------------------------------------------------- |
-| `VELLUM_ANDROID_VERSION_CODE`      | Positive, monotonically increasing Play build number |
-| `VELLUM_ANDROID_VERSION_NAME`      | User-visible version, such as `1.2.3`                |
-| `VELLUM_ANDROID_KEYSTORE_PATH`     | Path to the upload keystore                          |
-| `VELLUM_ANDROID_KEYSTORE_PASSWORD` | Upload keystore password                             |
-| `VELLUM_ANDROID_KEY_ALIAS`         | Upload key alias                                     |
-| `VELLUM_ANDROID_KEY_PASSWORD`      | Upload key password                                  |
-| `VELLUM_ANDROID_REQUIRE_SIGNING`   | Set to `true` to reject an unsigned bundle           |
+| `CADET_ANDROID_VERSION_CODE`      | Positive, monotonically increasing Play build number |
+| `CADET_ANDROID_VERSION_NAME`      | User-visible version, such as `1.2.3`                |
+| `CADET_ANDROID_KEYSTORE_PATH`     | Path to the upload keystore                          |
+| `CADET_ANDROID_KEYSTORE_PASSWORD` | Upload keystore password                             |
+| `CADET_ANDROID_KEY_ALIAS`         | Upload key alias                                     |
+| `CADET_ANDROID_KEY_PASSWORD`      | Upload key password                                  |
+| `CADET_ANDROID_REQUIRE_SIGNING`   | Set to `true` to reject an unsigned bundle           |
 
 Local debug builds and CI do not need signing credentials. A release build is
 unsigned when no signing input is supplied. Supplying only part of the signing
@@ -688,16 +688,16 @@ Complete the following setup before enabling Google Play publishing:
 
 1. Apply the platform Terraform stacks that enable the Android Publisher API
    in the dev, staging, and production GCP projects.
-2. Create Play Console apps for `ai.vellum.assistant`,
-   `ai.vellum.assistant.staging`, and
-   `ai.vellum.assistant.dev`.
+2. Create Play Console apps for `ai.mycadet.assistant`,
+   `ai.mycadet.assistant.staging`, and
+   `ai.mycadet.assistant.dev`.
 3. Enable Play App Signing for each app and create one controlled upload key.
 4. Upload and roll out one signed AAB to each app's internal track manually.
    Google Play requires this initial release before the Publisher API can
    upload a completed release.
 5. In Play Console, grant each environment's `GCP_SERVICE_ACCOUNT` access only
    to its matching app, with **View app information (read-only)** and
-   **Release apps to testing tracks**. For `ai.vellum.assistant`, also grant the
+   **Release apps to testing tracks**. For `ai.mycadet.assistant`, also grant the
    production environment's service account **Release to production, exclude
    devices, and use Play App Signing**.
 6. Configure the repository and environment secrets above.
@@ -714,9 +714,9 @@ Create a separate Firebase Android app in each matching Firebase project:
 
 | GitHub environment | Android package ID            |
 | ------------------ | ----------------------------- |
-| `production`       | `ai.vellum.assistant`         |
-| `staging`          | `ai.vellum.assistant.staging` |
-| `dev`              | `ai.vellum.assistant.dev`     |
+| `production`       | `ai.mycadet.assistant`         |
+| `staging`          | `ai.mycadet.assistant.staging` |
+| `dev`              | `ai.mycadet.assistant.dev`     |
 
 For each app, download its `google-services.json`, encode it without line
 breaks, and save the result as the `ANDROID_FIREBASE_CONFIG_B64` secret on the

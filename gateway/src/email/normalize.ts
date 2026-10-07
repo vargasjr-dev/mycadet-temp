@@ -28,8 +28,8 @@ export interface EmailAttachment {
  * Mailgun multipart → JSON). By the time the payload reaches the
  * gateway it should already be in this canonical shape.
  */
-export interface VellumEmailPayload {
-  /** Sender email address (e.g. "user@vellum.me"). */
+export interface CadetEmailPayload {
+  /** Sender email address (e.g. "user@mycadet.bot"). */
   from: string;
   /** Sender display name (e.g. "Alice Smith"). Optional. */
   fromName?: string;
@@ -77,7 +77,7 @@ export interface NormalizedEmailEvent {
   /** Original recipient address for routing. */
   recipientAddress: string;
   /**
-   * The payload's {@link VellumEmailPayload.senderAuthenticated} signal,
+   * The payload's {@link CadetEmailPayload.senderAuthenticated} signal,
    * forwarded to the trust-verdict downgrade in `handleInbound`. Omitted when
    * the payload carried no boolean value.
    */

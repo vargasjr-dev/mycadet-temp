@@ -16,7 +16,7 @@ let workspaceDir: string;
 function freshWorkspace(): void {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-126-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-126-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 }
@@ -46,7 +46,7 @@ afterEach(() => {
 const SEEDED_BALANCED = {
   source: "managed",
   provider: "fireworks",
-  provider_connection: "vellum",
+  provider_connection: "cadet",
   model: "accounts/fireworks/models/glm-5p2",
   label: "Balanced (Managed)",
   description: "Good balance of quality, cost, and speed",

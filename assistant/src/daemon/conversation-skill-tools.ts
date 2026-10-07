@@ -161,13 +161,13 @@ function loadManifestForSkill(skill: SkillSummary): SkillToolManifest | null {
 }
 
 /**
- * Whether a skill is Vellum-produced for `skill_loaded` telemetry purposes:
+ * Whether a skill is Cadet-produced for `skill_loaded` telemetry purposes:
  * bundled skills always are; managed skills only when their install metadata
  * records a `cadet` origin (legacy version.json installs are inferred as
- * vellum by `readInstallMeta`). All other sources (workspace, extra, plugin)
+ * cadet by `readInstallMeta`). All other sources (workspace, extra, plugin)
  * never emit.
  */
-function isVellumProducedSkill(skill: SkillSummary): boolean {
+function isCadetProducedSkill(skill: SkillSummary): boolean {
   if (skill.source === "bundled") {
     return true;
   }
@@ -178,7 +178,7 @@ function isVellumProducedSkill(skill: SkillSummary): boolean {
 }
 
 /**
- * Record a `skill_loaded` telemetry event for a newly-activated Vellum-produced
+ * Record a `skill_loaded` telemetry event for a newly-activated Cadet-produced
  * skill. Metadata only — never skill output or conversation content.
  * `skill_updated_at` comes from the cached merged catalog (sync accessor —
  * this runs on the hot tool-projection path). Failures are swallowed at
@@ -192,7 +192,7 @@ function recordSkillLoadedTelemetry(
     return;
   }
   try {
-    if (!isVellumProducedSkill(skill)) {
+    if (!isCadetProducedSkill(skill)) {
       return;
     }
     const catalogEntry = getCachedCatalogSync().find((s) => s.id === skill.id);
@@ -213,7 +213,7 @@ function recordSkillLoadedTelemetry(
 /**
  * Stamp `lastUsedAt` (day-debounced) on a newly-loaded managed skill's
  * install metadata. Independent of telemetry consent and the
- * `isVellumProducedSkill` gate — those suppress `origin: "custom"` skills,
+ * `isCadetProducedSkill` gate — those suppress `origin: "custom"` skills,
  * which are exactly the assistant-authored skills the usage-based prune must
  * track. Only managed skills carry install metadata; bundled, workspace, and
  * plugin skills are skipped. Best-effort: the underlying write never throws.

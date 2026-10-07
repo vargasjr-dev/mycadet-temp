@@ -53,7 +53,7 @@ import { BadRequestError } from "../runtime/routes/errors.js";
  */
 let mtimeSeq = 0;
 function seedRawConfig(config: Record<string, unknown>): void {
-  const path = join(process.env.VELLUM_WORKSPACE_DIR!, "config.json");
+  const path = join(process.env.CADET_WORKSPACE_DIR!, "config.json");
   writeFileSync(path, JSON.stringify(config));
   mtimeSeq += 1;
   const stamp = new Date(Date.now() + mtimeSeq);

@@ -17,26 +17,26 @@ import {
   resetDeviceIdCache,
 } from "../util/device-id.js";
 
-const originalVellumEnvironment = process.env.VELLUM_ENVIRONMENT;
+const originalCadetEnvironment = process.env.CADET_ENVIRONMENT;
 const originalXdgConfigHome = process.env.XDG_CONFIG_HOME;
 const originalIsContainerized = process.env.IS_CONTAINERIZED;
-const originalVellumDeviceId = process.env.VELLUM_DEVICE_ID;
+const originalCadetDeviceId = process.env.CADET_DEVICE_ID;
 
 let tempDir: string;
 
 beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), "vellum-device-id-test-"));
-  delete process.env.VELLUM_DEVICE_ID;
+  tempDir = mkdtempSync(join(tmpdir(), "cadet-device-id-test-"));
+  delete process.env.CADET_DEVICE_ID;
   resetDeviceIdCache();
 });
 
 afterEach(() => {
   resetDeviceIdCache();
 
-  if (originalVellumEnvironment == null) {
-    delete process.env.VELLUM_ENVIRONMENT;
+  if (originalCadetEnvironment == null) {
+    delete process.env.CADET_ENVIRONMENT;
   } else {
-    process.env.VELLUM_ENVIRONMENT = originalVellumEnvironment;
+    process.env.CADET_ENVIRONMENT = originalCadetEnvironment;
   }
   if (originalXdgConfigHome == null) {
     delete process.env.XDG_CONFIG_HOME;
@@ -48,10 +48,10 @@ afterEach(() => {
   } else {
     process.env.IS_CONTAINERIZED = originalIsContainerized;
   }
-  if (originalVellumDeviceId == null) {
-    delete process.env.VELLUM_DEVICE_ID;
+  if (originalCadetDeviceId == null) {
+    delete process.env.CADET_DEVICE_ID;
   } else {
-    process.env.VELLUM_DEVICE_ID = originalVellumDeviceId;
+    process.env.CADET_DEVICE_ID = originalCadetDeviceId;
   }
 
   try {
@@ -62,75 +62,75 @@ afterEach(() => {
 });
 
 describe("getDeviceId env-awareness", () => {
-  test("non-prod (dev) writes device.json under $XDG_CONFIG_HOME/vellum-dev", () => {
+  test("non-prod (dev) writes device.json under $XDG_CONFIG_HOME/cadet-dev", () => {
     // Guarantee we're not containerized — the test-preload deletes this,
     // but be defensive.
     delete process.env.IS_CONTAINERIZED;
-    process.env.VELLUM_ENVIRONMENT = "dev";
+    process.env.CADET_ENVIRONMENT = "dev";
     process.env.XDG_CONFIG_HOME = tempDir;
 
     const id = getDeviceId();
     expect(typeof id).toBe("string");
     expect(id.length).toBeGreaterThan(0);
 
-    const expectedPath = join(tempDir, "vellum-dev", "device.json");
+    const expectedPath = join(tempDir, "cadet-dev", "device.json");
     expect(existsSync(expectedPath)).toBe(true);
 
     const parsed = JSON.parse(readFileSync(expectedPath, "utf-8"));
     expect(parsed.deviceId).toBe(id);
   });
 
-  test("staging environment writes under $XDG_CONFIG_HOME/vellum-staging", () => {
+  test("staging environment writes under $XDG_CONFIG_HOME/cadet-staging", () => {
     delete process.env.IS_CONTAINERIZED;
-    process.env.VELLUM_ENVIRONMENT = "staging";
+    process.env.CADET_ENVIRONMENT = "staging";
     process.env.XDG_CONFIG_HOME = tempDir;
 
     getDeviceId();
 
-    const expectedPath = join(tempDir, "vellum-staging", "device.json");
+    const expectedPath = join(tempDir, "cadet-staging", "device.json");
     expect(existsSync(expectedPath)).toBe(true);
   });
 
-  test("unknown environment does NOT write under $XDG_CONFIG_HOME/vellum-<unknown>", () => {
+  test("unknown environment does NOT write under $XDG_CONFIG_HOME/cadet-<unknown>", () => {
     // Unknown env names fall back to the legacy production behavior.
     // We can't assert the exact legacy path without mocking homedir(),
     // but we can assert that the XDG env-scoped dir is NOT created.
     delete process.env.IS_CONTAINERIZED;
-    process.env.VELLUM_ENVIRONMENT = "no-such-env";
+    process.env.CADET_ENVIRONMENT = "no-such-env";
     process.env.XDG_CONFIG_HOME = tempDir;
 
     getDeviceId();
 
-    // No `vellum-no-such-env` directory created under our XDG tempdir.
-    const envScopedPath = join(tempDir, "vellum-no-such-env", "device.json");
+    // No `cadet-no-such-env` directory created under our XDG tempdir.
+    const envScopedPath = join(tempDir, "cadet-no-such-env", "device.json");
     expect(existsSync(envScopedPath)).toBe(false);
-    // Legacy fallback would write under `${homedir()}/.vellum` — not touched.
-    const productionXdgPath = join(tempDir, "vellum", "device.json");
+    // Legacy fallback would write under `${homedir()}/.cadet` — not touched.
+    const productionXdgPath = join(tempDir, "cadet", "device.json");
     expect(existsSync(productionXdgPath)).toBe(false);
   });
 
-  test("production does NOT write under $XDG_CONFIG_HOME/vellum", () => {
-    // Production path is ~/.vellum/device.json, never XDG_CONFIG_HOME.
+  test("production does NOT write under $XDG_CONFIG_HOME/cadet", () => {
+    // Production path is ~/.cadet/device.json, never XDG_CONFIG_HOME.
     delete process.env.IS_CONTAINERIZED;
-    delete process.env.VELLUM_ENVIRONMENT;
+    delete process.env.CADET_ENVIRONMENT;
     process.env.XDG_CONFIG_HOME = tempDir;
 
     getDeviceId();
 
-    const xdgPath = join(tempDir, "vellum", "device.json");
+    const xdgPath = join(tempDir, "cadet", "device.json");
     expect(existsSync(xdgPath)).toBe(false);
   });
 });
 
-describe("getDeviceId VELLUM_DEVICE_ID precedence", () => {
+describe("getDeviceId CADET_DEVICE_ID precedence", () => {
   beforeEach(() => {
     delete process.env.IS_CONTAINERIZED;
-    process.env.VELLUM_ENVIRONMENT = "dev";
+    process.env.CADET_ENVIRONMENT = "dev";
     process.env.XDG_CONFIG_HOME = tempDir;
   });
 
   test("env var set returns that value without writing device.json", () => {
-    process.env.VELLUM_DEVICE_ID = "abc-123";
+    process.env.CADET_DEVICE_ID = "abc-123";
 
     expect(getDeviceId()).toBe("abc-123");
     // Nothing written anywhere under the XDG tempdir.
@@ -138,25 +138,25 @@ describe("getDeviceId VELLUM_DEVICE_ID precedence", () => {
   });
 
   test("env var with surrounding whitespace returns the trimmed value", () => {
-    process.env.VELLUM_DEVICE_ID = "  abc-123  ";
+    process.env.CADET_DEVICE_ID = "  abc-123  ";
 
     expect(getDeviceId()).toBe("abc-123");
   });
 
   test("empty/whitespace-only env var falls through to file resolution", () => {
-    process.env.VELLUM_DEVICE_ID = "   ";
+    process.env.CADET_DEVICE_ID = "   ";
 
     const id = getDeviceId();
     expect(id.length).toBeGreaterThan(0);
-    expect(existsSync(join(tempDir, "vellum-dev", "device.json"))).toBe(true);
+    expect(existsSync(join(tempDir, "cadet-dev", "device.json"))).toBe(true);
   });
 
   test("env var wins over an existing device.json without overwriting it", () => {
-    const dir = join(tempDir, "vellum-dev");
+    const dir = join(tempDir, "cadet-dev");
     mkdirSync(dir, { recursive: true });
     const filePath = join(dir, "device.json");
     writeFileSync(filePath, JSON.stringify({ deviceId: "file-id" }));
-    process.env.VELLUM_DEVICE_ID = "env-id";
+    process.env.CADET_DEVICE_ID = "env-id";
 
     expect(getDeviceId()).toBe("env-id");
     expect(JSON.parse(readFileSync(filePath, "utf-8")).deviceId).toBe(
@@ -165,10 +165,10 @@ describe("getDeviceId VELLUM_DEVICE_ID precedence", () => {
   });
 
   test("env-resolved value stays cached until resetDeviceIdCache", () => {
-    process.env.VELLUM_DEVICE_ID = "env-id";
+    process.env.CADET_DEVICE_ID = "env-id";
     expect(getDeviceId()).toBe("env-id");
 
-    delete process.env.VELLUM_DEVICE_ID;
+    delete process.env.CADET_DEVICE_ID;
     expect(getDeviceId()).toBe("env-id");
 
     resetDeviceIdCache();
@@ -179,19 +179,19 @@ describe("getDeviceId VELLUM_DEVICE_ID precedence", () => {
 describe("getExistingDeviceId", () => {
   beforeEach(() => {
     delete process.env.IS_CONTAINERIZED;
-    process.env.VELLUM_ENVIRONMENT = "dev";
+    process.env.CADET_ENVIRONMENT = "dev";
     process.env.XDG_CONFIG_HOME = tempDir;
   });
 
   test("returns null without creating device.json when no id exists", () => {
-    const expectedPath = join(tempDir, "vellum-dev", "device.json");
+    const expectedPath = join(tempDir, "cadet-dev", "device.json");
 
     expect(getExistingDeviceId()).toBeNull();
     expect(existsSync(expectedPath)).toBe(false);
   });
 
   test("reads an existing device.json id", () => {
-    const dir = join(tempDir, "vellum-dev");
+    const dir = join(tempDir, "cadet-dev");
     mkdirSync(dir, { recursive: true });
     writeFileSync(
       join(dir, "device.json"),
@@ -202,7 +202,7 @@ describe("getExistingDeviceId", () => {
   });
 
   test("returns the env override without writing device.json", () => {
-    process.env.VELLUM_DEVICE_ID = "env-id";
+    process.env.CADET_DEVICE_ID = "env-id";
 
     expect(getExistingDeviceId()).toBe("env-id");
     expect(readdirSync(tempDir)).toEqual([]);

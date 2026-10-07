@@ -223,7 +223,7 @@ describe("message coordinates stay out of the handle", () => {
   });
 
   test("rejects a smuggled internal conversationId", () => {
-    // The Vellum internal conversation id is a separate identity and never
+    // The Cadet internal conversation id is a separate identity and never
     // lives inside the provider handle.
     expect(
       ConversationHandleSchema.safeParse({

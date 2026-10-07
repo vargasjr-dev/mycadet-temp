@@ -69,7 +69,7 @@ Setup runs `scripts/setup.ts` via bash, which calls `assistant schedules create`
 1. The scheduler boots a background conversation with the briefing prompt as the initial message.
 2. The agent runtime injects your recent memory, decisions, and workspace context automatically.
 3. The agent composes the briefing and runs `assistant notifications send` to deliver it.
-4. The notification routes to all your connected channels — the same pipeline as any other Vellum notification.
+4. The notification routes to all your connected channels — the same pipeline as any other Cadet notification.
 
 The briefing conversation is reused across runs so context accumulates over time (the agent sees prior briefings when composing today's).
 

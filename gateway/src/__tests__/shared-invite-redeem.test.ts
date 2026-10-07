@@ -1,5 +1,5 @@
 /**
- * Tests for `POST /v1/shared/invites/redeem`: redeeming a `vellum-shared`
+ * Tests for `POST /v1/shared/invites/redeem`: redeeming a `cadet-shared`
  * invite link token for a trusted-contact principal and token pair, and what
  * that principal can then do.
  *
@@ -67,7 +67,7 @@ const actualFlagResolver = await import("../feature-flag-resolver.js");
 mock.module("../feature-flag-resolver.js", () => ({
   ...actualFlagResolver,
   isFeatureFlagEnabled: (flag: string) =>
-    flag === "vellum-trusted-contacts" ? trustedContactsEnabled : false,
+    flag === "cadet-trusted-contacts" ? trustedContactsEnabled : false,
 }));
 
 // Token minting stays real; a test can make the next mint throw to fail a
@@ -125,7 +125,7 @@ const GUARDIAN_ID = "contact-guardian";
 type Invite = { id: string; token: string; inviteCode: string };
 
 async function createInvite(
-  sourceChannel = "vellum-shared",
+  sourceChannel = "cadet-shared",
   contactId = CONTACT_ID,
 ): Promise<Invite> {
   const { invite } = await createInviteNative({ contactId, sourceChannel });
@@ -169,7 +169,7 @@ function sharedChannelRows() {
   return getGatewayDb()
     .select()
     .from(contactChannels)
-    .where(eq(contactChannels.type, "vellum-shared"))
+    .where(eq(contactChannels.type, "cadet-shared"))
     .all();
 }
 
@@ -191,7 +191,7 @@ function proxyRequest(path: string, accessToken: string): Request {
     headers: {
       authorization: `Bearer ${accessToken}`,
       "content-type": "application/json",
-      "x-vellum-proxy-server": "ipc",
+      "x-cadet-proxy-server": "ipc",
     },
     body: "{}",
   });
@@ -206,7 +206,7 @@ async function resolveInboundTrust(principalId: string) {
     (r) => r.method === "resolve_inbound_trust",
   )!;
   const result = await route.handler({
-    channelType: "vellum-shared",
+    channelType: "cadet-shared",
     actorExternalId: principalId,
   });
   return ResolveInboundTrustResponseSchema.parse(result);
@@ -241,7 +241,7 @@ beforeEach(() => {
   resetSharedInviteRedeemRateLimiterForTests();
 });
 
-describe("redeeming a vellum-shared invite", () => {
+describe("redeeming a cadet-shared invite", () => {
   test("returns the principal and a contact token pair", async () => {
     const invite = await createInvite();
     const before = Date.now();
@@ -263,7 +263,7 @@ describe("redeeming a vellum-shared invite", () => {
     expect(Number.isInteger(grant.expiresAt)).toBe(true);
     expect(grant.expiresAt).toBeGreaterThan(before);
 
-    const claims = verifyToken(grant.accessToken, "vellum-gateway");
+    const claims = verifyToken(grant.accessToken, "cadet-gateway");
     expect(claims.ok && claims.claims.scope_profile).toBe("contact_client_v1");
     expect(claims.ok && claims.claims.sub).toEndWith(`:${grant.principalId}`);
 
@@ -373,13 +373,13 @@ describe("redeeming a vellum-shared invite", () => {
   });
 });
 
-describe("creating a vellum-shared invite", () => {
+describe("creating a cadet-shared invite", () => {
   test("refuses more than one use", async () => {
     let caught: unknown;
     try {
       await createInviteNative({
         contactId: CONTACT_ID,
-        sourceChannel: "vellum-shared",
+        sourceChannel: "cadet-shared",
         maxUses: 2,
       });
     } catch (err) {
@@ -393,7 +393,7 @@ describe("creating a vellum-shared invite", () => {
   test("accepts a single use", async () => {
     const { invite } = await createInviteNative({
       contactId: CONTACT_ID,
-      sourceChannel: "vellum-shared",
+      sourceChannel: "cadet-shared",
       maxUses: 1,
     });
     expect(invite.maxUses).toBe(1);
@@ -411,7 +411,7 @@ describe("creating a vellum-shared invite", () => {
   async function expectCreateConflict(contactId: string): Promise<void> {
     let caught: unknown;
     try {
-      await createInviteNative({ contactId, sourceChannel: "vellum-shared" });
+      await createInviteNative({ contactId, sourceChannel: "cadet-shared" });
     } catch (err) {
       caught = err;
     }
@@ -547,7 +547,7 @@ describe("a failure after the claim leaves the invite redeemable", () => {
     };
     new ContactStore().createInvite({
       id: invite.id,
-      sourceChannel: "vellum-shared",
+      sourceChannel: "cadet-shared",
       tokenHash: hashInviteToken(invite.token),
       contactId: GUARDIAN_ID,
       expiresAt: Date.now() + 60_000,
@@ -576,7 +576,7 @@ describe("the redeemed principal", () => {
     expect(forwarded).toBeDefined();
     expect(
       (forwarded!.params as { headers: Record<string, string> }).headers[
-        "x-vellum-actor-principal-id"
+        "x-cadet-actor-principal-id"
       ],
     ).toBe(grant.principalId);
   });
@@ -631,7 +631,7 @@ describe("the redeemed principal", () => {
       accessToken: string;
     };
     expect(rotated.guardianPrincipalId).toBe(grant.principalId);
-    const claims = verifyToken(rotated.accessToken, "vellum-gateway");
+    const claims = verifyToken(rotated.accessToken, "cadet-gateway");
     expect(claims.ok && claims.claims.scope_profile).toBe("contact_client_v1");
 
     const active = getGatewayDb()

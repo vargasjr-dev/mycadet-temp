@@ -25,15 +25,15 @@ import {
 const created: string[] = [];
 let workspaceDir = "";
 
-const VELLUM_ROUTE = {
+const CADET_ROUTE = {
   path: "platform",
   kind: "http" as const,
-  signer: "vellum" as const,
+  signer: "cadet" as const,
   handshake: "signed-headers" as const,
   description: "platform callback",
 };
 
-function writePlugin(plugin: string, routes: unknown = [VELLUM_ROUTE]): void {
+function writePlugin(plugin: string, routes: unknown = [CADET_ROUTE]): void {
   const pluginDir = join(workspaceDir, "plugins", plugin);
   mkdirSync(join(pluginDir, "channels"), { recursive: true });
   writeFileSync(
@@ -83,7 +83,7 @@ describe("watchPluginIngressForWebhookRoutes", () => {
   }
 
   it("claims a route a plugin installed while the gateway runs", async () => {
-    // A `signer: "vellum"` route is served without a guardian decision, so no
+    // A `signer: "cadet"` route is served without a guardian decision, so no
     // approval or revocation is coming to settle the registry for it.
     const cache = new PluginIngressCache({ workspaceDir, ttlMs: 0 });
     const unwatch = watch(cache);

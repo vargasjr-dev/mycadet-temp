@@ -32,7 +32,7 @@ import {
   getTextGenerationModelsForProvider,
   getManagedUpstreamForModel,
   providerOffersTextGeneration,
-  VELLUM_SERVED_PROVIDERS,
+  CADET_SERVED_PROVIDERS,
   type LlmProviderId,
 } from "./llm-model-catalog";
 
@@ -144,7 +144,7 @@ describe("parity with meta/llm-provider-catalog.json", () => {
 
     const cadetModels = getModelsForProvider("cadet");
     const servedIds = new Set<string>(
-      VELLUM_SERVED_PROVIDERS.flatMap((p) =>
+      CADET_SERVED_PROVIDERS.flatMap((p) =>
         MODELS_BY_PROVIDER[p].map((m) => m.id),
       ),
     );
@@ -154,7 +154,7 @@ describe("parity with meta/llm-provider-catalog.json", () => {
     const labels = cadetModels.map((m) => m.displayName);
     expect(new Set(labels).size).toBe(labels.length);
     const servedLabels = new Set(
-      VELLUM_SERVED_PROVIDERS.flatMap((p) =>
+      CADET_SERVED_PROVIDERS.flatMap((p) =>
         MODELS_BY_PROVIDER[p].map((m) => m.displayName),
       ),
     );

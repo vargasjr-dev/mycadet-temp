@@ -35,9 +35,9 @@ function writeLocalLockfile(overrides: Record<string, unknown> = {}): void {
 }
 
 function writeAssistantPid(value: string): string {
-  const pidDir = path.join(instanceDir, ".vellum", "workspace");
+  const pidDir = path.join(instanceDir, ".cadet", "workspace");
   mkdirSync(pidDir, { recursive: true });
-  const pidPath = path.join(pidDir, "vellum.pid");
+  const pidPath = path.join(pidDir, "cadet.pid");
   writeFileSync(pidPath, value);
   return pidPath;
 }
@@ -75,7 +75,7 @@ async function unusedPort(): Promise<number> {
 beforeEach(() => {
   tempDir = path.join(
     tmpdir(),
-    `vellum-local-status-test-${Date.now()}-${Math.random()}`,
+    `cadet-local-status-test-${Date.now()}-${Math.random()}`,
   );
   mkdirSync(tempDir, { recursive: true });
   lockfilePath = path.join(tempDir, "lockfile.json");
@@ -214,7 +214,7 @@ describe("getLocalAssistantStatus", () => {
   test("rejects non-local assistants", async () => {
     writeLockfile({
       assistantId: "platform-1",
-      cloud: "vellum",
+      cloud: "cadet",
       runtimeUrl: "https://example.com",
     });
 
@@ -250,12 +250,12 @@ describe("resolveLockfileInstanceDir", () => {
     const dataHome = path.join(tempDir, "data-home");
     expect(
       resolveLockfileInstanceDir([lockfilePath], "local-1", {
-        VELLUM_ENVIRONMENT: "production",
+        CADET_ENVIRONMENT: "production",
         XDG_DATA_HOME: dataHome,
       }),
     ).toEqual({
       ok: true,
-      instanceDir: path.join(dataHome, "vellum", "assistants", "local-1"),
+      instanceDir: path.join(dataHome, "cadet", "assistants", "local-1"),
     });
   });
 
@@ -263,7 +263,7 @@ describe("resolveLockfileInstanceDir", () => {
     writeLocalLockfile();
     expect(
       resolveLockfileInstanceDir([lockfilePath], "local-2", {
-        VELLUM_ENVIRONMENT: "production",
+        CADET_ENVIRONMENT: "production",
         XDG_DATA_HOME: tempDir,
       }),
     ).toEqual({ ok: true });

@@ -1,7 +1,7 @@
 ---
 name: phone-calls
 description: "Make outgoing phone calls, receive incoming calls, and pull up past call transcripts"
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "📞"
   cadet:

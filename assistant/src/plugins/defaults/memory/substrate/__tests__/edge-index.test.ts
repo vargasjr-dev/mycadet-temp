@@ -2,7 +2,7 @@
  * Tests for `substrate/edge-index.ts` — the in-memory directed edge index
  * derived from concept-page frontmatter.
  *
- * Tests live in temp workspaces (mkdtemp) and never touch `~/.vellum/`.
+ * Tests live in temp workspaces (mkdtemp) and never touch `~/.cadet/`.
  */
 
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
@@ -22,7 +22,7 @@ import type { ConceptPage } from "../types.js";
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-memory-v2-edge-index-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-memory-v2-edge-index-"));
 });
 
 afterEach(() => {

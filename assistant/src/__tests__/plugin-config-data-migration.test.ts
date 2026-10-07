@@ -39,7 +39,7 @@ import {
 
 const ROOT = join(
   tmpdir(),
-  `vellum-plugin-config-migration-${process.pid}-${Date.now()}`,
+  `cadet-plugin-config-migration-${process.pid}-${Date.now()}`,
 );
 
 const PLUGINS_DIR = join(ROOT, "plugins");
@@ -68,7 +68,7 @@ function writeInitHook(dir: string, body: string): void {
 }
 
 beforeAll(() => {
-  process.env.VELLUM_WORKSPACE_DIR = ROOT;
+  process.env.CADET_WORKSPACE_DIR = ROOT;
 });
 
 beforeEach(() => {

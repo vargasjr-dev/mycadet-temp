@@ -7,7 +7,7 @@
  * - Dev-bypass mode (`isHttpAuthDisabled()`) returns all clients.
  *
  * POST /v1/clients/presence (report_client_presence) records presence keyed
- * off the `x-vellum-client-id` header, and applies the same ownership posture:
+ * off the `x-cadet-client-id` header, and applies the same ownership posture:
  * only the actor that owns the target client may report its presence. The
  * handler resolves the client before comparing owners, so an unconnected
  * clientId (a report racing an SSE reconnect) and a connected-but-unowned one
@@ -89,7 +89,7 @@ describe("list_clients route — same-user filter", () => {
 
     const handler = findHandler("list_clients");
     const result = handler({
-      headers: { "x-vellum-actor-principal-id": "user-A" },
+      headers: { "x-cadet-actor-principal-id": "user-A" },
     }) as ListClientsResponse;
 
     const ids = result.clients.map((c) => c.clientId).sort();
@@ -102,7 +102,7 @@ describe("list_clients route — same-user filter", () => {
 
     const handler = findHandler("list_clients");
     const result = handler({
-      headers: { "x-vellum-actor-principal-id": "user-B" },
+      headers: { "x-cadet-actor-principal-id": "user-B" },
     }) as ListClientsResponse;
 
     const ids = result.clients.map((c) => c.clientId);
@@ -118,7 +118,7 @@ describe("list_clients route — same-user filter", () => {
 
     const handler = findHandler("list_clients");
     const result = handler({
-      headers: { "x-vellum-actor-principal-id": "user-A" },
+      headers: { "x-cadet-actor-principal-id": "user-A" },
     }) as ListClientsResponse;
 
     const ids = result.clients.map((c) => c.clientId);
@@ -145,7 +145,7 @@ describe("list_clients route — same-user filter", () => {
 
     const handler = findHandler("list_clients");
     const result = handler({
-      headers: { "x-vellum-actor-principal-id": "user-A" },
+      headers: { "x-cadet-actor-principal-id": "user-A" },
     }) as ListClientsResponse;
 
     const ids = result.clients.map((c) => c.clientId).sort();
@@ -157,7 +157,7 @@ describe("list_clients route — same-user filter", () => {
 
     const handler = findHandler("list_clients");
     const result = handler({
-      headers: { "x-vellum-actor-principal-id": "user-A" },
+      headers: { "x-cadet-actor-principal-id": "user-A" },
     }) as ListClientsResponse;
 
     expect(result.clients).toHaveLength(1);
@@ -177,8 +177,8 @@ describe("report_client_presence route", () => {
     const handler = findHandler("report_client_presence");
     const result = handler({
       headers: {
-        "x-vellum-client-id": "client-A1",
-        "x-vellum-actor-principal-id": "user-A",
+        "x-cadet-client-id": "client-A1",
+        "x-cadet-actor-principal-id": "user-A",
       },
       body: { state: "active" },
     }) as { recorded: boolean };
@@ -195,8 +195,8 @@ describe("report_client_presence route", () => {
     const handler = findHandler("report_client_presence");
     const result = handler({
       headers: {
-        "x-vellum-client-id": "client-gone",
-        "x-vellum-actor-principal-id": "user-A",
+        "x-cadet-client-id": "client-gone",
+        "x-cadet-actor-principal-id": "user-A",
       },
       body: { state: "idle" },
     }) as { recorded: boolean };
@@ -213,16 +213,16 @@ describe("report_client_presence route", () => {
     const handler = findHandler("report_client_presence");
     handler({
       headers: {
-        "x-vellum-client-id": "client-A1",
-        "x-vellum-actor-principal-id": "user-A",
+        "x-cadet-client-id": "client-A1",
+        "x-cadet-actor-principal-id": "user-A",
       },
       body: { state: "active" },
     });
 
     const result = handler({
       headers: {
-        "x-vellum-client-id": "client-A1",
-        "x-vellum-actor-principal-id": "user-B",
+        "x-cadet-client-id": "client-A1",
+        "x-cadet-actor-principal-id": "user-B",
       },
       body: { state: "away" },
     }) as { recorded: boolean };
@@ -238,7 +238,7 @@ describe("report_client_presence route", () => {
 
     const handler = findHandler("report_client_presence");
     const result = handler({
-      headers: { "x-vellum-client-id": "client-A1" },
+      headers: { "x-cadet-client-id": "client-A1" },
       body: { state: "active" },
     }) as { recorded: boolean };
 
@@ -257,8 +257,8 @@ describe("report_client_presence route", () => {
     const handler = findHandler("report_client_presence");
     const result = handler({
       headers: {
-        "x-vellum-client-id": "client-noprincipal",
-        "x-vellum-actor-principal-id": "user-A",
+        "x-cadet-client-id": "client-noprincipal",
+        "x-cadet-actor-principal-id": "user-A",
       },
       body: { state: "active" },
     }) as { recorded: boolean };
@@ -276,8 +276,8 @@ describe("report_client_presence route", () => {
     const handler = findHandler("report_client_presence");
     const result = handler({
       headers: {
-        "x-vellum-client-id": "client-A1",
-        "x-vellum-actor-principal-id": "user-B",
+        "x-cadet-client-id": "client-A1",
+        "x-cadet-actor-principal-id": "user-B",
       },
       body: { state: "idle" },
     }) as { recorded: boolean };
@@ -294,8 +294,8 @@ describe("report_client_presence route", () => {
     const handler = findHandler("report_client_presence");
     const result = handler({
       headers: {
-        "x-vellum-client-id": "client-gone",
-        "x-vellum-actor-principal-id": "user-A",
+        "x-cadet-client-id": "client-gone",
+        "x-cadet-actor-principal-id": "user-A",
       },
       body: { state: "idle" },
     }) as { recorded: boolean };
@@ -310,7 +310,7 @@ describe("report_client_presence route", () => {
       BadRequestError,
     );
     expect(() =>
-      handler({ headers: { "x-vellum-client-id": "  " }, body: {} }),
+      handler({ headers: { "x-cadet-client-id": "  " }, body: {} }),
     ).toThrow(BadRequestError);
   });
 
@@ -322,8 +322,8 @@ describe("report_client_presence route", () => {
     expect(() =>
       handler({
         headers: {
-          "x-vellum-client-id": "client-A1",
-          "x-vellum-actor-principal-id": "user-A",
+          "x-cadet-client-id": "client-A1",
+          "x-cadet-actor-principal-id": "user-A",
         },
         body: { state: "asleep" },
       }),
@@ -358,8 +358,8 @@ describe("report_web_presence route", () => {
     const handler = findHandler("report_web_presence");
     const result = handler({
       headers: {
-        "x-vellum-client-id": "client-A1",
-        "x-vellum-actor-principal-id": "user-A",
+        "x-cadet-client-id": "client-A1",
+        "x-cadet-actor-principal-id": "user-A",
       },
       body: { visible: true, focusedConversationId: "conv-1" },
     }) as { recorded: boolean };
@@ -379,8 +379,8 @@ describe("report_web_presence route", () => {
     const handler = findHandler("report_web_presence");
     const result = handler({
       headers: {
-        "x-vellum-client-id": "client-A1",
-        "x-vellum-actor-principal-id": "user-A",
+        "x-cadet-client-id": "client-A1",
+        "x-cadet-actor-principal-id": "user-A",
       },
       body: { visible: false, focusedConversationId: null },
     }) as { recorded: boolean };
@@ -398,8 +398,8 @@ describe("report_web_presence route", () => {
     const handler = findHandler("report_web_presence");
     const result = handler({
       headers: {
-        "x-vellum-client-id": "client-gone",
-        "x-vellum-actor-principal-id": "user-A",
+        "x-cadet-client-id": "client-gone",
+        "x-cadet-actor-principal-id": "user-A",
       },
       body: { visible: true, focusedConversationId: "conv-1" },
     }) as { recorded: boolean };
@@ -413,8 +413,8 @@ describe("report_web_presence route", () => {
     const handler = findHandler("report_web_presence");
     const result = handler({
       headers: {
-        "x-vellum-client-id": "client-A1",
-        "x-vellum-actor-principal-id": "user-B",
+        "x-cadet-client-id": "client-A1",
+        "x-cadet-actor-principal-id": "user-B",
       },
       body: { visible: true, focusedConversationId: "conv-1" },
     }) as { recorded: boolean };
@@ -431,8 +431,8 @@ describe("report_web_presence route", () => {
     const handler = findHandler("report_web_presence");
     const result = handler({
       headers: {
-        "x-vellum-client-id": "client-noprincipal",
-        "x-vellum-actor-principal-id": "user-A",
+        "x-cadet-client-id": "client-noprincipal",
+        "x-cadet-actor-principal-id": "user-A",
       },
       body: { visible: true, focusedConversationId: "conv-1" },
     }) as { recorded: boolean };
@@ -450,8 +450,8 @@ describe("report_web_presence route", () => {
     const handler = findHandler("report_web_presence");
     const result = handler({
       headers: {
-        "x-vellum-client-id": "client-A1",
-        "x-vellum-actor-principal-id": "user-B",
+        "x-cadet-client-id": "client-A1",
+        "x-cadet-actor-principal-id": "user-B",
       },
       body: { visible: true, focusedConversationId: "conv-1" },
     }) as { recorded: boolean };
@@ -475,8 +475,8 @@ describe("report_web_presence route", () => {
     expect(() =>
       handler({
         headers: {
-          "x-vellum-client-id": "client-A1",
-          "x-vellum-actor-principal-id": "user-A",
+          "x-cadet-client-id": "client-A1",
+          "x-cadet-actor-principal-id": "user-A",
         },
         body: { visible: "yes", focusedConversationId: "conv-1" },
       }),

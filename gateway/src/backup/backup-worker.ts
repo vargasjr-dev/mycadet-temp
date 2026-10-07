@@ -83,7 +83,7 @@ function defaultOffsiteDestinations(): BackupDestination[] {
         "Library",
         "Mobile Documents",
         "com~apple~CloudDocs",
-        "VellumAssistant",
+        "CadetAssistant",
         "backups",
       ),
       encrypt: true,
@@ -227,7 +227,7 @@ async function performBackup(
   );
 
   // Stream the response body to a temp file
-  const tempPath = join(tmpdir(), `vellum-backup-${randomUUID()}.vbundle`);
+  const tempPath = join(tmpdir(), `cadet-backup-${randomUUID()}.vbundle`);
   try {
     const response = await fetchImpl(
       `${deps.assistantRuntimeBaseUrl}/v1/migrations/export`,

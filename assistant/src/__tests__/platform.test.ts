@@ -4,6 +4,7 @@ import { join, win32 } from "node:path";
 import { afterAll, afterEach, describe, expect, test } from "bun:test";
 
 import {
+  cadetRoot,
   ensureDataDir,
   formatHomeRelativePath,
   getDataDir,
@@ -19,39 +20,38 @@ import {
   getWorkspacePluginsDir,
   getWorkspacePromptPath,
   getWorkspaceSkillsDir,
-  getXdgVellumConfigDirName,
-  vellumRoot,
+  getXdgCadetConfigDirName,
 } from "../util/platform.js";
 
-const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
+const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 
-// This file characterizes path resolution itself (including the ~/.vellum
+// This file characterizes path resolution itself (including the ~/.cadet
 // fallback and literal override paths) without reading or writing those
 // locations, so the live-workspace guard is deliberately bypassed.
 const originalAllowRealWorkspace =
-  process.env.VELLUM_ALLOW_REAL_WORKSPACE_IN_TESTS;
-process.env.VELLUM_ALLOW_REAL_WORKSPACE_IN_TESTS = "1";
+  process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS;
+process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS = "1";
 afterAll(() => {
   if (originalAllowRealWorkspace === undefined) {
-    delete process.env.VELLUM_ALLOW_REAL_WORKSPACE_IN_TESTS;
+    delete process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS;
   } else {
-    process.env.VELLUM_ALLOW_REAL_WORKSPACE_IN_TESTS =
+    process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS =
       originalAllowRealWorkspace;
   }
 });
-const originalVellumEnvironment = process.env.VELLUM_ENVIRONMENT;
+const originalCadetEnvironment = process.env.CADET_ENVIRONMENT;
 const originalXdgConfigHome = process.env.XDG_CONFIG_HOME;
 
 afterEach(() => {
   if (originalWorkspaceDir == null) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
   }
-  if (originalVellumEnvironment == null) {
-    delete process.env.VELLUM_ENVIRONMENT;
+  if (originalCadetEnvironment == null) {
+    delete process.env.CADET_ENVIRONMENT;
   } else {
-    process.env.VELLUM_ENVIRONMENT = originalVellumEnvironment;
+    process.env.CADET_ENVIRONMENT = originalCadetEnvironment;
   }
   if (originalXdgConfigHome == null) {
     delete process.env.XDG_CONFIG_HOME;
@@ -61,27 +61,27 @@ afterEach(() => {
 });
 
 // Path characterization: documents the current path layout.
-// Root-level helpers always resolve under ~/.vellum (from homedir()).
-// Workspace helpers resolve under VELLUM_WORKSPACE_DIR when set,
-// otherwise under ~/.vellum/workspace.
+// Root-level helpers always resolve under ~/.cadet (from homedir()).
+// Workspace helpers resolve under CADET_WORKSPACE_DIR when set,
+// otherwise under ~/.cadet/workspace.
 describe("path characterization", () => {
   test("formats Windows workspace paths relative to the home directory", () => {
     expect(
       formatHomeRelativePath(
-        "C:\\Users\\Alice\\.vellum\\workspace",
+        "C:\\Users\\Alice\\.cadet\\workspace",
         "C:\\Users\\Alice",
         win32,
       ),
-    ).toBe("~\\.vellum\\workspace");
+    ).toBe("~\\.cadet\\workspace");
     expect(
       formatHomeRelativePath("D:\\Cadet\\workspace", "C:\\Users\\Alice", win32),
     ).toBe("D:\\Cadet\\workspace");
   });
 
   test("all path helpers resolve to expected locations", () => {
-    // Without VELLUM_WORKSPACE_DIR override, workspace is under ~/.vellum
-    delete process.env.VELLUM_WORKSPACE_DIR;
-    const root = join(homedir(), ".vellum");
+    // Without CADET_WORKSPACE_DIR override, workspace is under ~/.cadet
+    delete process.env.CADET_WORKSPACE_DIR;
+    const root = join(homedir(), ".cadet");
     const ws = getWorkspaceDir();
     const data = getDataDir();
 
@@ -102,33 +102,33 @@ describe("path characterization", () => {
     expect(getWorkspaceHooksDir()).toBe(join(ws, "hooks"));
 
     // PID file lives in the workspace directory
-    expect(getPidPath()).toBe(join(ws, "vellum.pid"));
+    expect(getPidPath()).toBe(join(ws, "cadet.pid"));
   });
 
-  test("VELLUM_WORKSPACE_DIR overrides workspace location", () => {
-    process.env.VELLUM_WORKSPACE_DIR = "/tmp/custom-workspace";
+  test("CADET_WORKSPACE_DIR overrides workspace location", () => {
+    process.env.CADET_WORKSPACE_DIR = "/tmp/custom-workspace";
     expect(getWorkspaceDir()).toBe("/tmp/custom-workspace");
     expect(getDataDir()).toBe("/tmp/custom-workspace/data");
     // PID path follows workspace override
-    expect(getPidPath()).toBe("/tmp/custom-workspace/vellum.pid");
+    expect(getPidPath()).toBe("/tmp/custom-workspace/cadet.pid");
   });
 
   test("hooks directory is inside the workspace boundary", () => {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
     expect(getWorkspaceHooksDir().startsWith(getWorkspaceDir())).toBe(true);
   });
 
   test("ensureDataDir creates all expected directories", () => {
-    // Use a temp VELLUM_WORKSPACE_DIR so ensureDataDir writes to a temp dir
-    // rather than the real ~/.vellum. Root-level dirs still go to ~/.vellum
+    // Use a temp CADET_WORKSPACE_DIR so ensureDataDir writes to a temp dir
+    // rather than the real ~/.cadet. Root-level dirs still go to ~/.cadet
     // but we only verify workspace dirs here to avoid side effects.
     const wsDir = join(tmpdir(), `platform-test-ws-${Date.now()}`);
-    process.env.VELLUM_WORKSPACE_DIR = wsDir;
+    process.env.CADET_WORKSPACE_DIR = wsDir;
 
     ensureDataDir();
 
     // Root-level dirs (ensureDataDir always creates these)
-    const root = vellumRoot();
+    const root = cadetRoot();
     expect(existsSync(root)).toBe(true);
 
     // Workspace dirs (in our temp location)
@@ -151,38 +151,38 @@ describe("path characterization", () => {
 
 describe("XDG config dir name env-awareness", () => {
   test("production returns cadet", () => {
-    delete process.env.VELLUM_ENVIRONMENT;
+    delete process.env.CADET_ENVIRONMENT;
     delete process.env.XDG_CONFIG_HOME;
-    expect(getXdgVellumConfigDirName()).toBe("vellum");
+    expect(getXdgCadetConfigDirName()).toBe("cadet");
   });
 
   test("production (explicit) returns cadet", () => {
-    process.env.VELLUM_ENVIRONMENT = "production";
-    expect(getXdgVellumConfigDirName()).toBe("vellum");
+    process.env.CADET_ENVIRONMENT = "production";
+    expect(getXdgCadetConfigDirName()).toBe("cadet");
   });
 
-  test("dev environment returns vellum-dev", () => {
-    process.env.VELLUM_ENVIRONMENT = "dev";
-    expect(getXdgVellumConfigDirName()).toBe("vellum-dev");
+  test("dev environment returns cadet-dev", () => {
+    process.env.CADET_ENVIRONMENT = "dev";
+    expect(getXdgCadetConfigDirName()).toBe("cadet-dev");
   });
 
   test.each(["staging", "test", "local"])(
-    "%s environment returns vellum-%s",
+    "%s environment returns cadet-%s",
     (env) => {
-      process.env.VELLUM_ENVIRONMENT = env;
-      expect(getXdgVellumConfigDirName()).toBe(`vellum-${env}`);
+      process.env.CADET_ENVIRONMENT = env;
+      expect(getXdgCadetConfigDirName()).toBe(`cadet-${env}`);
     },
   );
 
   test("unknown environment falls back to production", () => {
-    process.env.VELLUM_ENVIRONMENT = "no-such-env";
-    expect(getXdgVellumConfigDirName()).toBe("vellum");
+    process.env.CADET_ENVIRONMENT = "no-such-env";
+    expect(getXdgCadetConfigDirName()).toBe("cadet");
   });
 });
 
 describe("workspace path primitives", () => {
   test("workspace helpers resolve under workspace dir", () => {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
     const ws = getWorkspaceDir();
 
     expect(getWorkspaceConfigPath()).toBe(join(ws, "config.json"));

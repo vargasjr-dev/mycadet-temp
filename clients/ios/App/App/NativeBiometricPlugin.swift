@@ -43,7 +43,7 @@ public class NativeBiometricPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "deleteToken", returnType: CAPPluginReturnPromise),
     ]
 
-    private static let keychainService = "ai.vocify-inc.vellum-assistant-ios.biometric-auth"
+    private static let keychainService = "ai.mycadet.ios.biometric-auth"
 
     // MARK: - isAvailable
 
@@ -145,7 +145,7 @@ public class NativeBiometricPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
 
-        let reason = call.getString("reason") ?? "Sign in to Vellum"
+        let reason = call.getString("reason") ?? "Sign in to Cadet"
 
         // Preflight: check if a Keychain item exists without triggering
         // biometric auth. An LAContext with interactionNotAllowed = true

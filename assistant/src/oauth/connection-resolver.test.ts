@@ -59,7 +59,7 @@ mock.module("./manual-token-connection.js", () => ({
 }));
 
 mock.module("../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: async () => mockPlatformClient,
   },
 }));

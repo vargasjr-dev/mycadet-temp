@@ -22,13 +22,13 @@ let configHome: string;
 
 /** Write the persisted default-environment file under the temp config home. */
 function persistDefault(name: string): void {
-  const file = path.join(configHome, "vellum", "environment");
+  const file = path.join(configHome, "cadet", "environment");
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, name + "\n", "utf-8");
 }
 
 beforeEach(() => {
-  configHome = mkdtempSync(path.join(os.tmpdir(), "vellum-env-"));
+  configHome = mkdtempSync(path.join(os.tmpdir(), "cadet-env-"));
 });
 
 afterEach(() => {
@@ -38,13 +38,13 @@ afterEach(() => {
 describe("defaultEnvironmentFilePath", () => {
   test("honors XDG_CONFIG_HOME", () => {
     expect(defaultEnvironmentFilePath({ XDG_CONFIG_HOME: configHome })).toBe(
-      path.join(configHome, "vellum", "environment"),
+      path.join(configHome, "cadet", "environment"),
     );
   });
 
   test("falls back to ~/.config", () => {
     expect(defaultEnvironmentFilePath({})).toBe(
-      path.join(os.homedir(), ".config", "vellum", "environment"),
+      path.join(os.homedir(), ".config", "cadet", "environment"),
     );
   });
 });
@@ -62,7 +62,7 @@ describe("readDefaultEnvironment", () => {
   });
 
   test("treats an empty file as no default", () => {
-    const file = path.join(configHome, "vellum", "environment");
+    const file = path.join(configHome, "cadet", "environment");
     mkdirSync(path.dirname(file), { recursive: true });
     writeFileSync(file, "  \n", "utf-8");
     expect(
@@ -72,12 +72,12 @@ describe("readDefaultEnvironment", () => {
 });
 
 describe("resolveEnvironmentName", () => {
-  test("prefers VELLUM_ENVIRONMENT over the persisted default", () => {
+  test("prefers CADET_ENVIRONMENT over the persisted default", () => {
     persistDefault("dev");
     expect(
       resolveEnvironmentName({
         XDG_CONFIG_HOME: configHome,
-        VELLUM_ENVIRONMENT: "staging",
+        CADET_ENVIRONMENT: "staging",
       }),
     ).toBe("staging");
   });
@@ -99,26 +99,26 @@ describe("path resolvers honor the persisted default", () => {
     persistDefault("dev");
     const env = { XDG_CONFIG_HOME: configHome };
     expect(resolveLockfilePaths(env)).toEqual([
-      path.join(configHome, "vellum-dev", "lockfile.json"),
+      path.join(configHome, "cadet-dev", "lockfile.json"),
     ]);
   });
 
   test("resolveConfigDir points at the persisted environment", () => {
     persistDefault("dev");
     expect(resolveConfigDir({ XDG_CONFIG_HOME: configHome })).toBe(
-      path.join(configHome, "vellum-dev"),
+      path.join(configHome, "cadet-dev"),
     );
   });
 
-  test("VELLUM_ENVIRONMENT still wins for path resolution", () => {
+  test("CADET_ENVIRONMENT still wins for path resolution", () => {
     persistDefault("dev");
     const env = {
       XDG_CONFIG_HOME: configHome,
-      VELLUM_ENVIRONMENT: "production",
+      CADET_ENVIRONMENT: "production",
     };
     expect(resolveLockfilePaths(env)).toEqual([
-      path.join(os.homedir(), ".vellum.lock.json"),
-      path.join(os.homedir(), ".vellum.lockfile.json"),
+      path.join(os.homedir(), ".cadet.lock.json"),
+      path.join(os.homedir(), ".cadet.lockfile.json"),
     ]);
   });
 });
@@ -132,7 +132,7 @@ describe("Windows path resolution", () => {
     APPDATA: "C:\\Users\\Example\\AppData\\Roaming",
     LOCALAPPDATA: "C:\\Users\\Example\\AppData\\Local",
     XDG_CONFIG_HOME: "D:\\LegacyConfig",
-    VELLUM_ENVIRONMENT: "dev",
+    CADET_ENVIRONMENT: "dev",
   };
 
   test("uses AppData with XDG read compatibility", () => {
@@ -141,33 +141,33 @@ describe("Windows path resolution", () => {
         defaultEnvironmentFilePath(env, options),
         "AppData\\Roaming\\cadet\\environment",
       ],
-      [resolveConfigDir(env, options), "AppData\\Roaming\\vellum-dev"],
-      [resolveRuntimeDir(env, options), "AppData\\Local\\vellum-dev"],
-      [resolveLogDir(env, options), "AppData\\Local\\vellum-dev\\logs"],
+      [resolveConfigDir(env, options), "AppData\\Roaming\\cadet-dev"],
+      [resolveRuntimeDir(env, options), "AppData\\Local\\cadet-dev"],
+      [resolveLogDir(env, options), "AppData\\Local\\cadet-dev\\logs"],
       [
         resolveInstanceDir(env, "assistant-123", options),
-        "AppData\\Local\\vellum-dev\\assistants\\assistant-123",
+        "AppData\\Local\\cadet-dev\\assistants\\assistant-123",
       ],
     ];
     for (const [actual, suffix] of paths) {
       expect(actual).toBe(`C:\\Users\\Example\\${suffix}`);
     }
     expect(resolveLockfilePaths(env, options)).toEqual([
-      "C:\\Users\\Example\\AppData\\Roaming\\vellum-dev\\lockfile.json",
-      "D:\\LegacyConfig\\vellum-dev\\lockfile.json",
+      "C:\\Users\\Example\\AppData\\Roaming\\cadet-dev\\lockfile.json",
+      "D:\\LegacyConfig\\cadet-dev\\lockfile.json",
     ]);
   });
 
   test("falls back to conventional AppData directories", () => {
-    const productionEnv = { VELLUM_ENVIRONMENT: "production" };
+    const productionEnv = { CADET_ENVIRONMENT: "production" };
     expect(resolveLockfilePaths(productionEnv, options)).toEqual([
-      "C:\\Users\\Example\\AppData\\Roaming\\vellum\\lockfile.json",
-      "C:\\Users\\Example\\.vellum.lock.json",
-      "C:\\Users\\Example\\.vellum.lockfile.json",
+      "C:\\Users\\Example\\AppData\\Roaming\\cadet\\lockfile.json",
+      "C:\\Users\\Example\\.cadet.lock.json",
+      "C:\\Users\\Example\\.cadet.lockfile.json",
     ]);
     expect(defaultEnvironmentFilePaths(env, options)).toEqual([
-      "C:\\Users\\Example\\AppData\\Roaming\\vellum\\environment",
-      "D:\\LegacyConfig\\vellum\\environment",
+      "C:\\Users\\Example\\AppData\\Roaming\\cadet\\environment",
+      "D:\\LegacyConfig\\cadet\\environment",
     ]);
   });
 
@@ -177,7 +177,7 @@ describe("Windows path resolution", () => {
         "Invalid assistant ID",
       );
       expect(() =>
-        guardianTokenPath("C:\\Vellum", assistantId, options),
+        guardianTokenPath("C:\\Cadet", assistantId, options),
       ).toThrow("Invalid assistant ID");
     }
   });

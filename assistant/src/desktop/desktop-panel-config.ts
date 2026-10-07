@@ -16,7 +16,7 @@ import {
   desktopChromeArguments,
 } from "./desktop-browser-endpoint.js";
 
-const TERMINAL_WINDOW_CLASS = "vellum-desktop-terminal";
+const TERMINAL_WINDOW_CLASS = "cadet-desktop-terminal";
 const TERMINAL_HEADER_CONFIG = "  window_decorations = 'TITLE|RESIZE',\n";
 
 // Absolute icon paths work without an installed icon theme.

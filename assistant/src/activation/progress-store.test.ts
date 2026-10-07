@@ -76,9 +76,9 @@ let workspaceDir: string;
 let origWorkspaceDir: string | undefined;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-activation-"));
-  origWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-activation-"));
+  origWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
   publishedTags.length = 0;
   publishedOrigins.length = 0;
   // A sibling test file may have left this process pretending to be a
@@ -91,9 +91,9 @@ afterEach(() => {
   resetActivationStepThrottleForTesting();
   setActivationLockTimingForTesting();
   if (origWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = origWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = origWorkspaceDir;
   }
   rmSync(workspaceDir, { recursive: true, force: true });
 });

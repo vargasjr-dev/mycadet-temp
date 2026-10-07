@@ -51,7 +51,7 @@ describe("channel policy registry", () => {
     // At minimum, cadet should always be deliverable.
     const deliverable = getDeliverableChannels();
     expect(deliverable.length).toBeGreaterThan(0);
-    expect(deliverable).toContain("vellum");
+    expect(deliverable).toContain("cadet");
   });
 
   test("getDeliverableChannels does not include channels with deliveryEnabled: false", () => {
@@ -97,7 +97,7 @@ describe("channel policy registry", () => {
   test("getConversationStrategy returns correct strategies per channel", () => {
     // Known assertions for current policy (regression guard)
     const expectedStrategies: [ChannelId, ConversationStrategy][] = [
-      ["vellum", "start_new_conversation"],
+      ["cadet", "start_new_conversation"],
       ["telegram", "continue_existing_conversation"],
       ["slack", "continue_existing_conversation"],
       ["phone", "not_deliverable"],
@@ -134,15 +134,15 @@ describe("channel policy registry", () => {
     expect(getConversationStrategy("phone")).toBe("not_deliverable");
   });
 
-  test("vellum-shared has no transport and receives no notifications", () => {
-    expect(isNotificationDeliverable("vellum-shared")).toBe(false);
-    expect(getConversationStrategy("vellum-shared")).toBe("not_deliverable");
-    expect(getTransportForChannel("vellum-shared")).toBeUndefined();
+  test("cadet-shared has no transport and receives no notifications", () => {
+    expect(isNotificationDeliverable("cadet-shared")).toBe(false);
+    expect(getConversationStrategy("cadet-shared")).toBe("not_deliverable");
+    expect(getTransportForChannel("cadet-shared")).toBeUndefined();
   });
 
   test("deliverable channels include cadet and telegram", () => {
     const deliverable = getDeliverableChannels();
-    expect(deliverable).toContain("vellum");
+    expect(deliverable).toContain("cadet");
     expect(deliverable).toContain("telegram");
   });
 

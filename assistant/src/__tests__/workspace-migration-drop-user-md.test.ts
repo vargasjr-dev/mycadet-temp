@@ -90,7 +90,7 @@ function seedGuardian(input: {
     [
       `${input.id}-ch`,
       input.id,
-      input.channelType ?? "vellum",
+      input.channelType ?? "cadet",
       input.address ?? "cadet:self",
       input.verifiedAt ?? now,
       now,
@@ -125,10 +125,10 @@ function guardianUserFile(id: string): string | null {
 // ── Test workspace scaffold ───────────────────────────────────────
 
 function workspaceDir(): string {
-  const dir = process.env.VELLUM_WORKSPACE_DIR;
+  const dir = process.env.CADET_WORKSPACE_DIR;
   if (!dir) {
     throw new Error(
-      "VELLUM_WORKSPACE_DIR should be set by the test preload — aborting",
+      "CADET_WORKSPACE_DIR should be set by the test preload — aborting",
     );
   }
   return dir;
@@ -306,7 +306,7 @@ describe("workspace migration 031-drop-user-md", () => {
     expect(existsSync(userMdPath())).toBe(false);
   });
 
-  test("falls back to any guardian when no vellum-channel guardian exists", () => {
+  test("falls back to any guardian when no cadet-channel guardian exists", () => {
     seedGuardian({
       id: "guardian-5",
       displayName: "Carol",
@@ -325,13 +325,13 @@ describe("workspace migration 031-drop-user-md", () => {
     expect(existsSync(userMdPath())).toBe(false);
   });
 
-  test("prefers vellum-channel guardian over a more-recently-verified other guardian", () => {
+  test("prefers cadet-channel guardian over a more-recently-verified other guardian", () => {
     // Older cadet guardian vs newer telegram guardian: cadet wins.
     seedGuardian({
-      id: "guardian-vellum",
+      id: "guardian-cadet",
       displayName: "Vee",
       userFile: "vee.md",
-      channelType: "vellum",
+      channelType: "cadet",
       address: "cadet:self",
       verifiedAt: 1_000,
     });

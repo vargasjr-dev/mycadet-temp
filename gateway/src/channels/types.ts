@@ -11,14 +11,14 @@ import type { ChannelId as CanonicalChannelId } from "@mycadet/service-contracts
 export const CHANNEL_IDS = [
   "telegram",
   "phone",
-  "vellum",
+  "cadet",
   "whatsapp",
   "slack",
   "email",
   "a2a",
   "discord",
   "plugin",
-  "vellum-shared",
+  "cadet-shared",
 ] as const satisfies readonly CanonicalChannelId[];
 
 export type ChannelId = (typeof CHANNEL_IDS)[number];
@@ -51,13 +51,13 @@ export type InterfaceId = (typeof INTERFACE_IDS)[number];
  * Maps legacy values to their canonical replacements.
  */
 const LEGACY_INTERFACE_ALIASES: Record<string, InterfaceId> = {
-  // The web client used to report "vellum" as its interface ID.
-  vellum: "web",
+  // The web client used to report "cadet" as its interface ID.
+  cadet: "web",
 };
 
 /**
  * Strict type guard — returns `true` only for canonical `InterfaceId`
- * values. Legacy aliases like `"vellum"` return `false`; use
+ * values. Legacy aliases like `"cadet"` return `false`; use
  * `parseInterfaceId` to accept and normalize those.
  */
 export function isInterfaceId(value: unknown): value is InterfaceId {

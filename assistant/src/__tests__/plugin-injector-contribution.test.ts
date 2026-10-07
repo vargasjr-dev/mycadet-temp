@@ -37,12 +37,12 @@ import {
 import type { InitContext, Injector, Plugin } from "../plugins/types.js";
 
 // Redirect plugin storage creation into a per-process temp tree so the test
-// never touches a developer's real ~/.vellum.
+// never touches a developer's real ~/.cadet.
 const TEST_WORKSPACE_DIR = join(
   tmpdir(),
-  `vellum-plugin-injector-contrib-test-${process.pid}`,
+  `cadet-plugin-injector-contrib-test-${process.pid}`,
 );
-process.env.VELLUM_WORKSPACE_DIR = TEST_WORKSPACE_DIR;
+process.env.CADET_WORKSPACE_DIR = TEST_WORKSPACE_DIR;
 
 const TEST_INJECTOR_NAME = "test-contrib-injector";
 

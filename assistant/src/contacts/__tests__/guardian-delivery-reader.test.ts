@@ -302,16 +302,16 @@ describe("selectors", () => {
 });
 
 describe("warmGuardianBindings", () => {
-  test("warms both the vellum-channel key and the unfiltered fallback key", async () => {
+  test("warms both the cadet-channel key and the unfiltered fallback key", async () => {
     const keys: string[] = [];
     await warmGuardianBindings(async (input) => {
       keys.push(input?.channelTypes?.join(",") ?? "ALL");
       return null;
     });
     // Both keys the sync persona resolvers read — peekGuardianForChannel
-    // ("vellum") and the peekAnyGuardian() fallback — must be warmed;
+    // ("cadet") and the peekAnyGuardian() fallback — must be warmed;
     // warming only the channel key leaves the any-channel fallback cold for
-    // guardians bound on non-vellum channels.
-    expect(keys.sort()).toEqual(["ALL", "vellum"]);
+    // guardians bound on non-cadet channels.
+    expect(keys.sort()).toEqual(["ALL", "cadet"]);
   });
 });

@@ -35,7 +35,7 @@ export async function recover(): Promise<void> {
       "restores the lockfile entry, and starts the assistant and gateway.",
     );
     console.log(
-      "Archives are stored in $XDG_DATA_HOME/vellum/retired/ (default: ~/.local/share/vellum/retired/).",
+      "Archives are stored in $XDG_DATA_HOME/cadet/retired/ (default: ~/.local/share/cadet/retired/).",
     );
     console.log("");
     console.log("Arguments:");
@@ -73,7 +73,7 @@ export async function recover(): Promise<void> {
   }
 
   // 3. Check that the recovering entry's own target directory is free.
-  const target = join(entry.resources.instanceDir, ".vellum");
+  const target = join(entry.resources.instanceDir, ".cadet");
   if (existsSync(target)) {
     console.error(
       `Error: ${target} already exists (owned by ${entry.assistantId}). ` +
@@ -85,7 +85,7 @@ export async function recover(): Promise<void> {
   // 4. Determine the original target directory, then extract and rename.
   //
   // retireLocal archives either the full instanceDir (named instances) or just
-  // the .vellum/ subdirectory (default instance whose instanceDir === homedir()).
+  // the .cadet/ subdirectory (default instance whose instanceDir === homedir()).
   // The directory is staged under `<archive>.staging` inside the retired dir
   // before being packed with `tar -C <retiredDir> <stagingBasename>`, so the
   // top-level entry inside the tarball is always `<name>.tar.gz.staging`.
@@ -96,7 +96,7 @@ export async function recover(): Promise<void> {
   const isNamedInstance = entry.resources.instanceDir !== homedir();
   const targetDir = isNamedInstance
     ? entry.resources.instanceDir
-    : join(entry.resources.instanceDir, ".vellum");
+    : join(entry.resources.instanceDir, ".cadet");
   const retiredDir = dirname(archivePath);
   const extractedPath = join(retiredDir, basename(archivePath) + ".staging");
 

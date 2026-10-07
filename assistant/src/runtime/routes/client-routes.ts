@@ -96,7 +96,7 @@ export const ROUTES: RouteDefinition[] = [
       // Dev-bypass mode (DISABLE_HTTP_AUTH=true, mirroring
       // require-bound-guardian.ts) preserves the previous "return all" behavior
       // for platform-managed deployments where the platform handles auth.
-      const callerPrincipalId = headers?.["x-vellum-actor-principal-id"];
+      const callerPrincipalId = headers?.["x-cadet-actor-principal-id"];
       const filtered = isHttpAuthDisabled()
         ? clients
         : clients.filter(
@@ -200,7 +200,7 @@ export const ROUTES: RouteDefinition[] = [
     handler: ({ queryParams, headers }) => {
       const since = parseHistorySince(queryParams?.since);
       const limit = parseHistoryLimit(queryParams?.limit);
-      const callerPrincipalId = headers?.["x-vellum-actor-principal-id"];
+      const callerPrincipalId = headers?.["x-cadet-actor-principal-id"];
       const history = listClientConnectionHistory({
         clientId: queryParams?.clientId?.trim() || undefined,
         interfaceId: queryParams?.interfaceId?.trim() || undefined,
@@ -237,7 +237,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Report desktop presence",
     description:
-      "Record the desktop presence state reported by the client identified by the X-Vellum-Client-Id header.",
+      "Record the desktop presence state reported by the client identified by the X-Cadet-Client-Id header.",
     tags: ["clients"],
     requestBody: PresenceBodySchema,
     responseBody: z.object({
@@ -246,10 +246,10 @@ export const ROUTES: RouteDefinition[] = [
         .describe("Whether a connected client matched the reporting clientId."),
     }),
     handler: ({ body, headers }) => {
-      const clientId = headers?.["x-vellum-client-id"]?.trim();
+      const clientId = headers?.["x-cadet-client-id"]?.trim();
       if (!clientId) {
         throw new BadRequestError(
-          "x-vellum-client-id header is required to report presence.",
+          "x-cadet-client-id header is required to report presence.",
         );
       }
       const { state } = parseBody(PresenceBodySchema, body);
@@ -276,7 +276,7 @@ export const ROUTES: RouteDefinition[] = [
       // (DISABLE_HTTP_AUTH=true) skips the check for platform-managed
       // deployments where the platform handles auth.
       if (!isHttpAuthDisabled()) {
-        const callerPrincipalId = headers?.["x-vellum-actor-principal-id"];
+        const callerPrincipalId = headers?.["x-cadet-actor-principal-id"];
         const ownerPrincipalId = client.actorPrincipalId;
         if (
           ownerPrincipalId === undefined ||
@@ -331,7 +331,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Report web tab visibility and focused conversation",
     description:
-      "Record the visibility and focused conversation reported by the web client identified by the X-Vellum-Client-Id header.",
+      "Record the visibility and focused conversation reported by the web client identified by the X-Cadet-Client-Id header.",
     tags: ["clients"],
     requestBody: WebPresenceBodySchema,
     responseBody: z.object({
@@ -340,10 +340,10 @@ export const ROUTES: RouteDefinition[] = [
         .describe("Whether a connected client matched the reporting clientId."),
     }),
     handler: ({ body, headers }) => {
-      const clientId = headers?.["x-vellum-client-id"]?.trim();
+      const clientId = headers?.["x-cadet-client-id"]?.trim();
       if (!clientId) {
         throw new BadRequestError(
-          "x-vellum-client-id header is required to report presence.",
+          "x-cadet-client-id header is required to report presence.",
         );
       }
       const { visible, focusedConversationId } = parseBody(
@@ -373,7 +373,7 @@ export const ROUTES: RouteDefinition[] = [
       // (DISABLE_HTTP_AUTH=true) skips the check for platform-managed
       // deployments where the platform handles auth.
       if (!isHttpAuthDisabled()) {
-        const callerPrincipalId = headers?.["x-vellum-actor-principal-id"];
+        const callerPrincipalId = headers?.["x-cadet-actor-principal-id"];
         const ownerPrincipalId = client.actorPrincipalId;
         if (
           ownerPrincipalId === undefined ||

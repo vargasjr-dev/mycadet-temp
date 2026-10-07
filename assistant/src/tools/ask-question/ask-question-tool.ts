@@ -311,7 +311,7 @@ export const askQuestionTool = {
     if (desktopHelp && context.supportsDynamicUi === false) {
       return {
         content:
-          "This channel cannot show the virtual desktop preview or Step In. Ask the user to continue in the Vellum app to complete this step. The obstacle remains unresolved.",
+          "This channel cannot show the virtual desktop preview or Step In. Ask the user to continue in the Cadet app to complete this step. The obstacle remains unresolved.",
         isError: true,
       };
     }

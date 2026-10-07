@@ -28,7 +28,7 @@ import { createWindow } from "./windows.client";
 
 const MAIN_DEFAULT_BOUNDS = { width: 1280, height: 800 } as const;
 const MAIN_MIN_SIZE = { width: 800, height: 600 } as const;
-const DEFAULT_WINDOW_TITLE = "Vellum";
+const DEFAULT_WINDOW_TITLE = "Cadet";
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
 let currentTitle = DEFAULT_WINDOW_TITLE;

@@ -32,7 +32,7 @@ import {
 } from "../config/managed-speech-defaults.js";
 import { sttCatalogKeyForRole } from "../stt/roles.js";
 
-const WORKSPACE_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
 const CONFIG_PATH = join(WORKSPACE_DIR, "config.json");
 
 function ensureTestDir(): void {
@@ -121,7 +121,7 @@ describe("maybeDefaultSpeechToManaged", () => {
 
   test("a narrowing stand-in is written to the live-voice role, not the global", async () => {
     // BYOK Flux with no key: the stand-in preserves turn detection, so it is
-    // vellum-flux, which streams and nothing else. Writing that globally is
+    // cadet-flux, which streams and nothing else. Writing that globally is
     // how batch transcription and telephony disappear for a managed user.
     mockManagedSpeechAvailable = true;
     writeConfig({

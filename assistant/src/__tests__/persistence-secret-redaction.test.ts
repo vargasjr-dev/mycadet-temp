@@ -115,7 +115,7 @@ function makeDeps(): EventHandlerDeps {
       provider: { name: "anthropic" },
       currentTurnSurfaces: [],
       trustContext: {
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         trustClass: "guardian",
       },
       modeSessions: mockUnownedModeSessions(),
@@ -128,8 +128,8 @@ function makeDeps(): EventHandlerDeps {
       get: () => () => {},
     }) as unknown as EventHandlerDeps["rlog"],
     turnChannelContext: {
-      userMessageChannel: "vellum",
-      assistantMessageChannel: "vellum",
+      userMessageChannel: "cadet",
+      assistantMessageChannel: "cadet",
     } as EventHandlerDeps["turnChannelContext"],
     turnInterfaceContext: {
       userMessageInterface: "macos",

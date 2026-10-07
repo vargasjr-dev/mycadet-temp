@@ -45,7 +45,7 @@ This file is the cross-system architecture index. Detailed designs live in domai
 - Production LLM calls go through the provider abstraction, not provider SDKs in feature code.
 - Transcript mode sessions use one conversation-owned coordinator to connect guarded computer-use, browser, and camera sources to immutable message membership. Source retirement stops future claims while captured turns and accepted frame writes settle. Durable lifecycle and display-boundary writes use compare-and-swap revisions. Startup recovery interrupts leftover active records while preserving last confirmed activity and unknown end; an auxiliary recovery failure disables tracking for that boot while ordinary assistant work remains available. Tracking errors are isolated from authorized actions and accepted content. History batches session descriptors with messages, uses the existing conversation-messages invalidation path, and reconciles revisions in the client query cache. See [`assistant/docs/mode-sessions.md`](assistant/docs/mode-sessions.md).
 - Plugin-declared remote MCP servers store OAuth records under `mcp-plugin/v1/<plugin>/<server>/<endpoint-digest>/<leaf>`, where plugin and server segments are base64url encoded and the SHA-256 endpoint digest covers the transport type plus the canonical URL without its fragment. The runtime public server id is presentation and routing state, not credential identity. Workspace MCP servers keep the existing `mcp:<serverId>:<leaf>` keys. This isolates plugin credentials by installed owner, original `mcp.json` key, and endpoint while leaving persisted workspace files unchanged. Plugin uninstall deletes the exact owner prefix when credential storage is reachable. If storage is unavailable, current `mcp.json` or install-fingerprint evidence blocks removal; without that evidence, removal succeeds with a warning because older credentials cannot be verified. An upgrade that removed both the declaration and its recorded fingerprint is indistinguishable from a plugin that never declared MCP, so historical keys may remain after offline removal.
-- The macOS and Windows Electron shells share platform-neutral window security, IPC validation, origin checks, and preload capability registration through `@vellumai/electron-desktop`, plus native helper process and JSON-RPC lifecycle through `@vellumai/native-sidecar`. Each client keeps platform lifecycle and native features in its own adapter modules under `clients/<platform>/src/`. Both preloads implement the same `CadetBridge` contract (`packages/ipc-contract`); a surface only one shell can back is optional there and documented in [`clients/windows/docs/parity-matrix.md`](clients/windows/docs/parity-matrix.md), which `clients/windows/src/preload/bridge-parity.test.ts` enforces against the macOS preload.
+- The macOS and Windows Electron shells share platform-neutral window security, IPC validation, origin checks, and preload capability registration through `@mycadet/electron-desktop`, plus native helper process and JSON-RPC lifecycle through `@mycadet/native-sidecar`. Each client keeps platform lifecycle and native features in its own adapter modules under `clients/<platform>/src/`. Both preloads implement the same `CadetBridge` contract (`packages/ipc-contract`); a surface only one shell can back is optional there and documented in [`clients/windows/docs/parity-matrix.md`](clients/windows/docs/parity-matrix.md), which `clients/windows/src/preload/bridge-parity.test.ts` enforces against the macOS preload.
 - Packaged Windows startup provisions a user-scoped CLI runtime from
   `resources/cli-runtime`. Versioned installs and one fallback live under
   Electron `userData`; a small channel-scoped launcher under
@@ -56,17 +56,17 @@ This file is the cross-system architecture index. Detailed designs live in domai
 - Notification producers emit through `emitNotificationSignal()` to preserve decisioning and audit invariants. Reminder routing metadata (`routingIntent`, `routingHints`) flows through the signal and is enforced post-decision to control multi-channel fanout. The decision engine produces per-channel conversation actions (`start_new` / `reuse_existing`) validated against a candidate set; `notification_conversation_created` is emitted only on actual creation, not on reuse.
 - Memory extraction/recall must enforce actor-role provenance gates for untrusted actors.
 - **Credential Execution Service (CES)** is a separate top-level package (`credential-executor/`) and a separate managed container image that enforces hard process-boundary isolation for credential-bearing operations. The assistant communicates with CES via Unix-socket (or Windows named-pipe) RPC in every environment. In Docker mode, the gateway still accesses credential CRUD via the CES HTTP API (`CES_CREDENTIAL_URL`), authenticated with `CES_SERVICE_TOKEN`; the assistant uses that HTTP API only as failover if the RPC transport dies. CES exposes three tools (`run_authenticated_command`, `make_authenticated_request`, `manage_secure_command_tool`) as a deliberate exception to the skill-first tool direction. These require hard isolation that skills cannot provide. Shared contract types, credential-storage abstractions, egress-proxy session management, and typed service clients live in seven private packages under `packages/`. These are the only allowed shared-code path; direct source imports between `assistant/` and `credential-executor/` remain banned:
-  - `@vellumai/service-contracts` — CES wire-protocol schemas (RPC methods, handshake types, Zod validators) and shared trust-rule types. Consumed via explicit domain subpaths: `@vellumai/service-contracts/credential-rpc`, `@vellumai/service-contracts/trust-rules`, `@vellumai/service-contracts/handles`, `@vellumai/service-contracts/grants`, `@vellumai/service-contracts/rpc`, `@vellumai/service-contracts/rendering`, `@vellumai/service-contracts/error`.
-  - `@vellumai/credential-storage` — Credential-storage abstractions shared by assistant and CES.
-  - `@vellumai/egress-proxy` — Egress-proxy session management for CES secure commands.
-  - `@vellumai/gateway-client` — Typed HTTP client for assistant-to-gateway calls (trust API, feature flags, log export, deliver).
-  - `@vellumai/assistant-client` — Typed HTTP client for gateway-to-assistant calls (runtime proxy, export).
-  - `@vellumai/ces-client` — Typed HTTP and RPC client for assistant/gateway-to-CES calls (credential CRUD, log export, RPC handshake/envelope). Sub-module exports: `@vellumai/ces-client/http-credentials`, `@vellumai/ces-client/http-log-export`, `@vellumai/ces-client/rpc-client`.
+  - `@mycadet/service-contracts` — CES wire-protocol schemas (RPC methods, handshake types, Zod validators) and shared trust-rule types. Consumed via explicit domain subpaths: `@mycadet/service-contracts/credential-rpc`, `@mycadet/service-contracts/trust-rules`, `@mycadet/service-contracts/handles`, `@mycadet/service-contracts/grants`, `@mycadet/service-contracts/rpc`, `@mycadet/service-contracts/rendering`, `@mycadet/service-contracts/error`.
+  - `@mycadet/credential-storage` — Credential-storage abstractions shared by assistant and CES.
+  - `@mycadet/egress-proxy` — Egress-proxy session management for CES secure commands.
+  - `@mycadet/gateway-client` — Typed HTTP client for assistant-to-gateway calls (trust API, feature flags, log export, deliver).
+  - `@mycadet/assistant-client` — Typed HTTP client for gateway-to-assistant calls (runtime proxy, export).
+  - `@mycadet/ces-client` — Typed HTTP and RPC client for assistant/gateway-to-CES calls (credential CRUD, log export, RPC handshake/envelope). Sub-module exports: `@mycadet/ces-client/http-credentials`, `@mycadet/ces-client/http-log-export`, `@mycadet/ces-client/rpc-client`.
 
   Secure commands are manifest-driven: each bundle declares an auth adapter (`env_var`, `temp_file`, or `credential_process`), an egress mode (`proxy_required` or `no_network`), and allowed argv patterns; generic HTTP clients, interpreters, and shell trampolines are structurally denied as entrypoints. CES-owned durable state (grants and audit logs) is never read or written by the assistant directly. Credential key files (`keys.enc`, `store.key`) are stored on the CES security volume (`/ces-security`) in Docker mode — no other container has access to this volume. `host_bash` is outside the strong CES secrecy guarantee. Response/output filtering (header stripping, body clamping, secret scrubbing) is defense-in-depth, not the primary protection. Managed rollout requires a third runtime image alongside the assistant and gateway images, with corresponding `vembda` pod-template changes; rollout is gated by five feature flags (`ces-tools`, `ces-shell-lockdown`, `ces-secure-install`, `ces-grant-audit`, `ces-managed-sidecar`; keys are simple kebab-case, e.g. `ces-tools`), all defaulting to off. See [`assistant/docs/credential-execution-service.md`](assistant/docs/credential-execution-service.md).
 
 - Trusted contact ingress ACL is channel-agnostic; identity binding adapts per channel (chat ID, E.164 phone, external user ID) without channel-specific branching.
-- macOS managed sign-in connects the desktop app to a platform-hosted assistant via Django assistant-scoped proxy endpoints (`/v1/assistants/{id}/...`). The `HTTPDaemonClient` operates in `platformAssistantProxy` route mode with `X-Session-Token` auth. Managed lockfile entries have `cloud: "vellum"`. Startup guardrails skip local daemon hatching and actor credential bootstrap.
+- macOS managed sign-in connects the desktop app to a platform-hosted assistant via Django assistant-scoped proxy endpoints (`/v1/assistants/{id}/...`). The `HTTPDaemonClient` operates in `platformAssistantProxy` route mode with `X-Session-Token` auth. Managed lockfile entries have `cloud: "cadet"`. Startup guardrails skip local daemon hatching and actor credential bootstrap.
 - The macOS host-proxy bridge connects to local loopback assistants and Cadet-managed assistants. Paired lockfile entries retain their desktop data-plane routing, but the app does not open `/v1/events` or result-posting connections that expose the Mac's host tools to paired assistants.
 - **Assistant feature flags** control skill availability at runtime. The canonical key format is simple kebab-case (e.g., `browser`, `ces-tools`); the legacy `feature_flags.<id>.enabled` and `skills.<id>.enabled` formats are no longer supported. All declared flags live in the unified registry at `meta/feature-flags/feature-flag-registry.json`, scoped by `scope` (`assistant` or `client`). Labels come from the registry. Bundled copies exist at `assistant/src/config/feature-flag-registry.json` and `gateway/src/feature-flag-registry.json`. The gateway owns the `/v1/feature-flags` REST API and the IPC `get_feature_flags` method (see [`gateway/ARCHITECTURE.md`](gateway/ARCHITECTURE.md)); the assistant resolves effective flag state via IPC to the gateway socket (`gateway.sock`) — see [`assistant/ARCHITECTURE.md`](assistant/ARCHITECTURE.md). When a flag is OFF, the corresponding skill is excluded from all exposure surfaces: client skill lists, system prompt catalog, `skill_load`, runtime tool projection, and included child skills. Guard tests enforce that all flag keys in code use the canonical format and that all referenced flags are declared in the unified registry.
 - **Safe storage limits** protect the workspace volume. When workspace disk usage reaches the critical 95% threshold, the assistant enters storage cleanup mode: background work is skipped, remote ingress including trusted-contact messages is blocked, local guardian turns get cleanup-specific runtime instructions, and clients must show acknowledgement/status UI until enough space is freed or the guardian explicitly overrides the lock. See [Safe Storage Limits](#safe-storage-limits).
@@ -77,27 +77,27 @@ This file is the cross-system architecture index. Detailed designs live in domai
 
 ## Environment and Data Layout
 
-Environments are **namespaces**, not containers. `VELLUM_ENVIRONMENT` selects a path prefix (`cadet` for `production`, `vellum-<env>` for the non-production seeds `dev`, `staging`, `test`, `local`). It does not own data. Data directories are always per-assistant, and the lockfile's `resources.instanceDir` field is the source of truth for any given assistant's on-disk location.
+Environments are **namespaces**, not containers. `CADET_ENVIRONMENT` selects a path prefix (`cadet` for `production`, `cadet-<env>` for the non-production seeds `dev`, `staging`, `test`, `local`). It does not own data. Data directories are always per-assistant, and the lockfile's `resources.instanceDir` field is the source of truth for any given assistant's on-disk location.
 
 ### Per-assistant data directories
 
-Every local assistant's daemon root is `<resources.instanceDir>/.vellum/`. The CLI passes per-instance paths to spawned daemons and gateways via explicit environment variables: `VELLUM_WORKSPACE_DIR` (workspace data), `GATEWAY_SECURITY_DIR` (gateway security state), and `CREDENTIAL_SECURITY_DIR` (CES key stores). `assistant/src/util/platform.ts:vellumRoot` resolves the root from `VELLUM_WORKSPACE_DIR` when set, falling back to `join(homedir(), ".vellum")`. All root-level state (PID file, `.env`, `runtime-port`, `protected/` with its encrypted keys, trust rules, credentials, capability token, etc.) and the workspace directory derive from these helpers.
+Every local assistant's daemon root is `<resources.instanceDir>/.cadet/`. The CLI passes per-instance paths to spawned daemons and gateways via explicit environment variables: `CADET_WORKSPACE_DIR` (workspace data), `GATEWAY_SECURITY_DIR` (gateway security state), and `CREDENTIAL_SECURITY_DIR` (CES key stores). `assistant/src/util/platform.ts:cadetRoot` resolves the root from `CADET_WORKSPACE_DIR` when set, falling back to `join(homedir(), ".cadet")`. All root-level state (PID file, `.env`, `runtime-port`, `protected/` with its encrypted keys, trust rules, credentials, capability token, etc.) and the workspace directory derive from these helpers.
 
 Allocation of `instanceDir` for new hatches:
 
 | Environment                     | `instanceDir` path                               |
 | ------------------------------- | ------------------------------------------------ |
-| `production`                    | `$XDG_DATA_HOME/vellum/assistants/<name>/`       |
-| non-production (`vellum-<env>`) | `$XDG_DATA_HOME/vellum-<env>/assistants/<name>/` |
+| `production`                    | `$XDG_DATA_HOME/cadet/assistants/<name>/`       |
+| non-production (`cadet-<env>`) | `$XDG_DATA_HOME/cadet-<env>/assistants/<name>/` |
 
-There is no "first local" special case — every new hatch goes through the same allocator (`cli/src/lib/assistant-config.ts:allocateLocalResources`) and lands under the XDG multi-instance tree. `~/.vellum/` is never an allocation target; it is only reached via existing lockfile entries whose `instanceDir = homedir()` was recorded before this change.
+There is no "first local" special case — every new hatch goes through the same allocator (`cli/src/lib/assistant-config.ts:allocateLocalResources`) and lands under the XDG multi-instance tree. `~/.cadet/` is never an allocation target; it is only reached via existing lockfile entries whose `instanceDir = homedir()` was recorded before this change.
 
 ### Lockfile
 
 | Environment    | Canonical path                                | Read fallback                             |
 | -------------- | --------------------------------------------- | ----------------------------------------- |
-| `production`   | `~/.vellum.lock.json`                         | `~/.vellum.lockfile.json` (legacy rename) |
-| non-production | `$XDG_CONFIG_HOME/vellum-<env>/lockfile.json` | (none — new path)                         |
+| `production`   | `~/.cadet.lock.json`                         | `~/.cadet.lockfile.json` (legacy rename) |
+| non-production | `$XDG_CONFIG_HOME/cadet-<env>/lockfile.json` | (none — new path)                         |
 
 The CLI routes all lockfile reads/writes through `cli/src/lib/environments/paths.ts:getLockfilePath` / `getLockfilePaths` so non-production environments land in the env-scoped XDG config tree. The parent directory is created on first write.
 
@@ -105,10 +105,10 @@ The CLI routes all lockfile reads/writes through `cli/src/lib/environments/paths
 
 | Environment    | Config dir                       |
 | -------------- | -------------------------------- |
-| `production`   | `$XDG_CONFIG_HOME/vellum/`       |
-| non-production | `$XDG_CONFIG_HOME/vellum-<env>/` |
+| `production`   | `$XDG_CONFIG_HOME/cadet/`       |
+| non-production | `$XDG_CONFIG_HOME/cadet-<env>/` |
 
-Platform tokens (`platform-token`), device IDs (`device-id`), and guardian tokens (`assistants/<id>/guardian-token.json`) live under the env-scoped config dir. The CLI (`cli/src/lib/platform-client.ts`, `cli/src/lib/guardian-token.ts`), the daemon (`assistant/src/util/platform.ts:getXdgPlatformTokenPath`, `getXdgVellumConfigDirName`), and the Electron app (`clients/macos/src/main/device-id.ts`) all agree on the same env-scoped path, so `cadet login`, guardian leasing, persisted device IDs, and desktop session state never bleed between environments.
+Platform tokens (`platform-token`), device IDs (`device-id`), and guardian tokens (`assistants/<id>/guardian-token.json`) live under the env-scoped config dir. The CLI (`cli/src/lib/platform-client.ts`, `cli/src/lib/guardian-token.ts`), the daemon (`assistant/src/util/platform.ts:getXdgPlatformTokenPath`, `getXdgCadetConfigDirName`), and the Electron app (`clients/macos/src/main/device-id.ts`) all agree on the same env-scoped path, so `cadet login`, guardian leasing, persisted device IDs, and desktop session state never bleed between environments.
 
 Paired guardian credentials stay in the trusted host. The renderer sends paired traffic to `/assistant/__gateway-paired/<assistantId>/*` without a bearer. The Electron main process, CLI web host, or Vite development host resolves the paired entry, removes any renderer-provided `Authorization` header, reads or refreshes the guardian token, and injects it only on the remote gateway hop. Renderer-facing guardian-token endpoints reject paired assistant IDs. Packaged Electron gates the custom-protocol route through main-process `WebRequest` frame identity because Chromium omits Origin, Referer, and Fetch Metadata from the `GlobalRequest` delivered to custom protocol handlers.
 
@@ -116,7 +116,7 @@ Paired guardian credentials stay in the trusted host. The renderer sends paired 
 
 Connecting a second machine, a phone, or a tablet to a self-hosted assistant runs on one secret: the device code of a challenge minted on the assistant's gateway. Which side mints the challenge sets the direction. The host mints and approves in one step and hands over a pairing link carrying the code, or the joining device mints for itself and shows a short approval code for the host to approve afterward. Every QR code in the flow renders one of those two, never a credential of its own. The user-facing walkthrough is [`docs/self-hosted-phone.md`](docs/self-hosted-phone.md).
 
-**The pairing link** is the forward direction. `cadet pair` and the desktop **Settings → General → Pair a device** card both mint a remote-web challenge on the assistant's own gateway over loopback and approve it on the spot, because running either one on the host machine _is_ the proof of local presence. `buildRemoteWebPairingUrl` composes the result as `<publicBaseUrl>/assistant/pair#device_code=<code>`, carrying the code in the fragment so it never reaches the wire. By default the QR code is that same link rendered as pixels: scanning it, opening it in a browser, and pasting it into `cadet connect import` are three ways to spend one link. `cadet pair --app` changes what the QR encodes, not what pairing does: `buildAppConnectUrl` composes `<scheme>://connect?url=<base>&code=<device code>` (default scheme `vellum-assistant`) so a scan opens the native app on that same device code, and the command prints the app link plus the https link for a device without the app.
+**The pairing link** is the forward direction. `cadet pair` and the desktop **Settings → General → Pair a device** card both mint a remote-web challenge on the assistant's own gateway over loopback and approve it on the spot, because running either one on the host machine _is_ the proof of local presence. `buildRemoteWebPairingUrl` composes the result as `<publicBaseUrl>/assistant/pair#device_code=<code>`, carrying the code in the fragment so it never reaches the wire. By default the QR code is that same link rendered as pixels: scanning it, opening it in a browser, and pasting it into `cadet connect import` are three ways to spend one link. `cadet pair --app` changes what the QR encodes, not what pairing does: `buildAppConnectUrl` composes `<scheme>://connect?url=<base>&code=<device code>` (default scheme `mycadet`) so a scan opens the native app on that same device code, and the command prints the app link plus the https link for a device without the app.
 
 **The approval code** is the reverse direction, for starting at the joining device and getting to the host afterward. Handed a bare `https://host` address instead of a link, the importing device mints its own challenge, displays the short `ABCD-EFGH` user code, and polls. The host approves it with `cadet pair --web-approve <code>` or from the pending-requests list on the Pair a device card. `POST /v1/remote-web/pairing-verification` and the three `/v1/remote-web/pairing-requests` routes are loopback-gated, so approving means being on the host.
 
@@ -134,13 +134,13 @@ Four compensating controls bound it, and each is load-bearing. The device code i
 
 Backwards compatibility lives entirely in the read path — no on-disk migration is performed.
 
-- Existing production lockfile entries with `instanceDir = homedir()` continue to work: the daemon receives `VELLUM_WORKSPACE_DIR = homedir()/.vellum/workspace` and resolves to `~/.vellum/` exactly as before.
-- Production writes still go to the legacy `~/.vellum.lock.json` filename; the rename-era `~/.vellum.lockfile.json` is accepted as a read fallback.
-- Unknown values of `VELLUM_ENVIRONMENT` (anything outside the seed table) resolve to `cadet` rather than a fabricated `vellum-<garbage>` directory, so misconfiguration degrades gracefully to the production path.
+- Existing production lockfile entries with `instanceDir = homedir()` continue to work: the daemon receives `CADET_WORKSPACE_DIR = homedir()/.cadet/workspace` and resolves to `~/.cadet/` exactly as before.
+- Production writes still go to the legacy `~/.cadet.lock.json` filename; the rename-era `~/.cadet.lockfile.json` is accepted as a read fallback.
+- Unknown values of `CADET_ENVIRONMENT` (anything outside the seed table) resolve to `cadet` rather than a fabricated `cadet-<garbage>` directory, so misconfiguration degrades gracefully to the production path.
 
 ### Mixed local/remote and targeting
 
-The lockfile can contain both local and remote entries side-by-side. Remote entries (`cloud: "gcp"`, `"aws"`, `"vellum"`, `"custom"`) carry connection metadata (`runtimeUrl`, `bearerToken`, etc.) but no `resources` block. `wake` and `sleep` only operate on local entries. `retire` works on both and dispatches per-cloud teardown for remote entries. CLI commands resolve which instance to target via `resolveTargetAssistant()` in the order: explicit name argument → `activeAssistant` field (set by `cadet use`) → sole local assistant.
+The lockfile can contain both local and remote entries side-by-side. Remote entries (`cloud: "gcp"`, `"aws"`, `"cadet"`, `"custom"`) carry connection metadata (`runtimeUrl`, `bearerToken`, etc.) but no `resources` block. `wake` and `sleep` only operate on local entries. `retire` works on both and dispatches per-cloud teardown for remote entries. CLI commands resolve which instance to target via `resolveTargetAssistant()` in the order: explicit name argument → `activeAssistant` field (set by `cadet use`) → sole local assistant.
 
 ## Multi-Local Instance Isolation
 
@@ -151,11 +151,11 @@ Multiple local assistant instances can run side-by-side on the same machine, eac
 Each named instance gets its own directory tree. The exact location depends on environment and whether the lockfile entry predates the env-aware allocator (see [Environment and Data Layout](#environment-and-data-layout) for allocation rules). For a production install of two new assistants `alice` and `bob`:
 
 ```
-~/.vellum.lock.json                                       # Global lockfile
-~/.local/share/vellum/assistants/
+~/.cadet.lock.json                                       # Global lockfile
+~/.local/share/cadet/assistants/
 ├── alice/                                                # instanceDir for alice
-│   └── .vellum/                                          # Daemon root (vellumRoot())
-│       ├── vellum.pid                                    # Daemon PID (duplicated by the CLI on spawn)
+│   └── .cadet/                                          # Daemon root (cadetRoot())
+│       ├── cadet.pid                                    # Daemon PID (duplicated by the CLI on spawn)
 │       ├── gateway.pid
 │       ├── ngrok.pid
 │       ├── runtime-port
@@ -170,11 +170,11 @@ Each named instance gets its own directory tree. The exact location depends on e
 │           │   └── logs/
 │           └── skills/
 └── bob/
-    └── .vellum/
+    └── .cadet/
         └── ...                                           # Same structure as alice
 ```
 
-An existing production lockfile entry created before env-aware allocation may still have `instanceDir = ~` and all of its state under `~/.vellum/`. That path is preserved via the lockfile read path — no data is moved. Non-production (`vellum-<env>`) hatches use the same layout under `$XDG_DATA_HOME/vellum-<env>/assistants/<name>/`.
+An existing production lockfile entry created before env-aware allocation may still have `instanceDir = ~` and all of its state under `~/.cadet/`. That path is preserved via the lockfile read path — no data is moved. Non-production (`cadet-<env>`) hatches use the same layout under `$XDG_DATA_HOME/cadet-<env>/assistants/<name>/`.
 
 All instances are created with explicit names via `cadet hatch --name <name>`.
 
@@ -182,12 +182,12 @@ All instances are created with explicit names via `cadet hatch --name <name>`.
 
 Each instance gets its own:
 
-- **`VELLUM_WORKSPACE_DIR`**: Set to `<instanceDir>/.vellum/workspace`. The daemon resolves all workspace state (DB, logs, memory indices) relative to this directory.
-- **`GATEWAY_SECURITY_DIR`** / **`CREDENTIAL_SECURITY_DIR`**: Set to `<instanceDir>/.vellum/protected`. The gateway and credential-executor resolve their security state (keys, trust rules, credentials) relative to these directories.
-- **`CES_BOOTSTRAP_SOCKET_DIR`**: Set to `<instanceDir>/.vellum/protected/credential-executor`. CES binds `ces.sock` here; the assistant and its children discover the same path. Not derived from `VELLUM_WORKSPACE_DIR`.
+- **`CADET_WORKSPACE_DIR`**: Set to `<instanceDir>/.cadet/workspace`. The daemon resolves all workspace state (DB, logs, memory indices) relative to this directory.
+- **`GATEWAY_SECURITY_DIR`** / **`CREDENTIAL_SECURITY_DIR`**: Set to `<instanceDir>/.cadet/protected`. The gateway and credential-executor resolve their security state (keys, trust rules, credentials) relative to these directories.
+- **`CES_BOOTSTRAP_SOCKET_DIR`**: Set to `<instanceDir>/.cadet/protected/credential-executor`. CES binds `ces.sock` here; the assistant and its children discover the same path. Not derived from `CADET_WORKSPACE_DIR`.
 - **Daemon port** (`RUNTIME_HTTP_PORT`), **Gateway port** (`GATEWAY_PORT`), **Qdrant port** (`QDRANT_HTTP_PORT`): Allocated by scanning upward from the environment's base port — see "Port allocation" below.
-- **PID file**: `<instanceDir>/.vellum/vellum.pid`
-- **SQLite database, logs, memory indices**: All under `<instanceDir>/.vellum/workspace/data/`
+- **PID file**: `<instanceDir>/.cadet/cadet.pid`
+- **SQLite database, logs, memory indices**: All under `<instanceDir>/.cadet/workspace/data/`
 
 ### Port allocation
 
@@ -195,7 +195,7 @@ Each instance gets its own:
 
 ### Lockfile schema
 
-The production lockfile (`~/.vellum.lock.json`) tracks all instances:
+The production lockfile (`~/.cadet.lock.json`) tracks all instances:
 
 ```jsonc
 {
@@ -206,11 +206,11 @@ The production lockfile (`~/.vellum.lock.json`) tracks all instances:
       "cloud": "local",
       "hatchedAt": "2026-03-04T...",
       "resources": {                    // Present for local entries
-        "instanceDir": "~/.local/share/vellum/assistants/alice",
+        "instanceDir": "~/.local/share/cadet/assistants/alice",
         "daemonPort": 7821,
         "gatewayPort": 7830,
         "qdrantPort": 6333,
-        "pidFile": "~/.local/share/vellum/assistants/alice/.vellum/vellum.pid"
+        "pidFile": "~/.local/share/cadet/assistants/alice/.cadet/cadet.pid"
       }
     },
     {
@@ -226,8 +226,8 @@ The production lockfile (`~/.vellum.lock.json`) tracks all instances:
 
 - `resources` (`LocalInstanceResources`): Present on all local entries. Contains per-instance ports and paths.
 - `activeAssistant`: Determines which instance CLI commands target by default.
-- Remote assistants (`cloud: "gcp"`, `"aws"`, `"vellum"`, etc.) are unaffected and have no `resources` field.
-- Non-production environments use `$XDG_CONFIG_HOME/vellum-<env>/lockfile.json` with the same schema.
+- Remote assistants (`cloud: "gcp"`, `"aws"`, `"cadet"`, etc.) are unaffected and have no `resources` field.
+- Non-production environments use `$XDG_CONFIG_HOME/cadet-<env>/lockfile.json` with the same schema.
 
 ## Docker Volume Architecture
 
@@ -245,7 +245,7 @@ Docker instances use dedicated volumes with per-service access boundaries instea
 <instance-name>-dockerd-data    →  /var/lib/docker      (assistant only — inner dockerd state)
 ```
 
-- **Workspace volume** (`/workspace`): Shared state — config, conversations, apps, skills, database, logs. Set via `VELLUM_WORKSPACE_DIR=/workspace`. The assistant and gateway have read-write access; the CES mounts it read-only (for config reading).
+- **Workspace volume** (`/workspace`): Shared state — config, conversations, apps, skills, database, logs. Set via `CADET_WORKSPACE_DIR=/workspace`. The assistant and gateway have read-write access; the CES mounts it read-only (for config reading).
 - **Gateway security volume** (`/gateway-security`): Files private to the gateway container. Only the gateway container mounts this volume. Set via `GATEWAY_SECURITY_DIR=/gateway-security`.
 - **CES security volume** (`/ces-security`): Credential encryption keys (`keys.enc`, `store.key`). Only the CES container mounts this volume. Set via `CREDENTIAL_SECURITY_DIR=/ces-security`.
 - **Socket volume** (`/run/ces-bootstrap`): CES bootstrap socket for initial service handshake between the assistant and CES containers.
@@ -279,7 +279,7 @@ Each bot container receives a bind of `/workspace` sourced from the assistant's 
 
 **Bare-metal fallback.** When the assistant runs directly on the host (bare-metal / local-dev mode) there is no inner `dockerd`; the daemon connects to the host's Docker engine and spawns bot containers as _siblings_ of the assistant process. In that configuration host-level `docker ps` does see each bot, and an ungraceful assistant exit can leave orphan bot containers — the meet-bot image's built-in max-meeting-minutes timeout caps their lifetime.
 
-**Security boundary — single-user local only.** The Docker-in-Docker model requires the assistant container to run with `--privileged`, or at minimum `CAP_SYS_ADMIN` + `CAP_NET_ADMIN`, so the inner `dockerd` can set up cgroups, overlay mounts, and container networks. This is acceptable for single-user local deployments where the assistant already runs with the user's privileges. It is **not** acceptable as-is for managed/multi-tenant mode: Kubernetes deployments must configure Pod Security Admission to allow this privilege level on the assistant pod, or swap in a different bot-spawn model (e.g. a Kubernetes job runner or a dedicated bot-scheduler service) before Meet can ship to managed instances. Managed Meet support is explicitly out of scope for this Docker-in-Docker approach — see [`vellum-assistant-platform`](../vellum-assistant-platform).
+**Security boundary — single-user local only.** The Docker-in-Docker model requires the assistant container to run with `--privileged`, or at minimum `CAP_SYS_ADMIN` + `CAP_NET_ADMIN`, so the inner `dockerd` can set up cgroups, overlay mounts, and container networks. This is acceptable for single-user local deployments where the assistant already runs with the user's privileges. It is **not** acceptable as-is for managed/multi-tenant mode: Kubernetes deployments must configure Pod Security Admission to allow this privilege level on the assistant pod, or swap in a different bot-spawn model (e.g. a Kubernetes job runner or a dedicated bot-scheduler service) before Meet can ship to managed instances. Managed Meet support is explicitly out of scope for this Docker-in-Docker approach — see [`mycadet-platform`](../mycadet-platform).
 
 ### Cross-Service Access Patterns
 
@@ -374,7 +374,7 @@ subgraph "Text Q&A Session"
             JOBS_WORKER["MemoryJobsWorker<br/>poll every 1.5s<br/>embed, extract, cleanup_stale"]
         end
 
-        subgraph "SQLite Database ($VELLUM_WORKSPACE_DIR/data/db/assistant.db)"
+        subgraph "SQLite Database ($CADET_WORKSPACE_DIR/data/db/assistant.db)"
             DB_CONV["conversations"]
             DB_MSG["messages"]
             DB_TOOL["tool_invocations"]
@@ -392,7 +392,7 @@ subgraph "Text Q&A Session"
             DB_CONTACTS["contacts<br/>(migrating to gateway)"]
         end
 
-        subgraph "SQLite Database ($VELLUM_WORKSPACE_DIR/data/db/assistant-memory.db)"
+        subgraph "SQLite Database ($CADET_WORKSPACE_DIR/data/db/assistant-memory.db)"
             DB_SEG["memory_segments"]
             DB_SUM["memory_summaries"]
             DB_EMB["memory_embeddings"]
@@ -473,10 +473,10 @@ subgraph "Text Q&A Session"
     end
 
     subgraph "macOS Local Storage"
-        ENC_STORE["Encrypted Store<br/>(local: ~/.vellum/protected/keys.enc<br/>Docker: /ces-security/keys.enc)"]
+        ENC_STORE["Encrypted Store<br/>(local: ~/.cadet/protected/keys.enc<br/>Docker: /ces-security/keys.enc)"]
         USERDEFAULTS["UserDefaults<br/>preferences / state"]
-        APP_SUPPORT["~/Library/App Support/<br/>vellum-assistant/"]
-        APPS_DATA["$VELLUM_WORKSPACE_DIR/data/apps/<br/>app JSON + pages"]
+        APP_SUPPORT["~/Library/App Support/<br/>mycadet/"]
+        APPS_DATA["$CADET_WORKSPACE_DIR/data/apps/<br/>app JSON + pages"]
         SESSION_LOGS["logs/session-*.json"]
     end
 
@@ -514,7 +514,7 @@ subgraph "Text Q&A Session"
     HTTP_RT -->|"ui_surface_show"| SURFACE_MGR
     SURFACE_MGR -->|"display != inline<br/>.openDynamicWorkspace"| WORKSPACE
     WORKSPACE --> DYN_PAGE
-    DYN_PAGE -->|"vellumBridge<br/>actions + data RPC<br/>(HTTP)"| HTTP_RT
+    DYN_PAGE -->|"cadetBridge<br/>actions + data RPC<br/>(HTTP)"| HTTP_RT
 
     %% Daemon internals
     HTTP_RT --> HANDLERS
@@ -665,7 +665,7 @@ All feature flags (assistant-scoped and client-scoped) are declared in the unifi
 
 **Resolution priority:** When determining whether an assistant flag is enabled, the resolver checks (highest priority first):
 
-1. `~/.vellum/protected/feature-flags.json` overrides (local) or gateway IPC socket (Docker)
+1. `~/.cadet/protected/feature-flags.json` overrides (local) or gateway IPC socket (Docker)
 2. Remote platform feature-flag snapshot, when a value is explicitly present
 3. Defaults registry `defaultEnabled`
 4. `false` (unknown flags fail closed)
@@ -717,7 +717,7 @@ End-to-end coverage lives in `assistant/src/__tests__/web-search-backend-failure
 
 - **Where the identity comes from.** The daemon reads `cadet:assistant_api_key` from the credential vault and spends it only on an outbound `Authorization: Api-Key` header. The plaintext key never crosses IPC into a CLI process and never appears in a response, a log, or an error body, so `runtime/routes/roadmap-routes.ts` is an allowlisted `secure-keys` importer (`credential-security-invariants`). `X-Api-Key` must not be substituted: that name collides with an unrelated internal credential under the service's case-insensitive header lookup, and a request carrying it is served as anonymous.
 - **Who may act.** Reads (`roadmap_list`, `roadmap_get`) fall back to anonymous when no key is stored, which only costs the viewer-upvoted marker. Every write requires the key and otherwise fails with a connect-first message. The gateway risk registry rates `create` and `delete` high and `update`, `upvote`, `unvote` medium: each one changes a public page attributed to the assistant.
-- **Which deployment it reaches.** The roadmap is a single public site with no per-environment deployment, so only production has a default host (`https://marketing.vellum.ai`); every other deployment must name its own endpoint through `VELLUM_MARKETING_URL`, and the route refuses to run until it does. Production is judged by `getPlatformBaseUrl()` resolving to `platform.vellum.ai`, not by `VELLUM_ENVIRONMENT`: unset, that variable means dev to `getPlatformBaseUrl` and local to every launcher, so reading it would let precisely the unlabelled assistant file real items and hand a key production never issued to a production host. The platform URL also accounts for the config file and `VELLUM_PLATFORM_URL`, and it names the deployment that issued the key these calls are signed with. Both endpoints resolve together from that one deployment, so a link can never name a different deployment than the call that fetched it, and a platform the seed table does not know (a self-hosted one) must name its web origin through `VELLUM_WEB_URL` as well. The whole resolution runs before the request rather than while rendering the reply, so a half-configured assistant fails before it publishes rather than after.
+- **Which deployment it reaches.** The roadmap is a single public site with no per-environment deployment, so only production has a default host (`https://marketing.mycadet.ai`); every other deployment must name its own endpoint through `CADET_MARKETING_URL`, and the route refuses to run until it does. Production is judged by `getPlatformBaseUrl()` resolving to `cloud.cadet.ai`, not by `CADET_ENVIRONMENT`: unset, that variable means dev to `getPlatformBaseUrl` and local to every launcher, so reading it would let precisely the unlabelled assistant file real items and hand a key production never issued to a production host. The platform URL also accounts for the config file and `CADET_PLATFORM_URL`, and it names the deployment that issued the key these calls are signed with. Both endpoints resolve together from that one deployment, so a link can never name a different deployment than the call that fetched it, and a platform the seed table does not know (a self-hosted one) must name its web origin through `CADET_WEB_URL` as well. The whole resolution runs before the request rather than while rendering the reply, so a half-configured assistant fails before it publishes rather than after.
 - **Bounded calls.** Each upstream request carries a 30s deadline, below the CLI's 60s IPC timeout, and honors the caller's abort signal. Closing the IPC socket does not abort a daemon handler, so an unbounded slow `create` could otherwise publish an item after its caller had already been told the request failed, and the retry would file a second one.
 
 ## Workflow Orchestration Engine
@@ -942,7 +942,7 @@ Plank runs on the managed desktop D-Bus session with private XDG configuration/d
 
 Virtual desktop Chrome enables balanced Memory Saver through the managed policies `HighEfficiencyModeEnabled=true` and `MemorySaverModeSavings=1`. Chrome can discard eligible inactive tabs to release memory; selecting a discarded tab reloads its page.
 
-Before launching Chrome or exposing its dock launcher, the Linux container session writes `CommandLineFlagSecurityWarningsEnabled=false` and `PasswordManagerEnabled=false` to `/etc/opt/chrome/policies/managed/vellum-desktop.json`. The extracted Google Chrome binary reads this system policy directory independently of its install location. This idempotent startup step covers fresh and previously installed desktops, preserves other policy files and unrelated values, and logs policy write failures without blocking the desktop. The policy hides command-line security warnings after Chrome restarts; it does not re-enable the sandbox or change launch flags. Password saving is disabled to suppress save-password prompts during automation; previously saved passwords remain usable. Chrome does not silently save new passwords with this policy. Host Chrome policies are untouched.
+Before launching Chrome or exposing its dock launcher, the Linux container session writes `CommandLineFlagSecurityWarningsEnabled=false` and `PasswordManagerEnabled=false` to `/etc/opt/chrome/policies/managed/cadet-desktop.json`. The extracted Google Chrome binary reads this system policy directory independently of its install location. This idempotent startup step covers fresh and previously installed desktops, preserves other policy files and unrelated values, and logs policy write failures without blocking the desktop. The policy hides command-line security warnings after Chrome restarts; it does not re-enable the sandbox or change launch flags. Password saving is disabled to suppress save-password prompts during automation; previously saved passwords remain usable. Chrome does not silently save new passwords with this policy. Host Chrome policies are untouched.
 
 The same managed policy file sets `NetworkPredictionOptions=2` to disable speculative DNS prefetching, TCP/SSL preconnections, and page prerendering in virtual desktop Chrome. This avoids speculative background work at the cost of potential navigation latency.
 
@@ -950,7 +950,7 @@ The same managed policy file sets `NetworkPredictionOptions=2` to disable specul
 
 **Transport.** `/v1/desktop/stream` is a pure RFB byte pipe: after the upgrade, every frame in both directions is binary and `DesktopStreamBridge` (`desktop-stream-bridge.ts`) pumps it to and from the VNC port, buffering client bytes that arrive before that socket is up. Nothing is signaled in-band; outcomes are close codes in the application range so they can neither collide with tunnel's own `1013` nor be remapped by the gateway's tunnel bridge. The manager decides them and the bridge only relays (`DesktopLoss`, through the viewer-slot result, `onDesktopLost`, or the `DesktopStartError` a start rejects with): `4008` desktop disabled or unsupported on this daemon, `4013` another viewer holds the slot, `4011` the desktop failed to start, died under the viewer, or the viewer fell too far behind (a dropped `ws.send`), and the standard `1001` when the runtime is shutting down, whether the socket arrived after shutdown began or a live viewer is cut off by it. On the managed path tunnel's bridge carries the runtime's `1001` as `4001` and the gateway's `1011` as `4011`, both of which the panel treats as retryable endings. The daemon upgrade is gated exactly as `/v1/watch/stream` (private-network peer and origin, gateway service token, one shared `upgradeRuntimeStream` path); the feature gate runs after the upgrade because the gateway relays close codes, not HTTP statuses, to the browser. VNC needs no password: only same-pod processes can reach the loopback port, and the authenticated upgrade is the only bridge to it.
 
-The managed desktop tunnel negotiates raw binary messages per connection. The gateway advertises `X-Vellum-Tunnel-Binary-WebSocket: 1` at registration; Tunnel confirms with `binary_messages: true` on desktop `websocket_open` frames. Confirmed streams use a binary envelope containing version byte 1, 32 lowercase ASCII hex connection-ID bytes, and the unchanged RFB payload. Other routes, text messages, and control messages retain JSON framing. Missing confirmation keeps JSON/base64 compatibility with older relays and gateways. Guardian checks remain on the existing desktop upgrade path.
+The managed desktop tunnel negotiates raw binary messages per connection. The gateway advertises `X-Cadet-Tunnel-Binary-WebSocket: 1` at registration; Tunnel confirms with `binary_messages: true` on desktop `websocket_open` frames. Confirmed streams use a binary envelope containing version byte 1, 32 lowercase ASCII hex connection-ID bytes, and the unchanged RFB payload. Other routes, text messages, and control messages retain JSON framing. Missing confirmation keeps JSON/base64 compatibility with older relays and gateways. Guardian checks remain on the existing desktop upgrade path.
 
 ### Virtual desktop computer use
 
@@ -974,7 +974,7 @@ The assistant points at things on the screen the user is sharing with a call, so
 
 For live-voice clients that advertise `lookFrames`, a `LOOK:SCREEN` control obtains a fresh view and starts sharing if necessary. The pending look retains the original caller request and any caller turns committed while it waits. Once its frame arrives, the hidden follow-up uses the combined request for front-door routing and carries it into the tool-capable leg if it escalates. Speculative caller turns contribute only after committing, including when their frame has already arrived. A caller turn launched after the frame suppresses the follow-up because it can already see that frame. The vision-capable front door decides whether the request needs annotation or only a spoken answer; hidden follow-ups skip the text-only escalation judge because it cannot assess the captured view. Capturing a frame does not complete a request to point at a control.
 
-**Offered on a negotiated capability, not on an interface.** The marks are drawn in a window the client opens for itself, so a client without one cannot answer the request at all. `host_cu_annotate` is therefore claimed by the client on its SSE connection (`X-Vellum-Cu-Annotate`, read in `assistant/src/runtime/routes/events-routes.ts`) rather than inferred from the interface, and `host-proxy-preactivation.ts` attaches the skill only when a connected client claims it. Offered from the `host_cu` transport alone the skill would reach Windows and Linux turns, whose executors forward it to a native helper that has no such action.
+**Offered on a negotiated capability, not on an interface.** The marks are drawn in a window the client opens for itself, so a client without one cannot answer the request at all. `host_cu_annotate` is therefore claimed by the client on its SSE connection (`X-Cadet-Cu-Annotate`, read in `assistant/src/runtime/routes/events-routes.ts`) rather than inferred from the interface, and `host-proxy-preactivation.ts` attaches the skill only when a connected client claims it. Offered from the `host_cu` transport alone the skill would reach Windows and Linux turns, whose executors forward it to a native helper that has no such action.
 
 **Routing.** The tools forward under the wire name `computer_use_point_at` (`assistant/src/tools/computer-use/skill-proxy-bridge.ts`), because that prefix is what `surfaceProxyResolver` routes to a desktop client. `hostCuCapabilityFor` maps that one name to `host_cu_annotate`, so the same-actor gate and the audit line name the capability that actually gated the request, and the call is exempt from the computer-use step budget.
 
@@ -999,7 +999,7 @@ graph LR
     SKILL["screen-annotation skill<br/>screen_point_at · screen_clear_marks"]
     BRIDGE["skill-proxy-bridge<br/>computer_use_point_at"]
     ROUTE["host-cu-target<br/>host_cu_annotate · same actor"]
-    SSE["Host proxy SSE<br/>X-Vellum-Cu-Annotate"]
+    SSE["Host proxy SSE<br/>X-Cadet-Cu-Annotate"]
     EXEC["PointAtExecutor<br/>Electron main"]
     HELPER["Shared CU helper<br/>every other tool"]
     PAINT["showCompanionCoachmarks<br/>owns the surface"]
@@ -1068,7 +1068,7 @@ See [From me chat alerts](assistant/src/notifications/README.md#from-me-chat-ale
 
 A native notification from an assistant is drawn as a message from that assistant: the assistant's avatar is the icon, its name is the first line, the conversation title drops to the second, and the body is unchanged. One drawing reaches remote APNs and FCM, app-originated mobile notifications, browser notifications, and the three Electron shells. Two client-scoped flags are independent and default off. `push-avatar-sender` gates sender metadata in platform pushes and Electron sender presentation. `local-notification-avatar` gates the iOS app-local native owner, Android app-local assistant presentation, and the prepared browser notification icon. Android coordinator ownership negotiation is independent of both presentation flags, so turning sender presentation off does not reopen an unshared delivery route. Neither flag advertises Android token capability or live foreground ownership. The platform companion is tracked in `meta/feature-flags/PENDING_PLATFORM_PRS.md`.
 
-**One disc, one spec.** `packages/avatar-manifest/src/notification-avatar.ts` (the `@vellumai/avatar-manifest/notification-avatar` subpath) owns the drawing: a 256px square holding a disc inscribed in it, filled with the assistant's accent mixed 14% into white (`#ECEFEA` when there is no accent), with custom images center-cover-cropped to fill the circle and character avatars inset 11% from each side. Both are clipped to the same circle the fill uses. The corners stay transparent deliberately, because iOS, Android, and the Windows toast logo slot all circle-crop what they are handed and a square of colour would show through as a ring anywhere that does not. The module is arithmetic and string building with no decoder and no node builtins, so both rasterizers call it: the daemon feeds `notificationAvatarSvg()` to resvg, and the web renderer draws the same geometry on a canvas. `NOTIFICATION_AVATAR_SPEC_VERSION` rides the sync's dedupe key so a change to the drawing re-uploads a disc whose source avatar never moved. Two caps live here and differ on purpose: `NOTIFICATION_AVATAR_MAX_BYTES` (128 KB) bounds the PNG that crosses a push transport, `NOTIFICATION_AVATAR_MAX_LOCAL_BYTES` (512 KB) the one that only crosses local IPC.
+**One disc, one spec.** `packages/avatar-manifest/src/notification-avatar.ts` (the `@mycadet/avatar-manifest/notification-avatar` subpath) owns the drawing: a 256px square holding a disc inscribed in it, filled with the assistant's accent mixed 14% into white (`#ECEFEA` when there is no accent), with custom images center-cover-cropped to fill the circle and character avatars inset 11% from each side. Both are clipped to the same circle the fill uses. The corners stay transparent deliberately, because iOS, Android, and the Windows toast logo slot all circle-crop what they are handed and a square of colour would show through as a ring anywhere that does not. The module is arithmetic and string building with no decoder and no node builtins, so both rasterizers call it: the daemon feeds `notificationAvatarSvg()` to resvg, and the web renderer draws the same geometry on a canvas. `NOTIFICATION_AVATAR_SPEC_VERSION` rides the sync's dedupe key so a change to the drawing re-uploads a disc whose source avatar never moved. Two caps live here and differ on purpose: `NOTIFICATION_AVATAR_MAX_BYTES` (128 KB) bounds the PNG that crosses a push transport, `NOTIFICATION_AVATAR_MAX_LOCAL_BYTES` (512 KB) the one that only crosses local IPC.
 
 **The daemon renders it and syncs it.** `assistant/src/avatar/notification-avatar.ts` builds the SVG and rasterizes it with resvg, loaded lazily through `assistant/src/avatar/resvg-lazy.ts` because the platform-specific native addon is absent from `bun --compile` binaries and a top-level import would take the daemon down at startup. A WebP source is transcoded to PNG first (resvg has no WebP decoder and renders such an `<image>` href blank), and an over-cap render is quantised to a palette PNG and dropped if that still misses. Every failure returns `null` rather than throwing, because the point is to leave the platform holding whatever it already has. `assistant/src/platform/sync-avatar.ts` folds the result into the avatar PATCH the daemon already sends to `/v1/assistants/{id}/`: `notification_avatar_base64` beside `avatar_base64`, both `null` when the avatar is removed, and the field omitted rather than nulled when no disc could be drawn. Its dedupe key is `<kind>:<raster digest>:<spec version>:<accent>:<disc|none>`, whose last segment is answered by `canRenderNotificationAvatar()`, a probe rather than a render. Folding render availability into the key is what keeps a sync that shipped only `avatar_base64` (no native rasterizer, no codec for the source) from latching for the key's whole 7-day life: the key moves the moment the cause clears. A platform that 400s the field gets exactly one reduced re-send without it, and `assistant/src/platform/platform-patch-queue.ts` persists the key the request actually shipped rather than the optimistic one the body was enqueued under.
 
@@ -1078,7 +1078,7 @@ A native notification from an assistant is drawn as a message from that assistan
 
 **iOS has separate remote and local owners.** `clients/ios/App/NotificationService/` is a `UNNotificationServiceExtension` embedded by all three app targets. It handles only APNs delivery: `SenderPayload.parse` requires a non-empty `id`, `name`, and `avatar_hash`; anything less and the push is delivered untouched. With a sender and an avatar in hand, `CommunicationContent.swift` donates an `INSendMessageIntent` whose `sender` is the assistant and whose `conversationIdentifier` is the assistant id (the same grouping macOS uses), makes it a two-recipient group whose `speakableGroupName` is the push title so the title lands on line two, and returns `content.updating(from:)`. `AvatarCache.swift` keeps the picture at `<App Group container>/Library/Caches/notification-avatars/<sha256>.png`: HTTPS only, 512 KB, eight entries evicted oldest-first by mtime, a 6-second monotonic download budget checked between bytes, and the bytes re-hashed before they are drawn, with symlinked or non-regular entries deleted rather than followed. Every failure path delivers the original content through the same one-shot handler, so a rewrite is never partial. App-originated notifications never pass through the extension. Under `local-notification-avatar` and a supported capability, the app-local `SenderNotification` plugin accepts the full-key post and owns submission. An exact prepared identity gates the Communication Notification sender rewrite, not ownership; a missing or stale identity makes the same native owner submit plain content once. The app targets carry `com.apple.developer.usernotifications.communication` and `NSUserActivityTypes = [INSendMessageIntent]`, the extension restates the App Group id in its own `Info.plist` because an entitlement is not Swift-readable, and `release-ios.yaml` asserts the App Group on every profile and the communication entitlement on the app's own before it archives. See [`clients/ios/README.md`](clients/ios/README.md#signing-four-profiles-per-environment).
 
-**Android shares one native coordinator.** `SafeMessagingService` is Firebase's message entry point in place of Capacitor's. Notification-block FCM retains the existing Capacitor route. Data-only FCM and app-local requests after the ownership handshake both claim the process-wide `NotificationDeliveryCoordinator`, so FCM-first, SSE-first, simultaneous, slow, and late arrivals converge on one terminal result. The versioned `AndroidPushRegistration` handshake binds live ownership to a page generation and stays separate from the token's `native-notification-render` capability and both presentation flags. `local-notification-avatar` decides whether a qualifying app-local post asks for assistant presentation; it does not select the coordinator owner. Page start, renderer loss, activity destruction, and bridge destruction clear live ownership through the serialized bridge lane without resetting coordinator memory. Negotiated foreground FCM visits the same visible active-conversation policy as SSE; a notification that survives that policy returns to the native coordinator for its only display and sound. `NativePushRenderer` posts a `MessagingStyle` conversation notification on the `vellum-alerts` channel with the assistant as the `Person`, the conversation title as the conversation title, and a long-lived conversation shortcut (at most two, and none for a self-hosted assistant). `AvatarCache.java` keeps the same file shape in the app's own cache directory, `<cacheDir>/notification-avatars/<sha256>.png`, under the same 512 KB and eight-file limits and the same re-hash-before-drawing rule, bounded by a 3-second connect, a 3-second response budget that starts before the response head, and a 2-second read timeout, with the bitmap sampled down to 512px before allocation. Permission or channel blocking is decided before avatar work. After the coordinator claims a key, failures remain native-owned and complete the retained result rather than falling back to a second renderer. See [`clients/android/README.md`](clients/android/README.md#native-notifications).
+**Android shares one native coordinator.** `SafeMessagingService` is Firebase's message entry point in place of Capacitor's. Notification-block FCM retains the existing Capacitor route. Data-only FCM and app-local requests after the ownership handshake both claim the process-wide `NotificationDeliveryCoordinator`, so FCM-first, SSE-first, simultaneous, slow, and late arrivals converge on one terminal result. The versioned `AndroidPushRegistration` handshake binds live ownership to a page generation and stays separate from the token's `native-notification-render` capability and both presentation flags. `local-notification-avatar` decides whether a qualifying app-local post asks for assistant presentation; it does not select the coordinator owner. Page start, renderer loss, activity destruction, and bridge destruction clear live ownership through the serialized bridge lane without resetting coordinator memory. Negotiated foreground FCM visits the same visible active-conversation policy as SSE; a notification that survives that policy returns to the native coordinator for its only display and sound. `NativePushRenderer` posts a `MessagingStyle` conversation notification on the `cadet-alerts` channel with the assistant as the `Person`, the conversation title as the conversation title, and a long-lived conversation shortcut (at most two, and none for a self-hosted assistant). `AvatarCache.java` keeps the same file shape in the app's own cache directory, `<cacheDir>/notification-avatars/<sha256>.png`, under the same 512 KB and eight-file limits and the same re-hash-before-drawing rule, bounded by a 3-second connect, a 3-second response budget that starts before the response head, and a 2-second read timeout, with the bitmap sampled down to 512px before allocation. Permission or channel blocking is decided before avatar work. After the coordinator claims a key, failures remain native-owned and complete the retained result rather than falling back to a second renderer. See [`clients/android/README.md`](clients/android/README.md#native-notifications).
 
 **Renderer preparation has scoped and legacy holders.** `clients/web/src/hooks/use-notification-avatar-sync.ts` runs across renderer surfaces when either sender flag needs preparation. It draws the disc with `rasterizeNotificationAvatar` and publishes an exact scoped identity snapshot for the mobile local bridges, browser notification path, and desktop sender adapter. It is keyed on the assistant, the spec version, the accent, and the avatar's manifest identity rather than its blob URL, which the query mints fresh on every refetch; an over-cap render is a settled answer that keeps the key, while a transient one buys exactly one redraw. The older module-level avatar singleton at `clients/web/src/runtime/notification-avatar.ts` remains a backward-compatible main-Electron-only publication outside pop-outs, but it does not feed notification delivery. `senderPayload()` in `clients/web/src/runtime/notifications.ts` reads the scoped `getNotificationIdentitySnapshot()` result and attaches `sender` to the `cadet:notifications:show` payload only when `push-avatar-sender` is on and the prepared identity names the active scope and assistant. `packages/ipc-contract` adds `NotificationSender` to `ShowNotificationPayload` with `avatarHash` constrained to 64 lowercase hex characters and `avatarBase64` bounded by the local cap, and the field is `.catch(undefined)` so a malformed decoration costs the avatar rather than the notification. `packages/electron-desktop/src/notifications.ts` decodes the base64 once at the IPC boundary and hands the verified bytes to the client's `create` factory. The macOS and Windows native paths require a file, so `packages/electron-desktop/src/notification-avatar-file.ts` stages those bytes at `<userData>/notification-avatars/<sha256>.png`: it recomputes the digest rather than trusting the name, counts a cache entry as a hit only while its length matches, stamps mtime on every hit, and prunes past the 16 newest while sparing any file younger than ten minutes. `notification-avatar-path.ts` wraps native-path staging so a throw is logged and reported as "no avatar", and `helper-toast-request.ts` derives the helper request. Linux does not read a staged sender file. Its Electron fallback builds a `nativeImage` directly from the verified bytes and passes that image as `icon`.
 

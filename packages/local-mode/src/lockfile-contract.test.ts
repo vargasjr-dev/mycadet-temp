@@ -17,7 +17,7 @@ describe("parseLockfile", () => {
         {
           assistantId: "asst_1",
           name: "Alice",
-          cloud: "vellum",
+          cloud: "cadet",
           runtimeUrl: "http://127.0.0.1:7777",
           hatchedAt: "2026-01-01T00:00:00.000Z",
           organizationId: "org_1",
@@ -37,7 +37,7 @@ describe("parseLockfile", () => {
     const raw = {
       activeAssistant: null,
       assistants: [
-        { assistantId: "asst_1", cloud: "vellum", runtimeUrl: "https://x" },
+        { assistantId: "asst_1", cloud: "cadet", runtimeUrl: "https://x" },
       ],
     };
 
@@ -45,7 +45,7 @@ describe("parseLockfile", () => {
     expect(parsed.assistants).toHaveLength(1);
     expect(parsed.assistants[0]).toEqual({
       assistantId: "asst_1",
-      cloud: "vellum",
+      cloud: "cadet",
       runtimeUrl: "https://x",
     });
   });
@@ -174,15 +174,15 @@ describe("parseLockfile", () => {
     // requests without guessing; local entries simply omit it.
     const raw = {
       assistants: [
-        { assistantId: "asst_1", cloud: "vellum", organizationId: "org_1" },
-        { assistantId: "asst_2", cloud: "vellum", organizationId: 7 }, // mistyped
+        { assistantId: "asst_1", cloud: "cadet", organizationId: "org_1" },
+        { assistantId: "asst_2", cloud: "cadet", organizationId: 7 }, // mistyped
         { assistantId: "asst_3", cloud: "local" }, // local, no org
       ],
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
-      { assistantId: "asst_1", cloud: "vellum", organizationId: "org_1" },
-      { assistantId: "asst_2", cloud: "vellum" },
+      { assistantId: "asst_1", cloud: "cadet", organizationId: "org_1" },
+      { assistantId: "asst_2", cloud: "cadet" },
       { assistantId: "asst_3", cloud: "local" },
     ]);
   });
@@ -243,7 +243,7 @@ describe("parseLockfile", () => {
             gatewayPort: 7777,
             daemonPort: 7778,
             runtimeVersion: "v0.8.13",
-            runtimeInstallDir: "/tmp/vellum/runtime/0.8.13",
+            runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
           },
         },
       ],
@@ -253,7 +253,7 @@ describe("parseLockfile", () => {
       gatewayPort: 7777,
       daemonPort: 7778,
       runtimeVersion: "v0.8.13",
-      runtimeInstallDir: "/tmp/vellum/runtime/0.8.13",
+      runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
     });
   });
 
@@ -268,7 +268,7 @@ describe("parseLockfile", () => {
             gatewayPort: 7777,
             daemonPort: 7778,
             runtimeVersion: "v0.8.13",
-            runtimeInstallDir: "/tmp/vellum/runtime/0.8.13",
+            runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
             qdrantPort: 7779,
             cesPort: 7780,
             signingKey: "hunter2",
@@ -282,7 +282,7 @@ describe("parseLockfile", () => {
       gatewayPort: 7777,
       daemonPort: 7778,
       runtimeVersion: "v0.8.13",
-      runtimeInstallDir: "/tmp/vellum/runtime/0.8.13",
+      runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
     });
   });
 
@@ -313,20 +313,20 @@ describe("parseLockfile", () => {
   test("prefers an explicit cloud over legacy remote markers", () => {
     const raw = {
       assistants: [
-        { assistantId: "a", cloud: "vellum", project: "stale-proj" },
+        { assistantId: "a", cloud: "cadet", project: "stale-proj" },
       ],
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
-      { assistantId: "a", cloud: "vellum" },
+      { assistantId: "a", cloud: "cadet" },
     ]);
   });
 });
 
 describe("resolveCloud", () => {
   test("prefers an explicit cloud", () => {
-    expect(resolveCloud({ cloud: "vellum", project: "p", sshUser: "u" })).toBe(
-      "vellum",
+    expect(resolveCloud({ cloud: "cadet", project: "p", sshUser: "u" })).toBe(
+      "cadet",
     );
   });
 
@@ -362,7 +362,7 @@ describe("taxonomy", () => {
       "docker",
       "apple-container",
       "cloud",
-      "vellum",
+      "cadet",
       "gcp",
       "aws",
       "custom",

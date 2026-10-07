@@ -31,7 +31,7 @@ if (import.meta.main) {
     const localAppData = process.env.LOCALAPPDATA;
     if (!localAppData) {
       throw new Error(
-        "LOCALAPPDATA is unavailable. Retry uninstalling Vellum.",
+        "LOCALAPPDATA is unavailable. Retry uninstalling Cadet.",
       );
     }
     uninstallPackagedCli(process.execPath, localAppData);

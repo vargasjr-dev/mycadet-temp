@@ -8,12 +8,12 @@ const log = getLogger("cors");
 /**
  * Pattern matching origins from the embedded WKWebView.
  *
- * The macOS app loads webview content from `https://{appId}.vellum.local/`,
+ * The macOS app loads webview content from `https://{appId}.cadet.local/`,
  * which is cross-origin relative to the local gateway at
  * `http://127.0.0.1:{port}`. Without CORS headers, the browser blocks
  * `window.cadet.fetch` requests from the webview to the gateway.
  */
-const WEBVIEW_ORIGIN_RE = /^https:\/\/[a-z0-9-]+\.vellum\.local$/;
+const WEBVIEW_ORIGIN_RE = /^https:\/\/[a-z0-9-]+\.cadet\.local$/;
 
 /**
  * Methods the webview bridge may use when calling custom route handlers.
@@ -24,7 +24,7 @@ const ALLOWED_METHODS = "GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS";
  * Headers the webview bridge sends (auth + content type + org id + client
  * identity for ATL-703 self-echo suppression + analytics metadata).
  *
- * `X-Vellum-Client-Id` / `X-Vellum-Interface-Id` mirror the headers the
+ * `X-Cadet-Client-Id` / `X-Cadet-Interface-Id` mirror the headers the
  * Chrome extension already sends (see `extensionCorsHeaders` below) and the
  * raw SSE streams attach via `getClientRegistrationHeaders()`. The web SPA's
  * central HeyAPI interceptor (`clients/web/src/lib/api-interceptors.ts`)
@@ -39,12 +39,12 @@ const ALLOWED_HEADERS = [
   "Authorization",
   "Content-Type",
   "X-Session-Token",
-  "Vellum-Organization-Id",
+  "Cadet-Organization-Id",
   "X-Trace-Id",
-  "X-Vellum-Client-Id",
-  "X-Vellum-Interface-Id",
-  "X-Vellum-Client-Version",
-  "X-Vellum-Sse-Watchdog",
+  "X-Cadet-Client-Id",
+  "X-Cadet-Interface-Id",
+  "X-Cadet-Client-Version",
+  "X-Cadet-Sse-Watchdog",
   ...Object.values(CLIENT_METADATA_HEADERS),
 ].join(", ");
 
@@ -83,11 +83,11 @@ export function extensionCorsHeaders(origin: string): Record<string, string> {
     // GET for SSE (/v1/events), POST for pair + host-browser callbacks
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     // All headers the extension service worker sends across these routes:
-    //   /v1/pair          → content-type, x-vellum-interface-id
-    //   /v1/events (SSE)  → accept, x-vellum-client-id, x-vellum-interface-id
+    //   /v1/pair          → content-type, x-cadet-interface-id
+    //   /v1/events (SSE)  → accept, x-cadet-client-id, x-cadet-interface-id
     //   /v1/host-browser-* → content-type, authorization
     "Access-Control-Allow-Headers":
-      "Accept, Authorization, Content-Type, X-Vellum-Client-Id, X-Vellum-Interface-Id, X-Vellum-Client-Version, X-Vellum-Sse-Watchdog",
+      "Accept, Authorization, Content-Type, X-Cadet-Client-Id, X-Cadet-Interface-Id, X-Cadet-Client-Version, X-Cadet-Sse-Watchdog",
     "Access-Control-Allow-Private-Network": "true",
     "Access-Control-Max-Age": "86400",
   };

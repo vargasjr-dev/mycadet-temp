@@ -49,7 +49,7 @@ function makePairRequest(body?: Record<string, unknown>): Request {
       host: "localhost:7830",
       "content-type": "application/json",
       origin: PROD_ORIGIN,
-      "x-vellum-interface-id": "chrome-extension",
+      "x-cadet-interface-id": "chrome-extension",
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -91,8 +91,8 @@ beforeEach(async () => {
     .values({
       id: `ch-${GUARDIAN_ID}`,
       contactId: GUARDIAN_ID,
-      type: "vellum",
-      address: "guardian-vellum",
+      type: "cadet",
+      address: "guardian-cadet",
       isPrimary: false,
       status: "active",
       policy: "allow",
@@ -233,7 +233,7 @@ describe("/v1/pair cli interface", () => {
       headers: {
         host: "localhost:7830",
         "content-type": "application/json",
-        "x-vellum-interface-id": "cli",
+        "x-cadet-interface-id": "cli",
       },
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -274,7 +274,7 @@ describe("/v1/pair cli interface", () => {
   });
 
   test("rejects a cli request carrying an Origin header (WebView exfiltration vector)", async () => {
-    // A browser/WebView page (e.g. a dynamic surface at *.vellum.local) always
+    // A browser/WebView page (e.g. a dynamic surface at *.cadet.local) always
     // sends an Origin; a real `cadet pair` never does. Such a request would
     // otherwise pass the loopback guards (it runs on the same machine) and mint
     // a broadly-scoped token the page could read back via the WebView CORS
@@ -284,8 +284,8 @@ describe("/v1/pair cli interface", () => {
       headers: {
         host: "localhost:7830",
         "content-type": "application/json",
-        "x-vellum-interface-id": "cli",
-        origin: "https://app.vellum.local",
+        "x-cadet-interface-id": "cli",
+        origin: "https://app.cadet.local",
       },
       body: JSON.stringify({ deviceId: "device-cli", platform: "webview" }),
     });

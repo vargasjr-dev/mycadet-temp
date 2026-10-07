@@ -1077,7 +1077,7 @@ export interface MarkdownMessageProps {
    * Custom URL transform applied to link, image, and definition URLs.
    * Overrides react-markdown's default sanitization which only allows
    * `http:`, `https:`, `mailto:`, and a few other schemes. Use this to
-   * permit custom URI schemes (e.g. `vellum://`).
+   * permit custom URI schemes (e.g. `mycadet://`).
    *
    * @see https://github.com/remarkjs/react-markdown?tab=readme-ov-file#urltransform
    */

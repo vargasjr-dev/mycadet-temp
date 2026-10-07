@@ -79,8 +79,8 @@ function makeDeps(): EventHandlerDeps {
       get: () => () => {},
     }) as unknown as EventHandlerDeps["rlog"],
     turnChannelContext: {
-      userMessageChannel: "vellum",
-      assistantMessageChannel: "vellum",
+      userMessageChannel: "cadet",
+      assistantMessageChannel: "cadet",
     } as EventHandlerDeps["turnChannelContext"],
     turnInterfaceContext: {
       userMessageInterface: "macos",

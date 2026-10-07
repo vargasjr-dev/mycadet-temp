@@ -223,7 +223,7 @@ export class ConversationEvictor {
   /**
    * Resolved on first sweep rather than at construction: the module-level
    * singleton is built at import, before the daemon has loaded its dotenv
-   * file, and VELLUM_MEMORY_LIMIT may come from there.
+   * file, and CADET_MEMORY_LIMIT may come from there.
    */
   private resolveMemoryThresholdBytes(): number {
     this.memoryThresholdBytes ??= defaultMemoryThresholdBytes(

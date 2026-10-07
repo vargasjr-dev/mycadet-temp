@@ -469,7 +469,7 @@ export type AgentEvent =
        * as `directions`). The loop does not invent a substitute snapshot
        * of messages/tools/systemPrompt; a missing payload stays missing.
        * `actualProvider` echoes `ProviderError.provider` so a routed
-       * invocation (e.g. Vellum via a Fireworks default wrapper) is
+       * invocation (e.g. Cadet via a Fireworks default wrapper) is
        * attributed to the transport that actually ran.
        *
        * Re-thrown by the inner LLM-call try/catch after emission so the

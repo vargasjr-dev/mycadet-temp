@@ -1,6 +1,6 @@
 # Uploads vendored marketplace plugin icons to GCS. See docs/plugin-icon-contract.md.
 # Bytes are pre-vendored + CI-checked (no fetch/re-validation here).
-# External prereq (vellum-assistant-platform Terraform): the per-env GCS bucket,
+# External prereq (mycadet-platform Terraform): the per-env GCS bucket,
 # WIF binding, and GCS_PLUGIN_ASSETS_BUCKET var. Until that lands the job skips cleanly.
 name: Upload Plugin Assets to GCS
 

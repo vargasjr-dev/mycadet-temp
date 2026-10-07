@@ -359,7 +359,7 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: "YES"
-        PRODUCT_BUNDLE_IDENTIFIER: ai.vellum.assistant.AppTests
+        PRODUCT_BUNDLE_IDENTIFIER: ai.mycadet.assistant.AppTests
     scheme:
       testTargets:
         - AppTests

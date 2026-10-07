@@ -475,7 +475,7 @@ export function buildSystemPrompt(options?: BuildSystemPromptOptions): string {
   // the guardian's contact, then to "default" when nothing resolves);
   // `users/<slug>.md → users/default.md` fallback lives in the
   // section's `workspacePath` array.  `channelSlug` is the channel
-  // identifier from `channelCapabilities`, defaulting to "vellum".
+  // identifier from `channelCapabilities`, defaulting to "cadet".
   // An explicit `personaOverride` slug wins over either derivation.
   const userSlug =
     options?.personaOverride?.userSlug ??
@@ -484,7 +484,7 @@ export function buildSystemPrompt(options?: BuildSystemPromptOptions): string {
   const channelSlug =
     options?.personaOverride?.channelSlug ??
     options?.channelCapabilities?.channel ??
-    "vellum";
+    "cadet";
   // The override's `hasNoClient` pin wins over the conversation-derived
   // top-level option (see the interface doc); placed after the `...options`
   // spread below so it overrides the spread-in value.

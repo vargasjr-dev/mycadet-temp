@@ -101,16 +101,16 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
-          owner: vellum-ai
-          repositories: vellum-assistant-platform
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          owner: cadet-ai
+          repositories: mycadet-platform
 
       - name: Trigger platform docs deploy
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh workflow run docs-cd.yaml \
-            --repo vellum-ai/vellum-assistant-platform \
+            --repo vargasjr-dev/mycadet-platform \
             --field environment="${{ matrix.environment }}" \
             --field docs_image_tag="${{ github.sha }}"

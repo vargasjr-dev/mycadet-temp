@@ -143,7 +143,7 @@ function installOverfullCompactionManager(): { trust: TrustContext } {
     manager.recoverContextOverflow =
       rebuild as unknown as typeof manager.recoverContextOverflow;
   }
-  return { trust: { sourceChannel: "vellum", trustClass: "unknown" } };
+  return { trust: { sourceChannel: "cadet", trustClass: "unknown" } };
 }
 
 /** Image blocks in the last history the provider was asked to send. */

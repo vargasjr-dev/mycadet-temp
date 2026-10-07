@@ -8,17 +8,17 @@
  */
 
 export const APP_PROTOCOL = "app";
-export const APP_HOST = "vellum.ai";
+export const APP_HOST = "mycadet.ai";
 
-declare const __VELLUM_BUILD_SHA__: string;
-declare const __VELLUM_ENVIRONMENT__: string;
+declare const __CADET_BUILD_SHA__: string;
+declare const __CADET_ENVIRONMENT__: string;
 
 export const LINUX_RELEASE_INFO = {
   commitSha:
-    typeof __VELLUM_BUILD_SHA__ === "string" ? __VELLUM_BUILD_SHA__ : "unknown",
+    typeof __CADET_BUILD_SHA__ === "string" ? __CADET_BUILD_SHA__ : "unknown",
   releaseChannel:
-    typeof __VELLUM_ENVIRONMENT__ === "string"
-      ? __VELLUM_ENVIRONMENT__
+    typeof __CADET_ENVIRONMENT__ === "string"
+      ? __CADET_ENVIRONMENT__
       : "production",
 };
 
@@ -27,7 +27,7 @@ const DEV_SERVER_FALLBACK_URL = "http://localhost:5173/assistant";
 export const RENDERER_BASE_PROD = `${APP_PROTOCOL}://${APP_HOST}/assistant`;
 
 export const getDevRendererBase = (): string =>
-  (process.env.VELLUM_DEV_URL ?? DEV_SERVER_FALLBACK_URL).replace(/\/+$/, "");
+  (process.env.CADET_DEV_URL ?? DEV_SERVER_FALLBACK_URL).replace(/\/+$/, "");
 
 export const getRendererBase = (isPackaged: boolean): string =>
   usesAppProtocolRenderer(isPackaged)
@@ -35,7 +35,7 @@ export const getRendererBase = (isPackaged: boolean): string =>
     : getDevRendererBase();
 
 export const usesAppProtocolRenderer = (isPackaged: boolean): boolean =>
-  isPackaged || process.env.VELLUM_LOCAL_RENDERER === "true";
+  isPackaged || process.env.CADET_LOCAL_RENDERER === "true";
 
 export const getRendererRootUrl = (isPackaged: boolean): string =>
   usesAppProtocolRenderer(isPackaged)

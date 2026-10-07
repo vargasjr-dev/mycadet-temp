@@ -211,7 +211,7 @@ async function readAuthPrerequisites(): Promise<{
   unreachable: boolean;
 }> {
   const envKey = envTrim("ASSISTANT_API_KEY");
-  const envUrl = envTrim("VELLUM_PLATFORM_URL").replace(/\/+$/, "");
+  const envUrl = envTrim("CADET_PLATFORM_URL").replace(/\/+$/, "");
 
   const [apiKeyRead, baseUrlRead] = await Promise.all([
     readCredentialOrEnv(ASSISTANT_API_KEY_ACCOUNT, envKey),

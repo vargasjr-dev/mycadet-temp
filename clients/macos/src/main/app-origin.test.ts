@@ -13,39 +13,39 @@ mock.module("electron", () => ({
 
 const { isAllowedOrigin, resolveAllowedOrigin } = await import("./app-origin");
 
-const ORIGINAL_DEV_URL = process.env.VELLUM_DEV_URL;
+const ORIGINAL_DEV_URL = process.env.CADET_DEV_URL;
 
 beforeEach(() => {
   appState.isPackaged = false;
-  delete process.env.VELLUM_DEV_URL;
+  delete process.env.CADET_DEV_URL;
 });
 
 afterEach(() => {
   if (ORIGINAL_DEV_URL === undefined) {
-    delete process.env.VELLUM_DEV_URL;
+    delete process.env.CADET_DEV_URL;
   } else {
-    process.env.VELLUM_DEV_URL = ORIGINAL_DEV_URL;
+    process.env.CADET_DEV_URL = ORIGINAL_DEV_URL;
   }
 });
 
 describe("resolveAllowedOrigin", () => {
-  test("packaged builds resolve to the app://vellum.ai tuple origin", () => {
+  test("packaged builds resolve to the app://mycadet.ai tuple origin", () => {
     appState.isPackaged = true;
     expect(resolveAllowedOrigin()).toEqual({
       protocol: "app:",
-      host: "vellum.ai",
+      host: "mycadet.ai",
     });
   });
 
-  test("dev falls back to the local Vite origin when VELLUM_DEV_URL is unset", () => {
+  test("dev falls back to the local Vite origin when CADET_DEV_URL is unset", () => {
     expect(resolveAllowedOrigin()).toEqual({
       protocol: "http:",
       host: "localhost:5173",
     });
   });
 
-  test("dev honors VELLUM_DEV_URL, including a non-default port in the host", () => {
-    process.env.VELLUM_DEV_URL = "http://localhost:3000/assistant";
+  test("dev honors CADET_DEV_URL, including a non-default port in the host", () => {
+    process.env.CADET_DEV_URL = "http://localhost:3000/assistant";
     expect(resolveAllowedOrigin()).toEqual({
       protocol: "http:",
       host: "localhost:3000",
@@ -57,17 +57,17 @@ describe("resolveAllowedOrigin", () => {
     appState.isPackaged = true;
     expect(resolveAllowedOrigin()).toEqual({
       protocol: "app:",
-      host: "vellum.ai",
+      host: "mycadet.ai",
     });
   });
 });
 
 describe("isAllowedOrigin", () => {
-  const prod = { protocol: "app:", host: "vellum.ai" };
+  const prod = { protocol: "app:", host: "mycadet.ai" };
   const dev = { protocol: "http:", host: "localhost:5173" };
 
   test("accepts the exact packaged origin string a frame reports", () => {
-    expect(isAllowedOrigin("app://vellum.ai", prod)).toBe(true);
+    expect(isAllowedOrigin("app://mycadet.ai", prod)).toBe(true);
   });
 
   test("accepts an already-parsed URL navigation target", () => {
@@ -82,7 +82,7 @@ describe("isAllowedOrigin", () => {
   });
 
   test("rejects a protocol mismatch on the right host", () => {
-    expect(isAllowedOrigin("https://vellum.ai", prod)).toBe(false);
+    expect(isAllowedOrigin("https://mycadet.ai", prod)).toBe(false);
   });
 
   test("rejects null, undefined, empty, and unparseable origins", () => {

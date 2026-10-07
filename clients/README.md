@@ -1,6 +1,6 @@
 # clients/
 
-Home for end-user client surfaces of the Vellum assistant — browser, mobile,
+Home for end-user client surfaces of the Cadet assistant — browser, mobile,
 and desktop wrappers that users interact with directly.
 
 ## Structure
@@ -8,7 +8,7 @@ and desktop wrappers that users interact with directly.
 ```
 clients/
 ├── web/               # Web app (Vite)
-├── docs/              # Public docs site: SSR Next.js app serving www.vellum.ai/docs
+├── docs/              # Public docs site: SSR Next.js app serving mycadet.ai/docs
 ├── ios/               # iOS Capacitor shell
 ├── android/           # Android Capacitor shell
 ├── macos/             # macOS desktop wrapper (Electron / electron-vite)

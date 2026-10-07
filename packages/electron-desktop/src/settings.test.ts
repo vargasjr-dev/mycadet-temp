@@ -19,7 +19,7 @@ afterEach(async () => {
 describe("settings persistence", () => {
   test("clears malformed settings and restores schema defaults", async () => {
     temporaryDirectory = await fs.mkdtemp(
-      path.join(os.tmpdir(), "vellum-settings-test-"),
+      path.join(os.tmpdir(), "cadet-settings-test-"),
     );
     await fs.writeFile(
       path.join(temporaryDirectory, "config.json"),

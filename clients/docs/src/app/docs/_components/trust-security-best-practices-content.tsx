@@ -81,7 +81,7 @@ export function TrustSecurityBestPracticesContent() {
             Every few weeks, open your workspace files and glance through.
             On the web, that&apos;s <strong>About your assistant &gt; Workspace</strong>.
             On desktop with a local install, you can also browse{" "}
-            <code>$VELLUM_WORKSPACE_DIR</code> directly.
+            <code>$CADET_WORKSPACE_DIR</code> directly.
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
@@ -356,7 +356,7 @@ export function TrustSecurityBestPracticesContent() {
             </li>
             <li>
               <strong>Or delete manually:</strong> Remove{" "}
-              <code>~/.vellum/</code> entirely. Your assistant starts
+              <code>~/.cadet/</code> entirely. Your assistant starts
               from scratch.
             </li>
             <li>

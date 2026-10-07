@@ -173,7 +173,7 @@ export async function run(
     await access(preferredDir, constants.W_OK);
     clipDir = preferredDir;
   } catch {
-    clipDir = join(tmpdir(), "vellum-clips", assetId);
+    clipDir = join(tmpdir(), "cadet-clips", assetId);
     await mkdir(clipDir, { recursive: true });
   }
 

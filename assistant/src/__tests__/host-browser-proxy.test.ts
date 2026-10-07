@@ -902,7 +902,7 @@ describe("HostBrowserProxy", () => {
   // ---------------------------------------------------------------------------
   // Method-aware routing
   //
-  // `Vellum.*` pseudo-methods are implemented only by the Chrome
+  // `Cadet.*` pseudo-methods are implemented only by the Chrome
   // extension dispatcher; the macOS bridge speaks raw CDP against
   // localhost:9222 and fails on all of them. Auto-resolution therefore
   // restricts pseudo-methods to chrome-extension clients and prefers
@@ -941,7 +941,7 @@ describe("HostBrowserProxy", () => {
       mockClients = [MACOS_CLIENT, EXT_CLIENT];
 
       const resultPromise = proxy.request(
-        { cdpMethod: "Vellum.listTabs", cdpParams: {} },
+        { cdpMethod: "Cadet.listTabs", cdpParams: {} },
         "session-1",
         undefined,
         "user-1",
@@ -962,7 +962,7 @@ describe("HostBrowserProxy", () => {
       mockClients = [MACOS_CLIENT];
 
       const result = await proxy.request(
-        { cdpMethod: "Vellum.selectTab", cdpParams: { tabId: 42 } },
+        { cdpMethod: "Cadet.selectTab", cdpParams: { tabId: 42 } },
         "session-1",
         undefined,
         "user-1",
@@ -976,7 +976,7 @@ describe("HostBrowserProxy", () => {
       mockClients = [];
 
       const result = await proxy.request(
-        { cdpMethod: "Vellum.createTab", cdpParams: {} },
+        { cdpMethod: "Cadet.createTab", cdpParams: {} },
         "session-1",
       );
 
@@ -988,7 +988,7 @@ describe("HostBrowserProxy", () => {
       mockClients = [MACOS_CLIENT, EXT_CLIENT];
 
       const result = await proxy.request(
-        { cdpMethod: "Vellum.closeTab", cdpParams: { tabId: 7 } },
+        { cdpMethod: "Cadet.closeTab", cdpParams: { tabId: 7 } },
         "session-1",
         undefined,
         "user-1",
@@ -1005,7 +1005,7 @@ describe("HostBrowserProxy", () => {
       mockClients = [MACOS_CLIENT, EXT_CLIENT];
 
       const resultPromise = proxy.request(
-        { cdpMethod: "Vellum.closeTab", cdpParams: { tabId: 7 } },
+        { cdpMethod: "Cadet.closeTab", cdpParams: { tabId: 7 } },
         "session-1",
         undefined,
         "user-1",
@@ -1037,7 +1037,7 @@ describe("HostBrowserProxy", () => {
       ];
 
       const result = await proxy.request(
-        { cdpMethod: "Vellum.listTabs", cdpParams: {} },
+        { cdpMethod: "Cadet.listTabs", cdpParams: {} },
         "session-1",
         undefined,
         "user-1",
@@ -1062,7 +1062,7 @@ describe("HostBrowserProxy", () => {
       ];
 
       const result = await proxy.request(
-        { cdpMethod: "Vellum.listTabs", cdpParams: {} },
+        { cdpMethod: "Cadet.listTabs", cdpParams: {} },
         "session-1",
         undefined,
         "user-1",

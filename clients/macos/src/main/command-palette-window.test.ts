@@ -263,9 +263,9 @@ mock.module("./companion-window", () => ({
 // Full `./cli-path-installer` surface so this mock — which leaks into co-run
 // test files via the global module registry — doesn't break sibling modules.
 mock.module("./cli-path-installer", () => ({
-  WRAPPER_MARKER: "# vellum-cli-wrapper v1",
+  WRAPPER_MARKER: "# cadet-cli-wrapper v1",
   getWrapperDir: () => "/tmp/.local/bin",
-  getWrapperPath: () => "/tmp/.local/bin/vellum",
+  getWrapperPath: () => "/tmp/.local/bin/cadet",
   buildWrapperScript: () => "",
   readWrapperOwnership: () => "absent",
   installWrapper: () => "installed",
@@ -318,7 +318,7 @@ beforeEach(() => {
   ensureVisibleMock.mockClear();
   dispatchToMainMock.mockClear();
   appState.isPackaged = false;
-  process.env.VELLUM_DEV_URL = "http://localhost:4242/assistant/";
+  process.env.CADET_DEV_URL = "http://localhost:4242/assistant/";
   activeWorkArea = { x: 1440, y: 100, width: 1600, height: 900 };
   focusedWindow = makeFocusedSource();
   currentMainWindow = null;
@@ -329,7 +329,7 @@ afterEach(() => {
   for (const { win } of created) {
     if (!win.isDestroyed()) win.close();
   }
-  delete process.env.VELLUM_DEV_URL;
+  delete process.env.CADET_DEV_URL;
 });
 
 describe("openCommandPaletteWindow", () => {

@@ -8,7 +8,7 @@ import { findWebDistDir } from "../web-dist.js";
 const tempDirs: string[] = [];
 
 function makeTempDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), "vellum-web-dist-"));
+  const dir = mkdtempSync(join(tmpdir(), "cadet-web-dist-"));
   tempDirs.push(dir);
   return dir;
 }
@@ -36,7 +36,7 @@ test("finds web assets beside a packaged Windows CLI", () => {
 
   expect(
     findWebDistDir({
-      execPath: join(runtimeDir, "vellum.exe"),
+      execPath: join(runtimeDir, "cadet.exe"),
       platform: "win32",
       resolvePackage: missingPackage,
       startDir: join(root, "source"),
@@ -51,7 +51,7 @@ test("does not use the Windows runtime path on macOS", () => {
 
   expect(
     findWebDistDir({
-      execPath: join(runtimeDir, "vellum"),
+      execPath: join(runtimeDir, "cadet"),
       platform: "darwin",
       resolvePackage: missingPackage,
       startDir: join(root, "source"),

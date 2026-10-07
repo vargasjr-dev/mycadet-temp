@@ -79,14 +79,14 @@ describe("listInstalledPlugins", () => {
     expect(result.every((p) => p.issues.length === 0)).toBe(true);
   });
 
-  test("surfaces a valid vellum.icon emoji on packageJson", () => {
+  test("surfaces a valid cadet.icon emoji on packageJson", () => {
     mkdirSync(join(pluginsDir, "iconed"));
     writeFileSync(
       join(pluginsDir, "iconed", "package.json"),
       JSON.stringify({
         name: "iconed",
         version: "1.0.0",
-        vellum: { icon: "🚀" },
+        cadet: { icon: "🚀" },
       }),
     );
 
@@ -136,11 +136,11 @@ describe("listInstalledPlugins", () => {
 
   test.each([
     ["missing cadet block", { name: "p", version: "1.0.0" }],
-    ["non-string icon", { name: "p", version: "1.0.0", vellum: { icon: 42 } }],
-    ["empty icon", { name: "p", version: "1.0.0", vellum: { icon: "" } }],
+    ["non-string icon", { name: "p", version: "1.0.0", cadet: { icon: 42 } }],
+    ["empty icon", { name: "p", version: "1.0.0", cadet: { icon: "" } }],
     [
       "over-long icon",
-      { name: "p", version: "1.0.0", vellum: { icon: "x".repeat(17) } },
+      { name: "p", version: "1.0.0", cadet: { icon: "x".repeat(17) } },
     ],
   ])("leaves icon undefined for %s", (_label, pkg) => {
     mkdirSync(join(pluginsDir, "no-icon"));

@@ -75,7 +75,7 @@ describe("host_file_edit cross-client guards", () => {
     expect(result.content).toContain(
       "The Cadet desktop app is needed to access files on your computer",
     );
-    expect(result.content).toContain("https://www.vellum.ai/downloads");
+    expect(result.content).toContain("https://mycadet.ai/downloads");
   });
 
   test("returns 'specified client disconnected' error when targetClientId set but proxy unavailable on web", async () => {

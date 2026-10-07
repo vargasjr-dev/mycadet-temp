@@ -10,7 +10,7 @@
  * connect` or the ensure-registration bootstrap).
  *
  * The platform endpoint is:
- *   POST {VELLUM_PLATFORM_URL}/v1/internal/gateway/callback-routes/register/
+ *   POST {CADET_PLATFORM_URL}/v1/internal/gateway/callback-routes/register/
  *
  * It accepts { assistant_id, callback_path, type } and returns a stable
  * callback_url that external services should use. Self-hosted assistants

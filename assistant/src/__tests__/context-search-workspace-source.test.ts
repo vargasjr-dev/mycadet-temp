@@ -214,7 +214,7 @@ describe("searchWorkspaceSource", () => {
     const root = makeTempDir();
     writeWorkspaceFile(
       root,
-      "scratch/vellum-assistant/notes.md",
+      "scratch/mycadet/notes.md",
       "deepneedle generated checkout",
     );
     writeWorkspaceFile(root, "work/notes.md", "deepneedle live authored note");

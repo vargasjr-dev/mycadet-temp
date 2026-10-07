@@ -97,7 +97,7 @@ describe("isActiveAssistant", () => {
 
   function makeTempDir(): string {
     const dir = fs.mkdtempSync(
-      path.join(os.tmpdir(), "vellum-local-mode-test-"),
+      path.join(os.tmpdir(), "cadet-local-mode-test-"),
     );
     tempDirs.push(dir);
     return dir;

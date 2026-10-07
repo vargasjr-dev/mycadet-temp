@@ -388,9 +388,9 @@ describe("resolveTrustVerdict", () => {
       principalId: "principal-1",
     });
     insertChannel({
-      id: "ch-guardian-vellum",
+      id: "ch-guardian-cadet",
       contactId: "c-guardian",
-      type: "vellum",
+      type: "cadet",
       address: "GUARDIAN_ID",
       status: "active",
     });
@@ -416,9 +416,9 @@ describe("resolveTrustVerdict", () => {
       principalId: "principal-1",
     });
     insertChannel({
-      id: "ch-guardian-vellum",
+      id: "ch-guardian-cadet",
       contactId: "c-guardian",
-      type: "vellum",
+      type: "cadet",
       address: "GUARDIAN_ANCHOR",
       status: "active",
     });
@@ -451,9 +451,9 @@ describe("resolveTrustVerdict", () => {
       principalId: "principal-1",
     });
     insertChannel({
-      id: "ch-guardian-vellum",
+      id: "ch-guardian-cadet",
       contactId: "c-guardian",
-      type: "vellum",
+      type: "cadet",
       address: "GUARDIAN_ANCHOR",
       status: "active",
     });
@@ -487,9 +487,9 @@ describe("resolveTrustVerdict", () => {
       role: "guardian",
     });
     insertChannel({
-      id: "ch-guardian-vellum",
+      id: "ch-guardian-cadet",
       contactId: "c-guardian",
-      type: "vellum",
+      type: "cadet",
       address: "GUARDIAN_ANCHOR",
       status: "active",
     });
@@ -518,9 +518,9 @@ describe("resolveTrustVerdict", () => {
       principalId: "principal-old",
     });
     insertChannel({
-      id: "ch-old-guardian-vellum",
+      id: "ch-old-guardian-cadet",
       contactId: "c-old-guardian",
-      type: "vellum",
+      type: "cadet",
       address: "OLD_GUARDIAN_ID",
       status: "revoked",
       policy: "deny",
@@ -548,9 +548,9 @@ describe("resolveTrustVerdict", () => {
       principalId: "principal-1",
     });
     insertChannel({
-      id: "ch-guardian-vellum",
+      id: "ch-guardian-cadet",
       contactId: "c-guardian",
-      type: "vellum",
+      type: "cadet",
       address: "GUARDIAN_ANCHOR",
       status: "active",
     });

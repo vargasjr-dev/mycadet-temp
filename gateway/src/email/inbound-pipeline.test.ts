@@ -12,7 +12,7 @@ import { describe, it, expect, mock, beforeEach } from "bun:test";
 import type { Logger } from "pino";
 import type { GatewayConfig } from "../config.js";
 import type { HandleInboundOptions } from "../handlers/handle-inbound.js";
-import type { VellumEmailPayload } from "./normalize.js";
+import type { CadetEmailPayload } from "./normalize.js";
 
 let capturedOptions: HandleInboundOptions | undefined;
 const handleInboundMock = mock(async (_config, _event, options) => {
@@ -64,8 +64,8 @@ const noopLog = {
 } as unknown as Logger;
 
 function makePayload(
-  overrides: Partial<VellumEmailPayload> = {},
-): VellumEmailPayload {
+  overrides: Partial<CadetEmailPayload> = {},
+): CadetEmailPayload {
   return {
     from: "guardian@example.com",
     to: "bot@example.com",
@@ -77,7 +77,7 @@ function makePayload(
   };
 }
 
-async function run(payload: VellumEmailPayload): Promise<void> {
+async function run(payload: CadetEmailPayload): Promise<void> {
   await runEmailInboundPipeline({
     config: {} as GatewayConfig,
     log: noopLog,
@@ -85,7 +85,7 @@ async function run(payload: VellumEmailPayload): Promise<void> {
     source: "mailgun",
     dedupCache: new StringDedupCache(60_000),
     dedupKey: "",
-    vellumPayload: payload,
+    cadetPayload: payload,
     traceId: undefined,
     sendReply: undefined,
   });

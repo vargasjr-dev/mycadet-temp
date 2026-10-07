@@ -104,7 +104,7 @@ describe("seedCanonicalConnections labels", () => {
     const conns = listConnections(db);
     const byName = Object.fromEntries(conns.map((c) => [c.name, c]));
 
-    expect(byName["vellum"]?.label).toBe("Vellum");
+    expect(byName["cadet"]?.label).toBe("Cadet");
   });
 
   test("second boot preserves user-customized label", () => {
@@ -112,7 +112,7 @@ describe("seedCanonicalConnections labels", () => {
     seedCanonicalConnections(db);
 
     // User customizes the label.
-    updateConnection(db, "vellum", {
+    updateConnection(db, "cadet", {
       auth: { type: "platform" },
       label: "Work Cadet",
     });
@@ -120,7 +120,7 @@ describe("seedCanonicalConnections labels", () => {
     // Reboot.
     seedCanonicalConnections(db);
 
-    const conn = getConnection(db, "vellum");
+    const conn = getConnection(db, "cadet");
     expect(conn?.label).toBe("Work Cadet");
   });
 
@@ -129,7 +129,7 @@ describe("seedCanonicalConnections labels", () => {
     seedCanonicalConnections(db);
 
     // User clears the label (PATCH label: null).
-    updateConnection(db, "vellum", {
+    updateConnection(db, "cadet", {
       auth: { type: "platform" },
       label: null,
     });
@@ -141,7 +141,7 @@ describe("seedCanonicalConnections labels", () => {
     // present for everyone.
     seedCanonicalConnections(db);
 
-    const conn = getConnection(db, "vellum");
-    expect(conn?.label).toBe("Vellum");
+    const conn = getConnection(db, "cadet");
+    expect(conn?.label).toBe("Cadet");
   });
 });

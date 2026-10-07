@@ -122,13 +122,13 @@ describe("an owner-authored defer on a guardian-owned conversation", () => {
   });
 
   test("the internal cadet channel counts as guardian-owned", () => {
-    createConversation({ id: "conv-vellum" });
-    setConversationOriginChannelIfUnset("conv-vellum", "vellum");
+    createConversation({ id: "conv-cadet" });
+    setConversationOriginChannelIfUnset("conv-cadet", "cadet");
 
     expect(
       buildWakeScheduleOptions(
-        { ...OWNER_WAKE_JOB, createdFromConversationId: "conv-vellum" },
-        "conv-vellum",
+        { ...OWNER_WAKE_JOB, createdFromConversationId: "conv-cadet" },
+        "conv-cadet",
       ),
     ).toHaveProperty("trustContext", INTERNAL_GUARDIAN_TRUST_CONTEXT);
   });

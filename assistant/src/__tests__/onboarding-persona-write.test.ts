@@ -28,7 +28,7 @@ import {
 } from "bun:test";
 
 // Captured at module scope: the preload cleans up its env var between suites.
-const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
+const PRELOAD_WS = process.env.CADET_WORKSPACE_DIR!;
 
 // ── Mock state ────────────────────────────────────────────────────
 
@@ -44,11 +44,11 @@ let mockWorkspaceDir: string = "";
 let mockGuardianDeliveries: GuardianDeliveryStub[] = [];
 let mockContactsByAddress: Record<string, { userFile: string | null }> = {};
 
-function seedVellumGuardian(userFile: string | null): void {
+function seedCadetGuardian(userFile: string | null): void {
   mockGuardianDeliveries = [
-    { channelType: "vellum", address: "cadet:self", status: "active" },
+    { channelType: "cadet", address: "cadet:self", status: "active" },
   ];
-  mockContactsByAddress["vellum:cadet:self"] = { userFile };
+  mockContactsByAddress["cadet:cadet:self"] = { userFile };
 }
 
 // ── Mock modules (must precede imports from the module under test) ──
@@ -93,7 +93,7 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  // The preload owns VELLUM_WORKSPACE_DIR (a real temp workspace); give this
+  // The preload owns CADET_WORKSPACE_DIR (a real temp workspace); give this
   // test a clean one by wiping its contents.
   mockWorkspaceDir = PRELOAD_WS;
   rmSync(mockWorkspaceDir, { recursive: true, force: true });
@@ -106,7 +106,7 @@ beforeEach(() => {
 
 describe("writeOnboardingSection", () => {
   test("writes section to guardian persona file when it exists", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
     const guardianPath = workspacePath("users/alice.md");
     mkdirSync(workspacePath("users"), { recursive: true });
     writeFileSync(guardianPath, "# User Profile\n\n- **Name:** Alice\n");
@@ -128,7 +128,7 @@ describe("writeOnboardingSection", () => {
   });
 
   test("renders user-confirmed research findings as nested bullets", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
     const guardianPath = workspacePath("users/alice.md");
     mkdirSync(workspacePath("users"), { recursive: true });
     writeFileSync(guardianPath, "# User Profile\n\n- **Name:** Alice\n");

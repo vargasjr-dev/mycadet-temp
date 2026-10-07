@@ -32,7 +32,7 @@ enum VoiceModeDeepLink: String {
     /// voice mode in the production app.
     ///
     /// - Parameter prompt: what the user already said, when the command came
-    ///   from `AskVellumIntent`. Omitted from the URL when `nil` or blank, so a
+    ///   from `AskCadetIntent`. Omitted from the URL when `nil` or blank, so a
     ///   plain launch intent produces the byte-identical URL it always has.
     ///   The web parser bounds and sanitizes whatever arrives; nothing is
     ///   trusted for being locally produced.

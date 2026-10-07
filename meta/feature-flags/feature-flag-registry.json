@@ -75,11 +75,11 @@
       "defaultEnabled": false
     },
     {
-      "id": "vellum-hosted-inference",
+      "id": "cadet-hosted-inference",
       "scope": "assistant",
-      "key": "vellum-hosted-inference",
-      "label": "Vellum Hosted Inference",
-      "description": "Show Vellum-hosted GPU models (Qwen3 8B) in the catalog and the Settings Personality sliders that steer them.",
+      "key": "cadet-hosted-inference",
+      "label": "Cadet Hosted Inference",
+      "description": "Show Cadet-hosted GPU models (Qwen3 8B) in the catalog and the Settings Personality sliders that steer them.",
       "defaultEnabled": false
     },
     {
@@ -231,7 +231,7 @@
       "scope": "client",
       "key": "paired-devices-ui",
       "label": "Paired Devices UI",
-      "description": "Show the paired-devices list and revoke controls inside the pair-a-device settings card. Visibility only; `vellum devices` on the host stays available.",
+      "description": "Show the paired-devices list and revoke controls inside the pair-a-device settings card. Visibility only; `cadet devices` on the host stays available.",
       "defaultEnabled": false
     },
     {
@@ -319,7 +319,7 @@
       "scope": "client",
       "key": "account-mfa",
       "label": "Account MFA",
-      "description": "Surface the Security settings page where users enroll and manage TOTP two-factor authentication for their Vellum (WorkOS) account. Applies to email/password sign-in only.",
+      "description": "Surface the Security settings page where users enroll and manage TOTP two-factor authentication for their Cadet (WorkOS) account. Applies to email/password sign-in only.",
       "defaultEnabled": false
     },
     {
@@ -335,7 +335,7 @@
       "scope": "client",
       "key": "marketing-pricing-takeover",
       "label": "Marketing Pricing Takeover",
-      "description": "Gates the marketing pricing takeover page (www.vellum.ai/pricing) and the `/assistant/checkout?package=<slug>` deep link its package CTAs target. One flag covers both halves of the funnel so they can never be enabled independently and strand a CTA. When off, the checkout deep link redirects to the in-app plans takeover.",
+      "description": "Gates the marketing pricing takeover page (mycadet.ai/pricing) and the `/assistant/checkout?package=<slug>` deep link its package CTAs target. One flag covers both halves of the funnel so they can never be enabled independently and strand a CTA. When off, the checkout deep link redirects to the in-app plans takeover.",
       "defaultEnabled": false
     },
     {
@@ -407,7 +407,7 @@
       "scope": "client",
       "key": "channel-conversation-sidecar",
       "label": "Channel Conversation Sidecar",
-      "description": "Renders a conversation bound to an external channel (Slack, Telegram, Discord, phone, email, and any other channel adapter) as two lanes in web chat: Vellum stays the primary full-width lane, and the canonical external-channel transcript moves into the existing read-only right drawer, opened from a channel-thread control in the chat header. Rows the client can attribute to the external channel are drawn once, in the drawer, instead of being blended into the Vellum lane. The drawer offers an Open in <channel> secondary action and a per-message Reference in Vellum action that stages one quoted reference above the Vellum composer. The Vellum composer stays the only input; nothing about delivery, routing, or permissions changes. Off leaves the header deep-link pill and the blended transcript unchanged.",
+      "description": "Renders a conversation bound to an external channel (Slack, Telegram, Discord, phone, email, and any other channel adapter) as two lanes in web chat: Cadet stays the primary full-width lane, and the canonical external-channel transcript moves into the existing read-only right drawer, opened from a channel-thread control in the chat header. Rows the client can attribute to the external channel are drawn once, in the drawer, instead of being blended into the Cadet lane. The drawer offers an Open in <channel> secondary action and a per-message Reference in Cadet action that stages one quoted reference above the Cadet composer. The Cadet composer stays the only input; nothing about delivery, routing, or permissions changes. Off leaves the header deep-link pill and the blended transcript unchanged.",
       "defaultEnabled": false
     },
     {
@@ -513,11 +513,11 @@
       "defaultEnabled": false
     },
     {
-      "id": "vellum-trusted-contacts",
+      "id": "cadet-trusted-contacts",
       "scope": "both",
-      "key": "vellum-trusted-contacts",
-      "label": "Vellum Trusted Contacts",
-      "description": "Lets a guardian give another person access to talk to their assistant in the Vellum UI as a trusted contact. Gates contact-role token minting in the gateway, trusted-contact trust resolution for `vellum` channel principals, and the assistant's trusted-contact route allowlist. Off: none of those surfaces admit a contact, and the assistant stays reachable only by its guardian.",
+      "key": "cadet-trusted-contacts",
+      "label": "Cadet Trusted Contacts",
+      "description": "Lets a guardian give another person access to talk to their assistant in the Cadet UI as a trusted contact. Gates contact-role token minting in the gateway, trusted-contact trust resolution for `cadet` channel principals, and the assistant's trusted-contact route allowlist. Off: none of those surfaces admit a contact, and the assistant stays reachable only by its guardian.",
       "defaultEnabled": false
     }
   ]

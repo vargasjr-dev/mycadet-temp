@@ -4,7 +4,7 @@
  *
  * A "channel" is an external messaging surface an actor can reach the
  * assistant through (Slack, Telegram, WhatsApp, phone, …) plus a couple of
- * internal ids (`vellum` for native app conversations, `vellum-shared` for
+ * internal ids (`cadet` for native app conversations, `cadet-shared` for
  * conversations a guardian shares with a contact, `platform` for the internal
  * control plane). This is the single source of truth for that set:
  *
@@ -34,7 +34,7 @@
 export const CHANNEL_IDS = [
   "telegram",
   "phone",
-  "vellum",
+  "cadet",
   "whatsapp",
   "slack",
   "email",
@@ -44,7 +44,7 @@ export const CHANNEL_IDS = [
   "plugin",
   // Internal id for conversations a guardian shares with a contact. It has no
   // transport: the contact's own client holds the connection.
-  "vellum-shared",
+  "cadet-shared",
 ] as const;
 
 export type ChannelId = (typeof CHANNEL_IDS)[number];
@@ -82,7 +82,7 @@ export function isChannelId(value: unknown): value is ChannelId {
  * here would be a second copy of a different fact.
  *
  * Channels absent from this map reach the assistant without a bot credential
- * of their own: `phone` through the voice provider, `vellum`, `vellum-shared`
+ * of their own: `phone` through the voice provider, `cadet`, `cadet-shared`
  * and `platform` internally.
  */
 export const CHANNEL_BOT_PROVIDER = {

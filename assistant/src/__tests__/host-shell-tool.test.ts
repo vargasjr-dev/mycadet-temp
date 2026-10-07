@@ -440,7 +440,7 @@ describe("host_bash — environment setup", () => {
 
   test("does not leak non-allowlisted env vars", async () => {
     // Set a custom env var that is NOT in the SAFE_ENV_VARS allowlist
-    const varName = "VELLUM_TEST_UNLISTED_VAR";
+    const varName = "CADET_TEST_UNLISTED_VAR";
     const originalVal = process.env[varName];
     process.env[varName] = "should-not-appear";
 
@@ -685,15 +685,15 @@ describe("host_bash — proxy delegation", () => {
   // Under tmpdir so the live-workspace guard accepts it as a workspace.
   const FAKE_INSTANCE_WS = join(
     tmpdir(),
-    "vellum-instance",
-    ".vellum",
+    "cadet-instance",
+    ".cadet",
     "workspace",
   );
 
   const ROUTING_ENV_KEYS = [
-    "VELLUM_WORKSPACE_DIR",
-    "VELLUM_DATA_DIR",
-    "VELLUM_ENVIRONMENT",
+    "CADET_WORKSPACE_DIR",
+    "CADET_DATA_DIR",
+    "CADET_ENVIRONMENT",
     "INTERNAL_GATEWAY_BASE_URL",
   ] as const;
 
@@ -862,11 +862,11 @@ describe("host_bash — proxy delegation", () => {
     for (const key of ROUTING_ENV_KEYS) {
       delete process.env[key];
     }
-    // With VELLUM_WORKSPACE_DIR unset, loadConfig resolves the real ~/.vellum
+    // With CADET_WORKSPACE_DIR unset, loadConfig resolves the real ~/.cadet
     // fallback (read-only here), so bypass the live-workspace guard for it.
     const originalAllowRealWorkspace =
-      process.env.VELLUM_ALLOW_REAL_WORKSPACE_IN_TESTS;
-    process.env.VELLUM_ALLOW_REAL_WORKSPACE_IN_TESTS = "1";
+      process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS;
+    process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS = "1";
 
     try {
       const proxyResult: ToolExecutionResult = {
@@ -888,9 +888,9 @@ describe("host_bash — proxy delegation", () => {
       });
     } finally {
       if (originalAllowRealWorkspace === undefined) {
-        delete process.env.VELLUM_ALLOW_REAL_WORKSPACE_IN_TESTS;
+        delete process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS;
       } else {
-        process.env.VELLUM_ALLOW_REAL_WORKSPACE_IN_TESTS =
+        process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS =
           originalAllowRealWorkspace;
       }
       restoreEnv(envSnapshot);
@@ -899,9 +899,9 @@ describe("host_bash — proxy delegation", () => {
 
   test("propagates daemon routing env vars to proxy for nested assistant CLI calls", async () => {
     const envSnapshot = captureEnv(ROUTING_ENV_KEYS);
-    process.env.VELLUM_WORKSPACE_DIR = FAKE_INSTANCE_WS;
-    process.env.VELLUM_DATA_DIR = join(FAKE_INSTANCE_WS, "data");
-    process.env.VELLUM_ENVIRONMENT = "local";
+    process.env.CADET_WORKSPACE_DIR = FAKE_INSTANCE_WS;
+    process.env.CADET_DATA_DIR = join(FAKE_INSTANCE_WS, "data");
+    process.env.CADET_ENVIRONMENT = "local";
     process.env.INTERNAL_GATEWAY_BASE_URL = "http://127.0.0.1:7830";
 
     try {
@@ -919,9 +919,9 @@ describe("host_bash — proxy delegation", () => {
       expect(result).toBe(proxyResult);
       expect(calls.length).toBe(1);
       expect(calls[0].input.env).toEqual({
-        VELLUM_WORKSPACE_DIR: FAKE_INSTANCE_WS,
-        VELLUM_DATA_DIR: join(FAKE_INSTANCE_WS, "data"),
-        VELLUM_ENVIRONMENT: "local",
+        CADET_WORKSPACE_DIR: FAKE_INSTANCE_WS,
+        CADET_DATA_DIR: join(FAKE_INSTANCE_WS, "data"),
+        CADET_ENVIRONMENT: "local",
         INTERNAL_GATEWAY_BASE_URL: "http://127.0.0.1:7830",
         __CONVERSATION_ID: "test-conversation",
         __REVEAL_NONCE: expect.any(String),

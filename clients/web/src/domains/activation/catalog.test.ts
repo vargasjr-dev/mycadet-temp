@@ -33,7 +33,7 @@ import { ACTIVATION_LIST_IDS } from "@/hooks/use-activation-checklist-flag";
 import activationTasks from "@/i18n/locales/en/activation-tasks.json";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { VELLUM_DOWNLOADS_URL } from "@/utils/external-urls";
+import { CADET_DOWNLOADS_URL } from "@/utils/external-urls";
 
 const TASKS = activationTasks.tasks as unknown as Record<
   string,
@@ -173,7 +173,7 @@ describe("activation task pool", () => {
   // pins the copy to the constant the rest of the app links through: a
   // downloads URL that moves has to move here too.
   test("the desktop download link is the shared downloads URL", () => {
-    expect(TASKS["try-computer-use"]?.link?.url).toBe(VELLUM_DOWNLOADS_URL);
+    expect(TASKS["try-computer-use"]?.link?.url).toBe(CADET_DOWNLOADS_URL);
   });
 
   test("no copy uses an em dash or trails whitespace", () => {

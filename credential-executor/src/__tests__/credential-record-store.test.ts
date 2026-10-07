@@ -115,10 +115,10 @@ describe("003-import-workspace-metadata", () => {
       }),
     );
 
-    const prevWorkspace = process.env.VELLUM_WORKSPACE_DIR;
+    const prevWorkspace = process.env.CADET_WORKSPACE_DIR;
     const prevMode = process.env.CES_MODE;
     const prevData = process.env.CES_DATA_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspace;
+    process.env.CADET_WORKSPACE_DIR = workspace;
     process.env.CES_MODE = "managed";
     process.env.CES_DATA_DIR = cesData;
 
@@ -138,9 +138,9 @@ describe("003-import-workspace-metadata", () => {
       expect(existsSync(leftoverPath)).toBe(true);
     } finally {
       if (prevWorkspace === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = prevWorkspace;
+        process.env.CADET_WORKSPACE_DIR = prevWorkspace;
       }
       if (prevMode === undefined) {
         delete process.env.CES_MODE;
@@ -183,10 +183,10 @@ describe("003-import-workspace-metadata", () => {
       }),
     );
 
-    const prevWorkspace = process.env.VELLUM_WORKSPACE_DIR;
+    const prevWorkspace = process.env.CADET_WORKSPACE_DIR;
     const prevMode = process.env.CES_MODE;
     const prevData = process.env.CES_DATA_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspace;
+    process.env.CADET_WORKSPACE_DIR = workspace;
     process.env.CES_MODE = "managed";
     process.env.CES_DATA_DIR = cesData;
 
@@ -205,9 +205,9 @@ describe("003-import-workspace-metadata", () => {
       expect(existsSync(leftoverPath)).toBe(true);
     } finally {
       if (prevWorkspace === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = prevWorkspace;
+        process.env.CADET_WORKSPACE_DIR = prevWorkspace;
       }
       if (prevMode === undefined) {
         delete process.env.CES_MODE;

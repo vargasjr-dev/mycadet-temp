@@ -305,7 +305,7 @@ function result(
 }
 
 const GUARDIAN_TRUST = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "guardian",
 } as const;
 

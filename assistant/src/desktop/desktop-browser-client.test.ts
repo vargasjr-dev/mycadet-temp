@@ -168,7 +168,7 @@ test("shared snapshot and click use desktop element IDs without personal browser
   );
   expect(pressIndex).toBeGreaterThan(0);
   expect(f.calls[pressIndex - 1]?.params.expression).toContain(
-    "data-vellum-desktop-cursor",
+    "data-cadet-desktop-cursor",
   );
   expect(
     f.calls.filter((call) => call.params.type === "mousePressed"),
@@ -254,7 +254,7 @@ test("tab changes clear element references and aliases are not reused across lea
     f.cdp.conversationId,
     new Map([["e1", 42]]),
   );
-  const created = await f.cdp.send<{ tabId: number }>("Vellum.createTab");
+  const created = await f.cdp.send<{ tabId: number }>("Cadet.createTab");
   expect(
     browserManager.resolveSnapshotBackendNodeId(f.cdp.conversationId, "e1"),
   ).toBeNull();
@@ -278,7 +278,7 @@ test("navigation during cursor animation prevents input on the replacement page"
   f.fail((method, params) => {
     if (
       method === "Runtime.evaluate" &&
-      String(params.expression).includes("data-vellum-desktop-cursor")
+      String(params.expression).includes("data-cadet-desktop-cursor")
     ) {
       f.emit("Page.frameNavigated");
     }

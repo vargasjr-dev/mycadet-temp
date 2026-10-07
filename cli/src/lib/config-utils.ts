@@ -68,7 +68,7 @@ export function buildHatchConfigValues(
 /**
  * Write arbitrary key-value pairs to a temporary JSON file and return its
  * path. The caller is responsible for getting the file to the daemon — for
- * the local hatch flow that means setting `VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH`
+ * the local hatch flow that means setting `CADET_DEFAULT_WORKSPACE_CONFIG_PATH`
  * on the daemon process; for the Docker hatch flow the caller stages the
  * file into the workspace volume so the rename-after-consume step in
  * `mergeDefaultWorkspaceConfig` is a same-filesystem rename.
@@ -91,7 +91,7 @@ export function writeInitialConfig(
   const config = buildNestedConfig(configValues);
   const tempPath = join(
     tmpdir(),
-    `vellum-default-workspace-config-${process.pid}-${Date.now()}.json`,
+    `cadet-default-workspace-config-${process.pid}-${Date.now()}.json`,
   );
   writeFileSync(tempPath, JSON.stringify(config, null, 2) + "\n");
   return tempPath;

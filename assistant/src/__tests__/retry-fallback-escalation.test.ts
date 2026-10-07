@@ -193,9 +193,9 @@ describe("RetryProvider fallback-route escalation", () => {
     // Usage-attribution headers come from the backup resolution so platform
     // usage events attribute degraded traffic to the backup profile.
     const headers = config.usageAttributionHeaders as Record<string, string>;
-    expect(headers["X-Vellum-Inference-Profile"]).toBe("backup-profile");
-    expect(headers["X-Vellum-Resolved-Model"]).toBe("backup-model");
-    expect(headers["X-Vellum-Resolved-Provider"]).toBe("anthropic");
+    expect(headers["X-Cadet-Inference-Profile"]).toBe("backup-profile");
+    expect(headers["X-Cadet-Resolved-Model"]).toBe("backup-model");
+    expect(headers["X-Cadet-Resolved-Provider"]).toBe("anthropic");
   });
 
   test("401 invalid_credentials after refresh fails → falls back without burning the retry budget", async () => {
@@ -436,7 +436,7 @@ describe("RetryProvider fallback-route escalation", () => {
   test.each([
     ["model", "pinned-model"],
     ["provider", "openai"],
-    ["provider_connection", "vellum"],
+    ["provider_connection", "cadet"],
   ] as const)(
     "explicit config.%s pin + outage-shaped error → callback never invoked, original error rethrown",
     async (field, value) => {
@@ -729,7 +729,7 @@ describe("RetryProvider fallback-route escalation", () => {
     expect(config.effort).not.toBe("low");
   });
 
-  test("route with forwardUsageAttributionHeaders false → no X-Vellum-* headers reach the backup adapter, even when the primary forwards them", async () => {
+  test("route with forwardUsageAttributionHeaders false → no X-Cadet-* headers reach the backup adapter, even when the primary forwards them", async () => {
     // A managed primary (forwarding enabled) falling back to a BYOK or other
     // third-party adapter must not leak billing metadata: the fallback
     // normalization follows the ROUTE's policy, not the primary's.
@@ -779,9 +779,9 @@ describe("RetryProvider fallback-route escalation", () => {
       string,
       string
     >;
-    expect(headers["X-Vellum-Inference-Profile"]).toBe("backup-profile");
-    expect(headers["X-Vellum-Resolved-Model"]).toBe("backup-model");
-    expect(headers["X-Vellum-Resolved-Provider"]).toBe("anthropic");
+    expect(headers["X-Cadet-Inference-Profile"]).toBe("backup-profile");
+    expect(headers["X-Cadet-Resolved-Model"]).toBe("backup-model");
+    expect(headers["X-Cadet-Resolved-Provider"]).toBe("anthropic");
   });
 
   test("fallback response without actualProvider → stamped with the backup provider's name", async () => {

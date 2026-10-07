@@ -442,7 +442,7 @@ describe("stt-routes", () => {
   async function withTempAudioFile(
     run: (filePath: string) => Promise<void>,
   ): Promise<void> {
-    const filePath = join(tmpdir(), `vellum-stt-test-${randomUUID()}.wav`);
+    const filePath = join(tmpdir(), `cadet-stt-test-${randomUUID()}.wav`);
     await writeFile(filePath, Buffer.from("fake-audio"));
     try {
       await run(filePath);

@@ -18,12 +18,12 @@
 import type { QuestionEntry } from "../api/events/question-request.js";
 import type { GuardianRequestWire } from "../channels/gateway-guardian-requests.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
+import { buildCadetCardAffinity } from "../notifications/cadet-card-affinity.js";
 import { emitNotificationSignal } from "../notifications/emit-signal.js";
 import {
   recordApprovalCardDelivery,
   recordGuardianRequestDeliveries,
 } from "../notifications/guardian-delivery-recorder.js";
-import { buildVellumCardAffinity } from "../notifications/vellum-card-affinity.js";
 import { canonicalizeInboundIdentity } from "../util/canonicalize-identity.js";
 import { getLogger } from "../util/logger.js";
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "./assistant-scope.js";
@@ -104,18 +104,18 @@ export async function bridgeQuestionRequestToGuardian(
     return { skipped: true, reason: "binding_identity_mismatch" };
   }
 
-  // The vellum delivery row is created up front in onConversationCreated so
+  // The cadet delivery row is created up front in onConversationCreated so
   // the in-app client sees it immediately; the post-resolve recorder reuses it.
-  let vellumDeliveryIdPromise: Promise<string | undefined> | undefined;
+  let cadetDeliveryIdPromise: Promise<string | undefined> | undefined;
 
   const signalPromise = emitNotificationSignal({
     sourceEventName: "guardian.question",
     sourceChannel,
     sourceContextId: conversationId,
     requiresConversation: true,
-    // Pin the in-app (vellum) card to the conversation the question was
+    // Pin the in-app (cadet) card to the conversation the question was
     // asked in, so the guardian answers it in context.
-    ...(buildVellumCardAffinity(conversationId) ?? {}),
+    ...(buildCadetCardAffinity(conversationId) ?? {}),
     attentionHints: {
       requiresAction: true,
       urgency: "high",
@@ -145,12 +145,12 @@ export async function bridgeQuestionRequestToGuardian(
     },
     dedupeKey: `ask-question-request:${guardianRequest.id}`,
     onConversationCreated: (info) => {
-      vellumDeliveryIdPromise ??= recordApprovalCardDelivery({
+      cadetDeliveryIdPromise ??= recordApprovalCardDelivery({
         requestId: guardianRequest.id,
-        channel: "vellum",
+        channel: "cadet",
         conversationId: info.conversationId,
       }).then((delivery) => delivery?.id);
-      return vellumDeliveryIdPromise.then(() => undefined);
+      return cadetDeliveryIdPromise.then(() => undefined);
     },
   });
 
@@ -159,7 +159,7 @@ export async function bridgeQuestionRequestToGuardian(
       await recordGuardianRequestDeliveries({
         requestId: guardianRequest.id,
         deliveryResults: signalResult.deliveryResults,
-        vellumDeliveryId: await vellumDeliveryIdPromise,
+        cadetDeliveryId: await cadetDeliveryIdPromise,
       });
     })
     .catch((err) => {

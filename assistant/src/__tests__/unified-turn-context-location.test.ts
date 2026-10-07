@@ -45,7 +45,7 @@ describe("unified-turn-context chat_id and thread_id", () => {
     const block = buildUnifiedTurnContextBlock({
       timestamp: TS,
       interfaceName: "web",
-      channelName: "vellum",
+      channelName: "cadet",
       chatId: "should-not-render",
       threadId: "should-not-render",
     });

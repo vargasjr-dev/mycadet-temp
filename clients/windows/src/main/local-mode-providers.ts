@@ -19,7 +19,7 @@ import {
 import { provisionCliRuntime, resolveCliRuntimePaths } from "./cli-installer";
 
 const resolveCliInvocation = async (): Promise<CliInvocation> => {
-  const override = process.env.VELLUM_CLI_PATH;
+  const override = process.env.CADET_CLI_PATH;
   if (override) {
     return { command: "bun", baseArgs: ["run", override] };
   }
@@ -41,7 +41,7 @@ const resolveCliInvocation = async (): Promise<CliInvocation> => {
     ),
   );
   return {
-    command: path.join(runtime.installDir, "vellum.exe"),
+    command: path.join(runtime.installDir, "cadet.exe"),
     baseArgs: [],
   };
 };

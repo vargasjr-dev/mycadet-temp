@@ -172,9 +172,9 @@ beforeEach(() => {
   getGatewayDb().delete(contacts).run();
   seedContact("guardian", "guardian");
   seedChannel({
-    id: "guardian-vellum",
+    id: "guardian-cadet",
     contactId: "guardian",
-    type: "vellum",
+    type: "cadet",
     address: GUARDIAN_PRINCIPAL,
     status: "active",
   });

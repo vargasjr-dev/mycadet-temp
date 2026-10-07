@@ -82,10 +82,10 @@ function rowsMatching(filter: ConversationListFilter): Conversation[] {
     if (filter.originChannel === undefined) {
       return true;
     }
-    // "vellum" also claims rows that were never attributed, matching the
+    // "cadet" also claims rows that were never attributed, matching the
     // daemon's tolerant predicate.
-    return filter.originChannel === "vellum"
-      ? c.originChannel == null || c.originChannel === "vellum"
+    return filter.originChannel === "cadet"
+      ? c.originChannel == null || c.originChannel === "cadet"
       : c.originChannel === filter.originChannel;
   });
 }

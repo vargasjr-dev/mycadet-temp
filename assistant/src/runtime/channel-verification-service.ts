@@ -42,7 +42,7 @@ export interface GuardianBinding {
   /**
    * Canonical principal from the gateway guardian contact. `null` when the
    * gateway row carries no principal — callers must treat that as UNRESOLVED
-   * (repair via the vellum anchor / adopt path), never as an empty principal.
+   * (repair via the cadet anchor / adopt path), never as an empty principal.
    */
   guardianPrincipalId: string | null;
   status: BindingStatus;

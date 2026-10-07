@@ -9,7 +9,7 @@ import {
 import { join } from "node:path";
 
 export function writeDesktopChromePolicy(policyDir: string): void {
-  const path = join(policyDir, "vellum-desktop.json");
+  const path = join(policyDir, "cadet-desktop.json");
   let policy: Record<string, unknown> = {};
   try {
     const value: unknown = JSON.parse(readFileSync(path, "utf8"));
@@ -40,7 +40,7 @@ export function writeDesktopChromePolicy(policyDir: string): void {
   policy.HighEfficiencyModeEnabled = true;
   policy.MemorySaverModeSavings = 1;
   mkdirSync(policyDir, { recursive: true });
-  const staging = mkdtempSync(join(policyDir, ".vellum-desktop-"));
+  const staging = mkdtempSync(join(policyDir, ".cadet-desktop-"));
   try {
     const temporaryPath = join(staging, "policy.json");
     writeFileSync(temporaryPath, JSON.stringify(policy, null, 2) + "\n", {

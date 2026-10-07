@@ -29,7 +29,7 @@ import {
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { leaseGuardianToken } from "./guardian-token";
 import { logHatchNextSteps } from "./hatch-next-steps.js";
-import { isVellumProcess, stopProcess } from "./process";
+import { isCadetProcess, stopProcess } from "./process";
 import { generateInstanceName } from "./random-name";
 import {
   HOST_IMAGE_LOADER_URL,
@@ -61,11 +61,11 @@ import { emitProgress } from "./desktop-progress.js";
 
 export type ServiceName = "assistant" | "credential-executor" | "gateway";
 
-const DOCKERHUB_ORG = "vellumai";
+const DOCKERHUB_ORG = "mycadet";
 export const DOCKERHUB_IMAGES: Record<ServiceName, string> = {
-  assistant: `${DOCKERHUB_ORG}/vellum-assistant`,
-  "credential-executor": `${DOCKERHUB_ORG}/vellum-credential-executor`,
-  gateway: `${DOCKERHUB_ORG}/vellum-gateway`,
+  assistant: `${DOCKERHUB_ORG}/mycadet`,
+  "credential-executor": `${DOCKERHUB_ORG}/cadet-credential-executor`,
+  gateway: `${DOCKERHUB_ORG}/cadet-gateway`,
 };
 
 /** Internal ports exposed by each service's Dockerfile. Re-exported from environments/paths.ts. */
@@ -79,11 +79,11 @@ import { loopbackSafeFetch } from "./loopback-fetch.js";
 /** Max time to wait for the assistant container to emit the readiness sentinel. */
 export const DOCKER_READY_TIMEOUT_MS = 5 * 60 * 1000;
 
-/** Default virtual-camera device path. Overridable via `VELLUM_AVATAR_DEVICE`. */
+/** Default virtual-camera device path. Overridable via `CADET_AVATAR_DEVICE`. */
 const DEFAULT_AVATAR_DEVICE_PATH = "/dev/video10";
 
 /** Env var the assistant reads to discover its virtual-camera device path. */
-export const AVATAR_DEVICE_ENV_VAR = "VELLUM_AVATAR_DEVICE";
+export const AVATAR_DEVICE_ENV_VAR = "CADET_AVATAR_DEVICE";
 
 /**
  * Resolve the avatar device path from the environment. Always returns a
@@ -331,7 +331,7 @@ export interface HatchDockerParams {
    * local source tree (the image-pull fallback). `stable` (default) keeps the
    * latest-stable behavior; `preview` pulls the latest preview release. Only
    * affects the pull path — a local source build ignores it. Falls back to
-   * the `VELLUM_HATCH_CHANNEL` env var when unset, so callers that hatch via
+   * the `CADET_HATCH_CHANNEL` env var when unset, so callers that hatch via
    * env (e.g. evals) can opt in without changing the invocation.
    */
   channel?: ReleaseChannel;
@@ -501,7 +501,7 @@ export async function retireDocker(name: string): Promise<void> {
   const watcherPid =
     typeof entry?.watcherPid === "number" ? entry.watcherPid : null;
   if (watcherPid !== null) {
-    if (isVellumProcess(watcherPid)) {
+    if (isCadetProcess(watcherPid)) {
       await stopProcess(watcherPid, "file-watcher");
     } else {
       console.log(
@@ -543,10 +543,10 @@ export async function retireDocker(name: string): Promise<void> {
   // Future: consider stopping Colima VM when no Docker instances remain.
   // Considerations:
   // - Use loadAllAssistantsAcrossEnvs() instead of loadAllAssistants() to
-  //   avoid stopping Colima while another VELLUM_ENVIRONMENT still has a
+  //   avoid stopping Colima while another CADET_ENVIRONMENT still has a
   //   running Docker instance.
   // - Track whether Cadet started Colima (vs. the user already had it
-  //   running for non-Vellum workloads) \u2014 e.g. via a dedicated Colima
+  //   running for non-Cadet workloads) \u2014 e.g. via a dedicated Colima
   //   profile (`colima start --profile cadet`) or a sentinel file.
   // - Only stop if both conditions are met: no cross-env Docker instances
   //   AND Cadet owns the Colima lifecycle.
@@ -623,7 +623,7 @@ function findRepoRoot(): string {
   }
 
   // Walk up from the compiled binary's location. When the CLI is bundled
-  // inside the macOS app (e.g. .../dist/Vellum.app/Contents/MacOS/vellum-cli),
+  // inside the macOS app (e.g. .../dist/Cadet.app/Contents/MacOS/cadet-cli),
   // the binary still lives inside the repo tree, so walking up will
   // eventually reach the repo root.
   const execRoot = walkUpForRepoRoot(dirname(process.execPath));
@@ -633,7 +633,7 @@ function findRepoRoot(): string {
 
   // Check the app bundle's Resources directory. Debug DMG builds bundle
   // Dockerfiles at Contents/Resources/dockerfiles/{assistant,gateway,...}/Dockerfile.
-  // The CLI binary lives at Contents/MacOS/vellum-cli, so Resources is at
+  // The CLI binary lives at Contents/MacOS/cadet-cli, so Resources is at
   // ../Resources relative to the binary.
   const bundledRoot = join(
     dirname(process.execPath),
@@ -653,7 +653,7 @@ function findRepoRoot(): string {
 
   throw new Error(
     "Could not find repository root containing assistant/Dockerfile. " +
-      "Run this command from within the vellum-assistant repository.",
+      "Run this command from within the mycadet repository.",
   );
 }
 
@@ -1134,11 +1134,11 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
   } = params;
   let watch = params.watch ?? false;
   // Resolve the release channel for the image-pull fallback: explicit param
-  // wins, then the VELLUM_HATCH_CHANNEL env var, else stable. Any value other
+  // wins, then the CADET_HATCH_CHANNEL env var, else stable. Any value other
   // than "preview" (case-insensitive) is treated as stable.
   const channel: ReleaseChannel =
     params.channel ??
-    (process.env.VELLUM_HATCH_CHANNEL?.trim().toLowerCase() === "preview"
+    (process.env.CADET_HATCH_CHANNEL?.trim().toLowerCase() === "preview"
       ? "preview"
       : "stable");
 
@@ -1269,10 +1269,10 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     if (mode.build && repoRoot) {
       emitProgress(2, 6, "Building images...");
       const localTag = `local-${instanceName}`;
-      imageTags.assistant = `vellum-assistant:${localTag}`;
-      imageTags.gateway = `vellum-gateway:${localTag}`;
+      imageTags.assistant = `mycadet:${localTag}`;
+      imageTags.gateway = `cadet-gateway:${localTag}`;
       imageTags["credential-executor"] =
-        `vellum-credential-executor:${localTag}`;
+        `cadet-credential-executor:${localTag}`;
 
       log(`🥚 Hatching Docker assistant: ${instanceName}`);
       log(
@@ -1294,10 +1294,10 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
 
       // Allow explicit image overrides via environment variables.
       // When all three are set, skip version-based resolution entirely.
-      const envAssistant = process.env.VELLUM_ASSISTANT_IMAGE;
-      const envGateway = process.env.VELLUM_GATEWAY_IMAGE;
+      const envAssistant = process.env.CADET_ASSISTANT_IMAGE;
+      const envGateway = process.env.CADET_GATEWAY_IMAGE;
       const envCredentialExecutor =
-        process.env.VELLUM_CREDENTIAL_EXECUTOR_IMAGE;
+        process.env.CADET_CREDENTIAL_EXECUTOR_IMAGE;
 
       let imageSource: string;
 
@@ -1454,7 +1454,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         ],
         readFileSync(hostOverlayPath, "utf-8"),
       );
-      extraAssistantEnv.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH =
+      extraAssistantEnv.CADET_DEFAULT_WORKSPACE_CONFIG_PATH =
         stagedOverlayInContainer;
     }
 
@@ -1473,12 +1473,12 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       : ownSecret;
 
     emitProgress(4, 6, "Starting containers...");
-    if (flagEnvVars.VELLUM_DISABLE_PLATFORM) {
-      extraAssistantEnv.VELLUM_DISABLE_PLATFORM =
-        flagEnvVars.VELLUM_DISABLE_PLATFORM;
+    if (flagEnvVars.CADET_DISABLE_PLATFORM) {
+      extraAssistantEnv.CADET_DISABLE_PLATFORM =
+        flagEnvVars.CADET_DISABLE_PLATFORM;
     }
     const hostDeviceId = getOrCreateHostDeviceId();
-    extraAssistantEnv.VELLUM_DEVICE_ID = hostDeviceId;
+    extraAssistantEnv.CADET_DEVICE_ID = hostDeviceId;
     // Forward the migration URL allowlists so a daemon inside the container
     // can PUT/GET teleport bundles against a local (non-GCS) platform.
     // Pass-through only: unset in normal use, preserving the strict
@@ -1486,8 +1486,8 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     // via host.docker.internal, so that is the value to export when
     // teleporting docker assistants against a local platform.
     for (const key of [
-      "VELLUM_MIGRATION_EXPORT_ALLOWED_HOSTS",
-      "VELLUM_MIGRATION_IMPORT_ALLOWED_HOSTS",
+      "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
+      "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
     ] as const) {
       const value = process.env[key];
       if (value) {
@@ -1496,7 +1496,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     }
     const extraGatewayEnv = {
       ...flagEnvVars,
-      VELLUM_DEVICE_ID: hostDeviceId,
+      CADET_DEVICE_ID: hostDeviceId,
     };
     await startContainers(
       {
@@ -1801,7 +1801,7 @@ async function waitForGatewayAndLease(opts: {
   log(`Assistant ready after ${elapsedSec}s`);
   if (analyze) {
     console.info(
-      `[vellum-hatch-timing] ${JSON.stringify({
+      `[cadet-hatch-timing] ${JSON.stringify({
         containers_up_to_ready_ms: containersUpToReadyMs,
         instance: instanceName,
       })}`,

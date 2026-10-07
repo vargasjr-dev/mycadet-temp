@@ -39,14 +39,14 @@ import {
 
 const SHA_A = "a".repeat(40);
 const SHA_B = "b".repeat(40);
-const CANON_REPO = "vellum-ai/vellum-assistant";
+const CANON_REPO = "vargasjr-dev/mycadet";
 const MANIFEST_URL = `https://api.github.com/repos/${CANON_REPO}/contents/plugins/marketplace.json`;
 const CONTENTS = `https://api.github.com/repos/${CANON_REPO}/contents/`;
 
 /** A marketplace manifest pinning `name` to `ref`. */
 function manifestWith(name: string, ref: string): unknown {
   return {
-    name: "vellum",
+    name: "cadet",
     plugins: [
       {
         name,
@@ -198,7 +198,7 @@ function installCopy(
     writeFileSync(
       join(dir, "install-meta.json"),
       JSON.stringify({
-        origin: "vellum",
+        origin: "cadet",
         name,
         source: {
           kind: "github",
@@ -797,7 +797,7 @@ function installMergeCopy(
     writeFileSync(abs, content);
   }
   const sidecar: Record<string, unknown> = {
-    origin: "vellum",
+    origin: "cadet",
     name,
     source: { kind: "github", owner: "example-org", repo: name, ref },
     commit,

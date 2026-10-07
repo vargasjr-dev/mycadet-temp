@@ -1,6 +1,6 @@
 /**
  * Container memory accounting read from cgroup files (and the platform
- * `VELLUM_MEMORY_LIMIT` override).
+ * `CADET_MEMORY_LIMIT` override).
  *
  * Shared by the `/v1/health` identity handler (which reports current + max) and
  * the resource monitor (which additionally samples the peak and the
@@ -28,17 +28,17 @@ function readCgroupInt(path: string): number | null {
 }
 
 /**
- * Read the memory limit from the VELLUM_MEMORY_LIMIT env var (K8s resource
+ * Read the memory limit from the CADET_MEMORY_LIMIT env var (K8s resource
  * format), then fall back to cgroups, then to os.totalmem() at the call site.
  *
  * In platform mode the container runs under gVisor where cgroup files may report
- * the node's memory rather than the container limit. VELLUM_MEMORY_LIMIT is set
+ * the node's memory rather than the container limit. CADET_MEMORY_LIMIT is set
  * by the StatefulSet template to the exact K8s memory limit (e.g. "3Gi").
  */
 export function getContainerMemoryLimitBytes(): number | null {
   // 1. Prefer the explicit env var set by the platform StatefulSet template.
   try {
-    const envLimit = process.env.VELLUM_MEMORY_LIMIT;
+    const envLimit = process.env.CADET_MEMORY_LIMIT;
     if (envLimit) {
       const parsed = parseK8sMemoryBytes(envLimit);
       if (parsed !== null) {
@@ -81,7 +81,7 @@ export function getContainerMemoryLimitBytes(): number | null {
  * available or readable.
  *
  * Unlike the limit lookup, no env-var override is needed: the gVisor issue that
- * motivates VELLUM_MEMORY_LIMIT is specifically about the *limit* files exposing
+ * motivates CADET_MEMORY_LIMIT is specifically about the *limit* files exposing
  * the host node's memory instead of the sandbox limit. The *usage* files
  * (memory.current / memory.usage_in_bytes) reflect the sandbox's own accounting
  * and are accurate under gVisor.

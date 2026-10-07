@@ -270,7 +270,7 @@ async function flushPromises(): Promise<void> {
 }
 
 const originalAssistantApiKey = process.env.ASSISTANT_API_KEY;
-const originalPlatformUrl = process.env.VELLUM_PLATFORM_URL;
+const originalPlatformUrl = process.env.CADET_PLATFORM_URL;
 const originalPlatformAssistantId = process.env.PLATFORM_ASSISTANT_ID;
 const originalPlatformOrgId = process.env.PLATFORM_ORGANIZATION_ID;
 const originalPlatformUserId = process.env.PLATFORM_USER_ID;
@@ -291,7 +291,7 @@ beforeEach(() => {
   webhookRouteReads = 0;
   fetchImplFn = async () => new Response("not found", { status: 404 });
   delete process.env.ASSISTANT_API_KEY;
-  delete process.env.VELLUM_PLATFORM_URL;
+  delete process.env.CADET_PLATFORM_URL;
   delete process.env.PLATFORM_ASSISTANT_ID;
   delete process.env.PLATFORM_ORGANIZATION_ID;
   delete process.env.PLATFORM_USER_ID;
@@ -301,7 +301,7 @@ beforeEach(() => {
 afterEach(() => {
   rmSync(workspaceDir, { recursive: true, force: true });
   restoreEnv("ASSISTANT_API_KEY", originalAssistantApiKey);
-  restoreEnv("VELLUM_PLATFORM_URL", originalPlatformUrl);
+  restoreEnv("CADET_PLATFORM_URL", originalPlatformUrl);
   restoreEnv("PLATFORM_ASSISTANT_ID", originalPlatformAssistantId);
   restoreEnv("PLATFORM_ORGANIZATION_ID", originalPlatformOrgId);
   restoreEnv("PLATFORM_USER_ID", originalPlatformUserId);
@@ -428,8 +428,8 @@ describe("TunnelClient", () => {
       protocols: [TUNNEL_TUNNEL_SUBPROTOCOL],
       headers: {
         Authorization: "Api-Key api-key-123",
-        "X-Vellum-Tunnel-Binary-WebSocket": "1",
-        "X-Vellum-Tunnel-Allowed-Paths": TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
+        "X-Cadet-Tunnel-Binary-WebSocket": "1",
+        "X-Cadet-Tunnel-Allowed-Paths": TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
       },
     });
 
@@ -629,7 +629,7 @@ describe("TunnelClient", () => {
   test("awaits validate before rejecting a mismatched registration", async () => {
     const sockets: FakeWebSocket[] = [];
     process.env.ASSISTANT_API_KEY = "api-key-123";
-    process.env.VELLUM_PLATFORM_URL = "https://platform.example.com";
+    process.env.CADET_PLATFORM_URL = "https://platform.example.com";
     fetchImplFn = async () =>
       new Response(
         JSON.stringify({
@@ -765,8 +765,8 @@ describe("TunnelClient", () => {
       protocols: [TUNNEL_TUNNEL_SUBPROTOCOL],
       headers: {
         Authorization: "Api-Key api-key-123",
-        "X-Vellum-Tunnel-Binary-WebSocket": "1",
-        "X-Vellum-Tunnel-Allowed-Paths": TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
+        "X-Cadet-Tunnel-Binary-WebSocket": "1",
+        "X-Cadet-Tunnel-Allowed-Paths": TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
       },
     });
     expect(reconnectDelays).toEqual([10]);
@@ -777,7 +777,7 @@ describe("TunnelClient", () => {
     const reconnectDelays: number[] = [];
     const apiKeyCredential = credentialKey("cadet", "assistant_api_key");
     const assistantIdCredential = credentialKey(
-      "vellum",
+      "cadet",
       "platform_assistant_id",
     );
     let resolveFirstApiKeyRead: (value: string | undefined) => void = () => {};
@@ -827,8 +827,8 @@ describe("TunnelClient", () => {
       protocols: [TUNNEL_TUNNEL_SUBPROTOCOL],
       headers: {
         Authorization: "Api-Key api-key-123",
-        "X-Vellum-Tunnel-Binary-WebSocket": "1",
-        "X-Vellum-Tunnel-Allowed-Paths": TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
+        "X-Cadet-Tunnel-Binary-WebSocket": "1",
+        "X-Cadet-Tunnel-Allowed-Paths": TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
       },
     });
     expect(reconnectDelays).toEqual([]);
@@ -1694,7 +1694,7 @@ describe("advertised path rules", () => {
 
   function headerValue(socket: FakeWebSocket): unknown {
     return (socket.options as { headers: Record<string, string> } | undefined)
-      ?.headers["X-Vellum-Tunnel-Allowed-Paths"];
+      ?.headers["X-Cadet-Tunnel-Allowed-Paths"];
   }
 
   test("advertises the registered routes on connect while the flag is on", async () => {

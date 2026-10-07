@@ -1,5 +1,5 @@
 /**
- * Tests for AssistantClient's platform-managed (`cloud: "vellum"`) auth path.
+ * Tests for AssistantClient's platform-managed (`cloud: "cadet"`) auth path.
  * These entries have no guardian token on disk, so the client must authenticate
  * with the stored platform credential instead of sending an anonymous request
  * (which the platform answers with a bare 403).
@@ -17,7 +17,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const testDir = mkdtempSync(join(tmpdir(), "client-platform-auth-test-"));
-const ORIGINAL_LOCKFILE_DIR = process.env.VELLUM_LOCKFILE_DIR;
+const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_FETCH = globalThis.fetch;
 
@@ -38,7 +38,7 @@ function seedCloud(token?: string): void {
     assistantId: ASSISTANT_ID,
     name: "Credence",
     runtimeUrl: PLATFORM_URL,
-    cloud: "vellum",
+    cloud: "cadet",
   });
   if (token) {
     savePlatformToken(token);
@@ -76,7 +76,7 @@ function orgResponse(): Response {
 
 describe("AssistantClient platform-managed auth", () => {
   beforeEach(() => {
-    process.env.VELLUM_LOCKFILE_DIR = testDir;
+    process.env.CADET_LOCKFILE_DIR = testDir;
     process.env.XDG_CONFIG_HOME = testDir;
     // Tests share testDir, so a token saved by an earlier one must not leak.
     clearPlatformToken();
@@ -85,9 +85,9 @@ describe("AssistantClient platform-managed auth", () => {
   afterEach(() => {
     globalThis.fetch = ORIGINAL_FETCH;
     if (ORIGINAL_LOCKFILE_DIR === undefined) {
-      delete process.env.VELLUM_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
     } else {
-      process.env.VELLUM_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
+      process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
     }
     if (ORIGINAL_CONFIG_HOME === undefined) {
       delete process.env.XDG_CONFIG_HOME;
@@ -100,7 +100,7 @@ describe("AssistantClient platform-managed auth", () => {
     rmSync(testDir, { recursive: true, force: true });
   });
 
-  test("sends X-Session-Token + Vellum-Organization-Id for a session token", async () => {
+  test("sends X-Session-Token + Cadet-Organization-Id for a session token", async () => {
     seedCloud("sess-tok-1");
     const calls = stubFetch((url) =>
       isOrgFetch(url) ? orgResponse() : new Response("", { status: 200 }),
@@ -115,7 +115,7 @@ describe("AssistantClient platform-managed auth", () => {
       `${PLATFORM_URL}/v1/assistants/${ASSISTANT_ID}/messages/`,
     );
     expect(assistantCall.headers["X-Session-Token"]).toBe("sess-tok-1");
-    expect(assistantCall.headers["Vellum-Organization-Id"]).toBe(ORG_ID);
+    expect(assistantCall.headers["Cadet-Organization-Id"]).toBe(ORG_ID);
     expect(assistantCall.headers["Authorization"]).toBeUndefined();
     expect(assistantCall.headers["Content-Type"]).toBe("application/json");
   });
@@ -150,7 +150,7 @@ describe("AssistantClient platform-managed auth", () => {
     expect(calls.filter((c) => isOrgFetch(c.url))).toHaveLength(0);
     const assistantCall = calls[0];
     expect(assistantCall.headers["Authorization"]).toBe("Bearer vak_test_key");
-    expect(assistantCall.headers["Vellum-Organization-Id"]).toBeUndefined();
+    expect(assistantCall.headers["Cadet-Organization-Id"]).toBeUndefined();
     expect(assistantCall.headers["X-Session-Token"]).toBeUndefined();
   });
 

@@ -349,7 +349,7 @@ describe("browser_execute route", () => {
         input: {},
         sessionId: "actor-session",
       },
-      { "x-vellum-actor-principal-id": "actor-123" },
+      { "x-cadet-actor-principal-id": "actor-123" },
     );
 
     expect(mockOperationCalls).toHaveLength(1);
@@ -391,7 +391,7 @@ describe("browser_execute route", () => {
         sessionId: "unused",
         conversationId: "conv-live-actor",
       },
-      { "x-vellum-actor-principal-id": "header-actor" },
+      { "x-cadet-actor-principal-id": "header-actor" },
     );
 
     expect(mockOperationCalls).toHaveLength(1);
@@ -701,7 +701,7 @@ test("desktop route preserves guardian ownership and live-turn cancellation", as
   };
   const result = await callHandler(
     { operation: "snapshot", desktop: true, conversationId: "conv-desktop" },
-    { "x-vellum-actor-principal-id": "user-other" },
+    { "x-cadet-actor-principal-id": "user-other" },
   );
   expect(result).toMatchObject({ content: "desktop" });
   expect(mockOperationCalls).toHaveLength(0);

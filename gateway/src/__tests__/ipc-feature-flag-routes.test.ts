@@ -78,7 +78,7 @@ afterEach(() => {
   clearFeatureFlagStoreCache();
   clearRemoteFeatureFlagStoreCache();
   resetEnvOverridesCache();
-  delete process.env.VELLUM_FLAG_A2A_CHANNEL;
+  delete process.env.CADET_FLAG_A2A_CHANNEL;
 });
 
 const { resetFeatureFlagDefaultsCache, _setRegistryCandidateOverrides } =
@@ -271,7 +271,7 @@ describe("IPC feature flag routes", () => {
   });
 
   test("get_feature_flags includes env override values", async () => {
-    process.env.VELLUM_FLAG_A2A_CHANNEL = "true";
+    process.env.CADET_FLAG_A2A_CHANNEL = "true";
     resetEnvOverridesCache();
 
     if (existsSync(featureFlagStorePath)) rmSync(featureFlagStorePath);

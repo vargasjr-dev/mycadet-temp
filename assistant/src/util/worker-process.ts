@@ -184,7 +184,7 @@ function packagedWorkerSpawn(
   runtime: WorkerCommandRuntime,
 ): { executable: string; entry: PackagedWorkerEntry } | null {
   if (runtime.platform === "win32" && packagedEntry) {
-    const executable = join(dirname(runtime.execPath), "vellum-worker.exe");
+    const executable = join(dirname(runtime.execPath), "cadet-worker.exe");
     if (runtime.executableExists(executable)) {
       return { executable, entry: packagedEntry };
     }
@@ -284,7 +284,7 @@ export function workerKindSignature(
     // Matched as separate fragments rather than one adjacent string: a Windows
     // command line may quote the executable path, so the two are not reliably
     // neighbours.
-    return ["vellum-worker", packaged.entry];
+    return ["cadet-worker", packaged.entry];
   }
   return [
     normalizeSeparators(fileURLToPath(entry))
@@ -572,7 +572,7 @@ export async function spawnWorkerProcess(args: {
   pidPath: string;
   /** Worker entry script, e.g. `new URL("./worker.ts", import.meta.url)`. */
   entry: URL;
-  /** Entry bundled into vellum-worker.exe for packaged Windows runtimes. */
+  /** Entry bundled into cadet-worker.exe for packaged Windows runtimes. */
   packagedEntry?: PackagedWorkerEntry;
   /** Human-readable name used in spawn-failure messages, e.g. "Memory worker". */
   workerLabel: string;

@@ -54,7 +54,7 @@ function run(): void {
 beforeEach(() => {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-145-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-145-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 });
@@ -91,7 +91,7 @@ describe("145-collapse-profile-bindings-to-entries", () => {
 
   test("maps identity kinds when judging agreement", () => {
     seedRows([
-      { name: "team-managed", provider: "vellum" },
+      { name: "team-managed", provider: "cadet" },
       { name: "chatgpt-subscription", provider: "chatgpt" },
     ]);
     writeConfig({
@@ -160,13 +160,13 @@ describe("145-collapse-profile-bindings-to-entries", () => {
   });
 
   test("strips a stray binding from a routing-identity profile", () => {
-    seedRows([{ name: "vellum", provider: "vellum" }]);
+    seedRows([{ name: "cadet", provider: "cadet" }]);
     writeConfig({
       llm: {
         profiles: {
           managed: {
-            provider: "vellum",
-            provider_connection: "vellum",
+            provider: "cadet",
+            provider_connection: "cadet",
             model: "claude-opus-4-8",
           },
         },
@@ -176,7 +176,7 @@ describe("145-collapse-profile-bindings-to-entries", () => {
     run();
 
     const managed = readProfiles().managed;
-    expect(managed.provider).toBe("vellum");
+    expect(managed.provider).toBe("cadet");
     expect(managed).not.toHaveProperty("provider_connection");
   });
 
@@ -246,18 +246,18 @@ describe("145-collapse-profile-bindings-to-entries", () => {
   });
 
   test("folds a canonical cadet binding only for identity-servable models", () => {
-    seedRows([{ name: "vellum", provider: "vellum" }]);
+    seedRows([{ name: "cadet", provider: "cadet" }]);
     writeConfig({
       llm: {
         profiles: {
           routable: {
             provider: "anthropic",
-            provider_connection: "vellum",
+            provider_connection: "cadet",
             model: "claude-opus-4-8",
           },
           stale: {
             provider: "anthropic",
-            provider_connection: "vellum",
+            provider_connection: "cadet",
             model: "claude-ancient-1",
           },
         },
@@ -267,13 +267,13 @@ describe("145-collapse-profile-bindings-to-entries", () => {
     run();
 
     const routable = readProfiles().routable;
-    expect(routable.provider).toBe("vellum");
+    expect(routable.provider).toBe("cadet");
     expect(routable).not.toHaveProperty("provider_connection");
     // An unservable model would be stripped by the read-path schema if
     // folded to the identity; the profile stays untouched instead.
     const stale = readProfiles().stale;
     expect(stale.provider).toBe("anthropic");
-    expect(stale.provider_connection).toBe("vellum");
+    expect(stale.provider_connection).toBe("cadet");
   });
 
   test("keeps a self-named binding when a row by that name exists", () => {
@@ -310,7 +310,7 @@ describe("145-collapse-profile-bindings-to-entries", () => {
             provider_connection: "anthropic-work",
             model: "claude-opus-4-8",
           },
-          unbound: { provider: "vellum", model: "claude-opus-4-8" },
+          unbound: { provider: "cadet", model: "claude-opus-4-8" },
         },
       },
     });
@@ -320,6 +320,6 @@ describe("145-collapse-profile-bindings-to-entries", () => {
     run();
 
     expect(readProfiles()).toEqual(afterFirst);
-    expect(afterFirst.unbound.provider).toBe("vellum");
+    expect(afterFirst.unbound.provider).toBe("cadet");
   });
 });

@@ -631,7 +631,7 @@ export function buildSchema(): Record<string, unknown> {
           description:
             "Receives inbound email webhook events from the Cadet platform, verifies the HMAC signature, normalizes the message, and forwards it to the assistant runtime.",
           operationId: "emailInboundWebhook",
-          security: [{ VellumSignature: [] }],
+          security: [{ CadetSignature: [] }],
           requestBody: {
             required: true,
             content: {
@@ -1751,7 +1751,7 @@ export function buildSchema(): Record<string, unknown> {
         post: {
           summary: "Mark a contact channel as verified by guardian attestation",
           description:
-            "Guardian-only endpoint that attests a contact channel as verified without exchanging a challenge code. The caller must be the bound guardian — verified either by JWT actor principal (laptop / docker) or by `X-Vellum-User-Id` matching the stored platform user id (platform-managed). Idempotent: an already-verified channel returns 200 without re-writing. Mutation is gateway-DB primary with a best-effort dual-write to the assistant daemon DB for sync during the gateway-security-migration transition.",
+            "Guardian-only endpoint that attests a contact channel as verified without exchanging a challenge code. The caller must be the bound guardian — verified either by JWT actor principal (laptop / docker) or by `X-Cadet-User-Id` matching the stored platform user id (platform-managed). Idempotent: an already-verified channel returns 200 without re-writing. Mutation is gateway-DB primary with a best-effort dual-write to the assistant daemon DB for sync during the gateway-security-migration transition.",
           operationId: "contactsChannelVerify",
           security: [{ BearerAuth: [] }],
           parameters: [
@@ -1766,7 +1766,7 @@ export function buildSchema(): Record<string, unknown> {
             "200": { description: "Contact channel marked as verified" },
             "401": {
               description:
-                "Unauthorized — missing or invalid bearer token, or missing X-Vellum-User-Id when DISABLE_HTTP_AUTH=true",
+                "Unauthorized — missing or invalid bearer token, or missing X-Cadet-User-Id when DISABLE_HTTP_AUTH=true",
             },
             "403": {
               description: "Forbidden — caller is not the bound guardian",
@@ -3802,7 +3802,7 @@ export function buildSchema(): Record<string, unknown> {
         get: {
           summary: "List ingress declarations and their approval state",
           description:
-            "Guardian-only gateway endpoint listing every ingress declaration the gateway can see, each with the digest a guardian would approve, the public paths it would open, the credential its signatures are verified against, and whether each route is served right now. Servability is not implied by approval state: a vellum-signed route is served out of a pending declaration. This is the only way to learn that a declaration is waiting, because on the public surface a route held back by approval answers 404 exactly like one nobody declared. Declarations that failed validation are reported separately with their reason.",
+            "Guardian-only gateway endpoint listing every ingress declaration the gateway can see, each with the digest a guardian would approve, the public paths it would open, the credential its signatures are verified against, and whether each route is served right now. Servability is not implied by approval state: a cadet-signed route is served out of a pending declaration. This is the only way to learn that a declaration is waiting, because on the public surface a route held back by approval answers 404 exactly like one nobody declared. Declarations that failed validation are reported separately with their reason.",
           operationId: "channelIngressList",
           security: [{ BearerAuth: [] }],
           responses: {
@@ -5004,10 +5004,10 @@ export function buildSchema(): Record<string, unknown> {
           description:
             "HMAC-SHA1 signature computed by Twilio over the request URL and form parameters.",
         },
-        VellumSignature: {
+        CadetSignature: {
           type: "apiKey",
           in: "header",
-          name: "Vellum-Signature",
+          name: "Cadet-Signature",
           description:
             "HMAC-SHA256 signature computed by the Cadet platform over the raw request body using the webhook secret. Format: sha256=<hex-digest>.",
         },

@@ -16,7 +16,7 @@ import { removeLegacySkillsIndexMigration } from "../workspace/migrations/084-re
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-migration-084-test-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-migration-084-test-"));
 });
 
 afterEach(() => {

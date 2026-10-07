@@ -105,7 +105,7 @@ describe("applyActivePluginName", () => {
     conversationSpy?.mockRestore();
   });
 
-  test("sets VELLUM_PLUGIN_NAME when a unique plugin owner is active", () => {
+  test("sets CADET_PLUGIN_NAME when a unique plugin owner is active", () => {
     conversationSpy = spyOn(
       conversationRegistry,
       "findConversationOrSubagent",

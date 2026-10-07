@@ -174,7 +174,7 @@ describe("computer-use screenshot reply placement", () => {
       SCREENSHOT_BASE64,
     );
     linkAttachmentToMessage(toolRow.id, canonical.id, 0);
-    const workingDir = mkdtempSync(join(tmpdir(), "vellum-cu-explicit-"));
+    const workingDir = mkdtempSync(join(tmpdir(), "cadet-cu-explicit-"));
     writeFileSync(join(workingDir, "selected.png"), "screenshot");
 
     try {
@@ -330,7 +330,7 @@ describe("computer-use screenshot reply placement", () => {
 
       resetTables();
       recoverConversationsFromDiskViewMigration.run(
-        process.env.VELLUM_WORKSPACE_DIR!,
+        process.env.CADET_WORKSPACE_DIR!,
       );
       const recovered = rawGet<{ count: number }>(
         "test:countRecoveredFinalScreenshotReplies",
@@ -396,7 +396,7 @@ describe("computer-use screenshot reply placement", () => {
 
       resetTables();
       recoverConversationsFromDiskViewMigration.run(
-        process.env.VELLUM_WORKSPACE_DIR!,
+        process.env.CADET_WORKSPACE_DIR!,
       );
       const recovered = rawGet<{ count: number }>(
         "test:countRecoveredDeliveredAndPrivateRows",

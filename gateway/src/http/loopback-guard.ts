@@ -121,7 +121,7 @@ export function enforceLoopbackOnly(
  * (device management, cli pairing) are only ever called by a terminal process,
  * which never sends an Origin; a present Origin means a browser/WebView is
  * driving the request. Because the gateway reflects CORS for matched
- * `*.vellum.local` WebView origins, such JS could otherwise reach these
+ * `*.cadet.local` WebView origins, such JS could otherwise reach these
  * loopback-only endpoints from inside the WebView sandbox (read device hashes,
  * revoke devices, mint tokens). This closes that vector — mirroring the
  * `/v1/pair` cli-interface guard. Returns a 403 `Response` if an Origin is

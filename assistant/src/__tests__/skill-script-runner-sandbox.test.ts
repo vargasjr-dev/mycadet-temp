@@ -76,7 +76,7 @@ beforeAll(async () => {
     `export async function run() {
   return {
     content: JSON.stringify({
-      pluginName: process.env.VELLUM_PLUGIN_NAME ?? null,
+      pluginName: process.env.CADET_PLUGIN_NAME ?? null,
     }),
     isError: false,
   };
@@ -127,7 +127,7 @@ describe("runSkillToolScript sandbox — success", () => {
     expect(parsed.conversationId).toBe("sess-42");
   }, 15_000);
 
-  test("sets VELLUM_PLUGIN_NAME for a plugin-owned skill tool", async () => {
+  test("sets CADET_PLUGIN_NAME for a plugin-owned skill tool", async () => {
     const result = await runSkillToolScript(
       tempDir,
       "plugin-name-echo.ts",

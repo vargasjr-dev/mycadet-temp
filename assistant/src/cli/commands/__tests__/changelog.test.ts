@@ -30,7 +30,7 @@ import { Command } from "commander";
 // ── Mocks ────────────────────────────────────────────────────────────
 
 // The preload's workspace is where the changelog cache is written.
-const TMP_ROOT = process.env.VELLUM_WORKSPACE_DIR!;
+const TMP_ROOT = process.env.CADET_WORKSPACE_DIR!;
 
 // ── Test fixtures ────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ const REL_080: FakeRelease = {
   name: "v0.8.0 — Tavily",
   body: "## Tavily web search\n\nNew search provider.",
   published_at: "2026-05-10T12:00:00Z",
-  html_url: "https://github.com/vellum-ai/vellum-assistant/releases/tag/v0.8.0",
+  html_url: "https://github.com/vargasjr-dev/mycadet/releases/tag/v0.8.0",
   draft: false,
   prerelease: false,
 };
@@ -59,7 +59,7 @@ const REL_079: FakeRelease = {
   name: "v0.7.9",
   body: "## Memory v2\n\nMemory v2 is now the default.",
   published_at: "2026-05-01T12:00:00Z",
-  html_url: "https://github.com/vellum-ai/vellum-assistant/releases/tag/v0.7.9",
+  html_url: "https://github.com/vargasjr-dev/mycadet/releases/tag/v0.7.9",
   draft: false,
   prerelease: false,
 };
@@ -70,7 +70,7 @@ const REL_080_RC: FakeRelease = {
   body: "Release candidate.",
   published_at: "2026-05-09T12:00:00Z",
   html_url:
-    "https://github.com/vellum-ai/vellum-assistant/releases/tag/v0.8.0-rc.1",
+    "https://github.com/vargasjr-dev/mycadet/releases/tag/v0.8.0-rc.1",
   draft: false,
   prerelease: true,
 };
@@ -80,7 +80,7 @@ const REL_DRAFT: FakeRelease = {
   name: "v0.8.1 (draft)",
   body: null,
   published_at: null,
-  html_url: "https://github.com/vellum-ai/vellum-assistant/releases/tag/v0.8.1",
+  html_url: "https://github.com/vargasjr-dev/mycadet/releases/tag/v0.8.1",
   draft: true,
   prerelease: false,
 };
@@ -91,7 +91,7 @@ function stableRelease(tag: string, body = `release ${tag}`): FakeRelease {
     name: tag,
     body,
     published_at: "2026-04-01T12:00:00Z",
-    html_url: `https://github.com/vellum-ai/vellum-assistant/releases/tag/${tag}`,
+    html_url: `https://github.com/vargasjr-dev/mycadet/releases/tag/${tag}`,
     draft: false,
     prerelease: false,
   };

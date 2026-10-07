@@ -50,7 +50,7 @@ const ECHO_HANDLER = `
 function echo(request) {
   return Response.json({
     pathname: new URL(request.url).pathname,
-    principalType: request.headers.get("x-vellum-principal-type"),
+    principalType: request.headers.get("x-cadet-principal-type"),
   });
 }
 export const GET = echo;
@@ -230,7 +230,7 @@ describe("plugin notice routes", () => {
         plugin: PLUGIN,
         path: PLUGIN_ADMISSION_DENIED_NOTICE_PATH.slice("notices/".length),
       },
-      headers: { "x-vellum-principal-type": "svc_gateway" },
+      headers: { "x-cadet-principal-type": "svc_gateway" },
       body: {},
     });
     expect(response.status).toBe(200);

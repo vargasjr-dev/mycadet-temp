@@ -7,7 +7,7 @@
  * re-state the implementation.
  *
  * The command's only external dependency is `getDbPath()`, which derives
- * from `VELLUM_WORKSPACE_DIR` — we set that env var per test and let the
+ * from `CADET_WORKSPACE_DIR` — we set that env var per test and let the
  * real platform helper produce the path. No module-level mocks needed.
  */
 
@@ -29,15 +29,15 @@ beforeEach(() => {
   workspaceDir = mkdtempSync(join(tmpdir(), "db-status-test-"));
   mkdirSync(join(workspaceDir, "data", "db"), { recursive: true });
   dbPath = join(workspaceDir, "data", "db", "assistant.db");
-  originalWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  originalWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
 });
 
 afterEach(() => {
   if (originalWorkspaceEnv === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceEnv;
+    process.env.CADET_WORKSPACE_DIR = originalWorkspaceEnv;
   }
   rmSync(workspaceDir, { recursive: true, force: true });
 });

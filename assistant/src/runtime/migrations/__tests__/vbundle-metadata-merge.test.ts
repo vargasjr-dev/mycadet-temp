@@ -3,8 +3,8 @@
  * importers. Covers the behaviour the two importers rely on:
  *
  * - Bundle without cadet + target with cadet → target's cadet entries
- *   survive and the bundle's non-vellum entries are kept.
- * - Bundle with mixed user services → non-vellum entries import, any
+ *   survive and the bundle's non-cadet entries are kept.
+ * - Bundle with mixed user services → non-cadet entries import, any
  *   rogue cadet entries in the bundle are dropped.
  * - Live metadata empty / missing → bundle lands as-is.
  * - Malformed inputs → no corruption (bundle returned verbatim).
@@ -12,7 +12,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { mergeMetadataPreservingVellum } from "../vbundle-metadata-merge.js";
+import { mergeMetadataPreservingCadet } from "../vbundle-metadata-merge.js";
 
 interface Record {
   credentialId: string;
@@ -58,41 +58,41 @@ function keys(records: Record[]): Set<string> {
   return new Set(records.map(asKey));
 }
 
-const VELLUM_FIELDS = [
+const CADET_FIELDS = [
   "platform_base_url",
   "assistant_api_key",
   "platform_assistant_id",
   "webhook_secret",
 ] as const;
 
-function vellumRecords(): Record[] {
-  return VELLUM_FIELDS.map((field) =>
-    record({ service: "vellum", field, credentialId: `target-${field}` }),
+function cadetRecords(): Record[] {
+  return CADET_FIELDS.map((field) =>
+    record({ service: "cadet", field, credentialId: `target-${field}` }),
   );
 }
 
-describe("mergeMetadataPreservingVellum", () => {
-  test("preserves all four target vellum:* entries when bundle has none", () => {
-    const target = vellumRecords();
+describe("mergeMetadataPreservingCadet", () => {
+  test("preserves all four target cadet:* entries when bundle has none", () => {
+    const target = cadetRecords();
     const bundle = [
       record({ service: "telegram", field: "bot_token" }),
       record({ service: "slack_channel", field: "app_token" }),
     ];
 
     const merged = parse(
-      mergeMetadataPreservingVellum(file(bundle), file(target)),
+      mergeMetadataPreservingCadet(file(bundle), file(target)),
     );
 
     const mergedKeys = keys(merged.credentials);
-    for (const field of VELLUM_FIELDS) {
-      expect(mergedKeys.has(`vellum:${field}`)).toBe(true);
+    for (const field of CADET_FIELDS) {
+      expect(mergedKeys.has(`cadet:${field}`)).toBe(true);
     }
     expect(mergedKeys.has("telegram:bot_token")).toBe(true);
     expect(mergedKeys.has("slack_channel:app_token")).toBe(true);
   });
 
-  test("bundle non-vellum entries still import alongside preserved cadet entries", () => {
-    const target = vellumRecords();
+  test("bundle non-cadet entries still import alongside preserved cadet entries", () => {
+    const target = cadetRecords();
     const bundle = [
       record({ service: "telegram", field: "bot_token" }),
       record({ service: "telegram", field: "webhook_secret" }),
@@ -100,7 +100,7 @@ describe("mergeMetadataPreservingVellum", () => {
     ];
 
     const merged = parse(
-      mergeMetadataPreservingVellum(file(bundle), file(target)),
+      mergeMetadataPreservingCadet(file(bundle), file(target)),
     );
 
     // 4 cadet + 3 user = 7 total.
@@ -109,25 +109,25 @@ describe("mergeMetadataPreservingVellum", () => {
 
     // Target's credentialIds for cadet are preserved (not the bundle's).
     for (const r of merged.credentials) {
-      if (r.service === "vellum") {
+      if (r.service === "cadet") {
         expect(r.credentialId.startsWith("target-")).toBe(true);
       }
     }
   });
 
-  test("drops bundle vellum:* entries and preserves target's identity", () => {
-    const target = vellumRecords();
+  test("drops bundle cadet:* entries and preserves target's identity", () => {
+    const target = cadetRecords();
     // Bundle carries conflicting cadet entries — should be dropped even
     // though the source would normally be filtered before this helper is
     // called.
     const bundle = [
       record({
-        service: "vellum",
+        service: "cadet",
         field: "assistant_api_key",
         credentialId: "source-rogue",
       }),
       record({
-        service: "vellum",
+        service: "cadet",
         field: "platform_base_url",
         credentialId: "source-rogue-url",
       }),
@@ -135,14 +135,14 @@ describe("mergeMetadataPreservingVellum", () => {
     ];
 
     const merged = parse(
-      mergeMetadataPreservingVellum(file(bundle), file(target)),
+      mergeMetadataPreservingCadet(file(bundle), file(target)),
     );
 
-    const vellumRecordsOut = merged.credentials.filter(
-      (r) => r.service === "vellum",
+    const cadetRecordsOut = merged.credentials.filter(
+      (r) => r.service === "cadet",
     );
-    expect(vellumRecordsOut.length).toBe(4);
-    for (const r of vellumRecordsOut) {
+    expect(cadetRecordsOut.length).toBe(4);
+    for (const r of cadetRecordsOut) {
       expect(r.credentialId.startsWith("target-")).toBe(true);
     }
     // Telegram entry still imports.
@@ -158,18 +158,18 @@ describe("mergeMetadataPreservingVellum", () => {
       record({ service: "telegram", field: "bot_token" }),
       record({ service: "slack_channel", field: "app_token" }),
     ];
-    const merged = parse(mergeMetadataPreservingVellum(file(bundle), null));
+    const merged = parse(mergeMetadataPreservingCadet(file(bundle), null));
     expect(keys(merged.credentials)).toEqual(
       new Set(["telegram:bot_token", "slack_channel:app_token"]),
     );
   });
 
-  test("no live metadata still strips bundle vellum:* entries", () => {
+  test("no live metadata still strips bundle cadet:* entries", () => {
     const bundle = [
-      record({ service: "vellum", field: "assistant_api_key" }),
+      record({ service: "cadet", field: "assistant_api_key" }),
       record({ service: "telegram", field: "bot_token" }),
     ];
-    const merged = parse(mergeMetadataPreservingVellum(file(bundle), null));
+    const merged = parse(mergeMetadataPreservingCadet(file(bundle), null));
     // Bundle's cadet entry is always filtered.
     expect(merged.credentials.length).toBe(1);
     expect(merged.credentials[0]?.service).toBe("telegram");
@@ -178,27 +178,27 @@ describe("mergeMetadataPreservingVellum", () => {
   test("preserves bundle version field verbatim", () => {
     const bundle = file([record({ service: "telegram", field: "bot_token" })]);
     const merged = JSON.parse(
-      mergeMetadataPreservingVellum(bundle, file(vellumRecords())),
+      mergeMetadataPreservingCadet(bundle, file(cadetRecords())),
     );
     expect(merged.version).toBe(5);
   });
 
   test("malformed bundle JSON → returned unchanged (never corrupt the file)", () => {
     const bad = "{not valid json";
-    const live = file(vellumRecords());
-    const result = mergeMetadataPreservingVellum(bad, live);
+    const live = file(cadetRecords());
+    const result = mergeMetadataPreservingCadet(bad, live);
     expect(result).toBe(bad);
   });
 
   test("malformed live JSON → bundle returned as merged output without preservation", () => {
     const bundle = file([record({ service: "telegram", field: "bot_token" })]);
-    const merged = parse(mergeMetadataPreservingVellum(bundle, "{bad"));
+    const merged = parse(mergeMetadataPreservingCadet(bundle, "{bad"));
     expect(keys(merged.credentials)).toEqual(new Set(["telegram:bot_token"]));
   });
 
-  test("live metadata with extra non-vellum entries does NOT smuggle them in", () => {
+  test("live metadata with extra non-cadet entries does NOT smuggle them in", () => {
     const live = file([
-      ...vellumRecords(),
+      ...cadetRecords(),
       record({ service: "telegram", field: "bot_token" }),
       record({ service: "notion", field: "api_key" }),
     ]);
@@ -206,16 +206,16 @@ describe("mergeMetadataPreservingVellum", () => {
       record({ service: "slack_channel", field: "app_token" }),
     ]);
 
-    const merged = parse(mergeMetadataPreservingVellum(bundle, live));
+    const merged = parse(mergeMetadataPreservingCadet(bundle, live));
 
-    // Only bundle's non-vellum + target's vellum. Target's user entries
+    // Only bundle's non-cadet + target's cadet. Target's user entries
     // must NOT carry over (they belong to source-style flows, handled by
     // the bundle).
     expect(keys(merged.credentials).has("slack_channel:app_token")).toBe(true);
     expect(keys(merged.credentials).has("telegram:bot_token")).toBe(false);
     expect(keys(merged.credentials).has("notion:api_key")).toBe(false);
-    for (const field of VELLUM_FIELDS) {
-      expect(keys(merged.credentials).has(`vellum:${field}`)).toBe(true);
+    for (const field of CADET_FIELDS) {
+      expect(keys(merged.credentials).has(`cadet:${field}`)).toBe(true);
     }
   });
 });

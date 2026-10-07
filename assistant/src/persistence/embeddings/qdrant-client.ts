@@ -120,7 +120,7 @@ export function stripLegacySparseSuffix(sentinel: string): string {
  * recreate, cleared by the startup lifecycle hook once the `rebuild_index` job
  * has been enqueued.
  *
- * Closes a data-loss window in {@link VellumQdrantClient.ensureCollection}: the
+ * Closes a data-loss window in {@link CadetQdrantClient.ensureCollection}: the
  * `migrated` signal that tells the lifecycle hook to enqueue `rebuild_index`
  * otherwise lives only in a local variable returned after `deleteCollection` +
  * `createCollection` both succeed. If Qdrant fails between the delete and the
@@ -133,7 +133,7 @@ export function stripLegacySparseSuffix(sentinel: string): string {
  * reembed sentinel in `plugins/defaults/memory/v2/qdrant.ts`.
  *
  * Distinct from the in-collection model-identity sentinel point handled by
- * {@link VellumQdrantClient.readSentinel} / `writeSentinel` — that records the
+ * {@link CadetQdrantClient.readSentinel} / `writeSentinel` — that records the
  * embedding model; this records "a rebuild is owed".
  */
 const REBUILD_SENTINEL_FILENAME = ".memory-v1-rebuild-required";
@@ -166,9 +166,9 @@ export async function clearRebuildSentinel(): Promise<void> {
   }
 }
 
-let _instance: VellumQdrantClient | null = null;
+let _instance: CadetQdrantClient | null = null;
 
-export function getQdrantClient(): VellumQdrantClient {
+export function getQdrantClient(): CadetQdrantClient {
   if (!_instance) {
     throw new Error(
       "Qdrant client not initialized. Call initQdrantClient() first.",
@@ -179,12 +179,12 @@ export function getQdrantClient(): VellumQdrantClient {
 
 export function initQdrantClient(
   config: QdrantClientConfig,
-): VellumQdrantClient {
-  _instance = new VellumQdrantClient(config);
+): CadetQdrantClient {
+  _instance = new CadetQdrantClient(config);
   return _instance;
 }
 
-export class VellumQdrantClient {
+export class CadetQdrantClient {
   private readonly client: QdrantRestClient;
   private readonly collection: string;
   private readonly vectorSize: number;

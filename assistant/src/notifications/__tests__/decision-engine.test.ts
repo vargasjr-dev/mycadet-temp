@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // ── Mocks (must precede imports from mocked modules) ──────────────────
 
 mock.module("../../channels/config.js", () => ({
-  getDeliverableChannels: () => ["vellum", "telegram", "platform"],
+  getDeliverableChannels: () => ["cadet", "telegram", "platform"],
 }));
 
 let persistedDecisions: Array<Record<string, unknown>> = [];
@@ -120,7 +120,7 @@ function makeAssistantReplySignal(
   return {
     signalId: "sig-assistant-reply-test-1",
     createdAt: Date.now(),
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
     sourceContextId: "conv-1",
     sourceEventName: "chat.assistant_reply",
     contextPayload: {
@@ -161,15 +161,15 @@ describe("assistant_tool pass-through in notification decision engine", () => {
   test("uses producer-supplied title and body verbatim, no LLM call", async () => {
     const signal = makeAssistantToolSignal();
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "telegram",
     ] as NotificationChannel[]);
 
     expect(decision.shouldNotify).toBe(true);
-    expect(decision.selectedChannels).toContain("vellum");
-    expect(decision.renderedCopy.vellum?.body).toBe("exact verbatim text here");
-    expect(decision.renderedCopy.vellum?.title).toBe("Custom Title");
-    expect(decision.conversationActions?.vellum?.action).toBe("start_new");
+    expect(decision.selectedChannels).toContain("cadet");
+    expect(decision.renderedCopy.cadet?.body).toBe("exact verbatim text here");
+    expect(decision.renderedCopy.cadet?.title).toBe("Custom Title");
+    expect(decision.conversationActions?.cadet?.action).toBe("start_new");
     expect(decision.reasoningSummary).toBe("assistant_tool pass-through");
     expect(decision.verbatimCopy).toBe(true);
     expect(decision.fallbackUsed).toBe(false);
@@ -184,7 +184,7 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       dedupeKey: "deploy-status:prod",
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     expect(decision.dedupeKey).toBe("deploy-status:prod");
@@ -197,14 +197,14 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     expect(decision.shouldNotify).toBe(true);
-    expect(decision.renderedCopy.vellum?.body).toBe(
+    expect(decision.renderedCopy.cadet?.body).toBe(
       "First sentence. Second sentence follows here.",
     );
-    expect(decision.renderedCopy.vellum?.title).toBe("First sentence.");
+    expect(decision.renderedCopy.cadet?.title).toBe("First sentence.");
     expect(decision.reasoningSummary).toBe("assistant_tool pass-through");
   });
 
@@ -217,7 +217,7 @@ describe("assistant_tool pass-through in notification decision engine", () => {
         visibleInSourceNow: false,
       },
     });
-    const availableChannels = ["vellum", "telegram"] as NotificationChannel[];
+    const availableChannels = ["cadet", "telegram"] as NotificationChannel[];
     const decision = await evaluateSignal(signal, availableChannels);
 
     expect(decision.shouldNotify).toBe(true);
@@ -225,11 +225,11 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       expect.arrayContaining(availableChannels),
     );
     expect(decision.selectedChannels.length).toBe(availableChannels.length);
-    expect(decision.renderedCopy.vellum?.body).toBe("exact verbatim text here");
+    expect(decision.renderedCopy.cadet?.body).toBe("exact verbatim text here");
     expect(decision.renderedCopy.telegram?.body).toBe(
       "exact verbatim text here",
     );
-    expect(decision.conversationActions?.vellum?.action).toBe("start_new");
+    expect(decision.conversationActions?.cadet?.action).toBe("start_new");
     expect(decision.conversationActions?.telegram?.action).toBe("start_new");
   });
 
@@ -241,7 +241,7 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     expect(decision.deepLinkTarget).toEqual({
@@ -258,7 +258,7 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     expect(decision.deepLinkTarget).toBeUndefined();
@@ -272,17 +272,17 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "telegram",
     ] as NotificationChannel[]);
 
     // Cadet (canonical inbox) stays in selectedChannels; telegram is
     // added on top. `--preferred-channels` is additive push, never a
     // replacement for the inbox.
-    expect(decision.selectedChannels).toContain("vellum");
+    expect(decision.selectedChannels).toContain("cadet");
     expect(decision.selectedChannels).toContain("telegram");
     expect(decision.selectedChannels.length).toBe(2);
-    expect(decision.renderedCopy.vellum?.body).toBe("also push to telegram");
+    expect(decision.renderedCopy.cadet?.body).toBe("also push to telegram");
     expect(decision.renderedCopy.telegram?.body).toBe("also push to telegram");
   });
 
@@ -300,7 +300,7 @@ describe("assistant_tool pass-through in notification decision engine", () => {
         visibleInSourceNow: false,
       },
     });
-    const available = ["vellum", "telegram", "slack"] as NotificationChannel[];
+    const available = ["cadet", "telegram", "slack"] as NotificationChannel[];
     const decision = await evaluateSignal(signal, available);
 
     // Urgent broadcasts to every available channel; the additive union
@@ -323,7 +323,7 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       },
       routingIntent: "all_channels",
     });
-    const connected = ["vellum", "telegram"] as NotificationChannel[];
+    const connected = ["cadet", "telegram"] as NotificationChannel[];
     const decision = await evaluateSignal(signal, connected);
     const enforced = enforceRoutingIntent(
       decision,
@@ -333,7 +333,7 @@ describe("assistant_tool pass-through in notification decision engine", () => {
     );
 
     expect(enforced.selectedChannels).toEqual(
-      expect.arrayContaining(["vellum", "telegram"]),
+      expect.arrayContaining(["cadet", "telegram"]),
     );
     for (const ch of enforced.selectedChannels) {
       expect(enforced.renderedCopy[ch]?.body).toBe("verbatim broadcast body");
@@ -349,12 +349,12 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "telegram",
     ] as NotificationChannel[]);
 
-    expect(decision.selectedChannels).toEqual(["vellum"]);
-    expect(decision.renderedCopy.vellum?.body).toBe("fyi");
+    expect(decision.selectedChannels).toEqual(["cadet"]);
+    expect(decision.renderedCopy.cadet?.body).toBe("fyi");
   });
 
   test("channelAllowlist replaces the default channel set", async () => {
@@ -365,7 +365,7 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "telegram",
     ] as NotificationChannel[]);
 
@@ -383,13 +383,13 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "telegram",
       "slack",
     ] as NotificationChannel[]);
 
     expect(decision.selectedChannels).toEqual(["telegram"]);
-    expect(decision.selectedChannels).not.toContain("vellum");
+    expect(decision.selectedChannels).not.toContain("cadet");
     expect(decision.selectedChannels).not.toContain("slack");
   });
 
@@ -407,7 +407,7 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "telegram",
       "slack",
     ] as NotificationChannel[]);
@@ -424,7 +424,7 @@ describe("assistant_tool pass-through in notification decision engine", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "telegram",
     ] as NotificationChannel[]);
 
@@ -448,11 +448,11 @@ describe("background completion pass-through in notification decision engine", (
           },
         },
       }),
-      ["vellum", "platform", "telegram"],
+      ["cadet", "platform", "telegram"],
     );
 
-    expect(decision.selectedChannels).toEqual(["vellum", "platform"]);
-    expect(decision.renderedCopy.vellum?.body).toBe(
+    expect(decision.selectedChannels).toEqual(["cadet", "platform"]);
+    expect(decision.renderedCopy.cadet?.body).toBe(
       "The completed report is ready.",
     );
     expect(decision.reasoningSummary).toBe("background_result pass-through");
@@ -463,11 +463,11 @@ describe("background completion pass-through in notification decision engine", (
       makeAssistantToolSignal({
         sourceEventName: "activity.complete",
       }),
-      ["vellum", "platform"],
+      ["cadet", "platform"],
     );
 
     expect(decision.reasoningSummary).toBe("assistant_tool pass-through");
-    expect(decision.selectedChannels).toEqual(["vellum"]);
+    expect(decision.selectedChannels).toEqual(["cadet"]);
   });
 });
 
@@ -479,7 +479,7 @@ describe("chat.assistant_reply pass-through in notification decision engine", ()
   test("uses producer-supplied title and body verbatim, no LLM call", async () => {
     const signal = makeAssistantReplySignal();
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "platform",
     ] as NotificationChannel[]);
 
@@ -494,22 +494,22 @@ describe("chat.assistant_reply pass-through in notification decision engine", ()
 
   test("selects local and mobile completion delivery when both are available", async () => {
     const decision = await evaluateSignal(makeAssistantReplySignal(), [
-      "vellum",
+      "cadet",
       "telegram",
       "platform",
     ] as NotificationChannel[]);
 
-    expect(decision.selectedChannels).toEqual(["vellum", "platform"]);
+    expect(decision.selectedChannels).toEqual(["cadet", "platform"]);
     expect(decision.shouldNotify).toBe(true);
   });
 
   test("delivers locally when mobile push is unavailable", async () => {
     const decision = await evaluateSignal(makeAssistantReplySignal(), [
-      "vellum",
+      "cadet",
       "telegram",
     ] as NotificationChannel[]);
 
-    expect(decision.selectedChannels).toEqual(["vellum"]);
+    expect(decision.selectedChannels).toEqual(["cadet"]);
     expect(decision.shouldNotify).toBe(true);
   });
 
@@ -526,7 +526,7 @@ describe("chat.assistant_reply pass-through in notification decision engine", ()
     // A channel added to COMPLETION_CHANNELS (or appended by a
     // downstream guard) inherits the verbatim copy instead of falling back.
     const available = [
-      "vellum",
+      "cadet",
       "telegram",
       "platform",
     ] as NotificationChannel[];
@@ -641,7 +641,7 @@ describe("recipient notes injection (ACL from gateway, notes joined locally)", (
       return {};
     };
 
-    await evaluateSignal(makeLlmSignal(), ["vellum"] as NotificationChannel[]);
+    await evaluateSignal(makeLlmSignal(), ["cadet"] as NotificationChannel[]);
 
     expect(capturedSystemPrompt).toContain("<recipient-context>");
     expect(capturedSystemPrompt).toContain("Prefers terse updates.");
@@ -657,7 +657,7 @@ describe("recipient notes injection (ACL from gateway, notes joined locally)", (
       return {};
     };
 
-    await evaluateSignal(makeLlmSignal(), ["vellum"] as NotificationChannel[]);
+    await evaluateSignal(makeLlmSignal(), ["cadet"] as NotificationChannel[]);
 
     expect(capturedSystemPrompt).not.toContain("<recipient-context>");
   });
@@ -674,7 +674,7 @@ describe("decision tool title field specification", () => {
       return {};
     };
 
-    await evaluateSignal(makeLlmSignal(), ["vellum"] as NotificationChannel[]);
+    await evaluateSignal(makeLlmSignal(), ["cadet"] as NotificationChannel[]);
 
     const tool = capturedTools?.[0] as {
       input_schema: {
@@ -689,7 +689,7 @@ describe("decision tool title field specification", () => {
       };
     };
     const description =
-      tool.input_schema.properties.renderedCopy.properties.vellum.properties
+      tool.input_schema.properties.renderedCopy.properties.cadet.properties
         .title.description;
 
     expect(description).toContain("2 to 6 words");
@@ -718,18 +718,18 @@ describe("title normalization", () => {
     toolUseBlock = {
       input: {
         shouldNotify: true,
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         reasoningSummary: "model decision",
         dedupeKey: "title-normalization-test",
-        renderedCopy: { vellum: { title, body } },
+        renderedCopy: { cadet: { title, body } },
       },
     };
 
     try {
       const decision = await evaluateSignal(makeLlmSignal(), [
-        "vellum",
+        "cadet",
       ] as NotificationChannel[]);
-      return decision.renderedCopy.vellum?.title;
+      return decision.renderedCopy.cadet?.title;
     } finally {
       toolUseBlock = null;
       providerSendMessage = previousSendMessage;
@@ -780,10 +780,10 @@ describe("title normalization", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
-    expect(decision.renderedCopy.vellum?.title).toBe("Backup finished.");
+    expect(decision.renderedCopy.cadet?.title).toBe("Backup finished.");
   });
 });
 
@@ -822,14 +822,14 @@ describe("schedule.result pass-through in notification decision engine", () => {
     // classifier compresses a signal into a short alert, which would throw
     // away the content the user set the schedule up to receive.
     const decision = await evaluateSignal(makeScheduleResultSignal(), [
-      "vellum",
+      "cadet",
       "platform",
     ] as NotificationChannel[]);
 
-    expect(decision.renderedCopy.vellum?.body).toBe(
+    expect(decision.renderedCopy.cadet?.body).toBe(
       "- **3 new emails**\n- `deploy.sh` failed overnight",
     );
-    expect(decision.renderedCopy.vellum?.title).toBe("Morning briefing");
+    expect(decision.renderedCopy.cadet?.title).toBe("Morning briefing");
     expect(decision.reasoningSummary).toBe("schedule_result pass-through");
     expect(decision.verbatimCopy).toBe(true);
     expect(decision.fallbackUsed).toBe(false);
@@ -839,22 +839,22 @@ describe("schedule.result pass-through in notification decision engine", () => {
     // Unlike an unseen chat reply, a scheduled run's output has no
     // conversation the user is already in. `cadet` is where it persists.
     const decision = await evaluateSignal(makeScheduleResultSignal(), [
-      "vellum",
+      "cadet",
       "telegram",
       "platform",
     ] as NotificationChannel[]);
 
-    expect(decision.selectedChannels).toEqual(["vellum", "platform"]);
+    expect(decision.selectedChannels).toEqual(["cadet", "platform"]);
     expect(decision.shouldNotify).toBe(true);
   });
 
   test("still reaches the inbox when push is unavailable", async () => {
     const decision = await evaluateSignal(makeScheduleResultSignal(), [
-      "vellum",
+      "cadet",
       "telegram",
     ] as NotificationChannel[]);
 
-    expect(decision.selectedChannels).toEqual(["vellum"]);
+    expect(decision.selectedChannels).toEqual(["cadet"]);
     expect(decision.shouldNotify).toBe(true);
   });
 });
@@ -906,7 +906,7 @@ describe("scheduler requested-message pass-through in notification decision engi
 
   test("keeps a scheduler-owned report verbatim on every urgency-selected channel", async () => {
     const available = [
-      "vellum",
+      "cadet",
       "telegram",
       "platform",
     ] as NotificationChannel[];
@@ -933,7 +933,7 @@ describe("scheduler requested-message pass-through in notification decision engi
 
   test("copies the complete report onto the urgency-narrowed channel set", async () => {
     const available = [
-      "vellum",
+      "cadet",
       "telegram",
       "platform",
     ] as NotificationChannel[];
@@ -950,12 +950,12 @@ describe("scheduler requested-message pass-through in notification decision engi
     );
 
     expect(decision.shouldNotify).toBe(true);
-    expect(decision.selectedChannels).toEqual(["vellum"]);
+    expect(decision.selectedChannels).toEqual(["cadet"]);
     expect(decision.reasoningSummary).toBe(
       "scheduler requested-message pass-through",
     );
-    expect(decision.renderedCopy.vellum?.body).toBe(SCHEDULER_OWNED_REPORT);
-    expect(decision.renderedCopy.vellum?.conversationSeedMessage).toBe(
+    expect(decision.renderedCopy.cadet?.body).toBe(SCHEDULER_OWNED_REPORT);
+    expect(decision.renderedCopy.cadet?.conversationSeedMessage).toBe(
       SCHEDULER_OWNED_REPORT,
     );
     expect(decision.renderedCopy.telegram?.body).toBe(SCHEDULER_OWNED_REPORT);
@@ -978,7 +978,7 @@ describe("scheduler requested-message pass-through in notification decision engi
             requestedTitle: "Your day",
           },
         }),
-        ["vellum", "telegram", "platform"] as NotificationChannel[],
+        ["cadet", "telegram", "platform"] as NotificationChannel[],
       );
 
       expect(providerCalled).toBe(true);
@@ -1019,7 +1019,7 @@ describe("scheduler requested-message pass-through in notification decision engi
             visibleInSourceNow: false,
           },
         },
-        ["vellum", "telegram", "platform"] as NotificationChannel[],
+        ["cadet", "telegram", "platform"] as NotificationChannel[],
       );
 
       expect(providerCalled).toBe(true);

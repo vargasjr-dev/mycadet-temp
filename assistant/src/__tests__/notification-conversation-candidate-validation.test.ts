@@ -28,7 +28,7 @@ function makeCandidate(
     title: "Test Thread",
     updatedAt: Date.now(),
     latestSourceEventName: "test.event",
-    channel: "vellum" as NotificationChannel,
+    channel: "cadet" as NotificationChannel,
     ...overrides,
   };
 }
@@ -118,43 +118,43 @@ describe("conversation candidate validation", () => {
 
     test("reuse_existing with valid candidate is accepted via validateConversationActions", () => {
       const candidateSet: ConversationCandidateSet = {
-        vellum: [makeCandidate({ conversationId: "conv-valid" })],
+        cadet: [makeCandidate({ conversationId: "conv-valid" })],
       };
 
       const result = validateConversationActions(
-        { vellum: { action: "reuse_existing", conversationId: "conv-valid" } },
-        ["vellum"] as NotificationChannel[],
+        { cadet: { action: "reuse_existing", conversationId: "conv-valid" } },
+        ["cadet"] as NotificationChannel[],
         candidateSet,
       );
 
-      expect(result.vellum?.action).toBe("reuse_existing");
-      if (result.vellum?.action === "reuse_existing") {
-        expect(result.vellum.conversationId).toBe("conv-valid");
+      expect(result.cadet?.action).toBe("reuse_existing");
+      if (result.cadet?.action === "reuse_existing") {
+        expect(result.cadet.conversationId).toBe("conv-valid");
       }
     });
 
     test("reuse_existing with invalid candidate is downgraded to start_new", () => {
       const candidateSet: ConversationCandidateSet = {
-        vellum: [makeCandidate({ conversationId: "conv-valid" })],
+        cadet: [makeCandidate({ conversationId: "conv-valid" })],
       };
 
       const result = validateConversationActions(
-        { vellum: { action: "reuse_existing", conversationId: "conv-hacked" } },
-        ["vellum"] as NotificationChannel[],
+        { cadet: { action: "reuse_existing", conversationId: "conv-hacked" } },
+        ["cadet"] as NotificationChannel[],
         candidateSet,
       );
 
-      expect(result.vellum?.action).toBe("start_new");
+      expect(result.cadet?.action).toBe("start_new");
     });
 
     test("reuse_existing with empty candidate set is downgraded to start_new", () => {
       const result = validateConversationActions(
-        { vellum: { action: "reuse_existing", conversationId: "conv-any" } },
-        ["vellum"] as NotificationChannel[],
+        { cadet: { action: "reuse_existing", conversationId: "conv-any" } },
+        ["cadet"] as NotificationChannel[],
         undefined,
       );
 
-      expect(result.vellum?.action).toBe("start_new");
+      expect(result.cadet?.action).toBe("start_new");
     });
   });
 
@@ -163,14 +163,14 @@ describe("conversation candidate validation", () => {
       const candidateMap: ConversationCandidateSet = {};
 
       // When no candidates exist for cadet, the map has no entry
-      expect(candidateMap.vellum).toBeUndefined();
+      expect(candidateMap.cadet).toBeUndefined();
     });
 
     test("candidate set preserves channel association via validateConversationActions", () => {
-      const vellumCandidates = [
+      const cadetCandidates = [
         makeCandidate({
           conversationId: "conv-v1",
-          channel: "vellum" as NotificationChannel,
+          channel: "cadet" as NotificationChannel,
         }),
       ];
       const telegramCandidates = [
@@ -181,26 +181,26 @@ describe("conversation candidate validation", () => {
       ];
 
       const candidateSet: ConversationCandidateSet = {
-        vellum: vellumCandidates,
+        cadet: cadetCandidates,
         telegram: telegramCandidates,
       };
 
       // Cadet candidate should not be valid for telegram and vice versa
-      const validChannels: NotificationChannel[] = ["vellum", "telegram"];
+      const validChannels: NotificationChannel[] = ["cadet", "telegram"];
 
       const result1 = validateConversationActions(
-        { vellum: { action: "reuse_existing", conversationId: "conv-v1" } },
+        { cadet: { action: "reuse_existing", conversationId: "conv-v1" } },
         validChannels,
         candidateSet,
       );
-      expect(result1.vellum?.action).toBe("reuse_existing");
+      expect(result1.cadet?.action).toBe("reuse_existing");
 
       const result2 = validateConversationActions(
-        { vellum: { action: "reuse_existing", conversationId: "conv-t1" } },
+        { cadet: { action: "reuse_existing", conversationId: "conv-t1" } },
         validChannels,
         candidateSet,
       );
-      expect(result2.vellum?.action).toBe("start_new");
+      expect(result2.cadet?.action).toBe("start_new");
 
       const result3 = validateConversationActions(
         { telegram: { action: "reuse_existing", conversationId: "conv-t1" } },

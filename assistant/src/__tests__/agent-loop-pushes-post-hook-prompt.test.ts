@@ -63,7 +63,7 @@ const userMessage: Message = {
 };
 
 const trust: TrustContext = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "guardian",
 };
 

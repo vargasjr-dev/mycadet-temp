@@ -195,8 +195,8 @@ beforeEach(async () => {
     .values({
       id: `ch-${GUARDIAN_ID}`,
       contactId: GUARDIAN_ID,
-      type: "vellum",
-      address: "guardian-vellum",
+      type: "cadet",
+      address: "guardian-cadet",
       isPrimary: false,
       status: "active",
       policy: "allow",
@@ -252,7 +252,7 @@ describe("minted token role", () => {
     expect(actorRow("mint-role-guardian")?.role).toBe("guardian");
     expect(refreshRow("mint-role-guardian")?.role).toBe("guardian");
 
-    const verified = verifyToken(pair.accessToken, "vellum-gateway");
+    const verified = verifyToken(pair.accessToken, "cadet-gateway");
     expect(verified.ok).toBe(true);
     expect(verified.ok && verified.claims.scope_profile).toBe(
       "actor_client_v1",
@@ -270,7 +270,7 @@ describe("minted token role", () => {
     expect(actorRow("mint-role-contact")?.role).toBe("contact");
     expect(refreshRow("mint-role-contact")?.role).toBe("contact");
 
-    const verified = verifyToken(pair.accessToken, "vellum-gateway");
+    const verified = verifyToken(pair.accessToken, "cadet-gateway");
     expect(verified.ok).toBe(true);
     expect(verified.ok && verified.claims.scope_profile).toBe(
       "contact_client_v1",
@@ -311,7 +311,7 @@ describe("minted token role", () => {
       role: "contact",
     });
 
-    const verified = verifyToken(pair.accessToken, "vellum-gateway");
+    const verified = verifyToken(pair.accessToken, "cadet-gateway");
     expect(verified.ok && verified.claims.scope_profile).toBe(
       "contact_client_v1",
     );
@@ -456,7 +456,7 @@ describe("/v1/pair clientReportedName", () => {
         host: "localhost:7830",
         "content-type": "application/json",
         origin: PROD_ORIGIN,
-        "x-vellum-interface-id": "chrome-extension",
+        "x-cadet-interface-id": "chrome-extension",
       },
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -468,7 +468,7 @@ describe("/v1/pair clientReportedName", () => {
       headers: {
         host: "localhost:7830",
         "content-type": "application/json",
-        "x-vellum-interface-id": "cli",
+        "x-cadet-interface-id": "cli",
       },
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -542,7 +542,7 @@ describe("/v1/pair clientReportedName", () => {
         host: "localhost:7830",
         "content-type": "application/json",
         origin: PROD_ORIGIN,
-        "x-vellum-interface-id": "chrome-extension",
+        "x-cadet-interface-id": "chrome-extension",
       },
       body: "not json",
     });
@@ -707,12 +707,12 @@ describe("GET /v1/devices", () => {
 
   test("rejects a request carrying an Origin header (WebView vector, 403)", async () => {
     // A real host CLI never sends an Origin; a present Origin means a
-    // browser/WebView (e.g. *.vellum.local) is calling and could read back
+    // browser/WebView (e.g. *.cadet.local) is calling and could read back
     // device hashes via the gateway's WebView CORS allowance. Must be refused.
     seedActor({ device: "device-A" });
     const req = new Request("http://localhost:7830/v1/devices", {
       method: "GET",
-      headers: { host: "localhost:7830", origin: "https://app.vellum.local" },
+      headers: { host: "localhost:7830", origin: "https://app.cadet.local" },
     });
     const res = await handleListDevices(req, LOOPBACK_IP);
     expect(res.status).toBe(403);
@@ -862,7 +862,7 @@ describe("POST /v1/devices/revoke", () => {
       headers: {
         host: "localhost:7830",
         "content-type": "application/json",
-        origin: "https://app.vellum.local",
+        origin: "https://app.cadet.local",
       },
       body: JSON.stringify({ hashedDeviceId: hashToken("device-A") }),
     });

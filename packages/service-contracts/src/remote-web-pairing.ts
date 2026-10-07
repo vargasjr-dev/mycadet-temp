@@ -22,7 +22,7 @@
  *       (loopback-only)
  *
  * These shapes mirror those handlers' request/response bodies exactly so the
- * gateway, the `vellum pair` CLI (`cli/src/commands/pair.ts`), the host-side
+ * gateway, the `cadet pair` CLI (`cli/src/commands/pair.ts`), the host-side
  * pairing sessions (`packages/local-mode/src/pair.ts`), and the web SPA
  * (`clients/web/src/lib/auth/remote-gateway-session.ts`) share one definition
  * and cannot silently drift.
@@ -33,7 +33,7 @@
 
 /**
  * Pairing-challenge TTL in milliseconds (10 minutes): the gateway's challenge
- * store enforces it and the `vellum pair` CLI renders it in user-facing copy.
+ * store enforces it and the `cadet pair` CLI renders it in user-facing copy.
  */
 export const REMOTE_WEB_PAIRING_CODE_TTL_MS = 10 * 60 * 1000;
 
@@ -178,7 +178,7 @@ export interface RemoteWebPairingTokenRequest {
   /** Platform to record for the device. Ignored without a `deviceId`. */
   platform?: RemoteWebPairingPlatform;
   /**
-   * Optional self-reported device name, for example "Vellum iOS app". The gateway
+   * Optional self-reported device name, for example "Cadet iOS app". The gateway
    * stores it verbatim (capped) and never trusts it for authorization. Absent from
    * clients that predate this field.
    */
@@ -225,7 +225,7 @@ export type RemoteWebPairingTokenResponse =
 
 // ── Shared pairing URL helpers ──────────────────────────────────────────────
 //
-// Every surface that mints a pairing (the `vellum pair` CLI, the web
+// Every surface that mints a pairing (the `cadet pair` CLI, the web
 // settings "Pair a device" card) must accept the same public URLs and build
 // the same scannable links. The helpers are environment-neutral (WHATWG URL
 // only) so both Node and browser callers share one implementation.
@@ -692,7 +692,7 @@ export function parsePairingAddress(raw: string): ParsePairingAddressResult {
  * What a pairing attempt failed on, for callers picking recovery copy. Every
  * pairing surface reports one of these: the host-side sessions in
  * `@mycadet/local-mode`, the Electron bridge, the desktop connect dialog, and
- * the `vellum connect import` CLI.
+ * the `cadet connect import` CLI.
  */
 export type PairingFailureReason =
   /** The pasted address is not a usable assistant address. */

@@ -11,7 +11,7 @@ const SHELL_PATH_CACHE_TTL_MS = 30_000;
 
 // Wraps the printf'd PATH so it can be isolated from any startup-file
 // output (banners, warnings) the interactive login shell writes first.
-const PATH_SENTINEL = "__VELLUM_PATH_7f3a__";
+const PATH_SENTINEL = "__CADET_PATH_7f3a__";
 
 // Shells where the POSIX `printf ... "$PATH"` query is valid syntax.
 const POSIX_SHELLS = new Set(["zsh", "bash", "sh", "dash", "ksh"]);

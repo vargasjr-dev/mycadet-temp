@@ -135,7 +135,7 @@ mock.module("../../contacts/guardian-delivery-reader.js", () => ({
     return guardianPrincipalId
       ? [
           {
-            channelType: "vellum",
+            channelType: "cadet",
             status: "active",
             principalId: guardianPrincipalId,
           },
@@ -259,7 +259,7 @@ function makeMessage(overrides: Partial<MessageRow> = {}): MessageRow {
 function makeMacOriginatedMessage(): MessageRow {
   return makeMessage({
     metadata: JSON.stringify({
-      userMessageChannel: "vellum",
+      userMessageChannel: "cadet",
       userMessageInterface: "web",
       client: { os: "macos" },
       clientOsFromRequest: true,
@@ -270,7 +270,7 @@ function makeMacOriginatedMessage(): MessageRow {
 function makeWindowsOriginatedMessage(): MessageRow {
   return makeMessage({
     metadata: JSON.stringify({
-      userMessageChannel: "vellum",
+      userMessageChannel: "cadet",
       userMessageInterface: "web",
       client: { os: "windows" },
       clientOsFromRequest: true,
@@ -286,7 +286,7 @@ function makeWindowsOriginatedMessage(): MessageRow {
 function makeWebOriginatedMessage(): MessageRow {
   return makeMessage({
     metadata: JSON.stringify({
-      userMessageChannel: "vellum",
+      userMessageChannel: "cadet",
       userMessageInterface: "web",
       client: { os: "web" },
       clientOsFromRequest: true,
@@ -672,7 +672,7 @@ describe("emitAssistantReplyNotification", () => {
     expect(emitCalls).toHaveLength(1);
     expect(emitCalls[0]).toEqual({
       sourceEventName: "chat.assistant_reply",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       sourceContextId: CONVERSATION_ID,
       attentionHints: {
         requiresAction: false,
@@ -950,8 +950,8 @@ describe("emitAssistantReplyNotification", () => {
         {
           type: "text",
           text: [
-            "![cadet scene](vellum://workspace/clients/web/public/cut.mp4)",
-            "![hero animation](vellum://workspace/repos/hero.mp4)",
+            "![cadet scene](cadet://workspace/clients/web/public/cut.mp4)",
+            "![hero animation](cadet://workspace/repos/hero.mp4)",
           ].join(" "),
         },
       ] as ContentBlock[]);
@@ -971,7 +971,7 @@ describe("emitAssistantReplyNotification", () => {
       assistantRow = makeAssistantRow([
         {
           type: "text",
-          text: "Here is the scene: ![cadet scene](vellum://workspace/a.mp4)",
+          text: "Here is the scene: ![cadet scene](cadet://workspace/a.mp4)",
         },
       ] as ContentBlock[]);
 
@@ -1011,7 +1011,7 @@ describe("emitAssistantReplyNotification", () => {
       );
     });
 
-    // Remote embeds are as valid as `vellum://` ones per the system prompt, but
+    // Remote embeds are as valid as `cadet://` ones per the system prompt, but
     // they register nothing in the attachment store, so the alt text is the
     // only thing left to name them by. Going silent here would be worse than
     // the raw markdown this change removes.
@@ -1058,14 +1058,14 @@ describe("emitAssistantReplyNotification", () => {
       );
     });
 
-    // A `vellum://` embed becomes an attachment row and a remote one does not,
+    // A `cadet://` embed becomes an attachment row and a remote one does not,
     // so the two sources have to be counted together, and the tracked embed
     // must not be counted twice.
     test("counts local and remote media together", async () => {
       assistantRow = makeAssistantRow([
         {
           type: "text",
-          text: "![local](vellum://workspace/a.mp4) ![remote](https://e.com/b.png)",
+          text: "![local](cadet://workspace/a.mp4) ![remote](https://e.com/b.png)",
         },
       ] as ContentBlock[]);
       assistantAttachments = [{ originalFilename: "a.mp4" }];
@@ -1078,11 +1078,11 @@ describe("emitAssistantReplyNotification", () => {
     });
 
     // `resolveAssistantAttachments` skips a file that is missing, oversized,
-    // unreadable, or denied at the host-read approval, so a `vellum://` embed
+    // unreadable, or denied at the host-read approval, so a `cadet://` embed
     // can leave no row. Its alt is then the only label the reply has.
     test("names a tracked embed whose attachment never resolved", async () => {
       assistantRow = makeAssistantRow([
-        { type: "text", text: "![the diagram](vellum://workspace/gone.png)" },
+        { type: "text", text: "![the diagram](cadet://workspace/gone.png)" },
       ] as ContentBlock[]);
       assistantAttachments = [];
 
@@ -1098,7 +1098,7 @@ describe("emitAssistantReplyNotification", () => {
       assistantRow = makeAssistantRow([
         {
           type: "text",
-          text: "![one](vellum://workspace/1.png) ![two](vellum://workspace/2.png)",
+          text: "![one](cadet://workspace/1.png) ![two](cadet://workspace/2.png)",
         },
       ] as ContentBlock[]);
       assistantAttachments = [{ originalFilename: "1.png" }];
@@ -1112,7 +1112,7 @@ describe("emitAssistantReplyNotification", () => {
 
     test("does not double count an embed that became an attachment", async () => {
       assistantRow = makeAssistantRow([
-        { type: "text", text: "![local](vellum://workspace/a.mp4)" },
+        { type: "text", text: "![local](cadet://workspace/a.mp4)" },
       ] as ContentBlock[]);
       assistantAttachments = [{ originalFilename: "a.mp4" }];
 
@@ -1123,7 +1123,7 @@ describe("emitAssistantReplyNotification", () => {
 
     test("prefers the attachment row over the alt text when both exist", async () => {
       assistantRow = makeAssistantRow([
-        { type: "text", text: "![scene](vellum://workspace/cut.mp4)" },
+        { type: "text", text: "![scene](cadet://workspace/cut.mp4)" },
       ] as ContentBlock[]);
       assistantAttachments = [{ originalFilename: "cut.mp4" }];
 
@@ -1257,7 +1257,7 @@ describe("emitAssistantReplyNotification", () => {
       name: "in-app live voice",
       metadata: {
         voiceSessionTurn: true,
-        userMessageChannel: "vellum",
+        userMessageChannel: "cadet",
         userMessageInterface: "macos",
       },
     },
@@ -1276,7 +1276,7 @@ describe("emitAssistantReplyNotification", () => {
   test("still emits for a typed desktop send on the same channel", async () => {
     initiatingRow = makeMessage({
       metadata: JSON.stringify({
-        userMessageChannel: "vellum",
+        userMessageChannel: "cadet",
         userMessageInterface: "macos",
       }),
     });
@@ -1361,7 +1361,7 @@ describe("emitAssistantReplyNotification", () => {
     },
     {
       name: "an in-app live-voice anchor",
-      metadata: { voiceSessionTurn: true, userMessageChannel: "vellum" },
+      metadata: { voiceSessionTurn: true, userMessageChannel: "cadet" },
     },
   ];
 

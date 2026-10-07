@@ -6,7 +6,7 @@ export function shouldAutoStartDaemon(
   env: Record<string, string | undefined> = process.env,
 ): boolean {
   // Explicit autostart flag takes precedence
-  const autostart = env.VELLUM_DAEMON_AUTOSTART?.trim();
+  const autostart = env.CADET_DAEMON_AUTOSTART?.trim();
   if (autostart === "1" || autostart === "true") {
     return true;
   }

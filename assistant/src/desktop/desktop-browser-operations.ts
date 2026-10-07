@@ -101,7 +101,7 @@ export function executeDesktopBrowserTabs(
       };
     } else if (params.command === "new") {
       const created = await cdpClient.send<{ tabId: number }>(
-        "Vellum.createTab",
+        "Cadet.createTab",
         {},
         signal,
       );

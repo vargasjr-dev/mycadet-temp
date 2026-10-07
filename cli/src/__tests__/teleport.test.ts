@@ -17,7 +17,7 @@ import { join } from "node:path";
 // ---------------------------------------------------------------------------
 
 const testDir = mkdtempSync(join(tmpdir(), "cli-teleport-test-"));
-process.env.VELLUM_LOCKFILE_DIR = testDir;
+process.env.CADET_LOCKFILE_DIR = testDir;
 
 // ---------------------------------------------------------------------------
 // Mocks — must be set up before importing the module under test.
@@ -107,7 +107,7 @@ const readPlatformTokenMock = mock<typeof platformClient.readPlatformToken>(
 );
 
 const getPlatformUrlMock = mock<typeof platformClient.getPlatformUrl>(
-  () => "https://platform.vellum.ai",
+  () => "https://cloud.cadet.ai",
 );
 
 const hatchAssistantMock = mock<typeof platformClient.hatchAssistant>(
@@ -404,7 +404,7 @@ afterAll(() => {
   mock.module("../lib/retire-local.js", () => realRetireLocal);
   mock.module("../lib/upgrade-lifecycle.js", () => realUpgradeLifecycle);
   rmSync(testDir, { recursive: true, force: true });
-  delete process.env.VELLUM_LOCKFILE_DIR;
+  delete process.env.CADET_LOCKFILE_DIR;
 });
 
 let originalArgv: string[];
@@ -464,7 +464,7 @@ beforeEach(() => {
   readPlatformTokenMock.mockReset();
   readPlatformTokenMock.mockReturnValue("platform-token");
   getPlatformUrlMock.mockReset();
-  getPlatformUrlMock.mockReturnValue("https://platform.vellum.ai");
+  getPlatformUrlMock.mockReturnValue("https://cloud.cadet.ai");
   hatchAssistantMock.mockReset();
   hatchAssistantMock.mockResolvedValue({
     assistant: {
@@ -615,7 +615,7 @@ afterEach(() => {
 });
 
 function setArgv(...args: string[]): void {
-  process.argv = ["bun", "vellum", "teleport", ...args];
+  process.argv = ["bun", "cadet", "teleport", ...args];
 }
 
 function makeEntry(
@@ -780,12 +780,12 @@ describe("same-environment rejection", () => {
     setArgv("--from", "src", "--platform", "dst");
 
     const srcEntry = makeEntry("src", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const dstEntry = makeEntry("dst", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -823,7 +823,7 @@ describe("same-environment rejection", () => {
   test("flag says docker but resolved target is local -> rejects cloud mismatch", async () => {
     setArgv("--from", "src", "--docker", "misidentified");
 
-    const srcEntry = makeEntry("src", { cloud: "vellum" });
+    const srcEntry = makeEntry("src", { cloud: "cadet" });
     const dstEntry = makeEntry("misidentified", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -892,8 +892,8 @@ describe("resolveOrHatchTarget", () => {
 
   test("platform with existing ID -> returns existing without hatching", async () => {
     const platformEntry = makeEntry("uuid-123", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     findAssistantByNameMock.mockImplementation((name: string) => {
       if (name === "uuid-123") return platformEntry;
@@ -986,7 +986,7 @@ describe("unified GCS flow — four directions", () => {
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://platform.vellum.ai",
+        "https://cloud.cadet.ai",
       );
 
       // Runtime export-to-gcs kicked off with the signed upload URL.
@@ -1029,8 +1029,8 @@ describe("unified GCS flow — four directions", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", {
       cloud: "local",
@@ -1077,7 +1077,7 @@ describe("unified GCS flow — four directions", () => {
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://platform.vellum.ai",
+        "https://cloud.cadet.ai",
       );
       // For platform sources, export-to-gcs is reached via the platform's
       // wildcard runtime proxy. The helper builds the assistant-scoped URL
@@ -1085,8 +1085,8 @@ describe("unified GCS flow — four directions", () => {
       // sends platform-token auth — no guardian-token bootstrap.
       expect(localRuntimeExportToGcsMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          cloud: "vellum",
-          runtimeUrl: "https://platform.vellum.ai",
+          cloud: "cadet",
+          runtimeUrl: "https://cloud.cadet.ai",
           assistantId: "my-platform",
         }),
         "platform-token",
@@ -1101,8 +1101,8 @@ describe("unified GCS flow — four directions", () => {
       // ImportJob records and would 404 on runtime-created job IDs.
       expect(localRuntimePollJobStatusMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          cloud: "vellum",
-          runtimeUrl: "https://platform.vellum.ai",
+          cloud: "cadet",
+          runtimeUrl: "https://cloud.cadet.ai",
         }),
         "platform-token",
         "local-export-job-1",
@@ -1124,7 +1124,7 @@ describe("unified GCS flow — four directions", () => {
           targetRuntimeVersion: "0.6.5",
         }),
         "platform-token",
-        "https://platform.vellum.ai",
+        "https://cloud.cadet.ai",
       );
       expect(localRuntimeIdentityMock).toHaveBeenCalledWith(
         expect.objectContaining({ cloud: "local" }),
@@ -1186,7 +1186,7 @@ describe("unified GCS flow — four directions", () => {
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://platform.vellum.ai",
+        "https://cloud.cadet.ai",
       );
       expect(localRuntimeExportToGcsMock).toHaveBeenCalled();
 
@@ -1200,7 +1200,7 @@ describe("unified GCS flow — four directions", () => {
           targetRuntimeVersion: "0.6.5",
         }),
         "platform-token",
-        "https://platform.vellum.ai",
+        "https://cloud.cadet.ai",
       );
       expect(localRuntimeIdentityMock).toHaveBeenCalledWith(
         expect.objectContaining({ cloud: "docker" }),
@@ -1264,7 +1264,7 @@ describe("unified GCS flow — four directions", () => {
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://platform.vellum.ai",
+        "https://cloud.cadet.ai",
       );
       expect(localRuntimeExportToGcsMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -1309,8 +1309,8 @@ describe("signed-URL request targets the bundle-owning platform", () => {
     // Crucially, the target's runtimeUrl is NOT the default getPlatformUrl()
     // return value — this is the regression case Codex flagged.
     const platformEntry = makeEntry("existing-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://staging-platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://staging-cloud.cadet.ai",
     });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -1332,20 +1332,20 @@ describe("signed-URL request targets the bundle-owning platform", () => {
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://staging-platform.vellum.ai",
+        "https://staging-cloud.cadet.ai",
       );
 
       // And the import must run against the same platform.
       expect(platformImportBundleFromGcsMock).toHaveBeenCalledWith(
         "bundle-key-123",
         "platform-token",
-        "https://staging-platform.vellum.ai",
+        "https://staging-cloud.cadet.ai",
       );
 
       // Assert none of the signed-URL calls used the default URL — if any
       // did, upload and download would hit different platforms.
       for (const call of platformRequestSignedUrlMock.mock.calls) {
-        expect(call[2]).toBe("https://staging-platform.vellum.ai");
+        expect(call[2]).toBe("https://staging-cloud.cadet.ai");
       }
     } finally {
       restoreFetch();
@@ -1356,8 +1356,8 @@ describe("signed-URL request targets the bundle-owning platform", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://dev-platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://dev-cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1400,7 +1400,7 @@ describe("signed-URL request targets the bundle-owning platform", () => {
           targetRuntimeVersion: "0.6.5",
         }),
         "platform-token",
-        "https://dev-platform.vellum.ai",
+        "https://dev-cloud.cadet.ai",
       );
     } finally {
       restoreFetch();
@@ -1449,8 +1449,8 @@ describe("CLI never buffers bundle bytes", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1552,8 +1552,8 @@ describe("polling", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1649,8 +1649,8 @@ describe("MigrationInProgressError handling", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1707,8 +1707,8 @@ describe("VersionMismatchError handling", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1814,8 +1814,8 @@ describe("VersionMismatchError handling", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1863,8 +1863,8 @@ describe("target runtime version fetch", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -1915,8 +1915,8 @@ describe("target runtime version fetch", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -2000,8 +2000,8 @@ describe("dry-run", () => {
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     const platformEntry = makeEntry("existing-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -2016,7 +2016,7 @@ describe("dry-run", () => {
       expect(platformImportPreflightFromGcsMock).toHaveBeenCalledWith(
         "bundle-key-123",
         "platform-token",
-        "https://platform.vellum.ai",
+        "https://cloud.cadet.ai",
       );
       expect(hatchAssistantMock).not.toHaveBeenCalled();
     } finally {
@@ -2028,8 +2028,8 @@ describe("dry-run", () => {
     setArgv("--from", "my-platform", "--local", "my-local", "--dry-run");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -2181,8 +2181,8 @@ describe("pre-export source backup", () => {
   test("platform source: takes a PVC snapshot through the source platform before exporting", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -2210,7 +2210,7 @@ describe("pre-export source backup", () => {
     expect(listPlatformBackupsMock).toHaveBeenCalledWith(
       expect.objectContaining({
         assistantId: "my-platform",
-        runtimeUrl: "https://platform.vellum.ai",
+        runtimeUrl: "https://cloud.cadet.ai",
       }),
       "platform-token",
     );
@@ -2225,8 +2225,8 @@ describe("pre-export source backup", () => {
   test("platform source with a recent ready snapshot: reuses it", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -2275,8 +2275,8 @@ describe("pre-export source backup", () => {
   test("platform snapshot failure (never ready) aborts too", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -2356,8 +2356,8 @@ describe("version guard", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -2368,7 +2368,7 @@ describe("version guard", () => {
     });
 
     fetchCurrentVersionMock.mockImplementation((url: string) => {
-      if (url === "https://platform.vellum.ai") return Promise.resolve("0.7.0");
+      if (url === "https://cloud.cadet.ai") return Promise.resolve("0.7.0");
       return Promise.resolve("0.6.0");
     });
 
@@ -2387,8 +2387,8 @@ describe("version guard", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -2421,8 +2421,8 @@ describe("version guard", () => {
     setArgv("--from", "my-platform", "--local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const newLocalEntry = makeEntry("new-local", { cloud: "local" });
 
@@ -2445,7 +2445,7 @@ describe("version guard", () => {
     });
 
     fetchCurrentVersionMock.mockImplementation((url: string) => {
-      if (url === "https://platform.vellum.ai") return Promise.resolve("0.7.0");
+      if (url === "https://cloud.cadet.ai") return Promise.resolve("0.7.0");
       return Promise.resolve("0.6.0");
     });
 
@@ -2535,8 +2535,8 @@ describe("platform credential injection", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", {
       cloud: "local",
@@ -2574,7 +2574,7 @@ describe("platform credential injection", () => {
         bearerToken: "local-bearer",
         assistantApiKey: "api-key-123",
         platformAssistantId: "platform-assistant-1",
-        platformBaseUrl: "https://platform.vellum.ai",
+        platformBaseUrl: "https://cloud.cadet.ai",
         organizationId: "org-1",
         userId: "user-1",
         webhookSecret: "webhook-secret-123",
@@ -2583,7 +2583,7 @@ describe("platform credential injection", () => {
         expect.objectContaining({
           assistantId: "my-local",
           platformAssistantId: "platform-assistant-1",
-          platformBaseUrl: "https://platform.vellum.ai",
+          platformBaseUrl: "https://cloud.cadet.ai",
           platformOrganizationId: "org-1",
         }),
       );
@@ -2671,8 +2671,8 @@ describe("auth + transient-error resilience", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -2894,7 +2894,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://platform.vellum.ai",
+        "https://cloud.cadet.ai",
       );
     } finally {
       restoreFetch();
@@ -2933,8 +2933,8 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
@@ -2961,8 +2961,8 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
       // (cloud=cadet) with the platform token — not via guardian token.
       expect(localRuntimeIdentityMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          cloud: "vellum",
-          runtimeUrl: "https://platform.vellum.ai",
+          cloud: "cadet",
+          runtimeUrl: "https://cloud.cadet.ai",
           assistantId: "my-platform",
         }),
         "platform-token",
@@ -2976,7 +2976,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
           maxRuntimeVersion: null,
         }),
         "platform-token",
-        "https://platform.vellum.ai",
+        "https://cloud.cadet.ai",
       );
     } finally {
       restoreFetch();
@@ -2987,8 +2987,8 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const platformEntry = makeEntry("my-platform", {
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 

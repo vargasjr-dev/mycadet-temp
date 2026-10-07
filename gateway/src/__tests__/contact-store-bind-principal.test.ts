@@ -1,11 +1,11 @@
 /**
  * Tests for ContactStore.bindContactPrincipal, the reserved-channel-type
- * guard on the generic contact writes, and the dedicated vellum-shared writer.
+ * guard on the generic contact writes, and the dedicated cadet-shared writer.
  *
  * `upsertContact` refuses `role` and `principalId` outright, so binding a
  * principal has its own narrow write. These pin that the write reaches only
  * contact-role rows and never retargets one, and that the generic writes
- * refuse the reserved `vellum-shared` type.
+ * refuse the reserved `cadet-shared` type.
  */
 
 import {
@@ -146,12 +146,12 @@ describe("ContactStore.bindContactPrincipal", () => {
 });
 
 describe("reserved channel types", () => {
-  test("upsertContact refuses a vellum-shared channel", async () => {
+  test("upsertContact refuses a cadet-shared channel", async () => {
     await expect(
       new ContactStore().upsertContact({
         displayName: "Someone",
         channels: [
-          { type: "vellum-shared", address: "prin_1", isPrimary: true },
+          { type: "cadet-shared", address: "prin_1", isPrimary: true },
         ],
       }),
     ).rejects.toThrow(ReservedChannelTypeError);
@@ -162,17 +162,17 @@ describe("reserved channel types", () => {
   test("the refusal is case-insensitive", async () => {
     await expect(
       new ContactStore().upsertContact({
-        channels: [{ type: "Vellum-Shared", address: "prin_1" }],
+        channels: [{ type: "Cadet-Shared", address: "prin_1" }],
       }),
     ).rejects.toThrow(ReservedChannelTypeError);
   });
 
-  test("a vellum-shared channel alongside another type refuses the whole write", async () => {
+  test("a cadet-shared channel alongside another type refuses the whole write", async () => {
     await expect(
       new ContactStore().upsertContact({
         channels: [
           { type: "slack", address: "U123" },
-          { type: "vellum-shared", address: "prin_1" },
+          { type: "cadet-shared", address: "prin_1" },
         ],
       }),
     ).rejects.toThrow(ReservedChannelTypeError);
@@ -193,11 +193,11 @@ describe("reserved channel types", () => {
 
   test("the plain cadet channel type is not reserved", async () => {
     const { contact } = await new ContactStore().upsertContact({
-      channels: [{ type: "vellum", address: "prin_1", isPrimary: true }],
+      channels: [{ type: "cadet", address: "prin_1", isPrimary: true }],
     });
 
     const channels = new ContactStore().getChannelsForContact(contact.id);
-    expect(channels.map((ch) => ch.type)).toEqual(["vellum"]);
+    expect(channels.map((ch) => ch.type)).toEqual(["cadet"]);
   });
 });
 
@@ -206,11 +206,11 @@ describe("writeSharedPrincipalChannel", () => {
     return getGatewayDb()
       .select()
       .from(contactChannels)
-      .where(eq(contactChannels.type, "vellum-shared"))
+      .where(eq(contactChannels.type, "cadet-shared"))
       .all();
   }
 
-  test("binds the principal and records its active vellum-shared channel", () => {
+  test("binds the principal and records its active cadet-shared channel", () => {
     seedContact({ id: "ct_1" });
 
     writeSharedPrincipalChannel({

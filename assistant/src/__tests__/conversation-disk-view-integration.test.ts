@@ -15,7 +15,7 @@ import {
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
-const workspaceDir = process.env.VELLUM_WORKSPACE_DIR!;
+const workspaceDir = process.env.CADET_WORKSPACE_DIR!;
 const conversationsDir = join(workspaceDir, "conversations");
 mkdirSync(conversationsDir, { recursive: true });
 

@@ -25,7 +25,7 @@ anti-pattern was retired in #35642 and again in the ask_question redesign).
         │
         ▼ per-channel rendering ONLY
   channel adapters                               (notifications/adapters/{telegram,slack,discord,macos,platform},
-  telegram: inline keyboard; slack: blocks;       vellum: conversation card via approval-card-builder)
+  telegram: inline keyboard; slack: blocks;       cadet: conversation card via approval-card-builder)
   card deliveries recorded per channel            (guardian-delivery-recorder.ts → guardian_request_deliveries)
         │
         ▼ user responds: button tap / "CODE <reply>" / bare text
@@ -100,20 +100,20 @@ Routing policy for channel-delivered cards: a guardian card sent to a
 channel chat (Slack, Telegram, Discord, WhatsApp) is a delivery
 projection, not conversation content. Channel deliveries are not
 paired with any conversation (`conversation-pairing.ts` skips every
-non-vellum guardian delivery), and the Slack DM cold backfill skips
+non-cadet guardian delivery), and the Slack DM cold backfill skips
 messages whose ts matches a recorded guardian delivery for the chat
 (`guardian_requests_list_deliveries_by_chat`), so a card never enters
-a Vellum transcript. The in-app homes of a request are the feed item
-and the source conversation's pinned vellum card.
+a Cadet transcript. The in-app homes of a request are the feed item
+and the source conversation's pinned cadet card.
 
 ## Cards are not conversation history
 
-`pairDeliveryWithConversation` persists one message row for the vellum
+`pairDeliveryWithConversation` persists one message row for the cadet
 delivery so the card renders and deep-links. That row is addressed to a
 conversation the request is _about_, not one the assistant is speaking in:
-`buildVellumCardAffinity` pins the vellum card to the originating
+`buildCadetCardAffinity` pins the cadet card to the originating
 conversation. Channel guardian deliveries pair no conversation (see the
-routing policy above), so the vellum row is the only card row written; it
+routing policy above), so the cadet row is the only card row written; it
 goes straight to the DB by the notification pipeline, so the live turn's
 in-memory history never sees it. Rows that channel deliveries paired
 before the projection-only policy still exist and are covered by the same

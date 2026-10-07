@@ -1,7 +1,7 @@
 import type { Server } from "bun";
 
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
-import { findVellumGuardian } from "../../auth/guardian-bootstrap.js";
+import { findCadetGuardian } from "../../auth/guardian-bootstrap.js";
 import {
   isNarrowScopeProfile,
   resolveScopeProfile,
@@ -41,7 +41,7 @@ type GetClientIp = () => string;
 // alone is insufficient — it closes the accidental misconfig case where the
 // flag gets set on a non-platform deployment (e.g. a leaked dev env var on a
 // public host). When the bypass IS active, the platform vembda sidecar is
-// expected to forward `X-Vellum-User-Id`; the gateway cross-checks that
+// expected to forward `X-Cadet-User-Id`; the gateway cross-checks that
 // against the bound platform user id. This means reaching the gateway
 // sidecar's port directly (without going through vembda) still requires
 // knowing the bound user id. The platform header alone is not a free-pass.
@@ -76,7 +76,7 @@ export function logAuthBypassState(): void {
   if (isPlatformManaged()) {
     log.info(
       "DISABLE_HTTP_AUTH + IS_PLATFORM both set: JWT validation bypassed; " +
-        "X-Vellum-User-Id is cross-checked against the bound platform user id",
+        "X-Cadet-User-Id is cross-checked against the bound platform user id",
     );
   } else {
     log.warn(
@@ -97,8 +97,8 @@ export function logAuthBypassState(): void {
  * platform-managed bypass is checked first, so this fallback only applies in
  * default mode.
  *
- *   - `requireEdgeAuth` — validates a JWT bearer token (aud=vellum-gateway)
- *     OR (when bypass is active) cross-checks X-Vellum-User-Id against the
+ *   - `requireEdgeAuth` — validates a JWT bearer token (aud=cadet-gateway)
+ *     OR (when bypass is active) cross-checks X-Cadet-User-Id against the
  *     bound platform user id.
  *   - `requireEdgeAuthWithScope` — same, plus a scope-profile check on the
  *     decoded JWT. Under the platform bypass, scope is enforced upstream by
@@ -116,18 +116,18 @@ export function createAuthMiddleware(
   trustProxy = false,
 ) {
   /**
-   * Cross-check `X-Vellum-User-Id` against the bound platform user id.
+   * Cross-check `X-Cadet-User-Id` against the bound platform user id.
    * Used by all three guards under the platform-managed bypass. Returns
    * null on success, or a 4xx/5xx Response.
    */
   async function requirePlatformUserHeader(
     req: Request,
   ): Promise<Response | null> {
-    const headerUserId = req.headers.get("x-vellum-user-id");
+    const headerUserId = req.headers.get("x-cadet-user-id");
     if (!headerUserId) {
       log.warn(
         { path: new URL(req.url).pathname },
-        "Edge auth rejected: missing X-Vellum-User-Id (platform bypass active)",
+        "Edge auth rejected: missing X-Cadet-User-Id (platform bypass active)",
       );
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -161,7 +161,7 @@ export function createAuthMiddleware(
     if (storedUserId !== headerUserId) {
       log.warn(
         { path: new URL(req.url).pathname },
-        "Edge auth rejected: X-Vellum-User-Id does not match bound platform user id",
+        "Edge auth rejected: X-Cadet-User-Id does not match bound platform user id",
       );
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -169,7 +169,7 @@ export function createAuthMiddleware(
   }
 
   /**
-   * Validate a JWT bearer token (aud=vellum-gateway) for client-facing routes.
+   * Validate a JWT bearer token (aud=cadet-gateway) for client-facing routes.
    * Loopback peers (127.0.0.0/8, ::1) fall back when auth is missing,
    * malformed, or invalid.
    */
@@ -234,7 +234,7 @@ export function createAuthMiddleware(
    * Two auth modes:
    *
    *   1. Platform-managed (DISABLE_HTTP_AUTH + IS_PLATFORM): caller's identity
-   *      is asserted via X-Vellum-User-Id cross-checked against the bound
+   *      is asserted via X-Cadet-User-Id cross-checked against the bound
    *      platform user id.
    *   2. Default: validate the edge JWT, require an actor principal, assert it
    *      matches the bound guardian's principal id.
@@ -542,11 +542,11 @@ export function createAuthMiddleware(
     }
     let guardian: { principalId: string } | null;
     try {
-      guardian = await findVellumGuardian();
+      guardian = await findCadetGuardian();
     } catch (err) {
       log.error(
         { path: new URL(req.url).pathname, err },
-        "Guardian edge auth: findVellumGuardian failed",
+        "Guardian edge auth: findCadetGuardian failed",
       );
       return Response.json({ error: "Service Unavailable" }, { status: 503 });
     }

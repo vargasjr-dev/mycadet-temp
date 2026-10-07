@@ -1,7 +1,7 @@
 /**
  * Cache for resolved feature-flag overrides.
  *
- * State lives on `globalThis.vellumAssistant.featureFlagCache` so test
+ * State lives on `globalThis.cadetAssistant.featureFlagCache` so test
  * infrastructure can seed it through the ambient namespace without importing
  * production modules into the preload-time graph.
  *
@@ -10,8 +10,8 @@
  * authoritative fetched or test-seeded value.
  */
 
-function slot(): VellumFeatureFlagCache {
-  const ns = (globalThis.vellumAssistant ??= {});
+function slot(): CadetFeatureFlagCache {
+  const ns = (globalThis.cadetAssistant ??= {});
   return (ns.featureFlagCache ??= { overrides: null, fromGateway: false });
 }
 

@@ -518,7 +518,7 @@ describe("ALL_CREDENTIAL_SPECS registration", () => {
     expect(services).toContain("whatsapp");
     expect(services).toContain("slack_channel");
     expect(services).toContain("discord_channel");
-    expect(services).toContain("vellum");
+    expect(services).toContain("cadet");
   });
 
   test("the discord spec requires exactly the token the wiring reads", () => {

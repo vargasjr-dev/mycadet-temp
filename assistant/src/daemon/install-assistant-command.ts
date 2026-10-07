@@ -34,7 +34,7 @@ import { getLogger } from "../util/logger.js";
 const log = getLogger("install-assistant-command");
 
 /** Ownership marker embedded in every wrapper this module writes. */
-const WRAPPER_MARKER = "# vellum-assistant-command v1";
+const WRAPPER_MARKER = "# mycadet-command v1";
 
 /**
  * What to install as `assistant`:
@@ -90,13 +90,13 @@ export function resolveAssistantCommandTarget(overrides?: {
   // Compiled desktop build: the `assistant` binary sits beside the daemon
   // binary inside the app bundle.
   if (execPath.includes(`${sep}Contents${sep}MacOS${sep}`)) {
-    const binary = join(dirname(execPath), "vellum-assistant");
+    const binary = join(dirname(execPath), "mycadet");
     if (existsSync(binary)) {
       return { kind: "binary", binary };
     }
     log.warn(
       { expected: binary },
-      "Bundled vellum-assistant binary not found alongside daemon",
+      "Bundled mycadet binary not found alongside daemon",
     );
     return null;
   }
@@ -119,7 +119,7 @@ function wrapperScript(bun: string, entry: string): string {
   return [
     "#!/bin/sh",
     WRAPPER_MARKER,
-    "# Installed by the Vellum assistant daemon. Safe to delete.",
+    "# Installed by the Cadet assistant daemon. Safe to delete.",
     `exec ${shQuote(bun)} ${shQuote(entry)} "$@"`,
     "",
   ].join("\n");
@@ -279,10 +279,10 @@ function commandResolvesElsewhere(
  * Tries `/usr/local/bin/assistant` first, then falls back to
  * `~/.local/bin/assistant` (and patches the shell profile if needed).
  *
- * Skipped when VELLUM_DEV=1 (developers manage their own PATH).
+ * Skipped when CADET_DEV=1 (developers manage their own PATH).
  */
 export function installAssistantCommand(): void {
-  if (process.env.VELLUM_DEV === "1") {
+  if (process.env.CADET_DEV === "1") {
     return;
   }
 

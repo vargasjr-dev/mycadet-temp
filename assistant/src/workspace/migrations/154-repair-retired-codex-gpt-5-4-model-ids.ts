@@ -175,7 +175,7 @@ const KNOWN_PROVIDERS = new Set([
   "opencode",
   "baseten",
   "poolside",
-  "vellum",
+  "cadet",
   "chatgpt",
 ]);
 

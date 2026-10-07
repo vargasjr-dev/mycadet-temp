@@ -282,7 +282,7 @@ describe("managed fallback dispatch", () => {
     expect(backup[0].body.model).toBe("claude-opus-5");
     expect(backup[0].body.max_tokens).toBe(32000);
     expect(backup[0].body.thinking).toMatchObject({ type: "adaptive" });
-    expect(backup[0].headers["x-vellum-inference-profile"]).toBe(
+    expect(backup[0].headers["x-cadet-inference-profile"]).toBe(
       "quality-optimized-backup",
     );
     expect(response.actualInferenceProfile).toBe("quality-optimized-backup");

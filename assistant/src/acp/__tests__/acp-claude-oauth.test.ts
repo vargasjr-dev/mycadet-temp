@@ -116,7 +116,7 @@ const ACP_SPAWN_TOOL = "acp_spawn";
 
 const TEST_DIR = join(
   tmpdir(),
-  `vellum-acp-claude-oauth-test-${randomBytes(4).toString("hex")}`,
+  `cadet-acp-claude-oauth-test-${randomBytes(4).toString("hex")}`,
 );
 
 function oauthMetadata() {

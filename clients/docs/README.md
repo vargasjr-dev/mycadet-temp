@@ -1,14 +1,14 @@
 # @mycadet/docs
 
-Public docs site for the Vellum assistant: an SSR Next.js app serving
-https://www.vellum.ai/docs. Production ingress routes only `/docs/*` to this
+Public docs site for the Cadet assistant: an SSR Next.js app serving
+https://mycadet.ai/docs. Production ingress routes only `/docs/*` to this
 app, so every public URL and asset lives under the `/docs` prefix.
 
 ## Development
 
 The app is self-contained: no platform environment (`vel up`, Django) is
 required. The only network dependency is the releases page, which fetches
-published release notes from the public `www.vellum.ai` API at request time
+published release notes from the public `mycadet.ai` API at request time
 (override with `RELEASES_API_URL`) and renders an empty list if unreachable.
 
 ```bash

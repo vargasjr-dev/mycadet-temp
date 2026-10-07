@@ -327,7 +327,7 @@ describe("formatPublishResult", () => {
   it("formats success", () => {
     const result = formatPublishResult({
       ok: true,
-      pr_url: "https://github.com/vellum-ai/vellum-assistant/pull/1",
+      pr_url: "https://github.com/vargasjr-dev/mycadet/pull/1",
       pr_number: 1,
       status: "pending_review",
     });

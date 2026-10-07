@@ -46,7 +46,7 @@ type PointerAudienceMode = "auto" | "trusted" | "untrusted";
  *
  * Owner when:
  * - recent message provenance trust class is 'guardian', or
- * - conversation origin channel is 'vellum' (desktop app).
+ * - conversation origin channel is 'cadet' (desktop app).
  *
  * Known non-guardian contacts ('trusted_contact' / 'unverified_contact') and
  * unknown callers are NOT the owner: routing their pointer status through the
@@ -70,7 +70,7 @@ function resolvePointerAudienceIsOwner(conversationId: string): boolean {
     }
 
     const originChannel = getConversationOriginChannel(conversationId);
-    if (originChannel === "vellum") {
+    if (originChannel === "cadet") {
       return true;
     }
   } catch {

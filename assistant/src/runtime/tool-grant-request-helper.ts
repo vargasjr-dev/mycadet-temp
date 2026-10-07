@@ -20,12 +20,12 @@ import {
   listGuardianRequestsOrEmpty,
 } from "../channels/gateway-guardian-requests.js";
 import type { ChannelId } from "../channels/types.js";
+import { buildCadetCardAffinity } from "../notifications/cadet-card-affinity.js";
 import { emitNotificationSignal } from "../notifications/emit-signal.js";
 import {
   recordApprovalCardDelivery,
   recordGuardianRequestDeliveries,
 } from "../notifications/guardian-delivery-recorder.js";
-import { buildVellumCardAffinity } from "../notifications/vellum-card-affinity.js";
 import { getLogger } from "../util/logger.js";
 import { resolveApprovalSourceReference } from "./approval-source-link.js";
 import { getGuardianBinding } from "./channel-verification-service.js";
@@ -100,7 +100,7 @@ export async function createOrReuseToolGrantRequest(
     return { failed: true, reason: "no_guardian_binding" };
   }
 
-  // A binding with no principal is unresolved, not empty: adopt the vellum
+  // A binding with no principal is unresolved, not empty: adopt the cadet
   // anchor principal so the resulting request is decidable by the guardian.
   // When neither resolves, fail closed — a principal-less tool_grant_request
   // can never be authorized by anyone.
@@ -174,9 +174,9 @@ export async function createOrReuseToolGrantRequest(
   const requestCode =
     guardianRequest.requestCode ?? guardianRequest.id.slice(0, 6).toUpperCase();
 
-  // The vellum delivery row is created up front in onConversationCreated so the
+  // The cadet delivery row is created up front in onConversationCreated so the
   // in-app client sees it immediately; the post-resolve recorder reuses it.
-  let vellumDeliveryIdPromise: Promise<string | undefined> | undefined;
+  let cadetDeliveryIdPromise: Promise<string | undefined> | undefined;
 
   // Emit notification so guardian is alerted. Uses 'guardian.question' as
   // sourceEventName so that existing request-code guidance in the notification
@@ -186,9 +186,9 @@ export async function createOrReuseToolGrantRequest(
     sourceChannel,
     sourceContextId: conversationId,
     requiresConversation: true,
-    // Pin the in-app (vellum) card to the conversation the escalated tool is
+    // Pin the in-app (cadet) card to the conversation the escalated tool is
     // running in, so the guardian decides it in context.
-    ...(buildVellumCardAffinity(conversationId) ?? {}),
+    ...(buildCadetCardAffinity(conversationId) ?? {}),
     attentionHints: {
       requiresAction: true,
       urgency: "high",
@@ -217,12 +217,12 @@ export async function createOrReuseToolGrantRequest(
     // The broadcaster awaits the returned promise, so the delivery row is
     // durable before the client can act on the conversation.
     onConversationCreated: (info) => {
-      vellumDeliveryIdPromise ??= recordApprovalCardDelivery({
+      cadetDeliveryIdPromise ??= recordApprovalCardDelivery({
         requestId: guardianRequest.id,
-        channel: "vellum",
+        channel: "cadet",
         conversationId: info.conversationId,
       }).then((delivery) => delivery?.id);
-      return vellumDeliveryIdPromise.then(() => undefined);
+      return cadetDeliveryIdPromise.then(() => undefined);
     },
   });
 
@@ -232,7 +232,7 @@ export async function createOrReuseToolGrantRequest(
     await recordGuardianRequestDeliveries({
       requestId: guardianRequest.id,
       deliveryResults: signalResult.deliveryResults,
-      vellumDeliveryId: await vellumDeliveryIdPromise,
+      cadetDeliveryId: await cadetDeliveryIdPromise,
     });
   });
 

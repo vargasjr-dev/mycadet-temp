@@ -48,7 +48,7 @@ mock.module("node:child_process", () => ({ spawn: spawnMock }));
 const cliInstallerState = {
   isInstalled: false,
   installError: null as Error | null,
-  cliBinPath: "/fake/userData/cli/0.8.6/node_modules/.bin/vellum",
+  cliBinPath: "/fake/userData/cli/0.8.6/node_modules/.bin/cadet",
   bundledBunPath: "/fake/resources/bun",
 };
 const ensureCliInstalledMock = mock(async () => {
@@ -65,7 +65,7 @@ const realExistsSync = fs.existsSync.bind(fs);
 const existsSyncOverrides: Record<string, boolean> = {};
 
 const resolveInvocation = async () => {
-  const envPath = process.env.VELLUM_CLI_PATH;
+  const envPath = process.env.CADET_CLI_PATH;
   if (envPath) {
     return { command: "bun", baseArgs: ["run", envPath] };
   }
@@ -91,19 +91,19 @@ const resolveInvocation = async () => {
 // exercise the real shared read/write logic without touching a real config
 // dir. Set before importing the module under test because `installLocalMode`
 // captures the resolved paths once at registration time.
-const previousEnvironment = process.env.VELLUM_ENVIRONMENT;
-const previousLockfileDir = process.env.VELLUM_LOCKFILE_DIR;
+const previousEnvironment = process.env.CADET_ENVIRONMENT;
+const previousLockfileDir = process.env.CADET_LOCKFILE_DIR;
 const previousConfigHome = process.env.XDG_CONFIG_HOME;
-const lockfileDir = fs.mkdtempSync(path.join(os.tmpdir(), "vellum-lockfile-"));
-const configHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), "vellum-config-"));
-process.env.VELLUM_ENVIRONMENT = "production";
-process.env.VELLUM_LOCKFILE_DIR = lockfileDir;
+const lockfileDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-lockfile-"));
+const configHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-config-"));
+process.env.CADET_ENVIRONMENT = "production";
+process.env.CADET_LOCKFILE_DIR = lockfileDir;
 process.env.XDG_CONFIG_HOME = configHomeDir;
-const lockfilePath = path.join(lockfileDir, ".vellum.lock.json");
+const lockfilePath = path.join(lockfileDir, ".cadet.lock.json");
 
 // Matches the module's `resolveConfigDir(process.env)` under the
 // production + XDG_CONFIG_HOME environment pinned above.
-const configDir = path.join(configHomeDir, "vellum");
+const configDir = path.join(configHomeDir, "cadet");
 
 let mockSessionToken: string | null = null;
 
@@ -132,15 +132,15 @@ beforeAll(() => {
 
 afterAll(() => {
   if (previousEnvironment === undefined) {
-    delete process.env.VELLUM_ENVIRONMENT;
+    delete process.env.CADET_ENVIRONMENT;
   } else {
-    process.env.VELLUM_ENVIRONMENT = previousEnvironment;
+    process.env.CADET_ENVIRONMENT = previousEnvironment;
   }
 
   if (previousLockfileDir === undefined) {
-    delete process.env.VELLUM_LOCKFILE_DIR;
+    delete process.env.CADET_LOCKFILE_DIR;
   } else {
-    process.env.VELLUM_LOCKFILE_DIR = previousLockfileDir;
+    process.env.CADET_LOCKFILE_DIR = previousLockfileDir;
   }
 
   if (previousConfigHome === undefined) {
@@ -173,7 +173,7 @@ afterEach(() => {
   cliInstallerState.installError = null;
   mockSessionToken = null;
   refreshLockfileNowMock.mockClear();
-  delete process.env.VELLUM_CLI_PATH;
+  delete process.env.CADET_CLI_PATH;
   for (const key of Object.keys(existsSyncOverrides)) {
     delete existsSyncOverrides[key];
   }
@@ -257,8 +257,8 @@ describe("cadet:localMode:hatch handler", () => {
     expect(spawnArgs).toHaveLength(0);
   });
 
-  test("VELLUM_CLI_PATH env override takes precedence", async () => {
-    process.env.VELLUM_CLI_PATH = "/custom/cli/index.ts";
+  test("CADET_CLI_PATH env override takes precedence", async () => {
+    process.env.CADET_CLI_PATH = "/custom/cli/index.ts";
 
     const pending = hatch();
     await tick();
@@ -690,12 +690,12 @@ describe("lockfile IPC handlers", () => {
       "local-1",
     );
     saveLockfileAssistant(
-      { assistantId: "old-platform", cloud: "vellum", runtimeUrl: "http://x" },
+      { assistantId: "old-platform", cloud: "cadet", runtimeUrl: "http://x" },
       "local-1",
     );
 
     const result = replacePlatformAssistants([
-      { assistantId: "new-platform", cloud: "vellum", runtimeUrl: "http://y" },
+      { assistantId: "new-platform", cloud: "cadet", runtimeUrl: "http://y" },
     ]);
 
     expect(result.ok).toBe(true);
@@ -773,8 +773,8 @@ describe("cadet:localMode:retire handler", () => {
 
   test("passes the current session token through the shared retire invocation", async () => {
     mockSessionToken = "tok-electron";
-    const previousPlatformToken = process.env.VELLUM_PLATFORM_TOKEN;
-    process.env.VELLUM_PLATFORM_TOKEN = "parent-token";
+    const previousPlatformToken = process.env.CADET_PLATFORM_TOKEN;
+    process.env.CADET_PLATFORM_TOKEN = "parent-token";
     try {
       const pending = retire("asst-1");
       await tick();
@@ -783,14 +783,14 @@ describe("cadet:localMode:retire handler", () => {
       expect(await pending).toEqual({ ok: true });
       expect(
         (spawnOptions[0] as { env?: NodeJS.ProcessEnv }).env
-          ?.VELLUM_PLATFORM_TOKEN,
+          ?.CADET_PLATFORM_TOKEN,
       ).toBe("tok-electron");
-      expect(process.env.VELLUM_PLATFORM_TOKEN).toBe("parent-token");
+      expect(process.env.CADET_PLATFORM_TOKEN).toBe("parent-token");
     } finally {
       if (previousPlatformToken === undefined) {
-        delete process.env.VELLUM_PLATFORM_TOKEN;
+        delete process.env.CADET_PLATFORM_TOKEN;
       } else {
-        process.env.VELLUM_PLATFORM_TOKEN = previousPlatformToken;
+        process.env.CADET_PLATFORM_TOKEN = previousPlatformToken;
       }
     }
   });
@@ -1353,7 +1353,7 @@ describe("cadet:localMode:guardianToken handler", () => {
       ],
     ]);
     expect(
-      (spawnOptions[0] as { env?: NodeJS.ProcessEnv }).env?.VELLUM_ENVIRONMENT,
+      (spawnOptions[0] as { env?: NodeJS.ProcessEnv }).env?.CADET_ENVIRONMENT,
     ).toBe("production");
 
     lastChild.stdout.emit("data", Buffer.from("refreshed-token\n"));
@@ -1369,7 +1369,7 @@ describe("cadet:localMode:guardianToken handler", () => {
     lastChild.stderr.emit(
       "data",
       Buffer.from(
-        `VELLUM_REFRESH_ERROR=${JSON.stringify({ status: 503, error: "Assistant gateway is unreachable" })}\n`,
+        `CADET_REFRESH_ERROR=${JSON.stringify({ status: 503, error: "Assistant gateway is unreachable" })}\n`,
       ),
     );
     lastChild.emit("close", 1);
@@ -1507,7 +1507,7 @@ describe("cadet:localMode:readAssistantAvatar handler", () => {
   let instanceDir: string;
 
   beforeEach(() => {
-    instanceDir = fs.mkdtempSync(path.join(os.tmpdir(), "vellum-instance-"));
+    instanceDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-instance-"));
     fs.writeFileSync(
       lockfilePath,
       JSON.stringify({
@@ -1532,7 +1532,7 @@ describe("cadet:localMode:readAssistantAvatar handler", () => {
   test("reads the avatar off the lockfile entry's instance dir", () => {
     const avatarDir = path.join(
       instanceDir,
-      ".vellum",
+      ".cadet",
       "workspace",
       "data",
       "avatar",
@@ -1567,7 +1567,7 @@ describe("cadet:localMode:readAssistantAvatar handler", () => {
 
   test("entry without an instanceDir reads the default dir from process.env", () => {
     const previousDataHome = process.env.XDG_DATA_HOME;
-    const dataHome = fs.mkdtempSync(path.join(os.tmpdir(), "vellum-data-"));
+    const dataHome = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-data-"));
     process.env.XDG_DATA_HOME = dataHome;
     try {
       fs.writeFileSync(
@@ -1579,10 +1579,10 @@ describe("cadet:localMode:readAssistantAvatar handler", () => {
       );
       const avatarDir = path.join(
         dataHome,
-        "vellum",
+        "cadet",
         "assistants",
         "asst-1",
-        ".vellum",
+        ".cadet",
         "workspace",
         "data",
         "avatar",
@@ -1610,7 +1610,7 @@ describe("cadet:localMode:readAssistantAvatar handler", () => {
   test("an unreadable manifest image surfaces as a failure over IPC", () => {
     const avatarDir = path.join(
       instanceDir,
-      ".vellum",
+      ".cadet",
       "workspace",
       "data",
       "avatar",

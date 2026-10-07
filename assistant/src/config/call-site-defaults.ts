@@ -12,7 +12,7 @@ type CallSiteDefaultConfig = {
   /**
    * Direct model pin overriding the resolved profile's model. The resolver
    * treats a bare model pin as catalog-implied: it stamps the model's
-   * catalog provider and keeps the provider-agnostic Vellum managed
+   * catalog provider and keeps the provider-agnostic Cadet managed
    * connection (see `resolveOverrideOrDefault`). Reserve for call sites
    * whose latency envelope the profile's model cannot meet.
    */
@@ -153,7 +153,7 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
     effort: "low",
     thinking: { enabled: false },
   },
-  // The managed-only profile resolves through the Vellum connection. On a
+  // The managed-only profile resolves through the Cadet connection. On a
   // BYOK install it has no body, so the judge is unavailable and the front
   // door's own decision stands.
   voiceEscalationJudge: {

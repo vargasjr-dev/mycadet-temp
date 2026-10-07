@@ -1992,7 +1992,7 @@ export async function processMessage(
       ? (
           await listPendingRequestsByScopeOrEmpty(
             conversation.conversationId,
-            "vellum",
+            "cadet",
           )
         ).map((request) => request.id)
       : [];
@@ -2017,7 +2017,7 @@ export async function processMessage(
         actorPrincipalId:
           conversation.trustContext?.guardianPrincipalId ?? undefined,
         actorExternalUserId: conversation.trustContext?.guardianExternalUserId,
-        channel: "vellum",
+        channel: "cadet",
         guardianPrincipalId:
           conversation.trustContext?.guardianPrincipalId ?? undefined,
       },
@@ -2039,8 +2039,8 @@ export async function processMessage(
         }
       }
       const routerChannelMeta = {
-        userMessageChannel: "vellum" as const,
-        assistantMessageChannel: "vellum" as const,
+        userMessageChannel: "cadet" as const,
+        assistantMessageChannel: "cadet" as const,
         userMessageInterface: guardianIfCtx?.userMessageInterface ?? "web",
         assistantMessageInterface:
           guardianIfCtx?.assistantMessageInterface ?? "web",

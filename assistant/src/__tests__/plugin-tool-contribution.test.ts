@@ -46,13 +46,13 @@ import {
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 
 // Redirect plugin-storage-directory creation into a per-process temp tree so
-// the test doesn't touch the developer's real ~/.vellum. This matches the
+// the test doesn't touch the developer's real ~/.cadet. This matches the
 // convention used by plugin-bootstrap.test.ts.
 const TEST_WORKSPACE_DIR = join(
   tmpdir(),
-  `vellum-plugin-tool-contrib-test-${process.pid}`,
+  `cadet-plugin-tool-contrib-test-${process.pid}`,
 );
-process.env.VELLUM_WORKSPACE_DIR = TEST_WORKSPACE_DIR;
+process.env.CADET_WORKSPACE_DIR = TEST_WORKSPACE_DIR;
 
 function makeFakeTool(name: string, extras: Partial<Tool> = {}): Tool {
   return {

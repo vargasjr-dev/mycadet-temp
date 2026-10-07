@@ -16,7 +16,7 @@ let workspaceDir: string;
 function freshWorkspace(): void {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-127-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-127-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 }
@@ -119,7 +119,7 @@ describe("127-backfill-default-provider", () => {
 
     backfillDefaultProviderMigration.run(workspaceDir);
 
-    expect(defaultProvider()).toEqual({ provider: "vellum" });
+    expect(defaultProvider()).toEqual({ provider: "cadet" });
   });
 
   test("IS_PLATFORM backfills cadet with no other signals", () => {
@@ -128,7 +128,7 @@ describe("127-backfill-default-provider", () => {
 
     backfillDefaultProviderMigration.run(workspaceDir);
 
-    expect(defaultProvider()).toEqual({ provider: "vellum" });
+    expect(defaultProvider()).toEqual({ provider: "cadet" });
   });
 
   test("IS_PLATFORM never overwrites an existing defaultProvider value", () => {
@@ -178,7 +178,7 @@ describe("127-backfill-default-provider", () => {
 
     backfillDefaultProviderMigration.run(workspaceDir);
 
-    expect(defaultProvider()).toEqual({ provider: "vellum" });
+    expect(defaultProvider()).toEqual({ provider: "cadet" });
   });
 
   test("a valid object with a connectionName is left untouched", () => {

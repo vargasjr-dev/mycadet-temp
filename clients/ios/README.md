@@ -21,7 +21,7 @@ documented in [`docs/NATIVE_VOICE.md`](docs/NATIVE_VOICE.md).
 ## Web content delivery
 
 **What:** The iOS app loads the web UI live over HTTPS from the deployed
-web origin (e.g. `https://www.vellum.ai/assistant`). No web assets are
+web origin (e.g. `https://mycadet.ai/assistant`). No web assets are
 bundled in the IPA — the `webDir` (`capacitor-shell/`) contains only a
 placeholder HTML page that is never shown at runtime.
 
@@ -30,7 +30,7 @@ placeholder HTML page that is never shown at runtime.
 environment-appropriate origin. `cap sync ios` bakes that URL into the
 native `capacitor.config.json`. At launch, `WKWebView` navigates
 straight to it. Each environment (production, staging, dev) has its own
-origin — set `VELLUM_ENVIRONMENT` before `bunx cap sync ios` to select
+origin — set `CADET_ENVIRONMENT` before `bunx cap sync ios` to select
 which URL is baked into the build.
 
 **Why remote URL, not a local bundle (like the Electron app):**
@@ -176,7 +176,7 @@ device):
 
 1. Safari → **Develop** menu → pick the simulator (e.g. "Simulator —
    iPhone 16 Pro") or your connected device → click the entry under the
-   app's bundle ID (`…vellum-assistant-ios.dev` for App Dev).
+   app's bundle ID (`…mycadet-ios.dev` for App Dev).
 2. The Web Inspector window opens against the live WebView. Reloading the
    app, navigating, or `cmd+R`-ing in Xcode all keep working — just
    reopen the inspector entry from the Develop menu when the WebView
@@ -265,7 +265,7 @@ a breakpoint.
 See [Web content delivery](#web-content-delivery) for the full
 what / how / why. The `/assistant` path suffix is deliberate — booting
 on the bare host lands on the marketing page, whose CTA redirects to
-`www.vellum.ai/assistant` and bounces non-prod shells off their own host.
+`mycadet.ai/assistant` and bounces non-prod shells off their own host.
 
 **Do not** switch to a static `vite build` output that bundles web
 assets into the IPA. We deliberately serve from the live web origin
@@ -296,9 +296,9 @@ for what the extra App IDs cost at release time.
 
 | Target      | Bundle ID                            | Display Name   | Icon   | Server          |
 | ----------- | ------------------------------------ | -------------- | ------ | --------------- |
-| App         | `ai.vocify-inc.vellum-assistant-ios` | Vellum         | Green  | `www.vellum.ai` |
-| App Staging | `.staging`                           | Vellum Staging | Yellow | staging server  |
-| App Dev     | `.dev`                               | Vellum Dev     | Pink   | dev server      |
+| App         | `ai.mycadet.ios` | Cadet         | Green  | `mycadet.ai` |
+| App Staging | `.staging`                           | Cadet Staging | Yellow | staging server  |
+| App Dev     | `.dev`                               | Cadet Dev     | Pink   | dev server      |
 
 Build settings shared across all three targets live in
 `App/App/Config/Base.xcconfig`. Per-target overrides (bundle ID, display
@@ -379,8 +379,8 @@ inline in `App/project.yml` under the `AppEnvironment` template.
   the shell lists it in `available`, so a missing name reads as a disabled Set
   button rather than a failed swap.
 - `App/App/Base.lproj/LaunchScreen.storyboard` uses a black background with the
-  white Vellum wordmark centered at its native 92×28 point size. The vector
-  image lives in the `VellumLogo` imageset in `Assets.xcassets/`.
+  white Cadet wordmark centered at its native 92×28 point size. The vector
+  image lives in the `CadetLogo` imageset in `Assets.xcassets/`.
 
 #### Alternate icon size cost
 
@@ -423,8 +423,8 @@ There's a deliberate mismatch:
 
 | Where                             | Value                                           |
 | --------------------------------- | ----------------------------------------------- |
-| Xcode `PRODUCT_BUNDLE_IDENTIFIER` | `ai.vocify-inc.vellum-assistant-ios` ← real one |
-| `capacitor.config.ts` `appId`     | `ai.vellum.assistant`                           |
+| Xcode `PRODUCT_BUNDLE_IDENTIFIER` | `ai.mycadet.ios` ← real one |
+| `capacitor.config.ts` `appId`     | `ai.mycadet.assistant`                           |
 
 Capacitor requires `appId` to use Java package form because Android uses it as
 the application namespace. The iOS project is generated from `project.yml`
@@ -450,12 +450,12 @@ copy in `clients/ios/App/App/public/`) and then `xcodegen generate` to refresh
 ### Point at a different server (self-hosted origin or local dev)
 
 **HTTPS origin (self-hosted assistant, or any valid-TLS host):** set
-`VELLUM_SERVER_URL` when syncing. It overrides the environment-derived
-Vellum Cloud URL and is baked into `server.url` the same way:
+`CADET_SERVER_URL` when syncing. It overrides the environment-derived
+Cadet Cloud URL and is baked into `server.url` the same way:
 
 ```bash
 cd clients/web
-VELLUM_SERVER_URL=https://your-host.ts.net bunx cap sync ios
+CADET_SERVER_URL=https://your-host.ts.net bunx cap sync ios
 ```
 
 Then rebuild in Xcode. The value must be a valid `https:` URL — `cap sync`
@@ -465,7 +465,7 @@ without the variable (e.g. `bun run ios:setup`) to return to the environment
 default.
 
 **Plain-HTTP local dev (e.g. a local Next.js on your LAN):** ATS blocks
-cleartext HTTP and `VELLUM_SERVER_URL` is https-only, so this path still
+cleartext HTTP and `CADET_SERVER_URL` is https-only, so this path still
 requires temporarily editing `capacitor.config.ts`:
 
 ```ts
@@ -541,9 +541,9 @@ The bundle compiles only the sources listed under the `AppTests` target in
 
 On first build after pulling:
 
-- [ ] Home-screen icon is Vellum green with a white "V" (not the blue X
+- [ ] Home-screen icon is Cadet green with a white "V" (not the blue X
       Capacitor placeholder)
-- [ ] Launch screen briefly displays the white Vellum wordmark on black
+- [ ] Launch screen briefly displays the white Cadet wordmark on black
 - [ ] WebView loads the configured server URL and you can sign in
 - [ ] Chat streams token-by-token (verifies SSE is intact — if tokens
       arrive in one big blob, CapacitorHttp got turned on somewhere)
@@ -552,7 +552,7 @@ On first build after pulling:
 - [ ] Voice-room camera opens a sharp native preview on a physical device,
       flips cameras, captures a photo, and leaves live-voice audio running
 - [ ] Xcode → App target → General → Bundle Identifier reads
-      `ai.vocify-inc.vellum-assistant-ios`
+      `ai.mycadet.ios`
 
 ## Gotchas
 
@@ -565,8 +565,8 @@ On first build after pulling:
   `Assets.xcassets/`. It's wired into `project.yml` as a per-target
   resource and shows up in the regenerated `project.pbxproj` as a
   `folder.iconcomposer.icon` reference.
-- **Launch logo is missing**: confirm the `VellumLogo` imageset contains the
-  SVG and `LaunchScreen.storyboard` references `VellumLogo`.
+- **Launch logo is missing**: confirm the `CadetLogo` imageset contains the
+  SVG and `LaunchScreen.storyboard` references `CadetLogo`.
 - **`xcuserdata` and `App.xcodeproj/*` changes in `git status`** —
   expected, both are gitignored. `xcuserdata` is per-user IDE state
   (selected scheme, breakpoints); `App.xcodeproj/*` is regenerated by
@@ -834,15 +834,15 @@ provisioning profile` instead. The fix is the portal work below, not a
 
 | Environment | Extension bundle ID                                              | Profile name (exact)                                            | GitHub secret                            |
 | ----------- | ---------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------- |
-| production  | `ai.vocify-inc.vellum-assistant-ios.VoiceActivity`               | `Vellum Assistant iOS VoiceActivity Distribution`               | `IOS_PROVISIONING_PROFILE_EXT`           |
-| staging     | `ai.vocify-inc.vellum-assistant-ios.staging.VoiceActivity`       | `Vellum Assistant iOS Staging VoiceActivity Distribution`       | `IOS_PROVISIONING_PROFILE_EXT_STAGING`   |
-| dev         | `ai.vocify-inc.vellum-assistant-ios.dev.VoiceActivity`           | `Vellum Assistant iOS Dev VoiceActivity Distribution`           | `IOS_PROVISIONING_PROFILE_EXT_DEV`       |
-| production  | `ai.vocify-inc.vellum-assistant-ios.Share`                       | `Vellum Assistant iOS Share Distribution`                       | `IOS_PROVISIONING_PROFILE_SHARE`         |
-| staging     | `ai.vocify-inc.vellum-assistant-ios.staging.Share`               | `Vellum Assistant iOS Staging Share Distribution`               | `IOS_PROVISIONING_PROFILE_SHARE_STAGING` |
-| dev         | `ai.vocify-inc.vellum-assistant-ios.dev.Share`                   | `Vellum Assistant iOS Dev Share Distribution`                   | `IOS_PROVISIONING_PROFILE_SHARE_DEV`     |
-| production  | `ai.vocify-inc.vellum-assistant-ios.NotificationService`         | `Vellum Assistant iOS NotificationService Distribution`         | `IOS_PROVISIONING_PROFILE_NSE`           |
-| staging     | `ai.vocify-inc.vellum-assistant-ios.staging.NotificationService` | `Vellum Assistant iOS Staging NotificationService Distribution` | `IOS_PROVISIONING_PROFILE_NSE_STAGING`   |
-| dev         | `ai.vocify-inc.vellum-assistant-ios.dev.NotificationService`     | `Vellum Assistant iOS Dev NotificationService Distribution`     | `IOS_PROVISIONING_PROFILE_NSE_DEV`       |
+| production  | `ai.mycadet.ios.VoiceActivity`               | `Cadet Assistant iOS VoiceActivity Distribution`               | `IOS_PROVISIONING_PROFILE_EXT`           |
+| staging     | `ai.mycadet.ios.staging.VoiceActivity`       | `Cadet Assistant iOS Staging VoiceActivity Distribution`       | `IOS_PROVISIONING_PROFILE_EXT_STAGING`   |
+| dev         | `ai.mycadet.ios.dev.VoiceActivity`           | `Cadet Assistant iOS Dev VoiceActivity Distribution`           | `IOS_PROVISIONING_PROFILE_EXT_DEV`       |
+| production  | `ai.mycadet.ios.Share`                       | `Cadet Assistant iOS Share Distribution`                       | `IOS_PROVISIONING_PROFILE_SHARE`         |
+| staging     | `ai.mycadet.ios.staging.Share`               | `Cadet Assistant iOS Staging Share Distribution`               | `IOS_PROVISIONING_PROFILE_SHARE_STAGING` |
+| dev         | `ai.mycadet.ios.dev.Share`                   | `Cadet Assistant iOS Dev Share Distribution`                   | `IOS_PROVISIONING_PROFILE_SHARE_DEV`     |
+| production  | `ai.mycadet.ios.NotificationService`         | `Cadet Assistant iOS NotificationService Distribution`         | `IOS_PROVISIONING_PROFILE_NSE`           |
+| staging     | `ai.mycadet.ios.staging.NotificationService` | `Cadet Assistant iOS Staging NotificationService Distribution` | `IOS_PROVISIONING_PROFILE_NSE_STAGING`   |
+| dev         | `ai.mycadet.ios.dev.NotificationService`     | `Cadet Assistant iOS Dev NotificationService Distribution`     | `IOS_PROVISIONING_PROFILE_NSE_DEV`       |
 
 The containing app App IDs already exist, and each one already carries
 the App Group from the VoiceActivity row. A new Share or
@@ -853,9 +853,9 @@ distribution profile:
 
 | Environment | App bundle ID                                | Profile name (exact)                        | GitHub secret                      |
 | ----------- | -------------------------------------------- | ------------------------------------------- | ---------------------------------- |
-| production  | `ai.vocify-inc.vellum-assistant-ios`         | `Vellum Assistant iOS Distribution`         | `IOS_PROVISIONING_PROFILE`         |
-| staging     | `ai.vocify-inc.vellum-assistant-ios.staging` | `Vellum Assistant iOS Staging Distribution` | `IOS_PROVISIONING_PROFILE_STAGING` |
-| dev         | `ai.vocify-inc.vellum-assistant-ios.dev`     | `Vellum Assistant iOS Dev Distribution`     | `IOS_PROVISIONING_PROFILE_DEV`     |
+| production  | `ai.mycadet.ios`         | `Cadet Assistant iOS Distribution`         | `IOS_PROVISIONING_PROFILE`         |
+| staging     | `ai.mycadet.ios.staging` | `Cadet Assistant iOS Staging Distribution` | `IOS_PROVISIONING_PROFILE_STAGING` |
+| dev         | `ai.mycadet.ios.dev`     | `Cadet Assistant iOS Dev Distribution`     | `IOS_PROVISIONING_PROFILE_DEV`     |
 
 For the NotificationService rows only, step 2 below also enables
 **Communication Notifications** on the containing app's App ID, and step 4
@@ -872,9 +872,9 @@ Release workflow to prove the setup on that track):
    → **Identifiers** → **+** → **App IDs** → **App**. Set
    **Bundle ID** to **Explicit** and paste the exact string from the
    first table. Description can be anything descriptive
-   (e.g. "Vellum Assistant iOS Dev VoiceActivity"). Enable **App
+   (e.g. "Cadet Assistant iOS Dev VoiceActivity"). Enable **App
    Groups** and nothing else, then assign the group for this row's
-   environment (`group.ai.vocify-inc.vellum-assistant-ios`, plus the
+   environment (`group.ai.mycadet.ios`, plus the
    `.staging` / `.dev` suffix; create it under **Identifiers → App
    Groups** first if it does not exist). Push in particular
    stays off: the extension's entitlements file carries the App Group
@@ -962,18 +962,18 @@ inspect_profile() {
 inspect_profile \
   "$app_path/PlugIns/VoiceActivity Dev.appex" \
   voice-activity \
-  "Vellum Assistant iOS Dev VoiceActivity Distribution" \
-  "7FZDXZR8P5.ai.vocify-inc.vellum-assistant-ios.dev.VoiceActivity"
+  "Cadet Assistant iOS Dev VoiceActivity Distribution" \
+  "7FZDXZR8P5.ai.mycadet.ios.dev.VoiceActivity"
 inspect_profile \
   "$app_path/PlugIns/Share Dev.appex" \
   share \
-  "Vellum Assistant iOS Dev Share Distribution" \
-  "7FZDXZR8P5.ai.vocify-inc.vellum-assistant-ios.dev.Share"
+  "Cadet Assistant iOS Dev Share Distribution" \
+  "7FZDXZR8P5.ai.mycadet.ios.dev.Share"
 inspect_profile \
   "$app_path/PlugIns/NotificationService Dev.appex" \
   notification-service \
-  "Vellum Assistant iOS Dev NotificationService Distribution" \
-  "7FZDXZR8P5.ai.vocify-inc.vellum-assistant-ios.dev.NotificationService"
+  "Cadet Assistant iOS Dev NotificationService Distribution" \
+  "7FZDXZR8P5.ai.mycadet.ios.dev.NotificationService"
 
 # Verify signature integrity separately from embedded profile contents.
 codesign --verify --strict --verbose=2 "$app_path"
@@ -1027,7 +1027,7 @@ seconds of wall clock on top of the request's idle timeout, which bounds only a
 stall. Android bounds the same download the same way, reading 8 KB chunks under
 the same 512 KB cap against a three-second budget that spans the response head
 and the body (`RESPONSE_BUDGET_MILLIS` in
-`clients/android/app/src/main/java/ai/vellum/assistant/push/AvatarCache.java`).
+`clients/android/app/src/main/java/ai/cadet/assistant/push/AvatarCache.java`).
 iOS buffers 16 KB chunks out of a per-byte `URLSession.AsyncBytes` sequence and
 reads a monotonic clock once per byte, since any stride between checks is a
 window a host answering fewer bytes than that stride hides in.

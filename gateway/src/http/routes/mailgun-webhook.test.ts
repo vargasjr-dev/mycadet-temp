@@ -34,7 +34,7 @@ mock.module("../../runtime/client.js", () => ({
 const {
   createMailgunWebhookHandler,
   extractMailgunAuthResults,
-  normalizeMailgunToVellumPayload,
+  normalizeMailgunToCadetPayload,
 } = await import("./mailgun-webhook.js");
 
 // --- Sender authentication -------------------------------------------------
@@ -113,7 +113,7 @@ describe("extractMailgunAuthResults", () => {
   });
 });
 
-describe("normalizeMailgunToVellumPayload sender authentication", () => {
+describe("normalizeMailgunToCadetPayload sender authentication", () => {
   it("sets senderAuthenticated=true for a DMARC-authenticated sender", () => {
     const headers = messageHeaders([
       [
@@ -121,7 +121,7 @@ describe("normalizeMailgunToVellumPayload sender authentication", () => {
         "mx.mailgun.org; dmarc=pass header.from=example.com",
       ],
     ]);
-    const payload = normalizeMailgunToVellumPayload(
+    const payload = normalizeMailgunToCadetPayload(
       fields({ "message-headers": headers }),
     );
     expect(payload?.senderAuthenticated).toBe(true);
@@ -136,14 +136,14 @@ describe("normalizeMailgunToVellumPayload sender authentication", () => {
         "mx.mailgun.org; spf=fail smtp.mailfrom=attacker.net; dmarc=fail header.from=example.com",
       ],
     ]);
-    const payload = normalizeMailgunToVellumPayload(
+    const payload = normalizeMailgunToCadetPayload(
       fields({ "message-headers": headers }),
     );
     expect(payload?.senderAuthenticated).toBe(false);
   });
 
   it("omits senderAuthenticated when Mailgun sent no auth header", () => {
-    const payload = normalizeMailgunToVellumPayload(fields());
+    const payload = normalizeMailgunToCadetPayload(fields());
     expect(payload).not.toBeNull();
     expect(payload?.senderAuthenticated).toBeUndefined();
   });

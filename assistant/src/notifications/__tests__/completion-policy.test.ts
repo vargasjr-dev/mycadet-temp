@@ -100,23 +100,23 @@ describe("completion local delivery policy", () => {
       contextPayload: { completion },
     };
     expect(
-      resolveCompletionRecipient(event, { channel: "vellum" }),
+      resolveCompletionRecipient(event, { channel: "cadet" }),
     ).toBeUndefined();
     expect(
       resolveCompletionRecipient(event, {
-        channel: "vellum",
+        channel: "cadet",
         metadata: { guardianPrincipalId: "  " },
       }),
     ).toBeUndefined();
     expect(
       resolveCompletionRecipient(event, {
-        channel: "vellum",
+        channel: "cadet",
         metadata: { guardianPrincipalId: "other-principal" },
       }),
     ).toBeUndefined();
     expect(
       resolveCompletionRecipient(event, {
-        channel: "vellum",
+        channel: "cadet",
         metadata: { guardianPrincipalId: "principal-1" },
       }),
     ).toBe("principal-1");
@@ -127,7 +127,7 @@ describe("completion local delivery policy", () => {
       sourceEventName: "activity.complete",
       contextPayload: { completion },
     };
-    for (const channel of ["vellum", "platform"] as const) {
+    for (const channel of ["cadet", "platform"] as const) {
       for (const guardianPrincipalId of [undefined, "", "other-principal"]) {
         expect(
           isCompletionRecipientUnavailable(event, {
@@ -161,7 +161,7 @@ describe("completion local delivery policy", () => {
         contextPayload: { completion: payload },
       };
       for (const channel of [
-        "vellum",
+        "cadet",
         "platform",
         "slack",
         "telegram",
@@ -181,7 +181,7 @@ describe("completion local delivery policy", () => {
   );
 
   test("ordinary activity events retain their delivery policy", () => {
-    for (const channel of ["vellum", "platform", "slack"] as const) {
+    for (const channel of ["cadet", "platform", "slack"] as const) {
       expect(
         isCompletionRecipientUnavailable(
           {
@@ -198,7 +198,7 @@ describe("completion local delivery policy", () => {
           sourceEventName: "assistant.share",
           contextPayload: { completion: null },
         },
-        { channel: "vellum" },
+        { channel: "cadet" },
       ),
     ).toBe(false);
   });
@@ -236,7 +236,7 @@ describe("completion local delivery policy", () => {
       expect(
         isCompletionRecipientUnavailable(
           { sourceEventName },
-          { channel: "vellum" },
+          { channel: "cadet" },
         ),
       ).toBe(true);
     },

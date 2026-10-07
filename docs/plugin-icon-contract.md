@@ -2,8 +2,8 @@
 
 This doc is the single cross-repo source of truth for **marketplace plugin icons** — the small glyph shown next to a plugin in `assistant plugins search`, the desktop/web catalog, and the marketing site. It mirrors how skill icons work. Two repos consume this contract and MUST enforce identical rules:
 
-- **`vellum-ai/vellum-assistant`** (this repo) — the assistant validator at [`assistant/src/cli/lib/plugin-icon-file.ts`](../assistant/src/cli/lib/plugin-icon-file.ts) is the authoritative implementation. In-repo curation lives here (`plugins/marketplace.json`, `plugins/assets/`, `plugins/plugin-icons.json`).
-- **`vellum-ai/vellum-assistant-platform`** — a Django validator behind `/v1/plugins/` that MUST match this doc byte-for-byte. Uploads the PNGs to GCS and serves the combined catalog `icon` value.
+- **`vargasjr-dev/mycadet`** (this repo) — the assistant validator at [`assistant/src/cli/lib/plugin-icon-file.ts`](../assistant/src/cli/lib/plugin-icon-file.ts) is the authoritative implementation. In-repo curation lives here (`plugins/marketplace.json`, `plugins/assets/`, `plugins/plugin-icons.json`).
+- **`vargasjr-dev/mycadet-platform`** — a Django validator behind `/v1/plugins/` that MUST match this doc byte-for-byte. Uploads the PNGs to GCS and serves the combined catalog `icon` value.
 
 Any change to the format, limits, or manifest shape below is a **coordinated cross-repo change** — the TS validator and the Python validator move together, or a plugin that validates in one repo silently gets "no icon" in the other.
 
@@ -97,7 +97,7 @@ The platform serves each plugin a single `icon` value in `/v1/plugins/`, matchin
 
 1. **PNG URL** — if `plugins/plugin-icons.json` has an entry for the plugin, the platform serves the GCS URL of the vendored `icon.png` (cache-busted by `iconVersion`; see below).
 2. **Emoji** — else if the marketplace entry has an `icon` emoji, serve that string.
-3. **`null`** — else no icon. The client then falls back to a generic 📦/🧩 glyph (per [PR #37087](https://github.com/vellum-ai/vellum-assistant/pull/37087)).
+3. **`null`** — else no icon. The client then falls back to a generic 📦/🧩 glyph (per [PR #37087](https://github.com/vargasjr-dev/mycadet/pull/37087)).
 
 A vendored PNG always wins over a curated emoji, so a plugin only needs one source: give it a PNG **or** an emoji, not both. The platform serves that single `icon`, and clients render it best-effort — there is no separate emoji field riding alongside a PNG URL.
 

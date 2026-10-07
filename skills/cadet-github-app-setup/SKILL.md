@@ -163,7 +163,7 @@ The manifest flow does **not** support setting a logo — there's no field for i
 If the assistant has an avatar (typically at `data/avatar/avatar-image.png` in the workspace root), send it to the user as a chat attachment:
 
 ```
-<vellum-attachment source="sandbox" path="data/avatar/avatar-image.png" />
+<cadet-attachment source="sandbox" path="data/avatar/avatar-image.png" />
 ```
 
 Then direct them to the app settings page to upload it:

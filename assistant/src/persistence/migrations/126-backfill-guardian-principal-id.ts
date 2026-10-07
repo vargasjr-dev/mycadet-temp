@@ -58,23 +58,23 @@ export function downBackfillGuardianPrincipalId(database: DrizzleDb): void {
  *
  * Strategy:
  *
- * 1. Derive the assistant's canonical principal from the active 'vellum'
+ * 1. Derive the assistant's canonical principal from the active 'cadet'
  *    binding's guardianExternalUserId. This is the stable identity used for
  *    all guardian decisions from the desktop client.
  *
  * 2. Backfill channel_guardian_bindings:
- *    a. For the vellum binding: set guardianPrincipalId = guardianExternalUserId
- *       (the vellum external user ID IS the canonical principal).
- *    b. For non-vellum bindings: set guardianPrincipalId to the vellum
+ *    a. For the cadet binding: set guardianPrincipalId = guardianExternalUserId
+ *       (the cadet external user ID IS the canonical principal).
+ *    b. For non-cadet bindings: set guardianPrincipalId to the cadet
  *       binding's principal (unifying all channels onto one canonical
- *       principal). Falls back to guardianExternalUserId if no vellum
+ *       principal). Falls back to guardianExternalUserId if no cadet
  *       binding exists.
  *
  * 3. Backfill canonical_guardian_requests (pending only):
  *    a. If the request has a guardianExternalUserId that maps to an active
  *       binding, use that binding's guardianPrincipalId (now backfilled).
  *    b. For desktop-originated requests (sourceType = 'desktop' or
- *       sourceChannel = 'vellum') that lack guardianExternalUserId,
+ *       sourceChannel = 'cadet') that lack guardianExternalUserId,
  *       use the assistant principal derived in step 1.
  *    c. Pending requests that cannot be deterministically bound are expired
  *       (including access_request rows, which are now principal-bound).
@@ -114,42 +114,42 @@ export function migrateBackfillGuardianPrincipalId(database: DrizzleDb): void {
   try {
     raw.exec("BEGIN");
 
-    // ── Step 1a: Backfill vellum binding first ─────────────────────
-    // The vellum binding's external user ID IS the canonical principal.
+    // ── Step 1a: Backfill cadet binding first ─────────────────────
+    // The cadet binding's external user ID IS the canonical principal.
     raw.exec(/*sql*/ `
     UPDATE channel_guardian_bindings
     SET guardian_principal_id = guardian_external_user_id,
         updated_at = ${Date.now()}
     WHERE status = 'active'
-      AND channel = 'vellum'
+      AND channel = 'cadet'
       AND guardian_external_user_id IS NOT NULL
       AND guardian_principal_id IS NULL
   `);
 
-    // ── Step 1b: Derive canonical principal from vellum binding ──
-    const vellumRow = raw
+    // ── Step 1b: Derive canonical principal from cadet binding ──
+    const cadetRow = raw
       .query(
         `SELECT guardian_principal_id FROM channel_guardian_bindings
-     WHERE assistant_id = 'self' AND channel = 'vellum' AND status = 'active'
+     WHERE assistant_id = 'self' AND channel = 'cadet' AND status = 'active'
      AND guardian_principal_id IS NOT NULL LIMIT 1`,
       )
       .get() as { guardian_principal_id: string } | null;
 
-    if (vellumRow) {
-      // Unify non-vellum bindings onto the canonical principal
+    if (cadetRow) {
+      // Unify non-cadet bindings onto the canonical principal
       raw
         .query(
           `UPDATE channel_guardian_bindings
        SET guardian_principal_id = ?,
            updated_at = ${Date.now()}
        WHERE status = 'active'
-         AND channel != 'vellum'
+         AND channel != 'cadet'
          AND guardian_external_user_id IS NOT NULL
          AND guardian_principal_id IS NULL`,
         )
-        .run(vellumRow.guardian_principal_id);
+        .run(cadetRow.guardian_principal_id);
     } else {
-      // No vellum binding — fallback to channel-specific principal
+      // No cadet binding — fallback to channel-specific principal
       raw.exec(/*sql*/ `
       UPDATE channel_guardian_bindings
       SET guardian_principal_id = guardian_external_user_id,
@@ -160,22 +160,22 @@ export function migrateBackfillGuardianPrincipalId(database: DrizzleDb): void {
     `);
     }
 
-    // ── Step 2: Derive assistant principal from vellum binding ─────
-    // The vellum binding's guardianExternalUserId is the canonical
+    // ── Step 2: Derive assistant principal from cadet binding ─────
+    // The cadet binding's guardianExternalUserId is the canonical
     // assistant principal used for desktop-originated requests.
-    const vellumBinding = raw
+    const cadetBinding = raw
       .query(
-        `SELECT guardian_external_user_id, guardian_principal_id FROM channel_guardian_bindings WHERE assistant_id = 'self' AND channel = 'vellum' AND status = 'active' LIMIT 1`,
+        `SELECT guardian_external_user_id, guardian_principal_id FROM channel_guardian_bindings WHERE assistant_id = 'self' AND channel = 'cadet' AND status = 'active' LIMIT 1`,
       )
       .get() as {
       guardian_external_user_id: string;
       guardian_principal_id: string | null;
     } | null;
 
-    // Use the (now-backfilled) principal from the vellum binding
+    // Use the (now-backfilled) principal from the cadet binding
     const assistantPrincipal =
-      vellumBinding?.guardian_principal_id ??
-      vellumBinding?.guardian_external_user_id ??
+      cadetBinding?.guardian_principal_id ??
+      cadetBinding?.guardian_external_user_id ??
       null;
 
     // ── Step 3: Backfill canonical_guardian_requests ────────────────
@@ -256,7 +256,7 @@ export function migrateBackfillGuardianPrincipalId(database: DrizzleDb): void {
            WHERE status = 'pending'
              AND guardian_principal_id IS NULL
              AND guardian_external_user_id IS NULL
-             AND (source_type = 'desktop' OR source_channel = 'vellum')`,
+             AND (source_type = 'desktop' OR source_channel = 'cadet')`,
             )
             .run(assistantPrincipal, now);
         }

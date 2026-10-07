@@ -35,7 +35,7 @@ export const importWorkspaceMetadataMigration: CesMigration = {
     "Import workspace credential metadata.json into the CES metadata store",
 
   async run(_backend: SecureKeyBackend): Promise<void> {
-    const workspaceDir = process.env["VELLUM_WORKSPACE_DIR"]?.trim();
+    const workspaceDir = process.env["CADET_WORKSPACE_DIR"]?.trim();
     const leftoverPath = leftoverWorkspaceMetadataPath(workspaceDir);
     if (!leftoverPath || !existsSync(leftoverPath)) {
       log.info("CES metadata import: no workspace metadata.json; skipping");

@@ -83,7 +83,7 @@ describe("ensureCompleteCustomProfiles", () => {
   test("inherits the cadet managed connection only onto managed-routable providers", () => {
     writeConfig({
       llm: {
-        default: { ...distinctiveDefault, provider_connection: "vellum" },
+        default: { ...distinctiveDefault, provider_connection: "cadet" },
         profiles: {
           gpt: { source: "user", model: "gpt-5.5" },
           router: {

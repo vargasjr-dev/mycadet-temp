@@ -1,5 +1,5 @@
 /**
- * SSE connection helper for vellum-cloud assistants.
+ * SSE connection helper for cadet-cloud assistants.
  *
  * Manages the connect/reconnect lifecycle for the cloud transport:
  * GET /v1/assistants/{assistantId}/events?conversationKey=...
@@ -10,8 +10,8 @@
  * and aborts a silently stalled stream (no events or heartbeat comments)
  * via the idle watchdog.
  *
- * Client registration headers (`X-Vellum-Client-Id`,
- * `X-Vellum-Interface-Id`) are sent on every connect so the daemon's
+ * Client registration headers (`X-Cadet-Client-Id`,
+ * `X-Cadet-Interface-Id`) are sent on every connect so the daemon's
  * ClientRegistry tracks this extension instance.
  */
 
@@ -29,12 +29,12 @@ const SSE_RECONNECT_MAX_MS = 30_000;
 
 /**
  * Connection mode for cloud assistants. The `runtimeUrl` is the
- * gateway base URL (e.g. `https://api.vellum.ai`); the `token` is the
+ * gateway base URL (e.g. `https://api.cadet.ai`); the `token` is the
  * bearer token for the gateway edge auth (WorkOS session JWT).
  */
 export type SseMode =
   | {
-      kind: "vellum-cloud";
+      kind: "cadet-cloud";
       runtimeUrl: string;
       assistantId: string;
       token: string | null;
@@ -202,7 +202,7 @@ export class SseConnection {
     if (!this.isCurrentConnect(generation)) {
       return;
     }
-    if (mode.kind === "vellum-cloud") {
+    if (mode.kind === "cadet-cloud") {
       if (mode.token) {
         headers["Authorization"] = `Bearer ${mode.token}`;
       }
@@ -210,7 +210,7 @@ export class SseConnection {
         headers["X-Session-Token"] = mode.sessionToken;
       }
       if (mode.organizationId) {
-        headers["Vellum-Organization-Id"] = mode.organizationId;
+        headers["Cadet-Organization-Id"] = mode.organizationId;
       }
     } else if (mode.kind === "self-hosted" && mode.token) {
       headers["Authorization"] = `Bearer ${mode.token}`;

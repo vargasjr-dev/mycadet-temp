@@ -41,7 +41,7 @@ interface Expense {
   createdAt: string;
 }
 
-const DATA_DIR = join(process.env.VELLUM_WORKSPACE_DIR!, "data");
+const DATA_DIR = join(process.env.CADET_WORKSPACE_DIR!, "data");
 const DATA_FILE = join(DATA_DIR, "expenses.json");
 
 function loadExpenses(): Expense[] {

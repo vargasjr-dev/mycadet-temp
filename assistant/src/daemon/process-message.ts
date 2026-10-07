@@ -85,7 +85,7 @@ type ProcessMessageOptions = ConversationCreateOptions & {
   onEvent?: (msg: AssistantEvent) => void;
   /** IDs of user-uploaded attachments to resolve and include in the turn. */
   attachmentIds?: string[];
-  /** Originating channel (e.g. "slack", "telegram"). Defaults to "vellum". */
+  /** Originating channel (e.g. "slack", "telegram"). Defaults to "cadet". */
   sourceChannel?: string;
   /** Originating interface (e.g. "cli", "web"). Defaults to "web". */
   sourceInterface?: string;
@@ -291,7 +291,7 @@ export function resolveTurnChannel(
     }
     return parsed;
   }
-  return "vellum";
+  return "cadet";
 }
 
 export function resolveTurnInterface(sourceInterface?: string): InterfaceId {

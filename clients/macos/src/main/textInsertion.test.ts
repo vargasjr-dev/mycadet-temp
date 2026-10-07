@@ -115,7 +115,7 @@ describe("typeIntoFrontApp", () => {
 
     await expect(
       typeIntoFrontAppWithDeps("hello", harness.deps),
-    ).resolves.toEqual({ status: "vellum-focused" });
+    ).resolves.toEqual({ status: "cadet-focused" });
 
     expect(harness.runAppleScript).not.toHaveBeenCalled();
     expect(harness.writes).toEqual([]);
@@ -346,7 +346,7 @@ describe("undoInFrontAppWithDeps", () => {
     const harness = createHarness({ focused: true });
     const result = await undoInFrontAppWithDeps(harness.deps);
 
-    expect(result).toEqual({ status: "vellum-focused" });
+    expect(result).toEqual({ status: "cadet-focused" });
     expect(harness.runAppleScript).not.toHaveBeenCalled();
   });
 

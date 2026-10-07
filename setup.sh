@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# setup.sh — One-time local development setup for vellum-assistant.
+# setup.sh — One-time local development setup for mycadet.
 #
 # Installs workspace dependencies, registers local packages as linkable,
-# links them into the meta package, and then links the global `vellum`
+# links them into the meta package, and then links the global `cadet`
 # command to the local meta entry point.
 #
 # Usage:
@@ -68,28 +68,28 @@ info "Installing dependencies in scripts/"
 # Link local packages into meta so it resolves to local source
 # ---------------------------------------------------------------------------
 info "Linking local packages into meta/"
-(cd "${REPO_ROOT}/meta" && bun link @mycadet/cli @mycadet/assistant @mycadet/vellum-gateway @mycadet/credential-executor)
+(cd "${REPO_ROOT}/meta" && bun link @mycadet/cli @mycadet/assistant @mycadet/cadet-gateway @mycadet/credential-executor)
 
 # ---------------------------------------------------------------------------
-# Link the global `vellum` command to this repo's meta package
+# Link the global `cadet` command to this repo's meta package
 # ---------------------------------------------------------------------------
-info "Linking global 'vellum' command to meta/"
+info "Linking global 'cadet' command to meta/"
 (cd "${REPO_ROOT}/meta" && bun link)
 
 # ---------------------------------------------------------------------------
-# Install shell completions for the `vellum` command
+# Install shell completions for the `cadet` command
 # ---------------------------------------------------------------------------
-info "Installing shell completions for vellum"
+info "Installing shell completions for cadet"
 
-VELLUM_COMP_DIR="${HOME}/.config/vellum/completions"
-mkdir -p "${VELLUM_COMP_DIR}"
+CADET_COMP_DIR="${HOME}/.config/cadet/completions"
+mkdir -p "${CADET_COMP_DIR}"
 
-LOCKFILE_PATH="${HOME}/.vellum.lock.json"
+LOCKFILE_PATH="${HOME}/.cadet.lock.json"
 LOCKFILE_GREP="grep -o '\"assistantId\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' ${LOCKFILE_PATH} 2>/dev/null | awk -F'\"' '{print \$(NF-1)}'"
 
 # — Bash completions —
-cat > "${VELLUM_COMP_DIR}/completions.bash" << 'BASH_COMP'
-_vellum_completions() {
+cat > "${CADET_COMP_DIR}/completions.bash" << 'BASH_COMP'
+_cadet_completions() {
   local cur prev commands
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
@@ -103,18 +103,18 @@ _vellum_completions() {
 
   case "${COMP_WORDS[1]}" in
     hatch)
-      COMPREPLY=( $(compgen -W "openclaw vellum -d --name --remote" -- "${cur}") )
+      COMPREPLY=( $(compgen -W "openclaw cadet -d --name --remote" -- "${cur}") )
       ;;
     client|retire)
       local instances
 BASH_COMP
 
 # Append the dynamic lockfile lookup (needs variable expansion)
-cat >> "${VELLUM_COMP_DIR}/completions.bash" << BASH_COMP_DYN
+cat >> "${CADET_COMP_DIR}/completions.bash" << BASH_COMP_DYN
       instances="\$(${LOCKFILE_GREP} | tr '\n' ' ')"
 BASH_COMP_DYN
 
-cat >> "${VELLUM_COMP_DIR}/completions.bash" << 'BASH_COMP_END'
+cat >> "${CADET_COMP_DIR}/completions.bash" << 'BASH_COMP_END'
       COMPREPLY=( $(compgen -W "${instances}" -- "${cur}") )
       ;;
   esac
@@ -122,12 +122,12 @@ cat >> "${VELLUM_COMP_DIR}/completions.bash" << 'BASH_COMP_END'
   return 0
 }
 
-complete -F _vellum_completions vellum
+complete -F _cadet_completions cadet
 BASH_COMP_END
 
 # — Zsh completions —
-cat > "${VELLUM_COMP_DIR}/completions.zsh" << 'ZSH_COMP'
-_vellum() {
+cat > "${CADET_COMP_DIR}/completions.zsh" << 'ZSH_COMP'
+_cadet() {
   local -a commands
   commands=(
     'client'
@@ -149,18 +149,18 @@ _vellum() {
     args)
       case $words[1] in
         hatch)
-          _arguments '*:species:(openclaw vellum -d --name --remote)'
+          _arguments '*:species:(openclaw cadet -d --name --remote)'
           ;;
         client|retire)
           local -a instances
 ZSH_COMP
 
 # Append the dynamic lockfile lookup (needs variable expansion)
-cat >> "${VELLUM_COMP_DIR}/completions.zsh" << ZSH_COMP_DYN
+cat >> "${CADET_COMP_DIR}/completions.zsh" << ZSH_COMP_DYN
           instances=(\${(f)"\$(${LOCKFILE_GREP})"})
 ZSH_COMP_DYN
 
-cat >> "${VELLUM_COMP_DIR}/completions.zsh" << 'ZSH_COMP_END'
+cat >> "${CADET_COMP_DIR}/completions.zsh" << 'ZSH_COMP_END'
           _describe 'instance' instances
           ;;
       esac
@@ -168,7 +168,7 @@ cat >> "${VELLUM_COMP_DIR}/completions.zsh" << 'ZSH_COMP_END'
   esac
 }
 
-compdef _vellum vellum
+compdef _cadet cadet
 ZSH_COMP_END
 
 # ---------------------------------------------------------------------------
@@ -226,23 +226,23 @@ done
 if [ -e "${HOME}/.bashrc" ]; then
   target="$(rc_target "${HOME}/.bashrc")"
   [ -e "$target" ] || touch "$target"
-  if ! grep -qF '.config/vellum/completions/completions.bash' "$target"; then
-    printf '\n# vellum completions\nsource ~/.config/vellum/completions/completions.bash\n' >> "$target"
+  if ! grep -qF '.config/cadet/completions/completions.bash' "$target"; then
+    printf '\n# cadet completions\nsource ~/.config/cadet/completions/completions.bash\n' >> "$target"
   fi
 fi
 
 if [ -e "${HOME}/.zshrc" ]; then
   target="$(rc_target "${HOME}/.zshrc")"
   [ -e "$target" ] || touch "$target"
-  if ! grep -qF '.config/vellum/completions/completions.zsh' "$target"; then
+  if ! grep -qF '.config/cadet/completions/completions.zsh' "$target"; then
     # The escape hatch may be sourced before compinit defines `compdef`, so
     # ensure the completion system is initialized before sourcing.
     {
-      printf '\n# vellum completions\n'
+      printf '\n# cadet completions\n'
       printf 'if ! whence compdef >/dev/null 2>&1; then autoload -Uz compinit && compinit; fi\n'
-      printf 'source ~/.config/vellum/completions/completions.zsh\n'
+      printf 'source ~/.config/cadet/completions/completions.zsh\n'
     } >> "$target"
   fi
 fi
 
-info "Setup complete! Run 'vellum --version' to verify."
+info "Setup complete! Run 'cadet --version' to verify."

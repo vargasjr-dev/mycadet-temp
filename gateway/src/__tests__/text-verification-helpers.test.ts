@@ -75,7 +75,7 @@ describe("extractEmailReplyBody", () => {
 
   test("strips Outlook From:/Sent: block", () => {
     const body =
-      "421063\n\nFrom: Cadet <hi@credence.vellum.me>\nSent: Monday, June 9, 2026";
+      "421063\n\nFrom: Cadet <hi@credence.mycadet.bot>\nSent: Monday, June 9, 2026";
     expect(extractEmailReplyBody(body)).toBe("421063");
   });
 

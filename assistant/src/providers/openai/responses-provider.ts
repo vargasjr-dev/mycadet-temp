@@ -92,7 +92,7 @@ function supportedEffortsForModel(
   );
 }
 
-/** Translate a Vellum effort value onto the Responses wire for `model`. */
+/** Translate a Cadet effort value onto the Responses wire for `model`. */
 function mapResponsesReasoningEffort(
   effort: string,
   model: string,

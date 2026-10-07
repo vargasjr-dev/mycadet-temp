@@ -7,7 +7,7 @@
  * the email against the API response. For BYO providers without one
  * (Resend), it validates that the stored API key is functional (proving
  * account ownership) and trusts the provided email. For platform-managed
- * email (type "vellum"), the route's edge-scoped auth is sufficient.
+ * email (type "cadet"), the route's edge-scoped auth is sufficient.
  *
  * On success, creates a guardian email channel binding directly in both
  * the assistant and gateway databases (dual-write).
@@ -25,7 +25,7 @@ import { credentialKey } from "../../credential-key.js";
 import { getLogger } from "../../logger.js";
 import { validateMailgunEmail } from "./mailgun-identity.js";
 import { validateResendEmail } from "./resend-identity.js";
-import { validateVellumEmail } from "./vellum-identity.js";
+import { validateCadetEmail } from "./cadet-identity.js";
 
 const log = getLogger("inbound-register");
 
@@ -57,10 +57,10 @@ type EmailValidator = (
 const providerValidators: Record<string, EmailValidator> = {
   resend: validateResendEmail,
   mailgun: validateMailgunEmail,
-  vellum: validateVellumEmail,
+  cadet: validateCadetEmail,
 };
 
-const selfAuthenticatedProviders = new Set(["vellum"]);
+const selfAuthenticatedProviders = new Set(["cadet"]);
 
 // ---------------------------------------------------------------------------
 // Guardian lookup

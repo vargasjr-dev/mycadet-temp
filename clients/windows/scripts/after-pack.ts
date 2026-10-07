@@ -29,19 +29,19 @@ export const requiredPackageBinaries = (arch: string): string[] => [
   "resources/cli-runtime/cli-launcher.exe",
   "resources/cli-runtime/cli-uninstaller.exe",
   "resources/cli-runtime/credential-executor.exe",
-  "resources/cli-runtime/vellum-daemon.exe",
-  "resources/cli-runtime/vellum-gateway.exe",
-  "resources/cli-runtime/vellum-worker.exe",
-  "resources/cli-runtime/vellum.exe",
-  `resources/native-helper/${arch}/Vellum.WindowsHelper.exe`,
-  "resources/preview-handler/Vellum.PreviewHandler.dll",
+  "resources/cli-runtime/cadet-daemon.exe",
+  "resources/cli-runtime/cadet-gateway.exe",
+  "resources/cli-runtime/cadet-worker.exe",
+  "resources/cli-runtime/cadet.exe",
+  `resources/native-helper/${arch}/Cadet.WindowsHelper.exe`,
+  "resources/preview-handler/Cadet.PreviewHandler.dll",
 ];
 
 export const requiredPackageEntries = (arch: string): string[] => [
   ...CLI_RUNTIME_ENTRIES.map((entry) => `resources/cli-runtime/${entry}`),
   "resources/cli-runtime/cli-uninstaller.exe",
-  `resources/native-helper/${arch}/Vellum.WindowsHelper.exe`,
-  "resources/preview-handler/Vellum.PreviewHandler.dll",
+  `resources/native-helper/${arch}/Cadet.WindowsHelper.exe`,
+  "resources/preview-handler/Cadet.PreviewHandler.dll",
 ];
 
 interface ManifestEntry {

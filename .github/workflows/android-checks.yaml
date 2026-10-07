@@ -45,7 +45,7 @@ jobs:
       - name: Sync Android project
         working-directory: clients/web
         env:
-          VELLUM_ENVIRONMENT: ${{ matrix.environment }}
+          CADET_ENVIRONMENT: ${{ matrix.environment }}
         run: bun run android:sync
 
       - name: Run JVM tests

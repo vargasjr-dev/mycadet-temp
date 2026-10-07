@@ -111,7 +111,7 @@ import type {
 import { resolveLiveVoiceCredentialReadiness } from "../live-voice-credential-preflight.js";
 import { streamLiveVoiceTtsAudio } from "../live-voice-tts.js";
 
-const WORKSPACE_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
 const CONFIG_PATH = join(WORKSPACE_DIR, "config.json");
 
 /** Config with both speech services pointed at BYOK providers. */

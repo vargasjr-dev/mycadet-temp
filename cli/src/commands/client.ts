@@ -91,15 +91,15 @@ interface ParsedArgs {
   runtimeUrl: string;
   assistantId: string;
   assistantName?: string;
-  /** "vellum" for platform-hosted assistants, undefined for local. */
+  /** "cadet" for platform-hosted assistants, undefined for local. */
   cloud?: string;
   /** Platform session token (X-Session-Token), set when isManagedCloud(cloud). */
   platformToken?: string;
   /** Guardian JWT (Authorization: Bearer), set for local assistants. */
   bearerToken?: string;
-  /** Interface identifier sent as X-Vellum-Interface-Id on all requests. */
+  /** Interface identifier sent as X-Cadet-Interface-Id on all requests. */
   interfaceId: SupportedInterface;
-  /** VELLUM_FLAG_* env vars for the gateway (process.env propagation). */
+  /** CADET_FLAG_* env vars for the gateway (process.env propagation). */
   flagEnvVars: Record<string, string>;
   /** Parsed --flag overrides: kebab-case key -> typed value (for web injection). */
   parsedFlagOverrides: Record<string, boolean | string>;
@@ -125,16 +125,16 @@ export function parseArgs(): ParsedArgs {
     parseFeatureFlagArgs(process.argv.slice(3));
   const flagEnvVars = { ...readAmbientFlagEnvVars(), ...cliFlagVars };
   const disablePlatformAmbient =
-    process.env.VELLUM_DISABLE_PLATFORM?.trim().toLowerCase();
+    process.env.CADET_DISABLE_PLATFORM?.trim().toLowerCase();
   let disablePlatform =
     disablePlatformAmbient === "true" || disablePlatformAmbient === "1";
   const args = argsWithoutFlags;
 
   // Build parsedFlagOverrides from the extracted env vars:
-  // VELLUM_FLAG_UPPER_SNAKE -> kebab-case key with typed value.
+  // CADET_FLAG_UPPER_SNAKE -> kebab-case key with typed value.
   const parsedFlagOverrides: Record<string, boolean | string> = {};
   for (const [envName, rawValue] of Object.entries(flagEnvVars)) {
-    const snake = envName.replace(/^VELLUM_FLAG_/, "");
+    const snake = envName.replace(/^CADET_FLAG_/, "");
     const kebab = snake.toLowerCase().replace(/_/g, "-");
     const lower = rawValue.toLowerCase();
     if (["true", "1", "yes", "on"].includes(lower)) {
@@ -252,7 +252,7 @@ export function parseArgs(): ParsedArgs {
     }
   }
 
-  // Platform-hosted assistants (cloud "vellum") use a session token; every
+  // Platform-hosted assistants (cloud "cadet") use a session token; every
   // other topology — local, docker, and "paired" (a remote assistant paired
   // from another machine) — uses a bearer guardian JWT. Both are skipped
   // entirely when --token supplies the credential, so no saved creds are read.
@@ -347,16 +347,16 @@ ${ANSI.bold}OPTIONS:${ANSI.reset}
     -h, --help                 Show this help message
 
 ${ANSI.bold}DEFAULTS:${ANSI.reset}
-    Reads from ~/.vellum.lock.json (created by cadet hatch).
+    Reads from ~/.cadet.lock.json (created by cadet hatch).
     Override with flags above.
 
 ${ANSI.bold}EXAMPLES:${ANSI.reset}
     cadet client
-    cadet client vellum-assistant-foo
+    cadet client mycadet-foo
     # Remote assistants must be reached over https (e.g. a tunnel) — the
     # guardian refresh token is only sent over https or a loopback address:
     cadet client --url https://your-tunnel.example
-    cadet client vellum-assistant-foo --url http://localhost:${GATEWAY_PORT}
+    cadet client mycadet-foo --url http://localhost:${GATEWAY_PORT}
 
     # Ephemeral: connect to another machine's assistant with a paired token
     # (no lockfile entry, nothing persisted):
@@ -1475,7 +1475,7 @@ async function runViteDevServer(
 ): Promise<void> {
   const platformUrl = getPlatformUrl();
 
-  // Build VITE_VELLUM_FLAG_* vars so Vite exposes them to the browser bundle.
+  // Build VITE_CADET_FLAG_* vars so Vite exposes them to the browser bundle.
   const viteFlagVars: Record<string, string> = {};
   for (const [envName, value] of Object.entries(flagEnvVars)) {
     viteFlagVars[`VITE_${envName}`] = value;
@@ -1498,11 +1498,11 @@ async function runViteDevServer(
       ...process.env,
       ...flagEnvVars,
       ...viteFlagVars,
-      ...(disablePlatform ? { VITE_VELLUM_DISABLE_PLATFORM: "true" } : {}),
+      ...(disablePlatform ? { VITE_CADET_DISABLE_PLATFORM: "true" } : {}),
       VITE_PLATFORM_MODE: "false",
       API_PROXY_TARGET: platformUrl,
-      VELLUM_WEB_URL: getWebUrl(),
-      VELLUM_PLATFORM_URL: platformUrl,
+      CADET_WEB_URL: getWebUrl(),
+      CADET_PLATFORM_URL: platformUrl,
       PORT: String(port),
     },
   });
@@ -1590,7 +1590,7 @@ export async function client(): Promise<void> {
   } = parseArgs();
 
   if (disablePlatform) {
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
   }
 
   if (interfaceId === WEB_INTERFACE_ID) {
@@ -1633,7 +1633,7 @@ export async function client(): Promise<void> {
     });
     auth = {
       "X-Session-Token": platformToken,
-      ...(orgId ? { "Vellum-Organization-Id": orgId } : {}),
+      ...(orgId ? { "Cadet-Organization-Id": orgId } : {}),
       ...getClientRegistrationHeaders(interfaceId),
     };
   } else {

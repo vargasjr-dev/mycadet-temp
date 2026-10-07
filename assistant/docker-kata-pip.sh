@@ -15,12 +15,12 @@ esac
 
 . /app/assistant/docker-kata-runtime-family.sh
 
-if ! vellum_is_kata_family_runtime; then
+if ! cadet_is_kata_family_runtime; then
   exec "/usr/bin/${PIP_NAME}" "$@"
 fi
 
 export PIP_BREAK_SYSTEM_PACKAGES=1
-DATA_ROOT="${VELLUM_APT_DATA_ROOT:-/data/system}"
+DATA_ROOT="${CADET_APT_DATA_ROOT:-/data/system}"
 
 if [ "$(id -u)" = "0" ]; then
   /app/assistant/docker-init-apt-root.sh

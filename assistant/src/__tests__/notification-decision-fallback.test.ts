@@ -8,7 +8,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 mock.module("../channels/config.js", () => ({
-  getDeliverableChannels: () => ["vellum", "telegram", "slack"],
+  getDeliverableChannels: () => ["cadet", "telegram", "slack"],
 }));
 
 mock.module("../notifications/decisions-store.js", () => ({
@@ -76,14 +76,14 @@ describe("notification decision fallback copy", () => {
   test("uses human-friendly template copy for guardian.question", async () => {
     const signal = makeSignal();
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     expect(decision.fallbackUsed).toBe(true);
-    expect(decision.renderedCopy.vellum?.title).toBe("Guardian Question");
-    expect(decision.renderedCopy.vellum?.body).toBe("What is the gate code?");
-    expect(decision.renderedCopy.vellum?.title).not.toBe("guardian.question");
-    expect(decision.renderedCopy.vellum?.body).not.toContain(
+    expect(decision.renderedCopy.cadet?.title).toBe("Guardian Question");
+    expect(decision.renderedCopy.cadet?.body).toBe("What is the gate code?");
+    expect(decision.renderedCopy.cadet?.title).not.toBe("guardian.question");
+    expect(decision.renderedCopy.cadet?.body).not.toContain(
       "Action required: guardian.question",
     );
   });
@@ -100,14 +100,14 @@ describe("notification decision fallback copy", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "telegram",
     ] as NotificationChannel[]);
 
     expect(decision.fallbackUsed).toBe(true);
     // The typed-reply instruction rides in the card's plainTextFallback and
     // joins the text only where a transport sends it without buttons.
-    for (const channel of ["vellum", "telegram"] as const) {
+    for (const channel of ["cadet", "telegram"] as const) {
       expect(decision.renderedCopy[channel]?.body).toBe(
         "What is the gate code?",
       );
@@ -206,10 +206,10 @@ describe("notification decision fallback copy", () => {
       name: "record_notification_decision",
       input: {
         shouldNotify: true,
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Guardian Question",
             body: 'Allow running host_bash? Reply "A1B2C3 approve" to allow it. Use reference code A1B2C3 for this request.',
           },
@@ -230,11 +230,11 @@ describe("notification decision fallback copy", () => {
     });
 
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     expect(decision.fallbackUsed).toBe(false);
-    expect(decision.renderedCopy.vellum?.body).toBe("Allow running host_bash?");
+    expect(decision.renderedCopy.cadet?.body).toBe("Allow running host_bash?");
   });
 
   test("a model title that is only mechanics becomes the kind's headline", async () => {
@@ -245,10 +245,10 @@ describe("notification decision fallback copy", () => {
       name: "record_notification_decision",
       input: {
         shouldNotify: true,
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Reply A1B2C3 approve",
             body: "Allow running host_bash?",
           },
@@ -269,13 +269,13 @@ describe("notification decision fallback copy", () => {
     });
 
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     expect(decision.fallbackUsed).toBe(false);
     // The banner shows the title, so the code cannot survive there either.
-    expect(decision.renderedCopy.vellum?.title).toBe("Guardian Question");
-    expect(decision.renderedCopy.vellum?.body).toBe("Allow running host_bash?");
+    expect(decision.renderedCopy.cadet?.title).toBe("Guardian Question");
+    expect(decision.renderedCopy.cadet?.body).toBe("Allow running host_bash?");
   });
 
   test("copy that was nothing but mechanics becomes the request's own question", async () => {
@@ -331,13 +331,13 @@ describe("notification decision fallback copy", () => {
     });
 
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "telegram",
       "slack",
     ] as NotificationChannel[]);
 
     expect(decision.fallbackUsed).toBe(true);
-    for (const channel of ["vellum", "telegram", "slack"] as const) {
+    for (const channel of ["cadet", "telegram", "slack"] as const) {
       expect(decision.renderedCopy[channel]?.body).toBe(
         "Approve tool: bash (requested by Alice)",
       );
@@ -442,7 +442,7 @@ describe("guardian copy carries no reply mechanics", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "telegram",
     ] as NotificationChannel[]);
 
@@ -450,11 +450,11 @@ describe("guardian copy carries no reply mechanics", () => {
       "When you say it feels too harsh, what is the feeling exactly?\n\n1. Lines too heavy\n2. Feels showy\n3. Both, honestly";
     // The bell reads the seed; the banner reads the body. Line structure is
     // preserved so the options render as lines rather than one run-on blob.
-    expect(decision.renderedCopy.vellum?.conversationSeedMessage).toBe(
+    expect(decision.renderedCopy.cadet?.conversationSeedMessage).toBe(
       expectedQuestion,
     );
-    expect(decision.renderedCopy.vellum?.body).toBe(expectedQuestion);
-    expect(decision.renderedCopy.vellum?.deliveryText).toBe(expectedQuestion);
+    expect(decision.renderedCopy.cadet?.body).toBe(expectedQuestion);
+    expect(decision.renderedCopy.cadet?.deliveryText).toBe(expectedQuestion);
     // The chat channel is the same text: its buttons come from the card
     // context, and a transport without buttons appends the instruction.
     expect(decision.renderedCopy.telegram?.deliveryText).toBe(expectedQuestion);
@@ -468,10 +468,10 @@ describe("guardian copy carries no reply mechanics", () => {
       name: "record_notification_decision",
       input: {
         shouldNotify: true,
-        selectedChannels: ["vellum", "platform"],
+        selectedChannels: ["cadet", "platform"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Tool Grant Request",
             body: 'Alice is asking to run ls /tmp.\nApproval code: A1B2C3\nReply "A1B2C3 approve" or "A1B2C3 reject".',
             conversationSeedMessage:
@@ -482,14 +482,14 @@ describe("guardian copy carries no reply mechanics", () => {
             body: 'Alice is asking to run ls /tmp. Reply "A1B2C3 approve" or "A1B2C3 reject".',
           },
         },
-        dedupeKey: "guardian-question-vellum-llm-test",
+        dedupeKey: "guardian-question-cadet-llm-test",
         confidence: 0.9,
       },
     };
 
     const signal = makeSignal({
       contextPayload: {
-        requestId: "req-grant-vellum-1",
+        requestId: "req-grant-cadet-1",
         questionText: "Approve tool: bash (requested by Alice)",
         requestCode: "A1B2C3",
         requestKind: "tool_grant_request",
@@ -497,15 +497,15 @@ describe("guardian copy carries no reply mechanics", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "platform",
     ] as NotificationChannel[]);
 
     expect(decision.fallbackUsed).toBe(false);
-    expect(decision.renderedCopy.vellum?.body).toBe(
+    expect(decision.renderedCopy.cadet?.body).toBe(
       "Alice is asking to run ls /tmp.",
     );
-    expect(decision.renderedCopy.vellum?.conversationSeedMessage).toBe(
+    expect(decision.renderedCopy.cadet?.conversationSeedMessage).toBe(
       "**Alice** is asking to run `ls /tmp`.",
     );
     expect(decision.renderedCopy.platform?.body).toBe(
@@ -549,12 +549,12 @@ describe("access-request instruction enforcement", () => {
   test("fallback copy carries the requester context and no reply mechanics", async () => {
     const signal = makeAccessRequestSignal();
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
       "telegram",
     ] as NotificationChannel[]);
 
     expect(decision.fallbackUsed).toBe(true);
-    for (const channel of ["vellum", "telegram"] as const) {
+    for (const channel of ["cadet", "telegram"] as const) {
       const body = decision.renderedCopy[channel]?.body ?? "";
       expect(body).toContain("Alice");
       expect(body).not.toContain("A1B2C3");
@@ -571,10 +571,10 @@ describe("access-request instruction enforcement", () => {
       name: "record_notification_decision",
       input: {
         shouldNotify: true,
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Access Request",
             body: "Someone wants access to your assistant.",
           },
@@ -586,11 +586,11 @@ describe("access-request instruction enforcement", () => {
 
     const signal = makeAccessRequestSignal();
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     expect(decision.fallbackUsed).toBe(false);
-    expect(decision.renderedCopy.vellum?.body).toBe(
+    expect(decision.renderedCopy.cadet?.body).toBe(
       'Someone wants access to your assistant.\nReply "open invite flow" to start Trusted Contacts invite flow.',
     );
   });
@@ -603,10 +603,10 @@ describe("access-request instruction enforcement", () => {
       name: "record_notification_decision",
       input: {
         shouldNotify: true,
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Access Request",
             body: 'Alice wants access. Reply "A1B2C3 approve" or "A1B2C3 reject".',
           },
@@ -618,11 +618,11 @@ describe("access-request instruction enforcement", () => {
 
     const signal = makeAccessRequestSignal();
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     expect(decision.fallbackUsed).toBe(false);
-    expect(decision.renderedCopy.vellum?.body).toBe(
+    expect(decision.renderedCopy.cadet?.body).toBe(
       'Alice wants access.\nReply "open invite flow" to start Trusted Contacts invite flow.',
     );
   });
@@ -637,10 +637,10 @@ describe("access-request instruction enforcement", () => {
       name: "record_notification_decision",
       input: {
         shouldNotify: true,
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Access Request",
             body: fullBody,
           },
@@ -652,11 +652,11 @@ describe("access-request instruction enforcement", () => {
 
     const signal = makeAccessRequestSignal();
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     expect(decision.fallbackUsed).toBe(false);
-    expect(decision.renderedCopy.vellum?.body).toBe(
+    expect(decision.renderedCopy.cadet?.body).toBe(
       'Alice wants access.\nReply "open invite flow" to start Trusted Contacts invite flow.',
     );
   });
@@ -742,10 +742,10 @@ describe("access-request instruction enforcement", () => {
       name: "record_notification_decision",
       input: {
         shouldNotify: true,
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Access Request",
             body: 'Someone wants access to your assistant.\nReply "open invite flow" to start Trusted Contacts invite flow.',
           },
@@ -763,11 +763,11 @@ describe("access-request instruction enforcement", () => {
       },
     });
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     expect(decision.fallbackUsed).toBe(false);
-    expect(decision.renderedCopy.vellum?.body).toBe(
+    expect(decision.renderedCopy.cadet?.body).toBe(
       'Someone wants access to your assistant.\nReply "open invite flow" to start Trusted Contacts invite flow.',
     );
   });

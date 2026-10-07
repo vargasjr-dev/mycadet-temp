@@ -36,28 +36,28 @@ export const SAFE_ENV_VARS = [
   "SSH_AGENT_PID",
   "GPG_TTY",
   "GNUPGHOME",
-  "VELLUM_DEV",
-  "VELLUM_DEBUG",
-  "VELLUM_SLOW_SYNC_THRESHOLD_MS",
-  "VELLUM_SLOW_QUERY_THRESHOLD_MS",
-  "VELLUM_DEVICE_ID",
-  "VELLUM_DISABLE_PLATFORM",
-  "VELLUM_ENVIRONMENT",
-  "VELLUM_TEST_LOG_LEVEL",
+  "CADET_DEV",
+  "CADET_DEBUG",
+  "CADET_SLOW_SYNC_THRESHOLD_MS",
+  "CADET_SLOW_QUERY_THRESHOLD_MS",
+  "CADET_DEVICE_ID",
+  "CADET_DISABLE_PLATFORM",
+  "CADET_ENVIRONMENT",
+  "CADET_TEST_LOG_LEVEL",
 
-  "VELLUM_WORKSPACE_DIR",
+  "CADET_WORKSPACE_DIR",
   "CES_BOOTSTRAP_SOCKET_DIR",
   "GATEWAY_INTERNAL_URL",
   "ASSISTANT_IPC_SOCKET_DIR",
   "GATEWAY_IPC_SOCKET_DIR",
   "GATEWAY_SECURITY_DIR",
-  "VELLUM_PLATFORM_URL",
-  "VELLUM_ASSISTANT_PLATFORM_URL",
-  "VELLUM_DOCS_BASE_URL",
-  "VELLUM_WEB_URL",
-  "VELLUM_MARKETING_URL",
-  "VELLUM_MIGRATION_EXPORT_ALLOWED_HOSTS",
-  "VELLUM_MIGRATION_IMPORT_ALLOWED_HOSTS",
+  "CADET_PLATFORM_URL",
+  "CADET_ASSISTANT_PLATFORM_URL",
+  "CADET_DOCS_BASE_URL",
+  "CADET_WEB_URL",
+  "CADET_MARKETING_URL",
+  "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
+  "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
   "CES_MANAGED_MODE",
   "CES_CREDENTIAL_URL",
   "CES_SERVICE_TOKEN",
@@ -73,20 +73,20 @@ export const SAFE_ENV_VARS = [
   "QDRANT_HTTP_PORT",
   "IS_CONTAINERIZED",
   "IS_PLATFORM",
-  "VELLUM_CLOUD",
-  "VELLUM_SANDBOX_RUNTIME",
-  "VELLUM_PROFILER_RUN_ID",
-  "VELLUM_PROFILER_MODE",
-  "VELLUM_PROFILER_MAX_BYTES",
-  "VELLUM_PROFILER_MAX_RUNS",
-  "VELLUM_PROFILER_MIN_FREE_MB",
-  "VELLUM_MEMORY_LIMIT",
-  "VELLUM_CPU_LIMIT",
-  "VELLUM_ONNX_INTRA_OP_THREADS",
-  "VELLUM_MINIKUBE_STORAGE_SIZE",
-  "VELLUM_BACKUP_DIR",
-  "VELLUM_BACKUP_KEY_PATH",
-  // VELLUM_PLUGIN_NAME is intentionally absent. The daemon injects the
+  "CADET_CLOUD",
+  "CADET_SANDBOX_RUNTIME",
+  "CADET_PROFILER_RUN_ID",
+  "CADET_PROFILER_MODE",
+  "CADET_PROFILER_MAX_BYTES",
+  "CADET_PROFILER_MAX_RUNS",
+  "CADET_PROFILER_MIN_FREE_MB",
+  "CADET_MEMORY_LIMIT",
+  "CADET_CPU_LIMIT",
+  "CADET_ONNX_INTRA_OP_THREADS",
+  "CADET_MINIKUBE_STORAGE_SIZE",
+  "CADET_BACKUP_DIR",
+  "CADET_BACKUP_KEY_PATH",
+  // CADET_PLUGIN_NAME is intentionally absent. The daemon injects the
   // owning plugin install name after sanitizing the child environment.
   // Inheriting a parent-supplied value would let an arbitrary process
   // claim another plugin's credential scope.
@@ -105,9 +105,9 @@ export const WINDOWS_SAFE_ENV_VARS = [
 ] as const;
 
 export const KATA_SAFE_ENV_VARS = [
-  "VELLUM_APT_DATA_ROOT",
-  "VELLUM_APT_DATA_SUITE",
-  "VELLUM_APT_DATA_MIRROR",
+  "CADET_APT_DATA_ROOT",
+  "CADET_APT_DATA_SUITE",
+  "CADET_APT_DATA_MIRROR",
 ] as const;
 
 export const KATA_INJECTED_ENV_VARS = [
@@ -253,8 +253,8 @@ function stripBunNodeShimDirs(
 export const ALWAYS_INJECTED_ENV_VARS = [
   "INTERNAL_GATEWAY_BASE_URL",
   "SPECIES",
-  "VELLUM_DATA_DIR",
-  "VELLUM_WORKSPACE_DIR",
+  "CADET_DATA_DIR",
+  "CADET_WORKSPACE_DIR",
 ] as const;
 
 function appendUniquePathEntries(
@@ -277,7 +277,7 @@ export function buildSanitizedEnv(
   options?: { execPath?: string },
 ): Record<string, string> {
   const env: Record<string, string> = {};
-  const isKataRuntime = isKataFamilyRuntime(sourceEnv.VELLUM_SANDBOX_RUNTIME);
+  const isKataRuntime = isKataFamilyRuntime(sourceEnv.CADET_SANDBOX_RUNTIME);
   const platformVars =
     hostPlatform === "win32" ? WINDOWS_SAFE_ENV_VARS : ([] as const);
   const safeEnvVars = isKataRuntime
@@ -300,8 +300,8 @@ export function buildSanitizedEnv(
     }
   }
   if (isKataRuntime) {
-    const kataAptDataRoot = env.VELLUM_APT_DATA_ROOT ?? KATA_APT_DATA_ROOT;
-    env.VELLUM_APT_DATA_ROOT = kataAptDataRoot;
+    const kataAptDataRoot = env.CADET_APT_DATA_ROOT ?? KATA_APT_DATA_ROOT;
+    env.CADET_APT_DATA_ROOT = kataAptDataRoot;
     env.PATH = appendUniquePathEntries(env.PATH, kataAptPaths(kataAptDataRoot));
     env.LD_LIBRARY_PATH = appendUniquePathEntries(
       undefined,
@@ -331,16 +331,16 @@ export function buildSanitizedEnv(
   // Always inject an internal gateway base for local control-plane/API calls.
   const internalGatewayBase = getGatewayInternalBaseUrl();
   env.INTERNAL_GATEWAY_BASE_URL = internalGatewayBase;
-  // @deprecated — VELLUM_DATA_DIR is equivalent to $VELLUM_WORKSPACE_DIR/data.
+  // @deprecated — CADET_DATA_DIR is equivalent to $CADET_WORKSPACE_DIR/data.
   // Removing this requires an LLM-based migration or declarative migration
-  // file to update existing user-authored skills to use VELLUM_WORKSPACE_DIR.
-  env.VELLUM_DATA_DIR = getDataDir();
+  // file to update existing user-authored skills to use CADET_WORKSPACE_DIR.
+  env.CADET_DATA_DIR = getDataDir();
   // Expose the workspace directory so skills and child processes can read/write
   // workspace-scoped files (e.g. avatar traits, user data).
-  env.VELLUM_WORKSPACE_DIR = getWorkspaceDir();
+  env.CADET_WORKSPACE_DIR = getWorkspaceDir();
   // Identify the assistant species so skill scripts can gate on species-specific
-  // logic. Hardcoded to "vellum" — this is the Vellum assistant codebase.
-  env.SPECIES = "vellum";
+  // logic. Hardcoded to "cadet" — this is the Cadet assistant codebase.
+  env.SPECIES = "cadet";
   // Ensure UTF-8 locale so multi-byte characters (em dashes, curly quotes,
   // arrows, etc.) survive piping through tools like pbcopy without corruption.
   // macOS (Darwin) does not provide C.UTF-8, so use en_US.UTF-8 there.

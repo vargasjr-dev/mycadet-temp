@@ -162,8 +162,8 @@ describe("the descriptor schema", () => {
 
   it("rejects a credential field that could reach out of the plugin's service", () => {
     for (const field of [
-      "../vellum/webhook_secret",
-      "vellum/webhook_secret",
+      "../cadet/webhook_secret",
+      "cadet/webhook_secret",
       "Webhook_Secret",
       "",
     ]) {
@@ -181,7 +181,7 @@ describe("the descriptor schema", () => {
     expect(
       IngressVerificationSchema.safeParse({
         ...BODY_ONLY,
-        secret: { service: "vellum", field: "webhook_secret" },
+        secret: { service: "cadet", field: "webhook_secret" },
       }).success,
     ).toBe(false);
   });
@@ -671,7 +671,7 @@ describe("HMAC URL and form payloads", () => {
       URL_AND_FORM_HMAC,
       {
         "X-Provider-Signature": urlAndFormSignature(injected, PARAMS),
-        "X-Vellum-Ingress-Url": injected,
+        "X-Cadet-Ingress-Url": injected,
       },
       formBody(PARAMS),
       {

@@ -255,7 +255,7 @@ function makeRequest(
   return new Request(`http://localhost:8080${path}`, {
     method,
     headers: {
-      "x-vellum-proxy-server": "ipc",
+      "x-cadet-proxy-server": "ipc",
       ...headers,
     },
     body,
@@ -330,7 +330,7 @@ describe("tryIpcProxy", () => {
     }));
   });
 
-  test("returns null when X-Vellum-Proxy-Server header is missing", async () => {
+  test("returns null when X-Cadet-Proxy-Server header is missing", async () => {
     const req = new Request("http://localhost:8080/v1/health");
     const result = await tryIpcProxy(req, makeConfig());
     expect(result).toBeNull();
@@ -373,7 +373,7 @@ describe("tryIpcProxy", () => {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-vellum-conversation-id": "conv-123",
+        "x-cadet-conversation-id": "conv-123",
       },
       body: JSON.stringify({ message: "hello" }),
     });
@@ -460,13 +460,13 @@ describe("tryIpcProxy", () => {
     });
   });
 
-  test("only forwards X-Vellum-* headers", async () => {
+  test("only forwards X-Cadet-* headers", async () => {
     const req = makeRequest("/v1/health", {
       headers: {
         authorization: "Bearer secret",
         cookie: "session=abc",
-        "x-vellum-conversation-id": "conv-123",
-        "x-vellum-client-id": "client-456",
+        "x-cadet-conversation-id": "conv-123",
+        "x-cadet-client-id": "client-456",
       },
     });
 
@@ -477,9 +477,9 @@ describe("tryIpcProxy", () => {
       Record<string, unknown>,
     ];
     const headers = params.headers as Record<string, string>;
-    expect(headers["x-vellum-conversation-id"]).toBe("conv-123");
-    expect(headers["x-vellum-client-id"]).toBe("client-456");
-    expect(headers["x-vellum-proxy-server"]).toBe("ipc");
+    expect(headers["x-cadet-conversation-id"]).toBe("conv-123");
+    expect(headers["x-cadet-client-id"]).toBe("client-456");
+    expect(headers["x-cadet-proxy-server"]).toBe("ipc");
     expect(headers["authorization"]).toBeUndefined();
     expect(headers["cookie"]).toBeUndefined();
   });
@@ -538,14 +538,14 @@ describe("tryIpcProxy", () => {
     expect(result!.status).toBe(502);
   });
 
-  test("strips a spoofed x-vellum-subject from an authenticated request", async () => {
+  test("strips a spoofed x-cadet-subject from an authenticated request", async () => {
     // Nothing downstream consumes the header: the daemon's IPC adapter
     // (`injectLocalActorHeader`) deletes it on every dispatch.
     validateEdgeTokenMock.mockImplementation(() => ({
       ok: true,
       claims: {
-        iss: "vellum-auth",
-        aud: "vellum-gateway",
+        iss: "cadet-auth",
+        aud: "cadet-gateway",
         sub: "local:asst_1:oauth-proxy.stripe_link",
         scope_profile: "oauth_proxy_v1",
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -557,7 +557,7 @@ describe("tryIpcProxy", () => {
     const req = makeRequest("/v1/oauth/proxy/stripe_link/v1/accounts", {
       headers: {
         authorization: "Bearer valid",
-        "x-vellum-subject": "local:self:oauth-proxy.attacker",
+        "x-cadet-subject": "local:self:oauth-proxy.attacker",
       },
     });
     await tryIpcProxy(req, config);
@@ -567,7 +567,7 @@ describe("tryIpcProxy", () => {
       Record<string, unknown>,
     ];
     const headers = params.headers as Record<string, string>;
-    expect(headers["x-vellum-subject"]).toBeUndefined();
+    expect(headers["x-cadet-subject"]).toBeUndefined();
   });
 
   test("derives the principal headers from the verified claims", async () => {
@@ -575,8 +575,8 @@ describe("tryIpcProxy", () => {
     const req = makeRequest("/v1/health", {
       headers: {
         authorization: "Bearer valid",
-        "x-vellum-actor-principal-id": "attacker",
-        "x-vellum-principal-type": "svc_gateway",
+        "x-cadet-actor-principal-id": "attacker",
+        "x-cadet-principal-type": "svc_gateway",
       },
     });
     await tryIpcProxy(req, config);
@@ -586,13 +586,13 @@ describe("tryIpcProxy", () => {
       Record<string, unknown>,
     ];
     const headers = params.headers as Record<string, string>;
-    expect(headers["x-vellum-principal-type"]).toBe("actor");
-    expect(headers["x-vellum-actor-principal-id"]).toBe("user_1");
+    expect(headers["x-cadet-principal-type"]).toBe("actor");
+    expect(headers["x-cadet-actor-principal-id"]).toBe("user_1");
   });
 
-  test("strips x-vellum-subject when the request is unauthenticated", async () => {
+  test("strips x-cadet-subject when the request is unauthenticated", async () => {
     const req = makeRequest("/v1/health", {
-      headers: { "x-vellum-subject": "local:self:oauth-proxy.attacker" },
+      headers: { "x-cadet-subject": "local:self:oauth-proxy.attacker" },
     });
     await tryIpcProxy(req, makeConfig());
 
@@ -601,7 +601,7 @@ describe("tryIpcProxy", () => {
       Record<string, unknown>,
     ];
     const headers = params.headers as Record<string, string>;
-    expect(headers["x-vellum-subject"]).toBeUndefined();
+    expect(headers["x-cadet-subject"]).toBeUndefined();
   });
 
   test("passes query params to IPC", async () => {
@@ -631,8 +631,8 @@ describe("policy enforcement", () => {
     validateEdgeTokenMock.mockImplementation(() => ({
       ok: true,
       claims: {
-        iss: "vellum-auth",
-        aud: "vellum-gateway",
+        iss: "cadet-auth",
+        aud: "cadet-gateway",
         sub: "actor:asst_1:user_1",
         scope_profile: "actor_client_v1",
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -653,8 +653,8 @@ describe("policy enforcement", () => {
     validateEdgeTokenMock.mockImplementation(() => ({
       ok: true,
       claims: {
-        iss: "vellum-auth",
-        aud: "vellum-gateway",
+        iss: "cadet-auth",
+        aud: "cadet-gateway",
         sub: "actor:asst_1:user_1",
         scope_profile: "ui_page_v1",
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -685,8 +685,8 @@ describe("policy enforcement", () => {
     validateEdgeTokenMock.mockImplementation(() => ({
       ok: true,
       claims: {
-        iss: "vellum-auth",
-        aud: "vellum-gateway",
+        iss: "cadet-auth",
+        aud: "cadet-gateway",
         sub: "svc:daemon:asst_1",
         scope_profile: "actor_client_v1",
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -723,8 +723,8 @@ describe("policy enforcement", () => {
     validateEdgeTokenMock.mockImplementation(() => ({
       ok: true,
       claims: {
-        iss: "vellum-auth",
-        aud: "vellum-gateway",
+        iss: "cadet-auth",
+        aud: "cadet-gateway",
         sub: "svc:gateway:asst_1",
         scope_profile: "gateway_service_v1",
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -745,8 +745,8 @@ describe("policy enforcement", () => {
     validateEdgeTokenMock.mockImplementation(() => ({
       ok: true,
       claims: {
-        iss: "vellum-auth",
-        aud: "vellum-gateway",
+        iss: "cadet-auth",
+        aud: "cadet-gateway",
         sub: "actor:asst_1:user_1",
         scope_profile: "ui_page_v1",
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -767,8 +767,8 @@ describe("policy enforcement", () => {
     validateEdgeTokenMock.mockImplementation(() => ({
       ok: true,
       claims: {
-        iss: "vellum-auth",
-        aud: "vellum-gateway",
+        iss: "cadet-auth",
+        aud: "cadet-gateway",
         sub: "garbage",
         scope_profile: "actor_client_v1",
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -830,8 +830,8 @@ function mockClaims(profile: ScopeProfile) {
   validateEdgeTokenMock.mockImplementation(() => ({
     ok: true,
     claims: {
-      iss: "vellum-auth",
-      aud: "vellum-gateway",
+      iss: "cadet-auth",
+      aud: "cadet-gateway",
       sub: SUB_BY_PROFILE[profile],
       scope_profile: profile,
       exp: Math.floor(Date.now() / 1000) + 3600,
@@ -1103,7 +1103,7 @@ describe("trust class on the IPC fast path", () => {
   });
 
   test.each(["trusted_contact", "unverified_contact"])(
-    "a route admitting contacts serves a %s, resolved on vellum-shared",
+    "a route admitting contacts serves a %s, resolved on cadet-shared",
     async (trustClass) => {
       mockClaims("contact_client_v1");
       resolveTrustVerdictMock.mockImplementation(async () => ({ trustClass }));
@@ -1114,7 +1114,7 @@ describe("trust class on the IPC fast path", () => {
 
       expect(result!.status).toBe(200);
       expect(resolveTrustVerdictMock).toHaveBeenCalledWith({
-        channelType: "vellum-shared",
+        channelType: "cadet-shared",
         actorExternalId: "contact_1",
       });
       const [opId] = ipcCallAssistantMock.mock.calls[0] as [string];

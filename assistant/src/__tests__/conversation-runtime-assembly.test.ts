@@ -297,7 +297,7 @@ function seedChannelCapabilitiesConversation(
 describe("resolveChannelCapabilities", () => {
   test("defaults to cadet when no source channel is provided", () => {
     const caps = resolveChannelCapabilities();
-    expect(caps.channel).toBe("vellum");
+    expect(caps.channel).toBe("cadet");
     // Without a sourceInterface, desktop UI capabilities are false
     expect(caps.dashboardCapable).toBe(false);
     expect(caps.supportsDynamicUi).toBe(false);
@@ -306,15 +306,15 @@ describe("resolveChannelCapabilities", () => {
 
   test("cadet channel with macos interface has full desktop capabilities", () => {
     const caps = resolveChannelCapabilities(undefined, "macos");
-    expect(caps.channel).toBe("vellum");
+    expect(caps.channel).toBe("cadet");
     expect(caps.dashboardCapable).toBe(true);
     expect(caps.supportsDynamicUi).toBe(true);
     expect(caps.supportsVoiceInput).toBe(true);
   });
 
   test("cadet channel with cadet interface supports dynamic UI", () => {
-    const caps = resolveChannelCapabilities("vellum", "vellum");
-    expect(caps.channel).toBe("vellum");
+    const caps = resolveChannelCapabilities("cadet", "cadet");
+    expect(caps.channel).toBe("cadet");
     expect(caps.dashboardCapable).toBe(false);
     expect(caps.supportsDynamicUi).toBe(true);
     expect(caps.supportsVoiceInput).toBe(false);
@@ -322,42 +322,42 @@ describe("resolveChannelCapabilities", () => {
 
   test("defaults to cadet for null source channel", () => {
     const caps = resolveChannelCapabilities(null);
-    expect(caps.channel).toBe("vellum");
+    expect(caps.channel).toBe("cadet");
     expect(caps.dashboardCapable).toBe(false);
   });
 
-  test('normalises "dashboard" to "vellum"', () => {
+  test('normalises "dashboard" to "cadet"', () => {
     const caps = resolveChannelCapabilities("dashboard");
-    expect(caps.channel).toBe("vellum");
+    expect(caps.channel).toBe("cadet");
     // Without macos interface, capabilities are false
     expect(caps.dashboardCapable).toBe(false);
     expect(caps.supportsDynamicUi).toBe(false);
     expect(caps.supportsVoiceInput).toBe(false);
   });
 
-  test('normalises "http-api" to "vellum"', () => {
+  test('normalises "http-api" to "cadet"', () => {
     const caps = resolveChannelCapabilities("http-api");
-    expect(caps.channel).toBe("vellum");
+    expect(caps.channel).toBe("cadet");
     expect(caps.dashboardCapable).toBe(false);
     expect(caps.supportsDynamicUi).toBe(false);
     expect(caps.supportsVoiceInput).toBe(false);
   });
 
-  test('normalises "mac" to "vellum"', () => {
+  test('normalises "mac" to "cadet"', () => {
     const caps = resolveChannelCapabilities("mac");
-    expect(caps.channel).toBe("vellum");
+    expect(caps.channel).toBe("cadet");
     expect(caps.dashboardCapable).toBe(false);
   });
 
-  test('normalises "macos" to "vellum"', () => {
+  test('normalises "macos" to "cadet"', () => {
     const caps = resolveChannelCapabilities("macos");
-    expect(caps.channel).toBe("vellum");
+    expect(caps.channel).toBe("cadet");
     expect(caps.dashboardCapable).toBe(false);
   });
 
-  test('normalises "ios" to "vellum"', () => {
+  test('normalises "ios" to "cadet"', () => {
     const caps = resolveChannelCapabilities("ios");
-    expect(caps.channel).toBe("vellum");
+    expect(caps.channel).toBe("cadet");
     expect(caps.dashboardCapable).toBe(false);
   });
 
@@ -451,7 +451,7 @@ describe("injectChannelCapabilityContext", () => {
 
   test("skips injection entirely for desktop happy path (all capabilities true)", () => {
     const caps: ChannelCapabilities = {
-      channel: "vellum",
+      channel: "cadet",
       dashboardCapable: true,
       supportsDynamicUi: true,
       supportsVoiceInput: true,
@@ -921,7 +921,7 @@ describe("applyRuntimeInjections with channelCapabilities", () => {
 
 describe("trust-gating via channel capabilities", () => {
   test("cadet channel with macos interface injects macOS guidance", () => {
-    const caps = resolveChannelCapabilities("vellum", "macos");
+    const caps = resolveChannelCapabilities("cadet", "macos");
     const message: Message = {
       role: "user",
       content: [{ type: "text", text: "Enable my microphone" }],
@@ -941,7 +941,7 @@ describe("trust-gating via channel capabilities", () => {
 
   test("cadet channel with Windows client OS injects PowerShell guidance", () => {
     const caps: ChannelCapabilities = {
-      channel: "vellum",
+      channel: "cadet",
       dashboardCapable: true,
       supportsDynamicUi: true,
       supportsVoiceInput: true,
@@ -964,7 +964,7 @@ describe("trust-gating via channel capabilities", () => {
 
   test("cadet channel with Linux client OS injects host_bash guidance", () => {
     const caps: ChannelCapabilities = {
-      channel: "vellum",
+      channel: "cadet",
       dashboardCapable: true,
       supportsDynamicUi: true,
       supportsVoiceInput: true,
@@ -1003,7 +1003,7 @@ describe("trust-gating via channel capabilities", () => {
   });
 
   test("cadet web interface allows dynamic UI but constrains dashboard references", () => {
-    const caps = resolveChannelCapabilities("vellum", "vellum");
+    const caps = resolveChannelCapabilities("cadet", "cadet");
     const message: Message = {
       role: "user",
       content: [{ type: "text", text: "Show me a form" }],
@@ -1096,7 +1096,7 @@ describe("applyRuntimeInjections — injection mode", () => {
     // of the telegram channel capabilities under test, letting the reminder
     // gate hinge purely on PKB content presence.
     trust: {
-      sourceChannel: "vellum" as const,
+      sourceChannel: "cadet" as const,
       trustClass: "guardian" as const,
     },
   };
@@ -1454,7 +1454,7 @@ describe("stripInjectionsForCompaction preserves persistent blocks", () => {
         content: [
           {
             type: "text",
-            text: "<workspace>\nRoot: /home/user/.vellum/workspace\nDirectories: src, tests\nFiles: README.md\n</workspace>",
+            text: "<workspace>\nRoot: /home/user/.cadet/workspace\nDirectories: src, tests\nFiles: README.md\n</workspace>",
           },
           { type: "text", text: "Hello" },
         ],
@@ -1626,7 +1626,7 @@ describe("stripInjectionsForCompaction memory/info wrapper matching", () => {
  */
 const GUARDIAN_TRUST_FIXTURE = {
   trustClass: "guardian",
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
 } as const;
 
 describe("applyRuntimeInjections with nowScratchpad", () => {
@@ -1731,7 +1731,7 @@ describe("resolveTurnInboundActorContext", () => {
   test("returns null on guardian turns", () => {
     // GIVEN a guardian trust context
     const trustContext: TrustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
       requesterDisplayName: "Alice",
     };
@@ -2029,11 +2029,11 @@ describe("buildUnifiedTurnContextBlock", () => {
     expect(text).toContain("</turn_context>");
   });
 
-  test("response discretion only for non-vellum channels", () => {
-    const vellumOptions: UnifiedTurnContextOptions = {
+  test("response discretion only for non-cadet channels", () => {
+    const cadetOptions: UnifiedTurnContextOptions = {
       timestamp: "2026-04-02T12:00:00Z",
       interfaceName: "macos",
-      channelName: "vellum",
+      channelName: "cadet",
     };
 
     const telegramOptions: UnifiedTurnContextOptions = {
@@ -2042,10 +2042,10 @@ describe("buildUnifiedTurnContextBlock", () => {
       channelName: "telegram",
     };
 
-    const vellumText = buildUnifiedTurnContextBlock(vellumOptions);
+    const cadetText = buildUnifiedTurnContextBlock(cadetOptions);
     const telegramText = buildUnifiedTurnContextBlock(telegramOptions);
 
-    expect(vellumText).not.toContain("response_discretion:");
+    expect(cadetText).not.toContain("response_discretion:");
     expect(telegramText).toContain("response_discretion:");
     expect(telegramText).toContain("<no_response/>");
   });
@@ -2069,13 +2069,13 @@ describe("buildUnifiedTurnContextBlock", () => {
   });
 
   test("dedup logic: fields matching canonical_actor_identity are omitted", () => {
-    const uuid = "vellum-principal-b77e94f5-67c0-4599-8baa-871b925b3da8";
+    const uuid = "cadet-principal-b77e94f5-67c0-4599-8baa-871b925b3da8";
     const options: UnifiedTurnContextOptions = {
       timestamp: "2026-04-02T12:00:00Z",
       interfaceName: "macos",
-      channelName: "vellum",
+      channelName: "cadet",
       actorContext: {
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         canonicalActorIdentity: uuid,
         actorIdentifier: uuid,
         actorDisplayName: uuid,
@@ -2091,7 +2091,7 @@ describe("buildUnifiedTurnContextBlock", () => {
 
     const text = buildUnifiedTurnContextBlock(options);
     // Essential fields remain
-    expect(text).toContain("source_channel: vellum");
+    expect(text).toContain("source_channel: cadet");
     expect(text).toContain(`canonical_actor_identity: ${uuid}`);
     expect(text).toContain("trust_class: guardian");
     // Redundant fields are omitted
@@ -3001,7 +3001,7 @@ describe("applyRuntimeInjections — PKB relevance hints", () => {
     graphHandle.dispose();
   });
 
-  // PKB content makes `readPkbContext()` non-null so the (vellum/guardian-
+  // PKB content makes `readPkbContext()` non-null so the (cadet/guardian-
   // equivalent) fallback trust gate admits the reminder; cleared after each
   // test to avoid leaking into suites that assert the reminder is absent.
   beforeEach(seedPkbContent);
@@ -3747,7 +3747,7 @@ describe("Slack channel chronological rendering — multi-thread", () => {
       content: [{ type: "text", text: "cadet question" }],
     };
     seedChannelCapabilitiesConversation({
-      channel: "vellum",
+      channel: "cadet",
       dashboardCapable: true,
       supportsDynamicUi: true,
       supportsVoiceInput: true,
@@ -4145,7 +4145,7 @@ describe("Slack channel chronological rendering — multi-thread", () => {
     registerPluginInjectors(V3_PROBE_PLUGIN, [probeMemoryV3Injector(seen)]);
     try {
       seedChannelCapabilitiesConversation({
-        channel: "vellum",
+        channel: "cadet",
         dashboardCapable: true,
         supportsDynamicUi: true,
         supportsVoiceInput: true,
@@ -4842,7 +4842,7 @@ describe("Slack channel chronological rendering — multi-thread", () => {
         workspaceTopLevelDirty: false,
         surfaceState: new Map(),
         channelCapabilities: caps,
-        trustContext: { trustClass: "guardian", sourceChannel: "vellum" },
+        trustContext: { trustClass: "guardian", sourceChannel: "cadet" },
         slackContextCompactionWatermarkTs:
           compaction.slackContextCompactionWatermarkTs ?? null,
         contextCompactedMessageCount:
@@ -5296,7 +5296,7 @@ describe("Slack channel chronological rendering — multi-thread", () => {
     // (`isSlackChannelConversation`). A non-Slack conversation must never
     // self-resolve an `<active_thread>` block.
     seedChannelCapabilitiesConversation({
-      channel: "vellum",
+      channel: "cadet",
       dashboardCapable: true,
       supportsDynamicUi: true,
       supportsVoiceInput: true,

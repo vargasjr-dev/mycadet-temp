@@ -408,7 +408,7 @@ export class ClickHouseCompactionLogStore {
     const val = await this.resolveAssistantId();
     if (!val) {
       throw new Error(
-        "vellum:platform_assistant_id credential is required when compactionLogs.destination=clickhouse",
+        "cadet:platform_assistant_id credential is required when compactionLogs.destination=clickhouse",
       );
     }
     this.cachedAssistantId = val;

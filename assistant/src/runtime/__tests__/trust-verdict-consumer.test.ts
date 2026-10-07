@@ -27,7 +27,7 @@ describe("trustContextFromVerdict", () => {
       canonicalSenderId: "+15550100",
       guardianExternalUserId: "+15550100",
       guardianDeliveryChatId: "chat-9",
-      guardianPrincipalId: "vellum-principal-abc",
+      guardianPrincipalId: "cadet-principal-abc",
       memberDisplayName: "Alice",
     } satisfies TrustVerdict;
 
@@ -42,7 +42,7 @@ describe("trustContextFromVerdict", () => {
     expect(result.requesterExternalUserId).toBe("+15550100");
     expect(result.guardianExternalUserId).toBe("+15550100");
     expect(result.guardianChatId).toBe("chat-9");
-    expect(result.guardianPrincipalId).toBe("vellum-principal-abc");
+    expect(result.guardianPrincipalId).toBe("cadet-principal-abc");
     // memberDisplayName wins over sender display name.
     expect(result.requesterDisplayName).toBe("Alice");
     expect(result.requesterIdentifier).toBe("@alice");
@@ -53,7 +53,7 @@ describe("trustContextFromVerdict", () => {
         guardianExternalUserId: "+15550100",
         guardianDeliveryChatId: "chat-9",
       },
-      guardianPrincipalId: "vellum-principal-abc",
+      guardianPrincipalId: "cadet-principal-abc",
       memberRecord: null,
       trustClass: "guardian",
       actorMetadata: {
@@ -212,7 +212,7 @@ describe("actorTrustContextFromVerdict", () => {
       canonicalSenderId: "+15550100",
       guardianExternalUserId: "+15550100",
       guardianDeliveryChatId: "chat-9",
-      guardianPrincipalId: "vellum-principal-abc",
+      guardianPrincipalId: "cadet-principal-abc",
       memberDisplayName: "Alice",
     } satisfies TrustVerdict;
 
@@ -229,7 +229,7 @@ describe("actorTrustContextFromVerdict", () => {
         guardianExternalUserId: "+15550100",
         guardianDeliveryChatId: "chat-9",
       },
-      guardianPrincipalId: "vellum-principal-abc",
+      guardianPrincipalId: "cadet-principal-abc",
       memberRecord: null,
       trustClass: "guardian",
       actorMetadata: {
@@ -365,7 +365,7 @@ describe("actorTrustContextFromVerdict", () => {
       canonicalSenderId: "u-g",
       contactId: "contact-g",
       channelId: "channel-g",
-      guardianPrincipalId: "vellum-principal-g",
+      guardianPrincipalId: "cadet-principal-g",
       status: "active",
       policy: "allow",
     } satisfies TrustVerdict;
@@ -375,7 +375,7 @@ describe("actorTrustContextFromVerdict", () => {
       conversationExternalId: CONV,
     });
     expect(ctx.memberRecord!.role).toBe("guardian");
-    expect(ctx.guardianPrincipalId).toBe("vellum-principal-g");
+    expect(ctx.guardianPrincipalId).toBe("cadet-principal-g");
   });
 
   test("memberRecord null when status missing (fail-closed)", () => {

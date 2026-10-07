@@ -845,7 +845,7 @@ describe("wakeAgentForOpportunity", () => {
         conversationId: conversation.conversationId,
         hint: "background shell completed",
         source: "background-tool",
-        trustContext: { sourceChannel: "vellum", trustClass: "guardian" },
+        trustContext: { sourceChannel: "cadet", trustClass: "guardian" },
       },
       { resolveTarget: async () => conversation },
     );
@@ -919,7 +919,7 @@ describe("wakeAgentForOpportunity", () => {
         conversationId: conversation.conversationId,
         hint: "clean storage",
         source: "local-cleanup",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         sourceInterface: "macos",
       },
       { resolveTarget: async () => conversation },
@@ -928,7 +928,7 @@ describe("wakeAgentForOpportunity", () => {
     expect(result).toEqual({ invoked: true, producedToolCalls: false });
     expect(conversation.runCalls).toHaveLength(1);
     expect(conversation.runCalls[0]!.trust).toEqual({
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     });
   });
@@ -947,7 +947,7 @@ describe("wakeAgentForOpportunity", () => {
         conversationId: conversation.conversationId,
         hint: "retrospective pass",
         source: "memory-retrospective",
-        trustContext: { sourceChannel: "vellum", trustClass: "guardian" },
+        trustContext: { sourceChannel: "cadet", trustClass: "guardian" },
         personaOverride: override,
       },
       { resolveTarget: async () => conversation },
@@ -975,7 +975,7 @@ describe("wakeAgentForOpportunity", () => {
         conversationId: conversation.conversationId,
         hint: "scheduled triage",
         source: "schedule",
-        trustContext: { sourceChannel: "vellum", trustClass: "guardian" },
+        trustContext: { sourceChannel: "cadet", trustClass: "guardian" },
       },
       { resolveTarget: async () => conversation },
     );
@@ -984,7 +984,7 @@ describe("wakeAgentForOpportunity", () => {
     const ctxs = conversation.turnTrustContextSets.map((c) => c.ctx);
     // Elevated for the turn …
     expect(ctxs).toContainEqual({
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     });
     // … then restored to the prior value (unset → undefined) as the LAST write,
@@ -1004,7 +1004,7 @@ describe("wakeAgentForOpportunity", () => {
         conversationId: conversation.conversationId,
         hint: "scheduled triage",
         source: "schedule",
-        trustContext: { sourceChannel: "vellum", trustClass: "guardian" },
+        trustContext: { sourceChannel: "cadet", trustClass: "guardian" },
       },
       { resolveTarget: async () => conversation },
     );
@@ -2135,7 +2135,7 @@ describe("wakeAgentForOpportunity", () => {
         conversationId: "conv-trust",
         hint: "consolidate memory",
         source: "memory_v2_consolidation",
-        trustContext: { sourceChannel: "vellum", trustClass: "guardian" },
+        trustContext: { sourceChannel: "cadet", trustClass: "guardian" },
       },
       { resolveTarget: async () => conversation },
     );
@@ -2144,7 +2144,7 @@ describe("wakeAgentForOpportunity", () => {
     // (after), so the guardian trust never lingers on the cached conversation.
     expect(conversation.turnTrustContextSets).toHaveLength(2);
     expect(conversation.turnTrustContextSets[0]!.ctx).toEqual({
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     });
     expect(conversation.turnTrustContextSets[1]!.ctx).toBeUndefined();
@@ -2185,7 +2185,7 @@ describe("wakeAgentForOpportunity", () => {
   // through tool setup's `currentTurnTrustContext ?? trustContext` fallback.
 
   const GUARDIAN_TRUST = {
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
     trustClass: "guardian",
   } as const;
 
@@ -2267,7 +2267,7 @@ describe("wakeAgentForOpportunity", () => {
 
   test("leaves a trust that was re-set mid-run alone (identity guard)", async () => {
     const replaced = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "unknown",
     } as const;
     const conversation = makeWakeConversation({
@@ -3495,7 +3495,7 @@ describe("wakeAgentForOpportunity", () => {
   test("default resolver threads WakeOptions.trustContext into getOrCreateConversation", async () => {
     mockResolverTarget = makeDefaultResolverTarget("conv-thread-trust");
     const trustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     } as const;
 

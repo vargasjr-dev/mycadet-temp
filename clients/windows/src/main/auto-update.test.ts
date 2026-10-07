@@ -48,13 +48,13 @@ const { installAutoUpdate, windowsUpdateFeedUrl } =
 
 describe("windowsUpdateFeedUrl", () => {
   test("targets the architecture-specific win-electron feed", () => {
-    // Tests build without __VELLUM_ENVIRONMENT__, so the channel defaults
+    // Tests build without __CADET_ENVIRONMENT__, so the channel defaults
     // to production and the bucket collapses to prod.
     expect(windowsUpdateFeedUrl("x64")).toBe(
-      "https://storage.googleapis.com/vellum-ai-prod-releases/win-electron/x64/",
+      "https://storage.googleapis.com/mycadet-prod-releases/win-electron/x64/",
     );
     expect(windowsUpdateFeedUrl("arm64")).toBe(
-      "https://storage.googleapis.com/vellum-ai-prod-releases/win-electron/arm64/",
+      "https://storage.googleapis.com/mycadet-prod-releases/win-electron/arm64/",
     );
   });
 });
@@ -70,7 +70,7 @@ describe("resolveUpdateFeedUrl", () => {
     ];
     expect(new Set(feeds).size).toBe(feeds.length);
     expect(resolveUpdateFeedUrl("staging", "win-electron", "arm64")).toBe(
-      "https://storage.googleapis.com/vellum-ai-staging-releases/win-electron/arm64/",
+      "https://storage.googleapis.com/mycadet-staging-releases/win-electron/arm64/",
     );
   });
 });

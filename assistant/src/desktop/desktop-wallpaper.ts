@@ -16,7 +16,7 @@ export async function renderCurrentDesktopWallpaper(
   if (!isResvgAvailable()) {
     return null;
   }
-  const directory = await mkdtemp(join(tmpdir(), "vellum-wallpaper-"));
+  const directory = await mkdtemp(join(tmpdir(), "cadet-wallpaper-"));
   const output = join(directory, "wallpaper.png");
   try {
     const [executable, ...args] = resolveWorkerCommand(

@@ -3,11 +3,11 @@
  * elevate trust gate on `"local"`, so a gateway-proxied remote request must
  * never resolve to `local`, even when it arrives with no verified principal
  * header (e.g. `runtimeProxyRequireAuth` disabled). The
- * `x-vellum-proxy-server: ipc` marker (forwarded by the gateway, never sent by
+ * `x-cadet-proxy-server: ipc` marker (forwarded by the gateway, never sent by
  * a direct CLI) distinguishes the two.
  *
  * The transport verifies no subject and serves no wire-exact URL, so the two
- * fields that carry those (`x-vellum-subject`, `rawUrl`) are dropped rather
+ * fields that carry those (`x-cadet-subject`, `rawUrl`) are dropped rather
  * than passed through from a caller that can reach the socket.
  */
 
@@ -24,40 +24,40 @@ const SPOOFED_SUBJECT = "local:self:oauth-proxy.stripe_link";
 describe("injectLocalActorHeader principal resolution", () => {
   test("a forwarded verified principal wins", () => {
     const out = injectLocalActorHeader({
-      headers: { "x-vellum-principal-type": "actor" },
+      headers: { "x-cadet-principal-type": "actor" },
     });
-    expect(out.headers?.["x-vellum-principal-type"]).toBe("actor");
+    expect(out.headers?.["x-cadet-principal-type"]).toBe("actor");
   });
 
   test("gateway-proxied IPC with no principal resolves to svc_gateway, not local", () => {
     const out = injectLocalActorHeader({
-      headers: { "x-vellum-proxy-server": "ipc" },
+      headers: { "x-cadet-proxy-server": "ipc" },
     });
-    expect(out.headers?.["x-vellum-principal-type"]).toBe("svc_gateway");
+    expect(out.headers?.["x-cadet-principal-type"]).toBe("svc_gateway");
   });
 
   test("a direct IPC caller (no proxy marker, no principal) defaults to local", () => {
     const out = injectLocalActorHeader({ headers: {} });
-    expect(out.headers?.["x-vellum-principal-type"]).toBe("local");
+    expect(out.headers?.["x-cadet-principal-type"]).toBe("local");
   });
 });
 
 describe("injectLocalActorHeader identity sanitation", () => {
-  test("drops a caller-supplied x-vellum-subject", () => {
+  test("drops a caller-supplied x-cadet-subject", () => {
     const out = injectLocalActorHeader({
-      headers: { "x-vellum-subject": SPOOFED_SUBJECT },
+      headers: { "x-cadet-subject": SPOOFED_SUBJECT },
     });
-    expect(out.headers?.["x-vellum-subject"]).toBeUndefined();
+    expect(out.headers?.["x-cadet-subject"]).toBeUndefined();
   });
 
   test("drops the subject a gateway-proxied caller forwards", () => {
     const out = injectLocalActorHeader({
       headers: {
-        "x-vellum-proxy-server": "ipc",
-        "x-vellum-subject": SPOOFED_SUBJECT,
+        "x-cadet-proxy-server": "ipc",
+        "x-cadet-subject": SPOOFED_SUBJECT,
       },
     });
-    expect(out.headers?.["x-vellum-subject"]).toBeUndefined();
+    expect(out.headers?.["x-cadet-subject"]).toBeUndefined();
   });
 
   test("drops a caller-supplied rawUrl", () => {
@@ -111,8 +111,8 @@ describe("IPC dispatch", () => {
         method: "identity_probe",
         params: {
           headers: {
-            "x-vellum-subject": SPOOFED_SUBJECT,
-            "x-vellum-principal-type": "local",
+            "x-cadet-subject": SPOOFED_SUBJECT,
+            "x-cadet-principal-type": "local",
           },
           pathParams: { provider: "stripe_link" },
           rawUrl: { pathname: "/v1/oauth/proxy/stripe_link/v1/charges" },
@@ -122,7 +122,7 @@ describe("IPC dispatch", () => {
     );
 
     expect(received).toBeDefined();
-    expect(received?.headers?.["x-vellum-subject"]).toBeUndefined();
+    expect(received?.headers?.["x-cadet-subject"]).toBeUndefined();
     expect(received?.rawUrl).toBeUndefined();
     expect(received?.pathParams).toEqual({ provider: "stripe_link" });
   });

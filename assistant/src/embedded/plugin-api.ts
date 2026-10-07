@@ -28,7 +28,7 @@
 import * as pluginApi from "../plugin-api/index.js";
 
 /** Symbol key under which the plugin-api namespace is published on globalThis. */
-export const PLUGIN_API_REGISTRY_KEY = Symbol.for("vellum.plugin-api");
+export const PLUGIN_API_REGISTRY_KEY = Symbol.for("cadet.plugin-api");
 
 // Install on globalThis once at module-load time. The shim writer reads
 // `PLUGIN_API_EXPORTS` to know which bindings to re-export; the shim's

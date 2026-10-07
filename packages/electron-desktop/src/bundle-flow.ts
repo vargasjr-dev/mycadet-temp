@@ -1,7 +1,7 @@
 /**
  * Bundle-open orchestration: file-open -> assistant scan -> confirm -> unpack -> render.
  *
- * When the user double-clicks a `.vellum` file in Finder, this module coordinates
+ * When the user double-clicks a `.cadet` file in Finder, this module coordinates
  * the full flow: resolves the gateway port, asks the assistant to
  * scan the bundle, shows the confirmation dialog, unpacks the bundle on acceptance,
  * and opens the sandboxed renderer window.

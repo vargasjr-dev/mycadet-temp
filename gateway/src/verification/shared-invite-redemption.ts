@@ -1,5 +1,5 @@
 /**
- * Redeems a `vellum-shared` invite link token for a new trusted-contact
+ * Redeems a `cadet-shared` invite link token for a new trusted-contact
  * principal and a device-bound token pair.
  */
 
@@ -32,13 +32,13 @@ export type SharedInviteRedemptionResult =
       accessTokenExpiresAt: number;
       refreshToken: string;
     }
-  /** No live, unused `vellum-shared` invite matches the token. */
+  /** No live, unused `cadet-shared` invite matches the token. */
   | { status: "invalid" }
   /** The invite's contact cannot take a new principal. */
   | { status: "contact_unavailable" };
 
 /**
- * Redeem a `vellum-shared` invite by its link token: claim one use, mint a
+ * Redeem a `cadet-shared` invite by its link token: claim one use, mint a
  * fresh principal, record it on the invite's contact, and mint a contact-role
  * token pair bound to `deviceId`.
  *

@@ -2,7 +2,7 @@
  * IPC runtime proxy — serves HTTP requests by calling the assistant daemon
  * over IPC instead of forwarding them as HTTP.
  *
- * Activated when the client sends the `X-Vellum-Proxy-Server: ipc` header
+ * Activated when the client sends the `X-Cadet-Proxy-Server: ipc` header
  * AND the request path matches a route in the schema cache. This is the
  * testing gate for the IPC cutover; once proven, the header check is removed
  * and IPC becomes the default transport.
@@ -42,7 +42,7 @@ import { resolveTrustVerdict } from "../../risk/trust-verdict-resolver.js";
 const log = getLogger("ipc-runtime-proxy");
 
 const V1_PREFIX = "/v1/";
-const VELLUM_HEADER_PREFIX = "x-vellum-";
+const CADET_HEADER_PREFIX = "x-cadet-";
 
 function notFound(): Response {
   return Response.json(
@@ -55,7 +55,7 @@ function notFound(): Response {
  * Attempt to serve a request via IPC.
  *
  * Returns `null` when the request doesn't have the
- * `X-Vellum-Proxy-Server: ipc` header — the caller should fall through
+ * `X-Cadet-Proxy-Server: ipc` header — the caller should fall through
  * to the HTTP proxy.
  *
  * Once the header is present, the proxy commits to serving the request
@@ -70,7 +70,7 @@ export async function tryIpcProxy(
   req: Request,
   config: GatewayConfig,
 ): Promise<Response | null> {
-  if (req.headers.get("x-vellum-proxy-server") !== "ipc") {
+  if (req.headers.get("x-cadet-proxy-server") !== "ipc") {
     return null;
   }
 
@@ -172,29 +172,29 @@ export async function tryIpcProxy(
     queryParams[key] = value;
   }
 
-  // Only forward X-Vellum-* headers to the daemon.
+  // Only forward X-Cadet-* headers to the daemon.
   const headers: Record<string, string> = {};
   req.headers.forEach((value, key) => {
-    if (key.startsWith(VELLUM_HEADER_PREFIX)) {
+    if (key.startsWith(CADET_HEADER_PREFIX)) {
       headers[key] = value;
     }
   });
 
   // Drop the caller-supplied identity headers and re-derive them from the
   // verified JWT claims. The daemon's IPC adapter (`injectLocalActorHeader`)
-  // preserves any inbound `x-vellum-actor-principal-id`, so without this step
+  // preserves any inbound `x-cadet-actor-principal-id`, so without this step
   // a malicious client could spoof another user's principal id by setting the
-  // header explicitly. `x-vellum-subject` goes too, defense in depth behind
+  // header explicitly. `x-cadet-subject` goes too, defense in depth behind
   // that adapter's own unconditional delete.
-  delete headers["x-vellum-actor-principal-id"];
-  delete headers["x-vellum-principal-type"];
-  delete headers["x-vellum-subject"];
+  delete headers["x-cadet-actor-principal-id"];
+  delete headers["x-cadet-principal-type"];
+  delete headers["x-cadet-subject"];
   if (claims) {
     const sub = parseSub(claims.sub);
     if (sub.ok) {
-      headers["x-vellum-principal-type"] = sub.principalType;
+      headers["x-cadet-principal-type"] = sub.principalType;
       if (sub.actorPrincipalId) {
-        headers["x-vellum-actor-principal-id"] = sub.actorPrincipalId;
+        headers["x-cadet-actor-principal-id"] = sub.actorPrincipalId;
       }
     }
   }
@@ -322,7 +322,7 @@ export async function tryIpcProxy(
 
 /**
  * Trust class of the principal a trust-checked token names, read locally from
- * its contact ACL on the `vellum-shared` channel. Undefined when the token
+ * its contact ACL on the `cadet-shared` channel. Undefined when the token
  * names no actor principal or the resolver could not vouch.
  */
 async function resolveContactTrustClass(
@@ -333,7 +333,7 @@ async function resolveContactTrustClass(
     return undefined;
   }
   const verdict = await resolveTrustVerdict({
-    channelType: "vellum-shared",
+    channelType: "cadet-shared",
     actorExternalId: sub.actorPrincipalId,
   });
   return verdict.resolutionFailed ? undefined : verdict.trustClass;

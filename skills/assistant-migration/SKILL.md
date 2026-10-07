@@ -1,6 +1,6 @@
 ---
 name: assistant-migration
-description: Migrate from ChatGPT, Claude, OpenClaw, Hermes, Manus, and other AI assistants into Vellum by inspecting their data exports, conversation archives, files, prompts, custom instructions, memory, saved memories, tools, GPTs, workflows, integrations, and relationships, then mapping as much as safely possible into Vellum primitives. Handles single-source and multi-source migrations with a unified, deduplicated inventory.
+description: Migrate from ChatGPT, Claude, OpenClaw, Hermes, Manus, and other AI assistants into Cadet by inspecting their data exports, conversation archives, files, prompts, custom instructions, memory, saved memories, tools, GPTs, workflows, integrations, and relationships, then mapping as much as safely possible into Cadet primitives. Handles single-source and multi-source migrations with a unified, deduplicated inventory.
 compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🧳"
@@ -9,24 +9,24 @@ metadata:
     display-name: "Assistant Migration"
     includes: ["chatgpt-import"]
     activation-hints:
-      - "User wants to migrate from ChatGPT, Claude, OpenClaw, Hermes, Manus, or another AI assistant into Vellum"
-      - "User wants to migrate from ChatGPT or Claude into Vellum"
+      - "User wants to migrate from ChatGPT, Claude, OpenClaw, Hermes, Manus, or another AI assistant into Cadet"
+      - "User wants to migrate from ChatGPT or Claude into Cadet"
       - "User has a ChatGPT data export ZIP or Claude conversation/summary export"
       - "User has an assistant export, workspace, prompt bundle, memory dump, tool config, or migration request from another assistant system"
       - "User asks what can be preserved when switching from another assistant"
     avoid-when:
-      - "User is moving an existing Vellum assistant between Vellum homes; use backup/restore or teleport workflows instead"
+      - "User is moving an existing Cadet assistant between Cadet homes; use backup/restore or teleport workflows instead"
 ---
 
 # Assistant Migration
 
-Help the creator migrate from another AI assistant into Vellum. Preserve as much of the source assistant as can be understood safely. Non-Vellum systems (OpenClaw, Hermes, Manus, and others) evolve quickly, so never assume their internals follow a fixed schema: inspect the actual source artifacts in front of you and map them into Vellum primitives. The bundled memory parsers in `scripts/` follow the same rule; they introspect whatever artifact they are given instead of hardcoding a layout, and everything they emit is a review candidate, never a finished import.
+Help the creator migrate from another AI assistant into Cadet. Preserve as much of the source assistant as can be understood safely. Non-Cadet systems (OpenClaw, Hermes, Manus, and others) evolve quickly, so never assume their internals follow a fixed schema: inspect the actual source artifacts in front of you and map them into Cadet primitives. The bundled memory parsers in `scripts/` follow the same rule; they introspect whatever artifact they are given instead of hardcoding a layout, and everything they emit is a review candidate, never a finished import.
 
 ## Core Posture
 
 - Migrate internals opportunistically: prompts, memory exports, skill definitions, tool manifests, schedules, app code, workflow docs, MCP configs, browser/computer-use preferences, and integration metadata can often be preserved.
 - Do not pretend opaque runtime state is portable. If a file, database row, binary blob, or generated artifact cannot be confidently understood, mark it for review or rebuild.
-- Never import secrets from chat, logs, config dumps, browser profiles, or exported files. Secrets must be reconnected through Vellum's credential vault, OAuth flows, or setup skills.
+- Never import secrets from chat, logs, config dumps, browser profiles, or exported files. Secrets must be reconnected through Cadet's credential vault, OAuth flows, or setup skills.
 - Do not write new ad-hoc scripts that encode assumptions about another assistant's private filesystem or database schema. For memory extraction, use the bundled parsers in `scripts/`: they avoid schema assumptions by design (ZIP entries matched by name/content heuristics, SQLite tables discovered via `sqlite_master` introspection) and their output always goes through creator review before anything is saved.
 - Be inviting. Migration can feel sensitive because the creator may have a real relationship with the source assistant; acknowledge that directly, move at the creator's pace, and keep them in control of what is inspected, imported, reviewed, or left alone.
 - Treat every source assistant, source machine, and source export as read-only unless the creator explicitly authorizes a specific write. Before accessing a source machine, say plainly that you will not modify anything there.
@@ -45,18 +45,18 @@ Start with low-risk discovery:
 - If there is no export path, ask the source assistant to produce portable summaries of its memory, instructions, active workflows, skills, apps, contacts, and integration setup.
 - If access requires admin privileges, organization approval, or another person's account, stop and tell the creator what permission they need rather than trying to bypass it.
 
-When internals are hard to access, fall back to an interview-style migration: ask the creator and source assistant for high-signal summaries, then rebuild in Vellum with review.
+When internals are hard to access, fall back to an interview-style migration: ask the creator and source assistant for high-signal summaries, then rebuild in Cadet with review.
 
-Before copying large folders or attachments, estimate source size and check available space in the current Vellum workspace. Use available storage diagnostics or shell filesystem probes when available, migrate large assets in batches, and pause for the creator if the import could crowd the workspace or trigger disk-pressure cleanup.
+Before copying large folders or attachments, estimate source size and check available space in the current Cadet workspace. Use available storage diagnostics or shell filesystem probes when available, migrate large assets in batches, and pause for the creator if the import could crowd the workspace or trigger disk-pressure cleanup.
 
 ### Per-assistant references
 
 Once the source assistant is identified, consult the matching reference for the exact data-directory layout, a bundling recipe with explicit `--exclude` flags for secret-bearing paths, and the after-import rebind checklist:
 
-- [ChatGPT → Vellum](references/chatgpt.md)
-- [Claude → Vellum](references/claude.md)
-- [Hermes → Vellum](references/hermes.md)
-- [OpenClaw → Vellum](references/openclaw.md)
+- [ChatGPT → Cadet](references/chatgpt.md)
+- [Claude → Cadet](references/claude.md)
+- [Hermes → Cadet](references/hermes.md)
+- [OpenClaw → Cadet](references/openclaw.md)
 
 For ChatGPT conversation history specifically, do not parse export ZIPs here — invoke the `chatgpt-import` skill, which owns the export-and-parse flow. The ChatGPT reference covers only the non-conversation material (custom instructions, saved memories, GPT configs).
 
@@ -75,24 +75,24 @@ If the user already provided enough context, start inspecting.
 
 ### 2. Inventory Before Importing
 
-Build an inventory grouped by Vellum primitive. For each candidate item, capture:
+Build an inventory grouped by Cadet primitive. For each candidate item, capture:
 
 - Source path or origin.
 - What it appears to be.
-- Suggested Vellum destination.
+- Suggested Cadet destination.
 - Confidence: high, medium, or low.
 - Recommended action: port, review first, re-setup, or disregard.
 - Reason for the recommendation.
 
-Do not mutate Vellum state until the creator has reviewed the inventory unless they explicitly asked for an immediate best-effort migration.
+Do not mutate Cadet state until the creator has reviewed the inventory unless they explicitly asked for an immediate best-effort migration.
 
 #### Multi-source migrations
 
-When the creator names more than one source ("I used ChatGPT and Claude", "ChatGPT plus my old OpenClaw box"), build **one unified inventory**, not one per source. Each inventory row gains a **Source attribution** column alongside the existing fields (source path/origin, what-it-is, Vellum destination, confidence, action, reason).
+When the creator names more than one source ("I used ChatGPT and Claude", "ChatGPT plus my old OpenClaw box"), build **one unified inventory**, not one per source. Each inventory row gains a **Source attribution** column alongside the existing fields (source path/origin, what-it-is, Cadet destination, confidence, action, reason).
 
 Dedupe and reconcile across sources:
 
-- When the same fact, memory, identity trait, contact, or skill appears from multiple sources, collapse it to a **single Vellum item**.
+- When the same fact, memory, identity trait, contact, or skill appears from multiple sources, collapse it to a **single Cadet item**.
 - Record all contributing sources in the item's provenance notes so the creator can audit where it came from.
 - On conflict, prefer the **higher-confidence or more-recent** source. Surface genuine conflicts to the creator rather than silently picking one.
 - Credentials from every source are never imported; they rebind through the vault regardless of which source they came from.
@@ -110,9 +110,9 @@ Keep the existing Review Surface and Port / Review / Re-setup / Disregard flow. 
 
 Prefer a rich checklist when an interactive surface is available. The checklist should let the creator mark each item as:
 
-- **Port**: bring it into Vellum now.
+- **Port**: bring it into Cadet now.
 - **Review**: inspect in more depth before importing.
-- **Re-setup**: recreate through Vellum setup flows because direct import is unsafe or impossible.
+- **Re-setup**: recreate through Cadet setup flows because direct import is unsafe or impossible.
 - **Disregard**: leave it behind.
 
 If a rich UI is not available on the current channel, present the same information as a concise markdown table and ask for the creator's choices.
@@ -133,7 +133,7 @@ Suggested checklist groups:
 
 ### 4. Port What Maps Cleanly
 
-Use the most native Vellum primitive available. Prefer existing Vellum setup/import flows over custom conversion. Keep source provenance in notes when useful so the creator can audit where migrated material came from.
+Use the most native Cadet primitive available. Prefer existing Cadet setup/import flows over custom conversion. Keep source provenance in notes when useful so the creator can audit where migrated material came from.
 
 For each migrated group, report what changed and what remains pending. If an item is skipped, say why.
 
@@ -143,38 +143,38 @@ Some internals should be rebuilt instead of copied:
 
 - API keys, tokens, cookies, and browser sessions.
 - Provider-specific OAuth refresh tokens.
-- Foreign approval policies whose semantics do not match Vellum trust rules.
+- Foreign approval policies whose semantics do not match Cadet trust rules.
 - Opaque vector stores, caches, embeddings, hidden chain-of-thought, or model traces.
 - Runtime-specific process state, queues, locks, or binary databases that are not documented.
-- Capabilities that depend on a foreign tool runtime unavailable in Vellum.
+- Capabilities that depend on a foreign tool runtime unavailable in Cadet.
 
-When rebuilding, explain the Vellum equivalent and ask whether the creator wants to re-set it up now.
+When rebuilding, explain the Cadet equivalent and ask whether the creator wants to re-set it up now.
 
-## Vellum Primitive Map
+## Cadet Primitive Map
 
-| Source assistant concept                              | Vellum primitive                                             | Migration guidance                                                                                                                                                                                                         |
+| Source assistant concept                              | Cadet primitive                                             | Migration guidance                                                                                                                                                                                                         |
 | ----------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Name, persona, tone, identity docs, system prompts    | Identity, Personality, Avatar, `SOUL.md`, user persona files | Preserve explicit creator-approved identity/personality material. Convert brittle prompt hacks into plain behavioral guidance.                                                                                             |
 | Current focus, scratchpads, working notes             | `NOW.md`, Workspace notes, Memory                            | Preserve active projects and open loops. Avoid importing stale scratch state as permanent truth.                                                                                                                           |
 | Memory databases, summaries, profiles, user facts     | Memory                                                       | Extract candidates with the bundled parsers, review with the creator, then follow the Memory Import Guidance flow below. Provenance frontmatter (`source:`, `origin_date:`) preserves attribution and original chronology. |
 | Conversation history                                  | Conversations and Memory                                     | Import supported structured exports when available. Otherwise summarize useful history into memory candidates rather than dumping logs blindly.                                                                            |
-| Tools, skills, commands, plugins, playbooks           | Skills                                                       | Recreate as Vellum skills when the capability is still useful. Keep instructions portable; avoid foreign runtime assumptions.                                                                                              |
-| MCP servers                                           | MCP                                                          | Recreate server registrations and required environment through Vellum's MCP setup flow. Reconnect secrets through the credential vault.                                                                                    |
+| Tools, skills, commands, plugins, playbooks           | Skills                                                       | Recreate as Cadet skills when the capability is still useful. Keep instructions portable; avoid foreign runtime assumptions.                                                                                              |
+| MCP servers                                           | MCP                                                          | Recreate server registrations and required environment through Cadet's MCP setup flow. Reconnect secrets through the credential vault.                                                                                    |
 | Browser automation state, browsing tasks              | Browser capability                                           | Recreate workflows and permissions. Do not import cookies or browser profile secrets directly.                                                                                                                             |
-| Computer-use automations                              | Computer Use capability                                      | Recreate task intent and permission expectations. Verify host-computer access through Vellum's own consent model.                                                                                                          |
+| Computer-use automations                              | Computer Use capability                                      | Recreate task intent and permission expectations. Verify host-computer access through Cadet's own consent model.                                                                                                          |
 | Custom dashboards, tools, visual workflows            | Apps or Widgets                                              | Persistent interactive tools should become Apps. Transient conversation UI should become Widgets or normal chat flows.                                                                                                     |
-| Slack, Telegram, email, phone, webhooks               | Channels and Integrations                                    | Reconnect channels through Vellum setup skills. Expect some providers, especially Slack, to need fresh setup.                                                                                                              |
+| Slack, Telegram, email, phone, webhooks               | Channels and Integrations                                    | Reconnect channels through Cadet setup skills. Expect some providers, especially Slack, to need fresh setup.                                                                                                              |
 | Friends, coworkers, allowed users                     | Contacts and Trusted Contacts                                | Map relationships into Contacts. Grant channel access through trusted-contact and guardian flows, not direct database edits.                                                                                               |
 | Owner/admin identity, approval authority              | Guardian Verification                                        | Verify the creator/guardian on each channel needed for secure access and approvals.                                                                                                                                        |
 | Secrets, API keys, tokens, OAuth refresh tokens       | Credential Vault and OAuth Integrations                      | Never paste or import raw secrets. Rebind through secure prompts, OAuth connect flows, or provider setup skills.                                                                                                           |
 | Autonomy settings, allowlists, deny rules             | Trust Rules and Permissions                                  | Translate intent, not syntax. Start conservative when semantics are unclear.                                                                                                                                               |
-| Timed jobs and reminders                              | Schedules                                                    | Recreate one-shot and recurring tasks using Vellum schedules. Preserve the user-visible intent and delivery channel.                                                                                                       |
+| Timed jobs and reminders                              | Schedules                                                    | Recreate one-shot and recurring tasks using Cadet schedules. Preserve the user-visible intent and delivery channel.                                                                                                       |
 | Autonomous monitors and polling jobs                  | Watchers                                                     | Rebuild as watchers when the source monitors external events. Reconnect provider credentials first.                                                                                                                        |
-| Periodic self-checks                                  | Heartbeats                                                   | Use Vellum heartbeats for agenda-free self-checking, not for specific timed jobs.                                                                                                                                          |
+| Periodic self-checks                                  | Heartbeats                                                   | Use Cadet heartbeats for agenda-free self-checking, not for specific timed jobs.                                                                                                                                          |
 | Pending replies or nudges                             | Followups                                                    | Preserve expected-response workflows as followups when the source tracks sent messages awaiting replies.                                                                                                                   |
 | Reusable action templates and queues                  | Task Queue                                                   | Recreate repeatable work as tasks or queued work items when the creator expects review before completion.                                                                                                                  |
 | Model routing, fast/quality/cost modes, provider keys | Inference Profiles and Provider Connections                  | Map source behavior to named profiles such as balanced, quality, or cost/speed variants. Reconnect provider credentials safely.                                                                                            |
-| Files, projects, notes, attachments                   | Workspace                                                    | Copy useful, non-secret artifacts into the Vellum workspace with clear organization. Leave local worktree artifacts and foreign caches behind.                                                                             |
+| Files, projects, notes, attachments                   | Workspace                                                    | Copy useful, non-secret artifacts into the Cadet workspace with clear organization. Leave local worktree artifacts and foreign caches behind.                                                                             |
 
 ## Memory Import Guidance
 
@@ -251,7 +251,7 @@ End with a concise report:
 
 - Ported successfully.
 - Needs creator review.
-- Needs re-setup in Vellum.
+- Needs re-setup in Cadet.
 - Disregarded or intentionally left behind.
 - Residual risk: anything uncertain, sensitive, or not yet verified.
 

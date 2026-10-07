@@ -76,8 +76,8 @@ import {
 
 const execFileAsync = promisify(execFile);
 
-const PLUGIN_SOURCE_OWNER = "vellum-ai";
-const PLUGIN_SOURCE_REPO = "vellum-assistant";
+const PLUGIN_SOURCE_OWNER = "vargasjr-dev";
+const PLUGIN_SOURCE_REPO = "mycadet";
 const PLUGIN_SOURCE_PATH_PREFIX = "plugins";
 import { DEFAULT_DIRECT_REF } from "./parse-github-plugin-spec.js";
 import { DEFAULT_PLUGIN_REF } from "./plugin-constants.js";
@@ -401,10 +401,10 @@ async function resolvePluginSource(
  *
  * - `default-`: built-in default plugins that ship in the assistant source
  *   tree.
- * - `vellum-`: first-class plugins shipped from the Cadet team (e.g. curated
+ * - `cadet-`: first-class plugins shipped from the Cadet team (e.g. curated
  *   marketplace entries).
  */
-export const RESERVED_PLUGIN_PREFIXES = ["default-", "vellum-"] as const;
+export const RESERVED_PLUGIN_PREFIXES = ["default-", "cadet-"] as const;
 
 /**
  * Reject plugin names that could escape the canonical source path or the
@@ -413,7 +413,7 @@ export const RESERVED_PLUGIN_PREFIXES = ["default-", "vellum-"] as const;
  * built from kebab-case alphanumerics.
  *
  * Names carrying one of the {@link RESERVED_PLUGIN_PREFIXES} (`default-`,
- * `vellum-`) are also rejected — those prefixes are reserved for first-party
+ * `cadet-`) are also rejected — those prefixes are reserved for first-party
  * plugins.
  *
  * Exported so callers (e.g. the CLI input prompt) can validate up front
@@ -1174,7 +1174,7 @@ function normalizeInstalledManifest(
 }
 
 /**
- * Write a minimal Vellum-compatible `package.json` into a staged plugin that
+ * Write a minimal Cadet-compatible `package.json` into a staged plugin that
  * shipped no manifest of its own. The Cadet external plugin loader
  * (`buildPluginFromDir`) hard-requires a `package.json` validated against
  * `PluginPackageJsonSchema` and silently skips the plugin when it's missing.

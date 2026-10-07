@@ -138,7 +138,7 @@ const ALIAS_BLOCK_END = "<!-- avatar-icon-aliases:end -->";
 /**
  * Manifest-relative name of the activity the aliases point at, and the
  * sub-package their own names sit under. The names resolve against the manifest
- * package, so an alias is `<applicationId>/ai.vellum.assistant.icon.<resource>`
+ * package, so an alias is `<applicationId>/ai.mycadet.assistant.icon.<resource>`
  * at runtime, which is what the plugin toggling them has to address.
  */
 const MAIN_ACTIVITY_NAME = ".MainActivity";

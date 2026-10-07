@@ -8,8 +8,8 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 mock.module("../client-identity.js", () => ({
   getClientRegistrationHeaders: async () => ({
-    "X-Vellum-Client-Id": "ext-test-id",
-    "X-Vellum-Interface-Id": "chrome-extension",
+    "X-Cadet-Client-Id": "ext-test-id",
+    "X-Cadet-Interface-Id": "chrome-extension",
   }),
   getClientId: async () => "ext-test-id",
 }));

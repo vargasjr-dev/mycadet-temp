@@ -426,7 +426,7 @@ export type ConversationToolUseBlock = z.infer<
   typeof ConversationToolUseBlockSchema
 >;
 
-/** A vellum surface projection (no provider analog). */
+/** A cadet surface projection (no provider analog). */
 export const ConversationSurfaceBlockSchema = z.object({
   type: z.literal("surface"),
   surface: ConversationMessageSurfaceSchema,
@@ -436,7 +436,7 @@ export type ConversationSurfaceBlock = z.infer<
 >;
 
 /**
- * A vellum attachment projection (no provider analog).
+ * A cadet attachment projection (no provider analog).
  *
  * The inlined `attachment` is a metadata-only positional reference:
  * `data`/`thumbnailData` are never populated here. The payload ships once,
@@ -467,7 +467,7 @@ export type ConversationAttachmentBlock = z.infer<
  *   - internal/sensitive provider fields are dropped (risk/approval scratch
  *     fields, raw base64 image bytes, provider thought signatures, opaque
  *     server-tool blobs).
- *   - vellum projections with no provider analog (`surface`, `attachment`)
+ *   - cadet projections with no provider analog (`surface`, `attachment`)
  *     reuse the existing history schemas.
  *
  * The daemon builds this array directly from the model-native content while

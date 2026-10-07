@@ -42,7 +42,7 @@ describe("resolveSpeechRelayConnection", () => {
     expect(connection!.wsBaseUrl).toBe("ws://gateway:7822");
     // The token targets the gateway audience with the daemon service sub.
     expect(connection!.mintServiceToken()).toBe(
-      "minted-token:vellum-gateway:svc:daemon:self",
+      "minted-token:cadet-gateway:svc:daemon:self",
     );
   });
 

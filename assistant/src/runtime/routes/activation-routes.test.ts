@@ -105,9 +105,9 @@ let workspaceDir: string;
 let origWorkspaceDir: string | undefined;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-activation-routes-"));
-  origWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-activation-routes-"));
+  origWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
   publishedOrigins.length = 0;
   existingConversationIds.clear();
   existingConversationIds.add("conv-1");
@@ -116,9 +116,9 @@ beforeEach(() => {
 afterEach(() => {
   setActivationLockTimingForTesting();
   if (origWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = origWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = origWorkspaceDir;
   }
   rmSync(workspaceDir, { recursive: true, force: true });
 });
@@ -192,11 +192,11 @@ describe("activation routes", () => {
     await call(startTaskRoute, {
       pathParams: { taskId: "draft-email" },
       body: { conversationId: "conv-1" },
-      headers: { "x-vellum-client-id": "client-a" },
+      headers: { "x-cadet-client-id": "client-a" },
     });
     await call(dismissRoute, {
       body: { kind: "modal" },
-      headers: { "x-vellum-client-id": "client-b" },
+      headers: { "x-cadet-client-id": "client-b" },
     });
 
     expect(publishedOrigins).toEqual(["client-a", "client-b"]);
@@ -206,7 +206,7 @@ describe("activation routes", () => {
     await call(startTaskRoute, {
       pathParams: { taskId: "draft-email" },
       body: { conversationId: "conv-1" },
-      headers: { "x-vellum-client-id": "  " },
+      headers: { "x-cadet-client-id": "  " },
     });
 
     expect(publishedOrigins).toEqual([undefined]);

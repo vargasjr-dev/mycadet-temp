@@ -32,8 +32,8 @@ const originalEnv = {
   openaiApiKey: process.env.OPENAI_API_KEY,
   xdgConfigHome: process.env.XDG_CONFIG_HOME,
   xdgDataHome: process.env.XDG_DATA_HOME,
-  vellumEnvironment: process.env.VELLUM_ENVIRONMENT,
-  vellumLockfileDir: process.env.VELLUM_LOCKFILE_DIR,
+  cadetEnvironment: process.env.CADET_ENVIRONMENT,
+  cadetLockfileDir: process.env.CADET_LOCKFILE_DIR,
 };
 
 let testDir = "";
@@ -59,10 +59,10 @@ function guardianTokenFixture(
 }
 
 function writeLockfile(entry: AssistantEntry): void {
-  const lockfileDir = process.env.VELLUM_LOCKFILE_DIR!;
+  const lockfileDir = process.env.CADET_LOCKFILE_DIR!;
   mkdirSync(lockfileDir, { recursive: true });
   writeFileSync(
-    join(lockfileDir, ".vellum.lock.json"),
+    join(lockfileDir, ".cadet.lock.json"),
     JSON.stringify(
       {
         assistants: [entry],
@@ -150,12 +150,12 @@ function secretWriteCall(): RecordedFetchCall {
 
 describe("setup command", () => {
   beforeEach(() => {
-    testDir = mkdtempSync(join(tmpdir(), "vellum-setup-test-"));
-    process.argv = ["bun", "vellum", "setup"];
+    testDir = mkdtempSync(join(tmpdir(), "cadet-setup-test-"));
+    process.argv = ["bun", "cadet", "setup"];
     process.env.XDG_CONFIG_HOME = join(testDir, "config");
     process.env.XDG_DATA_HOME = join(testDir, "data");
-    process.env.VELLUM_LOCKFILE_DIR = join(testDir, "lockfile");
-    delete process.env.VELLUM_ENVIRONMENT;
+    process.env.CADET_LOCKFILE_DIR = join(testDir, "lockfile");
+    delete process.env.CADET_ENVIRONMENT;
     delete process.env.ANTHROPIC_API_KEY;
     delete process.env.OPENAI_API_KEY;
     consoleLogSpy = spyOn(console, "log").mockImplementation(() => {});
@@ -170,8 +170,8 @@ describe("setup command", () => {
     setOptionalEnv("OPENAI_API_KEY", originalEnv.openaiApiKey);
     setOptionalEnv("XDG_CONFIG_HOME", originalEnv.xdgConfigHome);
     setOptionalEnv("XDG_DATA_HOME", originalEnv.xdgDataHome);
-    setOptionalEnv("VELLUM_ENVIRONMENT", originalEnv.vellumEnvironment);
-    setOptionalEnv("VELLUM_LOCKFILE_DIR", originalEnv.vellumLockfileDir);
+    setOptionalEnv("CADET_ENVIRONMENT", originalEnv.cadetEnvironment);
+    setOptionalEnv("CADET_LOCKFILE_DIR", originalEnv.cadetLockfileDir);
     consoleLogSpy.mockRestore();
     consoleErrorSpy.mockRestore();
     rmSync(testDir, { recursive: true, force: true });
@@ -204,7 +204,7 @@ describe("setup command", () => {
   });
 
   test("honors an explicit provider option", async () => {
-    process.argv = ["bun", "vellum", "setup", "--provider", "openai"];
+    process.argv = ["bun", "cadet", "setup", "--provider", "openai"];
     process.env.OPENAI_API_KEY = "test-openai-key";
     writeLockfile({
       assistantId: "assistant-123",
@@ -279,7 +279,7 @@ describe("setup command", () => {
       assistantId: "assistant-123",
       runtimeUrl: "https://assistant.example",
       bearerToken: "entry-token",
-      cloud: "vellum",
+      cloud: "cadet",
     });
 
     await setup();
@@ -296,7 +296,7 @@ describe("setup command", () => {
       assistantId: "assistant-123",
       runtimeUrl: "https://assistant.example",
       bearerToken: "entry-token",
-      cloud: "vellum",
+      cloud: "cadet",
     });
     saveGuardianToken(
       "assistant-123",
@@ -325,7 +325,7 @@ describe("setup command", () => {
       assistantId: "assistant-123",
       runtimeUrl: "https://assistant.example",
       bearerToken: "entry-token",
-      cloud: "vellum",
+      cloud: "cadet",
     });
     saveGuardianToken(
       "assistant-123",

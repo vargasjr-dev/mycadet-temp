@@ -154,7 +154,7 @@ exports.default = async function afterSign(context) {
   // build-mac-helper.sh writes alongside the bundle; fall back to walking
   // the bin directory for any .app folder if the sidecar is missing.
   let helperAppName = null;
-  const sidecarPath = path.join(binDir, ".vellum-mac-helper.bundle-name");
+  const sidecarPath = path.join(binDir, ".cadet-mac-helper.bundle-name");
   if (fs.existsSync(sidecarPath)) {
     helperAppName = fs.readFileSync(sidecarPath, "utf8").trim();
   }
@@ -165,18 +165,18 @@ exports.default = async function afterSign(context) {
         (entry) =>
           entry.isDirectory() &&
           entry.name.endsWith(".app") &&
-          entry.name !== "vellum-mac-helper.app",
+          entry.name !== "cadet-mac-helper.app",
       );
       if (discovered) {
         helperAppName = discovered.name.replace(/\.app$/, "");
       }
     } catch {
-      // fall through to the default `vellum-mac-helper.app` name
+      // fall through to the default `cadet-mac-helper.app` name
     }
   }
   const helperAppPath = helperAppName
     ? path.join(binDir, `${helperAppName}.app`)
-    : path.join(binDir, "vellum-mac-helper.app");
+    : path.join(binDir, "cadet-mac-helper.app");
 
   // The notifier addon is packed per architecture under bin/notifier/<arch>/,
   // so collect whatever architectures this build shipped.
@@ -213,7 +213,7 @@ exports.default = async function afterSign(context) {
       entitlements: path.join(entitlementsDir, "bun.plist"),
     },
     {
-      name: helperAppName ?? "vellum-mac-helper",
+      name: helperAppName ?? "cadet-mac-helper",
       path: helperAppPath,
       entitlements: path.join(entitlementsDir, "helper.plist"),
     },

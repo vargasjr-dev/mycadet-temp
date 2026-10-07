@@ -1,6 +1,6 @@
 # Completion notifications on desktop and web
 
-Implementation plan for [JARVIS-1578](https://linear.app/vellum/issue/JARVIS-1578/notify-on-desktop-and-web-when-the-assistant-finishes-and-when).
+Implementation plan for [JARVIS-1578](https://linear.app/cadet/issue/JARVIS-1578/notify-on-desktop-and-web-when-the-assistant-finishes-and-when).
 
 Status: implementation and source review complete; automated checks pass. Live device acceptance remains pending. Updated September 22, 2026.
 
@@ -40,11 +40,11 @@ An alert on a phone and an alert on a computer are separate device deliveries. A
 
 ## Existing work to preserve
 
-- [#39777](https://github.com/vellum-ai/vellum-assistant/pull/39777) emits unseen user-reply notifications, currently selecting only the `platform` mobile push channel.
-- [#42035](https://github.com/vellum-ai/vellum-assistant/pull/42035) provides Electron window attention and conversation-scoped presence, including keeping the desktop event stream open while minimized.
-- [#42499](https://github.com/vellum-ai/vellum-assistant/pull/42499) mirrors reply notifications into the notification bell.
-- [#41916](https://github.com/vellum-ai/vellum-assistant/pull/41916) provides scheduled-result notifications. The scheduler waits for delegated work, skips quiet schedules, and avoids a second notification when the run already delivered its result.
-- [#43092](https://github.com/vellum-ai/vellum-assistant/pull/43092) makes the shared web client honor `silent`. Ordinary completion notifications cannot banner merely by adding a delivery channel.
+- [#39777](https://github.com/vargasjr-dev/mycadet/pull/39777) emits unseen user-reply notifications, currently selecting only the `platform` mobile push channel.
+- [#42035](https://github.com/vargasjr-dev/mycadet/pull/42035) provides Electron window attention and conversation-scoped presence, including keeping the desktop event stream open while minimized.
+- [#42499](https://github.com/vargasjr-dev/mycadet/pull/42499) mirrors reply notifications into the notification bell.
+- [#41916](https://github.com/vargasjr-dev/mycadet/pull/41916) provides scheduled-result notifications. The scheduler waits for delegated work, skips quiet schedules, and avoids a second notification when the run already delivered its result.
+- [#43092](https://github.com/vargasjr-dev/mycadet/pull/43092) makes the shared web client honor `silent`. Ordinary completion notifications cannot banner merely by adding a delivery channel.
 - `conversation-pairing.ts` already prevents a `chat.assistant_reply` preview from being appended as a duplicate transcript message. Keep that behavior.
 
 Evidence comes from code and PR review. It does not establish end-to-end device behavior or the version installed by any particular user.

@@ -421,14 +421,14 @@ describe("ContactStore.getContactRich", () => {
     seedAssistantInfo({
       id: "bot",
       contactType: "assistant",
-      species: "vellum",
+      species: "cadet",
       metadata: { model: "opus" },
     });
 
     const result = await new ContactStore().getContactRich("bot");
     expect(result!.assistantMetadata).toEqual({
       contactId: "bot",
-      species: "vellum",
+      species: "cadet",
       metadata: { model: "opus" },
     });
 

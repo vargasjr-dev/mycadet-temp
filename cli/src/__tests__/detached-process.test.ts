@@ -50,7 +50,7 @@ const tempDirs: string[] = [];
 describe("relaunchDetached", () => {
   beforeEach(() => {
     spawnMock.mockClear();
-    const configHome = mkdtempSync(join(tmpdir(), "vellum-detached-xdg-"));
+    const configHome = mkdtempSync(join(tmpdir(), "cadet-detached-xdg-"));
     tempDirs.push(configHome);
     process.env.XDG_CONFIG_HOME = configHome;
   });

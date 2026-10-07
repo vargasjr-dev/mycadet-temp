@@ -8,7 +8,7 @@ describe("normalizeEmailWebhook", () => {
   function makePayload(overrides?: Record<string, unknown>) {
     return {
       from: "alice@example.com",
-      to: "bot@vellum.me",
+      to: "bot@mycadet.bot",
       messageId: "<msg-1@example.com>",
       conversationId: "conv-1",
       subject: "Test Subject",
@@ -23,7 +23,7 @@ describe("normalizeEmailWebhook", () => {
     const result = normalizeEmailWebhook(makePayload());
     expect(result).not.toBeNull();
     expect(result!.eventId).toBe("<msg-1@example.com>");
-    expect(result!.recipientAddress).toBe("bot@vellum.me");
+    expect(result!.recipientAddress).toBe("bot@mycadet.bot");
     expect(result!.event.sourceChannel).toBe("email");
     expect(result!.event.message.content).toBe("Hello, world!");
     expect(result!.event.message.conversationExternalId).toBe("conv-1");
@@ -36,7 +36,7 @@ describe("normalizeEmailWebhook", () => {
     // Missing 'from'
     expect(
       normalizeEmailWebhook({
-        to: "bot@vellum.me",
+        to: "bot@mycadet.bot",
         messageId: "m",
         conversationId: "c",
       }),
@@ -53,7 +53,7 @@ describe("normalizeEmailWebhook", () => {
     expect(
       normalizeEmailWebhook({
         from: "a@b.com",
-        to: "bot@vellum.me",
+        to: "bot@mycadet.bot",
         conversationId: "c",
       }),
     ).toBeNull();
@@ -61,7 +61,7 @@ describe("normalizeEmailWebhook", () => {
     expect(
       normalizeEmailWebhook({
         from: "a@b.com",
-        to: "bot@vellum.me",
+        to: "bot@mycadet.bot",
         messageId: "m",
       }),
     ).toBeNull();

@@ -40,9 +40,9 @@ interface RetireArchiveCommand {
 
 const WINDOWS_RETIRE_ARCHIVE_SCRIPT = [
   "$ErrorActionPreference = 'Stop'",
-  "& tar.exe -czf $env:VELLUM_RETIRE_ARCHIVE_PATH -C $env:VELLUM_RETIRE_ARCHIVE_PARENT $env:VELLUM_RETIRE_STAGING_NAME",
+  "& tar.exe -czf $env:CADET_RETIRE_ARCHIVE_PATH -C $env:CADET_RETIRE_ARCHIVE_PARENT $env:CADET_RETIRE_STAGING_NAME",
   "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }",
-  "Remove-Item -LiteralPath $env:VELLUM_RETIRE_STAGING_DIR -Recurse -Force",
+  "Remove-Item -LiteralPath $env:CADET_RETIRE_STAGING_DIR -Recurse -Force",
 ].join("; ");
 
 export function getRetireArchiveCommand(
@@ -66,10 +66,10 @@ export function getRetireArchiveCommand(
         WINDOWS_RETIRE_ARCHIVE_SCRIPT,
       ],
       env: {
-        VELLUM_RETIRE_ARCHIVE_PATH: archivePath,
-        VELLUM_RETIRE_ARCHIVE_PARENT: archiveParent,
-        VELLUM_RETIRE_STAGING_NAME: stagingName,
-        VELLUM_RETIRE_STAGING_DIR: stagingDir,
+        CADET_RETIRE_ARCHIVE_PATH: archivePath,
+        CADET_RETIRE_ARCHIVE_PARENT: archiveParent,
+        CADET_RETIRE_STAGING_NAME: stagingName,
+        CADET_RETIRE_STAGING_DIR: stagingDir,
       },
     };
   }
@@ -78,7 +78,7 @@ export function getRetireArchiveCommand(
     args: [
       "-c",
       'tar czf "$1" -C "$2" "$3" && rm -rf "$4"',
-      "vellum-retire",
+      "cadet-retire",
       archivePath,
       archiveParent,
       stagingName,
@@ -100,20 +100,20 @@ export async function retireLocal(
     );
   }
   const resources = entry.resources;
-  const vellumDir = join(resources.instanceDir, ".vellum");
+  const cadetDir = join(resources.instanceDir, ".cadet");
 
   // Check whether another local assistant shares the same data directory.
   const otherSharesDir = loadAllAssistants().some((other) => {
     if (other.cloud !== "local") return false;
     if (other.assistantId === name) return false;
     if (!other.resources) return false;
-    const otherVellumDir = join(other.resources.instanceDir, ".vellum");
-    return otherVellumDir === vellumDir;
+    const otherCadetDir = join(other.resources.instanceDir, ".cadet");
+    return otherCadetDir === cadetDir;
   });
 
   if (otherSharesDir) {
     reporter.log(
-      `   Skipping process stop and archive — another local assistant shares ${vellumDir}.`,
+      `   Skipping process stop and archive — another local assistant shares ${cadetDir}.`,
     );
     reporter.log("\u2705 Local instance retired (config entry removed only).");
     return { assistantId: name, archived: false, sharedDataDir: true };
@@ -129,12 +129,12 @@ export async function retireLocal(
 
   // Stop gateway via PID file — use a longer timeout because the gateway has a
   // drain window (5s) before it exits.
-  const gatewayPidFile = join(vellumDir, "gateway.pid");
+  const gatewayPidFile = join(cadetDir, "gateway.pid");
   await stopProcessByPidFile(gatewayPidFile, "gateway", undefined, 7000);
 
   // Stop the CES sibling — it is stopped by its PID file, a no-op when the
   // PID file is absent (e.g. the sibling was never started or already exited).
-  const cesPidFile = join(vellumDir, "ces.pid");
+  const cesPidFile = join(cadetDir, "ces.pid");
   const cesStopped = await stopProcessByPidFile(
     cesPidFile,
     "credential-executor",
@@ -148,19 +148,19 @@ export async function retireLocal(
   // (crash, OOM kill, or the SIGKILL ceiling above) leaves Qdrant running as
   // an orphan. Check both the current PID file location and the legacy one.
   const qdrantPidFile = join(
-    vellumDir,
+    cadetDir,
     "workspace",
     "data",
     "qdrant",
     "qdrant.pid",
   );
-  const qdrantLegacyPidFile = join(vellumDir, "qdrant.pid");
+  const qdrantLegacyPidFile = join(cadetDir, "qdrant.pid");
   await stopProcessByPidFile(qdrantPidFile, "qdrant", undefined, 5000);
   await stopProcessByPidFile(qdrantLegacyPidFile, "qdrant", undefined, 5000);
 
   // Stop the nginx ingress if one is fronting this gateway — it would
   // otherwise be orphaned when the instance directory is archived.
-  await stopIngressNginx(join(vellumDir, "workspace"));
+  await stopIngressNginx(join(cadetDir, "workspace"));
 
   // If the PID file didn't track a running daemon, scan for orphaned
   // daemon processes that may have been started without writing a PID.
@@ -177,9 +177,9 @@ export async function retireLocal(
 
   // For named instances (instanceDir differs from the base directory),
   // archive and remove the entire instance directory. For the default
-  // instance, archive only the .vellum subdirectory.
+  // instance, archive only the .cadet subdirectory.
   const isNamedInstance = resources.instanceDir !== homedir();
-  const dirToArchive = isNamedInstance ? resources.instanceDir : vellumDir;
+  const dirToArchive = isNamedInstance ? resources.instanceDir : cadetDir;
 
   // Move the data directory out of the way so the path is immediately available
   // for the next hatch, then kick off the tar archive in the background.

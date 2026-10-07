@@ -32,10 +32,10 @@ import { commitImport } from "../vbundle-importer.js";
 import { defaultV1Options } from "./v1-test-helpers.js";
 
 // ---------------------------------------------------------------------------
-// Shared fixture: per-test workspace under VELLUM_WORKSPACE_DIR.
+// Shared fixture: per-test workspace under CADET_WORKSPACE_DIR.
 // ---------------------------------------------------------------------------
 
-const WORKSPACE_ROOT = process.env.VELLUM_WORKSPACE_DIR!;
+const WORKSPACE_ROOT = process.env.CADET_WORKSPACE_DIR!;
 const USERS_DIR = join(WORKSPACE_ROOT, "users");
 
 const LEGACY_USER_MD_CONTENT = `# User Profile

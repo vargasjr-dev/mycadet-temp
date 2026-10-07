@@ -66,7 +66,7 @@ describe("materializing a conversation from a channel key", () => {
     });
 
     const second = getOrCreateConversation("default:slack:slack", {
-      origin: "vellum",
+      origin: "cadet",
     });
 
     expect(second.created).toBe(false);
@@ -97,7 +97,7 @@ describe("what the attribution protects", () => {
     // The other half: attributing at creation must not withdraw trust from
     // the guardian's own conversations, or every local wake regresses.
     const { conversationId } = getOrCreateConversation("native-key", {
-      origin: "vellum",
+      origin: "cadet",
     });
 
     expect(recoverRestingTrustContext(conversationId)).not.toBeNull();

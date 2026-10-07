@@ -113,5 +113,5 @@ function backupProfilesResolveUnderDefaultProvider(
   const provider = isPlainObject(defaultProvider)
     ? defaultProvider.provider
     : undefined;
-  return typeof provider !== "string" || provider === "vellum";
+  return typeof provider !== "string" || provider === "cadet";
 }

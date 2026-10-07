@@ -36,11 +36,11 @@ Open: `https://discord.com/developers/applications`
 
 After the user clicks:
 
-> Set the application name to **Vellum Assistant**, accept the Developer Terms of Service and Developer Policy, then click **Create**.
+> Set the application name to **Cadet Assistant**, accept the Developer Terms of Service and Developer Policy, then click **Create**.
 
 **Known issues:**
 
-- If the user already has an application named "Vellum Assistant", they can either reuse it or pick a different name
+- If the user already has an application named "Cadet Assistant", they can either reuse it or pick a different name
 - Discord may show a CAPTCHA during creation
 
 **Milestone (2 of 8):** "Application created - now let's head to the OAuth2 settings."
@@ -103,7 +103,7 @@ channel. Discord's `messages.read` grants nothing to a server-side app (its
 docs scope it to a local RPC client), so asking for it only adds a permission
 to the consent screen.
 
-> I'll start the Discord authorization flow now. You should see a Discord consent page asking you to authorize **Vellum Assistant** to access your account.
+> I'll start the Discord authorization flow now. You should see a Discord consent page asking you to authorize **Cadet Assistant** to access your account.
 >
 > Review the permissions and click **Authorize**.
 

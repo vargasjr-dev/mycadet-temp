@@ -11,13 +11,13 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-// Real assistant-config reads the lockfile from VELLUM_LOCKFILE_DIR. Pin the
+// Real assistant-config reads the lockfile from CADET_LOCKFILE_DIR. Pin the
 // environment too: the lockfile filename is environment-dependent, and a dev
 // machine's persisted default environment would otherwise redirect the lookup.
 const testDir = mkdtempSync(join(tmpdir(), "pair-command-test-"));
-process.env.VELLUM_LOCKFILE_DIR = testDir;
-const originalEnvironment = process.env.VELLUM_ENVIRONMENT;
-process.env.VELLUM_ENVIRONMENT = "production";
+process.env.CADET_LOCKFILE_DIR = testDir;
+const originalEnvironment = process.env.CADET_ENVIRONMENT;
+process.env.CADET_ENVIRONMENT = "production";
 
 import { buildAppConnectUrl, pair } from "../commands/pair.js";
 
@@ -69,7 +69,7 @@ function stubPairingGateway(
 
 function writeLockfile(): void {
   writeFileSync(
-    join(testDir, ".vellum.lock.json"),
+    join(testDir, ".cadet.lock.json"),
     JSON.stringify({
       assistants: [
         {
@@ -85,7 +85,7 @@ function writeLockfile(): void {
 }
 
 // Capture the real argv ONCE, before any test mutates it, and restore after
-// every test — so a `['bun','vellum','pair',...]` argv can't leak into other
+// every test — so a `['bun','cadet','pair',...]` argv can't leak into other
 // test files in the same Bun run.
 const ORIGINAL_ARGV = [...process.argv];
 
@@ -100,11 +100,11 @@ describe("pair command", () => {
 
   afterAll(() => {
     rmSync(testDir, { recursive: true, force: true });
-    delete process.env.VELLUM_LOCKFILE_DIR;
+    delete process.env.CADET_LOCKFILE_DIR;
     if (originalEnvironment === undefined) {
-      delete process.env.VELLUM_ENVIRONMENT;
+      delete process.env.CADET_ENVIRONMENT;
     } else {
-      process.env.VELLUM_ENVIRONMENT = originalEnvironment;
+      process.env.CADET_ENVIRONMENT = originalEnvironment;
     }
   });
 
@@ -120,7 +120,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = ["bun", "vellum", "pair", "--url", PUBLIC_URL];
+    process.argv = ["bun", "cadet", "pair", "--url", PUBLIC_URL];
     try {
       await pair();
     } finally {
@@ -166,7 +166,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = ["bun", "vellum", "pair", "--url", PUBLIC_URL, "--json"];
+    process.argv = ["bun", "cadet", "pair", "--url", PUBLIC_URL, "--json"];
     try {
       await pair();
     } finally {
@@ -225,10 +225,10 @@ describe("pair command", () => {
     let plain: { urls: string[]; output: string };
     let withQr: { urls: string[]; output: string };
     try {
-      plain = await runPair(["bun", "vellum", "pair", "--url", PUBLIC_URL]);
+      plain = await runPair(["bun", "cadet", "pair", "--url", PUBLIC_URL]);
       withQr = await runPair([
         "bun",
-        "vellum",
+        "cadet",
         "pair",
         "--qr",
         "--url",
@@ -252,7 +252,7 @@ describe("pair command", () => {
         logs.push(a.join(" "));
       },
     );
-    process.argv = ["bun", "vellum", "pair", "--help"];
+    process.argv = ["bun", "cadet", "pair", "--help"];
     try {
       await pair();
     } finally {
@@ -284,10 +284,10 @@ describe("pair command", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "pair",
       "--app-scheme",
-      "vellum-assistant-dev",
+      "mycadet-dev",
       "--url",
       PUBLIC_URL,
     ];
@@ -328,7 +328,7 @@ describe("pair command", () => {
       throw new Error(`exit:${code}`);
     }) as never);
 
-    process.argv = ["bun", "vellum", "pair", "--web", "--url", PUBLIC_URL];
+    process.argv = ["bun", "cadet", "pair", "--web", "--url", PUBLIC_URL];
     let exited = false;
     try {
       await pair();
@@ -351,7 +351,7 @@ describe("pair command", () => {
   test("resolves an unquoted multi-word display name", async () => {
     // Assistant whose display name has a space; passed as separate argv tokens.
     writeFileSync(
-      join(testDir, ".vellum.lock.json"),
+      join(testDir, ".cadet.lock.json"),
       JSON.stringify({
         assistants: [
           {
@@ -373,7 +373,7 @@ describe("pair command", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "pair",
       "My",
       "Assistant",
@@ -414,7 +414,7 @@ describe("pair command", () => {
       throw new Error(`exit:${code}`);
     }) as never);
 
-    process.argv = ["bun", "vellum", "pair", "--frobnicate"];
+    process.argv = ["bun", "cadet", "pair", "--frobnicate"];
     let exited = false;
     try {
       await pair();
@@ -438,7 +438,7 @@ describe("pair command", () => {
 
   test("rejects an unknown --flag even alongside a multi-word positional name", async () => {
     writeFileSync(
-      join(testDir, ".vellum.lock.json"),
+      join(testDir, ".cadet.lock.json"),
       JSON.stringify({
         assistants: [
           {
@@ -472,7 +472,7 @@ describe("pair command", () => {
     }) as never);
 
     // Positional name tokens must not rescue an unknown flag from rejection.
-    process.argv = ["bun", "vellum", "pair", "My", "Assistant", "--frobnicate"];
+    process.argv = ["bun", "cadet", "pair", "My", "Assistant", "--frobnicate"];
     let exited = false;
     try {
       await pair();
@@ -493,7 +493,7 @@ describe("pair command", () => {
     // Local hatch on a NON-default gateway port (e.g. a 2nd instance).
     const LOOPBACK_CUSTOM = "http://127.0.0.1:7842";
     writeFileSync(
-      join(testDir, ".vellum.lock.json"),
+      join(testDir, ".cadet.lock.json"),
       JSON.stringify({
         assistants: [
           {
@@ -525,7 +525,7 @@ describe("pair command", () => {
       throw new Error(`exit:${code}`);
     }) as never);
 
-    process.argv = ["bun", "vellum", "pair"];
+    process.argv = ["bun", "cadet", "pair"];
     let exited = false;
     try {
       await pair();
@@ -552,7 +552,7 @@ describe("pair command", () => {
 
   test("--url override wins over a loopback runtime URL", async () => {
     writeFileSync(
-      join(testDir, ".vellum.lock.json"),
+      join(testDir, ".cadet.lock.json"),
       JSON.stringify({
         assistants: [
           {
@@ -577,7 +577,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = ["bun", "vellum", "pair", "--url", OVERRIDE, "--json"];
+    process.argv = ["bun", "cadet", "pair", "--url", OVERRIDE, "--json"];
     try {
       await pair();
     } finally {
@@ -597,7 +597,7 @@ describe("pair command", () => {
 
   test("--web-approve approves a browser pairing code over loopback", async () => {
     writeFileSync(
-      join(testDir, ".vellum.lock.json"),
+      join(testDir, ".cadet.lock.json"),
       JSON.stringify({
         assistants: [
           {
@@ -637,7 +637,7 @@ describe("pair command", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "pair",
       "--web-approve",
       "ABCD-EFGH",
@@ -683,7 +683,7 @@ describe("pair command", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "pair",
       "--url",
       "http://pair.example.com",
@@ -724,7 +724,7 @@ describe("pair command", () => {
       throw new Error(`exit:${code}`);
     }) as never);
 
-    process.argv = ["bun", "vellum", "pair", "--url", "http://127.0.0.1:7830"];
+    process.argv = ["bun", "cadet", "pair", "--url", "http://127.0.0.1:7830"];
     let exited = false;
     try {
       await pair();
@@ -760,7 +760,7 @@ describe("pair command", () => {
       throw new Error(`exit:${code}`);
     }) as never);
 
-    process.argv = ["bun", "vellum", "pair", "--url", "not-a-url"];
+    process.argv = ["bun", "cadet", "pair", "--url", "not-a-url"];
     let exited = false;
     try {
       await pair();
@@ -803,7 +803,7 @@ describe("pair command", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "pair",
       "--url",
       "https://login.tailscale.com/admin/invite/abc123",
@@ -831,45 +831,45 @@ describe("pair command", () => {
   test("buildAppConnectUrl composes and encodes the connect link", () => {
     expect(
       buildAppConnectUrl(
-        "vellum-assistant",
+        "mycadet",
         "https://pair.example.ts.net",
         "device-code",
       ),
     ).toBe(
-      "vellum-assistant://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code",
+      "mycadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code",
     );
     // Path prefixes and fragment-hostile characters survive the encoding.
     expect(
       buildAppConnectUrl(
-        "vellum-assistant-dev",
+        "mycadet-dev",
         "https://host.example.ts.net/assistant-123",
         "a+b/c=",
       ),
     ).toBe(
-      "vellum-assistant-dev://connect?url=https%3A%2F%2Fhost.example.ts.net%2Fassistant-123&code=a%2Bb%2Fc%3D",
+      "mycadet-dev://connect?url=https%3A%2F%2Fhost.example.ts.net%2Fassistant-123&code=a%2Bb%2Fc%3D",
     );
     // A label rides along as an encoded `name` param (spaces percent-encoded,
     // not form-encoded, for the app's URLComponents parser); an empty one is
     // omitted.
     expect(
       buildAppConnectUrl(
-        "vellum-assistant",
+        "mycadet",
         "https://pair.example.ts.net",
         "device-code",
         "My Homelab",
       ),
     ).toBe(
-      "vellum-assistant://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code&name=My%20Homelab",
+      "mycadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code&name=My%20Homelab",
     );
     expect(
       buildAppConnectUrl(
-        "vellum-assistant",
+        "mycadet",
         "https://pair.example.ts.net",
         "device-code",
         "",
       ),
     ).toBe(
-      "vellum-assistant://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code",
+      "mycadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code",
     );
   });
 
@@ -910,11 +910,11 @@ describe("pair command", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "pair",
       "--app",
       "--app-scheme",
-      "vellum-assistant-dev",
+      "mycadet-dev",
       "--url",
       "https://pair.example.ts.net",
       "--json",
@@ -930,7 +930,7 @@ describe("pair command", () => {
     // Without --label the connect link names the assistant after its lockfile
     // display name (the id here, since the entry has no name).
     expect(out.appUrl).toBe(
-      "vellum-assistant-dev://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code&name=pair-test",
+      "mycadet-dev://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code&name=pair-test",
     );
     // The browser URL stays available as the no-app fallback.
     expect(out.pairUrl).toBe(
@@ -976,7 +976,7 @@ describe("pair command", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "pair",
       "--app",
       "--label",
@@ -994,7 +994,7 @@ describe("pair command", () => {
 
     const out = JSON.parse(logs.join("\n"));
     expect(out.appUrl).toBe(
-      "vellum-assistant://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code&name=Homelab",
+      "mycadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code&name=Homelab",
     );
   });
 
@@ -1019,7 +1019,7 @@ describe("pair command", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "pair",
       "--app",
       "--web-approve",
@@ -1043,7 +1043,7 @@ describe("pair command", () => {
 
   function writeLockfileWithIngress(ingressUrl: string): void {
     writeFileSync(
-      join(testDir, ".vellum.lock.json"),
+      join(testDir, ".cadet.lock.json"),
       JSON.stringify({
         assistants: [
           {
@@ -1102,7 +1102,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = ["bun", "vellum", "pair"];
+    process.argv = ["bun", "cadet", "pair"];
     try {
       await pair();
     } finally {
@@ -1162,7 +1162,7 @@ describe("pair command", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "pair",
       "--url",
       "https://explicit.example.ts.net",
@@ -1199,7 +1199,7 @@ describe("pair command", () => {
       throw new Error(`exit:${code}`);
     }) as never);
 
-    process.argv = ["bun", "vellum", "pair"];
+    process.argv = ["bun", "cadet", "pair"];
     let exited = false;
     try {
       await pair();
@@ -1240,7 +1240,7 @@ describe("pair command", () => {
       throw new Error(`exit:${code}`);
     }) as never);
 
-    process.argv = ["bun", "vellum", "pair"];
+    process.argv = ["bun", "cadet", "pair"];
     let exited = false;
     try {
       await pair();

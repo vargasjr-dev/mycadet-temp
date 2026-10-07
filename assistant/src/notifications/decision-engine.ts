@@ -84,7 +84,7 @@ const MAX_IDENTITY_CONTEXT_CHARS = 2000;
 
 /** Completion alerts reach connected clients and registered mobile devices. */
 const COMPLETION_CHANNELS = [
-  "vellum",
+  "cadet",
   "platform",
 ] as const satisfies readonly NotificationChannel[];
 
@@ -148,7 +148,7 @@ function buildSystemPrompt(
     `When a routing intent is present, respect it in your channel selection. A post-decision guard will enforce the intent.`,
     ``,
     `Copy guidelines (three distinct outputs):`,
-    `- \`title\` and \`body\` are for native notification popups (e.g. vellum desktop/mobile) — keep them short and glanceable (title ≤ 8 words, body ≤ 2 sentences).`,
+    `- \`title\` and \`body\` are for native notification popups (e.g. cadet desktop/mobile) — keep them short and glanceable (title ≤ 8 words, body ≤ 2 sentences).`,
     `  - Write popup copy as final copy for the guardian or recipient. Do not write instructions for the assistant or another intermediary.`,
     `- \`deliveryText\` is the channel-native message for chat channels (e.g. telegram). It must read naturally as a standalone message.`,
     `  - Do not prepend mechanical labels like "Conversation:".`,
@@ -159,7 +159,7 @@ function buildSystemPrompt(
     `  - For telegram: 1-2 concise sentences.`,
     `  - For guardian requests (approvals, questions, access requests) on every channel: describe the request only. Never include reference or approval codes, code-reply instructions, or directions to respond elsewhere. The delivery layer adds buttons, or typed-reply instructions where a channel has none.`,
     `- \`conversationSeedMessage\` is the opening message in the internal notification conversation and also the expanded detail shown in the home feed. It should be richer and more contextual than the popup body.`,
-    `  - For vellum (desktop): use structured markdown for readability. Break content into bullet points, numbered lists, or short sections with **bold** labels. Avoid long unbroken paragraphs — scan-friendly formatting is preferred.`,
+    `  - For cadet (desktop): use structured markdown for readability. Break content into bullet points, numbered lists, or short sections with **bold** labels. Avoid long unbroken paragraphs — scan-friendly formatting is preferred.`,
     `  - Never dump raw JSON. Include only human-readable context.`,
     ``,
     `Conversation reuse guidelines:`,
@@ -305,7 +305,7 @@ function buildDecisionTool(availableChannels: NotificationChannel[]) {
                   conversationSeedMessage: {
                     type: "string",
                     description:
-                      "Richer opening message for the notification conversation. More contextual than title/body. For vellum: 2-4 sentences. For telegram: 1-2 sentences. Never raw JSON.",
+                      "Richer opening message for the notification conversation. More contextual than title/body. For cadet: 2-4 sentences. For telegram: 1-2 sentences. Never raw JSON.",
                   },
                 },
                 required: ["title", "body"],
@@ -378,19 +378,19 @@ function buildFallbackDecision(
     (urgency === "high" || urgency === "critical") &&
     signal.attentionHints.requiresAction;
 
-  // Always include the vellum channel in the fallback — it's a local
+  // Always include the cadet channel in the fallback — it's a local
   // broadcast with no cost, so desktop notifications should never be lost
   // when the LLM is unavailable. External channels (e.g. Telegram) are
   // only included for high-urgency actionable signals.
   const selectedChannels: NotificationChannel[] = isHighUrgencyAction
     ? [...availableChannels]
-    : availableChannels.filter((ch) => ch === "vellum");
+    : availableChannels.filter((ch) => ch === "cadet");
 
   if (selectedChannels.length === 0) {
     return {
       shouldNotify: false,
       selectedChannels: [],
-      reasoningSummary: "Fallback: suppressed (vellum channel not available)",
+      reasoningSummary: "Fallback: suppressed (cadet channel not available)",
       renderedCopy: {},
       dedupeKey: `fallback:${signal.sourceEventName}:${signal.sourceContextId}:${signal.createdAt}`,
       confidence: 0.3,
@@ -405,7 +405,7 @@ function buildFallbackDecision(
     selectedChannels,
     reasoningSummary: isHighUrgencyAction
       ? "Fallback: high urgency + requires action — all channels"
-      : "Fallback: vellum-only (local, always delivered)",
+      : "Fallback: cadet-only (local, always delivered)",
     renderedCopy: copy,
     dedupeKey: `fallback:${signal.sourceEventName}:${signal.sourceContextId}:${signal.createdAt}`,
     confidence: 0.3,
@@ -774,7 +774,7 @@ function enforceAccessRequestSeedBlocks(
  *
  * `renderedCopy` and `conversationActions` are populated for every available
  * channel, not just `selectedChannels`: downstream guards (routing-intent
- * expansion in `enforceRoutingIntent`, urgency-forced vellum prepending in
+ * expansion in `enforceRoutingIntent`, urgency-forced cadet prepending in
  * `emit-signal`) may widen `selectedChannels` afterwards, and pre-seeding
  * keeps the verbatim message from degrading to an empty
  * `composeFallbackCopy` body.
@@ -829,8 +829,8 @@ function selectDefaultChannelsByUrgency(
   if (isUrgent) {
     return [...availableChannels];
   }
-  return availableChannels.includes("vellum")
-    ? ["vellum" as NotificationChannel]
+  return availableChannels.includes("cadet")
+    ? ["cadet" as NotificationChannel]
     : [];
 }
 
@@ -888,7 +888,7 @@ export async function evaluateSignal(
     );
     // `channelAllowlist` is exclusive: only those available channels are
     // selected. `preferredChannels` is additive on top of the default set
-    // (vellum stays the canonical inbox) and is ignored when an allowlist
+    // (cadet stays the canonical inbox) and is ignored when an allowlist
     // is present. Disconnected names are dropped so we never deliver on
     // something unavailable.
     const exclusiveAllowlist = readChannelAllowlist(payload);
@@ -1071,7 +1071,7 @@ async function classifyWithLLM(
 
   // Resolve guardian contact notes for recipient context. The guardian's
   // identity (ACL) comes from the gateway pull, channel-agnostic so notes are
-  // available even when the only deliverable channel is "vellum". Notes (INFO)
+  // available even when the only deliverable channel is "cadet". Notes (INFO)
   // stay local and are joined by contactId.
   let recipientNotes: string | undefined;
   try {
@@ -1279,8 +1279,8 @@ export function enforceRoutingIntent(
 // ── Guardian request conversation affinity ───────────────────────────────
 
 /**
- * Force a new vellum conversation for guardian-request signals that carry no
- * vellum affinity hint.
+ * Force a new cadet conversation for guardian-request signals that carry no
+ * cadet affinity hint.
  *
  * Guardian cards (tool approvals, tool grants, access requests, voice and
  * ask_question prompts) are pinned to their originating conversation by the
@@ -1302,7 +1302,7 @@ export function enforceGuardianRequestConversationAffinity(
     return decision;
   }
 
-  if (signal.conversationAffinityHint?.vellum) {
+  if (signal.conversationAffinityHint?.cadet) {
     return decision;
   }
 
@@ -1312,12 +1312,12 @@ export function enforceGuardianRequestConversationAffinity(
   > = {
     ...(decision.conversationActions ?? {}),
   };
-  conversationActions.vellum = { action: "start_new" };
+  conversationActions.cadet = { action: "start_new" };
   enforced.conversationActions = conversationActions;
 
   log.info(
     { sourceEventName: signal.sourceEventName },
-    "Guardian request conversation affinity: no vellum pin — forcing start_new",
+    "Guardian request conversation affinity: no cadet pin — forcing start_new",
   );
 
   return enforced;

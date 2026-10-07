@@ -126,14 +126,14 @@ describe("GET /v1/channel-admission-policy", () => {
   });
 
   test("omits exempt `a2a` and hidden `cadet`/`whatsapp` but includes enforced `phone`", async () => {
-    // a2a stays exempt (no runtime admission model). vellum/whatsapp are still
+    // a2a stays exempt (no runtime admission model). cadet/whatsapp are still
     // enforced at runtime but hidden from the Channel Trust Floors UI, so they
     // must not surface even when a row is persisted. phone is now enforced and
     // visible, so it must surface.
     store.set("a2a", "guardian_only");
-    store.set("vellum", "guardian_only");
+    store.set("cadet", "guardian_only");
     store.set("whatsapp", "guardian_only");
-    store.set("vellum-shared", "guardian_only");
+    store.set("cadet-shared", "guardian_only");
 
     const handler = createChannelAdmissionPolicyListHandler();
     const res = await handler(
@@ -144,9 +144,9 @@ describe("GET /v1/channel-admission-policy", () => {
     };
     const seen = new Set(body.policies.map((p) => p.channelType));
     expect(seen.has("a2a")).toBe(false);
-    expect(seen.has("vellum")).toBe(false);
+    expect(seen.has("cadet")).toBe(false);
     expect(seen.has("whatsapp")).toBe(false);
-    expect(seen.has("vellum-shared")).toBe(false);
+    expect(seen.has("cadet-shared")).toBe(false);
     // phone is enforced + visible; other visible channels still surface.
     expect(seen.has("phone")).toBe(true);
     expect(seen.has("telegram")).toBe(true);
@@ -241,11 +241,11 @@ describe("PUT /v1/channel-admission-policy/:channelType", () => {
     expect(body.policy.note).toBeNull();
   });
 
-  test("rejects PUT for hidden channels (`cadet`, `vellum-shared`, `whatsapp`) with 403", async () => {
+  test("rejects PUT for hidden channels (`cadet`, `cadet-shared`, `whatsapp`) with 403", async () => {
     // Hidden channels are managed automatically and not user-configurable;
     // even a non-kill-switch policy must be rejected so no stranded row forms.
     const handler = createChannelAdmissionPolicySetHandler();
-    for (const channel of ["vellum", "vellum-shared", "whatsapp"] as const) {
+    for (const channel of ["cadet", "cadet-shared", "whatsapp"] as const) {
       const res = await handler(
         jsonRequest(
           `http://localhost/v1/channel-admission-policy/${channel}`,
@@ -310,7 +310,7 @@ describe("DELETE /v1/channel-admission-policy/:channelType", () => {
   test("rejects DELETE for hidden channels (`cadet`, `whatsapp`) with 403", async () => {
     store.set("whatsapp", "no_one");
     const handler = createChannelAdmissionPolicyDeleteHandler();
-    for (const channel of ["vellum", "whatsapp"] as const) {
+    for (const channel of ["cadet", "whatsapp"] as const) {
       const res = await handler(
         jsonRequest(
           `http://localhost/v1/channel-admission-policy/${channel}`,

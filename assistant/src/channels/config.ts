@@ -22,7 +22,7 @@ export interface ChannelNotificationPolicy {
 }
 
 const CHANNEL_POLICIES = {
-  vellum: {
+  cadet: {
     notification: {
       deliveryEnabled: true,
       conversationStrategy: "start_new_conversation",
@@ -55,7 +55,7 @@ const CHANNEL_POLICIES = {
   platform: {
     notification: {
       deliveryEnabled: true,
-      // Platform is a push-only relay — conversations are owned by the vellum
+      // Platform is a push-only relay — conversations are owned by the cadet
       // channel. push_only skips pairDeliveryWithConversation without implying
       // the channel is non-deliverable (which not_deliverable would).
       conversationStrategy: "push_only",
@@ -99,7 +99,7 @@ const CHANNEL_POLICIES = {
       conversationStrategy: "continue_existing_conversation",
     },
   },
-  "vellum-shared": {
+  "cadet-shared": {
     notification: {
       // A shared conversation has no transport: the contact's own client
       // reads replies over its connection, so there is nowhere to push to.

@@ -28,17 +28,17 @@ const { appId } = createRequire(import.meta.url)(
 ) as { appId: string };
 
 const BUILD_DEFINES = {
-  __VELLUM_APP_USER_MODEL_ID__: JSON.stringify(appId),
-  __VELLUM_BUILD_SHA__: JSON.stringify(resolveShortBuildCommitSha()),
-  __VELLUM_ENVIRONMENT__: JSON.stringify(
-    process.env.VELLUM_ENVIRONMENT || "local",
+  __CADET_APP_USER_MODEL_ID__: JSON.stringify(appId),
+  __CADET_BUILD_SHA__: JSON.stringify(resolveShortBuildCommitSha()),
+  __CADET_ENVIRONMENT__: JSON.stringify(
+    process.env.CADET_ENVIRONMENT || "local",
   ),
-  __VELLUM_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(
-    process.env.VELLUM_ENABLE_CHROME_DEVTOOLS === "true" ||
-      process.env.VELLUM_ENABLE_CHROME_DEVTOOLS === "1",
+  __CADET_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(
+    process.env.CADET_ENABLE_CHROME_DEVTOOLS === "true" ||
+      process.env.CADET_ENABLE_CHROME_DEVTOOLS === "1",
   ),
-  __VELLUM_ROOT_HOSTNAME__: JSON.stringify(
-    process.env.VITE_ROOT_HOSTNAME || ".vellum.ai",
+  __CADET_ROOT_HOSTNAME__: JSON.stringify(
+    process.env.VITE_ROOT_HOSTNAME || ".mycadet.ai",
   ),
 };
 

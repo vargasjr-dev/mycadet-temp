@@ -38,7 +38,7 @@ const STORAGE_JPEG_QUALITY = 90;
 const CACHE_MAX_ENTRIES = 500;
 
 function getCacheDir(): string {
-  return join(tmpdir(), "vellum-optimized-images");
+  return join(tmpdir(), "cadet-optimized-images");
 }
 
 /**
@@ -229,8 +229,8 @@ async function runSips(
   options: ConvertToJpegOptions,
 ): Promise<Buffer | null> {
   const stamp = `${Date.now()}-${uuid().slice(0, 8)}`;
-  const srcPath = join(tmpdir(), `vellum-img-opt-${stamp}-src`);
-  const outPath = join(tmpdir(), `vellum-img-opt-${stamp}-out.jpg`);
+  const srcPath = join(tmpdir(), `cadet-img-opt-${stamp}-src`);
+  const outPath = join(tmpdir(), `cadet-img-opt-${stamp}-out.jpg`);
   try {
     writeFileSync(srcPath, inputBytes);
     // `-z` resamples to an exact height/width (the only sips mode that can

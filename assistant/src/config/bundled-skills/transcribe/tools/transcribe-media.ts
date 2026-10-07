@@ -158,7 +158,7 @@ async function toWav(
   isVideo: boolean,
   signal?: AbortSignal,
 ): Promise<string> {
-  const wavPath = join(tmpdir(), `vellum-transcribe-${randomUUID()}.wav`);
+  const wavPath = join(tmpdir(), `cadet-transcribe-${randomUUID()}.wav`);
   const args = ["ffmpeg", "-y", "-i", inputPath];
   if (isVideo) {
     args.push("-vn");
@@ -210,7 +210,7 @@ async function transcribeWithProvider(
   }
 
   // Split into chunks for large files
-  const chunkDir = join(tmpdir(), `vellum-transcribe-chunks-${randomUUID()}`);
+  const chunkDir = join(tmpdir(), `cadet-transcribe-chunks-${randomUUID()}`);
   await mkdir(chunkDir, { recursive: true });
 
   try {

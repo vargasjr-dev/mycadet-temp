@@ -21,7 +21,7 @@ export const seedHeartbeatCallsiteCostDefaultMigration: WorkspaceMigration = {
   description:
     "Seed cost-optimized defaults for the heartbeatAgent LLM call site",
   run(workspaceDir: string): void {
-    if (process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH) {
+    if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
       return;
     }
 

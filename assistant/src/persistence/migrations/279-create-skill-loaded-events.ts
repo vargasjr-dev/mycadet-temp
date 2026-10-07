@@ -2,7 +2,7 @@ import type { DrizzleDb } from "../db-connection.js";
 
 /**
  * Create the skill_loaded_events table for `skill_loaded` telemetry events —
- * one row per activation of a Vellum-produced skill (see
+ * one row per activation of a Cadet-produced skill (see
  * skill-loaded-events-store.ts for the data contract). The index backs the
  * telemetry reporter's compound `(created_at, id)` watermark cursor.
  */

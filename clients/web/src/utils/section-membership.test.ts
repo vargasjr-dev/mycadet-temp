@@ -50,7 +50,7 @@ const SLACK: ConversationListFilter = {
 };
 const NATIVE_CHATS: ConversationListFilter = {
   groupId: "system:all",
-  originChannel: "vellum",
+  originChannel: "cadet",
 };
 const CUSTOM: ConversationListFilter = { groupId: "group-uuid" };
 
@@ -129,7 +129,7 @@ describe("matchesSectionFilter", () => {
     expect(matchesSectionFilter(conversation(), NATIVE_CHATS)).toBe(true);
     expect(
       matchesSectionFilter(
-        conversation({ originChannel: "vellum" }),
+        conversation({ originChannel: "cadet" }),
         NATIVE_CHATS,
       ),
     ).toBe(true);

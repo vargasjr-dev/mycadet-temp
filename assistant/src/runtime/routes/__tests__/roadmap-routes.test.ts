@@ -94,29 +94,29 @@ beforeEach(() => {
   storedApiKey = "assistant-key";
   platformBaseUrl = "https://cloud.mycadet.ai";
   calls = [];
-  process.env.VELLUM_MARKETING_URL = "https://marketing.test";
-  process.env.VELLUM_WEB_URL = "https://web.test";
+  process.env.CADET_MARKETING_URL = "https://marketing.test";
+  process.env.CADET_WEB_URL = "https://web.test";
 });
 
 afterEach(() => {
   globalThis.fetch = realFetch;
-  delete process.env.VELLUM_MARKETING_URL;
-  delete process.env.VELLUM_WEB_URL;
-  delete process.env.VELLUM_ENVIRONMENT;
+  delete process.env.CADET_MARKETING_URL;
+  delete process.env.CADET_WEB_URL;
+  delete process.env.CADET_ENVIRONMENT;
 });
 
 describe("which deployment the roadmap calls reach", () => {
   test("a production assistant needs no configuration", async () => {
-    delete process.env.VELLUM_MARKETING_URL;
+    delete process.env.CADET_MARKETING_URL;
     stubFetch({ items: [], total: 0 });
 
     await list({});
 
-    expect(calls[0].url).toBe("https://marketing.vellum.ai/v1/roadmap");
+    expect(calls[0].url).toBe("https://marketing.mycadet.ai/v1/roadmap");
   });
 
   // The deployment is judged by the platform that issued the key, never by
-  // VELLUM_ENVIRONMENT: unset, that variable means dev to getPlatformBaseUrl
+  // CADET_ENVIRONMENT: unset, that variable means dev to getPlatformBaseUrl
   // and local to every launcher, so trusting it would let exactly the assistant
   // with no label post to the real roadmap.
   test.each([
@@ -127,46 +127,46 @@ describe("which deployment the roadmap calls reach", () => {
     "an unconfigured %s assistant refuses to touch the public roadmap",
     async (baseUrl) => {
       platformBaseUrl = baseUrl;
-      delete process.env.VELLUM_MARKETING_URL;
-      delete process.env.VELLUM_ENVIRONMENT;
+      delete process.env.CADET_MARKETING_URL;
+      delete process.env.CADET_ENVIRONMENT;
       stubFetch({ items: [], total: 0 });
 
-      await expect(list({})).rejects.toThrow("The Vellum roadmap has no");
+      await expect(list({})).rejects.toThrow("The Cadet roadmap has no");
       expect(calls).toHaveLength(0);
     },
   );
 
-  test("VELLUM_ENVIRONMENT=production does not by itself unlock the real roadmap", async () => {
+  test("CADET_ENVIRONMENT=production does not by itself unlock the real roadmap", async () => {
     platformBaseUrl = "https://dev-cloud.mycadet.ai";
-    delete process.env.VELLUM_MARKETING_URL;
-    process.env.VELLUM_ENVIRONMENT = "production";
+    delete process.env.CADET_MARKETING_URL;
+    process.env.CADET_ENVIRONMENT = "production";
     stubFetch({ items: [], total: 0 });
 
-    await expect(list({})).rejects.toThrow("The Vellum roadmap has no");
+    await expect(list({})).rejects.toThrow("The Cadet roadmap has no");
     expect(calls).toHaveLength(0);
   });
 
   test("item links point at the deployment the item was read from", async () => {
     // Labelled staging, but authenticating against production: the link has to
     // follow the platform, or it points at a staging page for a real item.
-    process.env.VELLUM_ENVIRONMENT = "staging";
-    delete process.env.VELLUM_WEB_URL;
-    delete process.env.VELLUM_MARKETING_URL;
+    process.env.CADET_ENVIRONMENT = "staging";
+    delete process.env.CADET_WEB_URL;
+    delete process.env.CADET_MARKETING_URL;
     stubFetch({ items: [UPSTREAM_ITEM], total: 1 });
 
     const result = (await list({})) as { items: { url: string }[] };
 
-    expect(result.items[0].url).toBe("https://www.vellum.ai/roadmap/dark-mode");
+    expect(result.items[0].url).toBe("https://mycadet.ai/roadmap/dark-mode");
   });
 
   // A self-hosted platform is not in the seed table, so nothing is known about
   // it: naming its roadmap API says nothing about where its items are rendered.
   test("a self-hosted deployment must name its web origin too", async () => {
     platformBaseUrl = "https://platform.self-hosted.example";
-    delete process.env.VELLUM_WEB_URL;
+    delete process.env.CADET_WEB_URL;
     stubFetch({ items: [], total: 0 });
 
-    await expect(list({})).rejects.toThrow("Set VELLUM_WEB_URL");
+    await expect(list({})).rejects.toThrow("Set CADET_WEB_URL");
     expect(calls).toHaveLength(0);
   });
 
@@ -181,8 +181,8 @@ describe("which deployment the roadmap calls reach", () => {
   });
 
   test("a platform change mid-flight cannot fail a create that already published", async () => {
-    delete process.env.VELLUM_MARKETING_URL;
-    delete process.env.VELLUM_WEB_URL;
+    delete process.env.CADET_MARKETING_URL;
+    delete process.env.CADET_WEB_URL;
     globalThis.fetch = (async (
       _input: string | URL | Request,
       _init?: RequestInit,
@@ -205,7 +205,7 @@ describe("which deployment the roadmap calls reach", () => {
       body: { title: "Add dark mode" },
     })) as { url: string };
 
-    expect(created.url).toBe("https://www.vellum.ai/roadmap/dark-mode");
+    expect(created.url).toBe("https://mycadet.ai/roadmap/dark-mode");
   });
 
   test("a named endpoint is honored on any deployment", async () => {
@@ -343,11 +343,11 @@ describe("roadmap writes", () => {
         body: { title: "Dark mode", status: "planned" },
       }),
     ).rejects.toThrow(
-      "An assistant can change only an item's title and description; status is set by Vellum staff.",
+      "An assistant can change only an item's title and description; status is set by Cadet staff.",
     );
     await expect(
       update({ pathParams: { slug: "dark-mode" }, body: { tags: [] } }),
-    ).rejects.toThrow("tags is set by Vellum staff");
+    ).rejects.toThrow("tags is set by Cadet staff");
     expect(calls).toHaveLength(0);
   });
 
@@ -360,7 +360,7 @@ describe("roadmap writes", () => {
         body: { titel: "Dark mode", status: "planned" },
       }),
     ).rejects.toThrow(
-      "An assistant can change only an item's title and description; status is set by Vellum staff; titel is not a roadmap update field.",
+      "An assistant can change only an item's title and description; status is set by Cadet staff; titel is not a roadmap update field.",
     );
     expect(calls).toHaveLength(0);
   });
@@ -486,7 +486,7 @@ describe("upstream failures", () => {
     }) as typeof fetch;
 
     await expect(list({})).rejects.toThrow(
-      "Could not reach the Vellum roadmap service",
+      "Could not reach the Cadet roadmap service",
     );
   });
 });

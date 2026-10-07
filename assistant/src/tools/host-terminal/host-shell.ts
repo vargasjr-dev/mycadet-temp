@@ -62,17 +62,17 @@ const HOST_BASH_PROXY_ENV_KEYS = [
   // Preserve per-instance routing so nested `assistant` CLI commands invoked
   // over host_bash proxy target the same daemon/socket as the origin turn.
 
-  "VELLUM_WORKSPACE_DIR",
+  "CADET_WORKSPACE_DIR",
   // Keep legacy/diagnostic workspace + environment context aligned.
-  "VELLUM_DATA_DIR",
-  "VELLUM_ENVIRONMENT",
+  "CADET_DATA_DIR",
+  "CADET_ENVIRONMENT",
   // Preserve local control-plane routing when nested commands call APIs.
   "INTERNAL_GATEWAY_BASE_URL",
 ] as const;
 
 function buildHostShellEnv(): Record<string, string> {
   const env = buildSanitizedEnv();
-  // Ensure ~/.local/bin and ~/.bun/bin are in PATH so `vellum` and `bun` are
+  // Ensure ~/.local/bin and ~/.bun/bin are in PATH so `cadet` and `bun` are
   // reachable when a desktop app launches the assistant with a minimal PATH.
   const home = homedir();
   const extraDirs = [join(home, ".local", "bin"), join(home, ".bun", "bin")];

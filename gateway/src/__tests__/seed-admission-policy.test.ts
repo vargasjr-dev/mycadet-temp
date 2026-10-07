@@ -33,7 +33,7 @@ describe("seedAdmissionPolicyDefaults", () => {
     const byChannel = new Map(
       store.list().map((r) => [r.channelType, r.policy]),
     );
-    expect(byChannel.get("vellum")).toBe("guardian_only");
+    expect(byChannel.get("cadet")).toBe("guardian_only");
     expect(byChannel.get("slack")).toBe("trusted_contacts");
     expect(byChannel.get("telegram")).toBe("trusted_contacts");
     expect(byChannel.get("whatsapp")).toBe("trusted_contacts");
@@ -79,13 +79,13 @@ describe("seedAdmissionPolicyDefaults", () => {
     expect(store.get("discord")).toBe("strangers");
   });
 
-  test("seeds vellum-shared as a known channel at a guardian_only floor", () => {
+  test("seeds cadet-shared as a known channel at a guardian_only floor", () => {
     seedAdmissionPolicyDefaults(store);
     initAdmissionPolicyCache(store);
 
-    expect(isChannelId("vellum-shared")).toBe(true);
-    expect(store.get("vellum-shared")).toBe("guardian_only");
-    expect(getAdmissionPolicyCache().get("vellum-shared")).toBe(
+    expect(isChannelId("cadet-shared")).toBe(true);
+    expect(store.get("cadet-shared")).toBe("guardian_only");
+    expect(getAdmissionPolicyCache().get("cadet-shared")).toBe(
       "guardian_only",
     );
   });
@@ -94,13 +94,13 @@ describe("seedAdmissionPolicyDefaults", () => {
     // A legacy/stale row on a now-hidden channel must not strand the channel
     // at a floor the user can no longer see or reset in the UI.
     store.set("whatsapp", "no_one", "legacy kill switch");
-    store.set("vellum", "any_contact", "legacy widened cadet");
-    store.set("vellum-shared", "strangers", "legacy widened vellum-shared");
+    store.set("cadet", "any_contact", "legacy widened cadet");
+    store.set("cadet-shared", "strangers", "legacy widened cadet-shared");
 
     seedAdmissionPolicyDefaults(store);
 
     expect(store.get("whatsapp")).toBe("trusted_contacts");
-    expect(store.get("vellum")).toBe("guardian_only");
-    expect(store.get("vellum-shared")).toBe("guardian_only");
+    expect(store.get("cadet")).toBe("guardian_only");
+    expect(store.get("cadet-shared")).toBe("guardian_only");
   });
 });

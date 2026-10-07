@@ -248,8 +248,8 @@ describe("LiveVoiceSession archive and metrics events", () => {
 
     await startReleasedTurn(session);
     expect(startVoiceTurn.mock.calls[0]?.[0]).toMatchObject({
-      userMessageChannel: "vellum",
-      assistantMessageChannel: "vellum",
+      userMessageChannel: "cadet",
+      assistantMessageChannel: "cadet",
       userMessageInterface: "macos",
       assistantMessageInterface: "macos",
       // Pins the full production control prompt for the FRONT-DOOR leg (the

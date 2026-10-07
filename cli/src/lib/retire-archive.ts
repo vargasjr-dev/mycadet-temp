@@ -19,7 +19,7 @@ function isPathInside(
 export function getRetiredDir(): string {
   const xdgData =
     process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share");
-  const dir = join(xdgData, "vellum", "retired");
+  const dir = join(xdgData, "cadet", "retired");
   mkdirSync(dir, { recursive: true });
   return dir;
 }

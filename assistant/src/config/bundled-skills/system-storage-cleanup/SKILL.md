@@ -1,7 +1,7 @@
 ---
 name: system-storage-cleanup
 description: "Handle disk pressure, critically low storage, safe storage limits, and storage cleanup mode by inspecting disk usage and proposing safe cleanup steps."
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "\U0001F9F9"
   cadet:
@@ -35,7 +35,7 @@ Never delete credentials, security material, workspace database files, config fi
 
 ## Inspection Procedure
 
-Use local/container-visible inspection first. Prefer `df -h` on the current workspace path and on `VELLUM_WORKSPACE_DIR` when that variable is available. In Docker/container mode, `/workspace` is the persistent volume and cleanup should normally focus there.
+Use local/container-visible inspection first. Prefer `df -h` on the current workspace path and on `CADET_WORKSPACE_DIR` when that variable is available. In Docker/container mode, `/workspace` is the persistent volume and cleanup should normally focus there.
 
 Use `du` one level at a time and sort by size to identify large directories before drilling deeper. Keep each pass readable and bounded to the volume or workspace that is actually full. Avoid whole-filesystem scans unless the target volume cannot be isolated.
 

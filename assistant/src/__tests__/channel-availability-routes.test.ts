@@ -37,7 +37,7 @@ let mockFetchThrows = false;
 const mockSecureKeys = useMemorySecureKeys();
 
 mock.module("../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: async () => ({
       platformAssistantId: mockPlatformAssistantId,
       fetch: async (_path: string) => {

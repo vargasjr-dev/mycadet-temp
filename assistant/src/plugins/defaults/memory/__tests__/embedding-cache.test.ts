@@ -21,15 +21,15 @@ let previousWorkspaceEnv: string | undefined;
 
 beforeAll(() => {
   tmpWorkspace = mkdtempSync(join(tmpdir(), "embedding-cache-test-"));
-  previousWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = tmpWorkspace;
+  previousWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = tmpWorkspace;
 });
 
 afterAll(() => {
   if (previousWorkspaceEnv === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceEnv;
+    process.env.CADET_WORKSPACE_DIR = previousWorkspaceEnv;
   }
   rmSync(tmpWorkspace, { recursive: true, force: true });
 });

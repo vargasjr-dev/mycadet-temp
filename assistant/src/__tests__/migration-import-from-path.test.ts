@@ -44,7 +44,7 @@ import {
 } from "../runtime/routes/migration-routes.js";
 import { callHandler } from "./helpers/call-route-handler.js";
 
-const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
+const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 
 function freshWorkspaceRoot(): string {
   const parent = realpathSync(
@@ -56,7 +56,7 @@ function freshWorkspaceRoot(): string {
 }
 
 function setWorkspaceDir(dir: string): void {
-  process.env.VELLUM_WORKSPACE_DIR = dir;
+  process.env.CADET_WORKSPACE_DIR = dir;
 }
 
 function makeSmallValidBundle(): Uint8Array {
@@ -133,9 +133,9 @@ afterEach(() => {
 
 afterAll(() => {
   if (originalWorkspaceDir !== undefined) {
-    process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
   } else {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   }
 });
 

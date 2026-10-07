@@ -8,7 +8,7 @@
  * (`canonical_guardian_requests`): `sourceConversationId` renames
  * `conversation_id`, `requestTrigger` renames the `trigger` field (column
  * `request_trigger`), and `sourceType` is COMPUTED by the gateway mapper from
- * `sourceChannel` (phone → voice, vellum → desktop, else channel) — it is not
+ * `sourceChannel` (phone → voice, cadet → desktop, else channel) — it is not
  * stored.
  *
  * Method names deliberately use the `guardian_requests_` prefix — the
@@ -66,7 +66,7 @@ export type GuardianRequestSourceType = z.infer<
 
 /**
  * Derive the presentation-level source type from the provenance channel:
- * phone → voice, vellum → desktop, everything else (incl. null) → channel.
+ * phone → voice, cadet → desktop, everything else (incl. null) → channel.
  * `sourceType` is never stored — gateway and daemon both derive it here.
  */
 export function deriveGuardianRequestSourceType(
@@ -75,7 +75,7 @@ export function deriveGuardianRequestSourceType(
   if (sourceChannel === "phone") {
     return "voice";
   }
-  if (sourceChannel === "vellum") {
+  if (sourceChannel === "cadet") {
     return "desktop";
   }
   return "channel";

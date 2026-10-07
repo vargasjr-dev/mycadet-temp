@@ -8,7 +8,7 @@ interface MockPlatformClient {
 let mockClient: MockPlatformClient | null = null;
 
 mock.module("./client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: async () => mockClient,
   },
 }));

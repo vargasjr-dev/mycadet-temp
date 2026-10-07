@@ -2,7 +2,7 @@ import { getModelsForProvider } from "@/assistant/llm-model-catalog";
 import { codexServableModels } from "@/domains/settings/ai/codex-subscription-models";
 import {
   CHATGPT_CONNECTION_PROVIDER,
-  VELLUM_CONNECTION_PROVIDER,
+  CADET_CONNECTION_PROVIDER,
 } from "@/domains/settings/ai/constants";
 import type {
   DefaultProviderStatus,
@@ -88,7 +88,7 @@ function authMeta(conn: ProviderConnection): string | null {
  * meta for a custom provider.
  */
 export function providerRowMeta(conn: ProviderConnection): string {
-  if (conn.provider === VELLUM_CONNECTION_PROVIDER) {
+  if (conn.provider === CADET_CONNECTION_PROVIDER) {
     return "Included with your plan";
   }
   if (conn.provider === "openai-compatible") {

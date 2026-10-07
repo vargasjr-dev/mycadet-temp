@@ -3338,7 +3338,7 @@ describe("OpenRouterProvider — Anthropic dispatch", () => {
     await provider.sendMessage([userMsg("hi")], {
       config: {
         usageAttributionHeaders: {
-          "Vellum-Organization-Id": "org-123",
+          "Cadet-Organization-Id": "org-123",
         },
       },
     });
@@ -3348,7 +3348,7 @@ describe("OpenRouterProvider — Anthropic dispatch", () => {
         "HTTP-Referer": "https://mycadet.ai",
         "X-OpenRouter-Title": "Cadet",
         "X-OpenRouter-Categories": "personal-agent,cli-agent",
-        "Vellum-Organization-Id": "org-123",
+        "Cadet-Organization-Id": "org-123",
       }),
     );
     expect(lastStreamParams).not.toHaveProperty("HTTP-Referer");

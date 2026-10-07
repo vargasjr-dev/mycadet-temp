@@ -20,7 +20,7 @@ const registerCallbackRouteMock = mock(
     if (registerCallbackRouteError) {
       throw registerCallbackRouteError;
     }
-    return `https://gateway.vellum.ai/assistant-123/${callbackPath}`;
+    return `https://gateway.cadet.ai/assistant-123/${callbackPath}`;
   },
 );
 
@@ -55,7 +55,7 @@ mock.module("../../../inbound/platform-callback-registration.js", () => ({
   registerLocalWebhookRoute: registerLocalWebhookRouteMock,
   resolvePlatformCallbackRegistrationContext: async () => ({
     isPlatform,
-    platformBaseUrl: "https://api.vellum.ai",
+    platformBaseUrl: "https://api.cadet.ai",
     assistantId: platformContextEnabled ? "assistant-123" : "",
     hasAssistantApiKey: platformContextEnabled,
     authHeader: platformContextEnabled ? "Api-Key secret" : null,
@@ -89,7 +89,7 @@ describe("webhooks_register callback URL resolution", () => {
     platformContextEnabled = true;
 
     expect(await register({ type: "telegram" })).toEqual({
-      callbackUrl: "https://gateway.vellum.ai/assistant-123/webhooks/telegram",
+      callbackUrl: "https://gateway.cadet.ai/assistant-123/webhooks/telegram",
       type: "telegram",
       path: "webhooks/telegram",
       mode: "platform",
@@ -103,7 +103,7 @@ describe("webhooks_register callback URL resolution", () => {
     platformContextEnabled = true;
 
     expect(await register({ type: "telegram" })).toEqual({
-      callbackUrl: "https://gateway.vellum.ai/assistant-123/webhooks/telegram",
+      callbackUrl: "https://gateway.cadet.ai/assistant-123/webhooks/telegram",
       type: "telegram",
       path: "webhooks/telegram",
       mode: "platform",
@@ -147,7 +147,7 @@ describe("webhooks_register callback URL resolution", () => {
     };
 
     expect(await register({ type: "telegram" })).toMatchObject({
-      callbackUrl: "https://gateway.vellum.ai/assistant-123/webhooks/telegram",
+      callbackUrl: "https://gateway.cadet.ai/assistant-123/webhooks/telegram",
       mode: "platform",
     });
     expect(registerLocalWebhookRouteMock).toHaveBeenCalled();
@@ -159,7 +159,7 @@ describe("webhooks_register callback URL resolution", () => {
     platformContextEnabled = true;
 
     expect(await register({ type: "telegram" })).toMatchObject({
-      callbackUrl: "https://gateway.vellum.ai/assistant-123/webhooks/telegram",
+      callbackUrl: "https://gateway.cadet.ai/assistant-123/webhooks/telegram",
       mode: "platform",
     });
     expect(registerLocalWebhookRouteMock).not.toHaveBeenCalled();

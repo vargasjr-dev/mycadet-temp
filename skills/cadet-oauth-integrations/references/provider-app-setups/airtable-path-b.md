@@ -36,7 +36,7 @@ Tell the user:
 > `https://airtable.com/create/oauth`
 >
 > 1. Click **Register new OAuth integration**
-> 2. Set the name to **Vellum Assistant**
+> 2. Set the name to **Cadet Assistant**
 > 3. Click **Register integration**
 >
 > Let me know when the integration is created.

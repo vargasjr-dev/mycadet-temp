@@ -5,7 +5,7 @@ import { posix, win32 } from "node:path";
 
 const DARWIN_UNIX_SOCKET_MAX_PATH_BYTES = 103;
 const DEFAULT_UNIX_SOCKET_MAX_PATH_BYTES = 107;
-const IPC_TMP_DIR_NAME = "vellum-ipc";
+const IPC_TMP_DIR_NAME = "cadet-ipc";
 const join = posix.join;
 
 export type IpcSocketPathSource =
@@ -66,7 +66,7 @@ function resolveWindowsNamedPipe(
     .digest("hex")
     .slice(0, 24);
   return {
-    path: `\\\\.\\pipe\\vellum-${socketName}-${hash}`,
+    path: `\\\\.\\pipe\\cadet-${socketName}-${hash}`,
     source: "windows-named-pipe",
   };
 }

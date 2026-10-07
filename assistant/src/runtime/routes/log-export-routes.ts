@@ -88,7 +88,7 @@ async function handleExport({
   const { conversationId, full, startTime, endTime, auditLimit } =
     body as ExportRequestBody;
 
-  const staging = mkdtempSync(join(tmpdir(), "vellum-export-"));
+  const staging = mkdtempSync(join(tmpdir(), "cadet-export-"));
 
   try {
     // --- Audit data ---

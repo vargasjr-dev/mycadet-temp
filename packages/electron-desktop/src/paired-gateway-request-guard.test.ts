@@ -21,7 +21,7 @@ mock.module("electron", () => ({
 const { installPairedGatewayRequestGuard } =
   await import("./paired-gateway-request-guard");
 
-const APP_ORIGIN = { protocol: "app:", host: "vellum.ai" };
+const APP_ORIGIN = { protocol: "app:", host: "mycadet.ai" };
 
 beforeEach(() => {
   registeredFilter = undefined;
@@ -37,13 +37,13 @@ describe("installPairedGatewayRequestGuard", () => {
     });
 
     expect(registeredFilter?.urls).toEqual([
-      "app://vellum.ai/assistant/__gateway-paired/*",
-      "app://vellum.ai/__gateway-paired/*",
+      "app://mycadet.ai/assistant/__gateway-paired/*",
+      "app://mycadet.ai/__gateway-paired/*",
     ]);
 
     let cancel: boolean | undefined;
     registeredListener?.(
-      { frame: { origin: "app://vellum.ai" } },
+      { frame: { origin: "app://mycadet.ai" } },
       (response) => {
         cancel = response.cancel;
       },

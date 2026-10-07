@@ -39,7 +39,7 @@ export async function sshAppleContainer(
   const handshake =
     JSON.stringify({
       command: command && command.length > 0 ? command : ["/bin/bash"],
-      service: service || "vellum-assistant",
+      service: service || "mycadet",
       cols,
       rows,
     }) + "\n";

@@ -14,7 +14,7 @@ import {
   workspaceBasenameOf,
 } from "@/utils/workspace-path-links";
 
-const VELLUM_WORKSPACE_PREFIX = "cadet://workspace/";
+const CADET_WORKSPACE_PREFIX = "cadet://workspace/";
 
 export interface LocalFileTarget {
   workspacePath: string | null;
@@ -47,8 +47,8 @@ function decodeSegments(path: string): string {
 export function resolveLocalFileTarget(href: string): LocalFileTarget {
   const text = href.trim();
 
-  if (text.startsWith(VELLUM_WORKSPACE_PREFIX)) {
-    const relative = decodeSegments(text.slice(VELLUM_WORKSPACE_PREFIX.length));
+  if (text.startsWith(CADET_WORKSPACE_PREFIX)) {
+    const relative = decodeSegments(text.slice(CADET_WORKSPACE_PREFIX.length));
     return {
       workspacePath: isWorkspaceRelativePath(relative) ? relative : null,
       filename: workspaceBasenameOf(relative),

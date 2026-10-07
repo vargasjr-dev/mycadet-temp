@@ -8,10 +8,10 @@
  * No source-module imports
  * ------------------------
  * This file has ZERO runtime imports from `src/`. It accesses the DB
- * singletons' state via the shared `globalThis.vellumAssistant.dbSingletons`
+ * singletons' state via the shared `globalThis.cadetAssistant.dbSingletons`
  * slots that `src/persistence/db-singleton.ts` also reads/writes, typed by the
- * shared ambient `VellumDbSlots` (declared in
- * `src/vellum-assistant-namespace.d.ts`). That ambient type is pure
+ * shared ambient `CadetDbSlots` (declared in
+ * `src/mycadet-namespace.d.ts`). That ambient type is pure
  * compile-time information — referencing it adds nothing to this file's runtime
  * import graph — so keeping the helper off the production import graph (what
  * protects the test preload from a broken `node_modules` symlink, DB ghost #3)
@@ -24,12 +24,12 @@
 
 import { resetGatewayAclStore } from "./helpers/gateway-acl-store.js";
 
-function emptySlot(): VellumDbSlot {
+function emptySlot(): CadetDbSlot {
   return { db: null, closer: null };
 }
 
-function dbSlots(): VellumDbSlots {
-  const ns = (globalThis.vellumAssistant ??= {});
+function dbSlots(): CadetDbSlots {
+  const ns = (globalThis.cadetAssistant ??= {});
   return (ns.dbSingletons ??= {
     main: emptySlot(),
     "main-readonly": emptySlot(),

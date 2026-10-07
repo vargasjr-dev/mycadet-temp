@@ -38,7 +38,7 @@ import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
 const TEST_DIR = join(
   tmpdir(),
-  `vellum-seckeys-test-${randomBytes(4).toString("hex")}`,
+  `cadet-seckeys-test-${randomBytes(4).toString("hex")}`,
 );
 const STORE_PATH = join(TEST_DIR, "keys.enc");
 
@@ -46,9 +46,9 @@ describe("secure-keys", () => {
   beforeEach(() => {
     _resetBackend();
 
-    // Ensure VELLUM_DEV and VELLUM_DESKTOP_APP are NOT set
-    delete process.env.VELLUM_DEV;
-    delete process.env.VELLUM_DESKTOP_APP;
+    // Ensure CADET_DEV and CADET_DESKTOP_APP are NOT set
+    delete process.env.CADET_DEV;
+    delete process.env.CADET_DESKTOP_APP;
 
     if (existsSync(TEST_DIR)) {
       rmSync(TEST_DIR, { recursive: true });
@@ -60,8 +60,8 @@ describe("secure-keys", () => {
   afterEach(() => {
     setStorePathForTesting(null);
     _resetBackend();
-    delete process.env.VELLUM_DEV;
-    delete process.env.VELLUM_DESKTOP_APP;
+    delete process.env.CADET_DEV;
+    delete process.env.CADET_DESKTOP_APP;
     delete process.env.IS_CONTAINERIZED;
     delete process.env.CES_CREDENTIAL_URL;
   });
@@ -107,8 +107,8 @@ describe("secure-keys", () => {
   // Desktop app uses encrypted store (same as dev/CLI)
   // -----------------------------------------------------------------------
   describe("desktop app uses encrypted store", () => {
-    test("VELLUM_DESKTOP_APP=1 writes to encrypted store", async () => {
-      process.env.VELLUM_DESKTOP_APP = "1";
+    test("CADET_DESKTOP_APP=1 writes to encrypted store", async () => {
+      process.env.CADET_DESKTOP_APP = "1";
       _resetBackend();
 
       const result = await setSecureKeyAsync("api-key", "new-value");
@@ -116,8 +116,8 @@ describe("secure-keys", () => {
       expect(encryptedStore.getKey("api-key")).toBe("new-value");
     });
 
-    test("VELLUM_DESKTOP_APP=1 reads from encrypted store", async () => {
-      process.env.VELLUM_DESKTOP_APP = "1";
+    test("CADET_DESKTOP_APP=1 reads from encrypted store", async () => {
+      process.env.CADET_DESKTOP_APP = "1";
       _resetBackend();
 
       encryptedStore.setKey("api-key", "encrypted-value");
@@ -126,8 +126,8 @@ describe("secure-keys", () => {
       expect(result).toBe("encrypted-value");
     });
 
-    test("VELLUM_DESKTOP_APP=1 deletes from encrypted store", async () => {
-      process.env.VELLUM_DESKTOP_APP = "1";
+    test("CADET_DESKTOP_APP=1 deletes from encrypted store", async () => {
+      process.env.CADET_DESKTOP_APP = "1";
       _resetBackend();
 
       encryptedStore.setKey("api-key", "encrypted-value");
@@ -139,11 +139,11 @@ describe("secure-keys", () => {
   });
 
   // -----------------------------------------------------------------------
-  // Dev mode — VELLUM_DEV=1 uses encrypted store
+  // Dev mode — CADET_DEV=1 uses encrypted store
   // -----------------------------------------------------------------------
-  describe("dev mode (VELLUM_DEV=1)", () => {
+  describe("dev mode (CADET_DEV=1)", () => {
     test("setSecureKeyAsync writes to encrypted store", async () => {
-      process.env.VELLUM_DEV = "1";
+      process.env.CADET_DEV = "1";
       _resetBackend();
 
       const result = await setSecureKeyAsync("api-key", "dev-value");
@@ -152,7 +152,7 @@ describe("secure-keys", () => {
     });
 
     test("getSecureKeyAsync reads from encrypted store", async () => {
-      process.env.VELLUM_DEV = "1";
+      process.env.CADET_DEV = "1";
       _resetBackend();
 
       encryptedStore.setKey("api-key", "encrypted-value");
@@ -162,7 +162,7 @@ describe("secure-keys", () => {
     });
 
     test("getSecureKeyAsync returns undefined when encrypted store is empty", async () => {
-      process.env.VELLUM_DEV = "1";
+      process.env.CADET_DEV = "1";
       _resetBackend();
 
       const result = await getSecureKeyAsync("api-key");
@@ -196,8 +196,8 @@ describe("secure-keys", () => {
     });
 
     test("deleteSecureKeyAsync in dev mode deletes from encrypted store", async () => {
-      process.env.VELLUM_DEV = "1";
-      process.env.VELLUM_DESKTOP_APP = "1";
+      process.env.CADET_DEV = "1";
+      process.env.CADET_DESKTOP_APP = "1";
       _resetBackend();
 
       encryptedStore.setKey("api-key", "encrypted-value");
@@ -228,8 +228,8 @@ describe("secure-keys", () => {
       expect(result.accounts.length).toBe(2);
     });
 
-    test("returns encrypted store keys with VELLUM_DEV=1", async () => {
-      process.env.VELLUM_DEV = "1";
+    test("returns encrypted store keys with CADET_DEV=1", async () => {
+      process.env.CADET_DEV = "1";
       _resetBackend();
 
       encryptedStore.setKey("dev-key-1", "val2");
@@ -242,8 +242,8 @@ describe("secure-keys", () => {
       expect(result.accounts.length).toBe(2);
     });
 
-    test("returns encrypted store keys with VELLUM_DESKTOP_APP=1", async () => {
-      process.env.VELLUM_DESKTOP_APP = "1";
+    test("returns encrypted store keys with CADET_DESKTOP_APP=1", async () => {
+      process.env.CADET_DESKTOP_APP = "1";
       _resetBackend();
 
       encryptedStore.setKey("desktop-key-1", "val1");
@@ -281,7 +281,7 @@ describe("secure-keys", () => {
     });
 
     test("returns unreachable false in dev mode", async () => {
-      process.env.VELLUM_DEV = "1";
+      process.env.CADET_DEV = "1";
       _resetBackend();
 
       const result = await getSecureKeyResultAsync("missing-key");
@@ -289,8 +289,8 @@ describe("secure-keys", () => {
       expect(result.unreachable).toBe(false);
     });
 
-    test("returns unreachable false with VELLUM_DESKTOP_APP=1", async () => {
-      process.env.VELLUM_DESKTOP_APP = "1";
+    test("returns unreachable false with CADET_DESKTOP_APP=1", async () => {
+      process.env.CADET_DESKTOP_APP = "1";
       _resetBackend();
 
       const result = await getSecureKeyResultAsync("missing-key");

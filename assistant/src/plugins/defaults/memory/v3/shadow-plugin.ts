@@ -279,7 +279,7 @@ async function initLanes(config: AssistantConfig): Promise<ShadowLanes> {
   // The entity lane's heading catalog: distinctive `## ` heading tokens → the
   // sections they head, so a named entity in the turn message surfaces its page
   // even when additive BM25 buries it under the message's bulk theme. Gated by
-  // the needle's corpus IDF so hub tokens (e.g. "vellum") never become keys.
+  // the needle's corpus IDF so hub tokens (e.g. "cadet") never become keys.
   const entityCfg = config.memory.v3.entity;
   const entityIndex = entityCfg.enabled
     ? buildEntityIndex(

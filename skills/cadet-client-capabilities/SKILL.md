@@ -1,12 +1,12 @@
 ---
 name: cadet-client-capabilities
-description: Truthful answers about what the Vellum client apps can and cannot do on the user's device. Device location and GPS are unavailable in every client and there is no location permission prompt to approve, so location requests are answered by asking for a typed city or address instead.
+description: Truthful answers about what the Cadet client apps can and cannot do on the user's device. Device location and GPS are unavailable in every client and there is no location permission prompt to approve, so location requests are answered by asking for a typed city or address instead.
 compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "📍"
   cadet:
     category: "system"
-    display-name: "Vellum Client Capabilities"
+    display-name: "Cadet Client Capabilities"
     activation-hints:
       - "asked to use the user's current location, GPS, or device position"
       - "whether the app can access a device sensor, permission, or hardware feature"
@@ -22,7 +22,7 @@ Never claim that a permission prompt, sheet, dialog, or button is on the user's 
 
 ## Device Location
 
-No Vellum client can read the device's location. Not the web app, not the macOS or Windows desktop apps, not the iOS or Android apps, not the CLI. There is no GPS access, no geolocation integration, and no location permission flow that could be triggered or approved.
+No Cadet client can read the device's location. Not the web app, not the macOS or Windows desktop apps, not the iOS or Android apps, not the CLI. There is no GPS access, no geolocation integration, and no location permission flow that could be triggered or approved.
 
 When the user asks you to use their current, live, or nearby location:
 
@@ -30,7 +30,7 @@ When the user asks you to use their current, live, or nearby location:
 2. Ask them to type a city, address, or place name instead. Weather, search, and nearby-place requests all work from a typed location.
 3. Continue the task with what they give you.
 
-Do not stall the task waiting for a permission grant that cannot arrive, and do not send the user to OS settings; there is no Vellum entry there to enable.
+Do not stall the task waiting for a permission grant that cannot arrive, and do not send the user to OS settings; there is no Cadet entry there to enable.
 
 ### The one coarse signal that exists
 
@@ -44,11 +44,11 @@ It does not exist today in any client. The honest answer is that they can mentio
 
 Tell the user only what is actually downloadable. Do not invent a Linux desktop installer.
 
-- Web app: https://www.vellum.ai
-- iOS: https://apps.apple.com/us/app/vellum-assistant/id6759934423
-- Android: https://play.google.com/store/apps/details?id=ai.vellum.assistant
-- macOS and Windows desktop: https://www.vellum.ai/downloads
-- Chrome extension: https://chromewebstore.google.com/detail/vellum-assistant-browser/hphbdmpffeigpcdjkckleobjmhhokpne
+- Web app: https://mycadet.ai
+- iOS: https://apps.apple.com/us/app/mycadet/id6759934423
+- Android: https://play.google.com/store/apps/details?id=ai.mycadet.assistant
+- macOS and Windows desktop: https://mycadet.ai/downloads
+- Chrome extension: https://chromewebstore.google.com/detail/mycadet-browser/hphbdmpffeigpcdjkckleobjmhhokpne
 - Linux desktop: not shipped. Use the web app or Chrome extension. The runtime can self-host on Linux; that is the server, not a desktop app.
 
 For install, pricing, or "how do I install you" questions, also load `cadet-self-knowledge` and fetch Installation, FAQ, and Pricing from the docs. Do not answer those from memory.
@@ -57,8 +57,8 @@ For install, pricing, or "how do I install you" questions, also load `cadet-self
 
 When a task needs a logged-in browser or a host computer (internal pages, company SSO, VPN-only dashboards, local files, or host shell):
 
-1. Offer the desktop app for Mac or Windows: https://www.vellum.ai/downloads
-2. For browser sessions, also offer the Chrome extension: https://chromewebstore.google.com/detail/vellum-assistant-browser/hphbdmpffeigpcdjkckleobjmhhokpne
+1. Offer the desktop app for Mac or Windows: https://mycadet.ai/downloads
+2. For browser sessions, also offer the Chrome extension: https://chromewebstore.google.com/detail/mycadet-browser/hphbdmpffeigpcdjkckleobjmhhokpne
 3. Offer those first. Only ask for a screenshot or pasted page content if the user cannot install either.
 
 On iOS or Android there is no in-app browser, no Chrome extension to install on the phone, and no host computer. Offer the desktop app or Chrome extension on a computer. Do not describe a browser panel, local browser session picker, or other UI that is not on this phone.

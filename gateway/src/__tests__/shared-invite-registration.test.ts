@@ -1,5 +1,5 @@
 /**
- * Tests for registering `vellum-shared` invites with the platform during
+ * Tests for registering `cadet-shared` invites with the platform during
  * invite creation (`createInviteNative`). The gateway DB is real; the
  * platform, credential store, feature flags and daemon IPC are stubbed.
  */
@@ -42,7 +42,7 @@ const actualFlagResolver = await import("../feature-flag-resolver.js");
 mock.module("../feature-flag-resolver.js", () => ({
   ...actualFlagResolver,
   isFeatureFlagEnabled: (flag: string) =>
-    flag === "vellum-trusted-contacts" ? trustedContactsEnabled : false,
+    flag === "cadet-trusted-contacts" ? trustedContactsEnabled : false,
 }));
 
 type StoredCredential = { value: string | undefined; unreachable: boolean };
@@ -102,18 +102,18 @@ beforeEach(() => {
   ipcCalls = [];
   trustedContactsEnabled = true;
   withPlatformCredentials();
-  delete process.env.VELLUM_DISABLE_PLATFORM;
+  delete process.env.CADET_DISABLE_PLATFORM;
   delete process.env.IS_PLATFORM;
-  delete process.env.VELLUM_PLATFORM_URL;
+  delete process.env.CADET_PLATFORM_URL;
   delete process.env.ASSISTANT_API_KEY;
 });
 
-describe("vellum-shared invite registration", () => {
+describe("cadet-shared invite registration", () => {
   test("registers the token hash and expiry with the assistant API key", async () => {
     const before = Date.now();
     const result = await createInviteNative({
       contactId: CONTACT_ID,
-      sourceChannel: "vellum-shared",
+      sourceChannel: "cadet-shared",
       expiresInMs: 60 * 60 * 1000,
     });
 
@@ -135,14 +135,14 @@ describe("vellum-shared invite registration", () => {
 
     const rows = activeInviteRows();
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.sourceChannel).toBe("vellum-shared");
+    expect(rows[0]!.sourceChannel).toBe("cadet-shared");
     expect(rows[0]!.tokenHash).toBe(body.code_hash);
   });
 
   test("sends an integer expiry for a fractional lifetime", async () => {
     await createInviteNative({
       contactId: CONTACT_ID,
-      sourceChannel: "vellum-shared",
+      sourceChannel: "cadet-shared",
       expiresInMs: 90_000.5,
     });
 
@@ -152,12 +152,12 @@ describe("vellum-shared invite registration", () => {
 
   test("falls back to the environment for platform credentials", async () => {
     storedCredentials = {};
-    process.env.VELLUM_PLATFORM_URL = PLATFORM_URL;
+    process.env.CADET_PLATFORM_URL = PLATFORM_URL;
     process.env.ASSISTANT_API_KEY = "vak_env_key";
 
     await createInviteNative({
       contactId: CONTACT_ID,
-      sourceChannel: "vellum-shared",
+      sourceChannel: "cadet-shared",
     });
 
     const [url, init] = fetchMock.mock.calls[0]!;
@@ -176,7 +176,7 @@ describe("vellum-shared invite registration", () => {
         method: "POST",
         body: JSON.stringify({
           contactId: CONTACT_ID,
-          sourceChannel: "vellum-shared",
+          sourceChannel: "cadet-shared",
         }),
       }),
     );
@@ -200,11 +200,11 @@ describe("registration is skipped", () => {
   });
 
   test("when platform features are disabled", async () => {
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
 
     await createInviteNative({
       contactId: CONTACT_ID,
-      sourceChannel: "vellum-shared",
+      sourceChannel: "cadet-shared",
     });
 
     expect(fetchMock).not.toHaveBeenCalled();
@@ -216,7 +216,7 @@ describe("registration is skipped", () => {
 
     await createInviteNative({
       contactId: CONTACT_ID,
-      sourceChannel: "vellum-shared",
+      sourceChannel: "cadet-shared",
     });
 
     expect(fetchMock).not.toHaveBeenCalled();
@@ -230,7 +230,7 @@ describe("registration is skipped", () => {
 
     await createInviteNative({
       contactId: CONTACT_ID,
-      sourceChannel: "vellum-shared",
+      sourceChannel: "cadet-shared",
     });
 
     expect(fetchMock).not.toHaveBeenCalled();
@@ -242,7 +242,7 @@ describe("registration is skipped", () => {
 
     await createInviteNative({
       contactId: CONTACT_ID,
-      sourceChannel: "vellum-shared",
+      sourceChannel: "cadet-shared",
     });
 
     expect(fetchMock).not.toHaveBeenCalled();
@@ -259,7 +259,7 @@ describe("a failed registration leaves no invite", () => {
     try {
       await createInviteNative({
         contactId: CONTACT_ID,
-        sourceChannel: "vellum-shared",
+        sourceChannel: "cadet-shared",
       });
     } catch (err) {
       caught = err;
@@ -315,7 +315,7 @@ describe("a failed registration leaves no invite", () => {
         method: "POST",
         body: JSON.stringify({
           contactId: CONTACT_ID,
-          sourceChannel: "vellum-shared",
+          sourceChannel: "cadet-shared",
         }),
       }),
     );

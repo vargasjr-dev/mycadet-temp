@@ -82,7 +82,7 @@ async function handleHostCuResult({ body, headers }: RouteHandlerArgs) {
     targetActorPrincipalId: peeked.targetActorPrincipalId,
     op: "host_cu",
     missingClientIdMessage:
-      "x-vellum-client-id header is missing for a targeted host CU request.",
+      "x-cadet-client-id header is missing for a targeted host CU request.",
   });
 
   // Conversation-agnostic observation (see `runtime/host-observe.ts`): the
@@ -157,7 +157,7 @@ export const ROUTES: RouteDefinition[] = [
     additionalResponses: {
       "400": {
         description:
-          "x-vellum-client-id header is missing for a targeted host CU request.",
+          "x-cadet-client-id header is missing for a targeted host CU request.",
       },
       "403": {
         description: SAME_ACTOR_FORBIDDEN_DESCRIPTION,

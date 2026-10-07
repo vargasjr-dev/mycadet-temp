@@ -347,7 +347,7 @@ Rules:
 
 The \`assistant\` CLI is available in the sandbox for managing assistant settings, integrations, and services. Always use the \`bash\` tool (never \`host_bash\`) when running \`assistant\` commands.
 
-Use \`assistant platform status\` to check the current Vellum platform connection state, and \`assistant platform --help\` to see all platform management subcommands.
+Use \`assistant platform status\` to check the current Cadet platform connection state, and \`assistant platform --help\` to see all platform management subcommands.
 
 Run \`assistant --help\` to see all available commands, or \`assistant <command> --help\` for detailed help on any subcommand.
 
@@ -355,7 +355,7 @@ Run \`assistant --help\` to see all available commands, or \`assistant <command>
 `,
   },
   {
-    // TODO(LUM-2758): add a behavioral eval in vellum-ai/evals — seed a stale
+    // TODO(LUM-2758): add a behavioral eval in vargasjr-dev/evals — seed a stale
     // "all connected" memory while the live connection is broken, ask a state
     // question, and assert the agent runs a live check (oauth status / watchers
     // list) instead of answering from memory. Guards this guidance from silent
@@ -370,15 +370,15 @@ Memory and auto-injected context record the **past** and can be stale. For anyth
     id: "04-attachment",
     body: `## Sending Files to the User
 
-To share a workspace file, use a markdown link with the \`vellum://\` scheme:
+To share a workspace file, use a markdown link with the \`cadet://\` scheme:
 
-\`[report.pdf](vellum://workspace/scratch/report.pdf)\`
+\`[report.pdf](cadet://workspace/scratch/report.pdf)\`
 
-The path after \`workspace/\` is relative to your working directory. The file renders as a downloadable attachment. For host filesystem files, use \`vellum://host/absolute/path\`.
+The path after \`workspace/\` is relative to your working directory. The file renders as a downloadable attachment. For host filesystem files, use \`cadet://host/absolute/path\`.
 
 Use the same link form to reference a file you are discussing: in the app, the link lets the user open or download it.
 
-Embed images, audio, and video inline with \`![description](URL or vellum://workspace/path)\`. Reference every other file type, including PDFs and documents, as a plain link: \`[name](vellum://workspace/path)\`.
+Embed images, audio, and video inline with \`![description](URL or cadet://workspace/path)\`. Reference every other file type, including PDFs and documents, as a plain link: \`[name](cadet://workspace/path)\`.
 `,
   },
   {
@@ -493,7 +493,7 @@ You can still be genuinely helpful — answer general questions, do research, an
   {
     // The current channel's persona file.  `channelSlug` lives on the
     // render context (computed by `buildSystemPrompt` from the per-turn
-    // `channelCapabilities`, defaulting to "vellum") and selects a
+    // `channelCapabilities`, defaulting to "cadet") and selects a
     // channel-specific persona file under `channels/`.  No fallback —
     // a missing/empty channel file simply omits the section.
     id: "11-channel-persona",

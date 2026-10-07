@@ -63,7 +63,7 @@ function isEnvVarMethod(
 
 /**
  * Factory function type for creating ACP client handlers.
- * PR 5 will provide the real VellumAcpClientHandler implementation.
+ * PR 5 will provide the real CadetAcpClientHandler implementation.
  */
 export type AcpClientFactory = (agent: Agent) => Client;
 
@@ -405,7 +405,7 @@ export class AcpAgentProcess {
    * Per the ACP spec, the agent replays the session's conversation history
    * as `session/update` notifications before the load response resolves;
    * callers should suppress forwarding of those replayed updates (see
-   * VellumAcpClientHandler.beginReplaySuppression).
+   * CadetAcpClientHandler.beginReplaySuppression).
    */
   async loadSession(
     sessionId: string,

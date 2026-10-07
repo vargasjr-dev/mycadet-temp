@@ -330,7 +330,7 @@ describe("processMessage callSite threading", () => {
       "conv-store-client-timezone",
       {
         transport: {
-          channelId: "vellum",
+          channelId: "cadet",
           interfaceId: "macos",
           clientTimezone: "america/new_york",
         },
@@ -341,7 +341,7 @@ describe("processMessage callSite threading", () => {
 
     await getOrCreateConversation("conv-store-client-timezone", {
       transport: {
-        channelId: "vellum",
+        channelId: "cadet",
         interfaceId: "ios",
         clientTimezone: "europe/london",
       },
@@ -368,7 +368,7 @@ describe("processMessage callSite threading", () => {
     // and reuse paths so each turn reflects its own surface.
     const conversation = await getOrCreateConversation("conv-store-client-os", {
       transport: {
-        channelId: "vellum",
+        channelId: "cadet",
         interfaceId: "web",
         clientOs: "macos",
       },
@@ -378,7 +378,7 @@ describe("processMessage callSite threading", () => {
 
     await getOrCreateConversation("conv-store-client-os", {
       transport: {
-        channelId: "vellum",
+        channelId: "cadet",
         interfaceId: "web",
         clientOs: "ios",
       },

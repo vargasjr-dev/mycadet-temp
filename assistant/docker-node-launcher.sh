@@ -4,7 +4,7 @@
 #
 # A real Node interpreter always wins. One can appear after the image is built:
 # `apt-get install nodejs` writes /usr/bin/node, and on Kata-family runtimes the
-# persistent apt chroot puts it under $VELLUM_APT_DATA_ROOT/usr/bin, which the
+# persistent apt chroot puts it under $CADET_APT_DATA_ROOT/usr/bin, which the
 # sandbox PATH carries. Delegating keeps Node CLIs on Node semantics.
 #
 # With no real Node on PATH the bin runs under Bun with the auto-serve shim

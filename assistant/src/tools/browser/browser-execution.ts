@@ -210,7 +210,7 @@ const MODE_TRADEOFFS: Record<StatusCheckMode, string[]> = {
     "More secure than relying on Chrome's native remote debugging functionality.",
   ],
   [BROWSER_STATUS_MODE.CDP_INSPECT]: [
-    "This is the second-best approach for all things browser-use, after the native Vellum Assistant Chrome Extension.",
+    "This is the second-best approach for all things browser-use, after the native Cadet Assistant Chrome Extension.",
     "It requires Chrome version 146 or greater",
     "It requires toggling on remote debugging in Chrome Settings",
     "It's prone to phishing attacks from other local processes that may try to do their own remote debugging.",
@@ -308,7 +308,7 @@ const REMEDIATION_HINTS: Record<string, string[]> = {
   "extension:transport_error": [
     CHROME_EXTENSION_INSTALL_HINT,
     DESKTOP_APP_INSTALL_HINT,
-    "Make sure Chrome is open with the Vellum extension enabled, or that the desktop app is running.",
+    "Make sure Chrome is open with the Cadet extension enabled, or that the desktop app is running.",
     "In the extension popup, check that the status shows connected.",
   ],
   // cdp-inspect backend — discovery-level failures
@@ -873,7 +873,7 @@ export async function executeBrowserNavigate(
   // navigates in its own dedicated tab so it never clobbers the tab the
   // user is on (frequently the very tab they're chatting with the
   // assistant from). The dedicated tab is opened once per conversation
-  // via the extension's `Vellum.createTab` pseudo-CDP method and pinned,
+  // via the extension's `Cadet.createTab` pseudo-CDP method and pinned,
   // so this Page.navigate and every subsequent command route to it:
   //   - first navigate (no pin yet) → open + pin a fresh tab.
   //   - later navigates (pin exists) → reuse the pinned tab; the `cdp`
@@ -891,7 +891,7 @@ export async function executeBrowserNavigate(
       ? input.target_client_id
       : undefined;
   if (context.cdpClient && forceNewTab) {
-    await cdp.send("Vellum.createTab", {}, context.signal);
+    await cdp.send("Cadet.createTab", {}, context.signal);
   }
   if (cdp.kind === "extension" && useActiveTab) {
     // Explicit opt-out: target the currently-active tab. Clear any
@@ -908,7 +908,7 @@ export async function executeBrowserNavigate(
         const result = await cdp.send<{
           tabId?: number | string;
           clientId?: string;
-        }>("Vellum.createTab", {}, context.signal);
+        }>("Cadet.createTab", {}, context.signal);
         const tabId =
           typeof result?.tabId === "number"
             ? String(result.tabId)
@@ -926,12 +926,12 @@ export async function executeBrowserNavigate(
           } catch (disposeErr) {
             log.warn(
               { conversationId: context.conversationId, err: disposeErr },
-              "Failed to dispose CDP client after Vellum.createTab returned no tabId",
+              "Failed to dispose CDP client after Cadet.createTab returned no tabId",
             );
           }
           return {
             content:
-              "Error: Failed to open a new tab for navigation: Vellum.createTab returned no tabId. Pass --use-active-tab to navigate the currently-active tab instead.",
+              "Error: Failed to open a new tab for navigation: Cadet.createTab returned no tabId. Pass --use-active-tab to navigate the currently-active tab instead.",
             isError: true,
           };
         } else {
@@ -946,7 +946,7 @@ export async function executeBrowserNavigate(
         // Surface the failure rather than silently clobbering the active
         // tab — that's exactly the behavior a dedicated tab is supposed
         // to avoid. Clear any stale pin so subsequent ops don't route to
-        // a dead tab. Note: an old extension build without Vellum.createTab
+        // a dead tab. Note: an old extension build without Cadet.createTab
         // support will land here (CDP returns an "unknown method" error).
         // We're early-returning before the main try/finally block below,
         // so we must dispose the cdp client manually to avoid leaking it.
@@ -954,14 +954,14 @@ export async function executeBrowserNavigate(
         const message = err instanceof Error ? err.message : String(err);
         log.warn(
           { conversationId: context.conversationId, err },
-          "Vellum.createTab failed; aborting navigate",
+          "Cadet.createTab failed; aborting navigate",
         );
         try {
           cdp.dispose();
         } catch (disposeErr) {
           log.warn(
             { conversationId: context.conversationId, err: disposeErr },
-            "Failed to dispose CDP client after Vellum.createTab failure",
+            "Failed to dispose CDP client after Cadet.createTab failure",
           );
         }
         return {
@@ -1530,10 +1530,10 @@ export async function executeBrowserAttach(
   try {
     if (cdp.kind === "extension") {
       // Extension path: explicitly attach the debugger via a synthetic
-      // Vellum.attach command so the debugging session is established
+      // Cadet.attach command so the debugging session is established
       // before any navigation or interaction.
       const result = await cdp.send<{ attached?: boolean; target?: unknown }>(
-        "Vellum.attach",
+        "Cadet.attach",
         {},
         context.signal,
       );
@@ -1586,9 +1586,9 @@ export async function executeBrowserDetach(
   try {
     if (cdp.kind === "extension") {
       // Extension path: explicitly detach the debugger via a synthetic
-      // Vellum.detach command so the Chrome debugging banner clears.
+      // Cadet.detach command so the Chrome debugging banner clears.
       const result = await cdp.send<{ detached?: boolean; target?: unknown }>(
-        "Vellum.detach",
+        "Cadet.detach",
         {},
         context.signal,
       );
@@ -1616,7 +1616,7 @@ export async function executeBrowserDetach(
     return { content: `Error: Detach failed: ${msg}`, isError: true };
   } finally {
     // Always reset conversation-scoped browser state, even if the
-    // Vellum.detach round-trip failed (target gone, transport dropped).
+    // Cadet.detach round-trip failed (target gone, transport dropped).
     // browser_detach is the user's recovery path — leaving a stale
     // sticky backend or snapshot map behind would defeat its purpose.
     clearBrowserSessionState(context);
@@ -1662,11 +1662,11 @@ export async function executeBrowserClose(
     // Non-local path: the user owns their Chrome tab — we must not
     // close it. On the extension backend, detach the debugger (so the
     // Chrome debugging banner clears promptly); other backends have no
-    // Vellum.detach. Either way drop the cached snapshot state so stale
+    // Cadet.detach. Either way drop the cached snapshot state so stale
     // eids from prior snapshots cannot be resolved by later tool calls.
     if (cdp.kind === "extension") {
       try {
-        await cdp.send("Vellum.detach", {}, context.signal);
+        await cdp.send("Cadet.detach", {}, context.signal);
       } catch {
         // Tolerate detach failures (already detached, tab closed, etc.)
       }
@@ -2549,7 +2549,7 @@ function extensionConnectionActions(): string[] {
   return [
     CHROME_EXTENSION_INSTALL_HINT,
     DESKTOP_APP_INSTALL_HINT,
-    "Tell the user to make sure a browser is open with the Vellum Chrome extension on.",
+    "Tell the user to make sure a browser is open with the Cadet Chrome extension on.",
   ];
 }
 

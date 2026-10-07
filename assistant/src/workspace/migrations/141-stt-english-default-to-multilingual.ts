@@ -33,14 +33,14 @@ import type { WorkspaceMigration } from "./types.js";
  */
 const MULTILINGUAL = "multi";
 const ENGLISH = "en";
-const MULTI_DEFAULT_PROVIDERS = new Set(["deepgram", "vellum"]);
+const MULTI_DEFAULT_PROVIDERS = new Set(["deepgram", "cadet"]);
 
 export const sttEnglishDefaultToMultilingualMigration: WorkspaceMigration = {
   id: "141-stt-english-default-to-multilingual",
   description:
     "Move services.stt.language from the accepted English default to multilingual on Deepgram and managed speech",
   run(workspaceDir: string): void {
-    if (process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH) {
+    if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
       return;
     }
 
@@ -85,7 +85,7 @@ export const sttEnglishDefaultToMultilingualMigration: WorkspaceMigration = {
     // holds the bring-your-own value it would restore, so mode wins.
     const provider =
       stt.mode === "managed"
-        ? "vellum"
+        ? "cadet"
         : typeof stt.provider === "string"
           ? stt.provider
           : "deepgram";

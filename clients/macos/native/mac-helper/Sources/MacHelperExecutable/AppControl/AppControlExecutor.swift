@@ -5,7 +5,7 @@ import CoreGraphics
 import Foundation
 import os
 
-private let log = Logger(subsystem: "ai.vellum.mac-helper", category: "AppControlExecutor")
+private let log = Logger(subsystem: "ai.mycadet.mac-helper", category: "AppControlExecutor")
 
 /// Hard cap on how long we'll wait for a target app to become frontmost
 /// after `NSRunningApplication.activate()`. macOS focus transitions are
@@ -152,7 +152,7 @@ enum AppControlExecutor {
             return HostAppControlResultPayload(
                 requestId: requestId,
                 state: .running,
-                executionError: "Accessibility permission not granted. Grant Vellum access in System Settings > Privacy & Security > Accessibility, then retry."
+                executionError: "Accessibility permission not granted. Grant Cadet access in System Settings > Privacy & Security > Accessibility, then retry."
             )
         }
 

@@ -169,10 +169,10 @@ function main(): void {
   const outDir = join(buildDir, "out");
   const pkgDir = join(buildDir, "package");
   const nodeModulesDir = join(buildDir, "node_modules");
-  const vellumOverlay = join(nodeModulesDir, "@vellumai");
+  const cadetOverlay = join(nodeModulesDir, "@mycadet");
 
   rmSync(buildDir, { recursive: true, force: true });
-  mkdirSync(vellumOverlay, { recursive: true });
+  mkdirSync(cadetOverlay, { recursive: true });
 
   // 1. Emit declarations for the authoring surface and everything it reaches.
   console.log("[plugin-api] emitting authoring-surface declarations…");
@@ -183,17 +183,17 @@ function main(): void {
   //    API Extractor inlines them (as `bundledPackages`) instead of leaving
   //    dangling `@mycadet/*` imports an external consumer can't resolve.
   console.log("[plugin-api] emitting workspace contract declarations…");
-  const vellumDir = join(NODE_MODULES, "@vellumai");
+  const cadetDir = join(NODE_MODULES, "@mycadet");
   const bundled: string[] = [];
-  for (const name of readdirSync(vellumDir)) {
-    const dir = join(vellumDir, name);
+  for (const name of readdirSync(cadetDir)) {
+    const dir = join(cadetDir, name);
     if (!existsSync(join(dir, "tsconfig.json"))) {
       continue;
     }
     if (!existsSync(join(dir, "src"))) {
       continue;
     }
-    const dest = join(vellumOverlay, name);
+    const dest = join(cadetOverlay, name);
     if (emitContract(dir, dest)) {
       writeContractManifest(join(dir, "package.json"), dest);
       bundled.push(`@mycadet/${name}`);
@@ -285,7 +285,7 @@ function main(): void {
         name: "@mycadet/plugin-api",
         version,
         description:
-          "Public TypeScript authoring contract for Vellum assistant plugins.",
+          "Public TypeScript authoring contract for Cadet assistant plugins.",
         license: "MIT",
         type: "module",
         main: "./index.js",
@@ -308,7 +308,7 @@ function main(): void {
         publishConfig: { access: "public" },
         repository: {
           type: "git",
-          url: "git+https://github.com/vellum-ai/vellum-assistant.git",
+          url: "git+https://github.com/vargasjr-dev/mycadet.git",
           directory: "assistant/src/plugin-api",
         },
       },

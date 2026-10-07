@@ -32,7 +32,7 @@ import { ensureVisible } from "../main-window";
  * avatar through `electron.Notification`'s `icon`.
  */
 
-const HELPER_EXECUTABLE = "vellum-linux-helper";
+const HELPER_EXECUTABLE = "cadet-linux-helper";
 
 // Bound on toasts a user could still interact with.
 const MAX_TRACKED_TOASTS = 200;
@@ -49,7 +49,7 @@ const SHOW_RESULT_SCHEMA = z.object({
 });
 
 export const resolveHelperPath = (): string | null => {
-  const override = process.env["VELLUM_LINUX_HELPER_PATH"];
+  const override = process.env["CADET_LINUX_HELPER_PATH"];
   // `resourcesPath` (the packaged install's resources dir) is only set under
   // an Electron runtime; the app-path candidate is the dev publish dir.
   const resourcesPath: string | undefined = process.resourcesPath;

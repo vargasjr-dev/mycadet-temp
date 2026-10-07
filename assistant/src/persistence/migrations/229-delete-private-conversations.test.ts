@@ -656,9 +656,9 @@ function seedGuardianAndApprovalRows(raw: Database, now: number): void {
       created_at,
       updated_at
     ) VALUES
-      ('legacy-delivery-private-request', 'legacy-request-private-source', 'vellum', 'conv-standard', 'chat-standard', 'user-123', 'pending', ${now}, ${now}),
-      ('legacy-delivery-private-destination', 'legacy-request-private-destination', 'vellum', 'conv-private', 'chat-private', 'user-123', 'pending', ${now}, ${now}),
-      ('legacy-delivery-standard', 'legacy-request-standard', 'vellum', 'conv-standard', 'chat-standard', 'user-123', 'pending', ${now}, ${now});
+      ('legacy-delivery-private-request', 'legacy-request-private-source', 'cadet', 'conv-standard', 'chat-standard', 'user-123', 'pending', ${now}, ${now}),
+      ('legacy-delivery-private-destination', 'legacy-request-private-destination', 'cadet', 'conv-private', 'chat-private', 'user-123', 'pending', ${now}, ${now}),
+      ('legacy-delivery-standard', 'legacy-request-standard', 'cadet', 'conv-standard', 'chat-standard', 'user-123', 'pending', ${now}, ${now});
 
     INSERT INTO canonical_guardian_requests (
       id,
@@ -672,9 +672,9 @@ function seedGuardianAndApprovalRows(raw: Database, now: number): void {
       created_at,
       updated_at
     ) VALUES
-      ('canonical-request-private-source', 'tool_approval', 'conversation', 'vellum', 'conv-private', 'CANP01', 'pending', ${now + 60000}, ${now}, ${now}),
-      ('canonical-request-private-destination', 'tool_approval', 'conversation', 'vellum', 'conv-standard', 'CANP02', 'pending', ${now + 60000}, ${now}, ${now}),
-      ('canonical-request-standard', 'tool_approval', 'conversation', 'vellum', 'conv-standard', 'CANS01', 'pending', ${now + 60000}, ${now}, ${now});
+      ('canonical-request-private-source', 'tool_approval', 'conversation', 'cadet', 'conv-private', 'CANP01', 'pending', ${now + 60000}, ${now}, ${now}),
+      ('canonical-request-private-destination', 'tool_approval', 'conversation', 'cadet', 'conv-standard', 'CANP02', 'pending', ${now + 60000}, ${now}, ${now}),
+      ('canonical-request-standard', 'tool_approval', 'conversation', 'cadet', 'conv-standard', 'CANS01', 'pending', ${now + 60000}, ${now}, ${now});
 
     INSERT INTO canonical_guardian_deliveries (
       id,
@@ -687,9 +687,9 @@ function seedGuardianAndApprovalRows(raw: Database, now: number): void {
       created_at,
       updated_at
     ) VALUES
-      ('canonical-delivery-private-request', 'canonical-request-private-source', 'vellum', 'conv-standard', 'chat-standard', 'message-standard', 'pending', ${now}, ${now}),
-      ('canonical-delivery-private-destination', 'canonical-request-private-destination', 'vellum', 'conv-private', 'chat-private', 'message-private', 'pending', ${now}, ${now}),
-      ('canonical-delivery-standard', 'canonical-request-standard', 'vellum', 'conv-standard', 'chat-standard', 'message-standard', 'pending', ${now}, ${now});
+      ('canonical-delivery-private-request', 'canonical-request-private-source', 'cadet', 'conv-standard', 'chat-standard', 'message-standard', 'pending', ${now}, ${now}),
+      ('canonical-delivery-private-destination', 'canonical-request-private-destination', 'cadet', 'conv-private', 'chat-private', 'message-private', 'pending', ${now}, ${now}),
+      ('canonical-delivery-standard', 'canonical-request-standard', 'cadet', 'conv-standard', 'chat-standard', 'message-standard', 'pending', ${now}, ${now});
 
     INSERT INTO scoped_approval_grants (
       id,
@@ -705,9 +705,9 @@ function seedGuardianAndApprovalRows(raw: Database, now: number): void {
       created_at,
       updated_at
     ) VALUES
-      ('scoped-grant-private', 'request_id', 'canonical-request-private-source', NULL, NULL, 'vellum', 'vellum', 'conv-private', 'active', ${now + 60000}, ${now}, ${now}),
-      ('scoped-grant-standard', 'request_id', 'canonical-request-standard', NULL, NULL, 'vellum', 'vellum', 'conv-standard', 'active', ${now + 60000}, ${now}, ${now}),
-      ('scoped-grant-unscoped', 'tool_signature', NULL, 'test_tool', 'digest-123', 'vellum', 'vellum', NULL, 'active', ${now + 60000}, ${now}, ${now});
+      ('scoped-grant-private', 'request_id', 'canonical-request-private-source', NULL, NULL, 'cadet', 'cadet', 'conv-private', 'active', ${now + 60000}, ${now}, ${now}),
+      ('scoped-grant-standard', 'request_id', 'canonical-request-standard', NULL, NULL, 'cadet', 'cadet', 'conv-standard', 'active', ${now + 60000}, ${now}, ${now}),
+      ('scoped-grant-unscoped', 'tool_signature', NULL, 'test_tool', 'digest-123', 'cadet', 'cadet', NULL, 'active', ${now + 60000}, ${now}, ${now});
 
     INSERT INTO scoped_approval_grants (
       id,
@@ -724,7 +724,7 @@ function seedGuardianAndApprovalRows(raw: Database, now: number): void {
       created_at,
       updated_at
     ) VALUES
-      ('scoped-grant-private-call-only', 'tool_signature', NULL, 'test_tool', 'digest-456', 'vellum', 'vellum', NULL, 'call-private-guardian', 'active', ${now + 60000}, ${now}, ${now});
+      ('scoped-grant-private-call-only', 'tool_signature', NULL, 'test_tool', 'digest-456', 'cadet', 'cadet', NULL, 'call-private-guardian', 'active', ${now + 60000}, ${now}, ${now});
 
     INSERT INTO channel_guardian_approval_requests (
       id,

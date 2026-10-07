@@ -23,11 +23,11 @@ import type { WorkspaceMigration } from "./types.js";
  * to the same model this migration writes.
  *
  * Provider guard: the stale ID belongs to the `fireworks` provider and also
- * appears in managed profiles stamped `provider: "vellum"` (which route
+ * appears in managed profiles stamped `provider: "cadet"` (which route
  * Fireworks-account model IDs through the managed proxy). Under the entries
  * model (migration 145) `provider` can also hold a `provider_connections`
  * entry name whose row kind drives dispatch. A fragment is repaired when
- * its `provider` is `"fireworks"`, `"vellum"`, absent, or an entry name
+ * its `provider` is `"fireworks"`, `"cadet"`, absent, or an entry name
  * whose row kind is one of those. Any other provider is left untouched: an
  * `openai-compatible` endpoint may legitimately serve a model by the stale
  * name.
@@ -142,7 +142,7 @@ export const repairRetiredFireworksMinimaxM2p7ModelIdMigration: WorkspaceMigrati
 
 const STALE_MODEL_ID = "accounts/fireworks/models/minimax-m2p7";
 const REPLACEMENT_MODEL_ID = "accounts/fireworks/models/minimax-m3";
-const REPAIRABLE_PROVIDERS = new Set(["fireworks", "vellum"]);
+const REPAIRABLE_PROVIDERS = new Set(["fireworks", "cadet"]);
 
 function repairFragment(
   fragment: Record<string, unknown> | null,

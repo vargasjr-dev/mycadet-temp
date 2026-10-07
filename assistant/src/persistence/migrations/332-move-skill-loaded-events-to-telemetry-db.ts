@@ -71,7 +71,7 @@ function ensureSkillLoadedEventsSchema(telemetryRaw: Database): void {
 
 /**
  * Move `skill_loaded_events` — the `skill_loaded` telemetry outbox (one row
- * per Vellum-skill activation, metadata only) — into the dedicated telemetry
+ * per Cadet-skill activation, metadata only) — into the dedicated telemetry
  * database (`assistant-telemetry.db`), alongside `watchdog_events`
  * (migration 301), `config_setting_events` (325), `onboarding_events` (329),
  * `auth_fallback_events` (330), and `lifecycle_events` (331). Rows are

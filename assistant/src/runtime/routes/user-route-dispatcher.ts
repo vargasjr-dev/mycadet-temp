@@ -4,9 +4,9 @@
  * Maps requests under the `/x/*` path prefix to handler modules resolved from
  * the filesystem at request time. Two locations back the surface:
  *
- * - `$VELLUM_WORKSPACE_DIR/routes/<path>` — workspace routes, served at
+ * - `$CADET_WORKSPACE_DIR/routes/<path>` — workspace routes, served at
  *   `/x/<path>`.
- * - `$VELLUM_WORKSPACE_DIR/plugins/<name>/routes/<path>` — a plugin's routes,
+ * - `$CADET_WORKSPACE_DIR/plugins/<name>/routes/<path>` — a plugin's routes,
  *   served in that plugin's namespace at `/x/plugins/<name>/<path>`. The
  *   `plugins/<name>/` prefix is reserved for this: a request there resolves
  *   only against the named plugin's `routes/` directory (never the workspace

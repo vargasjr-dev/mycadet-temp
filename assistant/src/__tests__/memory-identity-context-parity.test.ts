@@ -31,7 +31,7 @@ const { buildIdentityContext } =
 
 // ── Workspace fixtures ─────────────────────────────────────────────────
 
-const workspaceDir = process.env.VELLUM_WORKSPACE_DIR!;
+const workspaceDir = process.env.CADET_WORKSPACE_DIR!;
 const identityPath = join(workspaceDir, "IDENTITY.md");
 const soulPath = join(workspaceDir, "SOUL.md");
 const templatesDir = join(import.meta.dirname, "../prompts/templates");

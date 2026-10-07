@@ -82,15 +82,15 @@ describe("GET /avatar/state", () => {
     workspaceDir = mkdtempSync(join(tmpdir(), "avatar-state-route-test-"));
     avatarDir = join(workspaceDir, "data", "avatar");
     mkdirSync(avatarDir, { recursive: true });
-    prevWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    prevWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
   });
 
   afterEach(() => {
     if (prevWorkspaceDir === undefined) {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     } else {
-      process.env.VELLUM_WORKSPACE_DIR = prevWorkspaceDir;
+      process.env.CADET_WORKSPACE_DIR = prevWorkspaceDir;
     }
     rmSync(workspaceDir, { recursive: true, force: true });
   });
@@ -250,17 +250,17 @@ describe("avatar write/remove handlers", () => {
     workspaceDir = mkdtempSync(join(tmpdir(), "avatar-write-route-test-"));
     avatarDir = join(workspaceDir, "data", "avatar");
     mkdirSync(avatarDir, { recursive: true });
-    prevWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    prevWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
     publishedOrigins.length = 0;
     recorded.length = 0;
   });
 
   afterEach(() => {
     if (prevWorkspaceDir === undefined) {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     } else {
-      process.env.VELLUM_WORKSPACE_DIR = prevWorkspaceDir;
+      process.env.CADET_WORKSPACE_DIR = prevWorkspaceDir;
     }
     rmSync(workspaceDir, { recursive: true, force: true });
   });
@@ -587,7 +587,7 @@ describe("avatar write/remove handlers", () => {
 
   describe("client OS on avatar_changed", () => {
     test("the client-os header reaches the event, sanitized", async () => {
-      await uploadRed({ "x-vellum-client-os": " macOS " });
+      await uploadRed({ "x-cadet-client-os": " macOS " });
 
       expect(recorded).toHaveLength(1);
       expect(recorded[0]!.name).toBe("avatar_changed");
@@ -598,14 +598,14 @@ describe("avatar write/remove handlers", () => {
     });
 
     test("an out-of-bounds client-os header is dropped, not forwarded", async () => {
-      await uploadRed({ "x-vellum-client-os": "a".repeat(65) });
+      await uploadRed({ "x-cadet-client-os": "a".repeat(65) });
 
       expect(recorded).toHaveLength(1);
       expect(recorded[0]!.fields).not.toHaveProperty("client_os");
     });
 
     test("the client id reaches the fan-out", async () => {
-      await uploadRed({ "x-vellum-client-id": "web-1" });
+      await uploadRed({ "x-cadet-client-id": "web-1" });
 
       expect(publishedOrigins).toEqual(["web-1"]);
     });
@@ -627,15 +627,15 @@ describe("GET /avatar/get (manifest-driven precedence)", () => {
     workspaceDir = mkdtempSync(join(tmpdir(), "avatar-get-route-test-"));
     avatarDir = join(workspaceDir, "data", "avatar");
     mkdirSync(avatarDir, { recursive: true });
-    prevWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    prevWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
   });
 
   afterEach(() => {
     if (prevWorkspaceDir === undefined) {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     } else {
-      process.env.VELLUM_WORKSPACE_DIR = prevWorkspaceDir;
+      process.env.CADET_WORKSPACE_DIR = prevWorkspaceDir;
     }
     rmSync(workspaceDir, { recursive: true, force: true });
   });

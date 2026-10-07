@@ -1,5 +1,5 @@
 /**
- * Sandboxed renderer window for `.vellum` bundles.
+ * Sandboxed renderer window for `.cadet` bundles.
  *
  * Each bundle gets its own `BrowserWindow` backed by a dedicated
  * `persist:bundle-{uuid}` session partition. Cookies, localStorage, and
@@ -7,14 +7,14 @@
  * preload script so there is no `window.cadet` bridge; the renderer runs
  * in full sandbox mode with only the web-platform APIs available.
  *
- * Navigation is restricted to the bundle's own `vellumapp://{uuid}/`
+ * Navigation is restricted to the bundle's own `cadetapp://{uuid}/`
  * origin, and `window.open` is blocked outright, so a bundle cannot
  * reach another bundle's content or escape into arbitrary web pages.
  */
 import { BrowserWindow, session } from "electron";
 
-import { getBundlePlatform, VELLUMAPP_PROTOCOL } from "./bundle-platform";
-import { createVellumAppHandler } from "./vellumapp-protocol";
+import { getBundlePlatform, CADETAPP_PROTOCOL } from "./bundle-platform";
+import { createCadetAppHandler } from "./cadetapp-protocol";
 import { hardenedWebPreferences } from "./windows";
 
 const openBundleWindows = new Map<string, BrowserWindow>();
@@ -37,8 +37,8 @@ export const openBundleWindow = (
   platform.denyAllPermissions(bundleSession);
 
   bundleSession.protocol.handle(
-    VELLUMAPP_PROTOCOL,
-    createVellumAppHandler(platform.bundlesRoot()),
+    CADETAPP_PROTOCOL,
+    createCadetAppHandler(platform.bundlesRoot()),
   );
 
   const win = new BrowserWindow({
@@ -52,7 +52,7 @@ export const openBundleWindow = (
     },
   });
 
-  const allowedPrefix = `${VELLUMAPP_PROTOCOL}://${uuid}/`;
+  const allowedPrefix = `${CADETAPP_PROTOCOL}://${uuid}/`;
 
   win.webContents.on("will-navigate", (event, url) => {
     if (!url.startsWith(allowedPrefix)) {
@@ -62,7 +62,7 @@ export const openBundleWindow = (
 
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
 
-  void win.loadURL(`${VELLUMAPP_PROTOCOL}://${uuid}/${entry}`);
+  void win.loadURL(`${CADETAPP_PROTOCOL}://${uuid}/${entry}`);
 
   openBundleWindows.set(uuid, win);
   win.on("closed", () => {

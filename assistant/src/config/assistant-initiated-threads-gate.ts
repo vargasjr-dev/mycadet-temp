@@ -40,7 +40,7 @@ export function isAssistantInitiatedThreadsEnabled(
      (`"on"`). The gateway's env-override path does not: its parser treats
      `on` as a truthy word (`TRUTHY = {"true","1","yes","on"}` in
      `feature-flag-env-overrides.ts`) and coerces it to boolean `true`, then
-     applies env last — so `VELLUM_FLAG_ASSISTANT_INITIATED_THREADS=on`
+     applies env last — so `CADET_FLAG_ASSISTANT_INITIATED_THREADS=on`
      reaches the daemon as `true`, not `"on"`.
 
      A strict `=== "on"` therefore reads the env kill-switch as OFF, which is

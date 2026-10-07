@@ -35,7 +35,7 @@ const baseRun = {
   requestId: "req-web",
   onEvent: () => {},
   callSite: "subagentSpawn" as const,
-  trust: { sourceChannel: "vellum" as const, trustClass: "unknown" as const },
+  trust: { sourceChannel: "cadet" as const, trustClass: "unknown" as const },
 };
 
 const userMessages = [

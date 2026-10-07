@@ -20,7 +20,7 @@
     "build:fetch-bun": "bash scripts/fetch-bun.sh",
     "build:web": "cd ../web && bun install && bun run openapi-ts && bun run build && cd ../macos && mkdir -p resources && rm -rf resources/web-dist && cp -R ../web/dist resources/web-dist",
     "pack": "bash scripts/pack.sh",
-    "pack:debug": "VELLUM_ENABLE_CHROME_DEVTOOLS=true bash scripts/pack.sh"
+    "pack:debug": "CADET_ENABLE_CHROME_DEVTOOLS=true bash scripts/pack.sh"
   },
   "devDependencies": {
     "@types/bun": "1.3.14",

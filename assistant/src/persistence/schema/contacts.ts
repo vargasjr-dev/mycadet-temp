@@ -42,7 +42,7 @@ export const assistantContactMetadata = sqliteTable(
     contactId: text("contact_id")
       .primaryKey()
       .references(() => contacts.id, { onDelete: "cascade" }),
-    species: text("species").notNull(), // 'vellum' | 'openclaw'
+    species: text("species").notNull(), // 'cadet' | 'openclaw'
     metadata: text("metadata"), // JSON blob for species-specific fields
   },
 );

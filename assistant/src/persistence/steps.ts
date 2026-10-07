@@ -49,9 +49,9 @@ import { migrateMemoryItemsIndexes } from "./migrations/017-memory-items-indexes
 import { migrateRemainingTableIndexes } from "./migrations/018-remaining-table-indexes.js";
 import { downNotificationTablesSchema } from "./migrations/019-notification-tables-schema-migration.js";
 import {
-  downRenameChannelToVellum,
-  migrateRenameChannelToVellum,
-} from "./migrations/020-rename-macos-ios-channel-to-vellum.js";
+  downRenameChannelToCadet,
+  migrateRenameChannelToCadet,
+} from "./migrations/020-rename-macos-ios-channel-to-cadet.js";
 import { migrateConversationStatusIndexes } from "./migrations/021-conversation-status-indexes.js";
 import { migrateAddOriginInterface } from "./migrations/022-add-origin-interface.js";
 import { migrateMemoryItemSourcesIndexes } from "./migrations/023-memory-item-sources-indexes.js";
@@ -632,14 +632,14 @@ export const migrationSteps: MigrationStep[] = [
   migrateMemoryItemsIndexes,
   migrateRemainingTableIndexes,
   {
-    name: "migrateRenameChannelToVellum",
-    run: migrateRenameChannelToVellum,
+    name: "migrateRenameChannelToCadet",
+    run: migrateRenameChannelToCadet,
     rollback: [
       {
         version: 11,
         description:
-          "Rename macos and ios channel identifiers to vellum across all tables",
-        down: downRenameChannelToVellum,
+          "Rename macos and ios channel identifiers to cadet across all tables",
+        down: downRenameChannelToCadet,
       },
     ],
   },

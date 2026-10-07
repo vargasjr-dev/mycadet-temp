@@ -402,10 +402,10 @@ describe("IPC contact routes", () => {
     expect(result.channelId.length).toBeGreaterThan(0);
   });
 
-  test("create_contact refuses the reserved vellum-shared channel type", async () => {
+  test("create_contact refuses the reserved cadet-shared channel type", async () => {
     await startServerAndConnect();
     const res = await sendRequest(client, "create_contact", {
-      channelType: "vellum-shared",
+      channelType: "cadet-shared",
       address: "prin-fake-001",
     });
 

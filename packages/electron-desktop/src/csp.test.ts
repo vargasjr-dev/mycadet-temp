@@ -79,7 +79,7 @@ describe("CSP_POLICY", () => {
 
   test("script-src allows the platform origin for the replay recorder script", () => {
     const scriptSrc = directiveValue("script-src")!;
-    expect(scriptSrc).toContain("https://*.vellum.ai");
+    expect(scriptSrc).toContain("https://*.mycadet.ai");
   });
 
   test("media-src allows the hosted voice-preview sources", () => {
@@ -105,10 +105,10 @@ describe("CSP_POLICY", () => {
     expect(directiveValue("base-uri")).toBe("'none'");
   });
 
-  test("connect-src allows vellum.ai but not broad https:", () => {
+  test("connect-src allows mycadet.ai but not broad https:", () => {
     const connectSrc = directiveValue("connect-src")!;
-    expect(connectSrc).toContain("https://*.vellum.ai");
-    expect(connectSrc).toContain("wss://*.vellum.ai");
+    expect(connectSrc).toContain("https://*.mycadet.ai");
+    expect(connectSrc).toContain("wss://*.mycadet.ai");
     expect(connectSrc).not.toMatch(/\bhttps:\s/);
   });
 

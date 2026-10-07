@@ -62,7 +62,7 @@ function seedGuardian(opts: {
     .values({
       id: `ch-${opts.contactId}`,
       contactId: opts.contactId,
-      type: opts.channelType ?? "vellum",
+      type: opts.channelType ?? "cadet",
       address: `addr-${opts.contactId}`,
       isPrimary: false,
       status: opts.channelStatus ?? "active",
@@ -93,7 +93,7 @@ describe("resolveLocalGuardianPrincipalId", () => {
     expect(await resolveLocalGuardianPrincipalId()).toBe("local");
   });
 
-  test("falls back to 'local' when the active guardian channel is non-vellum", async () => {
+  test("falls back to 'local' when the active guardian channel is non-cadet", async () => {
     seedGuardian({
       contactId: "guardian-3",
       principalId: "principal-owner",

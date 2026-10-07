@@ -11,13 +11,13 @@ import type { CdpClientKind } from "./types.js";
  * error-classification plumbing with three deliberate differences:
  *
  *  - `kind` is `"host-bridge"`, so transport-aware tool branches
- *    (e.g. `--new-tab`'s `Vellum.createTab` path) correctly treat the
+ *    (e.g. `--new-tab`'s `Cadet.createTab` path) correctly treat the
  *    bridge as a non-extension backend.
  *  - No pinned-tab `cdpSessionId` is ever injected: extension pins
  *    store Chrome tab ids, which never match the CDP target ids the
  *    bridge resolves from `/json/list` and would guarantee
  *    `cdp_session_not_found` failures.
- *  - Tab methods throw locally instead of sending `Vellum.*`
+ *  - Tab methods throw locally instead of sending `Cadet.*`
  *    pseudo-methods the bridge cannot serve (matches the
  *    local/cdp-inspect client convention).
  */

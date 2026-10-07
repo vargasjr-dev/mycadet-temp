@@ -1,11 +1,11 @@
 import type { ClientOs, InterfaceId } from "../channels/types.js";
 
 /** Public download page for the desktop apps. */
-export const DESKTOP_APP_DOWNLOAD_URL = "https://www.vellum.ai/downloads";
+export const DESKTOP_APP_DOWNLOAD_URL = "https://mycadet.ai/downloads";
 
-/** Chrome Web Store listing for the Vellum Assistant browser extension. */
+/** Chrome Web Store listing for the Cadet Assistant browser extension. */
 export const CHROME_WEB_STORE_INSTALL_URL =
-  "https://chromewebstore.google.com/detail/vellum-assistant-browser/hphbdmpffeigpcdjkckleobjmhhokpne";
+  "https://chromewebstore.google.com/detail/mycadet-browser/hphbdmpffeigpcdjkckleobjmhhokpne";
 
 export const DESKTOP_APP_INSTALL_HINT = `Download the Cadet desktop app: ${DESKTOP_APP_DOWNLOAD_URL}. Open it, then retry.`;
 
@@ -25,7 +25,7 @@ export function formatDesktopAppRequired(
 }
 
 /** User-facing install step for status userActions and command-failure hints. */
-export const CHROME_EXTENSION_INSTALL_HINT = `Install the Vellum Assistant Chrome extension from the Chrome Web Store: ${CHROME_WEB_STORE_INSTALL_URL}`;
+export const CHROME_EXTENSION_INSTALL_HINT = `Install the Cadet Assistant Chrome extension from the Chrome Web Store: ${CHROME_WEB_STORE_INSTALL_URL}`;
 
 export interface CapabilityOfferSurface {
   transportInterface?: InterfaceId;

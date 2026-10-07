@@ -131,7 +131,7 @@ describe("runDeferredTasksWhenAssistantReady", () => {
         );
       }
       // Evidence of prior onboarding with no guardian row →
-      // ensureVellumGuardianBinding throws VellumGuardianMintRefusedError.
+      // ensureCadetGuardianBinding throws CadetGuardianMintRefusedError.
       seedContact({ id: "invited-contact" });
       bustGuardianIntegrityCache();
       setGuardianIntegrityReporterOverridesForTesting({
@@ -191,7 +191,7 @@ describe("runDeferredTasksWhenAssistantReady", () => {
       const channels = getGatewayDb().select().from(contactChannels).all();
       expect(channels).toHaveLength(1);
       expect(channels[0]).toMatchObject({
-        type: "vellum",
+        type: "cadet",
         address: "principal-123",
         status: "active",
       });

@@ -56,7 +56,7 @@ export interface PluginPackageMetadata {
   readonly version?: string;
   readonly description?: string;
   readonly peerDependencies?: Record<string, string>;
-  /** Author-supplied short glyph (emoji) from `vellum.icon`, when present. */
+  /** Author-supplied short glyph (emoji) from `cadet.icon`, when present. */
   readonly icon?: string;
 }
 

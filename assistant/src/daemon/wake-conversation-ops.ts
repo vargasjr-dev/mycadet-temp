@@ -224,9 +224,9 @@ export async function persistWakeTailMessage(
   const turnInterfaceCtx = conversation.getTurnInterfaceContext();
   const metadata: Record<string, unknown> = {
     ...provenanceFromTrustContext(restingTrust(conversation)),
-    userMessageChannel: turnChannelCtx?.userMessageChannel ?? "vellum",
+    userMessageChannel: turnChannelCtx?.userMessageChannel ?? "cadet",
     assistantMessageChannel:
-      turnChannelCtx?.assistantMessageChannel ?? "vellum",
+      turnChannelCtx?.assistantMessageChannel ?? "cadet",
     userMessageInterface: turnInterfaceCtx?.userMessageInterface ?? "web",
     assistantMessageInterface:
       turnInterfaceCtx?.assistantMessageInterface ?? "web",
@@ -304,9 +304,9 @@ export async function persistWakeTriggerMessage(
   const turnInterfaceCtx = conversation.getTurnInterfaceContext();
   const metadata: Record<string, unknown> = {
     ...provenanceFromTrustContext(restingTrust(conversation)),
-    userMessageChannel: turnChannelCtx?.userMessageChannel ?? "vellum",
+    userMessageChannel: turnChannelCtx?.userMessageChannel ?? "cadet",
     assistantMessageChannel:
-      turnChannelCtx?.assistantMessageChannel ?? "vellum",
+      turnChannelCtx?.assistantMessageChannel ?? "cadet",
     userMessageInterface: turnInterfaceCtx?.userMessageInterface ?? "web",
     assistantMessageInterface:
       turnInterfaceCtx?.assistantMessageInterface ?? "web",

@@ -100,7 +100,7 @@ try {
       await freshPage.goto(server.url.href);
       await freshPage.addScriptTag({ content: bundle });
       assert.equal(await freshPage.evaluate(async () => {
-        const open = indexedDB.open("vellum-browser-notifications", 1);
+        const open = indexedDB.open("cadet-browser-notifications", 1);
         const db = await new Promise<IDBDatabase>((resolve, reject) => {
           open.onsuccess = () => resolve(open.result);
           open.onerror = () => reject(open.error);

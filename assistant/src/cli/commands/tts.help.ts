@@ -105,7 +105,7 @@ Examples:
       helpText: `
 Set the assistant's TTS voice on whichever provider is currently active
 (services.tts.provider). This writes to the config key that provider actually
-reads — e.g. services.tts.providers.vellum.model for managed speech — so the
+reads — e.g. services.tts.providers.cadet.model for managed speech — so the
 change takes effect on the next spoken turn.
 
 Prefer this over 'assistant config set services.tts.providers.elevenlabs.voiceId'

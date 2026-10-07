@@ -691,7 +691,7 @@ async function runTurn(
     conversationId: convId,
     turnIndex,
     trust: {
-      sourceChannel: "vellum" as const,
+      sourceChannel: "cadet" as const,
       trustClass: "guardian" as const,
     },
   };
@@ -821,7 +821,7 @@ async function reinjectTurn(
     conversationId: convId,
     turnIndex,
     trust: {
-      sourceChannel: "vellum" as const,
+      sourceChannel: "cadet" as const,
       trustClass: "guardian" as const,
     },
   };
@@ -935,7 +935,7 @@ async function retryTurn(
     conversationId: convId,
     turnIndex: retryTurnIndex,
     trust: {
-      sourceChannel: "vellum" as const,
+      sourceChannel: "cadet" as const,
       trustClass: "guardian" as const,
     },
   };

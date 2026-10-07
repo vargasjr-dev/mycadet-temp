@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const { app, BrowserWindow, protocol, session } = require("electron");
 
 const SCHEME = "paired-probe";
-const HOST = "vellum.ai";
+const HOST = "mycadet.ai";
 const PAIRED_PATH = "/assistant/__gateway-paired/asst-1/readyz";
 const RESULT_PATH = process.env.PAIRED_GATEWAY_GUARD_RESULT_PATH;
 

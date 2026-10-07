@@ -33,7 +33,7 @@ let respond: (call: FetchCall) => Response | Promise<Response>;
 const realFetch = globalThis.fetch;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "vellum-pair-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-pair-"));
   lockfilePath = path.join(tmpDir, "lockfile.json");
   configDir = path.join(tmpDir, "config");
   fetchCalls = [];
@@ -203,7 +203,7 @@ describe("pairAssistant", () => {
     expect(result.updated).toBe(false);
     expect(result.accessOnly).toBe(true);
 
-    // The on-disk entry matches what `vellum connect import` writes, field for
+    // The on-disk entry matches what `cadet connect import` writes, field for
     // field and in the same key order.
     const onDisk = readLockfileFromDisk();
     const entry = (onDisk.assistants as Array<Record<string, unknown>>)[0]!;

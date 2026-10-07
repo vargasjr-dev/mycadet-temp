@@ -118,7 +118,7 @@ function seedPendingRequest(): SimGuardianRequest {
   });
   bridgeState.seedDelivery({
     requestId: request.id,
-    destinationChannel: "vellum",
+    destinationChannel: "cadet",
     destinationConversationId: CONVERSATION_ID,
   });
   seedUndecidedCard(request.id);
@@ -145,7 +145,7 @@ describe("in-app trust decision rehydration", () => {
     await withdrawGuardianRequestCards({
       request,
       status: "denied",
-      originChannel: "vellum",
+      originChannel: "cadet",
       decidedAction: "leave_unverified",
     });
 
@@ -165,7 +165,7 @@ describe("in-app trust decision rehydration", () => {
     await withdrawGuardianRequestCards({
       request,
       status: "approved",
-      originChannel: "vellum",
+      originChannel: "cadet",
       decidedAction: "trust",
     });
 
@@ -180,7 +180,7 @@ describe("in-app trust decision rehydration", () => {
     await withdrawGuardianRequestCards({
       request,
       status: "approved",
-      originChannel: "vellum",
+      originChannel: "cadet",
       decidedAction: "trust",
     });
 

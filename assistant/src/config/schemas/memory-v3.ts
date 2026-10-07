@@ -204,7 +204,7 @@ export const MemoryV3EntitySchema = z
       .nonnegative("memory.v3.entity.idfFloor must be a non-negative number")
       .default(4)
       .describe(
-        'Minimum corpus IDF for a `## ` heading token to become an entity key. Excludes hub tokens (e.g. "vellum") common enough that an exact match cannot disambiguate; those pages ride the core/hot lanes instead.',
+        'Minimum corpus IDF for a `## ` heading token to become an entity key. Excludes hub tokens (e.g. "cadet") common enough that an exact match cannot disambiguate; those pages ride the core/hot lanes instead.',
       ),
     cap: z
       .number({ error: "memory.v3.entity.cap must be a number" })

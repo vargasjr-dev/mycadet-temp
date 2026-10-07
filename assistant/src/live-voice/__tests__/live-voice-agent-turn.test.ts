@@ -369,8 +369,8 @@ describe("LiveVoiceSession assistant turn", () => {
     expect(voiceTurnOptions).toMatchObject({
       conversationId: "conversation-123",
       voiceSessionId: "session-123",
-      userMessageChannel: "vellum",
-      assistantMessageChannel: "vellum",
+      userMessageChannel: "cadet",
+      assistantMessageChannel: "cadet",
       userMessageInterface: "macos",
       assistantMessageInterface: "macos",
       content: "hello world",

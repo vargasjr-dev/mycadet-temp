@@ -89,7 +89,7 @@ export function localModePlugin(env: Record<string, string>): Plugin {
   });
 
   return {
-    name: "vellum-local-mode",
+    name: "cadet-local-mode",
     transformIndexHtml(html) {
       return html.replace(
         "</head>",
@@ -409,7 +409,7 @@ function hatchMiddleware(baseDir: string): Connect.NextHandleFunction {
     const chunks: Buffer[] = [];
     req.on("data", (chunk: Buffer) => chunks.push(chunk));
     req.on("end", () => {
-      let species = "vellum";
+      let species = "cadet";
       let remote: string | undefined;
       if (chunks.length > 0) {
         try {
@@ -789,7 +789,7 @@ function wakeMiddleware(baseDir: string): Connect.NextHandleFunction {
   };
 }
 
-// Paired-device management via the CLI (`vellum devices … --json`). POST-only
+// Paired-device management via the CLI (`cadet devices … --json`). POST-only
 // (the renderer's postLocalCommand always POSTs); run-helper results respond
 // 200 with `ok` discriminating success so all hosts share one wire shape.
 function devicesMiddleware(baseDir: string): Connect.NextHandleFunction {

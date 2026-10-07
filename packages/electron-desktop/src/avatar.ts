@@ -17,7 +17,7 @@ import { on } from "./presence-runtime";
  * Rasterization happens in the renderer because Electron's `nativeImage`
  * decodes only PNG/JPEG, not the trait-composited SVG, and the renderer is
  * the only context with a canvas and the trait compositor. Main owns the
- * per-surface masking and the bundled-Vellum-mark fallback.
+ * per-surface masking and the bundled-Cadet-mark fallback.
  *
  * A `null` publish (no avatar, or a renderer-side rasterization failure) means
  * "fall back to the bundled mark" — the same restore-bundle-icon path the

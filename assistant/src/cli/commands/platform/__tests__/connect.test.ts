@@ -103,7 +103,7 @@ describe("assistant platform connect", () => {
       ok: true,
       result: {
         alreadyConnected: true,
-        baseUrl: "https://platform.vellum.ai",
+        baseUrl: "https://cloud.cadet.ai",
       },
     };
 
@@ -124,7 +124,7 @@ describe("assistant platform connect", () => {
     const parsed = JSON.parse(stdoutChunks.join(""));
     expect(parsed.ok).toBe(true);
     expect(parsed.alreadyConnected).toBe(true);
-    expect(parsed.baseUrl).toBe("https://platform.vellum.ai");
+    expect(parsed.baseUrl).toBe("https://cloud.cadet.ai");
   });
 
   test("calls exitFromIpcResult on error", async () => {

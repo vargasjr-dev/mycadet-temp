@@ -246,24 +246,24 @@ describe("Windows auxiliary windows", () => {
   });
 
   test("loads auxiliary windows from the app origin in local-renderer dev", () => {
-    // VELLUM_LOCAL_RENDERER serves the main window over app:// while
-    // VELLUM_DEV_URL names the remote platform; auxiliary windows must
+    // CADET_LOCAL_RENDERER serves the main window over app:// while
+    // CADET_DEV_URL names the remote platform; auxiliary windows must
     // follow the main window or the IPC sender guard rejects them.
-    process.env.VELLUM_LOCAL_RENDERER = "true";
-    process.env.VELLUM_DEV_URL = "https://dev-assistant.example.com/assistant";
+    process.env.CADET_LOCAL_RENDERER = "true";
+    process.env.CADET_DEV_URL = "https://dev-assistant.example.com/assistant";
     try {
       onListeners.get("cadet:dictationOverlay:setState")?.([
         { kind: "recording", transcription: "" },
       ]);
       expect(created[0]!.window.loadURL).toHaveBeenCalledWith(
-        "app://vellum.ai/assistant/floating/dictation-overlay",
+        "app://mycadet.ai/assistant/floating/dictation-overlay",
       );
     } finally {
       onListeners.get("cadet:dictationOverlay:setState")?.([
         { kind: "dismiss" },
       ]);
-      delete process.env.VELLUM_LOCAL_RENDERER;
-      delete process.env.VELLUM_DEV_URL;
+      delete process.env.CADET_LOCAL_RENDERER;
+      delete process.env.CADET_DEV_URL;
     }
   });
 

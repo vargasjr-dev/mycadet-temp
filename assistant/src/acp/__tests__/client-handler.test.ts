@@ -6,20 +6,20 @@ import type {
 } from "@agentclientprotocol/sdk";
 
 import type { AssistantEvent } from "../../api/index.js";
-import { VellumAcpClientHandler } from "../client-handler.js";
+import { CadetAcpClientHandler } from "../client-handler.js";
 import { modelOption } from "./helpers/acp-model-option.js";
 
 const ACP_SESSION_ID = "acp-session-abc";
 const PARENT_CONVERSATION_ID = "conv-xyz";
 
 function makeHandler(): {
-  handler: VellumAcpClientHandler;
+  handler: CadetAcpClientHandler;
   sent: AssistantEvent[];
   configOptionUpdates: SessionConfigOption[][];
 } {
   const sent: AssistantEvent[] = [];
   const configOptionUpdates: SessionConfigOption[][] = [];
-  const handler = new VellumAcpClientHandler(
+  const handler = new CadetAcpClientHandler(
     ACP_SESSION_ID,
     (msg) => {
       sent.push(msg);
@@ -32,7 +32,7 @@ function makeHandler(): {
   return { handler, sent, configOptionUpdates };
 }
 
-describe("VellumAcpClientHandler.sessionUpdate", () => {
+describe("CadetAcpClientHandler.sessionUpdate", () => {
   test("forwards agent_thought_chunk as an acp_session_update", async () => {
     const { handler, sent } = makeHandler();
 
@@ -74,7 +74,7 @@ describe("VellumAcpClientHandler.sessionUpdate", () => {
   });
 });
 
-describe("VellumAcpClientHandler replay suppression", () => {
+describe("CadetAcpClientHandler replay suppression", () => {
   function messageChunk(text: string): SessionNotification {
     return {
       sessionId: ACP_SESSION_ID,
@@ -132,7 +132,7 @@ describe("VellumAcpClientHandler replay suppression", () => {
   });
 });
 
-describe("VellumAcpClientHandler seq + enriched fields", () => {
+describe("CadetAcpClientHandler seq + enriched fields", () => {
   test("seq increments monotonically per forwarded event", async () => {
     const { handler, sent } = makeHandler();
 
@@ -792,7 +792,7 @@ describe("VellumAcpClientHandler seq + enriched fields", () => {
   });
 });
 
-describe("VellumAcpClientHandler config_option_update", () => {
+describe("CadetAcpClientHandler config_option_update", () => {
   const MODEL_OPTION = modelOption("sonnet");
 
   const THOUGHT_OPTION: SessionConfigOption = {
@@ -834,7 +834,7 @@ describe("VellumAcpClientHandler config_option_update", () => {
 
   test("a handler without the callback tolerates the update", async () => {
     const sent: AssistantEvent[] = [];
-    const handler = new VellumAcpClientHandler(
+    const handler = new CadetAcpClientHandler(
       ACP_SESSION_ID,
       (msg) => {
         sent.push(msg);

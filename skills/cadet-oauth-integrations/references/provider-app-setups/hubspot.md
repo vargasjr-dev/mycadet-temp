@@ -55,7 +55,7 @@ If the user already has a developer account, skip to the next step.
 
 ### Step 4: Fill In App Details
 
-> Set the app name to **Vellum Assistant**. You can leave the other fields (description, logo, etc.) blank for now. Click **Save**.
+> Set the app name to **Cadet Assistant**. You can leave the other fields (description, logo, etc.) blank for now. Click **Save**.
 
 ---
 
@@ -105,7 +105,7 @@ Wait for the user to confirm all 5 scopes are added.
 
 Follow the `cadet-oauth-integrations` workflow to collect credentials, register the OAuth app, connect, and verify.
 
-> I'll start the HubSpot authorization flow now. You should see a HubSpot consent page asking you to allow **Vellum Assistant** to access your account.
+> I'll start the HubSpot authorization flow now. You should see a HubSpot consent page asking you to allow **Cadet Assistant** to access your account.
 >
 > Select the HubSpot account you want to connect, review the permissions, and click **Grant access**.
 

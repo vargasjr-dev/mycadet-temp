@@ -11,7 +11,7 @@ import type {
   NotifierRequest,
 } from "./notifier";
 
-const userDataDir = mkdtempSync(path.join(tmpdir(), "vellum-notif-avatars-"));
+const userDataDir = mkdtempSync(path.join(tmpdir(), "cadet-notif-avatars-"));
 
 interface ElectronNotificationOptions {
   title: string;

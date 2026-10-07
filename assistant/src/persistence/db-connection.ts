@@ -19,21 +19,21 @@ export type DrizzleDb = ReturnType<typeof drizzle<typeof schema>>;
 /**
  * Guard against opening a real workspace database during tests. Shared by
  * every connection opener (main, logs, memory) so a misconfigured test run
- * cannot write to the real `~/.vellum/workspace` files through any of them.
+ * cannot write to the real `~/.cadet/workspace` files through any of them.
  */
 export function assertTestDbIsIsolated(): void {
   if (
     process.env.NODE_ENV !== "test" ||
-    process.env.VELLUM_ALLOW_REAL_WORKSPACE_IN_TESTS === "1"
+    process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS === "1"
   ) {
     return;
   }
 
-  const workspaceDir = process.env.VELLUM_WORKSPACE_DIR?.trim();
+  const workspaceDir = process.env.CADET_WORKSPACE_DIR?.trim();
   if (!workspaceDir) {
     throw new Error(
       [
-        "Refusing to open the assistant DB during tests without VELLUM_WORKSPACE_DIR.",
+        "Refusing to open the assistant DB during tests without CADET_WORKSPACE_DIR.",
         "Run assistant tests from the assistant package so the test preload can isolate state:",
         "  cd assistant && bun test src/path/to/file.test.ts",
       ].join("\n"),
@@ -43,8 +43,8 @@ export function assertTestDbIsIsolated(): void {
   const resolvedWorkspaceDir =
     canonicalizePathThroughExistingParent(workspaceDir);
   const realWorkspaceDir = canonicalizePathThroughExistingParent(
-    process.env.VELLUM_TEST_REAL_WORKSPACE_DIR?.trim() ||
-      join(homedir(), ".vellum", "workspace"),
+    process.env.CADET_TEST_REAL_WORKSPACE_DIR?.trim() ||
+      join(homedir(), ".cadet", "workspace"),
   );
   if (
     resolvedWorkspaceDir === realWorkspaceDir ||
@@ -53,7 +53,7 @@ export function assertTestDbIsIsolated(): void {
     throw new Error(
       [
         "Refusing to open the real assistant workspace DB during tests.",
-        `VELLUM_WORKSPACE_DIR resolved to ${resolvedWorkspaceDir}.`,
+        `CADET_WORKSPACE_DIR resolved to ${resolvedWorkspaceDir}.`,
         "Use a temp workspace for tests instead.",
       ].join("\n"),
     );

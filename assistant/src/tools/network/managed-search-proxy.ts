@@ -1,4 +1,4 @@
-import { VellumPlatformClient } from "../../platform/client.js";
+import { CadetPlatformClient } from "../../platform/client.js";
 
 export type ManagedSearchProxyProvider = "brave";
 
@@ -56,7 +56,7 @@ interface ManagedSearchProxyEnvelope {
  * reports as `kind: "unavailable"`.
  */
 export async function managedSearchAvailable(): Promise<boolean> {
-  const client = await VellumPlatformClient.create();
+  const client = await CadetPlatformClient.create();
   return client !== null && Boolean(client.platformAssistantId);
 }
 
@@ -65,7 +65,7 @@ export async function callManagedSearchProxy(
   request: ManagedSearchProxyRequest,
   signal?: AbortSignal,
 ): Promise<ManagedSearchProxyResult> {
-  const client = await VellumPlatformClient.create();
+  const client = await CadetPlatformClient.create();
   if (!client) {
     return {
       ok: false,

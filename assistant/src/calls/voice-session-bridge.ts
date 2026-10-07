@@ -1679,14 +1679,14 @@ export async function startVoiceTurn(
           { turnId, toolName: msg.toolName },
           "Auto-denying confirmation request for non-guardian voice turn (no matching scoped grant)",
         );
-        // A local live-voice session (vellum channel) belongs to the device
+        // A local live-voice session (cadet channel) belongs to the device
         // owner's own authenticated client, so a non-guardian turn there
         // means guardian trust could not be resolved (fresh install,
         // gateway unreachable) — tell the model verification failed rather
         // than implying the owner lacks guardian access.
         conversation.handleConfirmationResponse(msg.requestId, "deny", {
           decisionContext:
-            turnChannelContext.userMessageChannel === "vellum"
+            turnChannelContext.userMessageChannel === "cadet"
               ? `Permission denied for "${msg.toolName}": the caller's permissions could not be verified for this voice session, so side-effect tools are unavailable. In your next assistant reply, briefly say you could not verify permissions for this action right now and suggest retrying or completing it in text chat.`
               : `Permission denied for "${msg.toolName}": this voice call does not have interactive approval capabilities. Side-effect tools are not available for non-guardian voice callers. In your next assistant reply, explain briefly that this action requires guardian-level access and cannot be performed during this call.`,
         });
@@ -1721,7 +1721,7 @@ export async function startVoiceTurn(
         msg.input,
         workspaceRoot,
       );
-      const canPrompt = turnChannelContext.userMessageChannel === "vellum";
+      const canPrompt = turnChannelContext.userMessageChannel === "cadet";
       // Fail closed on a missing boundary for the same reason: with no
       // workspace root there is no way to tell an ordinary write from an
       // escape, and the safe reading of "cannot tell" is "ask". A real

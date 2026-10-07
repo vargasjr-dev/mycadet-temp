@@ -757,7 +757,7 @@ describe("createChannelReplySession", () => {
   });
 
   test("withholds an in-progress cadet link until it closes, then strips it", async () => {
-    // Slack streams are append-only, so a `[label](vellum://…)` link split
+    // Slack streams are append-only, so a `[label](cadet://…)` link split
     // across deltas must not stream its internal path before the closing `)`
     // arrives — once emitted it could not be retracted.
     const session = createChannelReplySession({
@@ -768,12 +768,12 @@ describe("createChannelReplySession", () => {
 
     session.observeEvent(textDelta("Here is your file: [report.pdf]("));
     await tick(15);
-    session.observeEvent(textDelta("vellum://workspace/scratch/report"));
+    session.observeEvent(textDelta("cadet://workspace/scratch/report"));
     await tick(15);
 
     // Nothing containing the internal path may have been streamed yet.
     for (const op of slackStreamOps()) {
-      expect(JSON.stringify(op)).not.toContain("vellum://");
+      expect(JSON.stringify(op)).not.toContain("cadet://");
     }
 
     session.observeEvent(textDelta(".pdf)"));
@@ -783,7 +783,7 @@ describe("createChannelReplySession", () => {
     const ops = slackStreamOps();
     const streamed = ops.map((op) => op.appended ?? "").join("");
     expect(streamed).toBe("Here is your file: report.pdf");
-    expect(streamed).not.toContain("vellum://");
+    expect(streamed).not.toContain("cadet://");
   });
 
   test("counts deliverable text segments split at tool boundaries", async () => {

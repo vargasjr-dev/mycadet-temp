@@ -2,26 +2,26 @@
 set -euo pipefail
 
 # Generate a per-environment AppIcon.icns for the Electron build.
-# Reads VELLUM_ENVIRONMENT (default: local) and renders the matching icon from
+# Reads CADET_ENVIRONMENT (default: local) and renders the matching icon from
 # build-resources/icons/{env}/ into build/icon.icns.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-VELLUM_ENVIRONMENT="${VELLUM_ENVIRONMENT:-local}"
+CADET_ENVIRONMENT="${CADET_ENVIRONMENT:-local}"
 ICONS_DIR="$APP_DIR/build-resources/icons"
 
-if [ -d "$ICONS_DIR/$VELLUM_ENVIRONMENT" ]; then
-    ICON_SOURCE_DIR="$ICONS_DIR/$VELLUM_ENVIRONMENT"
+if [ -d "$ICONS_DIR/$CADET_ENVIRONMENT" ]; then
+    ICON_SOURCE_DIR="$ICONS_DIR/$CADET_ENVIRONMENT"
 elif [ -d "$ICONS_DIR/production" ]; then
-    echo "generate-icon: no icons for '$VELLUM_ENVIRONMENT', falling back to production"
+    echo "generate-icon: no icons for '$CADET_ENVIRONMENT', falling back to production"
     ICON_SOURCE_DIR="$ICONS_DIR/production"
 else
     echo "generate-icon: no icon sources found at $ICONS_DIR" >&2
     exit 1
 fi
 
-echo "generate-icon: using $VELLUM_ENVIRONMENT icon from $ICON_SOURCE_DIR"
+echo "generate-icon: using $CADET_ENVIRONMENT icon from $ICON_SOURCE_DIR"
 
 OUTPUT_DIR="$APP_DIR/build"
 mkdir -p "$OUTPUT_DIR"
@@ -243,7 +243,7 @@ done
 
 iconutil --convert icns --output "$OUTPUT_DIR/icon.icns" "$ICONSET_DIR"
 
-echo "generate-icon: wrote $OUTPUT_DIR/icon.icns ($VELLUM_ENVIRONMENT)"
+echo "generate-icon: wrote $OUTPUT_DIR/icon.icns ($CADET_ENVIRONMENT)"
 
 # actool ships with full Xcode, not the Command Line Tools. Without it there is
 # no Assets.car, so Finder falls back to the icon.icns written above via
@@ -287,7 +287,7 @@ done
 rm -rf "$(dirname "$ICON_BUNDLE_DIR")"
 
 if [ "$ACTOOL_SUCCESS" = "1" ]; then
-    echo "generate-icon: wrote $OUTPUT_DIR/Assets.car ($VELLUM_ENVIRONMENT)"
+    echo "generate-icon: wrote $OUTPUT_DIR/Assets.car ($CADET_ENVIRONMENT)"
 else
     echo "generate-icon: actool failed to produce Assets.car after all attempts:" >&2
     echo "$ACTOOL_OUTPUT" >&2

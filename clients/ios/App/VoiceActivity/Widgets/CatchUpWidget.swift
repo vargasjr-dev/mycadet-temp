@@ -17,14 +17,14 @@ import WidgetKit
 struct CatchUpWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(
-            kind: VellumWidgetKind.catchUp,
+            kind: CadetWidgetKind.catchUp,
             provider: SnapshotProvider()
         ) { entry in
             CatchUpWidgetView(entry: entry)
                 .containerBackground(WidgetTheme.surface, for: .widget)
         }
         .configurationDisplayName("Catch Up")
-        .description("See your most recent Vellum conversations and start a new chat or a voice session.")
+        .description("See your most recent Cadet conversations and start a new chat or a voice session.")
         .supportedFamilies([.systemMedium])
         .contentMarginsDisabled()
     }
@@ -162,7 +162,7 @@ struct CatchUpWidgetView: View {
     /// end with opening the app. The actions beside it stay live, so the
     /// widget is still a way in.
     private func emptyPrompt(scale: CGFloat) -> some View {
-        WidgetPromptText("Open Vellum to see your recent chats.", size: 11 * scale)
+        WidgetPromptText("Open Cadet to see your recent chats.", size: 11 * scale)
             .padding(.top, 2 * scale)
             .padding(.leading, CatchUpRow.leadingInset * scale)
     }

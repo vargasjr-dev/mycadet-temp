@@ -36,7 +36,7 @@ Tell the user:
 > `https://developer.spotify.com/dashboard`
 >
 > 1. Click **Create App**
-> 2. Set the app name to **Vellum Assistant**
+> 2. Set the app name to **Cadet Assistant**
 > 3. Set the description to **Personal assistant integration**
 > 4. Set the redirect URI to `OAUTH_CALLBACK_URL`
 > 5. Under **Which API/SDKs are you planning to use?**, check **Web API**

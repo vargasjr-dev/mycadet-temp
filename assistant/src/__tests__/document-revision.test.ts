@@ -65,7 +65,7 @@ function makeContext(sent: SentMessage[]): ToolContext {
     workingDir: "/tmp/project",
     conversationId: CONVERSATION_ID,
     trustClass: "guardian",
-    executionChannel: "vellum",
+    executionChannel: "cadet",
     sendToClient: (message) => {
       sent.push(message);
     },

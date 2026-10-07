@@ -67,7 +67,7 @@ const baseRun = {
   requestId: "req-dedup",
   onEvent: () => {},
   callSite: "mainAgent" as const,
-  trust: { sourceChannel: "vellum" as const, trustClass: "unknown" as const },
+  trust: { sourceChannel: "cadet" as const, trustClass: "unknown" as const },
   messages: [
     { role: "user" as const, content: [{ type: "text" as const, text: "go" }] },
   ],

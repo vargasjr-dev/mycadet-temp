@@ -29,7 +29,7 @@ export interface LifecycleEventAttributes {
   riskLevel?: string;
   /** Auto-approve threshold (access preset) in effect for the invocation. */
   riskThreshold?: string;
-  /** Channel the event's turn runs on ("vellum", "slack", "telegram", ...). */
+  /** Channel the event's turn runs on ("cadet", "slack", "telegram", ...). */
   surface?: string;
   /**
    * Parent conversation. Rides the same `share_analytics` gate as the

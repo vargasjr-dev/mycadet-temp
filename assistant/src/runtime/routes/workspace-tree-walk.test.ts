@@ -14,7 +14,7 @@ import { beforeAll, describe, expect, test } from "bun:test";
 
 import { walkWorkspaceTree } from "./workspace-tree-walk.js";
 
-const workspaceDir = process.env.VELLUM_WORKSPACE_DIR!;
+const workspaceDir = process.env.CADET_WORKSPACE_DIR!;
 const root = join(workspaceDir, "walk-fixture");
 
 function write(relative: string, content = "x") {

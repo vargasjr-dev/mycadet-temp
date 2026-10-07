@@ -11,7 +11,7 @@ import Foundation
 /// - `add({url, name?})` remembers an origin
 /// - `remove({url})` forgets one (clearing the active slot when it matches)
 /// - `switchTo({url?})` swaps the shell's origin and reloads in place; an
-///   absent/empty url returns to the baked Vellum Cloud origin
+///   absent/empty url returns to the baked Cadet Cloud origin
 ///
 /// Every method here that changes the ACTIVE origin also drops the widget
 /// snapshot, inherited from `SelfHostedServer.setActive` rather than called

@@ -212,7 +212,7 @@ describe("toConversation — Slack channel binding", () => {
             },
           },
         },
-        conversationOriginChannel: "vellum",
+        conversationOriginChannel: "cadet",
       }),
     );
 

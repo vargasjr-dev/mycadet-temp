@@ -76,7 +76,7 @@ describe("channel to bot provider", () => {
 
   test("a channel without a bot credential resolves to nothing", () => {
     expect(botProviderForChannel("phone")).toBeUndefined();
-    expect(botProviderForChannel("vellum")).toBeUndefined();
+    expect(botProviderForChannel("cadet")).toBeUndefined();
     expect(botProviderForChannel("not-a-channel")).toBeUndefined();
   });
 

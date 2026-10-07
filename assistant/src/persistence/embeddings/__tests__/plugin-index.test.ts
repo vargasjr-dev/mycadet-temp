@@ -135,7 +135,7 @@ mock.module("../../../config/loader.js", () => ({
   getConfig: () => ({
     memory: {
       qdrant: {
-        collection: "vellum_memory",
+        collection: "cadet_memory",
         vectorSize: 3,
         onDisk: true,
         quantization: "none",

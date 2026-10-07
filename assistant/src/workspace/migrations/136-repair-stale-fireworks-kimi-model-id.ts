@@ -18,9 +18,9 @@ import type { WorkspaceMigration } from "./types.js";
  *
  * Provider guard: the stale ID belongs to the `fireworks` provider and
  * also appears in managed profiles stamped
- * `provider: "vellum"` (which route Fireworks-account model IDs through
+ * `provider: "cadet"` (which route Fireworks-account model IDs through
  * the managed proxy). A fragment is repaired when its `provider` is
- * `"fireworks"`, `"vellum"`, or absent; an explicit other provider (e.g.
+ * `"fireworks"`, `"cadet"`, or absent; an explicit other provider (e.g.
  * an `openai-compatible` endpoint serving a model by the same name) is
  * left untouched.
  */
@@ -100,7 +100,7 @@ export const repairStaleFireworksKimiModelIdMigration: WorkspaceMigration = {
 
 const STALE_MODEL_ID = "accounts/fireworks/models/kimi-k2p5";
 const REPLACEMENT_MODEL_ID = "accounts/fireworks/models/deepseek-v4-flash";
-const REPAIRABLE_PROVIDERS = new Set(["fireworks", "vellum"]);
+const REPAIRABLE_PROVIDERS = new Set(["fireworks", "cadet"]);
 
 function repairFragment(fragment: Record<string, unknown> | null): boolean {
   if (fragment === null) {

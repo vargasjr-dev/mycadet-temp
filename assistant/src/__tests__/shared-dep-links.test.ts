@@ -21,20 +21,20 @@ const ZOD_REL_PATH = "node_modules/zod";
 
 describe("ensureSharedDepLinks", () => {
   // Ensure each test gets a fresh import of the linker, since the module
-  // reads getWorkspaceDir() (backed by VELLUM_WORKSPACE_DIR) at call time
+  // reads getWorkspaceDir() (backed by CADET_WORKSPACE_DIR) at call time
   // but the module itself may be cached across tests.
   let prevWorkspaceDir: string | undefined;
 
   afterEach(() => {
     if (prevWorkspaceDir !== undefined) {
-      process.env.VELLUM_WORKSPACE_DIR = prevWorkspaceDir;
+      process.env.CADET_WORKSPACE_DIR = prevWorkspaceDir;
     } else {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     }
   });
 
   async function importLinker() {
-    // Dynamic import so VELLUM_WORKSPACE_DIR is read fresh each time.
+    // Dynamic import so CADET_WORKSPACE_DIR is read fresh each time.
     return await import("../plugins/ensure-shared-dep-links.js");
   }
 
@@ -47,8 +47,8 @@ describe("ensureSharedDepLinks", () => {
 
   test("symlinks the real zod package into workspace node_modules", async () => {
     const workspaceDir = await mkdtemp(join(tmpdir(), "shared-dep-links-"));
-    prevWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    prevWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
 
     const { ensureSharedDepLinks } = await importLinker();
     await ensureSharedDepLinks();
@@ -65,8 +65,8 @@ describe("ensureSharedDepLinks", () => {
 
   test("a fake user plugin can import and USE zod via the symlink", async () => {
     const workspaceDir = await mkdtemp(join(tmpdir(), "shared-dep-links-"));
-    prevWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    prevWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
 
     const { ensureSharedDepLinks } = await importLinker();
     await ensureSharedDepLinks();
@@ -91,8 +91,8 @@ describe("ensureSharedDepLinks", () => {
 
   test("is idempotent — existing links are not clobbered", async () => {
     const workspaceDir = await mkdtemp(join(tmpdir(), "shared-dep-links-"));
-    prevWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    prevWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
 
     const { ensureSharedDepLinks } = await importLinker();
     await ensureSharedDepLinks();
@@ -111,8 +111,8 @@ describe("ensureSharedDepLinks", () => {
     const realPkg = JSON.stringify({ name: "zod", version: "9.9.9" });
     await writeFile(join(realDir, "package.json"), realPkg);
 
-    prevWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    prevWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
 
     const { ensureSharedDepLinks } = await importLinker();
     await ensureSharedDepLinks();

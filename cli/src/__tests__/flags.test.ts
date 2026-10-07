@@ -18,7 +18,7 @@ const testDir = mkdtempSync(join(tmpdir(), "cli-flags-test-"));
 const originalArgv = [...process.argv];
 const originalExit = process.exit;
 const originalFetch = globalThis.fetch;
-const originalLockfileDir = process.env.VELLUM_LOCKFILE_DIR;
+const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
 
 let consoleLogSpy: ReturnType<typeof spyOn>;
 let consoleErrorSpy: ReturnType<typeof spyOn>;
@@ -42,7 +42,7 @@ function writeLockfile(
 ): void {
   mkdirSync(testDir, { recursive: true });
   writeFileSync(
-    join(testDir, ".vellum.lock.json"),
+    join(testDir, ".cadet.lock.json"),
     JSON.stringify(
       {
         assistants: entries,
@@ -69,8 +69,8 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 describe("cadet flags --assistant routing", () => {
   beforeEach(() => {
-    process.env.VELLUM_LOCKFILE_DIR = testDir;
-    rmSync(join(testDir, ".vellum.lock.json"), { force: true });
+    process.env.CADET_LOCKFILE_DIR = testDir;
+    rmSync(join(testDir, ".cadet.lock.json"), { force: true });
     fetchCalls = [];
     // Capture every outgoing fetch and respond with a stub matching the
     // subcommand's expected shape. The URL is what the test asserts on.
@@ -109,9 +109,9 @@ describe("cadet flags --assistant routing", () => {
 
   afterAll(() => {
     if (originalLockfileDir === undefined) {
-      delete process.env.VELLUM_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
     } else {
-      process.env.VELLUM_LOCKFILE_DIR = originalLockfileDir;
+      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
     }
     rmSync(testDir, { recursive: true, force: true });
   });
@@ -130,7 +130,7 @@ describe("cadet flags --assistant routing", () => {
     );
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "flags",
       "set",
       "browser",
@@ -161,7 +161,7 @@ describe("cadet flags --assistant routing", () => {
     ]);
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "flags",
       "--assistant",
       "Bob",
@@ -188,7 +188,7 @@ describe("cadet flags --assistant routing", () => {
       ],
       "alice-1",
     );
-    process.argv = ["bun", "vellum", "flags", "set", "browser", "true"];
+    process.argv = ["bun", "cadet", "flags", "set", "browser", "true"];
 
     await flags();
 
@@ -204,7 +204,7 @@ describe("cadet flags --assistant routing", () => {
     writeLockfile([makeEntry("alice-1", { name: "Alice" })]);
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "flags",
       "set",
       "browser",
@@ -224,7 +224,7 @@ describe("cadet flags --assistant routing", () => {
     writeLockfile([makeEntry("alice-1", { name: "Alice" })]);
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "flags",
       "set",
       "browser",
@@ -246,15 +246,15 @@ describe("cadet flags cross-environment hint", () => {
   let prevEnv: string | undefined;
 
   beforeEach(() => {
-    process.env.VELLUM_LOCKFILE_DIR = testDir;
-    rmSync(join(testDir, ".vellum.lock.json"), { force: true });
+    process.env.CADET_LOCKFILE_DIR = testDir;
+    rmSync(join(testDir, ".cadet.lock.json"), { force: true });
     prevXdg = process.env.XDG_DATA_HOME;
-    prevEnv = process.env.VELLUM_ENVIRONMENT;
+    prevEnv = process.env.CADET_ENVIRONMENT;
     xdgDataHome = mkdtempSync(join(tmpdir(), "cli-flags-hint-xdg-"));
     process.env.XDG_DATA_HOME = xdgDataHome;
     // Pin production so the detector skips it and the lockfile routes to
-    // testDir; the VELLUM_ENVIRONMENT var beats this machine's env config.
-    process.env.VELLUM_ENVIRONMENT = "production";
+    // testDir; the CADET_ENVIRONMENT var beats this machine's env config.
+    process.env.CADET_ENVIRONMENT = "production";
     // An unreachable gateway: every request throws like a dead socket would.
     // Cast through `unknown` since an always-throwing stub returns
     // `Promise<never>`, which does not structurally overlap with `fetch`.
@@ -280,9 +280,9 @@ describe("cadet flags cross-environment hint", () => {
       process.env.XDG_DATA_HOME = prevXdg;
     }
     if (prevEnv === undefined) {
-      delete process.env.VELLUM_ENVIRONMENT;
+      delete process.env.CADET_ENVIRONMENT;
     } else {
-      process.env.VELLUM_ENVIRONMENT = prevEnv;
+      process.env.CADET_ENVIRONMENT = prevEnv;
     }
     rmSync(xdgDataHome, { recursive: true, force: true });
   });
@@ -290,7 +290,7 @@ describe("cadet flags cross-environment hint", () => {
   // A dev-env assistant lives under the dev data dir, invisible to this
   // production CLI — the split the hint explains.
   function seedDevAssistant(): void {
-    mkdirSync(join(xdgDataHome, "vellum-dev", "assistants", "dev-bot"), {
+    mkdirSync(join(xdgDataHome, "cadet-dev", "assistants", "dev-bot"), {
       recursive: true,
     });
   }
@@ -298,14 +298,14 @@ describe("cadet flags cross-environment hint", () => {
   test("gateway-unreachable error gains the hint when another env has assistants", async () => {
     writeLockfile([makeEntry("alice-1", { name: "Alice" })], "alice-1");
     seedDevAssistant();
-    process.argv = ["bun", "vellum", "flags", "set", "browser", "true"];
+    process.argv = ["bun", "cadet", "flags", "set", "browser", "true"];
     await expect(flags()).rejects.toThrow(/Install cadet Command/);
   });
 
   test("gateway-unreachable error stays bare when no other env has assistants", async () => {
     writeLockfile([makeEntry("alice-1", { name: "Alice" })], "alice-1");
     // xdgDataHome is empty — detection finds nothing, so the message is intact.
-    process.argv = ["bun", "vellum", "flags", "set", "browser", "true"];
+    process.argv = ["bun", "cadet", "flags", "set", "browser", "true"];
     let error: Error | undefined;
     try {
       await flags();

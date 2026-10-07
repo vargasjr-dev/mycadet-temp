@@ -87,7 +87,7 @@ function handleCreateGroup({ body = {}, headers }: RouteHandlerArgs) {
     const group = createGroup(name, icon);
     publishConversationListChanged(
       "created",
-      headers?.["x-vellum-client-id"]?.trim() || undefined,
+      headers?.["x-cadet-client-id"]?.trim() || undefined,
     );
     return serializeGroup(group);
   } catch (err) {
@@ -139,7 +139,7 @@ function handleUpdateGroup({
   }
   publishConversationListChanged(
     "reordered",
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
   return serializeGroup(updated);
 }
@@ -156,7 +156,7 @@ function handleDeleteGroup({ pathParams = {}, headers }: RouteHandlerArgs) {
   deleteGroup(groupId);
   publishConversationListChanged(
     "reordered",
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
 }
 
@@ -190,7 +190,7 @@ function handleReorderGroups({ body = {}, headers }: RouteHandlerArgs) {
   reorderGroups(updates);
   publishConversationListChanged(
     "reordered",
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
   return { ok: true };
 }

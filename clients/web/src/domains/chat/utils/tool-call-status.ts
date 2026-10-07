@@ -58,7 +58,7 @@ export function perceivedStartedAt(
  *
  * This defensive read should collapse to a single field check once the daemon
  * stamps the terminal fields consistently — see
- * https://github.com/cadet-ai/cadet-assistant/issues/33501.
+ * https://github.com/cadet-ai/mycadet/issues/33501.
  */
 export function isToolCallRunning(tc: ToolCallStateFields): boolean {
   return !tc.isError && tc.result === undefined && tc.completedAt == null;

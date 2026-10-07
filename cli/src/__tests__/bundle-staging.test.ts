@@ -99,7 +99,7 @@ describe("stageBundleForRestore", () => {
       hostBundle,
     );
 
-    const dest = join(instanceDir, ".vellum", "workspace", staged.relativePath);
+    const dest = join(instanceDir, ".cadet", "workspace", staged.relativePath);
     expect(staged.relativePath.startsWith(`${RESTORE_STAGING_DIRNAME}/`)).toBe(
       true,
     );
@@ -226,7 +226,7 @@ describe("importStagedBundle", () => {
 describe("restoreBackup staged path", () => {
   test("stages a local bundle and posts JSON { path }", async () => {
     const instanceDir = join(tmpRoot, "instance");
-    mkdirSync(join(instanceDir, ".vellum", "workspace"), { recursive: true });
+    mkdirSync(join(instanceDir, ".cadet", "workspace"), { recursive: true });
     const backupPath = join(tmpRoot, "backup.vbundle");
     writeFileSync(backupPath, "bundle-bytes");
 

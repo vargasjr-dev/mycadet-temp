@@ -540,8 +540,8 @@ describe("runConversationTurn channel binding", () => {
     // The conversation carries no origin either, so the turn falls back to the
     // native channel rather than to the previous turn's.
     expect(metadataOf(rows[1])).toMatchObject({
-      userMessageChannel: "vellum",
-      assistantMessageChannel: "vellum",
+      userMessageChannel: "cadet",
+      assistantMessageChannel: "cadet",
     });
   }, 20_000);
 

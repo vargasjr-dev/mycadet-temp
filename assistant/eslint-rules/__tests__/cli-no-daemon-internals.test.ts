@@ -102,7 +102,7 @@ tester.run("cli/no-daemon-internals", rule, {
     // Hoisting the platform client.
     {
       filename: NESTED,
-      code: `import { VellumPlatformClient } from "../../../platform/client.js";`,
+      code: `import { CadetPlatformClient } from "../../../platform/client.js";`,
       errors: [{ messageId: "hoistedDaemonImport" }],
     },
     // A non-leaf module under providers/ is daemon-internal (only util/ etc.

@@ -93,7 +93,7 @@ export interface CatalogSkill {
 
 /**
  * Resolve the directory containing a `catalog.json` and first-party skill
- * sources — either bundled next to a compiled binary (e.g. `Vellum.app`) or
+ * sources — either bundled next to a compiled binary (e.g. `Cadet.app`) or
  * in the dev repo.
  *
  * Both `getCatalog()` in `catalog-cache.ts` and `resolveCatalog()` below
@@ -124,7 +124,7 @@ export function getRepoSkillsDir(): string | undefined {
     return undefined;
   }
 
-  if (!process.env.VELLUM_DEV) {
+  if (!process.env.CADET_DEV) {
     return undefined;
   }
 

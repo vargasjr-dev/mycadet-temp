@@ -202,7 +202,7 @@ function makeDecision(
 ): NotificationDecision {
   return {
     shouldNotify: true,
-    selectedChannels: ["vellum"],
+    selectedChannels: ["cadet"],
     reasoningSummary: "test",
     renderedCopy: {},
     dedupeKey: "dk-1",
@@ -268,13 +268,13 @@ describe("NotificationBroadcaster chat reply preference", () => {
   const reply = () => makeSignal({ sourceEventName: "chat.assistant_reply" });
   const decision = () =>
     makeDecision({
-      selectedChannels: ["vellum", "platform"],
-      renderedCopy: { vellum: copy, platform: copy, slack: copy },
+      selectedChannels: ["cadet", "platform"],
+      renderedCopy: { cadet: copy, platform: copy, slack: copy },
     });
 
   beforeEach(() => {
     destinationGuardianPrincipalId = "principal-1";
-    pairingByChannel.vellum = {
+    pairingByChannel.cadet = {
       ...defaultPairing(),
       conversationId: "conv-1",
       messageId: "msg-1",
@@ -284,7 +284,7 @@ describe("NotificationBroadcaster chat reply preference", () => {
 
   test("keeps pairing and external delivery while suppressing local and native alerts", async () => {
     saveRawConfig({ notifications: { newMessageEnabled: false } });
-    const local = makeCapturingAdapter("vellum");
+    const local = makeCapturingAdapter("cadet");
     const mobile = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: true,
@@ -299,7 +299,7 @@ describe("NotificationBroadcaster chat reply preference", () => {
     broadcaster.setOnConversationCreated(paired);
     const results = await broadcaster.broadcastDecision(reply(), {
       ...decision(),
-      selectedChannels: ["vellum", "platform", "slack"],
+      selectedChannels: ["cadet", "platform", "slack"],
     });
 
     expect(local.sends[0]?.payload).toMatchObject({
@@ -315,7 +315,7 @@ describe("NotificationBroadcaster chat reply preference", () => {
     expect(results).toEqual([
       expect.objectContaining({ channel: "platform", status: "skipped" }),
       expect.objectContaining({
-        channel: "vellum",
+        channel: "cadet",
         status: "sent",
         messageId: "msg-1",
       }),
@@ -333,7 +333,7 @@ describe("NotificationBroadcaster chat reply preference", () => {
     "chat.assistant_reply.extra",
   ])("does not suppress %s", async (sourceEventName) => {
     saveRawConfig({ notifications: { newMessageEnabled: false } });
-    const local = makeCapturingAdapter("vellum");
+    const local = makeCapturingAdapter("cadet");
     const mobile = makeCapturingAdapter("platform");
     await new NotificationBroadcaster([
       local.adapter,
@@ -358,7 +358,7 @@ describe("NotificationBroadcaster chat reply preference", () => {
   });
 
   test("rechecks the preference after pairing and an awaited creation callback", async () => {
-    const local = makeCapturingAdapter("vellum");
+    const local = makeCapturingAdapter("cadet");
     const mobile = makeCapturingAdapter("platform");
     const broadcaster = new NotificationBroadcaster([
       local.adapter,
@@ -379,7 +379,7 @@ describe("NotificationBroadcaster chat reply preference", () => {
     expect(mobile.sends).toHaveLength(0);
   });
 
-  test.each(["guardians", "vellum", "platform"])(
+  test.each(["guardians", "cadet", "platform"])(
     "delivers a reply re-enabled during %s preparation",
     async (stage) => {
       saveRawConfig({ notifications: { newMessageEnabled: false } });
@@ -397,7 +397,7 @@ describe("NotificationBroadcaster chat reply preference", () => {
           await enable();
         }
       };
-      const local = makeCapturingAdapter("vellum");
+      const local = makeCapturingAdapter("cadet");
       const mobile = makeCapturingAdapter("platform", {
         success: true,
         remotePushAccepted: true,
@@ -428,7 +428,7 @@ describe("NotificationBroadcaster chat reply preference", () => {
         saveRawConfig({ notifications: { newMessageEnabled: false } });
       }
     };
-    const local = makeCapturingAdapter("vellum");
+    const local = makeCapturingAdapter("cadet");
     const mobile = makeCapturingAdapter("platform");
     const results = await new NotificationBroadcaster([
       local.adapter,
@@ -447,7 +447,7 @@ describe("NotificationBroadcaster chat reply preference", () => {
   });
 
   test("keeps an accepted push truthful while silencing a deferred local intent", async () => {
-    const local = makeCapturingAdapter("vellum");
+    const local = makeCapturingAdapter("cadet");
     const mobile: ChannelAdapter = {
       channel: "platform",
       async send() {
@@ -471,7 +471,7 @@ describe("NotificationBroadcaster chat reply preference", () => {
   });
 
   test("records an adapter suppression as skipped without claiming a push", async () => {
-    const local = makeCapturingAdapter("vellum");
+    const local = makeCapturingAdapter("cadet");
     const mobile = makeCapturingAdapter("platform", {
       success: false,
       skipped: true,
@@ -494,7 +494,7 @@ describe("NotificationBroadcaster chat reply preference", () => {
     saveRawConfig({ notifications: { newMessageEnabled: false } });
     const selected = decision();
     saveRawConfig({ notifications: { newMessageEnabled: true } });
-    const local = makeCapturingAdapter("vellum");
+    const local = makeCapturingAdapter("cadet");
     const mobile = makeCapturingAdapter("platform");
     await new NotificationBroadcaster([
       local.adapter,
@@ -522,7 +522,7 @@ describe("NotificationBroadcaster completion delivery", () => {
     async (completion) => {
       destinationGuardianPrincipalId = "principal-1";
       const channels = [
-        "vellum",
+        "cadet",
         "platform",
         "slack",
         "telegram",
@@ -573,7 +573,7 @@ describe("NotificationBroadcaster completion delivery", () => {
     },
   );
 
-  test.each(["vellum", "platform"] as const)(
+  test.each(["cadet", "platform"] as const)(
     "%s links a typed completion to its persisted result conversation",
     async (channel) => {
       destinationGuardianPrincipalId = "principal-1";
@@ -665,9 +665,9 @@ describe("NotificationBroadcaster completion delivery", () => {
     "rejects a typed completion before either channel is paired or sent with recipient %s",
     async (guardianPrincipalId) => {
       destinationGuardianPrincipalId = guardianPrincipalId;
-      pairingErrorByChannel.vellum = new Error("must not pair locally");
+      pairingErrorByChannel.cadet = new Error("must not pair locally");
       pairingErrorByChannel.platform = new Error("must not pair for push");
-      const local = makeCapturingAdapter("vellum");
+      const local = makeCapturingAdapter("cadet");
       const mobile = makeCapturingAdapter("platform");
       const broadcaster = new NotificationBroadcaster([
         local.adapter,
@@ -686,9 +686,9 @@ describe("NotificationBroadcaster completion delivery", () => {
           },
         }),
         makeDecision({
-          selectedChannels: ["vellum", "platform"],
+          selectedChannels: ["cadet", "platform"],
           renderedCopy: {
-            vellum: { title: "Answer ready", body: "The result is ready." },
+            cadet: { title: "Answer ready", body: "The result is ready." },
             platform: { title: "Answer ready", body: "The result is ready." },
           },
         }),
@@ -696,7 +696,7 @@ describe("NotificationBroadcaster completion delivery", () => {
 
       expect(result).toEqual([
         expect.objectContaining({
-          channel: "vellum",
+          channel: "cadet",
           status: "failed",
           errorMessage: "completion recipient unavailable",
         }),
@@ -714,7 +714,7 @@ describe("NotificationBroadcaster completion delivery", () => {
   test.each(["chat.assistant_reply", "schedule.result"])(
     "%s preserves mobile delivery when local recipient resolution fails",
     async (sourceEventName) => {
-      const local = makeCapturingAdapter("vellum");
+      const local = makeCapturingAdapter("cadet");
       const mobile = makeCapturingAdapter("platform");
       const broadcaster = new NotificationBroadcaster([
         local.adapter,
@@ -723,16 +723,16 @@ describe("NotificationBroadcaster completion delivery", () => {
       const result = await broadcaster.broadcastDecision(
         makeSignal({ sourceEventName }),
         makeDecision({
-          selectedChannels: ["vellum", "platform"],
+          selectedChannels: ["cadet", "platform"],
           renderedCopy: {
-            vellum: { title: "Answer ready", body: "The result is ready." },
+            cadet: { title: "Answer ready", body: "The result is ready." },
             platform: { title: "Answer ready", body: "The result is ready." },
           },
         }),
       );
 
       expect(result).toEqual([
-        expect.objectContaining({ channel: "vellum", status: "failed" }),
+        expect.objectContaining({ channel: "cadet", status: "failed" }),
         expect.objectContaining({ channel: "platform", status: "sent" }),
       ]);
       expect(local.sends).toEqual([]);
@@ -741,14 +741,14 @@ describe("NotificationBroadcaster completion delivery", () => {
   );
 
   test("requires a recipient before pairing or sending a completion locally", async () => {
-    pairingErrorByChannel.vellum = new Error("must not pair");
-    const { adapter, sends } = makeCapturingAdapter("vellum");
+    pairingErrorByChannel.cadet = new Error("must not pair");
+    const { adapter, sends } = makeCapturingAdapter("cadet");
     const broadcaster = new NotificationBroadcaster([adapter]);
     const result = await broadcaster.broadcastDecision(
       makeSignal({ sourceEventName: "chat.assistant_reply" }),
       makeDecision({
         renderedCopy: {
-          vellum: { title: "Answer ready", body: "The result is ready." },
+          cadet: { title: "Answer ready", body: "The result is ready." },
         },
       }),
     );
@@ -762,15 +762,15 @@ describe("NotificationBroadcaster completion delivery", () => {
 
   test("resolves one completion presentation for both the intent and conversation event", async () => {
     destinationGuardianPrincipalId = "principal-1";
-    pairingByChannel.vellum = { ...defaultPairing(), conversationId: "conv-1" };
-    const { adapter, sends } = makeCapturingAdapter("vellum");
+    pairingByChannel.cadet = { ...defaultPairing(), conversationId: "conv-1" };
+    const { adapter, sends } = makeCapturingAdapter("cadet");
     const broadcaster = new NotificationBroadcaster([adapter]);
     const paired = mock(() => {});
     const result = await broadcaster.broadcastDecision(
       makeSignal({ sourceEventName: "chat.assistant_reply" }),
       makeDecision({
         renderedCopy: {
-          vellum: { title: "Answer ready", body: "The result is ready." },
+          cadet: { title: "Answer ready", body: "The result is ready." },
         },
       }),
       { onConversationCreated: paired },
@@ -801,7 +801,7 @@ describe("NotificationBroadcaster last-resort copy resolution", () => {
       // `{ title: "Notification", body: signal.sourceEventName }`.
       composeFallbackReturn = {};
 
-      const { adapter, sends } = makeCapturingAdapter("vellum");
+      const { adapter, sends } = makeCapturingAdapter("cadet");
       const broadcaster = new NotificationBroadcaster([adapter]);
 
       const signal = makeSignal();
@@ -824,10 +824,10 @@ describe("NotificationBroadcaster last-resort copy resolution", () => {
     // when no template matches the source event. The broadcaster must
     // refuse to deliver empty-body copy rather than passing it through.
     composeFallbackReturn = {
-      vellum: { title: "Notification", body: "" },
+      cadet: { title: "Notification", body: "" },
     };
 
-    const { adapter, sends } = makeCapturingAdapter("vellum");
+    const { adapter, sends } = makeCapturingAdapter("cadet");
     const broadcaster = new NotificationBroadcaster([adapter]);
 
     const signal = makeSignal();
@@ -842,10 +842,10 @@ describe("NotificationBroadcaster last-resort copy resolution", () => {
 
   test("delivers normally when fallback composer returns a usable body", async () => {
     composeFallbackReturn = {
-      vellum: { title: "Reminder", body: "Time to drink water" },
+      cadet: { title: "Reminder", body: "Time to drink water" },
     };
 
-    const { adapter, sends } = makeCapturingAdapter("vellum");
+    const { adapter, sends } = makeCapturingAdapter("cadet");
     const broadcaster = new NotificationBroadcaster([adapter]);
 
     const signal = makeSignal();
@@ -867,7 +867,7 @@ describe("NotificationBroadcaster delivery status recording", () => {
     // releases the signal's dedupe claim, so the retry sends this message a
     // second time. The lost status write only costs the delivery row.
     composeFallbackReturn = {
-      vellum: { title: "Reminder", body: "Time to drink water" },
+      cadet: { title: "Reminder", body: "Time to drink water" },
     };
     updateDeliveryStatusImpl = (status: string) => {
       if (status === "sent") {
@@ -875,7 +875,7 @@ describe("NotificationBroadcaster delivery status recording", () => {
       }
     };
 
-    const { adapter, sends } = makeCapturingAdapter("vellum");
+    const { adapter, sends } = makeCapturingAdapter("cadet");
     const broadcaster = new NotificationBroadcaster([adapter]);
 
     const results = await broadcaster.broadcastDecision(
@@ -1004,10 +1004,10 @@ describe("NotificationBroadcaster records a channel delivery after acknowledgeme
 
   test("a cadet delivery is not recorded through this path", async () => {
     composeFallbackReturn = {
-      vellum: { title: "Reminder", body: "Time to drink water" },
+      cadet: { title: "Reminder", body: "Time to drink water" },
     };
 
-    const { adapter } = makeCapturingAdapter("vellum");
+    const { adapter } = makeCapturingAdapter("cadet");
     const broadcaster = new NotificationBroadcaster([adapter]);
 
     await broadcaster.broadcastDecision(
@@ -1100,21 +1100,21 @@ describe("NotificationBroadcaster platform deep-link from contextPayload", () =>
 describe("NotificationBroadcaster remotePushDispatched flag", () => {
   const bothChannelsCopy = () => {
     composeFallbackReturn = {
-      vellum: { title: "Reminder", body: "Hello" },
+      cadet: { title: "Reminder", body: "Hello" },
       platform: { title: "Reminder", body: "Hello" },
     };
   };
 
   const bothChannelsDecision = () =>
     makeDecision({
-      selectedChannels: ["vellum", "platform"],
+      selectedChannels: ["cadet", "platform"],
       renderedCopy: {},
     });
 
   test("cadet payload carries true when the platform adapter reports an accepted push; platform payload omits it", async () => {
     bothChannelsCopy();
 
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: true,
@@ -1138,7 +1138,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
   test("cadet payload carries false when the platform dispatch fails", async () => {
     bothChannelsCopy();
 
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform", {
       success: false,
       error: "HTTP 503",
@@ -1157,7 +1157,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
   test("cadet payload carries platforms accepted before a partial failure", async () => {
     bothChannelsCopy();
 
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform", {
       success: false,
       error: "FCM failed",
@@ -1176,7 +1176,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
   test("cadet payload carries false when the platform reports no accepted push (skipped or zero tokens)", async () => {
     bothChannelsCopy();
 
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: false,
@@ -1195,7 +1195,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
   test("cadet payload carries false when the platform result omits remotePushAccepted", async () => {
     bothChannelsCopy();
 
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform", { success: true });
     const broadcaster = new NotificationBroadcaster([
       cadet.adapter,
@@ -1211,7 +1211,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
   test("cadet payload carries false when the platform adapter throws", async () => {
     bothChannelsCopy();
 
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform: ChannelAdapter = {
       channel: "platform",
       async send(): Promise<DeliveryResult> {
@@ -1230,14 +1230,14 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
     expect(results.find((r) => r.channel === "platform")?.status).toBe(
       "failed",
     );
-    expect(results.find((r) => r.channel === "vellum")?.status).toBe("sent");
+    expect(results.find((r) => r.channel === "cadet")?.status).toBe("sent");
   });
 
   test("cadet intent still flushes with false when the platform channel's prep throws", async () => {
     bothChannelsCopy();
     pairingErrorByChannel = { platform: new Error("pairing exploded") };
 
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: true,
@@ -1277,7 +1277,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
         });
       },
     };
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const broadcaster = new NotificationBroadcaster([cadet.adapter, platform]);
 
     const results = await broadcaster.broadcastDecision(
@@ -1304,7 +1304,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
   test("platform completing before the deadline sets the real outcome on the cadet payload", async () => {
     bothChannelsCopy();
 
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform: ChannelAdapter = {
       channel: "platform",
       async send(): Promise<DeliveryResult> {
@@ -1329,10 +1329,10 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
     bothChannelsCopy();
 
     const callOrder: string[] = [];
-    const vellum: ChannelAdapter = {
-      channel: "vellum",
+    const cadet: ChannelAdapter = {
+      channel: "cadet",
       async send(): Promise<DeliveryResult> {
-        callOrder.push("vellum");
+        callOrder.push("cadet");
         return { success: true };
       },
     };
@@ -1343,19 +1343,19 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
         return { success: true, remotePushAccepted: true };
       },
     };
-    const broadcaster = new NotificationBroadcaster([vellum, platform]);
+    const broadcaster = new NotificationBroadcaster([cadet, platform]);
 
     await broadcaster.broadcastDecision(makeSignal(), bothChannelsDecision());
 
-    expect(callOrder).toEqual(["platform", "vellum"]);
+    expect(callOrder).toEqual(["platform", "cadet"]);
   });
 
   test("platform deep link still carries the cadet pairing when the cadet send is deferred", async () => {
     bothChannelsCopy();
 
     pairingByChannel = {
-      vellum: {
-        conversationId: "conv-vellum-1",
+      cadet: {
+        conversationId: "conv-cadet-1",
         messageId: "msg-1",
         strategy: "start_new_conversation",
         createdNewConversation: false,
@@ -1363,7 +1363,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
       },
     };
 
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: true,
@@ -1377,7 +1377,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
 
     expect(platform.sends.length).toBe(1);
     expect(platform.sends[0]?.payload.deepLinkTarget).toEqual({
-      conversationId: "conv-vellum-1",
+      conversationId: "conv-cadet-1",
       messageId: "msg-1",
     });
   });
@@ -1391,7 +1391,7 @@ describe("NotificationBroadcaster forced-platform copy reuse", () => {
       platform: { title: "Template title", body: "Template body" },
     };
 
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: true,
@@ -1404,9 +1404,9 @@ describe("NotificationBroadcaster forced-platform copy reuse", () => {
     await broadcaster.broadcastDecision(
       makeSignal(),
       makeDecision({
-        selectedChannels: ["vellum", "platform"],
+        selectedChannels: ["cadet", "platform"],
         renderedCopy: {
-          vellum: { title: "Rendered title", body: "Rendered body" },
+          cadet: { title: "Rendered title", body: "Rendered body" },
         },
       }),
     );
@@ -1558,14 +1558,14 @@ describe("NotificationBroadcaster new From me threads", () => {
     });
   const decision = () =>
     makeDecision({
-      selectedChannels: ["vellum", "platform"],
-      renderedCopy: { vellum: copy },
+      selectedChannels: ["cadet", "platform"],
+      renderedCopy: { cadet: copy },
     });
   const options = (signal: NotificationSignal, platformAdded = true) => ({
     assistantInitiatedThread: {
       resolution: {
         isCandidate: true,
-        vellumSignal: {
+        cadetSignal: {
           ...signal,
           requiresConversation: true,
           conversationMetadata: { source: "assistant_initiated" },
@@ -1576,7 +1576,7 @@ describe("NotificationBroadcaster new From me threads", () => {
   });
 
   beforeEach(() => {
-    pairingByChannel.vellum = {
+    pairingByChannel.cadet = {
       ...defaultPairing(),
       conversationId: "conv-new",
       messageId: "msg-new",
@@ -1591,7 +1591,7 @@ describe("NotificationBroadcaster new From me threads", () => {
   });
 
   test("alerts only after creation and shares canonical IDs, copy, urgency, and source metadata", async () => {
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform", {
       success: true,
       remotePushAccepted: true,
@@ -1648,13 +1648,13 @@ describe("NotificationBroadcaster new From me threads", () => {
     "%s retains baseline silence and skips only feature-added push",
     async (scenario) => {
       if (scenario === "reuse") {
-        pairingByChannel.vellum!.createdNewConversation = false;
+        pairingByChannel.cadet!.createdNewConversation = false;
       }
       if (scenario === "missing_conversation") {
         persistedThreads.clear();
       }
       if (scenario === "missing_seed") {
-        pairingByChannel.vellum!.messageId = null;
+        pairingByChannel.cadet!.messageId = null;
       }
       if (scenario === "unpersisted_seed") {
         persistedSeed = false;
@@ -1676,7 +1676,7 @@ describe("NotificationBroadcaster new From me threads", () => {
       if (scenario === "flag_off") {
         dispatchOptions.assistantInitiatedThread.resolution.isCandidate = false;
       }
-      const cadet = makeCapturingAdapter("vellum");
+      const cadet = makeCapturingAdapter("cadet");
       const platform = makeCapturingAdapter("platform");
       const results = await new NotificationBroadcaster([
         cadet.adapter,
@@ -1695,8 +1695,8 @@ describe("NotificationBroadcaster new From me threads", () => {
   );
 
   test("failed pairing never sends feature push to the hidden producer", async () => {
-    pairingByChannel.vellum = defaultPairing();
-    const cadet = makeCapturingAdapter("vellum");
+    pairingByChannel.cadet = defaultPairing();
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform");
     const signal = share();
     await new NotificationBroadcaster([
@@ -1708,8 +1708,8 @@ describe("NotificationBroadcaster new From me threads", () => {
   });
 
   test("independently selected urgent push survives failed creation and quiet intent", async () => {
-    pairingByChannel.vellum = defaultPairing();
-    const cadet = makeCapturingAdapter("vellum");
+    pairingByChannel.cadet = defaultPairing();
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform");
     const signal = share();
     signal.attentionHints.urgency = "high";
@@ -1726,9 +1726,9 @@ describe("NotificationBroadcaster new From me threads", () => {
   });
 
   test("invalid reuse that creates a new thread qualifies", async () => {
-    pairingByChannel.vellum!.conversationFallbackUsed = true;
+    pairingByChannel.cadet!.conversationFallbackUsed = true;
     const signal = share();
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform");
     await new NotificationBroadcaster([
       cadet.adapter,
@@ -1738,7 +1738,7 @@ describe("NotificationBroadcaster new From me threads", () => {
       {
         ...decision(),
         conversationActions: {
-          vellum: { action: "reuse_existing", conversationId: "conv-stale" },
+          cadet: { action: "reuse_existing", conversationId: "conv-stale" },
         },
       },
       options(signal),
@@ -1755,7 +1755,7 @@ describe("NotificationBroadcaster new From me threads", () => {
   ] as const)(
     "replay proof action=%s fallback=%s permits push=%s",
     async (action, fallback, permitted) => {
-      existingDeliveries.vellum = {
+      existingDeliveries.cadet = {
         id: "delivery-original",
         conversationId: "conv-new",
         messageId: "msg-original",
@@ -1764,13 +1764,13 @@ describe("NotificationBroadcaster new From me threads", () => {
         conversationFallbackUsed: fallback ? 1 : 0,
       };
       const signal = share();
-      const cadet = makeCapturingAdapter("vellum");
+      const cadet = makeCapturingAdapter("cadet");
       const platform = makeCapturingAdapter("platform");
       await new NotificationBroadcaster([
         cadet.adapter,
         platform.adapter,
       ]).broadcastDecision(signal, decision(), options(signal));
-      expect(pairedChannels).not.toContain("vellum");
+      expect(pairedChannels).not.toContain("cadet");
       expect(cadet.sends).toHaveLength(0);
       expect(platform.sends).toHaveLength(permitted ? 1 : 0);
       if (permitted) {
@@ -1784,7 +1784,7 @@ describe("NotificationBroadcaster new From me threads", () => {
 
   test("platform rejection preserves the local alert through the deferred send", async () => {
     const signal = share();
-    const cadet = makeCapturingAdapter("vellum");
+    const cadet = makeCapturingAdapter("cadet");
     const platform = makeCapturingAdapter("platform", {
       success: false,
       skipped: true,

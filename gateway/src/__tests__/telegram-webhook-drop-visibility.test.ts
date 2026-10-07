@@ -34,7 +34,7 @@ mock.module("../fetch.js", () => ({
       return new Response(
         JSON.stringify({
           ok: true,
-          result: { id: 123456789, username: "vellum_bot" },
+          result: { id: 123456789, username: "cadet_bot" },
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );

@@ -64,7 +64,7 @@ describe("list_client_history", () => {
   test("returns ISO timestamps for the calling actor", () => {
     const handler = findHandler("list_client_history");
     const result = handler({
-      headers: { "x-vellum-actor-principal-id": "user-123" },
+      headers: { "x-cadet-actor-principal-id": "user-123" },
       queryParams: { clientId: "client-123" },
     }) as {
       sessions: Array<{ startedAt: string; endedAt: string | null }>;
@@ -80,7 +80,7 @@ describe("list_client_history", () => {
   test("hides other actors' history", () => {
     const handler = findHandler("list_client_history");
     const result = handler({
-      headers: { "x-vellum-actor-principal-id": "user-other" },
+      headers: { "x-cadet-actor-principal-id": "user-other" },
     }) as { sessions: unknown[]; events: unknown[] };
 
     expect(result.sessions).toEqual([]);
@@ -91,7 +91,7 @@ describe("list_client_history", () => {
     const handler = findHandler("list_client_history");
     expect(() =>
       handler({
-        headers: { "x-vellum-actor-principal-id": "user-123" },
+        headers: { "x-cadet-actor-principal-id": "user-123" },
         queryParams: { since: "not-a-date" },
       }),
     ).toThrow(BadRequestError);

@@ -304,11 +304,11 @@ describe("file classification", () => {
       path: "/workspace/.hooks/on-start.sh",
       workingDir: "/workspace",
       fileContext: {
-        protectedDir: "/workspace/.vellum/protected",
+        protectedDir: "/workspace/.cadet/protected",
         hooksDir: "/workspace/.hooks",
         actorTokenSigningKeyPath:
-          "/workspace/.vellum/protected/actor-token-signing-key",
-        skillSourceDirs: ["/workspace/.vellum/skills"],
+          "/workspace/.cadet/protected/actor-token-signing-key",
+        skillSourceDirs: ["/workspace/.cadet/skills"],
       },
     });
     expect(result.risk).toBe("high");
@@ -318,14 +318,14 @@ describe("file classification", () => {
   test("file context with skill source dirs escalates writes", async () => {
     const result = await classify({
       tool: "file_write",
-      path: "/workspace/.vellum/skills/my-skill/index.ts",
+      path: "/workspace/.cadet/skills/my-skill/index.ts",
       workingDir: "/workspace",
       fileContext: {
-        protectedDir: "/workspace/.vellum/protected",
+        protectedDir: "/workspace/.cadet/protected",
         hooksDir: "/workspace/.hooks",
         actorTokenSigningKeyPath:
-          "/workspace/.vellum/protected/actor-token-signing-key",
-        skillSourceDirs: ["/workspace/.vellum/skills"],
+          "/workspace/.cadet/protected/actor-token-signing-key",
+        skillSourceDirs: ["/workspace/.cadet/skills"],
       },
     });
     expect(result.risk).toBe("high");
@@ -338,13 +338,13 @@ describe("file classification", () => {
       path: "/workspace/tools/evil_tool.ts",
       workingDir: "/workspace",
       fileContext: {
-        protectedDir: "/workspace/.vellum/protected",
+        protectedDir: "/workspace/.cadet/protected",
         hooksDir: "/workspace/.hooks",
         toolsDir: "/workspace/tools",
         routesDir: "/workspace/routes",
         actorTokenSigningKeyPath:
-          "/workspace/.vellum/protected/actor-token-signing-key",
-        skillSourceDirs: ["/workspace/.vellum/skills"],
+          "/workspace/.cadet/protected/actor-token-signing-key",
+        skillSourceDirs: ["/workspace/.cadet/skills"],
       },
     });
     expect(result.risk).toBe("high");
@@ -357,13 +357,13 @@ describe("file classification", () => {
       path: "/workspace/routes/evil.ts",
       workingDir: "/workspace",
       fileContext: {
-        protectedDir: "/workspace/.vellum/protected",
+        protectedDir: "/workspace/.cadet/protected",
         hooksDir: "/workspace/.hooks",
         toolsDir: "/workspace/tools",
         routesDir: "/workspace/routes",
         actorTokenSigningKeyPath:
-          "/workspace/.vellum/protected/actor-token-signing-key",
-        skillSourceDirs: ["/workspace/.vellum/skills"],
+          "/workspace/.cadet/protected/actor-token-signing-key",
+        skillSourceDirs: ["/workspace/.cadet/skills"],
       },
     });
     expect(result.risk).toBe("medium");
@@ -376,15 +376,15 @@ describe("file classification", () => {
       path: "/workspace/workflows/victim/workflow.ts",
       workingDir: "/workspace",
       fileContext: {
-        protectedDir: "/workspace/.vellum/protected",
+        protectedDir: "/workspace/.cadet/protected",
         hooksDir: "/workspace/.hooks",
         toolsDir: "/workspace/tools",
         routesDir: "/workspace/routes",
         workflowsDir: "/workspace/workflows",
         monitoringDir: "/workspace/data/monitoring",
         actorTokenSigningKeyPath:
-          "/workspace/.vellum/protected/actor-token-signing-key",
-        skillSourceDirs: ["/workspace/.vellum/skills"],
+          "/workspace/.cadet/protected/actor-token-signing-key",
+        skillSourceDirs: ["/workspace/.cadet/skills"],
       },
     });
     expect(result.risk).toBe("high");
@@ -400,13 +400,13 @@ describe("file classification", () => {
       transferSandboxDestPath: "tools/evil.ts",
       transferSandboxWorkingDir: "/workspace",
       fileContext: {
-        protectedDir: "/workspace/.vellum/protected",
+        protectedDir: "/workspace/.cadet/protected",
         hooksDir: "/workspace/.hooks",
         toolsDir: "/workspace/tools",
         routesDir: "/workspace/routes",
         actorTokenSigningKeyPath:
-          "/workspace/.vellum/protected/actor-token-signing-key",
-        skillSourceDirs: ["/workspace/.vellum/skills"],
+          "/workspace/.cadet/protected/actor-token-signing-key",
+        skillSourceDirs: ["/workspace/.cadet/skills"],
       },
     });
     expect(result.risk).toBe("high");

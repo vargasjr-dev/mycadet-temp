@@ -176,7 +176,7 @@ export function YourFirstSkillContent() {
             Step 4: Refine until reliable
           </h3>
           <p className="mb-4 text-zinc-600">
-            Your skill is saved as plain text files in <code>$VELLUM_WORKSPACE_DIR/skills/</code>. You
+            Your skill is saved as plain text files in <code>$CADET_WORKSPACE_DIR/skills/</code>. You
             can:
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">

@@ -38,7 +38,7 @@ Tell the user:
 > 1. Click **Create app**
 > 2. Choose **Scoped access**
 > 3. Choose **Full Dropbox** access type
-> 4. Name it **Vellum Assistant**
+> 4. Name it **Cadet Assistant**
 > 5. Click **Create app**
 >
 > Let me know when the app is created.

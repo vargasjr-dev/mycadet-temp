@@ -6,7 +6,7 @@ const ALLOWED_KEY_RE = /^[a-z0-9][a-z0-9-]*$/;
  *
  * Each `--flag` consumes the next argument as `key=value`. Keys are validated
  * against a kebab-case pattern, then converted to env var names of the form
- * `VELLUM_FLAG_<UPPER_SNAKE>`. All `--flag` pairs are stripped from the
+ * `CADET_FLAG_<UPPER_SNAKE>`. All `--flag` pairs are stripped from the
  * returned `remaining` array so downstream parsers never see them.
  */
 export function parseFeatureFlagArgs(args: string[]): {
@@ -43,7 +43,7 @@ export function parseFeatureFlagArgs(args: string[]): {
         process.exit(1);
       }
 
-      const envName = `VELLUM_FLAG_${key.toUpperCase().replace(/-/g, "_")}`;
+      const envName = `CADET_FLAG_${key.toUpperCase().replace(/-/g, "_")}`;
       envVars[envName] = value;
       i += 2;
     } else {
@@ -55,10 +55,10 @@ export function parseFeatureFlagArgs(args: string[]): {
   return { envVars, remaining };
 }
 
-const ENV_FLAG_PREFIX = "VELLUM_FLAG_";
+const ENV_FLAG_PREFIX = "CADET_FLAG_";
 
 /**
- * Scan `process.env` for ambient `VELLUM_FLAG_*` entries.
+ * Scan `process.env` for ambient `CADET_FLAG_*` entries.
  * Returns them as-is (same `Record<string, string>` shape as
  * `parseFeatureFlagArgs().envVars`) so callers can merge both
  * sources with `--flag` args winning over ambient env vars.

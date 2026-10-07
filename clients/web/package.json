@@ -2,7 +2,7 @@
   "name": "@mycadet/web",
   "version": "0.12.6",
   "type": "module",
-  "description": "Pre-built web SPA for the Vellum Assistant",
+  "description": "Pre-built web SPA for the Cadet Assistant",
   "license": "MIT",
   "files": [
     "dist"

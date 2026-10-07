@@ -108,9 +108,9 @@ const pendingQuestion: GuardianRequestWire = {
 };
 
 describe("shared pure helpers", () => {
-  test("deriveGuardianRequestSourceType maps phone → voice, vellum → desktop, else channel", () => {
+  test("deriveGuardianRequestSourceType maps phone → voice, cadet → desktop, else channel", () => {
     expect(deriveGuardianRequestSourceType("phone")).toBe("voice");
-    expect(deriveGuardianRequestSourceType("vellum")).toBe("desktop");
+    expect(deriveGuardianRequestSourceType("cadet")).toBe("desktop");
     expect(deriveGuardianRequestSourceType("telegram")).toBe("channel");
     expect(deriveGuardianRequestSourceType(null)).toBe("channel");
   });
@@ -475,7 +475,7 @@ describe("delivery + destination IPC schemas", () => {
     expect(CreateGuardianRequestDeliveryIpcParamsSchema.parse(full)).toEqual(
       full,
     );
-    const minimal = { requestId: "req-1", destinationChannel: "vellum" };
+    const minimal = { requestId: "req-1", destinationChannel: "cadet" };
     expect(CreateGuardianRequestDeliveryIpcParamsSchema.parse(minimal)).toEqual(
       minimal,
     );

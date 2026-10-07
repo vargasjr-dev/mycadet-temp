@@ -5,7 +5,7 @@
  * `getClientRegistrationHeaders()` (`clients/web/src/lib/telemetry/
  * client-identity.ts`), the gateway allows them through webview CORS
  * (`gateway/src/http/middleware/cors.ts`) and forwards them to the daemon
- * by `x-vellum-*` prefix, and the daemon persists them under
+ * by `x-cadet-*` prefix, and the daemon persists them under
  * `metadata.client` on user messages (`handleSendMessage`), where
  * `turn-events-store` projects them onto `TurnTelemetryEvent.client` for
  * downstream analytics.
@@ -14,10 +14,10 @@
  * lowercase HTTP header names (HTTP header matching is case-insensitive).
  */
 export const CLIENT_METADATA_HEADERS = {
-  browser_family: "x-vellum-browser-family",
-  browser_version: "x-vellum-browser-version",
-  os: "x-vellum-client-os",
-  interface_version: "x-vellum-interface-version",
+  browser_family: "x-cadet-browser-family",
+  browser_version: "x-cadet-browser-version",
+  os: "x-cadet-client-os",
+  interface_version: "x-cadet-interface-version",
 } as const;
 
 export type ClientMetadataField = keyof typeof CLIENT_METADATA_HEADERS;

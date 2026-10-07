@@ -286,7 +286,7 @@ function sharedInviteRegistrationError(
  * daemon-owned and layered on by each create transport exactly once: the
  * daemon's create relay composes in-process; the gateway HTTP handler
  * composes via the `invites_compose_presentation` daemon IPC.
- * A `vellum-shared` invite is registered with the platform before the row is
+ * A `cadet-shared` invite is registered with the platform before the row is
  * written (see `registerSharedInvite`).
  *
  * Throws InviteNativeError(404) when the contact is unknown, (400) on invalid
@@ -311,12 +311,12 @@ export async function createInviteNative(
   // A redemption binds a new principal to the contact, and a contact carries
   // one principal, so a second use of the same invite could never succeed.
   if (
-    input.sourceChannel === "vellum-shared" &&
+    input.sourceChannel === "cadet-shared" &&
     input.maxUses !== undefined &&
     input.maxUses !== 1
   ) {
     throw new InviteNativeError(
-      "maxUses must be 1 for vellum-shared invites",
+      "maxUses must be 1 for cadet-shared invites",
       400,
       "BAD_REQUEST",
     );
@@ -334,11 +334,11 @@ export async function createInviteNative(
   // Redemption binds the new principal only to a contact-role contact that
   // carries none yet.
   if (
-    input.sourceChannel === "vellum-shared" &&
+    input.sourceChannel === "cadet-shared" &&
     (contact.role !== "contact" || contact.principalId)
   ) {
     throw new InviteNativeError(
-      `Contact "${input.contactId}" cannot take a vellum-shared invite`,
+      `Contact "${input.contactId}" cannot take a cadet-shared invite`,
       409,
       "CONFLICT",
     );
@@ -775,7 +775,7 @@ interface GuardianLabelCacheEntry {
   at: number;
 }
 
-const VALID_ASSISTANT_SPECIES = ["vellum"] as const;
+const VALID_ASSISTANT_SPECIES = ["cadet"] as const;
 const VALID_CHANNEL_STATUSES = [
   "active",
   "pending",
@@ -1270,7 +1270,7 @@ function validateSpeciesMetadata(
 ): string | null {
   if (metadata == null) return null;
 
-  if (species === "vellum") {
+  if (species === "cadet") {
     if (typeof metadata.assistantId !== "string" || !metadata.assistantId) {
       return 'Cadet assistant metadata requires a non-empty "assistantId" string';
     }

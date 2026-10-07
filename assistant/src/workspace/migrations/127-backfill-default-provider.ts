@@ -8,7 +8,7 @@ import type { WorkspaceMigration } from "./types.js";
 // signals: `IS_PLATFORM`, a legacy `llm.default.provider`, or a personal
 // `custom-*` profile's provider.
 //
-// Platform installs resolve to "vellum" before the legacy field is
+// Platform installs resolve to "cadet" before the legacy field is
 // consulted: a pre-field platform config commonly carries
 // `llm.default.provider: "anthropic"` as a schema-default echo rather than
 // a routing choice, and backfilling it would permanently pin the install to
@@ -41,7 +41,7 @@ const DEFAULT_PROFILE_PROVIDERS = [
   "gemini",
   "fireworks",
   "openrouter",
-  "vellum",
+  "cadet",
 ] as const;
 
 const CUSTOM_PROFILE_ORDER = [
@@ -83,7 +83,7 @@ export const backfillDefaultProviderMigration: WorkspaceMigration = {
       return;
     }
 
-    const provider = isPlatform() ? "vellum" : resolveProviderSignal(llm);
+    const provider = isPlatform() ? "cadet" : resolveProviderSignal(llm);
     if (provider === undefined) {
       return;
     }

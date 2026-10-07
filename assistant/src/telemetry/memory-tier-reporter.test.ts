@@ -81,7 +81,7 @@ describe("memory-tier-reporter", () => {
 
   afterEach(() => {
     stopMemoryTierReporter();
-    delete process.env.VELLUM_DEV;
+    delete process.env.CADET_DEV;
   });
 
   test("emits a memory_tier watchdog carrying the current tier", () => {
@@ -182,8 +182,8 @@ describe("memory-tier-reporter", () => {
     expect(recorded[0]?.detail).toEqual({ tier: "v2" });
   });
 
-  test("startMemoryTierReporter is a no-op under VELLUM_DEV=1", () => {
-    process.env.VELLUM_DEV = "1";
+  test("startMemoryTierReporter is a no-op under CADET_DEV=1", () => {
+    process.env.CADET_DEV = "1";
     consent = true; // consent known → a non-dev start would emit immediately
     currentConfig = makeConfig(true, true);
 

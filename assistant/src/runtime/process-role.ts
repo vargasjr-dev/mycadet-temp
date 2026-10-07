@@ -13,16 +13,16 @@
  * (which never runs that entrypoint) is a non-daemon by default — no per-worker
  * bookkeeping to keep in sync.
  *
- * State lives on the shared `globalThis.vellumAssistant.mainDaemonProcess` slot
+ * State lives on the shared `globalThis.cadetAssistant.mainDaemonProcess` slot
  * (like the other process-scoped singletons, and typed once by the ambient
- * `VellumAssistantNamespace` in `src/vellum-assistant-namespace.d.ts`) so the
+ * `CadetAssistantNamespace` in `src/mycadet-namespace.d.ts`) so the
  * test preload can default a test process to "main daemon" — a test runs daemon
  * code in-process and expects local hub delivery — without importing this
  * module.
  */
 
-function ns(): VellumAssistantNamespace {
-  return (globalThis.vellumAssistant ??= {});
+function ns(): CadetAssistantNamespace {
+  return (globalThis.cadetAssistant ??= {});
 }
 
 /**

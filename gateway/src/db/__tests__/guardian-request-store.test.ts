@@ -275,7 +275,7 @@ describe("listGuardianRequests", () => {
 
   test("translates the sourceType filter to source_channel predicates", () => {
     const voice = createRequest({ sourceChannel: "phone" });
-    const desktop = createRequest({ sourceChannel: "vellum" });
+    const desktop = createRequest({ sourceChannel: "cadet" });
     const telegram = createRequest({ sourceChannel: "telegram" });
     const channelless = createRequest();
 
@@ -563,7 +563,7 @@ describe("expireGuardianRequest", () => {
     });
     const d2 = createDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
 
@@ -585,7 +585,7 @@ describe("expireGuardianRequest", () => {
     });
     createDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
 
@@ -690,7 +690,7 @@ describe("deliveries", () => {
   test("deleting a request cascades to its deliveries", () => {
     const req = createRequest();
     createDelivery({ requestId: req.id, destinationChannel: "telegram" });
-    createDelivery({ requestId: req.id, destinationChannel: "vellum" });
+    createDelivery({ requestId: req.id, destinationChannel: "cadet" });
 
     getGatewayDb()
       .delete(guardianRequests)
@@ -744,12 +744,12 @@ describe("listPendingByDestinationConversation", () => {
 
     createDelivery({
       requestId: pending.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
     createDelivery({
       requestId: resolved.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
 
@@ -757,7 +757,7 @@ describe("listPendingByDestinationConversation", () => {
       listPendingByDestinationConversation("conv-1").map((r) => r.id),
     ).toEqual([pending.id]);
     expect(
-      listPendingByDestinationConversation("conv-1", "vellum").map((r) => r.id),
+      listPendingByDestinationConversation("conv-1", "cadet").map((r) => r.id),
     ).toEqual([pending.id]);
     expect(
       listPendingByDestinationConversation("conv-1", "telegram"),
@@ -768,7 +768,7 @@ describe("listPendingByDestinationConversation", () => {
     const req = createRequest();
     createDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
     createDelivery({
@@ -791,13 +791,13 @@ describe("listPendingByConversationScope", () => {
     const byDelivery = createRequest();
     createDelivery({
       requestId: byDelivery.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
     const both = createRequest({ sourceConversationId: "conv-1" });
     createDelivery({
       requestId: both.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
 
@@ -820,7 +820,7 @@ describe("listPendingByConversationScope", () => {
       destinationConversationId: "conv-1",
     });
 
-    const results = listPendingByConversationScope("conv-1", "vellum");
+    const results = listPendingByConversationScope("conv-1", "cadet");
     expect(results.map((r) => r.id)).toEqual([fresh.id]);
   });
 });

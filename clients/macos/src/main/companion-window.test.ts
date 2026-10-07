@@ -4312,7 +4312,7 @@ describe("the popover beside the surface", () => {
     for (const url of [
       "file:///etc/passwd",
       "javascript:alert(1)",
-      "vellum://workspace/x",
+      "cadet://workspace/x",
       "not a url",
     ]) {
       send("cadet:companion:openLink", url);

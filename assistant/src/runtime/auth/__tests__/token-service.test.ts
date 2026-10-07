@@ -15,9 +15,9 @@ beforeEach(() => {
 });
 
 describe("mintToken / verifyToken round-trip", () => {
-  test("mint + verify succeeds for valid token targeting vellum-daemon", () => {
+  test("mint + verify succeeds for valid token targeting cadet-daemon", () => {
     const token = mintToken({
-      aud: "vellum-daemon",
+      aud: "cadet-daemon",
       sub: "actor:self:principal-abc",
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -27,11 +27,11 @@ describe("mintToken / verifyToken round-trip", () => {
     expect(token).toBeTruthy();
     expect(token.split(".").length).toBe(3);
 
-    const result = verifyToken(token, "vellum-daemon");
+    const result = verifyToken(token, "cadet-daemon");
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.claims.iss).toBe("vellum-auth");
-      expect(result.claims.aud).toBe("vellum-daemon");
+      expect(result.claims.iss).toBe("cadet-auth");
+      expect(result.claims.aud).toBe("cadet-daemon");
       expect(result.claims.sub).toBe("actor:self:principal-abc");
       expect(result.claims.scope_profile).toBe("actor_client_v1");
       expect(result.claims.policy_epoch).toBe(CURRENT_POLICY_EPOCH);
@@ -42,24 +42,24 @@ describe("mintToken / verifyToken round-trip", () => {
 
   test("mint + verify succeeds for gateway audience", () => {
     const token = mintToken({
-      aud: "vellum-gateway",
+      aud: "cadet-gateway",
       sub: "svc:gateway:self",
       scope_profile: "gateway_ingress_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
       ttlSeconds: 60,
     });
 
-    const result = verifyToken(token, "vellum-gateway");
+    const result = verifyToken(token, "cadet-gateway");
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.claims.aud).toBe("vellum-gateway");
+      expect(result.claims.aud).toBe("cadet-gateway");
       expect(result.claims.sub).toBe("svc:gateway:self");
     }
   });
 
   test("each mint produces a unique jti", () => {
     const params = {
-      aud: "vellum-daemon" as const,
+      aud: "cadet-daemon" as const,
       sub: "actor:self:p1",
       scope_profile: "actor_client_v1" as const,
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -69,8 +69,8 @@ describe("mintToken / verifyToken round-trip", () => {
     const t1 = mintToken(params);
     const t2 = mintToken(params);
 
-    const r1 = verifyToken(t1, "vellum-daemon");
-    const r2 = verifyToken(t2, "vellum-daemon");
+    const r1 = verifyToken(t1, "cadet-daemon");
+    const r2 = verifyToken(t2, "cadet-daemon");
 
     expect(r1.ok).toBe(true);
     expect(r2.ok).toBe(true);
@@ -83,14 +83,14 @@ describe("mintToken / verifyToken round-trip", () => {
 describe("verifyToken failure cases", () => {
   test("rejects expired token", () => {
     const token = mintToken({
-      aud: "vellum-daemon",
+      aud: "cadet-daemon",
       sub: "actor:self:p1",
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
       ttlSeconds: -10, // already expired
     });
 
-    const result = verifyToken(token, "vellum-daemon");
+    const result = verifyToken(token, "cadet-daemon");
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toBe("token_expired");
@@ -99,14 +99,14 @@ describe("verifyToken failure cases", () => {
 
   test("rejects wrong audience", () => {
     const token = mintToken({
-      aud: "vellum-daemon",
+      aud: "cadet-daemon",
       sub: "actor:self:p1",
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
       ttlSeconds: 300,
     });
 
-    const result = verifyToken(token, "vellum-gateway");
+    const result = verifyToken(token, "cadet-gateway");
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toContain("audience_mismatch");
@@ -114,7 +114,7 @@ describe("verifyToken failure cases", () => {
   });
 
   test("rejects malformed token (no dots)", () => {
-    const result = verifyToken("not-a-jwt", "vellum-daemon");
+    const result = verifyToken("not-a-jwt", "cadet-daemon");
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toContain("malformed_token");
@@ -122,7 +122,7 @@ describe("verifyToken failure cases", () => {
   });
 
   test("rejects malformed token (only 2 parts)", () => {
-    const result = verifyToken("part1.part2", "vellum-daemon");
+    const result = verifyToken("part1.part2", "cadet-daemon");
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toContain("malformed_token");
@@ -131,7 +131,7 @@ describe("verifyToken failure cases", () => {
 
   test("rejects tampered payload", () => {
     const token = mintToken({
-      aud: "vellum-daemon",
+      aud: "cadet-daemon",
       sub: "actor:self:p1",
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -143,7 +143,7 @@ describe("verifyToken failure cases", () => {
     parts[1] = parts[1] + "X";
     const tampered = parts.join(".");
 
-    const result = verifyToken(tampered, "vellum-daemon");
+    const result = verifyToken(tampered, "cadet-daemon");
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toBe("invalid_signature");
@@ -152,7 +152,7 @@ describe("verifyToken failure cases", () => {
 
   test("rejects tampered signature", () => {
     const token = mintToken({
-      aud: "vellum-daemon",
+      aud: "cadet-daemon",
       sub: "actor:self:p1",
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -163,7 +163,7 @@ describe("verifyToken failure cases", () => {
     parts[2] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
     const tampered = parts.join(".");
 
-    const result = verifyToken(tampered, "vellum-daemon");
+    const result = verifyToken(tampered, "cadet-daemon");
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toBe("invalid_signature");
@@ -172,14 +172,14 @@ describe("verifyToken failure cases", () => {
 
   test("rejects token with stale policy epoch", () => {
     const token = mintToken({
-      aud: "vellum-daemon",
+      aud: "cadet-daemon",
       sub: "actor:self:p1",
       scope_profile: "actor_client_v1",
       policy_epoch: 0, // stale
       ttlSeconds: 300,
     });
 
-    const result = verifyToken(token, "vellum-daemon");
+    const result = verifyToken(token, "cadet-daemon");
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toBe("stale_policy_epoch");
@@ -189,7 +189,7 @@ describe("verifyToken failure cases", () => {
   test("rejects token signed with a different key", () => {
     // Mint with current key
     const token = mintToken({
-      aud: "vellum-daemon",
+      aud: "cadet-daemon",
       sub: "actor:self:p1",
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -199,7 +199,7 @@ describe("verifyToken failure cases", () => {
     // Switch to a different key
     initAuthSigningKey(Buffer.from("different-key-32-bytes-longXXXX"));
 
-    const result = verifyToken(token, "vellum-daemon");
+    const result = verifyToken(token, "cadet-daemon");
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toBe("invalid_signature");
@@ -220,14 +220,14 @@ describe("hashToken", () => {
 
   test("different tokens produce different hashes", () => {
     const t1 = mintToken({
-      aud: "vellum-daemon",
+      aud: "cadet-daemon",
       sub: "actor:self:p1",
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
       ttlSeconds: 300,
     });
     const t2 = mintToken({
-      aud: "vellum-daemon",
+      aud: "cadet-daemon",
       sub: "actor:self:p2",
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,

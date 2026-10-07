@@ -291,21 +291,21 @@ describe("ConversationEvictor", () => {
     });
 
     test("derives the threshold from the container limit at first sweep, not construction", () => {
-      const previous = process.env.VELLUM_MEMORY_LIMIT;
+      const previous = process.env.CADET_MEMORY_LIMIT;
       sessions.set("idle", createMockSession());
       evictor = new ConversationEvictor(sessions, {
         ttlMs: Number.MAX_SAFE_INTEGER,
         maxConversations: Number.MAX_SAFE_INTEGER,
       });
       // Half of 1 MiB is far below any live RSS, so the phase must fire.
-      process.env.VELLUM_MEMORY_LIMIT = "1Mi";
+      process.env.CADET_MEMORY_LIMIT = "1Mi";
       try {
         expect(evictor.sweep().memoryEvicted).toBe(1);
       } finally {
         if (previous === undefined) {
-          delete process.env.VELLUM_MEMORY_LIMIT;
+          delete process.env.CADET_MEMORY_LIMIT;
         } else {
-          process.env.VELLUM_MEMORY_LIMIT = previous;
+          process.env.CADET_MEMORY_LIMIT = previous;
         }
       }
     });

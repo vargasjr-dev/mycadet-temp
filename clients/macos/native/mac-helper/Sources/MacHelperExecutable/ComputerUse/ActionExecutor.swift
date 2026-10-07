@@ -34,7 +34,7 @@ enum ExecutorError: LocalizedError {
     }
 }
 
-private let log = Logger(subsystem: "ai.vellum.mac-helper", category: "ActionExecutor")
+private let log = Logger(subsystem: "ai.mycadet.mac-helper", category: "ActionExecutor")
 
 final class ActionExecutor {
     private let eventSource: CGEventSource?

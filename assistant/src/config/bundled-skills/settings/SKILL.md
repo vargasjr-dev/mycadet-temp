@@ -1,7 +1,7 @@
 ---
 name: settings
 description: Manage assistant voice and system settings
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "\u2699\uFE0F"
   cadet:

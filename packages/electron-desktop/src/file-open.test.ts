@@ -64,13 +64,13 @@ const { isAllowedOrigin } = await import("./app-origin");
 const {
   __resetForTesting,
   configureFileOpen,
-  extractVellumFilePathsFromArgv,
+  extractCadetFilePathsFromArgv,
   handleFileOpen,
   installFileOpen,
   onFileOpen,
 } = await import("./file-open");
 
-const resolveAllowedOrigin = () => ({ protocol: "app:", host: "vellum.ai" });
+const resolveAllowedOrigin = () => ({ protocol: "app:", host: "mycadet.ai" });
 const { handle, on } = createIpcRegistrar(
   resolveAllowedOrigin,
   isAllowedOrigin,
@@ -113,13 +113,13 @@ afterEach(() => {
   windows = [];
 });
 
-describe("extractVellumFilePathsFromArgv", () => {
+describe("extractCadetFilePathsFromArgv", () => {
   test("canonicalizes Unicode paths and removes duplicate argv entries", () => {
-    const relativePath = "exports/例.vellum";
+    const relativePath = "exports/例.cadet";
 
     expect(
-      extractVellumFilePathsFromArgv([
-        "Vellum.exe",
+      extractCadetFilePathsFromArgv([
+        "Cadet.exe",
         relativePath,
         path.resolve(relativePath),
       ]),
@@ -128,42 +128,42 @@ describe("extractVellumFilePathsFromArgv", () => {
 
   test("ignores missing paths and invalid extensions", () => {
     expect(
-      extractVellumFilePathsFromArgv([
+      extractCadetFilePathsFromArgv([
         "",
         "--open",
         "notes.txt",
-        "archive.vellum.bak",
+        "archive.cadet.bak",
       ]),
     ).toEqual([]);
   });
 
   test("resolves relative paths from the launching working directory", () => {
     expect(
-      extractVellumFilePathsFromArgv(
-        ["Vellum.exe", "exports/example.vellum"],
+      extractCadetFilePathsFromArgv(
+        ["Cadet.exe", "exports/example.cadet"],
         "/launching-directory",
       ),
-    ).toEqual(["/launching-directory/exports/example.vellum"]);
+    ).toEqual(["/launching-directory/exports/example.cadet"]);
   });
 });
 
 describe("handleFileOpen", () => {
-  test(".vellum files are buffered when no subscribers exist", () => {
+  test(".cadet files are buffered when no subscribers exist", () => {
     installFileOpen();
 
-    handleFileOpen("/tmp/example.vellum");
+    handleFileOpen("/tmp/example.cadet");
 
     const drainHandler = ipcHandleMock.mock.calls.find(
       (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
-    expect(drainHandler(allowedEvent)).toEqual(["/tmp/example.vellum"]);
+    expect(drainHandler(allowedEvent)).toEqual(["/tmp/example.cadet"]);
   });
 
-  test("non-.vellum files are silently ignored", () => {
+  test("non-.cadet files are silently ignored", () => {
     installFileOpen();
 
     handleFileOpen("/tmp/example.txt");
-    handleFileOpen("/tmp/example.vellum.bak");
+    handleFileOpen("/tmp/example.cadet.bak");
     handleFileOpen("/tmp/readme.md");
 
     const drainHandler = ipcHandleMock.mock.calls.find(
@@ -172,25 +172,25 @@ describe("handleFileOpen", () => {
     expect(drainHandler(allowedEvent)).toEqual([]);
   });
 
-  test(".VELLUM extension is accepted (case-insensitive)", () => {
+  test(".CADET extension is accepted (case-insensitive)", () => {
     installFileOpen();
 
-    handleFileOpen("/tmp/example.VELLUM");
+    handleFileOpen("/tmp/example.CADET");
 
     const drainHandler = ipcHandleMock.mock.calls.find(
       (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
-    expect(drainHandler(allowedEvent)).toEqual(["/tmp/example.VELLUM"]);
+    expect(drainHandler(allowedEvent)).toEqual(["/tmp/example.CADET"]);
   });
 
   test("calls ensureMainWindowVisible when app is ready", () => {
-    handleFileOpen("/tmp/example.vellum");
+    handleFileOpen("/tmp/example.cadet");
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
   test("defers activation when app is not yet ready", () => {
     appIsReady = false;
-    handleFileOpen("/tmp/example.vellum");
+    handleFileOpen("/tmp/example.cadet");
     expect(ensureMainWindowVisibleMock).not.toHaveBeenCalled();
   });
 });
@@ -199,16 +199,16 @@ describe("drain", () => {
   test("returns buffered paths and clears buffer", () => {
     installFileOpen();
 
-    handleFileOpen("/tmp/a.vellum");
-    handleFileOpen("/tmp/b.vellum");
+    handleFileOpen("/tmp/a.cadet");
+    handleFileOpen("/tmp/b.cadet");
 
     const drainHandler = ipcHandleMock.mock.calls.find(
       (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
 
     expect(drainHandler(allowedEvent)).toEqual([
-      "/tmp/a.vellum",
-      "/tmp/b.vellum",
+      "/tmp/a.cadet",
+      "/tmp/b.cadet",
     ]);
     // Second drain returns empty.
     expect(drainHandler(allowedEvent)).toEqual([]);
@@ -217,7 +217,7 @@ describe("drain", () => {
   test("drain adds the sender to subscribers", () => {
     installFileOpen();
 
-    handleFileOpen("/tmp/backlog.vellum");
+    handleFileOpen("/tmp/backlog.cadet");
 
     const drainHandler = ipcHandleMock.mock.calls.find(
       (c) => c[0] === "cadet:fileOpen:drain",
@@ -225,7 +225,7 @@ describe("drain", () => {
     drainHandler(allowedEvent);
 
     // With a subscriber, the next file should NOT enter the buffer.
-    handleFileOpen("/tmp/live.vellum");
+    handleFileOpen("/tmp/live.cadet");
     expect(drainHandler(allowedEvent)).toEqual([]);
   });
 });
@@ -236,15 +236,15 @@ describe("broadcast", () => {
     const w2 = makeWindow();
     windows = [w1, w2];
 
-    handleFileOpen("/tmp/example.vellum");
+    handleFileOpen("/tmp/example.cadet");
 
     expect(w1.webContents.send).toHaveBeenCalledWith(
       "cadet:fileOpen:event",
-      "/tmp/example.vellum",
+      "/tmp/example.cadet",
     );
     expect(w2.webContents.send).toHaveBeenCalledWith(
       "cadet:fileOpen:event",
-      "/tmp/example.vellum",
+      "/tmp/example.cadet",
     );
   });
 
@@ -253,7 +253,7 @@ describe("broadcast", () => {
     const dead = makeWindow(true);
     windows = [alive, dead];
 
-    handleFileOpen("/tmp/example.vellum");
+    handleFileOpen("/tmp/example.cadet");
 
     expect(alive.webContents.send).toHaveBeenCalled();
     expect(dead.webContents.send).not.toHaveBeenCalled();
@@ -267,13 +267,13 @@ describe("subscriber lifecycle", () => {
       (c) => c[0] === "cadet:fileOpen:drain",
     )![1] as (event: unknown) => unknown[];
 
-    handleFileOpen("/tmp/backlog.vellum");
+    handleFileOpen("/tmp/backlog.cadet");
 
     const s1 = makeSender();
     subscribeWith(s1);
-    expect(drainHandler(allowedEvent)).toEqual(["/tmp/backlog.vellum"]);
+    expect(drainHandler(allowedEvent)).toEqual(["/tmp/backlog.cadet"]);
 
-    handleFileOpen("/tmp/live.vellum");
+    handleFileOpen("/tmp/live.cadet");
 
     unsubscribeWith(s1);
     const s2 = makeSender();
@@ -293,11 +293,11 @@ describe("subscriber lifecycle", () => {
 
     // Simulate the drain sender going away so subscribers empties.
     d1.fireDestroyed();
-    handleFileOpen("/tmp/post-logout.vellum");
+    handleFileOpen("/tmp/post-logout.cadet");
 
     // New drain picks up the buffered path.
     expect(drainHandler(makeAllowedEvent().event)).toEqual([
-      "/tmp/post-logout.vellum",
+      "/tmp/post-logout.cadet",
     ]);
   });
 
@@ -314,9 +314,9 @@ describe("subscriber lifecycle", () => {
     // Simulate the drain sender being destroyed (auto-clears).
     d.fireDestroyed();
 
-    handleFileOpen("/tmp/after-crash.vellum");
+    handleFileOpen("/tmp/after-crash.cadet");
     expect(drainHandler(makeAllowedEvent().event)).toEqual([
-      "/tmp/after-crash.vellum",
+      "/tmp/after-crash.cadet",
     ]);
   });
 });
@@ -350,7 +350,7 @@ describe("installFileOpen", () => {
     expect(openFile).toBeDefined();
 
     const preventDefault = mock(() => undefined);
-    openFile?.({ preventDefault } as unknown, "/tmp/example.vellum");
+    openFile?.({ preventDefault } as unknown, "/tmp/example.cadet");
 
     expect(preventDefault).toHaveBeenCalled();
   });
@@ -358,22 +358,22 @@ describe("installFileOpen", () => {
 
 describe("onFileOpen", () => {
   test("replays buffered paths to a newly registered callback", () => {
-    handleFileOpen("/tmp/cold-launch.vellum");
-    handleFileOpen("/tmp/cold-launch-2.vellum");
+    handleFileOpen("/tmp/cold-launch.cadet");
+    handleFileOpen("/tmp/cold-launch-2.cadet");
 
     const received: string[] = [];
     onFileOpen((p) => received.push(p));
 
     expect(received).toEqual([
-      "/tmp/cold-launch.vellum",
-      "/tmp/cold-launch-2.vellum",
+      "/tmp/cold-launch.cadet",
+      "/tmp/cold-launch-2.cadet",
     ]);
   });
 
   test("does not replay paths that were already drained", () => {
     installFileOpen();
 
-    handleFileOpen("/tmp/early.vellum");
+    handleFileOpen("/tmp/early.cadet");
 
     const drainHandler = ipcHandleMock.mock.calls.find(
       (c) => c[0] === "cadet:fileOpen:drain",
@@ -390,9 +390,9 @@ describe("onFileOpen", () => {
     const received: string[] = [];
     onFileOpen((p) => received.push(p));
 
-    handleFileOpen("/tmp/live.vellum");
+    handleFileOpen("/tmp/live.cadet");
 
-    expect(received).toEqual(["/tmp/live.vellum"]);
+    expect(received).toEqual(["/tmp/live.cadet"]);
   });
 
   test("unsubscribe stops receiving events", () => {
@@ -400,7 +400,7 @@ describe("onFileOpen", () => {
     const unsub = onFileOpen((p) => received.push(p));
 
     unsub();
-    handleFileOpen("/tmp/after-unsub.vellum");
+    handleFileOpen("/tmp/after-unsub.cadet");
 
     expect(received).toEqual([]);
   });

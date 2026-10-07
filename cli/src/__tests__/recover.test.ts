@@ -63,11 +63,11 @@ import { recover } from "../commands/recover.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "cli-recover-test-"));
 const originalArgv = [...process.argv];
-const originalLockfileDir = process.env.VELLUM_LOCKFILE_DIR;
+const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
 const originalXdgData = process.env.XDG_DATA_HOME;
 
 // Directories that getRetiredDir() will use when XDG_DATA_HOME is overridden
-const retiredDir = join(testDir, "vellum", "retired");
+const retiredDir = join(testDir, "cadet", "retired");
 
 function makeEntry(assistantId: string, instanceDir: string): AssistantEntry {
   return {
@@ -113,12 +113,12 @@ let exitSpy: ReturnType<typeof spyOn>;
 
 beforeEach(() => {
   // Route lockfile and retired archives to the temp directory
-  process.env.VELLUM_LOCKFILE_DIR = testDir;
+  process.env.CADET_LOCKFILE_DIR = testDir;
   process.env.XDG_DATA_HOME = testDir;
   // Write an empty lockfile so saveAssistantEntry has a dir to write to
   mkdirSync(testDir, { recursive: true });
   writeFileSync(
-    join(testDir, ".vellum.lock.json"),
+    join(testDir, ".cadet.lock.json"),
     JSON.stringify({ assistants: [] }) + "\n",
   );
 
@@ -136,14 +136,14 @@ beforeEach(() => {
 
 afterEach(() => {
   process.argv = [...originalArgv];
-  process.env.VELLUM_LOCKFILE_DIR = originalLockfileDir;
+  process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
   process.env.XDG_DATA_HOME = originalXdgData;
   consoleLogSpy.mockRestore();
   consoleErrorSpy.mockRestore();
   exitSpy.mockRestore();
-  // Clean up per-test artifacts inside testDir/vellum/
-  if (existsSync(join(testDir, "vellum"))) {
-    rmSync(join(testDir, "vellum"), { recursive: true, force: true });
+  // Clean up per-test artifacts inside testDir/cadet/
+  if (existsSync(join(testDir, "cadet"))) {
+    rmSync(join(testDir, "cadet"), { recursive: true, force: true });
   }
 });
 
@@ -152,9 +152,9 @@ afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
   process.argv = [...originalArgv];
   if (originalLockfileDir !== undefined) {
-    process.env.VELLUM_LOCKFILE_DIR = originalLockfileDir;
+    process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
   } else {
-    delete process.env.VELLUM_LOCKFILE_DIR;
+    delete process.env.CADET_LOCKFILE_DIR;
   }
   if (originalXdgData !== undefined) {
     process.env.XDG_DATA_HOME = originalXdgData;
@@ -167,7 +167,7 @@ afterAll(() => {
 
 describe("recover --help", () => {
   test("prints usage, description, and examples then exits 0", async () => {
-    process.argv = ["bun", "vellum", "recover", "--help"];
+    process.argv = ["bun", "cadet", "recover", "--help"];
     await expect(recover()).rejects.toThrow("process.exit(0)");
     const output = consoleLogSpy.mock.calls.flat().join("\n");
     expect(output).toContain("Usage: cadet recover <name>");
@@ -178,13 +178,13 @@ describe("recover --help", () => {
 
 describe("recover error cases", () => {
   test("exits 1 when no name is given", async () => {
-    process.argv = ["bun", "vellum", "recover"];
+    process.argv = ["bun", "cadet", "recover"];
     await expect(recover()).rejects.toThrow("process.exit(1)");
     expect(consoleErrorSpy.mock.calls[0][0]).toContain("Usage:");
   });
 
   test("exits 1 when archive is missing", async () => {
-    process.argv = ["bun", "vellum", "recover", "ghost-assistant"];
+    process.argv = ["bun", "cadet", "recover", "ghost-assistant"];
     await expect(recover()).rejects.toThrow("process.exit(1)");
     expect(consoleErrorSpy.mock.calls[0][0]).toContain(
       "No retired archive found for 'ghost-assistant'",
@@ -205,38 +205,38 @@ describe("recover error cases", () => {
       join(retiredDir, `${name}.json`),
       JSON.stringify(entry, null, 2) + "\n",
     );
-    process.argv = ["bun", "vellum", "recover", name];
+    process.argv = ["bun", "cadet", "recover", name];
     await expect(recover()).rejects.toThrow("missing resource configuration");
   });
 
-  test("exits 1 when target .vellum/ already exists", async () => {
+  test("exits 1 when target .cadet/ already exists", async () => {
     const name = "already-exists";
     const instanceDir = join(testDir, name);
     const entry = makeEntry(name, instanceDir);
     writeArchiveFixtures(name, entry);
     // Pre-create the collision path that recover checks
-    mkdirSync(join(instanceDir, ".vellum"), { recursive: true });
-    process.argv = ["bun", "vellum", "recover", name];
+    mkdirSync(join(instanceDir, ".cadet"), { recursive: true });
+    process.argv = ["bun", "cadet", "recover", name];
     await expect(recover()).rejects.toThrow("process.exit(1)");
     expect(consoleErrorSpy.mock.calls[0][0]).toContain("already exists");
   });
 });
 
 describe("recover extraction path — default instance (instanceDir === homedir())", () => {
-  test("extracts to retiredDir and renames staging dir to instanceDir/.vellum", async () => {
+  test("extracts to retiredDir and renames staging dir to instanceDir/.cadet", async () => {
     const name = "default-instance";
     const entry = makeEntry(name, homedir());
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
 
-    const expectedTargetDir = join(homedir(), ".vellum");
-    // If a real ~/.vellum exists (e.g. the machine runs a live assistant),
+    const expectedTargetDir = join(homedir(), ".cadet");
+    // If a real ~/.cadet exists (e.g. the machine runs a live assistant),
     // temporarily move it aside so the collision guard doesn't fire.
-    const backupDir = join(homedir(), ".vellum-recover-test-bak");
+    const backupDir = join(homedir(), ".cadet-recover-test-bak");
     const hadExisting = existsSync(expectedTargetDir);
     if (hadExisting) renameSync(expectedTargetDir, backupDir);
 
     try {
-      process.argv = ["bun", "vellum", "recover", name];
+      process.argv = ["bun", "cadet", "recover", name];
       await recover();
 
       // exec must have been called with -C retiredDir, NOT -C homedir()
@@ -272,12 +272,12 @@ describe("recover extraction path — named instance (instanceDir !== homedir())
     const entry = makeEntry(name, instanceDir);
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
 
-    // Named instance: targetDir is instanceDir itself (not instanceDir/.vellum)
+    // Named instance: targetDir is instanceDir itself (not instanceDir/.cadet)
     const expectedTargetDir = instanceDir;
     // Parent dir must exist for renameSync
     mkdirSync(join(testDir, "custom-location"), { recursive: true });
 
-    process.argv = ["bun", "vellum", "recover", name];
+    process.argv = ["bun", "cadet", "recover", name];
     await recover();
 
     // exec must have been called with -C retiredDir
@@ -287,7 +287,7 @@ describe("recover extraction path — named instance (instanceDir !== homedir())
     const cIndex = args.indexOf("-C");
     expect(args[cIndex + 1]).toBe(retiredDir);
 
-    // Staging dir was renamed to instanceDir (not instanceDir/.vellum)
+    // Staging dir was renamed to instanceDir (not instanceDir/.cadet)
     expect(existsSync(extractedPath)).toBe(false);
     expect(existsSync(expectedTargetDir)).toBe(true);
 
@@ -306,7 +306,7 @@ describe("recover extraction path — named instance (instanceDir !== homedir())
     const entry = makeEntry(name, instanceDir);
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
 
-    process.argv = ["bun", "vellum", "recover", name];
+    process.argv = ["bun", "cadet", "recover", name];
     await recover();
 
     expect(existsSync(extractedPath)).toBe(false);

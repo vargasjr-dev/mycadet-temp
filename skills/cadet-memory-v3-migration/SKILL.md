@@ -73,8 +73,8 @@ If `quality-optimized` isn't a profile, `assistant config get llm.profiles` and 
 **(5) Size the job + confirm.** Count the corpus and tell the user what they're signing up for:
 
 ```
-find "$VELLUM_WORKSPACE_DIR/memory/concepts" -name '*.md' | wc -l
-du -sh "$VELLUM_WORKSPACE_DIR/memory/concepts"
+find "$CADET_WORKSPACE_DIR/memory/concepts" -name '*.md' | wc -l
+du -sh "$CADET_WORKSPACE_DIR/memory/concepts"
 ```
 
 Reform of a multi-thousand-page corpus is many millions of tokens and real money. Use the CLI gate:
@@ -92,7 +92,7 @@ Consolidation is the **only** process that writes `memory/concepts/`. If it fire
 **(a) Record, then disable, both triggers.** Consolidation fires on a size trigger (`consolidation_max_buffer_lines`) and a time trigger (`consolidation_interval_hours`) — those are the only two paths. Each lives in **two namespaces**: `memory.substrate.X` overrides `memory.v2.X`, and the substrate key wins whenever it is present. Freeze in the winning namespace, and record the whole substrate override object first — that object, verbatim, is what Step 9 restores:
 
 ```
-cd "$VELLUM_WORKSPACE_DIR"   # the workspace root — NOT /workspace on local installs
+cd "$CADET_WORKSPACE_DIR"   # the workspace root — NOT /workspace on local installs
 assistant config get memory.substrate                           # record VERBATIM — may print "(not set)"
 assistant config get memory.v2.consolidation_max_buffer_lines   # record (shipped default 100)
 assistant config get memory.v2.consolidation_interval_hours     # record (shipped default 8)
@@ -105,7 +105,7 @@ Freezing via `memory.v2.*` is **not** enough: on a workspace whose substrate twi
 **(b) Wait out any in-flight run.** A run holds `memory/.v2-state/consolidation.lock` (`<pid> <ms>`) while working (hard-capped at 15 min) and removes it when done. The triggers are off now, so no new run can start — just wait for the lock to clear:
 
 ```
-cd "$VELLUM_WORKSPACE_DIR"
+cd "$CADET_WORKSPACE_DIR"
 LOCK=memory/.v2-state/consolidation.lock
 for _ in $(seq 1 80); do
   [ -f "$LOCK" ] || { echo "consolidation idle"; break; }
@@ -118,7 +118,7 @@ done
 **(c) Snapshot** — paper trail + read-only baseline:
 
 ```
-cd "$VELLUM_WORKSPACE_DIR"
+cd "$CADET_WORKSPACE_DIR"
 git add -A && git commit -m "memory-v3-migration: start" --allow-empty
 mkdir -p .mv3/snapshot .mv3/staging .mv3/provenance .mv3/audit .mv3/eval
 cp -R memory/concepts .mv3/snapshot/concepts          # read-only baseline — NEVER edit
@@ -174,7 +174,7 @@ This is what makes loss-proof real. Two passes (see `references/loss-proofing.md
 Mid commit:
 
 ```
-cd "$VELLUM_WORKSPACE_DIR" && git add -A && git commit -m "memory-v3-migration: staged wiki + loss audit" --allow-empty
+cd "$CADET_WORKSPACE_DIR" && git add -A && git commit -m "memory-v3-migration: staged wiki + loss audit" --allow-empty
 ```
 
 ### Step 8 — Eval gate (prove it before cutover)
@@ -203,7 +203,7 @@ The gate is `eval-tally`'s `gate` field: **`pass`** if the wiki wins or ties (a 
 Coupled, in one window — staged articles have no `summary:`, so live retrieval degrades the moment they land; deploy and go-live must not be separated.
 
 ```
-cd "$VELLUM_WORKSPACE_DIR"
+cd "$CADET_WORKSPACE_DIR"
 cp -R memory/concepts .mv3/backup-concepts.$(date +%Y%m%d-%H%M%S)   # rollback point
 rsync -a --delete .mv3/staging/ memory/concepts/                     # deploy the reviewed wiki (flat)
 assistant memory v3 backfill-sections                                # seed section embeddings; verify non-zero

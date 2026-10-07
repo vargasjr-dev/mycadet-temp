@@ -45,8 +45,8 @@ mock.module("../daemon/process-message.js", () => ({
   processMessageInBackground: mock(() =>
     Promise.resolve({ messageId: "msg-bg" }),
   ),
-  resolveTurnChannel: () => "vellum",
-  resolveTurnInterface: () => "vellum",
+  resolveTurnChannel: () => "cadet",
+  resolveTurnInterface: () => "cadet",
 }));
 
 const createdConversations: Array<{ conversationType: string }> = [];

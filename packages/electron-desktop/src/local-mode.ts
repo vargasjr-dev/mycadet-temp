@@ -293,7 +293,7 @@ async function getHostGuardianAccessToken(
     configDir,
     invocation,
     true,
-    { VELLUM_ENVIRONMENT: requireRuntime().paths.environment },
+    { CADET_ENVIRONMENT: requireRuntime().paths.environment },
     options,
   );
 }
@@ -319,7 +319,7 @@ export async function getPairedGuardianAccessToken(
     requireRuntime().paths.configDir,
     invocation,
     true,
-    { VELLUM_ENVIRONMENT: requireRuntime().paths.environment },
+    { CADET_ENVIRONMENT: requireRuntime().paths.environment },
   );
 }
 

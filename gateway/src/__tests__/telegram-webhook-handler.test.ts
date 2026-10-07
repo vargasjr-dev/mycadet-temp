@@ -203,7 +203,7 @@ function installFetchMock() {
         return new Response(
           JSON.stringify({
             ok: true,
-            result: { id: 123456789, username: "vellum_bot" },
+            result: { id: 123456789, username: "cadet_bot" },
           }),
           { status: 200, headers: { "content-type": "application/json" } },
         );
@@ -765,7 +765,7 @@ describe("telegram webhook handler: rooms", () => {
       update_id: updateId,
       message: {
         message_id: updateId,
-        text: "@vellum_bot how is it going",
+        text: "@cadet_bot how is it going",
         entities: [{ type: "mention", offset: 0, length: 11 }],
         chat: { id: GROUP_CHAT_ID, type: "supergroup" },
         from: { id: 67890, is_bot: false, username: "testuser" },
@@ -861,7 +861,7 @@ describe("telegram webhook handler: rooms", () => {
     const res = await handler(
       makeWebhookRequest(
         makeGroupPayload(5401, {
-          text: "/new@vellum_bot",
+          text: "/new@cadet_bot",
           entities: [{ type: "bot_command", offset: 0, length: 15 }],
         }),
       ),

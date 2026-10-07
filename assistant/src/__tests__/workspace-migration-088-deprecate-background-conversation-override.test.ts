@@ -15,7 +15,7 @@ import { deprecateBackgroundConversationOverrideMigration } from "../workspace/m
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-migration-088-test-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-migration-088-test-"));
 });
 
 afterEach(() => {

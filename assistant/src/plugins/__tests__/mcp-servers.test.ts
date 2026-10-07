@@ -32,7 +32,7 @@ function makePluginsDir(
     }
   >,
 ): string {
-  const root = mkdtempSync(join(tmpdir(), "vellum-plugin-mcp-"));
+  const root = mkdtempSync(join(tmpdir(), "cadet-plugin-mcp-"));
   for (const [name, spec] of Object.entries(plugins)) {
     const dir = join(root, name);
     mkdirSync(dir, { recursive: true });
@@ -226,7 +226,7 @@ describe("readPluginMcpServers", () => {
     // `listAllPlugins` reports a malformed directory rather than dropping
     // it, but the runtime loader will never load one, so honoring its
     // mcp.json would advertise a server no plugin stands behind.
-    const root = mkdtempSync(join(tmpdir(), "vellum-plugin-mcp-"));
+    const root = mkdtempSync(join(tmpdir(), "cadet-plugin-mcp-"));
     const dir = join(root, "no-manifest");
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "mcp.json"), VALID_MANIFEST);
@@ -440,7 +440,7 @@ describe("readPluginMcpServers", () => {
   test("returns empty when the plugins directory does not exist", () => {
     expect(
       readPluginMcpServers({
-        workspacePluginsDir: join(tmpdir(), "vellum-does-not-exist-12345"),
+        workspacePluginsDir: join(tmpdir(), "cadet-does-not-exist-12345"),
       }),
     ).toEqual({ servers: [], issues: [] });
   });

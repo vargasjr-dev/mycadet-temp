@@ -39,7 +39,7 @@ import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
 const TEST_DIR = join(
   tmpdir(),
-  `vellum-invariants-test-${randomBytes(4).toString("hex")}`,
+  `cadet-invariants-test-${randomBytes(4).toString("hex")}`,
 );
 const STORE_PATH = join(TEST_DIR, "keys.enc");
 
@@ -209,9 +209,9 @@ describe("Invariant 2: no generic plaintext secret read API", () => {
       "providers/provider-availability.ts", // provider availability API key check
       "media/image-credentials.ts", // shared image-gen credential resolver (provider API key lookup)
       "persistence/embeddings/embedding-backend.ts", // embedding backend API key lookup
-      "persistence/llm-request-log-source-clickhouse.ts", // ClickHouse read source — lazy lookup of clickhouse:url + clickhouse:password + vellum:platform_assistant_id for self-scoped mirror reads
-      "persistence/llm-request-log-sink-clickhouse.ts", // ClickHouse write sink — lazy lookup of clickhouse:url + clickhouse:password + vellum:platform_assistant_id for self-scoped log writes
-      "persistence/compaction-log-store-clickhouse.ts", // ClickHouse compaction log writer — lazy lookup of clickhouse:url + clickhouse:password + vellum:platform_assistant_id for self-scoped event writes
+      "persistence/llm-request-log-source-clickhouse.ts", // ClickHouse read source — lazy lookup of clickhouse:url + clickhouse:password + cadet:platform_assistant_id for self-scoped mirror reads
+      "persistence/llm-request-log-sink-clickhouse.ts", // ClickHouse write sink — lazy lookup of clickhouse:url + clickhouse:password + cadet:platform_assistant_id for self-scoped log writes
+      "persistence/compaction-log-store-clickhouse.ts", // ClickHouse compaction log writer — lazy lookup of clickhouse:url + clickhouse:password + cadet:platform_assistant_id for self-scoped event writes
       "config/platform-identity.ts", // assistant API key lookup for platform identity validate
       "config/platform-rehydration.ts", // startup rehydration of platform base URL from the credential store and ids from platform validate
       "workspace/migrations/006-services-config.ts", // services config migration reads provider API keys

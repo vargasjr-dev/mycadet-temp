@@ -13,13 +13,13 @@
  *
  * The renderer-base URLs are derived: `RENDERER_BASE_PROD` is the
  * packaged path the `app://` protocol handler resolves to; the dev
- * path is honored from `VELLUM_DEV_URL` (vel's edge proxy, or the
+ * path is honored from `CADET_DEV_URL` (vel's edge proxy, or the
  * local Vite default at port 5173). Both end at the `/assistant`
  * suffix that `clients/web/vite.config.ts`'s `base` setting requires.
  */
 
 export const APP_PROTOCOL = "app";
-export const APP_HOST = "vellum.ai";
+export const APP_HOST = "mycadet.ai";
 
 const DEV_SERVER_FALLBACK_URL = "http://localhost:5173/assistant";
 
@@ -30,13 +30,13 @@ const DEV_SERVER_FALLBACK_URL = "http://localhost:5173/assistant";
 export const RENDERER_BASE_PROD = `${APP_PROTOCOL}://${APP_HOST}/assistant`;
 
 /**
- * Renderer-base URL in dev. Honors `VELLUM_DEV_URL` so the launcher
+ * Renderer-base URL in dev. Honors `CADET_DEV_URL` so the launcher
  * can point at whichever Vite-or-equivalent is up (standalone Vite
  * at :5173, or vel's edge proxy at :3000). Strips any trailing slash
  * so callers can append `/<subpath>` without producing `//`.
  */
 export const getDevRendererBase = (): string =>
-  (process.env.VELLUM_DEV_URL ?? DEV_SERVER_FALLBACK_URL).replace(/\/+$/, "");
+  (process.env.CADET_DEV_URL ?? DEV_SERVER_FALLBACK_URL).replace(/\/+$/, "");
 
 /**
  * SPA-root URL the main BrowserWindow loads.

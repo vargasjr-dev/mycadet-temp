@@ -1,6 +1,6 @@
 # Per-environment Linux app icons
 
-Each subdirectory is one `VELLUM_ENVIRONMENT` value and holds the sources
+Each subdirectory is one `CADET_ENVIRONMENT` value and holds the sources
 `scripts/generate-icon.sh` composites into the packaged app.
 
 ```
@@ -40,7 +40,7 @@ never leaves a developer machine.
 `scripts/pack.sh` runs `scripts/generate-icon.sh` before electron-builder, which
 packages the result as `build/icon.png`. That script:
 
-1. Resolves `build-resources/icons/$VELLUM_ENVIRONMENT/`, falling back to
+1. Resolves `build-resources/icons/$CADET_ENVIRONMENT/`, falling back to
    `production/` when no directory matches.
 2. Requires `rsvg-convert` and ImageMagick on `PATH`, accepting either the
    ImageMagick 7 `magick` binary or the ImageMagick 6 `convert` binary.
@@ -65,5 +65,5 @@ and leaves the Linux one where it was.
 2. Copy `production/icon.json` and `production/Assets/white-V.svg` into it.
 3. Set `fill.solid` to the environment's ground.
 4. Mirror the same directory under `clients/macos/build-resources/icons/`.
-5. Build with `VELLUM_ENVIRONMENT=<name> bash scripts/pack.sh` and check
+5. Build with `CADET_ENVIRONMENT=<name> bash scripts/pack.sh` and check
    `build/icon.png`.

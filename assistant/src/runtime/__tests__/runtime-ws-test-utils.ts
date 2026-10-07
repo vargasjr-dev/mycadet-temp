@@ -5,7 +5,7 @@ import { mintToken } from "../auth/token-service.js";
 
 export function mintGatewayToken(): string {
   return mintToken({
-    aud: "vellum-daemon",
+    aud: "cadet-daemon",
     sub: "svc:gateway:self",
     scope_profile: "gateway_ingress_v1",
     policy_epoch: CURRENT_POLICY_EPOCH,
@@ -15,7 +15,7 @@ export function mintGatewayToken(): string {
 
 export function mintActorToken(): string {
   return mintToken({
-    aud: "vellum-daemon",
+    aud: "cadet-daemon",
     sub: "actor:self:user-123",
     scope_profile: "actor_client_v1",
     policy_epoch: CURRENT_POLICY_EPOCH,

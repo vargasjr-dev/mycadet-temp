@@ -55,7 +55,7 @@ const managedEconomy = {
 beforeEach(() => {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-107-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-107-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 });

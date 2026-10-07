@@ -302,13 +302,13 @@ describe("AcpAgentProcess config options", () => {
 
 describe("AcpAgentProcess auth_required retry", () => {
   // spawnedEnv is injected the way spawn() builds it ({ ...process.env,
-  // ...config.env }), so the advertised var names use a VELLUM_TEST_ prefix
+  // ...config.env }), so the advertised var names use a CADET_TEST_ prefix
   // guaranteed absent from the test process env. The structure mirrors
   // codex-acp's real advertisement: an agent-driven browser login (no `type`,
   // must never be auto-selected) followed by two env_var methods, in that
   // order.
-  const CODEX_VAR = "VELLUM_TEST_FAKE_CODEX_API_KEY";
-  const OPENAI_VAR = "VELLUM_TEST_FAKE_OPENAI_API_KEY";
+  const CODEX_VAR = "CADET_TEST_FAKE_CODEX_API_KEY";
+  const OPENAI_VAR = "CADET_TEST_FAKE_OPENAI_API_KEY";
 
   const codexLikeAuthMethods: AuthMethod[] = [
     { id: "chatgpt", name: "Login with ChatGPT" },
@@ -592,7 +592,7 @@ describe("AcpAgentProcess auth_required retry", () => {
           name: "Use OPENAI_API_KEY",
           vars: [
             { name: OPENAI_VAR },
-            { name: "VELLUM_TEST_FAKE_OPTIONAL_VAR", optional: true },
+            { name: "CADET_TEST_FAKE_OPTIONAL_VAR", optional: true },
           ],
         },
       ],

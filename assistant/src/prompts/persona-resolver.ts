@@ -143,8 +143,8 @@ function resolveUserFilename(
   try {
     if (trustContext === undefined) {
       // Desktop / native — resolve via the gateway guardian delivery cache,
-      // preferring the vellum-channel guardian, then any guardian.
-      const guardian = peekGuardianForChannel("vellum") ?? peekAnyGuardian();
+      // preferring the cadet-channel guardian, then any guardian.
+      const guardian = peekGuardianForChannel("cadet") ?? peekAnyGuardian();
       if (guardian) {
         filename = guardianDeliveryUserFile(guardian) ?? "guardian.md";
       }
@@ -285,13 +285,13 @@ export function resolveUserPersona(
  * Resolve the per-channel persona file based on channel capabilities.
  *
  * Reads from `channels/<channel>.md` in the workspace directory.
- * Defaults to `"vellum"` when no channel capabilities are provided.
+ * Defaults to `"cadet"` when no channel capabilities are provided.
  * Returns null if the channel file does not exist.
  */
 export function resolveChannelPersona(
   channelCapabilities: ChannelCapabilities | undefined,
 ): string | null {
-  const channel = channelCapabilities?.channel ?? "vellum";
+  const channel = channelCapabilities?.channel ?? "cadet";
   const filePath = join(getWorkspaceDir(), "channels", channel + ".md");
   return readPersonaFile(filePath);
 }

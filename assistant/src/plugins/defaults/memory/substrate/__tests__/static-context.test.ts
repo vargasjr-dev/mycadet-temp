@@ -12,7 +12,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 const noopLogger: Record<string, unknown> = new Proxy(
   {} as Record<string, unknown>,

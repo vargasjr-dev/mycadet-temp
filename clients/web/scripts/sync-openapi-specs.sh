@@ -7,7 +7,7 @@ set -euo pipefail
 # anyone — including open-source contributors — can run `bun run openapi-ts`
 # without access to the private platform repo.
 #
-# Vellum developers: run this script after the platform repo regenerates
+# Cadet developers: run this script after the platform repo regenerates
 # its specs to update the committed copies here.
 #
 # Usage:
@@ -16,13 +16,13 @@ set -euo pipefail
 # Resolution order:
 #   1. Explicit directory argument
 #   2. PLATFORM_OPENAPI_DIR environment variable
-#   3. Sibling checkout: ../vellum-assistant-platform/django/openapi_schemas/
+#   3. Sibling checkout: ../mycadet-platform/django/openapi_schemas/
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WEB_DIR="$(dirname "$SCRIPT_DIR")"
 OUTPUT_DIR="$WEB_DIR/openapi-schemas"
 
-SIBLING_DEFAULT="$WEB_DIR/../../../vellum-assistant-platform/django/openapi_schemas"
+SIBLING_DEFAULT="$WEB_DIR/../../../mycadet-platform/django/openapi_schemas"
 SCHEMAS_DIR="${1:-${PLATFORM_OPENAPI_DIR:-$SIBLING_DEFAULT}}"
 
 # Only sync the public-facing specs. internal.yaml stays private.

@@ -2,7 +2,7 @@
  * `notification_conversation_created` SSE event.
  *
  * Server → client broadcast emitted when an incoming notification
- * creates a new vellum conversation. First-party clients ignore it; the
+ * creates a new cadet conversation. First-party clients ignore it; the
  * web client lists it as a no-op. A guardian-sensitive
  * conversation is announced only to connections authenticated as the
  * guardian named in `targetGuardianPrincipalId`.

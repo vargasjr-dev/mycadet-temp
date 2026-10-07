@@ -20,7 +20,7 @@ describe("getBuilderManagedEnvKeys", () => {
     const { always } = getBuilderManagedEnvKeys("gateway");
 
     const expected = [
-      "VELLUM_WORKSPACE_DIR",
+      "CADET_WORKSPACE_DIR",
       "GATEWAY_SECURITY_DIR",
       "ASSISTANT_HOST",
       "CES_CREDENTIAL_URL",
@@ -35,8 +35,8 @@ describe("getBuilderManagedEnvKeys", () => {
       expect(always.has(key)).toBe(true);
     }
 
-    expect(always.has("VELLUM_DISABLE_PLATFORM")).toBe(false);
-    expect(always.has("VELLUM_DEVICE_ID")).toBe(false);
+    expect(always.has("CADET_DISABLE_PLATFORM")).toBe(false);
+    expect(always.has("CADET_DEVICE_ID")).toBe(false);
   });
 
   test("assistant always-set keys include secrets and builder-computed extras", () => {
@@ -44,7 +44,7 @@ describe("getBuilderManagedEnvKeys", () => {
 
     const expected = [
       ...SECRET_KEYS,
-      "VELLUM_ASSISTANT_NAME",
+      "CADET_ASSISTANT_NAME",
       "GATEWAY_INTERNAL_URL",
       "RUNTIME_HTTP_HOST",
       "PATH",
@@ -61,8 +61,8 @@ describe("getBuilderManagedEnvKeys", () => {
     );
     expect(sorted).toEqual([
       { name: "TUNNEL_BASE_URL", hostVar: "TUNNEL_BASE_URL" },
-      { name: "VELLUM_ENVIRONMENT", hostVar: "VELLUM_ENVIRONMENT" },
-      { name: "VELLUM_PLATFORM_URL", hostVar: "VELLUM_PLATFORM_URL" },
+      { name: "CADET_ENVIRONMENT", hostVar: "CADET_ENVIRONMENT" },
+      { name: "CADET_PLATFORM_URL", hostVar: "CADET_PLATFORM_URL" },
     ]);
   });
 
@@ -76,8 +76,8 @@ describe("getBuilderManagedEnvKeys", () => {
       expect(hostForwarded).toContainEqual({ name: envVar, hostVar: envVar });
     }
     expect(hostForwarded).toContainEqual({
-      name: "VELLUM_PLATFORM_URL",
-      hostVar: "VELLUM_PLATFORM_URL",
+      name: "CADET_PLATFORM_URL",
+      hostVar: "CADET_PLATFORM_URL",
     });
   });
 
@@ -126,7 +126,7 @@ describe("buildServiceRunArgs extra env routing", () => {
       gatewayContainer: "test-gateway",
       network: "test-net",
     },
-    extraGatewayEnv: { VELLUM_DISABLE_PLATFORM: "1" },
+    extraGatewayEnv: { CADET_DISABLE_PLATFORM: "1" },
     extraAssistantEnv: { FOO: "bar" },
   };
 
@@ -134,19 +134,19 @@ describe("buildServiceRunArgs extra env routing", () => {
 
   test("extraGatewayEnv lands only in gateway args", () => {
     const gatewayArgs = runArgs.gateway();
-    expect(gatewayArgs).toContain("VELLUM_DISABLE_PLATFORM=1");
+    expect(gatewayArgs).toContain("CADET_DISABLE_PLATFORM=1");
     expect(gatewayArgs).not.toContain("FOO=bar");
   });
 
   test("extraAssistantEnv lands only in assistant args", () => {
     const assistantArgs = runArgs.assistant();
     expect(assistantArgs).toContain("FOO=bar");
-    expect(assistantArgs).not.toContain("VELLUM_DISABLE_PLATFORM=1");
+    expect(assistantArgs).not.toContain("CADET_DISABLE_PLATFORM=1");
   });
 
   test("credential-executor args get neither extra env map", () => {
     const cesArgs = runArgs["credential-executor"]();
-    expect(cesArgs).not.toContain("VELLUM_DISABLE_PLATFORM=1");
+    expect(cesArgs).not.toContain("CADET_DISABLE_PLATFORM=1");
     expect(cesArgs).not.toContain("FOO=bar");
   });
 });

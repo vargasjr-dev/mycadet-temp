@@ -1351,7 +1351,7 @@ const PLATFORM_GATE_DENIALS: Record<
     abortMessage: "Platform routes disabled in remote-gateway mode",
   },
   deny_local: {
-    log: "VELLUM_DISABLE_PLATFORM is set, no-op platform request:",
+    log: "CADET_DISABLE_PLATFORM is set, no-op platform request:",
     abortMessage: "Platform features disabled in local mode",
   },
 };

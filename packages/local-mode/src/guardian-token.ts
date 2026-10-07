@@ -111,11 +111,11 @@ export type TokenResult =
   | { ok: false; status: number; error: string };
 
 /**
- * Prefix of the machine-readable line `vellum gateway token refresh` writes
+ * Prefix of the machine-readable line `cadet gateway token refresh` writes
  * to stderr on failure so hosts can distinguish a spent credential (401)
  * from an unreachable gateway (503) without scraping the human message.
  */
-export const GUARDIAN_REFRESH_ERROR_PREFIX = "VELLUM_REFRESH_ERROR=";
+export const GUARDIAN_REFRESH_ERROR_PREFIX = "CADET_REFRESH_ERROR=";
 
 /** Encode a structured refresh failure for the CLI's stderr. */
 export function formatGuardianRefreshCliFailure(
@@ -126,7 +126,7 @@ export function formatGuardianRefreshCliFailure(
 }
 
 /**
- * Read the structured status out of a failed `vellum gateway token refresh`.
+ * Read the structured status out of a failed `cadet gateway token refresh`.
  * An unlabeled non-zero exit defaults to 503: this spawn only runs when the
  * on-disk refresh token is still unexpired, so a bare CLI failure is an
  * unreachable or still-starting gateway, not a spent credential.
@@ -177,9 +177,9 @@ export function parseGuardianRefreshCliFailure(
 
 export interface GuardianTokenOptions {
   /**
-   * True when the entry was imported from another machine via `vellum pair`.
+   * True when the entry was imported from another machine via `cadet pair`.
    * A paired entry has no local daemon, so expired-refresh guidance points at
-   * re-pairing instead of `vellum hatch`/`vellum wake`.
+   * re-pairing instead of `cadet hatch`/`cadet wake`.
    */
   paired?: boolean;
   /** Gateway URL resolved for the paired proxy request. */
@@ -289,8 +289,8 @@ export function getGuardianAccessToken(
       ok: false,
       status: 401,
       error: options?.paired
-        ? "Guardian token expired. Run `vellum pair` on the assistant's machine, then re-import it from the app's connect flow or with `vellum connect import`."
-        : "Guardian token expired. Re-run `vellum hatch` or `vellum wake`.",
+        ? "Guardian token expired. Run `cadet pair` on the assistant's machine, then re-import it from the app's connect flow or with `cadet connect import`."
+        : "Guardian token expired. Re-run `cadet hatch` or `cadet wake`.",
     });
   }
 

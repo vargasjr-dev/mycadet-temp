@@ -13,9 +13,9 @@ import { withLockfileLock } from "./lockfile-lock";
 /**
  * Forget a paired assistant on this machine: remove its lockfile entry and
  * delete its stored guardian token. Client-side only, mirroring the CLI's
- * `vellum unpair`: the remote assistant itself is never touched (host-side
- * device revocation is `vellum devices`). Only pairing records
- * (`cloud: "paired"`, created by `vellum connect import`) are forgettable this
+ * `cadet unpair`: the remote assistant itself is never touched (host-side
+ * device revocation is `cadet devices`). Only pairing records
+ * (`cloud: "paired"`, created by `cadet connect import`) are forgettable this
  * way; local and managed assistants go through retire.
  */
 export function unpairAssistant(
@@ -89,7 +89,7 @@ function unpairAssistantLocked(
   const remaining = assistants.filter((a) => a?.assistantId !== assistantId);
   lockfile.assistants = remaining;
   // Reassign the active assistant like the CLI's removeAssistantEntry does, so
-  // unpairing through the bridge and through `vellum unpair` leave the same
+  // unpairing through the bridge and through `cadet unpair` leave the same
   // active state. Skip tolerated malformed entries (no string assistantId):
   // parseLockfile drops them from the returned lockfile, so pointing at one
   // would report no active assistant while valid entries remain.

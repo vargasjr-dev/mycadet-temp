@@ -178,7 +178,7 @@ interface ImportResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Platform (Vellum-hosted) restore via Django migration import
+// Platform (Cadet-hosted) restore via Django migration import
 // ---------------------------------------------------------------------------
 
 async function restorePlatform(

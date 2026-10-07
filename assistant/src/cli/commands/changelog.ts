@@ -2,7 +2,7 @@
  * `assistant changelog`
  *
  * Lazy, fetched-on-demand release-notes surface. Pulls release bodies from
- * the public GitHub Releases API for `vellum-ai/vellum-assistant` and caches
+ * the public GitHub Releases API for `vargasjr-dev/mycadet` and caches
  * them locally so repeat invocations don't hit the network.
  *
  * Subcommands:

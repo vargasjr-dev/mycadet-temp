@@ -63,12 +63,12 @@ mock.module("./turn-events-store.js", () => ({
 let mockPlatformClient: Record<string, unknown> | null = null;
 
 mock.module("../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: async () => mockPlatformClient,
   },
 }));
 
-const mockGetPlatformBaseUrl = mock(() => "https://platform.vellum.ai");
+const mockGetPlatformBaseUrl = mock(() => "https://cloud.cadet.ai");
 
 const mockGetPlatformOrganizationId = mock(() => "");
 const mockGetPlatformUserId = mock(() => "");
@@ -362,7 +362,7 @@ beforeEach(() => {
   mockQueryUnreportedTurnEvents.mockReturnValue([]);
   getDb().delete(toolInvocations).run();
   getTelemetryDb()!.delete(telemetryEvents).run();
-  delete process.env.VELLUM_DISABLE_PLATFORM;
+  delete process.env.CADET_DISABLE_PLATFORM;
   delete process.env.IS_PLATFORM;
   mockGetPlatformBaseUrl.mockReset();
   mockGetDeviceId.mockReset();
@@ -374,7 +374,7 @@ beforeEach(() => {
 
   // Defaults
   mockGetFlushCheckpoint.mockReturnValue(null);
-  mockGetPlatformBaseUrl.mockReturnValue("https://platform.vellum.ai");
+  mockGetPlatformBaseUrl.mockReturnValue("https://cloud.cadet.ai");
 
   mockFetch = mock(() =>
     Promise.resolve(new Response('{"accepted":0}', { status: 200 })),
@@ -386,7 +386,7 @@ beforeEach(() => {
   // sends authenticated-only; tests that exercise the no-credentials path
   // override this with `mockPlatformClient = null`.
   mockPlatformClient = {
-    baseUrl: "https://test.vellum.ai",
+    baseUrl: "https://test.mycadet.ai",
     assistantApiKey: "test-key",
     platformAssistantId: "asst-123",
     fetch: (path: string, init?: RequestInit) => mockFetch(path, init),
@@ -395,7 +395,7 @@ beforeEach(() => {
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
-  delete process.env.VELLUM_DISABLE_PLATFORM;
+  delete process.env.CADET_DISABLE_PLATFORM;
   delete process.env.IS_PLATFORM;
 });
 
@@ -409,7 +409,7 @@ describe("UsageTelemetryReporter", () => {
       return new Response('{"accepted":2}', { status: 200 });
     });
     mockPlatformClient = {
-      baseUrl: "https://test.vellum.ai",
+      baseUrl: "https://test.mycadet.ai",
       assistantApiKey: "test-key",
       platformAssistantId: "asst-123",
       fetch: clientFetchMock,
@@ -445,11 +445,11 @@ describe("UsageTelemetryReporter", () => {
     expect(watermarkCalls.length).toBe(0);
   });
 
-  test("flush is skipped when VELLUM_DISABLE_PLATFORM is set in local mode", async () => {
+  test("flush is skipped when CADET_DISABLE_PLATFORM is set in local mode", async () => {
     // The platform-disabled toggle suppresses the send. Unlike the opt-out
     // branch, watermarks are NOT advanced, so the backlog ships once the flag
     // is cleared.
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
 
     const events = [makeUsageEvent()];
     mockQueryUnreportedUsageEvents.mockReturnValue(events);
@@ -464,12 +464,12 @@ describe("UsageTelemetryReporter", () => {
     expect(mockSetFlushCheckpoint).not.toHaveBeenCalled();
   });
 
-  test("VELLUM_DISABLE_PLATFORM is ignored when IS_PLATFORM is set (managed mode)", async () => {
+  test("CADET_DISABLE_PLATFORM is ignored when IS_PLATFORM is set (managed mode)", async () => {
     // Platform-managed assistants always connect to the platform; an inherited
-    // VELLUM_DISABLE_PLATFORM must not suppress telemetry for them (matches
-    // arePlatformFeaturesEnabled / VellumPlatformClient.create()).
+    // CADET_DISABLE_PLATFORM must not suppress telemetry for them (matches
+    // arePlatformFeaturesEnabled / CadetPlatformClient.create()).
     process.env.IS_PLATFORM = "true";
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
 
     const events = [makeUsageEvent()];
     mockQueryUnreportedUsageEvents.mockReturnValue(events);
@@ -1050,7 +1050,7 @@ describe("UsageTelemetryReporter", () => {
         conversationType: "standard",
         turnIndex: 1,
         interfaceId: "macos",
-        channelId: "vellum",
+        channelId: "cadet",
         clientMetadata: JSON.stringify({
           browser_family: null,
           os: "darwin",
@@ -1074,7 +1074,7 @@ describe("UsageTelemetryReporter", () => {
         conversationType: "standard",
         turnIndex: 1,
         interfaceId: "web",
-        channelId: "vellum",
+        channelId: "cadet",
         clientMetadata: "{not valid json",
       },
       {
@@ -1119,7 +1119,7 @@ describe("UsageTelemetryReporter", () => {
 
     expect(byId["evt-turn-macos"]).toMatchObject({
       interface_id: "macos",
-      channel_id: "vellum",
+      channel_id: "cadet",
       client: {
         os: "darwin",
         interface_version: "0.8.2",
@@ -1135,7 +1135,7 @@ describe("UsageTelemetryReporter", () => {
     // ride through cleanly.
     expect(byId["evt-turn-web-broken"]).toMatchObject({
       interface_id: "web",
-      channel_id: "vellum",
+      channel_id: "cadet",
       client: null,
     });
     expect(byId["evt-turn-legacy"]).toMatchObject({
@@ -1159,7 +1159,7 @@ describe("UsageTelemetryReporter", () => {
         conversationType: "standard",
         turnIndex: 2,
         interfaceId: "macos",
-        channelId: "vellum",
+        channelId: "cadet",
         clientMetadata: null,
       },
     ];
@@ -1332,7 +1332,7 @@ describe("UsageTelemetryReporter", () => {
       conversationType: "standard",
       turnIndex: 1,
       interfaceId: "macos",
-      channelId: "vellum",
+      channelId: "cadet",
       clientMetadata: null,
       // Defaults to UNKNOWN so existing cases keep asserting the pre-marker
       // wire shape; each scripted case opts in explicitly.
@@ -1836,12 +1836,12 @@ describe("UsageTelemetryReporter", () => {
   });
 
   test("platform disabled takes precedence over consent off — watermarks NOT advanced", async () => {
-    // VELLUM_DISABLE_PLATFORM keeps the consent cache false (the consent
+    // CADET_DISABLE_PLATFORM keeps the consent cache false (the consent
     // refresh can't create a platform client), so both gates would fire. The
     // platform-disabled gate runs first and returns without advancing
     // watermarks, preserving the backlog until the flag is cleared — a
     // deployment toggle must not be treated as a privacy opt-out.
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
     mockGetRawShareAnalytics.mockReturnValue(false);
     const events = [makeUsageEvent()];
     mockQueryUnreportedUsageEvents.mockReturnValue(events);
@@ -3315,7 +3315,7 @@ describe("UsageTelemetryReporter", () => {
   });
 
   test("expired rows are pruned even when the flush skips for platform-disabled", async () => {
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
     seedExpiredAndFreshRows();
     const reporter = new UsageTelemetryReporter(
       [outboxSource(OUTBOX_NAME)],

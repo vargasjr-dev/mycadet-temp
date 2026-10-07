@@ -182,13 +182,13 @@ describe("handle-inbound admission policy", () => {
   test("`cadet` is configurable: its policy is forwarded (not exempt)", async () => {
     // cadet can never be `no_one` (route returns 422), but other floors apply
     // and are forwarded for runtime enforcement.
-    store.set("vellum", "guardian_only");
+    store.set("cadet", "guardian_only");
     resetAdmissionPolicyCache();
     initAdmissionPolicyCache();
 
     const result = await handleInbound(
       makeConfig(),
-      makeEvent({ sourceChannel: "vellum" }),
+      makeEvent({ sourceChannel: "cadet" }),
       { routingOverride: { assistantId: "asst-1", routeSource: "default" } },
     );
 

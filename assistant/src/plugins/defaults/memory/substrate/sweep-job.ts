@@ -154,7 +154,7 @@ export async function memoryV2SweepJob(
       return 0;
     }
 
-    // Warm both guardian-delivery cache keys (vellum + unfiltered) so
+    // Warm both guardian-delivery cache keys (cadet + unfiltered) so
     // resolveUserName's sync guardian-file resolution, including its
     // any-channel fallback, hits fresh keys instead of falling back to
     // users/default.md on this worker process's cold cache.

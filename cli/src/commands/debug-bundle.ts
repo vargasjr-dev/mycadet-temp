@@ -62,7 +62,7 @@ Requirements:
   - You are logged in ('cadet login'), which also registers the
     assistant with the platform.
   - The assistant runs version ${DEBUG_PROFILE_MIN_VERSION} or newer.
-  - The assistant is self-hosted. Vellum-hosted assistants need no bundle;
+  - The assistant is self-hosted. Cadet-hosted assistants need no bundle;
     staff clone them directly.
 
 Side effects:
@@ -180,7 +180,7 @@ export async function debugBundle(): Promise<void> {
     process.exit(1);
   }
   console.log(
-    "Debug bundle sent to Vellum. Staff can open it for the next 7 days.",
+    "Debug bundle sent to Cadet. Staff can open it for the next 7 days.",
   );
 }
 

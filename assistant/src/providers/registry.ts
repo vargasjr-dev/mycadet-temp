@@ -71,7 +71,7 @@ function getConnectionProviderCacheKey(
   effectiveProvider: string,
 ): string {
   // `effectiveProvider` differs from `connection.provider` only for the
-  // provider-agnostic Vellum-managed connection, where one connection name
+  // provider-agnostic Cadet-managed connection, where one connection name
   // serves multiple upstreams — include it so those entries don't collide.
   return `${connection.name}\u0000${effectiveProvider}\u0000${model}`;
 }
@@ -308,7 +308,7 @@ export async function resolveProviderFromConnection(
   config: ProvidersConfig,
   opts: { model?: string; providerOverride?: string } = {},
 ): Promise<Provider | null> {
-  // The provider-agnostic Vellum-managed connection carries only the `vellum`
+  // The provider-agnostic Cadet-managed connection carries only the `cadet`
   // sentinel on its row, so callers pass the resolved profile's provider here.
   // For every other connection this is `undefined` and the effective provider
   // is the connection's own — no behavior change.
@@ -316,7 +316,7 @@ export async function resolveProviderFromConnection(
   const model = opts.model ?? resolveModel(config, effectiveProvider);
   // Routing identities must already be translated to a factory id
   // (`resolveRoutingIdentity`). `chatgpt` has no factory and must not
-  // reach adapter construction. `vellum` is a catalog factory, so it is
+  // reach adapter construction. `cadet` is a catalog factory, so it is
   // a valid effectiveProvider after that translation.
   if (
     ROUTING_IDENTITY_PROVIDERS.has(effectiveProvider) &&

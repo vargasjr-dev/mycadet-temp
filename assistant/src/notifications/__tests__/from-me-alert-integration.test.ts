@@ -64,10 +64,10 @@ function persistedShare() {
   const decision: NotificationDecision & { persistedDecisionId: string } = {
     persistedDecisionId: crypto.randomUUID(),
     shouldNotify: true,
-    selectedChannels: ["vellum", "platform"],
+    selectedChannels: ["cadet", "platform"],
     reasoningSummary: "Share a useful update",
     renderedCopy: {
-      vellum: { title: "A useful update", body: "The report is ready." },
+      cadet: { title: "A useful update", body: "The report is ready." },
     },
     dedupeKey: signal.signalId,
     confidence: 1,
@@ -90,7 +90,7 @@ function persistedShare() {
   };
 }
 
-function recordingAdapter(channel: "vellum" | "platform") {
+function recordingAdapter(channel: "cadet" | "platform") {
   const sent: ChannelDeliveryPayload[] = [];
   const readableAtSend: boolean[] = [];
   const adapter: ChannelAdapter = {
@@ -118,7 +118,7 @@ function recordingAdapter(channel: "vellum" | "platform") {
 
 test("new From me alerts address the saved chat and seed before either adapter sends", async () => {
   const { signal, decision, options } = persistedShare();
-  const local = recordingAdapter("vellum");
+  const local = recordingAdapter("cadet");
   const push = recordingAdapter("platform");
   const broadcaster = new NotificationBroadcaster([
     local.adapter,
@@ -160,7 +160,7 @@ test("new From me alerts address the saved chat and seed before either adapter s
 
 test("a missing platform delivery reuses the saved initial-creation audit without reseeding", async () => {
   const { signal, decision, options } = persistedShare();
-  const local = recordingAdapter("vellum");
+  const local = recordingAdapter("cadet");
   await new NotificationBroadcaster([local.adapter]).broadcastDecision(
     signal,
     decision,
@@ -168,7 +168,7 @@ test("a missing platform delivery reuses the saved initial-creation audit withou
   );
   const initial = findDeliveryByDecisionAndChannel(
     decision.persistedDecisionId,
-    "vellum",
+    "cadet",
   );
   expect(initial).toMatchObject({
     conversationStrategy: "start_new_conversation",

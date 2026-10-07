@@ -407,7 +407,7 @@ describe("decide: reserved channel types", () => {
         activateDecision(request.id, {
           aclOutcome: {
             type: "activate_member",
-            sourceChannel: "vellum-shared",
+            sourceChannel: "cadet-shared",
             externalUserId: "prin-fake-001",
             externalChatId: "local",
             displayName: "Alice",

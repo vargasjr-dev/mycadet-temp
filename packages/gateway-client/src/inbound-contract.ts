@@ -162,7 +162,7 @@ export const SourceMetadataSchema = z
     // Email-specific fields
     /**
      * Ingress provider that delivered the email to the gateway
-     * (e.g. "mailgun", "resend", or "platform" for the Vellum relay).
+     * (e.g. "mailgun", "resend", or "platform" for the Cadet relay).
      */
     emailProvider: z.string().optional(),
     /** Email subject line. */

@@ -70,7 +70,7 @@ describe("syncTerminalGuardianRequestStatus", () => {
     const req = makeRequest();
     const cadet = bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-thread",
     });
     const slack = bridgeState.seedDelivery({
@@ -110,7 +110,7 @@ describe("syncTerminalGuardianRequestStatus", () => {
     const req = makeRequest();
     bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-thread",
     });
 
@@ -132,7 +132,7 @@ describe("syncTerminalGuardianRequestStatus", () => {
     const req = makeRequest({ status: "approved" });
     bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-thread",
     });
 

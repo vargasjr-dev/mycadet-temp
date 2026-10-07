@@ -31,7 +31,7 @@
 
 import { getConfigReadOnly } from "../config/loader.js";
 import { getLogger } from "../util/logger.js";
-import { VellumPlatformClient } from "./client.js";
+import { CadetPlatformClient } from "./client.js";
 import { arePlatformFeaturesEnabled } from "./feature-gate.js";
 
 const log = getLogger("consent-cache");
@@ -117,7 +117,7 @@ export async function refreshConsentCache(): Promise<void> {
     return;
   }
 
-  const client = await VellumPlatformClient.create();
+  const client = await CadetPlatformClient.create();
   if (!client) {
     resetConsentToUnknown();
     return;

@@ -123,7 +123,7 @@ export function getCachedCategoriesSync(): SkillCategoryDef[] {
  */
 export function getLocalCategorySlugs(): Set<string> {
   // Primary: getRepoSkillsDir() resolves the catalog for compiled binaries and
-  // VELLUM_DEV dev runs.
+  // CADET_DEV dev runs.
   const repoSkillsDir = getRepoSkillsDir();
   if (repoSkillsDir) {
     const slugs = readLocalCategories(repoSkillsDir).map((c) => c.slug);
@@ -132,7 +132,7 @@ export function getLocalCategorySlugs(): Set<string> {
     }
   }
   // Fallback for source runs where getRepoSkillsDir() returns undefined (e.g.
-  // the Docker image runs `bun run src/index.ts` without VELLUM_DEV and is not
+  // the Docker image runs `bun run src/index.ts` without CADET_DEV and is not
   // on the /$bunfs/ path): the catalog is copied to the repo-root `skills/`
   // dir, resolvable relative to this module (assistant/src/skills -> skills).
   const moduleRelativeSkillsDir = join(

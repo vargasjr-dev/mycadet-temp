@@ -21,7 +21,7 @@ let pluginsDir: string;
 function freshWorkspace(): void {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-116-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-116-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   pluginsDir = join(workspaceDir, "plugins");
   mkdirSync(pluginsDir, { recursive: true });

@@ -25,7 +25,7 @@ struct SnapshotEntry: TimelineEntry {
     }
 }
 
-/// The timeline behind every Vellum Home Screen widget: read the App Group
+/// The timeline behind every Cadet Home Screen widget: read the App Group
 /// snapshot, hand it over, and schedule the one moment it stops being fresh.
 ///
 /// The extension has no network stack and no auth, so there is nothing to

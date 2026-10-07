@@ -6,7 +6,7 @@ const {
   deriveCommunicationEntitlements,
 } = require("./scripts/entitlements/derive-communication-entitlements");
 
-const env = process.env.VELLUM_ENVIRONMENT || "local";
+const env = process.env.CADET_ENVIRONMENT || "local";
 const bucketEnv = env === "production" ? "prod" : env;
 const targetArch = process.env.ELECTRON_TARGET_ARCH || "arm64";
 
@@ -17,13 +17,13 @@ const productName =
 
 const appId =
   env === "production"
-    ? "com.vellum.vellum-assistant-electron"
-    : `com.vellum.vellum-assistant-electron-${env}`;
+    ? "com.mycadet.mycadet-electron"
+    : `com.mycadet.mycadet-electron-${env}`;
 
 // Mirror build-mac-helper.sh's env→helper-bundle-name mapping so the packaged
 // app's `bin/` directory has the same folder name as the helper the build
 // script wrote to `resources/`. The runtime sidecar
-// `.vellum-mac-helper.bundle-name` carries the same string, so the runtime
+// `.cadet-mac-helper.bundle-name` carries the same string, so the runtime
 // resolves the .app folder from the sidecar rather than this mapping — but the
 // sidecar only reaches the packaged app if electron-builder copies it into
 // `bin/` alongside the bundle.
@@ -35,7 +35,7 @@ const helperBundleName =
 // The Communication Notifications entitlement is restricted: an app that
 // declares it without an authorizing provisioning profile is killed at launch.
 // A build only gets the entitlement (and the profile) when
-// VELLUM_MAC_PROVISIONING_PROFILE names a decoded profile on disk; every other
+// CADET_MAC_PROVISIONING_PROFILE names a decoded profile on disk; every other
 // build signs with the plain entitlements and posts plain notifications. The
 // profile build's plist is derived from app.plist at pack time, so app.plist
 // stays the single source of the entitlement set.
@@ -43,10 +43,10 @@ const helperBundleName =
 // A variable pointing at a file that is not there means the release job failed
 // to decode the profile, so the build stops rather than quietly shipping the
 // plain entitlements under a name that says otherwise.
-const provisioningProfile = process.env.VELLUM_MAC_PROVISIONING_PROFILE || "";
+const provisioningProfile = process.env.CADET_MAC_PROVISIONING_PROFILE || "";
 if (provisioningProfile && !fs.existsSync(provisioningProfile)) {
   throw new Error(
-    `VELLUM_MAC_PROVISIONING_PROFILE names ${provisioningProfile}, which does not exist`,
+    `CADET_MAC_PROVISIONING_PROFILE names ${provisioningProfile}, which does not exist`,
   );
 }
 const entitlements = provisioningProfile
@@ -55,8 +55,8 @@ const entitlements = provisioningProfile
 
 const schemes =
   env === "production"
-    ? ["vellum", "vellum-assistant"]
-    : [`vellum-assistant-${env}`];
+    ? ["cadet", "mycadet"]
+    : [`mycadet-${env}`];
 
 /** @type {import("electron-builder").Configuration} */
 module.exports = {
@@ -64,7 +64,7 @@ module.exports = {
   productName,
   publish: {
     provider: "generic",
-    url: `https://storage.googleapis.com/vellum-ai-${bucketEnv}-releases/mac-electron/${targetArch}/`,
+    url: `https://storage.googleapis.com/mycadet-${bucketEnv}-releases/mac-electron/${targetArch}/`,
   },
   directories: {
     output: "dist",
@@ -87,8 +87,8 @@ module.exports = {
     // mapping in TS. Must stay alongside the bundle in `bin/` so a
     // packaged app can resolve it via process.resourcesPath.
     {
-      from: "resources/.vellum-mac-helper.bundle-name",
-      to: "bin/.vellum-mac-helper.bundle-name",
+      from: "resources/.cadet-mac-helper.bundle-name",
+      to: "bin/.cadet-mac-helper.bundle-name",
     },
     // Native notifier addon, per architecture, built by build-notifier.sh.
     { from: "resources/notifier", to: "bin/notifier" },
@@ -106,7 +106,7 @@ module.exports = {
   ],
   fileAssociations: [
     {
-      ext: "vellum",
+      ext: "cadet",
       name: "Cadet Bundle",
       role: "Viewer",
     },
@@ -148,16 +148,16 @@ module.exports = {
       // Declares the intent the notifier addon donates. Harmless without the
       // Communication Notifications entitlement, so it ships unconditionally.
       NSUserActivityTypes: ["INSendMessageIntent"],
-      // Register the .vellum UTI so Quick Look extensions can provide
-      // thumbnails and previews for .vellum bundle files in Finder.
+      // Register the .cadet UTI so Quick Look extensions can provide
+      // thumbnails and previews for .cadet bundle files in Finder.
       UTExportedTypeDeclarations: [
         {
-          UTTypeIdentifier: "com.vellum.app-bundle",
+          UTTypeIdentifier: "com.mycadet.app-bundle",
           UTTypeConformsTo: ["public.data", "public.content"],
           UTTypeDescription: "Cadet App Bundle",
           UTTypeTagSpecification: {
-            "public.filename-extension": ["vellum"],
-            "public.mime-type": "application/x-vellum",
+            "public.filename-extension": ["cadet"],
+            "public.mime-type": "application/x-cadet",
           },
         },
       ],

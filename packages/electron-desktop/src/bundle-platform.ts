@@ -4,7 +4,7 @@ import { capabilityToken } from "./capability-registry";
 import type { IpcRegistrar } from "./ipc";
 
 export const BUNDLES_DIR_NAME = "bundles";
-export const VELLUMAPP_PROTOCOL = "vellumapp";
+export const CADETAPP_PROTOCOL = "cadetapp";
 
 export interface ActiveBundleGateway {
   assistantId: string;

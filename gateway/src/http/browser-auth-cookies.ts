@@ -1,4 +1,4 @@
-export const BROWSER_REFRESH_COOKIE = "vellum_web_refresh";
+export const BROWSER_REFRESH_COOKIE = "cadet_web_refresh";
 const BROWSER_REFRESH_PATH = "/v1/guardian/refresh";
 
 function normalizeCookiePath(value: string | undefined): string {

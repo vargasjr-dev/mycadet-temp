@@ -45,15 +45,15 @@ export const PlatformConfigSchema = z
         "platform.baseUrl must be an absolute URL starting with http:// or https://",
       )
       .default("")
-      .describe("Base URL of the Vellum platform API"),
+      .describe("Base URL of the Cadet platform API"),
     subdomain: z
       .string({ error: "platform.subdomain must be a string" })
       .default("")
       .describe(
-        "Registered subdomain on vellum.me (e.g. 'apollobot' → apollobot.vellum.me). Set automatically by 'assistant domain register'.",
+        "Registered subdomain on mycadet.bot (e.g. 'apollobot' → apollobot.mycadet.bot). Set automatically by 'assistant domain register'.",
       ),
   })
-  .describe("Vellum platform connection settings");
+  .describe("Cadet platform connection settings");
 
 export type PlatformConfig = z.infer<typeof PlatformConfigSchema>;
 

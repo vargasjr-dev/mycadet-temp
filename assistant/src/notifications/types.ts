@@ -125,7 +125,7 @@ export const ChannelDeliveryPayloadSchema = z.object({
    *  `contextPayload`. */
   toolApprovalSource: ToolApprovalSourceViewSchema.optional(),
   /** True when the platform (APNs) channel accepted a remote push for this
-   *  delivery. Set only on the vellum channel's payload so clients can avoid
+   *  delivery. Set only on the cadet channel's payload so clients can avoid
    *  double-bannering. */
   remotePushDispatched: z.boolean().optional(),
   remotePushPlatforms: z.array(z.enum(["ios", "android"])).optional(),

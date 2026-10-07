@@ -31,7 +31,7 @@ mock.module("../../paths.js", () => ({
 
 mock.module("../../auth/guardian-bootstrap.js", () => ({
   bootstrapGuardian: () => ({
-    guardianPrincipalId: "vellum-principal-test",
+    guardianPrincipalId: "cadet-principal-test",
     accessToken: "test-at",
     accessTokenExpiresAt: Date.now() + 86400_000,
     refreshToken: "test-rt",

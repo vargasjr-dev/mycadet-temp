@@ -10,7 +10,7 @@ describe("jev-managed as a call-site pin target", () => {
     expect(
       LLMSchema.safeParse({
         ...PIN,
-        defaultProvider: { provider: "vellum" },
+        defaultProvider: { provider: "cadet" },
       }).success,
     ).toBe(true);
   });

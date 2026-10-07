@@ -165,7 +165,7 @@ function seedAssistantChannel(opts: {
   fakeAssistantDb.channels.set(opts.id, {
     id: opts.id,
     contact_id: opts.contactId,
-    type: "vellum",
+    type: "cadet",
     address: opts.address ?? `addr-${opts.id}`,
     is_primary: 0,
     external_user_id: null,
@@ -219,7 +219,7 @@ function seedChannel(opts: {
     .values({
       id: opts.id,
       contactId: opts.contactId,
-      type: opts.type ?? "vellum",
+      type: opts.type ?? "cadet",
       address: opts.address ?? `addr-${opts.id}`,
       isPrimary: false,
       status: opts.status ?? "unverified",
@@ -606,7 +606,7 @@ describe("ContactStore.upsertContact binding-strength guard (LUM-2505)", () => {
       id: "c1",
       channels: [
         {
-          type: "vellum",
+          type: "cadet",
           address: "addr-ch1",
           status: "active",
           verifiedVia: "manual_channel_claim",
@@ -640,7 +640,7 @@ describe("ContactStore.upsertContact binding-strength guard (LUM-2505)", () => {
       id: "c1",
       channels: [
         {
-          type: "vellum",
+          type: "cadet",
           address: "addr-ch1",
           status: "active",
           verifiedVia: "challenge",

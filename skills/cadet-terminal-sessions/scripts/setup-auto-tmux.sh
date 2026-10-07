@@ -18,31 +18,31 @@
 
 set -euo pipefail
 
-MARKER_START="# >>> vellum-auto-tmux >>>"
-MARKER_END="# <<< vellum-auto-tmux <<<"
+MARKER_START="# >>> cadet-auto-tmux >>>"
+MARKER_END="# <<< cadet-auto-tmux <<<"
 
-AUTO_TMUX_BLOCK='# >>> vellum-auto-tmux >>>
+AUTO_TMUX_BLOCK='# >>> cadet-auto-tmux >>>
 # Auto-wrap new interactive shells in tmux so the assistant can see/drive them.
 # Managed by: terminal-sessions skill. Remove this block or run setup-auto-tmux.sh --uninstall to disable.
-if command -v tmux &>/dev/null && [ -z "${TMUX:-}" ] && [ -n "${PS1:-}" ] && [ -z "${VELLUM_NO_AUTO_TMUX:-}" ]; then
+if command -v tmux &>/dev/null && [ -z "${TMUX:-}" ] && [ -n "${PS1:-}" ] && [ -z "${CADET_NO_AUTO_TMUX:-}" ]; then
   # Build a human-friendly session name from the terminal tab/window
-  _vellum_tty_slug="$(basename "$(tty)" 2>/dev/null | tr "/" "-")"
-  _vellum_session="sh-${_vellum_tty_slug}-$$"
+  _cadet_tty_slug="$(basename "$(tty)" 2>/dev/null | tr "/" "-")"
+  _cadet_session="sh-${_cadet_tty_slug}-$$"
 
   # If we are inside iTerm2, try to use the tab title as the session name
   if [ -n "${ITERM_SESSION_ID:-}" ]; then
-    _vellum_session="iterm-${_vellum_tty_slug}-$$"
+    _cadet_session="iterm-${_cadet_tty_slug}-$$"
   fi
 
   # If we are inside VSCode integrated terminal, tag it
   if [ "${TERM_PROGRAM:-}" = "vscode" ]; then
-    _vellum_session="vscode-${_vellum_tty_slug}-$$"
+    _cadet_session="vscode-${_cadet_tty_slug}-$$"
   fi
 
-  tmux new-session -d -s "$_vellum_session" 2>/dev/null && exec tmux attach-session -t "$_vellum_session"
-  unset _vellum_tty_slug _vellum_session
+  tmux new-session -d -s "$_cadet_session" 2>/dev/null && exec tmux attach-session -t "$_cadet_session"
+  unset _cadet_tty_slug _cadet_session
 fi
-# <<< vellum-auto-tmux <<<'
+# <<< cadet-auto-tmux <<<'
 
 # Detect shell config file
 detect_rc_file() {
@@ -76,7 +76,7 @@ install() {
   fi
 
   # Back up the rc file
-  cp "$rc_file" "${rc_file}.vellum-backup.$(date +%s)" 2>/dev/null || true
+  cp "$rc_file" "${rc_file}.cadet-backup.$(date +%s)" 2>/dev/null || true
 
   # Append the block
   {
@@ -86,7 +86,7 @@ install() {
 
   echo "✓ Auto-tmux installed in $rc_file"
   echo "  New terminal windows will auto-create tmux sessions."
-  echo "  Set VELLUM_NO_AUTO_TMUX=1 to skip for a single session."
+  echo "  Set CADET_NO_AUTO_TMUX=1 to skip for a single session."
   echo "  Run with --uninstall to remove."
 }
 
@@ -100,7 +100,7 @@ uninstall() {
   fi
 
   # Back up first
-  cp "$rc_file" "${rc_file}.vellum-backup.$(date +%s)"
+  cp "$rc_file" "${rc_file}.cadet-backup.$(date +%s)"
 
   # Remove the block between markers (inclusive)
   # Use a temp file for portability (macOS sed -i is different from GNU)

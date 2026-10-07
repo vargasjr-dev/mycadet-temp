@@ -121,7 +121,7 @@ export function sanitizeUsageMetadataValue(value: unknown): string | null {
 
 /**
  * Attribution records the billed upstream: a routing-identity provider
- * ("vellum"/"chatgpt") translates to the upstream that actually serves the
+ * ("cadet"/"chatgpt") translates to the upstream that actually serves the
  * request, matching what dispatch resolves. Unroutable identity models fall
  * back to the stored value rather than throwing — attribution must never
  * take dispatch down.

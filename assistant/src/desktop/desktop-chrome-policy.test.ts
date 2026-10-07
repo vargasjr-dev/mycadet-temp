@@ -27,7 +27,7 @@ afterEach(() => {
 
 test("preserves unrelated policies and does not rewrite on repeated startup", () => {
   const directory = policyDirectory();
-  const path = join(directory, "vellum-desktop.json");
+  const path = join(directory, "cadet-desktop.json");
   const otherPath = join(directory, "organization.json");
   const unrelated = '{ "HomepageLocation": "https://example.com" }\n';
   writeFileSync(otherPath, unrelated);
@@ -48,7 +48,7 @@ test("preserves unrelated policies and does not rewrite on repeated startup", ()
   expect(readFileSync(otherPath, "utf8")).toBe(unrelated);
   expect(readdirSync(directory).sort()).toEqual([
     "organization.json",
-    "vellum-desktop.json",
+    "cadet-desktop.json",
   ]);
 
   const before = statSync(path);
@@ -61,8 +61,8 @@ test("preserves unrelated policies and does not rewrite on repeated startup", ()
 test("creates missing policy directories for a fresh desktop", () => {
   const directory = join(policyDirectory(), "policies", "managed");
   writeDesktopChromePolicy(directory);
-  expect(readdirSync(directory)).toEqual(["vellum-desktop.json"]);
-  expect(statSync(join(directory, "vellum-desktop.json")).mode & 0o777).toBe(
+  expect(readdirSync(directory)).toEqual(["cadet-desktop.json"]);
+  expect(statSync(join(directory, "cadet-desktop.json")).mode & 0o777).toBe(
     0o644,
   );
 });
@@ -71,10 +71,10 @@ test.each(["{broken", "[]", "null", "false"])(
   "leaves invalid existing policy content untouched: %s",
   (content) => {
     const directory = policyDirectory();
-    const path = join(directory, "vellum-desktop.json");
+    const path = join(directory, "cadet-desktop.json");
     writeFileSync(path, content);
     expect(() => writeDesktopChromePolicy(directory)).toThrow();
     expect(readFileSync(path, "utf8")).toBe(content);
-    expect(readdirSync(directory)).toEqual(["vellum-desktop.json"]);
+    expect(readdirSync(directory)).toEqual(["cadet-desktop.json"]);
   },
 );

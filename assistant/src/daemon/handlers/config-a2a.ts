@@ -24,7 +24,7 @@ import {
   searchContacts,
   upsertContact,
 } from "../../contacts/contact-store.js";
-import type { VellumAssistantMetadata } from "../../contacts/types.js";
+import type { CadetAssistantMetadata } from "../../contacts/types.js";
 import { getPublicBaseUrl } from "../../inbound/public-ingress-urls.js";
 import {
   claimA2aInvite,
@@ -182,7 +182,7 @@ export function completeA2AInvite(params: {
   };
 }): CompleteA2AInviteResult {
   // Resolve sender identity before any mutations so we fail cleanly
-  const displayName = getAssistantName() ?? "Vellum Assistant";
+  const displayName = getAssistantName() ?? "Cadet Assistant";
   let gatewayUrl: string;
   try {
     gatewayUrl = getPublicBaseUrl(getConfig());
@@ -223,16 +223,16 @@ export function completeA2AInvite(params: {
   const metadataJson = JSON.stringify({
     assistantId: params.acceptor.assistantId,
     gatewayUrl: params.acceptor.gatewayUrl,
-  } satisfies VellumAssistantMetadata);
+  } satisfies CadetAssistantMetadata);
   db.insert(assistantContactMetadata)
     .values({
       contactId: invite.contactId,
-      species: "vellum",
+      species: "cadet",
       metadata: metadataJson,
     })
     .onConflictDoUpdate({
       target: assistantContactMetadata.contactId,
-      set: { species: "vellum", metadata: metadataJson },
+      set: { species: "cadet", metadata: metadataJson },
     })
     .run();
 
@@ -284,16 +284,16 @@ export function redeemA2AInvite(params: {
   const metadataJson = JSON.stringify({
     assistantId: params.sender.assistantId,
     gatewayUrl: params.sender.gatewayUrl,
-  } satisfies VellumAssistantMetadata);
+  } satisfies CadetAssistantMetadata);
   db.insert(assistantContactMetadata)
     .values({
       contactId: contact.id,
-      species: "vellum",
+      species: "cadet",
       metadata: metadataJson,
     })
     .onConflictDoUpdate({
       target: assistantContactMetadata.contactId,
-      set: { species: "vellum", metadata: metadataJson },
+      set: { species: "cadet", metadata: metadataJson },
     })
     .run();
 
@@ -398,7 +398,7 @@ export async function acceptA2AInvite(params: {
   const senderGatewayUrl = safety.origin;
 
   // 1. Validate local config
-  const displayName = getAssistantName() ?? "Vellum Assistant";
+  const displayName = getAssistantName() ?? "Cadet Assistant";
   let localGatewayUrl: string;
   try {
     localGatewayUrl = getPublicBaseUrl(getConfig());

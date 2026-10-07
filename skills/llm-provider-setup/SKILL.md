@@ -10,7 +10,7 @@ metadata:
 
 ## Overview
 
-This skill is the canonical procedure for adding a new LLM provider, model, or inference profile to a Vellum assistant. Follow the steps in order — each step's output feeds the next, and the final live-call verification is mandatory. Never skip ahead by writing raw config JSON.
+This skill is the canonical procedure for adding a new LLM provider, model, or inference profile to a Cadet assistant. Follow the steps in order — each step's output feeds the next, and the final live-call verification is mandatory. Never skip ahead by writing raw config JSON.
 
 **Run the steps strictly sequentially — one command per step, and read its output before running the next.** Never batch create → verify → activate into a single turn: creation can fail validation, verification can fail on a wrong model id or missing credential, and activation must not happen until verification passed. Each step's output is the gate for the next one.
 
@@ -19,14 +19,14 @@ This skill is the canonical procedure for adding a new LLM provider, model, or i
 Managed (platform-credentialed) routing may already cover the user's need — no API key required:
 
 ```bash
-assistant inference providers list          # provider entries; `vellum` is the platform-managed route
+assistant inference providers list          # provider entries; `cadet` is the platform-managed route
 assistant inference providers default       # default provider + availability status
 assistant inference profiles list           # effective profiles: managed + user, with availability
 ```
 
-**Managed first.** If the user is signed in to Vellum and the model they asked for is served by the managed route, build the profile on it — `--provider vellum --model <model-id>`, no `--connection`, no credential, nothing to prompt for. Skip Steps 1 and 2 entirely and go to Step 3; there is no key to collect. If the model turns out not to be managed-routable, profile creation says so explicitly (Step 4) — only then fall back to key collection.
+**Managed first.** If the user is signed in to Cadet and the model they asked for is served by the managed route, build the profile on it — `--provider cadet --model <model-id>`, no `--connection`, no credential, nothing to prompt for. Skip Steps 1 and 2 entirely and go to Step 3; there is no key to collect. If the model turns out not to be managed-routable, profile creation says so explicitly (Step 4) — only then fall back to key collection.
 
-Collect an API key only when there is genuinely no managed option: the user is not signed in to Vellum, the model is not served by the managed route, or the user explicitly wants to use their own key.
+Collect an API key only when there is genuinely no managed option: the user is not signed in to Cadet, the model is not served by the managed route, or the user explicitly wants to use their own key.
 
 ## Step 1 — Reuse an existing key, or securely collect a new one
 
@@ -70,7 +70,7 @@ assistant inference providers create <connection-name> \
   --model <another-model-id>
 ```
 
-For a local, keyless endpoint (e.g. LM Studio, vLLM) use `--auth none` and drop `--credential`. The managed Vellum connection is not editable — create a new named connection instead of modifying it.
+For a local, keyless endpoint (e.g. LM Studio, vLLM) use `--auth none` and drop `--credential`. The managed Cadet connection is not editable — create a new named connection instead of modifying it.
 
 ## Step 3 — Discover a valid model id (do not guess)
 
@@ -92,7 +92,7 @@ On the managed route (Step 0), there is no connection to name:
 
 ```bash
 assistant inference profiles create <profile-name> \
-  --provider vellum \
+  --provider cadet \
   --model <model-id> \
   --label "<Display Name>"
 ```

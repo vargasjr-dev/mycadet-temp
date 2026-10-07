@@ -26,7 +26,7 @@ interface PlatformCallbackRouteResponse {
  * Follows the same pattern as Telegram's managed callback route registration
  * in `telegram/webhook-manager.ts`. Requires platform credentials (base URL,
  * assistant API key, assistant ID). The base URL can fall back to
- * `VELLUM_PLATFORM_URL`; the key can fall back to `ASSISTANT_API_KEY`.
+ * `CADET_PLATFORM_URL`; the key can fall back to `ASSISTANT_API_KEY`.
  *
  * Self-hosted assistants with a configured ``ingress.publicBaseUrl`` send
  * their own base URL so the callback route points directly at the gateway
@@ -57,7 +57,7 @@ export async function registerEmailCallbackRoute(caches?: {
   // matching the daemon's resolvePlatformCallbackRegistrationContext().
   const platformBaseUrl = (
     platformBaseUrlRaw?.trim() ||
-    process.env.VELLUM_PLATFORM_URL?.trim() ||
+    process.env.CADET_PLATFORM_URL?.trim() ||
     ""
   ).replace(/\/+$/, "");
 

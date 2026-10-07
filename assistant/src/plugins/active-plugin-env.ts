@@ -38,7 +38,7 @@ export function uniqueActivePluginOwner(
   return [...owners][0];
 }
 
-/** Set `VELLUM_PLUGIN_NAME` on `env` when a single plugin owner is active. */
+/** Set `CADET_PLUGIN_NAME` on `env` when a single plugin owner is active. */
 export function applyActivePluginName(
   env: NodeJS.ProcessEnv,
   conversationId: string | undefined,

@@ -84,17 +84,17 @@ function capturedFetch(): {
 }
 
 describe("platform push proxy", () => {
-  const savedPlatformUrl = process.env.VELLUM_PLATFORM_URL;
+  const savedPlatformUrl = process.env.CADET_PLATFORM_URL;
 
   beforeAll(() => {
-    delete process.env.VELLUM_PLATFORM_URL;
+    delete process.env.CADET_PLATFORM_URL;
   });
 
   afterAll(() => {
     if (savedPlatformUrl !== undefined) {
-      process.env.VELLUM_PLATFORM_URL = savedPlatformUrl;
+      process.env.CADET_PLATFORM_URL = savedPlatformUrl;
     } else {
-      delete process.env.VELLUM_PLATFORM_URL;
+      delete process.env.CADET_PLATFORM_URL;
     }
   });
 
@@ -135,7 +135,7 @@ describe("platform push proxy", () => {
     const payload = {
       token: "device-token",
       platform: "ios",
-      bundle_id: "ai.vellum.assistant",
+      bundle_id: "ai.mycadet.assistant",
     };
 
     const res = await handler.handleUpsertPushToken(
@@ -170,7 +170,7 @@ describe("platform push proxy", () => {
 
     const res = await handler.handleDeletePushToken(
       new Request(
-        "http://localhost:7830/v1/assistants/self/push-tokens/device-token/?bundle_id=ai.vellum.assistant",
+        "http://localhost:7830/v1/assistants/self/push-tokens/device-token/?bundle_id=ai.mycadet.assistant",
         { method: "DELETE" },
       ),
       "device-token",
@@ -179,7 +179,7 @@ describe("platform push proxy", () => {
     expect(res.status).toBe(204);
     const upstream = capturedFetch();
     expect(upstream.url).toBe(
-      `${PLATFORM_BASE_URL}/v1/assistants/${PLATFORM_ASSISTANT_ID}/push-tokens/device-token/?bundle_id=ai.vellum.assistant`,
+      `${PLATFORM_BASE_URL}/v1/assistants/${PLATFORM_ASSISTANT_ID}/push-tokens/device-token/?bundle_id=ai.mycadet.assistant`,
     );
     expect(upstream.method).toBe("DELETE");
     expect(upstream.headers.get("Authorization")).toBe(

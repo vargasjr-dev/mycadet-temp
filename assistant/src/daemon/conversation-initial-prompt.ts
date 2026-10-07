@@ -29,7 +29,7 @@ import type { TrustContext } from "./trust-context-types.js";
  *   persona resolution reads the sync guardian-delivery cache, which is cold
  *   in worker processes (schedule worker, memory worker) and after TTL expiry
  *   in the daemon.
- * - Otherwise (no construction-time identity: the local vellum app sets trust
+ * - Otherwise (no construction-time identity: the local cadet app sets trust
  *   after creation) the guardian binding is warmed first so the persona slot
  *   resolves the guardian's `users/<slug>.md` instead of `users/default.md` on
  *   a cold cache.

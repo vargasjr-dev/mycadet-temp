@@ -15,7 +15,7 @@ import {
   appendFailedEmailAttachmentNotice,
   ingestEmailAttachments,
 } from "./attachments.js";
-import type { VellumEmailPayload } from "./normalize.js";
+import type { CadetEmailPayload } from "./normalize.js";
 import { normalizeEmailWebhook } from "./normalize.js";
 
 /**
@@ -43,7 +43,7 @@ export interface EmailInboundPipelineOptions {
   dedupCache: StringDedupCache;
   /** Already-reserved dedup key; an empty string skips mark bookkeeping. */
   dedupKey: string;
-  vellumPayload: VellumEmailPayload;
+  cadetPayload: CadetEmailPayload;
   traceId: string | undefined;
   /** Undefined when the provider has no send credentials — replies are skipped. */
   sendReply: EmailReplySender | undefined;
@@ -108,7 +108,7 @@ export async function runEmailInboundPipeline(
     source,
     dedupCache,
     dedupKey,
-    vellumPayload,
+    cadetPayload,
     traceId,
     sendReply,
     logFields,
@@ -121,7 +121,7 @@ export async function runEmailInboundPipeline(
   };
 
   const normalized = normalizeEmailWebhook(
-    vellumPayload as unknown as Record<string, unknown>,
+    cadetPayload as unknown as Record<string, unknown>,
   );
   if (!normalized) {
     log.debug(
@@ -170,7 +170,7 @@ export async function runEmailInboundPipeline(
     return Response.json({ ok: true });
   }
 
-  const replySubject = `Re: ${vellumPayload.subject ?? "(no subject)"}`;
+  const replySubject = `Re: ${cadetPayload.subject ?? "(no subject)"}`;
 
   try {
     // Ingest inline base64 attachments into the assistant's attachment store
@@ -189,8 +189,8 @@ export async function runEmailInboundPipeline(
       transportMetadata: buildEmailTransportMetadata({
         senderAddress,
         recipientAddress,
-        subject: vellumPayload.subject,
-        inReplyTo: vellumPayload.inReplyTo,
+        subject: cadetPayload.subject,
+        inReplyTo: cadetPayload.inReplyTo,
       }),
       replyCallbackUrl: undefined,
       traceId,
@@ -200,13 +200,13 @@ export async function runEmailInboundPipeline(
       senderAuthenticated,
       sourceMetadata: {
         emailProvider: source,
-        emailSubject: vellumPayload.subject ?? undefined,
+        emailSubject: cadetPayload.subject ?? undefined,
         emailRecipient: recipientAddress,
-        ...(vellumPayload.inReplyTo
-          ? { emailInReplyTo: vellumPayload.inReplyTo }
+        ...(cadetPayload.inReplyTo
+          ? { emailInReplyTo: cadetPayload.inReplyTo }
           : {}),
-        ...(vellumPayload.references
-          ? { emailReferences: vellumPayload.references }
+        ...(cadetPayload.references
+          ? { emailReferences: cadetPayload.references }
           : {}),
       },
     });
@@ -221,7 +221,7 @@ export async function runEmailInboundPipeline(
           to: senderAddress,
           subject: replySubject,
           text: result.verificationReplyText,
-          inReplyTo: vellumPayload.messageId,
+          inReplyTo: cadetPayload.messageId,
         });
       }
       mark();
@@ -239,7 +239,7 @@ export async function runEmailInboundPipeline(
           to: senderAddress,
           subject: replySubject,
           text: result.inviteReplyText,
-          inReplyTo: vellumPayload.messageId,
+          inReplyTo: cadetPayload.messageId,
         });
       }
       mark();
@@ -289,7 +289,7 @@ export async function runEmailInboundPipeline(
           to: senderAddress,
           subject: replySubject,
           text: result.runtimeResponse.replyText,
-          inReplyTo: vellumPayload.messageId,
+          inReplyTo: cadetPayload.messageId,
         });
       } else {
         log.info(

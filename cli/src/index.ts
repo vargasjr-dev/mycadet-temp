@@ -169,7 +169,7 @@ function applyNoColorFlags(argv: string[]): void {
  * that `cadet hatch` forwards provider API keys to containers and other
  * commands have access to them.
  *
- * Reads `$XDG_CONFIG_HOME/vellum{-env}/.env` — the same config directory
+ * Reads `$XDG_CONFIG_HOME/cadet{-env}/.env` — the same config directory
  * the CLI uses for guardian tokens and environment state. The file is
  * written by remote-hatch scripts and can be user-managed.
  *
@@ -239,7 +239,7 @@ async function tryLaunchClient(): Promise<boolean> {
 }
 
 async function main() {
-  // Load $XDG_CONFIG_HOME/vellum/.env before any command runs so
+  // Load $XDG_CONFIG_HOME/cadet/.env before any command runs so
   // provider API keys and other config are available to hatch, exec, etc.
   loadConfigDotenv();
 

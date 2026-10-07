@@ -1,6 +1,6 @@
 ---
 name: slack-app-setup
-description: Connect a Slack app to the Vellum Assistant via Socket Mode. Use whenever the user wants to set up Slack for their assistant, connect a workspace, or get the assistant talking in Slack — opens a guided setup wizard in the side panel so the user can create the app, generate tokens, and connect in one flow.
+description: Connect a Slack app to the Cadet Assistant via Socket Mode. Use whenever the user wants to set up Slack for their assistant, connect a workspace, or get the assistant talking in Slack — opens a guided setup wizard in the side panel so the user can create the app, generate tokens, and connect in one flow.
 compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "💬"

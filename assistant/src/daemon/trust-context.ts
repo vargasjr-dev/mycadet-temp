@@ -20,7 +20,7 @@ import type { TrustContext } from "./trust-context-types.js";
  * use this constant.
  */
 export const INTERNAL_GUARDIAN_TRUST_CONTEXT = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "guardian",
 } as const satisfies TrustContext;
 
@@ -33,7 +33,7 @@ export const INTERNAL_GUARDIAN_TRUST_CONTEXT = {
  * grant elevated trust to a custom plugin reading `ctx.trust`.
  */
 export const FALLBACK_TURN_TRUST: TrustContext = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "unknown",
 };
 

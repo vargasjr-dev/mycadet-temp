@@ -2,7 +2,7 @@
  * Subprocess probe for the resource monitor's main-DB posture: telemetry
  * queries route through the dedicated read-only connection, writes through
  * it fail loudly, and the telemetry DB stays writable. Spawned by
- * `main-db-readonly.test.ts` with VELLUM_WORKSPACE_DIR pointing at a fresh
+ * `main-db-readonly.test.ts` with CADET_WORKSPACE_DIR pointing at a fresh
  * temp workspace, so the process-scoped posture and connection singletons
  * never leak into the test runner process.
  *

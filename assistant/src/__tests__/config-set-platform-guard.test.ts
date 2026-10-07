@@ -33,7 +33,7 @@ let mockIpcResult: {
 // ---------------------------------------------------------------------------
 
 mock.module("../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: () => mockPlatformClientCreate(),
   },
 }));
@@ -251,7 +251,7 @@ describe("config set - platform connection guard for service mode paths", () => 
       "config",
       "set",
       "services.web-search.provider",
-      "vellum",
+      "cadet",
     ]);
 
     expect(exitCode).toBe(1);

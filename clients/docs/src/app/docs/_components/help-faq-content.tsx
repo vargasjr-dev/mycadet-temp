@@ -305,7 +305,7 @@ export function HelpFaqContent() {
             you ask us to delete them. You can export your workspace at any
             time, or request full deletion through the account settings or
             support. If you self-host, your workspace folder
-            (<code>~/.vellum/</code>) stays on your machine until you delete
+            (<code>~/.cadet/</code>) stays on your machine until you delete
             it manually; <code>cadet retire</code> from the CLI archives the
             workspace as a tarball before removal. See{" "}
             <a href="/docs/trust-security/security-best-practices">Security Best Practices</a>{" "}
@@ -348,7 +348,7 @@ export function HelpFaqContent() {
             Can it access my files?
           </SectionHeading>
           <p className="mb-6 text-zinc-600">
-            Files inside the workspace (<code>$VELLUM_WORKSPACE_DIR</code>) are accessible without
+            Files inside the workspace (<code>$CADET_WORKSPACE_DIR</code>) are accessible without
             prompts. Files outside the workspace &mdash; on your host machine &mdash; require your
             explicit permission each time. You see what file it wants to access, whether
             it&apos;s a read or write, and can choose to allow once, allow temporarily, or create
@@ -412,7 +412,7 @@ export function HelpFaqContent() {
           </SectionHeading>
           <p className="mb-6 text-zinc-600">
             Yes. Say &ldquo;I want to rename you to [name]&rdquo; or edit IDENTITY.md directly in{" "}
-            <code>$VELLUM_WORKSPACE_DIR</code>.
+            <code>$CADET_WORKSPACE_DIR</code>.
           </p>
 
           <SectionHeading id="can-i-change-its-personality" level={3}>

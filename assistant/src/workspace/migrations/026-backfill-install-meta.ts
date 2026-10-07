@@ -1,7 +1,7 @@
 /**
  * Workspace migration 026: Backfill install-meta.json for existing skills
  *
- * Scans $VELLUM_WORKSPACE_DIR/skills/ for installed skill directories and writes
+ * Scans $CADET_WORKSPACE_DIR/skills/ for installed skill directories and writes
  * an install-meta.json for each skill that lacks one, inferring the origin
  * from legacy version.json and .integrity.json files.
  *
@@ -163,7 +163,7 @@ function loadIntegrityManifest(skillsDir: string): IntegrityManifest {
  * 1. version.json with `origin: "skills.sh"` -> skillssh
  * 2. version.json with `version` but no `origin` field:
  *    - Has entry in .integrity.json -> clawhub
- *    - Otherwise -> vellum
+ *    - Otherwise -> cadet
  * 3. version.json exists but doesn't match above -> custom
  * 4. No version.json:
  *    - Has entry in .integrity.json -> clawhub

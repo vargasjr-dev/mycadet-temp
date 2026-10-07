@@ -9,7 +9,7 @@ import { Typography } from "@mycadet/design-library/components/typography";
 
 import { LanguageModelSection } from "@/domains/settings/ai/language-model-section";
 import { ProviderRow } from "@/domains/settings/ai/provider-row";
-import { VELLUM_CONNECTION_PROVIDER } from "@/domains/settings/ai/constants";
+import { CADET_CONNECTION_PROVIDER } from "@/domains/settings/ai/constants";
 import { useProviderActions } from "@/domains/settings/ai/use-provider-actions";
 import {
   configLlmDefaultproviderGetOptions,
@@ -72,8 +72,8 @@ export function ProvidersSection({
   const connections = useMemo(() => {
     const fetched = data?.connections ?? [];
     return [
-      ...fetched.filter((c) => c.provider === VELLUM_CONNECTION_PROVIDER),
-      ...fetched.filter((c) => c.provider !== VELLUM_CONNECTION_PROVIDER),
+      ...fetched.filter((c) => c.provider === CADET_CONNECTION_PROVIDER),
+      ...fetched.filter((c) => c.provider !== CADET_CONNECTION_PROVIDER),
     ];
   }, [data]);
 

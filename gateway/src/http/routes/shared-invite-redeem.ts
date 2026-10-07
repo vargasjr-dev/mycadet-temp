@@ -1,10 +1,10 @@
 /**
- * `POST /v1/shared/invites/redeem`: exchanges a `vellum-shared` invite link
+ * `POST /v1/shared/invites/redeem`: exchanges a `cadet-shared` invite link
  * token for a trusted-contact principal and a device-bound token pair.
  *
  * Unauthenticated: the link token in the body is the credential. Failed
  * attempts are counted per client IP, and a client over the limit is refused
- * before its body is read. Hidden with a 404 while `vellum-trusted-contacts`
+ * before its body is read. Hidden with a 404 while `cadet-trusted-contacts`
  * is off.
  */
 
@@ -19,7 +19,7 @@ import { readJsonObjectBody } from "../route-helpers.js";
 
 const log = getLogger("shared-invite-redeem");
 
-const TRUSTED_CONTACTS_FLAG = "vellum-trusted-contacts";
+const TRUSTED_CONTACTS_FLAG = "cadet-trusted-contacts";
 const MAX_REDEEM_BODY_BYTES = 1024;
 const RETRY_AFTER_SECONDS = 60;
 

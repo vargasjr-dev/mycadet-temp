@@ -42,8 +42,8 @@ import {
 
 const METHOD = "resolve_guardian_delivery";
 
-const vellumGuardian: GuardianDelivery = {
-  channelType: "vellum",
+const cadetGuardian: GuardianDelivery = {
+  channelType: "cadet",
   contactId: "contact-1",
   address: "self",
   status: "active",
@@ -62,14 +62,14 @@ describe("warmLocalGuardianPrincipalCache", () => {
   });
 
   test("sync read is cold before warming", () => {
-    ipcHandlers.set(METHOD, () => ({ guardians: [vellumGuardian] }));
+    ipcHandlers.set(METHOD, () => ({ guardians: [cadetGuardian] }));
 
     // No warm yet — the cache snapshot is empty.
     expect(findLocalGuardianPrincipalIdFromStore()).toBeUndefined();
   });
 
   test("warming populates the cache for the sync read", async () => {
-    ipcHandlers.set(METHOD, () => ({ guardians: [vellumGuardian] }));
+    ipcHandlers.set(METHOD, () => ({ guardians: [cadetGuardian] }));
 
     await warmLocalGuardianPrincipalCache();
 
@@ -78,7 +78,7 @@ describe("warmLocalGuardianPrincipalCache", () => {
 
   test("cold-start SSE registration resolves the principal after warm", async () => {
     httpAuthDisabled = true;
-    ipcHandlers.set(METHOD, () => ({ guardians: [vellumGuardian] }));
+    ipcHandlers.set(METHOD, () => ({ guardians: [cadetGuardian] }));
 
     // Cold cache: dev-bypass header resolves to no principal.
     expect(
@@ -102,7 +102,7 @@ describe("warmLocalGuardianPrincipalCache", () => {
 
     // Failure not cached; a later successful read warms the cache.
     expect(findLocalGuardianPrincipalIdFromStore()).toBeUndefined();
-    ipcHandlers.set(METHOD, () => ({ guardians: [vellumGuardian] }));
+    ipcHandlers.set(METHOD, () => ({ guardians: [cadetGuardian] }));
     await warmLocalGuardianPrincipalCache();
     expect(findLocalGuardianPrincipalIdFromStore()).toBe("principal-abc");
   });
@@ -127,7 +127,7 @@ describe("resolveDecidableGuardianPrincipalId", () => {
   });
 
   test("a null binding principal adopts the cadet anchor principal", async () => {
-    ipcHandlers.set(METHOD, () => ({ guardians: [vellumGuardian] }));
+    ipcHandlers.set(METHOD, () => ({ guardians: [cadetGuardian] }));
 
     expect(await resolveDecidableGuardianPrincipalId(null)).toBe(
       "principal-abc",
@@ -135,7 +135,7 @@ describe("resolveDecidableGuardianPrincipalId", () => {
   });
 
   test("an empty-string binding principal is unresolved, never returned", async () => {
-    ipcHandlers.set(METHOD, () => ({ guardians: [vellumGuardian] }));
+    ipcHandlers.set(METHOD, () => ({ guardians: [cadetGuardian] }));
 
     expect(await resolveDecidableGuardianPrincipalId("")).toBe("principal-abc");
   });

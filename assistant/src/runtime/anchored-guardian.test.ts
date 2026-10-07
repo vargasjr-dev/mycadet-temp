@@ -2,7 +2,7 @@
  * Unit tests for `resolveAnchoredGuardian`.
  *
  * Covers the gateway arms (source-channel match validated against the cadet
- * anchor, vellum-anchor fallback) and the cosmetic `requireAnchorPrincipal`
+ * anchor, cadet-anchor fallback) and the cosmetic `requireAnchorPrincipal`
  * guard.
  */
 import { describe, expect, test } from "bun:test";
@@ -26,7 +26,7 @@ describe("resolveAnchoredGuardian — gateway arm", () => {
     const result = resolveAnchoredGuardian({
       guardians: [
         gw({
-          channelType: "vellum",
+          channelType: "cadet",
           address: "v-addr",
           principalId: "p-anchor",
           displayName: "Cadet",
@@ -49,11 +49,11 @@ describe("resolveAnchoredGuardian — gateway arm", () => {
     });
   });
 
-  test("source-channel guardian NOT matching the anchor falls back to vellum-anchor", () => {
+  test("source-channel guardian NOT matching the anchor falls back to cadet-anchor", () => {
     const result = resolveAnchoredGuardian({
       guardians: [
         gw({
-          channelType: "vellum",
+          channelType: "cadet",
           address: "v-addr",
           principalId: "p-anchor",
           displayName: "Cadet",
@@ -71,16 +71,16 @@ describe("resolveAnchoredGuardian — gateway arm", () => {
       principalId: "p-anchor",
       address: "v-addr",
       displayName: "Cadet",
-      channelType: "vellum",
-      source: "vellum-anchor",
+      channelType: "cadet",
+      source: "cadet-anchor",
     });
   });
 
-  test("no source-channel guardian falls back to vellum-anchor", () => {
+  test("no source-channel guardian falls back to cadet-anchor", () => {
     const result = resolveAnchoredGuardian({
       guardians: [
         gw({
-          channelType: "vellum",
+          channelType: "cadet",
           address: "v-addr",
           principalId: "p-anchor",
           displayName: "Cadet",
@@ -88,7 +88,7 @@ describe("resolveAnchoredGuardian — gateway arm", () => {
       ],
       sourceChannel: "telegram",
     });
-    expect(result?.source).toBe("vellum-anchor");
+    expect(result?.source).toBe("cadet-anchor");
     expect(result?.principalId).toBe("p-anchor");
   });
 });
@@ -116,7 +116,7 @@ describe("resolveAnchoredGuardian — requireAnchorPrincipal (cosmetic label)", 
     const result = resolveAnchoredGuardian({
       guardians: [
         gw({
-          channelType: "vellum",
+          channelType: "cadet",
           address: "v-addr",
           principalId: null,
           displayName: "Cadet",
@@ -132,7 +132,7 @@ describe("resolveAnchoredGuardian — requireAnchorPrincipal (cosmetic label)", 
     const result = resolveAnchoredGuardian({
       guardians: [
         gw({
-          channelType: "vellum",
+          channelType: "cadet",
           address: "v-addr",
           principalId: null,
           displayName: "Cadet",
@@ -140,7 +140,7 @@ describe("resolveAnchoredGuardian — requireAnchorPrincipal (cosmetic label)", 
       ],
       sourceChannel: "telegram",
     });
-    expect(result?.source).toBe("vellum-anchor");
+    expect(result?.source).toBe("cadet-anchor");
     expect(result?.principalId).toBeNull();
   });
 });

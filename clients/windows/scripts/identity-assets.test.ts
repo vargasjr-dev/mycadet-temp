@@ -9,8 +9,8 @@ const windowsDir = path.resolve(import.meta.dir, "..");
 
 const loadBuilderConfig = (environment: string) => {
   const configPath = requireCjs.resolve("../electron-builder.config.cjs");
-  const previous = process.env.VELLUM_ENVIRONMENT;
-  process.env.VELLUM_ENVIRONMENT = environment;
+  const previous = process.env.CADET_ENVIRONMENT;
+  process.env.CADET_ENVIRONMENT = environment;
   delete requireCjs.cache[configPath];
   try {
     return requireCjs(configPath) as {
@@ -21,9 +21,9 @@ const loadBuilderConfig = (environment: string) => {
     };
   } finally {
     if (previous === undefined) {
-      delete process.env.VELLUM_ENVIRONMENT;
+      delete process.env.CADET_ENVIRONMENT;
     } else {
-      process.env.VELLUM_ENVIRONMENT = previous;
+      process.env.CADET_ENVIRONMENT = previous;
     }
   }
 };

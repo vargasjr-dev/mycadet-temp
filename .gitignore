@@ -60,7 +60,7 @@ worktrees/
 .claude/skills/*
 !.claude/skills/update/
 !.claude/skills/release/
-!.claude/skills/vellum-skills/
+!.claude/skills/cadet-skills/
 !.claude/skills/cli-testing/
 !.claude/skills/add-mcp-integration/
 
@@ -82,7 +82,7 @@ context.md
 .agents/skills/*
 !.agents/skills/testing-design-library-storybook/
 .codex
-.vellum
+.cadet
 
 # IDE
 .idea/
@@ -126,17 +126,17 @@ next-env.d.ts
 
 # bun build artifacts
 *.bun-build
-vellum-assistant-safe-do-permissions
-vellum-assistant-do-fix-retriever-null-check
+mycadet-safe-do-permissions
+mycadet-do-fix-retriever-null-check
 
 # Chrome browser extension build
-clients/chrome-extension/vellum-browser-relay.zip
+clients/chrome-extension/cadet-browser-relay.zip
 
 # Drizzle migration files — schema is applied via drizzle-kit push at runtime
 gateway/src/db/migrations/
 
 # Chrome extension builds
-clients/chrome-extension/vellum-browser-relay.zip
+clients/chrome-extension/cadet-browser-relay.zip
 
 # vel command
 clients/web/.vel/watchers.json

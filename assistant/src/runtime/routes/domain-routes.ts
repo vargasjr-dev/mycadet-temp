@@ -1,7 +1,7 @@
 /**
  * Route handlers for domain registration and status.
  *
- * Delegates to the Vellum platform API for register/status and persists
+ * Delegates to the Cadet platform API for register/status and persists
  * the subdomain to local config so getAssistantDomain() can use it.
  */
 
@@ -13,7 +13,7 @@ import {
   saveRawConfig,
   setNestedValue,
 } from "../../config/loader.js";
-import { VellumPlatformClient } from "../../platform/client.js";
+import { CadetPlatformClient } from "../../platform/client.js";
 import { getLogger } from "../../util/logger.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, RouteError, UnauthorizedError } from "./errors.js";
@@ -52,8 +52,8 @@ const DomainVerificationStatusResponseSchema = z.object({
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-async function requireClient(): Promise<VellumPlatformClient> {
-  const client = await VellumPlatformClient.create();
+async function requireClient(): Promise<CadetPlatformClient> {
+  const client = await CadetPlatformClient.create();
   if (!client) {
     throw new UnauthorizedError(
       "Platform credentials not configured. Run: assistant platform connect",
@@ -68,7 +68,7 @@ async function requireClient(): Promise<VellumPlatformClient> {
 }
 
 async function fetchDomains(
-  client: VellumPlatformClient,
+  client: CadetPlatformClient,
 ): Promise<DomainListResponse> {
   const response = await client.fetch(
     `/v1/assistants/${client.platformAssistantId}/domains/`,

@@ -82,7 +82,7 @@ afterAll(() => {
 
 describe("cadet clean --help", () => {
   test("prints usage and exits 0", async () => {
-    process.argv = ["bun", "vellum", "clean", "--help"];
+    process.argv = ["bun", "cadet", "clean", "--help"];
     await expect(clean()).rejects.toThrow("process.exit(0)");
     const output = consoleLogSpy.mock.calls.flat().join("\n");
     expect(output).toContain("Usage: cadet clean");
@@ -90,7 +90,7 @@ describe("cadet clean --help", () => {
   });
 
   test("-h is accepted as an alias for --help", async () => {
-    process.argv = ["bun", "vellum", "clean", "-h"];
+    process.argv = ["bun", "cadet", "clean", "-h"];
     await expect(clean()).rejects.toThrow("process.exit(0)");
   });
 });
@@ -98,7 +98,7 @@ describe("cadet clean --help", () => {
 describe("cadet clean — no orphans", () => {
   test("prints nothing-to-do message when no orphans are found", async () => {
     detectOrphansMock.mockResolvedValueOnce([]);
-    process.argv = ["bun", "vellum", "clean"];
+    process.argv = ["bun", "cadet", "clean"];
     await clean();
     const output = consoleLogSpy.mock.calls.flat().join("\n");
     expect(output).toContain("No orphaned processes found.");
@@ -110,7 +110,7 @@ describe("cadet clean — single orphan", () => {
   test("kills the orphan and prints singular 'process'", async () => {
     detectOrphansMock.mockResolvedValueOnce([makeOrphan("assistant", "12345")]);
     stopProcessMock.mockResolvedValueOnce(true);
-    process.argv = ["bun", "vellum", "clean"];
+    process.argv = ["bun", "cadet", "clean"];
     await clean();
 
     expect(stopProcessMock).toHaveBeenCalledTimes(1);
@@ -129,7 +129,7 @@ describe("cadet clean — single orphan", () => {
   test("reports 0 cleaned when stopProcess returns false", async () => {
     detectOrphansMock.mockResolvedValueOnce([makeOrphan("gateway", "99999")]);
     stopProcessMock.mockResolvedValueOnce(false);
-    process.argv = ["bun", "vellum", "clean"];
+    process.argv = ["bun", "cadet", "clean"];
     await clean();
 
     const output = consoleLogSpy.mock.calls.flat().join("\n");
@@ -145,7 +145,7 @@ describe("cadet clean — multiple orphans", () => {
       makeOrphan("qdrant", "1003"),
     ]);
     stopProcessMock.mockResolvedValue(true);
-    process.argv = ["bun", "vellum", "clean"];
+    process.argv = ["bun", "cadet", "clean"];
     await clean();
 
     expect(stopProcessMock).toHaveBeenCalledTimes(3);
@@ -166,7 +166,7 @@ describe("cadet clean — multiple orphans", () => {
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(true);
-    process.argv = ["bun", "vellum", "clean"];
+    process.argv = ["bun", "cadet", "clean"];
     await clean();
 
     const output = consoleLogSpy.mock.calls.flat().join("\n");
@@ -180,7 +180,7 @@ describe("cadet clean — multiple orphans", () => {
       makeOrphan("gateway", "3002"),
     ]);
     stopProcessMock.mockResolvedValue(true);
-    process.argv = ["bun", "vellum", "clean"];
+    process.argv = ["bun", "cadet", "clean"];
     await clean();
 
     const calls = stopProcessMock.mock.calls as [number, string][];

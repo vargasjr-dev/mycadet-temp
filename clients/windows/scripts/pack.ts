@@ -8,7 +8,7 @@ const usage = `Usage: bun run pack [flags]
 Build and package the Windows app for the target architecture.
 
 Flags:
-  --environment, --env <name>  Set VELLUM_ENVIRONMENT (default: dev)
+  --environment, --env <name>  Set CADET_ENVIRONMENT (default: dev)
   --debug                      Enable Chrome DevTools in the packaged app
   --help, -h                   Show this help`;
 
@@ -35,13 +35,13 @@ if (
 }
 const environment =
   environmentArgument?.trim() ||
-  process.env.VELLUM_ENVIRONMENT?.trim() ||
+  process.env.CADET_ENVIRONMENT?.trim() ||
   "dev";
 const debug = process.argv.includes("--debug");
 const env = {
   ...process.env,
-  VELLUM_ENVIRONMENT: environment,
-  ...(debug ? { VELLUM_ENABLE_CHROME_DEVTOOLS: "true" } : {}),
+  CADET_ENVIRONMENT: environment,
+  ...(debug ? { CADET_ENABLE_CHROME_DEVTOOLS: "true" } : {}),
 };
 
 const runBun = (args: string[]): void => {

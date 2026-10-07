@@ -176,7 +176,7 @@ function resolveDiscoveredPluginIngress(
  * The declared route the gateway may serve at `plugin`/`path`, if any.
  *
  * Approval is the general gate, with one exception: a route declaring
- * `signer: "vellum"` is served without it. Such a route only opens to a
+ * `signer: "cadet"` is served without it. Such a route only opens to a
  * caller holding the platform's own webhook secret, which is to say us, and
  * the user extended that trust when they connected their account, so asking
  * them to approve it again buys nothing. A route signed by anyone else still
@@ -212,7 +212,7 @@ export function findServableRoute(
  * Whether the gate opens a declared route.
  *
  * `approved` says the route came out of a declaration a guardian has granted,
- * which is the general case. The exception is `signer: "vellum"`, served
+ * which is the general case. The exception is `signer: "cadet"`, served
  * without a grant for the reason {@link findServableRoute} gives.
  *
  * This is the whole rule, in one place, because two things decide it: the
@@ -222,7 +222,7 @@ export function findServableRoute(
  * refuses.
  */
 function isRouteServable(route: IngressRoute, approved: boolean): boolean {
-  return approved || route.signer === "vellum";
+  return approved || route.signer === "cadet";
 }
 
 /** A public webhook path the gateway would serve right now. */

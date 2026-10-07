@@ -186,7 +186,7 @@ export async function wake(): Promise<void> {
   }
 
   // Resolve the signing key. The gateway persists its own copy to disk at
-  // <instanceDir>/.vellum/protected/actor-token-signing-key. That on-disk key
+  // <instanceDir>/.cadet/protected/actor-token-signing-key. That on-disk key
   // is the source of truth because it is what the gateway actually used to sign
   // existing actor tokens. Prefer it over the lockfile value so that tokens
   // survive upgrades and any scenario where the two diverge.
@@ -196,7 +196,7 @@ export async function wake(): Promise<void> {
   // must remain the authoritative source.
   const legacyKeyPath = join(
     resources.instanceDir,
-    ".vellum",
+    ".cadet",
     "protected",
     "actor-token-signing-key",
   );
@@ -265,8 +265,8 @@ export async function wake(): Promise<void> {
     // means credential operations will fail until the next wake. Relaunch the
     // sibling so the daemon's lazy reconnect (secure-keys.ts) picks it up on
     // the next credential read. startCes always launches the sibling.
-    const vellumDir = join(resources.instanceDir, ".vellum");
-    const cesPidFile = join(vellumDir, "ces.pid");
+    const cadetDir = join(resources.instanceDir, ".cadet");
+    const cesPidFile = join(cadetDir, "ces.pid");
     const cesAlive = isProcessAlive(cesPidFile).alive;
     if (!cesAlive) {
       console.log("CES sibling not running — relaunching...");
@@ -277,8 +277,8 @@ export async function wake(): Promise<void> {
   // Start gateway
   let gatewayStarted = false;
   {
-    const vellumDir = join(resources.instanceDir, ".vellum");
-    const gatewayPidFile = join(vellumDir, "gateway.pid");
+    const cadetDir = join(resources.instanceDir, ".cadet");
+    const gatewayPidFile = join(cadetDir, "gateway.pid");
     const gatewayState = await resolveProcessState(
       gatewayPidFile,
       resources.gatewayPort,
@@ -368,7 +368,7 @@ export async function wake(): Promise<void> {
   // Self-heal the guardian token when the current environment's config dir
   // is missing it. Hatch cross-writes the lockfile across env dirs but the
   // guardian token is only persisted under the hatch-time env, so a desktop
-  // app built under a different VELLUM_ENVIRONMENT can't find a bearer and
+  // app built under a different CADET_ENVIRONMENT can't find a bearer and
   // cascades into 401 → auth-rate-limit → 429. A sibling env copy is cheap
   // and strictly additive.
   if (seedGuardianTokenFromSiblingEnv(entry.assistantId)) {
@@ -420,14 +420,14 @@ export async function wake(): Promise<void> {
 
   // Restore the nginx edge and point the webhook auto-tunnel at it. Non-fatal:
   // a down edge is a degraded remote-web/webhook path, not a broken assistant.
-  const workspaceDir = join(resources.instanceDir, ".vellum", "workspace");
+  const workspaceDir = join(resources.instanceDir, ".cadet", "workspace");
   const ngrokChild = await restoreTunnelEdgeAndAutoTunnel(
     entry.assistantId,
     resources.gatewayPort,
     workspaceDir,
   );
   if (ngrokChild?.pid) {
-    const ngrokPidFile = join(resources.instanceDir, ".vellum", "ngrok.pid");
+    const ngrokPidFile = join(resources.instanceDir, ".cadet", "ngrok.pid");
     writeFileSync(ngrokPidFile, String(ngrokChild.pid));
   }
 

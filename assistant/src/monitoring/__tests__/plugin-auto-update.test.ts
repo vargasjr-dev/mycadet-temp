@@ -42,7 +42,7 @@ const MONITORING_DIR = join(ROOT, "data", "monitoring");
 const STAMP = join(MONITORING_DIR, "plugin-auto-update-last-run-at");
 const CONFIG_PATH = join(ROOT, "config.json");
 
-process.env.VELLUM_WORKSPACE_DIR = ROOT;
+process.env.CADET_WORKSPACE_DIR = ROOT;
 mkdirSync(MONITORING_DIR, { recursive: true });
 mkdirSync(PLUGINS_DIR, { recursive: true });
 
@@ -313,7 +313,7 @@ describe("plugin auto-update sweep", () => {
     installPlugin("alpha", {
       status: "update-available",
       source: { repo: "someone-else/alpha" },
-      marketplace: { repo: "vellum-ai/alpha" },
+      marketplace: { repo: "vargasjr-dev/alpha" },
     });
 
     const result = await runPluginAutoUpdateSweepIfDue();
@@ -326,8 +326,8 @@ describe("plugin auto-update sweep", () => {
     writeConfig({ mode: "auto" });
     installPlugin("alpha", {
       status: "update-available",
-      source: { repo: "vellum-ai/plugins", path: "alpha" },
-      marketplace: { repo: "vellum-ai/plugins", path: "alpha" },
+      source: { repo: "vargasjr-dev/plugins", path: "alpha" },
+      marketplace: { repo: "vargasjr-dev/plugins", path: "alpha" },
     });
 
     const result = await runPluginAutoUpdateSweepIfDue();
@@ -341,8 +341,8 @@ describe("plugin auto-update sweep", () => {
     // Same monorepo, different directory: not the plugin the catalog pins.
     installPlugin("alpha", {
       status: "update-available",
-      source: { repo: "vellum-ai/plugins", path: "experimental/alpha" },
-      marketplace: { repo: "vellum-ai/plugins", path: "alpha" },
+      source: { repo: "vargasjr-dev/plugins", path: "experimental/alpha" },
+      marketplace: { repo: "vargasjr-dev/plugins", path: "alpha" },
     });
 
     const result = await runPluginAutoUpdateSweepIfDue();
@@ -357,7 +357,7 @@ describe("plugin auto-update sweep", () => {
     // catalog, and the upgrade is what gives it provenance.
     installPlugin("alpha", {
       status: "unknown-provenance",
-      marketplace: { repo: "vellum-ai/alpha" },
+      marketplace: { repo: "vargasjr-dev/alpha" },
     });
 
     const result = await runPluginAutoUpdateSweepIfDue();

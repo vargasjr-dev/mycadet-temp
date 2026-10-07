@@ -13,7 +13,7 @@
  * fan-out and outbox modules are mocked so the origin ids and event payloads
  * they receive can be asserted.
  *
- * The avatar directory is controlled per-test via VELLUM_WORKSPACE_DIR, which
+ * The avatar directory is controlled per-test via CADET_WORKSPACE_DIR, which
  * `getAvatarDir()` resolves live. Per the test-isolation rule in
  * assistant/AGENTS.md, this file imports ONLY the modules under test
  * (`avatar-store` and the accent repair it shares with the read routes); state
@@ -105,8 +105,8 @@ describe("avatar-store", () => {
     workspaceDir = mkdtempSync(join(tmpdir(), "avatar-store-test-"));
     // getAvatarDir() === <workspace>/data/avatar
     avatarDir = join(workspaceDir, "data", "avatar");
-    prevWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    prevWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
     // Pre-create the avatar dir so tests that seed legacy artifacts can write
     // into it before the store's own mkdir runs.
     mkdirSync(avatarDir, { recursive: true });
@@ -117,9 +117,9 @@ describe("avatar-store", () => {
 
   afterEach(() => {
     if (prevWorkspaceDir === undefined) {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     } else {
-      process.env.VELLUM_WORKSPACE_DIR = prevWorkspaceDir;
+      process.env.CADET_WORKSPACE_DIR = prevWorkspaceDir;
     }
     rmSync(workspaceDir, { recursive: true, force: true });
   });

@@ -28,8 +28,8 @@ beforeEach(() => {
 });
 
 describe("TUNNEL_ALLOWED_PATHS", () => {
-  it("matches the platform-side header name (must stay in sync with vellum-assistant-platform RegistrationAllowedPathsHeader)", () => {
-    expect(TUNNEL_ALLOWED_PATHS_HEADER).toBe("X-Vellum-Tunnel-Allowed-Paths");
+  it("matches the platform-side header name (must stay in sync with mycadet-platform RegistrationAllowedPathsHeader)", () => {
+    expect(TUNNEL_ALLOWED_PATHS_HEADER).toBe("X-Cadet-Tunnel-Allowed-Paths");
   });
 
   it("encodes the regex list as a JSON array string for direct use as the header value", () => {

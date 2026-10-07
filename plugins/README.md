@@ -4,7 +4,7 @@ Plugins extend the assistant's default capabilities using hooks, tools,
 skills, and more.
 
 If you're authoring a plugin against the current convention, this file is
-your map. Read [`vellum-ai/simple-memory`](https://github.com/vellum-ai/simple-memory)
+your map. Read [`vargasjr-dev/simple-memory`](https://github.com/vargasjr-dev/simple-memory)
 alongside, it's the canonical reference implementation and exercises every
 wired surface.
 
@@ -14,7 +14,7 @@ wired surface.
 - [What a plugin can contribute today](#what-a-plugin-can-contribute-today)
 - [Directory layout](#directory-layout)
 - [Manifest](#manifest--packagejson)
-- [Public API surface](#public-api-surface--vellumaiplugin-api)
+- [Public API surface](#public-api-surface--mycadetplugin-api)
 - [Hooks](#hooks)
 - [Tools](#tools)
 - [Schedules](#schedules)
@@ -110,7 +110,7 @@ The external loader reads three fields:
   "peerDependencies": {
     "@mycadet/plugin-api": "^0.8.0"
   },
-  "vellum": {}
+  "cadet": {}
 }
 ```
 
@@ -123,7 +123,7 @@ The external loader reads three fields:
   but does not block load today** (the install path is still in flux);
   once it stabilizes the mismatch will harden into a hard reject.
   Omitting the peerDep entirely is also logged.
-- **`vellum`** - reserved for future use.
+- **`cadet`** - reserved for future use.
 
 Any other `package.json` field passes through untouched — write
 whatever your editor / linter / publish tooling expects.
@@ -136,7 +136,7 @@ Plugins import types and constants from `@mycadet/plugin-api`. This
 package is the only public-contract surface — anything not exported
 from there is assistant-internal and subject to change.
 
-For more on what these API exports, please see [here](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api).
+For more on what these API exports, please see [here](https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api).
 
 ---
 
@@ -532,7 +532,7 @@ tools in plugin skills must declare `execution_target: "sandbox"` (host
 execution is reserved for first-party bundled skills) and a tool name may be
 owned by only one skill, so share a single carrier skill via the parents'
 `includes` rather than duplicating the entry. A plugin-resident skill tool
-and a bash child inherit `VELLUM_PLUGIN_NAME` so `resolveCredential()` from
+and a bash child inherit `CADET_PLUGIN_NAME` so `resolveCredential()` from
 `@mycadet/plugin-api` can read credentials under that plugin's service.
 Companion scripts under `skills/<skill>/{scripts,tools}/` also recover the
 plugin name from their path, so raw `bun` works. See the `plugin-builder`
@@ -799,10 +799,10 @@ a `name`, an optional `owner`, and a `plugins` array.
 
 ```json
 {
-  "name": "vellum-assistant",
+  "name": "mycadet",
   "owner": {
-    "name": "Vellum",
-    "url": "https://github.com/vellum-ai/vellum-assistant"
+    "name": "Cadet",
+    "url": "https://github.com/vargasjr-dev/mycadet"
   },
   "plugins": [
     {
@@ -893,7 +893,7 @@ Code plugin keyed on a `.claude-plugin/plugin.json`), so installed verbatim
 they fail this loader's contract — a name that doesn't match the directory, no
 `@mycadet/plugin-api` peer dependency, no `hooks/`/`tools/`. A postinstall
 adapter is a small, curated transform we commit _here_ to translate such a
-clone into Vellum's shape.
+clone into Cadet's shape.
 
 To adapt an external plugin, add a directory next to this README named for the
 marketplace entry. It supplies a `package.json` whose only job is to name the
@@ -913,7 +913,7 @@ Install flow for an entry that has a stub:
 2. This stub's files are **overlaid** onto the clone so the installer can find
    and run its `scripts.postinstall`.
 3. The stub's `scripts.postinstall` is run against the staged tree to shape it
-   into a valid Vellum plugin (e.g. synthesize `hooks/<name>.ts`). A failure
+   into a valid Cadet plugin (e.g. synthesize `hooks/<name>.ts`). A failure
    aborts and rolls back the install.
 4. The installer rebuilds the plugin's `package.json` from the **upstream**
    manifest captured before the overlay — preserving its `version`,
@@ -928,7 +928,7 @@ ruleset from the upstream `skills/caveman/SKILL.md` and renders
 that ruleset on the user-facing model call.
 
 Trust boundary: only `scripts.postinstall` from a **curated stub in this repo**
-ever runs — it is reviewed Vellum code, version-pinned to the marketplace ref.
+ever runs — it is reviewed Cadet code, version-pinned to the marketplace ref.
 The upstream repo's own lifecycle scripts are never executed. The adapter is
 restricted to a single `bun <script>` invocation pointing at a `.ts`/`.js` file
 inside the stub, run under a stripped environment and a timeout.

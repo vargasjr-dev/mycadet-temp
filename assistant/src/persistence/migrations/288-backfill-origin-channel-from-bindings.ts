@@ -7,9 +7,9 @@ import { type DrizzleDb, getSqliteFrom } from "../db-connection.js";
  * conversations that have a channel binding but NULL origin_channel (created
  * before origin_channel was consistently set on first inbound message).
  *
- * Step 2: Set remaining NULL rows to 'vellum'. These are native/local
+ * Step 2: Set remaining NULL rows to 'cadet'. These are native/local
  * conversations created before the mechanism existed — they have no external
- * binding and were always implicitly vellum-channel conversations.
+ * binding and were always implicitly cadet-channel conversations.
  */
 export function migrateBackfillOriginChannelFromBindings(
   database: DrizzleDb,
@@ -34,10 +34,10 @@ export function migrateBackfillOriginChannelFromBindings(
     )
     .run();
 
-  // Step 2: Remaining NULL rows are native/local — set to 'vellum'
+  // Step 2: Remaining NULL rows are native/local — set to 'cadet'
   raw
     .query(
-      /*sql*/ `UPDATE conversations SET origin_channel = 'vellum' WHERE origin_channel IS NULL`,
+      /*sql*/ `UPDATE conversations SET origin_channel = 'cadet' WHERE origin_channel IS NULL`,
     )
     .run();
 }

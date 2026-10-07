@@ -146,7 +146,7 @@ describe("bridgeConfirmationRequestToGuardian", () => {
     // The in-app card is pinned to the conversation the confirmation was
     // emitted in — never left to LLM conversation routing.
     expect(emittedSignals[0].conversationAffinityHint).toEqual({
-      vellum: "conv-1",
+      cadet: "conv-1",
     });
 
     const payload = emittedSignals[0].contextPayload as Record<string, unknown>;
@@ -296,12 +296,12 @@ describe("bridgeConfirmationRequestToGuardian", () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const vellumDelivery = bridgeState.deliveries.find(
+    const cadetDelivery = bridgeState.deliveries.find(
       (d) =>
-        d.requestId === guardianRequest.id && d.destinationChannel === "vellum",
+        d.requestId === guardianRequest.id && d.destinationChannel === "cadet",
     );
-    expect(vellumDelivery).toBeDefined();
-    expect(vellumDelivery?.destinationConversationId).toBe(
+    expect(cadetDelivery).toBeDefined();
+    expect(cadetDelivery?.destinationConversationId).toBe(
       "guardian-conversation-1",
     );
   });

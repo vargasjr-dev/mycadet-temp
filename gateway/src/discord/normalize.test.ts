@@ -29,7 +29,7 @@ function messagePayload(overrides: Record<string, unknown> = {}) {
       global_name: "Alice Example",
       bot: false,
     },
-    mentions: [{ id: "bot-1", username: "vellum" }],
+    mentions: [{ id: "bot-1", username: "cadet" }],
     ...overrides,
   };
 }

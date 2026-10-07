@@ -96,7 +96,7 @@ export { flags as ALL_FLAGS };
 
 // -- Env flag override helpers ------------------------------------------------
 
-const VITE_FLAG_PREFIX = "VITE_VELLUM_FLAG_";
+const VITE_FLAG_PREFIX = "VITE_CADET_FLAG_";
 
 function upperSnakeToKebab(upper: string): string {
   return upper.toLowerCase().replace(/_/g, "-");

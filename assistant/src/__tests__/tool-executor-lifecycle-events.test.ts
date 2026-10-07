@@ -911,7 +911,7 @@ describe("ToolExecutor audit terminals", () => {
     // Directive stripping + placeholder substitution shrink the content the
     // executed terminal carries; the stamped size must reflect the raw output.
     const rawContent =
-      'Your invite: <vellum-sensitive-output kind="invite_code" value="SECRET-CODE-123" /> use SECRET-CODE-123';
+      'Your invite: <cadet-sensitive-output kind="invite_code" value="SECRET-CODE-123" /> use SECRET-CODE-123';
     fakeToolResult = { content: rawContent, isError: false };
 
     const executor = new ToolExecutor(makePrompter());
@@ -1014,7 +1014,7 @@ describe("ToolExecutor audit terminals", () => {
     const result = await executor.execute(
       "file_edit",
       {
-        path: "/Users/alice/.vellum/workspace/users/alice.md",
+        path: "/Users/alice/.cadet/workspace/users/alice.md",
         old_string: "old",
         new_string: "new",
       },

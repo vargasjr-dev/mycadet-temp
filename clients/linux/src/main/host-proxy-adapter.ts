@@ -44,7 +44,7 @@ export const createLinuxHostProxyRuntime = (
     ...clientHeaders,
     sseFallbackClientHeaders: () => ({
       ...clientHeaders.sseClientHeaders(),
-      "X-Vellum-Interface-Id": "macos",
+      "X-Cadet-Interface-Id": "macos",
     }),
     executors: {
       host_bash: hostBashExecutor,

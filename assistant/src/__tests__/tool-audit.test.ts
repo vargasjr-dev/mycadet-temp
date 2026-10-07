@@ -311,7 +311,7 @@ describe("tool audit terminals", () => {
   test("reports the caller-supplied raw resultBytes, not the sanitized content size", () => {
     // For sensitive-output tools, the executor passes the RAW result size
     // separately from the placeholder-rewritten content stored for audit.
-    const sanitizedContent = "code: VELLUM_ASSISTANT_INVITE_CODE_AB12CD34";
+    const sanitizedContent = "code: CADET_ASSISTANT_INVITE_CODE_AB12CD34";
     const rawSize = 4096;
 
     recordToolExecuted({

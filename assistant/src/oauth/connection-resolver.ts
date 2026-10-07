@@ -4,7 +4,7 @@ import {
   type Services,
   ServicesSchema,
 } from "../config/schemas/services.js";
-import { VellumPlatformClient } from "../platform/client.js";
+import { CadetPlatformClient } from "../platform/client.js";
 import { getLogger } from "../util/logger.js";
 import { BYOOAuthConnection, type BYOTokenHeader } from "./byo-connection.js";
 import type { OAuthConnection } from "./connection.js";
@@ -104,14 +104,14 @@ export async function resolveOAuthConnectionWithMeta(
   if (managedKey && managedKey in ServicesSchema.shape) {
     const services: Services = getConfig().services;
     if (getServiceMode(services, managedKey as keyof Services) === "managed") {
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       if (!client || !client.platformAssistantId) {
         const detail = !client
           ? "missing platform prerequisites"
           : "missing assistant ID";
         throw new Error(
           `Platform-managed connection for "${provider}" cannot be created: ${detail}. ` +
-            `Log in to the Vellum platform or switch to using your own OAuth app.`,
+            `Log in to the Cadet platform or switch to using your own OAuth app.`,
         );
       }
 
@@ -403,7 +403,7 @@ function parseConnectionMetadata(
 // ---------------------------------------------------------------------------
 
 interface ResolvePlatformConnectionIdOptions {
-  client: VellumPlatformClient;
+  client: CadetPlatformClient;
   provider: string;
   account?: string;
   requiredScopes?: string[];
@@ -441,7 +441,7 @@ function platformConnectionLabel(entry: PlatformConnectionEntry): string {
  * List Connections endpoint.
  */
 async function fetchPlatformConnections(options: {
-  client: VellumPlatformClient;
+  client: CadetPlatformClient;
   provider: string;
   accountIdentifier?: string;
 }): Promise<PlatformConnectionEntry[]> {

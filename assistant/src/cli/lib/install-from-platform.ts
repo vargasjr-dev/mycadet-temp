@@ -280,8 +280,8 @@ export async function installPluginViaPlatform(
  */
 async function resolveAssistantApiKey(): Promise<string | undefined> {
   try {
-    const { VellumPlatformClient } = await import("../../platform/client.js");
-    const client = await VellumPlatformClient.create();
+    const { CadetPlatformClient } = await import("../../platform/client.js");
+    const client = await CadetPlatformClient.create();
     return client?.assistantApiKey || undefined;
   } catch {
     return undefined;

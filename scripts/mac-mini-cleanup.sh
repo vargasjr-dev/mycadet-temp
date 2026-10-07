@@ -77,25 +77,25 @@ step_kill_qdrant_processes() {
     fi
 }
 
-step_kill_vellum_processes() {
-    VELLUM_PIDS=$(pgrep -f "Vellum" 2>/dev/null || true)
-    if [ -n "$VELLUM_PIDS" ]; then
-        if ! echo "$VELLUM_PIDS" | xargs kill -9 2>/dev/null; then
-            echo "      ⚠️  Warning: Some Vellum processes could not be killed"
+step_kill_cadet_processes() {
+    CADET_PIDS=$(pgrep -f "Cadet" 2>/dev/null || true)
+    if [ -n "$CADET_PIDS" ]; then
+        if ! echo "$CADET_PIDS" | xargs kill -9 2>/dev/null; then
+            echo "      ⚠️  Warning: Some Cadet processes could not be killed"
         else
-            echo "      ✅ Killed Vellum processes: $VELLUM_PIDS"
+            echo "      ✅ Killed Cadet processes: $CADET_PIDS"
         fi
     else
-        echo "      ⏭️  No Vellum processes found, skipping"
+        echo "      ⏭️  No Cadet processes found, skipping"
     fi
 }
 
-step_remove_vellum_dir() {
-    if [ -d ~/.vellum ]; then
-        rm -rf ~/.vellum
-        echo "      ✅ Removed ~/.vellum"
+step_remove_cadet_dir() {
+    if [ -d ~/.cadet ]; then
+        rm -rf ~/.cadet
+        echo "      ✅ Removed ~/.cadet"
     else
-        echo "      ⏭️  No ~/.vellum directory found, skipping"
+        echo "      ⏭️  No ~/.cadet directory found, skipping"
     fi
 }
 
@@ -112,19 +112,19 @@ step_kill_embed_workers() {
     fi
 }
 
-step_remove_vellum_lock() {
-    if [ -f ~/.vellum.lock.json ]; then
-        rm -f ~/.vellum.lock.json
-        echo "      ✅ Removed ~/.vellum.lock.json"
+step_remove_cadet_lock() {
+    if [ -f ~/.cadet.lock.json ]; then
+        rm -f ~/.cadet.lock.json
+        echo "      ✅ Removed ~/.cadet.lock.json"
     else
-        echo "      ⏭️  No ~/.vellum.lock.json found, skipping"
+        echo "      ⏭️  No ~/.cadet.lock.json found, skipping"
     fi
 }
 
 step_remove_cli_symlinks() {
     CLI_REMOVED=false
     for dir in /usr/local/bin "$HOME/.local/bin"; do
-        for cmd in vellum assistant; do
+        for cmd in cadet assistant; do
             LINK="$dir/$cmd"
             if [ -L "$LINK" ]; then
                 rm -f "$LINK"
@@ -138,17 +138,17 @@ step_remove_cli_symlinks() {
     fi
 }
 
-step_remove_vellum_apps() {
-    VELLUM_APP_REMOVED=false
-    for app in "/Applications/Vellum.app" "/Applications/Vellum Staging.app" "/Applications/Vellum (Staging).app"; do
+step_remove_cadet_apps() {
+    CADET_APP_REMOVED=false
+    for app in "/Applications/Cadet.app" "/Applications/Cadet Staging.app" "/Applications/Cadet (Staging).app"; do
         if [ -d "$app" ]; then
             rm -rf "$app"
             echo "       ✅ Removed $app"
-            VELLUM_APP_REMOVED=true
+            CADET_APP_REMOVED=true
         fi
     done
-    if [ "$VELLUM_APP_REMOVED" = false ]; then
-        echo "       ⏭️  No Vellum apps found, skipping"
+    if [ "$CADET_APP_REMOVED" = false ]; then
+        echo "       ⏭️  No Cadet apps found, skipping"
     fi
 }
 
@@ -177,29 +177,29 @@ step_remove_playwright() {
     fi
 }
 
-step_clear_vellum_defaults() {
-    VELLUM_DEFAULTS_DOMAIN="com.vellum.vellum-assistant"
-    if defaults read "$VELLUM_DEFAULTS_DOMAIN" &>/dev/null; then
-        defaults delete "$VELLUM_DEFAULTS_DOMAIN"
-        echo "       ✅ Cleared UserDefaults for $VELLUM_DEFAULTS_DOMAIN"
+step_clear_cadet_defaults() {
+    CADET_DEFAULTS_DOMAIN="com.mycadet.mycadet"
+    if defaults read "$CADET_DEFAULTS_DOMAIN" &>/dev/null; then
+        defaults delete "$CADET_DEFAULTS_DOMAIN"
+        echo "       ✅ Cleared UserDefaults for $CADET_DEFAULTS_DOMAIN"
     else
-        echo "       ⏭️  No UserDefaults found for $VELLUM_DEFAULTS_DOMAIN, skipping"
+        echo "       ⏭️  No UserDefaults found for $CADET_DEFAULTS_DOMAIN, skipping"
     fi
 }
 
 step_remove_dock_entry() {
     DOCK_PLIST="$HOME/Library/Preferences/com.apple.dock.plist"
     if [ -f "$DOCK_PLIST" ]; then
-        # Find and remove any Vellum entry from persistent-apps in the Dock plist
-        DOCK_APPS=$(/usr/libexec/PlistBuddy -c "Print :persistent-apps" "$DOCK_PLIST" 2>/dev/null | grep -c "Vellum" || true)
+        # Find and remove any Cadet entry from persistent-apps in the Dock plist
+        DOCK_APPS=$(/usr/libexec/PlistBuddy -c "Print :persistent-apps" "$DOCK_PLIST" 2>/dev/null | grep -c "Cadet" || true)
         if [ "$DOCK_APPS" -gt 0 ]; then
             # Iterate in reverse to safely remove entries by index
             NUM_ENTRIES=$(/usr/libexec/PlistBuddy -c "Print :persistent-apps" "$DOCK_PLIST" 2>/dev/null | grep -c "Dict" || echo "0")
             for ((i=NUM_ENTRIES-1; i>=0; i--)); do
                 LABEL=$(/usr/libexec/PlistBuddy -c "Print :persistent-apps:$i:tile-data:file-label" "$DOCK_PLIST" 2>/dev/null || true)
-                if [[ "$LABEL" == *"Vellum"* ]]; then
+                if [[ "$LABEL" == *"Cadet"* ]]; then
                     /usr/libexec/PlistBuddy -c "Delete :persistent-apps:$i" "$DOCK_PLIST"
-                    echo "       ✅ Removed Vellum from Dock persistent apps (index $i)"
+                    echo "       ✅ Removed Cadet from Dock persistent apps (index $i)"
                 fi
             done
             if ! killall Dock 2>/dev/null; then
@@ -208,7 +208,7 @@ step_remove_dock_entry() {
                 echo "       ✅ Dock restarted"
             fi
         else
-            echo "       ⏭️  Vellum not found in Dock, skipping"
+            echo "       ⏭️  Cadet not found in Dock, skipping"
         fi
     else
         echo "       ⏭️  No Dock plist found, skipping"
@@ -249,7 +249,7 @@ step_uninstall_docker() {
             DOCKER_REMOVED=true
         fi
         # Also check known install locations in case they weren't on PATH
-        for known_dir in /usr/local/bin /opt/homebrew/bin "$HOME/.vellum/bin"; do
+        for known_dir in /usr/local/bin /opt/homebrew/bin "$HOME/.cadet/bin"; do
             if [ -f "$known_dir/$docker_bin" ] || [ -L "$known_dir/$docker_bin" ]; then
                 rm -f "$known_dir/$docker_bin"
                 echo "       ✅ Removed $known_dir/$docker_bin"
@@ -267,7 +267,7 @@ step_uninstall_colima() {
     # Find colima binary — try `which`, then known paths
     COLIMA_BIN=$(which colima 2>/dev/null || true)
     if [ -z "$COLIMA_BIN" ]; then
-        for known_dir in /usr/local/bin /opt/homebrew/bin "$HOME/.vellum/bin"; do
+        for known_dir in /usr/local/bin /opt/homebrew/bin "$HOME/.cadet/bin"; do
             if [ -f "$known_dir/colima" ]; then
                 COLIMA_BIN="$known_dir/colima"
                 break
@@ -304,7 +304,7 @@ step_uninstall_colima() {
             echo "       ✅ Removed $FOUND_PATH"
             COLIMA_REMOVED=true
         fi
-        for known_dir in /usr/local/bin /opt/homebrew/bin "$HOME/.vellum/bin"; do
+        for known_dir in /usr/local/bin /opt/homebrew/bin "$HOME/.cadet/bin"; do
             if [ -f "$known_dir/$colima_bin_name" ] || [ -L "$known_dir/$colima_bin_name" ]; then
                 rm -f "$known_dir/$colima_bin_name"
                 echo "       ✅ Removed $known_dir/$colima_bin_name"
@@ -351,15 +351,15 @@ step_uninstall_homebrew() {
 run_step 1  "Killing bun run processes"                step_kill_bun_processes
 run_step 2  "Uninstalling bun"                         step_uninstall_bun
 run_step 3  "Killing qdrant processes"                 step_kill_qdrant_processes
-run_step 4  "Killing Vellum processes"                 step_kill_vellum_processes
-run_step 5  "Removing ~/.vellum directory"             step_remove_vellum_dir
+run_step 4  "Killing Cadet processes"                 step_kill_cadet_processes
+run_step 5  "Removing ~/.cadet directory"             step_remove_cadet_dir
 run_step 6  "Killing embedding worker processes"       step_kill_embed_workers
-run_step 7  "Removing ~/.vellum.lock.json"             step_remove_vellum_lock
+run_step 7  "Removing ~/.cadet.lock.json"             step_remove_cadet_lock
 run_step 8  "Removing CLI symlinks"                    step_remove_cli_symlinks
-run_step 9  "Removing Vellum apps from /Applications"  step_remove_vellum_apps
+run_step 9  "Removing Cadet apps from /Applications"  step_remove_cadet_apps
 run_step 10 "Removing ms-playwright browser caches"    step_remove_playwright
-run_step 11 "Clearing Vellum desktop app UserDefaults" step_clear_vellum_defaults
-run_step 12 "Removing Vellum from the Dock"            step_remove_dock_entry
+run_step 11 "Clearing Cadet desktop app UserDefaults" step_clear_cadet_defaults
+run_step 12 "Removing Cadet from the Dock"            step_remove_dock_entry
 run_step 13 "Uninstalling Colima"                      step_uninstall_colima
 run_step 14 "Uninstalling Docker"                      step_uninstall_docker
 run_step 15 "Uninstalling Homebrew"                    step_uninstall_homebrew

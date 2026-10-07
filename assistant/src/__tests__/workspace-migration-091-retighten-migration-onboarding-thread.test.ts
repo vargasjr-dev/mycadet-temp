@@ -42,7 +42,7 @@ const OLD_BULLET =
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-migration-091-test-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-migration-091-test-"));
 });
 
 afterEach(() => {

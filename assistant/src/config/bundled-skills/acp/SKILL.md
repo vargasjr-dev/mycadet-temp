@@ -1,7 +1,7 @@
 ---
 name: acp
 description: Set up, authenticate, and run external coding agents (Claude Code, Codex) via the Agent Client Protocol
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🔗"
   cadet:
@@ -49,7 +49,7 @@ ACP is always available - default profiles for `claude` and `codex` ship out-of-
 
 1. Install the adapter binary if it's missing. This happens automatically: when `acp_spawn` finds the agent's binary missing from PATH, the assistant installs the pinned version via a sandboxed bun global install and proceeds in the same call (see "Automatic adapter availability" below).
 
-2. Call `acp_spawn`. Do NOT run `vellum sleep && vellum wake` - that kills the conversation.
+2. Call `acp_spawn`. Do NOT run `cadet sleep && cadet wake` - that kills the conversation.
 
 ## Automatic adapter availability
 

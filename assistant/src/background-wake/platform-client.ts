@@ -1,4 +1,4 @@
-import { VellumPlatformClient } from "../platform/client.js";
+import { CadetPlatformClient } from "../platform/client.js";
 import type { BackgroundWakeIntent } from "./next-wake.js";
 
 /**
@@ -34,7 +34,7 @@ type BackgroundWakeIntentSnapshot = Pick<
 export async function publishBackgroundWakeIntent(
   intent: BackgroundWakeIntent,
 ): Promise<BackgroundWakeIntentClientResult> {
-  const client = await VellumPlatformClient.create();
+  const client = await CadetPlatformClient.create();
   if (!client) {
     return { status: "skipped", reason: "missing_platform_client" };
   }
@@ -63,7 +63,7 @@ export async function publishBackgroundWakeIntent(
 export async function clearBackgroundWakeIntent(
   intentSnapshot: BackgroundWakeIntentSnapshot = null,
 ): Promise<BackgroundWakeIntentClientResult> {
-  const client = await VellumPlatformClient.create();
+  const client = await CadetPlatformClient.create();
   if (!client) {
     return { status: "skipped", reason: "missing_platform_client" };
   }
@@ -91,7 +91,7 @@ export async function clearBackgroundWakeIntent(
 export async function renewBackgroundWakeLease(
   leaseId: string,
 ): Promise<BackgroundWakeLeaseClientResult> {
-  const client = await VellumPlatformClient.create();
+  const client = await CadetPlatformClient.create();
   if (!client) {
     return { status: "skipped", reason: "missing_platform_client" };
   }
@@ -119,7 +119,7 @@ export async function completeBackgroundWakeLease(args: {
   error?: string;
   nextIntent?: BackgroundWakeIntent | null;
 }): Promise<BackgroundWakeLeaseClientResult> {
-  const client = await VellumPlatformClient.create();
+  const client = await CadetPlatformClient.create();
   if (!client) {
     return { status: "skipped", reason: "missing_platform_client" };
   }

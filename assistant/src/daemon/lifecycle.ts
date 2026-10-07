@@ -122,7 +122,7 @@ export async function runDaemon(): Promise<void> {
 
   const startupStartedAt = Date.now();
   // dotenv loads before the first log call so the lazy root logger
-  // initializes against the final VELLUM_WORKSPACE_DIR / log path, not
+  // initializes against the final CADET_WORKSPACE_DIR / log path, not
   // whatever was in the live environment at process spawn.
   loadDotEnv();
   validateEnv();
@@ -544,7 +544,7 @@ export async function runDaemon(): Promise<void> {
     );
   }, MANAGED_CONNECTION_REFRESH_INTERVAL_MS);
 
-  // Merge CLI-provided default config (from VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH)
+  // Merge CLI-provided default config (from CADET_DEFAULT_WORKSPACE_CONFIG_PATH)
   // into the workspace config file before profile seeding and the first
   // loadConfig() call so onboarding/platform preferences are visible to the
   // seeder and persisted alongside schema defaults.

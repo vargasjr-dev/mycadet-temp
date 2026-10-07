@@ -1,8 +1,8 @@
-# Vellum Doctor
+# Cadet Doctor
 
-Vellum Doctor is a platform-hosted diagnostic tool for investigating problems with a Vellum assistant.
+Cadet Doctor is a platform-hosted diagnostic tool for investigating problems with a Cadet assistant.
 
-> **Status:** Beta. Vellum Doctor is available in the web client for platform-hosted assistants; it is not available for self-hosted assistants.
+> **Status:** Beta. Cadet Doctor is available in the web client for platform-hosted assistants; it is not available for self-hosted assistants.
 
 ## What it does
 
@@ -12,7 +12,7 @@ Doctor provides a separate diagnostic session where a guardian can describe an i
 - Tool calls with expandable technical details and outputs.
 - Requests for approval before an operation runs.
 - A backup prompt before an operation that may modify the assistant.
-- Feedback prompts when an issue may need attention from the Vellum team.
+- Feedback prompts when an issue may need attention from the Cadet team.
 - A session transcript that can be copied for follow-up or support.
 
 Doctor is separate from the assistant's normal conversation. It is a support and diagnosis surface, not another assistant that builds a long-term relationship with the guardian.
@@ -85,7 +85,7 @@ The **Copy Session** action serializes the visible session into text. Doctor's i
 
 ## Feedback and support handoff
 
-Doctor can show a feedback prompt when the investigation identifies an issue that may be useful to the Vellum team. The feedback flow can include the Doctor session ID and a transcript file, subject to the diagnostics choice in the feedback form.
+Doctor can show a feedback prompt when the investigation identifies an issue that may be useful to the Cadet team. The feedback flow can include the Doctor session ID and a transcript file, subject to the diagnostics choice in the feedback form.
 
 Sharing feedback is separate from approving a Doctor operation. A guardian can continue describing the issue while the feedback prompt is present.
 
@@ -192,4 +192,4 @@ The implementation currently lives in the web client and platform API contract:
 - `clients/web/src/domains/settings/components/panels/doctor-history.ts` maps persisted messages and serializes copied transcripts.
 - `clients/web/openapi-schemas/platform.yaml` defines the assistant-scoped Doctor routes and persisted session schemas.
 
-The Vellum Assistant runtime does not provide a local Doctor CLI command. Doctor is a web and platform capability, not a command run inside a self-hosted assistant.
+The Cadet Assistant runtime does not provide a local Doctor CLI command. Doctor is a web and platform capability, not a command run inside a self-hosted assistant.

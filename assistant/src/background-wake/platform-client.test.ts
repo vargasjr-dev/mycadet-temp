@@ -7,7 +7,7 @@ let mockClientFetch: ReturnType<typeof mock>;
 let mockCreateClient: ReturnType<typeof mock>;
 
 mock.module("../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: () => mockCreateClient(),
   },
 }));

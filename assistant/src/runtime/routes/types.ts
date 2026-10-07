@@ -107,9 +107,9 @@ export type RouteResponseBody =
  * fourth header does not widen that audience by default.
  */
 export const IDENTITY_HEADERS = [
-  "x-vellum-principal-type",
-  "x-vellum-actor-principal-id",
-  "x-vellum-subject",
+  "x-cadet-principal-type",
+  "x-cadet-actor-principal-id",
+  "x-cadet-subject",
 ] as const;
 
 export interface RouteHandlerArgs {
@@ -129,14 +129,14 @@ export interface RouteHandlerArgs {
    * headers.
    *
    * The HTTP adapter derives all three from the verified `AuthContext`, so a
-   * handler that elevates trust can gate on `x-vellum-principal-type` (e.g.
-   * `"local"`) and on the `x-vellum-subject` a capability grant names.
+   * handler that elevates trust can gate on `x-cadet-principal-type` (e.g.
+   * `"local"`) and on the `x-cadet-subject` a capability grant names.
    *
    * The IPC adapter (`injectLocalActorHeader`) has no verified context to
    * derive from: it resolves the principal type from the gateway-forwarded
    * header, else the gateway proxy marker, else `local`; fills the local
-   * guardian's `x-vellum-actor-principal-id` when the caller sent none; and
-   * drops `x-vellum-subject` outright, since nothing on that transport
+   * guardian's `x-cadet-actor-principal-id` when the caller sent none; and
+   * drops `x-cadet-subject` outright, since nothing on that transport
    * verifies a subject. A subject therefore reaches a handler over HTTP only,
    * and a subject check fails closed over IPC.
    */

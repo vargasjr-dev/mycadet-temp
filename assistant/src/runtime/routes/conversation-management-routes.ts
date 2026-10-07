@@ -81,6 +81,7 @@ import {
   publishConversationMessagesChanged,
   publishConversationTitleChanged,
 } from "../sync/resource-sync-events.js";
+import { resolveCadetActorTrustContext } from "./cadet-actor-trust.js";
 import { persistCannedAssistantCard } from "./canned-message-complete.js";
 import { buildChannelMetadata } from "./channel-metadata.js";
 import { conversationSummarySchema } from "./conversation-list-routes.js";
@@ -93,7 +94,6 @@ import {
 } from "./errors.js";
 import { setInferenceProfileSession } from "./inference-profile-session-handler.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
-import { resolveVellumActorTrustContext } from "./vellum-actor-trust.js";
 
 const log = getLogger("conversation-management-routes");
 
@@ -174,7 +174,7 @@ function handleCreateConversation({ body = {}, headers }: RouteHandlerArgs) {
     publishConversationListAndMetadataChanged(
       "created",
       result.conversationId,
-      headers?.["x-vellum-client-id"]?.trim() || undefined,
+      headers?.["x-cadet-client-id"]?.trim() || undefined,
     );
   }
   // On a conversationKey hit the row already exists, so the type it carries
@@ -229,7 +229,7 @@ async function handleForkConversation({
     publishConversationListAndMetadataChanged(
       "created",
       forkedConversation.id,
-      headers?.["x-vellum-client-id"]?.trim() || undefined,
+      headers?.["x-cadet-client-id"]?.trim() || undefined,
     );
     return { conversation: detail.conversation };
   } catch (err) {
@@ -275,10 +275,10 @@ async function handleSummarizeConversation({ body = {} }: RouteHandlerArgs) {
   const abortController = new AbortController();
   conversation.abortController = abortController;
 
-  // The summarize action only ships from the vellum web/desktop client; the
+  // The summarize action only ships from the cadet web/desktop client; the
   // interface id is omitted because this management route (unlike the send
   // path) does not receive one from the client.
-  const channelMeta = buildChannelMetadata("vellum", undefined, {
+  const channelMeta = buildChannelMetadata("cadet", undefined, {
     trustContext: conversation.trustContext,
   });
   const persistCard = (text: string) =>
@@ -418,7 +418,7 @@ async function handleSetInferenceProfile({
     profile: body.profile as string | null,
     ttlSeconds: body.ttlSeconds as number | null | undefined,
     sessionId: body.sessionId as string | undefined,
-    originClientId: headers?.["x-vellum-client-id"]?.trim() || undefined,
+    originClientId: headers?.["x-cadet-client-id"]?.trim() || undefined,
   });
 }
 
@@ -459,7 +459,7 @@ async function handleUpdateConversationEnabledPlugins({
 
   publishConversationEnabledPluginsChanged(
     resolvedId,
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
 
   return { conversationId: resolvedId, enabledPlugins: nextEnabledPlugins };
@@ -483,7 +483,7 @@ function handleRenameConversation({
   publishConversationTitleChanged(
     pathParams.id!,
     name,
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
 
   return { ok: true };
@@ -500,7 +500,7 @@ async function handleClearAllConversations({ headers = {} }: RouteHandlerArgs) {
   await clearAllConversations();
   publishConversationListChanged(
     "deleted",
-    headers["x-vellum-client-id"]?.trim() || undefined,
+    headers["x-cadet-client-id"]?.trim() || undefined,
   );
   return undefined;
 }
@@ -537,7 +537,7 @@ async function handleDeleteConversation({
   publishConversationListAndMetadataChanged(
     "deleted",
     resolvedId,
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
 
   void stripConversationIds(resolvedId);
@@ -557,7 +557,7 @@ function handleArchiveConversation({
   publishConversationListAndMetadataChanged(
     "reordered",
     resolvedId,
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
   return { ok: true, conversationId: resolvedId };
 }
@@ -574,7 +574,7 @@ function handleUnarchiveConversation({
   publishConversationListAndMetadataChanged(
     "reordered",
     resolvedId,
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
   return { ok: true, conversationId: resolvedId };
 }
@@ -588,7 +588,7 @@ function handleArchiveConversationsBulk({
     throw new BadRequestError("conversationIds must be a non-empty array");
   }
 
-  const originClientId = headers?.["x-vellum-client-id"]?.trim() || undefined;
+  const originClientId = headers?.["x-cadet-client-id"]?.trim() || undefined;
   const archivedIds: string[] = [];
 
   for (const rawId of rawIds) {
@@ -642,7 +642,7 @@ function handleSurfaceConversation({
   publishConversationListAndMetadataChanged(
     "reordered",
     resolvedId,
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
   return {
     ok: true,
@@ -694,8 +694,8 @@ async function handleRetryLastAssistantTurn({
   // check-then-claim window below, but bound only once the claim succeeds: a
   // retry that loses the race is rejected, and a rejected request must not
   // repoint the conversation's actor at its requester.
-  const actorPrincipalId = headers?.["x-vellum-actor-principal-id"];
-  const retryTrustContext = await resolveVellumActorTrustContext(
+  const actorPrincipalId = headers?.["x-cadet-actor-principal-id"];
+  const retryTrustContext = await resolveCadetActorTrustContext(
     actorPrincipalId,
     { healResetDrift: true },
   );
@@ -869,7 +869,7 @@ function handleReorderConversations({ body = {}, headers }: RouteHandlerArgs) {
   publishConversationListAndMetadataChanged(
     "reordered",
     updates.map((u) => u.conversationId),
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
   return { ok: true };
 }
@@ -895,7 +895,7 @@ export const ROUTES: RouteDefinition[] = [
         .string()
         .optional()
         .describe(
-          "Optional external key. Echoed back in the response. Non-vellum channels (Telegram, WhatsApp) use this to scope to a logical channel thread; vellum-web clients can omit it and rely on the assistant-minted `id`.",
+          "Optional external key. Echoed back in the response. Non-cadet channels (Telegram, WhatsApp) use this to scope to a logical channel thread; cadet-web clients can omit it and rely on the assistant-minted `id`.",
         ),
       conversationType: createConversationTypeSchema
         .optional()

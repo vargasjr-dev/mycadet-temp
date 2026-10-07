@@ -18,7 +18,7 @@ export const seedRecallCallsiteMigration: WorkspaceMigration = {
   id: "054-seed-recall-callsite",
   description: "Seed cost-optimized default for recall LLM call site",
   run(workspaceDir: string): void {
-    if (process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH) {
+    if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
       return;
     }
 

@@ -48,10 +48,10 @@ const { installAutoUpdate, linuxUpdateFeedUrl } = await import("./auto-update");
 describe("linuxUpdateFeedUrl", () => {
   test("targets the architecture-specific linux-electron feed", () => {
     expect(linuxUpdateFeedUrl("x64")).toBe(
-      "https://storage.googleapis.com/vellum-ai-prod-releases/linux-electron/x64/",
+      "https://storage.googleapis.com/mycadet-prod-releases/linux-electron/x64/",
     );
     expect(linuxUpdateFeedUrl("arm64")).toBe(
-      "https://storage.googleapis.com/vellum-ai-prod-releases/linux-electron/arm64/",
+      "https://storage.googleapis.com/mycadet-prod-releases/linux-electron/arm64/",
     );
   });
 });
@@ -67,7 +67,7 @@ describe("resolveUpdateFeedUrl", () => {
     ];
     expect(new Set(feeds).size).toBe(feeds.length);
     expect(resolveUpdateFeedUrl("staging", "linux-electron", "arm64")).toBe(
-      "https://storage.googleapis.com/vellum-ai-staging-releases/linux-electron/arm64/",
+      "https://storage.googleapis.com/mycadet-staging-releases/linux-electron/arm64/",
     );
   });
 });

@@ -45,7 +45,7 @@ describe("resolveTypesafeProvider", () => {
   test("a managed Jev profile resolves although it is configured as cadet", async () => {
     configured = {
       provider: stub("typesafe"),
-      configuredProviderName: "vellum",
+      configuredProviderName: "cadet",
       entryRouted: false,
     };
     expect((await resolveTypesafeProvider("voiceEscalationJudge"))?.name).toBe(
@@ -56,7 +56,7 @@ describe("resolveTypesafeProvider", () => {
   test("any other dispatched provider is unavailable", async () => {
     configured = {
       provider: stub("anthropic"),
-      configuredProviderName: "vellum",
+      configuredProviderName: "cadet",
       entryRouted: false,
     };
     expect(await resolveTypesafeProvider("voiceEscalationJudge")).toBeNull();

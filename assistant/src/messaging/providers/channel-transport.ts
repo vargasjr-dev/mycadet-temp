@@ -76,7 +76,7 @@ export interface EditTarget {
  * The message an emoji reaction lands on, and what to do there.
  *
  * `emoji` is spelled in the channel's own vocabulary (a Slack emoji name, a
- * unicode emoji elsewhere): Vellum names the operation and the channel
+ * unicode emoji elsewhere): Cadet names the operation and the channel
  * decides what its argument means, the same way `EditTarget.text` renders
  * per channel.
  */

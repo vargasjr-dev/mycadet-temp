@@ -84,7 +84,7 @@ function loadDefaultsRegistry(): FeatureFlagDefaultsRegistry {
         ]
       : []),
     // Packaged macOS app layout: the daemon binary lives at
-    // <App>.app/Contents/MacOS/vellum-daemon and the registry is copied
+    // <App>.app/Contents/MacOS/cadet-daemon and the registry is copied
     // to <App>.app/Contents/Resources/ by build.sh. In bun --compile
     // binaries, import.meta.dirname resolves to /$bunfs/root (virtual),
     // so we need to resolve relative to the real executable path.

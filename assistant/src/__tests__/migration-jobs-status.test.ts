@@ -20,7 +20,7 @@ import { NotFoundError } from "../runtime/routes/errors.js";
 import { handleMigrationJobStatus } from "../runtime/routes/migration-routes.js";
 import type { RouteHandlerArgs } from "../runtime/routes/types.js";
 
-const kFetchBodyError = Symbol.for("vellum.migrationImport.fetchBodyError");
+const kFetchBodyError = Symbol.for("cadet.migrationImport.fetchBodyError");
 
 /** Spin the microtask queue so `queueMicrotask`-scheduled work runs. */
 async function flushMicrotasks(n = 4): Promise<void> {

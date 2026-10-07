@@ -1515,12 +1515,12 @@ describe("channel-reply-delivery", () => {
       // cadet outbound: the row's metadata carries no provider envelope.
       // The reconciler must short-circuit silently.
       conversationMessages.push({
-        id: "msg-vellum",
+        id: "msg-cadet",
         role: "assistant",
         content: '[{"type":"text","text":"hi"}]',
         metadata: JSON.stringify({
-          userMessageChannel: "vellum",
-          assistantMessageChannel: "vellum",
+          userMessageChannel: "cadet",
+          assistantMessageChannel: "cadet",
         }),
       });
       renderedHistoryContent = {
@@ -1535,10 +1535,10 @@ describe("channel-reply-delivery", () => {
       nextDeliveryTs = "1700000300.000800";
 
       await deliverReplyViaCallback(
-        "conv-vellum",
-        "chat-vellum",
+        "conv-cadet",
+        "chat-cadet",
         "http://gateway/deliver/telegram",
-        "assistant-vellum",
+        "assistant-cadet",
       );
 
       expect(updateMessageMetadataCalls.length).toBe(0);

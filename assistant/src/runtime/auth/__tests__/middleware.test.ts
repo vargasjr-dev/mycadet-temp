@@ -50,7 +50,7 @@ function mintValidToken(overrides?: {
     ttl = overrides.exp - now;
   }
   return mintToken({
-    aud: overrides?.aud ?? "vellum-daemon",
+    aud: overrides?.aud ?? "cadet-daemon",
     sub: overrides?.sub ?? "actor:self:principal-test",
     scope_profile: overrides?.scope_profile ?? "actor_client_v1",
     policy_epoch: overrides?.policy_epoch ?? 1,
@@ -226,8 +226,8 @@ describe("authenticateRequest", () => {
   });
 
   test("rejects token with wrong audience", () => {
-    // Mint a token with an unrecognized audience (neither vellum-daemon nor vellum-gateway)
-    const token = mintValidToken({ aud: "vellum-other" as TokenAudience });
+    // Mint a token with an unrecognized audience (neither cadet-daemon nor cadet-gateway)
+    const token = mintValidToken({ aud: "cadet-other" as TokenAudience });
 
     const req = new Request("http://localhost/v1/messages", {
       method: "POST",
@@ -372,7 +372,7 @@ describe("authenticateRequest with auth disabled and a bearer present", () => {
 
   test("accepts a gateway-audience token through the fallback", () => {
     const token = mintValidToken({
-      aud: "vellum-gateway",
+      aud: "cadet-gateway",
       sub: "actor:self:local-client",
     });
 
@@ -397,7 +397,7 @@ describe("authenticateRequest with auth disabled and a bearer present", () => {
     ],
     [
       "wrong-audience",
-      () => mintValidToken({ aud: "vellum-other" as TokenAudience }),
+      () => mintValidToken({ aud: "cadet-other" as TokenAudience }),
     ],
     ["unparseable-sub", () => mintValidToken({ sub: "garbage" })],
   ])("refuses a %s token rather than falling back", (_label, build) => {
@@ -470,7 +470,7 @@ describe("authenticateRequest with auth disabled and a bearer present", () => {
 // ---------------------------------------------------------------------------
 
 describe("authenticateRequest for oauth_proxy_v1 grants", () => {
-  test.each(["vellum-daemon", "vellum-gateway"] as const)(
+  test.each(["cadet-daemon", "cadet-gateway"] as const)(
     "accepts an %s-audience grant and grants only oauth.proxy",
     (aud) => {
       const token = mintValidToken({

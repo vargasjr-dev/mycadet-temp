@@ -55,7 +55,7 @@ interface SelfHostedPlatformRegistration {
   organizationId: string | null;
 }
 
-const PLATFORM_TOKEN_ENV = "VELLUM_PLATFORM_TOKEN";
+const PLATFORM_TOKEN_ENV = "CADET_PLATFORM_TOKEN";
 
 function readPlatformRetireToken(): string | null {
   const envToken = process.env[PLATFORM_TOKEN_ENV]?.trim();
@@ -148,7 +148,7 @@ async function readSelfHostedPlatformRegistration(
   const gatewayUrl = entry.localUrl ?? entry.runtimeUrl;
   const platformAssistant = await readGatewayCredential(
     gatewayUrl,
-    "vellum:platform_assistant_id",
+    "cadet:platform_assistant_id",
     entry.bearerToken,
   );
   if (platformAssistant.unreachable) {
@@ -171,12 +171,12 @@ async function readSelfHostedPlatformRegistration(
   const [platformBaseUrl, organizationId] = await Promise.all([
     readGatewayCredential(
       gatewayUrl,
-      "vellum:platform_base_url",
+      "cadet:platform_base_url",
       entry.bearerToken,
     ),
     readGatewayCredential(
       gatewayUrl,
-      "vellum:platform_organization_id",
+      "cadet:platform_organization_id",
       entry.bearerToken,
     ),
   ]);
@@ -233,7 +233,7 @@ async function retireCustom(entry: AssistantEntry): Promise<void> {
   const remoteCmd = [
     "bunx cadet sleep 2>/dev/null || true",
     "pkill -f gateway 2>/dev/null || true",
-    "rm -rf ~/.vellum",
+    "rm -rf ~/.cadet",
   ].join(" && ");
 
   try {
@@ -258,7 +258,7 @@ async function retireCustom(entry: AssistantEntry): Promise<void> {
   console.log(`\u2705 Custom instance retired.`);
 }
 
-async function retireVellum(
+async function retireCadet(
   assistantId: string,
   runtimeUrl?: string,
 ): Promise<void> {
@@ -353,10 +353,10 @@ function teeConsoleToLogFile(fd: number | "ignore"): void {
 }
 
 export async function retire(): Promise<void> {
-  if (process.env.VELLUM_DESKTOP_APP) {
+  if (process.env.CADET_DESKTOP_APP) {
     resetLogFile("retire.log");
   }
-  const logFd = process.env.VELLUM_DESKTOP_APP
+  const logFd = process.env.CADET_DESKTOP_APP
     ? openLogFile("retire.log")
     : "ignore";
   teeConsoleToLogFile(logFd);
@@ -482,7 +482,7 @@ async function retireInner(): Promise<void> {
   } else if (cloud === "custom") {
     await retireCustom(entry);
   } else if (isManagedCloud(cloud)) {
-    await retireVellum(assistantId, entry.runtimeUrl);
+    await retireCadet(assistantId, entry.runtimeUrl);
   } else {
     console.error(`Error: Unknown cloud type '${cloud}'.`);
     process.exit(1);

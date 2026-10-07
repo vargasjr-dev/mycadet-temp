@@ -316,11 +316,11 @@ useEffect(() => {
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 export const description = "Item CRUD — JSON file storage"; // optional, for `assistant routes list`
-const FILE = join(process.env.VELLUM_WORKSPACE_DIR!, "data", "items.json");
+const FILE = join(process.env.CADET_WORKSPACE_DIR!, "data", "items.json");
 const load = () =>
   existsSync(FILE) ? JSON.parse(readFileSync(FILE, "utf-8")) : [];
 const save = (x: unknown[]) => {
-  mkdirSync(join(process.env.VELLUM_WORKSPACE_DIR!, "data"), {
+  mkdirSync(join(process.env.CADET_WORKSPACE_DIR!, "data"), {
     recursive: true,
   });
   writeFileSync(FILE, JSON.stringify(x, null, 2));

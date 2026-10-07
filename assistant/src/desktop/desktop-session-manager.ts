@@ -461,7 +461,7 @@ export class DesktopSessionManager {
     let env: Record<string, string>;
     try {
       this.binaries = resolveDesktopBinaries(this.which);
-      this.busName = `vellum-desktop-${randomUUID()}`;
+      this.busName = `cadet-desktop-${randomUUID()}`;
       env = this.childEnv();
       this.launch(
         "session-bus",
@@ -916,7 +916,7 @@ function xServerCommand(executable: string): string[] {
     "-depth",
     "24",
     "-desktop",
-    "Vellum",
+    "Cadet",
   ];
 }
 

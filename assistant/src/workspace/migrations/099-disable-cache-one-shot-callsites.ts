@@ -34,7 +34,7 @@ export const disableCacheOneShotCallsitesMigration: WorkspaceMigration = {
   description:
     "Add disableCache: true to existing one-shot call-site entries so upgraded workspaces match the new shipped defaults",
   run(workspaceDir: string): void {
-    if (process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH) {
+    if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
       return;
     }
 

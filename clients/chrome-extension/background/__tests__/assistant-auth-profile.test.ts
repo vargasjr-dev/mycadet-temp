@@ -21,14 +21,14 @@ describe('resolveAuthProfile', () => {
     expect(result).toBe('self-hosted' satisfies AssistantAuthProfile);
   });
 
-  test('maps "vellum" to vellum-cloud', () => {
-    const result = resolveAuthProfile({ cloud: 'vellum' });
-    expect(result).toBe('vellum-cloud' satisfies AssistantAuthProfile);
+  test('maps "cadet" to cadet-cloud', () => {
+    const result = resolveAuthProfile({ cloud: 'cadet' });
+    expect(result).toBe('cadet-cloud' satisfies AssistantAuthProfile);
   });
 
-  test('maps legacy "platform" to vellum-cloud', () => {
+  test('maps legacy "platform" to cadet-cloud', () => {
     const result = resolveAuthProfile({ cloud: 'platform' });
-    expect(result).toBe('vellum-cloud' satisfies AssistantAuthProfile);
+    expect(result).toBe('cadet-cloud' satisfies AssistantAuthProfile);
   });
 
   test('unknown cloud value yields unsupported', () => {
@@ -48,20 +48,20 @@ describe('resolveAuthProfile', () => {
     expect(resolveAuthProfile(withoutUrl)).toBe('self-hosted');
 
     const cloudWithUrl: LockfileTopology = {
-      cloud: 'vellum',
-      runtimeUrl: 'https://rt.vellum.cloud',
+      cloud: 'cadet',
+      runtimeUrl: 'https://rt.cadet.cloud',
     };
-    const cloudWithoutUrl: LockfileTopology = { cloud: 'vellum' };
-    expect(resolveAuthProfile(cloudWithUrl)).toBe('vellum-cloud');
-    expect(resolveAuthProfile(cloudWithoutUrl)).toBe('vellum-cloud');
+    const cloudWithoutUrl: LockfileTopology = { cloud: 'cadet' };
+    expect(resolveAuthProfile(cloudWithUrl)).toBe('cadet-cloud');
+    expect(resolveAuthProfile(cloudWithoutUrl)).toBe('cadet-cloud');
   });
 
   test('is stable across all known cloud values', () => {
     const expected: Array<[string, AssistantAuthProfile]> = [
       ['local', 'self-hosted'],
       ['apple-container', 'self-hosted'],
-      ['vellum', 'vellum-cloud'],
-      ['platform', 'vellum-cloud'],
+      ['cadet', 'cadet-cloud'],
+      ['platform', 'cadet-cloud'],
     ];
     for (const [cloud, profile] of expected) {
       expect(resolveAuthProfile({ cloud })).toBe(profile);

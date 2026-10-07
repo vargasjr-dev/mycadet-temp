@@ -36,7 +36,7 @@ Tell the user:
 > `https://app.asana.com/0/my-apps`
 >
 > 1. Click **Create New App**
-> 2. Set the app name to **Vellum Assistant**
+> 2. Set the app name to **Cadet Assistant**
 > 3. Select a purpose (e.g., "Build an integration")
 > 4. Click **Create app**
 >

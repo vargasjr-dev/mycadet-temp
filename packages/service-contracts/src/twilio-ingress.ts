@@ -6,23 +6,23 @@ export const TWILIO_MEDIA_STREAM_WEBHOOK_PATH = "/webhooks/twilio/media-stream";
 
 /**
  * Sentinel placeholder embedded in TwiML by the assistant where the real
- * public base URL should go. The gateway replaces `wss://__VELLUM_PUBLIC_BASE_URL__/…`
+ * public base URL should go. The gateway replaces `wss://__CADET_PUBLIC_BASE_URL__/…`
  * with the actual public URL (from Tunnel registration, config, or the
- * `X-Vellum-Ingress-URL` header) before returning TwiML to Twilio.
+ * `X-Cadet-Ingress-URL` header) before returning TwiML to Twilio.
  *
  * The placeholder uses `https://` so that `buildTwilioMediaStreamUrl` can
  * apply the standard `http→ws` scheme conversion, producing
- * `wss://__VELLUM_PUBLIC_BASE_URL__/…` in the output.
+ * `wss://__CADET_PUBLIC_BASE_URL__/…` in the output.
  */
 export const TWILIO_PUBLIC_BASE_URL_PLACEHOLDER =
-  "https://__VELLUM_PUBLIC_BASE_URL__";
+  "https://__CADET_PUBLIC_BASE_URL__";
 
 /**
  * The WebSocket-scheme form of the placeholder that appears in TwiML after
  * the `http→ws` scheme conversion applied by the URL builders.
  */
 export const TWILIO_PUBLIC_BASE_WSS_PLACEHOLDER =
-  "wss://__VELLUM_PUBLIC_BASE_URL__";
+  "wss://__CADET_PUBLIC_BASE_URL__";
 
 export { normalizePublicBaseUrl } from "./ingress.js";
 

@@ -31,7 +31,7 @@ const originalIsPlatform = process.env.IS_PLATFORM;
 
 function seedConfig(profiles: Record<string, unknown>): void {
   writeFileSync(
-    join(process.env.VELLUM_WORKSPACE_DIR!, "config.json"),
+    join(process.env.CADET_WORKSPACE_DIR!, "config.json"),
     JSON.stringify({ llm: { profiles } }),
   );
 }
@@ -76,7 +76,7 @@ test("managed mode still stamps cadet when no user connection exists", () => {
 
   runProviderConnectionsBackfill(getDb());
 
-  expect(backfilledConnection("byok")).toBe("vellum");
+  expect(backfilledConnection("byok")).toBe("cadet");
 });
 
 test("managed-owned entries keep the cadet stamp even when a user connection exists", () => {
@@ -111,8 +111,8 @@ test("managed-owned entries keep the cadet stamp even when a user connection exi
 
   runProviderConnectionsBackfill(getDb());
 
-  expect(backfilledConnection("balanced")).toBe("vellum");
-  expect(backfilledConnection("quality-optimized")).toBe("vellum");
+  expect(backfilledConnection("balanced")).toBe("cadet");
+  expect(backfilledConnection("quality-optimized")).toBe("cadet");
   expect(backfilledConnection("cost-optimized")).toBe("anthropic-personal");
   expect(backfilledConnection("byok")).toBe("anthropic-personal");
 });
@@ -120,7 +120,7 @@ test("managed-owned entries keep the cadet stamp even when a user connection exi
 test("routing-identity providers are never stamped with a connection", () => {
   process.env.IS_PLATFORM = "true";
   seedConfig({
-    managedRoute: { provider: "vellum", model: "claude-fable-5" },
+    managedRoute: { provider: "cadet", model: "claude-fable-5" },
     subscription: { provider: "chatgpt", model: "gpt-5.5" },
   });
 

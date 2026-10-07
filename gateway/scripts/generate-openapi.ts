@@ -121,10 +121,10 @@ function buildSpec(version: string) {
   return createDocument({
     openapi: "3.1.0",
     info: {
-      title: "Vellum Gateway API",
+      title: "Cadet Gateway API",
       version,
       description:
-        "Auto-generated OpenAPI specification for the Vellum Gateway HTTP endpoints.",
+        "Auto-generated OpenAPI specification for the Cadet Gateway HTTP endpoints.",
     },
     servers: [{ url: "", description: "Same-origin (gateway)" }],
     paths,

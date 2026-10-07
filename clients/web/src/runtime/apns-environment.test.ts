@@ -36,8 +36,8 @@ const { resolveSignedApnsEnvironment } =
 
 const consoleDebugSpy = spyOn(console, "debug").mockImplementation(() => {});
 
-const DEV_BUNDLE_ID = "ai.vocify-inc.cadet-assistant-ios.dev";
-const PROD_BUNDLE_ID = "ai.vocify-inc.cadet-assistant-ios";
+const DEV_BUNDLE_ID = "ai.vocify-inc.mycadet-ios.dev";
+const PROD_BUNDLE_ID = "ai.vocify-inc.mycadet-ios";
 
 beforeEach(() => {
   apnsEnvironmentResult = undefined;

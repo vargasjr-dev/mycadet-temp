@@ -1,5 +1,5 @@
 /**
- * Tests for {@link parsePluginArtifact} — the `vellum.artifact` descriptor
+ * Tests for {@link parsePluginArtifact} — the `cadet.artifact` descriptor
  * reader. A descriptor is surfaced only when both fields are well-formed
  * (https URL + 64-hex sha256); every malformed or partial shape is "no
  * artifact yet" (`null`) so callers never offer an unverifiable download.
@@ -13,9 +13,9 @@ const VALID_SHA = "a".repeat(64);
 
 describe("parsePluginArtifact", () => {
   test("returns the descriptor when url + sha256 are well-formed", () => {
-    // GIVEN a package.json with a complete vellum.artifact block
+    // GIVEN a package.json with a complete cadet.artifact block
     const pkg = {
-      vellum: {
+      cadet: {
         artifact: {
           url: "https://example.com/releases/v1.0.0/App.dmg",
           sha256: VALID_SHA,
@@ -36,7 +36,7 @@ describe("parsePluginArtifact", () => {
   test("surfaces an optional label when the plugin names the download", () => {
     // GIVEN a block that labels its artifact (e.g. for multi-artifact plugins)
     const pkg = {
-      vellum: {
+      cadet: {
         artifact: {
           url: "https://example.com/App.dmg",
           sha256: VALID_SHA,
@@ -59,7 +59,7 @@ describe("parsePluginArtifact", () => {
   test("trims a label and drops it when blank, keeping the descriptor", () => {
     // GIVEN a descriptor whose label is whitespace-only
     const pkg = {
-      vellum: {
+      cadet: {
         artifact: {
           url: "https://example.com/App.dmg",
           sha256: VALID_SHA,
@@ -81,7 +81,7 @@ describe("parsePluginArtifact", () => {
   test("ignores a non-string label without dropping the descriptor", () => {
     // GIVEN a label of the wrong type
     const pkg = {
-      vellum: {
+      cadet: {
         artifact: {
           url: "https://example.com/App.dmg",
           sha256: VALID_SHA,
@@ -103,7 +103,7 @@ describe("parsePluginArtifact", () => {
   test("ignores extra fields inside the artifact block", () => {
     // GIVEN a block carrying fields beyond url + sha256
     const pkg = {
-      vellum: {
+      cadet: {
         artifact: {
           url: "https://example.com/App.dmg",
           sha256: VALID_SHA,
@@ -126,7 +126,7 @@ describe("parsePluginArtifact", () => {
   test("ignores a malformed icon beside a valid artifact", () => {
     expect(
       parsePluginArtifact({
-        vellum: {
+        cadet: {
           artifact: {
             url: "https://example.com/App.dmg",
             sha256: VALID_SHA,
@@ -142,11 +142,11 @@ describe("parsePluginArtifact", () => {
 
   test.each([
     ["no cadet block", { name: "x" }],
-    ["no artifact block", { vellum: {} }],
+    ["no artifact block", { cadet: {} }],
     [
       "empty sha256 (bootstrap placeholder)",
       {
-        vellum: {
+        cadet: {
           artifact: { url: "https://example.com/App.dmg", sha256: "" },
         },
       },
@@ -154,7 +154,7 @@ describe("parsePluginArtifact", () => {
     [
       "sha256 too short",
       {
-        vellum: {
+        cadet: {
           artifact: { url: "https://example.com/App.dmg", sha256: "abc" },
         },
       },
@@ -162,7 +162,7 @@ describe("parsePluginArtifact", () => {
     [
       "sha256 with uppercase hex",
       {
-        vellum: {
+        cadet: {
           artifact: {
             url: "https://example.com/App.dmg",
             sha256: "A".repeat(64),
@@ -173,14 +173,14 @@ describe("parsePluginArtifact", () => {
     [
       "non-https url",
       {
-        vellum: {
+        cadet: {
           artifact: { url: "http://example.com/App.dmg", sha256: VALID_SHA },
         },
       },
     ],
-    ["missing url", { vellum: { artifact: { sha256: VALID_SHA } } }],
-    ["artifact is not an object", { vellum: { artifact: "App.dmg" } }],
-    ["cadet is an array", { vellum: [] }],
+    ["missing url", { cadet: { artifact: { sha256: VALID_SHA } } }],
+    ["artifact is not an object", { cadet: { artifact: "App.dmg" } }],
+    ["cadet is an array", { cadet: [] }],
   ])("returns null for %s", (_label, pkg) => {
     // WHEN we parse a malformed / partial descriptor
     // THEN nothing is surfaced
@@ -200,43 +200,43 @@ describe("parsePluginArtifact", () => {
 });
 
 describe("parsePluginIcon", () => {
-  test("returns the emoji when vellum.icon is a short glyph", () => {
-    expect(parsePluginIcon({ vellum: { icon: "🚀" } })).toBe("🚀");
+  test("returns the emoji when cadet.icon is a short glyph", () => {
+    expect(parsePluginIcon({ cadet: { icon: "🚀" } })).toBe("🚀");
   });
 
   test("trims surrounding whitespace", () => {
-    expect(parsePluginIcon({ vellum: { icon: "  🎯 " } })).toBe("🎯");
+    expect(parsePluginIcon({ cadet: { icon: "  🎯 " } })).toBe("🎯");
   });
 
   test("accepts a multi-code-point glyph within the bound", () => {
     // A ZWJ family emoji is several code points but well under the cap.
     const family = "👩‍👩‍👧‍👦";
-    expect(parsePluginIcon({ vellum: { icon: family } })).toBe(family);
+    expect(parsePluginIcon({ cadet: { icon: family } })).toBe(family);
   });
 
   test("accepts a value at exactly the 16-code-point bound", () => {
     const sixteen = "a".repeat(16);
-    expect(parsePluginIcon({ vellum: { icon: sixteen } })).toBe(sixteen);
+    expect(parsePluginIcon({ cadet: { icon: sixteen } })).toBe(sixteen);
   });
 
   test("ignores a malformed artifact beside a valid icon", () => {
     expect(
-      parsePluginIcon({ vellum: { artifact: "App.dmg", icon: "🚀" } }),
+      parsePluginIcon({ cadet: { artifact: "App.dmg", icon: "🚀" } }),
     ).toBe("🚀");
   });
 
   test.each([
     ["no cadet block", { name: "x" }],
-    ["no icon field", { vellum: {} }],
-    ["icon is empty", { vellum: { icon: "" } }],
-    ["icon is whitespace-only", { vellum: { icon: "   " } }],
+    ["no icon field", { cadet: {} }],
+    ["icon is empty", { cadet: { icon: "" } }],
+    ["icon is whitespace-only", { cadet: { icon: "   " } }],
     [
       "icon is too long (>16 code points)",
-      { vellum: { icon: "x".repeat(17) } },
+      { cadet: { icon: "x".repeat(17) } },
     ],
-    ["icon is a number", { vellum: { icon: 42 } }],
-    ["icon is an object", { vellum: { icon: {} } }],
-    ["cadet is an array", { vellum: [] }],
+    ["icon is a number", { cadet: { icon: 42 } }],
+    ["icon is an object", { cadet: { icon: {} } }],
+    ["cadet is an array", { cadet: [] }],
   ])("returns undefined for %s", (_label, pkg) => {
     expect(parsePluginIcon(pkg)).toBeUndefined();
   });
@@ -253,7 +253,7 @@ describe("parsePluginIcon", () => {
   test("does not count a >16-code-point emoji sequence as valid", () => {
     // 17 rocket emoji: 17 code points, over the cap.
     expect(
-      parsePluginIcon({ vellum: { icon: "🚀".repeat(17) } }),
+      parsePluginIcon({ cadet: { icon: "🚀".repeat(17) } }),
     ).toBeUndefined();
   });
 });

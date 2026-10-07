@@ -182,7 +182,7 @@ export function stripMarkdownForPreview(value: string): string {
  * Destinations the assistant resolves into attachment rows. Mirrors the link
  * forms `daemon/assistant-attachments.ts` extracts.
  */
-const TRACKED_MEDIA_URL_RE = /^vellum:\/\/(?:workspace|host)\//i;
+const TRACKED_MEDIA_URL_RE = /^cadet:\/\/(?:workspace|host)\//i;
 
 /** A media embed the flattener dropped, kept so a caller can name it. */
 export interface MediaEmbed {
@@ -193,7 +193,7 @@ export interface MediaEmbed {
   alt: string;
   /**
    * Whether the destination resolves through the attachment store. A
-   * `vellum://` embed becomes an attachment row, so a caller holding
+   * `cadet://` embed becomes an attachment row, so a caller holding
    * attachment metadata has already counted it; a remote one leaves no row
    * there and its alt is the only label it has.
    */
@@ -229,7 +229,7 @@ function collectMediaEmbeds(
  * The media embeds in `value`, in order, empty alts included.
  *
  * Lets a caller describe copy whose entire content was embeds. Remote
- * `https://` embeds are as valid as `vellum://` ones and register nothing in
+ * `https://` embeds are as valid as `cadet://` ones and register nothing in
  * the attachment store, so without this a reply of one remote image would go
  * out with no copy at all rather than merely an unhelpful one.
  */

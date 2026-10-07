@@ -7,14 +7,14 @@
  *
  * The persisted client ID is separate from the `clientInstanceId` used
  * by the relay WebSocket handshake (which is scoped to the relay
- * connection lifecycle). This ID is sent as `X-Vellum-Client-Id` on all
+ * connection lifecycle). This ID is sent as `X-Cadet-Client-Id` on all
  * SSE streaming connections for client registration in the daemon.
  */
 
 import { DEFAULT_SSE_IDLE_TIMEOUT_MS } from './sse-idle-watchdog.js';
 
 const CHROME_EXT_INTERFACE_ID = 'chrome-extension';
-const CLIENT_ID_STORAGE_KEY = 'vellum.clientId';
+const CLIENT_ID_STORAGE_KEY = 'cadet.clientId';
 const SSE_WATCHDOG_ENABLED = DEFAULT_SSE_IDLE_TIMEOUT_MS > 0;
 
 let cached: string | null = null;
@@ -61,18 +61,18 @@ export function clientCapabilityHeaders(
 ): Record<string, string> {
   const headers: Record<string, string> = {};
   if (version) {
-    headers['X-Vellum-Client-Version'] = version;
+    headers['X-Cadet-Client-Version'] = version;
   }
   if (watchdogEnabled) {
-    headers['X-Vellum-Sse-Watchdog'] = '1';
+    headers['X-Cadet-Sse-Watchdog'] = '1';
   }
   return headers;
 }
 
 export async function getClientRegistrationHeaders(): Promise<Record<string, string>> {
   return {
-    'X-Vellum-Client-Id': await getClientId(),
-    'X-Vellum-Interface-Id': CHROME_EXT_INTERFACE_ID,
+    'X-Cadet-Client-Id': await getClientId(),
+    'X-Cadet-Interface-Id': CHROME_EXT_INTERFACE_ID,
     ...clientCapabilityHeaders(readManifestVersion(), SSE_WATCHDOG_ENABLED),
   };
 }

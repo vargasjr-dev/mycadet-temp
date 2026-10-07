@@ -23,7 +23,7 @@ const CONFIG = {
 } as GatewayConfig;
 
 const PLUGIN_SECRET = "plugin-webhook-secret";
-const VELLUM_SECRET = "platform-webhook-secret";
+const CADET_SECRET = "platform-webhook-secret";
 const WS_PATH = "/webhooks/plugins/meeting-bot/realtime";
 
 const ROUTE = {
@@ -44,7 +44,7 @@ function credentialsFor(entries: Record<string, string>) {
 
 const CREDENTIALS = credentialsFor({
   "credential/meeting-bot/webhook_secret": PLUGIN_SECRET,
-  "credential/vellum/webhook_secret": VELLUM_SECRET,
+  "credential/cadet/webhook_secret": CADET_SECRET,
 });
 
 function resolution(
@@ -57,7 +57,7 @@ function approvedWith(
   routes: {
     path: string;
     kind: "http" | "websocket";
-    signer: "plugin" | "vellum";
+    signer: "plugin" | "cadet";
     handshake: "signed-headers" | "signed-query";
     description: string;
   }[],
@@ -86,9 +86,9 @@ function upgradeRequest(
   } = opts;
   const headers: Record<string, string> = {};
   if (upgrade) headers.upgrade = "websocket";
-  if (timestamp) headers["vellum-timestamp"] = timestamp;
+  if (timestamp) headers["cadet-timestamp"] = timestamp;
   if (secret) {
-    headers["vellum-signature"] =
+    headers["cadet-signature"] =
       `sha256=${createHmac("sha256", secret).update(`${timestamp}.${signPath}`, "utf8").digest("hex")}`;
   }
   return new Request(`http://gateway${path}`, { headers });
@@ -175,7 +175,7 @@ describe("upgrade gate", () => {
     expect(upgrades).toEqual([]);
   });
 
-  it("upgrades a vellum-signed declaration nobody approved", async () => {
+  it("upgrades a cadet-signed declaration nobody approved", async () => {
     // Only a caller holding the platform secret can open it, and the user
     // extended that trust when they connected their account.
     const handle = makeHandler({
@@ -184,7 +184,7 @@ describe("upgrade gate", () => {
           pending: [
             {
               plugin: "meeting-bot",
-              routes: [{ ...ROUTE, signer: "vellum" as const }],
+              routes: [{ ...ROUTE, signer: "cadet" as const }],
               digest: "d".repeat(32),
             },
           ],
@@ -193,7 +193,7 @@ describe("upgrade gate", () => {
     const { server, upgrades } = fakeServer();
 
     const res = await handle(
-      upgradeRequest({ secret: VELLUM_SECRET }),
+      upgradeRequest({ secret: CADET_SECRET }),
       server,
       "meeting-bot",
       "realtime",
@@ -211,7 +211,7 @@ describe("upgrade gate", () => {
           pending: [
             {
               plugin: "meeting-bot",
-              routes: [{ ...ROUTE, signer: "vellum" as const }],
+              routes: [{ ...ROUTE, signer: "cadet" as const }],
               digest: "d".repeat(32),
             },
           ],
@@ -378,15 +378,15 @@ describe("handshake signature", () => {
     expect(upgrades).toEqual([]);
   });
 
-  it("verifies a vellum-signed route against the platform secret", async () => {
+  it("verifies a cadet-signed route against the platform secret", async () => {
     const handle = makeHandler({
-      resolve: () => approvedWith([{ ...ROUTE, signer: "vellum" as const }]),
+      resolve: () => approvedWith([{ ...ROUTE, signer: "cadet" as const }]),
     });
     const { server, upgrades } = fakeServer();
 
     expect(
       await handle(
-        upgradeRequest({ secret: VELLUM_SECRET }),
+        upgradeRequest({ secret: CADET_SECRET }),
         server,
         "meeting-bot",
         "realtime",

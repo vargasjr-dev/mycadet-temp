@@ -1,10 +1,10 @@
 /**
- * Client for the platform's managed speech endpoints: Vellum-held Deepgram
+ * Client for the platform's managed speech endpoints: Cadet-held Deepgram
  * key, billed to the org's credits. The daemon sends complete audio (STT) or
  * text (TTS) and the platform does the provider call — no speech credentials
  * ever live on this machine.
  *
- * Contract (mirrors `vellum-assistant-platform` — do not change unilaterally):
+ * Contract (mirrors `mycadet-platform` — do not change unilaterally):
  * - `POST /v1/assistants/{id}/managed-speech/stt/transcribe/`
  *   `{audioBase64, mimeType, source?}` → 200 `{text, providerId, model,
  *   durationSeconds}`.
@@ -14,12 +14,12 @@
  *   `missing_price` (400), `provider_configuration_error` (500).
  *
  * Pure platform HTTP client: no provider-catalog, config-schema, or resolver
- * imports — the vellum STT/TTS providers build on top of it.
+ * imports — the cadet STT/TTS providers build on top of it.
  */
 
 import { z } from "zod";
 
-import { VellumPlatformClient } from "./client.js";
+import { CadetPlatformClient } from "./client.js";
 
 export type ManagedSpeechResult<T> =
   | { ok: true; value: T }
@@ -58,16 +58,16 @@ export interface ManagedSpeechSynthesis {
 export type ManagedSpeechTtsFormat = "mp3" | "wav_8000" | "pcm_16000";
 
 async function resolveClient(): Promise<
-  { client: VellumPlatformClient } | { error: ManagedSpeechResult<never> }
+  { client: CadetPlatformClient } | { error: ManagedSpeechResult<never> }
 > {
-  const client = await VellumPlatformClient.create();
+  const client = await CadetPlatformClient.create();
   if (!client) {
     return {
       error: {
         ok: false,
         kind: "unavailable",
         message:
-          "Managed speech is unavailable: no Vellum platform connection.",
+          "Managed speech is unavailable: no Cadet platform connection.",
       },
     };
   }

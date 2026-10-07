@@ -1,7 +1,7 @@
 /**
  * Centralized environment variable registry.
  *
- * This module documents every VELLUM_* and related env var with its type,
+ * This module documents every CADET_* and related env var with its type,
  * default, and description, and exports typed accessor functions for each.
  *
  * IMPORTANT: This module has NO internal imports (no logger, no platform
@@ -47,7 +47,7 @@ export function getDebugStdoutLogs(): boolean {
 /**
  * IS_CONTAINERIZED — boolean, default: false
  * When true, indicates the assistant is running inside a container (e.g. Docker).
- * Persistent data is stored in VELLUM_WORKSPACE_DIR (mapped to a dedicated volume).
+ * Persistent data is stored in CADET_WORKSPACE_DIR (mapped to a dedicated volume).
  */
 export function getIsContainerized(): boolean {
   return flag("IS_CONTAINERIZED");
@@ -75,52 +75,52 @@ export function isPlatformRemote(): boolean {
 }
 
 /**
- * VELLUM_DISABLE_PLATFORM — boolean, default: false
+ * CADET_DISABLE_PLATFORM — boolean, default: false
  * When true, all outbound platform API calls in local mode are suppressed.
  * The daemon, gateway, and web UI each no-op platform requests with a
  * debug log. Has no effect when IS_PLATFORM is true (platform-managed
  * instances always connect to the platform).
  */
 export function getDisablePlatform(): boolean {
-  return flag("VELLUM_DISABLE_PLATFORM");
+  return flag("CADET_DISABLE_PLATFORM");
 }
 
 /**
- * VELLUM_DEVICE_ID — string, default: undefined
+ * CADET_DEVICE_ID — string, default: undefined
  * Host-stable device id injected by the CLI into containerized deployments,
  * where the container fs cannot persist device.json across recreation.
  * Takes precedence over device.json resolution in util/device-id.ts.
  */
 export function getDeviceIdOverride(): string | undefined {
-  return str("VELLUM_DEVICE_ID");
+  return str("CADET_DEVICE_ID");
 }
 
 /**
- * VELLUM_WORKSPACE_DIR — string, default: undefined
+ * CADET_WORKSPACE_DIR — string, default: undefined
  * Overrides the default workspace directory.
  * Used in containerized deployments where the workspace is a separate volume.
  */
 export function getWorkspaceDirOverride(): string | undefined {
-  return str("VELLUM_WORKSPACE_DIR");
+  return str("CADET_WORKSPACE_DIR");
 }
 
 /**
- * VELLUM_BACKUP_DIR — string, default: undefined
- * Overrides the default backup root directory (~/.vellum/backups/).
+ * CADET_BACKUP_DIR — string, default: undefined
+ * Overrides the default backup root directory (~/.cadet/backups/).
  * Used in containerized deployments where the backup directory must be
  * on a persistent volume.
  */
 export function getBackupDirOverride(): string | undefined {
-  return str("VELLUM_BACKUP_DIR");
+  return str("CADET_BACKUP_DIR");
 }
 
 /**
- * VELLUM_BACKUP_KEY_PATH — string, default: undefined
- * Overrides the default backup encryption key path (~/.vellum/protected/backup.key).
+ * CADET_BACKUP_KEY_PATH — string, default: undefined
+ * Overrides the default backup encryption key path (~/.cadet/protected/backup.key).
  * Used in containerized deployments where the key must be on a persistent volume.
  */
 export function getBackupKeyPathOverride(): string | undefined {
-  return str("VELLUM_BACKUP_KEY_PATH");
+  return str("CADET_BACKUP_KEY_PATH");
 }
 
 // ── Profiler env vars ───────────────────────────────────────────────────
@@ -129,121 +129,121 @@ export function getBackupKeyPathOverride(): string | undefined {
 // profiler output on the workspace volume.
 
 /**
- * VELLUM_CPU_LIMIT — string (K8s resource format), default: undefined
+ * CADET_CPU_LIMIT — string (K8s resource format), default: undefined
  * The CPU resource limit for the container (e.g. "2000m", "2").
  * Set by the platform StatefulSet template to the exact K8s CPU limit.
  * Used by the health endpoint to report accurate CPU core count inside
  * gVisor sandboxes where cgroup files may expose the host node's CPUs.
  */
 export function getCpuLimit(): string | undefined {
-  return str("VELLUM_CPU_LIMIT");
+  return str("CADET_CPU_LIMIT");
 }
 
 /**
- * VELLUM_MINIKUBE_STORAGE_SIZE — string (K8s resource format), default: undefined
+ * CADET_MINIKUBE_STORAGE_SIZE — string (K8s resource format), default: undefined
  * The PVC storage request size for the assistant volume (e.g. "10Gi").
  * Only set in minikube (local dev) mode. Used by the health endpoint to
  * report accurate disk capacity on hostPath-backed PVCs where statfsSync
  * reports the host's entire filesystem instead of the PVC.
  */
 export function getMinikubeStorageSize(): string | undefined {
-  return str("VELLUM_MINIKUBE_STORAGE_SIZE");
+  return str("CADET_MINIKUBE_STORAGE_SIZE");
 }
 
 /**
- * VELLUM_PROFILER_RUN_ID — string, default: undefined
+ * CADET_PROFILER_RUN_ID — string, default: undefined
  * Unique identifier for the current profiler run. When set, the profiler
  * run store treats this run as "active" and will never prune its directory.
  */
 export function getProfilerRunId(): string | undefined {
-  return str("VELLUM_PROFILER_RUN_ID");
+  return str("CADET_PROFILER_RUN_ID");
 }
 
 /**
- * VELLUM_PROFILER_MODE — string, default: undefined
+ * CADET_PROFILER_MODE — string, default: undefined
  * The profiling mode to activate (e.g. "cpu", "heap", "cpu+heap").
  * When unset, profiling is disabled.
  */
 export function getProfilerMode(): string | undefined {
-  return str("VELLUM_PROFILER_MODE");
+  return str("CADET_PROFILER_MODE");
 }
 
 /**
- * VELLUM_PROFILER_MAX_BYTES — integer, default: undefined
+ * CADET_PROFILER_MAX_BYTES — integer, default: undefined
  * Maximum total bytes retained across all profiler runs (including active).
  * The startup sweep prunes oldest completed runs to stay within budget.
  */
 export function getProfilerMaxBytes(): number | undefined {
-  return int("VELLUM_PROFILER_MAX_BYTES");
+  return int("CADET_PROFILER_MAX_BYTES");
 }
 
 /**
- * VELLUM_PROFILER_MAX_RUNS — integer, default: undefined
+ * CADET_PROFILER_MAX_RUNS — integer, default: undefined
  * Maximum number of completed profiler runs retained on disk.
  * The startup sweep prunes oldest completed runs to stay within budget.
  */
 export function getProfilerMaxRuns(): number | undefined {
-  return int("VELLUM_PROFILER_MAX_RUNS");
+  return int("CADET_PROFILER_MAX_RUNS");
 }
 
 /**
- * VELLUM_PROFILER_MIN_FREE_MB — integer, default: undefined
+ * CADET_PROFILER_MIN_FREE_MB — integer, default: undefined
  * Minimum free disk space (in megabytes) that must remain after profiler
  * runs are accounted for. The startup sweep prunes oldest completed runs
  * until at least this much free space is available.
  */
 export function getProfilerMinFreeMb(): number | undefined {
-  return int("VELLUM_PROFILER_MIN_FREE_MB");
+  return int("CADET_PROFILER_MIN_FREE_MB");
 }
 
 // ── Known env var names ──────────────────────────────────────────────────────
 
 /**
- * Complete set of recognized VELLUM_* env var names. Used by validateEnvVars()
+ * Complete set of recognized CADET_* env var names. Used by validateEnvVars()
  * to warn about typos or unrecognized variables.
  */
-const KNOWN_VELLUM_VARS = new Set([
-  "VELLUM_ASSISTANT_NAME",
-  "VELLUM_ASSISTANT_PLATFORM_URL",
-  "VELLUM_AWS_ROLE_ARN",
-  "VELLUM_BACKUP_DIR",
-  "VELLUM_BACKUP_KEY_PATH",
-  "VELLUM_CLOUD",
-  "VELLUM_DAEMON_AUTOSTART",
-  "VELLUM_DATA_DIR",
-  "VELLUM_DEBUG",
-  "VELLUM_DESKTOP_APP",
-  "VELLUM_DEV",
-  "VELLUM_DEVICE_ID",
-  "VELLUM_DISABLE_PLATFORM",
-  "VELLUM_DOCS_BASE_URL",
-  "VELLUM_ENVIRONMENT",
-  "VELLUM_HATCHED_BY",
-  "VELLUM_HOOK_EVENT",
-  "VELLUM_HOOK_NAME",
-  "VELLUM_HOOK_SETTINGS",
-  "VELLUM_LOCKFILE_DIR",
-  "VELLUM_MARKETING_URL",
-  "VELLUM_MIGRATION_EXPORT_ALLOWED_HOSTS",
-  "VELLUM_MIGRATION_IMPORT_ALLOWED_HOSTS",
-  "VELLUM_PLATFORM_URL",
-  "VELLUM_PROFILER_MAX_BYTES",
-  "VELLUM_PROFILER_MAX_RUNS",
-  "VELLUM_PROFILER_MIN_FREE_MB",
-  "VELLUM_PROFILER_MODE",
-  "VELLUM_PROFILER_RUN_ID",
-  "VELLUM_ROOT_DIR",
-  "VELLUM_SSH_USER",
-  "VELLUM_WEB_URL",
-  "VELLUM_WORKSPACE_DIR",
-  "VELLUM_CPU_LIMIT",
-  "VELLUM_MEMORY_LIMIT",
-  "VELLUM_MINIKUBE_STORAGE_SIZE",
-  "VELLUM_ONNX_INTRA_OP_THREADS",
+const KNOWN_CADET_VARS = new Set([
+  "CADET_ASSISTANT_NAME",
+  "CADET_ASSISTANT_PLATFORM_URL",
+  "CADET_AWS_ROLE_ARN",
+  "CADET_BACKUP_DIR",
+  "CADET_BACKUP_KEY_PATH",
+  "CADET_CLOUD",
+  "CADET_DAEMON_AUTOSTART",
+  "CADET_DATA_DIR",
+  "CADET_DEBUG",
+  "CADET_DESKTOP_APP",
+  "CADET_DEV",
+  "CADET_DEVICE_ID",
+  "CADET_DISABLE_PLATFORM",
+  "CADET_DOCS_BASE_URL",
+  "CADET_ENVIRONMENT",
+  "CADET_HATCHED_BY",
+  "CADET_HOOK_EVENT",
+  "CADET_HOOK_NAME",
+  "CADET_HOOK_SETTINGS",
+  "CADET_LOCKFILE_DIR",
+  "CADET_MARKETING_URL",
+  "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
+  "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
+  "CADET_PLATFORM_URL",
+  "CADET_PROFILER_MAX_BYTES",
+  "CADET_PROFILER_MAX_RUNS",
+  "CADET_PROFILER_MIN_FREE_MB",
+  "CADET_PROFILER_MODE",
+  "CADET_PROFILER_RUN_ID",
+  "CADET_ROOT_DIR",
+  "CADET_SSH_USER",
+  "CADET_WEB_URL",
+  "CADET_WORKSPACE_DIR",
+  "CADET_CPU_LIMIT",
+  "CADET_MEMORY_LIMIT",
+  "CADET_MINIKUBE_STORAGE_SIZE",
+  "CADET_ONNX_INTRA_OP_THREADS",
 ]);
 
 /**
- * Check all VELLUM_* env vars and return warnings for any unrecognized ones.
+ * Check all CADET_* env vars and return warnings for any unrecognized ones.
  * Returns an array of warning messages (empty if all vars are recognized).
  *
  * This is intentionally a pure function that returns strings rather than
@@ -253,7 +253,7 @@ const KNOWN_VELLUM_VARS = new Set([
 export function checkUnrecognizedEnvVars(): string[] {
   const warnings: string[] = [];
   for (const key of Object.keys(process.env)) {
-    if (key.startsWith("VELLUM_") && !KNOWN_VELLUM_VARS.has(key)) {
+    if (key.startsWith("CADET_") && !KNOWN_CADET_VARS.has(key)) {
       warnings.push(`Unrecognized environment variable: ${key}`);
     }
   }

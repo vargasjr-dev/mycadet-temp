@@ -50,7 +50,7 @@ const {
 const originalShell = process.env.SHELL;
 
 // Mirrors the internal sentinel in shell-path.ts (intentionally unexported).
-const PATH_SENTINEL = "__VELLUM_PATH_7f3a__";
+const PATH_SENTINEL = "__CADET_PATH_7f3a__";
 
 const wrap = (path: string) => `${PATH_SENTINEL}${path}${PATH_SENTINEL}`;
 
@@ -322,58 +322,58 @@ describe("splitPathEntries", () => {
 
 describe("findExecutablesInPath", () => {
   test("returns hits in PATH precedence order", () => {
-    executablePaths.add("/a/vellum");
-    executablePaths.add("/c/vellum");
+    executablePaths.add("/a/cadet");
+    executablePaths.add("/c/cadet");
 
-    expect(findExecutablesInPath("vellum", "/a:/b:/c")).toEqual([
-      "/a/vellum",
-      "/c/vellum",
+    expect(findExecutablesInPath("cadet", "/a:/b:/c")).toEqual([
+      "/a/cadet",
+      "/c/cadet",
     ]);
   });
 
   test("skips missing and non-executable entries", () => {
-    executablePaths.add("/b/vellum");
+    executablePaths.add("/b/cadet");
 
-    expect(findExecutablesInPath("vellum", "/a:/b")).toEqual(["/b/vellum"]);
+    expect(findExecutablesInPath("cadet", "/a:/b")).toEqual(["/b/cadet"]);
   });
 
   test("skips directories even though they pass the X_OK probe", () => {
-    executablePaths.add("/a/vellum");
-    directoryPaths.add("/a/vellum");
-    executablePaths.add("/b/vellum");
+    executablePaths.add("/a/cadet");
+    directoryPaths.add("/a/cadet");
+    executablePaths.add("/b/cadet");
 
-    expect(findExecutablesInPath("vellum", "/a:/b")).toEqual(["/b/vellum"]);
+    expect(findExecutablesInPath("cadet", "/a:/b")).toEqual(["/b/cadet"]);
   });
 
   test("keeps symlinks that resolve to executable files (stat follows links)", () => {
     // Mocked statSync models the followed target: a link to a file.
-    executablePaths.add("/a/vellum");
+    executablePaths.add("/a/cadet");
 
-    expect(findExecutablesInPath("vellum", "/a")).toEqual(["/a/vellum"]);
+    expect(findExecutablesInPath("cadet", "/a")).toEqual(["/a/cadet"]);
   });
 
   test("skips symlinks that resolve to directories", () => {
-    executablePaths.add("/a/vellum");
-    directoryPaths.add("/a/vellum"); // link target is a directory
+    executablePaths.add("/a/cadet");
+    directoryPaths.add("/a/cadet"); // link target is a directory
 
-    expect(findExecutablesInPath("vellum", "/a")).toEqual([]);
+    expect(findExecutablesInPath("cadet", "/a")).toEqual([]);
   });
 
   test("skips empty and duplicate PATH entries", () => {
-    executablePaths.add("/a/vellum");
+    executablePaths.add("/a/cadet");
 
-    expect(findExecutablesInPath("vellum", ":/a::/a:/a:")).toEqual([
-      "/a/vellum",
+    expect(findExecutablesInPath("cadet", ":/a::/a:/a:")).toEqual([
+      "/a/cadet",
     ]);
   });
 
   test("normalizes trailing-slash entries to the same hit", () => {
-    executablePaths.add("/a/vellum");
+    executablePaths.add("/a/cadet");
 
-    expect(findExecutablesInPath("vellum", "/a/:/a")).toEqual(["/a/vellum"]);
+    expect(findExecutablesInPath("cadet", "/a/:/a")).toEqual(["/a/cadet"]);
   });
 
   test("returns empty array when nothing matches", () => {
-    expect(findExecutablesInPath("vellum", "/a:/b")).toEqual([]);
+    expect(findExecutablesInPath("cadet", "/a:/b")).toEqual([]);
   });
 });

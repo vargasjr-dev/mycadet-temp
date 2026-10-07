@@ -20,7 +20,7 @@ function safeUserInfoHomedir(): string {
 }
 
 /**
- * @deprecated Only used as a fallback when VELLUM_WORKSPACE_DIR /
+ * @deprecated Only used as a fallback when CADET_WORKSPACE_DIR /
  * GATEWAY_SECURITY_DIR are not set. Logs a warning so we can identify
  * hatch entrypoints that still rely on the old path.
  *
@@ -37,7 +37,7 @@ function safeUserInfoHomedir(): string {
 export function getLegacyRootDir(): string {
   return join(
     process.env.HOME || safeUserInfoHomedir() || homedir(),
-    ".vellum",
+    ".cadet",
   );
 }
 
@@ -52,24 +52,24 @@ let warnedSecurityDir = false;
 // honors.
 
 const WORKSPACE_GUARD = {
-  allowEnvVar: "VELLUM_ALLOW_REAL_WORKSPACE_IN_TESTS",
+  allowEnvVar: "CADET_ALLOW_REAL_WORKSPACE_IN_TESTS",
   runHint: "Run tests from the gateway package root.",
 };
 
 const SECURITY_GUARD = {
-  allowEnvVar: "VELLUM_ALLOW_REAL_GATEWAY_SECURITY_IN_TESTS",
+  allowEnvVar: "CADET_ALLOW_REAL_GATEWAY_SECURITY_IN_TESTS",
   runHint: "Run tests from the gateway package root.",
 };
 
 /**
  * Returns the workspace root for user-facing state.
  *
- * When VELLUM_WORKSPACE_DIR is set, returns that value (used in containerized
+ * When CADET_WORKSPACE_DIR is set, returns that value (used in containerized
  * deployments where the workspace is a separate volume). Otherwise falls back
- * to ~/.vellum/workspace via getLegacyRootDir() and logs a warning (once).
+ * to ~/.cadet/workspace via getLegacyRootDir() and logs a warning (once).
  */
 export function getWorkspaceDir(): string {
-  const override = process.env.VELLUM_WORKSPACE_DIR?.trim();
+  const override = process.env.CADET_WORKSPACE_DIR?.trim();
   if (override) {
     assertTestPathIsEphemeral(override, WORKSPACE_GUARD);
     return override;
@@ -77,8 +77,8 @@ export function getWorkspaceDir(): string {
   if (!warnedWorkspaceDir) {
     warnedWorkspaceDir = true;
     console.warn(
-      "[gateway/paths] VELLUM_WORKSPACE_DIR is not set — falling back to getLegacyRootDir(). " +
-        "Set VELLUM_WORKSPACE_DIR explicitly in the entrypoint.",
+      "[gateway/paths] CADET_WORKSPACE_DIR is not set — falling back to getLegacyRootDir(). " +
+        "Set CADET_WORKSPACE_DIR explicitly in the entrypoint.",
     );
   }
   const dir = join(getLegacyRootDir(), "workspace");
@@ -91,7 +91,7 @@ export function getWorkspaceDir(): string {
  *
  * In Docker, this is a dedicated volume mounted at /gateway-security via the
  * GATEWAY_SECURITY_DIR env var. In local (non-Docker) mode, falls back to
- * ~/.vellum/protected/ via getLegacyRootDir() and logs a warning (once).
+ * ~/.cadet/protected/ via getLegacyRootDir() and logs a warning (once).
  */
 export function getGatewaySecurityDir(): string {
   const override = process.env.GATEWAY_SECURITY_DIR?.trim();

@@ -22,26 +22,26 @@ describe("stripMarkdownForPreview", () => {
   describe("media embeds", () => {
     test("drops an embed whole, alt text included", () => {
       expect(
-        preview("![cadet scene](vellum://workspace/clients/vellum-cut.mp4)"),
+        preview("![cadet scene](cadet://workspace/clients/cadet-cut.mp4)"),
       ).toBe("");
     });
 
     test("reduces an embed-only reply to empty so the fallback is reachable", () => {
       const reply = [
-        "![cadet scene](vellum://workspace/clients/web/public/cut.mp4)",
-        "![hero animation](vellum://workspace/repos/hero.mp4)",
+        "![cadet scene](cadet://workspace/clients/web/public/cut.mp4)",
+        "![hero animation](cadet://workspace/repos/hero.mp4)",
       ].join(" ");
       expect(preview(reply)).toBe("");
     });
 
     test("keeps the surrounding prose", () => {
       expect(
-        preview("Here is the scene: ![cadet scene](vellum://workspace/a.mp4)"),
+        preview("Here is the scene: ![cadet scene](cadet://workspace/a.mp4)"),
       ).toBe("Here is the scene:");
     });
 
     test("leaves no stray bang behind", () => {
-      expect(preview("![alt](vellum://workspace/a.png)")).not.toContain("!");
+      expect(preview("![alt](cadet://workspace/a.png)")).not.toContain("!");
     });
 
     // An embed needs no surrounding whitespace, so dropping it outright would
@@ -53,7 +53,7 @@ describe("stripMarkdownForPreview", () => {
     });
 
     test("unwraps a plain link to its text", () => {
-      expect(preview("See [report.pdf](vellum://workspace/report.pdf)")).toBe(
+      expect(preview("See [report.pdf](cadet://workspace/report.pdf)")).toBe(
         "See report.pdf",
       );
     });
@@ -182,7 +182,7 @@ describe("mediaEmbeds", () => {
   test("recovers the alts a flattened reply dropped", () => {
     expect(
       alts(
-        "![the Q3 chart](https://cdn.example.com/q3.png) ![scene](vellum://workspace/a.mp4)",
+        "![the Q3 chart](https://cdn.example.com/q3.png) ![scene](cadet://workspace/a.mp4)",
       ),
     ).toEqual(["the Q3 chart", "scene"]);
   });
@@ -192,7 +192,7 @@ describe("mediaEmbeds", () => {
   });
 
   test("ignores plain links", () => {
-    expect(alts("[report.pdf](vellum://workspace/r.pdf)")).toEqual([]);
+    expect(alts("[report.pdf](cadet://workspace/r.pdf)")).toEqual([]);
   });
 
   test("returns nothing for prose", () => {
@@ -215,7 +215,7 @@ describe("mediaEmbeds", () => {
     test("marks workspace and host destinations tracked", () => {
       expect(
         mediaEmbeds(
-          "![a](vellum://workspace/a.mp4) ![b](vellum://host/tmp/b.png)",
+          "![a](cadet://workspace/a.mp4) ![b](cadet://host/tmp/b.png)",
         ).map((embed) => embed.tracked),
       ).toEqual([true, true]);
     });
@@ -228,7 +228,7 @@ describe("mediaEmbeds", () => {
 
     test("marks a reference embed untracked", () => {
       expect(
-        mediaEmbeds("![a][ref]\n\n[ref]: vellum://workspace/a.png")[0]?.tracked,
+        mediaEmbeds("![a][ref]\n\n[ref]: cadet://workspace/a.png")[0]?.tracked,
       ).toBe(false);
     });
   });

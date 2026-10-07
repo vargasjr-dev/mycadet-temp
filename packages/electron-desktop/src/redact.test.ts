@@ -50,14 +50,14 @@ describe("redactText", () => {
   test("redacts combined input with multiple patterns", () => {
     const input = [
       "Bearer sk-proj-AAAAAAAAAAAAAAAAAAAAAAAA",
-      "email: admin@vellum.ai",
+      "email: admin@mycadet.ai",
       "path: /Users/dev/src/app",
     ].join("\n");
 
     const result = redactText(input);
     expect(result).not.toContain("sk-proj");
     // generic-examples:ignore-next-line — reason: testing that redactText masks real-looking emails
-    expect(result).not.toContain("admin@vellum.ai");
+    expect(result).not.toContain("admin@mycadet.ai");
     expect(result).not.toContain("/Users/dev");
     expect(result).toContain("[REDACTED]");
     expect(result).toContain("[REDACTED_EMAIL]");

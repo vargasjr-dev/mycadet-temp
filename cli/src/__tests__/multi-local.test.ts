@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 // Create a temp directory that acts as a fake home, so allocateLocalResources()
-// never touches the real ~/.vellum directory.
+// never touches the real ~/.cadet directory.
 const testDir = mkdtempSync(join(tmpdir(), "cli-multi-local-test-"));
-process.env.VELLUM_LOCKFILE_DIR = testDir;
+process.env.CADET_LOCKFILE_DIR = testDir;
 
 // Mock homedir() to return testDir — this isolates allocateLocalResources()
 // which uses homedir() directly for instance directory creation.
@@ -38,19 +38,19 @@ import { mockOsHomedir } from "./helpers/os-mock.js";
 
 afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
-  delete process.env.VELLUM_LOCKFILE_DIR;
+  delete process.env.CADET_LOCKFILE_DIR;
 });
 
 function writeLockfile(data: unknown): void {
   writeFileSync(
-    join(testDir, ".vellum.lock.json"),
+    join(testDir, ".cadet.lock.json"),
     JSON.stringify(data, null, 2),
   );
 }
 
 function readLockfileRaw(): Record<string, unknown> {
   return JSON.parse(
-    readFileSync(join(testDir, ".vellum.lock.json"), "utf-8"),
+    readFileSync(join(testDir, ".cadet.lock.json"), "utf-8"),
   ) as Record<string, unknown>;
 }
 
@@ -67,12 +67,12 @@ const makeEntry = (
 
 function resetLockfile(): void {
   try {
-    rmSync(join(testDir, ".vellum.lock.json"));
+    rmSync(join(testDir, ".cadet.lock.json"));
   } catch {
     // file may not exist
   }
   try {
-    rmSync(join(testDir, ".vellum.lockfile.json"));
+    rmSync(join(testDir, ".cadet.lockfile.json"));
   } catch {
     // file may not exist
   }
@@ -99,7 +99,7 @@ describe("multi-local", () => {
         // THEN it lands under the XDG multi-instance dir (no "first = home"
         // special case anymore)
         expect(res.instanceDir).toBe(
-          join(xdgDataHome, "vellum", "assistants", "instance-a"),
+          join(xdgDataHome, "cadet", "assistants", "instance-a"),
         );
 
         // AND it gets the default ports since no other instances exist
@@ -117,11 +117,11 @@ describe("multi-local", () => {
     });
 
     test("first instance (dev) uses env-scoped multi-instance dir", async () => {
-      // GIVEN VELLUM_ENVIRONMENT=dev and XDG_DATA_HOME set to scratch
-      const prevEnv = process.env.VELLUM_ENVIRONMENT;
+      // GIVEN CADET_ENVIRONMENT=dev and XDG_DATA_HOME set to scratch
+      const prevEnv = process.env.CADET_ENVIRONMENT;
       const prevXdg = process.env.XDG_DATA_HOME;
       const xdgDataHome = mkdtempSync(join(tmpdir(), "cli-multi-xdg-dev-"));
-      process.env.VELLUM_ENVIRONMENT = "dev";
+      process.env.CADET_ENVIRONMENT = "dev";
       process.env.XDG_DATA_HOME = xdgDataHome;
       try {
         // WHEN we allocate resources for the first instance
@@ -129,13 +129,13 @@ describe("multi-local", () => {
 
         // THEN it lands under the env-scoped multi-instance dir
         expect(res.instanceDir).toBe(
-          join(xdgDataHome, "vellum-dev", "assistants", "instance-a"),
+          join(xdgDataHome, "cadet-dev", "assistants", "instance-a"),
         );
       } finally {
         if (prevEnv !== undefined) {
-          process.env.VELLUM_ENVIRONMENT = prevEnv;
+          process.env.CADET_ENVIRONMENT = prevEnv;
         } else {
-          delete process.env.VELLUM_ENVIRONMENT;
+          delete process.env.CADET_ENVIRONMENT;
         }
         if (prevXdg !== undefined) {
           process.env.XDG_DATA_HOME = prevXdg;
@@ -148,12 +148,12 @@ describe("multi-local", () => {
 
     test("allocation picks env-specific port bases for non-prod envs", async () => {
       // Each non-prod env sits in its own 1000-port window (see
-      // @mycadet/environments seeds). Hatching under VELLUM_ENVIRONMENT=dev should
+      // @mycadet/environments seeds). Hatching under CADET_ENVIRONMENT=dev should
       // produce ports in the dev block (18000+), not the production defaults.
-      const prevEnv = process.env.VELLUM_ENVIRONMENT;
+      const prevEnv = process.env.CADET_ENVIRONMENT;
       const prevXdg = process.env.XDG_DATA_HOME;
       const xdgDataHome = mkdtempSync(join(tmpdir(), "cli-multi-xdg-ports-"));
-      process.env.VELLUM_ENVIRONMENT = "dev";
+      process.env.CADET_ENVIRONMENT = "dev";
       process.env.XDG_DATA_HOME = xdgDataHome;
       try {
         const res = await allocateLocalResources("dev-a");
@@ -163,9 +163,9 @@ describe("multi-local", () => {
         expect(res.cesPort).toBe(18300);
       } finally {
         if (prevEnv !== undefined) {
-          process.env.VELLUM_ENVIRONMENT = prevEnv;
+          process.env.CADET_ENVIRONMENT = prevEnv;
         } else {
-          delete process.env.VELLUM_ENVIRONMENT;
+          delete process.env.CADET_ENVIRONMENT;
         }
         if (prevXdg !== undefined) {
           process.env.XDG_DATA_HOME = prevXdg;

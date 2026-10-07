@@ -92,7 +92,7 @@ const GATEWAY_RETRIEVAL_BANLIST: Array<{
     bannedSnippets: [
       'curl -s "$INTERNAL_GATEWAY_BASE_URL/v1/',
       "security find-generic-password",
-      "secret-tool lookup service vellum-assistant account credential/ngrok/authtoken",
+      "secret-tool lookup service mycadet account credential/ngrok/authtoken",
     ],
   },
   {
@@ -120,8 +120,8 @@ const CREDENTIAL_LOOKUP_ALLOWLIST = new Set<string>([
 
 const CREDENTIAL_LOOKUP_PATTERNS = [
   "security find-generic-password",
-  "secret-tool lookup service vellum-assistant account credential:",
-  "secret-tool lookup service vellum-assistant account credential/",
+  "secret-tool lookup service mycadet account credential:",
+  "secret-tool lookup service mycadet account credential/",
 ];
 
 const HOST_BASH_RETRIEVAL_ALLOWLIST = new Set<string>([

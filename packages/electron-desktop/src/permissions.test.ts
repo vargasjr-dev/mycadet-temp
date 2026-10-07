@@ -34,7 +34,7 @@ mock.module("electron", () => ({
 const permissionPolicy = await import("./permissions");
 const { denyAllPermissions, installPermissionHandler } = permissionPolicy;
 
-const allowedOrigin = { protocol: "app:", host: "vellum.ai" };
+const allowedOrigin = { protocol: "app:", host: "mycadet.ai" };
 const resolveAllowedOrigin = () => allowedOrigin;
 const shouldGrantPermissionCheck = (
   ...args: Parameters<
@@ -63,7 +63,7 @@ describe("permission policy", () => {
     expect(
       shouldGrantPermissionRequest("media", {
         mediaTypes: ["audio"],
-        securityOrigin: "app://vellum.ai",
+        securityOrigin: "app://mycadet.ai",
       }),
     ).toBe(true);
   });
@@ -75,13 +75,13 @@ describe("permission policy", () => {
     expect(
       shouldGrantPermissionRequest("media", {
         mediaTypes: ["video"],
-        securityOrigin: "app://vellum.ai",
+        securityOrigin: "app://mycadet.ai",
       }),
     ).toBe(true);
     expect(
       shouldGrantPermissionRequest("media", {
         mediaTypes: ["audio", "video"],
-        securityOrigin: "app://vellum.ai",
+        securityOrigin: "app://mycadet.ai",
       }),
     ).toBe(true);
   });
@@ -102,7 +102,7 @@ describe("permission policy", () => {
     expect(
       shouldGrantPermissionRequest("media", {
         mediaTypes: ["audio", "unknown"] as unknown as ("audio" | "video")[],
-        securityOrigin: "app://vellum.ai",
+        securityOrigin: "app://mycadet.ai",
       }),
     ).toBe(false);
   });
@@ -120,7 +120,7 @@ describe("permission policy", () => {
     expect(
       shouldGrantPermissionRequest("notifications", {
         mediaTypes: ["audio"],
-        securityOrigin: "app://vellum.ai",
+        securityOrigin: "app://mycadet.ai",
       }),
     ).toBe(false);
   });
@@ -129,7 +129,7 @@ describe("permission policy", () => {
     expect(
       shouldGrantPermissionRequest("clipboard-sanitized-write", {
         mediaTypes: [],
-        securityOrigin: "app://vellum.ai",
+        securityOrigin: "app://mycadet.ai",
       }),
     ).toBe(true);
   });
@@ -145,7 +145,7 @@ describe("permission policy", () => {
 
   test("allows matching audio permission checks", () => {
     expect(
-      shouldGrantPermissionCheck("media", "app://vellum.ai", {
+      shouldGrantPermissionCheck("media", "app://mycadet.ai", {
         mediaType: "audio",
       }),
     ).toBe(true);
@@ -156,7 +156,7 @@ describe("permission policy", () => {
     // fails here means the request handler above is never consulted and the
     // camera fails silently. The two must agree.
     expect(
-      shouldGrantPermissionCheck("media", "app://vellum.ai", {
+      shouldGrantPermissionCheck("media", "app://mycadet.ai", {
         mediaType: "video",
       }),
     ).toBe(true);
@@ -174,7 +174,7 @@ describe("permission policy", () => {
     expect(
       shouldGrantPermissionCheck(
         "clipboard-sanitized-write",
-        "app://vellum.ai",
+        "app://mycadet.ai",
         {},
       ),
     ).toBe(true);
@@ -207,7 +207,7 @@ describe("permission policy", () => {
 
     let granted = false;
     handler(
-      { getURL: () => "app://vellum.ai/assistant" } as Electron.WebContents,
+      { getURL: () => "app://mycadet.ai/assistant" } as Electron.WebContents,
       "media",
       (value) => {
         granted = value;
@@ -244,7 +244,7 @@ describe("denyAllPermissions", () => {
     });
     expect(granted).toBe(false);
 
-    expect(checkHandler!({}, "clipboard-read", "vellumapp://bundle")).toBe(
+    expect(checkHandler!({}, "clipboard-read", "cadetapp://bundle")).toBe(
       false,
     );
   });

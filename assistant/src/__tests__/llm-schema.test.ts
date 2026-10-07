@@ -197,7 +197,7 @@ describe("LLMSchema", () => {
     const result = LLMSchema.safeParse({
       profiles: {
         "glm-default": {
-          provider: "vellum",
+          provider: "cadet",
           model: "accounts/fireworks/models/glm-5p3",
         },
       },

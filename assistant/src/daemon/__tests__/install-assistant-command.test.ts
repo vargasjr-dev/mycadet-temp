@@ -42,7 +42,7 @@ function seedInstalledLayout(options: { withBin: boolean }): string {
   const nodeModules = join(root, "cli", "latest", "node_modules");
   const moduleDir = join(
     nodeModules,
-    "@vellumai",
+    "@mycadet",
     "assistant",
     "src",
     "daemon",
@@ -65,13 +65,13 @@ describe("resolveAssistantCommandTarget", () => {
     const moduleDir = seedInstalledLayout({ withBin: true });
 
     const target = resolveAssistantCommandTarget({
-      execPath: "/Applications/Vellum.app/Contents/Resources/bun",
+      execPath: "/Applications/Cadet.app/Contents/Resources/bun",
       moduleDir,
     });
 
     expect(target).toEqual({
       kind: "bun-entry",
-      bun: "/Applications/Vellum.app/Contents/Resources/bun",
+      bun: "/Applications/Cadet.app/Contents/Resources/bun",
       entry: join(root, "cli", "latest", "node_modules", ".bin", "assistant"),
     });
   });
@@ -92,7 +92,7 @@ describe("resolveAssistantCommandTarget", () => {
         "cli",
         "latest",
         "node_modules",
-        "@vellumai",
+        "@mycadet",
         "assistant",
         "src",
         "index.ts",
@@ -114,18 +114,18 @@ describe("resolveAssistantCommandTarget", () => {
   });
 
   test("compiled bundle resolves the sibling binary", () => {
-    const macosDir = join(root, "Vellum.app", "Contents", "MacOS");
+    const macosDir = join(root, "Cadet.app", "Contents", "MacOS");
     mkdirSync(macosDir, { recursive: true });
-    writeFileSync(join(macosDir, "vellum-assistant"), "");
+    writeFileSync(join(macosDir, "mycadet"), "");
 
     const target = resolveAssistantCommandTarget({
-      execPath: join(macosDir, "vellum-daemon"),
+      execPath: join(macosDir, "cadet-daemon"),
       moduleDir: join(root, "irrelevant"),
     });
 
     expect(target).toEqual({
       kind: "binary",
-      binary: join(macosDir, "vellum-assistant"),
+      binary: join(macosDir, "mycadet"),
     });
   });
 
@@ -134,7 +134,7 @@ describe("resolveAssistantCommandTarget", () => {
 
     expect(
       resolveAssistantCommandTarget({
-        execPath: "/opt/vellum/vellum-daemon",
+        execPath: "/opt/cadet/cadet-daemon",
         moduleDir,
       }),
     ).toBeNull();
@@ -144,7 +144,7 @@ describe("resolveAssistantCommandTarget", () => {
 describe("installCommandAt", () => {
   const target = {
     kind: "bun-entry" as const,
-    bun: "/Applications/Vellum Staging.app/Contents/Resources/bun",
+    bun: "/Applications/Cadet Staging.app/Contents/Resources/bun",
     entry: "/Users/x/Library/Application Support/@mycadet/macos/.bin/assistant",
   };
 
@@ -156,7 +156,7 @@ describe("installCommandAt", () => {
     const content = readFileSync(commandPath, "utf-8");
     expect(content.startsWith("#!/bin/sh\n")).toBe(true);
     expect(content).toContain(
-      `exec '/Applications/Vellum Staging.app/Contents/Resources/bun' ` +
+      `exec '/Applications/Cadet Staging.app/Contents/Resources/bun' ` +
         `'/Users/x/Library/Application Support/@mycadet/macos/.bin/assistant' "$@"`,
     );
     expect(lstatSync(commandPath).mode & 0o111).toBeGreaterThan(0);
@@ -221,7 +221,7 @@ describe("installCommandAt", () => {
   });
 
   test("symlinks a compiled binary target", () => {
-    const binary = join(root, "vellum-assistant");
+    const binary = join(root, "mycadet");
     writeFileSync(binary, "");
     const commandPath = join(root, "bin", "assistant");
 

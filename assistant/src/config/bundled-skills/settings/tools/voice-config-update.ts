@@ -28,7 +28,6 @@ import {
   normalizeSttProviderId,
   VALID_STT_PROVIDERS,
 } from "../../../schemas/stt.js";
-import { normalizeTtsProviderId } from "../../../schemas/tts.js";
 import { voicePickerHint } from "./shared.js";
 
 /**
@@ -109,7 +108,7 @@ const XAI_STT_LANGUAGES: readonly string[] = DEEPGRAM_MULTI_LANGUAGE_CODES;
  */
 const XAI_STT_LANGUAGE_ERROR = `the configured STT provider is xai, which supports: ${XAI_STT_LANGUAGES.join(
   ", ",
-)}. Multilingual (multi) and the extended language codes are Deepgram/managed (vellum) only; switch stt_provider to use them`;
+)}. Multilingual (multi) and the extended language codes are Deepgram/managed (cadet) only; switch stt_provider to use them`;
 
 /**
  * STT providers that auto-detect the spoken language natively and take no
@@ -274,7 +273,7 @@ function validateSetting(
           };
         }
       } else if (!/^[a-zA-Z0-9._-]+$/.test(trimmed)) {
-        // Managed (vellum) / deepgram voices are Deepgram Aura model ids and
+        // Managed (cadet) / deepgram voices are Deepgram Aura model ids and
         // the other providers' voice references are also hyphenated.
         return {
           ok: false,
@@ -293,7 +292,7 @@ function validateSetting(
           error: `tts_provider must be one of: ${catalogIds.join(", ")}`,
         };
       }
-      const coercedTts = normalizeTtsProviderId(value.trim());
+      const coercedTts = value.trim();
       if (!catalogIds.includes(coercedTts)) {
         return {
           ok: false,
@@ -387,8 +386,8 @@ function validateSetting(
  * Remove a legacy `mode` key from a raw `services.<svc>` block. The schema
  * no longer has the field, but the settings cards still write it (for
  * compatibility with older daemons) and read `mode: "managed"` as the
- * Vellum marker — left stale after a provider switch here, the cards would
- * render Vellum while the daemon routes the newly chosen provider.
+ * Cadet marker — left stale after a provider switch here, the cards would
+ * render Cadet while the daemon routes the newly chosen provider.
  */
 function deleteLegacySpeechMode(
   raw: Record<string, unknown>,
@@ -472,7 +471,7 @@ export async function run(
 
   // Managed speech has more than one STT id, so the gate reads the catalog
   // rather than a literal: without this, setting a managed provider other
-  // than "vellum" on a disconnected assistant persists happily and then
+  // than "cadet" on a disconnected assistant persists happily and then
   // resolves no transcriber at all.
   const wantsManagedSpeech =
     (setting === "stt_provider" &&
@@ -481,7 +480,7 @@ export async function run(
   if (wantsManagedSpeech && !(await managedSpeechAvailable())) {
     return {
       content:
-        "Error: managed speech requires a Vellum platform connection. Run 'assistant platform connect' first.",
+        "Error: managed speech requires a Cadet platform connection. Run 'assistant platform connect' first.",
       isError: true,
     };
   }
@@ -497,7 +496,7 @@ export async function run(
       : FRIENDLY_NAMES[setting as VoiceSettingName];
 
   // The `ttsVoiceId` UserDefaults key is an ElevenLabs concept on the desktop
-  // client. A managed (vellum) or other-provider voice lives only in daemon
+  // client. A managed (cadet) or other-provider voice lives only in daemon
   // config and hot-applies per turn — broadcasting its id under the ElevenLabs
   // key would pollute the client's ElevenLabs voice, so skip the broadcast.
   const skipClientBroadcast =

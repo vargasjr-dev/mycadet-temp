@@ -37,10 +37,10 @@ Tell the user:
 >
 > 1. In the left sidebar, find **Projects & Apps**
 > 2. Click **+ Add Project** (if you already have a project, you can reuse it)
-> 3. Set the project name to **Vellum Assistant**
+> 3. Set the project name to **Cadet Assistant**
 > 4. For the use case, pick **Making a bot** or **Exploring the API**
 > 5. Add a brief description and click through each step
-> 6. When prompted, create a new app named **Vellum Assistant**
+> 6. When prompted, create a new app named **Cadet Assistant**
 >
 > You may see API Key, API Secret, and Bearer Token - save them if you like, but we won't use them. Navigate to your app's settings page.
 >
@@ -59,7 +59,7 @@ Tell the user:
 > 1. **App permissions:** Select **Read and write**
 > 2. **Type of App:** Select **Web App, Automated App or Bot**
 > 3. **Callback URI / Redirect URL:** `OAUTH_CALLBACK_URL`
-> 4. **Website URL:** `https://vellum.ai` (or any website you own)
+> 4. **Website URL:** `https://mycadet.ai` (or any website you own)
 >
 > Click **Save**.
 >

@@ -15,7 +15,7 @@ let constructed: CapturedWindow[] = [];
 // the `devTools` gate, mirroring how the real `app.isPackaged` differs between
 // a dev run and a shipped build.
 const appState = { isPackaged: false };
-const DEBUG_DEVTOOLS_DEFINE = "__VELLUM_ENABLE_CHROME_DEVTOOLS__";
+const DEBUG_DEVTOOLS_DEFINE = "__CADET_ENABLE_CHROME_DEVTOOLS__";
 
 mock.module("electron", () => ({
   app: appState,

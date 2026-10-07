@@ -343,7 +343,7 @@ describe("WorkspaceHeartbeatService", () => {
     test("skips uninitialized workspaces", async () => {
       const uninitDir = join(
         tmpdir(),
-        `vellum-uninit-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        `cadet-uninit-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       );
       mkdirSync(uninitDir, { recursive: true });
 

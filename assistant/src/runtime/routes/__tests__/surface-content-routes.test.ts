@@ -78,10 +78,10 @@ mock.module("../../../daemon/conversation-store.js", () => ({
 }));
 
 let requesterTrustClass = "guardian";
-mock.module("../vellum-actor-trust.js", () => ({
-  resolveVellumActorTrustContext: async () => ({
+mock.module("../cadet-actor-trust.js", () => ({
+  resolveCadetActorTrustContext: async () => ({
     trustClass: requesterTrustClass,
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
   }),
 }));
 
@@ -115,8 +115,8 @@ function findHandler(operationId: string): RouteDefinition["handler"] {
  * to exercise it as the guardian must send these.
  */
 const GUARDIAN_HEADERS = {
-  "x-vellum-principal-type": "actor",
-  "x-vellum-actor-principal-id": "vellum-principal-guardian",
+  "x-cadet-principal-type": "actor",
+  "x-cadet-actor-principal-id": "cadet-principal-guardian",
 };
 
 function makeStub(id: string): StubConversation {
@@ -371,8 +371,8 @@ describe("surfaces_get_content handler", () => {
         pathParams: { surfaceId: "surf-hidden" },
         queryParams: { conversationId: "conv-actor" },
         headers: {
-          "x-vellum-principal-type": "actor",
-          "x-vellum-actor-principal-id": "vellum-principal-contact",
+          "x-cadet-principal-type": "actor",
+          "x-cadet-actor-principal-id": "cadet-principal-contact",
         },
       });
     } catch (err) {
@@ -407,8 +407,8 @@ describe("surfaces_get_content handler", () => {
       pathParams: { surfaceId: "surf-visible" },
       queryParams: { conversationId: "conv-actor-ok" },
       headers: {
-        "x-vellum-principal-type": "actor",
-        "x-vellum-actor-principal-id": "vellum-principal-contact",
+        "x-cadet-principal-type": "actor",
+        "x-cadet-actor-principal-id": "cadet-principal-contact",
       },
     });
 
@@ -450,7 +450,7 @@ describe("surfaces_get_content handler", () => {
       await handler({
         pathParams: { surfaceId: "surf-g" },
         queryParams: { conversationId: "conv-svc" },
-        headers: { "x-vellum-principal-type": "svc_gateway" },
+        headers: { "x-cadet-principal-type": "svc_gateway" },
       });
     } catch (err) {
       caught = err;
@@ -485,7 +485,7 @@ describe("surfaces_get_content handler", () => {
     const result = await handler({
       pathParams: { surfaceId: "surf-l" },
       queryParams: { conversationId: "conv-local" },
-      headers: { "x-vellum-principal-type": "local" },
+      headers: { "x-cadet-principal-type": "local" },
     });
 
     expect(result).toEqual({

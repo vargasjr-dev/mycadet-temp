@@ -73,9 +73,9 @@ jobs:
       #                              are public, so embedding them is expected
       #   - VITE_TUNNEL_HOST          per-environment variable: the live-voice
       #                              tunnel host (no scheme), e.g.
-      #                              `tunnel-dev.vellum.ai` on nonprod. Unset in
+      #                              `tunnel-dev.mycadet.ai` on nonprod. Unset in
       #                              prod, where the client defaults to
-      #                              `tunnel.vellum.ai`. Must match the tunnel the
+      #                              `tunnel.mycadet.ai`. Must match the tunnel the
       #                              environment's assistant gateways tunnel to,
       #                              or the live-voice WS upgrade 503s "offline".
       #   - VITE_APP_VERSION         commit SHA baked into the browser bundle

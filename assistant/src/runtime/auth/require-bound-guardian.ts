@@ -4,7 +4,7 @@ import { matchesBoundGuardian } from "./owner-caller.js";
 import type { AuthContext } from "./types.js";
 
 /**
- * Verify the actor from AuthContext is the bound guardian for the vellum channel.
+ * Verify the actor from AuthContext is the bound guardian for the cadet channel.
  * Sources the guardian from the gateway binding and fails closed when the
  * gateway is unreachable (null list). Returns an error Response if not
  * authorized, or null if allowed.

@@ -9,7 +9,7 @@ const log = getLogger("migrations/133-collapse-provider-connections");
 // Collapse the user-facing provider-connection references in LLM config onto
 // provider values:
 //
-// - `provider_connection: "vellum"` entries become `provider: "vellum"` (the
+// - `provider_connection: "cadet"` entries become `provider: "cadet"` (the
 //   routing identity) and lose the connection field — dispatch derives the
 //   managed upstream from the model.
 // - `provider_connection: "chatgpt-subscription"` entries become
@@ -97,9 +97,9 @@ const CODEX_MODEL_IDS = new Set([
   "gpt-5.3-codex",
 ]);
 
-const VELLUM_CONNECTION = "vellum";
+const CADET_CONNECTION = "cadet";
 const CHATGPT_CONNECTION = "chatgpt-subscription";
-const ROUTING_IDENTITIES = new Set(["vellum", "chatgpt"]);
+const ROUTING_IDENTITIES = new Set(["cadet", "chatgpt"]);
 
 export const collapseProviderConnectionsMigration: WorkspaceMigration = {
   id: "133-collapse-provider-connections",
@@ -148,7 +148,7 @@ export const collapseProviderConnectionsMigration: WorkspaceMigration = {
       const name = defaultProvider.connectionName;
       const provider = defaultProvider.provider;
       const conventional =
-        name === VELLUM_CONNECTION ||
+        name === CADET_CONNECTION ||
         (typeof provider === "string" && name === `${provider}-personal`);
       if (conventional) {
         delete defaultProvider.connectionName;
@@ -178,7 +178,7 @@ export const collapseProviderConnectionsMigration: WorkspaceMigration = {
     // the field is stripped on read, so any raw value is dead weight the
     // resolver has never honored. It is deleted verbatim, never used as a
     // rewrite signal: flipping a call site's provider from a schema-dead
-    // "vellum" string would move a BYOK call site onto the managed route.
+    // "cadet" string would move a BYOK call site onto the managed route.
     const callSites = readObject(llm.callSites);
     if (callSites !== null) {
       for (const key of Object.keys(callSites)) {
@@ -245,17 +245,17 @@ function rewriteEntry(entry: Record<string, unknown>, label: string): boolean {
     return false;
   }
 
-  if (connection === VELLUM_CONNECTION) {
+  if (connection === CADET_CONNECTION) {
     const decoded = decodeRoutedModel(entry.model);
     const model =
       decoded ?? (typeof entry.model === "string" ? entry.model : null);
     if (model !== null && MANAGED_MODEL_IDS.has(model)) {
-      entry.provider = "vellum";
+      entry.provider = "cadet";
       entry.model = model;
       delete entry.provider_connection;
       log.info(
         { label, model },
-        'Rewrote vellum-connection entry to provider "vellum"',
+        'Rewrote cadet-connection entry to provider "cadet"',
       );
     } else {
       // Not provably routable (unknown/stale/absent model): rewriting would
@@ -264,7 +264,7 @@ function rewriteEntry(entry: Record<string, unknown>, label: string): boolean {
       delete entry.provider_connection;
       log.warn(
         { label, model: entry.model, provider },
-        "Dropped vellum connection without identity rewrite — model is not a known managed-routable id",
+        "Dropped cadet connection without identity rewrite — model is not a known managed-routable id",
       );
     }
     return true;

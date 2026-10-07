@@ -23,15 +23,15 @@ let prevWorkspaceEnv: string | undefined;
 
 beforeEach(() => {
   workspace = mkdtempSync(join(tmpdir(), "delete-memory-page-"));
-  prevWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = workspace;
+  prevWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = workspace;
 });
 
 afterEach(() => {
   if (prevWorkspaceEnv === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = prevWorkspaceEnv;
+    process.env.CADET_WORKSPACE_DIR = prevWorkspaceEnv;
   }
   rmSync(workspace, { recursive: true, force: true });
 });

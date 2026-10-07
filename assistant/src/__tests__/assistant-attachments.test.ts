@@ -8,12 +8,12 @@ import {
   deduplicateDrafts,
   drainDirectiveDisplayBuffer,
   estimateBase64Bytes,
-  extractVellumLinks,
-  incompleteVellumLinkSuffixLength,
+  extractCadetLinks,
+  incompleteCadetLinkSuffixLength,
   inferMimeType,
   MAX_ASSISTANT_ATTACHMENT_BYTES,
   resolveAttachmentFilename,
-  stripVellumLinks,
+  stripCadetLinks,
   validateDrafts,
 } from "../daemon/assistant-attachments.js";
 
@@ -329,7 +329,7 @@ describe("cleanAssistantContent", () => {
     const content = [
       {
         type: "text",
-        text: 'Here is the file:\n<vellum-attachment path="out.png" />',
+        text: 'Here is the file:\n<cadet-attachment path="out.png" />',
       },
     ];
     const result = cleanAssistantContent(content);
@@ -344,7 +344,7 @@ describe("cleanAssistantContent", () => {
   test("leaves non-text blocks unchanged", () => {
     const content = [
       { type: "tool_use", id: "t1", name: "read", input: {} },
-      { type: "text", text: '<vellum-attachment path="x.pdf" />' },
+      { type: "text", text: '<cadet-attachment path="x.pdf" />' },
     ];
     const result = cleanAssistantContent(content);
 
@@ -354,7 +354,7 @@ describe("cleanAssistantContent", () => {
 
   test("accumulates warnings for malformed tags", () => {
     const content = [
-      { type: "text", text: '<vellum-attachment source="bad" path="x.txt" />' },
+      { type: "text", text: '<cadet-attachment source="bad" path="x.txt" />' },
     ];
     const result = cleanAssistantContent(content);
 
@@ -430,14 +430,14 @@ describe("cleanAssistantContent", () => {
 });
 
 // ---------------------------------------------------------------------------
-// extractVellumLinks
+// extractCadetLinks
 // ---------------------------------------------------------------------------
 
-describe("extractVellumLinks", () => {
+describe("extractCadetLinks", () => {
   test("extracts workspace links", () => {
     const text =
-      "Here is your report: [report.pdf](vellum://workspace/scratch/report.pdf)";
-    const result = extractVellumLinks(text);
+      "Here is your report: [report.pdf](cadet://workspace/scratch/report.pdf)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(1);
     expect(result.directiveRequests[0].source).toBe("sandbox");
@@ -446,8 +446,8 @@ describe("extractVellumLinks", () => {
   });
 
   test("extracts host links", () => {
-    const text = "[doc.pdf](vellum://host/Users/me/doc.pdf)";
-    const result = extractVellumLinks(text);
+    const text = "[doc.pdf](cadet://host/Users/me/doc.pdf)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(1);
     expect(result.directiveRequests[0].source).toBe("host");
@@ -458,10 +458,10 @@ describe("extractVellumLinks", () => {
   test("extracts multiple links", () => {
     const text = [
       "Here are the files:",
-      "[a.png](vellum://workspace/scratch/a.png)",
-      "[b.pdf](vellum://host/tmp/b.pdf)",
+      "[a.png](cadet://workspace/scratch/a.png)",
+      "[b.pdf](cadet://host/tmp/b.pdf)",
     ].join("\n");
-    const result = extractVellumLinks(text);
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(2);
     expect(result.directiveRequests[0].source).toBe("sandbox");
@@ -472,8 +472,8 @@ describe("extractVellumLinks", () => {
 
   test("decodes URL-encoded spaces in workspace paths", () => {
     const text =
-      "[file with spaces.txt](vellum://workspace/scratch/file%20with%20spaces.txt)";
-    const result = extractVellumLinks(text);
+      "[file with spaces.txt](cadet://workspace/scratch/file%20with%20spaces.txt)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(1);
     expect(result.directiveRequests[0].source).toBe("sandbox");
@@ -483,8 +483,8 @@ describe("extractVellumLinks", () => {
   });
 
   test("decodes URL-encoded spaces in host paths", () => {
-    const text = "[my file.pdf](vellum://host/Users/me/my%20file.pdf)";
-    const result = extractVellumLinks(text);
+    const text = "[my file.pdf](cadet://host/Users/me/my%20file.pdf)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(1);
     expect(result.directiveRequests[0].source).toBe("host");
@@ -493,8 +493,8 @@ describe("extractVellumLinks", () => {
 
   test("warns on malformed percent-encoding instead of throwing", () => {
     const text =
-      "[100% complete.txt](vellum://workspace/scratch/100%25complete.txt)";
-    const result = extractVellumLinks(text);
+      "[100% complete.txt](cadet://workspace/scratch/100%25complete.txt)";
+    const result = extractCadetLinks(text);
 
     // %25 decodes to %, so this should succeed
     expect(result.directiveRequests).toHaveLength(1);
@@ -502,8 +502,8 @@ describe("extractVellumLinks", () => {
   });
 
   test("warns on malformed percent-encoding and skips the link", () => {
-    const text = "[bad file](vellum://workspace/scratch/100%complete.txt)";
-    const result = extractVellumLinks(text);
+    const text = "[bad file](cadet://workspace/scratch/100%complete.txt)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(0);
     expect(result.parseWarnings).toHaveLength(1);
@@ -511,8 +511,8 @@ describe("extractVellumLinks", () => {
   });
 
   test("warns on empty workspace path", () => {
-    const text = "[file](vellum://workspace/)";
-    const result = extractVellumLinks(text);
+    const text = "[file](cadet://workspace/)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(0);
     expect(result.parseWarnings).toHaveLength(1);
@@ -520,17 +520,17 @@ describe("extractVellumLinks", () => {
   });
 
   test("warns on empty host path", () => {
-    const text = "[file](vellum://host/)";
-    const result = extractVellumLinks(text);
+    const text = "[file](cadet://host/)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(0);
     expect(result.parseWarnings).toHaveLength(1);
     expect(result.parseWarnings[0]).toContain("empty path");
   });
 
-  test("ignores non-vellum markdown links", () => {
+  test("ignores non-cadet markdown links", () => {
     const text = "[link](https://example.com)";
-    const result = extractVellumLinks(text);
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(0);
     expect(result.parseWarnings).toHaveLength(0);
@@ -538,7 +538,7 @@ describe("extractVellumLinks", () => {
 
   test("returns empty when no links present", () => {
     const text = "Just some plain text with no links.";
-    const result = extractVellumLinks(text);
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(0);
     expect(result.parseWarnings).toHaveLength(0);
@@ -546,8 +546,8 @@ describe("extractVellumLinks", () => {
 
   test("image form ignores alt text and falls back to path basename", () => {
     const text =
-      "![A screenshot of the header](vellum://workspace/scratch/shot.png)";
-    const result = extractVellumLinks(text);
+      "![A screenshot of the header](cadet://workspace/scratch/shot.png)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(1);
     expect(result.directiveRequests[0].source).toBe("sandbox");
@@ -557,8 +557,8 @@ describe("extractVellumLinks", () => {
   });
 
   test("image form with empty alt still creates an attachment", () => {
-    const text = "![](vellum://workspace/scratch/shot.png)";
-    const result = extractVellumLinks(text);
+    const text = "![](cadet://workspace/scratch/shot.png)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(1);
     expect(result.directiveRequests[0].path).toBe("scratch/shot.png");
@@ -566,8 +566,8 @@ describe("extractVellumLinks", () => {
   });
 
   test("image form works for host links", () => {
-    const text = "![a chart](vellum://host/Users/me/chart.png)";
-    const result = extractVellumLinks(text);
+    const text = "![a chart](cadet://host/Users/me/chart.png)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(1);
     expect(result.directiveRequests[0].source).toBe("host");
@@ -576,16 +576,16 @@ describe("extractVellumLinks", () => {
   });
 
   test("plain link retains its link text as the filename", () => {
-    const text = "[report.pdf](vellum://workspace/scratch/report.pdf)";
-    const result = extractVellumLinks(text);
+    const text = "[report.pdf](cadet://workspace/scratch/report.pdf)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(1);
     expect(result.directiveRequests[0].filename).toBe("report.pdf");
   });
 
   test("plain link with empty text falls back to path basename", () => {
-    const text = "[](vellum://workspace/scratch/report.pdf)";
-    const result = extractVellumLinks(text);
+    const text = "[](cadet://workspace/scratch/report.pdf)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(1);
     expect(result.directiveRequests[0].path).toBe("scratch/report.pdf");
@@ -594,10 +594,10 @@ describe("extractVellumLinks", () => {
 
   test("mixes image and plain links in one message", () => {
     const text = [
-      "Here is the chart ![the Q3 chart](vellum://workspace/scratch/chart.png)",
-      "and the writeup [report.pdf](vellum://workspace/scratch/report.pdf)",
+      "Here is the chart ![the Q3 chart](cadet://workspace/scratch/chart.png)",
+      "and the writeup [report.pdf](cadet://workspace/scratch/report.pdf)",
     ].join(" ");
-    const result = extractVellumLinks(text);
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(2);
     expect(result.directiveRequests[0].path).toBe("scratch/chart.png");
@@ -607,8 +607,8 @@ describe("extractVellumLinks", () => {
   });
 
   test("image form decodes percent-encoded path", () => {
-    const text = "![final](vellum://workspace/scratch/shot%20final.png)";
-    const result = extractVellumLinks(text);
+    const text = "![final](cadet://workspace/scratch/shot%20final.png)";
+    const result = extractCadetLinks(text);
 
     expect(result.directiveRequests).toHaveLength(1);
     expect(result.directiveRequests[0].path).toBe("scratch/shot final.png");
@@ -617,152 +617,152 @@ describe("extractVellumLinks", () => {
 });
 
 // ---------------------------------------------------------------------------
-// cleanAssistantContent — vellum:// links
+// cleanAssistantContent — cadet:// links
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// stripVellumLinks
+// stripCadetLinks
 // ---------------------------------------------------------------------------
 
-describe("stripVellumLinks", () => {
-  test("replaces vellum:// links with their link text", () => {
+describe("stripCadetLinks", () => {
+  test("replaces cadet:// links with their link text", () => {
     const text =
-      "Here is the file: [report.pdf](vellum://workspace/scratch/report.pdf)";
-    expect(stripVellumLinks(text)).toBe("Here is the file: report.pdf");
+      "Here is the file: [report.pdf](cadet://workspace/scratch/report.pdf)";
+    expect(stripCadetLinks(text)).toBe("Here is the file: report.pdf");
   });
 
   test("handles multiple links", () => {
     const text = [
-      "[a.png](vellum://workspace/scratch/a.png)",
-      "[b.pdf](vellum://host/tmp/b.pdf)",
+      "[a.png](cadet://workspace/scratch/a.png)",
+      "[b.pdf](cadet://host/tmp/b.pdf)",
     ].join(" and ");
-    expect(stripVellumLinks(text)).toBe("a.png and b.pdf");
+    expect(stripCadetLinks(text)).toBe("a.png and b.pdf");
   });
 
   test("preserves text with no cadet links", () => {
     const text = "Plain text with [link](https://example.com)";
-    expect(stripVellumLinks(text)).toBe(text);
+    expect(stripCadetLinks(text)).toBe(text);
   });
 
   test("handles link text that differs from path basename", () => {
-    const text = "[Quarterly Report](vellum://workspace/scratch/report.pdf)";
-    expect(stripVellumLinks(text)).toBe("Quarterly Report");
+    const text = "[Quarterly Report](cadet://workspace/scratch/report.pdf)";
+    expect(stripCadetLinks(text)).toBe("Quarterly Report");
   });
 
   test("strips the leading `!` from image links, keeping only the alt text", () => {
     const text =
-      "Here is the chart: ![the Q3 chart](vellum://workspace/scratch/chart.png)";
-    expect(stripVellumLinks(text)).toBe("Here is the chart: the Q3 chart");
+      "Here is the chart: ![the Q3 chart](cadet://workspace/scratch/chart.png)";
+    expect(stripCadetLinks(text)).toBe("Here is the chart: the Q3 chart");
   });
 
   test("image link with empty alt collapses to empty string", () => {
-    const text = "before ![](vellum://workspace/scratch/shot.png) after";
-    expect(stripVellumLinks(text)).toBe("before  after");
+    const text = "before ![](cadet://workspace/scratch/shot.png) after";
+    expect(stripCadetLinks(text)).toBe("before  after");
   });
 
   test("handles a mix of image and plain links", () => {
     const text =
-      "![chart](vellum://workspace/scratch/chart.png) and [report.pdf](vellum://host/tmp/report.pdf)";
-    expect(stripVellumLinks(text)).toBe("chart and report.pdf");
+      "![chart](cadet://workspace/scratch/chart.png) and [report.pdf](cadet://host/tmp/report.pdf)";
+    expect(stripCadetLinks(text)).toBe("chart and report.pdf");
   });
 });
 
 // ---------------------------------------------------------------------------
-// incompleteVellumLinkSuffixLength
+// incompleteCadetLinkSuffixLength
 // ---------------------------------------------------------------------------
 
-describe("incompleteVellumLinkSuffixLength", () => {
+describe("incompleteCadetLinkSuffixLength", () => {
   const suffix = (text: string) =>
-    text.slice(text.length - incompleteVellumLinkSuffixLength(text));
+    text.slice(text.length - incompleteCadetLinkSuffixLength(text));
 
   test("returns 0 for text with no trailing link", () => {
-    expect(incompleteVellumLinkSuffixLength("all done, no links here")).toBe(0);
+    expect(incompleteCadetLinkSuffixLength("all done, no links here")).toBe(0);
   });
 
   test("returns 0 for a completed cadet link", () => {
     expect(
-      incompleteVellumLinkSuffixLength(
-        "see [report.pdf](vellum://workspace/scratch/report.pdf)",
+      incompleteCadetLinkSuffixLength(
+        "see [report.pdf](cadet://workspace/scratch/report.pdf)",
       ),
     ).toBe(0);
   });
 
   test("returns 0 for a completed link followed by trailing text", () => {
     expect(
-      incompleteVellumLinkSuffixLength(
-        "[a.pdf](vellum://host/tmp/a.pdf) and more",
+      incompleteCadetLinkSuffixLength(
+        "[a.pdf](cadet://host/tmp/a.pdf) and more",
       ),
     ).toBe(0);
   });
 
   test.each([
-    ["mid path", "grab [a.pdf](vellum://host/tmp/a"],
-    ["at slash", "grab [a.pdf](vellum://host/"],
-    ["at authority", "grab [a.pdf](vellum://host"],
-    ["partial authority", "grab [a.pdf](vellum://ho"],
-    ["partial scheme", "grab [a.pdf](vel"],
+    ["mid path", "grab [a.pdf](cadet://host/tmp/a"],
+    ["at slash", "grab [a.pdf](cadet://host/"],
+    ["at authority", "grab [a.pdf](cadet://host"],
+    ["partial authority", "grab [a.pdf](cadet://ho"],
+    ["partial scheme", "grab [a.pdf](cad"],
     ["open paren", "grab [a.pdf]("],
     ["closed label", "grab [a.pdf]"],
     ["open label", "grab [a.pd"],
   ])("withholds an in-progress cadet link (%s)", (_name, text) => {
     expect(suffix(text).startsWith("[")).toBe(true);
     expect(
-      stripVellumLinks(
-        text.slice(0, text.length - incompleteVellumLinkSuffixLength(text)),
+      stripCadetLinks(
+        text.slice(0, text.length - incompleteCadetLinkSuffixLength(text)),
       ),
-    ).not.toContain("vellum://");
+    ).not.toContain("cadet://");
   });
 
   test("withholds only the trailing in-progress link, not an earlier complete one", () => {
     const text =
-      "[done.pdf](vellum://host/tmp/done.pdf) then [next](vellum://workspace/scratch/n";
-    expect(suffix(text)).toBe("[next](vellum://workspace/scratch/n");
+      "[done.pdf](cadet://host/tmp/done.pdf) then [next](cadet://workspace/scratch/n";
+    expect(suffix(text)).toBe("[next](cadet://workspace/scratch/n");
   });
 
   test("stops withholding once the URL diverges from the cadet scheme", () => {
     expect(
-      incompleteVellumLinkSuffixLength("see [site](https://example.com"),
+      incompleteCadetLinkSuffixLength("see [site](https://example.com"),
     ).toBe(0);
   });
 
   test.each([
-    ["image mid path", "look ![shot](vellum://workspace/scratch/sh"],
+    ["image mid path", "look ![shot](cadet://workspace/scratch/sh"],
     ["image at bracket", "look !["],
     ["lone bang", "look !"],
   ])("withholds an in-progress image link (%s)", (_name, text) => {
-    const held = incompleteVellumLinkSuffixLength(text);
+    const held = incompleteCadetLinkSuffixLength(text);
     expect(held).toBeGreaterThan(0);
     // The withheld suffix always includes the leading `!` so a stray bang
     // never leaks ahead of the alt text.
     expect(suffix(text)).toContain("!");
-    expect(stripVellumLinks(text.slice(0, text.length - held))).not.toContain(
-      "vellum://",
+    expect(stripCadetLinks(text.slice(0, text.length - held))).not.toContain(
+      "cadet://",
     );
   });
 
   test("returns 0 for a completed image link", () => {
     expect(
-      incompleteVellumLinkSuffixLength(
-        "![shot](vellum://workspace/scratch/shot.png)",
+      incompleteCadetLinkSuffixLength(
+        "![shot](cadet://workspace/scratch/shot.png)",
       ),
     ).toBe(0);
   });
 
   test("does not withhold a `!` that is not at the end of the text", () => {
-    expect(incompleteVellumLinkSuffixLength("wow! more text")).toBe(0);
+    expect(incompleteCadetLinkSuffixLength("wow! more text")).toBe(0);
   });
 });
 
 // ---------------------------------------------------------------------------
-// cleanAssistantContent — vellum:// links
+// cleanAssistantContent — cadet:// links
 // ---------------------------------------------------------------------------
 
 describe("cleanAssistantContent — cadet links", () => {
-  test("extracts vellum:// links as directives without stripping them", () => {
+  test("extracts cadet:// links as directives without stripping them", () => {
     const content = [
       {
         type: "text",
-        text: "Here is your file: [report.pdf](vellum://workspace/scratch/report.pdf)",
+        text: "Here is your file: [report.pdf](cadet://workspace/scratch/report.pdf)",
       },
     ];
     const result = cleanAssistantContent(content);
@@ -772,7 +772,7 @@ describe("cleanAssistantContent — cadet links", () => {
     expect(result.directives[0].path).toBe("scratch/report.pdf");
     // The link text is preserved (not stripped)
     expect((result.cleanedContent[0] as { text: string }).text).toContain(
-      "[report.pdf](vellum://workspace/scratch/report.pdf)",
+      "[report.pdf](cadet://workspace/scratch/report.pdf)",
     );
   });
 
@@ -780,7 +780,7 @@ describe("cleanAssistantContent — cadet links", () => {
     const content = [
       {
         type: "text",
-        text: '[report.pdf](vellum://workspace/scratch/report.pdf)\n<vellum-attachment path="extra.png" />',
+        text: '[report.pdf](cadet://workspace/scratch/report.pdf)\n<cadet-attachment path="extra.png" />',
       },
     ];
     const result = cleanAssistantContent(content);
@@ -788,10 +788,10 @@ describe("cleanAssistantContent — cadet links", () => {
     expect(result.directives).toHaveLength(2);
     // cadet link is preserved, legacy tag is stripped
     expect((result.cleanedContent[0] as { text: string }).text).toContain(
-      "[report.pdf](vellum://workspace/scratch/report.pdf)",
+      "[report.pdf](cadet://workspace/scratch/report.pdf)",
     );
     expect((result.cleanedContent[0] as { text: string }).text).not.toContain(
-      "<vellum-attachment",
+      "<cadet-attachment",
     );
   });
 });
@@ -802,14 +802,14 @@ describe("cleanAssistantContent — cadet links", () => {
 
 describe("drainDirectiveDisplayBuffer", () => {
   test("strips complete valid directives from streamed text", () => {
-    const input = 'Before <vellum-attachment path="out.png" /> After';
+    const input = 'Before <cadet-attachment path="out.png" /> After';
     const result = drainDirectiveDisplayBuffer(input);
     expect(result.emitText).toBe("Before  After");
     expect(result.bufferedRemainder).toBe("");
   });
 
   test("inserts space when inline directive is stripped with no surrounding whitespace", () => {
-    const input = 'sentence.<vellum-attachment path="out.png" />Next sentence.';
+    const input = 'sentence.<cadet-attachment path="out.png" />Next sentence.';
     const result = drainDirectiveDisplayBuffer(input);
     expect(result.emitText).toBe("sentence. Next sentence.");
     expect(result.bufferedRemainder).toBe("");
@@ -817,7 +817,7 @@ describe("drainDirectiveDisplayBuffer", () => {
 
   test("does not insert space when stripped directive already has trailing whitespace", () => {
     const input =
-      'sentence. <vellum-attachment path="out.png" />Next sentence.';
+      'sentence. <cadet-attachment path="out.png" />Next sentence.';
     const result = drainDirectiveDisplayBuffer(input);
     expect(result.emitText).toBe("sentence. Next sentence.");
     expect(result.bufferedRemainder).toBe("");
@@ -825,14 +825,14 @@ describe("drainDirectiveDisplayBuffer", () => {
 
   test("does not insert space when stripped directive already has leading whitespace on next char", () => {
     const input =
-      'sentence.<vellum-attachment path="out.png" /> Next sentence.';
+      'sentence.<cadet-attachment path="out.png" /> Next sentence.';
     const result = drainDirectiveDisplayBuffer(input);
     expect(result.emitText).toBe("sentence. Next sentence.");
     expect(result.bufferedRemainder).toBe("");
   });
 
   test("preserves invalid directives as plain text", () => {
-    const input = 'Bad <vellum-attachment source="bad" path="x.txt" /> tag';
+    const input = 'Bad <cadet-attachment source="bad" path="x.txt" /> tag';
     const result = drainDirectiveDisplayBuffer(input);
     expect(result.emitText).toBe(input);
     expect(result.bufferedRemainder).toBe("");
@@ -840,10 +840,10 @@ describe("drainDirectiveDisplayBuffer", () => {
 
   test("buffers incomplete directives until completion", () => {
     const first = drainDirectiveDisplayBuffer(
-      'Start <vellum-attachment path="file',
+      'Start <cadet-attachment path="file',
     );
     expect(first.emitText).toBe("Start ");
-    expect(first.bufferedRemainder).toContain("<vellum-attachment");
+    expect(first.bufferedRemainder).toContain("<cadet-attachment");
 
     const second = drainDirectiveDisplayBuffer(
       first.bufferedRemainder + '.png" /> done',
@@ -858,29 +858,29 @@ describe("drainDirectiveDisplayBuffer", () => {
     expect(result.bufferedRemainder).toBe("<");
   });
 
-  test('buffers trailing partial prefix "<vel" split across chunks', () => {
-    const result = drainDirectiveDisplayBuffer("Some text<vel");
+  test('buffers trailing partial prefix "<cad" split across chunks', () => {
+    const result = drainDirectiveDisplayBuffer("Some text<cad");
     expect(result.emitText).toBe("Some text");
-    expect(result.bufferedRemainder).toBe("<vel");
+    expect(result.bufferedRemainder).toBe("<cad");
   });
 
-  test('buffers trailing partial prefix "<vellum-attachmen" (one char short)', () => {
-    const result = drainDirectiveDisplayBuffer("Data <vellum-attachmen");
+  test('buffers trailing partial prefix "<cadet-attachmen" (one char short)', () => {
+    const result = drainDirectiveDisplayBuffer("Data <cadet-attachmen");
     expect(result.emitText).toBe("Data ");
-    expect(result.bufferedRemainder).toBe("<vellum-attachmen");
+    expect(result.bufferedRemainder).toBe("<cadet-attachmen");
   });
 
   test('does not buffer trailing "<" that is not a prefix of the tag', () => {
-    // "<x" does not match any prefix of "<vellum-attachment"
+    // "<x" does not match any prefix of "<cadet-attachment"
     const result = drainDirectiveDisplayBuffer("Hello<x");
     expect(result.emitText).toBe("Hello<x");
     expect(result.bufferedRemainder).toBe("");
   });
 
   test("partial prefix reassembles into a complete directive across chunks", () => {
-    const first = drainDirectiveDisplayBuffer("Before <vellum-at");
+    const first = drainDirectiveDisplayBuffer("Before <cadet-at");
     expect(first.emitText).toBe("Before ");
-    expect(first.bufferedRemainder).toBe("<vellum-at");
+    expect(first.bufferedRemainder).toBe("<cadet-at");
 
     const second = drainDirectiveDisplayBuffer(
       first.bufferedRemainder + 'tachment path="out.png" /> After',

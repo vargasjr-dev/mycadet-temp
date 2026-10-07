@@ -31,7 +31,7 @@ describe("installPluginDependencies", () => {
   let dir: string;
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), "vellum-plugin-deps-"));
+    dir = mkdtempSync(join(tmpdir(), "cadet-plugin-deps-"));
   });
 
   afterEach(() => {

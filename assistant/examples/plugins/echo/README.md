@@ -51,7 +51,7 @@ echo/
 ## Install locally
 
 The assistant scans `<workspaceDir>/plugins/*` (e.g.
-`$VELLUM_WORKSPACE_DIR/plugins/`) for subdirectories containing a `package.json`
+`$CADET_WORKSPACE_DIR/plugins/`) for subdirectories containing a `package.json`
 and loads each one during assistant startup. Dropping (or symlinking) this
 directory in place is enough to enable it.
 
@@ -60,8 +60,8 @@ directory in place is enough to enable it.
 From the repo root:
 
 ```bash
-mkdir -p "$VELLUM_WORKSPACE_DIR"/plugins
-ln -s "$(pwd)/assistant/examples/plugins/echo" "$VELLUM_WORKSPACE_DIR"/plugins/echo
+mkdir -p "$CADET_WORKSPACE_DIR"/plugins
+ln -s "$(pwd)/assistant/examples/plugins/echo" "$CADET_WORKSPACE_DIR"/plugins/echo
 ```
 
 Symlinks let you edit the plugin in-place and restart the assistant to
@@ -69,11 +69,11 @@ pick up changes.
 
 ### Option 2 — standalone copy
 
-A plain `cp -R` of this directory into `$VELLUM_WORKSPACE_DIR/plugins/echo/`
+A plain `cp -R` of this directory into `$CADET_WORKSPACE_DIR/plugins/echo/`
 works as-is. The hooks import their types from the public `@mycadet/plugin-api`
 specifier, which the daemon materializes as a workspace-level shim before it
 loads any plugin — so the copied directory resolves it without any path
-rewriting, in or out of a vellum-assistant checkout.
+rewriting, in or out of a mycadet checkout.
 
 ### Restart the assistant
 
@@ -81,7 +81,7 @@ Plugins register at assistant startup. After installing, restart the
 assistant:
 
 ```bash
-vellum restart
+cadet restart
 ```
 
 ## Verify it works
@@ -91,7 +91,7 @@ that exercises a turn — a conversation reply, a tool call — and tail the
 assistant's stderr log:
 
 ```bash
-tail -f ~/.vellum/daemon.log
+tail -f ~/.cadet/daemon.log
 ```
 
 You should see one line per hook invocation, similar to:
@@ -109,8 +109,8 @@ You should see one line per hook invocation, similar to:
 Remove the symlink (or the copied directory) and restart the assistant:
 
 ```bash
-rm "$VELLUM_WORKSPACE_DIR"/plugins/echo
-vellum restart
+rm "$CADET_WORKSPACE_DIR"/plugins/echo
+cadet restart
 ```
 
 ## Next steps

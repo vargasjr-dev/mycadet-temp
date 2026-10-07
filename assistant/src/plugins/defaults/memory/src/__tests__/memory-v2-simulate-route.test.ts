@@ -9,7 +9,7 @@
  *   3. The handler never calls `recordInjectionEvents` — the simulate path
  *      must not touch the EMA event log.
  *
- * Workspace lives in a `mkdtemp` directory per test; `~/.vellum/` is never
+ * Workspace lives in a `mkdtemp` directory per test; `~/.cadet/` is never
  * touched. The provider and DB are stubbed so no network or SQLite I/O
  * fires.
  */
@@ -26,7 +26,7 @@ import type {
 import type { ToolDefinition } from "../../llm-helpers.js";
 
 // Captured at module scope: the preload cleans up its env var between suites.
-const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
+const PRELOAD_WS = process.env.CADET_WORKSPACE_DIR!;
 
 // ---------------------------------------------------------------------------
 // Mocks (installed before the route module is imported)

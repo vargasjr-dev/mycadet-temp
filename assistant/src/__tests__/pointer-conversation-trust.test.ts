@@ -54,17 +54,17 @@ class FakeConversation {
 }
 
 const TRUSTED_CONTACT_CONTEXT: TrustContext = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "trusted_contact",
 };
 
 const UNVERIFIED_CONTACT_CONTEXT: TrustContext = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "unverified_contact",
 };
 
 const GUARDIAN_CONTEXT: TrustContext = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "guardian",
 };
 

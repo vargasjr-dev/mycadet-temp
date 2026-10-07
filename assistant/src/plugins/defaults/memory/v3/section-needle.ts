@@ -64,7 +64,7 @@ export interface SectionNeedle {
    * Corpus IDF of `term` over the section index (its head+body postings): higher
    * means the term occurs in fewer sections. The entity lane gates heading
    * tokens by this so only terms distinctive enough to disambiguate become
-   * entity keys (hub words like "vellum" fall below the floor).
+   * entity keys (hub words like "cadet" fall below the floor).
    */
   idf(term: string): number;
   /**

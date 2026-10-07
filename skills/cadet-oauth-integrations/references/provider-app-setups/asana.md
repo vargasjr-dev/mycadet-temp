@@ -37,7 +37,7 @@ Open: `https://app.asana.com/0/my-apps`
 
 After the user clicks:
 
-> Set the app name to **Vellum Assistant**. You'll also need to select a purpose - pick whichever fits best (e.g., "Build an integration" or "Personal use"). Then click **Create app**.
+> Set the app name to **Cadet Assistant**. You'll also need to select a purpose - pick whichever fits best (e.g., "Build an integration" or "Personal use"). Then click **Create app**.
 
 **Known issues:**
 
@@ -71,7 +71,7 @@ After the user clicks:
 
 Follow the `cadet-oauth-integrations` workflow to collect credentials, register the OAuth app, connect, and verify.
 
-> I'll start the Asana authorization flow now. You should see an Asana consent page asking you to allow **Vellum Assistant** to access your account.
+> I'll start the Asana authorization flow now. You should see an Asana consent page asking you to allow **Cadet Assistant** to access your account.
 >
 > Review the permissions and click **Allow**.
 

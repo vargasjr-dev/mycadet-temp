@@ -25,7 +25,7 @@ import { join } from "node:path";
 
 export const description = "Item CRUD — stores records as a JSON file";
 
-const DATA_DIR = join(process.env.VELLUM_WORKSPACE_DIR!, "data");
+const DATA_DIR = join(process.env.CADET_WORKSPACE_DIR!, "data");
 const DATA_FILE = join(DATA_DIR, "items.json");
 
 function loadItems(): Array<Record<string, unknown>> {
@@ -78,13 +78,13 @@ if (!createRes.ok) throw new Error(`HTTP ${createRes.status}`);
 
 ### Typing `window.cadet`
 
-Don't hand-declare `window.cadet` in a local `vellum.d.ts`. If the app depends on `@mycadet/plugin-api`, the `window.cadet` global is typed for you — add a one-line reference in a `.d.ts` (or entry file):
+Don't hand-declare `window.cadet` in a local `cadet.d.ts`. If the app depends on `@mycadet/plugin-api`, the `window.cadet` global is typed for you — add a one-line reference in a `.d.ts` (or entry file):
 
 ```typescript
 /// <reference types="@mycadet/plugin-api/app" />
 ```
 
-Equivalently, add `"@mycadet/plugin-api/app"` to `compilerOptions.types` in `tsconfig.json`. Both are types-only — do **not** `import` from `@mycadet/plugin-api` to get the global; a runtime bare import isn't supported for sandboxed apps. If you want to name a type, use `import type { VellumAppBridge } from "@mycadet/plugin-api/app"`.
+Equivalently, add `"@mycadet/plugin-api/app"` to `compilerOptions.types` in `tsconfig.json`. Both are types-only — do **not** `import` from `@mycadet/plugin-api` to get the global; a runtime bare import isn't supported for sandboxed apps. If you want to name a type, use `import type { CadetAppBridge } from "@mycadet/plugin-api/app"`.
 
 ## Reaching daemon capabilities (`@mycadet/plugin-api`)
 

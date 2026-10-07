@@ -264,7 +264,7 @@ export function registerSkillsCommand(program: Command): void {
               updatedAt?: string;
             }>;
           }>("listSkills", { queryParams: { include: "catalog", q: query } });
-          const vellumSkills = catalogR.ok
+          const cadetSkills = catalogR.ok
             ? catalogR.result!.skills.filter((s) => s.origin === "cadet")
             : [];
 
@@ -294,7 +294,7 @@ export function registerSkillsCommand(program: Command): void {
             : [];
 
           // Deduplicate by id — cadet wins
-          const seen = new Set(vellumSkills.map((s) => s.id));
+          const seen = new Set(cadetSkills.map((s) => s.id));
           const dedupedCommunity = communitySkills.filter((s) => {
             if (seen.has(s.id)) {
               return false;
@@ -310,7 +310,7 @@ export function registerSkillsCommand(program: Command): void {
             .slice(0, limit);
 
           const hasResults =
-            vellumSkills.length > 0 ||
+            cadetSkills.length > 0 ||
             clawhubResults.length > 0 ||
             skillsshResults.length > 0;
 
@@ -318,7 +318,7 @@ export function registerSkillsCommand(program: Command): void {
             console.log(
               JSON.stringify({
                 ok: true,
-                catalog: vellumSkills,
+                catalog: cadetSkills,
                 community: skillsshResults,
                 clawhub: clawhubResults,
                 ...(catalogR.ok ? {} : { catalogError: catalogR.error }),
@@ -339,9 +339,9 @@ export function registerSkillsCommand(program: Command): void {
             return;
           }
 
-          if (vellumSkills.length > 0) {
-            log.info(`Cadet catalog (${vellumSkills.length}):\n`);
-            for (const s of vellumSkills) {
+          if (cadetSkills.length > 0) {
+            log.info(`Cadet catalog (${cadetSkills.length}):\n`);
+            for (const s of cadetSkills) {
               const emoji = s.emoji ? `${s.emoji} ` : "";
               const badge = s.kind === "installed" ? " [installed]" : "";
               log.info(`  ${emoji}${s.name}${badge}`);

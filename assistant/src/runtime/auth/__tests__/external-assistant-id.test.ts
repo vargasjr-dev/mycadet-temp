@@ -10,21 +10,21 @@ import {
 
 afterEach(() => {
   resetExternalAssistantIdCache();
-  delete process.env.VELLUM_ASSISTANT_NAME;
+  delete process.env.CADET_ASSISTANT_NAME;
 });
 
 describe("getExternalAssistantId", () => {
-  test("resolves from VELLUM_ASSISTANT_NAME env var", () => {
-    process.env.VELLUM_ASSISTANT_NAME = "vellum-cool-eel";
-    expect(getExternalAssistantId()).toBe("vellum-cool-eel");
+  test("resolves from CADET_ASSISTANT_NAME env var", () => {
+    process.env.CADET_ASSISTANT_NAME = "cadet-cool-eel";
+    expect(getExternalAssistantId()).toBe("cadet-cool-eel");
   });
 
   test("caches the resolved value", () => {
-    process.env.VELLUM_ASSISTANT_NAME = "vellum-cool-eel";
-    expect(getExternalAssistantId()).toBe("vellum-cool-eel");
+    process.env.CADET_ASSISTANT_NAME = "cadet-cool-eel";
+    expect(getExternalAssistantId()).toBe("cadet-cool-eel");
     // Change env var — cached value should still be returned
-    process.env.VELLUM_ASSISTANT_NAME = "vellum-other-fox";
-    expect(getExternalAssistantId()).toBe("vellum-cool-eel");
+    process.env.CADET_ASSISTANT_NAME = "cadet-other-fox";
+    expect(getExternalAssistantId()).toBe("cadet-cool-eel");
   });
 
   test("returns undefined when env var is not set", () => {

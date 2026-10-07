@@ -54,7 +54,7 @@ const log = getLogger("slow-query");
 // Parsed once at module load; falls back below for any non-positive or
 // unparseable value.
 const configuredThresholdMs = Number(
-  process.env.VELLUM_SLOW_QUERY_THRESHOLD_MS,
+  process.env.CADET_SLOW_QUERY_THRESHOLD_MS,
 );
 
 /**

@@ -98,7 +98,7 @@ function viteProcessesOnPort(targetPort: number): Array<{ pid: number; command: 
 /** Wall-clock stack sample of a process via macOS `sample` — shows the exact
  * frames a stuck process is blocked in. */
 function sampleProcess(pid: number): string {
-  const sampleFile = `/tmp/vellum-dev-vite-hang-sample-${pid}.txt`;
+  const sampleFile = `/tmp/cadet-dev-vite-hang-sample-${pid}.txt`;
   try {
     run("sample", [String(pid), String(SAMPLE_SECONDS), "-mayDie", "-file", sampleFile]);
     const text = fs.readFileSync(sampleFile, "utf8");
@@ -111,7 +111,7 @@ function sampleProcess(pid: number): string {
 
 async function captureHangDiagnostics(): Promise<string> {
   const stamp = new Date().toISOString().replace(/:/g, "-");
-  const reportPath = `/tmp/vellum-dev-vite-hang-${stamp}.txt`;
+  const reportPath = `/tmp/cadet-dev-vite-hang-${stamp}.txt`;
   const sections: string[] = [
     `Vite dev-server hang capture — ${new Date().toISOString()}`,
     `Waited ${timeoutMs}ms for ${url} with no response.`,

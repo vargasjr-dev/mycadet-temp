@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 function makeLockPath(): string {
-  const tempDir = mkdtempSync(join(tmpdir(), "vellum-hatch-lock-test-"));
+  const tempDir = mkdtempSync(join(tmpdir(), "cadet-hatch-lock-test-"));
   tempDirs.push(tempDir);
   return join(tempDir, "local-hatch.lock");
 }
@@ -25,8 +25,8 @@ function makeLockPath(): string {
 describe("withLocalHatchLock", () => {
   test("uses the same machine lock when callers have different temp directories", () => {
     const originalTmpDir = process.env.TMPDIR;
-    const firstTmpDir = mkdtempSync(join(tmpdir(), "vellum-tmp-a-"));
-    const secondTmpDir = mkdtempSync(join(tmpdir(), "vellum-tmp-b-"));
+    const firstTmpDir = mkdtempSync(join(tmpdir(), "cadet-tmp-a-"));
+    const secondTmpDir = mkdtempSync(join(tmpdir(), "cadet-tmp-b-"));
     tempDirs.push(firstTmpDir, secondTmpDir);
 
     try {

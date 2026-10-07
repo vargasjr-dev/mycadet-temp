@@ -1001,7 +1001,7 @@ describe("schedules create", () => {
       "--mode",
       "script",
       "--script",
-      'cd "$VELLUM_WORKSPACE_DIR/schedules/$__SCHEDULE_ID" && bun poll.ts',
+      'cd "$CADET_WORKSPACE_DIR/schedules/$__SCHEDULE_ID" && bun poll.ts',
       "--expression",
       "*/15 * * * *",
       "--description",
@@ -1020,7 +1020,7 @@ describe("schedules create", () => {
             enabled: true,
             mode: "script",
             script:
-              'cd "$VELLUM_WORKSPACE_DIR/schedules/$__SCHEDULE_ID" && bun poll.ts',
+              'cd "$CADET_WORKSPACE_DIR/schedules/$__SCHEDULE_ID" && bun poll.ts',
           },
         },
       },

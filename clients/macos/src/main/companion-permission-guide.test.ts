@@ -106,7 +106,7 @@ mock.module("node:fs/promises", () => ({
 mock.module("electron", () => ({
   nativeImage: { createFromBuffer: () => avatarIcon },
   app: {
-    getPath: () => "/Applications/Vellum.app/Contents/MacOS/Vellum",
+    getPath: () => "/Applications/Cadet.app/Contents/MacOS/Cadet",
     getFileIcon: async (_file: string, options: { size: string }) => {
       // Electron does not support the large icon size on macOS.
       expect(["small", "normal"]).toContain(options.size);
@@ -155,7 +155,7 @@ mock.module("./companion-capture-sources", () => ({
 }));
 mock.module("./sidecar/mac-helper-path", () => ({
   getMacHelperAppPath: () =>
-    "/Applications/Vellum.app/Contents/Resources/bin/Vellum Helper.app",
+    "/Applications/Cadet.app/Contents/Resources/bin/Cadet Helper.app",
 }));
 const preparePresentation = mock(() => undefined);
 mock.module("./permissions-service", () => ({
@@ -228,7 +228,7 @@ describe("native permission guide", () => {
       sender: win.webContents,
     });
     expect(win.webContents.startDrag).toHaveBeenCalledWith({
-      file: "/Applications/Vellum.app/Contents/Resources/bin/Vellum Helper.app",
+      file: "/Applications/Cadet.app/Contents/Resources/bin/Cadet Helper.app",
       icon: avatarIcon,
     });
   });
@@ -293,7 +293,7 @@ describe("native permission guide", () => {
     expect(win.webContents.startDrag).not.toHaveBeenCalled();
     drag([session.id], { sender: win.webContents });
     expect(win.webContents.startDrag).toHaveBeenCalledWith({
-      file: "/Applications/Vellum.app/Contents/Resources/bin/Vellum Helper.app",
+      file: "/Applications/Cadet.app/Contents/Resources/bin/Cadet Helper.app",
       icon,
     });
   });

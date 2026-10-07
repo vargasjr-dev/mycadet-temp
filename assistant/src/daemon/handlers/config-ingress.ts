@@ -34,7 +34,7 @@ export function computeGatewayTarget(): string {
 /**
  * The `ingress` section of the raw workspace config.
  *
- * `vellum tunnel` writes this section (`cli/src/lib/ingress-config.ts`). The
+ * `cadet tunnel` writes this section (`cli/src/lib/ingress-config.ts`). The
  * CLI is a separate build unit the assistant does not depend on, so the key
  * names and the record validation are shared through
  * `@mycadet/service-contracts/ingress` instead.

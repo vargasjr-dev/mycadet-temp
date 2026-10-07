@@ -10,7 +10,7 @@ import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-const testDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testDir = process.env.CADET_WORKSPACE_DIR!;
 
 process.env.DISABLE_HTTP_AUTH = "true";
 

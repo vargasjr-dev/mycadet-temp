@@ -5,7 +5,7 @@ const packageDir = path.resolve(import.meta.dir, "..");
 export const platformOriginFromDevUrl = (value: string): string => {
   const url = new URL(value);
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new Error("VELLUM_DEV_URL must use http or https");
+    throw new Error("CADET_DEV_URL must use http or https");
   }
   return url.origin;
 };
@@ -26,10 +26,10 @@ const run = async (
 };
 
 const main = async (): Promise<void> => {
-  const remoteUrl = process.env.VELLUM_DEV_URL;
+  const remoteUrl = process.env.CADET_DEV_URL;
   if (!remoteUrl) {
     throw new Error(
-      "Set VELLUM_DEV_URL to the remote platform URL, for example https://dev-assistant.vellum.ai/assistant",
+      "Set CADET_DEV_URL to the remote platform URL, for example https://dev.cloud.mycadet.ai/assistant",
     );
   }
 
@@ -45,9 +45,9 @@ const main = async (): Promise<void> => {
   process.exit(
     await run(["run", "dev:electron-only"], {
       ...process.env,
-      VELLUM_LOCAL_RENDERER: "true",
-      VELLUM_PLATFORM_URL: platformOrigin,
-      VELLUM_WEB_URL: platformOrigin,
+      CADET_LOCAL_RENDERER: "true",
+      CADET_PLATFORM_URL: platformOrigin,
+      CADET_WEB_URL: platformOrigin,
     }),
   );
 };

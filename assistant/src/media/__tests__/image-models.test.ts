@@ -102,7 +102,7 @@ describe("resolveRequestedImageModel", () => {
     expect(openai.model).toBeUndefined();
     expect(openai.error).toContain("Unknown model");
 
-    expect(resolveRequestedImageModel("fast", "vellum")).toEqual({
+    expect(resolveRequestedImageModel("fast", "cadet")).toEqual({
       model: "gemini-3.1-flash-image-preview",
     });
   });

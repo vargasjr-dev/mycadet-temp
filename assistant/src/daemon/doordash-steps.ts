@@ -19,12 +19,12 @@ const SURFACE_ID = "doordash-progress";
 
 /**
  * Map a DoorDash CLI invocation (`doordash <subcommand>`,
- * `vellum doordash <subcommand>`, or `bun .../doordash-entry.ts <subcommand>`)
+ * `cadet doordash <subcommand>`, or `bun .../doordash-entry.ts <subcommand>`)
  * to the step label it corresponds to.
  */
 function doordashCommandToStep(cmd: string): string | undefined {
-  // Match standalone `doordash`, legacy `vellum doordash`, and `bun .../doordash-entry.ts` prefixes
-  const dd = /(?:vellum )?(?:doordash|bun\s+\S*doordash-entry\.ts) /;
+  // Match standalone `doordash`, legacy `cadet doordash`, and `bun .../doordash-entry.ts` prefixes
+  const dd = /(?:cadet )?(?:doordash|bun\s+\S*doordash-entry\.ts) /;
   if (
     new RegExp(dd.source + "status\\b").test(cmd) ||
     new RegExp(dd.source + "refresh\\b").test(cmd) ||

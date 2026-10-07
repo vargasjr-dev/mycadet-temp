@@ -78,7 +78,7 @@ export interface ResolveCallTtsOptions {
  * ({@link resolveEffectiveSpeechProviders}): a configured BYOK provider
  * whose credential does not resolve is stood in for by managed speech
  * while the platform connection is usable, the same substitution live
- * voice makes, so a fresh Vellum connection speaks on the phone with zero
+ * voice makes, so a fresh Cadet connection speaks on the phone with zero
  * TTS configuration.
  *
  * The native-vs-synthesized decision is driven by the catalog's

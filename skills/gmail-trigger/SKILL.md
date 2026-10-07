@@ -58,7 +58,7 @@ By default the trigger starts from now and never escalates pre-existing email. A
 Create a recurring **script-mode** schedule (default cadence every 15 minutes unless the user asks for a different one) whose command runs the schedule's own copy of the poll script with the flags chosen above:
 
 ```
-bun "$VELLUM_WORKSPACE_DIR/schedules/$__SCHEDULE_ID/poll.ts" --account you@example.com --action-prompt 'Summarize new email; flag anything urgent'
+bun "$CADET_WORKSPACE_DIR/schedules/$__SCHEDULE_ID/poll.ts" --account you@example.com --action-prompt 'Summarize new email; flag anything urgent'
 ```
 
 Pass `timeout_ms: 900000` — the poll's runtime includes the woken assistant turn. Single-quote the action prompt (the command runs through `sh`). All configuration lives in this command string, so it is visible in the schedule and editable later with `assistant schedules update <id> --script "..."`.
@@ -68,8 +68,8 @@ Pass `timeout_ms: 900000` — the poll's runtime includes the woken assistant tu
 Read the schedule id from the create result, then:
 
 ```bash
-mkdir -p "$VELLUM_WORKSPACE_DIR/schedules/<id>"
-cp "$VELLUM_WORKSPACE_DIR/skills/gmail-trigger/scripts/poll.ts" "$VELLUM_WORKSPACE_DIR/schedules/<id>/poll.ts"
+mkdir -p "$CADET_WORKSPACE_DIR/schedules/<id>"
+cp "$CADET_WORKSPACE_DIR/skills/gmail-trigger/scripts/poll.ts" "$CADET_WORKSPACE_DIR/schedules/<id>/poll.ts"
 ```
 
 The schedule owns this copy — customizations made to it are never touched by skill upgrades. `poll.ts` self-provisions its state on first run; create nothing else.

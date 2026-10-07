@@ -3,7 +3,7 @@
  *
  * Reads guardian delivery info from the gateway-backed guardian list.
  *
- * - Vellum: no external endpoint needed — delivery goes through the event
+ * - Cadet: no external endpoint needed — delivery goes through the event
  *   broadcast mechanism to connected desktop/mobile clients. The
  *   guardianPrincipalId is included in metadata so downstream adapters
  *   can scope guardian-sensitive notifications to bound guardian devices.
@@ -69,22 +69,22 @@ export function resolveDestinations(
     // `isNotificationDeliverable` is a type predicate, so past this point
     // `channel` is a NotificationChannel and the switch below is exhaustive.
     switch (channel) {
-      case "vellum": {
-        // Vellum delivery is local — no external endpoint required.
+      case "cadet": {
+        // Cadet delivery is local — no external endpoint required.
         // Include the guardianPrincipalId so the adapter can annotate
         // guardian-sensitive notifications for scoped delivery.
-        const guardian = resolveGuardian(guardians, "vellum");
+        const guardian = resolveGuardian(guardians, "cadet");
         const metadata: Record<string, unknown> = {};
         if (guardian?.principalId) {
           metadata.guardianPrincipalId = guardian.principalId;
         }
-        result.set("vellum", {
-          channel: "vellum",
+        result.set("cadet", {
+          channel: "cadet",
           metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
         });
         log.debug(
           {
-            channel: "vellum",
+            channel: "cadet",
             source: "guardian-delivery",
             hasEndpoint: false,
           },
@@ -193,10 +193,10 @@ export function resolveDestinations(
         break;
       }
       case "platform": {
-        // Platform delivery goes through the daemon's VellumPlatformClient —
+        // Platform delivery goes through the daemon's CadetPlatformClient —
         // no external binding needed. Include guardianPrincipalId so the
         // adapter can scope guardian-sensitive notifications.
-        const platformGuardian = resolveGuardian(guardians, "vellum");
+        const platformGuardian = resolveGuardian(guardians, "cadet");
         const platformMeta: Record<string, unknown> = {};
         if (platformGuardian?.principalId) {
           platformMeta.guardianPrincipalId = platformGuardian.principalId;

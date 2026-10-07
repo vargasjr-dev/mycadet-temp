@@ -36,16 +36,16 @@ let workspace: string;
 let previousWorkspace: string | undefined;
 beforeEach(() => {
   workspace = mkdtempSync(join(tmpdir(), "desktop-wallpaper-test-"));
-  previousWorkspace = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = workspace;
+  previousWorkspace = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = workspace;
   mkdirSync(join(workspace, "data/avatar"), { recursive: true });
 });
 afterEach(() => {
   __resetResvgCacheForTests();
   if (previousWorkspace === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = previousWorkspace;
+    process.env.CADET_WORKSPACE_DIR = previousWorkspace;
   }
   rmSync(workspace, { recursive: true, force: true });
 });

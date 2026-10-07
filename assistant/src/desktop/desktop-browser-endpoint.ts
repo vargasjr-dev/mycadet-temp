@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { shouldRestoreDesktopChromeSession } from "./desktop-chrome-session.js";
 
-export const DESKTOP_CHROME_WINDOW_CLASS = "vellum-desktop-chrome";
+export const DESKTOP_CHROME_WINDOW_CLASS = "cadet-desktop-chrome";
 const DesktopVersionResponseSchema = z.object({
   webSocketDebuggerUrl: z.unknown().optional(),
 });

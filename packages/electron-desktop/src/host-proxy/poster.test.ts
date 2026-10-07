@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
 
 const FAKE_DEVICE_ID = "test-device-00000000-0000-0000-0000-000000000000";
-const clientHeaders = () => ({ "X-Vellum-Client-Id": FAKE_DEVICE_ID });
+const clientHeaders = () => ({ "X-Cadet-Client-Id": FAKE_DEVICE_ID });
 
 const { HostProxyPoster } = await import("./poster");
 
@@ -107,7 +107,7 @@ function makeLocalPoster(
 
 function makeCloudPoster(
   fetchFn: typeof globalThis.fetch,
-  runtimeUrl = "https://platform.vellum.ai",
+  runtimeUrl = "https://cloud.cadet.ai",
   assistantId = "asst-123",
   sessionToken = "session-tok",
 ) {
@@ -149,7 +149,7 @@ describe("HostProxyPoster", () => {
       expect(req.method).toBe("POST");
       expect(req.headers["Content-Type"]).toBe("application/json");
       expect(req.headers["Authorization"]).toBe("Bearer test-token");
-      expect(req.headers["X-Vellum-Client-Id"]).toBe(FAKE_DEVICE_ID);
+      expect(req.headers["X-Cadet-Client-Id"]).toBe(FAKE_DEVICE_ID);
 
       const body = JSON.parse(req.body!);
       expect(body.requestId).toBe("req-1");
@@ -292,7 +292,7 @@ describe("HostProxyPoster", () => {
       expect(req.url).toBe("http://127.0.0.1:9000/v1/clients/presence");
       expect(req.method).toBe("POST");
       expect(req.headers["Content-Type"]).toBe("application/json");
-      expect(req.headers["X-Vellum-Client-Id"]).toBe(FAKE_DEVICE_ID);
+      expect(req.headers["X-Cadet-Client-Id"]).toBe(FAKE_DEVICE_ID);
 
       const body = JSON.parse(req.body!);
       expect(body.state).toBe("active");
@@ -385,7 +385,7 @@ describe("HostProxyPoster", () => {
       expect(req.url).toBe("http://127.0.0.1:9000/v1/transfers/xfer-1/content");
       expect(req.method).toBe("GET");
       expect(req.headers["Authorization"]).toBe("Bearer test-token");
-      expect(req.headers["X-Vellum-Client-Id"]).toBe(FAKE_DEVICE_ID);
+      expect(req.headers["X-Cadet-Client-Id"]).toBe(FAKE_DEVICE_ID);
     });
 
     test("returns null on non-2xx", async () => {
@@ -743,7 +743,7 @@ describe("HostProxyPoster", () => {
       await poster.postBashResult({ requestId: "r1", stdout: "" });
 
       expect(captured[0].url).toBe(
-        "https://platform.vellum.ai/v1/assistants/asst-123/host-bash-result",
+        "https://cloud.cadet.ai/v1/assistants/asst-123/host-bash-result",
       );
     });
 
@@ -767,7 +767,7 @@ describe("HostProxyPoster", () => {
       await poster.pullTransferContent("xfer-1");
 
       expect(captured[0].url).toBe(
-        "https://platform.vellum.ai/v1/assistants/asst-123/transfers/xfer-1/content",
+        "https://cloud.cadet.ai/v1/assistants/asst-123/transfers/xfer-1/content",
       );
     });
   });

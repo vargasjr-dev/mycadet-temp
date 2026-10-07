@@ -50,10 +50,10 @@ function makeDecision(
 ): NotificationDecision {
   return {
     shouldNotify: true,
-    selectedChannels: ["vellum"],
+    selectedChannels: ["cadet"],
     reasoningSummary: "Schedule reminder",
     renderedCopy: {
-      vellum: { title: "Reminder", body: "Time to drink water" },
+      cadet: { title: "Reminder", body: "Time to drink water" },
     },
     dedupeKey: "schedule:notify:schedule-123",
     confidence: 0.9,
@@ -93,7 +93,7 @@ describe("recurring schedule.notify dedup", () => {
     const decision = makeDecision({ dedupeKey: stableKey });
 
     const result = await runDeterministicChecks(secondSignal, decision, {
-      connectedChannels: ["vellum"],
+      connectedChannels: ["cadet"],
     });
 
     expect(result.passed).toBe(true);

@@ -2,21 +2,21 @@
  * Device ID resolver.
  *
  * Reads or creates a stable per-device UUID stored in device.json under the
- * Vellum config directory. The file is a JSON object (`{ "deviceId": "<uuid>" }`)
+ * Cadet config directory. The file is a JSON object (`{ "deviceId": "<uuid>" }`)
  * extensible for future per-device metadata.
  *
  * Path resolution:
- *   - All modes: the `VELLUM_DEVICE_ID` env var takes precedence when set
+ *   - All modes: the `CADET_DEVICE_ID` env var takes precedence when set
  *     and is never written to device.json (see getDeviceIdOverride in
  *     config/env-registry.ts).
- *   - Containerized (IS_CONTAINERIZED=true): `/home/assistant/.vellum/device.json`
+ *   - Containerized (IS_CONTAINERIZED=true): `/home/assistant/.cadet/device.json`
  *     — the assistant user's persistent home dir, kept off the shared data
- *     volume. Not affected by VELLUM_ENVIRONMENT because the container fs
+ *     volume. Not affected by CADET_ENVIRONMENT because the container fs
  *     has no cross-process contract with the Swift client.
- *   - Non-containerized production: `~/.vellum/device.json` (legacy, shared
+ *   - Non-containerized production: `~/.cadet/device.json` (legacy, shared
  *     across all local instances on the same machine).
- *   - Non-containerized non-production: `$XDG_CONFIG_HOME/vellum-<env>/device.json`,
- *     matching Swift's `VellumPaths.deviceIdFile`.
+ *   - Non-containerized non-production: `$XDG_CONFIG_HOME/cadet-<env>/device.json`,
+ *     matching Swift's `CadetPaths.deviceIdFile`.
  *
  * The value is cached in memory after the first successful read/write.
  * Falls back to a generated UUID if the file cannot be read or written.
@@ -32,7 +32,7 @@ import {
   getIsContainerized,
 } from "../config/env-registry.js";
 import { getLogger } from "./logger.js";
-import { getXdgVellumConfigDirName } from "./platform.js";
+import { getXdgCadetConfigDirName } from "./platform.js";
 
 const log = getLogger("device-id");
 
@@ -42,22 +42,22 @@ let cached: string | undefined;
  * Resolve the directory and file path for `device.json` based on the
  * runtime environment. See the module docblock for the resolution table.
  *
- * Production and containerized modes preserve the legacy `~/.vellum` /
- * `/home/assistant/.vellum` paths. Non-production, non-containerized
- * deployments route through `$XDG_CONFIG_HOME/vellum-<env>` to match
- * the Swift client's `VellumPaths.deviceIdFile`.
+ * Production and containerized modes preserve the legacy `~/.cadet` /
+ * `/home/assistant/.cadet` paths. Non-production, non-containerized
+ * deployments route through `$XDG_CONFIG_HOME/cadet-<env>` to match
+ * the Swift client's `CadetPaths.deviceIdFile`.
  */
 function resolveDeviceIdPaths(): { dir: string; file: string } {
   if (getIsContainerized()) {
-    const dir = join("/home/assistant", ".vellum");
+    const dir = join("/home/assistant", ".cadet");
     return { dir, file: join(dir, "device.json") };
   }
 
-  const configDirName = getXdgVellumConfigDirName();
-  if (configDirName === "vellum") {
-    // Production: device.json lives at ~/.vellum/device.json, shared
+  const configDirName = getXdgCadetConfigDirName();
+  if (configDirName === "cadet") {
+    // Production: device.json lives at ~/.cadet/device.json, shared
     // across all local instances on the same machine.
-    const dir = join(homedir(), ".vellum");
+    const dir = join(homedir(), ".cadet");
     return { dir, file: join(dir, "device.json") };
   }
 
@@ -95,7 +95,7 @@ export function getExistingDeviceId(): string | null {
   const fromEnv = getDeviceIdOverride();
   if (fromEnv) {
     cached = fromEnv;
-    log.info({ deviceId: cached }, "Resolved device ID from VELLUM_DEVICE_ID");
+    log.info({ deviceId: cached }, "Resolved device ID from CADET_DEVICE_ID");
     return cached;
   }
 
@@ -119,7 +119,7 @@ export function getExistingDeviceId(): string | null {
  *
  * Resolution order:
  *   1. Cached in-memory value (populated on first call)
- *   2. `VELLUM_DEVICE_ID` env var (CLI-injected; see env-registry)
+ *   2. `CADET_DEVICE_ID` env var (CLI-injected; see env-registry)
  *   3. `deviceId` field from device.json
  *   4. Generate a new UUID, persist it to device.json, and return it
  *
@@ -134,11 +134,11 @@ export function getDeviceId(): string {
   const fromEnv = getDeviceIdOverride();
   if (fromEnv) {
     cached = fromEnv;
-    log.info({ deviceId: cached }, "Resolved device ID from VELLUM_DEVICE_ID");
+    log.info({ deviceId: cached }, "Resolved device ID from CADET_DEVICE_ID");
     return cached;
   }
 
-  const { dir: vellumDir, file: filePath } = resolveDeviceIdPaths();
+  const { dir: cadetDir, file: filePath } = resolveDeviceIdPaths();
   const generated = randomUUID();
 
   try {
@@ -155,7 +155,7 @@ export function getDeviceId(): string {
   // Either the file doesn't exist or deviceId was missing/empty.
   // Generate a new UUID and persist it.
   try {
-    mkdirSync(vellumDir, { recursive: true });
+    mkdirSync(cadetDir, { recursive: true });
 
     // Read existing content to preserve other fields
     let existing: Record<string, unknown> = {};

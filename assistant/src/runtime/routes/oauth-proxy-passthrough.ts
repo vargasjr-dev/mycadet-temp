@@ -116,7 +116,7 @@ const STRIPPED_HEAD_RESPONSE_HEADERS = new Set(
  * a name no HTTP client follows, the target stays readable and is not
  * reachable by accident. The 3xx status itself is preserved.
  */
-export const PROXY_LOCATION_HEADER = "x-vellum-proxy-location";
+export const PROXY_LOCATION_HEADER = "x-cadet-proxy-location";
 
 /**
  * Provider segment for a base URL. An account pins one connection when the
@@ -151,7 +151,7 @@ function assertProxyProviderKey(provider: string): void {
  * Percent-encode an account for the segment, and with it for the subject the
  * segment is embedded in: encoding is what keeps a `:` in an account from
  * ending the subject component early, and a control character out of the
- * `x-vellum-subject` header. Its output alphabet holds none of those, so the
+ * `x-cadet-subject` header. Its output alphabet holds none of those, so the
  * only text refused here is text `encodeURIComponent` itself rejects, such as
  * a lone surrogate.
  */
@@ -185,7 +185,7 @@ export function parseProxyProviderSegment(segment: string): {
 
 /**
  * Subject a proxy grant is minted with, and the value the route requires in
- * `x-vellum-subject`, so a grant for one provider cannot reach another, nor a
+ * `x-cadet-subject`, so a grant for one provider cannot reach another, nor a
  * grant pinned to one account reach a second account of the same provider.
  *
  * The segment builder is reused so the subject and the URL segment cannot
@@ -295,7 +295,7 @@ export function sanitizeInboundHeaders(
     if (
       stripped.has(lower) ||
       lower.startsWith("x-forwarded-") ||
-      lower.startsWith("x-vellum-")
+      lower.startsWith("x-cadet-")
     ) {
       continue;
     }
@@ -325,9 +325,9 @@ export function materializeProxyResponse(
   let location: string | undefined;
   for (const [name, value] of Object.entries(upstream.headers ?? {})) {
     const lower = name.toLowerCase();
-    // `x-vellum-*` is this daemon's namespace on both sides of the hop, so a
+    // `x-cadet-*` is this daemon's namespace on both sides of the hop, so a
     // provider cannot author one.
-    if (stripped.has(lower) || lower.startsWith("x-vellum-")) {
+    if (stripped.has(lower) || lower.startsWith("x-cadet-")) {
       continue;
     }
     if (lower === "location" && redirect) {

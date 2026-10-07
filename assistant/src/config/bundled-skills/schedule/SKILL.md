@@ -1,7 +1,7 @@
 ---
 name: schedule
 description: Reminders, automations, and recurring page, dashboard, or status monitoring (cron, RRULE, or fire-at)
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "📅"
   cadet:
@@ -27,7 +27,7 @@ When the user wants something checked on a cadence (a status page, dashboard, si
 - Recurrence, cutoff times, escalation, and notifications are schedule and notification primitives. Do not reimplement them in a workspace file the user has to run.
 - Prefer **execute** mode: the scheduled message browses or fetches the source, applies the user's rules, and notifies on exceptions. Use **script** mode only for a cheap deterministic check against a live source the assistant can already reach (curl an API, read a file in the workspace). A script-mode job is still a schedule, not a file you hand the user.
 - Looking at a page, pasting HTML, or gathering a roster is setup for the schedule, not a reason to skip creating one.
-- If browsing cannot reach the page, still create the schedule. Offer the desktop app (https://www.vellum.ai/downloads) or the Chrome extension (https://chromewebstore.google.com/detail/vellum-assistant-browser/hphbdmpffeigpcdjkckleobjmhhokpne) so a logged-in browser session can run it. Do not replace the schedule with a parser against a pasted export, and do not assign comparison-run homework before anything is scheduled.
+- If browsing cannot reach the page, still create the schedule. Offer the desktop app (https://mycadet.ai/downloads) or the Chrome extension (https://chromewebstore.google.com/detail/mycadet-browser/hphbdmpffeigpcdjkckleobjmhhokpne) so a logged-in browser session can run it. Do not replace the schedule with a parser against a pasted export, and do not assign comparison-run homework before anything is scheduled.
 - Watchers cover Gmail, Google Calendar, GitHub, Linear, and Outlook event polling. An arbitrary web page or status dashboard is this skill, not the watcher skill.
 
 ## Schedule Syntax
@@ -113,11 +113,11 @@ Use `notify` for simple reminders ("remind me to take medicine at 9am"), `execut
 
 ## Authoring a Script Schedule
 
-Script commands run with the workspace root as the working directory. The assistant injects `__SCHEDULE_ID` (stable across runs of one schedule) and `__SCHEDULE_RUN_ID` (unique per firing) into the environment; `VELLUM_WORKSPACE_DIR` is also set. There is no schedule-name variable — the id is how a command finds anything keyed to its schedule.
+Script commands run with the workspace root as the working directory. The assistant injects `__SCHEDULE_ID` (stable across runs of one schedule) and `__SCHEDULE_RUN_ID` (unique per firing) into the environment; `CADET_WORKSPACE_DIR` is also set. There is no schedule-name variable — the id is how a command finds anything keyed to its schedule.
 
 **Check for an existing skill before writing one.** An installed skill may already do the work the script is about to reimplement. Search the installed skills first, and follow that skill's own instructions for using it from a schedule. Where it gives none, `assistant skills inspect <id> --json` reports where it is installed — resolve that when the schedule runs rather than baking the path in, since a skill's directory varies by source and moves when a workspace is restored elsewhere.
 
-**Files on disk.** A self-contained command can live directly in the `script` field. A schedule that needs files on disk — a script too large to inline, or state that carries across runs — has a conventional home at `$VELLUM_WORKSPACE_DIR/schedules/$__SCHEDULE_ID/`. The assistant does not create or manage this directory. Because it is keyed by the schedule id, create the schedule first, read the id from the result, then create and populate `schedules/<id>/`: script files at the top level, run-managed state under `state/`, and a `.gitignore` covering `state/`. At runtime the command may reference the directory by absolute path or `cd` into it — either works. Deleting a schedule does not remove its directory; clean it up separately.
+**Files on disk.** A self-contained command can live directly in the `script` field. A schedule that needs files on disk — a script too large to inline, or state that carries across runs — has a conventional home at `$CADET_WORKSPACE_DIR/schedules/$__SCHEDULE_ID/`. The assistant does not create or manage this directory. Because it is keyed by the schedule id, create the schedule first, read the id from the result, then create and populate `schedules/<id>/`: script files at the top level, run-managed state under `state/`, and a `.gitignore` covering `state/`. At runtime the command may reference the directory by absolute path or `cd` into it — either works. Deleting a schedule does not remove its directory; clean it up separately.
 
 **Handing off to the agent loop.** A script can wake the assistant when it finds something worth acting on:
 
@@ -171,7 +171,7 @@ Optionally pass `routing_hints` (a JSON object) to influence routing decisions (
   2. **`interface` fallback** — if `source_channel` is absent (common for guardian/direct users), map the `interface` value to a channel name:
      | `interface` value | Channel name |
      | --- | --- |
-     | `macos`, `windows`, `ios` | `vellum` |
+     | `macos`, `windows`, `ios` | `cadet` |
      | `telegram` | `telegram` |
      | `slack` | `slack` |
      | `cli` | _(omit — no routable channel)_ |
@@ -200,14 +200,14 @@ Use `syntax` + `expression` to specify the schedule type explicitly, or just `ex
 - Use `schedule_create` for both recurring automation ("every day at 9am") and one-time reminders ("remind me at 3pm").
 - `fire_at` must be a strict ISO 8601 timestamp with timezone offset or Z (e.g. `2025-03-15T09:00:00-05:00`).
 
-### In-app links (Vellum chat)
+### In-app links (Cadet chat)
 
-When you mention a schedule or a conversation it owns in Vellum chat, write a markdown link so the name is clickable:
+When you mention a schedule or a conversation it owns in Cadet chat, write a markdown link so the name is clickable:
 
 - `[Weekly digest](/assistant/schedules/<id>)`
 - `[Digest ready](/assistant/conversations/<id>)`
 
-Use these paths only in Vellum chat. Do not use them in Slack, Telegram, Discord, email, or notifications. Those surfaces cannot navigate `/assistant/...` routes.
+Use these paths only in Cadet chat. Do not use them in Slack, Telegram, Discord, email, or notifications. Those surfaces cannot navigate `/assistant/...` routes.
 
 ### Anchored & Ambiguous Relative Time
 
@@ -242,7 +242,7 @@ If any required capability is missing:
 
 1. **Still create the schedule** so timing is preserved. Do not tell the user it is ready to run.
 2. Explain what is missing and why the next fire will fail until that is fixed.
-3. Offer to set up the missing integration first. For a page the assistant cannot reach, offer the desktop app (https://www.vellum.ai/downloads) or the Chrome extension (https://chromewebstore.google.com/detail/vellum-assistant-browser/hphbdmpffeigpcdjkckleobjmhhokpne) before asking for a screenshot or pasted export.
+3. Offer to set up the missing integration first. For a page the assistant cannot reach, offer the desktop app (https://mycadet.ai/downloads) or the Chrome extension (https://chromewebstore.google.com/detail/mycadet-browser/hphbdmpffeigpcdjkckleobjmhhokpne) before asking for a screenshot or pasted export.
 4. Do not replace the schedule with a workspace script the user has to run themselves.
 
 ## Delivering Results
@@ -260,7 +260,7 @@ There is a safety net, and it is not a substitute for the above. When an execute
 Choose the right delivery tool based on the destination:
 
 - **A specific chat or mailbox** (a named Slack, Telegram, or Discord conversation, or an email draft): Use `messaging_send` with the target platform and conversation ID. It reaches Gmail or Outlook as a draft, and posts to a Slack, Telegram, or Discord chat through that channel's own transport, where the post is recorded and can be found again afterwards. Reach for `chat.postMessage` through `assistant oauth request` only for a Block Kit shape `messaging_send` cannot carry, with the provider the **slack** skill says to pass for posting on this workspace (`slack_channel` when the bot is set up; where only the `slack` integration exists, the skill says to tell the user before posting as them), never through `curl` or a revealed token. Either way the full content posts directly.
-- **The user's notification surfaces** (Vellum inbox, Telegram, platform push): Use `assistant notifications send` via `bash`. Pass `--source-channel scheduler` and the complete authored body as `--message`. The pipeline keeps that body. Do not summarize the report before sending.
+- **The user's notification surfaces** (Cadet inbox, Telegram, platform push): Use `assistant notifications send` via `bash`. Pass `--source-channel scheduler` and the complete authored body as `--message`. The pipeline keeps that body. Do not summarize the report before sending.
 
 Example schedule message for a Slack digest:
 

@@ -117,7 +117,7 @@ function releaseExpiredInteraction(request: GuardianRequestWire): void {
  * routed to the requester's DM via their user id rather than the channel id,
  * so it is never posted into a shared channel (see
  * `resolveRequesterDeliveryTarget`). No-ops on channels without a deliverable
- * route (e.g. email, the in-app vellum surface) or when the requester chat is
+ * route (e.g. email, the in-app cadet surface) or when the requester chat is
  * unknown. Best-effort: a delivery failure is logged, never thrown.
  */
 async function notifyRequesterOfExpiry(

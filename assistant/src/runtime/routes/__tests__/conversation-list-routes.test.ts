@@ -562,7 +562,7 @@ describe("GET /v1/conversations with needsAttention", () => {
   function markSeen(conversationId: string): void {
     recordConversationSeenSignal({
       conversationId,
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       signalType: "macos_conversation_opened",
       confidence: "explicit",
       source: "test",
@@ -837,7 +837,7 @@ describe("GET /v1/conversations/unread-count", () => {
   function markSeen(conversationId: string): void {
     recordConversationSeenSignal({
       conversationId,
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       signalType: "macos_conversation_opened",
       confidence: "explicit",
       source: "test",
@@ -1158,7 +1158,7 @@ describe("GET /v1/conversations/sections", () => {
     fileIntoGroup(createConversation({ title: "g-2" }).id, group.id);
     stampChannel(createConversation({ title: "slack-1" }).id, "slack");
     createConversation({ title: "native-unstamped" });
-    stampChannel(createConversation({ title: "native-stamped" }).id, "vellum");
+    stampChannel(createConversation({ title: "native-stamped" }).id, "cadet");
 
     const sections = invokeSections();
 
@@ -1189,7 +1189,7 @@ describe("GET /v1/conversations/sections", () => {
     seedUnseen(pinned.id);
     recordConversationSeenSignal({
       conversationId: pinned.id,
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       signalType: "macos_conversation_opened",
       confidence: "explicit",
       source: "test",

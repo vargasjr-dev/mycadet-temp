@@ -44,7 +44,7 @@ export function stagingTargetFromEntry(
 }
 
 function localWorkspaceDir(instanceDir: string): string {
-  return join(instanceDir, ".vellum", "workspace");
+  return join(instanceDir, ".cadet", "workspace");
 }
 
 export function formatBundleSizeMb(bytes: number): string {

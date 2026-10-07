@@ -16,7 +16,7 @@ describe("isDaemonCommand", () => {
   });
 
   test("packaged daemon as argv0", () => {
-    expect(isDaemonCommand("/Applications/Vellum/vellum-daemon")).toBe(true);
+    expect(isDaemonCommand("/Applications/Cadet/cadet-daemon")).toBe(true);
   });
 
   // The ordinary Windows install path contains a space, so splitting on
@@ -25,12 +25,12 @@ describe("isDaemonCommand", () => {
   test("packaged Windows daemon under an install path containing spaces", () => {
     expect(
       isDaemonCommand(
-        '"C:\\Program Files\\Cadet\\resources\\cli-runtime\\vellum-daemon.exe"',
+        '"C:\\Program Files\\Cadet\\resources\\cli-runtime\\cadet-daemon.exe"',
       ),
     ).toBe(true);
     expect(
       isDaemonCommand(
-        '"C:\\Program Files\\Cadet\\resources\\cli-runtime\\vellum-daemon.exe" --serve',
+        '"C:\\Program Files\\Cadet\\resources\\cli-runtime\\cadet-daemon.exe" --serve',
       ),
     ).toBe(true);
   });
@@ -55,7 +55,7 @@ describe("isDaemonCommand", () => {
 
   // process.title rewrites the source daemon's argv on Linux.
   test("a daemon that renamed its own process title", () => {
-    expect(isDaemonCommand("vellum-daemon")).toBe(true);
+    expect(isDaemonCommand("cadet-daemon")).toBe(true);
   });
 
   test("unrelated service whose argv merely contains a daemon/main path", () => {

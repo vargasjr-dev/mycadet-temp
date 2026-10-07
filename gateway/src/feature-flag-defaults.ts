@@ -57,7 +57,7 @@ function getRegistryCandidates(): string[] {
     candidates.push(join(execDir, REGISTRY_FILENAME));
   }
 
-  // 3. Packaged macOS app layout: <App>.app/Contents/MacOS/vellum-gateway
+  // 3. Packaged macOS app layout: <App>.app/Contents/MacOS/cadet-gateway
   //    defaults live under <App>.app/Contents/Resources/<file>.
   candidates.push(join(execDir, "..", "Resources", REGISTRY_FILENAME));
 

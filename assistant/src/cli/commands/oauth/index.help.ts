@@ -916,11 +916,11 @@ gateway-based, so the CLI talks to the proxy rather than to the provider
 directly.
 
 Environment variables (printed as \`export\` lines with --export):
-  VELLUM_OAUTH_PROXY_BASE_URL     Proxy base URL to point the CLI at
-  VELLUM_OAUTH_PROXY_TOKEN        Short-lived grant to use as the bearer token
-  VELLUM_OAUTH_PROXY_ACCOUNT      Account the grant resolved to (omitted when
+  CADET_OAUTH_PROXY_BASE_URL     Proxy base URL to point the CLI at
+  CADET_OAUTH_PROXY_TOKEN        Short-lived grant to use as the bearer token
+  CADET_OAUTH_PROXY_ACCOUNT      Account the grant resolved to (omitted when
                                   the connection carries no account)
-  VELLUM_OAUTH_PROXY_EXPIRES_AT   When the grant stops working
+  CADET_OAUTH_PROXY_EXPIRES_AT   When the grant stops working
 
 Use 'assistant oauth status <provider>' to find account identifiers for
 --account. Unlabeled connections can be selected by their connection ID.
@@ -936,8 +936,8 @@ works, and so does a host-absolute path such as /upload/gmail/... or
 
 Examples:
   $ assistant oauth proxy-url stripe_link
-  $ eval "$(assistant oauth proxy-url stripe_link --export)" && LINK_API_BASE_URL="$VELLUM_OAUTH_PROXY_BASE_URL" LINK_ACCESS_TOKEN="$VELLUM_OAUTH_PROXY_TOKEN" LINK_NO_REFRESH=1 link-cli payment-methods list --format json
-  $ eval "$(assistant oauth proxy-url google --export)" && curl -X POST -H "Authorization: Bearer $VELLUM_OAUTH_PROXY_TOKEN" -H "Content-Type: message/rfc822" --data-binary @draft.eml "$VELLUM_OAUTH_PROXY_BASE_URL/upload/gmail/v1/users/me/drafts?uploadType=media"`,
+  $ eval "$(assistant oauth proxy-url stripe_link --export)" && LINK_API_BASE_URL="$CADET_OAUTH_PROXY_BASE_URL" LINK_ACCESS_TOKEN="$CADET_OAUTH_PROXY_TOKEN" LINK_NO_REFRESH=1 link-cli payment-methods list --format json
+  $ eval "$(assistant oauth proxy-url google --export)" && curl -X POST -H "Authorization: Bearer $CADET_OAUTH_PROXY_TOKEN" -H "Content-Type: message/rfc822" --data-binary @draft.eml "$CADET_OAUTH_PROXY_BASE_URL/upload/gmail/v1/users/me/drafts?uploadType=media"`,
     },
   ],
 };

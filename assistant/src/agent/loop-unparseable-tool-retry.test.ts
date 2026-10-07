@@ -87,7 +87,7 @@ describe("AgentLoop: unparseable tool retries", () => {
       onEvent: (event) => {
         events.push(event);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls).toHaveLength(3);
@@ -147,7 +147,7 @@ describe("AgentLoop: unparseable tool retries", () => {
       onEvent: (event) => {
         events.push(event);
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       suppressAssistantText: true,
     });
 
@@ -200,7 +200,7 @@ describe("AgentLoop: unparseable tool retries", () => {
         events.push(event);
       },
       locale: "es",
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(result.history.at(-1)?.content).toEqual([
@@ -266,7 +266,7 @@ describe("AgentLoop: unparseable tool retries", () => {
       requestId: "request-789",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls).toHaveLength(5);
@@ -322,7 +322,7 @@ describe("AgentLoop: unparseable tool retries", () => {
       requestId: "request-456",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls).toHaveLength(6);

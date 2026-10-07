@@ -38,17 +38,17 @@ jobs:
           case "$ENVIRONMENT" in
             production)
               echo "flavor=Production" >> "$GITHUB_OUTPUT"
-              echo "package_id=ai.vellum.assistant" >> "$GITHUB_OUTPUT"
+              echo "package_id=ai.mycadet.assistant" >> "$GITHUB_OUTPUT"
               echo "track=production" >> "$GITHUB_OUTPUT"
               ;;
             staging)
               echo "flavor=Staging" >> "$GITHUB_OUTPUT"
-              echo "package_id=ai.vellum.assistant.staging" >> "$GITHUB_OUTPUT"
+              echo "package_id=ai.mycadet.assistant.staging" >> "$GITHUB_OUTPUT"
               echo "track=internal" >> "$GITHUB_OUTPUT"
               ;;
             dev)
               echo "flavor=Dev" >> "$GITHUB_OUTPUT"
-              echo "package_id=ai.vellum.assistant.dev" >> "$GITHUB_OUTPUT"
+              echo "package_id=ai.mycadet.assistant.dev" >> "$GITHUB_OUTPUT"
               echo "track=internal" >> "$GITHUB_OUTPUT"
               ;;
             *)
@@ -90,7 +90,7 @@ jobs:
       - name: Sync Android project
         working-directory: clients/web
         env:
-          VELLUM_ENVIRONMENT: ${{ inputs.environment }}
+          CADET_ENVIRONMENT: ${{ inputs.environment }}
         run: bun run android:sync
 
       - name: Restore optional Firebase configuration
@@ -125,19 +125,19 @@ jobs:
             echo "::error::ANDROID_UPLOAD_KEYSTORE_B64 is empty"
             exit 1
           fi
-          printf '%s' "$ANDROID_UPLOAD_KEYSTORE_B64" | base64 --decode > /tmp/vellum-android-upload.jks
-          chmod 600 /tmp/vellum-android-upload.jks
+          printf '%s' "$ANDROID_UPLOAD_KEYSTORE_B64" | base64 --decode > /tmp/cadet-android-upload.jks
+          chmod 600 /tmp/cadet-android-upload.jks
 
       - name: Build signed app bundle
         working-directory: clients/android
         env:
-          VELLUM_ANDROID_VERSION_CODE: ${{ steps.config.outputs.version_code }}
-          VELLUM_ANDROID_VERSION_NAME: ${{ steps.config.outputs.version_name }}
-          VELLUM_ANDROID_REQUIRE_SIGNING: "true"
-          VELLUM_ANDROID_KEYSTORE_PATH: /tmp/vellum-android-upload.jks
-          VELLUM_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
-          VELLUM_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
-          VELLUM_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          CADET_ANDROID_VERSION_CODE: ${{ steps.config.outputs.version_code }}
+          CADET_ANDROID_VERSION_NAME: ${{ steps.config.outputs.version_name }}
+          CADET_ANDROID_REQUIRE_SIGNING: "true"
+          CADET_ANDROID_KEYSTORE_PATH: /tmp/cadet-android-upload.jks
+          CADET_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          CADET_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          CADET_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
         run: ./gradlew ":app:bundle${{ steps.config.outputs.flavor }}Release"
 
       - name: Upload signed app bundle artifact
@@ -150,7 +150,7 @@ jobs:
       - name: Remove sensitive build material
         if: ${{ always() }}
         run: |
-          rm -f /tmp/vellum-android-upload.jks
+          rm -f /tmp/cadet-android-upload.jks
           rm -f clients/android/app/google-services.json
 
   publish:

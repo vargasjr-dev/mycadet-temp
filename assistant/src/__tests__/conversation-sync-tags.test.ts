@@ -237,7 +237,7 @@ describe("conversation sync tags", () => {
       route.handler({
         body: {
           conversationId: conversation.id,
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           signalType: "macos_conversation_opened",
           confidence: "explicit",
           source: "test",
@@ -272,7 +272,7 @@ describe("conversation sync tags", () => {
     });
     recordConversationSeenSignal({
       conversationId: conversation.id,
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       signalType: "macos_conversation_opened",
       confidence: "explicit",
       source: "test",

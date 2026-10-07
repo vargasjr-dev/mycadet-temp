@@ -92,7 +92,7 @@ function mockDomainStatusWithVerification() {
             {
               id: "550e8400-e29b-41d4-a716-446655440000",
               subdomain: "becky",
-              domain: "becky.vellum.me",
+              domain: "becky.mycadet.bot",
               status: "active",
               verified: true,
               created_at: "2026-04-15T19:00:00Z",
@@ -104,7 +104,7 @@ function mockDomainStatusWithVerification() {
     return Promise.resolve({
       ok: true,
       result: {
-        domain: "becky.vellum.me",
+        domain: "becky.mycadet.bot",
         status: "verified",
         message: "DNS records have been verified.",
       },
@@ -133,7 +133,7 @@ describe("assistant domain status", () => {
     );
 
     const parsed = JSON.parse(output.trim());
-    expect(parsed.domain.domain).toBe("becky.vellum.me");
+    expect(parsed.domain.domain).toBe("becky.mycadet.bot");
     expect(parsed.verification.status).toBe("verified");
     expect(process.exitCode).toBe(0);
   });

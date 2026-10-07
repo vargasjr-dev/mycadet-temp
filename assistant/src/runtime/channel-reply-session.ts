@@ -6,8 +6,8 @@ import type {
   ToolUseStartEvent,
 } from "../api/index.js";
 import {
-  incompleteVellumLinkSuffixLength,
-  stripVellumLinks,
+  incompleteCadetLinkSuffixLength,
+  stripCadetLinks,
 } from "../daemon/assistant-attachments.js";
 import {
   getTransportForCallback,
@@ -168,20 +168,20 @@ export function createChannelReplySession(params: {
   let opChain: Promise<void> = Promise.resolve();
 
   const cleanedText = (): string =>
-    stripVellumLinks(rawText).replace(NO_RESPONSE_INLINE_RE, "");
+    stripCadetLinks(rawText).replace(NO_RESPONSE_INLINE_RE, "");
 
   // Text safe to hand to an append-only stream: while more deltas may
-  // arrive, a trailing `[label](vellum://…)` link that is still being assembled
+  // arrive, a trailing `[label](cadet://…)` link that is still being assembled
   // is withheld so its internal path is never emitted before the link closes
-  // (and `stripVellumLinks` can remove it). Once `finished`, no delta can
+  // (and `stripCadetLinks` can remove it). Once `finished`, no delta can
   // extend the text, so the full cleaned reply is safe to emit.
   const streamableText = (): string => {
     if (finished) {
       return cleanedText();
     }
-    const hold = incompleteVellumLinkSuffixLength(rawText);
+    const hold = incompleteCadetLinkSuffixLength(rawText);
     const stable = hold > 0 ? rawText.slice(0, rawText.length - hold) : rawText;
-    return stripVellumLinks(stable).replace(NO_RESPONSE_INLINE_RE, "");
+    return stripCadetLinks(stable).replace(NO_RESPONSE_INLINE_RE, "");
   };
 
   const progressKey = (plan: StreamPlan | undefined): string | undefined =>

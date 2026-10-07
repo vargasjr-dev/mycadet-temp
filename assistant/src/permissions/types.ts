@@ -66,7 +66,7 @@ export interface PolicyContext {
   requestOrigin?: string;
   /** Trust classification of the actor driving the turn (e.g. "guardian"). */
   trustClass?: string;
-  /** Source channel the turn arrived on (e.g. "vellum" for internal jobs). */
+  /** Source channel the turn arrived on (e.g. "cadet" for internal jobs). */
   sourceChannel?: string;
   /**
    * External channel ID of the current chat (e.g. Slack channel ID), for the

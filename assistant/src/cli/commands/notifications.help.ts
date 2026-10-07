@@ -4,7 +4,7 @@ import type { CliCommandHelp } from "../lib/cli-command-help.js";
 
 export const NOTIFICATION_SOURCE_CHANNEL_VALUES = [
   "assistant_tool",
-  "vellum",
+  "cadet",
   "phone",
   "telegram",
   "slack",
@@ -245,7 +245,7 @@ Examples:
         },
       ],
       helpText: `
-Reads Cadet's Home feed at $VELLUM_WORKSPACE_DIR/data/home-feed.json.
+Reads Cadet's Home feed at $CADET_WORKSPACE_DIR/data/home-feed.json.
 Items are ordered by priority then recency, matching what the user sees
 in the macOS Home page. This is only the assistant's Cadet notification
 feed; it does not read email inboxes, Gmail, Outlook, or other external

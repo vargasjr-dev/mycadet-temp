@@ -78,14 +78,14 @@ const log = getLogger("app-management-routes");
 function getSharedAppsDirs(): string[] {
   const canonical = join(
     getUserAppDataDir(),
-    "vellum-assistant",
+    "mycadet",
     "shared-apps",
   );
   const legacy = join(
     homedir(),
     "Library",
     "Application Support",
-    "vellum-assistant",
+    "mycadet",
     "shared-apps",
   );
   return legacy === canonical ? [canonical] : [canonical, legacy];
@@ -567,7 +567,7 @@ async function importBundle(
   // Write to temp file for scanning and signature verification
   const tempPath = join(
     tmpdir(),
-    `vellum-import-${randomBytes(8).toString("hex")}.vbundle`,
+    `cadet-import-${randomBytes(8).toString("hex")}.vbundle`,
   );
   writeFileSync(tempPath, bundleBytes);
 
@@ -856,7 +856,7 @@ async function compilePluginAppHtmlEphemeral(
   if (!existsSync(join(sourceDir, "src"))) {
     return null;
   }
-  const tmpRoot = mkdtempSync(join(tmpdir(), "vellum-plugin-app-"));
+  const tmpRoot = mkdtempSync(join(tmpdir(), "cadet-plugin-app-"));
   try {
     const result = await runCompile(sourceDir, join(tmpRoot, "dist"));
     if (!result.ok) {

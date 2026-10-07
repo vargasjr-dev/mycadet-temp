@@ -17,7 +17,7 @@ import { PROVIDER_DISPLAY_NAMES } from "@/assistant/llm-model-catalog";
 import { ChatgptOAuthSection } from "@/domains/settings/ai/chatgpt-oauth-section";
 import {
   CHATGPT_CONNECTION_PROVIDER,
-  VELLUM_CONNECTION_PROVIDER,
+  CADET_CONNECTION_PROVIDER,
 } from "@/domains/settings/ai/constants";
 import {
   collapseSectionRows,
@@ -716,7 +716,7 @@ function candidateMeta(
   candidate: ProviderCandidate,
   t: TFunction<"settings">,
 ): string | undefined {
-  if (candidate.meta && candidate.provider === VELLUM_CONNECTION_PROVIDER) {
+  if (candidate.meta && candidate.provider === CADET_CONNECTION_PROVIDER) {
     return t("profileCreateModelFirst.recommendedMeta");
   }
   return candidate.meta;

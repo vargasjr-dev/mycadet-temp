@@ -104,7 +104,7 @@ function makeTurnContext(): TurnContext {
     requestId: "req-test-1",
     conversationId: "conv-test-1",
     turnIndex: 0,
-    trust: { sourceChannel: "vellum", trustClass: "guardian" },
+    trust: { sourceChannel: "cadet", trustClass: "guardian" },
   };
 }
 

@@ -87,7 +87,7 @@ describe("getLockfileData", () => {
   });
 
   test("surfaces a tunnel-recorded ingressUrl to the renderer", () => {
-    // The exact read the "Pair a device" card relies on: `vellum tunnel` stamps
+    // The exact read the "Pair a device" card relies on: `cadet tunnel` stamps
     // ingressUrl onto the entry, and the host read must carry it through.
     writeOnDisk({
       activeAssistant: "asst_1",
@@ -166,7 +166,7 @@ describe("upsertLockfileAssistant", () => {
       assistants: [
         {
           assistantId: "asst_old",
-          cloud: "vellum",
+          cloud: "cadet",
           runtimeUrl: "http://old",
           futureField: "keep-me",
         },
@@ -195,7 +195,7 @@ describe("upsertLockfileAssistant", () => {
       );
       expect(wireOld).toEqual({
         assistantId: "asst_old",
-        cloud: "vellum",
+        cloud: "cadet",
         runtimeUrl: "http://old",
       });
     }
@@ -551,7 +551,7 @@ describe("lockfile writers under lock contention", () => {
 
     const result = replacePlatformAssistants(
       [lockfilePath],
-      [{ assistantId: "asst_p", cloud: "vellum", runtimeUrl: "http://p" }],
+      [{ assistantId: "asst_p", cloud: "cadet", runtimeUrl: "http://p" }],
     );
 
     expect(result).toMatchObject({ ok: false, status: 423 });
@@ -687,7 +687,7 @@ describe("replacePlatformAssistants", () => {
       assistants: [
         {
           assistantId: "asst_p",
-          cloud: "vellum",
+          cloud: "cadet",
           runtimeUrl: "http://old",
           onboardedAt: "2026-08-01T00:00:00.000Z",
         },
@@ -696,14 +696,14 @@ describe("replacePlatformAssistants", () => {
 
     const result = replacePlatformAssistants(
       [lockfilePath],
-      [{ assistantId: "asst_p", cloud: "vellum", runtimeUrl: "http://new" }],
+      [{ assistantId: "asst_p", cloud: "cadet", runtimeUrl: "http://new" }],
     );
 
     expect(result.ok).toBe(true);
     expect(readOnDisk().assistants).toEqual([
       {
         assistantId: "asst_p",
-        cloud: "vellum",
+        cloud: "cadet",
         runtimeUrl: "http://new",
         onboardedAt: "2026-08-01T00:00:00.000Z",
       },
@@ -716,7 +716,7 @@ describe("replacePlatformAssistants", () => {
       assistants: [
         {
           assistantId: "asst_p",
-          cloud: "vellum",
+          cloud: "cadet",
           onboardedAt: "2026-08-01T00:00:00.000Z",
         },
       ],
@@ -727,7 +727,7 @@ describe("replacePlatformAssistants", () => {
       [
         {
           assistantId: "asst_p",
-          cloud: "vellum",
+          cloud: "cadet",
           onboardedAt: "2026-08-31T00:00:00.000Z",
         },
       ],
@@ -745,7 +745,7 @@ describe("replacePlatformAssistants", () => {
       assistants: [
         {
           assistantId: "asst_a",
-          cloud: "vellum",
+          cloud: "cadet",
           onboardedAt: "2026-08-01T00:00:00.000Z",
         },
       ],
@@ -753,11 +753,11 @@ describe("replacePlatformAssistants", () => {
 
     replacePlatformAssistants(
       [lockfilePath],
-      [{ assistantId: "asst_b", cloud: "vellum" }],
+      [{ assistantId: "asst_b", cloud: "cadet" }],
     );
 
     expect(readOnDisk().assistants).toEqual([
-      { assistantId: "asst_b", cloud: "vellum" },
+      { assistantId: "asst_b", cloud: "cadet" },
     ]);
   });
 
@@ -769,7 +769,7 @@ describe("replacePlatformAssistants", () => {
         { assistantId: "asst_local", cloud: "local", runtimeUrl: "http://l" },
         {
           assistantId: "asst_old_platform",
-          cloud: "vellum",
+          cloud: "cadet",
           runtimeUrl: "http://op",
         },
       ],
@@ -780,7 +780,7 @@ describe("replacePlatformAssistants", () => {
       [
         {
           assistantId: "asst_new_platform",
-          cloud: "vellum",
+          cloud: "cadet",
           runtimeUrl: "http://np",
         },
       ],
@@ -802,13 +802,13 @@ describe("replacePlatformAssistants", () => {
       assistants: [
         {
           assistantId: "asst_org_a",
-          cloud: "vellum",
+          cloud: "cadet",
           organizationId: "org_a",
           runtimeUrl: "http://a",
         },
         {
           assistantId: "asst_org_b_old",
-          cloud: "vellum",
+          cloud: "cadet",
           organizationId: "org_b",
           runtimeUrl: "http://bo",
         },
@@ -820,7 +820,7 @@ describe("replacePlatformAssistants", () => {
       [
         {
           assistantId: "asst_org_b_new",
-          cloud: "vellum",
+          cloud: "cadet",
           organizationId: "org_b",
           runtimeUrl: "http://bn",
         },
@@ -840,7 +840,7 @@ describe("replacePlatformAssistants", () => {
       activeAssistant: null,
       assistants: [
         // Legacy platform entry with no organizationId, same id as the sync.
-        { assistantId: "asst_dup", cloud: "vellum", runtimeUrl: "http://old" },
+        { assistantId: "asst_dup", cloud: "cadet", runtimeUrl: "http://old" },
       ],
     });
 
@@ -849,7 +849,7 @@ describe("replacePlatformAssistants", () => {
       [
         {
           assistantId: "asst_dup",
-          cloud: "vellum",
+          cloud: "cadet",
           organizationId: "org_a",
           runtimeUrl: "http://new",
         },
@@ -874,13 +874,13 @@ describe("replacePlatformAssistants", () => {
       assistants: [
         {
           assistantId: "asst_org_a",
-          cloud: "vellum",
+          cloud: "cadet",
           organizationId: "org_a",
           runtimeUrl: "http://a",
         },
         {
           assistantId: "asst_org_b",
-          cloud: "vellum",
+          cloud: "cadet",
           organizationId: "org_b",
           runtimeUrl: "http://b",
         },
@@ -892,7 +892,7 @@ describe("replacePlatformAssistants", () => {
       [
         {
           assistantId: "asst_new",
-          cloud: "vellum",
+          cloud: "cadet",
           runtimeUrl: "http://np",
         },
       ],
@@ -911,7 +911,7 @@ describe("replacePlatformAssistants", () => {
         { assistantId: "asst_local", cloud: "local", runtimeUrl: "http://l" },
         {
           assistantId: "asst_org_a",
-          cloud: "vellum",
+          cloud: "cadet",
           organizationId: "org_a",
           runtimeUrl: "http://a",
         },
@@ -923,7 +923,7 @@ describe("replacePlatformAssistants", () => {
       [
         {
           assistantId: "asst_org_a_new",
-          cloud: "vellum",
+          cloud: "cadet",
           organizationId: "org_a",
           runtimeUrl: "http://an",
         },
@@ -943,7 +943,7 @@ describe("replacePlatformAssistants", () => {
       assistants: [
         {
           assistantId: "asst_org_b_old",
-          cloud: "vellum",
+          cloud: "cadet",
           organizationId: "org_b",
           runtimeUrl: "http://bo",
         },
@@ -955,7 +955,7 @@ describe("replacePlatformAssistants", () => {
       [
         {
           assistantId: "asst_org_a",
-          cloud: "vellum",
+          cloud: "cadet",
           organizationId: "org_a",
           runtimeUrl: "http://a",
         },
@@ -973,7 +973,7 @@ describe("replacePlatformAssistants", () => {
       assistants: [
         {
           assistantId: "asst_old_platform",
-          cloud: "vellum",
+          cloud: "cadet",
           runtimeUrl: "http://op",
         },
       ],
@@ -984,7 +984,7 @@ describe("replacePlatformAssistants", () => {
       [
         {
           assistantId: "asst_new_platform",
-          cloud: "vellum",
+          cloud: "cadet",
           runtimeUrl: "http://np",
         },
       ],

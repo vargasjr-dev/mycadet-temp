@@ -30,7 +30,7 @@ const request = (
     headers.set("origin", init.origin);
   }
   return {
-    url: `app://vellum.ai${pathname}`,
+    url: `app://mycadet.ai${pathname}`,
     method: init.method ?? "GET",
     headers,
   };
@@ -79,7 +79,7 @@ describe("planGatewayForward", () => {
     const plan = planGatewayForward(
       request("/assistant/__gateway/8080/auth/token", {
         method: "POST",
-        origin: "app://vellum.ai",
+        origin: "app://mycadet.ai",
       }),
       allow(8080),
     );
@@ -99,10 +99,10 @@ describe("planGatewayForward", () => {
 
   test("preserves non-Origin headers such as the guardian bearer", () => {
     const req = {
-      url: "app://vellum.ai/assistant/__gateway/8080/auth/token",
+      url: "app://mycadet.ai/assistant/__gateway/8080/auth/token",
       method: "POST",
       headers: new Headers({
-        origin: "app://vellum.ai",
+        origin: "app://mycadet.ai",
         authorization: "Bearer guardian-token",
         "content-type": "application/json",
       }),
@@ -166,11 +166,11 @@ describe("planPairedGatewayForward", () => {
 
   test("strips the browser-ambient headers on the server-to-server hop", () => {
     const req = {
-      url: "app://vellum.ai/__gateway-paired/abc/v1/events",
+      url: "app://mycadet.ai/__gateway-paired/abc/v1/events",
       method: "POST",
       headers: new Headers({
-        origin: "app://vellum.ai",
-        referer: "app://vellum.ai/assistant",
+        origin: "app://mycadet.ai",
+        referer: "app://mycadet.ai/assistant",
         cookie: "sessionid=abc",
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
@@ -206,10 +206,10 @@ describe("planPairedGatewayForward", () => {
 
   test("strips renderer authorization while preserving ordinary headers", () => {
     const req = {
-      url: "app://vellum.ai/assistant/__gateway-paired/abc/v1/foo",
+      url: "app://mycadet.ai/assistant/__gateway-paired/abc/v1/foo",
       method: "GET",
       headers: new Headers({
-        origin: "app://vellum.ai",
+        origin: "app://mycadet.ai",
         authorization: "Bearer guardian-token",
         accept: "text/event-stream",
       }),

@@ -42,9 +42,9 @@ import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 
 const TEST_WORKSPACE_DIR = join(
   tmpdir(),
-  `vellum-plugin-disabled-state-test-${process.pid}-${Date.now()}`,
+  `cadet-plugin-disabled-state-test-${process.pid}-${Date.now()}`,
 );
-process.env.VELLUM_WORKSPACE_DIR = TEST_WORKSPACE_DIR;
+process.env.CADET_WORKSPACE_DIR = TEST_WORKSPACE_DIR;
 
 async function createSentinel(name: string): Promise<void> {
   const dir = join(TEST_WORKSPACE_DIR, "plugins", name);

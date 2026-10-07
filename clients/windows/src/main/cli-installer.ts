@@ -27,19 +27,19 @@ export interface CliRuntimePaths {
 type InstallState = { currentInstallDir: string; previousInstallDir?: string };
 
 type CliRuntimeOwnership = {
-  owner: "vellum-assistant";
+  owner: "mycadet";
   version: string;
 };
 
 const STATE = "install-state.json";
-export const CLI_RUNTIME_OWNERSHIP_MARKER = ".vellum-runtime.json";
+export const CLI_RUNTIME_OWNERSHIP_MARKER = ".cadet-runtime.json";
 export const CLI_RUNTIME_EXECUTABLES = [
-  "vellum.exe",
+  "cadet.exe",
   "bun.exe",
   "assistant.exe",
-  "vellum-daemon.exe",
-  "vellum-gateway.exe",
-  "vellum-worker.exe",
+  "cadet-daemon.exe",
+  "cadet-gateway.exe",
+  "cadet-worker.exe",
   "credential-executor.exe",
   "cli-launcher.exe",
 ] as const;
@@ -139,7 +139,7 @@ function isDirectRuntimeDir(installRoot: string, runtimeDir: string): boolean {
 
 function writeOwnershipMarker(runtimeDir: string, version: string): void {
   const ownership: CliRuntimeOwnership = {
-    owner: "vellum-assistant",
+    owner: "mycadet",
     version,
   };
   writeFileSync(
@@ -169,7 +169,7 @@ function isOwnedCliRuntime(installRoot: string, runtimeDir: string): boolean {
   );
   const manifest = readRuntimeManifest(runtimeDir);
   return (
-    ownership?.owner === "vellum-assistant" &&
+    ownership?.owner === "mycadet" &&
     ownership.version === manifest?.version &&
     isValidCliRuntime(runtimeDir, manifest.version)
   );

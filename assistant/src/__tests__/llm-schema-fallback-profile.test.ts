@@ -14,7 +14,7 @@ describe("LLMSchema fallbackProfile", () => {
     "accepts the code-owned managed pointer for %s",
     (profileName) => {
       const result = LLMSchema.safeParse({
-        defaultProvider: { provider: "vellum" },
+        defaultProvider: { provider: "cadet" },
         profiles: {
           [profileName]: {
             source: "managed",
@@ -140,7 +140,7 @@ describe("LLMSchema fallbackProfile", () => {
 
 describe("LLMSchema backup profile references vs llm.defaultProvider", () => {
   const backupKey = BACKUP_PROFILE_KEYS[0];
-  const managed = { provider: "vellum" } as const;
+  const managed = { provider: "cadet" } as const;
   const nonManaged = [{ provider: "anthropic" }, { provider: "chatgpt" }];
 
   test("activeProfile naming a backup parses on the managed column", () => {
@@ -237,7 +237,7 @@ describe("LLMSchema backup profile references vs llm.defaultProvider", () => {
     // `DefaultProviderField` catches an invalid value to `undefined`, and an
     // install predating the field is managed by definition, so both keep
     // their backups referenceable rather than losing a valid selection.
-    for (const defaultProvider of [undefined, { provider: 42 }, "vellum"]) {
+    for (const defaultProvider of [undefined, { provider: 42 }, "cadet"]) {
       const result = LLMSchema.safeParse({
         defaultProvider,
         activeProfile: backupKey,

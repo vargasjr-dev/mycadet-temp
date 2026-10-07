@@ -93,19 +93,19 @@ export function createHostProxyClientHeaders(
   identity: HostProxyClientIdentity,
 ): Pick<HostProxyRuntime, "posterClientHeaders" | "sseClientHeaders"> {
   const posterClientHeaders = () => ({
-    "X-Vellum-Client-Id": identity.getClientId(),
+    "X-Cadet-Client-Id": identity.getClientId(),
   });
   return {
     posterClientHeaders,
     sseClientHeaders: () => ({
       ...posterClientHeaders(),
-      "X-Vellum-Interface-Id": identity.interfaceId,
-      "X-Vellum-Machine-Name": identity.getMachineName(),
+      "X-Cadet-Interface-Id": identity.interfaceId,
+      "X-Cadet-Machine-Name": identity.getMachineName(),
       ...(identity.supportsWindowCapture
-        ? { "X-Vellum-Cu-Window-Capture": "1" }
+        ? { "X-Cadet-Cu-Window-Capture": "1" }
         : {}),
-      ...(identity.supportsSequence ? { "X-Vellum-Cu-Sequence": "1" } : {}),
-      ...(identity.supportsCoachmarks ? { "X-Vellum-Cu-Annotate": "1" } : {}),
+      ...(identity.supportsSequence ? { "X-Cadet-Cu-Sequence": "1" } : {}),
+      ...(identity.supportsCoachmarks ? { "X-Cadet-Cu-Annotate": "1" } : {}),
     }),
   };
 }
@@ -820,7 +820,7 @@ function connectCloudAssistant(
     const token = requireRuntime().getSessionToken();
     if (!token) return {};
     const headers: Record<string, string> = { "X-Session-Token": token };
-    if (organizationId) headers["Vellum-Organization-Id"] = organizationId;
+    if (organizationId) headers["Cadet-Organization-Id"] = organizationId;
     return headers;
   };
 
@@ -893,7 +893,7 @@ function handleLockfileChange(lockfile: Lockfile): void {
       ? assistant.resources?.gatewayPort
       : undefined;
     const isCloud =
-      assistant.cloud === "vellum" && assistant.runtimeUrl && hasSessionToken;
+      assistant.cloud === "cadet" && assistant.runtimeUrl && hasSessionToken;
     if (!port && !isCloud) continue;
 
     activeIds.add(assistant.assistantId);

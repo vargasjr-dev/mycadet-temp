@@ -54,7 +54,7 @@ test("Electron exposes the initiating frame for custom-protocol paired requests"
         secFetchSite: null,
       },
       observations: [
-        { frameOrigin: "paired-probe://vellum.ai" },
+        { frameOrigin: "paired-probe://mycadet.ai" },
         { frameOrigin: expect.stringMatching(/^http:\/\/127\.0\.0\.1:/) },
       ],
     });

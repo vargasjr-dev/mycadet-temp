@@ -221,7 +221,7 @@ describe("GatewayIpcServer — protocol/validation errors carry status codes", (
     const { mkdtempSync } = await import("node:fs");
     const { tmpdir } = await import("node:os");
     const { join } = await import("node:path");
-    socketDir = mkdtempSync(join(tmpdir(), "vellum-ipc-test-"));
+    socketDir = mkdtempSync(join(tmpdir(), "cadet-ipc-test-"));
     prevEnv = process.env.GATEWAY_IPC_SOCKET_DIR;
     process.env.GATEWAY_IPC_SOCKET_DIR = socketDir;
     // Disable the watchdog so the test has a single deterministic listener.

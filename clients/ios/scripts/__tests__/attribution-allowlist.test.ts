@@ -7,7 +7,7 @@
  * Swift nor Java can import TypeScript, so both native shells embed the list
  * verbatim: `Attribution` in `clients/ios/App/App/Attribution.swift` and
  * `Attribution` in
- * `clients/android/app/src/main/java/ai/vellum/assistant/Attribution.java`.
+ * `clients/android/app/src/main/java/ai/cadet/assistant/Attribution.java`.
  * Without this test, a key added to the web contract would leave CI green
  * while both shells silently dropped it.
  *
@@ -29,7 +29,7 @@ const SOURCES = {
   swift: join(REPO_ROOT, "clients/ios/App/App/Attribution.swift"),
   java: join(
     REPO_ROOT,
-    "clients/android/app/src/main/java/ai/vellum/assistant/Attribution.java",
+    "clients/android/app/src/main/java/ai/cadet/assistant/Attribution.java",
   ),
 } as const;
 

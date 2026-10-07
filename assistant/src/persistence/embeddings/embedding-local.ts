@@ -443,7 +443,7 @@ export class LocalEmbeddingBackend implements EmbeddingBackend {
     // Worker is running — drain stderr in background for ongoing logging
     this.drainStderr(proc.stderr);
 
-    // Write PID file so `vellum ps` can see the embed worker
+    // Write PID file so `cadet ps` can see the embed worker
     this.writePidFile(proc.pid);
 
     log.info(

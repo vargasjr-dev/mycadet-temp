@@ -251,7 +251,7 @@ function makeConversation(options?: {
   );
   conversation.setTrustContext({
     trustClass: "guardian",
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
   });
   return conversation;
 }

@@ -20,9 +20,9 @@ import {
 } from "@/hooks/use-native-app-nudge";
 
 const IOS_STORE_URL =
-  "https://apps.apple.com/us/app/cadet-assistant/id6759934423";
+  "https://apps.apple.com/us/app/mycadet/id6759934423";
 const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=ai.cadet.assistant";
+  "https://play.google.com/store/apps/details?id=ai.mycadet.assistant";
 const DOWNLOADS_URL = "https://www.cadet.ai/downloads";
 
 const env = import.meta.env as Record<string, string | undefined>;
@@ -49,7 +49,7 @@ describe("Android promotion readiness", () => {
     expect(resolveMobilePromotion("android").target).toBe("generic");
 
     env.VITE_ANDROID_PLAY_STORE_URL =
-      "https://example.com/store/apps/details?id=ai.cadet.assistant";
+      "https://example.com/store/apps/details?id=ai.mycadet.assistant";
     expect(resolveMobilePromotion("android").target).toBe("generic");
 
     env.VITE_ANDROID_PLAY_STORE_URL = `${PLAY_STORE_URL}&hl=en`;
@@ -64,7 +64,7 @@ describe("Android promotion readiness", () => {
     const url = new URL(ANDROID_PLAY_STORE_URL);
 
     expect([...url.searchParams.keys()]).toEqual(["id", "referrer"]);
-    expect(url.searchParams.get("id")).toBe("ai.cadet.assistant");
+    expect(url.searchParams.get("id")).toBe("ai.mycadet.assistant");
     expect(url.searchParams.get("referrer")).toBe(
       "utm_source=cadet-app&utm_medium=in-app-nudge",
     );
@@ -110,7 +110,7 @@ describe("resolveMobilePromotion", () => {
     });
 
     env.VITE_ANDROID_PLAY_STORE_URL =
-      "https://example.com/store/apps/details?id=ai.cadet.assistant";
+      "https://example.com/store/apps/details?id=ai.mycadet.assistant";
     expect(resolveMobilePromotion("android")).toEqual({
       target: "generic",
       appName: null,

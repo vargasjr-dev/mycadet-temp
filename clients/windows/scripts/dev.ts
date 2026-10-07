@@ -8,7 +8,7 @@
  * repo) and dispatches accordingly:
  *
  *   - vel up detected → `bun run dev:electron-only` with
- *     `VELLUM_DEV_URL=http://localhost:3000/assistant`. The renderer
+ *     `CADET_DEV_URL=http://localhost:3000/assistant`. The renderer
  *     attaches to the running stack and the BrowserWindow loads the
  *     edge proxy at the `/assistant` path (the bare root is the
  *     marketing site), so backend calls work the same way they do for
@@ -56,13 +56,13 @@ const downstreamScript = velRunning ? "dev:electron-only" : "dev:standalone";
 // Match the native Swift app's default of "local".
 const env: NodeJS.ProcessEnv = {
   ...process.env,
-  VELLUM_ENVIRONMENT: process.env.VELLUM_ENVIRONMENT || "local",
-  ...(velRunning ? { VELLUM_DEV_URL: VEL_RENDERER_URL } : {}),
+  CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
+  ...(velRunning ? { CADET_DEV_URL: VEL_RENDERER_URL } : {}),
 };
 
 if (velRunning) {
   console.log(
-    `[dev] detected vel up at ${VEL_EDGE_PROXY_ORIGIN} - attaching Electron to ${VEL_RENDERER_URL} (env: ${env.VELLUM_ENVIRONMENT})`,
+    `[dev] detected vel up at ${VEL_EDGE_PROXY_ORIGIN} - attaching Electron to ${VEL_RENDERER_URL} (env: ${env.CADET_ENVIRONMENT})`,
   );
 } else {
   console.log(

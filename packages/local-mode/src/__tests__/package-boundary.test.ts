@@ -3,7 +3,7 @@
  *
  * This package is the shared local-assistant host surface. It sits one layer
  * above @mycadet/environments, @mycadet/service-contracts, and the
- * source-only @mycadet/avatar-manifest (its only allowed @vellumai
+ * source-only @mycadet/avatar-manifest (its only allowed @mycadet
  * dependencies) and uses node builtins for filesystem, child-process, and
  * network work.
  *

@@ -15,8 +15,8 @@
  *     next worker tick retries (filing and compaction both rewrite the PKB
  *     tree, so at most one is ever queued).
  *
- * Tests use a temp workspace pinned via `VELLUM_WORKSPACE_DIR` so the DB
- * lives under `tmpdir()` and `~/.vellum/` is never touched.
+ * Tests use a temp workspace pinned via `CADET_WORKSPACE_DIR` so the DB
+ * lives under `tmpdir()` and `~/.cadet/` is never touched.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -40,15 +40,15 @@ let previousWorkspaceEnv: string | undefined;
 
 beforeAll(() => {
   tmpWorkspace = mkdtempSync(join(tmpdir(), "pkb-schedule-test-"));
-  previousWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = tmpWorkspace;
+  previousWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = tmpWorkspace;
 });
 
 afterAll(() => {
   if (previousWorkspaceEnv === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceEnv;
+    process.env.CADET_WORKSPACE_DIR = previousWorkspaceEnv;
   }
   rmSync(tmpWorkspace, { recursive: true, force: true });
 });
@@ -123,7 +123,7 @@ function countPendingJobs(type: string): number {
 // every migration on the next access.
 await initializeDb();
 
-// Open the memory connection now, while VELLUM_WORKSPACE_DIR still points at the
+// Open the memory connection now, while CADET_WORKSPACE_DIR still points at the
 // migrated per-process workspace. beforeAll swaps it to a fresh dir; without
 // pinning here, the first getMemoryDb() below would lazily open
 // assistant-memory.db in the swapped (empty) workspace and fail with

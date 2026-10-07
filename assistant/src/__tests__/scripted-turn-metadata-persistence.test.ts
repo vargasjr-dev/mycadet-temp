@@ -77,8 +77,8 @@ import type { TrustContext } from "../daemon/trust-context-types.js";
 
 function createContext(): MessagingConversationContext {
   const channel: TurnChannelContext = {
-    userMessageChannel: "vellum",
-    assistantMessageChannel: "vellum",
+    userMessageChannel: "cadet",
+    assistantMessageChannel: "cadet",
   };
   const iface: TurnInterfaceContext = {
     userMessageInterface: "web",

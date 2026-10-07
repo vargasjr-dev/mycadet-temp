@@ -5,8 +5,8 @@
  * Two auth modes (mirrors `requireEdgeGuardianAuth`):
  *
  *  1. Platform-managed (DISABLE_HTTP_AUTH=true + IS_PLATFORM=true): identity
- *     asserted via `X-Vellum-User-Id` header cross-referenced against the
- *     stored `vellum:platform_user_id` credential. Scope authorization is
+ *     asserted via `X-Cadet-User-Id` header cross-referenced against the
+ *     stored `cadet:platform_user_id` credential. Scope authorization is
  *     delegated to the upstream platform proxy.
  *  2. Default: edge JWT validated; scoped guard additionally checks the
  *     scope_profile claim.
@@ -42,7 +42,7 @@ mock.module("../platform-user-id.js", () => ({
     if (mockPlatformUserIdUnreachable) {
       return { userId: undefined, unreachable: true };
     }
-    const userId = await mockReadCredential("vellum:platform_user_id");
+    const userId = await mockReadCredential("cadet:platform_user_id");
     return { userId, unreachable: false };
   },
 }));
@@ -114,7 +114,7 @@ describe("requireEdgeAuth — DISABLE_HTTP_AUTH + IS_PLATFORM", () => {
     process.env.IS_PLATFORM = "true";
   });
 
-  test("401 when X-Vellum-User-Id header is missing", async () => {
+  test("401 when X-Cadet-User-Id header is missing", async () => {
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(makeReq());
     expect(res?.status).toBe(401);
@@ -124,16 +124,16 @@ describe("requireEdgeAuth — DISABLE_HTTP_AUTH + IS_PLATFORM", () => {
     mockReadCredential = mock(async () => undefined);
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
-      makeReq({ "x-vellum-user-id": PLATFORM_USER_ID }),
+      makeReq({ "x-cadet-user-id": PLATFORM_USER_ID }),
     );
     expect(res?.status).toBe(403);
   });
 
-  test("403 when X-Vellum-User-Id does not match stored credential", async () => {
+  test("403 when X-Cadet-User-Id does not match stored credential", async () => {
     mockReadCredential = mock(async () => PLATFORM_USER_ID);
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
-      makeReq({ "x-vellum-user-id": "different-user" }),
+      makeReq({ "x-cadet-user-id": "different-user" }),
     );
     expect(res?.status).toBe(403);
   });
@@ -142,7 +142,7 @@ describe("requireEdgeAuth — DISABLE_HTTP_AUTH + IS_PLATFORM", () => {
     mockPlatformUserIdUnreachable = true;
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
-      makeReq({ "x-vellum-user-id": PLATFORM_USER_ID }),
+      makeReq({ "x-cadet-user-id": PLATFORM_USER_ID }),
     );
     expect(res?.status).toBe(503);
   });
@@ -153,16 +153,16 @@ describe("requireEdgeAuth — DISABLE_HTTP_AUTH + IS_PLATFORM", () => {
     });
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
-      makeReq({ "x-vellum-user-id": PLATFORM_USER_ID }),
+      makeReq({ "x-cadet-user-id": PLATFORM_USER_ID }),
     );
     expect(res?.status).toBe(503);
   });
 
-  test("null (auth ok) when X-Vellum-User-Id matches stored credential", async () => {
+  test("null (auth ok) when X-Cadet-User-Id matches stored credential", async () => {
     mockReadCredential = mock(async () => PLATFORM_USER_ID);
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
-      makeReq({ "x-vellum-user-id": PLATFORM_USER_ID }),
+      makeReq({ "x-cadet-user-id": PLATFORM_USER_ID }),
     );
     expect(res).toBeNull();
   });
@@ -180,7 +180,7 @@ describe("requireEdgeAuth — DISABLE_HTTP_AUTH + IS_PLATFORM", () => {
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
       makeReq({
-        "x-vellum-user-id": PLATFORM_USER_ID,
+        "x-cadet-user-id": PLATFORM_USER_ID,
         authorization: "Bearer vak_platform_key",
       }),
     );
@@ -233,7 +233,7 @@ describe("requireEdgeAuth — JWT mode", () => {
   test("rejects edge-forwarded loopback requests when Authorization header is absent", async () => {
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
-      makeReq({ "x-vellum-edge-forwarded": "1" }),
+      makeReq({ "x-cadet-edge-forwarded": "1" }),
       makeLoopbackServer(),
     );
     expect(res?.status).toBe(401);
@@ -328,7 +328,7 @@ describe("requireEdgeAuthWithScope — DISABLE_HTTP_AUTH + IS_PLATFORM", () => {
     mockReadCredential = mock(async () => PLATFORM_USER_ID);
     const { requireEdgeAuthWithScope } = makeMiddleware();
     const res = await requireEdgeAuthWithScope(
-      makeReq({ "x-vellum-user-id": PLATFORM_USER_ID }),
+      makeReq({ "x-cadet-user-id": PLATFORM_USER_ID }),
       // any scope — bypass path does not look at it
       "ingress.write",
     );
@@ -340,7 +340,7 @@ describe("requireEdgeAuthWithScope — DISABLE_HTTP_AUTH + IS_PLATFORM", () => {
     const { requireEdgeAuthWithScope } = makeMiddleware();
     const res = await requireEdgeAuthWithScope(
       makeReq({
-        "x-vellum-user-id": PLATFORM_USER_ID,
+        "x-cadet-user-id": PLATFORM_USER_ID,
         authorization: "Bearer vak_platform_key",
       }),
       "ingress.write",
@@ -361,7 +361,7 @@ describe("requireEdgeAuthWithScope — DISABLE_HTTP_AUTH + IS_PLATFORM", () => {
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
   });
 
-  test("401 when X-Vellum-User-Id missing under bypass", async () => {
+  test("401 when X-Cadet-User-Id missing under bypass", async () => {
     const { requireEdgeAuthWithScope } = makeMiddleware();
     const res = await requireEdgeAuthWithScope(makeReq(), "ingress.write");
     expect(res?.status).toBe(401);
@@ -383,7 +383,7 @@ describe("requireEdgeAuthWithScope — JWT mode", () => {
   test("rejects edge-forwarded loopback requests when scoped Authorization is absent", async () => {
     const { requireEdgeAuthWithScope } = makeMiddleware();
     const res = await requireEdgeAuthWithScope(
-      makeReq({ "x-vellum-edge-forwarded": "1" }),
+      makeReq({ "x-cadet-edge-forwarded": "1" }),
       "settings.write",
       makeLoopbackServer(),
     );
@@ -667,7 +667,7 @@ describe("requireEdgeAuth — trustProxy loopback fallback", () => {
     process.env.DISABLE_HTTP_AUTH = "true";
     process.env.IS_PLATFORM = "true";
     const { requireEdgeAuth } = makeMiddleware(true);
-    // Missing X-Vellum-User-Id, loopback socket, trustProxy on: still the
+    // Missing X-Cadet-User-Id, loopback socket, trustProxy on: still the
     // platform 401 (missing user header), NOT a loopback free pass.
     const res = await requireEdgeAuth(makeReq(), makeLoopbackServer());
     expect(res?.status).toBe(401);
@@ -802,7 +802,7 @@ describe("handleCreateToken: derived actor-token identity carry-forward", () => 
 
   function mintSourceToken(): string {
     return mintToken({
-      aud: "vellum-gateway",
+      aud: "cadet-gateway",
       sub: `actor:self:${GUARDIAN_PRINCIPAL}`,
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -888,7 +888,7 @@ describe("handleCreateToken: derived actor-token identity carry-forward", () => 
   test("copies both identity fields from a source row onto the derived row", async () => {
     const sourceToken = mintSourceToken();
     seedSourceActorToken(sourceToken, {
-      pairingUserAgent: "Vellum/1.2 (Macintosh; Intel Mac OS X 10_15_7)",
+      pairingUserAgent: "Cadet/1.2 (Macintosh; Intel Mac OS X 10_15_7)",
       clientReportedName: "Alice's MacBook Pro",
     });
 
@@ -901,7 +901,7 @@ describe("handleCreateToken: derived actor-token identity carry-forward", () => 
     const derived = findDerivedRow();
     expect(derived?.platform).toBe("macos");
     expect(derived?.pairingUserAgent).toBe(
-      "Vellum/1.2 (Macintosh; Intel Mac OS X 10_15_7)",
+      "Cadet/1.2 (Macintosh; Intel Mac OS X 10_15_7)",
     );
     expect(derived?.clientReportedName).toBe("Alice's MacBook Pro");
   });

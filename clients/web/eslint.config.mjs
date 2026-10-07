@@ -236,13 +236,13 @@ const headerLiteralRules = [
       "Do not introduce new uses of the X-CSRFToken header outside src/lib/auth/ or src/lib/api-interceptors.ts. CSRF is centralized in the auth interceptor.",
   },
 
-  // No new literal `Vellum-Organization-Id` strings outside the
+  // No new literal `Cadet-Organization-Id` strings outside the
   // auth/interceptor surface. The active-org context belongs in one
   // place, not handcrafted across call sites.
   {
-    selector: "Literal[value='Vellum-Organization-Id']",
+    selector: "Literal[value='Cadet-Organization-Id']",
     message:
-      "Do not introduce new uses of the Vellum-Organization-Id header outside src/lib/auth/. Only the central interceptor should be reading or setting this header.",
+      "Do not introduce new uses of the Cadet-Organization-Id header outside src/lib/auth/. Only the central interceptor should be reading or setting this header.",
   },
 ];
 

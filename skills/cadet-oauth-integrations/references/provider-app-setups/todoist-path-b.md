@@ -36,7 +36,7 @@ Tell the user:
 > `https://developer.todoist.com/appconsole.html`
 >
 > 1. Click **Create a new app**
-> 2. Set the app name to **Vellum Assistant**
+> 2. Set the app name to **Cadet Assistant**
 > 3. Click **Create app**
 >
 > Let me know when the app is created.

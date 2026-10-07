@@ -274,15 +274,15 @@ describe("RetryProvider — callSite resolution", () => {
 
     const config = seen?.config as Record<string, unknown>;
     expect(config.usageAttributionHeaders).toEqual({
-      "X-Vellum-LLM-Call-Site": "memoryRetrieval",
-      "X-Vellum-Inference-Profile": "conversation-profile",
-      "X-Vellum-Inference-Profile-Source": "conversation",
-      "X-Vellum-Resolved-Provider": "openai",
-      "X-Vellum-Resolved-Model": "claude-profile",
+      "X-Cadet-LLM-Call-Site": "memoryRetrieval",
+      "X-Cadet-Inference-Profile": "conversation-profile",
+      "X-Cadet-Inference-Profile-Source": "conversation",
+      "X-Cadet-Resolved-Provider": "openai",
+      "X-Cadet-Resolved-Model": "claude-profile",
     });
     expect(
       (config.usageAttributionHeaders as Record<string, string>)[
-        "X-Vellum-LLM-Call-Site-Label"
+        "X-Cadet-LLM-Call-Site-Label"
       ],
     ).toBeUndefined();
   });
@@ -318,8 +318,8 @@ describe("RetryProvider — callSite resolution", () => {
 
     const headers = (seen?.config as Record<string, unknown>)
       .usageAttributionHeaders as Record<string, string>;
-    expect(headers["X-Vellum-Subagent-Role"]).toBe("advisor");
-    expect(headers["X-Vellum-Subagent-Spawn-Mode"]).toBe("advisor_consult");
+    expect(headers["X-Cadet-Subagent-Role"]).toBe("advisor");
+    expect(headers["X-Cadet-Subagent-Spawn-Mode"]).toBe("advisor_consult");
   });
 
   test("omits subagent headers for a conversation that is not a subagent", async () => {
@@ -347,8 +347,8 @@ describe("RetryProvider — callSite resolution", () => {
 
     const headers = (seen?.config as Record<string, unknown>)
       .usageAttributionHeaders as Record<string, string>;
-    expect(headers["X-Vellum-Subagent-Role"]).toBeUndefined();
-    expect(headers["X-Vellum-Subagent-Spawn-Mode"]).toBeUndefined();
+    expect(headers["X-Cadet-Subagent-Role"]).toBeUndefined();
+    expect(headers["X-Cadet-Subagent-Spawn-Mode"]).toBeUndefined();
   });
 
   test("omits attribution headers by default for direct provider transports", async () => {
@@ -404,9 +404,9 @@ describe("RetryProvider — callSite resolution", () => {
 
     const config = seen?.config as Record<string, unknown>;
     expect(config.usageAttributionHeaders).toEqual({
-      "X-Vellum-LLM-Call-Site": "vision",
-      "X-Vellum-Resolved-Provider": "openai",
-      "X-Vellum-Resolved-Model": "gpt-default",
+      "X-Cadet-LLM-Call-Site": "vision",
+      "X-Cadet-Resolved-Provider": "openai",
+      "X-Cadet-Resolved-Model": "gpt-default",
     });
   });
 
@@ -440,7 +440,7 @@ describe("RetryProvider — callSite resolution", () => {
     // when the field is absent, which pushes first-token past the verdict
     // deadline the profile exists to beat.
     //
-    // The profile declares `provider: "vellum"` (the provider-agnostic managed
+    // The profile declares `provider: "cadet"` (the provider-agnostic managed
     // sentinel) and the real upstream comes from the model id, so the stub is
     // named for that resolved upstream rather than the sentinel, matching what
     // `createAdapterFromConnection` builds for a managed route.
@@ -1476,7 +1476,7 @@ describe("RetryProvider — no callSite (pre-resolved config passes through)", (
       config: {
         model: "explicit-model",
         usageAttributionHeaders: {
-          "X-Vellum-LLM-Call-Site": "injected",
+          "X-Cadet-LLM-Call-Site": "injected",
         },
       },
     });

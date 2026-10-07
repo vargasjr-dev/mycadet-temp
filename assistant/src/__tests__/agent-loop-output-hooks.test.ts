@@ -117,7 +117,7 @@ describe("agent loop output hooks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
     expect(textOf(lastAssistant(history).content)).toBe("my [redacted] value");
   });
@@ -142,7 +142,7 @@ describe("agent loop output hooks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
     // Her real words never streamed; only the transformed text did, once.
     expect(streamedText(events)).not.toContain("secret");
@@ -167,7 +167,7 @@ describe("agent loop output hooks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
     expect(streamedText(events)).toBe("live text"); // streamed live, untransformed
     expect(textOf(lastAssistant(history).content)).toBe("[stored]"); // storage transformed
@@ -211,7 +211,7 @@ describe("agent loop output hooks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect([]),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
     const toolTurn = history.find(
       (m) =>
@@ -279,7 +279,7 @@ describe("agent loop output hooks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN the hook-added call ran through the normal tool path exactly once
@@ -345,7 +345,7 @@ describe("agent loop output hooks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect([]),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN the dropped call never executed and the turn ended on the text reply
@@ -371,7 +371,7 @@ describe("agent loop output hooks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect([]),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
     expect(calls[0].systemPrompt).toContain("[EDITED]");
   });
@@ -399,7 +399,7 @@ describe("agent loop output hooks", () => {
       messages: [userMessage],
       onEvent: collect([]),
       callSite: "mainAgent",
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN the provider call carries the hook's profile as the override
@@ -439,7 +439,7 @@ describe("agent loop output hooks", () => {
       onModelCallPrepared: (value) => {
         prepared = value;
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(prepared).toMatchObject({
@@ -475,7 +475,7 @@ describe("agent loop output hooks", () => {
       onModelCallPrepared: (value) => {
         prepared = value;
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(prepared?.disableCache).toBe(true);
@@ -503,7 +503,7 @@ describe("agent loop output hooks", () => {
       onModelCallPrepared: (value) => {
         prepared = value;
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(prepared?.systemPrompt).toBeNull();
@@ -539,7 +539,7 @@ describe("agent loop output hooks", () => {
       onModelCallPrepared: (value) => {
         prepared = value;
       },
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     expect(calls[0].options?.config?.callSite).toBe("mainAgent");
@@ -575,7 +575,7 @@ describe("agent loop output hooks", () => {
       onEvent: collect([]),
       callSite: "mainAgent",
       overrideProfile: "seed-profile",
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN the hook saw the loop's resolved override
@@ -614,7 +614,7 @@ describe("agent loop output hooks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect([]),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
     const finalContent = lastAssistant(history).content;
     expect(textOf(finalContent)).toBe("untouched");
@@ -656,7 +656,7 @@ describe("agent loop output hooks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
     expect(seen.calls).toBe(1);
     expect(textOf(lastAssistant(history).content)).toBe("PARTIAL ANSWER");
@@ -708,7 +708,7 @@ describe("agent loop output hooks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN the injected call never executed
@@ -732,7 +732,7 @@ describe("agent loop output hooks", () => {
         ctx.deferAssistantOutput = true;
       },
     });
-    const placeholder = "VELLUM_ASSISTANT_INVITE_CODE_TESTXXXX";
+    const placeholder = "CADET_ASSISTANT_INVITE_CODE_TESTXXXX";
     const real = "real-invite-code-xyz";
     const toolThenText = [
       {
@@ -766,7 +766,7 @@ describe("agent loop output hooks", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
     // Persisted message keeps the placeholder — model must never see real
     // values on reload.
@@ -832,7 +832,7 @@ describe("agent loop post-model-call retry decision", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect([]),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN the model was re-queried with the hook's repaired history
@@ -870,7 +870,7 @@ describe("agent loop post-model-call retry decision", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect([]),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN it terminates after the backstop is spent (5 continues + 1 accepted)
@@ -913,7 +913,7 @@ describe("agent loop post-model-call retry decision", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN the hook ran but the streamed reply is kept rather than discarded
@@ -960,7 +960,7 @@ describe("agent loop post-model-call retry decision", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN the hook saw the rejection with empty content
@@ -995,7 +995,7 @@ describe("agent loop post-model-call retry decision", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect(events),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN the rejection is surfaced and not retried
@@ -1040,7 +1040,7 @@ describe("agent loop post-model-call retry decision", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: collect([]),
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // THEN the tool ran normally (the continue did not discard the tool_use)

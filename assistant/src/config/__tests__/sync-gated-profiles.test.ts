@@ -16,7 +16,7 @@ import {
   test,
 } from "bun:test";
 
-const WORKSPACE_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
 const CONFIG_PATH = join(WORKSPACE_DIR, "config.json");
 
 function ensureTestDir(): void {
@@ -100,7 +100,7 @@ describe("reconcileFlagGatedProfiles", () => {
     const effective = getEffectiveProfile(raw.llm.profiles, "os-beta")!;
     expect(effective.model).toBe("MiniMaxAI/MiniMax-M3");
     expect(effective.provider_connection).toBeUndefined();
-    expect(effective.provider).toBe("vellum");
+    expect(effective.provider).toBe("cadet");
     expect(effective.source).toBe("managed");
     expect(effective.label).toBe("OS Beta");
     expect(effective.effort).toBe("low");

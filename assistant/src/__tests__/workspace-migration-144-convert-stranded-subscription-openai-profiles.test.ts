@@ -22,7 +22,7 @@ function freshWorkspace(): void {
   // assertNotLiveDb tmp-root containment check sees matching prefixes.
   workspaceDir = join(
     realpathSync(tmpdir()),
-    `vellum-migration-144-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-144-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 }
@@ -238,7 +238,7 @@ describe("144-convert-stranded-subscription-openai-profiles migration", () => {
   test("does not convert without the subscription row", () => {
     writeConfig(STRANDED_CONFIG);
     seedConnections([
-      { name: "vellum", provider: "vellum", authType: "platform" },
+      { name: "cadet", provider: "cadet", authType: "platform" },
     ]);
     const before = readFileSync(join(workspaceDir, "config.json"), "utf-8");
 

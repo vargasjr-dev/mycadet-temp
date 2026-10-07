@@ -48,7 +48,7 @@ import { callHandler } from "./helpers/call-route-handler.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
 import { setConfig } from "./helpers/set-config.js";
 
-const testDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testDir = process.env.CADET_WORKSPACE_DIR!;
 const conversationsDir = join(testDir, "conversations");
 mkdirSync(conversationsDir, { recursive: true });
 
@@ -413,12 +413,12 @@ describe("macOS browser backend fallback (no extension, no cdp-inspect)", () => 
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-vellum-principal-type": authContext.principalType,
+          "x-cadet-principal-type": authContext.principalType,
         },
         body: JSON.stringify({
           conversationKey,
           content,
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           interface: "macos",
         }),
       }),
@@ -458,12 +458,12 @@ describe("macOS browser backend fallback (no extension, no cdp-inspect)", () => 
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-vellum-principal-type": authContext.principalType,
+          "x-cadet-principal-type": authContext.principalType,
         },
         body: JSON.stringify({
           conversationKey,
           content,
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           interface: "macos",
         }),
       }),
@@ -520,7 +520,7 @@ describe("POST /v1/messages — body.conversationId direct id lookup", () => {
   //   - `body.conversationId` is the assistant-minted internal id and is
   //     looked up directly. A missing row is a 404 — clients must obtain
   //     the id from a prior daemon response.
-  //   - `body.conversationKey` is an external key (non-vellum channels /
+  //   - `body.conversationKey` is an external key (non-cadet channels /
   //     web idempotency); resolved via the conversation_keys table and
   //     materialised on first use.
   //
@@ -545,7 +545,7 @@ describe("POST /v1/messages — body.conversationId direct id lookup", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-vellum-principal-type": authContext.principalType,
+          "x-cadet-principal-type": authContext.principalType,
         },
         body: JSON.stringify(body),
       }),
@@ -572,7 +572,7 @@ describe("POST /v1/messages — body.conversationId direct id lookup", () => {
       }
       const body = {
         content: "Start a new chat",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
         riskThreshold: "none",
       };
@@ -623,7 +623,7 @@ describe("POST /v1/messages — body.conversationId direct id lookup", () => {
       const response = await sendMessage({
         conversationId: seeded.conversationId,
         content: "Continue this chat",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
         riskThreshold: "none",
       });
@@ -646,7 +646,7 @@ describe("POST /v1/messages — body.conversationId direct id lookup", () => {
     try {
       const response = await sendMessage({
         content: "Start a new chat",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
         riskThreshold: "none",
       });
@@ -667,7 +667,7 @@ describe("POST /v1/messages — body.conversationId direct id lookup", () => {
       const response = await sendMessage({
         conversationKey: "shared-chat-key",
         content: "Send to a keyed chat",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
         riskThreshold: "none",
       });
@@ -689,7 +689,7 @@ describe("POST /v1/messages — body.conversationId direct id lookup", () => {
     const response = await sendMessage({
       conversationId: seeded.conversationId,
       content: "Direct id lookup — should reuse the existing conversation.",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       interface: "macos",
     });
 
@@ -710,7 +710,7 @@ describe("POST /v1/messages — body.conversationId direct id lookup", () => {
       {
         conversationId: `does-not-exist-${crypto.randomUUID()}`,
         content: "Should 404 — unknown internal id.",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       },
       404,
@@ -738,7 +738,7 @@ describe("POST /v1/messages — body.conversationId direct id lookup", () => {
       conversationId: idSeed.conversationId,
       conversationKey: keyValue,
       content: "Both fields sent — id should win.",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       interface: "macos",
     });
 
@@ -768,12 +768,12 @@ describe("conversationKey send path disk-view regression", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-vellum-principal-type": authContext.principalType,
+          "x-cadet-principal-type": authContext.principalType,
         },
         body: JSON.stringify({
           conversationKey,
           content,
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           interface: "macos",
         }),
       }),
@@ -880,12 +880,12 @@ describe("host-proxy preactivation across an interrupt", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-vellum-principal-type": authContext.principalType,
+          "x-cadet-principal-type": authContext.principalType,
         },
         body: JSON.stringify({
           conversationKey,
           content,
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           interface: "macos",
           ...(clientMessageId ? { clientMessageId } : {}),
         }),

@@ -6,7 +6,7 @@ import {
   INFERENCE_PROVIDERS,
   MANAGED_ROUTABLE_PROVIDERS,
   OPENAI_COMPATIBLE_PROVIDER,
-  VELLUM_CONNECTION_PROVIDER,
+  CADET_CONNECTION_PROVIDER,
 } from "@/domains/settings/ai/constants";
 import { CONNECTION_PROVIDERS } from "@/domains/settings/ai/provider-editor-constants";
 
@@ -46,7 +46,7 @@ export function connectionServesProvider(
     return true;
   }
   return (
-    connectionProvider === VELLUM_CONNECTION_PROVIDER &&
+    connectionProvider === CADET_CONNECTION_PROVIDER &&
     MANAGED_ROUTABLE_PROVIDERS.has(selectedProvider)
   );
 }
@@ -114,8 +114,8 @@ export function providersServedByConnections(
   // catalog order (a connection for a provider this app version doesn't
   // list) is appended so version drift never hides a served provider.
   const ordered: ConnectionProvider[] = [];
-  if (served.includes(VELLUM_CONNECTION_PROVIDER)) {
-    ordered.push(VELLUM_CONNECTION_PROVIDER);
+  if (served.includes(CADET_CONNECTION_PROVIDER)) {
+    ordered.push(CADET_CONNECTION_PROVIDER);
   }
   // The subscription identity sits with the other first-class routes rather
   // than in the version-drift bucket at the end.
@@ -126,7 +126,7 @@ export function providersServedByConnections(
     ...CONNECTION_PROVIDERS.filter((provider) => served.includes(provider)),
     ...served.filter(
       (provider) =>
-        provider !== VELLUM_CONNECTION_PROVIDER &&
+        provider !== CADET_CONNECTION_PROVIDER &&
         provider !== CHATGPT_CONNECTION_PROVIDER &&
         !CONNECTION_PROVIDERS.includes(provider),
     ),
@@ -193,7 +193,7 @@ export function parseEntryPickerValue(
 }
 
 const ROUTING_IDENTITY_KINDS = new Set<string>([
-  VELLUM_CONNECTION_PROVIDER,
+  CADET_CONNECTION_PROVIDER,
   CHATGPT_CONNECTION_PROVIDER,
 ]);
 
@@ -240,7 +240,7 @@ export function expandEndpointEntries(
   const multiEntryKinds = multiEntryProviderKinds(connections);
   const entries: { value: string; label: string; meta?: string }[] = [];
   for (const provider of providers) {
-    if (provider === VELLUM_CONNECTION_PROVIDER) {
+    if (provider === CADET_CONNECTION_PROVIDER) {
       entries.push({
         value: provider,
         label: labelFor(provider),

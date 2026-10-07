@@ -2,7 +2,7 @@
  * Shared builder for guardian approval card seed content blocks.
  *
  * Both access-request and tool-approval notifications render a Surface card
- * with Approve/Reject buttons in the Vellum in-app channel. This module
+ * with Approve/Reject buttons in the Cadet in-app channel. This module
  * provides the shared construction logic so each notification type only
  * supplies its domain-specific data (title, subtitle, metadata, etc.)
  * without duplicating the card structure or action wiring.

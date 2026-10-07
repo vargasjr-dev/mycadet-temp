@@ -23,7 +23,7 @@ let workspaceDir: string;
 function freshWorkspace(): void {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-130-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-130-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 }
@@ -109,7 +109,7 @@ describe("130-speech-mode-to-provider", () => {
 
   // The pre-migration schema allowed provider "cadet" alongside mode
   // "managed"; that pair must survive rather than double-rewrite.
-  test("preserves an already-vellum managed service", () => {
+  test("preserves an already-cadet managed service", () => {
     writeConfig({ services: { stt: { mode: "managed", provider: "cadet" } } });
 
     speechModeToProviderMigration.run(workspaceDir);

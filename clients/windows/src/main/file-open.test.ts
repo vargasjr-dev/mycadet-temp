@@ -60,8 +60,8 @@ const makeEvent = () => {
 
 test("delivers canonical first-instance and second-instance file paths once", () => {
   const originalArgv = process.argv;
-  const firstPath = "exports/例.vellum";
-  process.argv = ["Vellum.exe", firstPath, firstPath, "notes.txt"];
+  const firstPath = "exports/例.cadet";
+  process.argv = ["Cadet.exe", firstPath, firstPath, "notes.txt"];
   try {
     fileOpenModule.install({} as never);
   } finally {
@@ -75,16 +75,16 @@ test("delivers canonical first-instance and second-instance file paths once", ()
   firstEvent.destroy();
 
   const secondWorkingDirectory = path.resolve("secondary-launch");
-  const secondRelativePath = "exports/second.vellum";
+  const secondRelativePath = "exports/second.cadet";
   const secondPath = path.resolve(secondWorkingDirectory, secondRelativePath);
   for (const listener of appListeners.get("second-instance") ?? []) {
     listener(
       {},
       [
-        "Vellum.exe",
+        "Cadet.exe",
         secondRelativePath,
         secondRelativePath,
-        "archive.vellum.bak",
+        "archive.cadet.bak",
       ],
       secondWorkingDirectory,
     );

@@ -218,7 +218,7 @@ describe("secrets_add credential transcript scrub", () => {
     const result = await addRoute.handler({
       body: {
         type: "credential",
-        name: "vellum:platform_base_url",
+        name: "cadet:platform_base_url",
         value: "0198f4c2-1111-2222-3333-444455556666",
       },
     });
@@ -236,7 +236,7 @@ describe("secrets_add credential transcript scrub", () => {
       addRoute.handler({
         body: {
           type: "credential",
-          name: "vellum:platform_assistant_id",
+          name: "cadet:platform_assistant_id",
           value: "   ",
         },
       }),

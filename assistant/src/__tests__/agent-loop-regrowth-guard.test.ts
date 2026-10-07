@@ -120,7 +120,7 @@ function installManager(opts?: { proactiveExhausted?: boolean }): {
       exhausted: false,
     })) as unknown as typeof manager.recoverContextOverflow;
   }
-  return { trust: { sourceChannel: "vellum", trustClass: "unknown" } };
+  return { trust: { sourceChannel: "cadet", trustClass: "unknown" } };
 }
 
 function countCompactions(events: AgentEvent[]): number {

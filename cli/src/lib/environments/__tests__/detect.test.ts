@@ -11,9 +11,9 @@ import { getSeed } from "../resolve.js";
 
 const prod = getSeed("production")!;
 
-/** Create `<XDG_DATA_HOME>/vellum-<env>/assistants/<id>/` for a non-prod env. */
+/** Create `<XDG_DATA_HOME>/cadet-<env>/assistants/<id>/` for a non-prod env. */
 function seedAssistantDir(dataHome: string, envName: string, id: string): void {
-  mkdirSync(join(dataHome, `vellum-${envName}`, "assistants", id), {
+  mkdirSync(join(dataHome, `cadet-${envName}`, "assistants", id), {
     recursive: true,
   });
 }
@@ -25,12 +25,12 @@ describe("cross-environment assistant detection", () => {
 
   beforeEach(() => {
     prevXdg = process.env.XDG_DATA_HOME;
-    prevEnv = process.env.VELLUM_ENVIRONMENT;
+    prevEnv = process.env.CADET_ENVIRONMENT;
     dataHome = mkdtempSync(join(tmpdir(), "cli-detect-xdg-"));
     process.env.XDG_DATA_HOME = dataHome;
     // Pin the current env so the hint's "this CLI targets '<env>'" copy and
     // the current-env skip are deterministic regardless of machine config.
-    process.env.VELLUM_ENVIRONMENT = "production";
+    process.env.CADET_ENVIRONMENT = "production";
   });
 
   afterEach(() => {
@@ -40,9 +40,9 @@ describe("cross-environment assistant detection", () => {
       process.env.XDG_DATA_HOME = prevXdg;
     }
     if (prevEnv === undefined) {
-      delete process.env.VELLUM_ENVIRONMENT;
+      delete process.env.CADET_ENVIRONMENT;
     } else {
-      process.env.VELLUM_ENVIRONMENT = prevEnv;
+      process.env.CADET_ENVIRONMENT = prevEnv;
     }
     rmSync(dataHome, { recursive: true, force: true });
   });
@@ -62,14 +62,14 @@ describe("cross-environment assistant detection", () => {
 
   test("skips the current environment even when it holds assistants", () => {
     // production's own multi-instance dir (no env suffix).
-    mkdirSync(join(dataHome, "vellum", "assistants", "prod-bot"), {
+    mkdirSync(join(dataHome, "cadet", "assistants", "prod-bot"), {
       recursive: true,
     });
     expect(detectOtherEnvironmentAssistants(prod)).toEqual([]);
   });
 
   test("ignores an env dir that holds no assistant subdirectory", () => {
-    mkdirSync(join(dataHome, "vellum-dev", "assistants"), { recursive: true });
+    mkdirSync(join(dataHome, "cadet-dev", "assistants"), { recursive: true });
     expect(detectOtherEnvironmentAssistants(prod)).toEqual([]);
   });
 
@@ -92,7 +92,7 @@ describe("cross-environment assistant detection", () => {
     expect(hint).toContain("'dev'");
     expect(hint).toContain("This CLI targets 'production'");
     expect(hint).toContain("Install cadet Command");
-    expect(hint).toContain("VELLUM_ENVIRONMENT=dev");
+    expect(hint).toContain("CADET_ENVIRONMENT=dev");
   });
 
   test("hint is null when no other env has assistants", () => {

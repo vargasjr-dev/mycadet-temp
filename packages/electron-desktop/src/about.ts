@@ -17,7 +17,7 @@ export interface AboutIpc {
 }
 
 let runtime: AboutRuntime = {
-  rendererBase: () => "app://vellum.ai/assistant",
+  rendererBase: () => "app://mycadet.ai/assistant",
 };
 
 export const configureAboutRuntime = (next: AboutRuntime): void => {
@@ -46,24 +46,24 @@ export const configureAboutRuntime = (next: AboutRuntime): void => {
  * right metadata.
  */
 
-const WEBSITE = "https://vellum.ai";
+const WEBSITE = "https://mycadet.ai";
 
 // Injected by `electron.vite.config.ts` at build time.
-declare const __VELLUM_BUILD_SHA__: string;
-declare const __VELLUM_ENVIRONMENT__: string;
+declare const __CADET_BUILD_SHA__: string;
+declare const __CADET_ENVIRONMENT__: string;
 
-const VELLUM_ENV: string =
-  typeof __VELLUM_ENVIRONMENT__ === "string"
-    ? __VELLUM_ENVIRONMENT__
+const CADET_ENV: string =
+  typeof __CADET_ENVIRONMENT__ === "string"
+    ? __CADET_ENVIRONMENT__
     : "production";
 
 const APP_NAME =
-  VELLUM_ENV === "production"
+  CADET_ENV === "production"
     ? "Cadet"
-    : `Cadet ${VELLUM_ENV.charAt(0).toUpperCase() + VELLUM_ENV.slice(1)}`;
+    : `Cadet ${CADET_ENV.charAt(0).toUpperCase() + CADET_ENV.slice(1)}`;
 
 const COMMIT_SHA: string =
-  typeof __VELLUM_BUILD_SHA__ === "string" ? __VELLUM_BUILD_SHA__ : "unknown";
+  typeof __CADET_BUILD_SHA__ === "string" ? __CADET_BUILD_SHA__ : "unknown";
 
 const COPYRIGHT = (): string => `© ${new Date().getFullYear()} ${APP_NAME}`;
 

@@ -18,7 +18,7 @@ import {
   test,
 } from "bun:test";
 
-const testDataDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testDataDir = process.env.CADET_WORKSPACE_DIR!;
 
 import {
   describeQdrantStartFailure,
@@ -554,14 +554,14 @@ describe("QdrantManager", () => {
 
   // ── Symlink Safety ────────────────────────────────────────────
 
-  describe("vellum-qdrant symlink safety", () => {
-    test("ignores pre-existing non-symlink vellum-qdrant file", async () => {
+  describe("cadet-qdrant symlink safety", () => {
+    test("ignores pre-existing non-symlink cadet-qdrant file", async () => {
       const realMarkerPath = join(qdrantDir, "real-executed.txt");
       const hijackMarkerPath = join(qdrantDir, "hijack-executed.txt");
 
       placeFakeBinary(`#!/bin/sh\necho real > "${realMarkerPath}"\nexit 1`);
 
-      const hijackPath = join(qdrantBinDir, "vellum-qdrant");
+      const hijackPath = join(qdrantBinDir, "cadet-qdrant");
       writeFileSync(
         hijackPath,
         `#!/bin/sh\necho hijack > "${hijackMarkerPath}"\nexit 0`,
@@ -592,8 +592,8 @@ describe("QdrantManager", () => {
       );
       chmodSync(evilBinaryPath, 0o755);
 
-      const vellumQdrantPath = join(qdrantBinDir, "vellum-qdrant");
-      symlinkSync(evilBinaryPath, vellumQdrantPath);
+      const cadetQdrantPath = join(qdrantBinDir, "cadet-qdrant");
+      symlinkSync(evilBinaryPath, cadetQdrantPath);
 
       const port = getTestPort();
       const mgr = new QdrantManager({

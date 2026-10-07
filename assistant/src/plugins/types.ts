@@ -144,7 +144,7 @@ export interface TurnContext {
    * when absent the `unified-turn-context` injector emits nothing.
    */
   readonly timestamp?: string;
-  /** Human-readable interface label (e.g. "vellum", "telegram"). */
+  /** Human-readable interface label (e.g. "cadet", "telegram"). */
   readonly interfaceName?: string;
   /**
    * Client OS surface, reported independently of the transport interface.

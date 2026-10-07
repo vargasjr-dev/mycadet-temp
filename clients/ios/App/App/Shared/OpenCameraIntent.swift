@@ -1,6 +1,6 @@
 import AppIntents
 
-/// "Take a photo": open Vellum with the composer's camera already up.
+/// "Take a photo": open Cadet with the composer's camera already up.
 ///
 /// The action behind the Quick Actions widget's camera button. It hands
 /// `CameraDeepLink` to the shell rather than opening anything itself, so the
@@ -15,7 +15,7 @@ import AppIntents
 struct OpenCameraIntent: AppIntent {
     static var title: LocalizedStringResource = "Take a photo"
     static var description = IntentDescription(
-        "Open Vellum and take a photo to send to your assistant."
+        "Open Cadet and take a photo to send to your assistant."
     )
 
     /// Both launch-mode declarations are load-bearing; do not "clean this up".

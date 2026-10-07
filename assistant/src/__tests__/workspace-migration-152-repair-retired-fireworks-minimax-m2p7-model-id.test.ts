@@ -22,7 +22,7 @@ let workspaceDir: string;
 function freshWorkspace(): void {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-152-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-152-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 }
@@ -87,7 +87,7 @@ describe("152-repair-retired-fireworks-minimax-m2p7-model-id migration", () => {
           malformed: STALE,
         },
         profiles: {
-          "cost-optimized": { provider: "vellum", model: STALE },
+          "cost-optimized": { provider: "cadet", model: STALE },
           legacy: { model: STALE },
         },
       },
@@ -102,7 +102,7 @@ describe("152-repair-retired-fireworks-minimax-m2p7-model-id migration", () => {
     // Non-exact matches and malformed leaves are untouched.
     expect(llm.callSites.heartbeat.model).toBe(`${STALE}-tuned`);
     expect(llm.callSites.malformed).toBe(STALE);
-    // Managed profiles stamped provider "vellum" carry Fireworks model IDs.
+    // Managed profiles stamped provider "cadet" carry Fireworks model IDs.
     expect(llm.profiles["cost-optimized"].model).toBe(REPLACEMENT);
     expect(llm.profiles.legacy.model).toBe(REPLACEMENT);
   });
@@ -110,7 +110,7 @@ describe("152-repair-retired-fireworks-minimax-m2p7-model-id migration", () => {
   test("repairs entry-bound fragments whose row kind is fireworks or cadet", () => {
     seedRows([
       { name: "my-fireworks", provider: "fireworks" },
-      { name: "managed-alt", provider: "vellum" },
+      { name: "managed-alt", provider: "cadet" },
     ]);
     writeConfig({
       llm: {

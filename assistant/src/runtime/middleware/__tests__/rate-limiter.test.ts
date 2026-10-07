@@ -90,7 +90,7 @@ describe("isRateLimitExemptEndpoint", () => {
 });
 
 describe("authenticated API rate limit is configurable", () => {
-  const configPath = join(process.env.VELLUM_WORKSPACE_DIR!, "config.json");
+  const configPath = join(process.env.CADET_WORKSPACE_DIR!, "config.json");
 
   // Apply a config on disk and push it to the live limiter the same way the
   // config watcher does on a config.json change.

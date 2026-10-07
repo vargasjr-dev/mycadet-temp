@@ -14,7 +14,7 @@ Every field on a tool definition is optional. The loader fills documented defaul
 
 ## Tool reference
 
-These are the fields a tool definition can set. Names and types come from `ToolDefinition` in [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api).
+These are the fields a tool definition can set. Names and types come from `ToolDefinition` in [`@mycadet/plugin-api`](https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api).
 
 | Field              | Type                                           | Default                | Description                                                                                                                                                                                                                 |
 | ------------------ | ---------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -87,7 +87,7 @@ A tool that needs durable storage should derive the directory from the workspace
 execute: async (input, ctx) => {
   const fs = await import("node:fs/promises");
   const path = await import("node:path");
-  const storageDir = path.join(process.env.VELLUM_WORKSPACE_DIR, "plugins", "my-plugin-name", "data");
+  const storageDir = path.join(process.env.CADET_WORKSPACE_DIR, "plugins", "my-plugin-name", "data");
   await fs.mkdir(storageDir, { recursive: true });
   // read/write files under storageDir
 },
@@ -102,14 +102,14 @@ All tools (built-in, plugin, workspace, and MCP) land in one shared catalog. Whe
 1. **Core tools.** Registered at startup. They take precedence over plugin and MCP tools: a plugin or MCP tool with the same name is skipped with a warning.
 2. **Workspace tools.** Filesystem overrides under `/workspace/tools/`. These are the explicit exception to registration order: a workspace override always shadows a core tool of the same name, regardless of when it was discovered.
 3. **MCP server tools.** Registered when an MCP server connects. Conflicts with core or workspace tools are skipped; conflicts with plugin tools are resolved by first registration.
-4. **Built-in default plugin tools.** Vellum ships a set of default plugins alongside the Assistant. Their tools register during bootstrap, before any user-installed plugin tools.
+4. **Built-in default plugin tools.** Cadet ships a set of default plugins alongside the Assistant. Their tools register during bootstrap, before any user-installed plugin tools.
 5. **User plugin tools.** Registered at boot, ordered by the plugin's original install date (same ordering as hooks: `install-meta.json` -> directory birthtime -> unknown). A user plugin tool that collides with a core, workspace, MCP, or default plugin tool is skipped. A collision between two different user plugins with the same tool name fails registration.
 
 The model sees the full catalog regardless of source. Pick distinctive tool names to avoid collisions. The loader derives the name from the file basename, so namespacing with a prefix (for example `myplugin_search`) is the simplest way to stay clear.
 
 ## @mycadet/plugin-api exports for tools
 
-These are the tool-related exports from [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api). The full field contracts are documented in the sections above.
+These are the tool-related exports from [`@mycadet/plugin-api`](https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api). The full field contracts are documented in the sections above.
 
 | Export                | Kind | Purpose                                                                         |
 | --------------------- | ---- | ------------------------------------------------------------------------------- |
@@ -155,4 +155,4 @@ export default {
 };
 ```
 
-Types come from [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api), the only supported contract.
+Types come from [`@mycadet/plugin-api`](https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api), the only supported contract.

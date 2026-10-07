@@ -93,12 +93,12 @@ describe("interrupted-turn reconciler", () => {
   });
 
   test("the internal cadet channel is treated as a guardian-owned local conversation", () => {
-    seedInterrupted("conv-vellum");
-    setConversationOriginChannelIfUnset("conv-vellum", "vellum");
+    seedInterrupted("conv-cadet");
+    setConversationOriginChannelIfUnset("conv-cadet", "cadet");
 
     const result = reconcileInterruptedConversations(true);
 
-    expect(result.resume).toEqual([guardianTarget("conv-vellum")]);
+    expect(result.resume).toEqual([guardianTarget("conv-cadet")]);
     expect(result.trustUnrecoverable).toEqual([]);
   });
 

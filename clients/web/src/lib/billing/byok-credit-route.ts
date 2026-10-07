@@ -1,7 +1,7 @@
 import {
   getModelsForProvider,
   MODELS_BY_PROVIDER,
-  VELLUM_SERVED_PROVIDERS,
+  CADET_SERVED_PROVIDERS,
 } from "@/assistant/llm-model-catalog";
 import type {
   ConfigGetResponse,
@@ -122,7 +122,7 @@ function classifyEntry(
   return burns;
 }
 
-const MANAGED_ROUTABLE = new Set<string>(VELLUM_SERVED_PROVIDERS);
+const MANAGED_ROUTABLE = new Set<string>(CADET_SERVED_PROVIDERS);
 
 /** The provider whose catalog owns a model id, mirroring the daemon's lookup. */
 function catalogProviderForModel(model: string): string | undefined {

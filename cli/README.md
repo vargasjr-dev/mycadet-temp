@@ -55,7 +55,7 @@ cadet hatch [options]
 
 #### Remote Targets
 
-- **`local`** -- Starts the local assistant and local gateway. Gateway source resolution order is: repo source tree, then installed `@mycadet/vellum-gateway` package.
+- **`local`** -- Starts the local assistant and local gateway. Gateway source resolution order is: repo source tree, then installed `@mycadet/cadet-gateway` package.
 - **`docker`** -- Starts the assistant, gateway, and credential service in Docker containers.
 - **`cadet`** -- Hatches an assistant on the Cadet Cloud.
 - **`custom`** -- Recognized but not yet implemented.
@@ -138,12 +138,12 @@ Delete a provisioned assistant instance. The cloud provider and connection detai
 cadet retire <name>
 ```
 
-The CLI looks up the instance by name in the production lockfile (`~/.vellum.lock.json`) or the env-scoped lockfile under `$XDG_CONFIG_HOME/vellum-<env>/lockfile.json` for non-production environments, then determines how to retire it based on the saved `cloud` field:
+The CLI looks up the instance by name in the production lockfile (`~/.cadet.lock.json`) or the env-scoped lockfile under `$XDG_CONFIG_HOME/cadet-<env>/lockfile.json` for non-production environments, then determines how to retire it based on the saved `cloud` field:
 
 - **`gcp`** -- Deletes the GCP Compute Engine instance via `gcloud compute instances delete`.
 - **`aws`** -- Terminates the AWS EC2 instance by looking up the instance ID from its Name tag.
-- **`local`** -- Stops the local assistant (`cadet sleep`) and removes the assistant's instance directory (`resources.instanceDir` in the lockfile; typically `~/.local/share/vellum/assistants/<name>/` for new hatches, or `~/.vellum/` for legacy entries).
-- **`custom`** -- SSHs to the remote host to stop the assistant/gateway and remove the remote `~/.vellum` directory.
+- **`local`** -- Stops the local assistant (`cadet sleep`) and removes the assistant's instance directory (`resources.instanceDir` in the lockfile; typically `~/.local/share/cadet/assistants/<name>/` for new hatches, or `~/.cadet/` for legacy entries).
+- **`custom`** -- SSHs to the remote host to stop the assistant/gateway and remove the remote `~/.cadet` directory.
 
 #### Examples
 

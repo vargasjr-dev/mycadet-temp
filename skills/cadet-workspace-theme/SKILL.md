@@ -9,16 +9,16 @@ metadata:
     display-name: "Workspace Theme"
 ---
 
-You are customizing the visual theme of the app you and your user share. The theme lives in one file — `$VELLUM_WORKSPACE_DIR/ui/theme.json` — which the assistant runtime validates and serves to every connected client. Valid changes apply **live**, layered on top of the built-in light/dark/velvet base theme: open windows re-color within a few seconds of the file being saved. No restart, no build step.
+You are customizing the visual theme of the app you and your user share. The theme lives in one file — `$CADET_WORKSPACE_DIR/ui/theme.json` — which the assistant runtime validates and serves to every connected client. Valid changes apply **live**, layered on top of the built-in light/dark/velvet base theme: open windows re-color within a few seconds of the file being saved. No restart, no build step.
 
-**All commands in this skill use the `bash` tool.** `$VELLUM_WORKSPACE_DIR` is available in the sandbox environment.
+**All commands in this skill use the `bash` tool.** `$CADET_WORKSPACE_DIR` is available in the sandbox environment.
 
 ## Inspect current state
 
 Always check what's there before changing it:
 
 ```bash
-cat "$VELLUM_WORKSPACE_DIR/ui/theme.json" 2>/dev/null || echo "No theme yet — clients render the built-in theme"
+cat "$CADET_WORKSPACE_DIR/ui/theme.json" 2>/dev/null || echo "No theme yet — clients render the built-in theme"
 ```
 
 ## The file
@@ -112,7 +112,7 @@ This requires the desktop app to be running; if the command times out or reports
 Delete the file (or write `{"version":1}` with no tokens) and clients revert to the built-in theme:
 
 ```bash
-rm "$VELLUM_WORKSPACE_DIR/ui/theme.json"
+rm "$CADET_WORKSPACE_DIR/ui/theme.json"
 ```
 
 ## Etiquette

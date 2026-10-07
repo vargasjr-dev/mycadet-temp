@@ -45,7 +45,7 @@ const {
 const tokenPath = (): string => path.join(userDataDir, "session.enc");
 
 beforeEach(() => {
-  userDataDir = mkdtempSync(path.join(os.tmpdir(), "vellum-session-token-"));
+  userDataDir = mkdtempSync(path.join(os.tmpdir(), "cadet-session-token-"));
   encryptionAvailable = true;
   __resetForTesting();
   setSessionTokenLogger({ warn: () => undefined });

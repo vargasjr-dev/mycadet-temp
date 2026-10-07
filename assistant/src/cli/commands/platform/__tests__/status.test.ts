@@ -27,7 +27,7 @@ describe("assistant platform status", () => {
       ok: true,
       result: {
         isPlatform: true,
-        baseUrl: "https://platform.vellum.ai",
+        baseUrl: "https://cloud.cadet.ai",
         assistantId: "asst-abc-123",
         hasAssistantApiKey: true,
         hasWebhookSecret: true,
@@ -43,7 +43,7 @@ describe("assistant platform status", () => {
 
     const parsed = JSON.parse(out.join(""));
     expect(parsed.isPlatform).toBe(true);
-    expect(parsed.baseUrl).toBe("https://platform.vellum.ai");
+    expect(parsed.baseUrl).toBe("https://cloud.cadet.ai");
     expect(parsed.assistantId).toBe("asst-abc-123");
     expect(parsed.hasAssistantApiKey).toBe(true);
     expect(parsed.hasWebhookSecret).toBe(true);

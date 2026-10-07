@@ -113,7 +113,7 @@ export async function evaluateTelephonyTtsPlayability(
     }
   }
 
-  // The vellum secret alone doesn't prove usability: managed speech also
+  // The cadet secret alone doesn't prove usability: managed speech also
   // needs the platform assistant identity, or synthesis fails before any
   // request is made — with allowNativeFallback false, that would mean
   // silent call failures instead of a BYOK fallback.

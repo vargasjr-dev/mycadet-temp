@@ -76,7 +76,7 @@ function dispatchSteer(args: {
       queryParams: { conversationId: args.conversationId },
       headers:
         args.actorPrincipalId !== undefined
-          ? { "x-vellum-actor-principal-id": args.actorPrincipalId }
+          ? { "x-cadet-actor-principal-id": args.actorPrincipalId }
           : {},
     }),
   );

@@ -3,7 +3,7 @@ import SwiftUI
 import UIKit
 import WidgetKit
 
-// The pieces every Vellum Home Screen widget builds itself out of: a tile, a
+// The pieces every Cadet Home Screen widget builds itself out of: a tile, a
 // circle, a pill, the unread mark, and the secondary line of text that stands
 // in when there is nothing to list. They live here rather than beside whichever
 // widget reached for them first, because a control that lives in one widget's
@@ -43,7 +43,7 @@ enum WidgetFlattenedFill {
 /// The app's own mark, at the size a control wears it: this build's icon
 /// ground with the icon's own eyes on it.
 ///
-/// The eyes are `VellumAppIconEyes`, the same `eyes.svg` the three Icon
+/// The eyes are `CadetAppIconEyes`, the same `eyes.svg` the three Icon
 /// Composer bundles embed, pinned to the avatar component library's quirky
 /// style by `clients/ios/scripts/__tests__/ios-default-icon-geometry.test.ts`.
 /// Drawing the widget's own ``WidgetAvatarEyes`` here would be a different
@@ -87,7 +87,7 @@ struct CadetAppIconMark: View {
     }
 
     private var eyes: some View {
-        Image("VellumAppIconEyes")
+        Image("CadetAppIconEyes")
             .resizable()
             .scaledToFit()
             .frame(width: size * Self.artworkScale, height: size * Self.artworkScale)

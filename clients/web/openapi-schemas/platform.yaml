@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: vellum-assistant-platform API
+  title: mycadet-platform API
   version: 1.0.0 (v1)
-  description: Documentation of API endpoints of vellum-assistant-platform
+  description: Documentation of API endpoints of mycadet-platform
 paths:
   /v1/admin/assistants/{assistant_id}/doctor/sessions/:
     post:
@@ -10,7 +10,7 @@ paths:
       description: Create a Doctor session for any hosted assistant as a staff user.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -25,7 +25,7 @@ paths:
       tags:
       - admin
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -59,7 +59,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/admin/assistants/{assistant_id}/doctor/sessions/{session_id}/:
     delete:
@@ -67,7 +67,7 @@ paths:
       description: Delete an upstream Doctor session through the admin scope.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -87,7 +87,7 @@ paths:
       tags:
       - admin
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -111,7 +111,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/admin/assistants/{assistant_id}/doctor/sessions/{session_id}/events/:
     get:
@@ -119,7 +119,7 @@ paths:
       description: Proxy the Doctor SSE event stream for staff users.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -146,7 +146,7 @@ paths:
       tags:
       - admin
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -183,7 +183,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/admin/assistants/{assistant_id}/doctor/sessions/{session_id}/messages/:
     post:
@@ -191,7 +191,7 @@ paths:
       description: Send a message to an admin-created or existing Doctor session.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -223,7 +223,7 @@ paths:
               $ref: '#/components/schemas/DoctorSessionMessageRequestRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -258,14 +258,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/:
     get:
       operationId: assistants_list
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -298,7 +298,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -309,7 +309,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAssistantList'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/backups/:
     get:
@@ -317,7 +317,7 @@ paths:
       description: List backups and trigger manual point-in-time backups for an assistant.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -332,7 +332,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -355,14 +355,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     post:
       operationId: assistants_backups_create
       description: Trigger a manual point-in-time backup for the assistant.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -377,7 +377,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -400,7 +400,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/backups/{snapshot_name}/restore/:
     post:
@@ -413,7 +413,7 @@ paths:
         never attempts the restore if the snapshot is absent from the list.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -433,7 +433,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -462,7 +462,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/doctor/history/:
     get:
@@ -482,7 +482,7 @@ paths:
         to display the message tally.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -509,7 +509,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -525,7 +525,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/doctor/history/{doctor_session_id}/:
     get:
@@ -538,7 +538,7 @@ paths:
         Messages are returned in ``sequence`` order.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -559,7 +559,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -575,7 +575,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/doctor/sessions/:
     post:
@@ -586,7 +586,7 @@ paths:
         Calls the Doctor service to create a session and returns the session ID.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -601,7 +601,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -635,7 +635,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/doctor/sessions/{session_id}/:
     delete:
@@ -643,7 +643,7 @@ paths:
       description: Delete a Doctor session.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -663,7 +663,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -687,7 +687,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/doctor/sessions/{session_id}/events/:
     get:
@@ -695,7 +695,7 @@ paths:
       description: Proxy the Doctor SSE event stream for a session.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -722,7 +722,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -759,7 +759,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/doctor/sessions/{session_id}/messages/:
     post:
@@ -767,7 +767,7 @@ paths:
       description: Send a user message to an active Doctor session.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -799,7 +799,7 @@ paths:
               $ref: '#/components/schemas/DoctorSessionMessageRequestRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -834,7 +834,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/doctor/sessions/{session_id}/user-outcome/:
     post:
@@ -847,7 +847,7 @@ paths:
         Idempotent: the latest answer wins.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -879,7 +879,7 @@ paths:
               $ref: '#/components/schemas/DoctorSessionUserOutcomeRequestRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -907,7 +907,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/domains/:
     get:
@@ -935,7 +935,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - SDKCompatibleAssistantKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
@@ -946,7 +946,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAssistantDomainList'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     post:
       operationId: assistants_domains_create
@@ -972,7 +972,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateAssistantDomainRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - SDKCompatibleAssistantKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
@@ -989,7 +989,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/domains/{id}/:
     delete:
@@ -1011,14 +1011,14 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - SDKCompatibleAssistantKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
         '204':
           description: No response body
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/domains/{id}/provision/:
     post:
@@ -1041,7 +1041,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - SDKCompatibleAssistantKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
@@ -1064,7 +1064,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/domains/{id}/verification-status/:
     get:
@@ -1086,7 +1086,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - SDKCompatibleAssistantKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
@@ -1097,7 +1097,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DomainVerificationStatus'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/email-addresses/:
     get:
@@ -1125,7 +1125,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - SDKCompatibleAssistantKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
@@ -1136,7 +1136,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAssistantEmailAddressList'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     post:
       operationId: assistants_email_addresses_create
@@ -1163,7 +1163,7 @@ paths:
               $ref: '#/components/schemas/CreateEmailAddressRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - SDKCompatibleAssistantKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
@@ -1174,7 +1174,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AssistantEmailAddress'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/email-addresses/{id}/:
     delete:
@@ -1196,14 +1196,14 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - SDKCompatibleAssistantKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
         '204':
           description: No response body
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/email-addresses/{id}/status/:
     get:
@@ -1225,7 +1225,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - SDKCompatibleAssistantKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
@@ -1236,7 +1236,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/EmailAddressStatus'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/emails/:
     get:
@@ -1278,7 +1278,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - SDKCompatibleAssistantKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
@@ -1289,7 +1289,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedEmailMessageList'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/handle-available/:
     get:
@@ -1319,7 +1319,7 @@ paths:
         a save).
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -1340,7 +1340,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -1354,7 +1354,7 @@ paths:
           description: No response body
         '429':
           description: No response body
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/live-activity/tokens/:
     post:
@@ -1392,7 +1392,7 @@ paths:
               $ref: '#/components/schemas/LiveActivityTokenUpsertRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -1403,7 +1403,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/LiveActivityTokenUpsert'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/live-activity/tokens/{token}/:
     delete:
@@ -1430,14 +1430,14 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
       responses:
         '204':
           description: No response body
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/maintenance-mode/enter/:
     post:
@@ -1450,7 +1450,7 @@ paths:
         only after vembda confirms the handoff succeeded.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -1465,7 +1465,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -1494,7 +1494,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/maintenance-mode/exit/:
     post:
@@ -1507,7 +1507,7 @@ paths:
         confirms the StatefulSet handoff is complete.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -1522,7 +1522,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -1545,13 +1545,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/managed-search-proxy/{provider}/:
     post:
       operationId: assistants_managed_search_proxy_create
-      description: Proxy a managed search-provider API request through Vellum. The
-        caller supplies the provider-shaped request path/query/body; Vellum validates
+      description: Proxy a managed search-provider API request through Cadet. The
+        caller supplies the provider-shaped request path/query/body; Cadet validates
         the route, checks billing eligibility, strips caller credentials, injects
         managed provider credentials, and returns the upstream response envelope.
       parameters:
@@ -1619,13 +1619,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ManagedSearchProxyErrorResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/managed-speech/stt/transcribe/:
     post:
       operationId: assistants_managed_speech_stt_transcribe_create
-      description: Transcribe pre-recorded audio through Vellum's managed Deepgram
-        speech-to-text proxy. Vellum validates the request, checks billing eligibility,
+      description: Transcribe pre-recorded audio through Cadet's managed Deepgram
+        speech-to-text proxy. Cadet validates the request, checks billing eligibility,
         calls Deepgram with managed credentials, bills the transcribed duration, and
         returns the transcript. Pass 'language' to name the spoken language (a BCP-47
         code, or 'multi' for code-switching); omitting it decodes as English rather
@@ -1690,13 +1690,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ManagedSpeechErrorResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/managed-speech/tts/synthesize/:
     post:
       operationId: assistants_managed_speech_tts_synthesize_create
-      description: Synthesize speech audio from text through Vellum's managed text-to-speech
-        proxy. Vellum validates the request, checks billing eligibility, calls the
+      description: Synthesize speech audio from text through Cadet's managed text-to-speech
+        proxy. Cadet validates the request, checks billing eligibility, calls the
         speech provider for the selected voice with managed credentials, bills the
         input character count, and returns the synthesized audio bytes.
       parameters:
@@ -1760,12 +1760,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ManagedSpeechErrorResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/managed-speech/tts/voices/:
     get:
       operationId: assistants_managed_speech_tts_voices_retrieve
-      description: List the voices offered by Vellum's managed text-to-speech, in
+      description: List the voices offered by Cadet's managed text-to-speech, in
         display order, with the platform's default voice. Only voices that are currently
         priced (and therefore usable via the synthesize endpoint) are returned.
       parameters:
@@ -1786,7 +1786,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ManagedSpeechTTSVoicesResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/oauth/{provider}/start/:
     post:
@@ -1823,7 +1823,7 @@ paths:
               $ref: '#/components/schemas/OAuthStartRequestRequest'
       security:
       - AssistantAPIKey: []
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -1839,7 +1839,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/OAuthErrorResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/oauth/connections/:
     get:
@@ -1904,7 +1904,7 @@ paths:
       - assistants
       security:
       - AssistantAPIKey: []
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -1916,7 +1916,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/OAuthConnection'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/oauth/connections/{connection_id}/disconnect/:
     post:
@@ -1943,7 +1943,7 @@ paths:
       - assistants
       security:
       - AssistantAPIKey: []
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -1953,7 +1953,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/OAuthDisconnectResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/owner-consent/:
     get:
@@ -1977,7 +1977,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/OwnerConsent'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/push-tokens/:
     post:
@@ -2017,7 +2017,7 @@ paths:
               $ref: '#/components/schemas/DevicePushTokenUpsertRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -2028,7 +2028,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DevicePushTokenUpsert'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/push-tokens/{token}/:
     delete:
@@ -2073,7 +2073,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -2082,7 +2082,7 @@ paths:
           description: No response body
         '400':
           description: No response body
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/release-channel/:
     get:
@@ -2090,7 +2090,7 @@ paths:
       description: Read release-channel state and preview safety backups for an assistant.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2105,7 +2105,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -2127,7 +2127,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/release-channel/preview/opt-in/:
     post:
@@ -2135,7 +2135,7 @@ paths:
       description: Switch a stable-channel assistant to the preview release channel.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2150,7 +2150,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -2196,7 +2196,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/release-channel/preview/opt-out/:
     post:
@@ -2204,7 +2204,7 @@ paths:
       description: Switch a preview-channel assistant back to the stable release channel.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2231,7 +2231,7 @@ paths:
               $ref: '#/components/schemas/PreviewChannelOptOutRequestRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -2271,7 +2271,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/system-events/:
     get:
@@ -2284,7 +2284,7 @@ paths:
         never returned.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2311,7 +2311,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -2327,7 +2327,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/terminal/sessions/:
     post:
@@ -2340,7 +2340,7 @@ paths:
         429 when the per-user creation rate is exceeded.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2369,7 +2369,7 @@ paths:
               type: object
               additionalProperties: {}
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -2405,7 +2405,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/terminal/sessions/{session_id}/:
     delete:
@@ -2417,7 +2417,7 @@ paths:
         vembda which terminates the PTY process and frees the session slot.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2437,7 +2437,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -2460,7 +2460,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/terminal/sessions/{session_id}/input/:
     post:
@@ -2472,7 +2472,7 @@ paths:
         vembda which writes the data bytes into the PTY stdin.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2506,7 +2506,7 @@ paths:
               type: object
               additionalProperties: {}
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -2536,7 +2536,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/terminal/sessions/{session_id}/resize/:
     post:
@@ -2548,7 +2548,7 @@ paths:
         vembda which forwards the new dimensions to the PTY.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2582,7 +2582,7 @@ paths:
               type: object
               additionalProperties: {}
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -2612,14 +2612,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/:
     get:
       operationId: assistants_retrieve
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2634,7 +2634,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -2645,13 +2645,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Assistant'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     patch:
       operationId: assistants_partial_update
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2677,7 +2677,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedAssistantPartialUpdateRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -2698,7 +2698,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/access-consent/:
     get:
@@ -2706,7 +2706,7 @@ paths:
       description: Read or update the owner's consent for admin daemon-log access.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2721,7 +2721,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -2738,14 +2738,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     patch:
       operationId: assistants_access_consent_detail_partial_update
       description: Read or update the owner's consent for admin daemon-log access.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2771,7 +2771,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedAccessConsentRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -2795,14 +2795,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/activate/:
     post:
       operationId: assistants_activate_create
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2817,7 +2817,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -2840,7 +2840,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/connection-status/:
     post:
@@ -2853,7 +2853,7 @@ paths:
         unreachable (surface an error).
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2868,7 +2868,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -2885,18 +2885,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/debug-bundle-upload-url/:
     post:
       operationId: assistants_debug_bundle_upload_url_create
       description: Returns a signed PUT URL the assistant uploads a debug-profile
-        .vbundle to, so Vellum staff can open it on a debug clone. Only while the
+        .vbundle to, so Cadet staff can open it on a debug clone. Only while the
         owner's staff access grant is active. Bundles are deleted after seven days.
       summary: Mint a signed upload URL for a debug bundle
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2911,7 +2911,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -2940,14 +2940,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/operational/status/:
     get:
       operationId: assistants_operational_status_detail_read
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -2962,7 +2962,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -2985,7 +2985,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/resize/:
     post:
@@ -3000,7 +3000,7 @@ paths:
         per-tier ceiling policy.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3026,7 +3026,7 @@ paths:
             schema:
               $ref: '#/components/schemas/AssistantResizeRequestRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3051,14 +3051,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/restart/:
     post:
       operationId: assistants_restart_detail_create
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3084,7 +3084,7 @@ paths:
             schema:
               $ref: '#/components/schemas/AssistantRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3114,14 +3114,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/retire/:
     delete:
       operationId: assistants_retire_detail_destroy
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3145,7 +3145,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3158,14 +3158,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/rollback/:
     post:
       operationId: assistants_rollback_detail_create
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3191,7 +3191,7 @@ paths:
             schema:
               $ref: '#/components/schemas/RollbackRequestRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3226,14 +3226,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/sleep-policy/:
     get:
       operationId: assistants_sleep_policy_detail_read
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3248,7 +3248,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3265,13 +3265,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     patch:
       operationId: assistants_sleep_policy_detail_partial_update
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3297,7 +3297,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedSleepPolicyRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3321,14 +3321,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/upgrade/:
     post:
       operationId: assistants_upgrade_detail_create
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3354,7 +3354,7 @@ paths:
             schema:
               $ref: '#/components/schemas/UpgradeRequestRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3390,14 +3390,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/upgrade-policy/:
     get:
       operationId: assistants_upgrade_policy_detail_read
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3412,7 +3412,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3429,13 +3429,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     patch:
       operationId: assistants_upgrade_policy_detail_partial_update
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3461,7 +3461,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedUpgradePolicyRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3485,14 +3485,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/{id}/upgrade-status/:
     get:
       operationId: assistants_upgrade_status_detail_read
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3507,7 +3507,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3524,14 +3524,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/access-consent/:
     get:
       operationId: assistants_access_consent_retrieve
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3540,7 +3540,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3557,13 +3557,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     patch:
       operationId: assistants_access_consent_partial_update
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3583,7 +3583,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedAccessConsentRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3607,14 +3607,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/active/:
     get:
       operationId: assistants_active_retrieve
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3623,7 +3623,7 @@ paths:
       tags:
       - assistants
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3640,14 +3640,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/hatch/:
     post:
       operationId: assistants_hatch_create
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3678,7 +3678,7 @@ paths:
             schema:
               $ref: '#/components/schemas/HatchAssistantRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3731,7 +3731,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/telemetry/ingest/:
     post:
@@ -3761,14 +3761,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/TelemetryIngestResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/assistants/upgrade/:
     post:
       operationId: assistants_upgrade_create
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3788,7 +3788,7 @@ paths:
             schema:
               $ref: '#/components/schemas/UpgradeRequestRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -3824,7 +3824,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/auth/live-voice-token/:
     post:
@@ -3833,11 +3833,11 @@ paths:
         Mint a short-lived, single-use live-voice WS token for the web SPA.
 
         Requires session auth + CSRF (enforced by DRF ``SessionAuthentication`` for
-        this unsafe POST) and the ``Vellum-Organization-Id`` header. The caller
+        this unsafe POST) and the ``Cadet-Organization-Id`` header. The caller
         must own the requested assistant within the resolved organization.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3867,7 +3867,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/LiveVoiceTokenResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/feature-flags/client-flag-values/:
     get:
@@ -3875,17 +3875,17 @@ paths:
       description: |-
         Return evaluated feature flag values for the current user.
 
-        When session-authenticated with the ``Vellum-Organization-Id`` header,
+        When session-authenticated with the ``Cadet-Organization-Id`` header,
         flags are evaluated against the user/org LD context. Unauthenticated
         requests receive flags evaluated against an anonymous LD context.
       parameters:
       - in: header
-        name: Vellum-Device-Id
+        name: Cadet-Device-Id
         schema:
           type: string
         description: Stable device identifier for per-device flag targeting.
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -3894,7 +3894,7 @@ paths:
       tags:
       - feature-flags
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - {}
@@ -3905,7 +3905,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientFeatureFlagsResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/feedback/:
     post:
@@ -3935,7 +3935,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/FeedbackIngestResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/feedback/assistant/:
     post:
@@ -3970,18 +3970,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/FeedbackIngestResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/managed-speech/tts/voices/:
     get:
       operationId: managed_speech_tts_voices_retrieve
-      description: List the voices offered by Vellum's managed text-to-speech, in
+      description: List the voices offered by Cadet's managed text-to-speech, in
         display order, with the platform's default voice. Only voices that are currently
         priced (and therefore usable via the synthesize endpoint) are returned.
       tags:
       - managed-speech
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -3991,7 +3991,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ManagedSpeechTTSVoicesResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/:
     get:
@@ -4013,7 +4013,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4023,7 +4023,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedOrganizationReadList'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/auto-top-up/:
     get:
@@ -4031,7 +4031,7 @@ paths:
       description: Return the current auto top-up configuration for the org.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4040,7 +4040,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4050,14 +4050,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/AutoTopUpConfigResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     put:
       operationId: organizations_billing_auto_top_up_update
       description: Create or update the auto top-up configuration for the org.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4078,7 +4078,7 @@ paths:
               $ref: '#/components/schemas/AutoTopUpConfigRequestRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4088,7 +4088,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AutoTopUpConfigResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/auto-top-up/confirm-setup-intent/:
     post:
@@ -4109,7 +4109,7 @@ paths:
         and be ``succeeded`` with a payment method attached.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4130,7 +4130,7 @@ paths:
               $ref: '#/components/schemas/AutoTopUpConfirmSetupIntentRequestRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4140,7 +4140,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AutoTopUpConfigResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/auto-top-up/disable/:
     post:
@@ -4148,7 +4148,7 @@ paths:
       description: Disable automatic top-ups for the org. Preserves saved settings.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4157,7 +4157,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4167,7 +4167,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AutoTopUpDisableResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/auto-top-up/history/:
     get:
@@ -4176,7 +4176,7 @@ paths:
         max 20).
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4185,7 +4185,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4195,7 +4195,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AutoTopUpHistoryResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/auto-top-up/remove-payment-method/:
     post:
@@ -4216,7 +4216,7 @@ paths:
         the config already has no PM saved.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4225,7 +4225,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4235,7 +4235,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AutoTopUpDisableResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/auto-top-up/setup-intent/:
     post:
@@ -4249,7 +4249,7 @@ paths:
         payment method onto ``AutoTopUpConfig.stripe_payment_method_id``.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4258,7 +4258,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4268,7 +4268,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AutoTopUpSetupIntentResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/checkout-bonus/:
     get:
@@ -4280,7 +4280,7 @@ paths:
         check may perform outbound Stripe reads to verify abandonment.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4289,7 +4289,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4299,14 +4299,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/CheckoutBonusEligibilityResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     post:
       operationId: organizations_billing_checkout_bonus_create
       description: Claim the one-time bonus; the service re-verifies eligibility.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4315,7 +4315,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4325,7 +4325,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CheckoutBonusClaimResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/daily-credit-limit/:
     get:
@@ -4333,7 +4333,7 @@ paths:
       description: Return the daily limit (or null) and the read-only spend counter.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4342,7 +4342,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4352,14 +4352,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DailyCreditLimitResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     put:
       operationId: organizations_billing_daily_credit_limit_update
       description: Set (or clear, via null) the organization's daily credit limit.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4380,7 +4380,7 @@ paths:
               $ref: '#/components/schemas/DailyCreditLimitRequestRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4390,7 +4390,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DailyCreditLimitResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/daily-credit-limit/skip-today/:
     post:
@@ -4403,7 +4403,7 @@ paths:
         record a skip that has nothing to suspend.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4412,7 +4412,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4422,14 +4422,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/DailyCreditLimitResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     delete:
       operationId: organizations_billing_daily_credit_limit_skip_today_destroy
       description: Restore the daily limit immediately, ending an active skip early.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4438,7 +4438,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4448,7 +4448,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DailyCreditLimitResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/free-tier-daily-limit/:
     get:
@@ -4456,7 +4456,7 @@ paths:
       description: Return enrollment, enforcement, and today's usage-credit spend.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4465,7 +4465,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -4476,7 +4476,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/FreeTierDailyLimitResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/invoices/:
     get:
@@ -4484,7 +4484,7 @@ paths:
       description: Return one page of the org's Stripe invoices, newest first.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4499,7 +4499,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -4516,7 +4516,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: Invalid or expired starting_after cursor.
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/invoices/download/:
     get:
@@ -4529,7 +4529,7 @@ paths:
         be assembled server-side.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4538,7 +4538,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4549,7 +4549,7 @@ paths:
                 type: string
                 format: binary
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/low-balance-alert/:
     get:
@@ -4557,7 +4557,7 @@ paths:
       description: Return the per-org override (or null), effective, and default values.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4566,7 +4566,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4576,14 +4576,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/LowBalanceAlertResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     put:
       operationId: organizations_billing_low_balance_alert_update
       description: Set (or clear, via null) the per-org low-balance threshold override.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4604,7 +4604,7 @@ paths:
               $ref: '#/components/schemas/LowBalanceAlertRequestRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4614,7 +4614,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/LowBalanceAlertResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/plans/:
     get:
@@ -4623,7 +4623,7 @@ paths:
         I/O.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4632,7 +4632,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -4643,7 +4643,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PlanListResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/portal-session/:
     post:
@@ -4651,7 +4651,7 @@ paths:
       description: POST /v1/organizations/billing/portal-session/ → {portal_url}.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4660,7 +4660,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -4670,7 +4670,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BillingPortalSessionResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/subscription/:
     get:
@@ -4678,7 +4678,7 @@ paths:
       description: GET /…/subscription/ → current state. POST upgrade action.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4697,7 +4697,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SubscriptionResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/subscription/cancel/:
     post:
@@ -4715,7 +4715,7 @@ paths:
         Portal cancels.'
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4744,7 +4744,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SubscriptionCancelResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/subscription/change-credit-tier/:
     post:
@@ -4767,7 +4767,7 @@ paths:
         Stripe subscription.'
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4798,7 +4798,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreditTierChangeResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/subscription/change-machine-tier/:
     post:
@@ -4818,7 +4818,7 @@ paths:
         single-price subscriptions get HTTP 409 until they are migrated.'
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4849,7 +4849,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ComputeTierChangeResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/subscription/change-package/:
     post:
@@ -4860,7 +4860,7 @@ paths:
         change (named ↔ named, named ↔ custom, custom ↔ custom). Diffs the target''s
         machine, storage, credit, and base-platform-fee line items against the current
         subscription and applies them as one or two atomic Stripe updates: the machine/storage/fee
-        items (adding, swapping, or removing — including the ``vellum_pro_base`` fee)
+        items (adding, swapping, or removing — including the ``cadet_pro_base`` fee)
         settle in a first ``Subscription.modify`` that bills immediately, while any
         included-credit bundle change settles in a separate ``proration_behavior=none``
         modify. A credit-tier INCREASE additionally charges the flat price difference
@@ -4885,7 +4885,7 @@ paths:
         are rejected unless unchanged.'
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4915,7 +4915,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PackageChangeResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/subscription/change-storage-tier/:
     post:
@@ -4934,7 +4934,7 @@ paths:
         metadata; legacy subscriptions get HTTP 409 until they are migrated.'
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4965,7 +4965,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StorageTierChangeResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/subscription/machine/:
     post:
@@ -4976,7 +4976,7 @@ paths:
         ``BillingAccount.max_machine_tier`` ceiling. Free — no Stripe call.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -4997,7 +4997,7 @@ paths:
               $ref: '#/components/schemas/ProMachineResizeRequestRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5007,7 +5007,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProMachineResizeResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/subscription/onboarding/:
     get:
@@ -5015,7 +5015,7 @@ paths:
       description: Post-checkout Pro onboarding wizard endpoints.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5024,7 +5024,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5034,7 +5034,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/OnboardingStateResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/subscription/onboarding/domain/:
     post:
@@ -5042,7 +5042,7 @@ paths:
       description: Post-checkout Pro onboarding wizard endpoints.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5062,7 +5062,7 @@ paths:
             schema:
               $ref: '#/components/schemas/OnboardingDomainRequestRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5072,7 +5072,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/OnboardingDomainResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/subscription/onboarding/ensure-provisioned/:
     post:
@@ -5093,7 +5093,7 @@ paths:
         deploy) — nothing was queued, and the request is safe to retry.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5102,7 +5102,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5118,7 +5118,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnsureProvisionedUnavailable'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/subscription/reactivate/:
     post:
@@ -5133,7 +5133,7 @@ paths:
         403; subscribe again via upgrade instead).'
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5151,7 +5151,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SubscriptionReactivateResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/subscription/upgrade/:
     post:
@@ -5159,7 +5159,7 @@ paths:
       description: GET /…/subscription/ → current state. POST upgrade action.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5189,7 +5189,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SubscriptionUpgradeResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/summary/:
     get:
@@ -5200,7 +5200,7 @@ paths:
         Read-only — does not create or modify any billing state.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5209,7 +5209,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       - AssistantAPIKey: []
@@ -5220,7 +5220,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BillingSummaryResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     post:
       operationId: organizations_billing_summary_create
@@ -5231,7 +5231,7 @@ paths:
         that don't yet have one.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5240,7 +5240,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5250,7 +5250,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BillingSummaryResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/top-ups/checkout-session/:
     post:
@@ -5263,7 +5263,7 @@ paths:
         Stripe Checkout URL for client-side redirect.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5283,7 +5283,7 @@ paths:
             schema:
               $ref: '#/components/schemas/TopUpCheckoutRequestRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5293,7 +5293,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/TopUpCheckoutResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/usage/series/:
     get:
@@ -5301,7 +5301,7 @@ paths:
       description: Return time-bucketed usage data grouped by a chosen dimension.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5392,7 +5392,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5402,7 +5402,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UsageSeriesResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/billing/usage/totals/:
     get:
@@ -5410,7 +5410,7 @@ paths:
       description: Return total spend and event count for the organization.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5478,7 +5478,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5488,7 +5488,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UsageTotalsResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/notifications/:
     get:
@@ -5496,7 +5496,7 @@ paths:
       description: List notifications for the authenticated organization.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5535,7 +5535,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5545,7 +5545,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedNotificationListList'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/notifications/{id}/acknowledge/:
     post:
@@ -5554,7 +5554,7 @@ paths:
         user.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5582,7 +5582,7 @@ paths:
               $ref: '#/components/schemas/AcknowledgeRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5592,7 +5592,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AcknowledgeResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/notifications/{id}/snooze/:
     post:
@@ -5601,7 +5601,7 @@ paths:
         null).
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5629,7 +5629,7 @@ paths:
               $ref: '#/components/schemas/SnoozeRequest'
         required: true
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5639,7 +5639,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SnoozeResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/notifications/pause-rules/:
     post:
@@ -5647,7 +5647,7 @@ paths:
       description: Create an org-scoped notification mute/pause rule.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5667,7 +5667,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PauseRuleCreateRequest'
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5677,7 +5677,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PauseRuleRead'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/notifications/pause-rules/{rule_id}/:
     delete:
@@ -5685,7 +5685,7 @@ paths:
       description: Delete an org-scoped notification mute/pause rule.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5700,13 +5700,13 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
         '204':
           description: No response body
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/organizations/notifications/summary/:
     get:
@@ -5714,7 +5714,7 @@ paths:
       description: Return unread and active notification counts for navigation badges.
       parameters:
       - in: header
-        name: Vellum-Organization-Id
+        name: Cadet-Organization-Id
         schema:
           type: string
           format: uuid
@@ -5723,7 +5723,7 @@ paths:
       tags:
       - organizations
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5733,7 +5733,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotificationSummary'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/referral-codes/me/:
     get:
@@ -5746,7 +5746,7 @@ paths:
       tags:
       - referral-codes
       security:
-      - VellumAPIKey: []
+      - CadetAPIKey: []
       - cookieAuth: []
       - XSessionTokenAuth: []
       responses:
@@ -5762,7 +5762,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/releases/:
     get:
@@ -5816,7 +5816,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/ReleaseListItem'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/telemetry/ingest/:
     post:
@@ -5846,7 +5846,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/TelemetryIngestResponse'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/user/consent/:
     get:
@@ -5863,7 +5863,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserConsent'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     put:
       operationId: user_consent_update
@@ -5890,7 +5890,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserConsent'
           description: ''
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/user/deletion-request/:
     post:
@@ -5907,7 +5907,7 @@ paths:
           description: No response body
         '409':
           description: No response body
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/user/mfa/factors/:
     get:
@@ -5930,7 +5930,7 @@ paths:
           description: No response body
         '502':
           description: No response body
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
     post:
       operationId: user_mfa_factors_create
@@ -5954,7 +5954,7 @@ paths:
           description: No response body
         '502':
           description: No response body
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/user/mfa/factors/{id}/:
     delete:
@@ -5980,7 +5980,7 @@ paths:
           description: No response body
         '502':
           description: No response body
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
   /v1/user/mfa/factors/verify/:
     post:
@@ -6021,7 +6021,7 @@ paths:
           description: No response body
         '502':
           description: No response body
-      x-vellum-api-clients:
+      x-cadet-api-clients:
       - platform
 components:
   schemas:
@@ -6031,7 +6031,7 @@ components:
       properties:
         access_consented:
           type: boolean
-          description: 'When True, Vellum staff may access this assistant and its
+          description: 'When True, Cadet staff may access this assistant and its
             data for debugging: daemon log files, an admin terminal on the running
             assistant, and a disposable clone of its disk. Defaults to False; the
             owner can revoke at any time, which blocks new access and further commands
@@ -9331,7 +9331,7 @@ components:
       properties:
         access_consented:
           type: boolean
-          description: 'When True, Vellum staff may access this assistant and its
+          description: 'When True, Cadet staff may access this assistant and its
             data for debugging: daemon log files, an admin terminal on the running
             assistant, and a disposable clone of its disk. Defaults to False; the
             owner can revoke at any time, which blocks new access and further commands
@@ -10550,7 +10550,7 @@ components:
       name: Authorization
       description: Assistant API key via 'Api-Key <key>', 'Bearer <key>', X-Api-Key
         header, or ?key= query parameter.
-    VellumAPIKey:
+    CadetAPIKey:
       type: http
       scheme: bearer
       description: Platform API key passed as 'Bearer vak_...' in the Authorization

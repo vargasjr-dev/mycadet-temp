@@ -38,9 +38,9 @@ describe("parseCallbackData", () => {
     }
   });
 
-  test("an in-app surface press attributes as vellum_surface", () => {
-    const result = parseCallbackData("apr:req-789:approve_once", "vellum");
-    expect(result!.source).toBe("vellum_surface");
+  test("an in-app surface press attributes as cadet_surface", () => {
+    const result = parseCallbackData("apr:req-789:approve_once", "cadet");
+    expect(result!.source).toBe("cadet_surface");
   });
 
   test("returns null for unknown action", () => {

@@ -36,7 +36,7 @@ export type AbortReasonKind =
    */
   | "voice_progress_narration_timeout";
 
-const ABORT_REASON_TAG = "__vellumAbortReason" as const;
+const ABORT_REASON_TAG = "__cadetAbortReason" as const;
 
 export interface AbortReason {
   readonly [ABORT_REASON_TAG]: true;

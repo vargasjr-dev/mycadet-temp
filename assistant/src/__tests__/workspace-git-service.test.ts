@@ -35,7 +35,7 @@ describe("WorkspaceGitService", () => {
     // Create a unique test directory for each test
     testDir = join(
       tmpdir(),
-      `vellum-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      `cadet-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     );
     mkdirSync(testDir, { recursive: true });
     _resetGitServiceRegistry();
@@ -96,7 +96,7 @@ describe("WorkspaceGitService", () => {
       }).trim();
 
       expect(userName).toBe("Cadet");
-      expect(userEmail).toBe("assistant@vellum.ai");
+      expect(userEmail).toBe("assistant@mycadet.ai");
     });
 
     test("installs branch guard hook that blocks non-main branches", async () => {
@@ -703,7 +703,7 @@ describe("WorkspaceGitService", () => {
     });
 
     test("returns different instances for different workspaces", () => {
-      const testDir2 = join(tmpdir(), `vellum-test-${Date.now()}-other`);
+      const testDir2 = join(tmpdir(), `cadet-test-${Date.now()}-other`);
       mkdirSync(testDir2, { recursive: true });
 
       try {
@@ -731,7 +731,7 @@ describe("WorkspaceGitService", () => {
       // Create a service pointing to a directory that doesn't exist yet
       const retryDir = join(
         tmpdir(),
-        `vellum-retry-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        `cadet-retry-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       );
       const service = new WorkspaceGitService(retryDir);
 
@@ -1073,7 +1073,7 @@ describe("WorkspaceGitService", () => {
         "fixture-keep.md\n",
       );
       // Force-added despite a user-authored .gitignore rule — the untrack
-      // step matches Vellum-managed rules only, so it must stay tracked.
+      // step matches Cadet-managed rules only, so it must stay tracked.
       writeFileSync(join(testDir, ".gitignore"), "user-secret.md\n");
       writeFileSync(join(testDir, "user-secret.md"), "keep");
       execFileSync("git", ["add", "-A", "-f"], { cwd: testDir });
@@ -1143,7 +1143,7 @@ describe("WorkspaceGitService", () => {
         cwd: testDir,
       });
       const oldGitignore =
-        "# Runtime state - excluded from git tracking\ndata/\nlogs/\n*.log\n*.sock\n*.pid\n*.sqlite\n*.sqlite-journal\n*.sqlite-wal\n*.sqlite-shm\n*.db\n*.db-journal\n*.db-wal\n*.db-shm\nvellum.pid\nsession-token\n";
+        "# Runtime state - excluded from git tracking\ndata/\nlogs/\n*.log\n*.sock\n*.pid\n*.sqlite\n*.sqlite-journal\n*.sqlite-wal\n*.sqlite-shm\n*.db\n*.db-journal\n*.db-wal\n*.db-shm\ncadet.pid\nsession-token\n";
       writeFileSync(join(testDir, ".gitignore"), oldGitignore);
       writeFileSync(join(testDir, "file.txt"), "content");
       execFileSync("git", ["add", "-A"], { cwd: testDir });
@@ -1199,7 +1199,7 @@ describe("WorkspaceGitService", () => {
       }).trim();
 
       expect(userName).toBe("Cadet");
-      expect(userEmail).toBe("assistant@vellum.ai");
+      expect(userEmail).toBe("assistant@mycadet.ai");
     });
 
     test("existing repo gets branch guard installed on init", async () => {
@@ -1238,7 +1238,7 @@ describe("WorkspaceGitService", () => {
       execFileSync("git", ["config", "user.name", "Cadet"], {
         cwd: testDir,
       });
-      execFileSync("git", ["config", "user.email", "assistant@vellum.ai"], {
+      execFileSync("git", ["config", "user.email", "assistant@mycadet.ai"], {
         cwd: testDir,
       });
       const gitignoreContent =

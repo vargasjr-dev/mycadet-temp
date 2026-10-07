@@ -4,7 +4,7 @@
 
 macOS-originated turns choose a browser backend from a three-tier chain, so the assistant prefers the user's real Chrome session over a sandboxed Playwright instance. The top tier, the host browser proxy, has two transports, both riding the SSE event hub:
 
-1. **Chrome Extension**: when the Vellum Chrome Extension is installed and paired, `HostBrowserProxy` publishes `host_browser_request` frames to `assistantEventHub` targeted at the extension's SSE subscription; the extension executes CDP commands through `chrome.debugger` and POSTs results to `/v1/host-browser-result`.
+1. **Chrome Extension**: when the Cadet Chrome Extension is installed and paired, `HostBrowserProxy` publishes `host_browser_request` frames to `assistantEventHub` targeted at the extension's SSE subscription; the extension executes CDP commands through `chrome.debugger` and POSTs results to `/v1/host-browser-result`.
 2. **macOS desktop bridge**: when the macOS desktop client is connected but no extension is, the same publish targets the desktop client's SSE subscription; it executes CDP commands against the local Chrome and POSTs results the same way.
 
 When neither is available, the chain falls through to cdp-inspect (direct Chrome DevTools Protocol attach) before resorting to the local Playwright browser.
@@ -15,8 +15,8 @@ This document describes the runtime architecture, backend precedence rules, tran
 
 | Component                 | Location                                           | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **HostBrowserProxy**      | `daemon/host-browser-proxy.ts`                     | Lazily-created singleton. Publishes `host_browser_request` frames to the hub with `targetCapability: "host_browser"` and an explicit target client chosen at send time (`resolveTargetClient`), then awaits the matching `host_browser_result`. `Vellum.*` pseudo-methods go only to a chrome-extension client; raw CDP prefers an extension client over the macOS bridge; `targetClientId` pins one; `sourceActorPrincipalId` restricts to that actor's clients. |
-| **events-routes.ts**      | `runtime/routes/events-routes.ts`                  | `GET /v1/events`: registers each SSE client on the hub with the capabilities its `X-Vellum-Interface-Id` supports (`host_browser` for `chrome-extension`; every host-proxy capability for `macos`).                                                                                                                                                                                                                                                               |
+| **HostBrowserProxy**      | `daemon/host-browser-proxy.ts`                     | Lazily-created singleton. Publishes `host_browser_request` frames to the hub with `targetCapability: "host_browser"` and an explicit target client chosen at send time (`resolveTargetClient`), then awaits the matching `host_browser_result`. `Cadet.*` pseudo-methods go only to a chrome-extension client; raw CDP prefers an extension client over the macOS bridge; `targetClientId` pins one; `sourceActorPrincipalId` restricts to that actor's clients. |
+| **events-routes.ts**      | `runtime/routes/events-routes.ts`                  | `GET /v1/events`: registers each SSE client on the hub with the capabilities its `X-Cadet-Interface-Id` supports (`host_browser` for `chrome-extension`; every host-proxy capability for `macos`).                                                                                                                                                                                                                                                               |
 | **pair.ts**               | `gateway/src/http/routes/pair.ts`                  | `POST /v1/pair`: loopback-only, rate-limited pairing that mints the extension's `actor_client_v1` JWT for self-hosted deployments. Cloud deployments issue the guardian-bound JWT through the gateway's WorkOS-backed flow.                                                                                                                                                                                                                                       |
 | **CDP Factory**           | `tools/browser/cdp-client/factory.ts`              | Builds the ordered candidate list and returns a `ScopedCdpClient` with per-invocation failover. The macOS bridge is its internal `"host-bridge"` candidate kind.                                                                                                                                                                                                                                                                                                  |
 | **BrowserSessionManager** | `browser-session/manager.ts`                       | Routes CDP commands through the selected backend with session tracking.                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -204,7 +204,7 @@ CDP factory: candidate succeeded, backend is now sticky
 Filter runtime logs with:
 
 ```bash
-grep -h "cdp-factory" "$VELLUM_WORKSPACE_DIR"/data/logs/assistant-*.log
+grep -h "cdp-factory" "$CADET_WORKSPACE_DIR"/data/logs/assistant-*.log
 ```
 
 ## Steady-state contract
@@ -217,7 +217,7 @@ background service with no further user interaction required:
    auto-bootstraps credentials (local pair token or cloud JWT) as part
    of the single-click flow.
 3. **Forget it**: The extension keeps its SSE subscription up indefinitely.
-   A `chrome.alarms` alarm (`vellum-relay-keepalive`, every 30 s) wakes the
+   A `chrome.alarms` alarm (`cadet-relay-keepalive`, every 30 s) wakes the
    MV3 service worker and reconnects the stream if it is closed; transient
    drops reconnect with exponential backoff (`sse-connection.ts`). The
    `autoConnect` flag persists across browser sessions so reopening Chrome
@@ -250,7 +250,7 @@ broad session-level CDP access; see
 
 When the Chrome extension calls
 `chrome.debugger.attach(target, requiredVersion)`, Chrome displays a
-persistent yellow infobar at the top of the affected tab saying "Vellum
+persistent yellow infobar at the top of the affected tab saying "Cadet
 started debugging this browser." This is an intentional security
 mitigation; it cannot be suppressed via the public MV3 API.
 
@@ -271,7 +271,7 @@ Chrome API notes:
 
 Decision: accept the infobar; no public API exists to suppress it. End-user messaging in the
 Mac app popup should explain that the banner is expected and normal
-when Vellum is driving the browser.
+when Cadet is driving the browser.
 
 Alternatives considered:
 

@@ -114,7 +114,7 @@ const CONVERSATION_ID = "conv-history-restored-1";
 /** The trust the surface-action route stamps on for a local guardian caller. */
 const GUARDIAN_TRUST: TrustContext = {
   trustClass: "guardian",
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
 };
 
 type EnqueueResult = { queued: boolean; requestId: string; rejected?: boolean };
@@ -456,7 +456,7 @@ describe("history-restored surface completion: requester provenance", () => {
       JSON.stringify({ provenanceTrustClass: "guardian" }),
     );
     const ctx = makeContext(undefined, {
-      trustContext: { trustClass: "unknown", sourceChannel: "vellum" },
+      trustContext: { trustClass: "unknown", sourceChannel: "cadet" },
     });
 
     await handleSurfaceAction(ctx, surfaceId, "inbox", CHOICE_PAYLOAD);
@@ -478,7 +478,7 @@ describe("history-restored surface completion: requester provenance", () => {
       JSON.stringify({ provenanceTrustClass: "trusted_contact" }),
     );
     const ctx = makeContext(undefined, {
-      trustContext: { trustClass: "unknown", sourceChannel: "vellum" },
+      trustContext: { trustClass: "unknown", sourceChannel: "cadet" },
     });
 
     await handleSurfaceAction(ctx, surfaceId, "inbox", CHOICE_PAYLOAD);

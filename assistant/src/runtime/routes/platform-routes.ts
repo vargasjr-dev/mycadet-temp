@@ -75,11 +75,11 @@ import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 // ---------------------------------------------------------------------------
 
 const CREDENTIAL_KEYS = {
-  baseUrl: { service: "vellum", field: "platform_base_url" },
-  apiKey: { service: "vellum", field: "assistant_api_key" },
-  assistantId: { service: "vellum", field: "platform_assistant_id" },
-  organizationId: { service: "vellum", field: "platform_organization_id" },
-  userId: { service: "vellum", field: "platform_user_id" },
+  baseUrl: { service: "cadet", field: "platform_base_url" },
+  apiKey: { service: "cadet", field: "assistant_api_key" },
+  assistantId: { service: "cadet", field: "platform_assistant_id" },
+  organizationId: { service: "cadet", field: "platform_organization_id" },
+  userId: { service: "cadet", field: "platform_user_id" },
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -678,7 +678,7 @@ async function fetchPlatformJson(
 
   if (!context.platformBaseUrl || !context.authHeader) {
     throw new UnprocessableEntityError(
-      "Platform credentials not available — run 'assistant platform connect' or set VELLUM_PLATFORM_URL",
+      "Platform credentials not available — run 'assistant platform connect' or set CADET_PLATFORM_URL",
     );
   }
 
@@ -937,7 +937,7 @@ export const ROUTES: RouteDefinition[] = [
       requiredScopes: ["settings.write"],
       allowedPrincipalTypes: LOCAL_PRINCIPALS,
     },
-    summary: "Connect to the Vellum Platform",
+    summary: "Connect to the Cadet Platform",
     description:
       "Checks whether the stored platform credentials still connect. Reports a stored key the platform rejects as credentialRejected, so the caller can direct the user to sign in again and replace it.",
     tags: ["platform"],
@@ -957,7 +957,7 @@ export const ROUTES: RouteDefinition[] = [
       requiredScopes: ["settings.read"],
       allowedPrincipalTypes: ACTOR_PRINCIPALS,
     },
-    summary: "Verify the Vellum-managed credential against the platform",
+    summary: "Verify the Cadet-managed credential against the platform",
     description:
       "Asks the platform whether the stored assistant API key authenticates. POST because it performs a check; the result is returned, not stored.",
     tags: ["platform"],
@@ -972,7 +972,7 @@ export const ROUTES: RouteDefinition[] = [
       requiredScopes: ["settings.write"],
       allowedPrincipalTypes: LOCAL_PRINCIPALS,
     },
-    summary: "Disconnect from the Vellum Platform",
+    summary: "Disconnect from the Cadet Platform",
     description:
       "Deletes stored platform credentials and emits platform_disconnected signal to connected clients.",
     tags: ["platform"],

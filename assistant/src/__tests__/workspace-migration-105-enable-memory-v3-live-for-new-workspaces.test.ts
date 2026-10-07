@@ -30,7 +30,7 @@ let workspaceDir: string;
 let configPath: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-migration-105-test-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-migration-105-test-"));
   configPath = join(workspaceDir, "config.json");
 });
 

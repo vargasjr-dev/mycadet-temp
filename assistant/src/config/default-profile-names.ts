@@ -30,7 +30,7 @@ export type DefaultProfileKey = (typeof DEFAULT_PROFILE_KEYS)[number];
  * Stable keys of the managed backup profiles, one per default profile.
  * Deliberately NOT part of `DEFAULT_PROFILE_KEYS`: that array drives picker
  * order and the intent x provider matrix, while backups are companions of
- * the managed (`vellum`) column only. Each backup pins a model at a
+ * the managed (`cadet`) column only. Each backup pins a model at a
  * different upstream provider than its primary, so an outage at the
  * primary's provider can be served by re-sending on the backup (see the
  * `fallbackProfile` field on `ProfileEntry`).
@@ -45,7 +45,7 @@ export type BackupProfileKey = (typeof BACKUP_PROFILE_KEYS)[number];
 
 /**
  * The backup profile each default profile falls back to. Applied to the
- * managed (`vellum`) column implementations only: BYOK installs may hold no
+ * managed (`cadet`) column implementations only: BYOK installs may hold no
  * credential for the backup's provider, so their columns carry no
  * `fallbackProfile` pointers.
  */
@@ -108,7 +108,7 @@ export const JEV_MANAGED_PROFILE_CALL_SITES = [
 ] as const;
 
 /**
- * Keys whose profile exists on the managed (`vellum`) column only: the
+ * Keys whose profile exists on the managed (`cadet`) column only: the
  * backups, the Jev profile, and the Auto profile. Under a BYOK or ChatGPT
  * default provider these names have no body to resolve to.
  */
@@ -146,8 +146,8 @@ export function isFlagGatedProfileKey(value: string): boolean {
 }
 
 /**
- * The named columns of the intent × provider matrix. `vellum` is the
- * platform-managed column (routed through the single `vellum` connection to
+ * The named columns of the intent × provider matrix. `cadet` is the
+ * platform-managed column (routed through the single `cadet` connection to
  * an underlying provider per profile) and `chatgpt` is the
  * ChatGPT-subscription column (routed through the `chatgpt-subscription`
  * connection to the Codex endpoint); the rest are BYOK columns whose

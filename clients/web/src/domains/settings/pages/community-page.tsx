@@ -20,7 +20,7 @@ import { YouTubeLogo } from "@/components/icons/youtube-logo";
 import { joinDiscord } from "@/hooks/use-discord-nudge";
 import { GITHUB_REPO_URL, useGitHubNudgeState } from "@/hooks/use-github-nudge";
 import { useTranslation } from "@/i18n";
-import { VELLUM_COMMUNITY_URL } from "@/utils/external-urls";
+import { CADET_COMMUNITY_URL } from "@/utils/external-urls";
 import { Button } from "@mycadet/design-library/components/button";
 import { Card } from "@mycadet/design-library/components/card";
 import { Tag } from "@mycadet/design-library/components/tag";
@@ -292,7 +292,7 @@ export function CommunityPage() {
             iconBg="#22c55e"
             title={t("communityPage.communityHubTitle")}
             description={t("communityPage.communityHubDescription")}
-            href={VELLUM_COMMUNITY_URL}
+            href={CADET_COMMUNITY_URL}
           />
           <ResourceCard
             icon={<XLogo size={20} />}
@@ -307,7 +307,7 @@ export function CommunityPage() {
             iconBg="#ef4444"
             title={t("communityPage.youtubeChannelTitle")}
             description={t("communityPage.youtubeChannelDescription")}
-            href="https://www.youtube.com/@Cadet_AI"
+            href="https://www.youtube.com/@MyCadet_AI"
           />
         </div>
       </div>

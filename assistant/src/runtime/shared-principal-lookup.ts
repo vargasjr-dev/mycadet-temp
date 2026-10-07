@@ -1,12 +1,12 @@
 /**
  * Trust-class lookup for a shared-conversation principal.
  *
- * `local-principal-trust.ts` asks the gateway one question about a `vellum`
+ * `local-principal-trust.ts` asks the gateway one question about a `cadet`
  * principal (is it the guardian?), so it cannot classify a contact. Contacts
- * in shared conversations live on the `vellum-shared` channel, and this module
+ * in shared conversations live on the `cadet-shared` channel, and this module
  * asks the question every other channel asks: the gateway's canonical
  * per-actor classifier (`resolve_inbound_trust`, reached through
- * {@link readInboundTrust}), with `vellum-shared` as the channel and the
+ * {@link readInboundTrust}), with `cadet-shared` as the channel and the
  * principal as the actor id. Classification stays gateway-owned; nothing
  * here re-derives it from ACL rows.
  *
@@ -109,7 +109,7 @@ async function fetchTrust(
   principalId: string,
 ): Promise<{ trust: SharedPrincipalTrust; cacheable: boolean }> {
   const result = await readInboundTrust({
-    channelType: "vellum-shared",
+    channelType: "cadet-shared",
     actorExternalId: principalId,
   });
 

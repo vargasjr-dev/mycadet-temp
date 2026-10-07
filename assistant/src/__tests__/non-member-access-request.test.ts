@@ -150,15 +150,15 @@ function resetState(): string {
   };
   // Seed the cadet anchor binding in the gateway list (gateway does this at
   // startup in production). The DB write mirrors it for any local INFO reads.
-  const principalId = `vellum-principal-${crypto.randomUUID()}`;
+  const principalId = `cadet-principal-${crypto.randomUUID()}`;
   seedGatewayGuardian({
-    channelType: "vellum",
+    channelType: "cadet",
     address: principalId,
     principalId,
     displayName: principalId,
   });
   createGuardianBinding({
-    channel: "vellum",
+    channel: "cadet",
     guardianExternalUserId: principalId,
     guardianDeliveryChatId: "local",
     guardianPrincipalId: principalId,
@@ -468,7 +468,7 @@ describe("non-member access request notification", () => {
       unknown
     >;
     // Falls back to cadet anchor, not the phone binding
-    expect(payload.guardianBindingChannel).toBe("vellum");
+    expect(payload.guardianBindingChannel).toBe("cadet");
 
     // Guardian request uses the cadet anchor identity
     const pending = listRequests({
@@ -592,7 +592,7 @@ describe("access-request-helper unit tests", () => {
       string,
       unknown
     >;
-    expect(payload.guardianBindingChannel).toBe("vellum");
+    expect(payload.guardianBindingChannel).toBe("cadet");
   });
 
   test("an email access request routes to every channel the guardian is connected on", async () => {
@@ -760,7 +760,7 @@ describe("access-request-helper unit tests", () => {
       string,
       unknown
     >;
-    expect(payload.guardianBindingChannel).toBe("vellum");
+    expect(payload.guardianBindingChannel).toBe("cadet");
   });
 
   test("notifyGuardianOfAccessRequest does not create a decisionable request when the gateway delivery is empty", async () => {
@@ -867,8 +867,8 @@ describe("access-request-helper unit tests", () => {
       reason: "ok",
       deliveryResults: [
         {
-          channel: "vellum",
-          destination: "vellum",
+          channel: "cadet",
+          destination: "cadet",
           status: "sent",
           conversationId: "conv-guardian-access-request",
         },
@@ -895,7 +895,7 @@ describe("access-request-helper unit tests", () => {
     await flushAsyncAccessRequestBookkeeping();
 
     const deliveries = listDeliveries(result.requestId);
-    const cadet = deliveries.find((d) => d.destinationChannel === "vellum");
+    const cadet = deliveries.find((d) => d.destinationChannel === "cadet");
     const telegram = deliveries.find(
       (d) => d.destinationChannel === "telegram",
     );
@@ -929,7 +929,7 @@ describe("access-request-helper unit tests", () => {
     });
 
     mockEmitResult = {
-      signalId: "sig-no-vellum",
+      signalId: "sig-no-cadet",
       deduplicated: false,
       dispatched: true,
       reason: "telegram-only",
@@ -957,7 +957,7 @@ describe("access-request-helper unit tests", () => {
     await flushAsyncAccessRequestBookkeeping();
 
     const deliveries = listDeliveries(result.requestId);
-    const cadet = deliveries.find((d) => d.destinationChannel === "vellum");
+    const cadet = deliveries.find((d) => d.destinationChannel === "cadet");
     const telegram = deliveries.find(
       (d) => d.destinationChannel === "telegram",
     );

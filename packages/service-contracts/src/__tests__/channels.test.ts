@@ -18,13 +18,13 @@ describe("isChannelId", () => {
   });
 
   test("includes the internal channels no external surface ingresses", () => {
-    // `platform` (control plane) and `vellum` (native app) are part of the
+    // `platform` (control plane) and `cadet` (native app) are part of the
     // canonical vocabulary even though the gateway never ingresses them. The
     // gateway's narrower list is a compile-time-asserted subset of this set,
     // so these must remain canonical for that assertion to mean anything.
     expect(isChannelId("platform")).toBe(true);
-    expect(isChannelId("vellum")).toBe(true);
-    expect(isChannelId("vellum-shared")).toBe(true);
+    expect(isChannelId("cadet")).toBe(true);
+    expect(isChannelId("cadet-shared")).toBe(true);
   });
 
   test("includes discord", () => {
@@ -58,8 +58,8 @@ describe("botProviderForChannel and channelForBotProvider", () => {
 
   test("answer nothing for a channel without a bot, a person's grant, or an unknown key", () => {
     expect(botProviderForChannel("phone")).toBeUndefined();
-    expect(botProviderForChannel("vellum")).toBeUndefined();
-    expect(botProviderForChannel("vellum-shared")).toBeUndefined();
+    expect(botProviderForChannel("cadet")).toBeUndefined();
+    expect(botProviderForChannel("cadet-shared")).toBeUndefined();
     expect(botProviderForChannel("not-a-channel")).toBeUndefined();
     // `slack` is the person's integration standing beside the bot's key.
     expect(channelForBotProvider("slack")).toBeUndefined();

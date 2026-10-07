@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
-const testDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testDir = process.env.CADET_WORKSPACE_DIR!;
 const workspaceDir = testDir;
 const conversationsDir = join(workspaceDir, "conversations");
 mkdirSync(conversationsDir, { recursive: true });

@@ -20,7 +20,7 @@ let workspaceDir: string;
 beforeEach(() => {
   workspaceDir = join(
     tmpdir(),
-    `vellum-adaptive-thinking-repair-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-adaptive-thinking-repair-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 });

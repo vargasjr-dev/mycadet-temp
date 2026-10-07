@@ -61,10 +61,10 @@ async function handleTransferContentGet({
   if (targetClientId != null) {
     const headerMap = headers as Record<string, string | undefined>;
     const submittingClientId =
-      headerMap["x-vellum-client-id"]?.trim() || undefined;
+      headerMap["x-cadet-client-id"]?.trim() || undefined;
     if (!submittingClientId) {
       throw new BadRequestError(
-        "x-vellum-client-id header required for targeted transfer",
+        "x-cadet-client-id header required for targeted transfer",
       );
     }
     if (submittingClientId !== targetClientId) {
@@ -79,7 +79,7 @@ async function handleTransferContentGet({
     // not 403 a legitimate fetch.
     enforceSameActorOrThrow({
       sourceActorPrincipalId: await resolveActorPrincipalIdForLocalGuardian(
-        headerMap["x-vellum-actor-principal-id"]?.trim() || undefined,
+        headerMap["x-cadet-actor-principal-id"]?.trim() || undefined,
       ),
       targetActorPrincipalId:
         match.proxy.getTargetActorPrincipalIdForTransfer(transferId),
@@ -96,7 +96,7 @@ async function handleTransferContentGet({
         targetActorPrincipalId,
         op: "host_transfer",
         missingClientIdMessage:
-          "x-vellum-client-id header required for targeted transfer",
+          "x-cadet-client-id header required for targeted transfer",
       });
     }
   }
@@ -163,10 +163,10 @@ async function handleTransferContentPut({
   if (targetClientId != null) {
     const headerMap = headers as Record<string, string | undefined>;
     const submittingClientId =
-      headerMap["x-vellum-client-id"]?.trim() || undefined;
+      headerMap["x-cadet-client-id"]?.trim() || undefined;
     if (!submittingClientId) {
       throw new BadRequestError(
-        "x-vellum-client-id header required for targeted transfer",
+        "x-cadet-client-id header required for targeted transfer",
       );
     }
     if (submittingClientId !== targetClientId) {
@@ -177,7 +177,7 @@ async function handleTransferContentPut({
 
     enforceSameActorOrThrow({
       sourceActorPrincipalId: await resolveActorPrincipalIdForLocalGuardian(
-        headerMap["x-vellum-actor-principal-id"]?.trim() || undefined,
+        headerMap["x-cadet-actor-principal-id"]?.trim() || undefined,
       ),
       targetActorPrincipalId:
         match.proxy.getTargetActorPrincipalIdForTransfer(transferId),
@@ -194,7 +194,7 @@ async function handleTransferContentPut({
         targetActorPrincipalId,
         op: "host_transfer",
         missingClientIdMessage:
-          "x-vellum-client-id header required for targeted transfer",
+          "x-cadet-client-id header required for targeted transfer",
       });
     }
   }
@@ -253,7 +253,7 @@ async function handleTransferResult({ body, headers }: RouteHandlerArgs) {
     targetActorPrincipalId: peeked.targetActorPrincipalId,
     op: "host_transfer",
     missingClientIdMessage:
-      "x-vellum-client-id header is missing for a targeted host transfer request.",
+      "x-cadet-client-id header is missing for a targeted host transfer request.",
   });
 
   HostTransferProxy.instance.resolveTransferResult(requestId, {
@@ -287,7 +287,7 @@ export const ROUTES: RouteDefinition[] = [
     additionalResponses: {
       "400": {
         description:
-          "x-vellum-client-id header is missing for a targeted transfer.",
+          "x-cadet-client-id header is missing for a targeted transfer.",
       },
       "403": {
         description: SAME_ACTOR_FORBIDDEN_DESCRIPTION,
@@ -311,7 +311,7 @@ export const ROUTES: RouteDefinition[] = [
     additionalResponses: {
       "400": {
         description:
-          "x-vellum-client-id header is missing for a targeted transfer.",
+          "x-cadet-client-id header is missing for a targeted transfer.",
       },
       "403": {
         description: SAME_ACTOR_FORBIDDEN_DESCRIPTION,
@@ -344,7 +344,7 @@ export const ROUTES: RouteDefinition[] = [
     additionalResponses: {
       "400": {
         description:
-          "x-vellum-client-id header is missing for a targeted host transfer request.",
+          "x-cadet-client-id header is missing for a targeted host transfer request.",
       },
       "403": {
         description: SAME_ACTOR_FORBIDDEN_DESCRIPTION,

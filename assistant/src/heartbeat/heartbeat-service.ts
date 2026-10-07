@@ -818,7 +818,7 @@ export class HeartbeatService {
 
     const checklist = this.readChecklist();
     const completedRunCount = countCompletedHeartbeatRuns();
-    // Warm both guardian-delivery cache keys (vellum + unfiltered) so
+    // Warm both guardian-delivery cache keys (cadet + unfiltered) so
     // buildPrompt's sync guardian persona read (isShallowProfile →
     // resolveGuardianPersona), including its any-channel fallback, hits fresh
     // keys instead of falling back to default.md on a cold/TTL-expired cache.
@@ -846,7 +846,7 @@ export class HeartbeatService {
       prompt,
       systemHint: "Heartbeat",
       trustContext: {
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         trustClass: "guardian",
       },
       callSite: "heartbeatAgent",

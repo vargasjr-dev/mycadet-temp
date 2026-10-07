@@ -102,7 +102,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Desktop system packages persist through container replacement as image layers.
-COPY assistant/docker/mousepad/90-vellum.gschema.override /usr/share/glib-2.0/schemas/90-vellum.gschema.override
+COPY assistant/docker/mousepad/90-cadet.gschema.override /usr/share/glib-2.0/schemas/90-cadet.gschema.override
 RUN set -eu; \
     wezterm_version=20240203-110809-5046fc22; \
     case "$(dpkg --print-architecture)" in \
@@ -226,8 +226,8 @@ RUN groupadd --system --gid 1001 assistant && \
     echo "assistant ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Set up assistant home directory for local state (device.json, etc.)
-RUN mkdir -p /home/assistant/.vellum && \
-    chown -R assistant:assistant /home/assistant/.vellum
+RUN mkdir -p /home/assistant/.cadet && \
+    chown -R assistant:assistant /home/assistant/.cadet
 
 # Update PATH for assistant user
 ENV PATH="/home/assistant/.bun/bin:${PATH}"
@@ -242,23 +242,23 @@ RUN printf '%s\n' \
     'if [ -r /app/assistant/docker-kata-apt-env.sh ]; then' \
     '  . /app/assistant/docker-kata-apt-env.sh' \
     'fi' \
-    > /etc/profile.d/vellum-kata-apt-root.sh && \
+    > /etc/profile.d/cadet-kata-apt-root.sh && \
     printf '%s\n' \
     '' \
-    'if [ -r /etc/profile.d/vellum-kata-apt-root.sh ]; then' \
-    '  . /etc/profile.d/vellum-kata-apt-root.sh' \
+    'if [ -r /etc/profile.d/cadet-kata-apt-root.sh ]; then' \
+    '  . /etc/profile.d/cadet-kata-apt-root.sh' \
     'fi' \
     >> /etc/bash.bashrc && \
     printf '%s\n' \
     '' \
-    'if [ -r /etc/profile.d/vellum-kata-apt-root.sh ]; then' \
-    '  . /etc/profile.d/vellum-kata-apt-root.sh' \
+    'if [ -r /etc/profile.d/cadet-kata-apt-root.sh ]; then' \
+    '  . /etc/profile.d/cadet-kata-apt-root.sh' \
     'fi' \
     >> /root/.bashrc && \
     printf '%s\n' \
     '' \
-    'if [ -r /etc/profile.d/vellum-kata-apt-root.sh ]; then' \
-    '  . /etc/profile.d/vellum-kata-apt-root.sh' \
+    'if [ -r /etc/profile.d/cadet-kata-apt-root.sh ]; then' \
+    '  . /etc/profile.d/cadet-kata-apt-root.sh' \
     'fi' \
     >> /home/assistant/.bashrc && \
     chown assistant:assistant /home/assistant/.bashrc
@@ -315,10 +315,10 @@ RUN chmod +x \
     /app/assistant/docker-kata-pip.sh \
     /app/assistant/docker-kata-runtime-family.sh \
     /app/assistant/docker-node-launcher.sh \
-    /usr/local/bin/vellum-block-volume-common.sh \
-    /usr/local/bin/vellum-block-volume-init.sh \
-    /usr/local/bin/vellum-block-volume-mount.sh \
-    /usr/local/bin/vellum-block-volume-resize.sh
+    /usr/local/bin/cadet-block-volume-common.sh \
+    /usr/local/bin/cadet-block-volume-init.sh \
+    /usr/local/bin/cadet-block-volume-mount.sh \
+    /usr/local/bin/cadet-block-volume-resize.sh
 
 # Run the daemon + http server
 CMD ["/app/assistant/docker-entrypoint.sh"]

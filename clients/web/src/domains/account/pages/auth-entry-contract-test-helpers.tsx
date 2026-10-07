@@ -24,7 +24,7 @@ export const CHECKOUT = "/assistant/checkout?package=super";
 const HOSTILE_DESTINATION = "https://evil.example";
 /** Served by the platform's Next.js app — a `<Navigate>` here dead-ends. */
 const IMPORT_FUNNEL = "/import?foo=1";
-const VELLUM_URL = "https://app.cadet.ai/x";
+const CADET_URL = "https://app.cadet.ai/x";
 
 interface AuthFlowCall {
   callbackUrl: string;
@@ -199,10 +199,10 @@ export function describeAuthEntryContract(
 
     test("a cadet.ai returnTo gets a real page load, not a router navigation", () => {
       authEntry.authenticated = true;
-      const entry = entryUrl(route, VELLUM_URL);
+      const entry = entryUrl(route, CADET_URL);
       renderEntry(entry);
 
-      expect(authEntry.hardNavigateCalls).toEqual([VELLUM_URL]);
+      expect(authEntry.hardNavigateCalls).toEqual([CADET_URL]);
       expect(currentLocation()).toBe(entry);
     });
 

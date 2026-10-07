@@ -68,7 +68,7 @@ async function handleHostBashResult({ body, headers }: RouteHandlerArgs) {
     targetActorPrincipalId: peeked.targetActorPrincipalId,
     op: "host_bash",
     missingClientIdMessage:
-      "x-vellum-client-id header is required for targeted host bash requests",
+      "x-cadet-client-id header is required for targeted host bash requests",
   });
 
   HostBashProxy.instance.resolveResult(requestId, {
@@ -105,7 +105,7 @@ export const ROUTES: RouteDefinition[] = [
     additionalResponses: {
       "400": {
         description:
-          "x-vellum-client-id header is missing for a targeted host bash request.",
+          "x-cadet-client-id header is missing for a targeted host bash request.",
       },
       "403": {
         description: SAME_ACTOR_FORBIDDEN_DESCRIPTION,

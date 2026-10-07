@@ -13,9 +13,9 @@ const COLUMN = "canonical_message_id";
  * This column names that row from the delivery audit, so the edit and
  * delete paths reach the row without re-running conversation pairing. The
  * existing `message_id` column keeps its meaning: the provider's message id
- * for a channel delivery, the conversation row id for a vellum delivery.
+ * for a channel delivery, the conversation row id for a cadet delivery.
  *
- * `NULL` for rows persisted before this migration ran, for vellum and
+ * `NULL` for rows persisted before this migration ran, for cadet and
  * platform deliveries, and for every channel delivery that did not succeed.
  *
  * Idempotent: the PRAGMA guard makes re-running a no-op once the column

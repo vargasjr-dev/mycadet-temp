@@ -133,7 +133,7 @@ function liveConversation(title: string) {
   );
   conversation.setTrustContext({
     trustClass: "guardian",
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
   });
   conversation.runAgentLoop = async () => {
     conversation.setProcessing(false);

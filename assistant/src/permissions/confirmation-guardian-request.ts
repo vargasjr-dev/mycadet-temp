@@ -70,7 +70,7 @@ export async function createGuardianRequestForConfirmation(
     const trustContext = opts?.preferTurnSnapshot
       ? conversation?.getTurnOrRestingTrust()
       : conversation?.getTrustContext();
-    const sourceChannel = trustContext?.sourceChannel ?? "vellum";
+    const sourceChannel = trustContext?.sourceChannel ?? "cadet";
     const inputRecord = msg.input as Record<string, unknown>;
     const activityRaw =
       typeof inputRecord.activity === "string"

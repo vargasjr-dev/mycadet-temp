@@ -65,9 +65,9 @@ afterEach(() => {
   clearFeatureFlagStoreCache();
   clearRemoteFeatureFlagStoreCache();
   resetEnvOverridesCache();
-  delete process.env.VELLUM_FLAG_BROWSER;
-  delete process.env.VELLUM_FLAG_A2A_CHANNEL;
-  delete process.env.VELLUM_FLAG_DEFAULT_MODEL;
+  delete process.env.CADET_FLAG_BROWSER;
+  delete process.env.CADET_FLAG_A2A_CHANNEL;
+  delete process.env.CADET_FLAG_DEFAULT_MODEL;
 });
 
 const { isFeatureFlagEnabled, getFeatureFlagValue } =
@@ -161,7 +161,7 @@ describe("getFeatureFlagValue", () => {
     writeRemoteFeatureFlags({ browser: false });
     writeFeatureFlag("browser", false);
 
-    process.env.VELLUM_FLAG_BROWSER = "true";
+    process.env.CADET_FLAG_BROWSER = "true";
     resetEnvOverridesCache();
 
     expect(getFeatureFlagValue("browser")).toBe(true);
@@ -171,7 +171,7 @@ describe("getFeatureFlagValue", () => {
     writeRemoteFeatureFlags({ "default-model": "remote-model" });
     writeFeatureFlag("default-model", "persisted-model");
 
-    process.env.VELLUM_FLAG_DEFAULT_MODEL = "env-model";
+    process.env.CADET_FLAG_DEFAULT_MODEL = "env-model";
     resetEnvOverridesCache();
 
     expect(getFeatureFlagValue("default-model")).toBe("env-model");

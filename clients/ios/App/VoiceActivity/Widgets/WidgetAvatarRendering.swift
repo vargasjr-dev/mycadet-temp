@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 import WidgetKit
 
-// Everything a Vellum Home Screen widget needs to draw the user's own
+// Everything a Cadet Home Screen widget needs to draw the user's own
 // assistant rather than a fixed brand mark: the colors derived from its
 // accent, the eyes, the avatar image, and the blurred photo card a custom
 // avatar sits on. They live together because a widget that themed itself would

@@ -95,7 +95,7 @@ Linear doesn't support setting the avatar via API — it must be uploaded throug
 If the assistant has an avatar, send it to the user:
 
 ```
-<vellum-attachment source="sandbox" path="data/avatar/avatar-image.png" />
+<cadet-attachment source="sandbox" path="data/avatar/avatar-image.png" />
 ```
 
 Then direct them to the app settings page:

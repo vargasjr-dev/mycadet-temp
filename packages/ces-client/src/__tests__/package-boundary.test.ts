@@ -50,26 +50,26 @@ const FORBIDDEN_IMPORT_PATTERNS = [
   // Assistant runtime internals
   /from\s+["'](?:\.\.\/)+assistant\/src/,
   /require\s*\(\s*["'](?:\.\.\/)+assistant\/src/,
-  /from\s+["']@vellumai\/assistant(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/assistant(?:\/|["'])/,
+  /from\s+["']@mycadet\/assistant(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/assistant(?:\/|["'])/,
 
   // Gateway runtime internals
   /from\s+["'](?:\.\.\/)+gateway\/src/,
   /require\s*\(\s*["'](?:\.\.\/)+gateway\/src/,
-  /from\s+["']@vellumai\/(?:vellum-)?gateway(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/(?:vellum-)?gateway(?:\/|["'])/,
+  /from\s+["']@mycadet\/(?:cadet-)?gateway(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/(?:cadet-)?gateway(?:\/|["'])/,
 
   // Credential executor runtime internals
   /from\s+["'](?:\.\.\/)+credential-executor\/src/,
   /require\s*\(\s*["'](?:\.\.\/)+credential-executor\/src/,
-  /from\s+["']@vellumai\/credential-executor(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/credential-executor(?:\/|["'])/,
+  /from\s+["']@mycadet\/credential-executor(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/credential-executor(?:\/|["'])/,
 
   // Runtime shared packages
-  /from\s+["']@vellumai\/credential-storage(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/credential-storage(?:\/|["'])/,
-  /from\s+["']@vellumai\/egress-proxy(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/egress-proxy(?:\/|["'])/,
+  /from\s+["']@mycadet\/credential-storage(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/credential-storage(?:\/|["'])/,
+  /from\s+["']@mycadet\/egress-proxy(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/egress-proxy(?:\/|["'])/,
 ];
 
 describe("package boundary", () => {

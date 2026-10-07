@@ -261,7 +261,7 @@ export class DesktopBrowserClient {
     if (this.transport !== transport) {
       throw new Error("Desktop browser session expired");
     }
-    if (method === "Vellum.createTab") {
+    if (method === "Cadet.createTab") {
       return (await this.createTab(transport, signal)) as T;
     }
     const targetId =

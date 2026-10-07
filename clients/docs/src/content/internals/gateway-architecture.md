@@ -93,13 +93,13 @@ The gateway exposes a REST API for reading and mutating assistant feature flags.
 | Method | Path                     | Description                                                                                                                                                                                                                                         |
 | ------ | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GET    | `/v1/feature-flags`      | List all declared assistant feature flags from the defaults registry, merged with persisted values from the feature flag store. Returns `{ flags: FeatureFlagEntry[] }` where each entry has `key`, `enabled`, `defaultEnabled`, and `description`. |
-| PATCH  | `/v1/feature-flags/:key` | Set a single assistant feature flag. Body: `{ "enabled": true\|false }`. Key must be a simple kebab-case flag key declared in the defaults registry. Writes to `~/.vellum/protected/feature-flags.json`.                                            |
+| PATCH  | `/v1/feature-flags/:key` | Set a single assistant feature flag. Body: `{ "enabled": true\|false }`. Key must be a simple kebab-case flag key declared in the defaults registry. Writes to `~/.cadet/protected/feature-flags.json`.                                            |
 
 **Unified registry:** All declared feature flags and their default values are defined in the unified registry at `meta/feature-flags/feature-flag-registry.json` (bundled copy at `gateway/src/feature-flag-registry.json`). The gateway loads this registry on startup via `gateway/src/feature-flag-defaults.ts`, filtering to `scope: "assistant"` flags. Labels come from the registry. The GET endpoint merges persisted overrides with explicit remote values and registry defaults to produce the full flag list. Declared flags missing from a remote snapshot fall back to their registry `defaultEnabled`; undeclared keys are rejected by writes and fail closed in direct resolver calls. The PATCH endpoint validates that the target flag key exists in the registry before accepting a write. Only declared keys are exposed by this API.
 
-**Flag key format:** The canonical key format is simple kebab-case (e.g., `browser`, `ces-tools`). Only keys matching this pattern and declared in the registry are accepted by the PATCH endpoint; other patterns are rejected with 400. All writes use the canonical format and are stored in the protected feature flag store (`~/.vellum/protected/feature-flags.json`).
+**Flag key format:** The canonical key format is simple kebab-case (e.g., `browser`, `ces-tools`). Only keys matching this pattern and declared in the registry are accepted by the PATCH endpoint; other patterns are rejected with 400. All writes use the canonical format and are stored in the protected feature flag store (`~/.cadet/protected/feature-flags.json`).
 
-**Storage:** Flag overrides are persisted in `~/.vellum/protected/feature-flags.json` (local) or `GATEWAY_SECURITY_DIR/feature-flags.json` (Docker). The store uses a versioned JSON format (`{ version: 1, values: Record<string, boolean> }`). Remote platform snapshots are persisted separately in `feature-flags-remote.json`; local overrides win over remote values, explicit remote values win over registry defaults, and missing remote values fall back to registry defaults. The gateway writes atomically (temp file + rename, 0o600 permissions). The daemon's config watcher monitors the protected directory and hot-reloads flag changes, so flag mutations take effect on the next session or tool resolution without a restart.
+**Storage:** Flag overrides are persisted in `~/.cadet/protected/feature-flags.json` (local) or `GATEWAY_SECURITY_DIR/feature-flags.json` (Docker). The store uses a versioned JSON format (`{ version: 1, values: Record<string, boolean> }`). Remote platform snapshots are persisted separately in `feature-flags-remote.json`; local overrides win over remote values, explicit remote values win over registry defaults, and missing remote values fall back to registry defaults. The gateway writes atomically (temp file + rename, 0o600 permissions). The daemon's config watcher monitors the protected directory and hot-reloads flag changes, so flag mutations take effect on the next session or tool resolution without a restart.
 
 **Token separation (authentication boundary):**
 
@@ -112,7 +112,7 @@ The assistant feature flags API uses scope-based JWT auth. The gateway issues JW
 
 The assistant daemon does not read or distribute a feature-flag token. All feature-flag auth flows go through the gateway's scoped JWT mechanism.
 
-**Protected feature flag store:** The canonical storage for assistant feature flag overrides is `~/.vellum/protected/feature-flags.json` (local) or `GATEWAY_SECURITY_DIR/feature-flags.json` (Docker). The store is managed by `gateway/src/feature-flag-store.ts` and uses a versioned JSON format with `Record<string, boolean>` values keyed by canonical flag keys (simple kebab-case, e.g., `browser`). The gateway's PATCH handler writes exclusively to this store. The daemon's resolver reads it with highest priority, falling back to the defaults registry. Undeclared keys are ignored by the resolver.
+**Protected feature flag store:** The canonical storage for assistant feature flag overrides is `~/.cadet/protected/feature-flags.json` (local) or `GATEWAY_SECURITY_DIR/feature-flags.json` (Docker). The store is managed by `gateway/src/feature-flag-store.ts` and uses a versioned JSON format with `Record<string, boolean>` values keyed by canonical flag keys (simple kebab-case, e.g., `browser`). The gateway's PATCH handler writes exclusively to this store. The daemon's resolver reads it with highest priority, falling back to the defaults registry. Undeclared keys are ignored by the resolver.
 
 **Key source files:**
 
@@ -211,7 +211,7 @@ All contact paths are registered flat only (`/v1/contacts...`, `/v1/contact-chan
 
 **Authentication boundary:**
 
-- Gateway validates the caller's JWT bearer token, except on `/v1/shared/invites/redeem`, where the `vellum-shared` invite link token in the body is the credential (see Invite-based onboarding).
+- Gateway validates the caller's JWT bearer token, except on `/v1/shared/invites/redeem`, where the `cadet-shared` invite link token in the body is the credential (see Invite-based onboarding).
 - Native contact/invite endpoints are served from the gateway DB after that bearer-auth check; runtime-relayed requests (Telegram control plane, contact search reads) reach the runtime with a minted JWT (`gateway_ingress_v1` or `gateway_service_v1` scope profile).
 - Upstream 4xx/5xx responses are passed through, while connection errors return `502` and timeouts return `504`.
 
@@ -310,7 +310,7 @@ The assistant runtime reads this URL via the centralized `public-ingress-urls.ts
 
 Tunnel is a platform-managed tunnel for assistant-hosted HTTP and WebSocket traffic. When it is active, Tunnel publishes the registered public assistant URL to `ingress.publicBaseUrl` and marks it with `ingress.publicBaseUrlManagedBy: "tunnel"`.
 
-When `TUNNEL_BASE_URL` is present in the gateway environment, the gateway creates `TunnelTunnelClient` but starts it only after Twilio setup has been started in the workspace. The Twilio setup skill writes `twilio.setupStarted: true` at the beginning of setup so the tunnel can open while credentials and phone-number selection are still in progress. On boot, existing Twilio credentials or existing `twilio.accountSid` / `twilio.phoneNumber` config also count as prior setup. Before credential-backed startup side effects run, the gateway clears any stale Tunnel-managed `ingress.publicBaseUrl`; if setup has not started, it does this without opening a tunnel. The client registers with Tunnel over `GET /v1/register` using the assistant API key, then receives a `registered` frame containing a public assistant URL such as `https://tunnel.vellum.ai/<assistant-id>`. If Cadet platform credentials change while the tunnel is already running or waiting on backoff, the gateway asks the client to reconnect with fresh credentials instead of waiting for process restart. The gateway writes the registered URL to `ingress.publicBaseUrl`. When the tunnel disconnects, it clears that value only if the Tunnel ownership marker is still present and the URL still matches what the tunnel published, leaving manual URLs intact.
+When `TUNNEL_BASE_URL` is present in the gateway environment, the gateway creates `TunnelTunnelClient` but starts it only after Twilio setup has been started in the workspace. The Twilio setup skill writes `twilio.setupStarted: true` at the beginning of setup so the tunnel can open while credentials and phone-number selection are still in progress. On boot, existing Twilio credentials or existing `twilio.accountSid` / `twilio.phoneNumber` config also count as prior setup. Before credential-backed startup side effects run, the gateway clears any stale Tunnel-managed `ingress.publicBaseUrl`; if setup has not started, it does this without opening a tunnel. The client registers with Tunnel over `GET /v1/register` using the assistant API key, then receives a `registered` frame containing a public assistant URL such as `https://tunnel.mycadet.ai/<assistant-id>`. If Cadet platform credentials change while the tunnel is already running or waiting on backoff, the gateway asks the client to reconnect with fresh credentials instead of waiting for process restart. The gateway writes the registered URL to `ingress.publicBaseUrl`. When the tunnel disconnects, it clears that value only if the Tunnel ownership marker is still present and the URL still matches what the tunnel published, leaving manual URLs intact.
 
 Tunnel forwards both HTTP request frames and WebSocket frames into the local gateway loopback listener:
 
@@ -326,7 +326,7 @@ The HTTP bridge can carry normal JSON requests and health checks, so it is usefu
 
 Local platform smoke-test flow:
 
-1. In `vellum-assistant-platform`, run `vel up tunnel`.
+1. In `mycadet-platform`, run `vel up tunnel`.
 2. Ensure vembda passes the environment-appropriate `TUNNEL_BASE_URL` into assistant gateway containers.
 3. Start or complete Twilio setup in the workspace so the gateway is allowed to connect the tunnel.
 4. Re-hatch or restart the assistant so the gateway receives the new environment.
@@ -340,7 +340,7 @@ The whole `/webhooks/` namespace used to be reachable through the tunnel as one 
 
 **Three admission layers**, outermost first. Each is narrower than the one in front of it, and none replaces the others:
 
-1. **Tunnel edge rules.** Every WebSocket upgrade to Tunnel carries the `X-Vellum-Tunnel-Allowed-Paths` header, a JSON array of Go RE2 patterns built in `gateway/src/tunnel/allowed-paths.ts`. Tunnel compiles them and drops any request matching none of them before it enters the tunnel. With the flag on, the array carries one exact-match rule per registered row in place of the `^/webhooks/` wildcard.
+1. **Tunnel edge rules.** Every WebSocket upgrade to Tunnel carries the `X-Cadet-Tunnel-Allowed-Paths` header, a JSON array of Go RE2 patterns built in `gateway/src/tunnel/allowed-paths.ts`. Tunnel compiles them and drops any request matching none of them before it enters the tunnel. With the flag on, the array carries one exact-match rule per registered row in place of the `^/webhooks/` wildcard.
 2. **Bridge re-validation.** `isAllowedTunnelHttpPath` (`gateway/src/tunnel/bridge-utils.ts`) consults the registry again as the frame arrives, so an edge rule that has gone stale still admits nothing the gateway has stopped claiming.
 3. **Route table and per-route authentication.** An admitted path must still match a registered gateway route, and each provider route runs its own check: Telegram's `secret_token`, Twilio's HMAC-SHA1 signature, a plugin webhook's token.
 
@@ -429,7 +429,7 @@ Runtime detects needs_confirmation
 
 **Proactive expiry sweep:** The daemon runs a periodic sweep every 60 seconds (`assistant/src/runtime/routes/guardian-expiry-sweep.ts`) that reads a bounded batch of past-deadline pending requests (`guardian_requests_list_expired_pending`, read-only), fans out card withdrawals and requester expiry notices per row, and only then confirms each with the per-request `guardian_requests_expire` CAS. The status flip is the receipt that the side effects ran: a lost IPC response or a daemon crash leaves the row pending and listed for the next round. Expired approvals close without waiting for follow-up traffic from either party, and a decision arriving past the deadline loses to expiry atomically (the decide CAS guards on `expires_at`).
 
-**Gateway-origin ingress contract:** The JWT token exchanged during gateway-to-runtime authentication proves gateway origin (via the `aud=vellum-daemon` claim). No separate header is required.
+**Gateway-origin ingress contract:** The JWT token exchanged during gateway-to-runtime authentication proves gateway origin (via the `aud=cadet-daemon` claim). No separate header is required.
 
 **Key modules:**
 
@@ -610,7 +610,7 @@ The channel inbound handler (`inbound-message-handler.ts`) enforces an access co
 
 **Invite-based onboarding:** Invite tokens are minted by the gateway via the invite HTTP API and stored SHA-256 hashed on the gateway DB's `ingress_invites` row -- the raw token is returned exactly once at creation time. External users redeem invites by sending the token as a channel message, which atomically creates a member record with `active` status and `allow` policy.
 
-A `vellum-shared` invite is redeemed instead through `POST /v1/shared/invites/redeem`, which the platform calls on the invitee's behalf with the link token and a device id. In one gateway DB transaction it claims the invite's single use, mints a principal, binds it to the invite's contact-role contact, records it as that contact's active `vellum-shared` channel, and mints a device-bound `contact`-role token pair; a failure at any step rolls all of it back and leaves the invite redeemable. `writeSharedPrincipalChannel` is the only writer of `vellum-shared` rows. The route accepts only the link token, never the 6-digit code, answers 404 while `vellum-trusted-contacts` is off, limits failed attempts per client IP, and is denied at the remote web ingress. The principal then resolves as `trusted_contact` through its `vellum-shared` channel for as long as that channel stays active.
+A `cadet-shared` invite is redeemed instead through `POST /v1/shared/invites/redeem`, which the platform calls on the invitee's behalf with the link token and a device id. In one gateway DB transaction it claims the invite's single use, mints a principal, binds it to the invite's contact-role contact, records it as that contact's active `cadet-shared` channel, and mints a device-bound `contact`-role token pair; a failure at any step rolls all of it back and leaves the invite redeemable. `writeSharedPrincipalChannel` is the only writer of `cadet-shared` rows. The route accepts only the link token, never the 6-digit code, answers 404 while `cadet-trusted-contacts` is off, limits failed attempts per client IP, and is denied at the remote web ingress. The principal then resolves as `trusted_contact` through its `cadet-shared` channel for as long as that channel stays active.
 
 **Relationship to guardian verification:** Guardian verification and ingress contact management are independent systems. Guardian verification establishes who controls the assistant on a channel (the trust anchor for approvals). Ingress contacts control who can interact with the assistant.
 
@@ -642,7 +642,7 @@ The gateway declares `contacts` and `contact_channels` tables and exposes them v
 | `gateway/src/http/routes/contacts-control-plane-proxy.ts` | Gateway-native invite lifecycle (mint, list, revoke, redeem) shared by HTTP and IPC              |
 | `gateway/src/ipc/invite-handlers.ts`                      | IPC routes relaying the daemon's invite surfaces to the native functions                         |
 | `gateway/src/verification/invite-redemption.ts`           | Redemption engine — validation, atomic claim, ACL activation                                     |
-| `gateway/src/verification/shared-invite-redemption.ts`    | `vellum-shared` invite redemption: claim, principal, channel and token pair in one transaction   |
+| `gateway/src/verification/shared-invite-redemption.ts`    | `cadet-shared` invite redemption: claim, principal, channel and token pair in one transaction   |
 | `gateway/src/http/routes/shared-invite-redeem.ts`         | `POST /v1/shared/invites/redeem`: flag gate, request schema, per-IP failure limit                |
 | `assistant/src/contacts/contact-store.ts`                 | Contact and channel lookups (findContactChannel, guardian bindings)                              |
 | `assistant/src/contacts/contacts-write.ts`                | Contact and channel identity/info writes (upsert, redemption info mirror — ACL is gateway-owned) |
@@ -653,7 +653,7 @@ The gateway declares `contacts` and `contact_channels` tables and exposes them v
 
 ### Telegram Credential Flow
 
-In desktop deployments, Telegram bot tokens are stored in secure storage (CES HTTP API when available, or the encrypted file store at `~/.vellum/protected/keys.enc`) and never in plaintext config files. When deploying the gateway standalone, operators may also supply credentials via environment variables (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`).
+In desktop deployments, Telegram bot tokens are stored in secure storage (CES HTTP API when available, or the encrypted file store at `~/.cadet/protected/keys.enc`) and never in plaintext config files. When deploying the gateway standalone, operators may also supply credentials via environment variables (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`).
 
 ```
 Entry points:
@@ -687,7 +687,7 @@ The `telegram_config` HTTP endpoint supports three actions:
 - **`set`** — validates the bot token against the Telegram API, stores it in secure storage, auto-generates a webhook secret if none exists (with rollback on failure), and self-heals webhook_secret metadata if it already exists. The gateway's credential watcher detects the storage change and triggers webhook reconciliation automatically
 - **`clear`** — deregisters the webhook by calling Telegram's `deleteWebhook` API directly (while the token is still available), then deletes the bot token and webhook secret from both secure storage and credential metadata. The gateway's credential watcher detects the storage change and updates its readiness state automatically
 
-The gateway reads Telegram credentials via its `credential-reader` module (`gateway/src/credential-reader.ts`), which uses a CES-first fallback strategy: it tries the CES HTTP API first (when `CES_CREDENTIAL_URL` is configured), then falls back to the encrypted file store (`~/.vellum/protected/keys.enc`).
+The gateway reads Telegram credentials via its `credential-reader` module (`gateway/src/credential-reader.ts`), which uses a CES-first fallback strategy: it tries the CES HTTP API first (when `CES_CREDENTIAL_URL` is configured), then falls back to the encrypted file store (`~/.cadet/protected/keys.enc`).
 
 ### Webhook Reconciliation
 
@@ -1049,7 +1049,7 @@ When a guardian question is dispatched while the macOS app is backgrounded, the 
 
 ### SQLite Tables
 
-The three call tables live in `$VELLUM_WORKSPACE_DIR/data/db/assistant.db` alongside existing tables; guardian requests and their deliveries live in the gateway DB (the assistant-side copies were dropped by gateway migration m0016):
+The three call tables live in `$CADET_WORKSPACE_DIR/data/db/assistant.db` alongside existing tables; guardian requests and their deliveries live in the gateway DB (the assistant-side copies were dropped by gateway migration m0016):
 
 - **`call_sessions`** — One row per call (inbound or outbound). Tracks conversation association, provider info (Twilio CallSid), phone numbers, task description (null for inbound calls), status lifecycle (`initiated` -> `ringing` -> `in_progress` -> `waiting_on_user` -> `completed`/`failed`), and timestamps. For inbound calls, the session is keyed by CallSid via `createInboundVoiceSession()` with idempotent replay protection. Foreign key to `conversations(id)` with cascade delete.
 

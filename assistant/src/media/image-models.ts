@@ -81,7 +81,7 @@ export function qualifyImageModelForOpenRouter(model: string): string {
  *
  * OpenRouter accepts any trimmed slug from its live catalog. Built-in
  * aliases and bare IDs are qualified (`fast` ->
- * `google/gemini-3.1-flash-image-preview`). Gemini, OpenAI, and Vellum
+ * `google/gemini-3.1-flash-image-preview`). Gemini, OpenAI, and Cadet
  * still require a registry match.
  */
 export function resolveRequestedImageModel(

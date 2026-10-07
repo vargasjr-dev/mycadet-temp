@@ -19,17 +19,17 @@ function makeConfig(): AssistantConfig {
 }
 
 describe("getVisibleProviderCatalog", () => {
-  test("hides Vellum-hosted GPU models unless hosted inference is on", () => {
+  test("hides Cadet-hosted GPU models unless hosted inference is on", () => {
     setOverridesForTesting({});
     const hidden = getVisibleProviderCatalog(makeConfig());
-    expect(hidden.find((p) => p.id === "vellum")).toBeUndefined();
+    expect(hidden.find((p) => p.id === "cadet")).toBeUndefined();
     expect(
       hidden.flatMap((p) => p.models).some((m) => m.id === "qwen/qwen3-8b"),
     ).toBe(false);
 
-    setOverridesForTesting({ "vellum-hosted-inference": true });
+    setOverridesForTesting({ "cadet-hosted-inference": true });
     const visible = getVisibleProviderCatalog(makeConfig());
-    const cadet = visible.find((p) => p.id === "vellum");
+    const cadet = visible.find((p) => p.id === "cadet");
     expect(cadet).toBeDefined();
     expect(cadet!.models.map((m) => m.id)).toEqual(["qwen/qwen3-8b"]);
   });

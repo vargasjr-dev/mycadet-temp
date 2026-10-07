@@ -5,7 +5,7 @@
  * `POST /v1/messages` is not in the gateway route table, so it never reaches
  * the `auth: "edge"` middleware: it falls through to the runtime-proxy
  * catch-all, or to the IPC fast path when the client sends
- * `X-Vellum-Proxy-Server: ipc`. Both validate the edge JWT inline and stamp on
+ * `X-Cadet-Proxy-Server: ipc`. Both validate the edge JWT inline and stamp on
  * their own, so both need their own coverage.
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
@@ -113,7 +113,7 @@ function mintEdge(
   scopeProfile: ScopeProfile = "actor_client_v1",
 ): string {
   return mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub,
     scope_profile: scopeProfile,
     policy_epoch: CURRENT_POLICY_EPOCH,
@@ -188,7 +188,7 @@ function messageRequest(token?: string, opts: { ipc?: boolean } = {}): Request {
     headers.authorization = `Bearer ${token}`;
   }
   if (opts.ipc) {
-    headers["x-vellum-proxy-server"] = "ipc";
+    headers["x-cadet-proxy-server"] = "ipc";
   }
   return new Request("http://127.0.0.1:7830/v1/messages", {
     method: "POST",

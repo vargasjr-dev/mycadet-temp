@@ -1,7 +1,7 @@
 ---
 name: chat-complex-documents
 description: Chat with and search your complex documents — ask questions, extract tables and fields, and get answers grounded in the source. Connects the hosted Unstructured Transform MCP server to parse, structure, and enrich PDFs, Word/Excel/PowerPoint, images, scanned files, emails, and 60+ other formats into clean, AI-ready text for search, Q&A, and summarization without building a custom parsing pipeline.
-compatibility: "Works on both the Vellum desktop app (local daemon) and the Vellum web app (platform-hosted). Requires an Unstructured account to authorize during the OAuth step."
+compatibility: "Works on both the Cadet desktop app (local daemon) and the Cadet web app (platform-hosted). Requires an Unstructured account to authorize during the OAuth step."
 metadata:
   icon: assets/icon.svg
   emoji: "📄"

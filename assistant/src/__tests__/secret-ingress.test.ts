@@ -284,7 +284,7 @@ describe("checkIngressForSecrets", () => {
   });
 
   test("does not block an allowlisted token-shaped value", () => {
-    const dataDir = join(process.env.VELLUM_WORKSPACE_DIR!, "data");
+    const dataDir = join(process.env.CADET_WORKSPACE_DIR!, "data");
     mkdirSync(dataDir, { recursive: true });
     try {
       writeFileSync(

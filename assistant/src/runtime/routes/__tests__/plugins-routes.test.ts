@@ -27,7 +27,7 @@
  *   - Forwards `pathParams.name` to the `uninstallPlugin` lib
  *   - Returns `{ name, target }` mirroring the lib's `UninstallPluginResult`
  *   - Publishes `sync_changed(plugins:list)` on success (threading the
- *     `x-vellum-client-id` origin); no broadcast on an error path
+ *     `x-cadet-client-id` origin); no broadcast on an error path
  *   - Maps `InvalidPluginNameError` → BadRequestError (400)
  *   - Maps `PluginNotInstalledError` → NotFoundError (404)
  *   - Maps unknown errors → InternalError (500) with message preserved
@@ -37,7 +37,7 @@
  *   - Returns `{ ok: true }` and publishes a `sync_changed` carrying the
  *     `plugins:list` tag via the canonical resource-sync publisher (enable and
  *     disable emit the SAME invalidation)
- *   - Threads `x-vellum-client-id` into the published event's `originClientId`
+ *   - Threads `x-cadet-client-id` into the published event's `originClientId`
  *   - Enable pokes the imperative plugin source reconcile, which activates a
  *     plugin the boot scan skipped for its sentinel and converges its
  *     schedules and MCP servers
@@ -594,7 +594,7 @@ describe("GET /v1/plugins", () => {
     expect(entry?.issues).toEqual(["missing package.json"]);
   });
 
-  test("serializes `icon` from vellum.icon, omitting it when absent", async () => {
+  test("serializes `icon` from cadet.icon, omitting it when absent", async () => {
     installedFixture = [
       pluginEntry({
         name: "with-icon",
@@ -1006,11 +1006,11 @@ describe("GET /v1/plugins/search", () => {
       catalog(ref, [
         {
           name: "simple-memory",
-          path: "github:vellum-ai/simple-memory@ed09a4c01bf18e4ac8859faee94cb65c7cbd1ca3",
+          path: "github:vargasjr-dev/simple-memory@ed09a4c01bf18e4ac8859faee94cb65c7cbd1ca3",
           category: "productivity",
           source: {
             kind: "github",
-            repo: "vellum-ai/simple-memory",
+            repo: "vargasjr-dev/simple-memory",
             ref: "ed09a4c01bf18e4ac8859faee94cb65c7cbd1ca3",
           },
         },
@@ -1046,11 +1046,11 @@ describe("GET /v1/plugins/search", () => {
       matches: [
         {
           name: "simple-memory",
-          path: "github:vellum-ai/simple-memory@ed09a4c01bf18e4ac8859faee94cb65c7cbd1ca3",
+          path: "github:vargasjr-dev/simple-memory@ed09a4c01bf18e4ac8859faee94cb65c7cbd1ca3",
           category: "productivity",
           source: {
             kind: "github",
-            repo: "vellum-ai/simple-memory",
+            repo: "vargasjr-dev/simple-memory",
             ref: "ed09a4c01bf18e4ac8859faee94cb65c7cbd1ca3",
           },
         },
@@ -1316,7 +1316,7 @@ describe("DELETE /v1/plugins/:name", () => {
   test("forwards pathParams.name to uninstallPlugin and returns its result", async () => {
     uninstallSpy.mockImplementation(async (opts) => ({
       name: opts.name,
-      target: `/workspace/.vellum/plugins/${opts.name}`,
+      target: `/workspace/.cadet/plugins/${opts.name}`,
     }));
 
     const result = await invokeUninstall({
@@ -1327,14 +1327,14 @@ describe("DELETE /v1/plugins/:name", () => {
     expect(uninstallSpy.mock.calls[0]?.[0]).toEqual({ name: "simple-memory" });
     expect(result).toEqual({
       name: "simple-memory",
-      target: "/workspace/.vellum/plugins/simple-memory",
+      target: "/workspace/.cadet/plugins/simple-memory",
     });
   });
 
   test("publishes sync_changed(plugins:list) on a successful uninstall", async () => {
     uninstallSpy.mockImplementation(async (opts) => ({
       name: opts.name,
-      target: `/workspace/.vellum/plugins/${opts.name}`,
+      target: `/workspace/.cadet/plugins/${opts.name}`,
     }));
 
     await invokeUninstall({ pathParams: { name: "simple-memory" } });
@@ -1345,7 +1345,7 @@ describe("DELETE /v1/plugins/:name", () => {
   test("returns non-fatal cleanup warnings from the shared uninstall", async () => {
     uninstallSpy.mockImplementation(async (opts) => ({
       name: opts.name,
-      target: `/workspace/.vellum/plugins/${opts.name}`,
+      target: `/workspace/.cadet/plugins/${opts.name}`,
       warnings: ["plugin.uninstall.mcp_oauth_credentials_unchecked"],
     }));
 
@@ -1358,15 +1358,15 @@ describe("DELETE /v1/plugins/:name", () => {
     ]);
   });
 
-  test("threads x-vellum-client-id into the published event's originClientId", async () => {
+  test("threads x-cadet-client-id into the published event's originClientId", async () => {
     uninstallSpy.mockImplementation(async (opts) => ({
       name: opts.name,
-      target: `/workspace/.vellum/plugins/${opts.name}`,
+      target: `/workspace/.cadet/plugins/${opts.name}`,
     }));
 
     await invokeUninstall({
       pathParams: { name: "simple-memory" },
-      headers: { "x-vellum-client-id": "client-abc" },
+      headers: { "x-cadet-client-id": "client-abc" },
     });
 
     const [msg] = broadcastMessageSpy.mock.calls[0]!;
@@ -1404,7 +1404,7 @@ describe("DELETE /v1/plugins/:name", () => {
     uninstallSpy.mockImplementation((opts) => {
       throw new PluginNotInstalledError(
         opts.name,
-        `/workspace/.vellum/plugins/${opts.name}`,
+        `/workspace/.cadet/plugins/${opts.name}`,
       );
     });
 
@@ -1602,7 +1602,7 @@ const CAVEMAN_CATALOG_MATCH: PluginSearchMatch = {
 function trustedInstallResult(opts: InstallPluginOptions): InstallPluginResult {
   return {
     name: opts.name,
-    target: `/workspace/.vellum/plugins/${opts.name}`,
+    target: `/workspace/.cadet/plugins/${opts.name}`,
     fileCount: 7,
     ref: opts.trustedSource?.ref ?? opts.ref ?? "main",
     commit: opts.trustedSource?.ref ?? null,
@@ -1626,8 +1626,8 @@ describe("POST /v1/plugins/install", () => {
     // The default (no-pin) path reads the same gated catalog `search`
     // advertises and installs from a trusted pre-resolved source — no direct
     // `plugins/marketplace.json` fetch (the pin/marketplace path is untouched).
-    const prev = process.env.VELLUM_DISABLE_PLATFORM;
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    const prev = process.env.CADET_DISABLE_PLATFORM;
+    process.env.CADET_DISABLE_PLATFORM = "true";
     try {
       installSpy.mockImplementation(async (opts) => trustedInstallResult(opts));
 
@@ -1654,15 +1654,15 @@ describe("POST /v1/plugins/install", () => {
       expect(result).toEqual({
         ok: true,
         name: "caveman",
-        target: "/workspace/.vellum/plugins/caveman",
+        target: "/workspace/.cadet/plugins/caveman",
         fileCount: 7,
         ref: CAVEMAN_PIN,
       });
     } finally {
       if (prev === undefined) {
-        delete process.env.VELLUM_DISABLE_PLATFORM;
+        delete process.env.CADET_DISABLE_PLATFORM;
       } else {
-        process.env.VELLUM_DISABLE_PLATFORM = prev;
+        process.env.CADET_DISABLE_PLATFORM = prev;
       }
     }
   });
@@ -1684,7 +1684,7 @@ describe("POST /v1/plugins/install", () => {
     );
     installSpy.mockImplementation(async (opts) => ({
       name: opts.name,
-      target: `/workspace/.vellum/plugins/${opts.name}`,
+      target: `/workspace/.cadet/plugins/${opts.name}`,
       fileCount: 2,
       ref: "1.0.0",
       commit: null,
@@ -1705,7 +1705,7 @@ describe("POST /v1/plugins/install", () => {
     expect(result).toEqual({
       ok: true,
       name: "fathom",
-      target: "/workspace/.vellum/plugins/fathom",
+      target: "/workspace/.cadet/plugins/fathom",
       fileCount: 2,
       ref: "1.0.0",
     });
@@ -1719,12 +1719,12 @@ describe("POST /v1/plugins/install", () => {
     expectPluginsListBroadcast();
   });
 
-  test("threads x-vellum-client-id into the published event's originClientId", async () => {
+  test("threads x-cadet-client-id into the published event's originClientId", async () => {
     installSpy.mockImplementation(async (opts) => trustedInstallResult(opts));
 
     await invokeInstall({
       body: { name: "caveman" },
-      headers: { "x-vellum-client-id": "client-abc" },
+      headers: { "x-cadet-client-id": "client-abc" },
     });
 
     const [msg] = broadcastMessageSpy.mock.calls[0]!;
@@ -1821,7 +1821,7 @@ describe("POST /v1/plugins/install", () => {
     installSpy.mockImplementation(async (opts) => {
       throw new PluginAlreadyInstalledError(
         opts.name,
-        `/workspace/.vellum/plugins/${opts.name}`,
+        `/workspace/.cadet/plugins/${opts.name}`,
       );
     });
 
@@ -1883,7 +1883,7 @@ describe("POST /v1/plugins/install", () => {
     }));
     installSpy.mockImplementation(async (opts) => ({
       name: opts.name,
-      target: `/workspace/.vellum/plugins/${opts.name}`,
+      target: `/workspace/.cadet/plugins/${opts.name}`,
       fileCount: 7,
       ref: opts.ref ?? "main",
       commit: "a".repeat(40),
@@ -2001,7 +2001,7 @@ function inspection(
     local:
       overrides.local === undefined
         ? {
-            target: "/workspace/.vellum/plugins/level-up",
+            target: "/workspace/.cadet/plugins/level-up",
             commit: "60a392b0000000000000000000000000000000aa",
             committedAt: "2026-06-01T12:34:56.000Z",
             version: "0.1.0",
@@ -2009,7 +2009,7 @@ function inspection(
             installedAt: "2026-06-08T00:00:00.000Z",
             source: {
               kind: "github",
-              owner: "vellum-ai",
+              owner: "vargasjr-dev",
               repo: "level-up",
               ref: "60a392b0000000000000000000000000000000aa",
             },
@@ -2025,12 +2025,12 @@ function inspection(
     remote:
       overrides.remote === undefined
         ? {
-            repo: "vellum-ai/level-up",
+            repo: "vargasjr-dev/level-up",
             path: "",
             commit: "3eae1820000000000000000000000000000000bb",
             committedAt: "2026-06-05T08:12:24.000Z",
             description: "Surfaces a Level Up diff card.",
-            homepage: "https://github.com/vellum-ai/level-up",
+            homepage: "https://github.com/vargasjr-dev/level-up",
             license: "MIT",
             category: null,
             marketplaceRef: "main",
@@ -2169,7 +2169,7 @@ function upgradeResult(
       overrides.toTimestamp === undefined
         ? "2026-06-05T08:12:24.000Z"
         : overrides.toTimestamp,
-    target: overrides.target ?? "/workspace/.vellum/plugins/level-up",
+    target: overrides.target ?? "/workspace/.cadet/plugins/level-up",
     fileCount: overrides.fileCount === undefined ? 12 : overrides.fileCount,
     dryRun: overrides.dryRun ?? false,
     strategy: overrides.strategy ?? "overwrite",
@@ -2225,12 +2225,12 @@ describe("POST /v1/plugins/:name/upgrade", () => {
     expectPluginsListBroadcast();
   });
 
-  test("threads x-vellum-client-id into the published event's originClientId", async () => {
+  test("threads x-cadet-client-id into the published event's originClientId", async () => {
     upgradeSpy.mockImplementation(async () => upgradeResult());
 
     await invokeUpgrade({
       pathParams: { name: "level-up" },
-      headers: { "x-vellum-client-id": "client-abc" },
+      headers: { "x-cadet-client-id": "client-abc" },
     });
 
     const [msg] = broadcastMessageSpy.mock.calls[0]!;
@@ -2258,7 +2258,7 @@ describe("POST /v1/plugins/:name/upgrade", () => {
       fromTimestamp: "2026-06-01T12:34:56.000Z",
       toCommit: "3eae1820000000000000000000000000000000bb",
       toTimestamp: "2026-06-05T08:12:24.000Z",
-      target: "/workspace/.vellum/plugins/level-up",
+      target: "/workspace/.cadet/plugins/level-up",
       fileCount: 12,
       dryRun: false,
       strategy: "overwrite",
@@ -2468,7 +2468,7 @@ describe("POST /v1/plugins/:name/upgrade", () => {
     upgradeSpy.mockImplementation(async () => {
       throw new PluginNotInstalledError(
         "ghost",
-        "/workspace/.vellum/plugins/ghost",
+        "/workspace/.cadet/plugins/ghost",
       );
     });
 
@@ -2531,7 +2531,7 @@ describe("POST /v1/plugins/:name/upgrade", () => {
 
   test("PluginNotFoundError → NotFoundError (404)", async () => {
     upgradeSpy.mockImplementation(async () => {
-      throw new PluginNotFoundError("level-up", "main", "vellum-ai/level-up");
+      throw new PluginNotFoundError("level-up", "main", "vargasjr-dev/level-up");
     });
 
     await expect(
@@ -2544,7 +2544,7 @@ describe("POST /v1/plugins/:name/upgrade", () => {
     // so surface 503 rather than a misleading 500.
     upgradeSpy.mockImplementation(async () => {
       throw new PluginSourceUnavailableError(
-        "GitHub tree listing for vellum-ai/level-up: HTTP 403",
+        "GitHub tree listing for vargasjr-dev/level-up: HTTP 403",
         403,
       );
     });
@@ -2575,7 +2575,7 @@ function diffResult(
 ): PluginDiffResult {
   return {
     name: overrides.name ?? "level-up",
-    target: overrides.target ?? "/workspace/.vellum/plugins/level-up",
+    target: overrides.target ?? "/workspace/.cadet/plugins/level-up",
     commit: overrides.commit ?? "60a392b0000000000000000000000000000000aa",
     committedAt: overrides.committedAt ?? "2026-06-01T12:34:56.000Z",
     clean: overrides.clean ?? false,
@@ -2630,7 +2630,7 @@ describe("POST /v1/plugins/:name/diff", () => {
     diffSpy.mockImplementation(async () => {
       throw new PluginNotInstalledError(
         "ghost",
-        "/workspace/.vellum/plugins/ghost",
+        "/workspace/.cadet/plugins/ghost",
       );
     });
 
@@ -2645,7 +2645,7 @@ describe("POST /v1/plugins/:name/diff", () => {
       throw new PluginNotFoundError(
         "level-up",
         "deadbeef",
-        "vellum-ai/level-up",
+        "vargasjr-dev/level-up",
       );
     });
 
@@ -2674,7 +2674,7 @@ describe("POST /v1/plugins/:name/diff", () => {
     // retryable, so surface 503 rather than a misleading 500.
     diffSpy.mockImplementation(async () => {
       throw new PluginSourceUnavailableError(
-        "git clone failed for vellum-ai/level-up: HTTP 403",
+        "git clone failed for vargasjr-dev/level-up: HTTP 403",
         503,
       );
     });
@@ -2711,7 +2711,7 @@ function toggleResult(
   return {
     name,
     action,
-    sentinelPath: `/workspace/.vellum/plugins/${name}/.disabled`,
+    sentinelPath: `/workspace/.cadet/plugins/${name}/.disabled`,
   };
 }
 
@@ -2780,12 +2780,12 @@ describe("POST /v1/plugins/:name/enable", () => {
     expectPluginsListBroadcast();
   });
 
-  test("threads x-vellum-client-id into the published event's originClientId", async () => {
+  test("threads x-cadet-client-id into the published event's originClientId", async () => {
     enablePluginSpy.mockImplementation((name) => toggleResult(name, "enable"));
 
     await invokeEnable({
       pathParams: { name: "simple-memory" },
-      headers: { "x-vellum-client-id": "client-abc" },
+      headers: { "x-cadet-client-id": "client-abc" },
     });
 
     // The initiating client's id flows through the canonical publisher so it
@@ -2894,14 +2894,14 @@ describe("POST /v1/plugins/:name/disable", () => {
     expectPluginsListBroadcast();
   });
 
-  test("threads x-vellum-client-id into the published event's originClientId", async () => {
+  test("threads x-cadet-client-id into the published event's originClientId", async () => {
     disablePluginSpy.mockImplementation((name) =>
       toggleResult(name, "disable"),
     );
 
     await invokeDisable({
       pathParams: { name: "simple-memory" },
-      headers: { "x-vellum-client-id": "client-xyz" },
+      headers: { "x-cadet-client-id": "client-xyz" },
     });
 
     const [msg] = broadcastMessageSpy.mock.calls[0]!;

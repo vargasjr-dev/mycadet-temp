@@ -36,7 +36,7 @@ Tell the user:
 > `https://discord.com/developers/applications`
 >
 > 1. Click **New Application**
-> 2. Set the name to **Vellum Assistant**
+> 2. Set the name to **Cadet Assistant**
 > 3. Accept the Developer Terms of Service and Developer Policy
 > 4. Click **Create**
 >

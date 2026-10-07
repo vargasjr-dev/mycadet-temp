@@ -59,7 +59,7 @@ import { createGuardianBinding } from "./helpers/create-guardian-binding.js";
 
 await initializeDb();
 
-const testWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testWorkspaceDir = process.env.CADET_WORKSPACE_DIR!;
 
 test("permission simulation resolves the bundled computer-use target from input", async () => {
   const classify = spyOn(permissions, "classifyRisk").mockResolvedValue({

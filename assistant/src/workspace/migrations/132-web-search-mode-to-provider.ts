@@ -7,16 +7,16 @@ import type { WorkspaceMigration } from "./types.js";
  * Fold `services["web-search"].mode` into the provider field.
  *
  * Configs written by older versions carry two axes: `mode: "managed"` routes
- * search through the Vellum platform proxy while `provider` holds an
+ * search through the Cadet platform proxy while `provider` holds an
  * untouched BYOK choice. The schema treats `provider` as the only axis, with
- * `"vellum"` meaning managed, so this migration rewrites a managed service to
- * `provider: "vellum"` — otherwise the lingering BYOK provider would be taken
+ * `"cadet"` meaning managed, so this migration rewrites a managed service to
+ * `provider: "cadet"` — otherwise the lingering BYOK provider would be taken
  * at face value and a managed user would silently land on a provider they
  * hold no key for.
  *
  * `inference-provider-native` is the exception: it is a distinct user-facing
  * option (the inference model runs its own hosted search), so a managed
- * service on that provider keeps it verbatim rather than becoming `vellum`.
+ * service on that provider keeps it verbatim rather than becoming `cadet`.
  * Its managed fallback (platform proxy when the model has no native search
  * and no user key exists) works without a `mode`.
  *
@@ -25,7 +25,7 @@ import type { WorkspaceMigration } from "./types.js";
 export const webSearchModeToProviderMigration: WorkspaceMigration = {
   id: "132-web-search-mode-to-provider",
   description:
-    "Fold services.web-search mode into provider (managed -> provider: vellum)",
+    "Fold services.web-search mode into provider (managed -> provider: cadet)",
   run(workspaceDir: string): void {
     const configPath = join(workspaceDir, "config.json");
     if (!existsSync(configPath)) {
@@ -57,7 +57,7 @@ export const webSearchModeToProviderMigration: WorkspaceMigration = {
       service.mode === "managed" &&
       service.provider !== "inference-provider-native"
     ) {
-      service.provider = "vellum";
+      service.provider = "cadet";
     }
     delete service.mode;
 
@@ -90,12 +90,12 @@ export const webSearchModeToProviderMigration: WorkspaceMigration = {
       return;
     }
 
-    // Schemas that predate this migration accept provider "vellum" alongside
+    // Schemas that predate this migration accept provider "cadet" alongside
     // mode "managed", so the managed pair round-trips exactly. The BYOK
     // provider a managed service holds before `run()` is not recoverable —
     // `run()` overwrites it. Likewise `inference-provider-native` rolls back
     // to `your-own`: dropping `mode` erases any pairing with `managed`.
-    service.mode = service.provider === "vellum" ? "managed" : "your-own";
+    service.mode = service.provider === "cadet" ? "managed" : "your-own";
 
     writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
   },

@@ -68,7 +68,7 @@ import {
 } from "../../credential-refresh.js";
 import { getLogger } from "../../logger.js";
 import { readLimitedBodyBytes } from "../read-limited-body.js";
-import { verifyVellumSignature } from "../vellum-signature.js";
+import { verifyCadetSignature } from "../cadet-signature.js";
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 const log = getLogger("plugin-webhook");
@@ -97,7 +97,7 @@ function signingCredentialKey(
     return credentialKey(plugin, route.verification.secret.field);
   }
   return credentialKey(
-    route.signer === "vellum" ? "vellum" : plugin,
+    route.signer === "cadet" ? "cadet" : plugin,
     "webhook_secret",
   );
 }
@@ -376,7 +376,7 @@ export function createPluginWebhookHandler(deps: PluginWebhookHandlerDeps) {
       key: secretKey,
       verify: (candidate) => {
         if (!verification) {
-          return verifyVellumSignature(req.headers, body.bytes, candidate);
+          return verifyCadetSignature(req.headers, body.bytes, candidate);
         }
         const result = verifyDeclaredSignature({
           verification,
@@ -399,7 +399,7 @@ export function createPluginWebhookHandler(deps: PluginWebhookHandlerDeps) {
           plugin,
           path,
           signer: route.signer,
-          scheme: verification?.kind ?? "vellum",
+          scheme: verification?.kind ?? "cadet",
           rejection,
         },
         "Plugin webhook signature verification failed",

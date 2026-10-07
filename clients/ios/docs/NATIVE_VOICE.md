@@ -22,7 +22,7 @@ exactly four things:
 | --- | --- |
 | `VoiceAudioSessionPlugin` | Owns `AVAudioSession` for the duration of a session (`.playAndRecord` / `.voiceChat`), and reports interruptions |
 | `VoiceLiveActivityPlugin` | Requests, updates, and ends the one ActivityKit activity mirroring the session |
-| `VoiceActivity` widget extension | Renders that activity on the Lock Screen and in the Dynamic Island, plus the two Control Center / Lock Screen controls (the voice one below, and the non-voice "Open Vellum" app launcher). The same bundle also hosts three non-voice Home Screen widgets, Catch Up, Status, and Quick Actions, which draw the shared App Group snapshot and carry a voice button of their own |
+| `VoiceActivity` widget extension | Renders that activity on the Lock Screen and in the Dynamic Island, plus the two Control Center / Lock Screen controls (the voice one below, and the non-voice "Open Cadet" app launcher). The same bundle also hosts three non-voice Home Screen widgets, Catch Up, Status, and Quick Actions, which draw the shared App Group snapshot and carry a voice button of their own |
 | App Intents + `AppShortcutsProvider` | Turn a Siri phrase, a Spotlight hit, an Action Button press, a control tap, or a widget button into a `<scheme>://voice` URL |
 
 Everything native is *additive*. Remove all of it and voice still works — that
@@ -61,7 +61,7 @@ an optional platform flourish, and conflating them makes both harder to test.
 ```
 Siri phrase / Spotlight / Action Button   →  StartVoiceModeIntent
                                              StartNewVoiceConversationIntent
-                                             AskVellumIntent
+                                             AskCadetIntent
 Control Center / Lock Screen control      →  StartNewVoiceConversationIntent
 Home Screen widget voice button           →  StartNewVoiceConversationIntent
 Dynamic Island / Lock Screen tap          →  .widgetURL(VoiceModeDeepLink.resume.url())
@@ -238,13 +238,13 @@ reaches it.
 <scheme>://voice?mode=new|resume[&prompt=<percent-encoded text>]
 ```
 
-- `<scheme>` is the running build's own: `vellum-assistant`,
-  `vellum-assistant-staging`, or `vellum-assistant-dev`, set per environment as
+- `<scheme>` is the running build's own: `mycadet`,
+  `mycadet-staging`, or `mycadet-dev`, set per environment as
   `BUNDLE_URL_SCHEME` in `App/App/Config/App*.xcconfig`.
 - `mode` defaults to `new` for anything that is not exactly `resume`.
 - `resume` puts a running session back on screen; with nothing running it
   degrades to `new`.
-- `prompt` is optional free-form text (`AskVellumIntent`). The **web parser**
+- `prompt` is optional free-form text (`AskCadetIntent`). The **web parser**
   bounds and sanitizes it — 2000 characters max, control characters rejected —
   because a deep link is reachable from any app or web page that can open a URL.
   A rejected prompt does not reject the link: the session still starts.
@@ -264,9 +264,9 @@ otherwise arrive as a `prompt` of `Ben ` plus a stray parameter.
 
 | Producer | Mode | Where |
 | --- | --- | --- |
-| `StartVoiceModeIntent` (Siri: "Talk to Vellum") | `resume` | `App/App/Intents/` |
+| `StartVoiceModeIntent` (Siri: "Talk to Cadet") | `resume` | `App/App/Intents/` |
 | `StartNewVoiceConversationIntent` (Action Button, Control Center, Home Screen widgets) | `new` | `App/App/Shared/` |
-| `AskVellumIntent` (Siri collects the question) | `new` + `prompt` | `App/App/Intents/` |
+| `AskCadetIntent` (Siri collects the question) | `new` + `prompt` | `App/App/Intents/` |
 | Live Activity `widgetURL` (island / Lock Screen tap) | `resume` | `App/VoiceActivity/VoiceSessionLiveActivity.swift` |
 | Safari, a note, another app, a test link | either | — |
 
@@ -408,8 +408,8 @@ runtime: the shortcut still appears in the Shortcuts app, so it looks registered
 — Siri simply never matches a word of it. There is no build error and no log.
 
 The token resolves from **`CFBundleDisplayName`**, which `App/Info.plist` sets to
-`$(BUNDLE_DISPLAY_NAME)` and each environment's xcconfig supplies: "Vellum",
-"Vellum Staging", "Vellum Dev". All three are pronounceable, which is why one
+`$(BUNDLE_DISPLAY_NAME)` and each environment's xcconfig supplies: "Cadet",
+"Cadet Staging", "Cadet Dev". All three are pronounceable, which is why one
 phrase list serves every build. If `BUNDLE_DISPLAY_NAME` were ever dropped from
 an xcconfig, `CFBundleDisplayName` would expand to an empty string and the token
 would fall back to `CFBundleName` — which is `$(PRODUCT_NAME)`, itself
@@ -490,7 +490,7 @@ Each caller decides:
 The app and the appex read different keys, because they play different roles. The
 app *registers* the scheme in `CFBundleURLTypes`, which is what iOS routes on, so
 that is read first. An appex registers nothing — a widget extension must not
-claim a URL type — so it carries the scheme as the plain `VellumURLScheme`
+claim a URL type — so it carries the scheme as the plain `CadetURLScheme`
 Info.plist string, populated from the same `$(BUNDLE_URL_SCHEME)` variable. Both
 reject an empty value and one Xcode never expanded (`$(BUNDLE_URL_SCHEME)`
 verbatim), either of which would produce an unopenable URL.
@@ -615,7 +615,7 @@ activity rather than degrading the image.
 the app and its widget extension both reach, since a widget draws from storage
 rather than from an ActivityKit payload. `App/App/Extension.entitlements`
 declares that group and nothing else, `APP_GROUP_ID` names it per environment
-in every app and extension xcconfig, and the `VellumAppGroupId` Info.plist key
+in every app and extension xcconfig, and the `CadetAppGroupId` Info.plist key
 carries the identifier into both bundles, because the entitlement that grants
 access is not readable from Swift. Enabling the capability on the six App IDs
 is portal work; see `clients/ios/README.md`.
@@ -736,9 +736,9 @@ expect.
 
 | What | How |
 | --- | --- |
-| Deep-link contract, both modes | `xcrun simctl openurl booted "vellum-assistant-dev://voice?mode=new"` — and `…?mode=resume`, and a `&prompt=` variant with `&`, `#`, and emoji to check the round trip |
+| Deep-link contract, both modes | `xcrun simctl openurl booted "mycadet-dev://voice?mode=new"` — and `…?mode=resume`, and a `&prompt=` variant with `&`, `#`, and emoji to check the round trip |
 | Terminated-launch delivery | Force-quit the app in the simulator first, then `openurl`. This is the path that used to drop; a warm-open pass proves nothing about it |
-| Scheme isolation | Open a `vellum-assistant://` link with only the Dev build installed — nothing should happen |
+| Scheme isolation | Open a `mycadet://` link with only the Dev build installed — nothing should happen |
 | Live Activity presentations | Start a session, then background the app (`xcrun simctl launch booted com.apple.Preferences`; there is no home key). **The Dynamic Island renders in the simulator** on a Pro device: compact inline, and expanded on a touch and hold. Lock (⌘L) for the Lock Screen presentation, and check both appearances (Features → Toggle Appearance) since the accent is an arbitrary avatar color over a wallpaper |
 | The mic privacy indicator competing for the island | Also reproducible: a session holds the mic for the whole call, muted included, so the island is shared and iOS falls back to the minimal presentation. This is the one that decides whether the compact slots are ever seen during a call |
 | App Intents in the Shortcuts app | The three intents appear under the app with their icons and short titles |
@@ -770,7 +770,7 @@ The Simulator does not faithfully reproduce any of these.
 | --- | --- |
 | Backgrounded and locked audio | The simulator does not suspend the web process the way real iOS does — this is exactly the measurement the missing spike needs |
 | Siri phrase matching | Needs the on-device App Intents index and real speech. Allow a few minutes after install before the phrases resolve |
-| Action Button | iPhone 15 Pro or newer. Settings → Action Button → Shortcut → Vellum → "New voice conversation" |
+| Action Button | iPhone 15 Pro or newer. Settings → Action Button → Shortcut → Cadet → "New voice conversation" |
 | Spotlight surfacing | Device-side indexing, which lags install |
 | Apple Intelligence routing | Requires a device where Apple Intelligence is available |
 | `.notifyOthersOnDeactivation` | Start music, run a voice session, end it, confirm the music resumes |

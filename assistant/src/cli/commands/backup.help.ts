@@ -10,7 +10,7 @@ Backups capture a snapshot of the assistant workspace (config, conversations,
 trust rules, hooks, the SQLite database) as a .vbundle file. Credentials are
 NOT included — they live in the OS keychain / CES and users re-authenticate
 integrations after a restore (via the gateway). The automated worker runs on a configurable
-interval and writes to a local pool under ~/.vellum/backups/local/, optionally
+interval and writes to a local pool under ~/.cadet/backups/local/, optionally
 mirroring each snapshot to one or more offsite destinations. macOS uses
 encrypted iCloud Drive by default. Windows and Linux require an explicit path.
 
@@ -20,7 +20,7 @@ the medium (e.g. an external SSD).
 
 Examples:
   $ assistant backup enable --interval 6 --retention 3
-  $ assistant backup destinations add /Volumes/BackupSSD/vellum --plaintext
+  $ assistant backup destinations add /Volumes/BackupSSD/cadet --plaintext
   $ assistant backup status
   $ assistant backup list`,
   subcommands: [
@@ -71,7 +71,7 @@ Examples:
       helpText: `
 Offsite destinations are absolute paths the backup worker writes a copy of
 each snapshot to after the local write succeeds. macOS uses the iCloud Drive
-VellumAssistant folder until an explicit destinations array is configured.
+CadetAssistant folder until an explicit destinations array is configured.
 Windows and Linux have no implicit offsite destination.
 
 Each destination has an 'encrypt' flag. When true (the default), snapshots
@@ -80,9 +80,9 @@ as plaintext .vbundle — only use this for media you control physically.
 
 Examples:
   $ assistant backup destinations list
-  $ assistant backup destinations add /Volumes/BackupSSD/vellum --plaintext
-  $ assistant backup destinations remove /Volumes/BackupSSD/vellum
-  $ assistant backup destinations set-encrypt /Volumes/BackupSSD/vellum false`,
+  $ assistant backup destinations add /Volumes/BackupSSD/cadet --plaintext
+  $ assistant backup destinations remove /Volumes/BackupSSD/cadet
+  $ assistant backup destinations set-encrypt /Volumes/BackupSSD/cadet false`,
       subcommands: [
         {
           name: "list",
@@ -116,8 +116,8 @@ On macOS, adding the first explicit destination preserves the implicit iCloud
 destination. Windows and Linux start with only the destination supplied here.
 
 Examples:
-  $ assistant backup destinations add /Volumes/BackupSSD/vellum --plaintext
-  $ assistant backup destinations add ~/Dropbox/VellumAssistant/backups`,
+  $ assistant backup destinations add /Volumes/BackupSSD/cadet --plaintext
+  $ assistant backup destinations add ~/Dropbox/CadetAssistant/backups`,
         },
         {
           name: "remove",
@@ -131,7 +131,7 @@ Arguments:
 Errors if no destination with the given path exists.
 
 Examples:
-  $ assistant backup destinations remove /Volumes/BackupSSD/vellum`,
+  $ assistant backup destinations remove /Volumes/BackupSSD/cadet`,
         },
         {
           name: "set-encrypt",
@@ -147,8 +147,8 @@ Errors if no destination with the given path exists. Existing snapshot files
 are not modified; only future writes honour the new setting.
 
 Examples:
-  $ assistant backup destinations set-encrypt /Volumes/BackupSSD/vellum false
-  $ assistant backup destinations set-encrypt /Volumes/BackupSSD/vellum true`,
+  $ assistant backup destinations set-encrypt /Volumes/BackupSSD/cadet false
+  $ assistant backup destinations set-encrypt /Volumes/BackupSSD/cadet true`,
         },
       ],
     },

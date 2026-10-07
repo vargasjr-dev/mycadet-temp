@@ -250,7 +250,7 @@ export async function resolveMetaSlashCommand(
  *
  * A queued message records the verified requester that enqueued it
  * (`sourceActorPrincipalId`); the delete and steer routes receive the caller's
- * verified identity in the `x-vellum-actor-principal-id` header, which both
+ * verified identity in the `x-cadet-actor-principal-id` header, which both
  * adapters derive from the auth context rather than from anything the caller
  * sent. When both are present they must match: `message_queued` is broadcast
  * to every subscriber of the assistant, so every requestId in a conversation
@@ -263,7 +263,7 @@ export async function resolveMetaSlashCommand(
  *
  * - **The caller has no actor principal.** Local/IPC and service principals
  *   carry no `actorPrincipalId`; by the convention this routes layer already
- *   follows (see `vellum-actor-trust.ts`) a caller with no principal is the
+ *   follows (see `cadet-actor-trust.ts`) a caller with no principal is the
  *   guardian by construction, so the CLI keeps working.
  * - **The message has no recorded requester.** Daemon-internal enqueues (agent
  *   wake, subagent notifications, surface actions) have no enqueuing actor to

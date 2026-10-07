@@ -736,7 +736,7 @@ async function produce(conversationId: string, turnIndex: number) {
     turnIndex,
     // v3 sections are personal memory, so the injector only produces for an actor
     // allowed to see them. These cases are about the commit hook, not the gate.
-    trust: { trustClass: "guardian", sourceChannel: "vellum" } as never,
+    trust: { trustClass: "guardian", sourceChannel: "cadet" } as never,
   });
   const commit = block?.meta?.[MEMORY_V3_COMMIT_META_KEY];
   if (typeof commit === "function") {

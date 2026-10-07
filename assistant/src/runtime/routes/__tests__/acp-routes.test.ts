@@ -724,7 +724,7 @@ describe("POST /v1/acp/spawn: sandboxed bun auto-install on missing binary", () 
       env?: NodeJS.ProcessEnv;
     };
     expect(options.cwd).not.toBe("/untrusted/project");
-    expect(options.cwd).toContain("vellum-acp-install-");
+    expect(options.cwd).toContain("cadet-acp-install-");
     expect(options.env?.CLAUDE_CODE_OAUTH_TOKEN).toBeUndefined();
     expect(options.env?.GEMINI_API_KEY).toBeUndefined();
     expect(options.env?.BUN_CONFIG_REGISTRY).toBe(

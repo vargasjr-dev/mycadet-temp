@@ -181,7 +181,7 @@ function liveConversation(title: string) {
   );
   activeConversation.setTrustContext({
     trustClass: "guardian",
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
   });
   setConversation(conversation.id, activeConversation);
   return {
@@ -368,7 +368,7 @@ describe("persistLiveVoicePhoto", () => {
     );
     activeConversation.setTrustContext({
       trustClass: "guardian",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
     });
     setConversation(conversation.id, activeConversation);
     const attachment = await uploadAttachment(

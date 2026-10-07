@@ -15,7 +15,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="VellumLogo" translatesAutoresizingMaskIntoConstraints="NO" id="5lJ-3O-jR7">
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="CadetLogo" translatesAutoresizingMaskIntoConstraints="NO" id="5lJ-3O-jR7">
                                 <rect key="frame" x="141.5" y="319.5" width="92" height="28"/>
                             </imageView>
                         </subviews>
@@ -34,6 +34,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="VellumLogo" width="92" height="28"/>
+        <image name="CadetLogo" width="92" height="28"/>
     </resources>
 </document>

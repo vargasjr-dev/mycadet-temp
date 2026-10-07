@@ -141,7 +141,7 @@ const {
 } = await import("./cli-path-installer");
 
 const wrapperDir = `${mockHome}/.local/bin`;
-const wrapperPath = `${wrapperDir}/vellum`;
+const wrapperPath = `${wrapperDir}/cadet`;
 const locatorPath = `${userDataPath}/cli/locator.sh`;
 
 afterEach(() => {
@@ -170,7 +170,7 @@ describe("getWrapperDir", () => {
 });
 
 describe("getWrapperPath", () => {
-  test("returns ~/.local/bin/vellum", () => {
+  test("returns ~/.local/bin/cadet", () => {
     expect(getWrapperPath()).toBe(wrapperPath);
   });
 });
@@ -193,7 +193,7 @@ describe("buildWrapperScript", () => {
   test("ends with the exec line", () => {
     expect(
       buildWrapperScript().endsWith(
-        'exec "$VELLUM_BUN" "$VELLUM_CLI_BIN" "$@"\n',
+        'exec "$CADET_BUN" "$CADET_CLI_BIN" "$@"\n',
       ),
     ).toBe(true);
   });
@@ -396,7 +396,7 @@ describe("getCliPathInstallState", () => {
       inPath: false,
       runtimeReady: false,
     });
-    expect(findExecutablesCalls).toEqual([["vellum", shellPathValue]]);
+    expect(findExecutablesCalls).toEqual([["cadet", shellPathValue]]);
   });
 
   test("returns installed with inPath true when the wrapper is the first hit", async () => {
@@ -414,11 +414,11 @@ describe("getCliPathInstallState", () => {
   test("returns shadowed with inPath true when another cadet precedes the wrapper", async () => {
     readFileSyncResult = buildWrapperScript();
     shellPathValue = `/opt/homebrew/bin:${wrapperDir}:/usr/bin:/bin`;
-    shellPathHits = ["/opt/homebrew/bin/vellum", wrapperPath];
+    shellPathHits = ["/opt/homebrew/bin/cadet", wrapperPath];
 
     expect(await getCliPathInstallState()).toEqual({
       kind: "shadowed",
-      shadowedBy: "/opt/homebrew/bin/vellum",
+      shadowedBy: "/opt/homebrew/bin/cadet",
       inPath: true,
       runtimeReady: false,
     });
@@ -427,11 +427,11 @@ describe("getCliPathInstallState", () => {
   test("returns shadowed with inPath false when the wrapper dir is not in PATH", async () => {
     readFileSyncResult = buildWrapperScript();
     shellPathValue = "/opt/homebrew/bin:/usr/bin:/bin";
-    shellPathHits = ["/opt/homebrew/bin/vellum"];
+    shellPathHits = ["/opt/homebrew/bin/cadet"];
 
     expect(await getCliPathInstallState()).toEqual({
       kind: "shadowed",
-      shadowedBy: "/opt/homebrew/bin/vellum",
+      shadowedBy: "/opt/homebrew/bin/cadet",
       inPath: false,
       runtimeReady: false,
     });
@@ -440,8 +440,8 @@ describe("getCliPathInstallState", () => {
   test("does not report shadowed when the first hit symlinks to the wrapper", async () => {
     readFileSyncResult = buildWrapperScript();
     shellPathValue = `${mockHome}/bin:/usr/bin:/bin`;
-    shellPathHits = [`${mockHome}/bin/vellum`]; // ~/bin -> ~/.local/bin
-    realpathMap[`${mockHome}/bin/vellum`] = wrapperPath;
+    shellPathHits = [`${mockHome}/bin/cadet`]; // ~/bin -> ~/.local/bin
+    realpathMap[`${mockHome}/bin/cadet`] = wrapperPath;
     realpathMap[wrapperPath] = wrapperPath;
 
     expect(await getCliPathInstallState()).toEqual({
@@ -454,12 +454,12 @@ describe("getCliPathInstallState", () => {
   test("still reports shadowed when realpath resolution fails (string-compare fallback)", async () => {
     readFileSyncResult = buildWrapperScript();
     shellPathValue = `/opt/homebrew/bin:${wrapperDir}`;
-    shellPathHits = ["/opt/homebrew/bin/vellum", wrapperPath];
+    shellPathHits = ["/opt/homebrew/bin/cadet", wrapperPath];
     // realpathMap left empty → realpathSync throws for both sides.
 
     expect(await getCliPathInstallState()).toEqual({
       kind: "shadowed",
-      shadowedBy: "/opt/homebrew/bin/vellum",
+      shadowedBy: "/opt/homebrew/bin/cadet",
       inPath: true,
       runtimeReady: false,
     });
@@ -468,7 +468,7 @@ describe("getCliPathInstallState", () => {
   test("returns installed when the wrapper wins over a later npm copy", async () => {
     readFileSyncResult = buildWrapperScript();
     shellPathValue = `${wrapperDir}:/opt/homebrew/bin:/usr/bin:/bin`;
-    shellPathHits = [wrapperPath, "/opt/homebrew/bin/vellum"];
+    shellPathHits = [wrapperPath, "/opt/homebrew/bin/cadet"];
 
     expect(await getCliPathInstallState()).toEqual({
       kind: "installed",
@@ -506,11 +506,11 @@ describe("getCliPathInstallState", () => {
     readFileSyncResult = buildWrapperScript();
     cliBinExists = true;
     shellPathValue = `/opt/homebrew/bin:${wrapperDir}`;
-    shellPathHits = ["/opt/homebrew/bin/vellum", wrapperPath];
+    shellPathHits = ["/opt/homebrew/bin/cadet", wrapperPath];
 
     expect(await getCliPathInstallState()).toEqual({
       kind: "shadowed",
-      shadowedBy: "/opt/homebrew/bin/vellum",
+      shadowedBy: "/opt/homebrew/bin/cadet",
       inPath: true,
       runtimeReady: true,
     });
@@ -519,7 +519,7 @@ describe("getCliPathInstallState", () => {
   test("null shell PATH degrades to installed/inPath:false without shadow probing", async () => {
     readFileSyncResult = buildWrapperScript();
     shellPathValue = null;
-    shellPathHits = ["/opt/homebrew/bin/vellum", wrapperPath];
+    shellPathHits = ["/opt/homebrew/bin/cadet", wrapperPath];
 
     expect(await getCliPathInstallState()).toEqual({
       kind: "installed",

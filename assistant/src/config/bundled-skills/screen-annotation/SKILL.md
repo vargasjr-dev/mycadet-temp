@@ -1,7 +1,7 @@
 ---
 name: screen-annotation
 description: Point at things on the screen the user is showing you
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🫵"
   cadet:

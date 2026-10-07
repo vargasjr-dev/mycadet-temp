@@ -38,7 +38,7 @@ After the user clicks:
 
 > Fill in the following:
 >
-> - **App name:** Vellum Assistant
+> - **App name:** Cadet Assistant
 > - **App description:** Personal assistant integration
 > - **Redirect URI:** (I'll get the right URL for you in a moment)
 
@@ -85,7 +85,7 @@ Open: the app's **Settings** page.
 
 Follow the `cadet-oauth-integrations` workflow to collect credentials, register the OAuth app, connect, and verify.
 
-> I'll start the Spotify authorization flow now. You should see a Spotify consent page asking you to allow **Vellum Assistant** to access your account.
+> I'll start the Spotify authorization flow now. You should see a Spotify consent page asking you to allow **Cadet Assistant** to access your account.
 >
 > Review the permissions and click **Agree**.
 

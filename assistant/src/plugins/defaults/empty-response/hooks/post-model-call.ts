@@ -210,7 +210,7 @@ const postModelCall: HookFunction<PostModelCallContext> = async (ctx) => {
     // model response after a tool result makes the agent loop exit via
     // "no_tool_calls" and the runner reports the subagent as `completed` with
     // empty output — a silent failure the parent can't distinguish from a
-    // real result (see vellum-ai/vellum-assistant#43327). The refusal-rewrite
+    // real result (see vargasjr-dev/mycadet#43327). The refusal-rewrite
     // above is a user-facing terminal fallback, not a re-query, so it stays
     // ungated.
     if (ctx.callSite !== "mainAgent" && ctx.callSite !== "subagentSpawn") {

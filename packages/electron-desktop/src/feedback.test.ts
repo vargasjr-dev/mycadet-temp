@@ -64,7 +64,7 @@ describe("collectRedactedLogs", () => {
   test("skips unreadable files and redacts secrets and user paths", async () => {
     configureFeedback(
       dependencies({
-        getLogFilePaths: () => ["missing.log", "vellum.log"],
+        getLogFilePaths: () => ["missing.log", "cadet.log"],
         readFile: async (filePath) => {
           if (filePath === "missing.log") {
             throw new Error("missing");

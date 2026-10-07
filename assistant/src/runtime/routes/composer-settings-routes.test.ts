@@ -40,8 +40,8 @@ afterEach(() => {
 test("uses the caller identity and emits value-free invalidation after saving", async () => {
   await patch.handler({
     headers: {
-      "x-vellum-actor-principal-id": "user-1",
-      "x-vellum-client-id": "client-1",
+      "x-cadet-actor-principal-id": "user-1",
+      "x-cadet-client-id": "client-1",
     },
     body: { lastAutonomy: "low" },
   });
@@ -51,7 +51,7 @@ test("uses the caller identity and emits value-free invalidation after saving", 
     "client-1",
   );
   const result = await get.handler({
-    headers: { "x-vellum-actor-principal-id": "user-2" },
+    headers: { "x-cadet-actor-principal-id": "user-2" },
   });
   expect(result).toMatchObject({ preferences: { lastAutonomy: null } });
 });
@@ -62,7 +62,7 @@ test("refuses preferences with no resolved identity", async () => {
 test("the body cannot select another user's preferences", async () => {
   await expect(
     patch.handler({
-      headers: { "x-vellum-actor-principal-id": "user-1" },
+      headers: { "x-cadet-actor-principal-id": "user-1" },
       body: { principalId: "user-2", lastModeId: "balanced" },
     }),
   ).rejects.toThrow();

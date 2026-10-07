@@ -78,7 +78,7 @@ const {
   extractDeepLinkFromArgv,
   handleDeepLink,
   installDeepLinks,
-  parseVellumUrl,
+  parseCadetUrl,
   resolveAcceptedSchemes,
   resolveAuthCallbackScheme,
   resolveRegisteredSchemes,
@@ -131,60 +131,60 @@ afterEach(() => {
   windows = [];
 });
 
-describe("parseVellumUrl", () => {
-  test("vellum://send?message=hi → send with the message", () => {
-    expect(parseVellumUrl("vellum://send?message=hi")).toEqual({
+describe("parseCadetUrl", () => {
+  test("mycadet://send?message=hi → send with the message", () => {
+    expect(parseCadetUrl("mycadet://send?message=hi")).toEqual({
       kind: "send",
       message: "hi",
     });
   });
 
-  test("vellum-assistant://send?message=hi → same shape under the alternate scheme", () => {
-    expect(parseVellumUrl("vellum-assistant://send?message=hi")).toEqual({
+  test("mycadet://send?message=hi → same shape under the alternate scheme", () => {
+    expect(parseCadetUrl("mycadet://send?message=hi")).toEqual({
       kind: "send",
       message: "hi",
     });
   });
 
-  test("vellum://send → empty message (preserved, renderer decides)", () => {
-    expect(parseVellumUrl("vellum://send")).toEqual({
+  test("mycadet://send → empty message (preserved, renderer decides)", () => {
+    expect(parseCadetUrl("mycadet://send")).toEqual({
       kind: "send",
       message: "",
     });
   });
 
-  test("vellum://send decodes percent-encoded query parameters", () => {
-    expect(parseVellumUrl("vellum://send?message=hello%20world")).toEqual({
+  test("mycadet://send decodes percent-encoded query parameters", () => {
+    expect(parseCadetUrl("mycadet://send?message=hello%20world")).toEqual({
       kind: "send",
       message: "hello world",
     });
   });
 
-  test("vellum://thread/abc-123 → openThread with the id", () => {
-    expect(parseVellumUrl("vellum://thread/abc-123")).toEqual({
+  test("mycadet://thread/abc-123 → openThread with the id", () => {
+    expect(parseCadetUrl("mycadet://thread/abc-123")).toEqual({
       kind: "openThread",
       threadId: "abc-123",
     });
   });
 
-  test("vellum://thread/abc-123/extra → openThread on first segment, extras ignored", () => {
-    expect(parseVellumUrl("vellum://thread/abc-123/extra")).toEqual({
+  test("mycadet://thread/abc-123/extra → openThread on first segment, extras ignored", () => {
+    expect(parseCadetUrl("mycadet://thread/abc-123/extra")).toEqual({
       kind: "openThread",
       threadId: "abc-123",
     });
   });
 
-  test("vellum://thread → unknown (no id)", () => {
-    expect(parseVellumUrl("vellum://thread")).toEqual({
+  test("mycadet://thread → unknown (no id)", () => {
+    expect(parseCadetUrl("mycadet://thread")).toEqual({
       kind: "unknown",
-      url: "vellum://thread",
+      url: "mycadet://thread",
     });
   });
 
-  test("vellum://billing/checkout-complete?status=success&session_id=… → billingCheckoutComplete", () => {
+  test("mycadet://billing/checkout-complete?status=success&session_id=… → billingCheckoutComplete", () => {
     expect(
-      parseVellumUrl(
-        "vellum://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
+      parseCadetUrl(
+        "mycadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
       ),
     ).toEqual({
       kind: "billingCheckoutComplete",
@@ -196,8 +196,8 @@ describe("parseVellumUrl", () => {
 
   test("checkout-complete under the alternate scheme parses the same", () => {
     expect(
-      parseVellumUrl(
-        "vellum-assistant://billing/checkout-complete?status=success&session_id=cs_live_XYZ",
+      parseCadetUrl(
+        "mycadet://billing/checkout-complete?status=success&session_id=cs_live_XYZ",
       ),
     ).toEqual({
       kind: "billingCheckoutComplete",
@@ -209,7 +209,7 @@ describe("parseVellumUrl", () => {
 
   test("status=cancel → cancel with no session id", () => {
     expect(
-      parseVellumUrl("vellum://billing/checkout-complete?status=cancel"),
+      parseCadetUrl("mycadet://billing/checkout-complete?status=cancel"),
     ).toEqual({
       kind: "billingCheckoutComplete",
       status: "cancel",
@@ -220,8 +220,8 @@ describe("parseVellumUrl", () => {
 
   test("status=cancel ignores any session id that rides along", () => {
     expect(
-      parseVellumUrl(
-        "vellum://billing/checkout-complete?status=cancel&session_id=cs_test_a1B2",
+      parseCadetUrl(
+        "mycadet://billing/checkout-complete?status=cancel&session_id=cs_test_a1B2",
       ),
     ).toEqual({
       kind: "billingCheckoutComplete",
@@ -233,8 +233,8 @@ describe("parseVellumUrl", () => {
 
   test("flow=top_up is carried through on both statuses", () => {
     expect(
-      parseVellumUrl(
-        "vellum://billing/checkout-complete?status=success&session_id=cs_test_a1B2&flow=top_up",
+      parseCadetUrl(
+        "mycadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2&flow=top_up",
       ),
     ).toEqual({
       kind: "billingCheckoutComplete",
@@ -243,8 +243,8 @@ describe("parseVellumUrl", () => {
       flow: "top_up",
     });
     expect(
-      parseVellumUrl(
-        "vellum://billing/checkout-complete?status=cancel&flow=top_up",
+      parseCadetUrl(
+        "mycadet://billing/checkout-complete?status=cancel&flow=top_up",
       ),
     ).toEqual({
       kind: "billingCheckoutComplete",
@@ -256,8 +256,8 @@ describe("parseVellumUrl", () => {
 
   test("an unrecognized flow value degrades to the subscription flow", () => {
     expect(
-      parseVellumUrl(
-        "vellum://billing/checkout-complete?status=cancel&flow=bogus",
+      parseCadetUrl(
+        "mycadet://billing/checkout-complete?status=cancel&flow=bogus",
       ),
     ).toEqual({
       kind: "billingCheckoutComplete",
@@ -269,79 +269,79 @@ describe("parseVellumUrl", () => {
 
   test("success without a session id → unknown (never a success state with nothing to open)", () => {
     expect(
-      parseVellumUrl("vellum://billing/checkout-complete?status=success"),
+      parseCadetUrl("mycadet://billing/checkout-complete?status=success"),
     ).toEqual({
       kind: "unknown",
-      url: "vellum://billing/checkout-complete",
+      url: "mycadet://billing/checkout-complete",
     });
   });
 
   test("success with a malformed session id → unknown, query stripped", () => {
     expect(
-      parseVellumUrl(
-        "vellum://billing/checkout-complete?status=success&session_id=../../etc/passwd",
+      parseCadetUrl(
+        "mycadet://billing/checkout-complete?status=success&session_id=../../etc/passwd",
       ),
     ).toEqual({
       kind: "unknown",
-      url: "vellum://billing/checkout-complete",
+      url: "mycadet://billing/checkout-complete",
     });
   });
 
   test("missing / unrecognized status → unknown, query stripped (no session-id leak)", () => {
     expect(
-      parseVellumUrl(
-        "vellum://billing/checkout-complete?session_id=cs_test_a1B2",
+      parseCadetUrl(
+        "mycadet://billing/checkout-complete?session_id=cs_test_a1B2",
       ),
-    ).toEqual({ kind: "unknown", url: "vellum://billing/checkout-complete" });
+    ).toEqual({ kind: "unknown", url: "mycadet://billing/checkout-complete" });
     expect(
-      parseVellumUrl(
-        "vellum://billing/checkout-complete?status=bogus&session_id=cs_test_a1B2",
+      parseCadetUrl(
+        "mycadet://billing/checkout-complete?status=bogus&session_id=cs_test_a1B2",
       ),
-    ).toEqual({ kind: "unknown", url: "vellum://billing/checkout-complete" });
+    ).toEqual({ kind: "unknown", url: "mycadet://billing/checkout-complete" });
   });
 
   test("unrecognized billing path → unknown, query stripped", () => {
     expect(
-      parseVellumUrl("vellum://billing/other?session_id=cs_test_a1B2"),
-    ).toEqual({ kind: "unknown", url: "vellum://billing/other" });
-    expect(parseVellumUrl("vellum://billing")).toEqual({
+      parseCadetUrl("mycadet://billing/other?session_id=cs_test_a1B2"),
+    ).toEqual({ kind: "unknown", url: "mycadet://billing/other" });
+    expect(parseCadetUrl("mycadet://billing")).toEqual({
       kind: "unknown",
-      url: "vellum://billing",
+      url: "mycadet://billing",
     });
   });
 
   test("rejects foreign schemes — javascript: returns unknown", () => {
-    expect(parseVellumUrl("javascript:alert(1)")).toEqual({
+    expect(parseCadetUrl("javascript:alert(1)")).toEqual({
       kind: "unknown",
       url: "javascript:alert(1)",
     });
   });
 
   test("rejects file: scheme", () => {
-    expect(parseVellumUrl("file:///etc/passwd")).toEqual({
+    expect(parseCadetUrl("file:///etc/passwd")).toEqual({
       kind: "unknown",
       url: "file:///etc/passwd",
     });
   });
 
   test("rejects http: scheme", () => {
-    expect(parseVellumUrl("http://vellum.ai/send")).toEqual({
+    expect(parseCadetUrl("http://mycadet.ai/send")).toEqual({
       kind: "unknown",
-      url: "http://vellum.ai/send",
+      url: "http://mycadet.ai/send",
     });
   });
 
   test("malformed input → unknown (catches URL constructor throws)", () => {
-    expect(parseVellumUrl("not a url at all")).toEqual({
+    expect(parseCadetUrl("not a url at all")).toEqual({
       kind: "unknown",
       url: "not a url at all",
     });
   });
 
-  test("unrecognized vellum://… host → unknown", () => {
-    expect(parseVellumUrl("vellum://garbage")).toEqual({
+  test("unrecognized mycadet://… host → unknown", () => {
+    expect(parseCadetUrl("mycadet://garbage")).toEqual({
       kind: "unknown",
-      url: "vellum://garbage",
+      url: "mycadet://garbage",
     });
   });
 
@@ -349,17 +349,17 @@ describe("parseVellumUrl", () => {
     // The legacy code must not survive into the URL the renderer logs as
     // a `deeplink.unknown` log.
     expect(
-      parseVellumUrl("vellum://auth/callback?code=secret&state=xyz"),
-    ).toEqual({ kind: "unknown", url: "vellum://auth/callback" });
+      parseCadetUrl("mycadet://auth/callback?code=secret&state=xyz"),
+    ).toEqual({ kind: "unknown", url: "mycadet://auth/callback" });
     expect(
-      parseVellumUrl("vellum-assistant://auth/callback?code=secret"),
-    ).toEqual({ kind: "unknown", url: "vellum-assistant://auth/callback" });
+      parseCadetUrl("mycadet://auth/callback?code=secret"),
+    ).toEqual({ kind: "unknown", url: "mycadet://auth/callback" });
   });
 
-  test("vellum-assistant://connect?url=…&code=… → connect carrying the base and the device code", () => {
+  test("mycadet://connect?url=…&code=… → connect carrying the base and the device code", () => {
     expect(
-      parseVellumUrl(
-        "vellum-assistant://connect?url=https%3A%2F%2Fassistant.example.com%2Fassistant-1&code=ABCD-1234",
+      parseCadetUrl(
+        "mycadet://connect?url=https%3A%2F%2Fassistant.example.com%2Fassistant-1&code=ABCD-1234",
       ),
     ).toEqual({
       kind: "connect",
@@ -373,26 +373,26 @@ describe("parseVellumUrl", () => {
     // pins `a+b/c=` surviving the encoding. Refusing it here would silently
     // drop an approved code and drop the user into a fresh approval flow.
     expect(
-      parseVellumUrl(
-        "vellum://connect?url=https%3A%2F%2Fh.example&code=a%2Bb%2Fc%3D",
+      parseCadetUrl(
+        "mycadet://connect?url=https%3A%2F%2Fh.example&code=a%2Bb%2Fc%3D",
       ),
     ).toEqual({ kind: "connect", url: "https://h.example", code: "a+b/c=" });
   });
 
   test("connect drops a code that cannot have come from a gateway", () => {
     expect(
-      parseVellumUrl(
-        "vellum://connect?url=https%3A%2F%2Fh.example&code=has%20a%20space",
+      parseCadetUrl(
+        "mycadet://connect?url=https%3A%2F%2Fh.example&code=has%20a%20space",
       ),
     ).toEqual({ kind: "connect", url: "https://h.example" });
     expect(
-      parseVellumUrl(
-        "vellum://connect?url=https%3A%2F%2Fh.example&code=%00control",
+      parseCadetUrl(
+        "mycadet://connect?url=https%3A%2F%2Fh.example&code=%00control",
       ),
     ).toEqual({ kind: "connect", url: "https://h.example" });
     expect(
-      parseVellumUrl(
-        `vellum://connect?url=https%3A%2F%2Fh.example&code=${"a".repeat(257)}`,
+      parseCadetUrl(
+        `mycadet://connect?url=https%3A%2F%2Fh.example&code=${"a".repeat(257)}`,
       ),
     ).toEqual({ kind: "connect", url: "https://h.example" });
   });
@@ -400,24 +400,24 @@ describe("parseVellumUrl", () => {
   test("connect drops a code with no base to exchange it against", () => {
     // Nothing can be done with a device code alone, so it is not carried
     // across the bridge just to be discarded there.
-    expect(parseVellumUrl("vellum://connect?code=ABCD-1234")).toEqual({
+    expect(parseCadetUrl("mycadet://connect?code=ABCD-1234")).toEqual({
       kind: "connect",
     });
     expect(
-      parseVellumUrl("vellum://connect?url=http%3A%2F%2Fevil.example&code=SEC"),
+      parseCadetUrl("mycadet://connect?url=http%3A%2F%2Fevil.example&code=SEC"),
     ).toEqual({ kind: "connect" });
   });
 
-  test("vellum://connect?bundle=… → the legacy signal, never the payload", () => {
-    const link = parseVellumUrl("vellum://connect?bundle=eyJnYXRld2F5");
+  test("mycadet://connect?bundle=… → the legacy signal, never the payload", () => {
+    const link = parseCadetUrl("mycadet://connect?bundle=eyJnYXRld2F5");
     expect(link).toEqual({ kind: "connect", legacy: true });
     expect(JSON.stringify(link)).not.toContain("eyJnYXRld2F5");
   });
 
   test("a bundle rides alongside a usable base without displacing it", () => {
     expect(
-      parseVellumUrl(
-        "vellum://connect?url=https%3A%2F%2Fh.example&code=ABCD&bundle=eyJnYXRld2F5",
+      parseCadetUrl(
+        "mycadet://connect?url=https%3A%2F%2Fh.example&code=ABCD&bundle=eyJnYXRld2F5",
       ),
     ).toEqual({
       kind: "connect",
@@ -429,15 +429,15 @@ describe("parseVellumUrl", () => {
 
   test("connect drops a non-https url param but keeps the rest of the link", () => {
     expect(
-      parseVellumUrl(
-        "vellum://connect?url=http%3A%2F%2Fevil.example&bundle=eyJnYXRld2F5",
+      parseCadetUrl(
+        "mycadet://connect?url=http%3A%2F%2Fevil.example&bundle=eyJnYXRld2F5",
       ),
     ).toEqual({ kind: "connect", legacy: true });
   });
 
   test("connect drops an unparseable url param", () => {
     expect(
-      parseVellumUrl("vellum://connect?url=not%20a%20url&bundle=eyJnYXRld2F5"),
+      parseCadetUrl("mycadet://connect?url=not%20a%20url&bundle=eyJnYXRld2F5"),
     ).toEqual({ kind: "connect", legacy: true });
   });
 
@@ -445,8 +445,8 @@ describe("parseVellumUrl", () => {
     // The user clicked a connect link; even with every field missing or
     // malformed the renderer routes them to the connect flow with guidance
     // instead of logging an unknown URL.
-    expect(parseVellumUrl("vellum://connect")).toEqual({ kind: "connect" });
-    expect(parseVellumUrl("vellum://connect?url=&code=&bundle=")).toEqual({
+    expect(parseCadetUrl("mycadet://connect")).toEqual({ kind: "connect" });
+    expect(parseCadetUrl("mycadet://connect?url=&code=&bundle=")).toEqual({
       kind: "connect",
     });
   });
@@ -461,7 +461,7 @@ describe("parseVellumUrl", () => {
     ).map((method) => spyOn(console, method));
     try {
       handleDeepLink(
-        "vellum://connect?url=https%3A%2F%2Fh.example&code=SECRET-CODE&bundle=U0VDUkVUYnVuZGxl",
+        "mycadet://connect?url=https%3A%2F%2Fh.example&code=SECRET-CODE&bundle=U0VDUkVUYnVuZGxl",
       );
       for (const spy of consoleSpies) {
         for (const call of spy.mock.calls) {
@@ -481,12 +481,12 @@ describe("parseVellumUrl", () => {
     // so a device code must never be able to route there. Every connect link
     // stays a connect link, malformed fields and all.
     for (const input of [
-      "vellum://connect?url=https%3A%2F%2Fh.example&code=SECRET-CODE",
-      "vellum://connect?url=nonsense&code=SECRET-CODE",
-      "vellum://connect?code=SECRET-CODE",
-      "vellum://connect/extra/path?code=SECRET-CODE",
+      "mycadet://connect?url=https%3A%2F%2Fh.example&code=SECRET-CODE",
+      "mycadet://connect?url=nonsense&code=SECRET-CODE",
+      "mycadet://connect?code=SECRET-CODE",
+      "mycadet://connect/extra/path?code=SECRET-CODE",
     ]) {
-      const link = parseVellumUrl(input);
+      const link = parseCadetUrl(input);
       expect(link.kind).toBe("connect");
       expect(JSON.stringify(link)).not.toContain("nonsense");
     }
@@ -496,25 +496,25 @@ describe("parseVellumUrl", () => {
     // A scheme that doesn't match any known environment is always
     // rejected, regardless of which env this test suite runs under.
     const url =
-      "vellum-assistant-nonexistent://auth/callback?code=abc&state=xyz";
-    expect(parseVellumUrl(url)).toEqual({ kind: "unknown", url });
+      "mycadet-nonexistent://auth/callback?code=abc&state=xyz";
+    expect(parseCadetUrl(url)).toEqual({ kind: "unknown", url });
   });
 });
 
 describe("extractDeepLinkFromArgv", () => {
-  test("returns the first vellum:// URL in argv", () => {
+  test("returns the first mycadet:// URL in argv", () => {
     const argv = [
       "/usr/local/bin/electron",
       "--inspect=9229",
-      "vellum://send?message=hi",
+      "mycadet://send?message=hi",
       "--unrelated",
     ];
-    expect(extractDeepLinkFromArgv(argv)).toBe("vellum://send?message=hi");
+    expect(extractDeepLinkFromArgv(argv)).toBe("mycadet://send?message=hi");
   });
 
   test("matches the alternate scheme too", () => {
-    expect(extractDeepLinkFromArgv(["vellum-assistant://thread/x"])).toBe(
-      "vellum-assistant://thread/x",
+    expect(extractDeepLinkFromArgv(["mycadet://thread/x"])).toBe(
+      "mycadet://thread/x",
     );
   });
 
@@ -525,17 +525,17 @@ describe("extractDeepLinkFromArgv", () => {
   });
 
   test.each([
-    "vellum://send?message=hello",
-    "vellum://thread/thread-123",
-    "vellum://billing/checkout-complete?status=cancel",
+    "mycadet://send?message=hello",
+    "mycadet://thread/thread-123",
+    "mycadet://billing/checkout-complete?status=cancel",
   ])("extracts supported Windows launch URL %s", (url) => {
-    expect(extractDeepLinkFromArgv(["Vellum.exe", url])).toBe(url);
+    expect(extractDeepLinkFromArgv(["Cadet.exe", url])).toBe(url);
   });
 });
 
 describe("installDeepLinks", () => {
   test("delivers a cold-start argv link exactly once", () => {
-    configureTestRuntime(["Vellum.exe", "vellum://send?message=cold"]);
+    configureTestRuntime(["Cadet.exe", "mycadet://send?message=cold"]);
     installDeepLinks();
 
     const drain = ipcHandleMock.mock.calls.find(
@@ -548,9 +548,9 @@ describe("installDeepLinks", () => {
   test("delivers a second-instance argv link exactly once", () => {
     installDeepLinks();
     appListeners.get("second-instance")?.({}, [
-      "Vellum.exe",
-      "vellum://thread/warm",
-      "vellum://thread/ignored",
+      "Cadet.exe",
+      "mycadet://thread/warm",
+      "mycadet://thread/ignored",
     ]);
 
     const drain = ipcHandleMock.mock.calls.find(
@@ -617,7 +617,7 @@ describe("installDeepLinks", () => {
     expect(openUrl).toBeDefined();
 
     const preventDefault = mock(() => undefined);
-    openUrl?.({ preventDefault } as unknown, "vellum://send?message=hi");
+    openUrl?.({ preventDefault } as unknown, "mycadet://send?message=hi");
 
     expect(preventDefault).toHaveBeenCalled();
   });
@@ -625,8 +625,8 @@ describe("installDeepLinks", () => {
   test("registers the cadet:deepLinks:drain IPC handler returning + clearing the buffer", () => {
     installDeepLinks();
 
-    handleDeepLink("vellum://send?message=one");
-    handleDeepLink("vellum://thread/abc");
+    handleDeepLink("mycadet://send?message=one");
+    handleDeepLink("mycadet://thread/abc");
 
     // Find the registered handler.
     const drainCall = ipcHandleMock.mock.calls.find(
@@ -650,7 +650,7 @@ describe("installDeepLinks", () => {
     )![1] as (event: unknown) => unknown[];
 
     // Backlog before any subscriber.
-    handleDeepLink("vellum://send?message=backlog");
+    handleDeepLink("mycadet://send?message=backlog");
 
     // Renderer mounts: subscribes, drains.
     const s1 = makeSender();
@@ -660,7 +660,7 @@ describe("installDeepLinks", () => {
     ]);
 
     // Live link arrives while subscribed — broadcasts only.
-    handleDeepLink("vellum://thread/live");
+    handleDeepLink("mycadet://thread/live");
 
     // Renderer hard-navigates: unsubscribe, then a new renderer
     // mounts and drains. The live link must NOT be replayed.
@@ -682,7 +682,7 @@ describe("installDeepLinks", () => {
 
     unsubscribeWith(s1);
 
-    handleDeepLink("vellum://thread/post-logout");
+    handleDeepLink("mycadet://thread/post-logout");
 
     const s2 = makeSender();
     subscribeWith(s2);
@@ -701,7 +701,7 @@ describe("installDeepLinks", () => {
     unsubscribeWith(s);
     unsubscribeWith(s);
 
-    handleDeepLink("vellum://send?message=should-buffer");
+    handleDeepLink("mycadet://send?message=should-buffer");
     expect(drainHandler(allowedEvent)).toEqual([
       { kind: "send", message: "should-buffer" },
     ]);
@@ -714,7 +714,7 @@ describe("installDeepLinks", () => {
 
     const w = makeWindow();
     windows = [w];
-    handleDeepLink("vellum://send?message=live");
+    handleDeepLink("mycadet://send?message=live");
 
     expect(w.webContents.send).toHaveBeenCalledWith("cadet:deepLinks:event", {
       kind: "send",
@@ -742,7 +742,7 @@ describe("installDeepLinks", () => {
     s.fireDestroyed();
 
     // No subscribers now → next link is buffered.
-    handleDeepLink("vellum://send?message=after-crash");
+    handleDeepLink("mycadet://send?message=after-crash");
     expect(drainHandler(allowedEvent)).toEqual([
       { kind: "send", message: "after-crash" },
     ]);
@@ -755,7 +755,7 @@ describe("handleDeepLink — broadcast", () => {
     const w2 = makeWindow();
     windows = [w1, w2];
 
-    handleDeepLink("vellum://send?message=broadcast");
+    handleDeepLink("mycadet://send?message=broadcast");
 
     const expected = { kind: "send", message: "broadcast" };
     expect(w1.webContents.send).toHaveBeenCalledWith(
@@ -773,7 +773,7 @@ describe("handleDeepLink — broadcast", () => {
     const dead = makeWindow(true);
     windows = [alive, dead];
 
-    handleDeepLink("vellum://send?message=skip");
+    handleDeepLink("mycadet://send?message=skip");
 
     expect(alive.webContents.send).toHaveBeenCalled();
     expect(dead.webContents.send).not.toHaveBeenCalled();
@@ -794,24 +794,24 @@ describe("handleDeepLink — broadcast", () => {
 
 describe("handleDeepLink — window activation", () => {
   test("brings the main window forward for `send` (covers the no-renderer case on Darwin)", () => {
-    handleDeepLink("vellum://send?message=hi");
+    handleDeepLink("mycadet://send?message=hi");
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
   test("brings the main window forward for `openThread`", () => {
-    handleDeepLink("vellum://thread/abc");
+    handleDeepLink("mycadet://thread/abc");
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
   test("brings the main window forward for `billingCheckoutComplete`", () => {
     handleDeepLink(
-      "vellum://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
+      "mycadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
     );
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
   test("brings the main window forward for `connect`", () => {
-    handleDeepLink("vellum://connect?url=https%3A%2F%2Fh.example&code=ABCD");
+    handleDeepLink("mycadet://connect?url=https%3A%2F%2Fh.example&code=ABCD");
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
@@ -823,36 +823,36 @@ describe("handleDeepLink — window activation", () => {
     expect(ensureMainWindowVisibleMock).not.toHaveBeenCalled();
   });
 
-  test("defers activation when app is not yet ready (cold-launch via vellum://)", () => {
+  test("defers activation when app is not yet ready (cold-launch via mycadet://)", () => {
     // Cold launch path: `will-finish-launching` → `open-url` fires
     // BEFORE `app.whenReady()`. `new BrowserWindow()` pre-ready
     // would race Electron init; the link is buffered above and the
     // initial `installMainWindow` in the whenReady chain creates
     // the window which drains it on mount.
     appIsReady = false;
-    handleDeepLink("vellum://send?message=cold-launch");
+    handleDeepLink("mycadet://send?message=cold-launch");
 
     expect(ensureMainWindowVisibleMock).not.toHaveBeenCalled();
   });
 
   test("activates after app becomes ready (warm path: subsequent links)", () => {
     appIsReady = false;
-    handleDeepLink("vellum://send?message=cold");
+    handleDeepLink("mycadet://send?message=cold");
     expect(ensureMainWindowVisibleMock).not.toHaveBeenCalled();
 
     // Simulate whenReady having fired.
     appIsReady = true;
-    handleDeepLink("vellum://thread/warm");
+    handleDeepLink("mycadet://thread/warm");
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
   test("buffers the link AND activates so the renderer-on-mount drain still delivers it", () => {
     // Simulating the macOS path: app alive, main window closed,
-    // user clicks vellum://send → main handles it. The link must
+    // user clicks mycadet://send → main handles it. The link must
     // both (a) be parked in the buffer for the freshly-created
     // renderer to drain, and (b) trigger window creation so the
     // renderer actually mounts.
-    handleDeepLink("vellum://send?message=delivered");
+    handleDeepLink("mycadet://send?message=delivered");
 
     // Activation fired.
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
@@ -876,73 +876,73 @@ describe("handleDeepLink — window activation", () => {
 });
 
 describe("resolveRegisteredSchemes", () => {
-  test("production registers cadet and vellum-assistant", () => {
+  test("production registers cadet and mycadet", () => {
     expect(resolveRegisteredSchemes("production")).toEqual([
-      "vellum",
-      "vellum-assistant",
+      "cadet",
+      "mycadet",
     ]);
   });
 
-  test("dev registers only vellum-assistant-dev", () => {
-    expect(resolveRegisteredSchemes("dev")).toEqual(["vellum-assistant-dev"]);
+  test("dev registers only mycadet-dev", () => {
+    expect(resolveRegisteredSchemes("dev")).toEqual(["mycadet-dev"]);
   });
 
-  test("staging registers only vellum-assistant-staging", () => {
+  test("staging registers only mycadet-staging", () => {
     expect(resolveRegisteredSchemes("staging")).toEqual([
-      "vellum-assistant-staging",
+      "mycadet-staging",
     ]);
   });
 
-  test("local registers only vellum-assistant-local", () => {
+  test("local registers only mycadet-local", () => {
     expect(resolveRegisteredSchemes("local")).toEqual([
-      "vellum-assistant-local",
+      "mycadet-local",
     ]);
   });
 
   test("unknown env derives scheme from env name", () => {
-    expect(resolveRegisteredSchemes("test")).toEqual(["vellum-assistant-test"]);
+    expect(resolveRegisteredSchemes("test")).toEqual(["mycadet-test"]);
   });
 });
 
 describe("resolveAuthCallbackScheme", () => {
   test("uses the app-specific production scheme", () => {
-    expect(resolveAuthCallbackScheme("production")).toBe("vellum-assistant");
+    expect(resolveAuthCallbackScheme("production")).toBe("mycadet");
   });
 
   test("uses the environment-specific non-production scheme", () => {
-    expect(resolveAuthCallbackScheme("dev")).toBe("vellum-assistant-dev");
+    expect(resolveAuthCallbackScheme("dev")).toBe("mycadet-dev");
   });
 });
 
 describe("resolveAcceptedSchemes", () => {
-  test("production accepts vellum: and vellum-assistant:", () => {
+  test("production accepts cadet: and mycadet:", () => {
     const accepted = resolveAcceptedSchemes("production");
-    expect(accepted).toContain("vellum:");
-    expect(accepted).toContain("vellum-assistant:");
+    expect(accepted).toContain("cadet:");
+    expect(accepted).toContain("mycadet:");
     expect(accepted).toHaveLength(2);
   });
 
-  test("dev accepts vellum:, vellum-assistant:, and vellum-assistant-dev:", () => {
+  test("dev accepts cadet:, mycadet:, and mycadet-dev:", () => {
     const accepted = resolveAcceptedSchemes("dev");
-    expect(accepted).toContain("vellum:");
-    expect(accepted).toContain("vellum-assistant:");
-    expect(accepted).toContain("vellum-assistant-dev:");
+    expect(accepted).toContain("cadet:");
+    expect(accepted).toContain("mycadet:");
+    expect(accepted).toContain("mycadet-dev:");
     expect(accepted).toHaveLength(3);
   });
 
-  test("staging accepts vellum:, vellum-assistant:, and vellum-assistant-staging:", () => {
+  test("staging accepts cadet:, mycadet:, and mycadet-staging:", () => {
     const accepted = resolveAcceptedSchemes("staging");
-    expect(accepted).toContain("vellum:");
-    expect(accepted).toContain("vellum-assistant:");
-    expect(accepted).toContain("vellum-assistant-staging:");
+    expect(accepted).toContain("cadet:");
+    expect(accepted).toContain("mycadet:");
+    expect(accepted).toContain("mycadet-staging:");
     expect(accepted).toHaveLength(3);
   });
 
-  test("local accepts vellum:, vellum-assistant:, and vellum-assistant-local:", () => {
+  test("local accepts cadet:, mycadet:, and mycadet-local:", () => {
     const accepted = resolveAcceptedSchemes("local");
-    expect(accepted).toContain("vellum:");
-    expect(accepted).toContain("vellum-assistant:");
-    expect(accepted).toContain("vellum-assistant-local:");
+    expect(accepted).toContain("cadet:");
+    expect(accepted).toContain("mycadet:");
+    expect(accepted).toContain("mycadet-local:");
     expect(accepted).toHaveLength(3);
   });
 });

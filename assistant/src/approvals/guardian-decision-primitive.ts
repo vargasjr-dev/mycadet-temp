@@ -157,7 +157,7 @@ export interface ApplyGuardianDecisionParams {
   /** Actor context for the entity making the decision. */
   actorContext: ActorContext;
   /**
-   * Conversation an in-app (vellum) decision was made from, when known.
+   * Conversation an in-app (cadet) decision was made from, when known.
    * Threaded to card withdrawal so only the acting conversation's completion
    * broadcast is suppressed; the request's sibling in-app projections still
    * receive theirs.

@@ -10,7 +10,7 @@ The included `cadet-oauth-integrations` skill handles the generic parts of the f
 
 ## Check Managed Mode First
 
-**Before guiding the user through any of the steps below, check whether they should be using Vellum-managed Notion OAuth instead.**
+**Before guiding the user through any of the steps below, check whether they should be using Cadet-managed Notion OAuth instead.**
 
 Notion supports managed mode (see `assistant oauth providers get notion`). The flows in this file are for users who have explicitly chosen `your-own` mode. If the user has not made an explicit choice yet, default to managed mode — it requires no Notion developer console setup at all.
 
@@ -22,7 +22,7 @@ assistant oauth mode notion --json | jq -r '.mode'
 
 - If the result is `managed`, **stop reading this file** and follow [CONNECTING_ACCOUNTS.md](../CONNECTING_ACCOUNTS.md) instead. The user logs in with Notion and is done.
 - If the result is `your-own`, ask the user whether they'd prefer the simpler managed flow before continuing:
-  > "Notion can connect through Vellum's managed integration — no developer console setup needed, just a login. Want to use that, or do you want to create your own integration?"
+  > "Notion can connect through Cadet's managed integration — no developer console setup needed, just a login. Want to use that, or do you want to create your own integration?"
   > If they prefer managed, run `assistant oauth mode notion --set managed` and switch to the managed flow.
 - If the user already has an active Notion connection (`assistant oauth status notion` returns a live connection), do not switch modes — respect their existing setup.
 
@@ -65,7 +65,7 @@ This is the first navigation - wait a few seconds for the page to load, then tak
 >
 > On the creation form:
 >
-> 1. Set the name to **Vellum Assistant**
+> 1. Set the name to **Cadet Assistant**
 > 2. Select your workspace from the **Associated workspace** dropdown
 > 3. Click **Create**
 
@@ -73,7 +73,7 @@ There is no Type selector on the creation form - integrations are created as **I
 
 **Known issues:**
 
-- If they already have an integration named "Vellum Assistant", ask if they'd like to reuse it - skip ahead to Step 3
+- If they already have an integration named "Cadet Assistant", ask if they'd like to reuse it - skip ahead to Step 3
 - **Missing admin permissions:** Only workspace **admins** can create integrations. If the user can't find the "New integration" button, sees a disabled/grayed-out option, gets a permissions error, or tells you they aren't an admin — see [notion-non-admin.md](notion-non-admin.md).
 
 **Milestone (2 of 4):** "Integration created - now let's grab the secret and grant page access."
@@ -104,7 +104,7 @@ assistant credentials prompt --service notion --field internal_secret \
 > 1. Go to any Notion page you want to connect
 > 2. Click the **"..."** menu (top-right) or the **Share** button
 > 3. Click **"Add connections"** (or **"Connect to"**)
-> 4. Search for **Vellum Assistant** and select it
+> 4. Search for **Cadet Assistant** and select it
 > 5. Repeat for any other pages or databases you want accessible
 >
 > You can always add more pages later by repeating this step.

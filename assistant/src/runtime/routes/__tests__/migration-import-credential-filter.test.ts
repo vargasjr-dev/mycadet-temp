@@ -2,7 +2,7 @@
  * Tests for platform credential filtering during bundle import.
  *
  * `migration-routes.ts` pushes every bundle credential through a filter that
- * must exclude platform-identity (`vellum:*`) entries so they can't overwrite
+ * must exclude platform-identity (`cadet:*`) entries so they can't overwrite
  * the target's own Django-provisioned identity. The filter runs against the
  * raw CES account format — `credential/{service}/{field}` — produced by
  * `credentialKey()`, which is what `listSecureKeysAsync()` returns and what
@@ -16,7 +16,7 @@
  * regression is explicit at the bottom of this file.
  *
  * Covered:
- * - Platform (vellum:*) credentials stored under the real `credential/cadet/...`
+ * - Platform (cadet:*) credentials stored under the real `credential/cadet/...`
  *   key format are excluded.
  * - User credentials (any other prefix) pass through unchanged.
  * - Mixed bundles correctly split platform vs user credentials.
@@ -107,8 +107,8 @@ function filterCredentials(
 // ---------------------------------------------------------------------------
 
 describe("migration import credential filtering", () => {
-  test("platform (vellum:*) credentials are excluded", () => {
-    const vellumFields = [
+  test("platform (cadet:*) credentials are excluded", () => {
+    const cadetFields = [
       "assistant_api_key",
       "platform_assistant_id",
       "platform_base_url",
@@ -116,23 +116,23 @@ describe("migration import credential filtering", () => {
       "platform_user_id",
       "webhook_secret",
     ] as const;
-    const vellumPaths = vellumFields.map((f) =>
+    const cadetPaths = cadetFields.map((f) =>
       bundlePathFor(credentialKey("cadet", f)),
     );
 
     const entries = new Map<string, VBundleTarEntry>();
-    for (const path of vellumPaths) {
+    for (const path of cadetPaths) {
       entries.set(path, makeTarEntry(`value-for-${path}`));
     }
 
-    const manifest = makeManifest(vellumPaths);
+    const manifest = makeManifest(cadetPaths);
 
     const bundleCredentials = extractCredentialsFromBundle(entries, manifest);
     const { userCredentials, skippedPlatform } =
       filterCredentials(bundleCredentials);
 
     expect(userCredentials).toHaveLength(0);
-    expect(skippedPlatform).toBe(vellumFields.length);
+    expect(skippedPlatform).toBe(cadetFields.length);
   });
 
   test("user credentials pass through unchanged", () => {
@@ -165,22 +165,22 @@ describe("migration import credential filtering", () => {
   });
 
   test("mixed bundle with both platform and user credentials correctly splits", () => {
-    const vellumApiKey = credentialKey("cadet", "assistant_api_key");
-    const vellumUserId = credentialKey("cadet", "platform_user_id");
+    const cadetApiKey = credentialKey("cadet", "assistant_api_key");
+    const cadetUserId = credentialKey("cadet", "platform_user_id");
     const openaiKey = credentialKey("openai", "api_key");
     const anthropicKey = credentialKey("anthropic", "api_key");
     const githubToken = credentialKey("github", "api_token");
 
     const entries = new Map<string, VBundleTarEntry>();
-    entries.set(bundlePathFor(vellumApiKey), makeTarEntry("platform-key"));
-    entries.set(bundlePathFor(vellumUserId), makeTarEntry("platform-user"));
+    entries.set(bundlePathFor(cadetApiKey), makeTarEntry("platform-key"));
+    entries.set(bundlePathFor(cadetUserId), makeTarEntry("platform-user"));
     entries.set(bundlePathFor(openaiKey), makeTarEntry("sk-user-123"));
     entries.set(bundlePathFor(anthropicKey), makeTarEntry("sk-ant-456"));
     entries.set(bundlePathFor(githubToken), makeTarEntry("ghp-789"));
 
     const manifest = makeManifest([
-      bundlePathFor(vellumApiKey),
-      bundlePathFor(vellumUserId),
+      bundlePathFor(cadetApiKey),
+      bundlePathFor(cadetUserId),
       bundlePathFor(openaiKey),
       bundlePathFor(anthropicKey),
       bundlePathFor(githubToken),
@@ -196,30 +196,30 @@ describe("migration import credential filtering", () => {
     expect(accounts).toEqual([anthropicKey, githubToken, openaiKey].sort());
 
     // No platform credentials in the filtered output.
-    const vellumCreds = userCredentials.filter((c) =>
+    const cadetCreds = userCredentials.filter((c) =>
       c.account.startsWith(PLATFORM_CREDENTIAL_PREFIX),
     );
-    expect(vellumCreds).toHaveLength(0);
+    expect(cadetCreds).toHaveLength(0);
 
     expect(skippedPlatform).toBe(2);
   });
 
   test("skippedPlatform count is accurate with mixed credentials", () => {
-    const vellumApiKey = credentialKey("cadet", "assistant_api_key");
-    const vellumBaseUrl = credentialKey("cadet", "platform_base_url");
-    const vellumWebhook = credentialKey("cadet", "webhook_secret");
+    const cadetApiKey = credentialKey("cadet", "assistant_api_key");
+    const cadetBaseUrl = credentialKey("cadet", "platform_base_url");
+    const cadetWebhook = credentialKey("cadet", "webhook_secret");
     const userKey = credentialKey("github", "api_token");
 
     const entries = new Map<string, VBundleTarEntry>();
-    entries.set(bundlePathFor(vellumApiKey), makeTarEntry("v1"));
-    entries.set(bundlePathFor(vellumBaseUrl), makeTarEntry("v2"));
-    entries.set(bundlePathFor(vellumWebhook), makeTarEntry("v3"));
+    entries.set(bundlePathFor(cadetApiKey), makeTarEntry("v1"));
+    entries.set(bundlePathFor(cadetBaseUrl), makeTarEntry("v2"));
+    entries.set(bundlePathFor(cadetWebhook), makeTarEntry("v3"));
     entries.set(bundlePathFor(userKey), makeTarEntry("user-val"));
 
     const manifest = makeManifest([
-      bundlePathFor(vellumApiKey),
-      bundlePathFor(vellumBaseUrl),
-      bundlePathFor(vellumWebhook),
+      bundlePathFor(cadetApiKey),
+      bundlePathFor(cadetBaseUrl),
+      bundlePathFor(cadetWebhook),
       bundlePathFor(userKey),
     ]);
 
@@ -240,7 +240,7 @@ describe("migration import credential filtering", () => {
     );
   });
 
-  test("regression: the prefix matches credentialKey('vellum', '') so format changes propagate", () => {
+  test("regression: the prefix matches credentialKey('cadet', '') so format changes propagate", () => {
     // If credentialKey()'s format ever changes (e.g. slash → something else),
     // this assertion will fail and the duplicated constant in
     // migration-routes.ts must be updated to stay in sync.
@@ -251,10 +251,10 @@ describe("migration import credential filtering", () => {
       ),
     ).toBe(true);
 
-    // The raw "vellum:" string is not a valid CES account prefix — only
+    // The raw "cadet:" string is not a valid CES account prefix — only
     // the full "credential/cadet/" format from credentialKey() is correct.
     expect(
-      credentialKey("cadet", "assistant_api_key").startsWith("vellum:"),
+      credentialKey("cadet", "assistant_api_key").startsWith("cadet:"),
     ).toBe(false);
   });
 });

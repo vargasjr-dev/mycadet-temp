@@ -35,7 +35,7 @@ export interface PlatformForwardOptions {
 }
 
 const PLATFORM_PREFIXES = ["/v1", "/_allauth", "/accounts", "/_sr"] as const;
-const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Vellum-Electron-Renderer-Origin";
+const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
 function isPlatformPath(pathname: string): boolean {
   return PLATFORM_PREFIXES.some(
@@ -69,7 +69,7 @@ function expectedRendererOrigin(allowed: PlatformForwardAllowedOrigin): string {
  * handlers (`app://`), so standard origin-checking cannot trust them. Fall
  * back to two signals that ARE present:
  *
- *   1. `X-Vellum-Electron-Renderer-Origin` — set by the renderer's API
+ *   1. `X-Cadet-Electron-Renderer-Origin` — set by the renderer's API
  *      interceptor on mutating requests, stripped before forwarding.
  *   2. `Sec-Fetch-Site: same-origin` — browser-controlled Fetch Metadata
  *      header that page JS cannot forge.
@@ -133,7 +133,7 @@ function getInitiatorTrust(
  * Resolve a renderer request to a platform-proxy plan.
  *
  * On `forward`, the request's `Origin` is rewritten to the platform's own
- * origin. The renderer issues this request from `app://vellum.ai` but the
+ * origin. The renderer issues this request from `app://mycadet.ai` but the
  * platform expects its own origin for CORS purposes. Unsafe requests are only
  * forwarded when their browser-controlled `Origin` or `Referer` matches the
  * trusted renderer origin. All other headers pass through unchanged.
@@ -190,10 +190,10 @@ export function planPlatformForward(
 export const PROXY_NETWORK_ERROR_CODE = "proxy_network_error";
 
 /** Marker header on proxy-synthesized error responses. */
-export const PROXY_ERROR_HEADER = "X-Vellum-Proxy-Error";
+export const PROXY_ERROR_HEADER = "X-Cadet-Proxy-Error";
 
 const PROXY_NETWORK_ERROR_DETAIL =
-  "Couldn't reach Vellum. Check your internet connection and try again.";
+  "Couldn't reach Cadet. Check your internet connection and try again.";
 
 /**
  * Chromium net-stack failures that resolve on their own within seconds —

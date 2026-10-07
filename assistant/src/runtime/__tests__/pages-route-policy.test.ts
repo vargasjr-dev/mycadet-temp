@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 
 const APP_ID = "app-under-test";
-const appDir = mkdtempSync(join(tmpdir(), "vellum-pages-"));
+const appDir = mkdtempSync(join(tmpdir(), "cadet-pages-"));
 mkdirSync(join(appDir, "dist"), { recursive: true });
 writeFileSync(
   join(appDir, "dist", "index.html"),
@@ -49,7 +49,7 @@ const { RuntimeHttpServer } = await import("../http-server.js");
 
 /** A desktop/web client token: `actor_client_v1` carries settings.read. */
 const ACTOR_JWT = mintToken({
-  aud: "vellum-daemon",
+  aud: "cadet-daemon",
   sub: "actor:self:test-principal",
   scope_profile: "actor_client_v1",
   policy_epoch: CURRENT_POLICY_EPOCH,
@@ -58,7 +58,7 @@ const ACTOR_JWT = mintToken({
 
 /** The grant `assistant oauth proxy-url` hands to a third-party binary. */
 const PROXY_GRANT_JWT = mintToken({
-  aud: "vellum-daemon",
+  aud: "cadet-daemon",
   sub: "local:self:oauth-proxy.stripe_link",
   scope_profile: "oauth_proxy_v1",
   policy_epoch: CURRENT_POLICY_EPOCH,

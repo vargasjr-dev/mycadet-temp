@@ -13,7 +13,7 @@ mock.module("../contacts/guardian-delivery-reader.js", () => ({
 import { findContactByAddress } from "../contacts/contact-store.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
-import { healGuardianBindingDrift } from "../runtime/guardian-vellum-migration.js";
+import { healGuardianBindingDrift } from "../runtime/guardian-cadet-migration.js";
 import { createGuardianBinding } from "./helpers/create-guardian-binding.js";
 
 await initializeDb();
@@ -34,7 +34,7 @@ function gatewayGuardian(
   address: string = principalId,
 ): GuardianDelivery {
   return {
-    channelType: "vellum",
+    channelType: "cadet",
     contactId: "guardian-contact",
     principalId,
     address,
@@ -43,9 +43,9 @@ function gatewayGuardian(
 }
 
 /** Read the local cadet guardian channel/contact by its channel address. */
-function localVellumGuardian(address: string) {
-  const contact = findContactByAddress("vellum", address);
-  const channel = contact?.channels.find((c) => c.type === "vellum");
+function localCadetGuardian(address: string) {
+  const contact = findContactByAddress("cadet", address);
+  const channel = contact?.channels.find((c) => c.type === "cadet");
   return contact && channel ? { contact, channel } : null;
 }
 
@@ -55,26 +55,26 @@ describe("healGuardianBindingDrift", () => {
     mockGuardians = [];
   });
 
-  test("heals drift when both principals have vellum-principal- prefix", async () => {
+  test("heals drift when both principals have cadet-principal- prefix", async () => {
     // Simulate DB reset: new guardian binding with a different UUID
     createGuardianBinding({
-      channel: "vellum",
-      guardianExternalUserId: "vellum-principal-new-uuid",
+      channel: "cadet",
+      guardianExternalUserId: "cadet-principal-new-uuid",
       guardianDeliveryChatId: "local",
-      guardianPrincipalId: "vellum-principal-new-uuid",
+      guardianPrincipalId: "cadet-principal-new-uuid",
       verifiedVia: "startup-migration",
     });
-    mockGuardians = [gatewayGuardian("vellum-principal-new-uuid")];
+    mockGuardians = [gatewayGuardian("cadet-principal-new-uuid")];
 
     // Client arrives with the old JWT principal
-    const healed = await healGuardianBindingDrift("vellum-principal-old-uuid");
+    const healed = await healGuardianBindingDrift("cadet-principal-old-uuid");
     expect(healed).toBe(true);
 
     // The heal repairs the channel identity address to match the JWT. The
     // principalId column is gateway-owned and no longer written locally.
-    const guardian = localVellumGuardian("vellum-principal-old-uuid");
+    const guardian = localCadetGuardian("cadet-principal-old-uuid");
     expect(guardian).not.toBeNull();
-    expect(guardian!.channel.address).toBe("vellum-principal-old-uuid");
+    expect(guardian!.channel.address).toBe("cadet-principal-old-uuid");
   });
 
   test("repairs the local mirror toward the JWT when the gateway diverges", async () => {
@@ -82,54 +82,54 @@ describe("healGuardianBindingDrift", () => {
     // /v1/messages trust path still reads the local mirror in this plan, so the
     // mirror is repaired toward the JWT or the actor stays `unknown`.
     createGuardianBinding({
-      channel: "vellum",
-      guardianExternalUserId: "vellum-principal-stale-local",
+      channel: "cadet",
+      guardianExternalUserId: "cadet-principal-stale-local",
       guardianDeliveryChatId: "local",
-      guardianPrincipalId: "vellum-principal-stale-local",
+      guardianPrincipalId: "cadet-principal-stale-local",
       verifiedVia: "startup-migration",
     });
     // Gateway address matches the local channel address so the heal can resolve
     // its local write target; only the gateway principal has drifted.
     mockGuardians = [
       gatewayGuardian(
-        "vellum-principal-gateway",
-        "vellum-principal-stale-local",
+        "cadet-principal-gateway",
+        "cadet-principal-stale-local",
       ),
     ];
 
-    const healed = await healGuardianBindingDrift("vellum-principal-jwt");
+    const healed = await healGuardianBindingDrift("cadet-principal-jwt");
     expect(healed).toBe(true);
 
     // The local mirror's identity address now matches the JWT, so a subsequent
     // local trust resolution classifies the actor as guardian rather than
     // unknown. The principalId column is gateway-owned and not written locally.
-    const guardian = localVellumGuardian("vellum-principal-jwt");
-    expect(guardian!.channel.address).toBe("vellum-principal-jwt");
+    const guardian = localCadetGuardian("cadet-principal-jwt");
+    expect(guardian!.channel.address).toBe("cadet-principal-jwt");
   });
 
   test("no-op when principals already match", async () => {
     createGuardianBinding({
-      channel: "vellum",
-      guardianExternalUserId: "vellum-principal-same",
+      channel: "cadet",
+      guardianExternalUserId: "cadet-principal-same",
       guardianDeliveryChatId: "local",
-      guardianPrincipalId: "vellum-principal-same",
+      guardianPrincipalId: "cadet-principal-same",
       verifiedVia: "startup-migration",
     });
-    mockGuardians = [gatewayGuardian("vellum-principal-same")];
+    mockGuardians = [gatewayGuardian("cadet-principal-same")];
 
-    const healed = await healGuardianBindingDrift("vellum-principal-same");
+    const healed = await healGuardianBindingDrift("cadet-principal-same");
     expect(healed).toBe(false);
   });
 
-  test("refuses to heal when incoming principal lacks vellum-principal- prefix", async () => {
+  test("refuses to heal when incoming principal lacks cadet-principal- prefix", async () => {
     createGuardianBinding({
-      channel: "vellum",
-      guardianExternalUserId: "vellum-principal-aaa",
+      channel: "cadet",
+      guardianExternalUserId: "cadet-principal-aaa",
       guardianDeliveryChatId: "local",
-      guardianPrincipalId: "vellum-principal-aaa",
+      guardianPrincipalId: "cadet-principal-aaa",
       verifiedVia: "startup-migration",
     });
-    mockGuardians = [gatewayGuardian("vellum-principal-aaa")];
+    mockGuardians = [gatewayGuardian("cadet-principal-aaa")];
 
     // External/platform principal — should NOT be adopted
     const healed = await healGuardianBindingDrift("platform-user-12345");
@@ -137,13 +137,13 @@ describe("healGuardianBindingDrift", () => {
 
     // Guardian unchanged: the local channel identity address still resolves to
     // the original binding (principalId is gateway-owned, no longer local).
-    const guardian = localVellumGuardian("vellum-principal-aaa");
-    expect(guardian!.channel.address).toBe("vellum-principal-aaa");
+    const guardian = localCadetGuardian("cadet-principal-aaa");
+    expect(guardian!.channel.address).toBe("cadet-principal-aaa");
   });
 
-  test("refuses to heal when the gateway principal lacks vellum-principal- prefix", async () => {
+  test("refuses to heal when the gateway principal lacks cadet-principal- prefix", async () => {
     createGuardianBinding({
-      channel: "vellum",
+      channel: "cadet",
       guardianExternalUserId: "verified-phone-guardian",
       guardianDeliveryChatId: "local",
       guardianPrincipalId: "verified-phone-guardian",
@@ -151,33 +151,33 @@ describe("healGuardianBindingDrift", () => {
     });
     mockGuardians = [gatewayGuardian("verified-phone-guardian")];
 
-    // Even with a vellum-principal- incoming, don't overwrite a real binding
-    const healed = await healGuardianBindingDrift("vellum-principal-attacker");
+    // Even with a cadet-principal- incoming, don't overwrite a real binding
+    const healed = await healGuardianBindingDrift("cadet-principal-attacker");
     expect(healed).toBe(false);
 
     // Guardian unchanged: the local channel identity address still resolves to
     // the original binding (principalId is gateway-owned, no longer local).
-    const guardian = localVellumGuardian("verified-phone-guardian");
+    const guardian = localCadetGuardian("verified-phone-guardian");
     expect(guardian!.channel.address).toBe("verified-phone-guardian");
   });
 
   test("returns false when gateway reports no guardian binding", async () => {
     mockGuardians = [];
-    const healed = await healGuardianBindingDrift("vellum-principal-orphan");
+    const healed = await healGuardianBindingDrift("cadet-principal-orphan");
     expect(healed).toBe(false);
   });
 
   test("returns false when the gateway is unreachable (null list)", async () => {
     createGuardianBinding({
-      channel: "vellum",
-      guardianExternalUserId: "vellum-principal-aaa",
+      channel: "cadet",
+      guardianExternalUserId: "cadet-principal-aaa",
       guardianDeliveryChatId: "local",
-      guardianPrincipalId: "vellum-principal-aaa",
+      guardianPrincipalId: "cadet-principal-aaa",
       verifiedVia: "startup-migration",
     });
     mockGuardians = null;
 
-    const healed = await healGuardianBindingDrift("vellum-principal-old-uuid");
+    const healed = await healGuardianBindingDrift("cadet-principal-old-uuid");
     expect(healed).toBe(false);
   });
 });

@@ -52,7 +52,7 @@ describe("buildCheckinDescription", () => {
   test("embeds the uuid + fixed first-week prompt in the CTA link", () => {
     const html = buildCheckinDescription("uuid-123");
     expect(html).toContain(
-      "https://www.vellum.ai/assistant/conversations/uuid-123?prompt=What%20would%20you%20recommend",
+      "https://mycadet.ai/assistant/conversations/uuid-123?prompt=What%20would%20you%20recommend",
     );
     // Carries the app-owned attribution param (not a marketing `utm_*`, which
     // the marketing-site capture never sees on `/assistant/*` routes) so the web

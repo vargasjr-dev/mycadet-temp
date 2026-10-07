@@ -16,7 +16,7 @@ let mockCreateThrows: boolean;
 let fetchCallCount: number;
 
 mock.module("../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: async () => {
       if (mockCreateThrows) {
         throw new Error("credential store unavailable");
@@ -45,15 +45,15 @@ const clientStub = () => ({
 // Import after mocks
 // ---------------------------------------------------------------------------
 
-import { VellumPlatformClient } from "../platform/client.js";
+import { CadetPlatformClient } from "../platform/client.js";
 import {
   invalidateRegisteredInboxCache,
   listEmailAddresses,
   resolveRegisteredInbox,
 } from "./registered-inbox.js";
 
-async function testClient(): Promise<VellumPlatformClient> {
-  const client = await VellumPlatformClient.create();
+async function testClient(): Promise<CadetPlatformClient> {
+  const client = await CadetPlatformClient.create();
   if (!client) {
     throw new Error("mocked create returned null");
   }

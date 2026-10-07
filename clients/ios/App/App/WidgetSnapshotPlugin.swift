@@ -195,7 +195,7 @@ public class WidgetSnapshotPlugin: CAPPlugin, CAPBridgedPlugin {
     /// Every kind renders from the one snapshot, so a write invalidates all of
     /// them. `reloadTimelines` on a kind no widget is showing is a no-op.
     private static func reloadWidgets() {
-        for kind in VellumWidgetKind.all {
+        for kind in CadetWidgetKind.all {
             WidgetCenter.shared.reloadTimelines(ofKind: kind)
         }
     }

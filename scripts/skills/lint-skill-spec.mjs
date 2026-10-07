@@ -11,10 +11,10 @@
  *      no consecutive hyphens, no leading/trailing hyphens.
  *   6. `description` constraints: 1-1024 chars, non-empty.
  *   7. Optional `compatibility`: 1-500 chars if present.
- *   8. Required `metadata.emoji` (Vellum extension).
+ *   8. Required `metadata.emoji` (Cadet extension).
  *   9. Frontmatter is followed by Markdown body content.
  *  10. Non-standard top-level fields emit migration guidance:
- *      - Vellum-specific fields → move to `metadata.vellum`
+ *      - Cadet-specific fields → move to `metadata.cadet`
  *      - Environment requirements → move to `compatibility`
  *
  * Usage:
@@ -22,8 +22,8 @@
  *
  * Options:
  *   --dir <path>           Override the default skills directory (skills/)
- *   --skip-emoji           Skip the Vellum-specific metadata.emoji check
- *   --skip-category        Skip the Vellum-specific metadata.vellum.category check
+ *   --skip-emoji           Skip the Cadet-specific metadata.emoji check
+ *   --skip-category        Skip the Cadet-specific metadata.cadet.category check
  *   --allow-tools-json     Skip the TOOLS.json prohibition check
  *
  * If no skill names are provided, all skills are checked.
@@ -89,9 +89,9 @@ const STANDARD_FIELDS = new Set([
 ]);
 
 /**
- * Known vellum-specific extension fields that should be migrated to metadata.vellum.
+ * Known cadet-specific extension fields that should be migrated to metadata.cadet.
  */
-const VELLUM_EXTENSION_FIELDS = new Set(["includes"]);
+const CADET_EXTENSION_FIELDS = new Set(["includes"]);
 
 /**
  * Fields that should be migrated to the compatibility field.
@@ -169,10 +169,10 @@ function validateMetadataEmoji(metadata) {
   if (typeof metadata === "string") {
     try {
       const parsed = JSON.parse(metadata);
-      // Check for top-level emoji or emoji nested in vellum namespace
+      // Check for top-level emoji or emoji nested in cadet namespace
       if (
         (typeof parsed.emoji === "string" && parsed.emoji.length > 0) ||
-        (typeof parsed.vellum?.emoji === "string" && parsed.vellum.emoji.length > 0)
+        (typeof parsed.cadet?.emoji === "string" && parsed.cadet.emoji.length > 0)
       ) {
         return errors; // emoji found
       }
@@ -231,11 +231,11 @@ function validateCategory(metadata, validSlugs) {
   if (typeof metadata === "string") {
     try {
       const parsed = JSON.parse(metadata);
-      const cat = parsed.vellum?.category;
+      const cat = parsed.cadet?.category;
       if (typeof cat === "string" && cat.length > 0) {
         if (!validSlugs.has(cat)) {
           errors.push(
-            `"metadata.vellum.category" value "${cat}" is not a valid category slug. ` +
+            `"metadata.cadet.category" value "${cat}" is not a valid category slug. ` +
               `Valid slugs: ${[...validSlugs].join(", ")}`,
           );
         }
@@ -245,37 +245,37 @@ function validateCategory(metadata, validSlugs) {
       // fall through
     }
     errors.push(
-      'Required field "metadata.vellum.category" is missing. Skills must declare a category.',
+      'Required field "metadata.cadet.category" is missing. Skills must declare a category.',
     );
     return errors;
   }
 
   if (!metadata || typeof metadata !== "object") {
     errors.push(
-      'Required field "metadata.vellum.category" is missing. Skills must declare a category.',
+      'Required field "metadata.cadet.category" is missing. Skills must declare a category.',
     );
     return errors;
   }
 
-  const vellum = metadata.vellum;
-  if (!vellum || typeof vellum !== "object") {
+  const cadet = metadata.cadet;
+  if (!cadet || typeof cadet !== "object") {
     errors.push(
-      'Required field "metadata.vellum.category" is missing. Skills must declare a category.',
+      'Required field "metadata.cadet.category" is missing. Skills must declare a category.',
     );
     return errors;
   }
 
-  const cat = vellum.category;
+  const cat = cadet.category;
   if (typeof cat !== "string" || cat.length === 0) {
     errors.push(
-      'Required field "metadata.vellum.category" is missing or empty. Skills must declare a category.',
+      'Required field "metadata.cadet.category" is missing or empty. Skills must declare a category.',
     );
     return errors;
   }
 
   if (!validSlugs.has(cat)) {
     errors.push(
-      `"metadata.vellum.category" value "${cat}" is not a valid category slug. ` +
+      `"metadata.cadet.category" value "${cat}" is not a valid category slug. ` +
         `Valid slugs: ${[...validSlugs].join(", ")}`,
     );
   }
@@ -287,7 +287,7 @@ function validateCategory(metadata, validSlugs) {
  * Detect non-standard top-level fields and recommend migration.
  *
  * Returns errors for:
- * - Known vellum extension fields → recommend moving to metadata.vellum
+ * - Known cadet extension fields → recommend moving to metadata.cadet
  * - Compatibility-related fields → recommend moving to compatibility
  * - Unknown fields → recommend using metadata for custom data or compatibility for requirements
  */
@@ -299,11 +299,11 @@ function validateNonStandardFields(frontmatter) {
       continue;
     }
 
-    if (VELLUM_EXTENSION_FIELDS.has(key)) {
+    if (CADET_EXTENSION_FIELDS.has(key)) {
       errors.push(
-        `Non-standard field "${key}" should be moved to metadata.vellum.${key}. ` +
+        `Non-standard field "${key}" should be moved to metadata.cadet.${key}. ` +
           `The Agent Skills spec reserves top-level fields for standard properties. ` +
-          `Use the "metadata" field for vendor-specific extensions: metadata: { "vellum": { "${key}": ... } }`,
+          `Use the "metadata" field for vendor-specific extensions: metadata: { "cadet": { "${key}": ... } }`,
       );
     } else if (COMPATIBILITY_MIGRATION_FIELDS.has(key)) {
       errors.push(
@@ -365,7 +365,7 @@ function validateSkill(skillName, { skillsDir, skipEmoji, skipCategory, allowToo
 
   // Extract category for cross-catalog validation
   if (typeof frontmatter.metadata === "object") {
-    category = frontmatter.metadata?.vellum?.category;
+    category = frontmatter.metadata?.cadet?.category;
   }
 
   // 3. Validate required fields
@@ -388,7 +388,7 @@ function validateSkill(skillName, { skillsDir, skipEmoji, skipCategory, allowToo
     ),
   );
 
-  // 5. Validate required metadata.emoji (Vellum requirement) — skippable via --skip-emoji
+  // 5. Validate required metadata.emoji (Cadet requirement) — skippable via --skip-emoji
   if (!skipEmoji) {
     errors.push(
       ...validateMetadataEmoji(frontmatter.metadata).map(
@@ -397,7 +397,7 @@ function validateSkill(skillName, { skillsDir, skipEmoji, skipCategory, allowToo
     );
   }
 
-  // 6. Validate required metadata.vellum.category — skippable via --skip-category
+  // 6. Validate required metadata.cadet.category — skippable via --skip-category
   if (!skipCategory && validSlugs) {
     errors.push(
       ...validateCategory(frontmatter.metadata, validSlugs).map(

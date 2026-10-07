@@ -32,7 +32,7 @@ let workspaceDir: string;
 function freshWorkspace(): void {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-134-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-134-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 }
@@ -100,14 +100,14 @@ describe("134-image-generation-mode-to-provider", () => {
     imageGenerationModeToProviderMigration.run(workspaceDir);
 
     expect(imageGen(readConfig())).toEqual({
-      provider: "vellum",
+      provider: "cadet",
       model: "gemini-3-pro-image-preview",
     });
   });
 
   // Managed OpenAI has no exemption: the backend derives from the model
   // prefix at request time, so a managed gpt-image-2 user keeps routing to
-  // the OpenAI proxy through provider vellum.
+  // the OpenAI proxy through provider cadet.
   test("rewrites a managed openai service to provider cadet, model preserved", () => {
     writeConfig({
       services: {
@@ -122,7 +122,7 @@ describe("134-image-generation-mode-to-provider", () => {
     imageGenerationModeToProviderMigration.run(workspaceDir);
 
     expect(imageGen(readConfig())).toEqual({
-      provider: "vellum",
+      provider: "cadet",
       model: "gpt-image-2",
     });
   });
@@ -148,7 +148,7 @@ describe("134-image-generation-mode-to-provider", () => {
 
   test("pins the gemini default for your-own with no persisted provider", () => {
     // With `mode` gone, an absent provider leaf would be context-filled to
-    // "vellum" on platform deployments — a silent your-own -> managed flip.
+    // "cadet" on platform deployments — a silent your-own -> managed flip.
     writeConfig({
       services: { "image-generation": { mode: "your-own" } },
     });
@@ -179,7 +179,7 @@ describe("134-image-generation-mode-to-provider", () => {
   test("leaves configs without an image-generation mode alone", () => {
     const original = {
       services: {
-        "image-generation": { provider: "vellum", model: "gpt-image-2" },
+        "image-generation": { provider: "cadet", model: "gpt-image-2" },
         "google-oauth": { mode: "managed" },
       },
     };
@@ -242,7 +242,7 @@ describe("134-image-generation-mode-to-provider", () => {
       // model prefix on the next model write.
       expect(imageGen(readConfig())).toEqual({
         mode: "managed",
-        provider: "vellum",
+        provider: "cadet",
         model: "gemini-3-pro-image-preview",
       });
     });

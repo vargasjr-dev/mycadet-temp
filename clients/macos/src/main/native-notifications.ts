@@ -62,7 +62,7 @@ const categoryIdForLabels = (labels: readonly string[]): string => {
     .update(JSON.stringify(labels))
     .digest("hex")
     .slice(0, 16);
-  return `vellum.actions.${digest}`;
+  return `cadet.actions.${digest}`;
 };
 
 const categoryIdForActions = (actions: readonly CategoryAction[]): string =>

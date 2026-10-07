@@ -67,7 +67,7 @@ osascript -e 'tell application "Safari" to open location "https://example.com"'
 osascript -e 'tell application "Music" to playpause'
 
 # Display a system notification
-osascript -e 'display notification "Done!" with title "Vellum"'
+osascript -e 'display notification "Done!" with title "Cadet"'
 ```
 
 ## Tips

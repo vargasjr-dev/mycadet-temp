@@ -18,17 +18,17 @@ let previousDefaultWorkspaceConfigPath: string | undefined;
 
 beforeEach(() => {
   previousDefaultWorkspaceConfigPath =
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
-  delete process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-migration-142-test-"));
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
+  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-migration-142-test-"));
   configPath = join(workspaceDir, "config.json");
 });
 
 afterEach(() => {
   if (previousDefaultWorkspaceConfigPath === undefined) {
-    delete process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
+    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
   } else {
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH =
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH =
       previousDefaultWorkspaceConfigPath;
   }
   if (existsSync(workspaceDir)) {
@@ -122,7 +122,7 @@ describe("142-consolidate-voice-front-door migration", () => {
   });
 
   test("migrates saved overrides when a default config overlay is configured", () => {
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = "/tmp/overlay.json";
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = "/tmp/overlay.json";
     writeConfig({
       llm: {
         callSites: {

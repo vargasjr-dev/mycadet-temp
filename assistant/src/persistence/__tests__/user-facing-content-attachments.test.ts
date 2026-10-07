@@ -1,5 +1,5 @@
 /**
- * A `vellum://` link the model puts in a `send_user_message` message must be
+ * A `cadet://` link the model puts in a `send_user_message` message must be
  * found by the attachment-directive scan, exactly as a link in ordinary
  * assistant text is: the projected text blocks are what a user reads, so they
  * are what `cleanAssistantContent` walks on a row marked private. Without the
@@ -20,7 +20,7 @@ const CONTENT = [
     id: "tu_1",
     name: "send_user_message",
     input: {
-      message: "Here it is: [report.md](vellum://workspace/report.md)",
+      message: "Here it is: [report.md](cadet://workspace/report.md)",
     },
   },
 ] as ContentBlock[];

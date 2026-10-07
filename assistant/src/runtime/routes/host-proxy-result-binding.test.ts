@@ -40,8 +40,8 @@ describe("assertHostProxyResultBinding connection snapshot", () => {
 
     await assertHostProxyResultBinding({
       headers: {
-        "x-vellum-client-id": "host-proxy-bind-1",
-        "x-vellum-actor-principal-id": ACTOR,
+        "x-cadet-client-id": "host-proxy-bind-1",
+        "x-cadet-actor-principal-id": ACTOR,
       },
       targetClientId: pending?.targetClientId,
       targetConnectionId: pending?.targetConnectionId,
@@ -68,8 +68,8 @@ describe("assertHostProxyResultBinding connection snapshot", () => {
     await expect(
       assertHostProxyResultBinding({
         headers: {
-          "x-vellum-client-id": "host-proxy-bind-2",
-          "x-vellum-actor-principal-id": ACTOR,
+          "x-cadet-client-id": "host-proxy-bind-2",
+          "x-cadet-actor-principal-id": ACTOR,
         },
         targetClientId: pending?.targetClientId,
         targetConnectionId: pending?.targetConnectionId,

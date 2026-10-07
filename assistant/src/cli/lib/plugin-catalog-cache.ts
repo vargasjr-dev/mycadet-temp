@@ -4,7 +4,7 @@
  * Platform-first: when platform features are enabled the catalog is fetched
  * from the Cadet Cloud and any fetch failure propagates (fail hard — no
  * stale-cache smoothing). Successful loads are held per git ref for a short
- * TTL. When `VELLUM_DISABLE_PLATFORM` disables platform features the bundled
+ * TTL. When `CADET_DISABLE_PLATFORM` disables platform features the bundled
  * offline manifest is read instead, with zero network calls.
  */
 

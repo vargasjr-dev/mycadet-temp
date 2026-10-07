@@ -359,7 +359,7 @@ describe("tts voice — active-provider routing", () => {
     expect(setCall!.params.body.value).toBe("aura-2-zeus-en");
   });
 
-  test("an ElevenLabs voice id on a managed assistant still writes vellum.model", async () => {
+  test("an ElevenLabs voice id on a managed assistant still writes cadet.model", async () => {
     respondProvider("cadet");
 
     const { exitCode } = await runCommand([
@@ -430,7 +430,7 @@ describe("tts voice — active-provider routing", () => {
   test("a config_set failure sets a non-zero exit code", async () => {
     ipcResponders.config_get = {
       ok: true,
-      result: { services: { tts: { provider: "vellum" } } },
+      result: { services: { tts: { provider: "cadet" } } },
     };
     ipcResponders.config_set = { ok: false, error: "daemon error" };
 

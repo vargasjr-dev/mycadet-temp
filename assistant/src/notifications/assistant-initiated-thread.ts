@@ -16,8 +16,8 @@ const log = getLogger("assistant-initiated-thread");
 export interface AssistantInitiatedThreadResolution {
   /** Eligible for automatic promotion; creation and sidebar membership are not guaranteed. */
   isCandidate: boolean;
-  /** Prepared for vellum pairing only. Other channels retain the producer's signal. */
-  vellumSignal: NotificationSignal;
+  /** Prepared for cadet pairing only. Other channels retain the producer's signal. */
+  cadetSignal: NotificationSignal;
 }
 
 /** Background shares need a visible thread because their producer is hidden from the sidebar. */
@@ -30,7 +30,7 @@ export function resolveAssistantInitiatedThread(
     signal.conversationMetadata?.source !== undefined ||
     !isAssistantInitiatedThreadsEnabled()
   ) {
-    return { isCandidate: false, vellumSignal: signal };
+    return { isCandidate: false, cadetSignal: signal };
   }
 
   try {
@@ -40,19 +40,19 @@ export function resolveAssistantInitiatedThread(
       producing.conversationType !== "background" &&
       producing.conversationType !== "scheduled"
     ) {
-      return { isCandidate: false, vellumSignal: signal };
+      return { isCandidate: false, cadetSignal: signal };
     }
   } catch (err) {
     log.warn(
       { err, sourceContextId: signal.sourceContextId },
       "Unable to resolve the assistant-initiated thread candidate",
     );
-    return { isCandidate: false, vellumSignal: signal };
+    return { isCandidate: false, cadetSignal: signal };
   }
 
   return {
     isCandidate: true,
-    vellumSignal: {
+    cadetSignal: {
       ...signal,
       requiresConversation: true,
       conversationMetadata: {

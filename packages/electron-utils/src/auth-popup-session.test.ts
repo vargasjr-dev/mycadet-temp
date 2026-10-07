@@ -76,17 +76,17 @@ const fakePopup = () => {
 };
 
 describe("isFirstPartyAuthHost", () => {
-  test("covers Vellum hosts and the loopback callback listener", () => {
-    expect(isFirstPartyAuthHost("vellum.ai")).toBe(true);
-    expect(isFirstPartyAuthHost("www.vellum.ai")).toBe(true);
-    expect(isFirstPartyAuthHost("staging-platform.vellum.ai")).toBe(true);
+  test("covers Cadet hosts and the loopback callback listener", () => {
+    expect(isFirstPartyAuthHost("mycadet.ai")).toBe(true);
+    expect(isFirstPartyAuthHost("mycadet.ai")).toBe(true);
+    expect(isFirstPartyAuthHost("staging-cloud.cadet.ai")).toBe(true);
     expect(isFirstPartyAuthHost("localhost")).toBe(true);
     expect(isFirstPartyAuthHost("127.0.0.1")).toBe(true);
   });
 
   test("does not treat a lookalike suffix as first-party", () => {
-    expect(isFirstPartyAuthHost("notvellum.ai")).toBe(false);
-    expect(isFirstPartyAuthHost("vellum.ai.evil.com")).toBe(false);
+    expect(isFirstPartyAuthHost("notmycadet.ai")).toBe(false);
+    expect(isFirstPartyAuthHost("mycadet.ai.evil.com")).toBe(false);
     expect(isFirstPartyAuthHost("login.microsoftonline.com")).toBe(false);
   });
 });
@@ -101,10 +101,10 @@ describe("thirdPartyAuthHostFromUrl", () => {
   });
 
   test("ignores first-party, non-web, and unparseable URLs", () => {
-    expect(thirdPartyAuthHostFromUrl("https://www.vellum.ai/connect/x")).toBe(
+    expect(thirdPartyAuthHostFromUrl("https://mycadet.ai/connect/x")).toBe(
       null,
     );
-    expect(thirdPartyAuthHostFromUrl("app://vellum.ai/assistant")).toBe(null);
+    expect(thirdPartyAuthHostFromUrl("app://mycadet.ai/assistant")).toBe(null);
     expect(thirdPartyAuthHostFromUrl("about:blank")).toBe(null);
     expect(thirdPartyAuthHostFromUrl("not a url")).toBe(null);
   });
@@ -145,14 +145,14 @@ describe("selectSignInCookies", () => {
     expect(selected.map((c) => c.name).sort()).toEqual(["ESTSAUTH", "SID"]);
   });
 
-  test("never selects a Vellum or loopback cookie", () => {
+  test("never selects a Cadet or loopback cookie", () => {
     const selected = selectSignInCookies(
       [
-        { name: "vellum_session", domain: ".vellum.ai", path: "/" },
+        { name: "cadet_session", domain: ".mycadet.ai", path: "/" },
         { name: "dev", domain: "localhost", path: "/" },
         { name: "ESTSAUTH", domain: "login.microsoftonline.com", path: "/" },
       ],
-      ["login.microsoftonline.com", "www.vellum.ai", "localhost"],
+      ["login.microsoftonline.com", "mycadet.ai", "localhost"],
     );
     expect(selected.map((c) => c.name)).toEqual(["ESTSAUTH"]);
   });
@@ -189,7 +189,7 @@ describe("clearSignInCookiesForHosts", () => {
         domain: "login.microsoftonline.com",
         path: "/",
       },
-      { name: "vellum_session", domain: ".vellum.ai", path: "/" },
+      { name: "cadet_session", domain: ".mycadet.ai", path: "/" },
     ]);
 
     const removed = await clearSignInCookiesForHosts(jar, [
@@ -279,7 +279,7 @@ describe("trackAuthPopupSignInState", () => {
     const jar = fakeJar([
       { name: "ESTSAUTH", domain: "login.microsoftonline.com", path: "/" },
       { name: "MSPAuth", domain: ".login.live.com", path: "/" },
-      { name: "vellum_session", domain: ".vellum.ai", path: "/" },
+      { name: "cadet_session", domain: ".mycadet.ai", path: "/" },
     ]);
     let clearedHosts: readonly string[] = [];
 
@@ -289,14 +289,14 @@ describe("trackAuthPopupSignInState", () => {
     });
 
     // The connect URL starts first-party, redirects into Microsoft, and lands
-    // back on the Vellum completion page.
-    popup.navigate({}, "https://www.vellum.ai/connect/abc");
+    // back on the Cadet completion page.
+    popup.navigate({}, "https://mycadet.ai/connect/abc");
     popup.navigate(
       {},
       "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
     );
     popup.navigate({ url: "https://login.live.com/oauth20_authorize.srf" });
-    popup.navigate({}, "https://www.vellum.ai/account/oauth/popup-complete");
+    popup.navigate({}, "https://mycadet.ai/account/oauth/popup-complete");
     popup.close();
 
     await flush();
@@ -328,11 +328,11 @@ describe("trackAuthPopupSignInState", () => {
     );
     popup.redirect(
       {},
-      "https://www.vellum.ai/account/oauth/popup-complete?oauth_status=connected",
+      "https://mycadet.ai/account/oauth/popup-complete?oauth_status=connected",
     );
     popup.navigate(
       {},
-      "https://www.vellum.ai/account/oauth/popup-complete?oauth_status=connected",
+      "https://mycadet.ai/account/oauth/popup-complete?oauth_status=connected",
     );
     popup.close();
 
@@ -359,12 +359,12 @@ describe("trackAuthPopupSignInState", () => {
   test("leaves the jar untouched for a popup that never left first-party hosts", async () => {
     const popup = fakePopup();
     const jar = fakeJar([
-      { name: "vellum_session", domain: ".vellum.ai", path: "/" },
+      { name: "cadet_session", domain: ".mycadet.ai", path: "/" },
     ]);
 
     trackAuthPopupSignInState(popup.window, { cookies: () => jar });
 
-    popup.navigate({}, "https://www.vellum.ai/account/settings");
+    popup.navigate({}, "https://mycadet.ai/account/settings");
     popup.close();
 
     await flush();
@@ -425,7 +425,7 @@ describe("createAuthPopupSignInTracker", () => {
 
     tracker.trackCreatedChild(popup.window);
 
-    popup.navigate({}, "https://github.com/vellum-ai/vellum-assistant");
+    popup.navigate({}, "https://github.com/vargasjr-dev/mycadet");
     popup.close();
 
     await flush();
@@ -446,7 +446,7 @@ describe("createAuthPopupSignInTracker", () => {
     tracker.trackCreatedChild(authPopup.window);
     tracker.trackCreatedChild(linkPopup.window);
 
-    linkPopup.navigate({}, "https://github.com/vellum-ai/vellum-assistant");
+    linkPopup.navigate({}, "https://github.com/vargasjr-dev/mycadet");
     linkPopup.close();
     authPopup.navigate({}, "https://login.microsoftonline.com/common");
     authPopup.close();

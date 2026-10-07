@@ -79,17 +79,17 @@ function resetState(): void {
   emitSignalCalls.length = 0;
   gatewayGuardians = [];
 
-  const principalId = `vellum-principal-${crypto.randomUUID()}`;
+  const principalId = `cadet-principal-${crypto.randomUUID()}`;
   gatewayGuardians.push({
-    contactId: "c-vellum",
-    channelType: "vellum",
+    contactId: "c-cadet",
+    channelType: "cadet",
     address: principalId,
     principalId,
     displayName: principalId,
     status: "active",
   });
   createGuardianBinding({
-    channel: "vellum",
+    channel: "cadet",
     guardianExternalUserId: principalId,
     guardianDeliveryChatId: "local",
     guardianPrincipalId: principalId,

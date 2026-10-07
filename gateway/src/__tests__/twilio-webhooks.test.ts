@@ -769,7 +769,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     });
   });
 
-  test("validates signature against X-Vellum-Ingress-URL from platform callback proxy", async () => {
+  test("validates signature against X-Cadet-Ingress-URL from platform callback proxy", async () => {
     fetchMock = mock(
       async () =>
         new Response('<?xml version="1.0" encoding="UTF-8"?><Response/>', {
@@ -784,7 +784,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     // the /v1/gateway/callbacks/{assistantId}/ prefix that the gateway
     // never sees in the request path.
     const platformCallbackUrl =
-      "https://platform.vellum.ai/v1/gateway/callbacks/abc123/webhooks/twilio/voice";
+      "https://cloud.cadet.ai/v1/gateway/callbacks/abc123/webhooks/twilio/voice";
     const localUrl =
       "http://localhost:7830/webhooks/twilio/voice?callSessionId=platform-proxy-test";
     const params = { CallSid: "CA-platform-proxy" };
@@ -796,7 +796,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         "X-Twilio-Signature": signature,
-        "X-Vellum-Ingress-URL": platformCallbackUrl,
+        "X-Cadet-Ingress-URL": platformCallbackUrl,
       },
       body: new URLSearchParams(params).toString(),
     });
@@ -822,7 +822,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
       async () =>
         new Response(
           '<?xml version="1.0" encoding="UTF-8"?><Response><Connect>' +
-            '<Stream url="wss://__VELLUM_PUBLIC_BASE_URL__/webhooks/twilio/media-stream/sess-1/__VELLUM_RELAY_TOKEN__"/>' +
+            '<Stream url="wss://__CADET_PUBLIC_BASE_URL__/webhooks/twilio/media-stream/sess-1/__CADET_RELAY_TOKEN__"/>' +
             "</Connect></Response>",
           {
             status: 200,
@@ -837,7 +837,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     );
 
     const platformCallbackUrl =
-      `https://staging-platform.vellum.ai/v1/gateway/callbacks/${assistantId}` +
+      `https://staging-cloud.cadet.ai/v1/gateway/callbacks/${assistantId}` +
       "/webhooks/twilio/voice?callSessionId=platform-wss-test";
     const localUrl =
       "http://localhost:7830/webhooks/twilio/voice?callSessionId=platform-wss-test";
@@ -848,7 +848,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         "X-Twilio-Signature": signature,
-        "X-Vellum-Ingress-URL": platformCallbackUrl,
+        "X-Cadet-Ingress-URL": platformCallbackUrl,
       },
       body: new URLSearchParams(params).toString(),
     });
@@ -859,8 +859,8 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     expect(body).toContain(
       `url="wss://tunnel-staging.mycadet.ai/${assistantId}/webhooks/twilio/media-stream/sess-1/`,
     );
-    expect(body).not.toContain("__VELLUM_PUBLIC_BASE_URL__");
-    expect(body).not.toContain("staging-platform.vellum.ai");
+    expect(body).not.toContain("__CADET_PUBLIC_BASE_URL__");
+    expect(body).not.toContain("staging-cloud.cadet.ai");
   });
 
   test("platform proxy URL takes priority over configured ingress", async () => {
@@ -879,7 +879,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     );
 
     const platformCallbackUrl =
-      "https://platform.vellum.ai/v1/gateway/callbacks/abc123/webhooks/twilio/voice";
+      "https://cloud.cadet.ai/v1/gateway/callbacks/abc123/webhooks/twilio/voice";
     const localUrl =
       "http://localhost:7830/webhooks/twilio/voice?callSessionId=priority-test";
     const params = { CallSid: "CA-priority" };
@@ -891,7 +891,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         "X-Twilio-Signature": signature,
-        "X-Vellum-Ingress-URL": platformCallbackUrl,
+        "X-Cadet-Ingress-URL": platformCallbackUrl,
       },
       body: new URLSearchParams(params).toString(),
     });

@@ -228,7 +228,7 @@ export interface WakeOptions {
    * loop runs. Required for internal background jobs that need elevated
    * trust to invoke side-effect tools — without it the loop falls back to
    * `trustClass: "unknown"` and side-effect tools are blocked. Caller
-   * should pass `{ sourceChannel: "vellum", trustClass: "guardian" }` for
+   * should pass `{ sourceChannel: "cadet", trustClass: "guardian" }` for
    * assistant-self-maintenance jobs.
    */
   trustContext?: TrustContext;
@@ -238,7 +238,7 @@ export interface WakeOptions {
    * pressure even when they otherwise carry internal guardian trust.
    */
   sourceChannel?: TrustContext["sourceChannel"];
-  sourceInterface?: InterfaceId | "vellum";
+  sourceInterface?: InterfaceId | "cadet";
   /**
    * LLM call site to route this wake through. Defaults to `"mainAgent"` so
    * conversation wakes share the user's chat-model selection. Background jobs
@@ -389,7 +389,7 @@ export interface WakeOptions {
    * so their prompt is otherwise built from whatever snapshot the
    * conversation already holds — for a freshly hydrated conversation (the
    * fork-retrospective case) that is the no-trust-context derivation
-   * (guardian persona + "vellum" channel) regardless of which actor/channel
+   * (guardian persona + "cadet" channel) regardless of which actor/channel
    * the conversation belongs to. Used by fork-based memory retrospectives to
    * render the SOURCE conversation's persona sections — both for review
    * quality and for byte-parity with the source's cached system-prompt
@@ -673,14 +673,14 @@ function buildWakeTrust(
 ): TrustContext {
   if (decision.action !== "allow-cleanup-mode") {
     return {
-      sourceChannel: opts.sourceChannel ?? "vellum",
+      sourceChannel: opts.sourceChannel ?? "cadet",
       trustClass: "unknown",
     };
   }
   return (
     opts.trustContext ??
     ({
-      sourceChannel: opts.sourceChannel ?? "vellum",
+      sourceChannel: opts.sourceChannel ?? "cadet",
       trustClass: "guardian",
     } satisfies TrustContext)
   );

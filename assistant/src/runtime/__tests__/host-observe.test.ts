@@ -67,8 +67,8 @@ const hostCuResultRoute = ROUTES.find(
 async function postResult(
   body: Record<string, unknown>,
   headers: Record<string, string> = {
-    "x-vellum-client-id": "mac-1",
-    "x-vellum-actor-principal-id": ACTOR,
+    "x-cadet-client-id": "mac-1",
+    "x-cadet-actor-principal-id": ACTOR,
   },
 ): Promise<void> {
   await hostCuResultRoute?.handler({ body, headers });
@@ -375,8 +375,8 @@ describe("observeHostScreen", () => {
         postResult(
           { requestId, axTree: "Window [1]" },
           {
-            "x-vellum-client-id": "mac-1",
-            "x-vellum-actor-principal-id": OTHER_ACTOR,
+            "x-cadet-client-id": "mac-1",
+            "x-cadet-actor-principal-id": OTHER_ACTOR,
           },
         ),
       ).rejects.toThrow();

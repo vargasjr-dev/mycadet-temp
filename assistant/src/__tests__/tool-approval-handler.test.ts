@@ -6,7 +6,7 @@ import {
   thresholdReaderMock,
 } from "./gateway-threshold-reader-mock.js";
 
-const testDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testDir = process.env.CADET_WORKSPACE_DIR!;
 
 // Mock verification control-plane policy -- not targeting control-plane by default
 mock.module("../tools/verification-control-plane-policy.js", () => ({

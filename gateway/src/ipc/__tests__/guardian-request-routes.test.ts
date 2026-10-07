@@ -120,7 +120,7 @@ beforeEach(async () => {
   getGatewayDb().delete(guardianRequestDeliveries).run();
   getGatewayDb().delete(guardianRequests).run();
 
-  socketDir = mkdtempSync(join(tmpdir(), "vellum-ipc-test-"));
+  socketDir = mkdtempSync(join(tmpdir(), "cadet-ipc-test-"));
   prevEnv = process.env.GATEWAY_IPC_SOCKET_DIR;
   process.env.GATEWAY_IPC_SOCKET_DIR = socketDir;
   // Disable the watchdog so the test has a single deterministic listener.
@@ -240,7 +240,7 @@ describe("guardian_requests_create", () => {
     });
     const desktop = await createRequest({
       kind: "tool_approval",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       toolName: "bash",
     });
     const bare = await createRequest({});
@@ -314,7 +314,7 @@ describe("guardian_requests_list", () => {
     });
     const desktop = await createRequest({
       kind: "tool_approval",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       toolName: "bash",
     });
     const channel = await createRequest({ sourceChannel: "telegram" });

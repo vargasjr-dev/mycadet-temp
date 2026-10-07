@@ -5,7 +5,7 @@
  *
  * The flow mirrors `npm publish`: validate the package locally, resolve the
  * version (commit SHA), and POST to a registry endpoint. The platform then
- * creates a pull request against `vellum-ai/vellum-assistant` using the
+ * creates a pull request against `vargasjr-dev/mycadet` using the
  * Cadet Automation GitHub App.
  *
  * Designed for direct programmatic use with an injected `fetch`, mirroring
@@ -343,12 +343,12 @@ export async function postPublishRequest(
  *
  * Returns `null` when not connected to the Cadet Cloud (no API key
  * or base URL configured). The CLI command uses this to avoid hoisting
- * `VellumPlatformClient` into its static import graph; resolving it lazily
+ * `CadetPlatformClient` into its static import graph; resolving it lazily
  * keeps that daemon code out of the CLI process until the command needs it.
  */
 export async function resolvePlatformDeps(): Promise<PublishDeps | null> {
-  const { VellumPlatformClient } = await import("../../platform/client.js");
-  const client = await VellumPlatformClient.create();
+  const { CadetPlatformClient } = await import("../../platform/client.js");
+  const client = await CadetPlatformClient.create();
   if (!client) {
     return null;
   }

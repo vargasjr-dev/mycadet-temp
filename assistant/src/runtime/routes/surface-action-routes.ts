@@ -4,7 +4,7 @@
  * POST /v1/surface-actions — dispatch a surface action to an active conversation.
  * Requires the conversation to already exist (does not create new conversations).
  *
- * Trust context is resolved from the `x-vellum-actor-principal-id` header
+ * Trust context is resolved from the `x-cadet-actor-principal-id` header
  * injected by the HTTP adapter from the authenticated AuthContext.
  */
 import { z } from "zod";
@@ -18,6 +18,7 @@ import {
   findLocalGuardianPrincipalId,
   resolveActorPrincipalIdForLocalGuardian,
 } from "../local-actor-identity.js";
+import { resolveCadetActorTrustContext } from "./cadet-actor-trust.js";
 import { parseCallbackData } from "./channel-route-shared.js";
 import {
   BadRequestError,
@@ -27,7 +28,6 @@ import {
 } from "./errors.js";
 import { resolveSurfaceConversation } from "./surface-conversation-resolver.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
-import { resolveVellumActorTrustContext } from "./vellum-actor-trust.js";
 
 const log = getLogger("surface-action-routes");
 
@@ -37,11 +37,11 @@ const log = getLogger("surface-action-routes");
 
 /**
  * Resolve trust context for the actor principal from the gateway guardian
- * binding, and return it for the caller to attribute this action with. A vellum
+ * binding, and return it for the caller to attribute this action with. A cadet
  * principal is the guardian or nobody, so the mapper yields guardian or
  * unknown. Resolution (including the dev-bypass principal translation and the
  * mutating reset-drift repair) lives in the shared
- * {@link resolveVellumActorTrustContext} so the surface content route's
+ * {@link resolveCadetActorTrustContext} so the surface content route's
  * read-only requester scoping cannot drift from it.
  *
  * Resolution only: the requester travels to `handleSurfaceAction` as an
@@ -53,7 +53,7 @@ const log = getLogger("surface-action-routes");
 async function resolveRequesterTrustContext(
   actorPrincipalId: string | undefined,
 ): Promise<TrustContext> {
-  return resolveVellumActorTrustContext(actorPrincipalId, {
+  return resolveCadetActorTrustContext(actorPrincipalId, {
     healResetDrift: true,
   });
 }
@@ -91,16 +91,16 @@ async function handleSurfaceAction({
   // Intercept access-request approval actions (apr:<requestId>:<action>)
   // before conversation resolution — these are cross-conversation decisions
   // that route through the guardian decision primitive.
-  const aprDecision = parseCallbackData(actionId, "vellum");
+  const aprDecision = parseCallbackData(actionId, "cadet");
   if (aprDecision) {
     // Resolve the actor's guardian principal ID. In dev mode the synthetic
     // "dev-bypass" principal won't match the real guardian binding, so resolve
     // the local guardian principal — mirrors guardian-action-routes.ts.
     let guardianPrincipalId: string | undefined =
-      headers?.["x-vellum-actor-principal-id"] ?? undefined;
+      headers?.["x-cadet-actor-principal-id"] ?? undefined;
     if (
       isHttpAuthDisabled() &&
-      headers?.["x-vellum-actor-principal-id"] === "dev-bypass"
+      headers?.["x-cadet-actor-principal-id"] === "dev-bypass"
     ) {
       guardianPrincipalId = (await findLocalGuardianPrincipalId()) ?? undefined;
     }
@@ -109,7 +109,7 @@ async function handleSurfaceAction({
       requestId: aprDecision.requestId!,
       action: aprDecision.action,
       conversationId: conversationId ?? undefined,
-      channel: "vellum",
+      channel: "cadet",
       actorContext: {
         actorPrincipalId: guardianPrincipalId,
         guardianPrincipalId,
@@ -152,7 +152,7 @@ async function handleSurfaceAction({
     throw new NotFoundError("No active conversation found");
   }
 
-  const actorPrincipalId = headers?.["x-vellum-actor-principal-id"];
+  const actorPrincipalId = headers?.["x-cadet-actor-principal-id"];
   const requesterTrustContext =
     await resolveRequesterTrustContext(actorPrincipalId);
 

@@ -116,7 +116,7 @@ async function executeBackgroundJob(opts: {
     systemHint: opts.systemHint,
     prompt: opts.prompt,
     trustContext: {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     },
     callSite: opts.callSite,

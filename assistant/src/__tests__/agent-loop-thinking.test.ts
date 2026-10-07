@@ -51,7 +51,7 @@ describe("AgentLoop thinking and effort", () => {
       requestId: "test-request",
       messages: [{ role: "user", content: [{ type: "text", text: "Hi" }] }],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const config = lastConfig()!;
@@ -75,7 +75,7 @@ describe("AgentLoop thinking and effort", () => {
       requestId: "test-request",
       messages: [{ role: "user", content: [{ type: "text", text: "Hi" }] }],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const config = lastConfig()!;
@@ -98,7 +98,7 @@ describe("AgentLoop thinking and effort", () => {
       requestId: "test-request",
       messages: [{ role: "user", content: [{ type: "text", text: "Hi" }] }],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const config = lastConfig()!;
@@ -122,7 +122,7 @@ describe("AgentLoop thinking and effort", () => {
       requestId: "test-request",
       messages: [{ role: "user", content: [{ type: "text", text: "Hi" }] }],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     const config = lastConfig()!;

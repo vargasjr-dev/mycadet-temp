@@ -26,7 +26,7 @@ export const resolveUpdateFeedUrl = (
   arch: string,
 ): string => {
   const bucketEnv = environment === "production" ? "prod" : environment;
-  return `https://storage.googleapis.com/vellum-ai-${bucketEnv}-releases/${platform}/${arch}/`;
+  return `https://storage.googleapis.com/mycadet-${bucketEnv}-releases/${platform}/${arch}/`;
 };
 
 let autoUpdater: DesktopAutoUpdater;

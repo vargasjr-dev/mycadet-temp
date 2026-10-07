@@ -43,7 +43,7 @@ const log = getLogger("outbound-post-reconciliation");
  * assistant's posts resolve back to this row.
  *
  * An id the row already names is a redelivery and is skipped. A row
- * persisted with no envelope (e.g. vellum outbound) is left untouched. Every
+ * persisted with no envelope (e.g. cadet outbound) is left untouched. Every
  * write retries transient SQLite contention (`withSqliteRetry`), because
  * this is the only durable record of the sent message's id and nothing
  * revisits it once the delivery settles. Remaining failures are logged and

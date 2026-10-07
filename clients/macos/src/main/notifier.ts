@@ -14,13 +14,13 @@ import path from "node:path";
 
 import log from "./logger";
 
-const ADDON_FILENAME = "vellum-notifier.node";
+const ADDON_FILENAME = "cadet-notifier.node";
 
 /**
  * Kill switch for a build where the addon misbehaves: the loader reports
  * unavailable and every notification goes back through Electron.
  */
-const DISABLE_ENV_VAR = "VELLUM_DISABLE_NATIVE_NOTIFIER";
+const DISABLE_ENV_VAR = "CADET_DISABLE_NATIVE_NOTIFIER";
 
 interface NotifierSender {
   id: string;

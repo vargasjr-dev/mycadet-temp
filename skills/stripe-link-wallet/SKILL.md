@@ -32,7 +32,7 @@ When the user has connected Stripe Link to the assistant, the CLI reaches Link t
 - Always use `--format json` on every command. The default interactive Ink output is for humans, not agents. On `auth login` it is worse than noise: without `--format json` the command enters the interactive Ink UI and blocks until someone approves in the Link app, which nobody can do because the URL never reaches the user. Exception: `demo` and `onboard` require a TTY and have no JSON mode.
 - **Amount is in cents.** $10.00 = `--amount 1000`. Maximum is 50,000 cents ($500).
 - Never log or repeat raw card credentials (PAN, CVC) in the conversation. Always use `--output-file` when retrieving card credentials, and delete that file once the checkout is done.
-- Never print the proxy grant. Only `eval` the `--export` output of `assistant oauth proxy-url`; do not run it without `--export`, do not `echo` or `env` the `LINK_*` or `VELLUM_OAUTH_PROXY_*` variables, and do not write them to a file.
+- Never print the proxy grant. Only `eval` the `--export` output of `assistant oauth proxy-url`; do not run it without `--export`, do not `echo` or `env` the `LINK_*` or `CADET_OAUTH_PROXY_*` variables, and do not write them to a file.
 
 ---
 
@@ -68,7 +68,7 @@ assistant oauth status stripe_link --json
 
 - `connections` lists one or more entries: use the [proxy preamble](#proxy-preamble) on every `link-cli` call and skip `auth login` entirely. Only active connections are returned, so do not filter on the `status` field (a managed connection reads `ACTIVE`, a your-own one `active`). Several entries: ask the user which account to use and pass it as `--account` in the preamble.
 - `connections` is empty: check for an existing device login with `link-cli auth status --format json`. `"authenticated": true` means the fallback path works as-is. Otherwise go to **Setup**.
-- Non-zero exit mentioning `Unknown provider` or `Not connected to Vellum platform`: the connection path is unavailable (Link OAuth is not enabled for this assistant, or it has no platform pairing). Use the device login path only.
+- Non-zero exit mentioning `Unknown provider` or `Not connected to Cadet platform`: the connection path is unavailable (Link OAuth is not enabled for this assistant, or it has no platform pairing). Use the device login path only.
 - `link-cli` missing: use `bunx @stripe/link-cli` for every `link-cli` command in this skill.
 - `"update"` key present in `link-cli auth status` output: mention the update to the user but don't block on it.
 
@@ -78,9 +78,9 @@ Every bash call that runs `link-cli` on the connection path starts with these li
 
 ```bash
 eval "$(assistant oauth proxy-url stripe_link --export)"
-: "${VELLUM_OAUTH_PROXY_TOKEN:?no active Stripe Link connection, see Setup}"
-export LINK_API_BASE_URL="$VELLUM_OAUTH_PROXY_BASE_URL" \
-       LINK_ACCESS_TOKEN="$VELLUM_OAUTH_PROXY_TOKEN" \
+: "${CADET_OAUTH_PROXY_TOKEN:?no active Stripe Link connection, see Setup}"
+export LINK_API_BASE_URL="$CADET_OAUTH_PROXY_BASE_URL" \
+       LINK_ACCESS_TOKEN="$CADET_OAUTH_PROXY_TOKEN" \
        LINK_NO_REFRESH=1
 # the link-cli command for this step goes here
 ```
@@ -125,7 +125,7 @@ Do not run `assistant oauth connect stripe_link` from the shell and do not paste
 
 ### Fallback: `link-cli` device login
 
-Use this when the connection path is unavailable (`Unknown provider` or `Not connected to Vellum platform`), the connect surface cannot be shown, or the user declined to connect through the assistant.
+Use this when the connection path is unavailable (`Unknown provider` or `Not connected to Cadet platform`), the connect surface cannot be shown, or the user declined to connect through the assistant.
 
 Login is a device flow: the CLI hands back a URL, and the user approves it in the Link app on their own device. There is no browser here, so nothing happens until the user has the link in front of them.
 
@@ -362,7 +362,7 @@ link-cli spend-request cancel <id> --format json
 | `proxy-url` reports no active connection                                                       | The connection is gone. Show the connect surface again, or switch to an existing device login                                                                                                                                                                                                                                                                                                                                    |
 | `proxy-url` reports several accounts (409)                                                     | Ask the user which account, then add `--account <account>` to the preamble                                                                                                                                                                                                                                                                                                                                                       |
 | Link API call returns 424 on the connection path                                               | The connection needs reconnecting. Show the connect surface again; do not retry the command until status is active                                                                                                                                                                                                                                                                                                               |
-| Link API call returns 402 on the connection path                                               | The Vellum platform balance is exhausted, not the wallet. Tell the user plainly and stop; a merchant 402 from `mpp pay` is unrelated                                                                                                                                                                                                                                                                                             |
+| Link API call returns 402 on the connection path                                               | The Cadet platform balance is exhausted, not the wallet. Tell the user plainly and stop; a merchant 402 from `mpp pay` is unrelated                                                                                                                                                                                                                                                                                             |
 | Link API call returns 401 or 403 on the connection path                                        | Re-run the preamble for a fresh grant. If it persists, the connection lacks scopes and must be replaced: gate it with `assistant ui confirm`, and only on confirmation run `assistant oauth disconnect stripe_link` (with the same `--account` the preamble used, when several are connected) and show the connect surface again                                                                                                 |
 | Link API call returns 400 `Managed OAuth connections cannot forward these request headers`     | A proxy or platform problem, not the wallet or the CLI: `link-cli` sends only headers the proxy accepts. Do not retry, change flags, or work around it; report the full message to the user                                                                                                                                                                                                                                      |
 | Link API call returns 502, 421, or an error body naming the proxy or platform rather than Link | Platform side, not the wallet. A read (`list`, `retrieve`, `auth status`) may be retried once. A write (`spend-request create`, `update`, `cancel`, `mpp pay`) may already have taken effect: do not repeat it. Check with `spend-request retrieve <id>`, or `spend-request list --format json` when no id came back, and decide with the user. If it recurs, report the message and stop. Never fall back to a raw checkout URL |

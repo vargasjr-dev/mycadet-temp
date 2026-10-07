@@ -1726,7 +1726,7 @@ describe("OpenRouterProvider reasoning", () => {
     await provider.sendMessage([userMsg("hi")], {
       config: {
         usageAttributionHeaders: {
-          "Vellum-Organization-Id": "org-123",
+          "Cadet-Organization-Id": "org-123",
         },
       },
     });
@@ -1736,7 +1736,7 @@ describe("OpenRouterProvider reasoning", () => {
         "HTTP-Referer": "https://mycadet.ai",
         "X-OpenRouter-Title": "Cadet",
         "X-OpenRouter-Categories": "personal-agent,cli-agent",
-        "Vellum-Organization-Id": "org-123",
+        "Cadet-Organization-Id": "org-123",
       }),
     );
     expect(lastCreateParams).not.toHaveProperty("HTTP-Referer");

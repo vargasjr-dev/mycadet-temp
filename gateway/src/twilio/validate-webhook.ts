@@ -93,7 +93,7 @@ function buildSignatureUrlCandidateDetails(
   // platform path includes the /v1/gateway/callbacks/{id}/ prefix that
   // the gateway never sees.
   addCandidate(
-    req.headers.get("x-vellum-ingress-url") ?? undefined,
+    req.headers.get("x-cadet-ingress-url") ?? undefined,
     "platform_proxy",
   );
 

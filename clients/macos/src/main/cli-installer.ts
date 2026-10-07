@@ -29,10 +29,10 @@ const LATEST_INSTALL_DIR = "latest";
 const INSTALL_APP_VERSION_MARKER = ".app-version";
 
 // Injected by `electron.vite.config.ts` at build time.
-declare const __VELLUM_ENVIRONMENT__: string;
-const VELLUM_ENVIRONMENT =
-  typeof __VELLUM_ENVIRONMENT__ === "string"
-    ? __VELLUM_ENVIRONMENT__
+declare const __CADET_ENVIRONMENT__: string;
+const CADET_ENVIRONMENT =
+  typeof __CADET_ENVIRONMENT__ === "string"
+    ? __CADET_ENVIRONMENT__
     : "production";
 
 /**
@@ -41,24 +41,24 @@ const VELLUM_ENVIRONMENT =
  * tracks production `latest`. Keep in sync with generate-cli-lockfile.sh.
  */
 function getCliDistTag(): string {
-  if (VELLUM_ENVIRONMENT === "dev") return "dev";
-  if (VELLUM_ENVIRONMENT === "staging") return "staging";
+  if (CADET_ENVIRONMENT === "dev") return "dev";
+  if (CADET_ENVIRONMENT === "staging") return "staging";
   return "latest";
 }
 
 // Baked by electron.vite.config.ts: the repo CLI entry for local builds,
 // empty for release builds (and absent under bun test).
-declare const __VELLUM_LOCAL_CLI_ENTRY__: string;
+declare const __CADET_LOCAL_CLI_ENTRY__: string;
 const LOCAL_CLI_ENTRY =
-  typeof __VELLUM_LOCAL_CLI_ENTRY__ === "string"
-    ? __VELLUM_LOCAL_CLI_ENTRY__
+  typeof __CADET_LOCAL_CLI_ENTRY__ === "string"
+    ? __CADET_LOCAL_CLI_ENTRY__
     : "";
 
 // Baked by electron.vite.config.ts from .tool-versions: the version of the
 // bundled bun. Empty outside a packaged build (e.g. under bun test).
-declare const __VELLUM_BUN_VERSION__: string;
+declare const __CADET_BUN_VERSION__: string;
 const BUNDLED_BUN_VERSION =
-  typeof __VELLUM_BUN_VERSION__ === "string" ? __VELLUM_BUN_VERSION__ : "";
+  typeof __CADET_BUN_VERSION__ === "string" ? __CADET_BUN_VERSION__ : "";
 
 /**
  * Repo CLI entry for local builds, when the checkout is actually runnable:
@@ -81,7 +81,7 @@ export function getCliRootDir(): string {
 
 /** The `cadet` bin path within an install directory. */
 function binPathIn(dir: string): string {
-  return path.join(dir, "node_modules", ".bin", "vellum");
+  return path.join(dir, "node_modules", ".bin", "cadet");
 }
 
 /** Compare two version-like dir names numerically (so 0.10.0 > 0.9.0). */
@@ -216,7 +216,7 @@ export function writeFileAtomicSync(
 }
 
 /**
- * Atomically write the locator file the `~/.local/bin/vellum` wrapper
+ * Atomically write the locator file the `~/.local/bin/cadet` wrapper
  * sources to find the bundled bun and the current CLI bin. Refreshed on
  * every launch so app moves and version bumps self-heal. Non-fatal —
  * failures are logged but never block app startup.
@@ -236,8 +236,8 @@ export function writeCliLocator(): void {
 
     const content =
       "# Written by Cadet.app on every launch. Do not edit.\n" +
-      `VELLUM_BUN=${shQuote(getBundledBunPath())}\n` +
-      `VELLUM_CLI_BIN=${shQuote(getCliBinPath())}\n`;
+      `CADET_BUN=${shQuote(getBundledBunPath())}\n` +
+      `CADET_CLI_BIN=${shQuote(getCliBinPath())}\n`;
 
     writeFileAtomicSync(locatorPath, content);
   } catch (err) {
@@ -334,7 +334,7 @@ function anchorInstallDir(installDir: string): void {
   if (existsSync(pkgPath)) return;
   writeFileAtomicSync(
     pkgPath,
-    `${JSON.stringify({ name: "vellum-cli-install", private: true }, null, 2)}\n`,
+    `${JSON.stringify({ name: "cadet-cli-install", private: true }, null, 2)}\n`,
   );
 }
 

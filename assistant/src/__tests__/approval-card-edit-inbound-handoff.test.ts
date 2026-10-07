@@ -19,7 +19,7 @@ mock.module("../daemon/conversation-registry.js", () => ({
 }));
 
 mock.module("../runtime/local-actor-identity.js", () => ({
-  findLocalGuardianPrincipalId: async () => "vellum-principal-1",
+  findLocalGuardianPrincipalId: async () => "cadet-principal-1",
 }));
 
 import type { TrustVerdict } from "@mycadet/gateway-client";
@@ -65,7 +65,7 @@ function guardianVerdict(): TrustVerdict {
     policy: "allow",
     guardianExternalUserId: GUARDIAN,
     guardianDeliveryChatId: CHAT_ID,
-    guardianPrincipalId: "vellum-principal-1",
+    guardianPrincipalId: "cadet-principal-1",
   } satisfies TrustVerdict;
 }
 

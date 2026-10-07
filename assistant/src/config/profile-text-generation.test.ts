@@ -18,7 +18,7 @@ describe("profileSupportsTextGeneration", () => {
   test("false for the managed Jev profile shape", () => {
     expect(
       profileSupportsTextGeneration(
-        { provider: "vellum", model: "jev-latest" },
+        { provider: "cadet", model: "jev-latest" },
         {},
       ),
     ).toBe(false);

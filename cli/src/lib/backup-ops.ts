@@ -22,7 +22,7 @@ import { loopbackSafeFetch } from "./loopback-fetch.js";
 export function getBackupsDir(): string {
   const dataHome =
     process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share");
-  return join(dataHome, "vellum", "backups");
+  return join(dataHome, "cadet", "backups");
 }
 
 /** Human-readable file size */

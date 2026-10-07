@@ -33,10 +33,10 @@ export interface EnvironmentDefinition {
   /**
    * The web app (Next.js) base URL for browser-facing pages like
    * `/account/login`. In production this is separate from the API backend
-   * (e.g. `www.vellum.ai` vs `cloud.mycadet.ai`); locally it's
+   * (e.g. `mycadet.ai` vs `cloud.mycadet.ai`); locally it's
    * `localhost:3000` vs `localhost:8000`.
    *
-   * Mirrors `VellumEnvironment.webURL` on the Swift side.
+   * Mirrors `CadetEnvironment.webURL` on the Swift side.
    */
   webUrl: string;
 
@@ -63,7 +63,7 @@ export interface EnvironmentDefinition {
 
   /**
    * Override for the directory containing the lockfile. Populated by the
-   * resolver from `VELLUM_LOCKFILE_DIR` (an existing e2e test escape hatch)
+   * resolver from `CADET_LOCKFILE_DIR` (an existing e2e test escape hatch)
    * so path helpers don't read env vars directly.
    */
   lockfileDirOverride?: string;

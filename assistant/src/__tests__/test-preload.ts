@@ -1,10 +1,10 @@
 /**
  * Shared test preload — runs before every test file.
  *
- * Creates a per-process temporary directory and sets VELLUM_WORKSPACE_DIR so
+ * Creates a per-process temporary directory and sets CADET_WORKSPACE_DIR so
  * that all workspace-derived helpers (getDataDir, getDbPath,
  * getConversationsDir, getProtectedDir, …) resolve under the temp dir
- * instead of the real $VELLUM_WORKSPACE_DIR.
+ * instead of the real $CADET_WORKSPACE_DIR.
  *
  * Cleanup: the temp dir is removed after all tests in the file complete.
  *
@@ -26,23 +26,23 @@ import { installGatewayIpcMock } from "./mock-gateway-ipc.js";
 
 // --- Phase 1: env override (zero source-module imports above this point) ---
 
-// Layout: <tmpRoot>/workspace as VELLUM_WORKSPACE_DIR. The parent of
-// VELLUM_WORKSPACE_DIR is what `vellumRoot()` resolves to, so a separate
+// Layout: <tmpRoot>/workspace as CADET_WORKSPACE_DIR. The parent of
+// CADET_WORKSPACE_DIR is what `cadetRoot()` resolves to, so a separate
 // tmpRoot per process gives `getProtectedDir()` and friends per-process
 // isolation without needing an explicit `setStorePathForTesting()`.
-const tmpRoot = realpathSync(mkdtempSync(join(tmpdir(), "vellum-test-")));
+const tmpRoot = realpathSync(mkdtempSync(join(tmpdir(), "cadet-test-")));
 const testDir = join(tmpRoot, "workspace");
 mkdirSync(testDir);
-process.env.VELLUM_WORKSPACE_DIR = testDir;
-process.env.VELLUM_PLATFORM_URL = "https://test-platform.vellum.ai";
+process.env.CADET_WORKSPACE_DIR = testDir;
+process.env.CADET_PLATFORM_URL = "https://test-cloud.cadet.ai";
 process.exitCode = 0;
 
 // Seed this workspace from the prebuilt "migrated" fixture (a pre-migrated set
 // of the four assistant DBs) so a test's initializeDb() finds an already-migrated
 // DB and the migration runner no-ops instead of re-running the whole chain; when
-// VELLUM_TEST_FIXTURES_DIR is unset (a lone `bun test`) nothing is copied and the
+// CADET_TEST_FIXTURES_DIR is unset (a lone `bun test`) nothing is copied and the
 // full chain runs. Plain recursive file copy — no `src/` import.
-const fixturesDir = process.env.VELLUM_TEST_FIXTURES_DIR;
+const fixturesDir = process.env.CADET_TEST_FIXTURES_DIR;
 if (fixturesDir) {
   cpSync(join(fixturesDir, "migrated"), testDir, { recursive: true });
 }
@@ -60,9 +60,9 @@ delete process.env.CES_CREDENTIAL_URL;
 // daemon that isn't there). Default the shared process-role slot to true; a
 // test simulating a worker overrides it. Written directly (not via
 // `runtime/process-role.ts`) to keep the preload free of source-module imports;
-// the slot is typed by the ambient `VellumAssistantNamespace` global (declared
-// in `src/vellum-assistant-namespace.d.ts`), so no import is needed to touch it.
-(globalThis.vellumAssistant ??= {}).mainDaemonProcess = true;
+// the slot is typed by the ambient `CadetAssistantNamespace` global (declared
+// in `src/mycadet-namespace.d.ts`), so no import is needed to touch it.
+(globalThis.cadetAssistant ??= {}).mainDaemonProcess = true;
 
 // --- Phase 2: install the IPC mock (no source-module imports) ---
 
@@ -74,8 +74,8 @@ installGatewayIpcMock();
 
 afterAll(() => {
   process.exitCode = 0;
-  delete process.env.VELLUM_WORKSPACE_DIR;
-  delete process.env.VELLUM_PLATFORM_URL;
+  delete process.env.CADET_WORKSPACE_DIR;
+  delete process.env.CADET_PLATFORM_URL;
   if (savedIsContainerized !== undefined) {
     process.env.IS_CONTAINERIZED = savedIsContainerized;
   }

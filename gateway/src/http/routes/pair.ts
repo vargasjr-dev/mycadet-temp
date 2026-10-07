@@ -15,7 +15,7 @@
  *     at 10/minute per peer IP.
  *   - **Audit logging**: every rejected request emits a structured warn log.
  *
- * The client declares its type via the standard `X-Vellum-Interface-Id`
+ * The client declares its type via the standard `X-Cadet-Interface-Id`
  * header (e.g. `chrome-extension`). The returned JWT uses the
  * `actor_client_v1` scope profile (includes `approval.write`) and is valid
  * as a gateway edge token — send it as `Authorization: Bearer <token>` on
@@ -121,7 +121,7 @@ export async function resolveLocalGuardianPrincipalId(): Promise<string> {
       .where(
         and(
           eq(gwContacts.role, "guardian"),
-          eq(gwContactChannels.type, "vellum"),
+          eq(gwContactChannels.type, "cadet"),
           eq(gwContactChannels.status, "active"),
         ),
       )
@@ -170,7 +170,7 @@ function auditDeny(
 
 function getExternalAssistantId(): string {
   return (
-    process.env.VELLUM_ASSISTANT_NAME?.trim() || DAEMON_INTERNAL_ASSISTANT_ID
+    process.env.CADET_ASSISTANT_NAME?.trim() || DAEMON_INTERNAL_ASSISTANT_ID
   );
 }
 
@@ -214,13 +214,13 @@ export async function handlePair(
     );
   }
 
-  const interfaceId = req.headers.get("x-vellum-interface-id");
-  const clientId = req.headers.get("x-vellum-client-id");
+  const interfaceId = req.headers.get("x-cadet-interface-id");
+  const clientId = req.headers.get("x-cadet-client-id");
 
   if (!interfaceId) {
     return errorResponse(
       "BAD_REQUEST",
-      "missing required header: X-Vellum-Interface-Id",
+      "missing required header: X-Cadet-Interface-Id",
       400,
     );
   }
@@ -299,7 +299,7 @@ export async function handlePair(
 
     const expiresAt = Date.now() + PAIR_TOKEN_TTL_SECONDS * 1000;
     const token = mintToken({
-      aud: "vellum-gateway",
+      aud: "cadet-gateway",
       sub: `actor:${assistantId}:${guardianPrincipalId}`,
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -330,7 +330,7 @@ export async function handlePair(
   if (interfaceId === "cli") {
     // A real `cadet pair` is a terminal process and never sends an Origin
     // header; any Origin means a browser/WebView is calling (e.g. dynamic
-    // surface JS at https://<appId>.vellum.local). Reject it: combined with the
+    // surface JS at https://<appId>.cadet.local). Reject it: combined with the
     // gateway's WebView CORS allowance, such JS could otherwise mint and read
     // back a broadly-scoped actor_client_v1 token. (A local non-browser process
     // omitting Origin can still mint — that's the intentional loopback trust

@@ -58,20 +58,20 @@ export function getSeed(name: string): EnvironmentDefinition | undefined {
  *
  * Priority:
  *   1. `override` argument (from a `--environment` CLI flag, when wired)
- *   2. `VELLUM_ENVIRONMENT` env var
- *   3. User config file (`~/.config/vellum/environment`, set via `cadet env set`)
+ *   2. `CADET_ENVIRONMENT` env var
+ *   3. User config file (`~/.config/cadet/environment`, set via `cadet env set`)
  *   4. Default: `production`
  *
  * Per-field env-var overrides are honored on the resolved definition as
  * ad-hoc escape hatches (they do not materialize new environments):
- *   - `VELLUM_PLATFORM_URL` overrides `platformUrl`
- *   - `VELLUM_WEB_URL` overrides `webUrl`
- *   - `VELLUM_ASSISTANT_PLATFORM_URL` overrides `assistantPlatformUrl`
- *   - `VELLUM_LOCKFILE_DIR` overrides `lockfileDirOverride` (legacy e2e
+ *   - `CADET_PLATFORM_URL` overrides `platformUrl`
+ *   - `CADET_WEB_URL` overrides `webUrl`
+ *   - `CADET_ASSISTANT_PLATFORM_URL` overrides `assistantPlatformUrl`
+ *   - `CADET_LOCKFILE_DIR` overrides `lockfileDirOverride` (legacy e2e
  *     test hook)
  *
  * This function should be the single entrypoint for environment resolution.
- * No other code should drive off `VELLUM_ENVIRONMENT` directly.
+ * No other code should drive off `CADET_ENVIRONMENT` directly.
  */
 export function getCurrentEnvironment(
   override?: string,
@@ -81,15 +81,15 @@ export function getCurrentEnvironment(
   // When the environment was resolved from the config file, propagate it
   // into process.env so child processes (daemon, gateway) inherit the same
   // environment without needing to read the config file themselves.
-  if (source === "config" && !process.env.VELLUM_ENVIRONMENT) {
-    process.env.VELLUM_ENVIRONMENT = name;
+  if (source === "config" && !process.env.CADET_ENVIRONMENT) {
+    process.env.CADET_ENVIRONMENT = name;
   }
 
   const seed = SEEDS[name];
   if (!seed) {
     if (name !== DEFAULT_ENVIRONMENT_NAME) {
       // Warn on stderr instead of throwing, to match the silent-fallback
-      // behavior in assistant/src/util/platform.ts:getXdgVellumConfigDirName,
+      // behavior in assistant/src/util/platform.ts:getXdgCadetConfigDirName,
       // which silently falls back to production; the CLI agrees so neither
       // writer ends up in a disjoint state on a typo.
       process.stderr.write(
@@ -108,23 +108,23 @@ export function getCurrentEnvironment(
 
   const resolved: EnvironmentDefinition = { ...seed };
 
-  const platformUrlOverride = process.env.VELLUM_PLATFORM_URL?.trim();
+  const platformUrlOverride = process.env.CADET_PLATFORM_URL?.trim();
   if (platformUrlOverride) {
     resolved.platformUrl = platformUrlOverride;
   }
 
-  const webUrlOverride = process.env.VELLUM_WEB_URL?.trim();
+  const webUrlOverride = process.env.CADET_WEB_URL?.trim();
   if (webUrlOverride) {
     resolved.webUrl = webUrlOverride;
   }
 
   const assistantPlatformUrlOverride =
-    process.env.VELLUM_ASSISTANT_PLATFORM_URL?.trim();
+    process.env.CADET_ASSISTANT_PLATFORM_URL?.trim();
   if (assistantPlatformUrlOverride) {
     resolved.assistantPlatformUrl = assistantPlatformUrlOverride;
   }
 
-  const lockfileDirOverride = process.env.VELLUM_LOCKFILE_DIR?.trim();
+  const lockfileDirOverride = process.env.CADET_LOCKFILE_DIR?.trim();
   if (lockfileDirOverride) {
     resolved.lockfileDirOverride = lockfileDirOverride;
   }
@@ -143,7 +143,7 @@ export function resolveEnvironmentSource(override?: string): {
   if (trimmedOverride && trimmedOverride.length > 0) {
     return { name: trimmedOverride, source: "flag" };
   }
-  const envVar = process.env.VELLUM_ENVIRONMENT?.trim();
+  const envVar = process.env.CADET_ENVIRONMENT?.trim();
   if (envVar && envVar.length > 0) {
     return { name: envVar, source: "env" };
   }

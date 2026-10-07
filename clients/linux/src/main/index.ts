@@ -6,7 +6,7 @@ import path from "node:path";
 
 import {
   BUNDLES_DIR_NAME,
-  VELLUMAPP_PROTOCOL,
+  CADETAPP_PROTOCOL,
 } from "@mycadet/electron-desktop/bundle-platform";
 import { installCsp } from "@mycadet/electron-desktop/csp";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
@@ -23,7 +23,7 @@ import {
   executePlatformForwardPlan,
   planPlatformForward,
 } from "@mycadet/electron-desktop/platform-forward";
-import { registerVellumAppProtocol } from "@mycadet/electron-desktop/vellumapp-protocol";
+import { registerCadetAppProtocol } from "@mycadet/electron-desktop/cadetapp-protocol";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
   pairedGatewayTargetsFromLockfile,
@@ -49,7 +49,7 @@ import { ensureVisible } from "./main-window";
 import { installWebContentsSecurity } from "./windows.client";
 
 /**
- * Linux shell for the Vellum Assistant: a hardened BrowserWindow loading
+ * Linux shell for the Cadet Assistant: a hardened BrowserWindow loading
  * the clients/web renderer (Vite dev server in dev, `app://` static serving
  * of `resources/web-dist` in packaged builds). Every desktop capability is a
  * module under `./features/`, composed through the capability registry once
@@ -58,10 +58,10 @@ import { installWebContentsSecurity } from "./windows.client";
 
 // Dev-only: override the package `name` (`@mycadet/linux`) so
 // `app.getPath("userData")` resolves to its own directory, cleanly separate
-// from other Vellum installs. Packaged builds get a real `productName` from
+// from other Cadet installs. Packaged builds get a real `productName` from
 // electron-builder. Must run before `userData` is first read.
 if (!app.isPackaged) {
-  app.setName("Vellum Electron Linux");
+  app.setName("Cadet Electron Linux");
 }
 
 // Packaged builds all share the same package.json `name`, so Electron
@@ -100,7 +100,7 @@ protocol.registerSchemesAsPrivileged([
     },
   },
   {
-    scheme: VELLUMAPP_PROTOCOL,
+    scheme: CADETAPP_PROTOCOL,
     privileges: {
       standard: true,
       secure: true,
@@ -111,7 +111,7 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
-// Serve clients/web/dist/ as static files via `app://vellum.ai/...`. Route-like
+// Serve clients/web/dist/ as static files via `app://mycadet.ai/...`. Route-like
 // paths (no file extension, or `.html`) fall back to index.html so React
 // Router can handle client-side routes on reload; requests for missing
 // static assets return 404 so a stale or partial deploy surfaces as a load
@@ -211,7 +211,7 @@ handleSync("cadet:config:get", () => ({
   platformUrl: resolvedConfig.platformUrl,
   disablePlatform:
     ["true", "1"].includes(
-      (process.env.VELLUM_DISABLE_PLATFORM ?? "").toLowerCase(),
+      (process.env.CADET_DISABLE_PLATFORM ?? "").toLowerCase(),
     ) || undefined,
   deviceId: getDeviceId(),
 }));
@@ -257,7 +257,7 @@ app
         resolveAllowedOrigin,
       });
     }
-    registerVellumAppProtocol(
+    registerCadetAppProtocol(
       path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
     );
     installPermissionHandler(resolveAllowedOrigin);

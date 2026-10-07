@@ -378,8 +378,8 @@ describe("sanitizeInboundHeaders", () => {
       "x-trace-id",
       "x-forwarded-for",
       "x-forwarded-proto",
-      "x-vellum-subject",
-      "x-vellum-principal-type",
+      "x-cadet-subject",
+      "x-cadet-principal-type",
     ];
     const headers = Object.fromEntries(
       stripped.map((name) => [name, "dropped"]),
@@ -498,7 +498,7 @@ describe("materializeProxyResponse", () => {
           status,
           headers: {
             Location: "https://api.example.com/resources/created",
-            "x-vellum-proxy-location": "https://evil.example.com/steal",
+            "x-cadet-proxy-location": "https://evil.example.com/steal",
           },
         }),
         "POST",
@@ -516,8 +516,8 @@ describe("materializeProxyResponse", () => {
       upstream({
         status: 302,
         headers: {
-          "X-Vellum-Proxy-Location": "https://evil.example.com/steal",
-          "x-vellum-subject": "local:self:oauth-proxy.stripe_link",
+          "X-Cadet-Proxy-Location": "https://evil.example.com/steal",
+          "x-cadet-subject": "local:self:oauth-proxy.stripe_link",
           location: "https://files.example.com/blob/abc",
         },
       }),

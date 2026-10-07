@@ -31,13 +31,13 @@ describe("150-stt-flux-provider-to-model-family", () => {
 
   test("rewrites the managed pair the same way", () => {
     const dir = workspaceWith({
-      services: { stt: { provider: "vellum-flux", providers: {} } },
+      services: { stt: { provider: "cadet-flux", providers: {} } },
     });
 
     sttFluxProviderToModelFamilyMigration.run(dir);
 
-    expect(readConfig(dir).services.stt.provider).toBe("vellum");
-    expect(readConfig(dir).services.stt.providers.vellum.model).toBe("flux");
+    expect(readConfig(dir).services.stt.provider).toBe("cadet");
+    expect(readConfig(dir).services.stt.providers.cadet.model).toBe("flux");
   });
 
   test("keeps existing settings on the parent's entry", () => {

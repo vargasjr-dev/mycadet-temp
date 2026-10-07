@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { ClientOs } from "../channels/types.js";
 
-const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 // Build a mock that covers every export from platform.ts — any function not
 // explicitly mapped returns a no-op stub so that transitive imports don't fail.
@@ -350,7 +350,7 @@ describe("skill_load tool", () => {
     mkdirSync(skillDir, { recursive: true });
     writeFileSync(
       join(skillDir, "SKILL.md"),
-      '---\nname: "Marker Missing"\ndescription: "test"\nmetadata: {"vellum":{"includes":["nonexistent"]}}\n---\n\nBody.\n',
+      '---\nname: "Marker Missing"\ndescription: "test"\nmetadata: {"cadet":{"includes":["nonexistent"]}}\n---\n\nBody.\n',
     );
 
     const result = await executeSkillLoad({ skill: "marker-missing" });
@@ -370,11 +370,11 @@ describe("skill_load tool", () => {
     mkdirSync(dirB, { recursive: true });
     writeFileSync(
       join(dirA, "SKILL.md"),
-      '---\nname: "Cycle A"\ndescription: "test"\nmetadata: {"vellum":{"includes":["cycle-b"]}}\n---\n\nBody A.\n',
+      '---\nname: "Cycle A"\ndescription: "test"\nmetadata: {"cadet":{"includes":["cycle-b"]}}\n---\n\nBody A.\n',
     );
     writeFileSync(
       join(dirB, "SKILL.md"),
-      '---\nname: "Cycle B"\ndescription: "test"\nmetadata: {"vellum":{"includes":["cycle-a"]}}\n---\n\nBody B.\n',
+      '---\nname: "Cycle B"\ndescription: "test"\nmetadata: {"cadet":{"includes":["cycle-a"]}}\n---\n\nBody B.\n',
     );
 
     const result = await executeSkillLoad({ skill: "cycle-a" });
@@ -430,7 +430,7 @@ describe("skill_load tool", () => {
     mkdirSync(parentDir, { recursive: true });
     writeFileSync(
       join(parentDir, "SKILL.md"),
-      '---\nname: "Parent"\ndescription: "Has children"\nmetadata: {"vellum":{"includes":["child-skill"]}}\n---\n\nParent body.\n',
+      '---\nname: "Parent"\ndescription: "Has children"\nmetadata: {"cadet":{"includes":["child-skill"]}}\n---\n\nParent body.\n',
     );
 
     const result = await executeSkillLoad({ skill: "parent-with-children" });
@@ -703,7 +703,7 @@ describe("skill_load tool", () => {
     mkdirSync(skillDir, { recursive: true });
     writeFileSync(
       join(skillDir, "SKILL.md"),
-      '---\nname: "Empty Includes"\ndescription: "Has empty array"\nmetadata: {"vellum":{"includes":[]}}\n---\n\nBody.\n',
+      '---\nname: "Empty Includes"\ndescription: "Has empty array"\nmetadata: {"cadet":{"includes":[]}}\n---\n\nBody.\n',
     );
 
     const result = await executeSkillLoad({ skill: "empty-includes" });

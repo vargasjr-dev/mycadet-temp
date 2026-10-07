@@ -4,8 +4,8 @@
  * Registers one route per HTTP method that delegates to the
  * UserRouteDispatcher for file-based dispatch. The dispatcher resolves each
  * request against the filesystem at request time: workspace routes from
- * `$VELLUM_WORKSPACE_DIR/routes/`, and a plugin's routes from
- * `$VELLUM_WORKSPACE_DIR/plugins/<name>/routes/` under the reserved
+ * `$CADET_WORKSPACE_DIR/routes/`, and a plugin's routes from
+ * `$CADET_WORKSPACE_DIR/plugins/<name>/routes/` under the reserved
  * `/x/plugins/<name>/` namespace.
  *
  * The dispatcher operates on native `Request`/`Response` objects (the
@@ -38,8 +38,8 @@ const dispatcher = new UserRouteDispatcher();
  * reaches user code only when someone adds it here.
  */
 const USER_HANDLER_IDENTITY_HEADERS = new Set<string>([
-  "x-vellum-principal-type",
-  "x-vellum-actor-principal-id",
+  "x-cadet-principal-type",
+  "x-cadet-actor-principal-id",
 ]);
 
 /**

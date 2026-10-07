@@ -13,7 +13,7 @@
  *   - `getConsolidationLockPath` resolves the frozen
  *     `.v2-state/consolidation.lock` path.
  *
- * Tests use temp dirs (mkdtemp) and never touch `~/.vellum/`.
+ * Tests use temp dirs (mkdtemp) and never touch `~/.cadet/`.
  */
 import {
   existsSync,

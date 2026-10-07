@@ -155,10 +155,10 @@ describe("assistant oauth proxy-url", () => {
     const { stdout } = await runProxyUrl(["stripe_link", "--export"]);
 
     expect(stdout.split("\n")).toEqual([
-      `export VELLUM_OAUTH_PROXY_BASE_URL='${GRANT.baseUrl}'`,
-      `export VELLUM_OAUTH_PROXY_TOKEN='${GRANT.token}'`,
-      `export VELLUM_OAUTH_PROXY_EXPIRES_AT='${GRANT.expiresAt}'`,
-      `export VELLUM_OAUTH_PROXY_ACCOUNT='o'\\''brien@example.com'`,
+      `export CADET_OAUTH_PROXY_BASE_URL='${GRANT.baseUrl}'`,
+      `export CADET_OAUTH_PROXY_TOKEN='${GRANT.token}'`,
+      `export CADET_OAUTH_PROXY_EXPIRES_AT='${GRANT.expiresAt}'`,
+      `export CADET_OAUTH_PROXY_ACCOUNT='o'\\''brien@example.com'`,
       "",
     ]);
   });
@@ -168,14 +168,14 @@ describe("assistant oauth proxy-url", () => {
 
     const { stdout } = await runProxyUrl(["stripe_link", "--export"]);
 
-    expect(stdout).not.toContain("VELLUM_OAUTH_PROXY_ACCOUNT");
+    expect(stdout).not.toContain("CADET_OAUTH_PROXY_ACCOUNT");
     expect(stdout.trimEnd().split("\n")).toHaveLength(3);
   });
 
   test("--export ignores --json", async () => {
     const { stdout } = await runProxyUrl(["--json", "stripe_link", "--export"]);
 
-    expect(stdout.startsWith("export VELLUM_OAUTH_PROXY_BASE_URL=")).toBe(true);
+    expect(stdout.startsWith("export CADET_OAUTH_PROXY_BASE_URL=")).toBe(true);
   });
 
   test("rejects a non-integer --ttl without calling IPC", async () => {

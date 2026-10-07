@@ -46,7 +46,7 @@ on:
   #     # Both native shells embed the web layer's marketing attribution
   #     # allowlist; the same drift tests pin the two copies to it.
   #     - "clients/web/src/domains/account/social-auth.ts"
-  #     - "clients/android/app/src/main/java/ai/vellum/assistant/Attribution.java"
+  #     - "clients/android/app/src/main/java/ai/cadet/assistant/Attribution.java"
   #     - "clients/ios/App/App/Attribution.swift"
   #     - ".github/workflows/pr-native-drift.yaml"
   #

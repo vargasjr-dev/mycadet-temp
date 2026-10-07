@@ -7,7 +7,7 @@ import "../__tests__/test-preload.js";
 const calls: string[] = [];
 let getMeResponse: () => Promise<unknown> = async () => ({
   id: 123456789,
-  username: "vellum_bot",
+  username: "cadet_bot",
 });
 
 // Spread the actual module so untouched exports keep resolving when the
@@ -56,11 +56,11 @@ describe("createTelegramBotIdentityResolver", () => {
     });
     expect(await resolve()).toEqual({
       userId: "123456789",
-      username: "vellum_bot",
+      username: "cadet_bot",
     });
     expect(await resolve()).toEqual({
       userId: "123456789",
-      username: "vellum_bot",
+      username: "cadet_bot",
     });
     expect(calls).toEqual(["getMe"]);
   });
@@ -86,11 +86,11 @@ describe("createTelegramBotIdentityResolver", () => {
     expect(calls).toEqual(["getMe"]);
 
     // Past it, getMe runs again and the full identity replaces the fallback.
-    getMeResponse = async () => ({ id: 123456789, username: "vellum_bot" });
+    getMeResponse = async () => ({ id: 123456789, username: "cadet_bot" });
     clock += 1;
     expect(await resolve()).toEqual({
       userId: "123456789",
-      username: "vellum_bot",
+      username: "cadet_bot",
     });
     expect(calls).toEqual(["getMe", "getMe"]);
 

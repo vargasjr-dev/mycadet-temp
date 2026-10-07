@@ -891,7 +891,7 @@ describe("buildCandidateList", () => {
     // isAvailable() = true but hasExtensionClient() = false: only macOS bridge.
     // The bridge gets its own first-class candidate kind — it must NOT be
     // labelled "extension" (it routes raw CDP through localhost:9222 on the
-    // host and cannot serve Vellum.* pseudo-methods).
+    // host and cannot serve Cadet.* pseudo-methods).
     const fakeProxy = makeMacosBridgeOnlyProxy();
     mockSingletonProxy = fakeProxy;
     const ctx = makeContext({

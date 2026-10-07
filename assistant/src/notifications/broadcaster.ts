@@ -246,7 +246,7 @@ function resolveQuestionContext(
   };
 }
 
-/** Callback invoked immediately when a vellum notification conversation is created. */
+/** Callback invoked immediately when a cadet notification conversation is created. */
 export interface ConversationCreatedInfo {
   conversationId: string;
   title: string;
@@ -257,7 +257,7 @@ export interface ConversationCreatedInfo {
   groupId?: string;
   /** Semantic source from the signal producer (e.g. "schedule", "reminder"). */
   source?: string;
-  /** Mirrors the vellum adapter's resolved local presentation policy. */
+  /** Mirrors the cadet adapter's resolved local presentation policy. */
   silent: boolean;
 }
 /**
@@ -285,14 +285,14 @@ export interface BroadcastDecisionOptions {
   resultsSink?: NotificationDeliveryResult[];
 }
 
-// Cap on how long the deferred vellum send waits for the platform dispatch
+// Cap on how long the deferred cadet send waits for the platform dispatch
 // outcome: a duplicate banner beats a late one.
 const PLATFORM_OUTCOME_DEADLINE_MS = 2_500;
 
 /**
  * A channel dispatch that is fully prepared (destination resolved, copy
  * rendered, conversation paired, pending delivery row created) but whose
- * adapter send has not yet run. Used to defer the vellum send until the
+ * adapter send has not yet run. Used to defer the cadet send until the
  * platform dispatch outcome is known.
  */
 interface PendingChannelDispatch {
@@ -339,7 +339,7 @@ export class NotificationBroadcaster {
     }
   }
 
-  /** Register a callback that fires immediately when a vellum conversation is paired. */
+  /** Register a callback that fires immediately when a cadet conversation is paired. */
   setOnConversationCreated(fn: OnConversationCreatedFn): void {
     this.onConversationCreated = fn;
   }
@@ -380,13 +380,13 @@ export class NotificationBroadcaster {
         presentation,
       );
 
-    // Ensure vellum is processed first so the notification_conversation_created
+    // Ensure cadet is processed first so the notification_conversation_created
     // event fires immediately, before slower channel sends (e.g. Telegram 30s
-    // timeout) can delay it. Platform sorts second: the vellum intent carries
+    // timeout) can delay it. Platform sorts second: the cadet intent carries
     // remotePushDispatched, so its deferred send (below) flushes right after
     // the platform outcome is known instead of waiting behind slower channels.
     const dispatchRank = (channel: NotificationChannel): number => {
-      if (channel === "vellum") {
+      if (channel === "cadet") {
         return 0;
       }
       if (channel === "platform") {
@@ -413,31 +413,31 @@ export class NotificationBroadcaster {
         : undefined;
     const results: NotificationDeliveryResult[] = options?.resultsSink ?? [];
 
-    // Vellum pairing carried forward for the platform channel's deep link.
-    // A single-pass carry is safe because orderedChannels sorts vellum first.
-    let vellumPairing: {
+    // Cadet pairing carried forward for the platform channel's deep link.
+    // A single-pass carry is safe because orderedChannels sorts cadet first.
+    let cadetPairing: {
       conversationId: string;
       messageId: string | null;
     } | null = null;
 
-    // The vellum intent's remotePushDispatched flag must reflect the ACTUAL
+    // The cadet intent's remotePushDispatched flag must reflect the ACTUAL
     // platform dispatch outcome, not channel selection: when both channels
-    // are selected, the vellum channel is still prepared first (pairing, the
+    // are selected, the cadet channel is still prepared first (pairing, the
     // conversation-created emission, and the pending delivery row all run
-    // eagerly, so the platform deep link keeps the vellum pairing carry), but
+    // eagerly, so the platform deep link keeps the cadet pairing carry), but
     // its adapter send is deferred until the platform adapter reports whether
     // the platform accepted a device push. Typical cost: one fast HTTP
     // round-trip before the local banner goes out, capped at
     // PLATFORM_OUTCOME_DEADLINE_MS.
-    let deferredVellumSend: PendingChannelDispatch | null = null;
+    let deferredCadetSend: PendingChannelDispatch | null = null;
     let platformRemotePushAccepted = false;
     let platformRemotePushPlatforms: ("ios" | "android")[] | undefined;
-    const flushDeferredVellumSend = async (): Promise<void> => {
-      if (!deferredVellumSend) {
+    const flushDeferredCadetSend = async (): Promise<void> => {
+      if (!deferredCadetSend) {
         return;
       }
-      const pending = deferredVellumSend;
-      deferredVellumSend = null;
+      const pending = deferredCadetSend;
+      deferredCadetSend = null;
       pending.payload.remotePushDispatched = platformRemotePushAccepted;
       pending.payload.remotePushPlatforms = platformRemotePushPlatforms;
       await this.sendAndRecord(pending, signal, results);
@@ -445,14 +445,14 @@ export class NotificationBroadcaster {
 
     try {
       for (const channel of orderedChannels) {
-        // Platform sorts immediately after vellum, so reaching any later
+        // Platform sorts immediately after cadet, so reaching any later
         // channel means the platform outcome is settled (or the platform
-        // channel was skipped): flush the deferred vellum send now so the
-        // local banner is not held behind slower sends. On the vellum
-        // iteration itself this is a no-op -- vellum appears at most once in
+        // channel was skipped): flush the deferred cadet send now so the
+        // local banner is not held behind slower sends. On the cadet
+        // iteration itself this is a no-op -- cadet appears at most once in
         // the decision's channels and sorts first, so nothing is deferred yet.
         if (channel !== "platform") {
-          await flushDeferredVellumSend();
+          await flushDeferredCadetSend();
         }
 
         if (
@@ -525,12 +525,12 @@ export class NotificationBroadcaster {
           // A policy-forced platform channel has no rendered copy of its own
           // (the decision engine renders only the channels it selected). The
           // push mirrors the in-app banner -- and the iOS dedup suppresses the
-          // vellum banner in its favor -- so reuse the vellum channel's
+          // cadet banner in its favor -- so reuse the cadet channel's
           // rendered copy before falling back to deterministic templates.
-          const vellumCopy =
-            channel === "platform" ? decision.renderedCopy.vellum : undefined;
-          if (vellumCopy?.body?.trim()) {
-            copy = vellumCopy;
+          const cadetCopy =
+            channel === "platform" ? decision.renderedCopy.cadet : undefined;
+          if (cadetCopy?.body?.trim()) {
+            copy = cadetCopy;
           } else {
             if (!fallbackCopy) {
               fallbackCopy = composeFallbackCopy(
@@ -591,11 +591,11 @@ export class NotificationBroadcaster {
             channel,
           );
           if (existingDelivery) {
-            // On retry paths the vellum row already exists, so the fresh-pairing
+            // On retry paths the cadet row already exists, so the fresh-pairing
             // carry below never runs -- seed the platform deep-link carry from
             // the duplicate row's conversation instead.
-            if (channel === "vellum" && existingDelivery.conversationId) {
-              vellumPairing = {
+            if (channel === "cadet" && existingDelivery.conversationId) {
+              cadetPairing = {
                 conversationId: existingDelivery.conversationId,
                 messageId: existingDelivery.messageId,
               };
@@ -643,12 +643,12 @@ export class NotificationBroadcaster {
             conversationAction,
             bindingContext: destination.bindingContext,
             assistantInitiatedThread:
-              channel === "vellum" ? assistantInitiatedThread : undefined,
+              channel === "cadet" ? assistantInitiatedThread : undefined,
           },
         );
 
-        if (channel === "vellum" && pairing.conversationId) {
-          vellumPairing = {
+        if (channel === "cadet" && pairing.conversationId) {
+          cadetPairing = {
             conversationId: pairing.conversationId,
             messageId: pairing.messageId,
           };
@@ -662,19 +662,19 @@ export class NotificationBroadcaster {
             );
         }
 
-        // For the vellum and platform channels, merge the conversationId into
+        // For the cadet and platform channels, merge the conversationId into
         // deep-link metadata so notification taps can navigate to the
         // conversation. Prefer the channel's own pairing; platform (push_only,
-        // pairs nothing) takes this broadcast's vellum pairing; otherwise fall
+        // pairs nothing) takes this broadcast's cadet pairing; otherwise fall
         // back to sourceContextId when it resolves to a real row. Sentinel
         // context ids (job IDs, call session IDs, access-req-* strings) leave
         // the deep link without a conversation, and the client opens the app to
         // its default landing.
         let deepLinkTarget = decision.deepLinkTarget;
-        if (channel === "vellum" || channel === "platform") {
+        if (channel === "cadet" || channel === "platform") {
           const deepLinkPairing =
             channel === "platform" && !pairing.conversationId
-              ? (vellumPairing ?? pairing)
+              ? (cadetPairing ?? pairing)
               : pairing;
           const deepLinkConversationId =
             deepLinkPairing.conversationId ??
@@ -694,7 +694,7 @@ export class NotificationBroadcaster {
           }
         }
 
-        if (channel === "vellum" && pairing.conversationId) {
+        if (channel === "cadet" && pairing.conversationId) {
           // Resolve guardian scoping for conversation-created events so clients
           // can filter guardian-sensitive conversations the same way they filter
           // guardian-sensitive notification intents.
@@ -717,15 +717,15 @@ export class NotificationBroadcaster {
             sourceEventName: signal.sourceEventName,
             targetGuardianPrincipalId,
             groupId:
-              assistantInitiatedThread.vellumSignal.conversationMetadata
+              assistantInitiatedThread.cadetSignal.conversationMetadata
                 ?.groupId,
             source:
-              assistantInitiatedThread.vellumSignal.conversationMetadata
+              assistantInitiatedThread.cadetSignal.conversationMetadata
                 ?.source,
             silent: resolveSilent(),
           };
 
-          // The per-dispatch onConversationCreated callback fires whenever a vellum
+          // The per-dispatch onConversationCreated callback fires whenever a cadet
           // conversation is paired (new or reused) because callers like
           // dispatchGuardianQuestion rely on it to create delivery bookkeeping
           // rows before emitNotificationSignal() returns. A returned promise is
@@ -837,20 +837,20 @@ export class NotificationBroadcaster {
           continue;
         }
 
-        if (channel === "vellum" && orderedChannels.includes("platform")) {
-          // The vellum intent carries remotePushDispatched, so its send waits
+        if (channel === "cadet" && orderedChannels.includes("platform")) {
+          // The cadet intent carries remotePushDispatched, so its send waits
           // for the platform outcome; everything else (pairing, events, the
           // pending delivery row) already ran above.
-          deferredVellumSend = dispatch;
+          deferredCadetSend = dispatch;
           continue;
         }
 
-        if (channel === "platform" && deferredVellumSend) {
+        if (channel === "platform" && deferredCadetSend) {
           // The local banner is urgent: wait for the platform outcome only up
           // to the deadline (a duplicate banner beats a late one). On expiry
-          // the vellum send flushes with remotePushDispatched=false while the
+          // the cadet send flushes with remotePushDispatched=false while the
           // dispatch keeps running, recording its delivery row when it
-          // settles; the late outcome cannot re-flush vellum.
+          // settles; the late outcome cannot re-flush cadet.
           const backgroundResults: NotificationDeliveryResult[] = [];
           const platformSend = this.sendAndRecord(
             dispatch,
@@ -891,18 +891,18 @@ export class NotificationBroadcaster {
           } else {
             results.push(...backgroundResults);
           }
-          await flushDeferredVellumSend();
+          await flushDeferredCadetSend();
           continue;
         }
 
         await this.sendAndRecord(dispatch, signal, results);
       }
     } finally {
-      // Guarantees the vellum intent is emitted (and its pending delivery
+      // Guarantees the cadet intent is emitted (and its pending delivery
       // row resolved) even when a later channel's prep throws; also covers
-      // the common [vellum, platform] selection where no later channel
+      // the common [cadet, platform] selection where no later channel
       // triggered the mid-loop flush.
-      await flushDeferredVellumSend();
+      await flushDeferredCadetSend();
     }
 
     return results;
@@ -915,7 +915,7 @@ export class NotificationBroadcaster {
    * Only for channel deliveries (`continue_existing_conversation`, the
    * strategy every external channel adapter has): pairing resolved the home
    * conversation before the send and wrote no row, so this is the one write.
-   * Vellum and platform deliveries keep their own pairing rows. Returns
+   * Cadet and platform deliveries keep their own pairing rows. Returns
    * undefined when there is nothing to record (no home, no chat, no provider
    * id) and when the write fails: the post is already on the channel, so a
    * lost row is logged rather than turning the delivery into a failure.
@@ -977,7 +977,7 @@ export class NotificationBroadcaster {
       hasPersistedDecision,
     } = dispatch;
     try {
-      if (channel === "vellum") {
+      if (channel === "cadet") {
         payload.silent = isLocalNotificationSilent(
           payload,
           dispatch.presentation,

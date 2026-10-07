@@ -7,7 +7,7 @@
  * imported files, so we spawn a standalone bun process that runs an embed
  * worker script communicating via JSON-lines over stdin/stdout.
  *
- * The runtime is stored in $VELLUM_WORKSPACE_DIR/embedding-models/ and used
+ * The runtime is stored in $CADET_WORKSPACE_DIR/embedding-models/ and used
  * by embedding-local.ts on demand.
  *
  * Follows the same download/install pattern as qdrant-manager.ts.
@@ -44,7 +44,7 @@ const JINJA_VERSION = "0.5.5";
  * scripts when the worker IPC contract or spawn-args list changes (without
  * requiring an `@huggingface/transformers` version bump).
  *
- * v4: workers read `VELLUM_ONNX_INTRA_OP_THREADS` and pass
+ * v4: workers read `CADET_ONNX_INTRA_OP_THREADS` and pass
  * `session_options.intraOpNumThreads` (JARVIS-1398). The environment the host
  * spawns them with counts as part of the contract, so an install that keeps
  * the v3 scripts would silently ignore the cap.
@@ -140,7 +140,7 @@ if (cacheDir && env) env.cacheDir = cacheDir;
 // physical core for the whole batch and starves foreground work; the host
 // computes the cap in util/worker-compute.ts and passes it in the environment.
 // A missing or unparseable value means no cap, i.e. the ONNX default.
-const intraOpNumThreads = Number(process.env.VELLUM_ONNX_INTRA_OP_THREADS);
+const intraOpNumThreads = Number(process.env.CADET_ONNX_INTRA_OP_THREADS);
 const sessionOptions =
   Number.isInteger(intraOpNumThreads) && intraOpNumThreads > 0
     ? { intraOpNumThreads }
@@ -223,7 +223,7 @@ if (cacheDir && env) env.cacheDir = cacheDir;
 // Cap the ONNX intra-op thread pool. See the embed worker for the rationale;
 // the host computes the cap in util/worker-compute.ts and passes it in the
 // environment. A missing or unparseable value means no cap, i.e. the default.
-const intraOpNumThreads = Number(process.env.VELLUM_ONNX_INTRA_OP_THREADS);
+const intraOpNumThreads = Number(process.env.CADET_ONNX_INTRA_OP_THREADS);
 const sessionOptions =
   Number.isInteger(intraOpNumThreads) && intraOpNumThreads > 0
     ? { intraOpNumThreads }

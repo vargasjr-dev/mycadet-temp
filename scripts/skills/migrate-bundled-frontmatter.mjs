@@ -6,9 +6,9 @@
  *   2. Builds a new spec-compliant frontmatter block:
  *      - `name`: directory name (kebab-case)
  *      - `description`: kept unchanged
- *      - `compatibility`: "Designed for Vellum personal assistants"
+ *      - `compatibility`: "Designed for Cadet personal assistants"
  *      - `license`: kept if present
- *      - `metadata`: JSON object with emoji + vellum sub-object
+ *      - `metadata`: JSON object with emoji + cadet sub-object
  *   3. Writes the updated SKILL.md preserving the original body content
  *
  * Usage:
@@ -175,7 +175,7 @@ function migrateSkill(dirName, skillDir) {
 
   // 5. Extract emoji from various locations
   let emoji =
-    existingMetadata?.vellum?.emoji ||
+    existingMetadata?.cadet?.emoji ||
     existingMetadata?.emoji ||
     fields.emoji ||
     undefined;
@@ -184,12 +184,12 @@ function migrateSkill(dirName, skillDir) {
     console.warn(`  WARNING: No emoji found for ${dirName}`);
   }
 
-  // 6. Build vellum sub-object
-  const vellum = {};
+  // 6. Build cadet sub-object
+  const cadet = {};
 
   // display-name: only if original name differs from directory name
   if (originalName !== dirName) {
-    vellum["display-name"] = originalName;
+    cadet["display-name"] = originalName;
     changes.push(`display-name: "${originalName}"`);
   }
 
@@ -203,18 +203,18 @@ function migrateSkill(dirName, skillDir) {
       includesValue = fields.includes;
     }
   }
-  if (existingMetadata?.vellum?.includes) {
-    includesValue = existingMetadata.vellum.includes;
+  if (existingMetadata?.cadet?.includes) {
+    includesValue = existingMetadata.cadet.includes;
   }
   if (includesValue) {
-    vellum["includes"] = includesValue;
-    changes.push(`includes moved to metadata.vellum`);
+    cadet["includes"] = includesValue;
+    changes.push(`includes moved to metadata.cadet`);
   }
 
-  // Preserve other existing metadata.vellum fields (feature-flag, etc.)
+  // Preserve other existing metadata.cadet fields (feature-flag, etc.)
   // Dead keys (cli, requires, os, primaryEnv, install, credential-setup-for,
   // disable-model-invocation) have been removed.
-  if (existingMetadata?.vellum) {
+  if (existingMetadata?.cadet) {
     const HANDLED_KEYS = new Set([
       "emoji",
       "display-name",
@@ -229,11 +229,11 @@ function migrateSkill(dirName, skillDir) {
       "primaryEnv",
       "install",
     ]);
-    for (const [key, val] of Object.entries(existingMetadata.vellum)) {
+    for (const [key, val] of Object.entries(existingMetadata.cadet)) {
       if (HANDLED_KEYS.has(key)) {
         continue;
       }
-      vellum[key] = val;
+      cadet[key] = val;
     }
   }
 
@@ -242,8 +242,8 @@ function migrateSkill(dirName, skillDir) {
   if (emoji) {
     newMetadata["emoji"] = emoji;
   }
-  if (Object.keys(vellum).length > 0) {
-    newMetadata["vellum"] = vellum;
+  if (Object.keys(cadet).length > 0) {
+    newMetadata["cadet"] = cadet;
   }
 
   // 8. Build the new frontmatter
@@ -257,7 +257,7 @@ function migrateSkill(dirName, skillDir) {
   frontmatterLines.push(`description: ${escapedDescription}`);
 
   frontmatterLines.push(
-    `compatibility: "Designed for Vellum personal assistants"`,
+    `compatibility: "Designed for Cadet personal assistants"`,
   );
 
   if (license) {

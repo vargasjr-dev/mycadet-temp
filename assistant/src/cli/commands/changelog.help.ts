@@ -4,7 +4,7 @@ import type { CliCommandHelp } from "../lib/cli-command-help.js";
 
 // Shared config surfaced in the help text; `changelog.ts` imports these for
 // the fetch/cache behavior so the prose can never drift from the code.
-export const REPO = "vellum-ai/vellum-assistant";
+export const REPO = "vargasjr-dev/mycadet";
 export const LIST_TTL_MS = 60 * 60 * 1000;
 export const DEFAULT_LIST_LIMIT = 30;
 /**

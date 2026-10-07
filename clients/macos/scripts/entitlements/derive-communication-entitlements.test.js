@@ -40,7 +40,7 @@ function assertWellFormedXml(xml) {
 const tempDirs = [];
 
 function tempDir() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vellum-entitlements-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-entitlements-"));
   tempDirs.push(dir);
   return dir;
 }

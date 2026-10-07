@@ -177,7 +177,7 @@ function resolveEntryVision(entry: {
   model?: string;
   inputModalities?: InputModalities | null;
 }): boolean | undefined {
-  // Routing identities ("vellum"/"chatgpt") are not catalog providers; the
+  // Routing identities ("cadet"/"chatgpt") are not catalog providers; the
   // model's catalog owner is the capability source for them.
   const declared =
     entry.provider != null && ROUTING_IDENTITY_PROVIDERS.has(entry.provider)

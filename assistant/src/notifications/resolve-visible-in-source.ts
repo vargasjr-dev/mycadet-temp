@@ -77,7 +77,7 @@ export async function resolveCompletionRecipientPrincipalId(
   try {
     const guardians = await getGuardianDelivery();
     return guardians
-      ? (guardianForChannel(guardians, "vellum")?.principalId ?? undefined)
+      ? (guardianForChannel(guardians, "cadet")?.principalId ?? undefined)
       : undefined;
   } catch (err) {
     (logger ?? log).warn(

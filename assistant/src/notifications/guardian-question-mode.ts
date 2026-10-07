@@ -181,7 +181,7 @@ export type LenientToolApprovalPayload = z.infer<
 
 /**
  * Display-ready source reference for a tool-approval card, shared by every
- * renderer (the Vellum Surface card and the channel adapters) so the
+ * renderer (the Cadet Surface card and the channel adapters) so the
  * chat-id/permalink derivation lives in exactly one place. Declared as a
  * Zod schema because the broadcaster carries the projected view on
  * `ChannelDeliveryPayload` (computed once per broadcast, never re-derived

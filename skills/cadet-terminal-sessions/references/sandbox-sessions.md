@@ -4,7 +4,7 @@ title: Sandbox Mode
 
 ## Overview
 
-In **Sandbox Mode**, the assistant runs tmux sessions inside its own sandbox environment. The user can attach to any of these sessions live via the Vellum terminal UI.
+In **Sandbox Mode**, the assistant runs tmux sessions inside its own sandbox environment. The user can attach to any of these sessions live via the Cadet terminal UI.
 
 This is the **default mode** for any work that doesn't require access to the user's host machine. Claude Code and Codex are the exception: they run through the ACP skill, not through a tmux session. For tmux operational details (quoting, scrollback, naming, etc.) see [tmux-best-practices.md](tmux-best-practices.md).
 
@@ -15,12 +15,12 @@ This is the **default mode** for any work that doesn't require access to the use
 3. The user can observe any session in real time by running:
 
    ```
-   vellum terminal attach <session-name>
+   cadet terminal attach <session-name>
    ```
 
-   > **Note:** `vellum terminal attach` requires a managed (cloud-hosted) assistant. For local/Docker setups, use `tmux attach -t <session-name>` directly.
+   > **Note:** `cadet terminal attach` requires a managed (cloud-hosted) assistant. For local/Docker setups, use `tmux attach -t <session-name>` directly.
 
-   This opens a live, read-write terminal view of that session in the Vellum UI.
+   This opens a live, read-write terminal view of that session in the Cadet UI.
 
 ## Benefits
 
@@ -39,8 +39,8 @@ tmux send-keys -t frontend 'npm run dev' Enter
 # Check on it after a few turns
 tmux capture-pane -t frontend -p -S -50
 
-# User attaches to watch live output in Vellum terminal:
-# vellum terminal attach frontend
+# User attaches to watch live output in Cadet terminal:
+# cadet terminal attach frontend
 ```
 
 ## When to Use Sandbox Mode

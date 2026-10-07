@@ -148,7 +148,7 @@ function handleExportCli({ body = {} }: RouteHandlerArgs) {
   }
 
   // Support prefix matching. `archiveStatus: "all"` preserves the pre-default
-  // behavior of letting `vellum export <prefix>` resolve an archived row.
+  // behavior of letting `cadet export <prefix>` resolve an archived row.
   let conversation = getConversation(conversationId);
   if (!conversation) {
     const all = listConversations({

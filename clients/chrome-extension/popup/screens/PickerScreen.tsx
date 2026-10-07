@@ -80,7 +80,7 @@ export function PickerScreen({
             You don't have an assistant yet
           </p>
           <p className="text-xs text-fg-muted mb-4">
-            Create one in the Vellum app, then come back here to connect it.
+            Create one in the Cadet app, then come back here to connect it.
           </p>
           <button
             type="button"

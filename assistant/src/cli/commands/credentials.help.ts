@@ -79,7 +79,7 @@ Backend types:
   ces-http          Managed failover when the CES socket is unavailable
 
 Also shows the CREDENTIAL_SECURITY_DIR, GATEWAY_SECURITY_DIR, and
-VELLUM_WORKSPACE_DIR env vars so you can confirm which instance directory this
+CADET_WORKSPACE_DIR env vars so you can confirm which instance directory this
 process is scoped to.
 
 Examples:

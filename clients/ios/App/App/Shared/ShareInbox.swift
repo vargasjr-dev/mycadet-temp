@@ -54,7 +54,7 @@ enum ShareInboxDestination: Codable, Equatable {
 /// Content lives in the App Group rather than on the command URL because a
 /// custom scheme cannot carry file bytes, and because only this app and its
 /// extensions can write the container. Finding a fresh item here is the
-/// proof that the user shared through Vellum, which is why the web layer
+/// proof that the user shared through Cadet, which is why the web layer
 /// may send on the user's behalf without the `src=intent` marker.
 struct ShareInboxItem: Codable, Equatable {
     static let currentSchemaVersion = 1
@@ -105,7 +105,7 @@ enum ShareInbox {
     /// Darwin notification the share extension posts after a successful
     /// write, so a host already in memory can drain the inbox without
     /// waiting for the command URL.
-    static let readyNotificationName = "ai.vellum.share-inbox-ready" as CFString
+    static let readyNotificationName = "ai.mycadet.share-inbox-ready" as CFString
 
     private static let encoder: JSONEncoder = {
         let encoder = JSONEncoder()

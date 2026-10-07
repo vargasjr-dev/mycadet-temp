@@ -56,7 +56,7 @@ describe("screen_point_at", () => {
     expect(result.content).toContain(
       "The Cadet desktop app is needed to view or control your screen",
     );
-    expect(result.content).toContain("https://www.vellum.ai/downloads");
+    expect(result.content).toContain("https://mycadet.ai/downloads");
   });
 
   /** Drawing on the user's screen is a side effect a stopped turn must not have. */

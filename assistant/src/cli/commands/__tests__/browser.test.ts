@@ -534,7 +534,7 @@ describe("formatBrowserStatusLines", () => {
             summary:
               "Extension mode is unavailable: no Chrome Extension is connected.",
             userActions: [
-              "Install the Cadet Chrome extension from the Chrome Web Store: https://chromewebstore.google.com/detail/vellum-assistant-browser/hphbdmpffeigpcdjkckleobjmhhokpne",
+              "Install the Cadet Chrome extension from the Chrome Web Store: https://chromewebstore.google.com/detail/mycadet-browser/hphbdmpffeigpcdjkckleobjmhhokpne",
               "Tell the user to make sure a browser is open with the Cadet Chrome extension on.",
             ],
           },

@@ -25,7 +25,7 @@ import {
 export function getOriginClientId(
   headers: Record<string, string> | undefined,
 ): string | undefined {
-  return headers?.["x-vellum-client-id"]?.trim() || undefined;
+  return headers?.["x-cadet-client-id"]?.trim() || undefined;
 }
 
 export function publishAvatarChanged(originClientId?: string): void {

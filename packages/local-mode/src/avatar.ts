@@ -138,7 +138,7 @@ export function readLockfileAssistantAvatar(
   if (!resolved.instanceDir) {
     return { ok: true, avatar: null };
   }
-  const workspaceDir = path.join(resolved.instanceDir, ".vellum", "workspace");
+  const workspaceDir = path.join(resolved.instanceDir, ".cadet", "workspace");
   const avatar = readWorkspaceAvatar(workspaceDir);
   switch (avatar.kind) {
     case "character":

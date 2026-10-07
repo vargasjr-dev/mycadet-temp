@@ -12,7 +12,7 @@
  * conversations for this assistant (unfiltered).
  *
  * Client registration:
- *   Clients may send `X-Vellum-Client-Id` and `X-Vellum-Interface-Id`
+ *   Clients may send `X-Cadet-Client-Id` and `X-Cadet-Interface-Id`
  *   request headers. When both are present, the subscriber is registered
  *   as a client in the event hub with derived capabilities. The hub
  *   handles registration, touch (heartbeat), and unregistration (dispose).
@@ -241,7 +241,7 @@ const defaultSseShedReporter: SseShedReporter = (reason, inst) => {
  *                      conversation; the daemon 404s if no such conversation
  *                      exists (clients must obtain the id from a prior
  *                      response).
- *   conversationKey -- optional; external key (non-vellum channels) or the
+ *   conversationKey -- optional; external key (non-cadet channels) or the
  *                      web idempotency key. Resolved via the conversation
  *                      keys table; materializes a row on first use.
  *                      Ignored when `conversationId` is also provided.
@@ -249,10 +249,10 @@ const defaultSseShedReporter: SseShedReporter = (reason, inst) => {
  *   conversations for this assistant.
  *
  * Headers (optional):
- *   X-Vellum-Client-Id      -- stable per-install UUID identifying this client.
- *   X-Vellum-Interface-Id   -- interface type (e.g. "macos", "ios", "web").
- *   X-Vellum-Client-Version -- optional build/manifest version fingerprint.
- *   X-Vellum-Sse-Watchdog   -- optional "1" when the client has an SSE idle watchdog.
+ *   X-Cadet-Client-Id      -- stable per-install UUID identifying this client.
+ *   X-Cadet-Interface-Id   -- interface type (e.g. "macos", "ios", "web").
+ *   X-Cadet-Client-Version -- optional build/manifest version fingerprint.
+ *   X-Cadet-Sse-Watchdog   -- optional "1" when the client has an SSE idle watchdog.
  *
  *   When both identity headers are present, the subscriber is registered as a
  *   client in the event hub with metadata (interfaceId, capabilities). The hub
@@ -303,22 +303,22 @@ export function handleSubscribeAssistantEvents(
   }
 
   // ── Client identity from headers ──────────────────────────────────────
-  const rawMachineName = headers?.["x-vellum-machine-name"];
-  const rawActorPrincipalId = headers?.["x-vellum-actor-principal-id"];
+  const rawMachineName = headers?.["x-cadet-machine-name"];
+  const rawActorPrincipalId = headers?.["x-cadet-actor-principal-id"];
   const { clientId, interfaceId, actorPrincipalId } =
     readClientIdentity(headers);
   const clientVersion = sanitizeClientMetadataValue(
-    headers?.["x-vellum-client-version"],
+    headers?.["x-cadet-client-version"],
   );
-  const sseWatchdog = headers?.["x-vellum-sse-watchdog"]?.trim() === "1";
+  const sseWatchdog = headers?.["x-cadet-sse-watchdog"]?.trim() === "1";
 
   if (clientId && !interfaceId) {
     log.error(
-      { clientId, rawInterfaceId: headers?.["x-vellum-interface-id"] },
-      "client registration failed: invalid or missing X-Vellum-Interface-Id",
+      { clientId, rawInterfaceId: headers?.["x-cadet-interface-id"] },
+      "client registration failed: invalid or missing X-Cadet-Interface-Id",
     );
     throw new BadRequestError(
-      "X-Vellum-Interface-Id is required when X-Vellum-Client-Id is provided",
+      "X-Cadet-Interface-Id is required when X-Cadet-Client-Id is provided",
     );
   }
 
@@ -437,15 +437,15 @@ export function handleSubscribeAssistantEvents(
                 supportsHostProxy(interfaceId, cap),
               ),
               ...(interfaceId === "macos" &&
-              headers?.["x-vellum-cu-window-capture"] === "1"
+              headers?.["x-cadet-cu-window-capture"] === "1"
                 ? ["host_cu_window_capture" as const]
                 : []),
               ...(interfaceId === "macos" &&
-              headers?.["x-vellum-cu-sequence"] === "1"
+              headers?.["x-cadet-cu-sequence"] === "1"
                 ? ["host_cu_sequence" as const]
                 : []),
               ...(interfaceId === "macos" &&
-              headers?.["x-vellum-cu-annotate"] === "1"
+              headers?.["x-cadet-cu-annotate"] === "1"
                 ? ["host_cu_annotate" as const]
                 : []),
             ],
@@ -587,12 +587,12 @@ function readClientIdentity(headers: Record<string, string> | undefined): {
   interfaceId: InterfaceId | null;
   actorPrincipalId: string | undefined;
 } {
-  const clientId = headers?.["x-vellum-client-id"]?.trim() || null;
+  const clientId = headers?.["x-cadet-client-id"]?.trim() || null;
   const interfaceId = clientId
-    ? parseInterfaceId(headers?.["x-vellum-interface-id"]?.trim())
+    ? parseInterfaceId(headers?.["x-cadet-interface-id"]?.trim())
     : null;
   const actorPrincipalId = resolveActorPrincipalIdForLocalGuardianSync(
-    headers?.["x-vellum-actor-principal-id"]?.trim() || undefined,
+    headers?.["x-cadet-actor-principal-id"]?.trim() || undefined,
   );
   return { clientId, interfaceId, actorPrincipalId };
 }
@@ -747,7 +747,7 @@ export const ROUTES: RouteDefinition[] = [
       {
         name: "conversationKey",
         description:
-          "Scope to a single conversation by an external key (non-vellum channels) or the web idempotency key. Materializes a row on first use. Ignored when conversationId is also provided.",
+          "Scope to a single conversation by an external key (non-cadet channels) or the web idempotency key. Materializes a row on first use. Ignored when conversationId is also provided.",
       },
       {
         name: "lastSeenSeq",

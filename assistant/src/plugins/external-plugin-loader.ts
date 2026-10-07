@@ -10,7 +10,7 @@
  * need to be renamed when the convention shifts.
  *
  *     <pluginDir>/
- *       package.json              ← legacy Vellum manifest, selected first;
+ *       package.json              ← legacy Cadet manifest, selected first;
  *                                   peerDependencies["@mycadet/plugin-api"]
  *                                   semver range is checked against the
  *                                   running assistant version and rejects

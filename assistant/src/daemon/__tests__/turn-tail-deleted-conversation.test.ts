@@ -19,7 +19,7 @@ setConfig("memory", { enabled: false, v2: { enabled: false } });
 
 const CONVERSATION_ID = "conv-tail-delete-1";
 const ASSISTANT_MESSAGE_ID = "msg-assistant-1";
-const CONVERSATION_DIR = "/tmp/vellum-test/conv-tail-delete-1";
+const CONVERSATION_DIR = "/tmp/cadet-test/conv-tail-delete-1";
 
 /** Flipped by a test to model a deletion that landed before the settle ran. */
 let conversationDeleted = false;

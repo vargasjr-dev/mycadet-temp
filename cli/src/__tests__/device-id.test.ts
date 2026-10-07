@@ -12,7 +12,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 
 // Bun's os.homedir() ignores runtime HOME changes, so mock it (via the shared
-// helper) to keep production-path tests off the real ~/.vellum.
+// helper) to keep production-path tests off the real ~/.cadet.
 let fakeHome: string | undefined;
 await mockOsHomedir((realHomedir) => () => fakeHome ?? realHomedir());
 
@@ -28,8 +28,8 @@ const UUID_RE =
 
 const restoreEnv = snapshotEnv([
   "XDG_CONFIG_HOME",
-  "VELLUM_ENVIRONMENT",
-  "VELLUM_DEVICE_ID",
+  "CADET_ENVIRONMENT",
+  "CADET_DEVICE_ID",
 ]);
 
 describe("getOrCreateHostDeviceId", () => {
@@ -37,13 +37,13 @@ describe("getOrCreateHostDeviceId", () => {
   let deviceFile: string;
 
   beforeEach(() => {
-    delete process.env.VELLUM_DEVICE_ID;
+    delete process.env.CADET_DEVICE_ID;
     tempHome = mkdtempSync(join(tmpdir(), "cli-device-id-test-"));
     process.env.XDG_CONFIG_HOME = tempHome;
-    // Non-prod so the resolver targets $XDG_CONFIG_HOME/vellum-dev/
-    // instead of the real ~/.config/vellum/.
-    process.env.VELLUM_ENVIRONMENT = "dev";
-    deviceFile = join(tempHome, "vellum-dev", "device.json");
+    // Non-prod so the resolver targets $XDG_CONFIG_HOME/cadet-dev/
+    // instead of the real ~/.config/cadet/.
+    process.env.CADET_ENVIRONMENT = "dev";
+    deviceFile = join(tempHome, "cadet-dev", "device.json");
     resetHostDeviceIdCache();
   });
 
@@ -64,7 +64,7 @@ describe("getOrCreateHostDeviceId", () => {
   });
 
   test("returns the existing deviceId without rewriting the file", () => {
-    mkdirSync(join(tempHome, "vellum-dev"), { recursive: true });
+    mkdirSync(join(tempHome, "cadet-dev"), { recursive: true });
     writeFileSync(deviceFile, JSON.stringify({ deviceId: "existing-id" }));
     const before = statSync(deviceFile).mtimeMs;
 
@@ -88,7 +88,7 @@ describe("getOrCreateHostDeviceId", () => {
   });
 
   test("preserves unrelated fields when adding deviceId", () => {
-    mkdirSync(join(tempHome, "vellum-dev"), { recursive: true });
+    mkdirSync(join(tempHome, "cadet-dev"), { recursive: true });
     writeFileSync(deviceFile, JSON.stringify({ other: "kept", deviceId: "" }));
 
     const id = getOrCreateHostDeviceId();
@@ -99,15 +99,15 @@ describe("getOrCreateHostDeviceId", () => {
     expect(parsed.deviceId).toBe(id);
   });
 
-  test("VELLUM_DEVICE_ID env var wins and skips file access", () => {
-    process.env.VELLUM_DEVICE_ID = "env-device-id";
+  test("CADET_DEVICE_ID env var wins and skips file access", () => {
+    process.env.CADET_DEVICE_ID = "env-device-id";
 
     expect(getOrCreateHostDeviceId()).toBe("env-device-id");
     expect(existsSync(deviceFile)).toBe(false);
   });
 
   test("malformed JSON regenerates without throwing", () => {
-    mkdirSync(join(tempHome, "vellum-dev"), { recursive: true });
+    mkdirSync(join(tempHome, "cadet-dev"), { recursive: true });
     writeFileSync(deviceFile, "{not json");
 
     const id = getOrCreateHostDeviceId();
@@ -123,12 +123,12 @@ describe("getOrCreateHostDeviceId (production)", () => {
   let deviceFile: string;
 
   beforeEach(() => {
-    delete process.env.VELLUM_DEVICE_ID;
+    delete process.env.CADET_DEVICE_ID;
     tempHome = mkdtempSync(join(tmpdir(), "cli-device-id-prod-test-"));
     fakeHome = tempHome;
     process.env.XDG_CONFIG_HOME = join(tempHome, ".config");
-    process.env.VELLUM_ENVIRONMENT = "production";
-    deviceFile = join(tempHome, ".vellum", "device.json");
+    process.env.CADET_ENVIRONMENT = "production";
+    deviceFile = join(tempHome, ".cadet", "device.json");
     resetHostDeviceIdCache();
   });
 
@@ -139,7 +139,7 @@ describe("getOrCreateHostDeviceId (production)", () => {
     resetHostDeviceIdCache();
   });
 
-  test("creates device.json in the shared ~/.vellum dir", () => {
+  test("creates device.json in the shared ~/.cadet dir", () => {
     const id = getOrCreateHostDeviceId();
 
     expect(id).toMatch(UUID_RE);
@@ -147,8 +147,8 @@ describe("getOrCreateHostDeviceId (production)", () => {
     expect(JSON.parse(readFileSync(deviceFile, "utf-8")).deviceId).toBe(id);
   });
 
-  test("reuses an existing ~/.vellum/device.json", () => {
-    mkdirSync(join(tempHome, ".vellum"), { recursive: true });
+  test("reuses an existing ~/.cadet/device.json", () => {
+    mkdirSync(join(tempHome, ".cadet"), { recursive: true });
     writeFileSync(deviceFile, JSON.stringify({ deviceId: "shared-prod-id" }));
 
     expect(getOrCreateHostDeviceId()).toBe("shared-prod-id");

@@ -20,11 +20,11 @@ const { resolveActorTrust } = await import("../actor-trust-resolver.js");
 const { __resetMemberVerdictCacheForTest, setMemberVerdict } =
   await import("../member-verdict-cache.js");
 
-const GUARDIAN_ADDRESS = "vellum-principal-guardian";
+const GUARDIAN_ADDRESS = "cadet-principal-guardian";
 
 function guardianDelivery(): Record<string, unknown> {
   return {
-    channelType: "vellum",
+    channelType: "cadet",
     contactId: "guardian-contact",
     principalId: GUARDIAN_ADDRESS,
     address: GUARDIAN_ADDRESS,
@@ -44,7 +44,7 @@ describe("resolveActorTrust", () => {
 
     const result = resolveActorTrust({
       assistantId: "self",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       conversationExternalId: "local",
       actorExternalId: GUARDIAN_ADDRESS,
     });
@@ -61,7 +61,7 @@ describe("resolveActorTrust", () => {
     // Member classification is verdict-only: the resolver must not read the
     // member-verdict cache or elevate past unknown.
     mockGuardianList = [guardianDelivery()];
-    setMemberVerdict("vellum", "some-other-principal", {
+    setMemberVerdict("cadet", "some-other-principal", {
       trustClass: "unknown",
       canonicalSenderId: "some-other-principal",
       contactId: "contact-1",
@@ -72,7 +72,7 @@ describe("resolveActorTrust", () => {
 
     const result = resolveActorTrust({
       assistantId: "self",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       conversationExternalId: "local",
       actorExternalId: "some-other-principal",
     });
@@ -90,7 +90,7 @@ describe("resolveActorTrust", () => {
 
     const result = resolveActorTrust({
       assistantId: "self",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       conversationExternalId: "local",
       actorExternalId: GUARDIAN_ADDRESS,
     });
@@ -104,7 +104,7 @@ describe("resolveActorTrust", () => {
 
     const result = resolveActorTrust({
       assistantId: "self",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       conversationExternalId: "local",
       actorExternalId: "   ",
     });
@@ -117,7 +117,7 @@ describe("resolveActorTrust", () => {
   test("sender metadata passes through; identifier prefers @username", () => {
     const result = resolveActorTrust({
       assistantId: "self",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       conversationExternalId: "local",
       actorExternalId: "principal-x",
       actorUsername: "alice",

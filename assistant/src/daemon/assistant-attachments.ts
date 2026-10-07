@@ -86,7 +86,7 @@ export function estimateBase64Bytes(
 // ---------------------------------------------------------------------------
 
 // The stored-filename rule is a contract with the web client (which resolves
-// clicked vellum:// links back to attachments by filename), so it lives in
+// clicked cadet:// links back to attachments by filename), so it lives in
 // @mycadet/service-contracts. Re-exported here for the daemon's callers.
 import {
   inferMimeType,
@@ -174,12 +174,12 @@ interface DirectiveDisplayDrainResult {
 }
 
 /**
- * Match self-closing `<vellum-attachment ... />` tags.
+ * Match self-closing `<cadet-attachment ... />` tags.
  *
  * Captures the attribute string between the tag name and the `/>` close.
  * Non-greedy so multiple tags on separate lines are matched individually.
  */
-const DIRECTIVE_RE = /<vellum-attachment\s+([\s\S]*?)\/>/g;
+const DIRECTIVE_RE = /<cadet-attachment\s+([\s\S]*?)\/>/g;
 
 /**
  * Parse individual attribute key="value" pairs.
@@ -199,7 +199,7 @@ function parseAttributes(raw: string): Record<string, string> {
 }
 
 /**
- * Scan assistant text for `<vellum-attachment ... />` directives.
+ * Scan assistant text for `<cadet-attachment ... />` directives.
  *
  * Returns the text with successfully parsed directives stripped,
  * along with the parsed directive requests and any warnings for
@@ -214,7 +214,7 @@ export function parseDirectives(text: string): DirectiveParseResult {
 
     if (!attrs["path"]) {
       parseWarnings.push(
-        'Ignored <vellum-attachment />: missing required "path" attribute.',
+        'Ignored <cadet-attachment />: missing required "path" attribute.',
       );
       return fullMatch;
     }
@@ -222,7 +222,7 @@ export function parseDirectives(text: string): DirectiveParseResult {
     const sourceRaw = attrs["source"] ?? "sandbox";
     if (sourceRaw !== "sandbox" && sourceRaw !== "host") {
       parseWarnings.push(
-        `Ignored <vellum-attachment />: invalid source="${sourceRaw}". Must be "sandbox" or "host".`,
+        `Ignored <cadet-attachment />: invalid source="${sourceRaw}". Must be "sandbox" or "host".`,
       );
       return fullMatch;
     }
@@ -249,12 +249,12 @@ export function parseDirectives(text: string): DirectiveParseResult {
 }
 
 // ---------------------------------------------------------------------------
-// vellum:// markdown link extraction
+// cadet:// markdown link extraction
 // ---------------------------------------------------------------------------
 
 /**
- * Match markdown links with `vellum://workspace/` or `vellum://host/` URLs,
- * in both plain (`[text](vellum://…)`) and image (`![alt](vellum://…)`) form.
+ * Match markdown links with `cadet://workspace/` or `cadet://host/` URLs,
+ * in both plain (`[text](cadet://…)`) and image (`![alt](cadet://…)`) form.
  *
  * Captures:
  *   [1] = optional leading `!` marking the image form (empty for plain links)
@@ -263,24 +263,24 @@ export function parseDirectives(text: string): DirectiveParseResult {
  *   [4] = path after the authority
  *
  * The link text is NOT stripped from the assistant's message — unlike
- * `<vellum-attachment />` tags, the markdown link is valid user-facing
+ * `<cadet-attachment />` tags, the markdown link is valid user-facing
  * content that renders as a clickable download link or inline image.
  */
-const VELLUM_LINK_RE =
-  /(!?)\[([^\]]*)\]\(vellum:\/\/(workspace|host)(\/[^)]*)\)/g;
+const CADET_LINK_RE =
+  /(!?)\[([^\]]*)\]\(cadet:\/\/(workspace|host)(\/[^)]*)\)/g;
 
-interface VellumLinkExtractResult {
+interface CadetLinkExtractResult {
   directiveRequests: DirectiveRequest[];
   parseWarnings: string[];
 }
 
 /**
- * Extract `[text](vellum://workspace/path)` and `[text](vellum://host/path)`
+ * Extract `[text](cadet://workspace/path)` and `[text](cadet://host/path)`
  * markdown links from assistant text and return corresponding directive
  * requests. The text is NOT modified — the links remain as rendered markdown.
  */
 /**
- * Decode a vellum:// path segment, returning null on malformed percent-encoding
+ * Decode a cadet:// path segment, returning null on malformed percent-encoding
  * (e.g. a literal `%` not followed by two hex digits). This prevents a single
  * bad link from throwing URIError and aborting the entire assistant message.
  */
@@ -292,18 +292,18 @@ function safeDecodePath(rawPath: string): string | null {
   }
 }
 
-export function extractVellumLinks(text: string): VellumLinkExtractResult {
+export function extractCadetLinks(text: string): CadetLinkExtractResult {
   const directiveRequests: DirectiveRequest[] = [];
   const parseWarnings: string[] = [];
 
   let m: RegExpExecArray | null;
-  while ((m = VELLUM_LINK_RE.exec(text)) != null) {
+  while ((m = CADET_LINK_RE.exec(text)) != null) {
     const isImage = m[1] === "!";
     const linkText = m[2]!;
     const authority = m[3]!;
     const rawPath = m[4]!;
 
-    // For image links (`![alt](vellum://…)`) the bracket text is a
+    // For image links (`![alt](cadet://…)`) the bracket text is a
     // description, not a filename, so it must not override the resolved
     // basename. Plain links keep their text as the attachment filename.
     const filename = isImage ? undefined : linkText || undefined;
@@ -311,7 +311,7 @@ export function extractVellumLinks(text: string): VellumLinkExtractResult {
     const decodedPath = safeDecodePath(rawPath);
     if (decodedPath === null) {
       parseWarnings.push(
-        `Ignored vellum://${authority} link "${linkText}": malformed percent-encoding in path.`,
+        `Ignored cadet://${authority} link "${linkText}": malformed percent-encoding in path.`,
       );
       continue;
     }
@@ -323,7 +323,7 @@ export function extractVellumLinks(text: string): VellumLinkExtractResult {
         : decodedPath;
       if (!path) {
         parseWarnings.push(
-          `Ignored vellum://workspace link "${linkText}": empty path.`,
+          `Ignored cadet://workspace link "${linkText}": empty path.`,
         );
         continue;
       }
@@ -338,7 +338,7 @@ export function extractVellumLinks(text: string): VellumLinkExtractResult {
       // host: decodedPath is already absolute (starts with /)
       if (!decodedPath || decodedPath === "/") {
         parseWarnings.push(
-          `Ignored vellum://host link "${linkText}": empty path.`,
+          `Ignored cadet://host link "${linkText}": empty path.`,
         );
         continue;
       }
@@ -356,14 +356,14 @@ export function extractVellumLinks(text: string): VellumLinkExtractResult {
 }
 
 /**
- * Replace `[text](vellum://...)` and `![alt](vellum://...)` markdown links with
+ * Replace `[text](cadet://...)` and `![alt](cadet://...)` markdown links with
  * their bracket text. Used to sanitize text before channel delivery (Slack,
- * Telegram, etc.) where the `vellum://` scheme has no meaning. The image form's
+ * Telegram, etc.) where the `cadet://` scheme has no meaning. The image form's
  * leading `!` is dropped so the result is just the alt text (empty when the alt
  * text is empty).
  */
-export function stripVellumLinks(text: string): string {
-  return text.replace(VELLUM_LINK_RE, "$2");
+export function stripCadetLinks(text: string): string {
+  return text.replace(CADET_LINK_RE, "$2");
 }
 
 /** Regex fragment matching any prefix of `literal`, including empty and full. */
@@ -376,7 +376,7 @@ function anyPrefixOf(literal: string): string {
 }
 
 /**
- * A `[label](vellum://…)` or `![alt](vellum://…)` link still being assembled at
+ * A `[label](cadet://…)` or `![alt](cadet://…)` link still being assembled at
  * the end of the text: an optional leading `!` and opening `[` whose remainder
  * is a prefix of the full link grammar and has not reached its closing `)`.
  * A lone trailing `!` also matches, since it may be the first character of an
@@ -384,11 +384,11 @@ function anyPrefixOf(literal: string): string {
  * stray `!` leaking to append-only sinks ahead of the alt text. Matched only
  * when it runs to the end of the string.
  */
-const INCOMPLETE_VELLUM_LINK_TAIL_RE = new RegExp(
+const INCOMPLETE_CADET_LINK_TAIL_RE = new RegExp(
   "(?:!?\\[[^\\]]*" +
     "(?:\\]" +
     "(?:\\(" +
-    anyPrefixOf("vellum://") +
+    anyPrefixOf("cadet://") +
     "(?:" +
     `(?:${anyPrefixOf("workspace")}|${anyPrefixOf("host")})` +
     "(?:/[^)]*)?" +
@@ -399,30 +399,30 @@ const INCOMPLETE_VELLUM_LINK_TAIL_RE = new RegExp(
 );
 
 /**
- * Length of the trailing run of `text` that is a `[label](vellum://…)` link
- * still being assembled (see {@link INCOMPLETE_VELLUM_LINK_TAIL_RE}), or 0 when
+ * Length of the trailing run of `text` that is a `[label](cadet://…)` link
+ * still being assembled (see {@link INCOMPLETE_CADET_LINK_TAIL_RE}), or 0 when
  * the text does not end mid-link.
  *
  * Callers that emit text to an append-only sink (e.g. Slack streaming) withhold
- * this suffix until the link closes: {@link stripVellumLinks} only removes
- * complete links, so a partially-emitted `vellum://` path would leak an internal
+ * this suffix until the link closes: {@link stripCadetLinks} only removes
+ * complete links, so a partially-emitted `cadet://` path would leak an internal
  * workspace/host path that cannot be retracted once sent.
  */
-export function incompleteVellumLinkSuffixLength(text: string): number {
-  const match = text.match(INCOMPLETE_VELLUM_LINK_TAIL_RE);
+export function incompleteCadetLinkSuffixLength(text: string): number {
+  const match = text.match(INCOMPLETE_CADET_LINK_TAIL_RE);
   return match ? match[0].length : 0;
 }
 
 /**
  * Drain streamed assistant text while stripping only valid, complete
- * self-closing `<vellum-attachment ... />` directives.
+ * self-closing `<cadet-attachment ... />` directives.
  *
  * - Valid complete directives are removed from emitted text.
  * - Invalid directives are preserved as plain text.
  * - Incomplete directives are retained in `bufferedRemainder` until more
  *   text arrives.
  */
-const DIRECTIVE_TAG_PREFIX = "<vellum-attachment";
+const DIRECTIVE_TAG_PREFIX = "<cadet-attachment";
 
 /**
  * Check whether `text` ends with a prefix of `tag` (e.g. "<", "<v", "<ve", …).
@@ -457,7 +457,7 @@ export function drainDirectiveDisplayBuffer(
     const start = buffer.indexOf(DIRECTIVE_TAG_PREFIX, cursor);
     if (start === -1) {
       // No full tag-prefix match — but the remaining text might end with a
-      // partial prefix of "<vellum-attachment" split across streaming chunks.
+      // partial prefix of "<cadet-attachment" split across streaming chunks.
       const remaining = buffer.slice(cursor);
       const split = splitTrailingPrefix(remaining, DIRECTIVE_TAG_PREFIX);
       emitText += split.safe;
@@ -893,15 +893,15 @@ export function cleanAssistantContent(content: readonly unknown[]): {
       }
       const text = b.text as string;
 
-      // Extract vellum:// markdown links (non-destructive — links stay in text)
-      if (text.includes("vellum://")) {
-        const linkResult = extractVellumLinks(text);
+      // Extract cadet:// markdown links (non-destructive — links stay in text)
+      if (text.includes("cadet://")) {
+        const linkResult = extractCadetLinks(text);
         directives.push(...linkResult.directiveRequests);
         warnings.push(...linkResult.parseWarnings);
       }
 
-      // Strip legacy <vellum-attachment /> tags from the text
-      if (!text.includes("<vellum-attachment")) {
+      // Strip legacy <cadet-attachment /> tags from the text
+      if (!text.includes("<cadet-attachment")) {
         return block;
       }
       const result = parseDirectives(text);

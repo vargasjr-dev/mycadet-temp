@@ -21,9 +21,9 @@ describe("AssistantEventHub — machineName", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "client-with-name-001",
-          "x-vellum-interface-id": "macos",
-          "x-vellum-machine-name": "alice-mbp.local",
+          "x-cadet-client-id": "client-with-name-001",
+          "x-cadet-interface-id": "macos",
+          "x-cadet-machine-name": "alice-mbp.local",
         },
         abortSignal: ac.signal,
       },
@@ -45,8 +45,8 @@ describe("AssistantEventHub — machineName", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "client-without-name-001",
-          "x-vellum-interface-id": "macos",
+          "x-cadet-client-id": "client-without-name-001",
+          "x-cadet-interface-id": "macos",
         },
         abortSignal: ac.signal,
       },
@@ -68,9 +68,9 @@ describe("AssistantEventHub — machineName", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "client-with-trimmed-name-001",
-          "x-vellum-interface-id": "macos",
-          "x-vellum-machine-name": "  bob-mbp.local  ",
+          "x-cadet-client-id": "client-with-trimmed-name-001",
+          "x-cadet-interface-id": "macos",
+          "x-cadet-machine-name": "  bob-mbp.local  ",
         },
         abortSignal: ac.signal,
       },
@@ -126,8 +126,8 @@ describe("AssistantEventHub — machineName", () => {
 });
 
 describe.each([
-  ["x-vellum-cu-window-capture", "host_cu_window_capture"],
-  ["x-vellum-cu-sequence", "host_cu_sequence"],
+  ["x-cadet-cu-window-capture", "host_cu_window_capture"],
+  ["x-cadet-cu-sequence", "host_cu_sequence"],
 ] as const)("%s negotiation", (header, capability) => {
   test.each([
     ["macos", undefined, false],
@@ -146,8 +146,8 @@ describe.each([
         handleSubscribeAssistantEvents(
           {
             headers: {
-              "x-vellum-client-id": "client-1",
-              "x-vellum-interface-id": interfaceId,
+              "x-cadet-client-id": "client-1",
+              "x-cadet-interface-id": interfaceId,
               ...(advertised ? { [header]: advertised } : {}),
             },
             abortSignal: ac.signal,

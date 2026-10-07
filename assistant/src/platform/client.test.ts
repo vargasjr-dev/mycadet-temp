@@ -45,15 +45,15 @@ mock.module("../security/credential-key.js", () => ({
 
 import {
   _resetConfiguredProbeCacheForTests,
+  CadetPlatformClient,
   isPlatformClientConfigured,
-  VellumPlatformClient,
 } from "./client.js";
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("VellumPlatformClient", () => {
+describe("CadetPlatformClient", () => {
   let originalFetch: typeof globalThis.fetch;
 
   beforeEach(() => {
@@ -75,7 +75,7 @@ describe("VellumPlatformClient", () => {
 
   describe("create()", () => {
     test("returns a client when all prerequisites are met", async () => {
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       expect(client).not.toBeNull();
       expect(client!.baseUrl).toBe("https://platform.example.com");
       expect(client!.assistantApiKey).toBe("sk-test-key");
@@ -89,14 +89,14 @@ describe("VellumPlatformClient", () => {
         assistantApiKey: "",
       };
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       expect(client).toBeNull();
     });
 
     test("returns client with empty assistantId when assistant ID is missing", async () => {
       mockAssistantId = "";
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       expect(client).not.toBeNull();
       expect(client!.platformAssistantId).toBe("");
     });
@@ -104,7 +104,7 @@ describe("VellumPlatformClient", () => {
     test("strips trailing slash from platform base URL", async () => {
       mockManagedProxyCtx.platformBaseUrl = "https://platform.example.com///";
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       expect(client!.baseUrl).toBe("https://platform.example.com");
     });
 
@@ -116,12 +116,12 @@ describe("VellumPlatformClient", () => {
       };
       mockAssistantId = "stored-assistant-id";
       reseedMemorySecureKeys(mockSecureKeys, {
-        "vellum:platform_base_url": "https://stored-platform.example.com/",
-        "vellum:assistant_api_key": "stored-api-key",
-        "vellum:platform_assistant_id": " vault-assistant-id ",
+        "cadet:platform_base_url": "https://stored-platform.example.com/",
+        "cadet:assistant_api_key": "stored-api-key",
+        "cadet:platform_assistant_id": " vault-assistant-id ",
       });
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
 
       expect(client).not.toBeNull();
       expect(client!.baseUrl).toBe("https://stored-platform.example.com");
@@ -299,7 +299,7 @@ describe("VellumPlatformClient", () => {
         return new Response("ok", { status: 200 });
       }) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       await client!.fetch("/v1/some/endpoint/");
     });
 
@@ -312,7 +312,7 @@ describe("VellumPlatformClient", () => {
         },
       ) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       await client!.fetch("/v1/test/");
     });
 
@@ -326,7 +326,7 @@ describe("VellumPlatformClient", () => {
         },
       ) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       await client!.fetch("/v1/test/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -342,7 +342,7 @@ describe("VellumPlatformClient", () => {
         },
       ) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       await client!.fetch("/v1/test/", {
         method: "POST",
         body: '{"key":"value"}',
@@ -366,7 +366,7 @@ describe("VellumPlatformClient", () => {
         );
       }) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       const consent = await client!.getOwnerConsent();
       expect(consent).toEqual({
         shareAnalytics: true,
@@ -384,7 +384,7 @@ describe("VellumPlatformClient", () => {
           ),
       ) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       const consent = await client!.getOwnerConsent();
       expect(consent).toEqual({
         shareAnalytics: true,
@@ -405,7 +405,7 @@ describe("VellumPlatformClient", () => {
         },
       ) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       await client!.getOwnerConsent();
     });
 
@@ -414,7 +414,7 @@ describe("VellumPlatformClient", () => {
         async () => new Response("not found", { status: 404 }),
       ) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       expect(await client!.getOwnerConsent()).toBeNull();
     });
 
@@ -423,7 +423,7 @@ describe("VellumPlatformClient", () => {
         async () => new Response("error", { status: 500 }),
       ) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       expect(await client!.getOwnerConsent()).toBeNull();
     });
 
@@ -432,7 +432,7 @@ describe("VellumPlatformClient", () => {
         throw new Error("network down");
       }) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       expect(await client!.getOwnerConsent()).toBeNull();
     });
 
@@ -449,7 +449,7 @@ describe("VellumPlatformClient", () => {
           ),
       ) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       const consent = await client!.getOwnerConsent();
       expect(consent).toEqual({
         shareAnalytics: true,
@@ -471,7 +471,7 @@ describe("VellumPlatformClient", () => {
           ),
       ) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       const consent = await client!.getOwnerConsent();
       expect(consent).toEqual({
         shareAnalytics: false,
@@ -493,7 +493,7 @@ describe("VellumPlatformClient", () => {
           ),
       ) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       const consent = await client!.getOwnerConsent();
       expect(consent).toEqual({
         shareAnalytics: true,
@@ -512,7 +512,7 @@ describe("VellumPlatformClient", () => {
           ),
       ) as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       expect(await client!.getOwnerConsent()).toBeNull();
     });
 
@@ -529,7 +529,7 @@ describe("VellumPlatformClient", () => {
       );
       globalThis.fetch = fetchSpy as unknown as typeof globalThis.fetch;
 
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       expect(client!.platformAssistantId).toBe("");
       expect(await client!.getOwnerConsent()).toBeNull();
       expect(fetchSpy).not.toHaveBeenCalled();

@@ -1701,7 +1701,7 @@ describe("routing invariant: invite handoff bypass for access requests", () => {
 
     const result = await routeGuardianReply({
       messageText: "C0D3A5 approve",
-      actor: trustedActor({ channel: "vellum" }),
+      actor: trustedActor({ channel: "cadet" }),
       conversationId: "conv-guardian-conversation",
       pendingScope: { mode: "scoped", requestIds: [req.id] },
       approvalConversationGenerator: undefined,
@@ -1739,7 +1739,7 @@ describe("routing invariant: invite handoff bypass for access requests", () => {
 
     const result = await routeGuardianReply({
       messageText: "please approve this request",
-      actor: trustedActor({ channel: "vellum" }),
+      actor: trustedActor({ channel: "cadet" }),
       conversationId: "conv-guardian-conversation",
       pendingScope: { mode: "scoped", requestIds: [req.id] },
       approvalConversationGenerator: approvalConversationGenerator as any,
@@ -2037,18 +2037,18 @@ describe("routing invariant: surface action apr:* buttons route through canonica
   test("parseCallbackData extracts requestId and action from apr: action IDs", () => {
     const result = parseCallbackData(
       "apr:access-req-test-slack-U123-1700000000:approve_once",
-      "vellum",
+      "cadet",
     );
     expect(result).not.toBeNull();
     expect(result!.requestId).toBe("access-req-test-slack-U123-1700000000");
     expect(result!.action).toBe("approve_once");
-    expect(result!.source).toBe("vellum_surface");
+    expect(result!.source).toBe("cadet_surface");
   });
 
-  test("parseCallbackData returns vellum_surface source for cadet channel", () => {
-    const result = parseCallbackData("apr:req-1:reject", "vellum");
+  test("parseCallbackData returns cadet_surface source for cadet channel", () => {
+    const result = parseCallbackData("apr:req-1:reject", "cadet");
     expect(result).not.toBeNull();
-    expect(result!.source).toBe("vellum_surface");
+    expect(result!.source).toBe("cadet_surface");
   });
 
   test("processGuardianDecision approves access_request from cadet surface", async () => {
@@ -2070,7 +2070,7 @@ describe("routing invariant: surface action apr:* buttons route through canonica
     const result = await processGuardianDecision({
       requestId,
       action: "approve_once",
-      channel: "vellum",
+      channel: "cadet",
       actorContext: {
         actorPrincipalId: TEST_PRINCIPAL_ID,
         guardianPrincipalId: TEST_PRINCIPAL_ID,
@@ -2105,7 +2105,7 @@ describe("routing invariant: surface action apr:* buttons route through canonica
     const result = await processGuardianDecision({
       requestId,
       action: "reject",
-      channel: "vellum",
+      channel: "cadet",
       actorContext: {
         actorPrincipalId: TEST_PRINCIPAL_ID,
         guardianPrincipalId: TEST_PRINCIPAL_ID,
@@ -2140,7 +2140,7 @@ describe("routing invariant: surface action apr:* buttons route through canonica
     const result = await processGuardianDecision({
       requestId,
       action: "approve_once",
-      channel: "vellum",
+      channel: "cadet",
       actorContext: {
         actorPrincipalId: "wrong-principal",
         guardianPrincipalId: "wrong-principal",

@@ -150,8 +150,8 @@ mock.module("../runtime/routes/conversation-list-routes.js", () => ({
 
 const trustContext = { trustClass: "guardian" };
 const resolveTrustMock = mock(async (_principalId?: string) => trustContext);
-mock.module("../runtime/routes/vellum-actor-trust.js", () => ({
-  resolveVellumActorTrustContext: resolveTrustMock,
+mock.module("../runtime/routes/cadet-actor-trust.js", () => ({
+  resolveCadetActorTrustContext: resolveTrustMock,
 }));
 
 const resolveActorMock = mock(async (_principalId?: string) => "actor-123");
@@ -288,7 +288,7 @@ describe("POST /v1/conversations/:id/retry", () => {
     const res = await callHandler(
       retryHandler,
       makeRequest("conv-retry-test", {
-        "X-Vellum-Actor-Principal-Id": "principal-1",
+        "X-Cadet-Actor-Principal-Id": "principal-1",
       }),
       { id: "conv-retry-test" },
       202,
@@ -354,7 +354,7 @@ describe("POST /v1/conversations/:id/retry", () => {
       name: "voice-session",
       metadata: { voiceSessionTurn: true, userMessageChannel: "phone" },
     },
-    { name: "plain in-app", metadata: { userMessageChannel: "vellum" } },
+    { name: "plain in-app", metadata: { userMessageChannel: "cadet" } },
   ];
 
   for (const { name, metadata } of OFF_APP_ANCHOR_CASES) {

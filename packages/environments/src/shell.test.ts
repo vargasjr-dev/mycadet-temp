@@ -46,7 +46,7 @@ describe("buildShellInvocation", () => {
     expect(decoded).toContain("[Console]::OutputEncoding");
     expect(decoded).toContain("$global:LASTEXITCODE = 0");
     expect(decoded).toContain("Write-Output 'hello 世界'");
-    expect(decoded).toContain("exit $__vellumNativeExitCode");
+    expect(decoded).toContain("exit $__cadetNativeExitCode");
     expect(decoded).toEndWith("exit 0");
   });
 });

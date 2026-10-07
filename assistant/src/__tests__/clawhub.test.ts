@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 import { mock } from "bun:test";
 
-const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 import {
   clawhubInspect,

@@ -237,7 +237,7 @@ describe("credentials routes", () => {
           field: "api_token",
           revealNonce: "nonce-A",
         },
-        headers: { "x-vellum-principal-type": "local" },
+        headers: { "x-cadet-principal-type": "local" },
       })) as { value: string };
 
       // THEN the value is returned and the proof is recorded
@@ -265,7 +265,7 @@ describe("credentials routes", () => {
             field: "api_token",
             revealNonce: "nonce-A",
           },
-          headers: { "x-vellum-principal-type": principal },
+          headers: { "x-cadet-principal-type": principal },
         })) as { value: string };
         expect(result.value).toBe(SECRET_VALUE);
       }
@@ -279,7 +279,7 @@ describe("credentials routes", () => {
       /**
        * In local mode the gateway derives the `local` principal from the
        * verified JWT for WEB calls too, but it always stamps
-       * `x-vellum-proxy-server: ipc` — only a direct (unproxied) local call
+       * `x-cadet-proxy-server: ipc` — only a direct (unproxied) local call
        * is a tool shell's CLI and may become proof.
        */
       secureStore.set("vercel:api_token", SECRET_VALUE);
@@ -293,8 +293,8 @@ describe("credentials routes", () => {
           revealNonce: "nonce-A",
         },
         headers: {
-          "x-vellum-principal-type": "local",
-          "x-vellum-proxy-server": "ipc",
+          "x-cadet-principal-type": "local",
+          "x-cadet-proxy-server": "ipc",
         },
       })) as { value: string };
 
@@ -315,7 +315,7 @@ describe("credentials routes", () => {
 
       const result = (await revealRoute!.handler({
         body: { service: "vercel", field: "api_token" },
-        headers: { "x-vellum-principal-type": "local" },
+        headers: { "x-cadet-principal-type": "local" },
       })) as { value: string };
 
       expect(result.value).toBe(SECRET_VALUE);
@@ -346,7 +346,7 @@ describe("credentials routes", () => {
       await expect(
         revealRoute!.handler({
           body: { service: "vercel", field: "api_token", forChat: true },
-          headers: { "x-vellum-principal-type": "local" },
+          headers: { "x-cadet-principal-type": "local" },
         }),
       ).rejects.toThrow("chat-credential-reveal feature flag");
     });
@@ -364,7 +364,7 @@ describe("credentials routes", () => {
           forChat: true,
           revealNonce: "nonce-A",
         },
-        headers: { "x-vellum-principal-type": "local" },
+        headers: { "x-cadet-principal-type": "local" },
       })) as { value: string };
 
       expect(result.value).toBe(
@@ -398,8 +398,8 @@ describe("credentials routes", () => {
           revealNonce: "nonce-A",
         },
         headers: {
-          "x-vellum-principal-type": "local",
-          "x-vellum-proxy-server": "ipc",
+          "x-cadet-principal-type": "local",
+          "x-cadet-proxy-server": "ipc",
         },
       })) as { value: string };
 
@@ -418,11 +418,11 @@ describe("credentials routes", () => {
 
       await revealRoute!.handler({
         body: { service: "vercel", field: "api_token" },
-        headers: { "x-vellum-principal-type": "local" },
+        headers: { "x-cadet-principal-type": "local" },
       });
       await revealRoute!.handler({
         body: { service: "vercel", field: "api_token", forChat: true },
-        headers: { "x-vellum-principal-type": "local" },
+        headers: { "x-cadet-principal-type": "local" },
       });
 
       expect(
@@ -642,12 +642,12 @@ describe("credentials routes", () => {
       ]) {
         const result = (await setRoute!.handler({
           body: {
-            service: "vellum",
+            service: "cadet",
             field,
             value: "0198f4c2-1111-2222-3333-444455556666",
           },
         })) as SetResponse;
-        expect(result.service).toBe("vellum");
+        expect(result.service).toBe("cadet");
       }
 
       expect(scrubbedValues).toEqual([]);
@@ -868,12 +868,12 @@ describe("credentials routes", () => {
      * store and metadata table as a user's own credentials.
      */
     function seedPlatformCredential(field: string, value: string): string {
-      const key = `vellum:${field}`;
+      const key = `cadet:${field}`;
       secureStore.set(key, value);
       const now = Date.now();
       metadataStore.set(key, {
         credentialId: `cred-${++credentialIdCounter}`,
-        service: "vellum",
+        service: "cadet",
         field,
         allowedTools: [],
         allowedDomains: [],
@@ -911,8 +911,8 @@ describe("credentials routes", () => {
       for (const principal of ["local", "user", "svc_gateway"]) {
         await expect(
           revealRoute!.handler({
-            body: { service: "vellum", field: "assistant_api_key" },
-            headers: { "x-vellum-principal-type": principal },
+            body: { service: "cadet", field: "assistant_api_key" },
+            headers: { "x-cadet-principal-type": principal },
           }),
         ).rejects.toThrow(ForbiddenError);
       }
@@ -927,9 +927,9 @@ describe("credentials routes", () => {
       await expect(
         revealRoute!.handler({
           body: { id: credentialId },
-          headers: { "x-vellum-principal-type": "local" },
+          headers: { "x-cadet-principal-type": "local" },
         }),
-      ).rejects.toThrow(/owned by the Vellum platform/);
+      ).rejects.toThrow(/owned by the Cadet platform/);
     });
 
     test("inspect refuses platform credentials", async () => {
@@ -939,7 +939,7 @@ describe("credentials routes", () => {
       for (const field of ["assistant_api_key", "platform_base_url"]) {
         await expect(
           inspectRoute!.handler({
-            body: { service: "vellum", field },
+            body: { service: "cadet", field },
           }),
         ).rejects.toThrow(ForbiddenError);
       }
@@ -955,13 +955,13 @@ describe("credentials routes", () => {
       for (const field of ["assistant_api_key", "platform_base_url"]) {
         await expect(
           setRoute!.handler({
-            body: { service: "vellum", field, value: "https://attacker.test" },
+            body: { service: "cadet", field, value: "https://attacker.test" },
           }),
         ).rejects.toThrow(ForbiddenError);
       }
 
-      expect(secureStore.has("vellum:assistant_api_key")).toBe(false);
-      expect(secureStore.has("vellum:platform_base_url")).toBe(false);
+      expect(secureStore.has("cadet:assistant_api_key")).toBe(false);
+      expect(secureStore.has("cadet:platform_base_url")).toBe(false);
     });
 
     test("set does not overwrite an already-provisioned platform credential", async () => {
@@ -970,14 +970,14 @@ describe("credentials routes", () => {
       await expect(
         setRoute!.handler({
           body: {
-            service: "vellum",
+            service: "cadet",
             field: "platform_base_url",
             value: "https://attacker.test",
           },
         }),
-      ).rejects.toThrow(/owned by the Vellum platform/);
+      ).rejects.toThrow(/owned by the Cadet platform/);
 
-      expect(secureStore.get("vellum:platform_base_url")).toBe(
+      expect(secureStore.get("cadet:platform_base_url")).toBe(
         PLATFORM_BASE_URL,
       );
     });
@@ -988,12 +988,12 @@ describe("credentials routes", () => {
 
       for (const field of ["assistant_api_key", "platform_base_url"]) {
         await expect(
-          deleteRoute!.handler({ body: { service: "vellum", field } }),
+          deleteRoute!.handler({ body: { service: "cadet", field } }),
         ).rejects.toThrow(ForbiddenError);
       }
 
-      expect(secureStore.get("vellum:assistant_api_key")).toBe(PLATFORM_KEY);
-      expect(secureStore.get("vellum:platform_base_url")).toBe(
+      expect(secureStore.get("cadet:assistant_api_key")).toBe(PLATFORM_KEY);
+      expect(secureStore.get("cadet:platform_base_url")).toBe(
         PLATFORM_BASE_URL,
       );
     });
@@ -1025,7 +1025,7 @@ describe("credentials routes", () => {
 
       const revealed = (await revealRoute!.handler({
         body: { service: "vercel", field: "api_token" },
-        headers: { "x-vellum-principal-type": "user" },
+        headers: { "x-cadet-principal-type": "user" },
       })) as { value: string };
       expect(revealed.value).toBe(SECRET_VALUE);
     });
@@ -1041,12 +1041,12 @@ describe("credentials routes", () => {
      * store and metadata table as a user's own credentials.
      */
     function seedPlatformCredential(field: string, value: string): string {
-      const key = `vellum:${field}`;
+      const key = `cadet:${field}`;
       secureStore.set(key, value);
       const now = Date.now();
       metadataStore.set(key, {
         credentialId: `cred-${++credentialIdCounter}`,
-        service: "vellum",
+        service: "cadet",
         field,
         allowedTools: [],
         allowedDomains: [],
@@ -1084,8 +1084,8 @@ describe("credentials routes", () => {
       for (const principal of ["local", "user", "svc_gateway"]) {
         await expect(
           revealRoute!.handler({
-            body: { service: "vellum", field: "assistant_api_key" },
-            headers: { "x-vellum-principal-type": principal },
+            body: { service: "cadet", field: "assistant_api_key" },
+            headers: { "x-cadet-principal-type": principal },
           }),
         ).rejects.toThrow(ForbiddenError);
       }
@@ -1100,9 +1100,9 @@ describe("credentials routes", () => {
       await expect(
         revealRoute!.handler({
           body: { id: credentialId },
-          headers: { "x-vellum-principal-type": "local" },
+          headers: { "x-cadet-principal-type": "local" },
         }),
-      ).rejects.toThrow(/owned by the Vellum platform/);
+      ).rejects.toThrow(/owned by the Cadet platform/);
     });
 
     test("inspect refuses platform credentials", async () => {
@@ -1112,7 +1112,7 @@ describe("credentials routes", () => {
       for (const field of ["assistant_api_key", "platform_base_url"]) {
         await expect(
           inspectRoute!.handler({
-            body: { service: "vellum", field },
+            body: { service: "cadet", field },
           }),
         ).rejects.toThrow(ForbiddenError);
       }
@@ -1128,13 +1128,13 @@ describe("credentials routes", () => {
       for (const field of ["assistant_api_key", "platform_base_url"]) {
         await expect(
           setRoute!.handler({
-            body: { service: "vellum", field, value: "https://attacker.test" },
+            body: { service: "cadet", field, value: "https://attacker.test" },
           }),
         ).rejects.toThrow(ForbiddenError);
       }
 
-      expect(secureStore.has("vellum:assistant_api_key")).toBe(false);
-      expect(secureStore.has("vellum:platform_base_url")).toBe(false);
+      expect(secureStore.has("cadet:assistant_api_key")).toBe(false);
+      expect(secureStore.has("cadet:platform_base_url")).toBe(false);
     });
 
     test("set does not overwrite an already-provisioned platform credential", async () => {
@@ -1143,14 +1143,14 @@ describe("credentials routes", () => {
       await expect(
         setRoute!.handler({
           body: {
-            service: "vellum",
+            service: "cadet",
             field: "platform_base_url",
             value: "https://attacker.test",
           },
         }),
-      ).rejects.toThrow(/owned by the Vellum platform/);
+      ).rejects.toThrow(/owned by the Cadet platform/);
 
-      expect(secureStore.get("vellum:platform_base_url")).toBe(
+      expect(secureStore.get("cadet:platform_base_url")).toBe(
         PLATFORM_BASE_URL,
       );
     });
@@ -1161,12 +1161,12 @@ describe("credentials routes", () => {
 
       for (const field of ["assistant_api_key", "platform_base_url"]) {
         await expect(
-          deleteRoute!.handler({ body: { service: "vellum", field } }),
+          deleteRoute!.handler({ body: { service: "cadet", field } }),
         ).rejects.toThrow(ForbiddenError);
       }
 
-      expect(secureStore.get("vellum:assistant_api_key")).toBe(PLATFORM_KEY);
-      expect(secureStore.get("vellum:platform_base_url")).toBe(
+      expect(secureStore.get("cadet:assistant_api_key")).toBe(PLATFORM_KEY);
+      expect(secureStore.get("cadet:platform_base_url")).toBe(
         PLATFORM_BASE_URL,
       );
     });
@@ -1198,7 +1198,7 @@ describe("credentials routes", () => {
 
       const revealed = (await revealRoute!.handler({
         body: { service: "vercel", field: "api_token" },
-        headers: { "x-vellum-principal-type": "user" },
+        headers: { "x-cadet-principal-type": "user" },
       })) as { value: string };
       expect(revealed.value).toBe(SECRET_VALUE);
     });

@@ -8,17 +8,17 @@ import { launchOwnedCli, resolveOwnedCliTarget } from "./launch-cli";
 let tempDir = "";
 
 const writeLauncher = (): { launcher: string; target: string } => {
-  tempDir = mkdtempSync(path.join(tmpdir(), "vellum-cli-launcher-"));
+  tempDir = mkdtempSync(path.join(tmpdir(), "cadet-cli-launcher-"));
   const binDir = path.join(tempDir, "bin");
   const runtimeDir = path.join(tempDir, "runtime");
   mkdirSync(binDir, { recursive: true });
   mkdirSync(runtimeDir, { recursive: true });
-  const launcher = path.join(binDir, "vellum.exe");
-  const target = path.join(runtimeDir, "vellum.exe");
+  const launcher = path.join(binDir, "cadet.exe");
+  const target = path.join(runtimeDir, "cadet.exe");
   writeFileSync(launcher, "launcher", "utf8");
   writeFileSync(target, "runtime", "utf8");
   writeFileSync(
-    path.join(binDir, ".vellum-owned.json"),
+    path.join(binDir, ".cadet-owned.json"),
     JSON.stringify({ sourcePath: target }),
     "utf8",
   );
@@ -50,7 +50,7 @@ test("forwards CLI arguments to the owned versioned runtime", () => {
 test("rejects a launcher that points back to itself", () => {
   const { launcher } = writeLauncher();
   writeFileSync(
-    path.join(path.dirname(launcher), ".vellum-owned.json"),
+    path.join(path.dirname(launcher), ".cadet-owned.json"),
     JSON.stringify({ sourcePath: launcher }),
     "utf8",
   );
@@ -63,7 +63,7 @@ test("rejects a launcher that points back to itself", () => {
 test("rejects a case-variant launcher path that points back to itself", () => {
   const { launcher } = writeLauncher();
   writeFileSync(
-    path.join(path.dirname(launcher), ".vellum-owned.json"),
+    path.join(path.dirname(launcher), ".cadet-owned.json"),
     JSON.stringify({ sourcePath: launcher.toUpperCase() }),
     "utf8",
   );

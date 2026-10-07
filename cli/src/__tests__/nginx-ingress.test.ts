@@ -130,7 +130,7 @@ afterEach(() => {
 });
 
 function makeWorkspace(): string {
-  const dir = mkdtempSync(join(tmpdir(), "vellum-ingress-test-"));
+  const dir = mkdtempSync(join(tmpdir(), "cadet-ingress-test-"));
   workspaces.push(dir);
   return dir;
 }
@@ -147,7 +147,7 @@ describe("buildIngressNginxConfig", () => {
     gatewayPort: 7830,
     listenPort: 7840,
     remoteWebIngress: {
-      webDistDir: "/tmp/vellum web/dist",
+      webDistDir: "/tmp/cadet web/dist",
       config: {
         mode: "remote-gateway",
         apiBaseUrl: "/v1",
@@ -190,9 +190,9 @@ describe("buildIngressNginxConfig", () => {
   test("proxies requests to the gateway", () => {
     expect(conf).toContain("location / {");
     expect(conf).toContain("proxy_pass http://127.0.0.1:7830;");
-    expect(conf).toContain('proxy_set_header X-Vellum-Edge-Forwarded "1";');
+    expect(conf).toContain('proxy_set_header X-Cadet-Edge-Forwarded "1";');
     expect(conf).toContain(
-      "proxy_set_header X-Vellum-Client-Ip $vellum_edge_client_ip;",
+      "proxy_set_header X-Cadet-Client-Ip $cadet_edge_client_ip;",
     );
   });
 
@@ -202,14 +202,14 @@ describe("buildIngressNginxConfig", () => {
       // X-Forwarded-For; the client cannot smuggle a value because
       // proxy_set_header overwrites inbound headers.
       expect(config).toContain(
-        "map $http_x_forwarded_for $vellum_edge_client_ip {",
+        "map $http_x_forwarded_for $cadet_edge_client_ip {",
       );
       expect(config).toContain("default $remote_addr;");
       expect(config).toContain(
-        '"~,?\\s*(?<vellum_last_xff>[^,\\s]+)\\s*$" $vellum_last_xff;',
+        '"~,?\\s*(?<cadet_last_xff>[^,\\s]+)\\s*$" $cadet_last_xff;',
       );
       expect(config).toContain(
-        "proxy_set_header X-Vellum-Client-Ip $vellum_edge_client_ip;",
+        "proxy_set_header X-Cadet-Client-Ip $cadet_edge_client_ip;",
       );
     }
   });
@@ -248,7 +248,7 @@ describe("buildIngressNginxConfig", () => {
     expect(remoteConf).toContain("location = /assistant {");
     expect(remoteConf).toContain("return 302 /assistant/;");
     expect(remoteConf).toContain("location ^~ /assistant/assets/ {");
-    expect(remoteConf).toContain('alias "/tmp/vellum web/dist/assets/";');
+    expect(remoteConf).toContain('alias "/tmp/cadet web/dist/assets/";');
     expect(remoteConf).toContain("try_files $uri =404;");
     expect(remoteConf).toContain("location = /assistant/ {");
     expect(remoteConf).toContain(
@@ -257,9 +257,9 @@ describe("buildIngressNginxConfig", () => {
     expect(remoteConf).toContain("location = /assistant/index.html {");
     expect(remoteConf).toContain("location = /assistant/__remote-index.html {");
     expect(remoteConf).toContain("internal;");
-    expect(remoteConf).toContain('alias "/tmp/vellum web/dist/index.html";');
+    expect(remoteConf).toContain('alias "/tmp/cadet web/dist/index.html";');
     expect(remoteConf).toContain("location ^~ /assistant/ {");
-    expect(remoteConf).toContain('alias "/tmp/vellum web/dist/";');
+    expect(remoteConf).toContain('alias "/tmp/cadet web/dist/";');
     expect(remoteConf).toContain(
       "try_files $uri $uri/ /assistant/__remote-index.html;",
     );
@@ -331,14 +331,14 @@ describe("buildIngressNginxConfig", () => {
       gatewayPort: 7830,
       listenPort: 7840,
       remoteWebIngress: {
-        webDistDir: "/tmp/vellum web/dist",
+        webDistDir: "/tmp/cadet web/dist",
         assistantName: "Homelab",
         assistantId: "assistant-1",
-        hubUrl: "https://www.vellum.ai/assistant",
+        hubUrl: "https://mycadet.ai/assistant",
       },
     });
     expect(named).toContain(
-      'return 200 "{\\"mode\\":\\"remote-gateway\\",\\"apiBaseUrl\\":\\"/v1\\",\\"platformDisabled\\":true,\\"disablePlatform\\":true,\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://www.vellum.ai/assistant\\"}";',
+      'return 200 "{\\"mode\\":\\"remote-gateway\\",\\"apiBaseUrl\\":\\"/v1\\",\\"platformDisabled\\":true,\\"disablePlatform\\":true,\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\"}";',
     );
   });
 
@@ -350,7 +350,7 @@ describe("buildIngressNginxConfig", () => {
     expect(remoteConf).toContain("proxy_request_buffering off;");
     expect(remoteConf).toContain("proxy_buffering off;");
     expect(remoteConf).toContain(
-      'proxy_set_header X-Vellum-Edge-Forwarded "1";',
+      'proxy_set_header X-Cadet-Edge-Forwarded "1";',
     );
   });
 
@@ -436,7 +436,7 @@ describe("buildIngressNginxConfig", () => {
 describe("buildRemoteWebIndexHtml", () => {
   test("injects the remote gateway config after any bundled local config", () => {
     const html =
-      '<html><head><script>window.__CADET_CONFIG__={"webUrl":"https://www.vellum.ai"}</script></head><body></body></html>';
+      '<html><head><script>window.__CADET_CONFIG__={"webUrl":"https://mycadet.ai"}</script></head><body></body></html>';
     const result = buildRemoteWebIndexHtml(html, {
       mode: "remote-gateway",
       apiBaseUrl: "/v1",
@@ -444,7 +444,7 @@ describe("buildRemoteWebIndexHtml", () => {
     });
 
     expect(result).toContain(
-      'window.__CADET_CONFIG__={"webUrl":"https://www.vellum.ai"}',
+      'window.__CADET_CONFIG__={"webUrl":"https://mycadet.ai"}',
     );
     expect(result).toContain(
       'window.__CADET_CONFIG__={"mode":"remote-gateway","apiBaseUrl":"/v1","disablePlatform":true}',
@@ -524,19 +524,19 @@ describe("buildRemoteWebIndexHtml", () => {
 describe("cloudWebHubUrl", () => {
   test("maps build environments to their cloud SPA base", () => {
     expect(cloudWebHubUrl("production")).toBe(
-      "https://www.vellum.ai/assistant",
+      "https://mycadet.ai/assistant",
     );
     expect(cloudWebHubUrl("staging")).toBe(
-      "https://staging-assistant.vellum.ai/assistant",
+      "https://staging.cloud.mycadet.ai/assistant",
     );
     expect(cloudWebHubUrl("dev")).toBe(
-      "https://dev-assistant.vellum.ai/assistant",
+      "https://dev.cloud.mycadet.ai/assistant",
     );
     expect(cloudWebHubUrl("local")).toBe(
-      "https://dev-assistant.vellum.ai/assistant",
+      "https://dev.cloud.mycadet.ai/assistant",
     );
     expect(cloudWebHubUrl(undefined)).toBe(
-      "https://dev-assistant.vellum.ai/assistant",
+      "https://dev.cloud.mycadet.ai/assistant",
     );
   });
 });
@@ -847,7 +847,7 @@ function locationBlocks(
   return blocks;
 }
 
-const PRODUCTION_HUB_URL = "https://www.vellum.ai/assistant";
+const PRODUCTION_HUB_URL = "https://mycadet.ai/assistant";
 
 /**
  * Mirror of the SPA config fingerprint the edge records in its ingress state
@@ -878,18 +878,18 @@ function spaConfigHash(
     .digest("hex");
 }
 
-const originalEnvironment = process.env.VELLUM_ENVIRONMENT;
+const originalEnvironment = process.env.CADET_ENVIRONMENT;
 
 /** Pin the build environment so the stamped hubUrl is deterministic. */
 function pinProductionEnvironment(): void {
   beforeEach(() => {
-    process.env.VELLUM_ENVIRONMENT = "production";
+    process.env.CADET_ENVIRONMENT = "production";
   });
   afterEach(() => {
     if (originalEnvironment === undefined) {
-      delete process.env.VELLUM_ENVIRONMENT;
+      delete process.env.CADET_ENVIRONMENT;
     } else {
-      process.env.VELLUM_ENVIRONMENT = originalEnvironment;
+      process.env.CADET_ENVIRONMENT = originalEnvironment;
     }
   });
 }
@@ -1725,30 +1725,30 @@ describe("startRemoteWebIngress", () => {
 describe("ensureTunnelEdge", () => {
   const ASSISTANT_ID = "assistant-1";
   const REQUESTED_PORT = 7846;
-  const originalIngressPort = process.env.VELLUM_NGINX_INGRESS_PORT;
-  const originalLockfileDir = process.env.VELLUM_LOCKFILE_DIR;
+  const originalIngressPort = process.env.CADET_NGINX_INGRESS_PORT;
+  const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
   let lockfileDir: string;
 
   pinProductionEnvironment();
 
   beforeEach(() => {
-    process.env.VELLUM_NGINX_INGRESS_PORT = String(REQUESTED_PORT);
+    process.env.CADET_NGINX_INGRESS_PORT = String(REQUESTED_PORT);
     // Isolated lockfile dir so the assistant-name lookup never reads a real
     // machine lockfile.
     lockfileDir = makeWorkspace();
-    process.env.VELLUM_LOCKFILE_DIR = lockfileDir;
+    process.env.CADET_LOCKFILE_DIR = lockfileDir;
   });
 
   afterEach(() => {
     if (originalIngressPort === undefined) {
-      delete process.env.VELLUM_NGINX_INGRESS_PORT;
+      delete process.env.CADET_NGINX_INGRESS_PORT;
     } else {
-      process.env.VELLUM_NGINX_INGRESS_PORT = originalIngressPort;
+      process.env.CADET_NGINX_INGRESS_PORT = originalIngressPort;
     }
     if (originalLockfileDir === undefined) {
-      delete process.env.VELLUM_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
     } else {
-      process.env.VELLUM_LOCKFILE_DIR = originalLockfileDir;
+      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
     }
   });
 
@@ -1758,7 +1758,7 @@ describe("ensureTunnelEdge", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     writeFileSync(
-      join(lockfileDir, ".vellum.lock.json"),
+      join(lockfileDir, ".cadet.lock.json"),
       JSON.stringify({
         assistants: [
           {
@@ -1845,7 +1845,7 @@ describe("ensureTunnelEdge", () => {
     mockWebDistPresent();
     const writeLockfile = (name: string) =>
       writeFileSync(
-        join(lockfileDir, ".vellum.lock.json"),
+        join(lockfileDir, ".cadet.lock.json"),
         JSON.stringify({
           assistants: [
             {
@@ -2156,7 +2156,7 @@ describe("ensureTunnelEdge", () => {
       `already in use (for example by another assistant's tunnel edge)`,
     );
     await expect(promise).rejects.toThrow(`127.0.0.1:${REQUESTED_PORT}`);
-    await expect(promise).rejects.toThrow("VELLUM_NGINX_INGRESS_PORT");
+    await expect(promise).rejects.toThrow("CADET_NGINX_INGRESS_PORT");
     await expect(promise).rejects.toThrow(
       join(ws, "data", "logs", "nginx-ingress.log"),
     );
@@ -2164,13 +2164,13 @@ describe("ensureTunnelEdge", () => {
 });
 
 describe("stopContainerTunnelEdge", () => {
-  const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
+  const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 
   afterEach(() => {
     if (originalWorkspaceDir === undefined) {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     } else {
-      process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+      process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
     }
   });
 
@@ -2185,7 +2185,7 @@ describe("stopContainerTunnelEdge", () => {
 
   test("stops the default-workspace edge fronting this assistant", async () => {
     const ws = makeWorkspace();
-    process.env.VELLUM_WORKSPACE_DIR = ws;
+    process.env.CADET_WORKSPACE_DIR = ws;
     const pid = mockRunningEdge(ws, { listenPort: 7840, gatewayPort: 7930 });
     const { killed } = mockKillableNginx(pid);
 
@@ -2195,7 +2195,7 @@ describe("stopContainerTunnelEdge", () => {
 
   test("leaves an edge fronting a different container assistant alone", async () => {
     const ws = makeWorkspace();
-    process.env.VELLUM_WORKSPACE_DIR = ws;
+    process.env.CADET_WORKSPACE_DIR = ws;
     const pid = mockRunningEdge(ws, { listenPort: 7840, gatewayPort: 7930 });
     const { killed } = mockKillableNginx(pid);
 
@@ -2205,7 +2205,7 @@ describe("stopContainerTunnelEdge", () => {
 
   test("leaves an unattributable edge alone", async () => {
     const ws = makeWorkspace();
-    process.env.VELLUM_WORKSPACE_DIR = ws;
+    process.env.CADET_WORKSPACE_DIR = ws;
     const pid = mockRunningEdge(ws, { listenPort: 7840 });
     const { killed } = mockKillableNginx(pid);
 
@@ -2215,7 +2215,7 @@ describe("stopContainerTunnelEdge", () => {
 
   test("is a no-op when the entry carries no explicit gateway port", async () => {
     const ws = makeWorkspace();
-    process.env.VELLUM_WORKSPACE_DIR = ws;
+    process.env.CADET_WORKSPACE_DIR = ws;
     const pid = mockRunningEdge(ws, { listenPort: 7840, gatewayPort: 7930 });
     const { killed } = mockKillableNginx(pid);
 
@@ -2231,7 +2231,7 @@ describe("stopContainerTunnelEdge", () => {
 
   test("is a no-op when no edge is running", async () => {
     const ws = makeWorkspace();
-    process.env.VELLUM_WORKSPACE_DIR = ws;
+    process.env.CADET_WORKSPACE_DIR = ws;
 
     expect(await stopContainerTunnelEdge(containerEntry(7930))).toBe(false);
   });

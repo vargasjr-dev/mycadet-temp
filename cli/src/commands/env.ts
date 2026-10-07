@@ -47,8 +47,8 @@ function envGet(): void {
   const { name, source } = resolveEnvironmentSource();
   const sourceLabels: Record<typeof source, string> = {
     flag: "--environment flag",
-    env: "VELLUM_ENVIRONMENT env var",
-    config: "~/.config/vellum/environment",
+    env: "CADET_ENVIRONMENT env var",
+    config: "~/.config/cadet/environment",
     default: "default",
   };
   console.log(`${name} (from ${sourceLabels[source]})`);

@@ -91,11 +91,11 @@ describe("getConnectedChannels gateway connectivity", () => {
   });
 
   test("always reports cadet and platform connected", async () => {
-    deliverableChannels = ["vellum", "platform"];
+    deliverableChannels = ["cadet", "platform"];
     gatewayGuardians = null;
 
     const connected = await getConnectedChannels();
-    expect(connected).toContain("vellum");
+    expect(connected).toContain("cadet");
     expect(connected).toContain("platform");
   });
 });

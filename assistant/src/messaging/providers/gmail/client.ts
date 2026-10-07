@@ -34,7 +34,7 @@ export const GMAIL_API_BASE_URL =
  * downstream 403 into an actionable "reconnect Google and grant Gmail" error
  * at resolution time when the selected connection cannot read Gmail.
  *
- * Managed connections never carry this scope: Vellum's app grants Gmail as
+ * Managed connections never carry this scope: Cadet's app grants Gmail as
  * `https://mail.google.com/`, which `scopeDifference` in `oauth/scope-utils.ts`
  * accepts as covering it.
  */

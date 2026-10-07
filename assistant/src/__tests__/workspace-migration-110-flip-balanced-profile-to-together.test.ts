@@ -34,7 +34,7 @@ function readProfiles(): Record<string, Record<string, unknown>> {
 beforeEach(() => {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-110-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-110-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 });

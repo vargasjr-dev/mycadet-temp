@@ -24,7 +24,7 @@ let initialized = false;
  * No-op outside the Capacitor shell — browser consumers fall through to
  * `env(safe-area-inset-*)` which works correctly in Safari / Chrome.
  *
- * Ported from cadet-assistant-platform's SafeAreaBridge.tsx.
+ * Ported from mycadet-platform's SafeAreaBridge.tsx.
  */
 export async function initSafeAreaBridge(): Promise<void> {
   if (initialized) {

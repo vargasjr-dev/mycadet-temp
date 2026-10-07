@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
-import { VELLUM_DOWNLOADS_URL } from "@/utils/external-urls";
+import { CADET_DOWNLOADS_URL } from "@/utils/external-urls";
 
 const emitNudgeEvent = mock(
   (_action: string, _surface: string, _target: string) => {},
@@ -39,7 +39,7 @@ describe("desktop app download link", () => {
       "_blank",
       "noopener,noreferrer",
     );
-    expect(VELLUM_DOWNLOADS_URL).toBe("https://www.cadet.ai/downloads");
+    expect(CADET_DOWNLOADS_URL).toBe("https://www.cadet.ai/downloads");
   });
 
   test("tags Windows clicks and dismissals with the Windows target", () => {

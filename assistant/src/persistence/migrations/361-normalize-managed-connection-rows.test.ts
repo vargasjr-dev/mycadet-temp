@@ -66,42 +66,42 @@ describe("migration 361: normalize managed connection rows", () => {
     migrateNormalizeManagedConnectionRows(db);
 
     const row = readRow(sqlite, "managed-openai");
-    expect(row.provider).toBe("vellum");
+    expect(row.provider).toBe("cadet");
     expect(JSON.parse(row.auth)).toEqual({ type: "platform" });
   });
 
   test("heals a stuck legacy canonical row (name cadet, concrete provider, platform auth)", () => {
     const { sqlite, db } = createTestDb();
-    insertRow(sqlite, "vellum", "anthropic", '{"type":"platform"}');
+    insertRow(sqlite, "cadet", "anthropic", '{"type":"platform"}');
 
     migrateNormalizeManagedConnectionRows(db);
 
-    expect(readRow(sqlite, "vellum").provider).toBe("vellum");
+    expect(readRow(sqlite, "cadet").provider).toBe("cadet");
   });
 
   test("rewrites a cadet-provider row with non-platform auth to platform auth", () => {
     const { sqlite, db } = createTestDb();
     insertRow(
       sqlite,
-      "keyed-vellum",
-      "vellum",
+      "keyed-cadet",
+      "cadet",
       '{"type":"api_key","credential":"vault/x"}',
     );
-    insertRow(sqlite, "none-vellum", "vellum", '{"type":"none"}');
+    insertRow(sqlite, "none-cadet", "cadet", '{"type":"none"}');
 
     migrateNormalizeManagedConnectionRows(db);
 
-    expect(JSON.parse(readRow(sqlite, "keyed-vellum").auth)).toEqual({
+    expect(JSON.parse(readRow(sqlite, "keyed-cadet").auth)).toEqual({
       type: "platform",
     });
-    expect(JSON.parse(readRow(sqlite, "none-vellum").auth)).toEqual({
+    expect(JSON.parse(readRow(sqlite, "none-cadet").auth)).toEqual({
       type: "platform",
     });
   });
 
   test("leaves consistent rows untouched", () => {
     const { sqlite, db } = createTestDb();
-    insertRow(sqlite, "vellum", "vellum", '{"type":"platform"}');
+    insertRow(sqlite, "cadet", "cadet", '{"type":"platform"}');
     insertRow(
       sqlite,
       "anthropic-key",
@@ -126,21 +126,21 @@ describe("migration 361: normalize managed connection rows", () => {
     const { sqlite, db } = createTestDb();
     insertRow(
       sqlite,
-      "vellum",
+      "cadet",
       "anthropic",
       '{"type":"api_key","credential":"vault/anthropic"}',
     );
 
     migrateNormalizeManagedConnectionRows(db);
 
-    const row = readRow(sqlite, "vellum");
+    const row = readRow(sqlite, "cadet");
     expect(row.provider).toBe("anthropic");
     expect(JSON.parse(row.auth).type).toBe("api_key");
   });
 
   test("leaves a row with unparseable auth untouched", () => {
     const { sqlite, db } = createTestDb();
-    insertRow(sqlite, "broken", "vellum", "not json");
+    insertRow(sqlite, "broken", "cadet", "not json");
 
     migrateNormalizeManagedConnectionRows(db);
 
@@ -150,7 +150,7 @@ describe("migration 361: normalize managed connection rows", () => {
   test("is idempotent", () => {
     const { sqlite, db } = createTestDb();
     insertRow(sqlite, "managed-openai", "openai", '{"type":"platform"}');
-    insertRow(sqlite, "keyed-vellum", "vellum", '{"type":"api_key"}');
+    insertRow(sqlite, "keyed-cadet", "cadet", '{"type":"api_key"}');
 
     migrateNormalizeManagedConnectionRows(db);
     const afterFirst = readRows(sqlite);

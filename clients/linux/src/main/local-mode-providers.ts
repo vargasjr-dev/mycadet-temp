@@ -23,7 +23,7 @@ import {
 } from "./cli-installer";
 
 const resolveCliInvocation = async (): Promise<CliInvocation> => {
-  const override = process.env.VELLUM_CLI_PATH;
+  const override = process.env.CADET_CLI_PATH;
   if (override) {
     return { command: "bun", baseArgs: ["run", override] };
   }

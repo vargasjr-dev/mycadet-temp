@@ -313,9 +313,9 @@ export async function nonInteractiveExec(
   let timedOut = false;
 
   // Unique sentinels to delimit command output
-  const startSentinel = `__VELLUM_EXEC_START_${Date.now()}__`;
-  const endSentinel = `__VELLUM_EXEC_END_${Date.now()}__`;
-  const exitCodeSentinel = `__VELLUM_EXIT_`;
+  const startSentinel = `__CADET_EXEC_START_${Date.now()}__`;
+  const endSentinel = `__CADET_EXEC_END_${Date.now()}__`;
+  const exitCodeSentinel = `__CADET_EXIT_`;
 
   dbg(`sentinels: start=${startSentinel} end=${endSentinel}`);
 
@@ -464,7 +464,7 @@ export async function nonInteractiveExec(
 // Exported helpers — pure functions extracted for testability
 // ---------------------------------------------------------------------------
 
-const EXIT_CODE_SENTINEL = "__VELLUM_EXIT_";
+const EXIT_CODE_SENTINEL = "__CADET_EXIT_";
 
 /**
  * Strip ANSI escape sequences and carriage returns from raw PTY output.
@@ -525,7 +525,7 @@ export function parseSentinelOutput(
   let exitCode = 0;
   for (let i = lines.length - 1; i >= 0; i--) {
     if (lines[i].includes(EXIT_CODE_SENTINEL)) {
-      const match = lines[i].match(/__VELLUM_EXIT_(\d+)/);
+      const match = lines[i].match(/__CADET_EXIT_(\d+)/);
       if (match) {
         exitCode = parseInt(match[1], 10);
       }

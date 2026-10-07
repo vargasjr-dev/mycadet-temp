@@ -9,7 +9,7 @@
  *      consumed by:
  *        - `cli/src/__tests__/search-provider-env-var-parity.test.ts`
  *          (drift guard for the CLI's hardcoded env-var mirror).
- *        - Downstream `vellum-assistant-platform/web/src/lib/generated/
+ *        - Downstream `mycadet-platform/web/src/lib/generated/
  *          web-search-provider-catalog.json` (manually sync'd today; the
  *          scheduled sync workflow is a planned follow-up).
  *

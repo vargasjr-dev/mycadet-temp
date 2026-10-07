@@ -703,18 +703,18 @@ export class AssistantIpcServer {
 /**
  * Resolve an IPC caller's identity headers, the IPC counterpart to what the
  * HTTP adapter derives from the verified `AuthContext`:
- * `x-vellum-principal-type` and a synthetic `x-vellum-actor-principal-id` for
+ * `x-cadet-principal-type` and a synthetic `x-cadet-actor-principal-id` for
  * the local guardian. Handlers read the resolved identity from `headers` (the
  * single source of truth across both transports); they never trust the request
  * body.
  *
- * Principal type comes from the gateway-forwarded `x-vellum-principal-type`,
+ * Principal type comes from the gateway-forwarded `x-cadet-principal-type`,
  * else `svc_gateway` for a gateway-proxied request (marked by
- * `x-vellum-proxy-server: ipc`, which a direct CLI never sends), else `local`.
+ * `x-cadet-proxy-server: ipc`, which a direct CLI never sends), else `local`.
  * Routes that elevate trust gate on `local`, so a remote caller arriving with
  * no verified principal must resolve to `svc_gateway`, never `local`.
  *
- * `x-vellum-subject` and `rawUrl` are dropped: this transport verifies no
+ * `x-cadet-subject` and `rawUrl` are dropped: this transport verifies no
  * subject, and the wire-exact URL is the HTTP adapter's to set. Both are
  * spoofable by anything that reaches the socket, and a handler that reads
  * either treats absence as the fail-closed case.
@@ -724,26 +724,26 @@ export function injectLocalActorHeader(
 ): RouteHandlerArgs {
   const args = (params ?? {}) as RouteHandlerArgs;
   const existingHeaders = args.headers;
-  const forwardedPrincipal = existingHeaders?.["x-vellum-principal-type"] as
+  const forwardedPrincipal = existingHeaders?.["x-cadet-principal-type"] as
     | PrincipalType
     | undefined;
-  const isGatewayProxied = existingHeaders?.["x-vellum-proxy-server"] === "ipc";
+  const isGatewayProxied = existingHeaders?.["x-cadet-proxy-server"] === "ipc";
   const headers: Record<string, string> = {
     ...existingHeaders,
-    "x-vellum-principal-type":
+    "x-cadet-principal-type":
       forwardedPrincipal ?? (isGatewayProxied ? "svc_gateway" : "local"),
   };
-  delete headers["x-vellum-subject"];
+  delete headers["x-cadet-subject"];
 
   // Fill the local guardian's actor id for direct callers that lack one.
   // Defensive: the lookup queries the contacts table, which may not exist on a
   // very early boot path or in test fixtures without a DB — a failure must not
   // block dispatch, so routes requiring the header fail-closed on their own.
-  if (!headers["x-vellum-actor-principal-id"]) {
+  if (!headers["x-cadet-actor-principal-id"]) {
     try {
       const localActor = findLocalGuardianPrincipalIdFromStore();
       if (localActor) {
-        headers["x-vellum-actor-principal-id"] = localActor;
+        headers["x-cadet-actor-principal-id"] = localActor;
       }
     } catch (err) {
       log.debug(

@@ -39,7 +39,7 @@ mock.module("../../contacts/guardian-delivery-reader.js", () => ({
     return guardianPrincipalId
       ? [
           {
-            channelType: "vellum",
+            channelType: "cadet",
             status: "active",
             principalId: guardianPrincipalId,
           },

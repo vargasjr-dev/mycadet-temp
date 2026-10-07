@@ -8,7 +8,7 @@
  *
  * - {@link resolveActorTrust}: a sync, IO-free guardian-or-unknown
  *   classification read from the guardian-delivery cache snapshot. Its sole
- *   production caller is the vellum reset-drift re-resolution
+ *   production caller is the cadet reset-drift re-resolution
  *   (`reResolveTrustOnResetDrift` via `resolveTrustContext`), which runs
  *   exactly when the gateway verdict came back `unknown` and so cannot
  *   consume a verdict. Member (contact) classification is verdict-only and

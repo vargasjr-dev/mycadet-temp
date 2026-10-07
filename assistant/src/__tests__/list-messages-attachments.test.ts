@@ -301,7 +301,7 @@ describe("handleListMessages attachments", () => {
   });
 
   test("attachment-only assistant message synthesizes contentBlocks", async () => {
-    // When the assistant's entire response was a <vellum-attachment/> tag,
+    // When the assistant's entire response was a <cadet-attachment/> tag,
     // parseDirectives strips it → cleanText is empty → renderHistoryContent
     // drops the empty text block → contentBlocks is []. The serializer must
     // synthesize attachment blocks from msgAttachments so the client has a

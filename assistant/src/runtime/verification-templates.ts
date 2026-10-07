@@ -192,7 +192,7 @@ const voiceTemplates: Record<
   (vars: GuardianVerifyVoiceTemplateVars) => string
 > = {
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.VOICE_CALL_INTRO]: (vars) =>
-    `You are receiving a guardian verification call for your Vellum assistant. Please enter your ${vars.codeDigits}-digit verification code using your keypad.`,
+    `You are receiving a guardian verification call for your Cadet assistant. Please enter your ${vars.codeDigits}-digit verification code using your keypad.`,
 
   [GUARDIAN_VERIFY_TEMPLATE_KEYS.VOICE_RETRY]: (_vars) =>
     "That code was incorrect. Please try again.",

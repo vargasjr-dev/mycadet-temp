@@ -113,7 +113,7 @@ export const turnEventSample: TurnTelemetryEvent = {
   conversation_type: "standard",
   turn_index: 1,
   interface_id: "web",
-  channel_id: "vellum",
+  channel_id: "cadet",
   client: {
     browser_family: "chrome",
     browser_version: "124",

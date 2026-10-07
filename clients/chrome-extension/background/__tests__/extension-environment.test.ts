@@ -75,38 +75,38 @@ describe('parseExtensionEnvironment', () => {
 // ── resolveBuildDefaultEnvironment ──────────────────────────────────
 
 describe('resolveBuildDefaultEnvironment', () => {
-  const savedEnv = process.env.VELLUM_ENVIRONMENT;
+  const savedEnv = process.env.CADET_ENVIRONMENT;
 
   afterEach(() => {
     if (savedEnv === undefined) {
-      delete process.env.VELLUM_ENVIRONMENT;
+      delete process.env.CADET_ENVIRONMENT;
     } else {
-      process.env.VELLUM_ENVIRONMENT = savedEnv;
+      process.env.CADET_ENVIRONMENT = savedEnv;
     }
   });
 
-  test('returns the environment when VELLUM_ENVIRONMENT is a valid value', () => {
-    process.env.VELLUM_ENVIRONMENT = 'staging';
+  test('returns the environment when CADET_ENVIRONMENT is a valid value', () => {
+    process.env.CADET_ENVIRONMENT = 'staging';
     expect(resolveBuildDefaultEnvironment()).toBe('staging');
   });
 
   test('resolves "prod" alias via build env', () => {
-    process.env.VELLUM_ENVIRONMENT = 'prod';
+    process.env.CADET_ENVIRONMENT = 'prod';
     expect(resolveBuildDefaultEnvironment()).toBe('production');
   });
 
-  test('falls back to "production" when VELLUM_ENVIRONMENT is unset', () => {
-    delete process.env.VELLUM_ENVIRONMENT;
+  test('falls back to "production" when CADET_ENVIRONMENT is unset', () => {
+    delete process.env.CADET_ENVIRONMENT;
     expect(resolveBuildDefaultEnvironment()).toBe('production');
   });
 
-  test('falls back to "production" when VELLUM_ENVIRONMENT is empty', () => {
-    process.env.VELLUM_ENVIRONMENT = '';
+  test('falls back to "production" when CADET_ENVIRONMENT is empty', () => {
+    process.env.CADET_ENVIRONMENT = '';
     expect(resolveBuildDefaultEnvironment()).toBe('production');
   });
 
-  test('falls back to "production" when VELLUM_ENVIRONMENT is invalid', () => {
-    process.env.VELLUM_ENVIRONMENT = 'bogus';
+  test('falls back to "production" when CADET_ENVIRONMENT is invalid', () => {
+    process.env.CADET_ENVIRONMENT = 'bogus';
     expect(resolveBuildDefaultEnvironment()).toBe('production');
   });
 });
@@ -121,18 +121,18 @@ describe('cloudUrlsForEnvironment', () => {
   }> = [
     {
       env: 'production',
-      expectedApiBaseUrl: 'https://platform.vellum.ai',
-      expectedWebBaseUrl: 'https://www.vellum.ai',
+      expectedApiBaseUrl: 'https://cloud.cadet.ai',
+      expectedWebBaseUrl: 'https://mycadet.ai',
     },
     {
       env: 'staging',
-      expectedApiBaseUrl: 'https://staging-platform.vellum.ai',
-      expectedWebBaseUrl: 'https://staging-assistant.vellum.ai',
+      expectedApiBaseUrl: 'https://staging-cloud.cadet.ai',
+      expectedWebBaseUrl: 'https://staging.cloud.mycadet.ai',
     },
     {
       env: 'dev',
-      expectedApiBaseUrl: 'https://dev-platform.vellum.ai',
-      expectedWebBaseUrl: 'https://dev-assistant.vellum.ai',
+      expectedApiBaseUrl: 'https://dev-cloud.cadet.ai',
+      expectedWebBaseUrl: 'https://dev.cloud.mycadet.ai',
     },
     {
       env: 'local',
@@ -155,16 +155,16 @@ describe('cloudUrlsForEnvironment', () => {
 
   test('production parity: "prod" alias and "production" resolve to same URLs', () => {
     const fromProd = cloudUrlsForEnvironment('production');
-    expect(fromProd.apiBaseUrl).toBe('https://platform.vellum.ai');
-    expect(fromProd.webBaseUrl).toBe('https://www.vellum.ai');
+    expect(fromProd.apiBaseUrl).toBe('https://cloud.cadet.ai');
+    expect(fromProd.webBaseUrl).toBe('https://mycadet.ai');
   });
 });
 
 describe('createFirstAssistantUrl', () => {
   const cases: Array<{ env: ExtensionEnvironment; webBaseUrl: string }> = [
-    { env: 'production', webBaseUrl: 'https://www.vellum.ai' },
-    { env: 'staging', webBaseUrl: 'https://staging-assistant.vellum.ai' },
-    { env: 'dev', webBaseUrl: 'https://dev-assistant.vellum.ai' },
+    { env: 'production', webBaseUrl: 'https://mycadet.ai' },
+    { env: 'staging', webBaseUrl: 'https://staging.cloud.mycadet.ai' },
+    { env: 'dev', webBaseUrl: 'https://dev.cloud.mycadet.ai' },
     { env: 'local', webBaseUrl: 'http://localhost:3000' },
   ];
 

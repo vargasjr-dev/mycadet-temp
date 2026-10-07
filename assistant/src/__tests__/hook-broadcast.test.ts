@@ -36,9 +36,9 @@ import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.j
 
 // Point the workspace at an empty temp dir so the user-land hook loader finds
 // nothing; only the in-process hooks registered below participate.
-process.env.VELLUM_WORKSPACE_DIR = join(
+process.env.CADET_WORKSPACE_DIR = join(
   tmpdir(),
-  `vellum-hook-broadcast-${process.pid}-${Date.now()}`,
+  `cadet-hook-broadcast-${process.pid}-${Date.now()}`,
 );
 
 function buildPlugin(

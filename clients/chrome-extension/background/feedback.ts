@@ -15,7 +15,7 @@
  * it isn't a real tar — so we ship a real (one-file) tar.gz instead of a
  * plain gzipped JSON blob.
  *
- * Cloud submissions attach `X-Session-Token` and `Vellum-Organization-Id`
+ * Cloud submissions attach `X-Session-Token` and `Cadet-Organization-Id`
  * when available; self-hosted submissions ship unauthenticated, same as
  * the macOS app's behaviour when no session token exists. The platform
  * endpoint accepts both shapes.
@@ -87,12 +87,12 @@ export interface DiagnosticBundle {
  * must stay out of this list.
  */
 const NON_SECRET_STORAGE_KEYS: readonly string[] = [
-  "vellum.clientId",
-  "vellum.selectedAssistant",
-  "vellum.gatewayUrl",
-  "vellum.userMode",
-  "vellum.environment",
-  "vellum.connectedOrganizationId",
+  "cadet.clientId",
+  "cadet.selectedAssistant",
+  "cadet.gatewayUrl",
+  "cadet.userMode",
+  "cadet.environment",
+  "cadet.connectedOrganizationId",
   "autoConnect",
 ];
 
@@ -138,8 +138,8 @@ export async function collectDiagnosticBundle(
       ? { id: selectedAssistant.id, name: selectedAssistant.name }
       : null,
     organizationId:
-      typeof storage["vellum.connectedOrganizationId"] === "string"
-        ? (storage["vellum.connectedOrganizationId"] as string)
+      typeof storage["cadet.connectedOrganizationId"] === "string"
+        ? (storage["cadet.connectedOrganizationId"] as string)
         : null,
     clientId,
     email: session?.email ?? null,
@@ -195,7 +195,7 @@ export async function submitFeedback(
     const archive = await buildBundleTarGz(bundle);
     formData.set(
       "logs_file",
-      new File([archive], "vellum-extension-diagnostics.tar.gz", {
+      new File([archive], "cadet-extension-diagnostics.tar.gz", {
         type: "application/gzip",
       }),
     );
@@ -206,9 +206,9 @@ export async function submitFeedback(
     headers["X-Session-Token"] = session.sessionToken;
   }
   const storage = await readNonSecretStorage();
-  const orgId = storage["vellum.connectedOrganizationId"];
+  const orgId = storage["cadet.connectedOrganizationId"];
   if (typeof orgId === "string" && orgId.length > 0) {
-    headers["Vellum-Organization-Id"] = orgId;
+    headers["Cadet-Organization-Id"] = orgId;
   }
 
   const resp = await fetchImpl(uploadUrl, {

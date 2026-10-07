@@ -1,7 +1,7 @@
 ---
 name: transcribe
 description: Transcribe audio and video files using the configured speech-to-text provider
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🎙️"
   cadet:

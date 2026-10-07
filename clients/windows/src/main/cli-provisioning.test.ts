@@ -41,7 +41,7 @@ const makeTempDir = (): string => {
 const writeRuntimeEntries = (dir: string, version: string): void => {
   mkdirSync(dir, { recursive: true });
   for (const name of CLI_RUNTIME_EXECUTABLES) {
-    const contents = name === "vellum.exe" ? `vellum-${version}` : name;
+    const contents = name === "cadet.exe" ? `cadet-${version}` : name;
     writeFileSync(path.join(dir, name), contents, "utf8");
   }
   for (const name of CLI_RUNTIME_ASSETS) {
@@ -68,10 +68,10 @@ const writeRuntime = (
   );
   writeFileSync(
     path.join(dir, CLI_RUNTIME_OWNERSHIP_MARKER),
-    JSON.stringify({ owner: "vellum-assistant", version }),
+    JSON.stringify({ owner: "mycadet", version }),
     "utf8",
   );
-  return path.join(dir, "vellum.exe");
+  return path.join(dir, "cadet.exe");
 };
 
 const runtimePaths = (root: string, version: string): CliRuntimePaths => ({
@@ -120,8 +120,8 @@ test("installs, upgrades, and falls back from paths with spaces", () => {
   const first = runtimePaths(root, "1.0.0");
   writeRuntime(first.sourceDir, first.version);
   const v1 = provisionCliRuntime(first);
-  expect(readFileSync(path.join(v1.installDir, "vellum.exe"), "utf8")).toBe(
-    "vellum-1.0.0",
+  expect(readFileSync(path.join(v1.installDir, "cadet.exe"), "utf8")).toBe(
+    "cadet-1.0.0",
   );
 
   rmSync(first.sourceDir, { recursive: true });
@@ -131,7 +131,7 @@ test("installs, upgrades, and falls back from paths with spaces", () => {
   expect(v2.previousInstallDir).toBe(v1.installDir);
   expect(v2.reused).toBeFalse();
   rmSync(second.sourceDir, { recursive: true });
-  rmSync(path.join(v2.installDir, "vellum.exe"));
+  rmSync(path.join(v2.installDir, "cadet.exe"));
   const fallback = provisionCliRuntime(runtimePaths(root, "3.0.0"));
   expect(fallback.installDir).toBe(v1.installDir);
   expect(fallback.reused).toBeTrue();
@@ -205,7 +205,7 @@ test("preserves the newer runtime when reusing an older version", () => {
   expect(rollback.previousInstallDir).toBe(v2.installDir);
 
   rmSync(second.sourceDir, { recursive: true });
-  rmSync(path.join(v1.installDir, "vellum.exe"));
+  rmSync(path.join(v1.installDir, "cadet.exe"));
   const fallback = provisionCliRuntime(runtimePaths(root, "3.0.0"));
   expect(fallback.installDir).toBe(v2.installDir);
 });
@@ -236,7 +236,7 @@ test("does not replace a foreign launcher", () => {
   const paths = resolveCliLauncherPaths(path.join(root, "Local App Data"));
   mkdirSync(paths.binDir, { recursive: true });
   writeFileSync(paths.executable, "foreign", "utf8");
-  const source = path.join(root, "vellum.exe");
+  const source = path.join(root, "cadet.exe");
   writeFileSync(source, "owned", "utf8");
 
   expect(installCliLauncher(source, "1.0.0", paths, registry().run)).toBe(
@@ -252,7 +252,7 @@ test("isolates non-production launchers from the production PATH entry", () => {
   const development = resolveCliLauncherPaths(localAppData, "development");
 
   expect(production.binDir).toBe(path.join(localAppData, "Cadet", "bin"));
-  expect(staging.binDir).toBe(path.join(localAppData, "Vellum-staging", "bin"));
+  expect(staging.binDir).toBe(path.join(localAppData, "Cadet-staging", "bin"));
   expect(development.binDir).not.toBe(staging.binDir);
   expect(development.binDir).not.toBe(production.binDir);
 });
@@ -322,7 +322,7 @@ test("repairs stale ownership and updates the user PATH", () => {
   const source = writeRuntime(path.join(root, "runtime"), "1.0.0");
   const collisionDir = path.join(root, "Existing CLI");
   mkdirSync(collisionDir, { recursive: true });
-  writeFileSync(path.join(collisionDir, "vellum.exe"), "foreign", "utf8");
+  writeFileSync(path.join(collisionDir, "cadet.exe"), "foreign", "utf8");
   const userRegistry = registry(collisionDir);
 
   expect(getCliLauncherState(paths, source)).toBe("stale");
@@ -331,7 +331,7 @@ test("repairs stale ownership and updates the user PATH", () => {
   );
   expect(userRegistry.broadcasts()).toBe(1);
   expect(userRegistry.value().split(";")).toContain(paths.binDir);
-  rmSync(path.join(collisionDir, "vellum.exe"));
+  rmSync(path.join(collisionDir, "cadet.exe"));
   expect(installCliLauncher(source, "1.0.0", paths, userRegistry.run)).toBe(
     "installed",
   );
@@ -364,7 +364,7 @@ test("requires every packaged entry but puts only the launcher on PATH", () => {
   expect(readFileSync(paths.executable, "utf8")).toBe("cli-launcher.exe");
   expect(readLauncherSource(paths.ownership)).toBe(source);
   expect(
-    CLI_RUNTIME_ENTRIES.filter((name) => name !== "vellum.exe").every(
+    CLI_RUNTIME_ENTRIES.filter((name) => name !== "cadet.exe").every(
       (name) => !existsSync(path.join(paths.binDir, name)),
     ),
   ).toBeTrue();
@@ -475,7 +475,7 @@ test("reports a launcher shadowed by the machine PATH", () => {
   const source = writeRuntime(path.join(root, "runtime"), "1.0.0");
   const collisionDir = path.join(root, "Machine CLI");
   mkdirSync(collisionDir, { recursive: true });
-  writeFileSync(path.join(collisionDir, "vellum.exe"), "foreign", "utf8");
+  writeFileSync(path.join(collisionDir, "cadet.exe"), "foreign", "utf8");
 
   expect(
     installCliLauncher(source, "1.0.0", paths, registry("", collisionDir).run),
@@ -488,8 +488,8 @@ test("expands and unquotes PATH entries before collision checks", () => {
   const source = writeRuntime(path.join(root, "runtime"), "1.0.0");
   const collisionDir = path.join(root, "Expanded Machine CLI");
   mkdirSync(collisionDir, { recursive: true });
-  writeFileSync(path.join(collisionDir, "vellum.exe"), "foreign", "utf8");
-  process.env.VELLUM_TEST_COLLISION_DIR = collisionDir;
+  writeFileSync(path.join(collisionDir, "cadet.exe"), "foreign", "utf8");
+  process.env.CADET_TEST_COLLISION_DIR = collisionDir;
 
   try {
     expect(
@@ -497,11 +497,11 @@ test("expands and unquotes PATH entries before collision checks", () => {
         source,
         "1.0.0",
         paths,
-        registry("", '"%VELLUM_TEST_COLLISION_DIR%"').run,
+        registry("", '"%CADET_TEST_COLLISION_DIR%"').run,
       ),
     ).toBe("shadowed");
   } finally {
-    delete process.env.VELLUM_TEST_COLLISION_DIR;
+    delete process.env.CADET_TEST_COLLISION_DIR;
   }
 });
 
@@ -542,7 +542,7 @@ test("retries cleanup of a staged launcher", () => {
   const source = writeRuntime(path.join(root, "runtime"), "1.0.0");
   const userRegistry = registry();
   installCliLauncher(source, "1.0.0", paths, userRegistry.run);
-  const stagedLauncher = path.join(paths.binDir, ".vellum.exe.uninstalling");
+  const stagedLauncher = path.join(paths.binDir, ".cadet.exe.uninstalling");
   renameSync(paths.executable, stagedLauncher);
   const retryRegistry = registry();
 

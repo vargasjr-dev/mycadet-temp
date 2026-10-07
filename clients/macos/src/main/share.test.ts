@@ -90,7 +90,7 @@ const fakeSender = { id: 1 };
 const fakeEvent = { sender: fakeSender };
 
 const bytes = new Uint8Array([1, 2, 3, 4]);
-const expectedDir = `${path.join(tmpdir(), "vellum-share-")}abc123`;
+const expectedDir = `${path.join(tmpdir(), "cadet-share-")}abc123`;
 const STALE_MS = 60 * 60 * 1000;
 
 beforeEach(() => {
@@ -153,7 +153,7 @@ describe("share handler", () => {
 
     // THEN the bytes are written under a throwaway temp dir…
     expect(mkdtempMock).toHaveBeenCalledWith(
-      path.join(tmpdir(), "vellum-share-"),
+      path.join(tmpdir(), "cadet-share-"),
     );
     const expectedPath = path.join(expectedDir, "report.pdf");
     expect(writeFileMock).toHaveBeenCalledWith(expectedPath, bytes);
@@ -219,19 +219,19 @@ describe("share handler", () => {
 describe("sweepStaleShareDirs", () => {
   const dirPath = (name: string): string => path.join(tmpdir(), name);
 
-  test("removes only stale vellum-share-* dirs, sparing fresh ones and unrelated entries", async () => {
+  test("removes only stale cadet-share-* dirs, sparing fresh ones and unrelated entries", async () => {
     const now = Date.now();
     const mtimes: Record<string, number> = {
-      "vellum-share-old": now - 2 * STALE_MS, // stale → removed
-      "vellum-share-fresh": now - 1000, // in-flight → kept
-      "vellum-share-old2": now - (STALE_MS + 5000), // stale → removed
+      "cadet-share-old": now - 2 * STALE_MS, // stale → removed
+      "cadet-share-fresh": now - 1000, // in-flight → kept
+      "cadet-share-old2": now - (STALE_MS + 5000), // stale → removed
     };
     readdirMock.mockReturnValue(
       Promise.resolve([
-        "vellum-share-old",
-        "vellum-share-fresh",
-        "vellum-mac-helper-permission-x",
-        "vellum-share-old2",
+        "cadet-share-old",
+        "cadet-share-fresh",
+        "cadet-mac-helper-permission-x",
+        "cadet-share-old2",
       ]),
     );
     statMock.mockImplementation((p: string) =>
@@ -241,30 +241,30 @@ describe("sweepStaleShareDirs", () => {
     await sweepStaleShareDirs();
 
     expect(rmMock).toHaveBeenCalledTimes(2);
-    expect(rmMock).toHaveBeenCalledWith(dirPath("vellum-share-old"), {
+    expect(rmMock).toHaveBeenCalledWith(dirPath("cadet-share-old"), {
       recursive: true,
       force: true,
     });
-    expect(rmMock).toHaveBeenCalledWith(dirPath("vellum-share-old2"), {
+    expect(rmMock).toHaveBeenCalledWith(dirPath("cadet-share-old2"), {
       recursive: true,
       force: true,
     });
     // A fresh share dir might still be open by the selected service — never
     // deleted, even though it matches the prefix.
     expect(rmMock).not.toHaveBeenCalledWith(
-      dirPath("vellum-share-fresh"),
+      dirPath("cadet-share-fresh"),
       expect.anything(),
     );
     // Unrelated temp dirs aren't even stat'd.
     expect(statMock).not.toHaveBeenCalledWith(
-      dirPath("vellum-mac-helper-permission-x"),
+      dirPath("cadet-mac-helper-permission-x"),
     );
   });
 
   test("leaves everything in place when no share dir is stale", async () => {
     const now = Date.now();
     readdirMock.mockReturnValue(
-      Promise.resolve(["vellum-share-a", "vellum-share-b"]),
+      Promise.resolve(["cadet-share-a", "cadet-share-b"]),
     );
     statMock.mockImplementation(() => Promise.resolve({ mtimeMs: now - 1000 }));
 
@@ -285,17 +285,17 @@ describe("sweepStaleShareDirs", () => {
   test("a stat failure on one dir doesn't block sweeping the others", async () => {
     const now = Date.now();
     readdirMock.mockReturnValue(
-      Promise.resolve(["vellum-share-bad", "vellum-share-old"]),
+      Promise.resolve(["cadet-share-bad", "cadet-share-old"]),
     );
     statMock.mockImplementation((p: string) =>
-      path.basename(p) === "vellum-share-bad"
+      path.basename(p) === "cadet-share-bad"
         ? Promise.reject(new Error("stat failed"))
         : Promise.resolve({ mtimeMs: now - 2 * STALE_MS }),
     );
 
     await expect(sweepStaleShareDirs()).resolves.toBeUndefined();
     expect(rmMock).toHaveBeenCalledTimes(1);
-    expect(rmMock).toHaveBeenCalledWith(dirPath("vellum-share-old"), {
+    expect(rmMock).toHaveBeenCalledWith(dirPath("cadet-share-old"), {
       recursive: true,
       force: true,
     });

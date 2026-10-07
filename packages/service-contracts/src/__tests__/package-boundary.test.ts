@@ -52,34 +52,34 @@ const FORBIDDEN_IMPORT_PATTERNS = [
   // Assistant runtime
   /from\s+["'](?:\.\.\/)*assistant(?:\/|["'])/,
   /require\s*\(\s*["'](?:\.\.\/)*assistant(?:\/|["'])/,
-  /from\s+["']@vellumai\/assistant(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/assistant(?:\/|["'])/,
+  /from\s+["']@mycadet\/assistant(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/assistant(?:\/|["'])/,
 
   // Gateway
   /from\s+["'](?:\.\.\/)*gateway(?:\/|["'])/,
   /require\s*\(\s*["'](?:\.\.\/)*gateway(?:\/|["'])/,
-  /from\s+["']@vellumai\/(?:vellum-)?gateway(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/(?:vellum-)?gateway(?:\/|["'])/,
+  /from\s+["']@mycadet\/(?:cadet-)?gateway(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/(?:cadet-)?gateway(?:\/|["'])/,
 
   // Credential executor
   /from\s+["'](?:\.\.\/)*credential-executor(?:\/|["'])/,
   /require\s*\(\s*["'](?:\.\.\/)*credential-executor(?:\/|["'])/,
-  /from\s+["']@vellumai\/credential-executor(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/credential-executor(?:\/|["'])/,
+  /from\s+["']@mycadet\/credential-executor(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/credential-executor(?:\/|["'])/,
 
   // Runtime shared packages (higher layer)
-  /from\s+["']@vellumai\/credential-storage(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/credential-storage(?:\/|["'])/,
-  /from\s+["']@vellumai\/egress-proxy(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/egress-proxy(?:\/|["'])/,
+  /from\s+["']@mycadet\/credential-storage(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/credential-storage(?:\/|["'])/,
+  /from\s+["']@mycadet\/egress-proxy(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/egress-proxy(?:\/|["'])/,
 
   // x-client packages (higher layer)
-  /from\s+["']@vellumai\/assistant-client(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/assistant-client(?:\/|["'])/,
-  /from\s+["']@vellumai\/ces-client(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/ces-client(?:\/|["'])/,
-  /from\s+["']@vellumai\/gateway-client(?:\/|["'])/,
-  /require\s*\(\s*["']@vellumai\/gateway-client(?:\/|["'])/,
+  /from\s+["']@mycadet\/assistant-client(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/assistant-client(?:\/|["'])/,
+  /from\s+["']@mycadet\/ces-client(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/ces-client(?:\/|["'])/,
+  /from\s+["']@mycadet\/gateway-client(?:\/|["'])/,
+  /require\s*\(\s*["']@mycadet\/gateway-client(?:\/|["'])/,
 ];
 
 describe("package boundary", () => {

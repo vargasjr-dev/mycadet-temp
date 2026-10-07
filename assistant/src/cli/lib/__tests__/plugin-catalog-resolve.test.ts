@@ -3,7 +3,7 @@
  *
  * `resolveSourceFromMatch` is exercised as a pure function. The catalog-backed
  * resolvers run against the bundled manifest with platform features disabled
- * (`VELLUM_DISABLE_PLATFORM`, zero network), plus a platform-enabled case that
+ * (`CADET_DISABLE_PLATFORM`, zero network), plus a platform-enabled case that
  * asserts a rejecting catalog fetch propagates rather than resolving to `null`.
  */
 
@@ -141,12 +141,12 @@ describe("resolveSourceFromMatch", () => {
 describe("catalog-backed resolvers (bundled, offline)", () => {
   const ORIGINAL_ENV = {
     IS_PLATFORM: process.env.IS_PLATFORM,
-    VELLUM_DISABLE_PLATFORM: process.env.VELLUM_DISABLE_PLATFORM,
+    CADET_DISABLE_PLATFORM: process.env.CADET_DISABLE_PLATFORM,
   };
 
   beforeEach(() => {
     invalidatePluginCatalogCache();
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
     delete process.env.IS_PLATFORM;
   });
 
@@ -221,13 +221,13 @@ describe("catalog-backed resolvers (bundled, offline)", () => {
 describe("catalog-backed resolvers (platform enabled)", () => {
   const ORIGINAL_ENV = {
     IS_PLATFORM: process.env.IS_PLATFORM,
-    VELLUM_DISABLE_PLATFORM: process.env.VELLUM_DISABLE_PLATFORM,
+    CADET_DISABLE_PLATFORM: process.env.CADET_DISABLE_PLATFORM,
   };
 
   beforeEach(() => {
     invalidatePluginCatalogCache();
     delete process.env.IS_PLATFORM;
-    delete process.env.VELLUM_DISABLE_PLATFORM;
+    delete process.env.CADET_DISABLE_PLATFORM;
   });
 
   afterEach(() => {

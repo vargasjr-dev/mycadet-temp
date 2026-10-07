@@ -119,7 +119,7 @@ function makeInstallFetch(opts: FetchFixtureOpts): FetchLike {
         "Content-Type": "application/gzip",
         ETag: etag,
         "X-Plugin-Ref": opts.ref ?? "a".repeat(40),
-        "X-Plugin-Repo": opts.repo ?? "vellum-ai/reading-pal",
+        "X-Plugin-Repo": opts.repo ?? "vargasjr-dev/reading-pal",
         ...(opts.sourcePath ? { "X-Plugin-Source-Path": opts.sourcePath } : {}),
       },
     });
@@ -160,7 +160,7 @@ describe("installPluginFromPlatform — success", () => {
     const fetchFn = makeInstallFetch({
       entries,
       ref: "b".repeat(40),
-      repo: "vellum-ai/reading-pal",
+      repo: "vargasjr-dev/reading-pal",
     });
 
     const result = await installPluginFromPlatform(
@@ -191,7 +191,7 @@ describe("installPluginFromPlatform — success", () => {
     const meta = readInstallMeta(target);
     expect(meta?.commit).toBe("b".repeat(40));
     expect(meta?.source.repo).toBe("reading-pal");
-    expect(meta?.source.owner).toBe("vellum-ai");
+    expect(meta?.source.owner).toBe("vargasjr-dev");
     expect(meta?.etag?.startsWith('"sha256:')).toBe(true);
   });
 

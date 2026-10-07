@@ -395,7 +395,7 @@ async function finalizeAndPublishRecording(params: {
   }
   const allowedDir = path.join(
     process.env.HOME ?? "",
-    "Library/Application Support/vellum-assistant/recordings",
+    "Library/Application Support/mycadet/recordings",
   );
   let resolvedAllowedDir: string;
   try {

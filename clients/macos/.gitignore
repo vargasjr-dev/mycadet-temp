@@ -4,14 +4,14 @@ dist/
 build/
 resources/bun
 resources/hotkey-helper
-resources/vellum-mac-helper
-resources/vellum-mac-helper.app
+resources/cadet-mac-helper
+resources/cadet-mac-helper.app
 resources/web-dist
 native/hotkey-helper/.build/
 native/mac-helper/.build/
 resources/cli-lockfile
-resources/.vellum-mac-helper.source-hash
-resources/.vellum-mac-helper*.Info.plist
-resources/.vellum-mac-helper.bundle-name
-resources/Vellum Helper*.app
+resources/.cadet-mac-helper.source-hash
+resources/.cadet-mac-helper*.Info.plist
+resources/.cadet-mac-helper.bundle-name
+resources/Cadet Helper*.app
 resources/notifier

@@ -90,7 +90,7 @@ mock.module("../runtime/local-actor-identity.js", () => ({
 mock.module("../runtime/trust-context-resolver.js", () => ({
   resolveTrustContext: () => ({
     trustClass: "guardian",
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
   }),
   withSourceChannel: (sourceChannel: unknown, ctx: unknown) => ({
     ...(ctx as Record<string, unknown>),
@@ -101,7 +101,7 @@ mock.module("../runtime/trust-context-resolver.js", () => ({
 mock.module("../contacts/guardian-delivery-reader.js", () => ({
   getGuardianDelivery: async () => [
     {
-      channelType: "vellum",
+      channelType: "cadet",
       contactId: "guardian-contact",
       principalId: "test-user",
       address: "test-user",
@@ -193,13 +193,13 @@ describe("handleSendMessage guardian reply interception", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-vellum-actor-principal-id": "test-user",
-        "x-vellum-principal-type": "actor",
+        "x-cadet-actor-principal-id": "test-user",
+        "x-cadet-principal-type": "actor",
       },
       body: JSON.stringify({
         conversationKey: "guardian-conversation-key",
         content: "05BECB approve",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -284,13 +284,13 @@ describe("handleSendMessage guardian reply interception", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-vellum-actor-principal-id": "test-user",
-        "x-vellum-principal-type": "actor",
+        "x-cadet-actor-principal-id": "test-user",
+        "x-cadet-principal-type": "actor",
       },
       body: JSON.stringify({
         conversationKey: "guardian-conversation-key",
         content: "hello there",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -363,13 +363,13 @@ describe("handleSendMessage guardian reply interception", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-vellum-actor-principal-id": "test-user",
-        "x-vellum-principal-type": "actor",
+        "x-cadet-actor-principal-id": "test-user",
+        "x-cadet-principal-type": "actor",
       },
       body: JSON.stringify({
         conversationKey: "guardian-conversation-key",
         content: "Hey, how are you? Show me what you can do.",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "web",
         hidden: true,
       }),
@@ -453,13 +453,13 @@ describe("handleSendMessage guardian reply interception", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-vellum-actor-principal-id": "test-user",
-        "x-vellum-principal-type": "actor",
+        "x-cadet-actor-principal-id": "test-user",
+        "x-cadet-principal-type": "actor",
       },
       body: JSON.stringify({
         conversationKey: "guardian-conversation-key",
         content: "approve",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -541,13 +541,13 @@ describe("handleSendMessage guardian reply interception", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-vellum-actor-principal-id": "test-user",
-        "x-vellum-principal-type": "actor",
+        "x-cadet-actor-principal-id": "test-user",
+        "x-cadet-principal-type": "actor",
       },
       body: JSON.stringify({
         conversationKey: "guardian-conversation-key",
         content: "A1B2C3 approve",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -625,13 +625,13 @@ describe("handleSendMessage guardian reply interception", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-vellum-actor-principal-id": "test-user",
-        "x-vellum-principal-type": "actor",
+        "x-cadet-actor-principal-id": "test-user",
+        "x-cadet-principal-type": "actor",
       },
       body: JSON.stringify({
         conversationKey: "guardian-conversation-key",
         content: "reject",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -703,13 +703,13 @@ describe("handleSendMessage guardian reply interception", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-vellum-actor-principal-id": "test-user",
-        "x-vellum-principal-type": "actor",
+        "x-cadet-actor-principal-id": "test-user",
+        "x-cadet-principal-type": "actor",
       },
       body: JSON.stringify({
         conversationKey: "guardian-conversation-key",
         content: "tell me more about this request",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -783,13 +783,13 @@ describe("handleSendMessage guardian reply interception", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-vellum-actor-principal-id": "test-user",
-        "x-vellum-principal-type": "actor",
+        "x-cadet-actor-principal-id": "test-user",
+        "x-cadet-principal-type": "actor",
       },
       body: JSON.stringify({
         conversationKey: "guardian-conversation-key",
         content: "no sorry, beats 0 and 3 should be new threads",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -864,8 +864,8 @@ describe("handleSendMessage guardian reply interception", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-vellum-actor-principal-id": "test-user",
-        "x-vellum-principal-type": "actor",
+        "x-cadet-actor-principal-id": "test-user",
+        "x-cadet-principal-type": "actor",
       },
       body: JSON.stringify({
         conversationKey: "guardian-conversation-key",

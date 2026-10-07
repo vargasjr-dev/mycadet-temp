@@ -1,7 +1,7 @@
 {
   "targets": [
     {
-      "target_name": "vellum_notifier",
+      "target_name": "cadet_notifier",
       "sources": ["notifier.mm"],
       "include_dirs": ["<!(node -p \"require('node-addon-api').include_dir\")"],
       "conditions": [

@@ -1,7 +1,7 @@
 ---
 name: messaging
 description: Read, search, send, and manage messages across Gmail, Outlook, Telegram, and other platforms
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "\U0001F4AC"
   cadet:
@@ -24,7 +24,7 @@ For Email management (archive, label, triage, declutter), load the **gmail** or 
 
 ## Email Routing Priority
 
-When the user mentions "email" - sending, reading, checking, decluttering, drafting, or anything else - **always default to the user's own email** unless they explicitly ask about the assistant's own email address (e.g., "set up your email", "send from your address", "check your inbox"). The vast majority of email requests are about the user's Gmail or Outlook, not the assistant's @vellum.me address.
+When the user mentions "email" - sending, reading, checking, decluttering, drafting, or anything else - **always default to the user's own email** unless they explicitly ask about the assistant's own email address (e.g., "set up your email", "send from your address", "check your inbox"). The vast majority of email requests are about the user's Gmail or Outlook, not the assistant's @mycadet.bot address.
 
 Do not offer the assistant's own email as an option unless the user specifically asks. If Gmail and Outlook are not connected, guide them through setup.
 

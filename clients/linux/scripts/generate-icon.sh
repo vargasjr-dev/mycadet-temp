@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # generate-icon.sh: Render the per-environment Linux app icon.
 #
-# Reads VELLUM_ENVIRONMENT (default: local) and renders the matching icon from
+# Reads CADET_ENVIRONMENT (default: local) and renders the matching icon from
 # build-resources/icons/{env}/ into build/icon.png. The macOS shell renders the
 # same sources into a .icns via a Swift/CoreGraphics renderer; Linux has no
 # CoreGraphics, so this composites the solid background (icon.json `fill.solid`)
@@ -48,20 +48,20 @@ if [ "${1:-}" = "--print-srgb" ]; then
   exit 0
 fi
 
-VELLUM_ENVIRONMENT="${VELLUM_ENVIRONMENT:-local}"
+CADET_ENVIRONMENT="${CADET_ENVIRONMENT:-local}"
 ICONS_DIR="$APP_DIR/build-resources/icons"
 
-if [ -d "$ICONS_DIR/$VELLUM_ENVIRONMENT" ]; then
-  ICON_SOURCE_DIR="$ICONS_DIR/$VELLUM_ENVIRONMENT"
+if [ -d "$ICONS_DIR/$CADET_ENVIRONMENT" ]; then
+  ICON_SOURCE_DIR="$ICONS_DIR/$CADET_ENVIRONMENT"
 elif [ -d "$ICONS_DIR/production" ]; then
-  echo "generate-icon: no icons for '$VELLUM_ENVIRONMENT', falling back to production"
+  echo "generate-icon: no icons for '$CADET_ENVIRONMENT', falling back to production"
   ICON_SOURCE_DIR="$ICONS_DIR/production"
 else
   echo "generate-icon: no icon sources found at $ICONS_DIR" >&2
   exit 1
 fi
 
-echo "generate-icon: using $VELLUM_ENVIRONMENT icon from $ICON_SOURCE_DIR"
+echo "generate-icon: using $CADET_ENVIRONMENT icon from $ICON_SOURCE_DIR"
 
 command -v rsvg-convert >/dev/null 2>&1 || {
   echo "generate-icon: required tool 'rsvg-convert' not found on PATH" >&2
@@ -98,7 +98,7 @@ BG_COLOR="$(p3_to_srgb "$FILL_COMPONENTS")"
 OUTPUT_DIR="$APP_DIR/build"
 mkdir -p "$OUTPUT_DIR"
 
-FOREGROUND_PNG="$(mktemp /tmp/vellum-icon-fg-XXXXXX.png)"
+FOREGROUND_PNG="$(mktemp /tmp/cadet-icon-fg-XXXXXX.png)"
 trap 'rm -f "$FOREGROUND_PNG"' EXIT
 
 rsvg-convert -w "$ICON_SIZE" -h "$ICON_SIZE" "$FOREGROUND_SVG" -o "$FOREGROUND_PNG"

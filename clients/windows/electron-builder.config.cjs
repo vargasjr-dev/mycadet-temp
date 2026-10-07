@@ -2,7 +2,7 @@
 
 const { spawnSync } = require("node:child_process");
 
-const env = process.env.VELLUM_ENVIRONMENT || "local";
+const env = process.env.CADET_ENVIRONMENT || "local";
 const bucketEnv = env === "production" ? "prod" : env;
 const targetArch =
   process.env.ELECTRON_TARGET_ARCH ||
@@ -16,13 +16,13 @@ const productName =
 
 const appId =
   env === "production"
-    ? "com.vellum.vellum-assistant-electron"
-    : `com.vellum.vellum-assistant-electron-${env}`;
+    ? "com.mycadet.mycadet-electron"
+    : `com.mycadet.mycadet-electron-${env}`;
 
 const schemes =
   env === "production"
-    ? ["vellum", "vellum-assistant"]
-    : [`vellum-assistant-${env}`];
+    ? ["cadet", "mycadet"]
+    : [`mycadet-${env}`];
 
 const iconEnvironment = ["local", "dev", "staging", "production"].includes(env)
   ? env
@@ -136,7 +136,7 @@ module.exports = {
     provider: "generic",
     // CD publishes latest.yml under the environment's channel name.
     channel: "latest",
-    url: `https://storage.googleapis.com/vellum-ai-${bucketEnv}-releases/win-electron/${targetArch}/`,
+    url: `https://storage.googleapis.com/mycadet-${bucketEnv}-releases/win-electron/${targetArch}/`,
   },
   directories: {
     output: "dist",
@@ -168,9 +168,9 @@ module.exports = {
       to: "cli-runtime/node_modules",
     },
     {
-      from: `native/Vellum.PreviewHandler/build/${msbuildPlatform}/Release`,
+      from: `native/Cadet.PreviewHandler/build/${msbuildPlatform}/Release`,
       to: "preview-handler",
-      filter: ["Vellum.PreviewHandler.dll", "registration.json"],
+      filter: ["Cadet.PreviewHandler.dll", "registration.json"],
     },
   ],
   win: {
@@ -209,7 +209,7 @@ module.exports = {
   ],
   fileAssociations: [
     {
-      ext: "vellum",
+      ext: "cadet",
       name: "Cadet Bundle",
     },
   ],

@@ -164,7 +164,7 @@ const pluginInfoSchema = z.object({
     .string()
     .optional()
     .describe(
-      "Author-declared emoji icon from the plugin's package.json vellum.icon; absent when none.",
+      "Author-declared emoji icon from the plugin's package.json cadet.icon; absent when none.",
     ),
   hasIcon: z
     .boolean()
@@ -350,13 +350,13 @@ const pluginDetailsResponseSchema = z.object({
     })
     .nullable()
     .describe(
-      "Prebuilt client artifact from `package.json` `vellum.artifact`, or null when the plugin ships none or its descriptor is incomplete (e.g. a placeholder sha256).",
+      "Prebuilt client artifact from `package.json` `cadet.artifact`, or null when the plugin ships none or its descriptor is incomplete (e.g. a placeholder sha256).",
     ),
   icon: z
     .string()
     .nullable()
     .describe(
-      "Author-declared emoji icon from the plugin's `package.json` `vellum.icon`, or null when none.",
+      "Author-declared emoji icon from the plugin's `package.json` `cadet.icon`, or null when none.",
     ),
   hasIcon: z
     .boolean()
@@ -1832,7 +1832,7 @@ export const ROUTES: RouteDefinition[] = [
         name: "ref",
         schema: { type: "string" },
         description:
-          "Accepted for backward compatibility. The catalog is resolved from the Vellum platform (or the bundled manifest when platform features are disabled); this ref does not select a git revision — it is echoed back and used as the cache key. Defaults to the CLI's `DEFAULT_PLUGIN_REF` (typically `main`).",
+          "Accepted for backward compatibility. The catalog is resolved from the Cadet platform (or the bundled manifest when platform features are disabled); this ref does not select a git revision — it is echoed back and used as the cache key. Defaults to the CLI's `DEFAULT_PLUGIN_REF` (typically `main`).",
       },
     ],
     responseBody: pluginsSearchResponseSchema,

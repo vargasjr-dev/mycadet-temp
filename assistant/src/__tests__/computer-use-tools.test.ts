@@ -21,7 +21,7 @@ describe("forwardComputerUseProxyTool", () => {
     expect(result.content).toContain(
       "The Cadet desktop app is needed to view or control your screen",
     );
-    expect(result.content).toContain("https://www.vellum.ai/downloads");
+    expect(result.content).toContain("https://mycadet.ai/downloads");
     expect(result.content).not.toContain("computer_use_click");
   });
 

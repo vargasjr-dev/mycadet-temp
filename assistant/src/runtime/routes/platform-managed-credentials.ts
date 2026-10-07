@@ -1,5 +1,5 @@
 /**
- * Credentials the Vellum platform provisions onto a managed assistant pod for
+ * Credentials the Cadet platform provisions onto a managed assistant pod for
  * its own use: the API key the daemon authenticates to the managed LLM proxy
  * with, and the base URL that proxy lives at.
  *
@@ -11,14 +11,14 @@
  * calling principal.
  *
  * The two fields travel together because they are one capability. The API key
- * spends inference on Vellum's account, and the base URL decides which host
+ * spends inference on Cadet's account, and the base URL decides which host
  * receives it: the gateway resolves the platform host from
- * `vellum:platform_base_url` (see `gateway/src/platform-url.ts`) and then
- * sends `vellum:assistant_api_key` to it as the bearer. Leaving the URL
+ * `cadet:platform_base_url` (see `gateway/src/platform-url.ts`) and then
+ * sends `cadet:assistant_api_key` to it as the bearer. Leaving the URL
  * writable while hiding the key would hand back the same key by another
  * route, pointed at a host of the writer's choosing.
  */
-// The platform pushes the pre-rebrand display name ("vellum:*"); the
+// The platform pushes the pre-rebrand display name ("cadet:*"); the
 // canonical storage service is "cadet".
 const MANAGED_PROXY_CREDENTIALS = [
   { service: "cadet", field: "assistant_api_key" },
@@ -46,5 +46,5 @@ export function platformManagedCredentialRefusal(
   const name = service && field ? `${service}:${field}` : "This credential";
   const verb =
     action === "read" ? "inspected or revealed" : "changed or deleted";
-  return `${name} is provisioned and owned by the Vellum platform. It cannot be ${verb} through the credentials API.`;
+  return `${name} is provisioned and owned by the Cadet platform. It cannot be ${verb} through the credentials API.`;
 }

@@ -16,13 +16,13 @@ import WidgetKit
 ///
 /// The widget declares no `widgetURL`, so a tap outside the buttons falls
 /// through to WidgetKit's default of launching the app, which is the same
-/// "land where you left off" behavior `OpenVellumIntent` gives the Control
+/// "land where you left off" behavior `OpenCadetIntent` gives the Control
 /// Center control. Nothing here needs a destination the app does not already
 /// have the user parked on.
 struct QuickActionsWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(
-            kind: VellumWidgetKind.quickActions,
+            kind: CadetWidgetKind.quickActions,
             provider: SnapshotProvider()
         ) { entry in
             QuickActionsWidgetView(entry: entry)

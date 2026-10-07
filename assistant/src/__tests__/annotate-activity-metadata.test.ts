@@ -76,8 +76,8 @@ function makeDeps(): EventHandlerDeps {
       get: () => () => {},
     }) as unknown as EventHandlerDeps["rlog"],
     turnChannelContext: {
-      userMessageChannel: "vellum",
-      assistantMessageChannel: "vellum",
+      userMessageChannel: "cadet",
+      assistantMessageChannel: "cadet",
     } as unknown as EventHandlerDeps["turnChannelContext"],
     turnInterfaceContext: {
       userMessageInterface: "web",
@@ -118,14 +118,14 @@ const webSearchActivity: ToolActivityMetadata = {
       {
         rank: 1,
         title: "Cadet",
-        url: "https://vellum.ai",
-        domain: "vellum.ai",
+        url: "https://mycadet.ai",
+        domain: "mycadet.ai",
       },
       {
         rank: 2,
         title: "Docs",
-        url: "https://docs.vellum.ai",
-        domain: "docs.vellum.ai",
+        url: "https://docs.mycadet.ai",
+        domain: "docs.mycadet.ai",
       },
     ],
   },

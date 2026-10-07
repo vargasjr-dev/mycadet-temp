@@ -8,8 +8,8 @@ chmod 1777 /tmp 2>/dev/null || true
 KATA_APT_INIT_PID=""
 . /app/assistant/docker-kata-runtime-family.sh
 
-if vellum_is_kata_family_runtime && [ -x /app/assistant/docker-init-apt-root.sh ]; then
-  export VELLUM_APT_DATA_ROOT="${VELLUM_APT_DATA_ROOT:-/data/system}"
+if cadet_is_kata_family_runtime && [ -x /app/assistant/docker-init-apt-root.sh ]; then
+  export CADET_APT_DATA_ROOT="${CADET_APT_DATA_ROOT:-/data/system}"
   # Warm the chroot used by Kata-family apt wrappers without blocking assistant readiness.
   (
     /app/assistant/docker-init-apt-root.sh
@@ -26,7 +26,7 @@ wait_for_kata_apt_root() {
   fi
 }
 
-if [ "$(id -u)" = "0" ] && [ "${VELLUM_WORKSPACE_DIR:-}" = "/workspace" ] && [ -d /workspace ]; then
+if [ "$(id -u)" = "0" ] && [ "${CADET_WORKSPACE_DIR:-}" = "/workspace" ] && [ -d /workspace ]; then
   git config --global --add safe.directory /workspace >/dev/null 2>&1 || true
   git config --global --add safe.directory '/workspace/*' >/dev/null 2>&1 || true
 fi
@@ -47,15 +47,15 @@ if [ -d /workspace/.entrypoint.d ]; then
 fi
 
 # ── Bun profiler bootstrap ──────────────────────────────────────────────
-# When VELLUM_PROFILER_RUN_ID and VELLUM_PROFILER_MODE are set, prepare the
+# When CADET_PROFILER_RUN_ID and CADET_PROFILER_MODE are set, prepare the
 # run directory on the workspace volume and append the appropriate Bun
 # profiler flags to BUN_OPTIONS. Bun's native --cpu-prof / --heap-prof
 # flags write Chrome-compatible .cpuprofile and .heapsnapshot artifacts.
 BUN_OPTIONS="${BUN_OPTIONS:-}"
 
-if [ -n "${VELLUM_PROFILER_RUN_ID:-}" ] && [ -n "${VELLUM_PROFILER_MODE:-}" ]; then
-  PROFILER_WORKSPACE="${VELLUM_WORKSPACE_DIR:-$HOME/.vellum/workspace}"
-  PROFILER_RUN_DIR="${PROFILER_WORKSPACE}/data/profiler/runs/${VELLUM_PROFILER_RUN_ID}"
+if [ -n "${CADET_PROFILER_RUN_ID:-}" ] && [ -n "${CADET_PROFILER_MODE:-}" ]; then
+  PROFILER_WORKSPACE="${CADET_WORKSPACE_DIR:-$HOME/.cadet/workspace}"
+  PROFILER_RUN_DIR="${PROFILER_WORKSPACE}/data/profiler/runs/${CADET_PROFILER_RUN_ID}"
   PROFILER_HEAP_DIR="${PROFILER_RUN_DIR}"
 
   # Ensure the run directory exists
@@ -70,7 +70,7 @@ if [ -n "${VELLUM_PROFILER_RUN_ID:-}" ] && [ -n "${VELLUM_PROFILER_MODE:-}" ]; t
     )"
   fi
 
-  case "${VELLUM_PROFILER_MODE}" in
+  case "${CADET_PROFILER_MODE}" in
     cpu)
       BUN_OPTIONS="${BUN_OPTIONS} --cpu-prof --cpu-prof-md --cpu-prof-dir=${PROFILER_RUN_DIR}"
       ;;
@@ -81,7 +81,7 @@ if [ -n "${VELLUM_PROFILER_RUN_ID:-}" ] && [ -n "${VELLUM_PROFILER_MODE:-}" ]; t
       BUN_OPTIONS="${BUN_OPTIONS} --cpu-prof --cpu-prof-md --cpu-prof-dir=${PROFILER_RUN_DIR} --heap-prof --heap-prof-md --heap-prof-dir=${PROFILER_HEAP_DIR}"
       ;;
     *)
-      echo "Warning: unknown VELLUM_PROFILER_MODE '${VELLUM_PROFILER_MODE}', skipping profiler flags" >&2
+      echo "Warning: unknown CADET_PROFILER_MODE '${CADET_PROFILER_MODE}', skipping profiler flags" >&2
       ;;
   esac
 fi

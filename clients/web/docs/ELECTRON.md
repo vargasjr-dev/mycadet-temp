@@ -43,7 +43,7 @@ Most bridges are desktop-only niceties (Dock badge, biometrics) and so the off-E
 
 ```ts
 // clients/web/src/runtime/local-mode-host.ts
-export async function hatchLocalAssistant(species = "vellum") {
+export async function hatchLocalAssistant(species = "cadet") {
   if (isElectron()) return window.cadet!.localMode.hatch(species);
   // web/dev: the Vite middleware spawns the CLI binary
   const res = await fetch("/assistant/__local/hatch", {
@@ -77,7 +77,7 @@ See [`clients/web/src/domains/chat/hooks/use-electron-dock-sync.ts`](../src/doma
 When extending `window.cadet.*`, three files change together because the three TypeScript projects (main, preload, renderer) don't share a workspace symbol table:
 
 1. **[`clients/macos/src/preload/index.ts`](../../../clients/macos/src/preload/index.ts)**: adds the IPC plumbing + the typed `CadetBridge` field. Write the plumbing once as a `create<Surface>Bridge` factory in [`packages/electron-desktop/src/preload.ts`](../../../packages/electron-desktop/src/preload.ts) and consume it here and in the Windows shell's `preload/features/` module, so the bridge-parity test verifies one implementation instead of two hand-copies (see `createDownloadsBridge` for the shape).
-2. **[`clients/web/src/runtime/is-electron.ts`](../src/runtime/is-electron.ts)** — mirrors the new field on the renderer-side ambient `Window.vellum?` declaration.
+2. **[`clients/web/src/runtime/is-electron.ts`](../src/runtime/is-electron.ts)** — mirrors the new field on the renderer-side ambient `Window.cadet?` declaration.
 3. **`clients/web/src/runtime/<capability>.ts`** — per-capability wrapper module exposing the no-op-off-Electron functions feature code calls.
 
 The main-process handler itself lives in `clients/macos/src/main/`; that's a main-process concern, not a renderer one. For main-process conventions see [`clients/macos/README.md`](../../../clients/macos/README.md).
@@ -100,7 +100,7 @@ The bus integration means the same subscriber code works whether the signal came
 
 ### When signals can arrive before the renderer exists
 
-A subset of push signals — inbound deep links being the canonical case — can arrive at the main process BEFORE the renderer has loaded (the OS launches the app via a `vellum://` click → `open-url` fires before `whenReady`). The renderer wrapper grows a second surface for these:
+A subset of push signals — inbound deep links being the canonical case — can arrive at the main process BEFORE the renderer has loaded (the OS launches the app via a `mycadet://` click → `open-url` fires before `whenReady`). The renderer wrapper grows a second surface for these:
 
 - **`subscribe<X>(callback)`** — live subscription for post-mount signals.
 - **`drainPending<X>()`** — returns and clears the main-side buffer of signals that arrived during startup.

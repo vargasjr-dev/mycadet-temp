@@ -39,17 +39,17 @@ const EXTENSION_RECONNECT_GRACE_MS = 3_000;
 const EXTENSION_RECONNECT_POLL_MS = 250;
 
 /**
- * Extension-only pseudo-CDP methods (Vellum.listTabs, Vellum.selectTab,
- * Vellum.closeTab, Vellum.createTab, Vellum.findTab, Vellum.attach,
- * Vellum.detach) are implemented solely by the Chrome extension's
+ * Extension-only pseudo-CDP methods (Cadet.listTabs, Cadet.selectTab,
+ * Cadet.closeTab, Cadet.createTab, Cadet.findTab, Cadet.attach,
+ * Cadet.detach) are implemented solely by the Chrome extension's
  * dispatcher via the chrome.tabs / chrome.debugger APIs. The macOS CDP
  * bridge speaks raw CDP against localhost:9222 only and fails on every
- * `Vellum.*` method, so routing them anywhere but the extension is a
+ * `Cadet.*` method, so routing them anywhere but the extension is a
  * guaranteed failure. Prefix check rather than an allowlist so newly
  * added pseudo-methods stay covered.
  */
 function isExtensionOnlyMethod(cdpMethod: string): boolean {
-  return cdpMethod.startsWith("Vellum.");
+  return cdpMethod.startsWith("Cadet.");
 }
 
 /**
@@ -58,7 +58,7 @@ function isExtensionOnlyMethod(cdpMethod: string): boolean {
  * target is a different transport). The `extension_required` code is
  * deliberately NOT in ExtensionCdpClient's TRANSPORT_ERROR_CODES: it
  * classifies as `cdp_error` so the factory does not fail over to a
- * backend that cannot serve `Vellum.*` either, and the message is
+ * backend that cannot serve `Cadet.*` either, and the message is
  * surfaced verbatim to the caller.
  */
 function extensionRequiredResult(
@@ -92,7 +92,7 @@ function extensionRequiredResult(
  * `lastActiveAt` — so pure recency ordering is a race between transports
  * with very different capabilities:
  *
- *  - `Vellum.*` pseudo-methods: candidates are restricted to
+ *  - `Cadet.*` pseudo-methods: candidates are restricted to
  *    chrome-extension clients (the only transport that implements them).
  *  - Raw CDP methods: chrome-extension clients are preferred over other
  *    host_browser clients (the macOS bridge), with `lastActiveAt`

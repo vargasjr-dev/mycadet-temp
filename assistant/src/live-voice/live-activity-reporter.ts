@@ -27,7 +27,7 @@
  * throw here would cost the conversation.
  */
 
-import { VellumPlatformClient } from "../platform/client.js";
+import { CadetPlatformClient } from "../platform/client.js";
 import { getLogger } from "../util/logger.js";
 import type { LiveVoiceServerFramePayload } from "./protocol.js";
 
@@ -284,7 +284,7 @@ export class LiveActivityReporter {
     signal: AbortSignal,
   ): Promise<void> {
     try {
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       if (!client?.platformAssistantId) {
         return;
       }

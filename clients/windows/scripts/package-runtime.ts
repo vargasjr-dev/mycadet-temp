@@ -28,7 +28,7 @@ interface RuntimeTarget {
 const windowsDir = path.resolve(import.meta.dir, "..");
 const repoRoot = path.resolve(windowsDir, "..", "..");
 const outputDir = path.join(windowsDir, "resources", "cli-runtime");
-const releaseChannel = process.env.VELLUM_ENVIRONMENT || "local";
+const releaseChannel = process.env.CADET_ENVIRONMENT || "local";
 const targetArch = process.env.ELECTRON_TARGET_ARCH ?? process.arch;
 if (targetArch !== "x64" && targetArch !== "arm64") {
   throw new Error(`Unsupported Windows runtime architecture: ${targetArch}`);
@@ -116,7 +116,7 @@ const assistantExternals = [
 ] as const;
 const targets: readonly RuntimeTarget[] = [
   {
-    name: "vellum.exe",
+    name: "cadet.exe",
     entry: "cli/src/index.ts",
   },
   {
@@ -126,14 +126,14 @@ const targets: readonly RuntimeTarget[] = [
     defines: assistantDefines,
   },
   {
-    name: "vellum-daemon.exe",
+    name: "cadet-daemon.exe",
     entry: "assistant/src/daemon/windows-compiled-entry.ts",
     externals: assistantExternals,
     defines: assistantDefines,
     hideConsole: true,
   },
   {
-    name: "vellum-gateway.exe",
+    name: "cadet-gateway.exe",
     entry: "gateway/src/index.ts",
     externals: ["drizzle-kit", "drizzle-kit/*"],
     defines: {
@@ -142,7 +142,7 @@ const targets: readonly RuntimeTarget[] = [
     hideConsole: true,
   },
   {
-    name: "vellum-worker.exe",
+    name: "cadet-worker.exe",
     entry: "assistant/src/windows-compiled-worker-entry.ts",
     externals: assistantExternals,
     defines: assistantDefines,
@@ -258,7 +258,7 @@ if (versionCheck.status !== 0 || versionOutput !== assistantVersion) {
     `Packaged assistant version check failed: expected ${assistantVersion}, got ${versionOutput || "no output"} (${diagnostics}).`,
   );
 }
-const packagedCli = path.join(outputDir, "vellum.exe");
+const packagedCli = path.join(outputDir, "cadet.exe");
 const cliVersionCheck = spawnSync(packagedCli, ["--version"], {
   encoding: "utf8",
   windowsHide: true,

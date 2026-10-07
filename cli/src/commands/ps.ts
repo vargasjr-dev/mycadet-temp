@@ -275,11 +275,11 @@ async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
     );
   }
   const resources = entry.resources;
-  const vellumDir = join(resources.instanceDir, ".vellum");
+  const cadetDir = join(resources.instanceDir, ".cadet");
 
   const assistantSpec: ProcessSpec = {
     name: "assistant",
-    pgrepName: "vellum-daemon",
+    pgrepName: "cadet-daemon",
     port: resources.daemonPort,
     pidFile: getDaemonPidPath(resources),
   };
@@ -288,20 +288,20 @@ async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
       name: "├─ qdrant",
       pgrepName: "qdrant",
       port: resources.qdrantPort,
-      pidFile: join(vellumDir, "workspace", "data", "qdrant", "qdrant.pid"),
+      pidFile: join(cadetDir, "workspace", "data", "qdrant", "qdrant.pid"),
     },
     {
       name: "└─ embed-worker",
       pgrepName: "embed-worker",
       port: 0,
-      pidFile: join(vellumDir, "workspace", "embed-worker.pid"),
+      pidFile: join(cadetDir, "workspace", "embed-worker.pid"),
     },
   ];
   const gatewaySpec: ProcessSpec = {
     name: "gateway",
-    pgrepName: "vellum-gateway",
+    pgrepName: "cadet-gateway",
     port: resources.gatewayPort,
-    pidFile: join(vellumDir, "gateway.pid"),
+    pidFile: join(cadetDir, "gateway.pid"),
   };
 
   const allSpecs = [assistantSpec, ...subSpecs, gatewaySpec];
@@ -570,8 +570,8 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
   const { name: envName, source: envSource } = resolveEnvironmentSource();
   const sourceLabels: Record<typeof envSource, string> = {
     flag: "--environment flag",
-    env: "VELLUM_ENVIRONMENT",
-    config: "~/.config/vellum/environment",
+    env: "CADET_ENVIRONMENT",
+    config: "~/.config/cadet/environment",
     default: "default",
   };
   console.log(`Environment: ${envName} (${sourceLabels[envSource]})`);

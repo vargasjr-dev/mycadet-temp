@@ -456,8 +456,8 @@ export class DiscordGatewayClient {
           intents: DISCORD_GATEWAY_INTENTS,
           properties: {
             os: process.platform,
-            browser: "vellum-gateway",
-            device: "vellum-gateway",
+            browser: "cadet-gateway",
+            device: "cadet-gateway",
           },
         },
       }),

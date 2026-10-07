@@ -239,7 +239,7 @@ describe("addPointerMessage", () => {
 
   test("explicit untrusted audience mode skips processor", () => {
     const convId = "conv-ptr-explicit-untrusted";
-    ensureConversation(convId, { originChannel: "vellum" });
+    ensureConversation(convId, { originChannel: "cadet" });
 
     const processorCalled = { value: false };
     setProcessor(async () => {
@@ -260,7 +260,7 @@ describe("addPointerMessage", () => {
 
   test("trusted audience routes through daemon processor with required facts", async () => {
     const convId = "conv-ptr-trusted";
-    ensureConversation(convId, { originChannel: "vellum" });
+    ensureConversation(convId, { originChannel: "cadet" });
 
     let capturedInstruction = "";
     let capturedFacts: string[] = [];
@@ -285,7 +285,7 @@ describe("addPointerMessage", () => {
 
   test("trusted audience falls back to deterministic on processor failure", async () => {
     const convId = "conv-ptr-processor-fail";
-    ensureConversation(convId, { originChannel: "vellum" });
+    ensureConversation(convId, { originChannel: "cadet" });
 
     setProcessor(async () => {
       throw new Error("Daemon unavailable");
@@ -300,8 +300,8 @@ describe("addPointerMessage", () => {
   });
 
   test("cadet origin channel is detected as trusted audience", async () => {
-    const convId = "conv-ptr-vellum";
-    ensureConversation(convId, { originChannel: "vellum" });
+    const convId = "conv-ptr-cadet";
+    ensureConversation(convId, { originChannel: "cadet" });
 
     let processorCalled = false;
     setProcessor(async () => {

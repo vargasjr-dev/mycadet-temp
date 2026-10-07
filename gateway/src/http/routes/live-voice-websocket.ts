@@ -5,7 +5,7 @@ import {
   mintServiceToken,
 } from "../../auth/token-exchange.js";
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
-import { findVellumGuardian } from "../../auth/guardian-bootstrap.js";
+import { findCadetGuardian } from "../../auth/guardian-bootstrap.js";
 import { parseSub } from "../../auth/subject.js";
 import type { GatewayConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
@@ -130,7 +130,7 @@ async function checkLiveVoiceAuth(
         // Tunnel attests a platform user, not an actor principal, so the
         // principal comes from the gateway's own binding rather than from
         // anything the request carried.
-        const guardian = await findVellumGuardian();
+        const guardian = await findCadetGuardian();
         log.info(
           {
             userId: tunnelContext.userId,

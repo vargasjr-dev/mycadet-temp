@@ -6,7 +6,7 @@
  * `"off"` strings. The gateway's env-override path does not: its parser
  * (`feature-flag-env-overrides.ts`) treats `on` as a truthy *word* and
  * coerces it to boolean `true`, then applies env overrides last — so
- * `VELLUM_FLAG_ASSISTANT_INITIATED_THREADS=on` reaches the daemon as `true`.
+ * `CADET_FLAG_ASSISTANT_INITIATED_THREADS=on` reaches the daemon as `true`.
  *
  * A strict `=== "on"` therefore read the documented env kill-switch as OFF,
  * and did it silently: the section just never rendered. That shipped in the
@@ -37,7 +37,7 @@ describe("isAssistantInitiatedThreadsEnabled", () => {
   });
 
   test("enabled by boolean true (the gateway's env-override coercion)", () => {
-    // The regression. `VELLUM_FLAG_ASSISTANT_INITIATED_THREADS=on` arrives
+    // The regression. `CADET_FLAG_ASSISTANT_INITIATED_THREADS=on` arrives
     // here as `true`, never as "on".
     flagValue = true;
     expect(isAssistantInitiatedThreadsEnabled()).toBe(true);

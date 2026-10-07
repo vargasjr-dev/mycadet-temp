@@ -14,8 +14,8 @@ const { productName } = requireCjs("../electron-builder.config.cjs") as {
   productName: string;
 };
 const packageName = requireCjs("../package.json").name as string;
-const env = process.env.VELLUM_ENVIRONMENT || "local";
-const scheme = env === "production" ? "vellum" : `vellum-assistant-${env}`;
+const env = process.env.CADET_ENVIRONMENT || "local";
+const scheme = env === "production" ? "cadet" : `mycadet-${env}`;
 
 const fail = (message: string): never => {
   throw new Error(message);
@@ -134,17 +134,17 @@ const main = async (): Promise<void> => {
   for (const [relative, label] of [
     ["cli-runtime/web-dist/index.html", "Web renderer bundle"],
     ["cli-runtime/runtime.json", "Runtime manifest"],
-    [`native-helper/${arch}/Vellum.WindowsHelper.exe`, "Native helper"],
-    ["preview-handler/Vellum.PreviewHandler.dll", "Preview handler DLL"],
+    [`native-helper/${arch}/Cadet.WindowsHelper.exe`, "Native helper"],
+    ["preview-handler/Cadet.PreviewHandler.dll", "Preview handler DLL"],
     ["tray.ico", "Tray icon"],
   ] as const) {
     assertExists(path.join(resources, relative), label);
   }
   const packagedBun = path.join(resources, "cli-runtime", "bun.exe");
   await waitForVersionCommand(packagedBun, `Packaged Bun runtime for ${arch}`);
-  const packagedCli = path.join(resources, "cli-runtime", "vellum.exe");
+  const packagedCli = path.join(resources, "cli-runtime", "cadet.exe");
   await waitForVersionCommand(packagedCli, `Packaged CLI for ${arch}`);
-  assertRegistered("HKCU\\Software\\Classes\\.vellum");
+  assertRegistered("HKCU\\Software\\Classes\\.cadet");
 
   console.log(`Launching ${appExe}`);
   const child = spawn(appExe, [], {
@@ -152,8 +152,8 @@ const main = async (): Promise<void> => {
     windowsHide: true,
   });
   const logCandidates = [productName, packageName].flatMap((name) => [
-    path.join(appData, name, "logs", "vellum.log"),
-    path.join(appData, `${name}-${env}`, "logs", "vellum.log"),
+    path.join(appData, name, "logs", "cadet.log"),
+    path.join(appData, `${name}-${env}`, "logs", "cadet.log"),
   ]);
   const protocolKey = `HKCU\\Software\\Classes\\${scheme}`;
   let logFile: string | undefined;

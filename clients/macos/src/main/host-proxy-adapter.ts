@@ -61,7 +61,7 @@ export const installHostProxyBridge = (
         configDir,
         invocation,
         true,
-        { VELLUM_ENVIRONMENT: resolveEnvironmentName(process.env) },
+        { CADET_ENVIRONMENT: resolveEnvironmentName(process.env) },
       );
       if (!result.ok) {
         log.warn("[host-proxy-router] failed to obtain guardian token", {

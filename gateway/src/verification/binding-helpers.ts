@@ -128,7 +128,7 @@ export function resolveCanonicalPrincipal(fallback: string): string {
     .where(
       and(
         eq(gwContacts.role, "guardian"),
-        eq(gwContactChannels.type, "vellum"),
+        eq(gwContactChannels.type, "cadet"),
         eq(gwContactChannels.status, "active"),
       ),
     )

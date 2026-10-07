@@ -416,7 +416,7 @@ describe("handleHostAppControlResult — same-actor guard", () => {
     expect(() =>
       handleHostAppControlResult({
         body: { requestId, state: "running" },
-        headers: { "x-vellum-actor-principal-id": "user-attacker" },
+        headers: { "x-cadet-actor-principal-id": "user-attacker" },
       }),
     ).toThrow(ForbiddenError);
     expect(resolveCalls).toHaveLength(0);
@@ -436,7 +436,7 @@ describe("handleHostAppControlResult — same-actor guard", () => {
 
     const result = await handleHostAppControlResult({
       body: { requestId, state: "running" },
-      headers: { "x-vellum-actor-principal-id": "user-owner" },
+      headers: { "x-cadet-actor-principal-id": "user-owner" },
     });
 
     expect(result).toEqual({ accepted: true });
@@ -460,8 +460,8 @@ describe("handleHostAppControlResult — same-actor guard", () => {
     const result = await handleHostAppControlResult({
       body: { requestId, state: "running" },
       headers: {
-        "x-vellum-client-id": "client-A",
-        "x-vellum-actor-principal-id": "user-1",
+        "x-cadet-client-id": "client-A",
+        "x-cadet-actor-principal-id": "user-1",
       },
     });
 
@@ -485,8 +485,8 @@ describe("handleHostAppControlResult — same-actor guard", () => {
     const result = await handleHostAppControlResult({
       body: { requestId, state: "running" },
       headers: {
-        "x-vellum-client-id": "  client-A  ",
-        "x-vellum-actor-principal-id": "user-1",
+        "x-cadet-client-id": "  client-A  ",
+        "x-cadet-actor-principal-id": "user-1",
       },
     });
 
@@ -494,9 +494,9 @@ describe("handleHostAppControlResult — same-actor guard", () => {
     expect(resolveCalls).toHaveLength(1);
   });
 
-  // ── Targeted + missing x-vellum-client-id → 400 ──────────────────────
+  // ── Targeted + missing x-cadet-client-id → 400 ──────────────────────
 
-  test("targeted + missing x-vellum-client-id: throws BadRequestError", () => {
+  test("targeted + missing x-cadet-client-id: throws BadRequestError", () => {
     const requestId = "ac-req-targeted-no-header";
     pending.set(requestId, {
       conversationId: "conv-1",
@@ -512,7 +512,7 @@ describe("handleHostAppControlResult — same-actor guard", () => {
     ).toThrow(BadRequestError);
   });
 
-  test("targeted + whitespace-only x-vellum-client-id: throws BadRequestError", () => {
+  test("targeted + whitespace-only x-cadet-client-id: throws BadRequestError", () => {
     const requestId = "ac-req-targeted-empty-header";
     pending.set(requestId, {
       conversationId: "conv-1",
@@ -524,7 +524,7 @@ describe("handleHostAppControlResult — same-actor guard", () => {
     expect(() =>
       handleHostAppControlResult({
         body: { requestId, state: "running" },
-        headers: { "x-vellum-client-id": "   " },
+        headers: { "x-cadet-client-id": "   " },
       }),
     ).toThrow(BadRequestError);
   });
@@ -562,8 +562,8 @@ describe("handleHostAppControlResult — same-actor guard", () => {
       handleHostAppControlResult({
         body: { requestId, state: "running" },
         headers: {
-          "x-vellum-client-id": "client-B",
-          "x-vellum-actor-principal-id": "user-1",
+          "x-cadet-client-id": "client-B",
+          "x-cadet-actor-principal-id": "user-1",
         },
       }),
     ).toThrow(ForbiddenError);
@@ -581,8 +581,8 @@ describe("handleHostAppControlResult — same-actor guard", () => {
     await handleHostAppControlResult({
       body: { requestId, state: "running" },
       headers: {
-        "x-vellum-client-id": "client-B",
-        "x-vellum-actor-principal-id": "user-1",
+        "x-cadet-client-id": "client-B",
+        "x-cadet-actor-principal-id": "user-1",
       },
     }).catch(() => {
       // expected
@@ -606,8 +606,8 @@ describe("handleHostAppControlResult — same-actor guard", () => {
       handleHostAppControlResult({
         body: { requestId, state: "running" },
         headers: {
-          "x-vellum-client-id": "client-A",
-          "x-vellum-actor-principal-id": "user-2",
+          "x-cadet-client-id": "client-A",
+          "x-cadet-actor-principal-id": "user-2",
         },
       }),
     ).toThrow(ForbiddenError);
@@ -625,8 +625,8 @@ describe("handleHostAppControlResult — same-actor guard", () => {
     await handleHostAppControlResult({
       body: { requestId, state: "running" },
       headers: {
-        "x-vellum-client-id": "client-A",
-        "x-vellum-actor-principal-id": "user-2",
+        "x-cadet-client-id": "client-A",
+        "x-cadet-actor-principal-id": "user-2",
       },
     }).catch(() => {
       // expected

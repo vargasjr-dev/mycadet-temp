@@ -20,7 +20,7 @@ import {
 /** The daemon's self-minted service token — the only accepted principal. */
 function mintDaemonServiceToken(): string {
   return mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub: "svc:daemon:self",
     scope_profile: "speech_relay_v1",
     policy_epoch: CURRENT_POLICY_EPOCH,
@@ -35,7 +35,7 @@ function mintDaemonServiceToken(): string {
  */
 function mintOverScopedDaemonToken(): string {
   return mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub: "svc:daemon:self",
     scope_profile: "gateway_service_v1",
     policy_epoch: CURRENT_POLICY_EPOCH,
@@ -76,13 +76,13 @@ function makeKeyedCredentials(
 describe("tunnel origin derivation", () => {
   // getPlatformBaseUrl falls back to this env var; pin it absent so the
   // missing-credential cases below are deterministic on dev machines.
-  const savedPlatformUrl = process.env.VELLUM_PLATFORM_URL;
+  const savedPlatformUrl = process.env.CADET_PLATFORM_URL;
   beforeAll(() => {
-    delete process.env.VELLUM_PLATFORM_URL;
+    delete process.env.CADET_PLATFORM_URL;
   });
   afterAll(() => {
     if (savedPlatformUrl !== undefined) {
-      process.env.VELLUM_PLATFORM_URL = savedPlatformUrl;
+      process.env.CADET_PLATFORM_URL = savedPlatformUrl;
     }
   });
 
@@ -96,11 +96,11 @@ describe("tunnel origin derivation", () => {
     expect(tunnelOriginForPlatformHost("dev-cloud.mycadet.ai")).toBe(
       "https://tunnel-dev.mycadet.ai",
     );
-    expect(tunnelOriginForPlatformHost("platform.vellum.ai")).toBeNull();
+    expect(tunnelOriginForPlatformHost("cloud.cadet.ai")).toBeNull();
     expect(tunnelOriginForPlatformHost("localhost")).toBeNull();
     expect(tunnelOriginForPlatformHost("example.com")).toBeNull();
     expect(
-      tunnelOriginForPlatformHost("staging-platform.vellum.ai.evil.com"),
+      tunnelOriginForPlatformHost("staging-cloud.cadet.ai.evil.com"),
     ).toBeNull();
   });
 
@@ -168,7 +168,7 @@ describe("tunnel origin derivation", () => {
       credentials: makeKeyedCredentials({
         "credential/cadet/assistant_api_key": "vk-1",
         "credential/cadet/platform_base_url":
-          "https://staging-platform.vellum.ai",
+          "https://staging-cloud.cadet.ai",
       }),
     });
     const req = new Request(

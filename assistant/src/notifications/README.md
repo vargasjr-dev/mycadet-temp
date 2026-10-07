@@ -6,7 +6,7 @@ Signal-driven notification architecture where producers emit free-form events an
 
 With `assistant-initiated-threads` enabled, an `assistant.share` from a background,
 scheduled, or unresolved source can create a new chat in From me. The pipeline
-resolves that promotion once and applies it only to vellum conversation pairing.
+resolves that promotion once and applies it only to cadet conversation pairing.
 Ordinary shares retain their authored content and original urgency.
 
 A new chat qualifies for an alert only after its conversation and seed message
@@ -15,7 +15,7 @@ ungrouped chat. Reusing an existing chat, filing it elsewhere, pinning it, or
 failing to persist the seed does not enable this additional alert. An invalid
 reuse target that falls back to a newly created eligible chat does qualify.
 
-The successful creation makes the local intent non-silent. When vellum is
+The successful creation makes the local intent non-silent. When cadet is
 selected and platform credentials are configured, routing can also add the
 existing mobile push channel. Explicit quiet intent, suppression, exclusive
 channel allowlists, and single-channel routing retain precedence. A platform
@@ -43,8 +43,8 @@ Opening From me or reconnecting does not replay historical chats as alerts.
 ## Completion alerts
 
 `chat.assistant_reply`, `schedule.result`, and explicitly user-facing
-`activity.complete` signals use the available subset of `vellum` and
-`platform`. A self-hosted assistant can deliver through `vellum` without
+`activity.complete` signals use the available subset of `cadet` and
+`platform`. A self-hosted assistant can deliver through `cadet` without
 mobile push. `completion-policy.ts` owns local presentation: selected
 completions can banner at medium urgency, and low/medium notifications without
 a completion or new From me chat remain silent, and explicitly quiet work stays silent. The broadcaster resolves
@@ -62,7 +62,7 @@ its acceptance metadata. Transcript pairing, unread state, feed policy,
 external-channel delivery, scheduled results, and action-required alerts retain
 their existing behavior.
 
-Local completion delivery requires the active Vellum guardian principal from
+Local completion delivery requires the active Cadet guardian principal from
 the resolved destination. The broadcaster checks that identity before pairing,
 and the adapter targets the event hub's `targetActorPrincipalId` before sending
 title or body. Missing identity, or a background completion naming a different
@@ -76,7 +76,7 @@ Background completions opt in with typed `contextPayload.completion` provenance:
 the stable work ID, result conversation ID, recipient principal ID, and owning
 path (`parent_continuation`). Ordinary maintenance events
 without that context retain their existing policy. Declared ownership must
-validate before pairing or delivery. Owned completions can only reach `vellum`
+validate before pairing or delivery. Owned completions can only reach `cadet`
 and `platform` with a matching recipient; channel allowlists and model routing
 cannot widen that scope. Producers persist the
 user-facing result before emitting. Reply previews and these explicit background
@@ -111,7 +111,7 @@ Approval prompts do not count as prior result delivery. Internal jobs and
 workflow-manager wakes retain their existing behavior; workflow wakes need
 explicit run and quiet-mode provenance before they can use this producer.
 
-The recipient is the assistant's active Vellum guardian, as for ordinary
+The recipient is the assistant's active Cadet guardian, as for ordinary
 replies. Completion signals retain the pipeline's permanent deduplication
 claims and existing best-effort delivery semantics. There is no new retry
 queue for a signal whose transports all fail.
@@ -196,7 +196,7 @@ Source-active suppression depends only on the signal, so it runs earlier — as 
 
 ### 6. Broadcast, Conversation Pairing, and Delivery
 
-The broadcaster (`broadcaster.ts`) iterates over selected channels (vellum first for fast SSE push), resolves destinations via `destination-resolver.ts`, pairs each delivery with a conversation via `conversation-pairing.ts`, pulls rendered copy from the decision (falling back to `copy-composer.ts` templates), and dispatches through channel adapters. Each delivery attempt is recorded in `notification_deliveries` with `conversation_id`, `message_id`, and `conversation_strategy` columns. The broadcaster emits `notification_conversation_created` SSE events for new vellum conversations.
+The broadcaster (`broadcaster.ts`) iterates over selected channels (cadet first for fast SSE push), resolves destinations via `destination-resolver.ts`, pairs each delivery with a conversation via `conversation-pairing.ts`, pulls rendered copy from the decision (falling back to `copy-composer.ts` templates), and dispatches through channel adapters. Each delivery attempt is recorded in `notification_deliveries` with `conversation_id`, `message_id`, and `conversation_strategy` columns. The broadcaster emits `notification_conversation_created` SSE events for new cadet conversations.
 
 ## Channel Policy Registry
 
@@ -213,10 +213,10 @@ Each policy defines:
 
 | Strategy                         | Behavior                                                                                                                                                      | Used by                                                                                      |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `start_new_conversation`         | Pairs the delivery with a new or reused conversation, or appends to the producing one (see Conversation Pairing below).                                       | `vellum`                                                                                     |
+| `start_new_conversation`         | Pairs the delivery with a new or reused conversation, or appends to the producing one (see Conversation Pairing below).                                       | `cadet`                                                                                     |
 | `continue_existing_conversation` | Resolves the destination chat's home conversation, creating one on first delivery. The delivered post is written there only once the channel acknowledges it. | `telegram`, `slack`, `discord`, and the non-deliverable `whatsapp`, `email`, `a2a`, `plugin` |
-| `push_only`                      | Pairs nothing. The push deep-links through the vellum delivery's conversation.                                                                                | `platform`                                                                                   |
-| `not_deliverable`                | Channel cannot receive notifications. Pairing returns null IDs.                                                                                               | `phone`, `vellum-shared`                                                                     |
+| `push_only`                      | Pairs nothing. The push deep-links through the cadet delivery's conversation.                                                                                | `platform`                                                                                   |
+| `not_deliverable`                | Channel cannot receive notifications. Pairing returns null IDs.                                                                                               | `phone`, `cadet-shared`                                                                     |
 
 ### Helper Functions
 
@@ -236,12 +236,12 @@ Each policy defines:
 
 Before an adapter sends a notification, `pairDeliveryWithConversation()` (in `conversation-pairing.ts`) decides which conversation the delivery belongs to, from the channel's `conversationStrategy` and the decision engine's per-channel conversation action. The module header and the function's inline comments are the source of truth for the details. The rules that hold across them:
 
-- **Vellum (`start_new_conversation`)**:
+- **Cadet (`start_new_conversation`)**:
   - A signal that sets `requiresConversation` gets a conversation of its own, created with its seed message before the send (`standard` unless the producer overrides `conversationType`). An explicit `reuse_existing` action appends to a valid target instead, and falls back to a new conversation (`conversationFallbackUsed: true`) when the target is stale.
   - A signal that does not set it creates no conversation, except that with `assistant-initiated-threads` on, an `assistant.share` with no `conversationMetadata.source` of its own is promoted to one when its producing conversation is a background or scheduled run, or does not resolve (`resolveAssistantInitiatedThread()` in `assistant-initiated-thread.ts`). Otherwise its body is appended to the conversation that produced it (resolved from `sourceContextId`). A `chat.assistant_reply` appends nothing, because the full reply is already in that transcript.
 - **External channels (`continue_existing_conversation`)**: only the chat's home conversation is resolved, and nothing is written. The broadcaster records the delivered post as an assistant row once the channel acknowledges it (`recordDeliveredChannelPost`), so a failed or pending delivery never reads as something the assistant said.
-- **`push_only`** (platform) and **`not_deliverable`**: nothing is paired. Platform push deep-links through the vellum delivery's conversation.
-- **Guardian-request deliveries to channels** pair nothing either: they are projections of a canonical request, and only their vellum delivery carries a conversation (see `notifications/AGENTS.md`).
+- **`push_only`** (platform) and **`not_deliverable`**: nothing is paired. Platform push deep-links through the cadet delivery's conversation.
+- **Guardian-request deliveries to channels** pair nothing either: they are projections of a canonical request, and only their cadet delivery carries a conversation (see `notifications/AGENTS.md`).
 
 Pairing is resilient: errors are caught and logged, and a pairing failure never breaks the delivery pipeline.
 
@@ -259,7 +259,7 @@ The system produces **three distinct copy outputs** per notification:
 
 1. The **decision engine** can produce `title`/`body` (popup copy), `deliveryText` (chat copy), and `conversationSeedMessage` (richer conversation content) per channel.
 2. **Adapters** use the surface-appropriate field:
-   - Vellum notifications use `title` + `body`.
+   - Cadet notifications use `title` + `body`.
    - Telegram delivery prefers `deliveryText` and falls back to `conversationSeedMessage`, then `body`, then `title`.
 3. **Conversation pairing** uses the conversation seed as the conversation's opening message:
    - If the LLM produced a valid `conversationSeedMessage`, it is used directly (after a sanity check rejects empty, too-short, JSON dumps, or excessively long values).
@@ -271,18 +271,18 @@ The conversation seed composer adapts verbosity to the delivery surface:
 
 | Channel    | Default Interface | Verbosity | Style                                          |
 | ---------- | ----------------- | --------- | ---------------------------------------------- |
-| `vellum`   | `macos`           | Rich      | 2-4 short sentences with context and next step |
+| `cadet`   | `macos`           | Rich      | 2-4 short sentences with context and next step |
 | `telegram` | `telegram`        | Compact   | 1-2 concise sentences                          |
 
 Interface inference strategy:
 
 1. Explicit `interfaceHint` in the signal's `contextPayload` (if valid `InterfaceId`).
 2. `sourceInterface` from the originating conversation (if valid `InterfaceId`).
-3. Channel default mapping (`vellum` → `macos` → rich, `telegram` → `telegram` → compact).
+3. Channel default mapping (`cadet` → `macos` → rich, `telegram` → `telegram` → compact).
 
 ### Example: Reminder Notification
 
-**Native popup (vellum/macos):**
+**Native popup (cadet/macos):**
 
 ```
 Title: Reminder
@@ -295,7 +295,7 @@ Body:  Take out the trash
 Take out the trash
 ```
 
-**Conversation seed on vellum/macos (rich):**
+**Conversation seed on cadet/macos (rich):**
 
 ```
 Reminder. Take out the trash. Action required.
@@ -319,7 +319,7 @@ if (
 }
 ```
 
-When a vellum notification conversation **is** newly created (strategy `start_new_conversation`), the broadcaster emits the SSE event **immediately**, before slower channel deliveries such as Telegram, so a slow channel send cannot delay it.
+When a cadet notification conversation **is** newly created (strategy `start_new_conversation`), the broadcaster emits the SSE event **immediately**, before slower channel deliveries such as Telegram, so a slow channel send cannot delay it.
 
 The payload is `NotificationConversationCreatedEventSchema` in `api/events/notification-conversation-created.ts`.
 
@@ -327,11 +327,11 @@ No first-party client acts on this event: the shared web renderer (browser, desk
 
 ### Per-Dispatch Conversation Callback
 
-`emitNotificationSignal()` accepts an optional `onConversationCreated` callback (`options.onConversationCreated`). This lets producers run domain side effects (for example, creating cross-channel guardian delivery rows) as soon as vellum pairing occurs, without introducing a second conversation-creation path.
+`emitNotificationSignal()` accepts an optional `onConversationCreated` callback (`options.onConversationCreated`). This lets producers run domain side effects (for example, creating cross-channel guardian delivery rows) as soon as cadet pairing occurs, without introducing a second conversation-creation path.
 
 **Important distinction between the two callbacks:**
 
-- **Per-dispatch `options.onConversationCreated`**: Fires for **both** new and reused vellum conversation pairings. Callers like `dispatchGuardianQuestion` rely on this to create delivery bookkeeping rows before `emitNotificationSignal()` returns, regardless of whether the conversation was newly created or reused.
+- **Per-dispatch `options.onConversationCreated`**: Fires for **both** new and reused cadet conversation pairings. Callers like `dispatchGuardianQuestion` rely on this to create delivery bookkeeping rows before `emitNotificationSignal()` returns, regardless of whether the conversation was newly created or reused.
 - **Class-level `this.onConversationCreated` (SSE broadcast)**: Fires **only** when a brand-new conversation is created (`createdNewConversation === true && strategy === 'start_new_conversation'`). This emits the `notification_conversation_created` SSE event. Reused conversations do not trigger it.
 
 ## Schedule Routing Metadata and Trigger-Time Enforcement
@@ -368,7 +368,7 @@ Schedule fires (schedule worker: runDueSchedulesOnce in scheduler.ts, notify mod
             → Broadcaster → Adapters → Delivery
 ```
 
-`contextPayload.channelAllowlist` is an exclusive channel set. When present, emit-signal intersects it with connected channels, skips urgent vellum/platform force, and skips routing-intent expansion. `--preferred-channels` stays additive and is ignored when an allowlist is present. Access-request signals still force the in-app vellum card.
+`contextPayload.channelAllowlist` is an exclusive channel set. When present, emit-signal intersects it with connected channels, skips urgent cadet/platform force, and skips routing-intent expansion. `--preferred-channels` stays additive and is ignored when an allowlist is present. Access-request signals still force the in-app cadet card.
 
 The `enforceRoutingIntent()` function in `decision-engine.ts` runs after the LLM produces its channel selection but before deterministic checks. It overrides the decision's `selectedChannels` based on the routing intent:
 
@@ -376,7 +376,7 @@ The `enforceRoutingIntent()` function in `decision-engine.ts` runs after the LLM
 - **`multi_channel`**: If the LLM selected fewer than 2 channels but 2+ are connected, expands `selectedChannels` to at least two connected channels.
 - **`single_channel`**: Caps delivery to one channel: the signal's source channel when it is connected, otherwise the first channel the LLM selected. A signal with no routing intent keeps the LLM's selection.
 
-When enforcement changes the decision, the updated channel selection is re-persisted to the `notification_decisions` table so the stored decision matches what was actually dispatched. The `reasoningSummary` is annotated with the enforcement action (e.g. `[routing_intent=all_channels enforced: vellum, telegram]`).
+When enforcement changes the decision, the updated channel selection is re-persisted to the `notification_decisions` table so the stored decision matches what was actually dispatched. The `reasoningSummary` is annotated with the enforcement action (e.g. `[routing_intent=all_channels enforced: cadet, telegram]`).
 
 ### Single-Schedule Fanout
 
@@ -398,9 +398,9 @@ schedule_jobs table (routing_intent, routing_hints_json)
 
 The notification system delivers to five channel types:
 
-### Vellum (always connected)
+### Cadet (always connected)
 
-Local SSE via the assistant's broadcast mechanism. The `VellumAdapter` emits a `notification_intent` message containing:
+Local SSE via the assistant's broadcast mechanism. The `CadetAdapter` emits a `notification_intent` message containing:
 
 - `sourceEventName` -- the event that triggered the notification
 - `title` and `body` -- rendered notification copy
@@ -428,7 +428,7 @@ The destination for each comes from the guardian delivery list in `destination-r
 
 Connected channels are resolved at signal emission time by `getConnectedChannels()` in `emit-signal.ts`, from the guardian delivery list (`getGuardianDelivery()`):
 
-- **Vellum** is always considered connected (the local transport is always available when the assistant is running)
+- **Cadet** is always considered connected (the local transport is always available when the assistant is running)
 - **Platform** is always considered connected; a missing credential surfaces as a failed delivery
 - **Telegram** is connected when the guardian has a chat ID on the channel
 - **Slack** is connected when the guardian's chat ID is a DM channel (`D`-prefixed), so a binding made from a shared channel never receives notifications
@@ -440,9 +440,9 @@ The system uses a single conversation materialization path for **all** notificat
 
 1. `emitNotificationSignal()` evaluates the signal and dispatches to channels.
 2. `NotificationBroadcaster` pairs each delivery with a conversation via `pairDeliveryWithConversation()`, executing the per-channel conversation action (start_new or reuse_existing).
-3. For vellum deliveries, the broadcaster merges `conversationId` into `deepLinkMetadata` and emits `notification_conversation_created` only when a new conversation was created (not on reuse).
+3. For cadet deliveries, the broadcaster merges `conversationId` into `deepLinkMetadata` and emits `notification_conversation_created` only when a new conversation was created (not on reuse).
 
-Guardian dispatch follows this same path and uses the optional `onConversationCreated` callback to attach guardian-delivery bookkeeping to the paired vellum conversation.
+Guardian dispatch follows this same path and uses the optional `onConversationCreated` callback to attach guardian-delivery bookkeeping to the paired cadet conversation.
 
 ### Conversation-Before-Event Invariant
 
@@ -459,7 +459,7 @@ When the decision is persisted, a `conversationActions` summary is included in `
 ```json
 {
   "conversationActions": {
-    "vellum": "start_new",
+    "cadet": "start_new",
     "telegram": "reuse:conv-abc-123"
   }
 }
@@ -536,7 +536,7 @@ Where classification does not run, any other code-less reply falls through to th
 | `copy-composer.ts`              | Template-based fallback notification copy when LLM copy is unavailable                                     |
 | `conversation-seed-composer.ts` | Surface-aware conversation seed generation (richer than notification copy)                                 |
 | `destination-resolver.ts`       | Resolves per-channel endpoints (Telegram and Slack chat ID, Discord user ID)                               |
-| `adapters/macos.ts`             | Vellum adapter -- broadcasts `notification_intent` via SSE with deep-link metadata                         |
+| `adapters/macos.ts`             | Cadet adapter -- broadcasts `notification_intent` via SSE with deep-link metadata                         |
 | `adapters/platform.ts`          | Platform adapter: posts to the platform push-dispatch endpoint for native mobile push                      |
 | `adapters/telegram.ts`          | Telegram adapter: calls the Telegram Bot API through `messaging/providers/telegram-bot/send.ts`            |
 | `adapters/slack.ts`             | Slack adapter: posts to the guardian's DM through `messaging/providers/slack/send.ts`                      |
@@ -610,7 +610,7 @@ Three SQLite tables form the audit chain:
 
 ### Client Delivery Ack
 
-For vellum deliveries, the audit trail extends past the SSE broadcast to the OS notification post. The `notification_intent` message carries an optional `deliveryId`; after posting the notification (or deciding not to, for the conversation already on screen), the client reports the outcome to `POST notification-intent-result` through `sendNotificationIntentAck()` in `clients/web/src/runtime/notifications.ts`.
+For cadet deliveries, the audit trail extends past the SSE broadcast to the OS notification post. The `notification_intent` message carries an optional `deliveryId`; after posting the notification (or deciding not to, for the conversation already on screen), the client reports the outcome to `POST notification-intent-result` through `sendNotificationIntentAck()` in `clients/web/src/runtime/notifications.ts`.
 
 The ack populates three columns on `notification_deliveries`:
 
@@ -620,7 +620,7 @@ The ack populates three columns on `notification_deliveries`:
 | `client_delivery_error`  | TEXT    | Error description when the post failed (e.g. authorization denied)                                        |
 | `client_delivery_at`     | INTEGER | Epoch ms timestamp of when the client reported the outcome                                                |
 
-`'delivered'` covers two outcomes the column cannot tell apart: the OS accepted a posted banner, or the client deliberately showed none (the intent was `silent`, the user was already watching that conversation, or the sending assistant predates guardian targeting and the intent was guardian-scoped). The intent goes to every eligible connection, and each one acks the same `deliveryId`. `handleNotificationIntentResult()` in `runtime/routes/notification-routes.ts` overwrites the row with no client key, so the status holds the last client to report, not an aggregate, and `client_delivery_error` is only ever set, so it can outlive a later success. The audit trail answers three questions for each vellum delivery:
+`'delivered'` covers two outcomes the column cannot tell apart: the OS accepted a posted banner, or the client deliberately showed none (the intent was `silent`, the user was already watching that conversation, or the sending assistant predates guardian targeting and the intent was guardian-scoped). The intent goes to every eligible connection, and each one acks the same `deliveryId`. `handleNotificationIntentResult()` in `runtime/routes/notification-routes.ts` overwrites the row with no client key, so the status holds the last client to report, not an aggregate, and `client_delivery_error` is only ever set, so it can outlive a later success. The audit trail answers three questions for each cadet delivery:
 
 1. **Was the intent broadcast?** -- existing `status` column (`sent`)
 2. **Did any client report back?** -- `client_delivery_status` is non-null
@@ -649,10 +649,10 @@ FROM notification_deliveries d
 WHERE d.conversation_id IS NOT NULL
 ORDER BY d.created_at DESC;
 
--- Vellum deliveries where the client failed to post the notification
+-- Cadet deliveries where the client failed to post the notification
 SELECT d.rendered_title, d.client_delivery_status, d.client_delivery_error, d.client_delivery_at
 FROM notification_deliveries d
-WHERE d.channel = 'vellum' AND d.client_delivery_status = 'client_failed'
+WHERE d.channel = 'cadet' AND d.client_delivery_status = 'client_failed'
 ORDER BY d.created_at DESC;
 ```
 

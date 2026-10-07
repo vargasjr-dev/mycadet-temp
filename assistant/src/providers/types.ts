@@ -406,7 +406,7 @@ export interface SendMessageConfig {
   /**
    * Internal per-request HTTP headers for managed-proxy usage attribution.
    * Provider clients may pass these through SDK request options only when the
-   * transport is Vellum-managed, and must never include this object in provider
+   * transport is Cadet-managed, and must never include this object in provider
    * JSON request bodies.
    */
   usageAttributionHeaders?: Record<string, string>;

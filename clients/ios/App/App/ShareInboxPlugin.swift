@@ -11,7 +11,7 @@ import Foundation
 ///   the host cache first so the web layer can read them after the inbox
 ///   directory is gone.
 ///
-/// `load()` observes the Darwin `ai.vellum.share-inbox-ready` notification
+/// `load()` observes the Darwin `ai.mycadet.share-inbox-ready` notification
 /// the extension posts after a write and emits `inboxReady`, so a host
 /// already in memory can drain without waiting for the command URL.
 ///

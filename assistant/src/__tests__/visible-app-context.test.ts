@@ -35,14 +35,14 @@ let testDataDir: string;
 // Restored after each test so the workspace override never outlives this file:
 // leaving it pointed at a directory we just deleted breaks whatever module a
 // sibling test file loads next.
-const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
+const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 
 beforeEach(() => {
   testDataDir = join(
     tmpdir(),
-    `vellum-visible-app-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-visible-app-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
-  process.env.VELLUM_WORKSPACE_DIR = testDataDir;
+  process.env.CADET_WORKSPACE_DIR = testDataDir;
 });
 
 afterEach(() => {
@@ -50,9 +50,9 @@ afterEach(() => {
     rmSync(testDataDir, { recursive: true, force: true });
   }
   if (originalWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
   }
 });
 
@@ -179,7 +179,7 @@ describe("visible_app injection", () => {
       requestId: "visible-app-req",
       turnIndex: 0,
       trust: {
-        sourceChannel: "vellum" as const,
+        sourceChannel: "cadet" as const,
         trustClass: "guardian" as const,
       },
     });

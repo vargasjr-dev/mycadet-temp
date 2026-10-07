@@ -53,8 +53,8 @@ After the user clicks:
 
 > Fill in the following details:
 >
-> - **App name:** Vellum Assistant
-> - **Website URL:** any URL is fine (e.g., `https://vellum.ai`)
+> - **App name:** Cadet Assistant
+> - **Website URL:** any URL is fine (e.g., `https://mycadet.ai`)
 >
 > Then click **Save** or **Create**.
 
@@ -144,7 +144,7 @@ the app cannot grant fails the whole authorization.
 
 Follow the `cadet-oauth-integrations` workflow to collect credentials, register the OAuth app, connect, and verify.
 
-> I'll start the Figma authorization flow now. You should see a Figma consent page asking you to allow **Vellum Assistant** to access your account.
+> I'll start the Figma authorization flow now. You should see a Figma consent page asking you to allow **Cadet Assistant** to access your account.
 >
 > Review the permissions and click **Allow access**.
 

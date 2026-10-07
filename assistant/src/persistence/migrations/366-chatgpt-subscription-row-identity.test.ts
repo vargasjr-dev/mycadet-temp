@@ -76,12 +76,12 @@ describe("migration 366: chatgpt-subscription row identity", () => {
   test("leaves other rows untouched", () => {
     const { sqlite, db } = createTestDb();
     insertRow(sqlite, "openai-key", "openai", '{"type":"api_key"}');
-    insertRow(sqlite, "vellum", "vellum", '{"type":"platform"}');
+    insertRow(sqlite, "cadet", "cadet", '{"type":"platform"}');
 
     migrateChatgptSubscriptionRowIdentity(db);
 
     expect(readProvider(sqlite, "openai-key")).toBe("openai");
-    expect(readProvider(sqlite, "vellum")).toBe("vellum");
+    expect(readProvider(sqlite, "cadet")).toBe("cadet");
   });
 
   test("leaves unparseable auth untouched", () => {

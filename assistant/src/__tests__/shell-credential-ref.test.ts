@@ -44,7 +44,7 @@ import {
 
 const TEST_DIR = join(
   tmpdir(),
-  `vellum-shell-cred-ref-test-${randomBytes(4).toString("hex")}`,
+  `cadet-shell-cred-ref-test-${randomBytes(4).toString("hex")}`,
 );
 const META_PATH = join(TEST_DIR, "metadata.json");
 

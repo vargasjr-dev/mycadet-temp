@@ -33,7 +33,7 @@ function ctx(actorPrincipalId?: string): AuthContext {
 
 function guardian(principalId: string): GuardianDelivery {
   return {
-    channelType: "vellum",
+    channelType: "cadet",
     contactId: "guardian-contact",
     principalId,
     address: principalId,
@@ -48,20 +48,20 @@ describe("requireBoundGuardian", () => {
   });
 
   test("admits the bound guardian", async () => {
-    mockGuardians = [guardian("vellum-principal-abc")];
-    const result = await requireBoundGuardian(ctx("vellum-principal-abc"));
+    mockGuardians = [guardian("cadet-principal-abc")];
+    const result = await requireBoundGuardian(ctx("cadet-principal-abc"));
     expect(result).toBeNull();
   });
 
   test("denies a non-guardian actor", async () => {
-    mockGuardians = [guardian("vellum-principal-abc")];
-    const result = await requireBoundGuardian(ctx("vellum-principal-other"));
+    mockGuardians = [guardian("cadet-principal-abc")];
+    const result = await requireBoundGuardian(ctx("cadet-principal-other"));
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);
   });
 
   test("denies when actor principal is missing", async () => {
-    mockGuardians = [guardian("vellum-principal-abc")];
+    mockGuardians = [guardian("cadet-principal-abc")];
     const result = await requireBoundGuardian(ctx(undefined));
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);
@@ -69,23 +69,23 @@ describe("requireBoundGuardian", () => {
 
   test("fails closed on a null list (gateway unreachable)", async () => {
     mockGuardians = null;
-    const result = await requireBoundGuardian(ctx("vellum-principal-abc"));
+    const result = await requireBoundGuardian(ctx("cadet-principal-abc"));
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);
   });
 
   test("denies when no cadet guardian is bound", async () => {
     mockGuardians = [];
-    const result = await requireBoundGuardian(ctx("vellum-principal-abc"));
+    const result = await requireBoundGuardian(ctx("cadet-principal-abc"));
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);
   });
 
   test("denies a non-active (revoked) cadet row matching the actor", async () => {
     mockGuardians = [
-      { ...guardian("vellum-principal-abc"), status: "revoked" },
+      { ...guardian("cadet-principal-abc"), status: "revoked" },
     ];
-    const result = await requireBoundGuardian(ctx("vellum-principal-abc"));
+    const result = await requireBoundGuardian(ctx("cadet-principal-abc"));
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);
   });

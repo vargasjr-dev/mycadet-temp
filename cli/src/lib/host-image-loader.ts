@@ -3,7 +3,7 @@
  * that aren't pullable from any external registry.
  *
  * The endpoint URL is a well-known convention — port 5500 on 127.0.0.1.
- * The CLI calls in whenever it sees a ref that starts with `vellum-local/`,
+ * The CLI calls in whenever it sees a ref that starts with `cadet-local/`,
  * which are image refs that only exist in a local docker daemon and can't be
  * `docker pull`'d from any external registry.
  *
@@ -23,7 +23,7 @@ export const HOST_IMAGE_LOADER_URL = "http://127.0.0.1:5500/v1/images/load";
  * These cannot be `docker pull`'d from any external registry; the CLI must
  * route them through the host image-loader instead.
  */
-const LOCAL_BUILD_REF_PREFIX = "vellum-local/";
+const LOCAL_BUILD_REF_PREFIX = "cadet-local/";
 
 /** Whether `ref` points at a local-build image that requires the host loader. */
 export function isLocalBuildRef(ref: string): boolean {
@@ -106,8 +106,8 @@ export async function loadImageViaHost(
       throw new HostImageLoaderError(
         `Could not reach image-loader at ${url}. The ref \`${ref}\` is a ` +
           `local-build image that requires the loader. Is the loader running? ` +
-          `Start it, or set VELLUM_ASSISTANT_IMAGE / VELLUM_GATEWAY_IMAGE / ` +
-          `VELLUM_CREDENTIAL_EXECUTOR_IMAGE to bypass image resolution.`,
+          `Start it, or set CADET_ASSISTANT_IMAGE / CADET_GATEWAY_IMAGE / ` +
+          `CADET_CREDENTIAL_EXECUTOR_IMAGE to bypass image resolution.`,
         url,
         ref,
       );

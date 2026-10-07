@@ -812,7 +812,7 @@ export function buildChainedClient(
     /**
      * Re-target follow-on CDP commands at a specific tab/target by
      * updating the underlying client's `cdpSessionId`. The navigate
-     * executor calls this after `Vellum.createTab` returns so the
+     * executor calls this after `Cadet.createTab` returns so the
      * subsequent `Page.navigate` (and every command on this
      * conversation thereafter) routes to the new tab instead of the
      * currently-active tab.
@@ -845,10 +845,10 @@ export function buildChainedClient(
         );
       }
       // Fresh client: route through the failover walk so the extension
-      // backend is selected automatically. The Vellum.listTabs pseudo-method
+      // backend is selected automatically. The Cadet.listTabs pseudo-method
       // is handled by the extension dispatcher before chrome.debugger.sendCommand.
       const result = await scopedClient.send<{ tabs?: TabInfo[] }>(
-        "Vellum.listTabs",
+        "Cadet.listTabs",
         {},
       );
       if (!active?.client.listTabs) {
@@ -883,7 +883,7 @@ export function buildChainedClient(
         url?: string;
         title?: string;
         clientId?: string;
-      }>("Vellum.selectTab", { tabId });
+      }>("Cadet.selectTab", { tabId });
       if (!active?.client.selectTab) {
         throw new CdpError(
           "transport_error",
@@ -911,7 +911,7 @@ export function buildChainedClient(
         closed: boolean;
         tabId: number;
         clientId?: string;
-      }>("Vellum.closeTab", { tabId });
+      }>("Cadet.closeTab", { tabId });
       if (!active?.client.closeTab) {
         throw new CdpError(
           "transport_error",

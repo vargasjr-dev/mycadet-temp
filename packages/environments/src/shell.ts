@@ -16,10 +16,10 @@ const WINDOWS_UTF8_PREAMBLE =
   "$global:LASTEXITCODE = 0;";
 
 const WINDOWS_EXIT_STATUS_SUFFIX = `
-$__vellumCommandSucceeded = $?
-$__vellumNativeExitCode = $LASTEXITCODE
-if (-not $__vellumCommandSucceeded) {
-  if ($__vellumNativeExitCode -ne 0) { exit $__vellumNativeExitCode }
+$__cadetCommandSucceeded = $?
+$__cadetNativeExitCode = $LASTEXITCODE
+if (-not $__cadetCommandSucceeded) {
+  if ($__cadetNativeExitCode -ne 0) { exit $__cadetNativeExitCode }
   exit 1
 }
 exit 0`;

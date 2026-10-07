@@ -351,7 +351,7 @@ export class RemoteFeatureFlagSync {
     // Fall back to env vars when managed pod credentials are not yet cached.
     const platformUrl = (
       platformUrlRaw?.trim() ||
-      process.env.VELLUM_PLATFORM_URL?.trim() ||
+      process.env.CADET_PLATFORM_URL?.trim() ||
       ""
     ).replace(/\/+$/, "");
 
@@ -383,7 +383,7 @@ export class RemoteFeatureFlagSync {
     }
     const deviceId = getDeviceId();
     if (deviceId) {
-      headers["Vellum-Device-Id"] = deviceId;
+      headers["Cadet-Device-Id"] = deviceId;
     }
     log.debug(
       { url, authenticated: !!assistantCredential },

@@ -94,7 +94,7 @@ mock.module("../daemon/video-thumbnail.js", () => ({
 }));
 
 // The allowed recordings directory used by the recording handler
-const ALLOWED_RECORDINGS_DIR = `${process.env.HOME}/Library/Application Support/vellum-assistant/recordings`;
+const ALLOWED_RECORDINGS_DIR = `${process.env.HOME}/Library/Application Support/mycadet/recordings`;
 
 // Mock node:fs for file existence/stat checks and realpathSync in the recording handler
 let mockFileExists = true;
@@ -124,7 +124,7 @@ mock.module("node:fs", () => {
       if (
         p.includes("recording") ||
         p.includes("/tmp/") ||
-        p.includes("vellum-assistant")
+        p.includes("mycadet")
       ) {
         return p;
       }

@@ -30,7 +30,7 @@ function readConfig(): Record<string, any> {
 beforeEach(() => {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-148-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-148-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 });

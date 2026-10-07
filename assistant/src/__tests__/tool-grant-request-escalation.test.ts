@@ -10,7 +10,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-const testDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testDir = process.env.CADET_WORKSPACE_DIR!;
 
 // Mock task run rules — no task run rules by default
 mock.module("../tasks/ephemeral-permissions.js", () => ({
@@ -234,7 +234,7 @@ describe("ToolApprovalHandler / grant-miss escalation", () => {
     // The in-app card is pinned to the conversation the escalated tool runs
     // in — never left to LLM conversation routing.
     expect(emittedSignals[0].conversationAffinityHint).toEqual({
-      vellum: "conv-1",
+      cadet: "conv-1",
     });
     const payload = emittedSignals[0].contextPayload as Record<string, unknown>;
     const questionText = payload.questionText as string;

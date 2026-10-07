@@ -189,7 +189,7 @@ await initializeDb();
 // ---------------------------------------------------------------------------
 
 const trustContext: TrustContext = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "guardian",
 };
 

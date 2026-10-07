@@ -1,7 +1,7 @@
 /**
  * Local draft storage for messaging.
  *
- * Stores drafts at $VELLUM_WORKSPACE_DIR/data/drafts/<platform>/<id>.json
+ * Stores drafts at $CADET_WORKSPACE_DIR/data/drafts/<platform>/<id>.json
  * Works across all platforms — Slack, Gmail, Discord, etc.
  */
 

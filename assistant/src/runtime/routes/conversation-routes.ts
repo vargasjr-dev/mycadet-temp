@@ -176,11 +176,11 @@ import { safeStringSlice } from "../../util/unicode.js";
 import { assistantEventHub, broadcastMessage } from "../assistant-event-hub.js";
 import { getCurrentSeq } from "../assistant-stream-state.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
+import { reResolveTrustOnResetDrift } from "../guardian-cadet-migration.js";
 import {
   type GuardianPendingScope,
   routeGuardianReply,
 } from "../guardian-reply-router.js";
-import { reResolveTrustOnResetDrift } from "../guardian-vellum-migration.js";
 import type {
   ApprovalConversationGenerator,
   RuntimeAttachmentMetadata,
@@ -1400,7 +1400,7 @@ export async function handleListMessages({
       // Ensure every hydrated attachment has a corresponding content block.
       // renderHistoryContent inlines attachment blocks only when it has
       // file-block refs with matching DB rows; directives (assistant-authored
-      // <vellum-attachment/> tags) don't leave a file block after stripping,
+      // <cadet-attachment/> tags) don't leave a file block after stripping,
       // so their attachments end up in the flat `attachments` array but not in
       // `contentBlocks`. Append any that are missing so the canonical
       // projection is complete.
@@ -1737,9 +1737,9 @@ export async function handleSendMessage(
     };
   };
 
-  const actorPrincipalId = headers?.["x-vellum-actor-principal-id"];
-  const principalType = headers?.["x-vellum-principal-type"];
-  const originClientId = headers?.["x-vellum-client-id"]?.trim() || undefined;
+  const actorPrincipalId = headers?.["x-cadet-actor-principal-id"];
+  const principalType = headers?.["x-cadet-principal-type"];
+  const originClientId = headers?.["x-cadet-client-id"]?.trim() || undefined;
   const clientMetadata = readClientMetadataHeaders(headers);
   const locale = localeFromAcceptLanguage(headers?.["accept-language"]);
 
@@ -1921,7 +1921,7 @@ export async function handleSendMessage(
   // is a 404. Otherwise fall through to the external-key path: the
   // client-supplied `conversationKey` (external-key lookup; materializes
   // on first use) or, when neither is provided, a channel-dependent
-  // default. The vellum channel mints a fresh conversation on every
+  // default. The cadet channel mints a fresh conversation on every
   // empty-handed send so first-message-of-a-new-chat surfaces with a
   // server-minted id; other channels (phone, slack, …) share a stable
   // `default:<channel>:<interface>` thread so repeated calls from the
@@ -1934,7 +1934,7 @@ export async function handleSendMessage(
   const mintConversation =
     inboundConversationId === undefined &&
     !conversationKey &&
-    sourceChannel === "vellum";
+    sourceChannel === "cadet";
   const deferBootstrapCleanup =
     mintConversation && requestedRiskThreshold !== undefined;
   if (inboundConversationId !== undefined) {
@@ -2090,7 +2090,7 @@ export async function handleSendMessage(
   }
 
   // Resolve guardian context from the AuthContext's actorPrincipalId via the
-  // gateway guardian binding: a vellum principal is the guardian or nobody.
+  // gateway guardian binding: a cadet principal is the guardian or nobody.
   //
   // Resolved into a local; the conversation's slot is stamped only where this
   // request commits to running a turn, since that write is what supplies the
@@ -2107,7 +2107,7 @@ export async function handleSendMessage(
             sourceChannel,
             await resolveLocalPrincipalTrustContext({
               actorPrincipalId: guardianPrincipalId,
-              sourceChannel: "vellum",
+              sourceChannel: "cadet",
               conversationExternalId: "local",
             }),
           )
@@ -2127,7 +2127,7 @@ export async function handleSendMessage(
         sourceChannel,
         await resolveLocalPrincipalTrustContext({
           actorPrincipalId,
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           conversationExternalId: "local",
         }),
       );
@@ -2408,7 +2408,7 @@ export async function handleSendMessage(
       // messages while a tool confirmation is pending. Deterministic code-prefix
       // and callback parsing remain active. Mirrors conversation-process.ts behavior.
       approvalConversationGenerator:
-        sourceChannel === "vellum"
+        sourceChannel === "cadet"
           ? undefined
           : deps.approvalConversationGenerator,
       verifiedActorExternalUserId,
@@ -3883,10 +3883,10 @@ export const ROUTES: RouteDefinition[] = [
         .optional(),
       sourceChannel: z
         .string()
-        .describe('Originating channel id (e.g. "vellum")'),
+        .describe('Originating channel id (e.g. "cadet")'),
       interface: z
         .string()
-        .describe('Originating interface id (e.g. "vellum")'),
+        .describe('Originating interface id (e.g. "cadet")'),
       conversationType: z.string().optional(),
       slashCommand: z.string().optional(),
       clientTimezone: z.string().optional(),

@@ -613,7 +613,7 @@ describe("Conversation message queue", () => {
     // A different actor sends while the message waits, moving the slot.
     conversation.setTrustContext({
       trustClass: "guardian",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       requesterExternalUserId: "guardian-principal",
     });
 
@@ -658,7 +658,7 @@ describe("Conversation message queue", () => {
     // The guardian moves the slot while the contact's message waits.
     conversation.setTrustContext({
       trustClass: "guardian",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       requesterExternalUserId: "guardian-principal",
     });
 
@@ -705,7 +705,7 @@ describe("Conversation message queue", () => {
     // The guardian sends while the contact's message waits, moving the slot.
     conversation.setTrustContext({
       trustClass: "guardian",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       requesterExternalUserId: "guardian-principal",
     });
 
@@ -753,7 +753,7 @@ describe("Conversation message queue", () => {
 
     const guardian = {
       trustClass: "guardian" as const,
-      sourceChannel: "vellum" as const,
+      sourceChannel: "cadet" as const,
       requesterExternalUserId: "guardian-principal",
     };
     conversation.enqueueMessage({
@@ -786,7 +786,7 @@ describe("Conversation message queue", () => {
 
     const guardian = {
       trustClass: "guardian" as const,
-      sourceChannel: "vellum" as const,
+      sourceChannel: "cadet" as const,
       requesterExternalUserId: "guardian-principal",
     };
     conversation.setTrustContext(guardian);
@@ -848,7 +848,7 @@ describe("Conversation message queue", () => {
 
     const guardian = {
       trustClass: "guardian" as const,
-      sourceChannel: "vellum" as const,
+      sourceChannel: "cadet" as const,
       requesterExternalUserId: "guardian-principal",
     };
     await expect(
@@ -897,7 +897,7 @@ describe("Conversation message queue", () => {
       const result = await originalPersist(opts);
       conversation.setTrustContext({
         trustClass: "guardian",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         requesterExternalUserId: "guardian-principal",
       });
       // Also move the per-turn field, which is writable out-of-band: a wake
@@ -907,7 +907,7 @@ describe("Conversation message queue", () => {
       // loop call still fails this test.
       conversation.currentTurnTrustContext = {
         trustClass: "guardian",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         requesterExternalUserId: "guardian-principal",
       };
       slotMoved = true;
@@ -1039,13 +1039,13 @@ describe("Conversation message queue", () => {
       content: "msg-2",
       onEvent: () => {},
       requestId: "req-2",
-      transport: { channelId: "vellum", interfaceId: "web", clientOs: "macos" },
+      transport: { channelId: "cadet", interfaceId: "web", clientOs: "macos" },
     });
     conversation.enqueueMessage({
       content: "msg-3",
       onEvent: () => {},
       requestId: "req-3",
-      transport: { channelId: "vellum", interfaceId: "web", clientOs: "ios" },
+      transport: { channelId: "cadet", interfaceId: "web", clientOs: "ios" },
     });
     expect(conversation.getQueueDepth()).toBe(2);
 
@@ -1439,7 +1439,7 @@ describe("Conversation message queue", () => {
       content: "from-the-mac",
       onEvent: () => {},
       requestId: "req-mac",
-      transport: { channelId: "vellum", interfaceId: "web", clientOs: "macos" },
+      transport: { channelId: "cadet", interfaceId: "web", clientOs: "macos" },
     });
     // A surface action: no transport, so the drain leaves the conversation's
     // `clientOs` on the macOS value the send above applied.
@@ -1493,7 +1493,7 @@ describe("Conversation message queue", () => {
       onEvent: () => {},
       requestId: "req-2",
       transport: {
-        channelId: "vellum",
+        channelId: "cadet",
         interfaceId: "web",
         visibleAppId: "app-a",
       },
@@ -1503,7 +1503,7 @@ describe("Conversation message queue", () => {
       onEvent: () => {},
       requestId: "req-3",
       transport: {
-        channelId: "vellum",
+        channelId: "cadet",
         interfaceId: "web",
         visibleAppId: "app-b",
       },
@@ -3376,7 +3376,7 @@ describe("Conversation checkpoint handoff", () => {
       content: "msg-D",
       onEvent: makeHandler("D"),
       requestId: "req-D",
-      metadata: meta("vellum"),
+      metadata: meta("cadet"),
     });
     expect(conversation.getQueueDepth()).toBe(3);
 
@@ -3545,7 +3545,7 @@ describe("Conversation host attachment directives", () => {
   });
 
   test("host attachment prompts and resolves when user allows", async () => {
-    const hostPath = "/tmp/vellum-host-attachment-allow.txt";
+    const hostPath = "/tmp/cadet-host-attachment-allow.txt";
     writeFileSync(hostPath, "host attachment content");
 
     try {
@@ -3571,7 +3571,7 @@ describe("Conversation host attachment directives", () => {
         content: [
           {
             type: "text",
-            text: `Here is your file.\n<vellum-attachment source="host" path="${hostPath}" />`,
+            text: `Here is your file.\n<cadet-attachment source="host" path="${hostPath}" />`,
           },
         ],
       };
@@ -3618,7 +3618,7 @@ describe("Conversation host attachment directives", () => {
   });
 
   test("host attachment denial is non-fatal and emits warning text", async () => {
-    const hostPath = "/tmp/vellum-host-attachment-deny.txt";
+    const hostPath = "/tmp/cadet-host-attachment-deny.txt";
     writeFileSync(hostPath, "host attachment content");
 
     try {
@@ -3644,7 +3644,7 @@ describe("Conversation host attachment directives", () => {
         content: [
           {
             type: "text",
-            text: `Here is your file.\n<vellum-attachment source="host" path="${hostPath}" />`,
+            text: `Here is your file.\n<cadet-attachment source="host" path="${hostPath}" />`,
           },
         ],
       };

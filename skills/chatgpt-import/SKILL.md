@@ -1,6 +1,6 @@
 ---
 name: chatgpt-import
-description: Import conversation history from ChatGPT into Vellum
+description: Import conversation history from ChatGPT into Cadet
 compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "📥"
@@ -9,7 +9,7 @@ metadata:
     display-name: "ChatGPT Import"
 ---
 
-Import ChatGPT conversation history into Vellum so users can keep their conversation context and memory when switching from ChatGPT.
+Import ChatGPT conversation history into Cadet so users can keep their conversation context and memory when switching from ChatGPT.
 
 ## How to guide the user
 

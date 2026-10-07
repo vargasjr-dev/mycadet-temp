@@ -130,7 +130,7 @@ function looksLikeCopy(text) {
  *
  * A sentence separates its words, so `${label} actions` keeps "actions" and
  * `${count}-day trial` keeps "trial". An identifier does not separate
- * anything, so `${name}.vellum` and `${id}-opt-${expr}` are left with nothing:
+ * anything, so `${name}.cadet` and `${id}-opt-${expr}` are left with nothing:
  * a file extension and an id segment are not copy, and neither is the "-day"
  * that a translator would have to leave attached to the number anyway. The
  * ends of the run are free, since nothing is joined there.

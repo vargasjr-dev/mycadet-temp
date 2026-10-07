@@ -12,13 +12,13 @@ import { z } from "zod";
 import { getLogger } from "../../util/logger.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { resolveCapabilities } from "../capabilities.js";
+import { resolveCadetActorTrustContext } from "./cadet-actor-trust.js";
 import { BadRequestError, NotFoundError } from "./errors.js";
 import {
   findPersistedSurfaceState,
   resolveSurfaceConversation,
 } from "./surface-conversation-resolver.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
-import { resolveVellumActorTrustContext } from "./vellum-actor-trust.js";
 
 const log = getLogger("surface-content-routes");
 
@@ -107,12 +107,12 @@ async function handleGetSurfaceContent({
   // untrusted filter. Trust is resolved read-only (no reset-drift repair):
   // safe methods stay side-effect-free, and an unhealed drift just
   // fail-closes the same way until a mutating route heals it.
-  const actorPrincipalId = headers["x-vellum-actor-principal-id"];
-  const principalType = headers["x-vellum-principal-type"];
+  const actorPrincipalId = headers["x-cadet-actor-principal-id"];
+  const principalType = headers["x-cadet-principal-type"];
   let requesterCanAccessMemory = false;
   if (actorPrincipalId || principalType === "local") {
     const requesterTrust =
-      await resolveVellumActorTrustContext(actorPrincipalId);
+      await resolveCadetActorTrustContext(actorPrincipalId);
     requesterCanAccessMemory = resolveCapabilities(
       requesterTrust.trustClass,
     ).canAccessMemory;

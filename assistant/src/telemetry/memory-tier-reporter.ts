@@ -102,12 +102,12 @@ function recordBootTierOnceConsentKnown(): void {
 /**
  * Start the memory-tier reporter in the resource monitor process: emit the
  * current tier once at boot (once consent resolves), then every six hours,
- * UNCONDITIONALLY. No-op in dev mode (VELLUM_DEV=1) and idempotent if already
+ * UNCONDITIONALLY. No-op in dev mode (CADET_DEV=1) and idempotent if already
  * started. Runs alongside {@link import("./config-setting-snapshot.js").startConfigSnapshotReporter}
  * in the monitor worker.
  */
 export function startMemoryTierReporter(): void {
-  if (process.env.VELLUM_DEV === "1") {
+  if (process.env.CADET_DEV === "1") {
     return;
   }
   if (tierTimer) {

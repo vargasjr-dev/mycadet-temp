@@ -10,7 +10,7 @@ import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 const noopLogger: Record<string, unknown> = new Proxy(
   {} as Record<string, unknown>,
@@ -60,7 +60,7 @@ describe("buildSystemPrompt — persona override", () => {
   test("no override → trust-context-derived resolution (default persona, cadet channel)", () => {
     // No trust context and no resolvable guardian contact in this test env,
     // so the user persona falls back to users/default.md and the channel
-    // section resolves channels/vellum.md (absent → omitted).
+    // section resolves channels/cadet.md (absent → omitted).
     const result = buildSystemPrompt({});
 
     expect(result).toContain(DEFAULT_SENTINEL);
@@ -152,7 +152,7 @@ describe("buildSystemPrompt — default persona trust-class guardrail", () => {
     // A guardian normally renders their own users/<slug>.md; if they ever fall
     // back to default.md, every section is gated off and nothing leaks.
     const result = buildSystemPrompt({
-      trustContext: { sourceChannel: "vellum", trustClass: "guardian" },
+      trustContext: { sourceChannel: "cadet", trustClass: "guardian" },
     });
 
     expect(result).not.toContain(GUARDRAIL);
@@ -229,7 +229,7 @@ describe("buildSystemPrompt — default persona trust-class guardrail", () => {
       "utf-8",
     );
     const result = buildSystemPrompt({
-      trustContext: { sourceChannel: "vellum", trustClass: "guardian" },
+      trustContext: { sourceChannel: "cadet", trustClass: "guardian" },
       personaOverride: { userSlug: "owner" },
     });
 

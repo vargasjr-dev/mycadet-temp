@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import { parseSentinelOutput, stripAnsi } from "../terminal-session.js";
 
-const START = "__VELLUM_EXEC_START_1234__";
-const END = "__VELLUM_EXEC_END_1234__";
+const START = "__CADET_EXEC_START_1234__";
+const END = "__CADET_EXEC_END_1234__";
 
 // ---------------------------------------------------------------------------
 // stripAnsi
@@ -51,12 +51,12 @@ describe("stripAnsi", () => {
 describe("parseSentinelOutput", () => {
   test("extracts output between sentinels", () => {
     const cleaned = [
-      `echo '${START}'; ls; echo '${END}'; echo '__VELLUM_EXIT_'$__ec`,
+      `echo '${START}'; ls; echo '${END}'; echo '__CADET_EXIT_'$__ec`,
       START,
       "file1.txt",
       "file2.txt",
       END,
-      "__VELLUM_EXIT_0",
+      "__CADET_EXIT_0",
     ].join("\n");
 
     const result = parseSentinelOutput(cleaned, START, END);
@@ -66,10 +66,10 @@ describe("parseSentinelOutput", () => {
 
   test("extracts non-zero exit code", () => {
     const cleaned = [
-      `echo '${START}'; false; echo '${END}'; echo '__VELLUM_EXIT_'$__ec`,
+      `echo '${START}'; false; echo '${END}'; echo '__CADET_EXIT_'$__ec`,
       START,
       END,
-      "__VELLUM_EXIT_1",
+      "__CADET_EXIT_1",
     ].join("\n");
 
     const result = parseSentinelOutput(cleaned, START, END);
@@ -82,7 +82,7 @@ describe("parseSentinelOutput", () => {
       START,
       "bash: nosuchcmd: command not found",
       END,
-      "__VELLUM_EXIT_127",
+      "__CADET_EXIT_127",
     ].join("\n");
 
     const result = parseSentinelOutput(cleaned, START, END);
@@ -94,11 +94,11 @@ describe("parseSentinelOutput", () => {
     // The command echo contains the sentinel text, then the actual output
     // sentinel comes later. Parser must pick the last START, not the echo.
     const cleaned = [
-      `root$ echo '${START}'; mycommand; echo '${END}'; echo '__VELLUM_EXIT_'$__ec`,
+      `root$ echo '${START}'; mycommand; echo '${END}'; echo '__CADET_EXIT_'$__ec`,
       START,
       "real output here",
       END,
-      "__VELLUM_EXIT_0",
+      "__CADET_EXIT_0",
     ].join("\n");
 
     const result = parseSentinelOutput(cleaned, START, END);
@@ -110,7 +110,7 @@ describe("parseSentinelOutput", () => {
     // This was the original bug: backward search found END in the echo
     // (line 0) before START in the output (line 1), giving endIdx < startIdx.
     const cleaned = [
-      `echo '${START}'; cmd; echo '${END}'; echo '__VELLUM_EXIT_'$__ec; exit $__ec`,
+      `echo '${START}'; cmd; echo '${END}'; echo '__CADET_EXIT_'$__ec; exit $__ec`,
       START,
       "[INFO] Running clawhub command",
       '    args: ["search"]',
@@ -135,7 +135,7 @@ describe("parseSentinelOutput", () => {
       "",
       "  resend-setup [installed]",
       END,
-      "__VELLUM_EXIT_0",
+      "__CADET_EXIT_0",
     ].join("\n");
 
     const result = parseSentinelOutput(cleaned, START, END);
@@ -165,7 +165,7 @@ describe("parseSentinelOutput", () => {
     const cleaned = [
       "root:/workspace$ root:/workspace$ " +
         `echo '${START}'; 'assistant' 'skills' 'search' 'resend-setup'; __ec=$?; echo ` +
-        ` '${END}'; echo '__VELLUM_EXIT_'$__ec; exit $__ec`,
+        ` '${END}'; echo '__CADET_EXIT_'$__ec; exit $__ec`,
       START,
       "[13:06:38.851] INFO (761 on pod-0): [clawhub] Running clawhub command",
       "    args: [",
@@ -181,7 +181,7 @@ describe("parseSentinelOutput", () => {
       "    ID: resend-setup",
       "",
       END,
-      "__VELLUM_EXIT_0",
+      "__CADET_EXIT_0",
     ].join("\n");
 
     const result = parseSentinelOutput(cleaned, START, END);

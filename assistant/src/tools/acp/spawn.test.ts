@@ -123,7 +123,7 @@ const spawnMock = mock(
     _task: string,
     _cwd: string,
     _parentConversationId: string,
-    _sendToVellum: (msg: unknown) => void,
+    _sendToCadet: (msg: unknown) => void,
     _options?: { parentToolUseId?: string; model?: string },
   ): Promise<{
     acpSessionId: string;
@@ -378,7 +378,7 @@ describe("executeAcpSpawn: sandboxed bun auto-install on missing binary", () => 
     };
     expect(options.cwd).toBeDefined();
     expect(options.cwd).not.toBe("/untrusted/project");
-    expect(options.cwd).toContain("vellum-acp-install-");
+    expect(options.cwd).toContain("cadet-acp-install-");
     expect(options.env?.CLAUDE_CODE_OAUTH_TOKEN).toBeUndefined();
     expect(options.env?.GEMINI_API_KEY).toBeUndefined();
     expect(options.env?.BUN_CONFIG_REGISTRY).toBe(

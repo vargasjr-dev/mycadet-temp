@@ -129,13 +129,13 @@ function resetState(): void {
   // production). The gateway list is the source of truth for guardian
   // resolution; the DB write mirrors it for any local INFO reads.
   seedGatewayGuardian({
-    channelType: "vellum",
+    channelType: "cadet",
     address: "guardian-principal",
     principalId: "guardian-principal",
     displayName: "guardian-principal",
   });
   createGuardianBinding({
-    channel: "vellum",
+    channel: "cadet",
     guardianExternalUserId: "guardian-principal",
     guardianDeliveryChatId: "local",
     guardianPrincipalId: "guardian-principal",

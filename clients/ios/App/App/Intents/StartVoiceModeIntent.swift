@@ -7,7 +7,7 @@ import AppIntents
 /// Two intents rather than one intent with a `mode` parameter because the
 /// Action Button picker in Settings binds a shortcut, not a shortcut plus an
 /// argument — a parameterized intent would leave that binding ambiguous. This
-/// one is the natural Siri target ("talk to Vellum" should rejoin a call in
+/// one is the natural Siri target ("talk to Cadet" should rejoin a call in
 /// progress); the other is the natural Action Button target.
 ///
 /// `VoiceAppShortcuts` carries both intents into Siri, Spotlight, and the
@@ -15,7 +15,7 @@ import AppIntents
 struct StartVoiceModeIntent: AppIntent {
     static var title: LocalizedStringResource = "Start voice mode"
     static var description = IntentDescription(
-        "Open Vellum and start talking, picking up a voice conversation already in progress."
+        "Open Cadet and start talking, picking up a voice conversation already in progress."
     )
 
     // iOS 26 soft-deprecated `openAppWhenRun` in favor of `supportedModes`, but

@@ -61,7 +61,7 @@ describe("daemon credential client", () => {
 
       const result = await setSecureKeyViaDaemon(
         "credential",
-        "vellum:webhook_secret",
+        "cadet:webhook_secret",
         "some-value",
       );
       expect(result.ok).toBe(false);

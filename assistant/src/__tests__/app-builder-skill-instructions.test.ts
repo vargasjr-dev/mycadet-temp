@@ -38,12 +38,12 @@ describe("app-builder skill instructions", () => {
     // web/Electron/Capacitor sandbox never injects them, so the skill must not
     // steer generated apps toward APIs that silently no-op at runtime.
     for (const removedApi of [
-      "vellum.widgets",
-      "vellum.confirm",
-      "vellum.openLink",
-      "vellum.theme",
-      "vellum-theme-change",
-      "vellum.data",
+      "cadet.widgets",
+      "cadet.confirm",
+      "cadet.openLink",
+      "cadet.theme",
+      "cadet-theme-change",
+      "cadet.data",
     ]) {
       expect(skillText).not.toContain(removedApi);
     }

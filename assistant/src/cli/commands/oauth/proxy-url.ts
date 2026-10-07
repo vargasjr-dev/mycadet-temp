@@ -34,13 +34,13 @@ function shellQuote(value: string): string {
 
 function formatExportLines(result: OAuthProxyGrantResponse): string {
   const lines = [
-    `export VELLUM_OAUTH_PROXY_BASE_URL=${shellQuote(result.baseUrl)}`,
-    `export VELLUM_OAUTH_PROXY_TOKEN=${shellQuote(result.token)}`,
-    `export VELLUM_OAUTH_PROXY_EXPIRES_AT=${shellQuote(result.expiresAt)}`,
+    `export CADET_OAUTH_PROXY_BASE_URL=${shellQuote(result.baseUrl)}`,
+    `export CADET_OAUTH_PROXY_TOKEN=${shellQuote(result.token)}`,
+    `export CADET_OAUTH_PROXY_EXPIRES_AT=${shellQuote(result.expiresAt)}`,
   ];
   if (result.account) {
     lines.push(
-      `export VELLUM_OAUTH_PROXY_ACCOUNT=${shellQuote(result.account)}`,
+      `export CADET_OAUTH_PROXY_ACCOUNT=${shellQuote(result.account)}`,
     );
   }
   return lines.join("\n") + "\n";

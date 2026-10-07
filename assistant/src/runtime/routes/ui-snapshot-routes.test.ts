@@ -61,17 +61,17 @@ let originalWorkspaceDir: string | undefined;
 
 beforeEach(() => {
   workspaceDir = mkdtempSync(join(tmpdir(), "ui-snapshot-test-"));
-  originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
   fakeClient = undefined;
   broadcasts.length = 0;
 });
 
 afterEach(() => {
   if (originalWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
   }
   rmSync(workspaceDir, { recursive: true, force: true });
 });
@@ -121,8 +121,8 @@ describe("ui_snapshot", () => {
         heightPx: 1520,
       },
       headers: {
-        "x-vellum-client-id": "client-1",
-        "x-vellum-actor-principal-id": "actor-1",
+        "x-cadet-client-id": "client-1",
+        "x-cadet-actor-principal-id": "actor-1",
       },
     })) as { accepted: boolean };
     expect(accepted.accepted).toBe(true);
@@ -146,8 +146,8 @@ describe("ui_snapshot", () => {
       resultRoute.handler({
         body: { requestId, pngBase64: PNG_BASE64 },
         headers: {
-          "x-vellum-client-id": "client-2",
-          "x-vellum-actor-principal-id": "actor-2",
+          "x-cadet-client-id": "client-2",
+          "x-cadet-actor-principal-id": "actor-2",
         },
       }),
     ).rejects.toThrow(/not the target/);
@@ -156,8 +156,8 @@ describe("ui_snapshot", () => {
     await resultRoute.handler({
       body: { requestId, pngBase64: PNG_BASE64 },
       headers: {
-        "x-vellum-client-id": "client-1",
-        "x-vellum-actor-principal-id": "actor-1",
+        "x-cadet-client-id": "client-1",
+        "x-cadet-actor-principal-id": "actor-1",
       },
     });
     const result = await pending;
@@ -195,8 +195,8 @@ describe("ui_snapshot", () => {
     await resultRoute.handler({
       body: { requestId: request.msg.requestId, pngBase64: PNG_BASE64 },
       headers: {
-        "x-vellum-client-id": "client-1",
-        "x-vellum-actor-principal-id": "actor-1",
+        "x-cadet-client-id": "client-1",
+        "x-cadet-actor-principal-id": "actor-1",
       },
     });
 
@@ -210,7 +210,7 @@ describe("host_ui_snapshot_result", () => {
   test("tolerates late delivery for an unknown requestId", async () => {
     const result = (await resultRoute.handler({
       body: { requestId: "gone", pngBase64: PNG_BASE64 },
-      headers: { "x-vellum-client-id": "client-1" },
+      headers: { "x-cadet-client-id": "client-1" },
     })) as { accepted: boolean };
     expect(result.accepted).toBe(true);
   });

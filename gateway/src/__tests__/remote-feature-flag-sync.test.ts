@@ -110,7 +110,7 @@ function fakeCredentialCache(
 
 function defaultCredentials(): Record<string, string> {
   return {
-    "credential/cadet/platform_base_url": "https://platform.vellum.ai",
+    "credential/cadet/platform_base_url": "https://cloud.cadet.ai",
     "credential/cadet/assistant_api_key": "test-api-key",
   };
 }
@@ -118,16 +118,16 @@ function defaultCredentials(): Record<string, string> {
 // ---------------------------------------------------------------------------
 // Setup / teardown
 // ---------------------------------------------------------------------------
-const savedVellumPlatformUrl = process.env.VELLUM_PLATFORM_URL;
+const savedCadetPlatformUrl = process.env.CADET_PLATFORM_URL;
 const savedAssistantCredential = process.env.ASSISTANT_API_KEY;
-const savedDisablePlatform = process.env.VELLUM_DISABLE_PLATFORM;
+const savedDisablePlatform = process.env.CADET_DISABLE_PLATFORM;
 
 beforeEach(() => {
   // Clear env vars that the production code falls back to, so tests remain
   // deterministic unless they explicitly set them.
-  delete process.env.VELLUM_PLATFORM_URL;
+  delete process.env.CADET_PLATFORM_URL;
   delete process.env.ASSISTANT_API_KEY;
-  delete process.env.VELLUM_DISABLE_PLATFORM;
+  delete process.env.CADET_DISABLE_PLATFORM;
   mkdirSync(protectedDir, { recursive: true });
   // Write the test registry and point resolution at it
   writeFileSync(testRegistryPath, JSON.stringify(TEST_REGISTRY, null, 2));
@@ -147,9 +147,9 @@ afterEach(() => {
       process.env[key] = saved;
     }
   };
-  restoreEnv("VELLUM_PLATFORM_URL", savedVellumPlatformUrl);
+  restoreEnv("CADET_PLATFORM_URL", savedCadetPlatformUrl);
   restoreEnv("ASSISTANT_API_KEY", savedAssistantCredential);
-  restoreEnv("VELLUM_DISABLE_PLATFORM", savedDisablePlatform);
+  restoreEnv("CADET_DISABLE_PLATFORM", savedDisablePlatform);
   try {
     rmSync(protectedDir, { recursive: true, force: true });
     mkdirSync(protectedDir, { recursive: true });
@@ -168,7 +168,7 @@ afterEach(() => {
 describe("RemoteFeatureFlagSync", () => {
   test("skips sync when platform features are disabled", async () => {
     fetchMock = mock(async () => Response.json({ flags: { ff1: true } }));
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
 
     const sync = new RemoteFeatureFlagSync({
       credentials: fakeCredentialCache(defaultCredentials()),
@@ -184,7 +184,7 @@ describe("RemoteFeatureFlagSync", () => {
 
     const creds = defaultCredentials();
     delete creds["credential/cadet/platform_base_url"];
-    delete process.env.VELLUM_PLATFORM_URL;
+    delete process.env.CADET_PLATFORM_URL;
 
     const sync = new RemoteFeatureFlagSync({
       credentials: fakeCredentialCache(creds),
@@ -196,9 +196,9 @@ describe("RemoteFeatureFlagSync", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  test("falls back to VELLUM_PLATFORM_URL env var when platform_base_url is missing", async () => {
+  test("falls back to CADET_PLATFORM_URL env var when platform_base_url is missing", async () => {
     fetchMock = mock(async () => Response.json({ flags: {} }));
-    process.env.VELLUM_PLATFORM_URL = "https://env-platform.example.com";
+    process.env.CADET_PLATFORM_URL = "https://env-platform.example.com";
 
     const creds = defaultCredentials();
     delete creds["credential/cadet/platform_base_url"];
@@ -950,7 +950,7 @@ describe("RemoteFeatureFlagSync", () => {
 
     // Simulate transient API key loss (CES hiccup) — platform URL still present
     cache._setValues({
-      "credential/cadet/platform_base_url": "https://platform.vellum.ai",
+      "credential/cadet/platform_base_url": "https://cloud.cadet.ai",
     });
     fetchMock = mock(async () =>
       Response.json({ flags: { "per-assistant-flag": false } }),

@@ -1,2 +1,2 @@
 #!/usr/bin/env bun
-import("@mycadet/vellum-gateway/cli");
+import("@mycadet/cadet-gateway/cli");

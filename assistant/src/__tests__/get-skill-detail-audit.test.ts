@@ -121,7 +121,7 @@ mock.module("../skills/catalog-cache.js", () => ({
 
 mock.module("../skills/catalog-files.js", () => ({
   catalogSkillToSlim: () => ({}),
-  createVellumCatalogProvider: () => ({
+  createCadetCatalogProvider: () => ({
     canHandle: () => false,
     listFiles: async () => null,
     toSlimSkill: async () => null,
@@ -337,7 +337,7 @@ describe("getSkill — skillssh audit enrichment", () => {
     const result = await getSkill("caveman");
 
     // THEN it resolves to the cadet origin (plugin skills are mapped to
-    // bundled/vellum for older clients) while preserving plugin attribution
+    // bundled/cadet for older clients) while preserving plugin attribution
     // on the owner descriptor
     expect("skill" in result).toBe(true);
     if (!("skill" in result)) {

@@ -297,7 +297,7 @@ When a response includes `"has_more": true`, pass `"start_cursor": response.next
 ## Error Handling
 
 - **401 Unauthorized**: The token is missing, invalid, or expired. For Internal integrations, ask the user to re-run the **cadet-oauth-integrations** skill. For OAuth connections, the access token may need to be refreshed or re-authorized.
-- **403 Forbidden**: The integration doesn't have access to the requested page or database. Remind the user that they need to share the page/database with the "Vellum Assistant" integration in Notion (via the Share menu → "Add connections").
+- **403 Forbidden**: The integration doesn't have access to the requested page or database. Remind the user that they need to share the page/database with the "Cadet Assistant" integration in Notion (via the Share menu → "Add connections").
 - **404 Not Found**: The page or database ID doesn't exist or the integration can't see it. Verify the ID and check sharing settings.
 - **400 Bad Request**: Check the request body structure. The Notion API error response includes a `message` field with details.
 - **429 Too Many Requests**: Wait a few seconds and retry.

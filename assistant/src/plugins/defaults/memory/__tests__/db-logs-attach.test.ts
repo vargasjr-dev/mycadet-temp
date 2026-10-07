@@ -72,7 +72,7 @@ describe("logs database connection", () => {
   test.if(sqlite3Available)(
     "runAsyncSqlite({ dbPath }) targets the given file, not the main DB",
     async () => {
-      const targetPath = join(tmpdir(), `vellum-async-dbpath-${Date.now()}.db`);
+      const targetPath = join(tmpdir(), `cadet-async-dbpath-${Date.now()}.db`);
       try {
         const result = await runAsyncSqlite(
           "CREATE TABLE dbpath_probe (x INTEGER); INSERT INTO dbpath_probe VALUES (42); SELECT changes();",

@@ -15,7 +15,7 @@ import {
   resolveEmailCredentialOrRelease,
   runEmailInboundPipeline,
 } from "../../email/inbound-pipeline.js";
-import type { VellumEmailPayload } from "../../email/normalize.js";
+import type { CadetEmailPayload } from "../../email/normalize.js";
 import {
   evaluateSenderAuthentication,
   parseEmailAddress,
@@ -177,16 +177,16 @@ async function fetchResendEmailContent(
 
 /**
  * Normalize a Resend `email.received` webhook event into a
- * `VellumEmailPayload` suitable for `normalizeEmailWebhook()`.
+ * `CadetEmailPayload` suitable for `normalizeEmailWebhook()`.
  */
-export function normalizeResendToVellumPayload(
+export function normalizeResendToCadetPayload(
   event: ResendReceivedEvent,
   content: {
     html: string | null;
     text: string | null;
     headers: Record<string, string>;
   } | null,
-): VellumEmailPayload | null {
+): CadetEmailPayload | null {
   const { data } = event;
   if (!data.from || !data.to?.length || !data.message_id) return null;
 
@@ -404,10 +404,10 @@ export function createResendWebhookHandler(
       );
     }
 
-    // ── Normalize to VellumEmailPayload ─────────────────────────────
+    // ── Normalize to CadetEmailPayload ─────────────────────────────
 
-    const vellumPayload = normalizeResendToVellumPayload(event, emailContent);
-    if (!vellumPayload) {
+    const cadetPayload = normalizeResendToCadetPayload(event, emailContent);
+    if (!cadetPayload) {
       tlog.debug("Resend event missing required fields, acknowledging");
       dedupCache.mark(messageId);
       return Response.json({ ok: true });
@@ -422,7 +422,7 @@ export function createResendWebhookHandler(
       source: "resend",
       dedupCache,
       dedupKey: messageId,
-      vellumPayload,
+      cadetPayload,
       traceId,
       sendReply: apiKey ? buildResendReplySender(apiKey, tlog) : undefined,
       logFields: { emailId },

@@ -8,7 +8,7 @@
  * destructively write live state. The tmpdir redirection normally comes from
  * each package's bunfig.toml test preload, but bun only loads bunfig from
  * the cwd, so `bun test` run from any other directory skips the preload and
- * inherits the ambient env (or a ~/.vellum fallback). The containment
+ * inherits the ambient env (or a ~/.cadet fallback). The containment
  * assertion therefore lives in production code, where it fires no matter how
  * the test process was launched.
  *

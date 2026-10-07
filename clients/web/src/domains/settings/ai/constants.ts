@@ -1,4 +1,4 @@
-import { VELLUM_SERVED_PROVIDERS } from "@/assistant/llm-model-catalog";
+import { CADET_SERVED_PROVIDERS } from "@/assistant/llm-model-catalog";
 
 export const OPENAI_COMPATIBLE_PROVIDER = "openai-compatible";
 
@@ -47,7 +47,7 @@ export function isInferenceProvider(
  * routing sentinel, not a real LLM provider, so it never appears in the profile
  * provider picker.
  */
-export const VELLUM_CONNECTION_PROVIDER = "cadet";
+export const CADET_CONNECTION_PROVIDER = "cadet";
 
 /**
  * `provider` value stored on the canonical ChatGPT-subscription connection
@@ -65,7 +65,7 @@ export const CHATGPT_CONNECTION_PROVIDER = "chatgpt";
  * providers even though its own `provider` is `cadet`.
  */
 export const MANAGED_ROUTABLE_PROVIDERS = new Set<string>(
-  VELLUM_SERVED_PROVIDERS,
+  CADET_SERVED_PROVIDERS,
 );
 
 export const TOKEN_SLIDER_MIN_TOKENS = 1_000;

@@ -51,7 +51,7 @@ function seedRequestWithProjections() {
   });
   bridgeState.seedDelivery({
     requestId: req.id,
-    destinationChannel: "vellum",
+    destinationChannel: "cadet",
     destinationConversationId: "conv-thread",
   });
   bridgeState.seedDelivery({
@@ -69,7 +69,7 @@ async function decideFrom(requestId: string, conversationId: string) {
     requestId,
     action: "approve_once",
     conversationId,
-    channel: "vellum",
+    channel: "cadet",
     actorContext: {
       actorPrincipalId: PRINCIPAL_ID,
       guardianPrincipalId: PRINCIPAL_ID,

@@ -72,7 +72,7 @@ function readPins(table: string): string[] {
 beforeEach(() => {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-159-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-159-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 });
@@ -93,7 +93,7 @@ describe("159-rename-colliding-jev-profile-name migration", () => {
   test("renames a colliding user profile and rewrites every reference", async () => {
     writeConfig({
       llm: {
-        defaultProvider: { provider: "vellum" },
+        defaultProvider: { provider: "cadet" },
         profiles: {
           "jev-managed": {
             source: "user",

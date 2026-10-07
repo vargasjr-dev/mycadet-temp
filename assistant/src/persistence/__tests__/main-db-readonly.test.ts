@@ -19,7 +19,7 @@ describe("main DB read-only mode (resource monitor posture)", () => {
       const probePath = join(import.meta.dir, "main-db-readonly-probe.ts");
       const result = Bun.spawnSync({
         cmd: ["bun", probePath],
-        env: { ...process.env, VELLUM_WORKSPACE_DIR: workspaceDir },
+        env: { ...process.env, CADET_WORKSPACE_DIR: workspaceDir },
         stdout: "pipe",
         stderr: "pipe",
       });

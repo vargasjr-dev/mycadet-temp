@@ -4,7 +4,7 @@ import Foundation
 /// resolved from its own bundle rather than hardcoded.
 ///
 /// Each environment sets `APP_GROUP_ID` in its xcconfig
-/// (`group.ai.vocify-inc.vellum-assistant-ios`, `...-ios.staging`,
+/// (`group.ai.mycadet.ios`, `...-ios.staging`,
 /// `...-ios.dev`), so a hardcoded literal would point a Dev or Staging build
 /// at the production container and let one environment read another's data.
 ///
@@ -26,7 +26,7 @@ import Foundation
 /// `UserDefaults.standard` so in-process Shortcuts still have a picker.
 enum AppGroupID {
     /// Info.plist key carrying the group id, restated from the entitlement.
-    static let infoPlistKey = "VellumAppGroupId"
+    static let infoPlistKey = "CadetAppGroupId"
 
     /// The group for the currently running bundle, or `nil` when the bundle
     /// declares none. See the type docs for why there is no default.

@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 // ── Paths ──────────────────────────────────────────────────────────────────
 
-const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 /** Resolve the real skill directory so we can copy SKILL.md into the test. */
 const SKILL_SRC_DIR = join(
@@ -112,7 +112,7 @@ describe("cadet-self-knowledge skill", () => {
 
   test("references the docs site for conceptual questions", async () => {
     const result = await executeSkillLoad({ skill: "cadet-self-knowledge" });
-    expect(result.content).toContain("https://www.vellum.ai/docs");
+    expect(result.content).toContain("https://mycadet.ai/docs");
     expect(result.content).toContain("/getting-started/what-is-cadet");
     expect(result.content).toContain("/developer-guide/architecture");
     expect(result.content).toContain("/trust-security/the-permissions-model");
@@ -122,7 +122,7 @@ describe("cadet-self-knowledge skill", () => {
 
   test("references the GitHub repo for deep implementation questions", async () => {
     const result = await executeSkillLoad({ skill: "cadet-self-knowledge" });
-    expect(result.content).toContain("github.com/vellum-ai/vellum-assistant");
+    expect(result.content).toContain("github.com/vargasjr-dev/mycadet");
     expect(result.content).toContain("ARCHITECTURE.md");
   });
 
@@ -132,7 +132,7 @@ describe("cadet-self-knowledge skill", () => {
     const result = await executeSkillLoad({ skill: "cadet-self-knowledge" });
     expect(result.content).toContain("## Critical Rule");
     expect(result.content).toContain("Never answer from memory");
-    expect(result.content).toContain("distinct, legacy Vellum product");
+    expect(result.content).toContain("distinct, legacy Cadet product");
     expect(result.content).toContain(
       "Never use it to answer questions about this Cadet assistant",
     );

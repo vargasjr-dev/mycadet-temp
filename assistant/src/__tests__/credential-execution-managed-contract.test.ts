@@ -173,7 +173,7 @@ describe("UpdateManagedCredential RPC schema contract", () => {
   });
 
   test("request schema validates a well-formed payload", () => {
-    const payload = { assistantApiKey: "vellum_key_test_123" };
+    const payload = { assistantApiKey: "cadet_key_test_123" };
     const result = UpdateManagedCredentialSchema.safeParse(payload);
     expect(result.success).toBe(true);
   });
@@ -269,7 +269,7 @@ describe("managed CES bootstrap handshake contract", () => {
       type: "handshake_request",
       protocolVersion: CES_PROTOCOL_VERSION,
       sessionId: "test-session-123",
-      assistantApiKey: "vellum_key_test",
+      assistantApiKey: "cadet_key_test",
     });
     expect(result.success).toBe(true);
   });

@@ -1,7 +1,7 @@
 /**
  * Cross-process quiesce lease for graceful drains.
  *
- * `vellum sleep --wait` sets a short-TTL lease before stopping the assistant;
+ * `cadet sleep --wait` sets a short-TTL lease before stopping the assistant;
  * every background-work claim/fire site (heartbeat, the daemon's
  * watcher/sequence tick, the schedule worker's claim tick, the memory jobs
  * worker) checks it and stops STARTING new work while it is active. Enqueue

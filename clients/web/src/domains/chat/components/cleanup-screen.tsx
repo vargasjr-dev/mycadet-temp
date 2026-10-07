@@ -4,7 +4,7 @@ import { ExternalAnchor } from "@/components/external-anchor";
 import { Trans, useTranslation } from "@/i18n";
 
 import { useHintRotation } from "@/domains/chat/hooks/use-hint-rotation";
-import { VELLUM_COMMUNITY_URL } from "@/utils/external-urls";
+import { CADET_COMMUNITY_URL } from "@/utils/external-urls";
 
 const HINT_INTERVAL_MS = 4000;
 const CLEANUP_TIMEOUT_MS = 120_000;
@@ -54,7 +54,7 @@ export function CleanupScreen() {
             components={{
               communityLink: (
                 <ExternalAnchor
-                  href={VELLUM_COMMUNITY_URL}
+                  href={CADET_COMMUNITY_URL}
                   tone="default"
                   className="text-body-medium-default"
                   glyph={false}

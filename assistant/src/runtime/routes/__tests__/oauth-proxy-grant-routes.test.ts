@@ -116,7 +116,7 @@ function claimsOf(token: string): {
   scope_profile: string;
   exp: number;
 } {
-  const result = verifyToken(token, "vellum-gateway");
+  const result = verifyToken(token, "cadet-gateway");
   expect(result.ok).toBe(true);
   if (!result.ok) {
     throw new Error(result.reason);

@@ -3,9 +3,9 @@
  *
  * Features:
  * - WYSIWYG and Markdown source modes
- * - Dark theme matching Vellum design
+ * - Dark theme matching Cadet design
  * - Real-time word count
- * - Auto-save via Vellum JS bridge
+ * - Auto-save via Cadet JS bridge
  * - Code syntax highlighting
  * - Tables, task lists, and rich formatting
  */
@@ -98,7 +98,7 @@ export function generateEditorHTML(
       height: 100%;
     }
 
-    /* Override Toast UI Editor theme colors to match Vellum */
+    /* Override Toast UI Editor theme colors to match Cadet */
     .toastui-editor-defaultUI { border: none !important; }
     .toastui-editor-toolbar { background: var(--v-surface) !important; border-bottom: 1px solid var(--v-surface-border) !important; }
     .toastui-editor-toolbar-icons { color: var(--v-text-secondary) !important; }
@@ -199,7 +199,7 @@ export function generateEditorHTML(
     editor.on('change', notifyContentChanged);
     titleInput.addEventListener('input', notifyContentChanged);
 
-    // Vellum bridge: handle content updates from daemon
+    // Cadet bridge: handle content updates from daemon
     if (typeof window.cadet !== 'undefined') {
       window.cadet.onContentUpdate = function(data) {
         if (data.markdown) {

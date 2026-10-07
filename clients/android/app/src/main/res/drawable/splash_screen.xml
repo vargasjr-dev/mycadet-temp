@@ -9,5 +9,5 @@
         android:width="288dp"
         android:height="288dp"
         android:gravity="center"
-        android:drawable="@drawable/vellum_logo" />
+        android:drawable="@drawable/cadet_logo" />
 </layer-list>

@@ -107,7 +107,7 @@ export interface RuntimeMessageConversationOptions {
   slackInbound?: SlackInboundMessageMetadata;
   /** IDs of user-uploaded attachments to resolve and include in the turn. */
   attachmentIds?: string[];
-  /** Originating channel (e.g. "slack", "telegram"). Defaults to "vellum". */
+  /** Originating channel (e.g. "slack", "telegram"). Defaults to "cadet". */
   sourceChannel?: ChannelId;
   /** Originating interface (e.g. "cli", "web"). Defaults to "web". */
   sourceInterface?: InterfaceId;

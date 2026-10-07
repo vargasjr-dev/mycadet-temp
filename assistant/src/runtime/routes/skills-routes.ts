@@ -175,7 +175,7 @@ export const ROUTES: RouteDefinition[] = [
         name: "include",
         schema: { type: "string", enum: ["catalog"] },
         description:
-          "Optional inclusion flag. Use 'catalog' to merge available Vellum catalog skills into the response.",
+          "Optional inclusion flag. Use 'catalog' to merge available Cadet catalog skills into the response.",
       },
       {
         name: "origin",
@@ -726,7 +726,7 @@ export const ROUTES: RouteDefinition[] = [
         .boolean()
         .optional()
         .describe(
-          "When true, restrict to bundled and Vellum catalog skills only — do not fall through to community registries.",
+          "When true, restrict to bundled and Cadet catalog skills only — do not fall through to community registries.",
         ),
     }),
     responseBody: z.object({

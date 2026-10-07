@@ -9,7 +9,7 @@
  * the env override).
  *
  * Without this verifier, that failure mode would silently let tests
- * resolve `VELLUM_WORKSPACE_DIR` to the real `/workspace` and potentially
+ * resolve `CADET_WORKSPACE_DIR` to the real `/workspace` and potentially
  * destroy live data.
  *
  * Order matters: bunfig.toml lists this AFTER test-preload.ts so the
@@ -18,9 +18,9 @@
  * No source-module imports — only node stdlib (matches the same rule
  * test-preload.ts enforces).
  *
- * Positive assertion: `VELLUM_WORKSPACE_DIR` MUST resolve under
+ * Positive assertion: `CADET_WORKSPACE_DIR` MUST resolve under
  * `os.tmpdir()`. This mirrors exactly what test-preload.ts does
- * (`mkdtempSync(join(tmpdir(), "vellum-test-"))`), so any other value
+ * (`mkdtempSync(join(tmpdir(), "cadet-test-"))`), so any other value
  * indicates the preload either didn't run or didn't take effect.
  */
 
@@ -50,9 +50,9 @@ function canonicalize(p: string): string {
   }
 }
 
-const workspaceDir = process.env.VELLUM_WORKSPACE_DIR?.trim();
+const workspaceDir = process.env.CADET_WORKSPACE_DIR?.trim();
 if (!workspaceDir) {
-  fail("VELLUM_WORKSPACE_DIR is not set after main preload");
+  fail("CADET_WORKSPACE_DIR is not set after main preload");
 }
 
 const resolvedWorkspace = canonicalize(workspaceDir);
@@ -63,6 +63,6 @@ if (
   !resolvedWorkspace.startsWith(tmpRoot + sep)
 ) {
   fail(
-    `VELLUM_WORKSPACE_DIR resolves to ${resolvedWorkspace}, which is not under ${tmpRoot}`,
+    `CADET_WORKSPACE_DIR resolves to ${resolvedWorkspace}, which is not under ${tmpRoot}`,
   );
 }

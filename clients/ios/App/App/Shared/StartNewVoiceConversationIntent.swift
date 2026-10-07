@@ -18,7 +18,7 @@ import AppIntents
 struct StartNewVoiceConversationIntent: AppIntent {
     static var title: LocalizedStringResource = "New voice conversation"
     static var description = IntentDescription(
-        "Open Vellum and start a brand-new voice conversation."
+        "Open Cadet and start a brand-new voice conversation."
     )
 
     @available(iOS 26.0, *)

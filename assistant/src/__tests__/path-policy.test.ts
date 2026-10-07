@@ -25,7 +25,7 @@ import { getDotEnvPath } from "../util/platform.js";
 // We create and realpath the root eagerly so that macOS's /tmp -> /private/tmp
 // symlink doesn't cause prefix mismatches between normalized roots and paths.
 
-const CLASSIFIER_TEST_ROOT = process.env.VELLUM_WORKSPACE_DIR!;
+const CLASSIFIER_TEST_ROOT = process.env.CADET_WORKSPACE_DIR!;
 const MOCK_MANAGED_DIR = join(CLASSIFIER_TEST_ROOT, "skills");
 const MOCK_BUNDLED_DIR = join(CLASSIFIER_TEST_ROOT, "bundled-skills");
 
@@ -362,7 +362,7 @@ describe("sandboxPolicyWithHostFallback", () => {
     const result = sandboxPolicyWithHostFallback(
       join(
         process.env.HOME!,
-        ".vellum",
+        ".cadet",
         "protected",
         "actor-token-signing-key",
       ),
@@ -775,12 +775,12 @@ describe("baseline: skill directory paths (PR 1)", () => {
 
   test("host policy accepts absolute skill directory path", () => {
     const result = hostPolicy(
-      "/Users/test/.vellum/workspace/skills/my-skill/executor.ts",
+      "/Users/test/.cadet/workspace/skills/my-skill/executor.ts",
     );
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.resolved).toBe(
-        "/Users/test/.vellum/workspace/skills/my-skill/executor.ts",
+        "/Users/test/.cadet/workspace/skills/my-skill/executor.ts",
       );
     }
   });

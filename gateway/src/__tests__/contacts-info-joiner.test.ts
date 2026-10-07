@@ -212,7 +212,7 @@ describe("fetchInfoForContacts", () => {
     seedAssistantInfo({
       id: "c2",
       contactType: "assistant",
-      species: "vellum",
+      species: "cadet",
       metadata: { model: "opus" },
     });
 
@@ -229,7 +229,7 @@ describe("fetchInfoForContacts", () => {
     const c2 = result.get("c2")!;
     expect(c2.contactType).toBe("assistant");
     expect(c2.assistantMetadata).toEqual({
-      species: "vellum",
+      species: "cadet",
       metadata: { model: "opus" },
     });
   });
@@ -240,14 +240,14 @@ describe("fetchInfoForContacts", () => {
       notes: null,
       user_file: null,
       contact_type: "assistant",
-      species: "vellum",
+      species: "cadet",
       metadata: "{not valid json",
     });
 
     const result = await fetchInfoForContacts(["c1"]);
     const c1 = result.get("c1")!;
     expect(c1.assistantMetadata).toEqual({
-      species: "vellum",
+      species: "cadet",
       metadata: null,
     });
   });
@@ -261,7 +261,7 @@ describe("fetchInfoForContacts", () => {
       notes: null,
       user_file: null,
       contact_type: "human",
-      species: "vellum", // stale row
+      species: "cadet", // stale row
       metadata: JSON.stringify({ model: "opus" }),
     });
 
@@ -310,7 +310,7 @@ describe("ContactStore.listContactsWithInfo", () => {
       id: "old",
       notes: "old notes",
       contactType: "assistant",
-      species: "vellum",
+      species: "cadet",
       metadata: { x: 1 },
     });
 
@@ -331,7 +331,7 @@ describe("ContactStore.listContactsWithInfo", () => {
 
     const oldest = result[1];
     expect(oldest.assistantMetadata).toEqual({
-      species: "vellum",
+      species: "cadet",
       metadata: { x: 1 },
     });
   });

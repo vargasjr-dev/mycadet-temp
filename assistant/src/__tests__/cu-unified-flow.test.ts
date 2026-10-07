@@ -90,7 +90,7 @@ function buildMockContext(
     trustContext:
       trustGuardianPrincipalId != null
         ? {
-            sourceChannel: "vellum",
+            sourceChannel: "cadet",
             trustClass: "guardian",
             guardianPrincipalId: trustGuardianPrincipalId,
           }
@@ -238,7 +238,7 @@ describe("surfaceProxyResolver — CU tool routing", () => {
       expect(result.content).toContain(
         "The Cadet desktop app is needed to view or control your screen",
       );
-      expect(result.content).toContain("https://www.vellum.ai/downloads");
+      expect(result.content).toContain("https://mycadet.ai/downloads");
     });
 
     test("returns error when proxy exists but client not connected", async () => {
@@ -254,7 +254,7 @@ describe("surfaceProxyResolver — CU tool routing", () => {
       expect(result.content).toContain(
         "The Cadet desktop app is needed to view or control your screen",
       );
-      expect(result.content).toContain("https://www.vellum.ai/downloads");
+      expect(result.content).toContain("https://mycadet.ai/downloads");
       proxyObj.dispose();
     });
 

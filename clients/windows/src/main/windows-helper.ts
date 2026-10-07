@@ -13,14 +13,14 @@ export const getWindowsHelperPath = (): string =>
         process.resourcesPath,
         "native-helper",
         HELPER_ARCH,
-        "Vellum.WindowsHelper.exe",
+        "Cadet.WindowsHelper.exe",
       )
     : path.join(
         app.getAppPath(),
         "resources",
         "native-helper",
         HELPER_ARCH,
-        "Vellum.WindowsHelper.exe",
+        "Cadet.WindowsHelper.exe",
       );
 
 let client: NativeSidecarClient | null = null;

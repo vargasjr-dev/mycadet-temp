@@ -38,7 +38,7 @@ Tell the user:
 >
 > 1. Click **Create an app**
 > 2. Choose **QuickBooks Online and Payments**
-> 3. Name it **Vellum Assistant**
+> 3. Name it **Cadet Assistant**
 > 4. When asked for scopes, pick **Accounting**
 > 5. Click **Create app**
 >

@@ -37,7 +37,7 @@ export interface ValidateGcsSignedUrlOptions {
   /**
    * Allowlisted hosts. Defaults to `["storage.googleapis.com"]` — the only
    * production value. A non-default list (local/minikube via
-   * `VELLUM_MIGRATION_IMPORT_ALLOWED_HOSTS`, or tests pointing at a local
+   * `CADET_MIGRATION_IMPORT_ALLOWED_HOSTS`, or tests pointing at a local
    * HTTP fixture) relaxes the `scheme` check to accept `http:`, skips the
    * explicit-port check, and skips the signature-param requirement for the
    * listed hosts. Production code MUST NOT pass a wider list.

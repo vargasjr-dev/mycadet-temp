@@ -80,12 +80,12 @@ const testRuntime: HostProxyRuntime = {
   },
   installPresenceMonitor: mockInstallPresenceMonitor,
   sseClientHeaders: () => ({
-    "X-Vellum-Client-Id": MOCK_DEVICE_ID,
-    "X-Vellum-Interface-Id": "macos",
-    "X-Vellum-Machine-Name": "Example Mac",
+    "X-Cadet-Client-Id": MOCK_DEVICE_ID,
+    "X-Cadet-Interface-Id": "macos",
+    "X-Cadet-Machine-Name": "Example Mac",
   }),
   posterClientHeaders: () => ({
-    "X-Vellum-Client-Id": MOCK_DEVICE_ID,
+    "X-Cadet-Client-Id": MOCK_DEVICE_ID,
   }),
   executors: {
     host_bash: unavailableExecutor,
@@ -332,8 +332,8 @@ const MIXED_LOCKFILE: Lockfile = {
     },
     {
       assistantId: "cloud-1",
-      cloud: "vellum",
-      runtimeUrl: "https://platform.vellum.ai",
+      cloud: "cadet",
+      runtimeUrl: "https://cloud.cadet.ai",
     },
   ],
   activeAssistant: "local-1",
@@ -747,8 +747,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
           },
         ],
         activeAssistant: "cloud-1",
@@ -759,7 +759,7 @@ describe("host-proxy-router", () => {
       const conn = __testing.connections.get("cloud-1")!;
       expect(conn.sse).toBeInstanceOf(HostProxySseClient);
       expect(conn.poster).toBeInstanceOf(HostProxyPoster);
-      expect(conn.fingerprint).toBe("cloud:https://platform.vellum.ai:");
+      expect(conn.fingerprint).toBe("cloud:https://cloud.cadet.ai:");
     });
 
     test("stamps organizationId from the lockfile into the fingerprint", async () => {
@@ -769,8 +769,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
             organizationId: "org-from-lockfile",
           },
         ],
@@ -779,7 +779,7 @@ describe("host-proxy-router", () => {
       await flush();
 
       expect(__testing.connections.get("cloud-1")!.fingerprint).toBe(
-        "cloud:https://platform.vellum.ai:org-from-lockfile",
+        "cloud:https://cloud.cadet.ai:org-from-lockfile",
       );
     });
 
@@ -790,8 +790,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
             organizationId: "org-a",
           },
         ],
@@ -804,8 +804,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
             organizationId: "org-b",
           },
         ],
@@ -815,7 +815,7 @@ describe("host-proxy-router", () => {
 
       expect(__testing.connections.get("cloud-1")!.sse).not.toBe(firstSse);
       expect(__testing.connections.get("cloud-1")!.fingerprint).toBe(
-        "cloud:https://platform.vellum.ai:org-b",
+        "cloud:https://cloud.cadet.ai:org-b",
       );
     });
 
@@ -827,8 +827,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
           },
         ],
         activeAssistant: "cloud-1",
@@ -844,8 +844,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
           },
         ],
         activeAssistant: "cloud-1",
@@ -872,8 +872,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
           },
         ],
         activeAssistant: "cloud-1",
@@ -898,8 +898,8 @@ describe("host-proxy-router", () => {
           },
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
           },
         ],
         activeAssistant: "local-1",
@@ -912,7 +912,7 @@ describe("host-proxy-router", () => {
         "local:9001",
       );
       expect(__testing.connections.get("cloud-1")!.fingerprint).toBe(
-        "cloud:https://platform.vellum.ai:",
+        "cloud:https://cloud.cadet.ai:",
       );
     });
 
@@ -923,8 +923,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://old.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://old.mycadet.ai",
           },
         ],
         activeAssistant: "cloud-1",
@@ -936,8 +936,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://new.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://new.mycadet.ai",
           },
         ],
         activeAssistant: "cloud-1",
@@ -947,11 +947,11 @@ describe("host-proxy-router", () => {
       expect(__testing.connections.has("cloud-1")).toBe(true);
       expect(__testing.connections.get("cloud-1")!.sse).not.toBe(firstSse);
       expect(__testing.connections.get("cloud-1")!.fingerprint).toBe(
-        "cloud:https://new.vellum.ai:",
+        "cloud:https://new.mycadet.ai:",
       );
     });
 
-    test("ignores non-vellum cloud assistants without resources", async () => {
+    test("ignores non-cadet cloud assistants without resources", async () => {
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
@@ -976,8 +976,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
             resources: { gatewayPort: 9001, daemonPort: 9002 },
           },
         ],
@@ -986,7 +986,7 @@ describe("host-proxy-router", () => {
       await flush();
 
       expect(__testing.connections.get("cloud-1")!.fingerprint).toBe(
-        "cloud:https://platform.vellum.ai:",
+        "cloud:https://cloud.cadet.ai:",
       );
     });
 
@@ -997,8 +997,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
           },
         ],
         activeAssistant: "cloud-1",
@@ -1243,7 +1243,7 @@ describe("host-proxy-router", () => {
 
       expect(presencePosts.map((post) => post.url).sort()).toEqual([
         "http://127.0.0.1:9001/v1/clients/presence",
-        "https://platform.vellum.ai/v1/assistants/cloud-1/clients/presence",
+        "https://cloud.cadet.ai/v1/assistants/cloud-1/clients/presence",
       ]);
       expect(JSON.parse(presencePosts[0]!.body)).toEqual({ state: "idle" });
     });
@@ -1265,7 +1265,7 @@ describe("host-proxy-router", () => {
       // the case the install-time report cannot reach.
       expect(presencePosts.map((post) => post.url).sort()).toEqual([
         "http://127.0.0.1:9001/v1/clients/presence",
-        "https://platform.vellum.ai/v1/assistants/cloud-1/clients/presence",
+        "https://cloud.cadet.ai/v1/assistants/cloud-1/clients/presence",
       ]);
       expect(JSON.parse(presencePosts[0]!.body)).toEqual({ state: "idle" });
     });
@@ -1291,7 +1291,7 @@ describe("host-proxy-router", () => {
 
       expect(presencePosts.map((post) => post.url).sort()).toEqual([
         "http://127.0.0.1:9001/v1/clients/presence",
-        "https://platform.vellum.ai/v1/assistants/cloud-1/clients/presence",
+        "https://cloud.cadet.ai/v1/assistants/cloud-1/clients/presence",
       ]);
       expect(JSON.parse(presencePosts[0]!.body)).toEqual({ state: "idle" });
     });
@@ -1305,8 +1305,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
           },
         ],
         activeAssistant: "cloud-1",
@@ -1866,7 +1866,7 @@ describe("host-proxy-router", () => {
       installHostProxyBridge(testRuntime);
       const stale = addParkedPresenceConnection(
         "cloud-1",
-        "cloud:https://platform.vellum.ai:org-a",
+        "cloud:https://cloud.cadet.ai:org-a",
       );
 
       presenceReporter?.("active");
@@ -1881,8 +1881,8 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "vellum",
-            runtimeUrl: "https://platform.vellum.ai",
+            cloud: "cadet",
+            runtimeUrl: "https://cloud.cadet.ai",
             organizationId: "org-b",
           },
         ],
@@ -1893,7 +1893,7 @@ describe("host-proxy-router", () => {
       await flush();
 
       expect(__testing.connections.get("cloud-1")!.fingerprint).toBe(
-        "cloud:https://platform.vellum.ai:org-b",
+        "cloud:https://cloud.cadet.ai:org-b",
       );
       // Same queue object, so the fresh connection's seed waited its turn
       // instead of opening a second post.

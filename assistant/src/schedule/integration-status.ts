@@ -46,8 +46,8 @@ async function isProviderConnectedOnPlatform(
   provider: string,
 ): Promise<boolean> {
   try {
-    const { VellumPlatformClient } = await import("../platform/client.js");
-    const client = await VellumPlatformClient.create();
+    const { CadetPlatformClient } = await import("../platform/client.js");
+    const client = await CadetPlatformClient.create();
     if (!client?.platformAssistantId) {
       return false;
     }

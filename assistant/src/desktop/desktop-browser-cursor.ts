@@ -1,14 +1,14 @@
-export const REMOVE_DESKTOP_CURSOR = `document.querySelector('[data-vellum-desktop-cursor]')?.remove()`;
+export const REMOVE_DESKTOP_CURSOR = `document.querySelector('[data-cadet-desktop-cursor]')?.remove()`;
 
 export function desktopCursorExpression(x: number, y: number): string {
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
     throw new Error("Invalid desktop cursor coordinates");
   }
   return `(async () => {
-    let cursor = document.querySelector('[data-vellum-desktop-cursor]');
+    let cursor = document.querySelector('[data-cadet-desktop-cursor]');
     if (!cursor) {
       cursor = document.createElement('div');
-      cursor.setAttribute('data-vellum-desktop-cursor', '');
+      cursor.setAttribute('data-cadet-desktop-cursor', '');
       cursor.setAttribute('aria-hidden', 'true');
       cursor.setAttribute('popover', 'manual');
       cursor.style.cssText = 'all:initial;position:fixed;inset:auto;left:0;top:0;margin:0;padding:0;border:0;width:24px;height:30px;pointer-events:none;z-index:2147483647;';

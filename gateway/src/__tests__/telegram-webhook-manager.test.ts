@@ -54,7 +54,7 @@ afterEach(() => {
   claimError = undefined;
   delete process.env.IS_CONTAINERIZED;
   delete process.env.IS_PLATFORM;
-  delete process.env.VELLUM_PLATFORM_URL;
+  delete process.env.CADET_PLATFORM_URL;
   delete process.env.ASSISTANT_API_KEY;
   _resetPlatformIdentityForTests();
 });
@@ -820,7 +820,7 @@ describe("reconcileTelegramWebhook", () => {
       headers?: Record<string, string>;
     }[] = [];
     process.env.IS_CONTAINERIZED = "true";
-    process.env.VELLUM_PLATFORM_URL = "https://env-platform.example.com";
+    process.env.CADET_PLATFORM_URL = "https://env-platform.example.com";
     process.env.ASSISTANT_API_KEY = "env-key";
 
     const caches = makeCaches({
@@ -893,7 +893,7 @@ describe("reconcileTelegramWebhook", () => {
       headers?: Record<string, string>;
     }[] = [];
     process.env.IS_CONTAINERIZED = "true";
-    process.env.VELLUM_PLATFORM_URL = "https://env-platform.example.com";
+    process.env.CADET_PLATFORM_URL = "https://env-platform.example.com";
 
     const caches = makeCaches({
       ingressUrl: undefined,

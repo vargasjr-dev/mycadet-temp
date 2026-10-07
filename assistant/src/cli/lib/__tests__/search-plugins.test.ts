@@ -60,7 +60,7 @@ function entry(
 function catalog(entries: MarketplaceEntry[], ref = "main"): PluginCatalog {
   return {
     ...buildBundledPluginCatalog({
-      name: "vellum-assistant",
+      name: "mycadet",
       plugins: entries,
     }),
     ref,
@@ -71,7 +71,7 @@ describe("filterPluginCatalog", () => {
   test("matches the query as a case-insensitive regex against plugin names", () => {
     const matches = filterPluginCatalog(
       catalog([
-        entry("simple-memory", "vellum-ai/simple-memory", SHA_A),
+        entry("simple-memory", "vargasjr-dev/simple-memory", SHA_A),
         entry("memory-graph", "acme/memory-graph", SHA_B),
         entry("git-tools", "acme/git-tools", SHA_C),
       ]),
@@ -86,7 +86,7 @@ describe("filterPluginCatalog", () => {
 
   test("matches regardless of query casing (case-insensitive)", () => {
     const matches = filterPluginCatalog(
-      catalog([entry("simple-memory", "vellum-ai/simple-memory", SHA_A)]),
+      catalog([entry("simple-memory", "vargasjr-dev/simple-memory", SHA_A)]),
       "MEMORY",
     );
     expect(matches.map((m) => m.name)).toEqual(["simple-memory"]);
@@ -96,7 +96,7 @@ describe("filterPluginCatalog", () => {
     const matches = filterPluginCatalog(
       catalog([
         entry("memory-graph", "acme/memory-graph", SHA_B),
-        entry("simple-memory", "vellum-ai/simple-memory", SHA_A),
+        entry("simple-memory", "vargasjr-dev/simple-memory", SHA_A),
       ]),
       "^memory-",
     );
@@ -106,7 +106,7 @@ describe("filterPluginCatalog", () => {
   test("empty query matches every catalog entry", () => {
     const matches = filterPluginCatalog(
       catalog([
-        entry("simple-memory", "vellum-ai/simple-memory", SHA_A),
+        entry("simple-memory", "vargasjr-dev/simple-memory", SHA_A),
         entry("memory-graph", "acme/memory-graph", SHA_B),
         entry("git-tools", "acme/git-tools", SHA_C),
       ]),
@@ -121,7 +121,7 @@ describe("filterPluginCatalog", () => {
 
   test("empty result set on no matches", () => {
     const matches = filterPluginCatalog(
-      catalog([entry("simple-memory", "vellum-ai/simple-memory", SHA_A)]),
+      catalog([entry("simple-memory", "vargasjr-dev/simple-memory", SHA_A)]),
       "nothing-matches",
     );
     expect(matches).toEqual([]);
@@ -185,18 +185,18 @@ describe("marketplaceMatch", () => {
   test("projects a root entry onto a github source with a display locator", () => {
     expect(
       marketplaceMatch(
-        entry("simple-memory", "vellum-ai/simple-memory", SHA_A),
+        entry("simple-memory", "vargasjr-dev/simple-memory", SHA_A),
       ),
     ).toEqual({
       name: "simple-memory",
-      path: `github:vellum-ai/simple-memory@${SHA_A}`,
+      path: `github:vargasjr-dev/simple-memory@${SHA_A}`,
       description: undefined,
       category: null,
       homepage: undefined,
       license: undefined,
       source: {
         kind: "github",
-        repo: "vellum-ai/simple-memory",
+        repo: "vargasjr-dev/simple-memory",
         path: undefined,
         ref: SHA_A,
       },
@@ -286,11 +286,11 @@ describe("projectMarketplaceEntries", () => {
 
   test("projects each entry via marketplaceMatch", () => {
     const [match] = projectMarketplaceEntries([
-      entry("simple-memory", "vellum-ai/simple-memory", SHA_A),
+      entry("simple-memory", "vargasjr-dev/simple-memory", SHA_A),
     ]);
     expect(match).toEqual(
       marketplaceMatch(
-        entry("simple-memory", "vellum-ai/simple-memory", SHA_A),
+        entry("simple-memory", "vargasjr-dev/simple-memory", SHA_A),
       ),
     );
   });

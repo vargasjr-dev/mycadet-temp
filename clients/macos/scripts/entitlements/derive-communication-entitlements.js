@@ -3,7 +3,7 @@
 // `com.apple.developer.usernotifications.communication` is a restricted
 // entitlement: an app that declares it without an authorizing provisioning
 // profile is killed at launch, so only a build with
-// VELLUM_MAC_PROVISIONING_PROFILE set may carry it. That build signs with this
+// CADET_MAC_PROVISIONING_PROFILE set may carry it. That build signs with this
 // derived plist, which is `app.plist` plus the one restricted key, so the
 // canonical entitlement set lives in exactly one file.
 

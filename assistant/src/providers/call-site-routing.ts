@@ -275,10 +275,10 @@ export class CallSiteRoutingProvider implements Provider {
 
     let connectionName = resolved.provider_connection;
 
-    // A routing-identity provider ("vellum"/"chatgpt") names its own
+    // A routing-identity provider ("cadet"/"chatgpt") names its own
     // connection row; the provider-keyed scan below cannot find it (the
     // chatgpt row stores provider "openai"), so short-circuit to the
-    // canonical name. Unroutable vellum models throw here — loudly —
+    // canonical name. Unroutable cadet models throw here — loudly —
     // instead of falling through to the default transport.
     if (!connectionName) {
       connectionName = resolveRoutingIdentity(

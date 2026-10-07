@@ -2,8 +2,8 @@
  * Shared anchored-guardian resolution.
  *
  * Resolves the guardian identity for an inbound access request using the
- * assistant's vellum principal as the trust anchor: a source-channel guardian
- * is only accepted when its principal matches the anchor, otherwise the vellum
+ * assistant's cadet principal as the trust anchor: a source-channel guardian
+ * is only accepted when its principal matches the anchor, otherwise the cadet
  * anchor identity is used. This blocks stale or cross-assistant contacts from
  * being bound to a request.
  *
@@ -17,7 +17,7 @@ import type { ChannelId } from "../channels/types.js";
 import { guardianForChannel } from "../contacts/guardian-delivery-reader.js";
 import type { GuardianResolutionSource } from "../notifications/signal.js";
 
-/** Resolved guardian identity, anchored on the assistant's vellum principal. */
+/** Resolved guardian identity, anchored on the assistant's cadet principal. */
 export interface AnchoredGuardian {
   principalId: string | null;
   address: string;
@@ -31,8 +31,8 @@ export interface ResolveAnchoredGuardianInput {
   guardians: GuardianDelivery[] | null;
   sourceChannel: ChannelId;
   /**
-   * Require a non-null anchor principal for the vellum-anchor arm. When the
-   * vellum guardian has no principal, return `null` instead of a vellum-anchor
+   * Require a non-null anchor principal for the cadet-anchor arm. When the
+   * cadet guardian has no principal, return `null` instead of a cadet-anchor
    * record. Matches the cosmetic label path, which degrades to the default
    * reference when the anchor principal is absent.
    */
@@ -42,7 +42,7 @@ export interface ResolveAnchoredGuardianInput {
 /**
  * Resolve the anchored guardian for `sourceChannel`, or `null` when none can be
  * resolved. Gateway source-channel match → that record; gateway anchor-only →
- * vellum-anchor.
+ * cadet-anchor.
  */
 export function resolveAnchoredGuardian(
   input: ResolveAnchoredGuardianInput,
@@ -50,8 +50,8 @@ export function resolveAnchoredGuardian(
   const { sourceChannel, requireAnchorPrincipal } = input;
   const guardians = input.guardians ?? [];
 
-  const vellumGuardian = guardianForChannel(guardians, "vellum");
-  const anchorPrincipalId = vellumGuardian?.principalId;
+  const cadetGuardian = guardianForChannel(guardians, "cadet");
+  const anchorPrincipalId = cadetGuardian?.principalId;
 
   let resolved: AnchoredGuardian | null = null;
 
@@ -71,17 +71,17 @@ export function resolveAnchoredGuardian(
       source: "source-channel-contact",
     };
   } else if (
-    vellumGuardian &&
+    cadetGuardian &&
     !(requireAnchorPrincipal && !anchorPrincipalId)
   ) {
     // Source-channel resolution did not match the anchor → use the anchored
-    // vellum identity.
+    // cadet identity.
     resolved = {
       principalId: anchorPrincipalId ?? null,
-      address: vellumGuardian.address,
-      displayName: vellumGuardian.displayName ?? null,
-      channelType: "vellum",
-      source: "vellum-anchor",
+      address: cadetGuardian.address,
+      displayName: cadetGuardian.displayName ?? null,
+      channelType: "cadet",
+      source: "cadet-anchor",
     };
   }
 

@@ -159,7 +159,7 @@ describe("evaluateFdPressure", () => {
   test("ignores processes whose soft limit is unknown", () => {
     const unlimited: ProcessFdUsage = {
       pid: 3,
-      command: "vellum-qdrant",
+      command: "cadet-qdrant",
       openCount: 100_000,
       softLimit: null,
       hardLimit: null,

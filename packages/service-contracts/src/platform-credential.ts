@@ -7,7 +7,7 @@
  *       (`assistant/src/runtime/routes/platform-routes.ts`)
  *
  * The daemon's platform client produces the verdict, the route reports it,
- * and the `vellum` CLI reads it before deciding whether a stored key can be
+ * and the `cadet` CLI reads it before deciding whether a stored key can be
  * re-injected (`cli/src/lib/assistant-api-key-resolution.ts`), so all three
  * share one definition and cannot silently drift. The web app reads the same
  * shape through its generated daemon client.

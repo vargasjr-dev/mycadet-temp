@@ -133,7 +133,7 @@ function buildContext(
   return asConversation({
     conversationId,
     trustContext: {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
       guardianPrincipalId: "user-1",
     },

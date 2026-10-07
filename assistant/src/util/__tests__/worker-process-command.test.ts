@@ -15,27 +15,27 @@ describe("resolveWorkerCommand", () => {
     expect(
       resolveWorkerCommand(entry, "monitoring", {
         platform: "win32",
-        execPath: "/runtime/vellum-daemon.exe",
+        execPath: "/runtime/cadet-daemon.exe",
         executableExists: () => true,
       }),
-    ).toEqual(["/runtime/vellum-worker.exe", "monitoring"]);
+    ).toEqual(["/runtime/cadet-worker.exe", "monitoring"]);
   });
 
   test("routes integrity checks through the packaged worker", () => {
     expect(
       resolveWorkerCommand(entry, "db-integrity", {
         platform: "win32",
-        execPath: "/runtime/vellum-worker.exe",
+        execPath: "/runtime/cadet-worker.exe",
         executableExists: () => true,
       }),
-    ).toEqual(["/runtime/vellum-worker.exe", "db-integrity"]);
+    ).toEqual(["/runtime/cadet-worker.exe", "db-integrity"]);
   });
 
   test("falls back to the source entry outside a packaged runtime", () => {
     expect(
       resolveWorkerCommand(entry, "monitoring", {
         platform: "win32",
-        execPath: "/runtime/vellum-daemon.exe",
+        execPath: "/runtime/cadet-daemon.exe",
         executableExists: () => false,
       }),
     ).toEqual(["bun", "--smol", "run", "/source/monitoring/worker.ts"]);
@@ -98,7 +98,7 @@ describe("workerKindSignature", () => {
 
   const packaged = {
     platform: "win32" as const,
-    execPath: "/runtime/vellum-daemon.exe",
+    execPath: "/runtime/cadet-daemon.exe",
     executableExists: () => true,
   };
 
@@ -107,17 +107,17 @@ describe("workerKindSignature", () => {
   // worker's slot would otherwise reclaim another's process.
   test("distinguishes packaged worker kinds sharing one executable", () => {
     const scheduleSig = workerKindSignature(schedule, "schedule", packaged);
-    expect(matches('"C:/App/vellum-worker.exe" schedule', scheduleSig)).toBe(
+    expect(matches('"C:/App/cadet-worker.exe" schedule', scheduleSig)).toBe(
       true,
     );
-    expect(matches('"C:/App/vellum-worker.exe" monitoring', scheduleSig)).toBe(
+    expect(matches('"C:/App/cadet-worker.exe" monitoring', scheduleSig)).toBe(
       false,
     );
   });
 
   test("matches a packaged worker from a previous install", () => {
     const scheduleSig = workerKindSignature(schedule, "schedule", packaged);
-    expect(matches('"C:/Prev/vellum-worker.exe" schedule', scheduleSig)).toBe(
+    expect(matches('"C:/Prev/cadet-worker.exe" schedule', scheduleSig)).toBe(
       true,
     );
   });

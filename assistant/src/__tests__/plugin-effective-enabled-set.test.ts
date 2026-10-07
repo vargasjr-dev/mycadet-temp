@@ -57,9 +57,9 @@ import { getWorkspacePluginsDir } from "../util/platform.js";
 // hooks registered through `registerPlugin`.
 const TEST_WORKSPACE_DIR = join(
   tmpdir(),
-  `vellum-plugin-effective-set-${process.pid}-${Date.now()}`,
+  `cadet-plugin-effective-set-${process.pid}-${Date.now()}`,
 );
-process.env.VELLUM_WORKSPACE_DIR = TEST_WORKSPACE_DIR;
+process.env.CADET_WORKSPACE_DIR = TEST_WORKSPACE_DIR;
 
 function buildPlugin(
   name: string,

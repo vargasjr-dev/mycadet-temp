@@ -17,7 +17,7 @@ import {
   PluginDirectoryNotFoundError,
 } from "../toggle-plugin.js";
 
-// VELLUM_WORKSPACE_DIR is set to this; getWorkspacePluginsDir() returns
+// CADET_WORKSPACE_DIR is set to this; getWorkspacePluginsDir() returns
 // <workspace>/plugins, so the actual plugins directory is TMP_WS_DIR/plugins.
 const TMP_WS_DIR = join(tmpdir(), `toggle-plugin-test-${process.pid}`);
 const TMP_PLUGINS_DIR = join(TMP_WS_DIR, "plugins");
@@ -25,12 +25,12 @@ const TMP_PLUGINS_DIR = join(TMP_WS_DIR, "plugins");
 beforeEach(() => {
   rmSync(TMP_WS_DIR, { recursive: true, force: true });
   mkdirSync(TMP_PLUGINS_DIR, { recursive: true });
-  process.env.VELLUM_WORKSPACE_DIR = TMP_WS_DIR;
+  process.env.CADET_WORKSPACE_DIR = TMP_WS_DIR;
 });
 
 afterEach(() => {
   rmSync(TMP_WS_DIR, { recursive: true, force: true });
-  delete process.env.VELLUM_WORKSPACE_DIR;
+  delete process.env.CADET_WORKSPACE_DIR;
 });
 
 describe("disablePlugin", () => {

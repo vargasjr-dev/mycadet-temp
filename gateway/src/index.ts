@@ -1,4 +1,4 @@
-process.title = "vellum-gateway";
+process.title = "cadet-gateway";
 
 import { eventRefersToAnotherMessage } from "./channels/inbound-event.js";
 import { buildSlackSourceMetadata } from "./slack/source-metadata.js";
@@ -468,7 +468,7 @@ async function main() {
   // credential watcher callback whenever credentials change.
   let telegramReady = false;
   let whatsappReady = false;
-  let vellumReady = false;
+  let cadetReady = false;
   let tunnelStartRequested = false;
 
   function maybeStartTunnelTunnelForTwilio(
@@ -1914,7 +1914,7 @@ async function main() {
     // ── Trust rules v3 — assistant-scoped variants ──
     // Mirror the flat /v1/trust-rules routes for clients that use
     // GatewayHTTPClient's auto-prefix (Swift TrustRuleClient and
-    // vellum-assistant-platform's web/src/lib/trust-rules/api.ts), which build
+    // mycadet-platform's web/src/lib/trust-rules/api.ts), which build
     // URLs like /v1/assistants/<id>/trust-rules/. Without these, the request
     // falls through to the runtime-proxy catch-all and the daemon serves 404
     // on mutations (the daemon HTTP handlers were stripped by #28784).
@@ -2248,7 +2248,7 @@ async function main() {
     }
 
     // ── CORS: webview preflight & origin tracking ──
-    // The macOS WKWebView loads pages from https://{appId}.vellum.local/
+    // The macOS WKWebView loads pages from https://{appId}.cadet.local/
     // which is cross-origin to the gateway at http://127.0.0.1:{port}.
     // Reflect the origin back on matched requests so window.cadet.fetch
     // calls succeed.
@@ -2876,11 +2876,11 @@ async function main() {
       whatsappCreds?.phone_number_id && whatsappCreds?.access_token
     );
 
-    const vellumCreds = event.credentials.get("vellum");
-    vellumReady = !!(
-      vellumCreds?.platform_base_url && vellumCreds?.assistant_api_key
+    const cadetCreds = event.credentials.get("cadet");
+    cadetReady = !!(
+      cadetCreds?.platform_base_url && cadetCreds?.assistant_api_key
     );
-    if (vellumReady) {
+    if (cadetReady) {
       // Re-run validate when the API key / base URL change so a warm-pool
       // claim does not keep the previous assistant's bound owner ids.
       void ensurePlatformIdentityIds();
@@ -2951,7 +2951,7 @@ async function main() {
     // webhooks are forwarded to this gateway (same pattern as Telegram).
     // Fires on initial credential load and whenever cadet credentials change
     // (key rotation, late provisioning).
-    if (changed.has("vellum")) {
+    if (changed.has("cadet")) {
       tunnelClient?.refreshCredentials("cadet credentials changed");
       registerEmailCallbackRoute({
         credentials: credentialCache,
@@ -3067,7 +3067,7 @@ async function main() {
     if (
       event.changedKeys.has("ingress") &&
       !onlyTunnelPublicBaseUrlChanged &&
-      vellumReady
+      cadetReady
     ) {
       registerEmailCallbackRoute({
         credentials: credentialCache,

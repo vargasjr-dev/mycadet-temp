@@ -447,10 +447,10 @@ export function createToolExecutor(
       // for every channel adapter (Slack channel, Telegram chat, …); it keys
       // the channel tier of permission-matrix cell resolution, so a
       // channel-scoped cell governs regardless of adapter. Internal turns
-      // ("vellum" — the fallback and control-plane channel — or no source
+      // ("cadet" — the fallback and control-plane channel — or no source
       // channel at all) never have a binding, so they skip the lookup.
       channelPermissionChannelId:
-        turnTrust.sourceChannel && turnTrust.sourceChannel !== "vellum"
+        turnTrust.sourceChannel && turnTrust.sourceChannel !== "cadet"
           ? getBindingByConversation(ctx.conversationId)?.externalChatId
           : undefined,
       onOutput,
@@ -679,8 +679,8 @@ export const HOST_TOOL_NAMES = new Set(HOST_TOOL_TO_CAPABILITY.keys());
  * All members below adopt the same-actor enforcement pattern: the proxy
  * binds the request to a specific client id + actor principal id at
  * dispatch time, and the corresponding result route requires the
- * submitting client to present an `x-vellum-client-id` matching the
- * captured target plus an `x-vellum-actor-principal-id` matching the
+ * submitting client to present an `x-cadet-client-id` matching the
+ * captured target plus an `x-cadet-actor-principal-id` matching the
  * captured actor (see `enforceSameActorOrThrow` in
  * `runtime/auth/same-actor.ts`).
  *
@@ -1015,7 +1015,7 @@ export function createWireToolSurfaceRecorder(
  * creation and reused on each turn. MCP and workspace tool definitions are
  * re-read from the global registry on each turn so that tools registered or
  * changed after conversation creation are automatically picked up without
- * requiring conversation disposal or app restart — MCP via `vellum mcp
+ * requiring conversation disposal or app restart — MCP via `cadet mcp
  * reload`, workspace tools via edits under `<workspaceDir>/tools/` that the
  * per-turn reconcile (kicked below) folds into the registry.
  */
@@ -1128,7 +1128,7 @@ export function createResolveToolsCallback(
       : filteredCoreDefs;
 
     // Re-read MCP and workspace tool definitions from the registry each turn
-    // so conversations automatically pick up tools added/removed by `vellum
+    // so conversations automatically pick up tools added/removed by `cadet
     // mcp reload` and workspace-tool edits reconciled from disk, without
     // recreating the conversation.
     const currentMcpDefs = getMcpToolDefinitions();

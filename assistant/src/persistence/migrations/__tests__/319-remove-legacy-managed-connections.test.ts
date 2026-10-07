@@ -64,13 +64,13 @@ describe("migration 319 — remove legacy *-managed connections", () => {
   test("leaves the cadet connection and personal connections untouched", () => {
     const db = createTestDb();
     migrateCreateProviderConnections(db);
-    insertConnection(db, "vellum", "vellum");
+    insertConnection(db, "cadet", "cadet");
     insertConnection(db, "anthropic-personal", "anthropic");
 
     migrateRemoveLegacyManagedConnections(db);
 
     const names = connectionNames(db);
-    expect(names).toContain("vellum");
+    expect(names).toContain("cadet");
     expect(names).toContain("anthropic-personal");
   });
 

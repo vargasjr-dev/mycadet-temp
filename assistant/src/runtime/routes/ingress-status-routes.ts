@@ -12,7 +12,7 @@
  * a healthy one.
  *
  * Platform-hosted assistants receive webhooks through platform callback
- * routing and never run `vellum tunnel`, so they report `unconfigured`
+ * routing and never run `cadet tunnel`, so they report `unconfigured`
  * rather than a tunnel state they cannot act on. A self-hosted gateway whose
  * Tunnel owns the URL is the same story one layer down: that URL
  * carries webhooks alone, so it is `unconfigured` for pairing too, and the

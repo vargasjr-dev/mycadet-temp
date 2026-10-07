@@ -10,7 +10,7 @@ metadata:
 
 ## Overview
 
-This skill walks through analyzing and reducing LLM spend on a Vellum assistant. There are three layers:
+This skill walks through analyzing and reducing LLM spend on a Cadet assistant. There are three layers:
 
 1. **Provider connections** — named auth configs (e.g. `anthropic-managed`, `my-personal-key`)
 2. **Model profiles** — named presets (provider + model + effort + thinking + contextWindow). Four managed defaults, with UI labels. Note that the keys do not track the labels: read the key, not the name, when pinning a call site.
@@ -157,7 +157,7 @@ For the full setup procedure (managed-first, secure key collection, model discov
 
 If the user wants a custom profile on a specific provider, work down this ladder — do not start by asking for a key:
 
-1. **Check for a managed route first.** `assistant inference providers list` — managed entries (`auth=platform`, e.g. `anthropic-managed`) need no API key, and when the user is signed in to Vellum a profile built as `--provider vellum --model <model-id>` (no `--connection`) routes through the platform proxy. If either covers the target model, create the profile that way and skip the rest of this ladder.
+1. **Check for a managed route first.** `assistant inference providers list` — managed entries (`auth=platform`, e.g. `anthropic-managed`) need no API key, and when the user is signed in to Cadet a profile built as `--provider cadet --model <model-id>` (no `--connection`) routes through the platform proxy. If either covers the target model, create the profile that way and skip the rest of this ladder.
 2. **Check for an existing stored key.** `assistant credentials list` — if a suitable credential is already in the vault, reference it by vault path instead of prompting for a new one.
 3. **Only then collect a new key — securely, never in chat:**
 

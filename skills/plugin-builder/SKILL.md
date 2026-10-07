@@ -1,6 +1,6 @@
 ---
 name: plugin-builder
-description: "Use when the user wants to build, scaffold, ship, or edit a Vellum plugin that bundles multiple surfaces (hooks, tools, skills, and more) into one installable package."
+description: "Use when the user wants to build, scaffold, ship, or edit a Cadet plugin that bundles multiple surfaces (hooks, tools, skills, and more) into one installable package."
 compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🧩"
@@ -8,14 +8,14 @@ metadata:
     category: "development"
     display-name: "Plugin Builder"
     activation-hints:
-      - "User wants to build, scaffold, or author a Vellum plugin"
+      - "User wants to build, scaffold, or author a Cadet plugin"
       - "User wants to edit, update, or push changes to an existing plugin's GitHub repo"
       - "User wants to package skills, hooks, or tools into an installable plugin"
       - "User wants to ship MCP servers as part of a plugin (mcp.json)"
       - "User wants a plugin to receive public webhooks or become a channel (channels/ingress.json)"
       - "User wants to extend their assistant with a new capability shipped as a plugin"
-      - "User wants to publish a plugin to the Vellum marketplace catalog"
-      - "User asks how to ship or distribute extensions for Vellum"
+      - "User wants to publish a plugin to the Cadet marketplace catalog"
+      - "User asks how to ship or distribute extensions for Cadet"
     avoid-when:
       - "User only wants to install or upgrade an existing plugin (use the `assistant plugins` CLI directly)"
       - "User only wants to author a single SKILL.md (use the skill-management skill)"
@@ -24,9 +24,9 @@ metadata:
 
 # Plugin Builder
 
-Build on top of Vellum with plugins. A plugin bundles multiple surfaces into a single installable package that extends what an assistant can do.
+Build on top of Cadet with plugins. A plugin bundles multiple surfaces into a single installable package that extends what an assistant can do.
 
-Plugins are in beta. The peer-dep range you declare is what gets you load. Treat everything you write as something that can break between Vellum releases until 1.0 ships, and pin a real range.
+Plugins are in beta. The peer-dep range you declare is what gets you load. Treat everything you write as something that can break between Cadet releases until 1.0 ships, and pin a real range.
 
 ## What is a plugin?
 
@@ -36,7 +36,7 @@ A plugin is a directory in the assistant's workspace (`<workspaceDir>/plugins/<n
 assistant plugins install <name>
 ```
 
-Plugins can also be discovered and managed from the Plugins tab in the app, or searched from the CLI with `assistant plugins search`. The catalog is a curated allowlist that the Vellum team approves and curates.
+Plugins can also be discovered and managed from the Plugins tab in the app, or searched from the CLI with `assistant plugins search`. The catalog is a curated allowlist that the Cadet team approves and curates.
 
 ## The surfaces a plugin can bundle
 
@@ -56,7 +56,7 @@ The two extensibility patterns serve different goals. **Plugins are for distribu
 
 **Direct workspace contributions are for personal extension**: you simply want to extend your assistant and have no intention of distributing the work. Skip the plugin packaging entirely. Drop the file directly into the matching top-level workspace directory (`/workspace/tools/<name>/` for a tool, `/workspace/skills/<name>/` for a skill, `/workspace/mcp.json` for MCP servers) and the assistant picks it up automatically. No manifest, no install step, no peer dependency. A plugin is the way to ship those same servers with a versioned, installable unit.
 
-Several surfaces that plugins contribute run in the same process as the main Assistant process. They can import all internal methods from the Assistant from the single public package, [`@mycadet/plugin-api`](https://github.com/vellum-ai/vellum-assistant/tree/main/assistant/src/plugin-api), which is the only supported contract. Anything not exported from there is internal and can change without notice. See `references/plugins.md` for the full export surface.
+Several surfaces that plugins contribute run in the same process as the main Assistant process. They can import all internal methods from the Assistant from the single public package, [`@mycadet/plugin-api`](https://github.com/vargasjr-dev/mycadet/tree/main/assistant/src/plugin-api), which is the only supported contract. Anything not exported from there is internal and can change without notice. See `references/plugins.md` for the full export surface.
 
 ## Before you write a single file
 
@@ -64,7 +64,7 @@ Ask before building. Six questions, in this order. Stop if the user is unclear o
 
 1. **What job does the plugin do?** One sentence, plain language. If you cannot write this, the plugin should not be built yet.
 2. **Which surfaces does it ship?** Pick from the surfaces table above. Most plugins ship one or two, not all of them. See `references/plugins.md` for the directory layout and manifest, and the surface-specific references for each surface's contract.
-3. **Does it need credentials?** An API key, OAuth token, or webhook secret is not a value that belongs in a `.ts` file. For LLM inference credentials, use `getConfiguredProvider()` from `@mycadet/plugin-api` to route through the workspace's stored credentials without handling plaintext. For other credential types (OAuth tokens, webhook secrets), store them via the credential vault and resolve at runtime with `resolveCredential()` from `@mycadet/plugin-api`, which returns the plaintext value scoped to the service named after your plugin (the install-directory basename). Call it from a hook, plugin tool, plugin route, a plugin skill `TOOLS.json` executor, or a companion script under `skills/<skill>/{scripts,tools}/`. A bash or skill-sandbox child inherits `VELLUM_PLUGIN_NAME` when exactly one plugin skill is active. A standalone `bun` invocation of a script under that layout also recovers the plugin name from its path. Catch `CredentialResolutionError` to degrade gracefully. Do not shell out to `assistant credentials reveal`.
+3. **Does it need credentials?** An API key, OAuth token, or webhook secret is not a value that belongs in a `.ts` file. For LLM inference credentials, use `getConfiguredProvider()` from `@mycadet/plugin-api` to route through the workspace's stored credentials without handling plaintext. For other credential types (OAuth tokens, webhook secrets), store them via the credential vault and resolve at runtime with `resolveCredential()` from `@mycadet/plugin-api`, which returns the plaintext value scoped to the service named after your plugin (the install-directory basename). Call it from a hook, plugin tool, plugin route, a plugin skill `TOOLS.json` executor, or a companion script under `skills/<skill>/{scripts,tools}/`. A bash or skill-sandbox child inherits `CADET_PLUGIN_NAME` when exactly one plugin skill is active. A standalone `bun` invocation of a script under that layout also recovers the plugin name from its path. Catch `CredentialResolutionError` to degrade gracefully. Do not shell out to `assistant credentials reveal`.
 4. **Does it keep state?** A plugin is fully self-contained: durable state lives in its `data/` directory (`InitContext.pluginStorageDir`), with schema created idempotently by the `init` hook, handles closed in `shutdown`, and per-conversation rows purged in `conversation-deleted`. A plugin never persists state in the assistant's database or elsewhere in the workspace. See "State is plugin-owned" in `references/plugins.md`.
 5. **Where will the source live?** A GitHub repo, ideally under the user's own namespace. The marketplace entry pins to a full commit SHA.
 6. **Is the user writing TypeScript or compiling ahead?** In-repo Bun/Node compile on assistant start is the default. If they want a different build, ask now.
@@ -80,7 +80,7 @@ To exercise the plugin locally before pushing to the catalog, you have two optio
 **Option A: direct copy.** Copy the directory into the workspace's `plugins/` folder:
 
 ```
-cp -R my-plugin $VELLUM_WORKSPACE_DIR/plugins/my-plugin
+cp -R my-plugin $CADET_WORKSPACE_DIR/plugins/my-plugin
 ```
 
 **Option B: install from a GitHub URL (untrusted).** If the plugin is already pushed to a public GitHub repo, install it directly without waiting for marketplace review:
@@ -115,7 +115,7 @@ Once merged, users install by name: `assistant plugins install my-plugin`. The n
 - `package.json` declares `name`, `version`, and a real `peerDependencies["@mycadet/plugin-api"]` range.
 - Any durable state lives in `data/`, created by `init` and cleaned up by `shutdown` / `conversation-deleted`.
 - Each surface has been exercised locally with a working example.
-- A `marketplace.json` entry exists with a full SHA in `source.ref`, and the Vellum team's review is in flight.
+- A `marketplace.json` entry exists with a full SHA in `source.ref`, and the Cadet team's review is in flight.
 
 ## Reference files
 

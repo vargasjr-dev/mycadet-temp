@@ -11,7 +11,7 @@ import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
 // The real getWorkspacePluginsDir() is <workspace>/plugins and reads
 // The preload's workspace is where plugin channels are discovered.
-const pluginsRoot = process.env.VELLUM_WORKSPACE_DIR!;
+const pluginsRoot = process.env.CADET_WORKSPACE_DIR!;
 const workspacePluginsDir = join(pluginsRoot, "plugins");
 
 const { discoverPluginChannels } =

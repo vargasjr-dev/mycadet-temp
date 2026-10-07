@@ -90,7 +90,7 @@ export interface AvailableChannel extends Omit<ChannelInfo, "id"> {
  * Per-channel display metadata for the channels the gateway can currently
  * surface to clients. Add an entry here when surfacing a new channel via
  * `/v1/channels/available`. `Partial` because unsurfaced channels (e.g.
- * `vellum`, `platform`) deliberately have no metadata — keep this map
+ * `cadet`, `platform`) deliberately have no metadata — keep this map
  * minimal until there's a real surface to feed.
  */
 export const CHANNEL_METADATA: Partial<Record<ChannelId, ChannelInfo>> = {
@@ -186,7 +186,7 @@ export const CHANNEL_METADATA: Partial<Record<ChannelId, ChannelInfo>> = {
     icon: "bot",
     supportsVerification: false,
     setupMessages: {
-      guardian: "Connect with other Vellum assistants via the A2A protocol.",
+      guardian: "Connect with other Cadet assistants via the A2A protocol.",
       contact:
         "I'd like to connect with another assistant via A2A. Can you help me set that up?",
     },
@@ -225,15 +225,15 @@ export type InterfaceId = (typeof INTERFACE_IDS)[number];
  * `normalizeInterfaceId` maps these to their canonical replacements.
  */
 const LEGACY_INTERFACE_ALIASES: Record<string, InterfaceId> = {
-  // The web client used to report "vellum" as its interface ID. Older
+  // The web client used to report "cadet" as its interface ID. Older
   // conversation records and in-flight SSE connections may still carry this
   // value. Normalize to "web" so downstream logic only needs one branch.
-  vellum: "web",
+  cadet: "web",
 };
 
 /**
  * Strict type guard — returns `true` only for canonical `InterfaceId`
- * values. Legacy aliases like `"vellum"` return `false`; use
+ * values. Legacy aliases like `"cadet"` return `false`; use
  * `parseInterfaceId` to accept and normalize those.
  */
 export function isInterfaceId(value: unknown): value is InterfaceId {

@@ -14,8 +14,8 @@ import {
 const lightManagerTheme = create({
   base: "light",
 
-  brandTitle: "Vellum Web",
-  brandUrl: "https://github.com/vellum-ai/vellum-assistant",
+  brandTitle: "Cadet Web",
+  brandUrl: "https://github.com/vargasjr-dev/mycadet",
   appBorderRadius: 8,
 
   appBg: "#F6F5F4",
@@ -46,7 +46,7 @@ addons.setConfig({
 
 const SIBLING = siblingOf("web");
 
-addons.add("vellum/sibling-storybook", {
+addons.add("cadet/sibling-storybook", {
   type: types.TOOL,
   title: STORYBOOKS[SIBLING].label,
   render: () => (

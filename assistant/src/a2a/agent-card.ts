@@ -47,6 +47,6 @@ export function buildAgentCard(params: BuildAgentCardParams): AgentCard {
 
 export function getAgentCard(): AgentCard {
   return buildAgentCard({
-    assistantName: getAssistantName() ?? "Vellum Assistant",
+    assistantName: getAssistantName() ?? "Cadet Assistant",
   });
 }

@@ -140,7 +140,7 @@ const setAppIcon = mock(async (name: string | null) => {
  * from, since the icon belongs to the installed build rather than to the web
  * deploy loaded into it.
  */
-let shellAppId: string | null = "ai.vocify-inc.cadet-assistant-ios";
+let shellAppId: string | null = "ai.vocify-inc.mycadet-ios";
 const getInfoMock = mock(async () => {
   if (shellAppId === null) {
     throw new Error("App.getInfo unavailable");
@@ -325,7 +325,7 @@ beforeEach(() => {
   // not about that runs in the one users install.
   previousBuildEnv = buildEnv.VITE_ENVIRONMENT;
   buildEnv.VITE_ENVIRONMENT = "production";
-  shellAppId = "ai.vocify-inc.cadet-assistant-ios";
+  shellAppId = "ai.vocify-inc.mycadet-ios";
   avatarState = CHARACTER;
   nativeIOS = true;
   nativeAndroid = false;
@@ -406,7 +406,7 @@ describe("AppIconRow", () => {
   // question and gets this backwards whenever the two disagree.
   describe("the default thumbnail follows the shell", () => {
     test("draws the Dev shell's pink field", async () => {
-      shellAppId = "ai.vocify-inc.cadet-assistant-ios.dev";
+      shellAppId = "ai.vocify-inc.mycadet-ios.dev";
 
       await renderRow();
 
@@ -417,7 +417,7 @@ describe("AppIconRow", () => {
     });
 
     test("draws the Staging shell's yellow field", async () => {
-      shellAppId = "ai.vocify-inc.cadet-assistant-ios.staging";
+      shellAppId = "ai.vocify-inc.mycadet-ios.staging";
 
       await renderRow();
 
@@ -428,7 +428,7 @@ describe("AppIconRow", () => {
     });
 
     test("reads an Android shell's flavor suffix too", async () => {
-      shellAppId = "ai.cadet.assistant.dev";
+      shellAppId = "ai.mycadet.assistant.dev";
 
       await renderRow();
 
@@ -474,7 +474,7 @@ describe("AppIconRow", () => {
     // reading is what a renderer that cannot parse `color()` falls back to.
     test("paints the sRGB ground where color() will not parse", async () => {
       dropDisplayP3Support();
-      shellAppId = "ai.vocify-inc.cadet-assistant-ios.dev";
+      shellAppId = "ai.vocify-inc.mycadet-ios.dev";
 
       await renderRow();
 
@@ -496,7 +496,7 @@ describe("AppIconRow", () => {
     });
 
     test("leaves an applied alternate in its own color off production", async () => {
-      shellAppId = "ai.vocify-inc.cadet-assistant-ios.dev";
+      shellAppId = "ai.vocify-inc.mycadet-ios.dev";
       iconState = {
         supported: true,
         current: AVATAR_ICON,
@@ -517,7 +517,7 @@ describe("AppIconRow", () => {
   // for the primary icon reads the shell's platform as well as its build.
   describe("the default thumbnail follows the Android flavor", () => {
     test("draws the dev flavor's pink field", async () => {
-      runOnAndroidShell("ai.cadet.assistant.dev");
+      runOnAndroidShell("ai.mycadet.assistant.dev");
 
       await renderRow();
 
@@ -532,7 +532,7 @@ describe("AppIconRow", () => {
     });
 
     test("draws the staging flavor's yellow field", async () => {
-      runOnAndroidShell("ai.cadet.assistant.staging");
+      runOnAndroidShell("ai.mycadet.assistant.staging");
 
       await renderRow();
 
@@ -546,7 +546,7 @@ describe("AppIconRow", () => {
     });
 
     test("leaves the production flavor on the catalog green", async () => {
-      runOnAndroidShell("ai.cadet.assistant");
+      runOnAndroidShell("ai.mycadet.assistant");
 
       await renderRow();
 
@@ -566,7 +566,7 @@ describe("AppIconRow", () => {
   // drop a pinned shortcut on the way.
   describe("the picker's copy follows the shell", () => {
     test("names the deferred apply and the pinned shortcut on Android", async () => {
-      runOnAndroidShell("ai.cadet.assistant");
+      runOnAndroidShell("ai.mycadet.assistant");
       await renderRow();
       await waitFor(() => {
         expect(buttonByText("Change")).toBeDefined();
@@ -582,7 +582,7 @@ describe("AppIconRow", () => {
 
     test("names Android as the shell that kept the old icon", async () => {
       swapSucceeds = false;
-      runOnAndroidShell("ai.cadet.assistant");
+      runOnAndroidShell("ai.mycadet.assistant");
       await renderRow();
       await waitFor(() => {
         expect(buttonByText("Change")).toBeDefined();

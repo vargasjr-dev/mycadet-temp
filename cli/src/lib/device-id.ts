@@ -1,8 +1,8 @@
 /**
- * Host device ID resolver. Resolution order: `VELLUM_DEVICE_ID` env var,
+ * Host device ID resolver. Resolution order: `CADET_DEVICE_ID` env var,
  * then `device.json`. Production uses the machine-wide shared
- * `~/.vellum/device.json`, matching Electron (`clients/macos/src/main/device-id.ts`)
- * and Swift (`VellumPaths.deviceIdFile`); non-production uses
+ * `~/.cadet/device.json`, matching Electron (`clients/macos/src/main/device-id.ts`)
+ * and Swift (`CadetPaths.deviceIdFile`); non-production uses
  * `<configDir>/device.json`.
  *
  * Not to be confused with `guardian-token.ts`'s salted-hash Guardian
@@ -23,13 +23,13 @@ let cached: string | undefined;
 function resolveDeviceIdPaths(): { dir: string; file: string } {
   const env = getCurrentEnvironment();
   const dir =
-    env.name === "production" ? join(homedir(), ".vellum") : getConfigDir(env);
+    env.name === "production" ? join(homedir(), ".cadet") : getConfigDir(env);
   return { dir, file: join(dir, "device.json") };
 }
 
 /**
  * Get the stable device ID for this host machine, creating and persisting
- * one in `device.json` if absent. `VELLUM_DEVICE_ID` takes precedence over
+ * one in `device.json` if absent. `CADET_DEVICE_ID` takes precedence over
  * any file. Never throws: on write failure the generated UUID is still
  * cached and returned for the process lifetime.
  */
@@ -38,7 +38,7 @@ export function getOrCreateHostDeviceId(): string {
     return cached;
   }
 
-  const fromEnv = process.env.VELLUM_DEVICE_ID?.trim();
+  const fromEnv = process.env.CADET_DEVICE_ID?.trim();
   if (fromEnv) {
     cached = fromEnv;
     return cached;

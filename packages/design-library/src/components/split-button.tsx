@@ -52,7 +52,7 @@ export interface SplitButtonProps
  *   menuTitle="Other ways to connect"
  *   menuTriggerLabel="Other ways to connect Notion"
  *   menuItems={[
- *     <ActionMenu.Item key="vellum" label="Sign in through Vellum" onSelect={pickVellum} />,
+ *     <ActionMenu.Item key="cadet" label="Sign in through Cadet" onSelect={pickCadet} />,
  *   ]}
  *   onClick={connect}
  * >

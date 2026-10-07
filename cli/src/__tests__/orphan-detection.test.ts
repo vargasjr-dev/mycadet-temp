@@ -8,7 +8,7 @@ import type { EnvironmentDefinition } from "@mycadet/environments";
 // Point lockfile operations at a temp directory before importing anything that
 // would otherwise resolve real on-host paths.
 const testDir = mkdtempSync(join(tmpdir(), "cli-orphan-detection-test-"));
-process.env.VELLUM_LOCKFILE_DIR = testDir;
+process.env.CADET_LOCKFILE_DIR = testDir;
 
 import {
   detectOrphanedProcesses,
@@ -21,7 +21,7 @@ import {
 
 afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
-  delete process.env.VELLUM_LOCKFILE_DIR;
+  delete process.env.CADET_LOCKFILE_DIR;
 });
 
 function makeLocalEntry(
@@ -34,24 +34,24 @@ function makeLocalEntry(
     embed?: string;
   } = {},
 ): AssistantEntry {
-  const vellumDir = join(instanceDir, ".vellum");
-  mkdirSync(join(vellumDir, "workspace", "data", "qdrant"), {
+  const cadetDir = join(instanceDir, ".cadet");
+  mkdirSync(join(cadetDir, "workspace", "data", "qdrant"), {
     recursive: true,
   });
   if (pids.daemon !== undefined) {
-    writeFileSync(join(vellumDir, "workspace", "vellum.pid"), pids.daemon);
+    writeFileSync(join(cadetDir, "workspace", "cadet.pid"), pids.daemon);
   }
   if (pids.gateway !== undefined) {
-    writeFileSync(join(vellumDir, "gateway.pid"), pids.gateway);
+    writeFileSync(join(cadetDir, "gateway.pid"), pids.gateway);
   }
   if (pids.qdrant !== undefined) {
     writeFileSync(
-      join(vellumDir, "workspace", "data", "qdrant", "qdrant.pid"),
+      join(cadetDir, "workspace", "data", "qdrant", "qdrant.pid"),
       pids.qdrant,
     );
   }
   if (pids.embed !== undefined) {
-    writeFileSync(join(vellumDir, "workspace", "embed-worker.pid"), pids.embed);
+    writeFileSync(join(cadetDir, "workspace", "embed-worker.pid"), pids.embed);
   }
   return {
     assistantId: id,
@@ -107,8 +107,8 @@ describe("getKnownPidsFromAssistants", () => {
   test("ignores non-local entries without watcherPid", () => {
     const entry: AssistantEntry = {
       assistantId: "managed-1",
-      runtimeUrl: "https://platform.vellum.ai/foo",
-      cloud: "vellum",
+      runtimeUrl: "https://cloud.cadet.ai/foo",
+      cloud: "cadet",
     };
     const pids = getKnownPidsFromAssistants([entry]);
     expect(pids.size).toBe(0);

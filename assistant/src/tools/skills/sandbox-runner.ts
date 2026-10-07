@@ -109,7 +109,7 @@ export async function runSkillToolScriptSandbox(
 
   const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
-  const runDir = join(skillDir, ".vellum-skill-run", randomUUID());
+  const runDir = join(skillDir, ".cadet-skill-run", randomUUID());
 
   try {
     mkdirSync(runDir, { recursive: true });

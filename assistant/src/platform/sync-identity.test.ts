@@ -7,7 +7,7 @@ let mockClient: {
 } | null;
 
 mock.module("./client.js", () => ({
-  VellumPlatformClient: { create: async () => mockClient },
+  CadetPlatformClient: { create: async () => mockClient },
 }));
 
 import { syncIdentityNameToPlatform } from "./sync-identity.js";

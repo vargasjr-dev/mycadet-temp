@@ -15,11 +15,11 @@ describe("HOST_IMAGE_LOADER_URL", () => {
 });
 
 describe("isLocalBuildRef", () => {
-  test("recognizes the `vellum-local/` prefix as a local build", () => {
-    expect(isLocalBuildRef("vellum-local/assistant-server:sha-abc123")).toBe(
+  test("recognizes the `cadet-local/` prefix as a local build", () => {
+    expect(isLocalBuildRef("cadet-local/assistant-server:sha-abc123")).toBe(
       true,
     );
-    expect(isLocalBuildRef("vellum-local/gateway:sha-def")).toBe(true);
+    expect(isLocalBuildRef("cadet-local/gateway:sha-def")).toBe(true);
   });
 
   test("treats external registry refs as pullable", () => {
@@ -61,7 +61,7 @@ describe("loadImageViaHost", () => {
           url: "http://127.0.0.1:5500/v1/images/load",
           body: {
             loaded: true,
-            ref: "vellum-local/assistant:sha-abc",
+            ref: "cadet-local/assistant:sha-abc",
           },
           status: 200,
         },
@@ -71,7 +71,7 @@ describe("loadImageViaHost", () => {
 
     await loadImageViaHost(
       "http://127.0.0.1:5500/v1/images/load",
-      "vellum-local/assistant:sha-abc",
+      "cadet-local/assistant:sha-abc",
       silentLog,
       { fetchImpl },
     );
@@ -79,7 +79,7 @@ describe("loadImageViaHost", () => {
     expect(recorded).toHaveLength(1);
     expect(recorded[0].url).toBe("http://127.0.0.1:5500/v1/images/load");
     expect(recorded[0].body).toEqual({
-      ref: "vellum-local/assistant:sha-abc",
+      ref: "cadet-local/assistant:sha-abc",
     });
   });
 
@@ -99,7 +99,7 @@ describe("loadImageViaHost", () => {
     await expect(
       loadImageViaHost(
         "http://127.0.0.1:5500/v1/images/load",
-        "vellum-local/nope:abc",
+        "cadet-local/nope:abc",
         silentLog,
         { fetchImpl },
       ),
@@ -122,7 +122,7 @@ describe("loadImageViaHost", () => {
     try {
       await loadImageViaHost(
         "http://127.0.0.1:5500/v1/images/load",
-        "vellum-local/nope:abc",
+        "cadet-local/nope:abc",
         silentLog,
         { fetchImpl: fetchImpl2 },
       );
@@ -131,7 +131,7 @@ describe("loadImageViaHost", () => {
     }
     expect(caught).not.toBeNull();
     expect(caught?.status).toBe(502);
-    expect(caught?.ref).toBe("vellum-local/nope:abc");
+    expect(caught?.ref).toBe("cadet-local/nope:abc");
     expect(caught?.message).toContain("502");
     expect(caught?.message).toContain("docker save failed");
   });
@@ -149,7 +149,7 @@ describe("loadImageViaHost", () => {
     try {
       await loadImageViaHost(
         "http://127.0.0.1:5500/v1/images/load",
-        "vellum-local/anything:xyz",
+        "cadet-local/anything:xyz",
         silentLog,
         { fetchImpl },
       );
@@ -158,7 +158,7 @@ describe("loadImageViaHost", () => {
     }
     expect(caught).not.toBeNull();
     expect(caught?.message).toContain("loader running");
-    expect(caught?.message).toContain("VELLUM_ASSISTANT_IMAGE");
+    expect(caught?.message).toContain("CADET_ASSISTANT_IMAGE");
   });
 
   test("wraps generic fetch errors", async () => {

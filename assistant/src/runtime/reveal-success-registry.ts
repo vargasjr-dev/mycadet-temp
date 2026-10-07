@@ -24,7 +24,7 @@
  * gate): a web or gateway-proxied reveal (Settings row, chat chips) is not
  * evidence any tool ran a reveal and must never become proof — including
  * local-mode web calls, where the gateway derives the `local` principal
- * from the JWT but always stamps `x-vellum-proxy-server: ipc`.
+ * from the JWT but always stamps `x-cadet-proxy-server: ipc`.
  *
  * Records are conversation-bound via the reveal NONCE (see
  * `reveal-nonce.ts`): the shell tools export each conversation's secret

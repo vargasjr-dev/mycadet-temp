@@ -6,7 +6,7 @@
  *
  * All guardian action endpoints require a valid JWT bearer token.
  * Auth is verified upstream by JWT middleware; the adapter injects the
- * actor principal ID via the `x-vellum-actor-principal-id` header.
+ * actor principal ID via the `x-cadet-actor-principal-id` header.
  *
  * Guardian decisions additionally verify the actor is the bound guardian
  * via the `requireGuardian` route flag.
@@ -44,7 +44,7 @@ async function handleGuardianActionsPending({
 
   const prompts = await listGuardianDecisionPrompts({
     conversationId,
-    channel: "vellum",
+    channel: "cadet",
   });
   return { conversationId, prompts };
 }
@@ -63,15 +63,15 @@ async function handleGuardianActionDecision({
   );
 
   // Resolve the actor's guardian principal ID. The HTTP adapter injects it
-  // from the AuthContext via the x-vellum-actor-principal-id header.
+  // from the AuthContext via the x-cadet-actor-principal-id header.
   // For dev bypass (HTTP auth disabled) the synthetic "dev-bypass" principal
   // won't match the real guardian binding, so resolve the local guardian
   // principal to avoid identity_mismatch.
   let guardianPrincipalId: string | undefined =
-    headers["x-vellum-actor-principal-id"] ?? undefined;
+    headers["x-cadet-actor-principal-id"] ?? undefined;
   if (
     isHttpAuthDisabled() &&
-    headers["x-vellum-actor-principal-id"] === "dev-bypass"
+    headers["x-cadet-actor-principal-id"] === "dev-bypass"
   ) {
     guardianPrincipalId = (await findLocalGuardianPrincipalId()) ?? undefined;
   }
@@ -80,7 +80,7 @@ async function handleGuardianActionDecision({
     requestId,
     action,
     conversationId,
-    channel: "vellum",
+    channel: "cadet",
     actorContext: {
       actorPrincipalId: guardianPrincipalId,
       guardianPrincipalId,
@@ -122,7 +122,7 @@ async function handleGuardianActionDecision({
  *
  * Uses the conversation scope helper to union requests whose source
  * `conversationId` matches AND requests delivered to this conversation.
- * This allows guardian destination conversations (including macOS Vellum conversations)
+ * This allows guardian destination conversations (including macOS Cadet conversations)
  * to surface prompts for all canonical kinds.
  *
  * The returned prompts normalize `conversationId` to the queried conversation ID

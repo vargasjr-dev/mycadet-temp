@@ -183,7 +183,7 @@ describe("document tool security", () => {
 
     const localRead = executeDocumentRead(
       { surface_id: "doc-other" },
-      makeContext({ trustClass: "unknown", executionChannel: "vellum" }),
+      makeContext({ trustClass: "unknown", executionChannel: "cadet" }),
     );
     const localBody = parseResult<{
       success: boolean;

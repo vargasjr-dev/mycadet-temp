@@ -67,7 +67,7 @@ export class JobAlreadyInProgressError extends Error {
 // `error.code = "fetch_failed"` for clients.
 // ---------------------------------------------------------------------------
 
-const kFetchBodyError = Symbol.for("vellum.migrationImport.fetchBodyError");
+const kFetchBodyError = Symbol.for("cadet.migrationImport.fetchBodyError");
 
 function isFetchBodyError(err: unknown): boolean {
   if (!err || typeof err !== "object") {

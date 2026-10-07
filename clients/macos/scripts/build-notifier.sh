@@ -54,7 +54,7 @@ node "$NODE_GYP_BIN" rebuild \
   --dist-url=https://electronjs.org/headers \
   --devdir="${HOME}/.electron-gyp"
 
-BUILT="$PACKAGE_DIR/build/Release/vellum_notifier.node"
+BUILT="$PACKAGE_DIR/build/Release/cadet_notifier.node"
 if [ ! -f "$BUILT" ]; then
   echo "build-notifier: node-gyp produced no addon at $BUILT" >&2
   exit 1
@@ -66,7 +66,7 @@ fi
 rm -rf "$ROOT_DIR/resources/notifier"
 OUTPUT_DIR="$ROOT_DIR/resources/notifier/$ARCH"
 mkdir -p "$OUTPUT_DIR"
-OUTPUT="$OUTPUT_DIR/vellum-notifier.node"
+OUTPUT="$OUTPUT_DIR/cadet-notifier.node"
 cp "$BUILT" "$OUTPUT"
 
 # A toolchain that ignores --arch produces a host-architecture binary, and

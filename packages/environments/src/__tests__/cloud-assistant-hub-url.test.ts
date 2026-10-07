@@ -12,17 +12,17 @@ import { cloudAssistantHubUrl, SEEDS } from "../index.js";
 describe("cloudAssistantHubUrl", () => {
   test("cloud environments resolve to their own web origin", () => {
     expect(cloudAssistantHubUrl("production")).toBe(
-      "https://www.vellum.ai/assistant",
+      "https://mycadet.ai/assistant",
     );
     expect(cloudAssistantHubUrl("staging")).toBe(
-      "https://staging-assistant.vellum.ai/assistant",
+      "https://staging.cloud.mycadet.ai/assistant",
     );
   });
 
   test("every other environment falls back to the dev SPA", () => {
     for (const name of ["dev", "test", "local", "unknown-env", undefined]) {
       expect(cloudAssistantHubUrl(name)).toBe(
-        "https://dev-assistant.vellum.ai/assistant",
+        "https://dev.cloud.mycadet.ai/assistant",
       );
     }
   });

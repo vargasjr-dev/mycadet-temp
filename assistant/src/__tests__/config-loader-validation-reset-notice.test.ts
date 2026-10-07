@@ -32,7 +32,7 @@ import {
 import { getConfigValidationResetNoticePath } from "../util/platform.js";
 import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
-const WORKSPACE_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
 const CONFIG_PATH = join(WORKSPACE_DIR, "config.json");
 const NOTICE_PATH = getConfigValidationResetNoticePath();
 
@@ -170,7 +170,7 @@ describe("config-validation-reset notice sentinel", () => {
           llm: {
             profiles: {
               "glm-default": {
-                provider: "vellum",
+                provider: "cadet",
                 model: "accounts/fireworks/models/glm-5p3",
               },
             },

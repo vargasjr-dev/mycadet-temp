@@ -1,7 +1,7 @@
 /**
  * Resolve the manifest that identifies an installed plugin.
  *
- * `package.json` is the primary manifest for Vellum plugins. A root
+ * `package.json` is the primary manifest for Cadet plugins. A root
  * `plugin.json` is selected only when `package.json` is absent, so a legacy
  * plugin can carry another ecosystem's `plugin.json` without being
  * reclassified.
@@ -80,7 +80,7 @@ export interface ResolvedPluginManifest {
   readonly description?: string;
   readonly homepage?: string;
   readonly license?: unknown;
-  /** Parsed selected manifest, retained for Vellum-specific legacy fields. */
+  /** Parsed selected manifest, retained for Cadet-specific legacy fields. */
   readonly raw: Record<string, unknown>;
 }
 

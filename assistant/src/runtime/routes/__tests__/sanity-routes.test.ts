@@ -26,7 +26,7 @@ mock.module("../../../security/secure-keys.js", () => ({
 }));
 
 // The preload's workspace is where route handlers build their paths.
-const FAKE_WORKSPACE = process.env.VELLUM_WORKSPACE_DIR!;
+const FAKE_WORKSPACE = process.env.CADET_WORKSPACE_DIR!;
 
 const writtenFiles = new Map<string, string>();
 

@@ -1,5 +1,5 @@
 /**
- * Cloud authentication for the Vellum Chrome extension.
+ * Cloud authentication for the Cadet Chrome extension.
  *
  * Handles WorkOS sign-in via app-held PKCE, mirroring the macOS app. The
  * extension drives WorkOS User Management directly:
@@ -63,7 +63,7 @@ const CANCEL_PATTERN = /did not approve|cancell?ed|closed the window/i;
 
 // ── Storage keys ────────────────────────────────────────────────────
 
-const SESSION_STORAGE_KEY = 'vellum.cloudSession';
+const SESSION_STORAGE_KEY = 'cadet.cloudSession';
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -116,7 +116,7 @@ export async function clearSession(): Promise<void> {
 
 // ── Selected assistant persistence ──────────────────────────────────
 
-const SELECTED_ASSISTANT_KEY = 'vellum.selectedAssistant';
+const SELECTED_ASSISTANT_KEY = 'cadet.selectedAssistant';
 
 export interface SelectedAssistant {
   id: string;

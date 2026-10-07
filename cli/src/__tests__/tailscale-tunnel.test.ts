@@ -49,7 +49,7 @@ describe("Tailscale discovery", () => {
 const tempDirs: string[] = [];
 
 function makeWorkspace(): string {
-  const dir = mkdtempSync(join(tmpdir(), "vellum-tailscale-test-"));
+  const dir = mkdtempSync(join(tmpdir(), "cadet-tailscale-test-"));
   tempDirs.push(dir);
   return dir;
 }
@@ -91,8 +91,8 @@ function makeDeps(opts: {
 /** Point the lockfile at a temp dir holding one entry; returns its path. */
 function useTempLockfile(assistantId: string, ingressUrl?: string): string {
   const lockfileDir = makeWorkspace();
-  process.env.VELLUM_LOCKFILE_DIR = lockfileDir;
-  const lockfilePath = join(lockfileDir, ".vellum.lock.json");
+  process.env.CADET_LOCKFILE_DIR = lockfileDir;
+  const lockfilePath = join(lockfileDir, ".cadet.lock.json");
   writeFileSync(
     lockfilePath,
     JSON.stringify({
@@ -147,7 +147,7 @@ function readLockfileEntry(lockfilePath: string): Record<string, unknown> {
   return data.assistants[0];
 }
 
-const restoreEnv = snapshotEnv(["VELLUM_LOCKFILE_DIR"]);
+const restoreEnv = snapshotEnv(["CADET_LOCKFILE_DIR"]);
 
 afterEach(() => {
   restoreEnv();

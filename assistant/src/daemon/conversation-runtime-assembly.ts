@@ -114,7 +114,7 @@ const log = getLogger("conversation-runtime-assembly");
  * interacting.  Used to gate UI-specific references and permission asks.
  */
 export interface ChannelCapabilities {
-  /** The raw channel identifier (e.g. "vellum", "telegram"). */
+  /** The raw channel identifier (e.g. "cadet", "telegram"). */
   channel: string;
   /** Whether this channel can render the dashboard UI (apps, dynamic pages). */
   dashboardCapable: boolean;
@@ -284,7 +284,7 @@ export function resolveChannelCapabilities(
     case "mac":
     case "macos":
     case "ios":
-      channel = "vellum";
+      channel = "cadet";
       break;
     default:
       channel = sourceChannel;
@@ -310,7 +310,7 @@ export function resolveChannelCapabilities(
   const resolvedChatType = chatType ?? undefined;
 
   switch (channel) {
-    case "vellum": {
+    case "cadet": {
       const supportsDesktopUi = iface === "macos";
       return {
         channel,
@@ -2205,7 +2205,7 @@ function stripTailV2DynamicMemoryPrefix(
  * `transportHints`, its turn interface context's `userMessageInterface`
  * (falling back to its recorded `originInterface`, then `web`), its turn
  * channel context's `userMessageChannel` (falling back to its recorded
- * `originChannel`, then `vellum`), its `conversationType`, its
+ * `originChannel`, then `cadet`), its `conversationType`, its
  * `currentTurnTemporalSnapshot`, its subagent children
  * (`getSubagentChildren`), and — for the focus block — its persisted Slack
  * compaction boundary (`contextCompactedMessageCount` /
@@ -2307,7 +2307,7 @@ function fallbackTurnTrust(
   return {
     sourceChannel: channelCapabilities?.channel
       ? (channelCapabilities.channel as TrustContext["sourceChannel"])
-      : "vellum",
+      : "cadet",
     trustClass: "unknown",
   };
 }
@@ -2406,7 +2406,7 @@ export async function applyRuntimeInjections(
   const channelName = liveConversation
     ? (liveConversation.currentTurnChannelContext?.userMessageChannel ??
       liveConversation.originChannel ??
-      "vellum")
+      "cadet")
     : undefined;
   const isBackgroundConversation = isBackgroundConversationType(
     liveConversation?.conversationType,

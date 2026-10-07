@@ -51,11 +51,11 @@ interface StatusResources {
 }
 
 function getDaemonPidPath(instanceDir: string): string {
-  return path.join(instanceDir, ".vellum", "workspace", "vellum.pid");
+  return path.join(instanceDir, ".cadet", "workspace", "cadet.pid");
 }
 
 function getGatewayPidPath(instanceDir: string): string {
-  return path.join(instanceDir, ".vellum", "gateway.pid");
+  return path.join(instanceDir, ".cadet", "gateway.pid");
 }
 
 function readPidState(pidFile: string): PidState {

@@ -193,7 +193,7 @@ import { setConfig } from "./helpers/set-config.js";
 function makeDeps(
   conversationId: string,
   overrides: {
-    assistantMessageChannel?: "slack" | "vellum" | "telegram" | "discord";
+    assistantMessageChannel?: "slack" | "cadet" | "telegram" | "discord";
     requesterChatId?: string;
     requesterTimezoneLabel?: string;
     clientTimezone?: string;
@@ -232,11 +232,11 @@ function makeDeps(
     } as EventHandlerDeps["turnChannelContext"],
     turnInterfaceContext: {
       userMessageInterface:
-        assistantMessageChannel === "vellum"
+        assistantMessageChannel === "cadet"
           ? "macos"
           : assistantMessageChannel,
       assistantMessageInterface:
-        assistantMessageChannel === "vellum"
+        assistantMessageChannel === "cadet"
           ? "macos"
           : assistantMessageChannel,
     } as EventHandlerDeps["turnInterfaceContext"],
@@ -514,9 +514,9 @@ describe("outbound assistant Slack metadata persistence", () => {
   });
 
   test("does NOT stamp slackMeta on non-Slack outbound assistant messages", async () => {
-    const conversationId = "conv-vellum";
+    const conversationId = "conv-cadet";
     const deps = makeDeps(conversationId, {
-      assistantMessageChannel: "vellum",
+      assistantMessageChannel: "cadet",
     });
     await handleLlmCallStarted(state, deps);
     await handleMessageComplete(

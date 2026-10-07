@@ -25,7 +25,7 @@ mock.module("../runtime/assistant-event.js", () => ({
 }));
 
 // The default profiles used below (`balanced`, `cost-optimized`) route through
-// the Vellum-managed connection, and the handler's availability guard judges
+// the Cadet-managed connection, and the handler's availability guard judges
 // that route for real. Stand in for a signed-in platform session so the pin
 // path under test is the healthy one; `managedProxyEnabled` is flipped by the
 // guard test.
@@ -66,12 +66,12 @@ import { setConfig } from "./helpers/set-config.js";
 
 await initializeDb();
 
-// The Vellum-managed connection row the default profiles resolve to.
+// The Cadet-managed connection row the default profiles resolve to.
 getDb()
   .insert(providerConnections)
   .values({
-    name: "vellum",
-    provider: "vellum",
+    name: "cadet",
+    provider: "cadet",
     auth: JSON.stringify({ type: "platform" }),
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -415,7 +415,7 @@ describe("setInferenceProfileSession", () => {
         profile: "balanced",
         ttlSeconds: 300,
       });
-      await expect(promise).rejects.toThrow(/Not signed in to Vellum/);
+      await expect(promise).rejects.toThrow(/Not signed in to Cadet/);
       await expect(promise).rejects.toThrow(
         /assistant inference send --profile balanced "Reply with OK"/,
       );

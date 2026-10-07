@@ -16,7 +16,7 @@ import { join } from "node:path";
 // ---------------------------------------------------------------------------
 
 const testDir = mkdtempSync(join(tmpdir(), "cli-ps-platform-status-test-"));
-process.env.VELLUM_LOCKFILE_DIR = testDir;
+process.env.CADET_LOCKFILE_DIR = testDir;
 
 // ---------------------------------------------------------------------------
 // Mocks — set up before importing the command under test. All spies are
@@ -209,7 +209,7 @@ describe("cadet ps — platform status line", () => {
         assistantId: "assistant-123",
         name: "Alice",
         runtimeUrl: "https://platform.example",
-        cloud: "vellum",
+        cloud: "cadet",
       },
     ]);
     getActiveAssistantMock.mockReturnValue("assistant-123");
@@ -229,13 +229,13 @@ describe("cadet ps — platform status line", () => {
         assistantId: "assistant-123",
         name: "Alice",
         runtimeUrl: "https://platform.example/a",
-        cloud: "vellum",
+        cloud: "cadet",
       },
       {
         assistantId: "assistant-456",
         name: "Bob",
         runtimeUrl: "https://platform.example/b",
-        cloud: "vellum",
+        cloud: "cadet",
       },
     ]);
     getActiveAssistantMock.mockReturnValue("assistant-123");

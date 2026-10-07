@@ -21,7 +21,7 @@ const EYE_SVGS = [
   "App/AppIcon-Dev.icon/Assets/eyes.svg",
   "App/AppIcon-Staging.icon/Assets/eyes.svg",
   // The widget extension draws the same mark on its New Chat surfaces.
-  "VoiceActivity/Assets.xcassets/VellumAppIconEyes.imageset/eyes.svg",
+  "VoiceActivity/Assets.xcassets/CadetAppIconEyes.imageset/eyes.svg",
 ];
 
 function extractPaths(svg: string): Array<{ fill: string; d: string }> {

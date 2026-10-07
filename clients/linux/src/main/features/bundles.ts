@@ -26,7 +26,7 @@ const bundles: CapabilityModule<DesktopCapabilityRegistry> = {
   install(registry) {
     configureBundlePlatform({
       // Modules install synchronously in path order and `local-mode` (the CLI
-      // provider) sorts after this one, while a cold launch from a `.vellum`
+      // provider) sorts after this one, while a cold launch from a `.cadet`
       // file replays argv during `file-open`'s install. Yielding once lets
       // every module finish installing before the CLI is looked up.
       ...createBundleHostProvider(async () => {

@@ -25,7 +25,7 @@ export const AssistantEventPublishOptionsSchema = z.object({
   /**
    * Skip the subscriber with this `clientId`. Used for self-echo suppression on
    * `sync_changed`: the route handler echoes the originating tab's
-   * `X-Vellum-Client-Id` back on the event, and the hub uses it here to avoid
+   * `X-Cadet-Client-Id` back on the event, and the hub uses it here to avoid
    * re-delivering the invalidation to the tab that already mutated its own
    * optimistic state.
    */

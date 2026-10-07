@@ -24,7 +24,7 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 // Mocks — declared before imports that depend on platform/logger
 // ---------------------------------------------------------------------------
 
-const WORKSPACE_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
 const CONFIG_PATH = join(WORKSPACE_DIR, "config.json");
 
 function ensureTestDir(): void {
@@ -403,14 +403,14 @@ describe("loadConfig startup behavior", () => {
     }
     ensureTestDir();
     setStorePathForTesting(join(WORKSPACE_DIR, "keys.enc"));
-    delete process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
+    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_PLATFORM;
     invalidateConfigCache();
   });
 
   afterEach(() => {
     setStorePathForTesting(null);
-    delete process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
+    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_PLATFORM;
     invalidateConfigCache();
   });
@@ -467,7 +467,7 @@ describe("loadConfig startup behavior", () => {
         2,
       ) + "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     const result = mergeDefaultWorkspaceConfig();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8")) as Record<
@@ -607,7 +607,7 @@ describe("loadConfig startup behavior", () => {
         2,
       ) + "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
     const db = createProviderConnectionsDb();
 
     mergeDefaultConfigAndSeedInferenceProfiles(db);
@@ -666,7 +666,7 @@ describe("loadConfig startup behavior", () => {
         2,
       ) + "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     mergeDefaultConfigAndSeedInferenceProfiles();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
@@ -679,7 +679,7 @@ describe("loadConfig startup behavior", () => {
     // Default content resolves from the code catalog via the effective view.
     const effectiveBalanced = getEffectiveProfile(raw.llm.profiles, "balanced");
     expect(effectiveBalanced?.model).toBe(MANAGED_BALANCED_MODEL);
-    expect(effectiveBalanced?.provider).toBe("vellum");
+    expect(effectiveBalanced?.provider).toBe("cadet");
     expect(effectiveBalanced?.provider_connection).toBeUndefined();
   });
 
@@ -707,7 +707,7 @@ describe("loadConfig startup behavior", () => {
       JSON.stringify({ llm: { default: { provider: "anthropic" } } }, null, 2) +
         "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     mergeDefaultConfigAndSeedInferenceProfiles();
 
@@ -756,7 +756,7 @@ describe("loadConfig startup behavior", () => {
       JSON.stringify({ llm: { default: { provider: "anthropic" } } }, null, 2) +
         "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     mergeDefaultConfigAndSeedInferenceProfiles();
 
@@ -766,7 +766,7 @@ describe("loadConfig startup behavior", () => {
     // No managed entry is materialized; content resolves from the catalog.
     expect(raw.llm.profiles.balanced).toBeUndefined();
     const effectiveBalanced = getEffectiveProfile(raw.llm.profiles, "balanced");
-    expect(effectiveBalanced?.provider).toBe("vellum");
+    expect(effectiveBalanced?.provider).toBe("cadet");
     expect(effectiveBalanced?.provider_connection).toBeUndefined();
     // The old custom-balanced is preserved on disk but no longer active.
     expect(raw.llm.profiles["custom-balanced"].provider).toBe("openai");
@@ -791,7 +791,7 @@ describe("loadConfig startup behavior", () => {
         2,
       ) + "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     mergeDefaultConfigAndSeedInferenceProfiles();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
@@ -868,7 +868,7 @@ describe("loadConfig startup behavior", () => {
       JSON.stringify({ llm: { default: { provider: "openai" } } }, null, 2) +
         "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     mergeDefaultConfigAndSeedInferenceProfiles();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
@@ -905,7 +905,7 @@ describe("loadConfig startup behavior", () => {
       JSON.stringify({ llm: { default: { provider: "together" } } }, null, 2) +
         "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
     const db = createProviderConnectionsDb();
 
     mergeDefaultConfigAndSeedInferenceProfiles(db);
@@ -951,7 +951,7 @@ describe("loadConfig startup behavior", () => {
       JSON.stringify({ llm: { default: { provider: "litellm" } } }, null, 2) +
         "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
     const db = createProviderConnectionsDb();
 
     mergeDefaultConfigAndSeedInferenceProfiles(db);
@@ -1303,7 +1303,7 @@ describe("loadConfig startup behavior", () => {
         2,
       ) + "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     mergeDefaultConfigAndSeedInferenceProfiles();
     const config = loadConfig();
@@ -1322,7 +1322,7 @@ describe("loadConfig startup behavior", () => {
     // overlay's provider/model never reach the resolver — even on the
     // overlay boot. The overlay-set label is what shows through the
     // effective view.
-    expect(mainAgentConfig.provider).toBe("vellum");
+    expect(mainAgentConfig.provider).toBe("cadet");
     expect(mainAgentConfig.model).toBe(MANAGED_BALANCED_MODEL);
 
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
@@ -1352,7 +1352,7 @@ describe("loadConfig startup behavior", () => {
       afterRestart.llm.profiles,
       "balanced",
     );
-    expect(effectiveBalanced?.provider).toBe("vellum");
+    expect(effectiveBalanced?.provider).toBe("cadet");
     expect(effectiveBalanced?.provider_connection).toBeUndefined();
     expect(effectiveBalanced?.model).toBe(MANAGED_BALANCED_MODEL);
     expect(effectiveBalanced?.maxTokens).toBe(32000);
@@ -1382,7 +1382,7 @@ describe("loadConfig startup behavior", () => {
         2,
       ) + "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     mergeDefaultConfigAndSeedInferenceProfiles();
 
@@ -1420,7 +1420,7 @@ describe("loadConfig startup behavior", () => {
     // chat-model selection to `balanced` on the next boot.
     writeConfig({
       llm: {
-        defaultProvider: { provider: "vellum" },
+        defaultProvider: { provider: "cadet" },
         profiles: {},
         activeProfile: "balanced-backup",
       },
@@ -1462,7 +1462,7 @@ describe("loadConfig startup behavior", () => {
   test("a call site pinned to a managed backup profile survives a reload", () => {
     writeConfig({
       llm: {
-        defaultProvider: { provider: "vellum" },
+        defaultProvider: { provider: "cadet" },
         profiles: {},
         activeProfile: "balanced",
         callSites: { recall: { profile: "cost-optimized-backup" } },
@@ -1524,14 +1524,14 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     }
     ensureTestDir();
     setStorePathForTesting(join(WORKSPACE_DIR, "keys.enc"));
-    delete process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
+    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_PLATFORM;
     invalidateConfigCache();
   });
 
   afterEach(() => {
     setStorePathForTesting(null);
-    delete process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
+    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_PLATFORM;
     invalidateConfigCache();
   });
@@ -1550,7 +1550,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         2,
       ) + "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     mergeDefaultConfigAndSeedInferenceProfiles();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
@@ -1577,7 +1577,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
       JSON.stringify({ llm: { default: { provider: "anthropic" } } }, null, 2) +
         "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     mergeDefaultConfigAndSeedInferenceProfiles();
     const config = loadConfig();
@@ -1726,7 +1726,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         2,
       ) + "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
     const db = createProviderConnectionsDb();
 
     mergeDefaultConfigAndSeedInferenceProfiles(db);
@@ -1768,7 +1768,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         2,
       ) + "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
     const db = createProviderConnectionsDb();
 
     mergeDefaultConfigAndSeedInferenceProfiles(db);
@@ -1822,7 +1822,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
       JSON.stringify({ llm: { default: { provider: "anthropic" } } }, null, 2) +
         "\n",
     );
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     mergeDefaultConfigAndSeedInferenceProfiles();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
@@ -2049,14 +2049,14 @@ describe("OS Beta managed profile template", () => {
     }
     ensureTestDir();
     setStorePathForTesting(join(WORKSPACE_DIR, "keys.enc"));
-    delete process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
+    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_PLATFORM;
     invalidateConfigCache();
   });
 
   afterEach(() => {
     setStorePathForTesting(null);
-    delete process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
+    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_PLATFORM;
     invalidateConfigCache();
   });
@@ -2079,11 +2079,11 @@ describe("OS Beta managed profile template", () => {
     const entry = materializeProfile(
       OS_BETA_PROFILE_TEMPLATE,
       "together",
-      "vellum",
+      "cadet",
     );
 
     expect(entry.model).toBe("MiniMaxAI/MiniMax-M3");
-    expect(entry.provider_connection).toBe("vellum");
+    expect(entry.provider_connection).toBe("cadet");
     expect(entry.provider).toBe("together");
     expect(entry.label).toBe("OS Beta");
     expect(entry.source).toBe("managed");

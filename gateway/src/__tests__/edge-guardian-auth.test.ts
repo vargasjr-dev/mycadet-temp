@@ -2,8 +2,8 @@
  * Tests for the `requireEdgeGuardianAuth` middleware — both modes:
  *
  *  1. Platform-managed (DISABLE_HTTP_AUTH=true + IS_PLATFORM=true): identity
- *     asserted via `X-Vellum-User-Id` header cross-referenced against the
- *     stored `vellum:platform_user_id` credential.
+ *     asserted via `X-Cadet-User-Id` header cross-referenced against the
+ *     stored `cadet:platform_user_id` credential.
  *  2. Default (laptop / docker / bare-metal): edge JWT validated, then
  *     actor principal is matched against the bound cadet guardian.
  */
@@ -26,16 +26,16 @@ mock.module("../platform-user-id.js", () => ({
     if (mockPlatformUserIdUnreachable) {
       return { userId: undefined, unreachable: true };
     }
-    const userId = await mockReadCredential("vellum:platform_user_id");
+    const userId = await mockReadCredential("cadet:platform_user_id");
     return { userId, unreachable: false };
   },
 }));
 
-let mockFindVellumGuardian = mock(
+let mockFindCadetGuardian = mock(
   async (): Promise<{ principalId: string } | null> => null,
 );
 mock.module("../auth/guardian-bootstrap.js", () => ({
-  findVellumGuardian: () => mockFindVellumGuardian(),
+  findCadetGuardian: () => mockFindCadetGuardian(),
 }));
 
 let mockValidateEdgeToken = mock(
@@ -80,7 +80,7 @@ function makeLoopbackServer(address = "127.0.0.1") {
 beforeEach(() => {
   mockReadCredential = mock(async () => undefined);
   mockPlatformUserIdUnreachable = false;
-  mockFindVellumGuardian = mock(async () => null);
+  mockFindCadetGuardian = mock(async () => null);
   mockValidateEdgeToken = mock(() => ({ ok: false, reason: "noop" }));
   loopbackFallbackCountTracker.reset();
 });
@@ -100,7 +100,7 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
     process.env.IS_PLATFORM = "true";
   });
 
-  test("returns 401 when X-Vellum-User-Id header is missing", async () => {
+  test("returns 401 when X-Cadet-User-Id header is missing", async () => {
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(makeReq());
     expect(res?.status).toBe(401);
@@ -112,7 +112,7 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
     });
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
-      makeReq({ "x-vellum-user-id": PLATFORM_USER_ID }),
+      makeReq({ "x-cadet-user-id": PLATFORM_USER_ID }),
     );
     expect(res?.status).toBe(503);
   });
@@ -121,7 +121,7 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
     mockPlatformUserIdUnreachable = true;
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
-      makeReq({ "x-vellum-user-id": PLATFORM_USER_ID }),
+      makeReq({ "x-cadet-user-id": PLATFORM_USER_ID }),
     );
     expect(res?.status).toBe(503);
   });
@@ -130,7 +130,7 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
     mockReadCredential = mock(async () => undefined);
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
-      makeReq({ "x-vellum-user-id": PLATFORM_USER_ID }),
+      makeReq({ "x-cadet-user-id": PLATFORM_USER_ID }),
     );
     expect(res?.status).toBe(403);
   });
@@ -139,7 +139,7 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
     mockReadCredential = mock(async () => PLATFORM_USER_ID);
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
-      makeReq({ "x-vellum-user-id": "different-user" }),
+      makeReq({ "x-cadet-user-id": "different-user" }),
     );
     expect(res?.status).toBe(403);
   });
@@ -148,7 +148,7 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
     mockReadCredential = mock(async () => PLATFORM_USER_ID);
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
-      makeReq({ "x-vellum-user-id": PLATFORM_USER_ID }),
+      makeReq({ "x-cadet-user-id": PLATFORM_USER_ID }),
     );
     expect(res).toBeNull();
   });
@@ -159,7 +159,7 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
     expect(res?.status).toBe(401);
     expect(mockReadCredential).not.toHaveBeenCalled();
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
-    expect(mockFindVellumGuardian).not.toHaveBeenCalled();
+    expect(mockFindCadetGuardian).not.toHaveBeenCalled();
   });
 
   test("uses platform header check when a platform bearer is also forwarded", async () => {
@@ -167,13 +167,13 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
       makeReq({
-        "x-vellum-user-id": PLATFORM_USER_ID,
+        "x-cadet-user-id": PLATFORM_USER_ID,
         authorization: "Bearer vak_platform_key",
       }),
     );
     expect(res).toBeNull();
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
-    expect(mockFindVellumGuardian).not.toHaveBeenCalled();
+    expect(mockFindCadetGuardian).not.toHaveBeenCalled();
   });
 
   test("falls through to JWT mode when IS_PLATFORM is false (rejects missing bearer token)", async () => {
@@ -182,7 +182,7 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
     process.env.IS_PLATFORM = "false";
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
-      makeReq({ "x-vellum-user-id": PLATFORM_USER_ID }),
+      makeReq({ "x-cadet-user-id": PLATFORM_USER_ID }),
     );
     expect(res?.status).toBe(401);
   });
@@ -198,18 +198,18 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
     const res = await requireEdgeGuardianAuth(makeReq(), makeLoopbackServer());
     expect(res).toBeNull();
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
-    expect(mockFindVellumGuardian).not.toHaveBeenCalled();
+    expect(mockFindCadetGuardian).not.toHaveBeenCalled();
   });
 
   test("rejects edge-forwarded loopback requests when Authorization header is absent", async () => {
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
-      makeReq({ "x-vellum-edge-forwarded": "1" }),
+      makeReq({ "x-cadet-edge-forwarded": "1" }),
       makeLoopbackServer(),
     );
     expect(res?.status).toBe(401);
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
-    expect(mockFindVellumGuardian).not.toHaveBeenCalled();
+    expect(mockFindCadetGuardian).not.toHaveBeenCalled();
     expect(loopbackFallbackCountTracker.snapshot()).toEqual([]);
   });
 
@@ -221,7 +221,7 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
       makeLoopbackServer(),
     );
     expect(res).toBeNull();
-    expect(mockFindVellumGuardian).not.toHaveBeenCalled();
+    expect(mockFindCadetGuardian).not.toHaveBeenCalled();
   });
 
   test("a guardian loopback fallback is counted under the edge-guardian guard", async () => {
@@ -237,7 +237,7 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
     ]);
   });
 
-  test("returns 503 when findVellumGuardian throws (transient assistant DB outage)", async () => {
+  test("returns 503 when findCadetGuardian throws (transient assistant DB outage)", async () => {
     mockValidateEdgeToken = mock(() => ({
       ok: true,
       claims: {
@@ -245,7 +245,7 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
         scope_profile: "actor_client_v1",
       },
     }));
-    mockFindVellumGuardian = mock(async () => {
+    mockFindCadetGuardian = mock(async () => {
       throw new Error("assistant DB IPC failed");
     });
     const { requireEdgeGuardianAuth } = makeMiddleware();
@@ -263,7 +263,7 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
         scope_profile: "actor_client_v1",
       },
     }));
-    mockFindVellumGuardian = mock(async () => ({
+    mockFindCadetGuardian = mock(async () => ({
       principalId: GUARDIAN_PRINCIPAL,
     }));
     const { requireEdgeGuardianAuth } = makeMiddleware();
@@ -288,7 +288,7 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
       makeLoopbackServer(),
     );
     expect(res).toBeNull();
-    expect(mockFindVellumGuardian).not.toHaveBeenCalled();
+    expect(mockFindCadetGuardian).not.toHaveBeenCalled();
   });
 
   test("returns 403 when actor principal does not match the bound guardian", async () => {
@@ -299,7 +299,7 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
         scope_profile: "actor_client_v1",
       },
     }));
-    mockFindVellumGuardian = mock(async () => ({
+    mockFindCadetGuardian = mock(async () => ({
       principalId: GUARDIAN_PRINCIPAL,
     }));
     const { requireEdgeGuardianAuth } = makeMiddleware();
@@ -317,7 +317,7 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
         scope_profile: "actor_client_v1",
       },
     }));
-    mockFindVellumGuardian = mock(async () => ({
+    mockFindCadetGuardian = mock(async () => ({
       principalId: GUARDIAN_PRINCIPAL,
     }));
     const { requireEdgeGuardianAuth } = makeMiddleware();

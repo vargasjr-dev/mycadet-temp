@@ -8,31 +8,31 @@
  *
  * The renderer-base URLs are derived: `RENDERER_BASE_PROD` is the
  * packaged path the `app://` protocol handler resolves to; the dev
- * path is honored from `VELLUM_DEV_URL` (vel's edge proxy, or the
+ * path is honored from `CADET_DEV_URL` (vel's edge proxy, or the
  * local Vite default at port 5173). Both end at the `/assistant`
  * suffix that `clients/web/vite.config.ts`'s `base` setting requires.
- * `VELLUM_LOCAL_RENDERER` opts development into serving the locally built
+ * `CADET_LOCAL_RENDERER` opts development into serving the locally built
  * renderer through the app protocol, while keeping platform traffic remote.
  */
 
 export const APP_PROTOCOL = "app";
-export const APP_HOST = "vellum.ai";
+export const APP_HOST = "mycadet.ai";
 
-declare const __VELLUM_APP_USER_MODEL_ID__: string;
-declare const __VELLUM_BUILD_SHA__: string;
-declare const __VELLUM_ENVIRONMENT__: string;
+declare const __CADET_APP_USER_MODEL_ID__: string;
+declare const __CADET_BUILD_SHA__: string;
+declare const __CADET_ENVIRONMENT__: string;
 
 export const WINDOWS_RELEASE_INFO = {
   // Injected from electron-builder.config.cjs `appId` at build time.
   appUserModelId:
-    typeof __VELLUM_APP_USER_MODEL_ID__ === "string"
-      ? __VELLUM_APP_USER_MODEL_ID__
-      : "com.vellum.vellum-assistant-electron",
+    typeof __CADET_APP_USER_MODEL_ID__ === "string"
+      ? __CADET_APP_USER_MODEL_ID__
+      : "com.mycadet.mycadet-electron",
   commitSha:
-    typeof __VELLUM_BUILD_SHA__ === "string" ? __VELLUM_BUILD_SHA__ : "unknown",
+    typeof __CADET_BUILD_SHA__ === "string" ? __CADET_BUILD_SHA__ : "unknown",
   releaseChannel:
-    typeof __VELLUM_ENVIRONMENT__ === "string"
-      ? __VELLUM_ENVIRONMENT__
+    typeof __CADET_ENVIRONMENT__ === "string"
+      ? __CADET_ENVIRONMENT__
       : "production",
 };
 
@@ -45,20 +45,20 @@ const DEV_SERVER_FALLBACK_URL = "http://localhost:5173/assistant";
 export const RENDERER_BASE_PROD = `${APP_PROTOCOL}://${APP_HOST}/assistant`;
 
 /**
- * Renderer-base URL in dev. Honors `VELLUM_DEV_URL` so the launcher
+ * Renderer-base URL in dev. Honors `CADET_DEV_URL` so the launcher
  * can point at whichever Vite-or-equivalent is up (standalone Vite
  * at :5173, or vel's edge proxy at :3000). Strips any trailing slash
  * so callers can append `/<subpath>` without producing `//`.
  */
 export const getDevRendererBase = (): string =>
-  (process.env.VELLUM_DEV_URL ?? DEV_SERVER_FALLBACK_URL).replace(/\/+$/, "");
+  (process.env.CADET_DEV_URL ?? DEV_SERVER_FALLBACK_URL).replace(/\/+$/, "");
 
 /**
  * Renderer-base URL for the current process, for auxiliary windows and
  * any other surface that must land on the same origin as the main window.
  * Follows `usesAppProtocolRenderer`, not `isPackaged` alone: with
- * `VELLUM_LOCAL_RENDERER` the main window is served over `app://` while
- * `VELLUM_DEV_URL` points at the remote platform, and loading that remote
+ * `CADET_LOCAL_RENDERER` the main window is served over `app://` while
+ * `CADET_DEV_URL` points at the remote platform, and loading that remote
  * URL would hand a window a foreign origin that the IPC sender guard
  * rejects.
  */
@@ -69,7 +69,7 @@ export const getRendererBase = (isPackaged: boolean): string =>
 
 /** Whether this process loads the renderer through the app protocol. */
 export const usesAppProtocolRenderer = (isPackaged: boolean): boolean =>
-  isPackaged || process.env.VELLUM_LOCAL_RENDERER === "true";
+  isPackaged || process.env.CADET_LOCAL_RENDERER === "true";
 
 /**
  * SPA-root URL the main BrowserWindow loads.

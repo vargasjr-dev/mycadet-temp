@@ -5,7 +5,7 @@
  * JavaScriptCore calibrates its heap-growth heuristics from perceived machine
  * RAM. Under gVisor the cgroup limit files report the host node's memory
  * rather than the container's (the same discrepancy that motivates
- * VELLUM_MEMORY_LIMIT — see cgroup-memory.ts), so an unhinted worker grows its
+ * CADET_MEMORY_LIMIT — see cgroup-memory.ts), so an unhinted worker grows its
  * heap as if it owned the whole node. `BUN_JSC_forceRAMSize` pins the
  * heuristic to a fraction of the actual container limit instead.
  *

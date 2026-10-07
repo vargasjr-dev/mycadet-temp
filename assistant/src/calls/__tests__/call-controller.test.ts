@@ -140,8 +140,8 @@ mock.module("../../notifications/emit-signal.js", () => ({
 mock.module("../../contacts/guardian-delivery-reader.js", () => ({
   getGuardianDelivery: async () => [
     {
-      channelType: "vellum",
-      contactId: "guardian-vellum",
+      channelType: "cadet",
+      contactId: "guardian-cadet",
       principalId: "test-principal-id",
       address: "local",
       status: "active",
@@ -374,7 +374,7 @@ function resetTables() {
   );
   // Seed the cadet guardian binding (gateway does this at startup in production)
   createGuardianBinding({
-    channel: "vellum",
+    channel: "cadet",
     guardianExternalUserId: "test-principal-id",
     guardianDeliveryChatId: "local",
     guardianPrincipalId: "test-principal-id",

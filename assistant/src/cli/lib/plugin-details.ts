@@ -125,13 +125,13 @@ export interface PluginDetails {
   readonly ref: string;
   /**
    * Prebuilt client artifact (download URL + sha256) declared in the
-   * plugin's `package.json` `vellum.artifact`, resolved from the installed
+   * plugin's `package.json` `cadet.artifact`, resolved from the installed
    * copy first then the repo; `null` when the plugin ships none or its
    * descriptor is incomplete (e.g. a placeholder `sha256`).
    */
   readonly artifact: PluginArtifact | null;
   /**
-   * Author-declared emoji icon from the plugin's `package.json` `vellum.icon`,
+   * Author-declared emoji icon from the plugin's `package.json` `cadet.icon`,
    * resolved from the installed copy first then the repo; `null` when none.
    */
   readonly icon: string | null;

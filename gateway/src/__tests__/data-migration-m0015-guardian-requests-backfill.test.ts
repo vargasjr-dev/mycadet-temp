@@ -375,7 +375,7 @@ describe("m0015-guardian-requests-backfill", () => {
     });
 
     expect(await m0015Up()).toBe("done");
-    expect(gatewayRequest("req-desktop")!.source_channel).toBe("vellum");
+    expect(gatewayRequest("req-desktop")!.source_channel).toBe("cadet");
     expect(gatewayRequest("req-voice")!.source_channel).toBe("phone");
     expect(gatewayRequest("req-channel")!.source_channel).toBeNull();
     // An explicit source_channel always wins over the stored source_type.

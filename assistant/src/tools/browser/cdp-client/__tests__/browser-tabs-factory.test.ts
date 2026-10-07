@@ -131,9 +131,9 @@ function makeCandidateFromClient(
 // ── Helpers for fresh-client (pre-sticky) tests ───────────────────────
 
 /**
- * A fake extension client whose `send` method returns Vellum.* pseudo-responses
+ * A fake extension client whose `send` method returns Cadet.* pseudo-responses
  * so that fresh-client tab calls can succeed without a prior `send("Runtime.*")`.
- * This simulates how the real ExtensionCdpClient handles Vellum.listTabs etc.
+ * This simulates how the real ExtensionCdpClient handles Cadet.listTabs etc.
  * through the dispatcher before chrome.debugger.sendCommand.
  */
 function makeFakeExtensionClientForFreshPath(conversationId: string) {
@@ -145,7 +145,7 @@ function makeFakeExtensionClientForFreshPath(conversationId: string) {
         method: string,
         params?: Record<string, unknown>,
       ): Promise<unknown> => {
-        if (method === "Vellum.listTabs") {
+        if (method === "Cadet.listTabs") {
           return {
             tabs: [
               {
@@ -159,7 +159,7 @@ function makeFakeExtensionClientForFreshPath(conversationId: string) {
             ],
           };
         }
-        if (method === "Vellum.selectTab") {
+        if (method === "Cadet.selectTab") {
           return {
             tabId: params?.tabId,
             windowId: 10,
@@ -168,7 +168,7 @@ function makeFakeExtensionClientForFreshPath(conversationId: string) {
             clientId: "clientA",
           };
         }
-        if (method === "Vellum.closeTab") {
+        if (method === "Cadet.closeTab") {
           return { closed: true, tabId: params?.tabId };
         }
         return {};

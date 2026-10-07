@@ -41,7 +41,7 @@ export const getWindowsHelperPath = (): string => {
     ? process.resourcesPath
     : join(app.getAppPath(), "resources");
   const arch = process.arch === "arm64" ? "arm64" : "x64";
-  return join(root, "native-helper", arch, "Vellum.WindowsHelper.exe");
+  return join(root, "native-helper", arch, "Cadet.WindowsHelper.exe");
 };
 
 let sharedHelper: NativeSidecarClient | null = null;
@@ -54,7 +54,7 @@ export const getSharedCuHelper = (): NativeSidecarClient => {
     logger: log,
     responseTimeoutMs: CU_HELPER_TIMEOUT_MS,
     spawnEnv: {
-      VELLUM_HOST_PID: String(process.pid),
+      CADET_HOST_PID: String(process.pid),
     },
   });
   return sharedHelper;

@@ -46,7 +46,7 @@ const REMOVED_MODE_PATHS: Record<string, string> = {
 };
 
 /** Provider paths whose "cadet" value requires a platform connection. */
-const VELLUM_PROVIDER_PATHS = new Set([
+const CADET_PROVIDER_PATHS = new Set([
   "services.web-search.provider",
   "services.image-generation.provider",
 ]);
@@ -100,7 +100,7 @@ export function registerConfigCommand(program: Command): void {
           // web search.
           const requiresPlatform =
             (SERVICE_MODE_PATH_RE.test(key) && parsed === "managed") ||
-            (VELLUM_PROVIDER_PATHS.has(key) && parsed === "cadet");
+            (CADET_PROVIDER_PATHS.has(key) && parsed === "cadet");
           if (requiresPlatform) {
             const { requirePlatformConnection } =
               await import("./oauth/shared.js");

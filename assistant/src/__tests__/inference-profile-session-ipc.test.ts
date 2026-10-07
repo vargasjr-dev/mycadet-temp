@@ -13,7 +13,7 @@ mock.module("../runtime/assistant-event.js", () => ({
   buildAssistantEvent: (event: unknown) => event,
 }));
 
-// "balanced"/"cost-optimized" route through the Vellum-managed connection, and
+// "balanced"/"cost-optimized" route through the Cadet-managed connection, and
 // the open handler's availability guard judges that route for real. Stand in
 // for a signed-in platform session so these tests exercise the healthy path.
 mock.module("../providers/platform-proxy/context.js", () => ({
@@ -38,12 +38,12 @@ import { resetDbForTesting } from "./db-test-helpers.js";
 
 await initializeDb();
 
-// The Vellum-managed connection row the default profiles resolve to.
+// The Cadet-managed connection row the default profiles resolve to.
 getDb()
   .insert(providerConnections)
   .values({
-    name: "vellum",
-    provider: "vellum",
+    name: "cadet",
+    provider: "cadet",
     auth: JSON.stringify({ type: "platform" }),
     createdAt: Date.now(),
     updatedAt: Date.now(),

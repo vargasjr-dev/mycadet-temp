@@ -511,7 +511,7 @@ const errorMessage = mutation.error?.message ?? null;
 
 ### Org-readiness gating for daemon queries
 
-Platform-mode daemon requests require the `Vellum-Organization-Id`
+Platform-mode daemon requests require the `Cadet-Organization-Id`
 header. The org store hydrates asynchronously after auth, so queries
 that mount before hydration completes (e.g. conversation queries on
 the eager `ChatPage` path) must gate on `useIsOrgReady()`:

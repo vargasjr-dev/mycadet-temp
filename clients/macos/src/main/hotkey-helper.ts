@@ -638,7 +638,7 @@ const queryBundledMacHelperPermission = async (
   kind: MacHelperPermissionKind,
 ): Promise<unknown> => {
   const tempDir = await mkdtemp(
-    path.join(tmpdir(), "vellum-mac-helper-permission-"),
+    path.join(tmpdir(), "cadet-mac-helper-permission-"),
   );
   const outputPath = path.join(tempDir, "status.json");
 

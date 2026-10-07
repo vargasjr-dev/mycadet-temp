@@ -11,7 +11,7 @@
 
 import { platformOAuthHandle } from "@mycadet/service-contracts/credential-rpc";
 
-import { VellumPlatformClient } from "../platform/client.js";
+import { CadetPlatformClient } from "../platform/client.js";
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("managed-catalog");
@@ -115,7 +115,7 @@ export async function refreshManagedConnectionCache(): Promise<void> {
  * error message that never contains secret material.
  */
 export async function fetchManagedCatalog(): Promise<FetchManagedCatalogResult> {
-  const client = await VellumPlatformClient.create();
+  const client = await CadetPlatformClient.create();
 
   if (!client || !client.platformAssistantId) {
     return { ok: true, descriptors: [] };

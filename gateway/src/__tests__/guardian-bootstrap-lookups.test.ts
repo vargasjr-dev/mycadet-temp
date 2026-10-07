@@ -1,8 +1,8 @@
 /**
  * Tests for guardian-bootstrap guardian lookups
- * (findVellumGuardian + findGuardianForChannelActor), which read the gateway
- * DB directly, plus the resolve-or-mint path in resolveOrCreateVellumGuardian
- * (via ensureVellumGuardianBinding / bootstrapGuardian) and its divergent
+ * (findCadetGuardian + findGuardianForChannelActor), which read the gateway
+ * DB directly, plus the resolve-or-mint path in resolveOrCreateCadetGuardian
+ * (via ensureCadetGuardianBinding / bootstrapGuardian) and its divergent
  * re-mint guard (evidence of a prior guardian refuses the implicit mint).
  *
  * The guardian-integrity reporter is silenced/observed via its test-only
@@ -65,11 +65,11 @@ mock.module("../db/assistant-db-proxy.js", () => ({
 }));
 
 import {
-  findVellumGuardian,
+  findCadetGuardian,
   findGuardianForChannelActor,
-  ensureVellumGuardianBinding,
+  ensureCadetGuardianBinding,
   bootstrapGuardian,
-  VellumGuardianMintRefusedError,
+  CadetGuardianMintRefusedError,
 } from "../auth/guardian-bootstrap.js";
 import { bustGuardianIntegrityCache } from "../auth/guardian-integrity.js";
 import { initSigningKey } from "../auth/token-service.js";
@@ -202,52 +202,52 @@ afterAll(() => {
   resetGatewayDb();
 });
 
-describe("findVellumGuardian (gateway DB)", () => {
+describe("findCadetGuardian (gateway DB)", () => {
   test("resolves a guardian seeded only in the gateway DB", async () => {
     seedGuardianChannel({
-      type: "vellum",
-      address: "vellum-principal-1",
+      type: "cadet",
+      address: "cadet-principal-1",
       principalId: "principal-owner",
     });
 
-    const result = await findVellumGuardian();
+    const result = await findCadetGuardian();
     expect(result).toEqual({ principalId: "principal-owner" });
   });
 
   test("returns null when no active cadet guardian channel exists", async () => {
     seedGuardianChannel({
-      type: "vellum",
-      address: "vellum-principal-1",
+      type: "cadet",
+      address: "cadet-principal-1",
       status: "revoked",
       principalId: "principal-owner",
     });
 
-    expect(await findVellumGuardian()).toBeNull();
+    expect(await findCadetGuardian()).toBeNull();
   });
 
   test("returns null when the gateway DB is empty", async () => {
-    expect(await findVellumGuardian()).toBeNull();
+    expect(await findCadetGuardian()).toBeNull();
   });
 
   test("prefers the most recently verified guardian channel", async () => {
     seedGuardianChannel({
-      type: "vellum",
-      address: "vellum-old",
+      type: "cadet",
+      address: "cadet-old",
       contactId: "contact-old",
       channelId: "channel-old",
       verifiedAt: 1000,
       principalId: "principal-old",
     });
     seedGuardianChannel({
-      type: "vellum",
-      address: "vellum-new",
+      type: "cadet",
+      address: "cadet-new",
       contactId: "contact-new",
       channelId: "channel-new",
       verifiedAt: 2000,
       principalId: "principal-new",
     });
 
-    const result = await findVellumGuardian();
+    const result = await findCadetGuardian();
     expect(result).toEqual({ principalId: "principal-new" });
   });
 });
@@ -304,8 +304,8 @@ describe("findGuardianForChannelActor (gateway DB)", () => {
   });
 });
 
-describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
-  function gatewayVellumGuardians() {
+describe("resolve-or-mint (resolveOrCreateCadetGuardian)", () => {
+  function gatewayCadetGuardians() {
     return getGatewayDb()
       .select({
         principalId: contacts.principalId,
@@ -315,51 +315,51 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
       .from(contacts)
       .innerJoin(contactChannels, eq(contactChannels.contactId, contacts.id))
       .where(
-        and(eq(contacts.role, "guardian"), eq(contactChannels.type, "vellum")),
+        and(eq(contacts.role, "guardian"), eq(contactChannels.type, "cadet")),
       )
       .all();
   }
 
   test("returns the existing guardian on a gateway fast-path hit", async () => {
     seedGuardianChannel({
-      type: "vellum",
-      address: "vellum-principal-existing",
+      type: "cadet",
+      address: "cadet-principal-existing",
       principalId: "principal-existing",
     });
 
-    const principalId = await ensureVellumGuardianBinding();
+    const principalId = await ensureCadetGuardianBinding();
 
     expect(principalId).toBe("principal-existing");
-    expect(gatewayVellumGuardians()).toHaveLength(1);
+    expect(gatewayCadetGuardians()).toHaveLength(1);
   });
 
   test("second call hits the gateway fast path (idempotent)", async () => {
     assistantBackend = makeAssistantBackend();
 
-    const principalId = await ensureVellumGuardianBinding();
-    expect(principalId).toMatch(/^vellum-principal-/);
+    const principalId = await ensureCadetGuardianBinding();
+    expect(principalId).toMatch(/^cadet-principal-/);
 
     // Gateway now has the row; the assistant DB must not be read again.
     assistantBackend = throwingBackend;
-    expect(await ensureVellumGuardianBinding()).toBe(principalId);
-    expect(gatewayVellumGuardians()).toHaveLength(1);
+    expect(await ensureCadetGuardianBinding()).toBe(principalId);
+    expect(gatewayCadetGuardians()).toHaveLength(1);
   });
 
   test("mints a fresh principal when the gateway DB has no guardian", async () => {
     assistantBackend = makeAssistantBackend();
 
-    const principalId = await ensureVellumGuardianBinding();
+    const principalId = await ensureCadetGuardianBinding();
 
-    expect(principalId).toMatch(/^vellum-principal-/);
-    const gwRows = gatewayVellumGuardians();
+    expect(principalId).toMatch(/^cadet-principal-/);
+    const gwRows = gatewayCadetGuardians();
     expect(gwRows).toHaveLength(1);
     expect(gwRows[0]?.principalId).toBe(principalId);
   });
 
   test("bootstrapGuardian returns the existing guardian (isNew=false)", async () => {
     seedGuardianChannel({
-      type: "vellum",
-      address: "vellum-principal-existing",
+      type: "cadet",
+      address: "cadet-principal-existing",
       principalId: "principal-existing",
     });
 
@@ -383,7 +383,7 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
       deviceId: "device-1",
     });
 
-    expect(result.guardianPrincipalId).toMatch(/^vellum-principal-/);
+    expect(result.guardianPrincipalId).toMatch(/^cadet-principal-/);
     expect(result.isNew).toBe(true);
     expect(result.mintedOverPriorEvidence).toBe(false);
   });
@@ -395,11 +395,11 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
     // before any mint/mirror write. The rejection is an ordinary Error —
     // post-assistant-ready wraps the backfill in try/catch, so boot
     // continues degraded instead of crashing.
-    await expect(ensureVellumGuardianBinding()).rejects.toBeInstanceOf(
-      VellumGuardianMintRefusedError,
+    await expect(ensureCadetGuardianBinding()).rejects.toBeInstanceOf(
+      CadetGuardianMintRefusedError,
     );
 
-    expect(gatewayVellumGuardians()).toHaveLength(0);
+    expect(gatewayCadetGuardians()).toHaveLength(0);
     const contactRows = getGatewayDb().select().from(contacts).all();
     expect(contactRows).toHaveLength(1); // no new principal row minted
     expect(reportCalls).toEqual([
@@ -420,10 +420,10 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
     });
 
     await expect(
-      ensureVellumGuardianBinding({ recoverFromActorTokens: true }),
-    ).rejects.toBeInstanceOf(VellumGuardianMintRefusedError);
+      ensureCadetGuardianBinding({ recoverFromActorTokens: true }),
+    ).rejects.toBeInstanceOf(CadetGuardianMintRefusedError);
 
-    expect(gatewayVellumGuardians()).toHaveLength(0);
+    expect(gatewayCadetGuardians()).toHaveLength(0);
   });
 
   test("startup backfill recovers the guardian from active actor-token evidence (LUM-2783)", async () => {
@@ -435,12 +435,12 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
     // assistant backend stays installed to prove it never reads the mirror.
     seedActorToken(); // active token, guardianPrincipalId "principal-123"
 
-    const principalId = await ensureVellumGuardianBinding({
+    const principalId = await ensureCadetGuardianBinding({
       recoverFromActorTokens: true,
     });
 
     expect(principalId).toBe("principal-123");
-    const gwRows = gatewayVellumGuardians();
+    const gwRows = gatewayCadetGuardians();
     expect(gwRows).toHaveLength(1);
     expect(gwRows[0]).toMatchObject({
       principalId: "principal-123",
@@ -458,10 +458,10 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
     // repairable 401/503 flow is preserved.
     seedActorToken();
 
-    await expect(ensureVellumGuardianBinding()).rejects.toBeInstanceOf(
-      VellumGuardianMintRefusedError,
+    await expect(ensureCadetGuardianBinding()).rejects.toBeInstanceOf(
+      CadetGuardianMintRefusedError,
     );
-    expect(gatewayVellumGuardians()).toHaveLength(0);
+    expect(gatewayCadetGuardians()).toHaveLength(0);
   });
 
   test("startup backfill refuses when only a revoked actor token survives", async () => {
@@ -486,10 +486,10 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
     // Recovery is enabled but the only token is revoked, so it must not
     // resurrect the offboarded principal — the backfill falls through to refuse.
     await expect(
-      ensureVellumGuardianBinding({ recoverFromActorTokens: true }),
-    ).rejects.toBeInstanceOf(VellumGuardianMintRefusedError);
+      ensureCadetGuardianBinding({ recoverFromActorTokens: true }),
+    ).rejects.toBeInstanceOf(CadetGuardianMintRefusedError);
 
-    expect(gatewayVellumGuardians()).toHaveLength(0);
+    expect(gatewayCadetGuardians()).toHaveLength(0);
     expect(getGatewayDb().select().from(contacts).all()).toHaveLength(0);
     expect(reportCalls).toEqual([
       { has_contacts: false, has_actor_tokens: true },
@@ -504,23 +504,23 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
     // silently undoing the revoke — recovery is only for a genuinely ABSENT
     // guardian, not a present-but-revoked one.
     seedGuardianChannel({
-      type: "vellum",
-      address: "vellum-principal-revoked",
+      type: "cadet",
+      address: "cadet-principal-revoked",
       status: "revoked",
       principalId: "principal-revoked",
     });
     seedActorToken(); // active token, guardianPrincipalId "principal-123"
 
     await expect(
-      ensureVellumGuardianBinding({ recoverFromActorTokens: true }),
-    ).rejects.toBeInstanceOf(VellumGuardianMintRefusedError);
+      ensureCadetGuardianBinding({ recoverFromActorTokens: true }),
+    ).rejects.toBeInstanceOf(CadetGuardianMintRefusedError);
 
     // The revoked channel stays revoked — not reactivated — and no second
     // guardian binding was minted from the token.
-    const gwRows = gatewayVellumGuardians();
+    const gwRows = gatewayCadetGuardians();
     expect(gwRows).toHaveLength(1);
     expect(gwRows[0]).toMatchObject({
-      address: "vellum-principal-revoked",
+      address: "cadet-principal-revoked",
       status: "revoked",
     });
     // A guardian contact row exists, so integrity is "ok" (not
@@ -534,7 +534,7 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
     // block recovery — the surviving tokens name the real guardian, so an
     // upgraded install carrying only a stub still self-heals.
     seedGuardianChannel({
-      type: "vellum",
+      type: "cadet",
       address: "stub-addr",
       status: "unverified",
       principalId: null,
@@ -543,14 +543,14 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
     });
     seedActorToken(); // active token, guardianPrincipalId "principal-123"
 
-    const principalId = await ensureVellumGuardianBinding({
+    const principalId = await ensureCadetGuardianBinding({
       recoverFromActorTokens: true,
     });
 
     expect(principalId).toBe("principal-123");
     // A real guardian binding now exists for the token's principal (alongside
     // the inert stub).
-    const recovered = gatewayVellumGuardians().find(
+    const recovered = gatewayCadetGuardians().find(
       (r) => r.principalId === "principal-123",
     );
     expect(recovered).toMatchObject({
@@ -563,14 +563,14 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
 
   test("refuses when a guardian contact exists but the cadet binding is inactive — mint-refused report fires", async () => {
     seedGuardianChannel({
-      type: "vellum",
-      address: "vellum-principal-stale",
+      type: "cadet",
+      address: "cadet-principal-stale",
       status: "revoked",
       principalId: "principal-stale",
     });
 
-    await expect(ensureVellumGuardianBinding()).rejects.toBeInstanceOf(
-      VellumGuardianMintRefusedError,
+    await expect(ensureCadetGuardianBinding()).rejects.toBeInstanceOf(
+      CadetGuardianMintRefusedError,
     );
 
     // Integrity state is "ok" (a guardian row exists), so the
@@ -584,17 +584,17 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
     // backfill refuses (fail-closed) rather than fabricating a guardian. The
     // refusal must not latch — a later re-seed resolves on the next call.
     seedContact({ id: "invited-contact" });
-    await expect(ensureVellumGuardianBinding()).rejects.toBeInstanceOf(
-      VellumGuardianMintRefusedError,
+    await expect(ensureCadetGuardianBinding()).rejects.toBeInstanceOf(
+      CadetGuardianMintRefusedError,
     );
 
     seedGuardianChannel({
-      type: "vellum",
-      address: "vellum-principal-reseeded",
+      type: "cadet",
+      address: "cadet-principal-reseeded",
       principalId: "principal-reseeded",
     });
 
-    expect(await ensureVellumGuardianBinding()).toBe("principal-reseeded");
+    expect(await ensureCadetGuardianBinding()).toBe("principal-reseeded");
   });
 
   test("bootstrapGuardian (guardian init) mints over evidence with the returned flag set", async () => {
@@ -606,10 +606,10 @@ describe("resolve-or-mint (resolveOrCreateVellumGuardian)", () => {
       deviceId: "device-1",
     });
 
-    expect(result.guardianPrincipalId).toMatch(/^vellum-principal-/);
+    expect(result.guardianPrincipalId).toMatch(/^cadet-principal-/);
     expect(result.isNew).toBe(true);
     expect(result.mintedOverPriorEvidence).toBe(true);
-    expect(gatewayVellumGuardians()).toHaveLength(1);
+    expect(gatewayCadetGuardians()).toHaveLength(1);
     // The sanctioned recovery path warns locally; it is not a
     // missing-guardian integrity report.
     expect(reportCalls).toHaveLength(0);

@@ -228,7 +228,7 @@ describe("McpOAuthProvider client metadata", () => {
     // the assistant's own avatar, which is served behind authentication.
     const provider = newProvider();
     expect(provider.clientMetadata.logo_uri).toEqual(
-      "https://www.vellum.ai/favicon.svg",
+      "https://mycadet.ai/favicon.svg",
     );
   });
 

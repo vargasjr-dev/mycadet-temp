@@ -103,7 +103,7 @@ gcloud services enable compute.googleapis.com`}</code>
               disks can be grown later, never shrunk.
               <div className="mt-3 overflow-x-auto">
                 <pre className={preClass}>
-<code>{`gcloud compute instances create cadet-assistant \\
+<code>{`gcloud compute instances create mycadet \\
   --zone=us-central1-a \\
   --machine-type=e2-standard-4 \\
   --boot-disk-size=20GB \\

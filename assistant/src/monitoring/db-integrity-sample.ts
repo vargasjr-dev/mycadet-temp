@@ -146,10 +146,10 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 /**
  * Start the integrity sampler in the monitor process. No-op in dev mode
- * (VELLUM_DEV=1) and idempotent if already started.
+ * (CADET_DEV=1) and idempotent if already started.
  */
 export function startDbIntegritySampler(): void {
-  if (process.env.VELLUM_DEV === "1" || pollTimer) {
+  if (process.env.CADET_DEV === "1" || pollTimer) {
     return;
   }
   bootTimer = setTimeout(() => void sampleDbIntegrityIfDue(), BOOT_DELAY_MS);

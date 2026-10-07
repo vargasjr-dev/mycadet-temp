@@ -12,7 +12,7 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const WORKSPACE_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
 const CONFIG_PATH = join(WORKSPACE_DIR, "config.json");
 
 function ensureTestDir(): void {
@@ -153,7 +153,7 @@ describe("setImageGenModel with provider cadet", () => {
   test("a model change leaves provider cadet untouched", () => {
     writeConfig({
       services: {
-        "image-generation": { provider: "vellum", model: "gpt-image-2" },
+        "image-generation": { provider: "cadet", model: "gpt-image-2" },
       },
     });
 
@@ -165,6 +165,6 @@ describe("setImageGenModel with provider cadet", () => {
     expect(raw.services["image-generation"].model).toBe(
       "gemini-3-pro-image-preview",
     );
-    expect(raw.services["image-generation"].provider).toBe("vellum");
+    expect(raw.services["image-generation"].provider).toBe("cadet");
   });
 });

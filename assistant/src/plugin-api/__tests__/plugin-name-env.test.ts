@@ -12,7 +12,7 @@ import {
   resolveCallingPluginName,
 } from "../plugin-name-env.js";
 
-const pluginsDir = "/tmp/vellum-workspace/plugins";
+const pluginsDir = "/tmp/cadet-workspace/plugins";
 
 describe("readPluginNameFromEnv", () => {
   test("returns a trimmed install name", () => {
@@ -147,7 +147,7 @@ describe("resolveCallingPluginName", () => {
     expect(name).toBe("from-als");
   });
 
-  test("uses VELLUM_PLUGIN_NAME when ALS is empty", () => {
+  test("uses CADET_PLUGIN_NAME when ALS is empty", () => {
     expect(
       resolveCallingPluginName({ [PLUGIN_NAME_ENV]: "sms" }, [], "/tmp"),
     ).toBe("sms");
@@ -188,7 +188,7 @@ console.log(JSON.stringify({ name: resolveCallingPluginName() ?? null }));
         env: {
           PATH: process.env.PATH,
           HOME: process.env.HOME,
-          VELLUM_WORKSPACE_DIR: workspace,
+          CADET_WORKSPACE_DIR: workspace,
         },
         stdout: "pipe",
         stderr: "pipe",
@@ -206,7 +206,7 @@ console.log(JSON.stringify({ name: resolveCallingPluginName() ?? null }));
     }
   }, 15_000);
 
-  test("recovers the plugin name from VELLUM_PLUGIN_NAME without a plugin path", async () => {
+  test("recovers the plugin name from CADET_PLUGIN_NAME without a plugin path", async () => {
     const workspace = mkdtempSync(join(tmpdir(), "plugin-name-env-child-"));
     const scriptDir = join(workspace, "scratch");
     mkdirSync(scriptDir, { recursive: true });
@@ -225,8 +225,8 @@ console.log(JSON.stringify({ name: resolveCallingPluginName() ?? null }));
         env: {
           PATH: process.env.PATH,
           HOME: process.env.HOME,
-          VELLUM_WORKSPACE_DIR: workspace,
-          VELLUM_PLUGIN_NAME: "sms",
+          CADET_WORKSPACE_DIR: workspace,
+          CADET_PLUGIN_NAME: "sms",
         },
         stdout: "pipe",
         stderr: "pipe",

@@ -22,7 +22,7 @@ let clearEmbeddingBackendCacheCalls = 0;
 let seedMtimeSeq = 0;
 /** Write `rawConfigFixture` to the workspace config.json for the real loader. */
 function seedRawConfig(): void {
-  const path = join(process.env.VELLUM_WORKSPACE_DIR!, "config.json");
+  const path = join(process.env.CADET_WORKSPACE_DIR!, "config.json");
   writeFileSync(path, JSON.stringify(rawConfigFixture));
   // Monotonic mtime bump so the loader's size+mtime+ctime signature never
   // reads two consecutive seeds as identical.
@@ -122,7 +122,7 @@ describe("queued message conversation context", () => {
     expect(() =>
       deleteQueuedMessageRoute.handler({
         pathParams: { id: "request-1" },
-        headers: { "x-vellum-conversation-id": "missing-conversation" },
+        headers: { "x-cadet-conversation-id": "missing-conversation" },
       }),
     ).toThrow("Conversation not found");
   });
@@ -131,7 +131,7 @@ describe("queued message conversation context", () => {
     expect(() =>
       steerQueuedMessageRoute.handler({
         pathParams: { id: "request-1" },
-        headers: { "x-vellum-conversation-id": "missing-conversation" },
+        headers: { "x-cadet-conversation-id": "missing-conversation" },
       }),
     ).toThrow("Conversation not found");
   });
@@ -987,10 +987,10 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     // across tests in this file, so a leaked openai-personal would otherwise
     // win the derivation.
     getDb().delete(providerConnections).run();
-    // The single Vellum-managed connection serves managed-routable providers.
+    // The single Cadet-managed connection serves managed-routable providers.
     createConnection(getDb(), {
-      name: "vellum",
-      provider: "vellum",
+      name: "cadet",
+      provider: "cadet",
       auth: { type: "platform" },
     });
     // Seed an existing binding so the test starts from a non-empty state.
@@ -1021,8 +1021,8 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     ).profiles.custom;
 
     // No personal openai connection exists, so the route auto-derives the
-    // single Vellum-managed connection for this managed-routable provider.
-    expect(savedProfile.provider_connection).toBe("vellum");
+    // single Cadet-managed connection for this managed-routable provider.
+    expect(savedProfile.provider_connection).toBe("cadet");
   });
 
   test("Any active derivation skips orphaned legacy *-managed rows", async () => {
@@ -1036,8 +1036,8 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
       auth: { type: "platform" },
     });
     createConnection(getDb(), {
-      name: "vellum",
-      provider: "vellum",
+      name: "cadet",
+      provider: "cadet",
       auth: { type: "platform" },
     });
 
@@ -1051,7 +1051,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
         profiles: Record<string, Record<string, unknown>>;
       }
     ).profiles.custom;
-    expect(savedProfile.provider_connection).toBe("vellum");
+    expect(savedProfile.provider_connection).toBe("cadet");
   });
 
   test("auto-derives provider_connection for BYOK provider (Any active)", async () => {
@@ -2144,7 +2144,7 @@ describe("persisted chat settings", () => {
       };
       seedRawConfig();
       invalidateConfigCache();
-      const configPath = join(process.env.VELLUM_WORKSPACE_DIR!, "config.json");
+      const configPath = join(process.env.CADET_WORKSPACE_DIR!, "config.json");
       const originalBytes = readFileSync(configPath, "utf-8");
 
       await expect(
@@ -2172,7 +2172,7 @@ describe("persisted chat settings", () => {
         seedRawConfig();
         invalidateConfigCache();
         const configPath = join(
-          process.env.VELLUM_WORKSPACE_DIR!,
+          process.env.CADET_WORKSPACE_DIR!,
           "config.json",
         );
         const originalBytes = readFileSync(configPath, "utf-8");

@@ -94,7 +94,7 @@ mock.module("../runtime/local-actor-identity.js", () => ({
 mock.module("../runtime/trust-context-resolver.js", () => ({
   resolveTrustContext: () => ({
     trustClass: "guardian",
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
   }),
   withSourceChannel: (sourceChannel: unknown, ctx: unknown) => ({
     ...(ctx as Record<string, unknown>),
@@ -105,7 +105,7 @@ mock.module("../runtime/trust-context-resolver.js", () => ({
 mock.module("../contacts/guardian-delivery-reader.js", () => ({
   getGuardianDelivery: async () => [
     {
-      channelType: "vellum",
+      channelType: "cadet",
       contactId: "guardian-contact",
       principalId: "test-user",
       address: "test-user",
@@ -238,14 +238,14 @@ function makeRequest(extras: Record<string, unknown> = {}) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-vellum-actor-principal-id": "test-user",
-      "x-vellum-principal-type": "actor",
+      "x-cadet-actor-principal-id": "test-user",
+      "x-cadet-principal-type": "actor",
     },
     body: JSON.stringify({
       conversationKey: "hidden-queue-key",
       content:
         "[User action on channel_setup surface: closed the slack setup wizard]",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       interface: "macos",
       ...extras,
     }),

@@ -128,7 +128,7 @@ export function buildAccessRequestWarnings(
 /**
  * Signal-driven introduction-card action list for a parsed access-request
  * payload. Shared by every card renderer (Slack Card block, Telegram inline
- * keyboard, Vellum Surface card) so the offered actions never drift between
+ * keyboard, Cadet Surface card) so the offered actions never drift between
  * surfaces.
  */
 export function buildIntroductionActionsForPayload(
@@ -250,7 +250,7 @@ export function buildAccessRequestInviteDirective(): string {
  * Channel-agnostic by design: this reads the generic `contextPayload` and
  * renders the same on every channel. When `guardianResolutionSource` is
  * present and not `"source-channel-contact"`, the guardian was resolved via
- * fallback (e.g. vellum anchor) rather than a verified same-channel contact,
+ * fallback (e.g. cadet anchor) rather than a verified same-channel contact,
  * and the copy says so.
  */
 export function buildAccessRequestContextText(
@@ -290,7 +290,7 @@ export function buildAccessRequestContextText(
   lines.push(buildAccessRequestInviteDirective());
 
   if (
-    (p.guardianResolutionSource === "vellum-anchor" ||
+    (p.guardianResolutionSource === "cadet-anchor" ||
       p.guardianResolutionSource === "none") &&
     p.sourceChannel
   ) {
@@ -413,7 +413,7 @@ export function stripAccessRequestReplyMechanicsFromCopy(
 
 /**
  * Display-ready projection of an access request, shared by every renderer
- * (the Vellum Surface card and the Slack Card block). It carries the
+ * (the Cadet Surface card and the Slack Card block). It carries the
  * sanitized, pre-computed facts each renderer needs — identity sanitizing,
  * warnings, permalink, DM detection, preview sanitizing — so that projection
  * lives in exactly one place. Renderers lay these facts out in their

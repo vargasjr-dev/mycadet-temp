@@ -3,8 +3,8 @@
  *
  * ## Why a second handshake scheme
  *
- * The header scheme (`Vellum-Signature` / `Vellum-Timestamp`, see
- * `./vellum-signature.ts`) assumes the caller controls its request headers.
+ * The header scheme (`Cadet-Signature` / `Cadet-Timestamp`, see
+ * `./cadet-signature.ts`) assumes the caller controls its request headers.
  * Some callers cannot: a third-party service is handed a single URL and dials
  * it, with no place to put a header. Recall.ai's realtime endpoint is the case
  * that forced this. For those routes the whole credential has to live in the
@@ -38,10 +38,10 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /** Query parameter carrying the unix-seconds expiry the signature covers. */
-export const HANDSHAKE_EXPIRY_PARAM = "vellum_exp";
+export const HANDSHAKE_EXPIRY_PARAM = "cadet_exp";
 
 /** Query parameter carrying `sha256=<hex>` over {@link handshakeSignedPayload}. */
-export const HANDSHAKE_SIGNATURE_PARAM = "vellum_sig";
+export const HANDSHAKE_SIGNATURE_PARAM = "cadet_sig";
 
 const SIGNATURE_PREFIX = "sha256=";
 

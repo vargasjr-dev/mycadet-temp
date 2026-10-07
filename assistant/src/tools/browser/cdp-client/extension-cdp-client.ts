@@ -188,7 +188,7 @@ export class ExtensionCdpClient implements ScopedCdpClient {
    * Update the `cdpSessionId` used on subsequent {@link send} calls.
    *
    * Used by the navigate executor after opening a new tab via the
-   * `Vellum.createTab` pseudo-CDP method: the returned tabId becomes
+   * `Cadet.createTab` pseudo-CDP method: the returned tabId becomes
    * this client's pinned target so the follow-on `Page.navigate`
    * (and every command on this conversation thereafter) routes to
    * the freshly-created tab instead of the user's currently-active
@@ -198,13 +198,13 @@ export class ExtensionCdpClient implements ScopedCdpClient {
     this.cdpSessionId = cdpSessionId;
   }
 
-  /** List all open browser tabs via `Vellum.listTabs`. */
+  /** List all open browser tabs via `Cadet.listTabs`. */
   async listTabs(): Promise<TabInfo[]> {
-    const result = await this.send<{ tabs: TabInfo[] }>("Vellum.listTabs", {});
+    const result = await this.send<{ tabs: TabInfo[] }>("Cadet.listTabs", {});
     return Array.isArray(result?.tabs) ? result.tabs : [];
   }
 
-  /** Select (activate) an existing tab via `Vellum.selectTab`. */
+  /** Select (activate) an existing tab via `Cadet.selectTab`. */
   async selectTab(tabId: number): Promise<{
     tabId?: number;
     windowId?: number;
@@ -212,16 +212,16 @@ export class ExtensionCdpClient implements ScopedCdpClient {
     title?: string;
     clientId?: string;
   }> {
-    return this.send("Vellum.selectTab", { tabId });
+    return this.send("Cadet.selectTab", { tabId });
   }
 
-  /** Close a browser tab via `Vellum.closeTab`. */
+  /** Close a browser tab via `Cadet.closeTab`. */
   async closeTab(tabId: number): Promise<{
     closed: boolean;
     tabId: number;
     clientId?: string;
   }> {
-    return this.send("Vellum.closeTab", { tabId });
+    return this.send("Cadet.closeTab", { tabId });
   }
 }
 

@@ -56,7 +56,7 @@ describe("fetchPluginCatalogFromPlatform", () => {
           },
           {
             name: "alpha-tool",
-            repo: "vellum-ai/alpha-tool",
+            repo: "vargasjr-dev/alpha-tool",
             ref: SHA_A,
           },
         ],
@@ -98,7 +98,7 @@ describe("fetchPluginCatalogFromPlatform", () => {
     expect(alpha.license).toBeUndefined();
     expect(alpha.source).toEqual({
       kind: "github",
-      repo: "vellum-ai/alpha-tool",
+      repo: "vargasjr-dev/alpha-tool",
       path: undefined,
       ref: SHA_A,
     });

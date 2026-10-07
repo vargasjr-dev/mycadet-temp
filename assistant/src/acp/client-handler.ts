@@ -1,9 +1,9 @@
 /**
- * ACP client handler — bridges ACP agent events to Vellum's SSE message protocol.
+ * ACP client handler — bridges ACP agent events to Cadet's SSE message protocol.
  *
  * Implements the ACP SDK's Client interface, forwarding session updates,
  * permission requests, file operations, and terminal management to
- * connected Vellum clients.
+ * connected Cadet clients.
  */
 
 import { type ChildProcess, spawn } from "node:child_process";
@@ -73,10 +73,10 @@ interface TerminalState {
 }
 
 /**
- * Vellum's ACP Client handler. Receives events from an ACP agent and
- * forwards them as AssistantEvent objects to connected Vellum clients.
+ * Cadet's ACP Client handler. Receives events from an ACP agent and
+ * forwards them as AssistantEvent objects to connected Cadet clients.
  */
-export class VellumAcpClientHandler implements Client {
+export class CadetAcpClientHandler implements Client {
   private terminals = new Map<string, TerminalState>();
   private accumulatedText = "";
   private suppressForwarding = false;
@@ -103,18 +103,18 @@ export class VellumAcpClientHandler implements Client {
 
   constructor(
     private readonly acpSessionId: string,
-    private readonly sendToVellum: (msg: AssistantEvent) => void,
+    private readonly sendToCadet: (msg: AssistantEvent) => void,
     private readonly parentConversationId: string,
     private readonly onConfigOptions?: (
       configOptions: SessionConfigOption[],
     ) => void,
   ) {}
 
-  /** Forwards an update to Vellum, stamping a contiguous per-session `seq`. */
+  /** Forwards an update to Cadet, stamping a contiguous per-session `seq`. */
   private forwardUpdate(
     update: Omit<AcpSessionUpdateEvent, "type" | "acpSessionId" | "seq">,
   ): void {
-    this.sendToVellum({
+    this.sendToCadet({
       type: "acp_session_update",
       acpSessionId: this.acpSessionId,
       seq: ++this.lastSeq,
@@ -164,7 +164,7 @@ export class VellumAcpClientHandler implements Client {
   }
 
   /**
-   * Begins suppressing session updates from being forwarded to Vellum.
+   * Begins suppressing session updates from being forwarded to Cadet.
    *
    * Per the ACP spec, `session/load` replays the entire conversation history
    * as `session/update` notifications before the load response resolves. The
@@ -285,7 +285,7 @@ export class VellumAcpClientHandler implements Client {
       case "usage_update": {
         // Side gauge of context-window usage; no seq (not part of the
         // ordered timeline). UNSTABLE: cost may be absent.
-        this.sendToVellum({
+        this.sendToCadet({
           type: "acp_session_usage",
           acpSessionId: this.acpSessionId,
           usedTokens: update.used,
@@ -303,7 +303,7 @@ export class VellumAcpClientHandler implements Client {
 
       default: {
         // Other update types (available_commands_update, current_mode_update,
-        // session_info_update) are not forwarded to Vellum.
+        // session_info_update) are not forwarded to Cadet.
         log.debug(
           {
             acpSessionId: this.acpSessionId,

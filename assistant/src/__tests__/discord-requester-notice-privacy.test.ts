@@ -43,7 +43,7 @@ describe("adding Discord leaves the other channels alone", () => {
       "/deliver/whatsapp",
     );
     expect(resolveDeliverCallbackUrlForChannel("email")).toBeNull();
-    expect(resolveDeliverCallbackUrlForChannel("vellum")).toBeNull();
+    expect(resolveDeliverCallbackUrlForChannel("cadet")).toBeNull();
   });
 
   test("Slack still targets the requester's user id", () => {

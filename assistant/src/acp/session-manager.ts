@@ -34,7 +34,7 @@ import {
   requestErrorReason,
 } from "./auth-required.js";
 import { resolveAgentWithAutoInstall } from "./auto-install.js";
-import { VellumAcpClientHandler } from "./client-handler.js";
+import { CadetAcpClientHandler } from "./client-handler.js";
 import { deriveFailureError } from "./failure-error.js";
 import type { AcpModelInfo } from "./model-config.js";
 import { deriveModelInfo, resolveAcpModel } from "./model-config.js";
@@ -119,9 +119,9 @@ interface BufferedAcpUpdate {
 interface SessionEntry {
   process: AcpAgentProcess;
   state: AcpSessionState;
-  clientHandler: VellumAcpClientHandler;
+  clientHandler: CadetAcpClientHandler;
   /** Wrapped sender that also appends to the ring buffer. */
-  sendToVellum: (msg: AssistantEvent) => void;
+  sendToCadet: (msg: AssistantEvent) => void;
   currentPrompt: Promise<unknown> | null;
   parentConversationId: string;
   cwd: string;
@@ -296,7 +296,7 @@ export class AcpSessionManager {
     task: string,
     cwd: string,
     parentConversationId: string,
-    sendToVellum: (msg: AssistantEvent) => void,
+    sendToCadet: (msg: AssistantEvent) => void,
     options?: { parentToolUseId?: string; model?: string },
     cancellation?: AcpCancellationOptions,
   ): Promise<{
@@ -328,7 +328,7 @@ export class AcpSessionManager {
       parentConversationId,
       cwd,
       startedAt: Date.now(),
-      sendToVellum,
+      sendToCadet,
       parentToolUseId: options?.parentToolUseId,
       task,
     });
@@ -619,7 +619,7 @@ export class AcpSessionManager {
     parentConversationId: string;
     cwd: string;
     startedAt: number;
-    sendToVellum: (msg: AssistantEvent) => void;
+    sendToCadet: (msg: AssistantEvent) => void;
     parentToolUseId?: string;
     task?: string;
   }): SessionEntry {
@@ -659,12 +659,12 @@ export class AcpSessionManager {
           };
         }
       }
-      opts.sendToVellum(msg);
+      opts.sendToCadet(msg);
     };
 
     // The callback runs once the agent is connected and sending
     // notifications, which is after agentProcess is constructed just below.
-    const clientHandler = new VellumAcpClientHandler(
+    const clientHandler = new CadetAcpClientHandler(
       acpSessionId,
       wrappedSend,
       opts.parentConversationId,
@@ -694,7 +694,7 @@ export class AcpSessionManager {
       process: agentProcess,
       state,
       clientHandler,
-      sendToVellum: wrappedSend,
+      sendToCadet: wrappedSend,
       currentPrompt: null,
       parentConversationId: opts.parentConversationId,
       cwd: opts.cwd,
@@ -715,7 +715,7 @@ export class AcpSessionManager {
    * possible follow-up, not in scope here).
    */
   private sendSpawnedEvent(acpSessionId: string, entry: SessionEntry): void {
-    entry.sendToVellum({
+    entry.sendToCadet({
       type: "acp_session_spawned",
       acpSessionId,
       agent: entry.state.agentId,
@@ -743,7 +743,7 @@ export class AcpSessionManager {
     const modelRevision = ++this.modelRevision;
     entry.state.modelRevisionEpoch = this.modelRevisionEpoch;
     entry.state.modelRevision = modelRevision;
-    entry.sendToVellum({
+    entry.sendToCadet({
       type: "acp_session_model_update",
       acpSessionId,
       modelRevisionEpoch: this.modelRevisionEpoch,
@@ -822,9 +822,9 @@ export class AcpSessionManager {
    * `acp_session_history` row, reattaching to the agent's stored
    * conversation via ACP `session/resume` (preferred: no history replay) or
    * `session/load` (replayed history is suppressed; see
-   * VellumAcpClientHandler.beginReplaySuppression).
+   * CadetAcpClientHandler.beginReplaySuppression).
    *
-   * The resumed session reuses the original vellum session id,
+   * The resumed session reuses the original cadet session id,
    * parentConversationId, and startedAt, and re-seeds its ring buffer from
    * the persisted event log so the terminal upsert after the resumed run
    * merges new events into the original row instead of losing them.
@@ -835,7 +835,7 @@ export class AcpSessionManager {
    */
   async resumeFromHistory(
     acpSessionId: string,
-    sendToVellum: (msg: AssistantEvent) => void,
+    sendToCadet: (msg: AssistantEvent) => void,
   ): Promise<void> {
     if (
       this.sessions.has(acpSessionId) ||
@@ -880,7 +880,7 @@ export class AcpSessionManager {
     const resumePromise = this.performResume(
       acpSessionId,
       row as ResumableHistoryRow,
-      sendToVellum,
+      sendToCadet,
     );
     this.pendingResumes.set(acpSessionId, resumePromise);
     try {
@@ -900,7 +900,7 @@ export class AcpSessionManager {
   private async performResume(
     acpSessionId: string,
     row: ResumableHistoryRow,
-    sendToVellum: (msg: AssistantEvent) => void,
+    sendToCadet: (msg: AssistantEvent) => void,
   ): Promise<void> {
     // Resolve the adapter, silently auto-installing a missing allowlisted
     // binary via the same sandboxed `bun` path as spawn (see
@@ -938,7 +938,7 @@ export class AcpSessionManager {
       parentConversationId: row.parentConversationId,
       cwd: row.cwd,
       startedAt: row.startedAt,
-      sendToVellum,
+      sendToCadet,
       // Carry the persisted metadata onto the fresh in-memory state so the
       // next terminal upsert rewrites the same values instead of NULLing
       // them. A resumed run only emits a usage_update if it does fresh work;
@@ -1161,7 +1161,7 @@ export class AcpSessionManager {
   async steerOrResume(
     acpSessionId: string,
     instruction: string,
-    sendToVellum: (msg: AssistantEvent) => void,
+    sendToCadet: (msg: AssistantEvent) => void,
     opts?: AcpCancellationOptions,
   ): Promise<{ resumed: boolean }> {
     try {
@@ -1210,7 +1210,7 @@ export class AcpSessionManager {
     opts?.signal?.throwIfAborted();
 
     try {
-      await this.resumeFromHistory(acpSessionId, sendToVellum);
+      await this.resumeFromHistory(acpSessionId, sendToCadet);
     } catch (err) {
       // An abort is not a resume failure; it must reach the caller intact
       // rather than wrapped in AcpResumeError, which hides its abort shape.
@@ -1454,7 +1454,7 @@ export class AcpSessionManager {
   /**
    * Persists the session's final state + buffered event log to
    * `acp_session_history`, then frees the buffer entry. Upserts on id:
-   * resumed runs reuse the original vellum session id, so their terminal
+   * resumed runs reuse the original cadet session id, so their terminal
    * write must update the existing row (status, event log, etc.) instead of
    * being silently skipped. Best-effort: a DB failure is logged but does
    * not propagate, since the session has already reached a terminal state
@@ -1564,7 +1564,7 @@ export class AcpSessionManager {
               inputTokens: usage.inputTokens,
               outputTokens: usage.outputTokens,
             };
-            current.sendToVellum({
+            current.sendToCadet({
               type: "acp_session_usage",
               acpSessionId,
               usedTokens: current.state.latestUsage.usedTokens,
@@ -1579,7 +1579,7 @@ export class AcpSessionManager {
             { acpSessionId, stopReason: response.stopReason },
             "ACP prompt completed",
           );
-          current.sendToVellum({
+          current.sendToCadet({
             type: "acp_session_completed",
             acpSessionId,
             stopReason: response.stopReason,
@@ -1642,7 +1642,7 @@ export class AcpSessionManager {
           // `acp_session_error` keeps its pre-existing shape so older packaged
           // clients still parse it; the recovery signal rides its own event
           // below (see `api/events/acp-auth-required.ts`).
-          current.sendToVellum({
+          current.sendToCadet({
             type: "acp_session_error",
             acpSessionId,
             error: failureMessage,
@@ -1710,7 +1710,7 @@ export class AcpSessionManager {
             recoveryAnchor !== undefined &&
             stillCurrent
           ) {
-            current.sendToVellum({
+            current.sendToCadet({
               type: "acp_auth_required",
               acpSessionId,
               authCode: errorCode,

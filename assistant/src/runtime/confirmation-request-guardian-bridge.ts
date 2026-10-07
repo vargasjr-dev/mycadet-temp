@@ -3,7 +3,7 @@
  *
  * When a trusted-contact channel session creates a confirmation_request (tool approval),
  * this helper emits a guardian.question notification signal and persists guardian-request
- * delivery rows to guardian destinations (Telegram/Slack/Vellum), enabling the guardian
+ * delivery rows to guardian destinations (Telegram/Slack/Cadet), enabling the guardian
  * to approve via callback/request-code path.
  *
  * Modeled after the tool-grant-request-helper pattern. Designed to be called from
@@ -14,12 +14,12 @@
 
 import type { GuardianRequestWire } from "../channels/gateway-guardian-requests.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
+import { buildCadetCardAffinity } from "../notifications/cadet-card-affinity.js";
 import { emitNotificationSignal } from "../notifications/emit-signal.js";
 import {
   recordApprovalCardDelivery,
   recordGuardianRequestDeliveries,
 } from "../notifications/guardian-delivery-recorder.js";
-import { buildVellumCardAffinity } from "../notifications/vellum-card-affinity.js";
 import { canonicalizeInboundIdentity } from "../util/canonicalize-identity.js";
 import { getLogger } from "../util/logger.js";
 import { resolveApprovalSourceReference } from "./approval-source-link.js";
@@ -157,9 +157,9 @@ export async function bridgeConfirmationRequestToGuardian(
     ? `Approve tool: ${toolName} — ${guardianRequest.activityText}`
     : `Approve tool: ${toolName}`;
 
-  // The vellum delivery row is created up front in onConversationCreated so the
+  // The cadet delivery row is created up front in onConversationCreated so the
   // in-app client sees it immediately; the post-resolve recorder reuses it.
-  let vellumDeliveryIdPromise: Promise<string | undefined> | undefined;
+  let cadetDeliveryIdPromise: Promise<string | undefined> | undefined;
 
   // Emit guardian.question notification so the guardian is alerted.
   const signalPromise = emitNotificationSignal({
@@ -167,9 +167,9 @@ export async function bridgeConfirmationRequestToGuardian(
     sourceChannel,
     sourceContextId: conversationId,
     requiresConversation: true,
-    // Pin the in-app (vellum) card to the conversation the confirmation was
+    // Pin the in-app (cadet) card to the conversation the confirmation was
     // emitted in, so the guardian decides it in context.
-    ...(buildVellumCardAffinity(conversationId) ?? {}),
+    ...(buildCadetCardAffinity(conversationId) ?? {}),
     attentionHints: {
       requiresAction: true,
       urgency: "high",
@@ -203,12 +203,12 @@ export async function bridgeConfirmationRequestToGuardian(
     // The broadcaster awaits the returned promise, so the delivery row is
     // durable before the client can act on the conversation.
     onConversationCreated: (info) => {
-      vellumDeliveryIdPromise ??= recordApprovalCardDelivery({
+      cadetDeliveryIdPromise ??= recordApprovalCardDelivery({
         requestId: guardianRequest.id,
-        channel: "vellum",
+        channel: "cadet",
         conversationId: info.conversationId,
       }).then((delivery) => delivery?.id);
-      return vellumDeliveryIdPromise.then(() => undefined);
+      return cadetDeliveryIdPromise.then(() => undefined);
     },
   });
 
@@ -218,7 +218,7 @@ export async function bridgeConfirmationRequestToGuardian(
       await recordGuardianRequestDeliveries({
         requestId: guardianRequest.id,
         deliveryResults: signalResult.deliveryResults,
-        vellumDeliveryId: await vellumDeliveryIdPromise,
+        cadetDeliveryId: await cadetDeliveryIdPromise,
       });
     })
     .catch((err) => {

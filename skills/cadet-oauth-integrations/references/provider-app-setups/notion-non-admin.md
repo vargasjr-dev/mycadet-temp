@@ -4,7 +4,7 @@ The user doesn't have admin permissions on their Notion workspace. Only workspac
 
 Present these options:
 
-1. **Ask a workspace admin to create the integration** — The admin creates an Internal integration named "Vellum Assistant", copies the secret token (`ntn_...`), and shares it with the user. The user can then grant it access to their own pages. This is the easiest path.
+1. **Ask a workspace admin to create the integration** — The admin creates an Internal integration named "Cadet Assistant", copies the secret token (`ntn_...`), and shares it with the user. The user can then grant it access to their own pages. This is the easiest path.
 2. **Use a different workspace** — If the user has a personal Notion workspace (or any workspace where they're admin), they can set up the integration there instead.
 3. **Request admin permissions** — The user can ask their workspace admin to grant them admin access, then retry Step 2.
 
@@ -14,7 +14,7 @@ Suggested message:
 >
 > Here are your options:
 >
-> 1. **Ask your admin** to create an Internal integration named "Vellum Assistant" and share the secret token with you
+> 1. **Ask your admin** to create an Internal integration named "Cadet Assistant" and share the secret token with you
 > 2. **Use a different workspace** where you're an admin (e.g., a personal workspace)
 > 3. **Request admin access** from your workspace admin, then come back to this step
 

@@ -24,19 +24,19 @@ function mockFetchError() {
 }
 
 beforeEach(() => {
-  process.env.VELLUM_PLATFORM_URL = "https://platform.test";
+  process.env.CADET_PLATFORM_URL = "https://platform.test";
 });
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
-  delete process.env.VELLUM_PLATFORM_URL;
+  delete process.env.CADET_PLATFORM_URL;
 });
 
 const RELEASE = {
   version: "0.7.0",
-  assistant_image_ref: "gcr.io/vellum/assistant@sha256:aaa",
-  gateway_image_ref: "gcr.io/vellum/gateway@sha256:bbb",
-  credential_executor_image_ref: "gcr.io/vellum/ces@sha256:ccc",
+  assistant_image_ref: "gcr.io/cadet/assistant@sha256:aaa",
+  gateway_image_ref: "gcr.io/cadet/gateway@sha256:bbb",
+  credential_executor_image_ref: "gcr.io/cadet/ces@sha256:ccc",
 };
 
 describe("fetchReleases", () => {

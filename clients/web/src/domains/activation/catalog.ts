@@ -178,7 +178,7 @@ function toTask(
     prompt: t(`tasks.${id}.prompt` as never, { name }),
     ...(raw.requires ? { requires: raw.requires } : {}),
     // Link URLs are content. The one address the app owns elsewhere, the
-    // downloads page, is pinned to `VELLUM_DOWNLOADS_URL` by `catalog.test.ts`
+    // downloads page, is pinned to `CADET_DOWNLOADS_URL` by `catalog.test.ts`
     // so the two cannot drift.
     ...(raw.link ? { link: raw.link } : {}),
   };

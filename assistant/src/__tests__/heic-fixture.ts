@@ -21,7 +21,7 @@ const PNG_1PX_BASE64 =
  */
 export function makeHeicFixtureBytes(): Buffer | null {
   try {
-    const dir = mkdtempSync(join(tmpdir(), "vellum-heic-fixture-"));
+    const dir = mkdtempSync(join(tmpdir(), "cadet-heic-fixture-"));
     const pngPath = join(dir, "src.png");
     const bigPngPath = join(dir, "big.png");
     const heicPath = join(dir, "out.heic");

@@ -7,7 +7,7 @@
  * receives partial and final transcript events back through the
  * `start(onEvent)` callback, closing with `stop`. The consumer drives this
  * three-method contract without knowing the concrete provider (Deepgram,
- * Whisper, Gemini, xAI, or Vellum-managed speech), its wire protocol, or its
+ * Whisper, Gemini, xAI, or Cadet-managed speech), its wire protocol, or its
  * credentials.
  */
 

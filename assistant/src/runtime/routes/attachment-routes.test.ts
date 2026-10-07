@@ -15,7 +15,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 // via realpathSync internally).
 // The preload's workspace is already realpath'd — matching what
 // resolveAllowedFileBackedAttachmentPath canonicalizes to.
-const testWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testWorkspaceDir = process.env.CADET_WORKSPACE_DIR!;
 const testHomeDir = realpathSync(
   mkdtempSync(join(tmpdir(), "attachment-routes-home-")),
 );
@@ -24,7 +24,7 @@ const attachmentsDir = join(testWorkspaceDir, "data", "attachments");
 const conversationsDir = join(testWorkspaceDir, "conversations");
 const recordingsDir = join(
   testHomeDir,
-  "Library/Application Support/vellum-assistant/recordings",
+  "Library/Application Support/mycadet/recordings",
 );
 const outsideDir = mkdtempSync(join(tmpdir(), "attachment-routes-outside-"));
 

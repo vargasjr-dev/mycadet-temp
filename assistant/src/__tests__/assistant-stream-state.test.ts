@@ -609,7 +609,7 @@ describe("assistant-stream-state", () => {
 
   describe("seq re-issue guards", () => {
     const reservationPath = () =>
-      join(process.env.VELLUM_WORKSPACE_DIR!, "data", "stream-seq.json");
+      join(process.env.CADET_WORKSPACE_DIR!, "data", "stream-seq.json");
 
     test("reservation writes are raise-only: a higher on-disk ceiling is adopted, not overwritten", () => {
       // GIVEN this process reserved 1..1024 and another writer then
@@ -771,7 +771,7 @@ describe("assistant-stream-state", () => {
 
     test("a corrupt reservation file degrades to a cold start", () => {
       const path = join(
-        process.env.VELLUM_WORKSPACE_DIR!,
+        process.env.CADET_WORKSPACE_DIR!,
         "data",
         "stream-seq.json",
       );
@@ -823,7 +823,7 @@ describe("assistant-stream-state", () => {
 
     test("a missing reservation file is a cold start at 1", () => {
       rmSync(
-        join(process.env.VELLUM_WORKSPACE_DIR!, "data", "stream-seq.json"),
+        join(process.env.CADET_WORKSPACE_DIR!, "data", "stream-seq.json"),
         { force: true },
       );
       _simulateRestartForTesting();
@@ -835,7 +835,7 @@ describe("assistant-stream-state", () => {
 
   describe("disableStreamSeqStamping", () => {
     const reservationPath = () =>
-      join(process.env.VELLUM_WORKSPACE_DIR!, "data", "stream-seq.json");
+      join(process.env.CADET_WORKSPACE_DIR!, "data", "stream-seq.json");
 
     test("stamping is a complete no-op in a disabled process", () => {
       disableStreamSeqStamping();

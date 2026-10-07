@@ -6,7 +6,7 @@ import ScreenCaptureKit
 import UniformTypeIdentifiers
 import os
 
-private let log = Logger(subsystem: "ai.vellum.mac-helper", category: "AppWindowCapture")
+private let log = Logger(subsystem: "ai.mycadet.mac-helper", category: "AppWindowCapture")
 
 /// Captures the frontmost normal window of a target process by PID.
 ///
@@ -113,7 +113,7 @@ enum AppWindowCapture {
     /// macOS versions — we surface a permission hint in both branches so the
     /// daemon and the LLM can suggest the right fix.
     ///
-    /// Two paths, gated by the `VELLUM_APP_CONTROL_USE_DISPLAY_FILTER` env
+    /// Two paths, gated by the `CADET_APP_CONTROL_USE_DISPLAY_FILTER` env
     /// var (diagnostic — default off):
     ///
     /// - **Default (warmup pattern)** — `SCContentFilter(desktopIndependentWindow:)`
@@ -220,7 +220,7 @@ enum AppWindowCapture {
     /// path. Set to `"1"` before launching the macOS app to enable. Default
     /// behavior (env unset or any other value) is the historical
     /// warmup-capture pattern.
-    private static let USE_DISPLAY_FILTER_ENV = "VELLUM_APP_CONTROL_USE_DISPLAY_FILTER"
+    private static let USE_DISPLAY_FILTER_ENV = "CADET_APP_CONTROL_USE_DISPLAY_FILTER"
 
     /// Gap between the warmup capture and the real capture. ~2 frames at
     /// 60fps — long enough for the SCK pipeline to advance past whatever

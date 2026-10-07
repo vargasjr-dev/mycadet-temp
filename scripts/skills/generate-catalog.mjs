@@ -2,9 +2,9 @@
  * Generates `skills/catalog.json` from the SKILL.md frontmatter in each
  * skill directory under `skills/`.
  *
- * The catalog is a manifest of first-party Vellum skills that is fetched
+ * The catalog is a manifest of first-party Cadet skills that is fetched
  * from GitHub at runtime so the assistant can discover and install new
- * skills maintained by Vellum.
+ * skills maintained by Cadet.
  *
  * Usage:
  *   node scripts/skills/generate-catalog.mjs
@@ -98,7 +98,7 @@ const entries = readdirSync(SKILLS_DIR, { withFileTypes: true })
 
 const catalog = {
   description:
-    "Manifest of first-party Vellum skills. Fetched from GitHub at runtime so the assistant can discover and install new skills maintained by Vellum.",
+    "Manifest of first-party Cadet skills. Fetched from GitHub at runtime so the assistant can discover and install new skills maintained by Cadet.",
   version: 1,
   skills: entries,
 };

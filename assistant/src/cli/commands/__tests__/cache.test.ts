@@ -434,7 +434,7 @@ describe("cache set --file", () => {
       "cache",
       "set",
       "--file",
-      "/tmp/does-not-exist-vellum-cache-test.json",
+      "/tmp/does-not-exist-cadet-cache-test.json",
     ]);
 
     expect(exitCode).toBe(1);

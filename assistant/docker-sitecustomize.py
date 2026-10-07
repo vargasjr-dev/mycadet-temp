@@ -1,4 +1,4 @@
-"""Vellum: expose the persistent apt/pip chroot as site directories.
+"""Cadet: expose the persistent apt/pip chroot as site directories.
 
 Installed at /usr/lib/python3/dist-packages/sitecustomize.py in the assistant
 image. PYTHONPATH (set by docker-kata-apt-env.sh and buildSanitizedEnv) makes
@@ -10,7 +10,7 @@ which is intended — venvs are self-contained.
 
 import os
 
-if os.environ.get("VELLUM_SANDBOX_RUNTIME") in (
+if os.environ.get("CADET_SANDBOX_RUNTIME") in (
     "kata",
     "firecracker",
     "cloud-hypervisor",
@@ -18,7 +18,7 @@ if os.environ.get("VELLUM_SANDBOX_RUNTIME") in (
     import site
     import sys
 
-    _root = os.environ.get("VELLUM_APT_DATA_ROOT", "/data/system")
+    _root = os.environ.get("CADET_APT_DATA_ROOT", "/data/system")
     _version = "%d.%d" % sys.version_info[:2]
     # pip dir before apt dir, matching the PYTHONPATH precedence.
     for _dir in (

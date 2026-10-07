@@ -26,7 +26,7 @@ import { relocateDefaultUserBoundaryMigration } from "../workspace/migrations/12
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-migration-122-test-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-migration-122-test-"));
 });
 
 afterEach(() => {

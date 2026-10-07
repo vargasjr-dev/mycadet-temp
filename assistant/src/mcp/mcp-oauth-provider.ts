@@ -129,14 +129,14 @@ export class McpOAuthProvider implements OAuthClientProvider {
    * Identity presented at dynamic registration, and on the consent screen
    * the user reads before approving.
    *
-   * The client is this assistant, not the Vellum product and not the plugin
+   * The client is this assistant, not the Cadet product and not the plugin
    * that declared the server: each assistant registers separately, with its
    * own redirect URI, so its own name is what makes the consent screen
    * meaningful when a person runs several. `software_id` carries the
    * assistant id so a server can correlate an assistant's registrations
    * across servers without treating every assistant as the same client.
    *
-   * `logo_uri` is the Vellum mark rather than the assistant's own avatar.
+   * `logo_uri` is the Cadet mark rather than the assistant's own avatar.
    * An authorization server fetching a logo is anonymous, and the avatar is
    * served only behind authentication, so there is no per-assistant URL to
    * give it.
@@ -145,7 +145,7 @@ export class McpOAuthProvider implements OAuthClientProvider {
     const assistantName = getAssistantName();
     const assistantId = getPlatformAssistantId().trim();
     return buildMcpOAuthClientMetadata({
-      clientName: assistantName ?? "Vellum Assistant",
+      clientName: assistantName ?? "Cadet Assistant",
       redirectUris: this._redirectUrl ? [this._redirectUrl] : [],
       softwareId: assistantId.length > 0 ? assistantId : undefined,
       softwareVersion: APP_VERSION,

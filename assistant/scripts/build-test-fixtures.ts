@@ -38,12 +38,12 @@ import { basename, join } from "node:path";
 async function buildMigratedFixture(outWorkspaceDir: string): Promise<void> {
   // Migrate in a throwaway workspace, then snapshot its DBs into the fixture.
   const buildRoot = realpathSync(
-    mkdtempSync(join(tmpdir(), "vellum-fixture-build-")),
+    mkdtempSync(join(tmpdir(), "cadet-fixture-build-")),
   );
   const buildWorkspace = join(buildRoot, "workspace");
   mkdirSync(buildWorkspace);
-  process.env.VELLUM_WORKSPACE_DIR = buildWorkspace;
-  process.env.VELLUM_PLATFORM_URL ??= "https://test-cloud.mycadet.ai";
+  process.env.CADET_WORKSPACE_DIR = buildWorkspace;
+  process.env.CADET_PLATFORM_URL ??= "https://test-cloud.mycadet.ai";
   // Match the preload's env hygiene so migrations never route through a live
   // credential store while building the fixture.
   delete process.env.IS_CONTAINERIZED;

@@ -25,14 +25,14 @@ describe("resolveDestinations — gateway guardian list", () => {
   test("cadet carries guardianPrincipalId from the gateway list", () => {
     const list = [
       guardian({
-        channelType: "vellum",
+        channelType: "cadet",
         address: "user@example.com",
         principalId: "prin-1",
       }),
     ];
-    const result = resolveDestinations(["vellum"], list);
-    expect(result.get("vellum")).toEqual({
-      channel: "vellum",
+    const result = resolveDestinations(["cadet"], list);
+    expect(result.get("cadet")).toEqual({
+      channel: "cadet",
       metadata: { guardianPrincipalId: "prin-1" },
     });
   });
@@ -40,7 +40,7 @@ describe("resolveDestinations — gateway guardian list", () => {
   test("platform carries guardianPrincipalId from the cadet guardian", () => {
     const list = [
       guardian({
-        channelType: "vellum",
+        channelType: "cadet",
         address: "user@example.com",
         principalId: "prin-1",
       }),
@@ -171,8 +171,8 @@ describe("resolveDestinations — gateway empty or missing channel", () => {
   });
 
   test("null gateway list omits cadet principalId metadata", () => {
-    const result = resolveDestinations(["vellum"], null);
-    expect(result.get("vellum")).toEqual({ channel: "vellum" });
+    const result = resolveDestinations(["cadet"], null);
+    expect(result.get("cadet")).toEqual({ channel: "cadet" });
   });
 
   test("empty gateway list omits telegram", () => {

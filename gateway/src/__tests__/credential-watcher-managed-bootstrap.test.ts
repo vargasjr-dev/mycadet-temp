@@ -62,14 +62,14 @@ async function startGateway(): Promise<void> {
     );
   gatewayPort = await getFreePort();
 
-  const workspaceDir = join(testDir, ".vellum", "workspace");
+  const workspaceDir = join(testDir, ".cadet", "workspace");
   fakeAssistantIpc = startFakeAssistantIpc(workspaceDir);
 
   gatewayProc = spawn("bun", ["run", gatewayEntry], {
     env: {
       ...process.env,
-      GATEWAY_SECURITY_DIR: join(testDir, ".vellum", "protected"),
-      VELLUM_WORKSPACE_DIR: workspaceDir,
+      GATEWAY_SECURITY_DIR: join(testDir, ".cadet", "protected"),
+      CADET_WORKSPACE_DIR: workspaceDir,
       GATEWAY_PORT: String(gatewayPort),
       CES_CREDENTIAL_URL: `http://127.0.0.1:${cesPort}`,
       CES_SERVICE_TOKEN: TEST_SERVICE_TOKEN,

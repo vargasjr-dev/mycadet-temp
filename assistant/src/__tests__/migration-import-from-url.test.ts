@@ -48,7 +48,7 @@ import {
 // ---------------------------------------------------------------------------
 // Test isolation: per-file workspace root.
 //
-// The shared test preload points VELLUM_WORKSPACE_DIR at a tmp dir. The
+// The shared test preload points CADET_WORKSPACE_DIR at a tmp dir. The
 // streaming importer does an atomic rename of the workspace dir itself,
 // which implicitly invalidates the shared tmp dir for subsequent tests in
 // the same file. Each test below creates its own isolated workspace and
@@ -56,7 +56,7 @@ import {
 // handler.
 // ---------------------------------------------------------------------------
 
-const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
+const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 
 function freshWorkspaceRoot(): string {
   const parent = realpathSync(
@@ -70,7 +70,7 @@ function freshWorkspaceRoot(): string {
 }
 
 function setWorkspaceDir(dir: string): void {
-  process.env.VELLUM_WORKSPACE_DIR = dir;
+  process.env.CADET_WORKSPACE_DIR = dir;
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +172,7 @@ beforeAll(() => {
 afterAll(() => {
   _setUrlImportValidatorOptionsForTests(undefined);
   if (originalWorkspaceDir !== undefined) {
-    process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
   }
 });
 
@@ -421,7 +421,7 @@ describe("handleMigrationImport — no-swap path omits newer-migration warning",
     // seeded path above when the handler calls it post-import.
     resetDbForTesting();
 
-    // All-`vellum:*` credentials bundle: the streaming importer returns
+    // All-`cadet:*` credentials bundle: the streaming importer returns
     // ok=true with zero files_created/overwritten (no-swap success),
     // and the credential-import callback filters every entry as a
     // platform credential so CES is never invoked.

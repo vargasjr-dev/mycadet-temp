@@ -100,7 +100,7 @@ export type OriginChannel = ConversationListQuery["originChannel"];
 export const ORIGIN_CHANNELS = [
   "telegram",
   "phone",
-  "vellum",
+  "cadet",
   "whatsapp",
   "slack",
   "email",
@@ -506,7 +506,7 @@ export const SYSTEM_ASSISTANT_GROUP_ID = "system:assistant";
  * Typed against the generated union, so removing it from the schema fails
  * the build here rather than sending a value the daemon rejects.
  */
-export const NATIVE_ORIGIN_CHANNEL: NonNullable<OriginChannel> = "vellum";
+export const NATIVE_ORIGIN_CHANNEL: NonNullable<OriginChannel> = "cadet";
 
 /**
  * Read the server-side unread conversation count, mapping a 404 to `null`.

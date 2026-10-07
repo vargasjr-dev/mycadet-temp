@@ -38,7 +38,7 @@ function run(): void {
 beforeEach(() => {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-133-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-133-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 });
@@ -70,12 +70,12 @@ describe("133-collapse-provider-connections migration", () => {
     writeConfig({
       llm: {
         default: { provider: "anthropic", model: "claude-opus-4-8" },
-        defaultProvider: { provider: "vellum", connectionName: "vellum" },
+        defaultProvider: { provider: "cadet", connectionName: "cadet" },
         profiles: {
           "my-managed": {
             source: "user",
             provider: "anthropic",
-            provider_connection: "vellum",
+            provider_connection: "cadet",
             model: "claude-opus-4-8",
           },
         },
@@ -84,10 +84,10 @@ describe("133-collapse-provider-connections migration", () => {
     run();
     const llm = readLlm();
     expect(llm.default).toBeUndefined();
-    expect(llm.defaultProvider).toEqual({ provider: "vellum" });
+    expect(llm.defaultProvider).toEqual({ provider: "cadet" });
     expect(llm.profiles["my-managed"]).toEqual({
       source: "user",
-      provider: "vellum",
+      provider: "cadet",
       model: "claude-opus-4-8",
     });
   });
@@ -99,7 +99,7 @@ describe("133-collapse-provider-connections migration", () => {
           "my-managed": {
             source: "user",
             provider: "fireworks",
-            provider_connection: "vellum",
+            provider_connection: "cadet",
             model: "accounts/fireworks/models/minimax-m3",
           },
         },
@@ -109,7 +109,7 @@ describe("133-collapse-provider-connections migration", () => {
     const parsed = AssistantConfigSchema.safeParse(readConfig());
     expect(parsed.success).toBe(true);
     if (parsed.success) {
-      expect(parsed.data.llm.profiles?.["my-managed"]?.provider).toBe("vellum");
+      expect(parsed.data.llm.profiles?.["my-managed"]?.provider).toBe("cadet");
     }
   });
 
@@ -193,7 +193,7 @@ describe("133-collapse-provider-connections migration", () => {
           stale: {
             source: "user",
             provider: "anthropic",
-            provider_connection: "vellum",
+            provider_connection: "cadet",
             model: "claude-2.1-retired",
           },
         },
@@ -250,13 +250,13 @@ describe("133-collapse-provider-connections migration", () => {
         profiles: {
           stamped: {
             source: "user",
-            provider: "vellum",
-            provider_connection: "vellum",
+            provider: "cadet",
+            provider_connection: "cadet",
             model: "claude-opus-4-8",
           },
           encoded: {
             source: "user",
-            provider: "vellum",
+            provider: "cadet",
             model: "fireworks/accounts/fireworks/models/minimax-m3",
           },
         },
@@ -266,12 +266,12 @@ describe("133-collapse-provider-connections migration", () => {
     const llm = readLlm();
     expect(llm.profiles.stamped).toEqual({
       source: "user",
-      provider: "vellum",
+      provider: "cadet",
       model: "claude-opus-4-8",
     });
     expect(llm.profiles.encoded).toEqual({
       source: "user",
-      provider: "vellum",
+      provider: "cadet",
       model: "accounts/fireworks/models/minimax-m3",
     });
   });
@@ -283,7 +283,7 @@ describe("133-collapse-provider-connections migration", () => {
           routed: {
             source: "user",
             provider: "fireworks",
-            provider_connection: "vellum",
+            provider_connection: "cadet",
             model: "fireworks/accounts/fireworks/models/minimax-m3",
           },
         },
@@ -292,7 +292,7 @@ describe("133-collapse-provider-connections migration", () => {
     run();
     expect(readLlm().profiles.routed).toEqual({
       source: "user",
-      provider: "vellum",
+      provider: "cadet",
       model: "accounts/fireworks/models/minimax-m3",
     });
   });
@@ -304,7 +304,7 @@ describe("133-collapse-provider-connections migration", () => {
           together: {
             source: "user",
             provider: "together",
-            provider_connection: "vellum",
+            provider_connection: "cadet",
             model: "MiniMaxAI/MiniMax-M3",
           },
         },
@@ -313,7 +313,7 @@ describe("133-collapse-provider-connections migration", () => {
     run();
     expect(readLlm().profiles.together).toEqual({
       source: "user",
-      provider: "vellum",
+      provider: "cadet",
       model: "MiniMaxAI/MiniMax-M3",
     });
   });
@@ -326,7 +326,7 @@ describe("133-collapse-provider-connections migration", () => {
           "my-managed": {
             source: "user" as const,
             provider: "anthropic",
-            provider_connection: "vellum",
+            provider_connection: "cadet",
             model: "claude-opus-4-8",
           },
         },
@@ -335,7 +335,7 @@ describe("133-collapse-provider-connections migration", () => {
     writeConfig(pre);
     const preParsed = AssistantConfigSchema.parse(pre);
     const preResolved = resolveCallSiteConfig("mainAgent", preParsed.llm);
-    expect(preResolved.provider_connection).toBe("vellum");
+    expect(preResolved.provider_connection).toBe("cadet");
     expect(preResolved.provider).toBe("anthropic");
 
     run();
@@ -348,7 +348,7 @@ describe("133-collapse-provider-connections migration", () => {
       postResolved.model,
     );
     expect(identity).toEqual({
-      connectionName: "vellum",
+      connectionName: "cadet",
       expectedProvider: "anthropic",
     });
     expect(postResolved.model).toBe(preResolved.model);
@@ -364,7 +364,7 @@ describe("133-collapse-provider-connections migration", () => {
         callSites: {
           commitMessage: {
             provider: "anthropic",
-            provider_connection: "vellum",
+            provider_connection: "cadet",
             model: "claude-haiku-4-5-20251001",
           },
           mainAgent: {
@@ -390,11 +390,11 @@ describe("133-collapse-provider-connections migration", () => {
   test("idempotent on an already-migrated config", () => {
     const migrated = {
       llm: {
-        defaultProvider: { provider: "vellum" },
+        defaultProvider: { provider: "cadet" },
         profiles: {
           "my-managed": {
             source: "user",
-            provider: "vellum",
+            provider: "cadet",
             model: "claude-opus-4-8",
           },
           byok: {
@@ -421,7 +421,7 @@ describe("133-collapse-provider-connections migration", () => {
           "my-managed": {
             source: "user",
             provider: "anthropic",
-            provider_connection: "vellum",
+            provider_connection: "cadet",
             model: "claude-opus-4-8",
             maxTokens: 32000,
             effort: "high",
@@ -439,7 +439,7 @@ describe("133-collapse-provider-connections migration", () => {
     expect(llm.profileOrder).toEqual(["my-managed"]);
     expect(llm.profiles["my-managed"]).toEqual({
       source: "user",
-      provider: "vellum",
+      provider: "cadet",
       model: "claude-opus-4-8",
       maxTokens: 32000,
       effort: "high",

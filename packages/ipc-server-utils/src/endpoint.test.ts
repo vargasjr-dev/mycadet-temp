@@ -22,13 +22,13 @@ describe("resolveIpcEndpoint", () => {
     expect(windowsEndpoint("gateway", "C:\\one").path).not.toBe(first.path);
   });
   test("cleans socket files but skips named pipes", () => {
-    const dir = mkdtempSync(join(tmpdir(), "vellum-ipc-cleanup-"));
+    const dir = mkdtempSync(join(tmpdir(), "cadet-ipc-cleanup-"));
     const socketPath = join(dir, "assistant.sock");
     try {
       writeFileSync(socketPath, "stale");
       removeIpcEndpointFile(socketPath);
       expect(existsSync(socketPath)).toBe(false);
-      removeIpcEndpointFile("\\\\.\\pipe\\vellum-assistant-test");
+      removeIpcEndpointFile("\\\\.\\pipe\\mycadet-test");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

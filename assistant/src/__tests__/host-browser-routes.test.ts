@@ -130,7 +130,7 @@ describe("handleHostBrowserResult — same-actor guard", () => {
 
   // ── Targeted + correct headers → 200 ─────────────────────────────────
 
-  describe("targeted + correct x-vellum-client-id + actor-principal", () => {
+  describe("targeted + correct x-cadet-client-id + actor-principal", () => {
     test("returns { accepted: true } and resolves the interaction", async () => {
       const requestId = "browser-req-targeted-match";
       pendingInteractions.register(requestId, {
@@ -143,8 +143,8 @@ describe("handleHostBrowserResult — same-actor guard", () => {
       const result = await handleHostBrowserResult({
         body: { requestId, content: "ok", isError: false },
         headers: {
-          "x-vellum-client-id": "client-A",
-          "x-vellum-actor-principal-id": "user-1",
+          "x-cadet-client-id": "client-A",
+          "x-cadet-actor-principal-id": "user-1",
         },
       });
 
@@ -152,7 +152,7 @@ describe("handleHostBrowserResult — same-actor guard", () => {
       expect(pendingInteractions.get(requestId)).toBeUndefined();
     });
 
-    test("trims whitespace from x-vellum-client-id before comparing", async () => {
+    test("trims whitespace from x-cadet-client-id before comparing", async () => {
       const requestId = "browser-req-targeted-trim";
       pendingInteractions.register(requestId, {
         conversationId: "conv-1",
@@ -164,8 +164,8 @@ describe("handleHostBrowserResult — same-actor guard", () => {
       const result = await handleHostBrowserResult({
         body: { requestId, content: "ok", isError: false },
         headers: {
-          "x-vellum-client-id": "  client-A  ",
-          "x-vellum-actor-principal-id": "user-1",
+          "x-cadet-client-id": "  client-A  ",
+          "x-cadet-actor-principal-id": "user-1",
         },
       });
 
@@ -173,9 +173,9 @@ describe("handleHostBrowserResult — same-actor guard", () => {
     });
   });
 
-  // ── Targeted + missing x-vellum-client-id → 400 ──────────────────────
+  // ── Targeted + missing x-cadet-client-id → 400 ──────────────────────
 
-  describe("targeted + missing x-vellum-client-id", () => {
+  describe("targeted + missing x-cadet-client-id", () => {
     test("throws BadRequestError when header is absent", () => {
       const requestId = "browser-req-targeted-no-header";
       pendingInteractions.register(requestId, {
@@ -204,7 +204,7 @@ describe("handleHostBrowserResult — same-actor guard", () => {
       expect(() =>
         handleHostBrowserResult({
           body: { requestId, content: "ok", isError: false },
-          headers: { "x-vellum-client-id": "   " },
+          headers: { "x-cadet-client-id": "   " },
         }),
       ).toThrow(BadRequestError);
     });
@@ -228,9 +228,9 @@ describe("handleHostBrowserResult — same-actor guard", () => {
     });
   });
 
-  // ── Targeted + wrong x-vellum-client-id → 403 ────────────────────────
+  // ── Targeted + wrong x-cadet-client-id → 403 ────────────────────────
 
-  describe("targeted + wrong x-vellum-client-id", () => {
+  describe("targeted + wrong x-cadet-client-id", () => {
     test("throws ForbiddenError when client id does not match target", () => {
       const requestId = "browser-req-targeted-client-mismatch";
       pendingInteractions.register(requestId, {
@@ -244,8 +244,8 @@ describe("handleHostBrowserResult — same-actor guard", () => {
         handleHostBrowserResult({
           body: { requestId, content: "ok", isError: false },
           headers: {
-            "x-vellum-client-id": "client-B",
-            "x-vellum-actor-principal-id": "user-1",
+            "x-cadet-client-id": "client-B",
+            "x-cadet-actor-principal-id": "user-1",
           },
         }),
       ).toThrow(ForbiddenError);
@@ -265,8 +265,8 @@ describe("handleHostBrowserResult — same-actor guard", () => {
         await handleHostBrowserResult({
           body: { requestId, content: "ok", isError: false },
           headers: {
-            "x-vellum-client-id": "client-B",
-            "x-vellum-actor-principal-id": "user-1",
+            "x-cadet-client-id": "client-B",
+            "x-cadet-actor-principal-id": "user-1",
           },
         });
       } catch (e) {
@@ -291,8 +291,8 @@ describe("handleHostBrowserResult — same-actor guard", () => {
       await handleHostBrowserResult({
         body: { requestId, content: "ok", isError: false },
         headers: {
-          "x-vellum-client-id": "client-B",
-          "x-vellum-actor-principal-id": "user-1",
+          "x-cadet-client-id": "client-B",
+          "x-cadet-actor-principal-id": "user-1",
         },
       }).catch(() => {
         // expected
@@ -318,8 +318,8 @@ describe("handleHostBrowserResult — same-actor guard", () => {
         handleHostBrowserResult({
           body: { requestId, content: "ok", isError: false },
           headers: {
-            "x-vellum-client-id": "client-A",
-            "x-vellum-actor-principal-id": "user-2",
+            "x-cadet-client-id": "client-A",
+            "x-cadet-actor-principal-id": "user-2",
           },
         }),
       ).toThrow(ForbiddenError);
@@ -337,7 +337,7 @@ describe("handleHostBrowserResult — same-actor guard", () => {
       expect(() =>
         handleHostBrowserResult({
           body: { requestId, content: "ok", isError: false },
-          headers: { "x-vellum-client-id": "client-A" },
+          headers: { "x-cadet-client-id": "client-A" },
         }),
       ).toThrow(ForbiddenError);
     });
@@ -355,8 +355,8 @@ describe("handleHostBrowserResult — same-actor guard", () => {
         handleHostBrowserResult({
           body: { requestId, content: "ok", isError: false },
           headers: {
-            "x-vellum-client-id": "client-A",
-            "x-vellum-actor-principal-id": "user-1",
+            "x-cadet-client-id": "client-A",
+            "x-cadet-actor-principal-id": "user-1",
           },
         }),
       ).toThrow(ForbiddenError);
@@ -374,8 +374,8 @@ describe("handleHostBrowserResult — same-actor guard", () => {
       await handleHostBrowserResult({
         body: { requestId, content: "ok", isError: false },
         headers: {
-          "x-vellum-client-id": "client-A",
-          "x-vellum-actor-principal-id": "user-2",
+          "x-cadet-client-id": "client-A",
+          "x-cadet-actor-principal-id": "user-2",
         },
       }).catch(() => {
         // expected
@@ -412,7 +412,7 @@ describe("handleHostBrowserResult — same-actor guard", () => {
 
       const result = await handleHostBrowserResult({
         body: { requestId, content: "ok", isError: false },
-        headers: { "x-vellum-client-id": "anything" },
+        headers: { "x-cadet-client-id": "anything" },
       });
 
       expect(result).toEqual({ accepted: true });
@@ -430,7 +430,7 @@ describe("handleHostBrowserResult — same-actor guard", () => {
       expect(() =>
         handleHostBrowserResult({
           body: { requestId, content: "ok", isError: false },
-          headers: { "x-vellum-actor-principal-id": "user-attacker" },
+          headers: { "x-cadet-actor-principal-id": "user-attacker" },
         }),
       ).toThrow(ForbiddenError);
       expect(pendingInteractions.get(requestId)).toBeDefined();
@@ -446,7 +446,7 @@ describe("handleHostBrowserResult — same-actor guard", () => {
 
       const result = await handleHostBrowserResult({
         body: { requestId, content: "ok", isError: false },
-        headers: { "x-vellum-actor-principal-id": "user-owner" },
+        headers: { "x-cadet-actor-principal-id": "user-owner" },
       });
 
       expect(result).toEqual({ accepted: true });

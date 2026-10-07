@@ -56,7 +56,7 @@ export const ADMISSION_FLOOR: Record<AdmissionPolicy, number> = {
  *
  * `phone` is NOT exempt — voice ingress enforces the admission floor.
  *
- * `vellum` / `vellum-shared` / `whatsapp` are NOT exempt: their floors are
+ * `cadet` / `cadet-shared` / `whatsapp` are NOT exempt: their floors are
  * still enforced at runtime, but they are hidden from the configurable UI; see
  * {@link ADMISSION_POLICY_HIDDEN_CHANNELS}.
  */
@@ -78,15 +78,15 @@ export function isAdmissionPolicyExemptChannel(channelType: string): boolean {
  * drifted row so a stale floor (e.g. a legacy `no_one`) can't strand a channel
  * the user can no longer see.
  *
- * `vellum` is the local desktop/web client surface; the guardian is always
+ * `cadet` is the local desktop/web client surface; the guardian is always
  * max-rank there, so the seed default admits them regardless of the floor.
  *
- * `vellum-shared` carries conversations a guardian shares with a contact. Its
+ * `cadet-shared` carries conversations a guardian shares with a contact. Its
  * seed default is `guardian_only`, which admits no contact.
  */
 export const ADMISSION_POLICY_HIDDEN_CHANNELS: ReadonlySet<string> = new Set([
-  "vellum",
-  "vellum-shared",
+  "cadet",
+  "cadet-shared",
   "whatsapp",
 ]);
 

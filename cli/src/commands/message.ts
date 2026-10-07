@@ -161,7 +161,7 @@ export async function message(): Promise<void> {
 
   const payload: Record<string, string> = {
     content: messageContent,
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
     interface: "cli",
   };
   if (conversationKey) {

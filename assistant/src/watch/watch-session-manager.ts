@@ -435,7 +435,7 @@ export class WatchSessionManager {
       title: TEACH_CONVERSATION_TITLE,
       conversationType: "background",
       source: WATCH_CONVERSATION_SOURCE,
-      origin: "vellum",
+      origin: "cadet",
     }).id;
   }
 

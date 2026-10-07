@@ -2,7 +2,7 @@
  * Declared signature verification for plugin ingress routes.
  *
  * A plugin route that receives third-party webhooks cannot use the platform
- * scheme (`Vellum-Signature`, see `../http/vellum-signature.ts`): the caller is
+ * scheme (`Cadet-Signature`, see `../http/cadet-signature.ts`): the caller is
  * Comms, or Photon, or Stripe, and it signs the way it signs. Before this,
  * such a route could be declared, approved, registered with the vendor, and
  * then 403 every delivery — the only schemes the gateway knew were its own.
@@ -215,7 +215,7 @@ function requestUrlCandidates(opts: {
     }
   };
 
-  add(opts.headers.get("x-vellum-ingress-url"));
+  add(opts.headers.get("x-cadet-ingress-url"));
 
   let raw: URL | undefined;
   try {

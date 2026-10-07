@@ -51,7 +51,7 @@ describe("resolveImageGenCredentials", () => {
       });
     });
 
-    test("returns errorHint mentioning 'log in to Vellum' when platform URL is missing", async () => {
+    test("returns errorHint mentioning 'log in to Cadet' when platform URL is missing", async () => {
       mockPlatformBaseUrl = "";
       mockAssistantApiKey = "sk-assistant-key";
 
@@ -62,7 +62,7 @@ describe("resolveImageGenCredentials", () => {
 
       expect(result.credentials).toBeUndefined();
       expect(result.errorHint).toBeDefined();
-      expect(result.errorHint).toContain("log in to Vellum");
+      expect(result.errorHint).toContain("log in to Cadet");
     });
 
     test("returns errorHint when assistant API key is empty (TOCTOU-safe)", async () => {
@@ -76,7 +76,7 @@ describe("resolveImageGenCredentials", () => {
 
       expect(result.credentials).toBeUndefined();
       expect(result.errorHint).toBeDefined();
-      expect(result.errorHint).toContain("log in to Vellum");
+      expect(result.errorHint).toContain("log in to Cadet");
     });
   });
 
@@ -171,7 +171,7 @@ describe("resolveImageGenRouting", () => {
   test("provider cadet is managed with a gemini backend for gemini models", () => {
     expect(
       resolveImageGenRouting({
-        provider: "vellum",
+        provider: "cadet",
         model: "gemini-3.1-flash-image-preview",
       }),
     ).toEqual({ backendProvider: "gemini", managed: true });
@@ -179,14 +179,14 @@ describe("resolveImageGenRouting", () => {
 
   test("provider cadet derives an openai backend from a gpt model", () => {
     expect(
-      resolveImageGenRouting({ provider: "vellum", model: "gpt-image-2" }),
+      resolveImageGenRouting({ provider: "cadet", model: "gpt-image-2" }),
     ).toEqual({ backendProvider: "openai", managed: true });
   });
 
   test("a model override wins over the stored model under cadet", () => {
     expect(
       resolveImageGenRouting(
-        { provider: "vellum", model: "gemini-3.1-flash-image-preview" },
+        { provider: "cadet", model: "gemini-3.1-flash-image-preview" },
         "gpt-image-2",
       ),
     ).toEqual({ backendProvider: "openai", managed: true });
@@ -235,7 +235,7 @@ describe("resolveImageGenRouting", () => {
     mockPlatformBaseUrl = "";
 
     const routing = resolveImageGenRouting({
-      provider: "vellum",
+      provider: "cadet",
       model: "gemini-3.1-flash-image-preview",
     });
     const result = await resolveImageGenCredentials({

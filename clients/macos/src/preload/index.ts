@@ -768,9 +768,9 @@ if (cadetConfig) {
 
 const flagOverrides: Record<string, boolean | string> = {};
 for (const [key, value] of Object.entries(process.env)) {
-  if (!key.startsWith("VELLUM_FLAG_") || value === undefined) continue;
+  if (!key.startsWith("CADET_FLAG_") || value === undefined) continue;
   const flagKey = key
-    .slice("VELLUM_FLAG_".length)
+    .slice("CADET_FLAG_".length)
     .toLowerCase()
     .replace(/_/g, "-");
   const lower = value.trim().toLowerCase();

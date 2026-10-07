@@ -15,7 +15,7 @@
  * Used when there is no inbound reply callback URL to post back to — the
  * guardian decided off-channel (desktop), or the expiry sweep fired on a timer
  * with no originating request in hand. Returns null for channels that have no
- * deliverable route (e.g. email, the in-app vellum surface).
+ * deliverable route (e.g. email, the in-app cadet surface).
  *
  * Discord carries `dm=1`, which tells its transport that the `chatId` it is
  * handed names a person to open a DM with rather than a channel to post in.

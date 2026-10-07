@@ -52,7 +52,7 @@ let mockResolvedSkills: Array<{
 }> = [];
 
 // Per-provider mock state
-let mockVellumProvider: SkillFileProvider;
+let mockCadetProvider: SkillFileProvider;
 let mockSkillsshProvider: SkillFileProvider;
 let mockClawhubProvider: SkillFileProvider;
 
@@ -176,12 +176,12 @@ mock.module("../skills/catalog-files.js", () => ({
   sanitizeRelativePath: inlineSanitizeRelativePath,
   hasHiddenOrSkippedSegment: inlineHasHiddenOrSkippedSegment,
   catalogSkillToSlim: () => ({}),
-  createVellumCatalogProvider: () => ({
-    canHandle: (id: string) => mockVellumProvider.canHandle(id),
-    listFiles: (id: string) => mockVellumProvider.listFiles(id),
+  createCadetCatalogProvider: () => ({
+    canHandle: (id: string) => mockCadetProvider.canHandle(id),
+    listFiles: (id: string) => mockCadetProvider.listFiles(id),
     readFileContent: (id: string, p: string) =>
-      mockVellumProvider.readFileContent(id, p),
-    toSlimSkill: (id: string) => mockVellumProvider.toSlimSkill(id),
+      mockCadetProvider.readFileContent(id, p),
+    toSlimSkill: (id: string) => mockCadetProvider.toSlimSkill(id),
   }),
   readCatalogSkillFiles: async () => null,
   readCatalogSkillFileContent: async () => null,
@@ -336,7 +336,7 @@ beforeEach(() => {
   mockResolvedSkills = [];
   mockPlatformBaseUrl = "https://platform.test";
   providerReadCalls.length = 0;
-  mockVellumProvider = makeNoopProvider("vellum");
+  mockCadetProvider = makeNoopProvider("cadet");
   mockSkillsshProvider = makeNoopProvider("skillssh");
   mockClawhubProvider = makeNoopProvider("clawhub");
   // Force provider chain re-creation from the (mocked) factory functions
@@ -454,7 +454,7 @@ describe("getSkillFileContent — uninstalled skill (provider chain)", () => {
     mockResolvedSkills = [];
     installFetchForbidden();
 
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => true,
       listFiles: async () => null,
       readFileContent: async (_skillId, path) => ({
@@ -501,7 +501,7 @@ describe("getSkillFileContent — uninstalled skill (provider chain)", () => {
     installFetchForbidden();
 
     // Cadet doesn't handle
-    mockVellumProvider = makeNoopProvider("vellum");
+    mockCadetProvider = makeNoopProvider("cadet");
 
     // skills.sh handles and returns content
     mockSkillsshProvider = {
@@ -532,7 +532,7 @@ describe("getSkillFileContent — uninstalled skill (provider chain)", () => {
     installFetchForbidden();
 
     // Cadet and skills.sh don't handle
-    mockVellumProvider = makeNoopProvider("vellum");
+    mockCadetProvider = makeNoopProvider("cadet");
     mockSkillsshProvider = makeNoopProvider("skillssh");
 
     // Clawhub handles and returns content
@@ -564,7 +564,7 @@ describe("getSkillFileContent — uninstalled skill (provider chain)", () => {
     installFetchForbidden();
 
     // Cadet provider claims this skill but returns null for the specific file
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => true,
       listFiles: async () => null,
       readFileContent: async () => null,
@@ -587,7 +587,7 @@ describe("getSkillFileContent — uninstalled skill (provider chain)", () => {
     const clawhubReadCalls: string[] = [];
 
     // Cadet provider claims the skill but returns null for file content
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => true,
       listFiles: async () => null,
       readFileContent: async () => null,
@@ -657,7 +657,7 @@ describe("getSkillFileContent — installed skill with missing directory", () =>
     ];
     // Even if a provider would return content, the handler must NOT
     // fall through.
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => true,
       listFiles: async () => null,
       readFileContent: async () => ({
@@ -710,7 +710,7 @@ describe("getSkillFileContent — hidden / SKIP_DIRS rejection", () => {
   test("rejects dotfile reads for an uninstalled skill before any provider read", async () => {
     mockResolvedSkills = []; // not installed
     installFetchForbidden();
-    mockVellumProvider = {
+    mockCadetProvider = {
       canHandle: () => true,
       listFiles: async () => null,
       readFileContent: async () => ({

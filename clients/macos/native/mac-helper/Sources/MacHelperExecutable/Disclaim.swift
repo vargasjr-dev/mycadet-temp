@@ -21,7 +21,7 @@ import Foundation
 ///
 /// Returns true when the current process is already running disclaimed.
 func ensureDisclaimedResponsibility() -> Bool {
-    let marker = "VELLUM_HELPER_DISCLAIMED"
+    let marker = "CADET_HELPER_DISCLAIMED"
     if ProcessInfo.processInfo.environment[marker] == "1" {
         return true
     }

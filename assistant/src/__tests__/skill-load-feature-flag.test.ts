@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { setOverridesForTesting } from "./feature-flag-test-helpers.js";
 
-const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 const DECLARED_SKILL_ID = "a2a-channel";
 const DECLARED_FLAG_KEY = "a2a-channel";

@@ -14,7 +14,7 @@ import type { TrustContext } from "./trust-context-types.js";
  * The internal control-plane channel. A conversation stamped with it is the
  * assistant's own, not a remote correspondent's.
  */
-const INTERNAL_ORIGIN_CHANNEL = "vellum";
+const INTERNAL_ORIGIN_CHANNEL = "cadet";
 
 /**
  * Rebuild the trust context a conversation resumes under when no inbound actor
@@ -25,7 +25,7 @@ const INTERNAL_ORIGIN_CHANNEL = "vellum";
  * gateway verdict and never persisted, so it cannot be reconstructed here.
  * A local conversation is one whose stored `origin_channel` is either SQL NULL
  * (a desktop/web/CLI turn that never carried a channel message) or the internal
- * `vellum` channel. Those belong to the guardian owner, so they resume under
+ * `cadet` channel. Those belong to the guardian owner, so they resume under
  * {@link INTERNAL_GUARDIAN_TRUST_CONTEXT}: the trust class `loadFromDb` needs
  * to rehydrate their guardian-provenance history instead of filtering it to
  * empty, and the class the tool-approval gate reads to let the guardian's own

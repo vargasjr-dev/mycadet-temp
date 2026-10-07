@@ -1,7 +1,7 @@
 /**
  * Public Cadet roadmap, acted on as the assistant itself.
  *
- * Mirrors the surface of the user-facing `vellum roadmap` CLI
+ * Mirrors the surface of the user-facing `cadet roadmap` CLI
  * (`cli/src/commands/roadmap.ts`), but authenticates with the assistant's own
  * platform API key instead of the owner's session token, so items, upvotes and
  * comments are attributed to the assistant (`creator_kind: assistant`).
@@ -44,7 +44,7 @@ import type {
 // Endpoints
 // ---------------------------------------------------------------------------
 
-const DEFAULT_MARKETING_URL = "https://marketing.vellum.ai";
+const DEFAULT_MARKETING_URL = "https://marketing.mycadet.ai";
 
 /**
  * Deadline for one roadmap call, set below the CLI's 60s IPC timeout on
@@ -71,10 +71,10 @@ function hostnameOf(url: string): string | undefined {
  * The deployment this assistant belongs to, judged by the platform it
  * authenticates against.
  *
- * `VELLUM_ENVIRONMENT` cannot answer this. Unset, it means dev to
+ * `CADET_ENVIRONMENT` cannot answer this. Unset, it means dev to
  * `getPlatformBaseUrl` and local to every launcher, but it would have to mean
  * production for a roadmap default to be safe, and it is blind to the config
- * file and `VELLUM_PLATFORM_URL`, either of which can point a differently
+ * file and `CADET_PLATFORM_URL`, either of which can point a differently
  * labelled assistant at production. The platform base URL is the one signal
  * that already accounts for all three, and it names the deployment that issued
  * the very key these calls are signed with.
@@ -95,7 +95,7 @@ function resolveDeployment(): EnvironmentDefinition | undefined {
 interface RoadmapEndpoints {
   /**
    * Marketing service that serves the roadmap API. Reached directly rather
-   * than through the `www.vellum.ai/api/marketing` proxy the user-facing CLI
+   * than through the `mycadet.ai/api/marketing` proxy the user-facing CLI
    * uses: that proxy carries the owner's session cookie, which is exactly the
    * identity this surface exists to avoid.
    */
@@ -124,19 +124,19 @@ interface RoadmapEndpoints {
  */
 function resolveEndpoints(): RoadmapEndpoints {
   const deployment = resolveDeployment();
-  const apiOverride = process.env.VELLUM_MARKETING_URL?.trim();
-  const webOverride = process.env.VELLUM_WEB_URL?.trim();
+  const apiOverride = process.env.CADET_MARKETING_URL?.trim();
+  const webOverride = process.env.CADET_WEB_URL?.trim();
 
   if (!apiOverride && deployment?.name !== "production") {
     throw new UnprocessableEntityError(
-      `The Cadet roadmap has no deployment for a ${getPlatformBaseUrl()} assistant. Set VELLUM_MARKETING_URL to the roadmap service for this environment.`,
+      `The Cadet roadmap has no deployment for a ${getPlatformBaseUrl()} assistant. Set CADET_MARKETING_URL to the roadmap service for this environment.`,
     );
   }
 
   const web = webOverride || deployment?.webUrl;
   if (!web) {
     throw new UnprocessableEntityError(
-      `No web origin is known for a ${getPlatformBaseUrl()} assistant, so roadmap item links cannot be built. Set VELLUM_WEB_URL to the site that renders this environment's roadmap.`,
+      `No web origin is known for a ${getPlatformBaseUrl()} assistant, so roadmap item links cannot be built. Set CADET_WEB_URL to the site that renders this environment's roadmap.`,
     );
   }
 
@@ -651,7 +651,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "List public roadmap items",
     description:
-      "Lists items from the public Vellum roadmap. Authenticated as the assistant when a platform API key is stored, which fills in viewerUpvoted; anonymous otherwise.",
+      "Lists items from the public Cadet roadmap. Authenticated as the assistant when a platform API key is stored, which fills in viewerUpvoted; anonymous otherwise.",
     tags: ["roadmap"],
     queryParams: [
       { name: "q", required: false, description: "Search query" },

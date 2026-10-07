@@ -11,8 +11,8 @@ import {
   test,
 } from "bun:test";
 
-const originalVellumDev = process.env.VELLUM_DEV;
-process.env.VELLUM_DEV = "1";
+const originalCadetDev = process.env.CADET_DEV;
+process.env.CADET_DEV = "1";
 
 let oauthConnectionStore: Record<string, { id: string; status: string }> = {};
 
@@ -80,14 +80,14 @@ afterAll(() => {
   _setMetadataPath(null);
   setStorePathForTesting(null);
   _resetBackend();
-  if (originalVellumDev === undefined) {
-    delete process.env.VELLUM_DEV;
+  if (originalCadetDev === undefined) {
+    delete process.env.CADET_DEV;
   } else {
-    process.env.VELLUM_DEV = originalVellumDev;
+    process.env.CADET_DEV = originalCadetDev;
   }
 });
 
-const testDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testDir = process.env.CADET_WORKSPACE_DIR!;
 const secureStorePath = join(testDir, "discord-config-keys.enc");
 const metadataPath = join(testDir, "discord-config-metadata.json");
 

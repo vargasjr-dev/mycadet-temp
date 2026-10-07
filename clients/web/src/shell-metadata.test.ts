@@ -70,7 +70,7 @@ describe("SPA shell: Open Graph metadata", () => {
 
   test("declares a matching Twitter card", () => {
     expect(nameTag("twitter:card")).toBe("summary_large_image");
-    expect(nameTag("twitter:site")).toBe("@cadet_ai");
+    expect(nameTag("twitter:site")).toBe("@mycadet_ai");
     expect(nameTag("twitter:title")).toBe(EXPECTED_TITLE);
     expect(nameTag("twitter:description")).toBeTruthy();
     expect(nameTag("twitter:image")).toBe(EXPECTED_IMAGE);

@@ -108,7 +108,7 @@ import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 import { RouteResponse } from "./types.js";
 
 /**
- * CES account prefix for platform-identity (`vellum:*`) credentials. Entries
+ * CES account prefix for platform-identity (`cadet:*`) credentials. Entries
  * with an account that starts with this string are filtered out of any
  * imported bundle so they don't overwrite the target's own Django-provisioned
  * platform identity (most notably `assistant_api_key`).
@@ -130,7 +130,7 @@ const PLATFORM_CREDENTIAL_PREFIX = credentialKey("cadet", "");
  * import we reconcile metadata.json against CES so any field CES already holds
  * a value for gets a matching metadata entry.
  */
-const VELLUM_PLATFORM_IDENTITY_FIELDS = [
+const CADET_PLATFORM_IDENTITY_FIELDS = [
   "platform_base_url",
   "assistant_api_key",
   "platform_assistant_id",
@@ -140,33 +140,33 @@ const VELLUM_PLATFORM_IDENTITY_FIELDS = [
 ] as const;
 
 /**
- * Idempotent post-import reconciliation: for each vellum:* field, if CES
+ * Idempotent post-import reconciliation: for each cadet:* field, if CES
  * has a value but metadata.json doesn't list it, upsert the entry. Pure
  * add-only — never deletes anything. Safe to run whether or not Django's
  * post-hatch provisioning has completed (missing CES values are skipped).
  *
  * Exported for direct unit-testing.
  */
-export async function reconcileVellumMetadataFromCes(warningSink: {
+export async function reconcileCadetMetadataFromCes(warningSink: {
   warnings: string[];
 }): Promise<void> {
-  for (const field of VELLUM_PLATFORM_IDENTITY_FIELDS) {
+  for (const field of CADET_PLATFORM_IDENTITY_FIELDS) {
     try {
       const value = await getSecureKeyAsync(credentialKey("cadet", field));
       if (!value) {
         continue;
       }
-      if (getCredentialMetadata("vellum", field)) {
+      if (getCredentialMetadata("cadet", field)) {
         continue;
       }
-      upsertCredentialMetadata("vellum", field, {});
+      upsertCredentialMetadata("cadet", field, {});
       log.info(
         { field },
-        "Reconciled vellum:* metadata entry from CES after import",
+        "Reconciled cadet:* metadata entry from CES after import",
       );
     } catch (err) {
       warningSink.warnings.push(
-        `Failed to reconcile vellum:${field} metadata: ${
+        `Failed to reconcile cadet:${field} metadata: ${
           err instanceof Error ? err.message : String(err)
         }`,
       );
@@ -474,7 +474,7 @@ const MigrationExportToGcsBody = z.object({
   upload_url: z.string().url(),
   description: z.string().optional(),
   /**
-   * `debug`: a bundle for Vellum staff to inspect. Adds the gateway's
+   * `debug`: a bundle for Cadet staff to inspect. Adds the gateway's
    * database and recent logs under `gateway/`. `migration` is the default.
    */
   profile: z.enum(["migration", "debug"]).default("migration"),
@@ -645,7 +645,7 @@ export async function handleMigrationExportToGcs({ body }: RouteHandlerArgs) {
   // a platform→local import — so redact instead of emitting a bundle the
   // importer is guaranteed to reject.
   //
-  // A debug bundle goes to Vellum staff, so it never carries credentials
+  // A debug bundle goes to Cadet staff, so it never carries credentials
   // either, whatever the deployment mode.
   let collected: CollectedCredentials;
   if (manifestInputs.origin.mode === "managed" || isDebugProfile) {
@@ -1049,10 +1049,10 @@ export async function handleMigrationImport(
       );
     }
 
-    // Reconcile vellum:* metadata against CES so the gateway's
+    // Reconcile cadet:* metadata against CES so the gateway's
     // readServiceCredentials can still find platform identity values even
     // if Django's post-hatch provisioning raced with the import.
-    await reconcileVellumMetadataFromCes(result.report);
+    await reconcileCadetMetadataFromCes(result.report);
 
     // Invalidate in-process config cache so imported settings.json takes effect
     invalidateConfigCache();
@@ -1100,7 +1100,7 @@ const MigrationImportFromGcsBody = z.object({ bundle_url: z.string().url() });
  * `extraction_failed` for truncated bodies, matching the OpenAPI
  * contract.
  */
-const kFetchBodyError = Symbol.for("vellum.migrationImport.fetchBodyError");
+const kFetchBodyError = Symbol.for("cadet.migrationImport.fetchBodyError");
 
 /**
  * Sidecar flag on the wrapper PassThrough indicating that its upstream
@@ -1109,7 +1109,7 @@ const kFetchBodyError = Symbol.for("vellum.migrationImport.fetchBodyError");
  * in `result.reason = "extraction_failed"` but strips the tag.
  */
 const kFetchBodyTornDown = Symbol.for(
-  "vellum.migrationImport.fetchBodyTornDown",
+  "cadet.migrationImport.fetchBodyTornDown",
 );
 
 function tagFetchBodyError(err: NodeJS.ErrnoException): void {
@@ -1137,19 +1137,19 @@ function wasFetchBodyTornDown(stream: PassThrough): boolean {
  * (e.g. to point the validator at a local HTTP server fixture).
  *
  * NOTE: this is intentionally NOT initialized from the environment. The
- * `VELLUM_MIGRATION_IMPORT_ALLOWED_HOSTS` env var is import-scoped and is
+ * `CADET_MIGRATION_IMPORT_ALLOWED_HOSTS` env var is import-scoped and is
  * applied only by `resolveImportValidatorOptions` — never on the export
  * upload path, so a relaxed import allowlist can't widen where the
  * assistant is willing to PUT a bundle (SSRF). Widening the export path is
  * its own explicit operator opt-in via the separate
- * `VELLUM_MIGRATION_EXPORT_ALLOWED_HOSTS` env var (local/minikube only,
+ * `CADET_MIGRATION_EXPORT_ALLOWED_HOSTS` env var (local/minikube only,
  * where the platform serves plain-http SigV4 URLs from SeaweedFS) — see
  * `exportValidatorOptions`.
  */
 let urlValidatorOptions: ValidateGcsSignedUrlOptions | undefined;
 
 /**
- * Parse the comma-separated `VELLUM_MIGRATION_IMPORT_ALLOWED_HOSTS` env value
+ * Parse the comma-separated `CADET_MIGRATION_IMPORT_ALLOWED_HOSTS` env value
  * into `ValidateGcsSignedUrlOptions`. Returns `undefined` when the value is
  * absent or contains no non-empty host entries, so the validator falls back
  * to its strict production default.
@@ -1173,7 +1173,7 @@ export function parseMigrationImportAllowedHostsEnv(
  * Resolve the validator options for the IMPORT URL handlers only.
  *
  * Precedence: an explicit test override (when set) wins; otherwise the
- * env-derived import allowlist from `VELLUM_MIGRATION_IMPORT_ALLOWED_HOSTS`.
+ * env-derived import allowlist from `CADET_MIGRATION_IMPORT_ALLOWED_HOSTS`.
  * The platform injects that env var only where the bundle is served over
  * plain http from a non-GCS host — e.g. local/minikube, where the signed
  * bundle URL points at `http://host.docker.internal/...`. Supplying a
@@ -1199,14 +1199,14 @@ export function resolveImportValidatorOptions(
 function importValidatorOptions(): ValidateGcsSignedUrlOptions | undefined {
   return resolveImportValidatorOptions(
     urlValidatorOptions,
-    process.env.VELLUM_MIGRATION_IMPORT_ALLOWED_HOSTS,
+    process.env.CADET_MIGRATION_IMPORT_ALLOWED_HOSTS,
   );
 }
 
 /**
  * Effective validator options for the EXPORT (upload URL) handler,
  * combining the test seam with the export-only env allowlist from
- * `VELLUM_MIGRATION_EXPORT_ALLOWED_HOSTS`.
+ * `CADET_MIGRATION_EXPORT_ALLOWED_HOSTS`.
  *
  * Deliberately a separate env var from the import allowlist: the export
  * path controls where the assistant will PUT a full workspace bundle, so
@@ -1219,7 +1219,7 @@ function importValidatorOptions(): ValidateGcsSignedUrlOptions | undefined {
 function exportValidatorOptions(): ValidateGcsSignedUrlOptions | undefined {
   return resolveImportValidatorOptions(
     urlValidatorOptions,
-    process.env.VELLUM_MIGRATION_EXPORT_ALLOWED_HOSTS,
+    process.env.CADET_MIGRATION_EXPORT_ALLOWED_HOSTS,
   );
 }
 
@@ -1636,13 +1636,13 @@ async function runGcsImport(
     result.report.warnings.push(...credentialImportWarningSink.warnings);
   }
 
-  // Reconcile vellum:* metadata against CES so the gateway's
+  // Reconcile cadet:* metadata against CES so the gateway's
   // readServiceCredentials can still find platform identity values even
   // if Django's post-hatch provisioning raced with the streaming import
   // (its metadata upsert may have landed in the backup-dir copy that the
   // swap pushed aside, while its CES write survived on the separate
   // volume).
-  await reconcileVellumMetadataFromCes(result.report);
+  await reconcileCadetMetadataFromCes(result.report);
 
   // streamCommitImport already invalidated config + trust caches inside its
   // post-swap cleanup. We only need to check whether the newly-imported DB
@@ -1735,7 +1735,7 @@ async function handleMigrationImportFromPath(
       result.report.warnings.push(...credentialImportWarningSink.warnings);
     }
 
-    await reconcileVellumMetadataFromCes(result.report);
+    await reconcileCadetMetadataFromCes(result.report);
     appendNewerMigrationWarningsIfAny(result.report);
     return importCommitSuccessResult(result.report, credentialsImported);
   } catch (err) {
@@ -1988,7 +1988,7 @@ export async function handleMigrationImportFromGcs({ body }: RouteHandlerArgs) {
  * bundle from GCS, validates it, and returns the same preflight report as
  * /v1/migrations/import-preflight — without writing anything to disk.
  *
- * This allows the CLI to run `vellum teleport --dry-run` against local and
+ * This allows the CLI to run `cadet teleport --dry-run` against local and
  * docker targets (which do not have a direct-upload preflight path like the
  * platform does) by reusing the same GCS-mediated bundle it would use for
  * a real import.
@@ -2108,7 +2108,7 @@ interface CredentialWarningSink {
 }
 
 /**
- * Filter platform-identity (vellum:*) credentials out of the bundle, push
+ * Filter platform-identity (cadet:*) credentials out of the bundle, push
  * user credentials into CES via `bulkSetSecureKeysAsync`, and return a
  * structured summary. Never throws — CES failures become report warnings.
  */
@@ -2116,7 +2116,7 @@ async function importBundleCredentialsIntoCes(
   bundleCredentials: Array<{ account: string; value: string }>,
   warningSink: CredentialWarningSink,
 ): Promise<CredentialImportSummary | undefined> {
-  // Filter out platform-identity credentials (vellum:*) — these are
+  // Filter out platform-identity credentials (cadet:*) — these are
   // environment-specific and must not overwrite the target's own identity.
   const userCredentials = bundleCredentials.filter(
     (c) => !c.account.startsWith(PLATFORM_CREDENTIAL_PREFIX),
@@ -2479,7 +2479,7 @@ export const ROUTES: RouteDefinition[] = [
         .enum(["migration", "debug"])
         .optional()
         .describe(
-          "Export profile. 'migration' (default) builds a teleport bundle. 'debug' builds a bundle for Vellum staff to open on a debug clone: no credentials, plus the gateway's database and logs under gateway/.",
+          "Export profile. 'migration' (default) builds a teleport bundle. 'debug' builds a bundle for Cadet staff to open on a debug clone: no credentials, plus the gateway's database and logs under gateway/.",
         ),
     }),
     responseStatus: "202",
@@ -2528,7 +2528,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Dry-run import analysis from a signed GCS URL",
     description:
-      "Fetch a .vbundle archive from a signed GCS download URL and return a preflight report — what would change if the bundle were imported — without writing anything to disk. Enables `vellum teleport --dry-run` against local and docker targets.",
+      "Fetch a .vbundle archive from a signed GCS download URL and return a preflight report — what would change if the bundle were imported — without writing anything to disk. Enables `cadet teleport --dry-run` against local and docker targets.",
     tags: ["migrations"],
     requestBody: z.object({
       bundle_url: z

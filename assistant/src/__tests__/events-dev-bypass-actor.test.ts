@@ -107,9 +107,9 @@ describe("events SSE registration — dev-bypass actor translation", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "devbypass-client-001",
-          "x-vellum-interface-id": "macos",
-          "x-vellum-actor-principal-id": "dev-bypass",
+          "x-cadet-client-id": "devbypass-client-001",
+          "x-cadet-interface-id": "macos",
+          "x-cadet-actor-principal-id": "dev-bypass",
         },
         abortSignal: ac.signal,
       },
@@ -135,9 +135,9 @@ describe("events SSE registration — dev-bypass actor translation", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "devbypass-client-002",
-          "x-vellum-interface-id": "macos",
-          "x-vellum-actor-principal-id": "dev-bypass",
+          "x-cadet-client-id": "devbypass-client-002",
+          "x-cadet-interface-id": "macos",
+          "x-cadet-actor-principal-id": "dev-bypass",
         },
         abortSignal: ac.signal,
       },
@@ -161,9 +161,9 @@ describe("events SSE registration — dev-bypass actor translation", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "heal-client-001",
-          "x-vellum-interface-id": "chrome-extension",
-          "x-vellum-actor-principal-id": "dev-bypass",
+          "x-cadet-client-id": "heal-client-001",
+          "x-cadet-interface-id": "chrome-extension",
+          "x-cadet-actor-principal-id": "dev-bypass",
         },
         abortSignal: ac.signal,
       },
@@ -196,9 +196,9 @@ describe("events SSE registration — dev-bypass actor translation", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "warm-client-001",
-          "x-vellum-interface-id": "macos",
-          "x-vellum-actor-principal-id": "dev-bypass",
+          "x-cadet-client-id": "warm-client-001",
+          "x-cadet-interface-id": "macos",
+          "x-cadet-actor-principal-id": "dev-bypass",
         },
         abortSignal: ac.signal,
       },
@@ -222,8 +222,8 @@ describe("events SSE registration — dev-bypass actor translation", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "legacy-client-001",
-          "x-vellum-interface-id": "macos",
+          "x-cadet-client-id": "legacy-client-001",
+          "x-cadet-interface-id": "macos",
         },
         abortSignal: ac.signal,
       },
@@ -248,9 +248,9 @@ describe("events SSE registration — dev-bypass actor translation", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "race-client-001",
-          "x-vellum-interface-id": "macos",
-          "x-vellum-actor-principal-id": "dev-bypass",
+          "x-cadet-client-id": "race-client-001",
+          "x-cadet-interface-id": "macos",
+          "x-cadet-actor-principal-id": "dev-bypass",
         },
         abortSignal: ac1.signal,
       },
@@ -265,9 +265,9 @@ describe("events SSE registration — dev-bypass actor translation", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "race-client-001",
-          "x-vellum-interface-id": "macos",
-          "x-vellum-actor-principal-id": "dev-bypass",
+          "x-cadet-client-id": "race-client-001",
+          "x-cadet-interface-id": "macos",
+          "x-cadet-actor-principal-id": "dev-bypass",
         },
         abortSignal: ac2.signal,
       },
@@ -301,9 +301,9 @@ describe("events SSE registration — dev-bypass actor translation", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "retry-client-001",
-          "x-vellum-interface-id": "chrome-extension",
-          "x-vellum-actor-principal-id": "dev-bypass",
+          "x-cadet-client-id": "retry-client-001",
+          "x-cadet-interface-id": "chrome-extension",
+          "x-cadet-actor-principal-id": "dev-bypass",
         },
         abortSignal: ac.signal,
       },
@@ -411,9 +411,9 @@ describe("events SSE registration — dev-bypass actor translation", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "prod-client-003",
-          "x-vellum-interface-id": "macos",
-          "x-vellum-actor-principal-id": "dev-bypass",
+          "x-cadet-client-id": "prod-client-003",
+          "x-cadet-interface-id": "macos",
+          "x-cadet-actor-principal-id": "dev-bypass",
         },
         abortSignal: ac.signal,
       },
@@ -439,9 +439,9 @@ describe("events SSE registration — dev-bypass actor translation", () => {
     handleSubscribeAssistantEvents(
       {
         headers: {
-          "x-vellum-client-id": "service-client-004",
-          "x-vellum-interface-id": "macos",
-          "x-vellum-actor-principal-id": "service-account-A",
+          "x-cadet-client-id": "service-client-004",
+          "x-cadet-interface-id": "macos",
+          "x-cadet-actor-principal-id": "service-account-A",
         },
         abortSignal: ac.signal,
       },

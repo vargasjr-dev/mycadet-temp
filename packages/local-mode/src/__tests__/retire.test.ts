@@ -30,7 +30,7 @@ beforeAll(async () => {
 afterEach(() => {
   spawnArgs.length = 0;
   spawnMock.mockClear();
-  delete process.env.VELLUM_PLATFORM_TOKEN;
+  delete process.env.CADET_PLATFORM_TOKEN;
 });
 
 const invocation: CliInvocation = { command: "bun", baseArgs: ["run", "cli"] };
@@ -55,8 +55,8 @@ describe("runRetire", () => {
     lastChild.emit("close", 0);
 
     expect(await pending).toEqual({ ok: true });
-    expect(spawnArgs[0]?.[2].env?.VELLUM_PLATFORM_TOKEN).toBe("session-token");
-    expect(process.env.VELLUM_PLATFORM_TOKEN).toBeUndefined();
+    expect(spawnArgs[0]?.[2].env?.CADET_PLATFORM_TOKEN).toBe("session-token");
+    expect(process.env.CADET_PLATFORM_TOKEN).toBeUndefined();
   });
 
   test("a non-zero exit resolves to a failure carrying the CLI output", async () => {

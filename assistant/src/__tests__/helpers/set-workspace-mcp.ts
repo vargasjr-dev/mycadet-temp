@@ -1,5 +1,5 @@
 /**
- * Seed `$VELLUM_WORKSPACE_DIR/mcp.json` for tests that go through the
+ * Seed `$CADET_WORKSPACE_DIR/mcp.json` for tests that go through the
  * real workspace MCP loader.
  */
 

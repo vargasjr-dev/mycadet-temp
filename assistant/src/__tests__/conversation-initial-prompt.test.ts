@@ -49,7 +49,7 @@ const REQUESTER_TRUST = {
 // runBackgroundJob callers pass at construction: guardian class, no
 // per-actor identity.
 const GUARDIAN_BACKGROUND_TRUST = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "guardian",
 } as unknown as TrustContext;
 
@@ -57,7 +57,7 @@ const GUARDIAN_BACKGROUND_TRUST = {
 // resolution may still need the guardian-delivery cache (contact lookup miss
 // or null userFile falls through to the guardian file).
 const GUARDIAN_REQUESTER_TRUST = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "guardian",
   requesterExternalUserId: "principal-123",
 } as unknown as TrustContext;

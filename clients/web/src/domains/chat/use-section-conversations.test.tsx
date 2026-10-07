@@ -332,7 +332,7 @@ describe("useSectionConversations", () => {
 
     expect(sentFilters.at(-1)).toEqual({
       groupId: "system:all",
-      originChannel: "vellum",
+      originChannel: "cadet",
     });
   });
 

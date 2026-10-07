@@ -76,13 +76,13 @@ beforeEach(() => {
 });
 
 describe("resolveSharedPrincipal", () => {
-  test("asks the gateway for the vellum-shared channel and the principal as actor", async () => {
+  test("asks the gateway for the cadet-shared channel and the principal as actor", async () => {
     nextResult = verdict({ trustClass: "trusted_contact" });
 
     await resolveSharedPrincipal(PRINCIPAL);
 
     expect(readCalls).toEqual([
-      { channelType: "vellum-shared", actorExternalId: PRINCIPAL },
+      { channelType: "cadet-shared", actorExternalId: PRINCIPAL },
     ]);
   });
 

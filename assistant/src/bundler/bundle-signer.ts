@@ -1,5 +1,5 @@
 /**
- * Bundle signing for .vellum archives.
+ * Bundle signing for .cadet archives.
  *
  * Computes content hashes, constructs a canonical signing payload,
  * and requests an Ed25519 signature from the Swift client.
@@ -80,9 +80,9 @@ async function computeContentHashes(
 }
 
 /**
- * Sign a .vellum bundle.
+ * Sign a .cadet bundle.
  *
- * @param bundlePath - Path to the .vellum zip archive.
+ * @param bundlePath - Path to the .cadet zip archive.
  * @param requestSignature - Callback to request a signature from the Swift client.
  * @returns The SignatureJson to embed in the archive.
  */

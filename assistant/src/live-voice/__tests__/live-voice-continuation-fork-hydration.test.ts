@@ -149,7 +149,7 @@ mock.module("../../runtime/local-principal-trust.js", () => ({
       );
     }
     return {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: resolvedTrustClass,
       guardianPrincipalId: input.actorPrincipalId,
     } satisfies TrustContext;
@@ -214,7 +214,7 @@ describe("duplex continuation fork-parent hydration", () => {
 
   test("restores the parent's prior trust context after the load", async () => {
     const priorTrustContext: TrustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
       guardianPrincipalId: "principal-prior",
     };

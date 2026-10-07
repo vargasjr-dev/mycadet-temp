@@ -4,9 +4,9 @@
 
 #include "NotificationService-Base.xcconfig"
 
-APP_GROUP_ID = group.ai.vocify-inc.vellum-assistant-ios.staging
-BUNDLE_DISPLAY_NAME = Vellum Staging
-PRODUCT_BUNDLE_IDENTIFIER = ai.vocify-inc.vellum-assistant-ios.staging.NotificationService
+APP_GROUP_ID = group.ai.mycadet.ios.staging
+BUNDLE_DISPLAY_NAME = Cadet Staging
+PRODUCT_BUNDLE_IDENTIFIER = ai.mycadet.ios.staging.NotificationService
 
 // Exact portal profile name; must equal release-ios.yaml's `nse_profile_name`.
-PROVISIONING_PROFILE_SPECIFIER_Manual = Vellum Assistant iOS Staging NotificationService Distribution
+PROVISIONING_PROFILE_SPECIFIER_Manual = Cadet Assistant iOS Staging NotificationService Distribution

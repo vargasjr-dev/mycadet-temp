@@ -1,6 +1,6 @@
 ---
 name: email-setup
-description: Set up this assistant's own `[name].vellum.me` domain and email address (one-time setup)
+description: Set up this assistant's own `[name].mycadet.bot` domain and email address (one-time setup)
 compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "📧"
@@ -28,7 +28,7 @@ If an email exists but no domain, the email was set up under the legacy shared d
 
 ## Step 2: Register Your Domain
 
-Each assistant gets its own subdomain (e.g. `mybot.vellum.me`). This must be registered before creating an email address.
+Each assistant gets its own subdomain (e.g. `mybot.mycadet.bot`). This must be registered before creating an email address.
 
 ```bash
 assistant domain register <subdomain>
@@ -46,7 +46,7 @@ Once the domain is active, register your email username on that domain:
 assistant email register <username>
 ```
 
-This creates `<username>@<subdomain>.vellum.me`. Use the same name as your subdomain for simplicity (e.g. `mybot@mybot.vellum.me`), or ask the user if they prefer a different local part.
+This creates `<username>@<subdomain>.mycadet.bot`. Use the same name as your subdomain for simplicity (e.g. `mybot@mybot.mycadet.bot`), or ask the user if they prefer a different local part.
 
 ## Step 4: Verify Status
 
@@ -66,7 +66,7 @@ Confirm the address is active.
 - **One-time only.** If a domain and email already exist, do not register another.
 - **Domain first.** `email register` will fail if no domain is registered. Always check/register the domain before the email.
 - **User-initiated only.** Never run this skill unless the user asks.
-- **No API key prompting.** Email is handled through the Vellum platform — no provider API keys or DNS configuration needed.
+- **No API key prompting.** Email is handled through the Cadet platform — no provider API keys or DNS configuration needed.
 
 ## Troubleshooting
 

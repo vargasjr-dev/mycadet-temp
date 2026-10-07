@@ -500,7 +500,7 @@ export class ClickHouseLlmRequestLogSource implements LlmRequestLogSource {
     const val = await this.resolveAssistantId();
     if (!val) {
       throw new Error(
-        "vellum:platform_assistant_id credential is required when readSource=clickhouse",
+        "cadet:platform_assistant_id credential is required when readSource=clickhouse",
       );
     }
     this.cachedAssistantId = val;

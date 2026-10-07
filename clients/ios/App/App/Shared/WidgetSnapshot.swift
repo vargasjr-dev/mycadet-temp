@@ -52,14 +52,14 @@ struct WidgetSnapshot: Codable, Equatable {
     let avatar: WidgetSnapshotAvatar?
 }
 
-/// The `kind` string each Vellum widget registers under, and the identifier
+/// The `kind` string each Cadet widget registers under, and the identifier
 /// `WidgetCenter.reloadTimelines(ofKind:)` names to refresh it. Both sides
 /// read them from here so a rename cannot desynchronize a widget from the
 /// reload that is supposed to reach it.
-enum VellumWidgetKind {
-    static let catchUp = "VellumCatchUp"
-    static let status = "VellumStatus"
-    static let quickActions = "VellumQuickActions"
+enum CadetWidgetKind {
+    static let catchUp = "CadetCatchUp"
+    static let status = "CadetStatus"
+    static let quickActions = "CadetQuickActions"
 
     /// All of them, for a writer to reload: every kind renders from the one
     /// snapshot, so a write invalidates all three.

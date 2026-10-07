@@ -31,7 +31,7 @@ export function runRetire(
           ? {
               env: {
                 ...process.env,
-                VELLUM_PLATFORM_TOKEN: options.platformToken,
+                CADET_PLATFORM_TOKEN: options.platformToken,
               },
             }
           : {}),

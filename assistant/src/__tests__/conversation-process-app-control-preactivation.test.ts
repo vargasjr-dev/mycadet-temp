@@ -365,7 +365,7 @@ describe("drainQueue preactivation re-add for host-proxy interfaces", () => {
     ctx.trustContext = {
       trustClass: "trusted_contact",
       guardianPrincipalId: "owner-user",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
     };
 
     await drainQueue(ctx);
@@ -402,7 +402,7 @@ describe("drainQueue preactivation re-add for host-proxy interfaces", () => {
     // Someone else sent after this message was queued, moving the slot.
     ctx.trustContext = {
       trustClass: "guardian",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       requesterExternalUserId: "guardian-principal",
     };
 

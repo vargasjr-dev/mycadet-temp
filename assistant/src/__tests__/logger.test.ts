@@ -29,7 +29,7 @@ import { getLogger, initLogger, LOG_FILE_PATTERN } from "../util/logger.js";
 // The file-creating fallback path itself is gated behind a BUN_TEST=1
 // stderr fast-path in `getRootLogger()` (so test output stays sensible), so
 // these tests exercise the rebind via `initLogger()` calls instead. The
-// "no vellum.log" property is covered by `platform.test.ts` (asserts
+// "no cadet.log" property is covered by `platform.test.ts` (asserts
 // `getLogsDir()` returns the directory) and by the mechanical guarantee that
 // `buildRotatingLogger` derives filenames via `logFilePathForDate`.
 

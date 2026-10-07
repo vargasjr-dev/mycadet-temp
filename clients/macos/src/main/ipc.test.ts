@@ -38,7 +38,7 @@ beforeEach(() => {
   appState.isPackaged = false;
   handlers.clear();
   listeners.clear();
-  delete process.env.VELLUM_DEV_URL;
+  delete process.env.CADET_DEV_URL;
 });
 
 describe("handle (invocable)", () => {

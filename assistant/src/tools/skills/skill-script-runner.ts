@@ -26,7 +26,7 @@ export interface RunSkillToolScriptOptions {
   bundled?: boolean;
   /**
    * Catalog owner id when this skill is plugin-resident. The sandbox runner
-   * sets VELLUM_PLUGIN_NAME so the child can resolve credentials under
+   * sets CADET_PLUGIN_NAME so the child can resolve credentials under
    * that plugin's service.
    */
   pluginOwner?: string;

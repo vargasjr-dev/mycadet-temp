@@ -29,7 +29,7 @@ let workspaceDir: string;
 function freshWorkspace(): void {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-147-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-147-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 }
@@ -112,7 +112,7 @@ describe("147-rename-colliding-backup-profile-names migration", () => {
   test("renames a colliding user profile and rewrites supported references", async () => {
     writeConfig({
       llm: {
-        defaultProvider: { provider: "vellum" },
+        defaultProvider: { provider: "cadet" },
         profiles: {
           "balanced-backup": {
             source: "user",
@@ -164,7 +164,7 @@ describe("147-rename-colliding-backup-profile-names migration", () => {
   test("the code-owned backup is available under the reserved name afterwards", async () => {
     writeConfig({
       llm: {
-        defaultProvider: { provider: "vellum" },
+        defaultProvider: { provider: "cadet" },
         profiles: {
           "balanced-backup": {
             source: "user",
@@ -196,7 +196,7 @@ describe("147-rename-colliding-backup-profile-names migration", () => {
   test("the 147-to-148 migration sequence parses under LLMSchema", async () => {
     writeConfig({
       llm: {
-        defaultProvider: { provider: "vellum" },
+        defaultProvider: { provider: "cadet" },
         profiles: {
           "cost-optimized-backup": {
             source: "user",
@@ -326,7 +326,7 @@ describe("147-rename-colliding-backup-profile-names migration", () => {
   test("is a no-op without a collision and idempotent on re-run", async () => {
     const config = {
       llm: {
-        defaultProvider: { provider: "vellum" },
+        defaultProvider: { provider: "cadet" },
         profiles: {
           scratch: { source: "user", speed: "fast" },
         },

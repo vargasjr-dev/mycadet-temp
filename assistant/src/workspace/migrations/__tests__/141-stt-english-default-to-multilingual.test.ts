@@ -43,7 +43,7 @@ describe("141-stt-english-default-to-multilingual", () => {
   });
 
   test("moves it on the managed relay", () => {
-    write({ provider: "vellum", language: "en" });
+    write({ provider: "cadet", language: "en" });
     MIG.run(workspaceDir);
     expect(language()).toBe("multi");
   });

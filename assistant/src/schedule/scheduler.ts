@@ -221,7 +221,7 @@ async function dispatchScheduleMessage(
           ...(options.trustClass
             ? {
                 trustContext: {
-                  sourceChannel: "vellum",
+                  sourceChannel: "cadet",
                   trustClass: options.trustClass,
                 },
               }
@@ -1187,7 +1187,7 @@ export async function runDueSchedulesOnce(
         source: "schedule",
         prompt: job.message,
         systemHint: `Schedule: ${job.name}`,
-        trustContext: { sourceChannel: "vellum", trustClass: "guardian" },
+        trustContext: { sourceChannel: "cadet", trustClass: "guardian" },
         callSite: "mainAgent",
         cronRunId: runId,
         ...(job.inferenceProfile

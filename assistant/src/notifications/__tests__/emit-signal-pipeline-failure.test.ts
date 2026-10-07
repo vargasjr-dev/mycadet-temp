@@ -21,7 +21,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 const dispatchDecisionMock = mock();
 
 mock.module("../../channels/config.js", () => ({
-  getDeliverableChannels: () => ["vellum"],
+  getDeliverableChannels: () => ["cadet"],
 }));
 
 mock.module("../../contacts/guardian-delivery-reader.js", () => ({
@@ -30,7 +30,7 @@ mock.module("../../contacts/guardian-delivery-reader.js", () => ({
 }));
 
 mock.module("../../platform/client.js", () => ({
-  VellumPlatformClient: class {
+  CadetPlatformClient: class {
     static async create(): Promise<null> {
       return null;
     }
@@ -50,10 +50,10 @@ const DEDUPE_KEY = "schedule-definition-error:plugin:news/digest:2026-01-01";
 mock.module("../decision-engine.js", () => ({
   evaluateSignal: async () => ({
     shouldNotify: true,
-    selectedChannels: ["vellum"],
+    selectedChannels: ["cadet"],
     reasoningSummary: "deliver",
     renderedCopy: {
-      vellum: { title: "Plugin schedule error", body: "digest failed to load" },
+      cadet: { title: "Plugin schedule error", body: "digest failed to load" },
     },
     dedupeKey: DEDUPE_KEY,
     confidence: 0.9,
@@ -159,8 +159,8 @@ describe("emitNotificationSignal dedupe claim on failure", () => {
   for (const status of ["sent", "pending"] as const) {
     test(`a failure after a ${status} channel keeps its dedupe key`, async () => {
       throwAfterChannels({
-        channel: "vellum",
-        destination: "vellum",
+        channel: "cadet",
+        destination: "cadet",
         status,
       });
 

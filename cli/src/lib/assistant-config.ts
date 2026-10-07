@@ -43,9 +43,9 @@ export type LocalInstanceResources = Omit<
 > & {
   /**
    * Instance-specific data root. New local assistants are placed under
-   * `$XDG_DATA_HOME/vellum{-env}/assistants/<name>/`. Legacy entries
+   * `$XDG_DATA_HOME/cadet{-env}/assistants/<name>/`. Legacy entries
    * (pre env-data-layout) may still point at `~` — the read path honors
-   * whatever `instanceDir` is stored. The daemon's `.vellum/` directory
+   * whatever `instanceDir` is stored. The daemon's `.cadet/` directory
    * lives inside it.
    */
   instanceDir: string;
@@ -162,13 +162,13 @@ interface LockfileData {
 /**
  * Derive the daemon PID file path from a resources object. The PID file
  * lives inside the instance's workspace directory. When no resources are
- * available, falls back to `~/.vellum/workspace/vellum.pid`.
+ * available, falls back to `~/.cadet/workspace/cadet.pid`.
  */
 export function getDaemonPidPath(resources?: LocalInstanceResources): string {
-  const vellumDir = resources
-    ? join(resources.instanceDir, ".vellum")
-    : join(homedir(), ".vellum");
-  return join(vellumDir, "workspace", "vellum.pid");
+  const cadetDir = resources
+    ? join(resources.instanceDir, ".cadet")
+    : join(homedir(), ".cadet");
+  return join(cadetDir, "workspace", "cadet.pid");
 }
 
 function readLockfile(): LockfileData {
@@ -675,10 +675,10 @@ async function findAvailablePort(
 /**
  * Allocate an isolated set of resources for a named local instance.
  * Every new local assistant is allocated under
- * `$XDG_DATA_HOME/vellum{-env}/assistants/<name>/`. The legacy `~/.vellum/`
+ * `$XDG_DATA_HOME/cadet{-env}/assistants/<name>/`. The legacy `~/.cadet/`
  * path is only reached via existing lockfile entries from before this change
  * — the read path honors whatever `resources.instanceDir` is stored, so
- * production users' existing first-local assistants keep their `~/.vellum/`
+ * production users' existing first-local assistants keep their `~/.cadet/`
  * roots unchanged.
  */
 export async function allocateLocalResources(

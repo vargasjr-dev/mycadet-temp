@@ -161,7 +161,7 @@ interface DispatcherTestHarness {
   /**
    * Optional override that supplies a `createTab` dependency to the
    * dispatcher. When omitted, the dispatcher's `deps.createTab` is
-   * undefined and Vellum.createTab routes report "not supported".
+   * undefined and Cadet.createTab routes report "not supported".
    * Recorded call count + return values for assertions.
    */
   createTabImpl?: () => Promise<{ tabId?: number; targetId?: string }>;
@@ -1673,9 +1673,9 @@ describe('createHostBrowserDispatcher', () => {
     });
   });
 
-  // ── Synthetic Vellum.createTab ──────────────────────────────────
+  // ── Synthetic Cadet.createTab ──────────────────────────────────
 
-  describe('Vellum.createTab — synthetic new-tab command', () => {
+  describe('Cadet.createTab — synthetic new-tab command', () => {
     test('opens a new tab and returns its tabId as a string', async () => {
       harness = createHarness();
       harness.createTabImpl = async () => ({ tabId: 99 });
@@ -1684,13 +1684,13 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'createTab-1',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.createTab',
+        cdpMethod: 'Cadet.createTab',
       };
 
       await harness.dispatcher.handle(request);
 
       expect(harness.createTabCalls).toBe(1);
-      // proxy.attach + proxy.send NOT called — Vellum.createTab is synthetic
+      // proxy.attach + proxy.send NOT called — Cadet.createTab is synthetic
       // and pre-resolution. The follow-on Page.navigate that actually
       // attaches the debugger happens on a separate envelope.
       expect(harness.proxy.attachCalls.length).toBe(0);
@@ -1711,7 +1711,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'createTab-noid',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.createTab',
+        cdpMethod: 'Cadet.createTab',
       };
 
       await harness.dispatcher.handle(request);
@@ -1734,7 +1734,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'createTab-fail',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.createTab',
+        cdpMethod: 'Cadet.createTab',
       };
 
       await harness.dispatcher.handle(request);
@@ -1748,7 +1748,7 @@ describe('createHostBrowserDispatcher', () => {
 
     test('suppresses error envelope when createTab throws AFTER request was cancelled (regression)', async () => {
       // Regression for the Codex P1 finding: the inner catch on
-      // Vellum.createTab returned early and bypassed the outer
+      // Cadet.createTab returned early and bypassed the outer
       // postResult cancel-guard. If a request is cancelled while
       // deps.createTab() is in flight and then throws, we must NOT
       // emit a late error envelope — the daemon has already resolved
@@ -1769,7 +1769,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'createTab-cancel-race',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.createTab',
+        cdpMethod: 'Cadet.createTab',
       };
 
       const handlePromise = harness.dispatcher.handle(request);
@@ -1796,21 +1796,21 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'createTab-presolve',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.createTab',
+        cdpMethod: 'Cadet.createTab',
       };
 
       await harness.dispatcher.handle(request);
 
-      // Vellum.createTab must run BEFORE resolveTarget — otherwise a
+      // Cadet.createTab must run BEFORE resolveTarget — otherwise a
       // minimised browser with no active tab would fail before we
       // could create a new one.
       expect(harness.resolveTargetCalls.length).toBe(0);
     });
   });
 
-  // ── Synthetic Vellum.attach ──────────────────────────────────────
+  // ── Synthetic Cadet.attach ──────────────────────────────────────
 
-  describe('Vellum.attach — synthetic attach command', () => {
+  describe('Cadet.attach — synthetic attach command', () => {
     test('attaches and posts success without issuing proxy.send', async () => {
       harness = createHarness();
 
@@ -1818,7 +1818,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'attach-1',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.attach',
+        cdpMethod: 'Cadet.attach',
         cdpSessionId: '42',
       };
 
@@ -1828,7 +1828,7 @@ describe('createHostBrowserDispatcher', () => {
       expect(harness.proxy.attachCalls.length).toBe(1);
       expect(harness.proxy.attachCalls[0].target).toEqual({ tabId: 42 });
 
-      // proxy.send was NOT called — Vellum.attach is synthetic.
+      // proxy.send was NOT called — Cadet.attach is synthetic.
       expect(harness.proxy.sendCalls.length).toBe(0);
 
       // A success result was posted.
@@ -1840,14 +1840,14 @@ describe('createHostBrowserDispatcher', () => {
       expect(payload.target).toEqual({ tabId: 42 });
     });
 
-    test('deduplicates — second Vellum.attach skips proxy.attach', async () => {
+    test('deduplicates — second Cadet.attach skips proxy.attach', async () => {
       harness = createHarness();
 
       const attachRequest: HostBrowserRequestEnvelope = {
         type: 'host_browser_request',
         requestId: 'attach-1',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.attach',
+        cdpMethod: 'Cadet.attach',
         cdpSessionId: '42',
       };
 
@@ -1871,7 +1871,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'attach-1',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.attach',
+        cdpMethod: 'Cadet.attach',
         cdpSessionId: '42',
       };
 
@@ -1884,9 +1884,9 @@ describe('createHostBrowserDispatcher', () => {
     });
   });
 
-  // ── Synthetic Vellum.detach ──────────────────────────────────────
+  // ── Synthetic Cadet.detach ──────────────────────────────────────
 
-  describe('Vellum.detach — synthetic detach command', () => {
+  describe('Cadet.detach — synthetic detach command', () => {
     test('detaches, evicts cache, and allows a subsequent normal request to reattach', async () => {
       harness = createHarness({
         sendResult: { id: 1, result: { ok: true } },
@@ -1901,7 +1901,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'detach-1',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.detach',
+        cdpMethod: 'Cadet.detach',
         cdpSessionId: '42',
       };
 
@@ -1937,7 +1937,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'detach-1',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.detach',
+        cdpMethod: 'Cadet.detach',
         cdpSessionId: '42',
       };
 
@@ -1964,7 +1964,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'detach-cold',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.detach',
+        cdpMethod: 'Cadet.detach',
         cdpSessionId: '42',
       };
 
@@ -1978,9 +1978,9 @@ describe('createHostBrowserDispatcher', () => {
     });
   });
 
-  // ── Synthetic Vellum.listTabs ──────────────────────────────────────
+  // ── Synthetic Cadet.listTabs ──────────────────────────────────────
 
-  describe('Vellum.listTabs — list all browser tabs', () => {
+  describe('Cadet.listTabs — list all browser tabs', () => {
     const mockTabs = [
       { id: 1, windowId: 10, url: 'https://example.com', title: 'Example', active: true, pinned: false },
       { id: 2, windowId: 10, url: 'https://other.com', title: 'Other', active: false, pinned: true },
@@ -2004,7 +2004,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'listTabs-1',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.listTabs',
+        cdpMethod: 'Cadet.listTabs',
       };
 
       await harness.dispatcher.handle(request);
@@ -2029,7 +2029,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'listTabs-presolve',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.listTabs',
+        cdpMethod: 'Cadet.listTabs',
       };
 
       await harness.dispatcher.handle(request);
@@ -2052,7 +2052,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'listTabs-err',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.listTabs',
+        cdpMethod: 'Cadet.listTabs',
       };
 
       await harness.dispatcher.handle(request);
@@ -2064,9 +2064,9 @@ describe('createHostBrowserDispatcher', () => {
     });
   });
 
-  // ── Synthetic Vellum.selectTab ─────────────────────────────────────
+  // ── Synthetic Cadet.selectTab ─────────────────────────────────────
 
-  describe('Vellum.selectTab — activate a specific browser tab', () => {
+  describe('Cadet.selectTab — activate a specific browser tab', () => {
     const mockTab = { id: 42, windowId: 10, url: 'https://example.com', title: 'Example', active: true, pinned: false };
 
     beforeEach(() => {
@@ -2087,7 +2087,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'selectTab-1',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.selectTab',
+        cdpMethod: 'Cadet.selectTab',
         cdpParams: { tabId: 42 },
       };
 
@@ -2110,7 +2110,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'selectTab-notabid',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.selectTab',
+        cdpMethod: 'Cadet.selectTab',
         cdpParams: {},
       };
 
@@ -2129,7 +2129,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'selectTab-nan',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.selectTab',
+        cdpMethod: 'Cadet.selectTab',
         cdpParams: { tabId: 'notanumber' },
       };
 
@@ -2156,7 +2156,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'selectTab-err',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.selectTab',
+        cdpMethod: 'Cadet.selectTab',
         cdpParams: { tabId: 999 },
       };
 
@@ -2169,9 +2169,9 @@ describe('createHostBrowserDispatcher', () => {
     });
   });
 
-  // ── Synthetic Vellum.closeTab ──────────────────────────────────────
+  // ── Synthetic Cadet.closeTab ──────────────────────────────────────
 
-  describe('Vellum.closeTab — close a browser tab', () => {
+  describe('Cadet.closeTab — close a browser tab', () => {
     beforeEach(() => {
       (globalThis as unknown as { chrome: unknown }).chrome = {
         ...(globalThis as unknown as { chrome: Record<string, unknown> }).chrome,
@@ -2190,7 +2190,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'closeTab-1',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.closeTab',
+        cdpMethod: 'Cadet.closeTab',
         cdpParams: { tabId: 55 },
       };
 
@@ -2212,7 +2212,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'closeTab-notabid',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.closeTab',
+        cdpMethod: 'Cadet.closeTab',
         cdpParams: {},
       };
 
@@ -2239,7 +2239,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'closeTab-err',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.closeTab',
+        cdpMethod: 'Cadet.closeTab',
         cdpParams: { tabId: 77 },
       };
 
@@ -2258,7 +2258,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'closeTab-presolve',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.closeTab',
+        cdpMethod: 'Cadet.closeTab',
         cdpParams: { tabId: 55 },
       };
 
@@ -2320,7 +2320,7 @@ describe('createHostBrowserDispatcher', () => {
       };
     });
 
-    test('Vellum.createTab — cancel during getClientId() does not post success envelope', async () => {
+    test('Cadet.createTab — cancel during getClientId() does not post success envelope', async () => {
       let getClientIdCalls = 0;
       let releaseGetClientId: () => void = () => {};
       const gate = new Promise<void>((r) => {
@@ -2337,7 +2337,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'createTab-getid-cancel',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.createTab',
+        cdpMethod: 'Cadet.createTab',
       };
 
       const handlePromise = dispatcher.handle(request);
@@ -2355,7 +2355,7 @@ describe('createHostBrowserDispatcher', () => {
       expect(results.length).toBe(0);
     });
 
-    test('Vellum.createTab — no cancel: getClientId() completes and success envelope is posted', async () => {
+    test('Cadet.createTab — no cancel: getClientId() completes and success envelope is posted', async () => {
       const { dispatcher, results } = makeDispatcherWithGetClientId(
         async () => 'clientB',
       );
@@ -2364,7 +2364,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'createTab-getid-success',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.createTab',
+        cdpMethod: 'Cadet.createTab',
       };
 
       await dispatcher.handle(request);
@@ -2376,7 +2376,7 @@ describe('createHostBrowserDispatcher', () => {
       expect(payload.clientId).toBe('clientB');
     });
 
-    test('Vellum.selectTab — cancel during getClientId() does not post success envelope', async () => {
+    test('Cadet.selectTab — cancel during getClientId() does not post success envelope', async () => {
       let getClientIdCalls = 0;
       let releaseGetClientId: () => void = () => {};
       const gate = new Promise<void>((r) => {
@@ -2393,7 +2393,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'selectTab-getid-cancel',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.selectTab',
+        cdpMethod: 'Cadet.selectTab',
         cdpParams: { tabId: 42 },
       };
 
@@ -2410,7 +2410,7 @@ describe('createHostBrowserDispatcher', () => {
       expect(results.length).toBe(0);
     });
 
-    test('Vellum.selectTab — no cancel: getClientId() completes and success envelope is posted', async () => {
+    test('Cadet.selectTab — no cancel: getClientId() completes and success envelope is posted', async () => {
       const { dispatcher, results } = makeDispatcherWithGetClientId(
         async () => 'clientB',
       );
@@ -2419,7 +2419,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'selectTab-getid-success',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.selectTab',
+        cdpMethod: 'Cadet.selectTab',
         cdpParams: { tabId: 42 },
       };
 
@@ -2432,13 +2432,13 @@ describe('createHostBrowserDispatcher', () => {
       expect(payload.clientId).toBe('clientB');
     });
 
-    // Vellum.closeTab gained a getClientId() await on R4 (PR #31897) so the
+    // Cadet.closeTab gained a getClientId() await on R4 (PR #31897) so the
     // close response can carry the responding clientId — needed so the
     // route can scope clearPinnedTabByTabId to the actual client and not
     // wipe pins across every client sharing the same numeric tab id.
     // Cover both the throw path (cancel mid-await must not emit a ghost
     // success envelope) and the success path (clientId surfaces).
-    test('Vellum.closeTab — cancel during getClientId() does not post success envelope', async () => {
+    test('Cadet.closeTab — cancel during getClientId() does not post success envelope', async () => {
       let getClientIdCalls = 0;
       let releaseGetClientId: () => void = () => {};
       const gate = new Promise<void>((r) => {
@@ -2455,7 +2455,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'closeTab-getid-cancel',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.closeTab',
+        cdpMethod: 'Cadet.closeTab',
         cdpParams: { tabId: 42 },
       };
 
@@ -2472,7 +2472,7 @@ describe('createHostBrowserDispatcher', () => {
       expect(results.length).toBe(0);
     });
 
-    test('Vellum.closeTab — no cancel: clientId surfaces in success envelope', async () => {
+    test('Cadet.closeTab — no cancel: clientId surfaces in success envelope', async () => {
       const { dispatcher, results } = makeDispatcherWithGetClientId(
         async () => 'clientC',
       );
@@ -2481,7 +2481,7 @@ describe('createHostBrowserDispatcher', () => {
         type: 'host_browser_request',
         requestId: 'closeTab-getid-success',
         conversationId: 'conv-1',
-        cdpMethod: 'Vellum.closeTab',
+        cdpMethod: 'Cadet.closeTab',
         cdpParams: { tabId: 77 },
       };
 

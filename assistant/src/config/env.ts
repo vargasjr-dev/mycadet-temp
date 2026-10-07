@@ -150,11 +150,11 @@ export function getPlatformBaseUrl(): string {
   } catch {
     // Config not yet available (early bootstrap) — fall through
   }
-  // Resolve the default platform URL from VELLUM_ENVIRONMENT.
+  // Resolve the default platform URL from CADET_ENVIRONMENT.
   // `production`, `staging`, and `test` map to their respective hosted
   // platforms, `local` points at a developer's locally running platform,
   // and everything else (including unset) falls back to dev-platform.
-  const env = str("VELLUM_ENVIRONMENT")?.trim();
+  const env = str("CADET_ENVIRONMENT")?.trim();
   let defaultUrl: string;
   if (env === "production") {
     defaultUrl = "https://cloud.mycadet.ai";
@@ -169,7 +169,7 @@ export function getPlatformBaseUrl(): string {
   }
   return (
     configUrl ||
-    str("VELLUM_PLATFORM_URL") ||
+    str("CADET_PLATFORM_URL") ||
     _platformBaseUrlOverride ||
     defaultUrl
   );
@@ -193,7 +193,7 @@ export function getApexDomain(): string {
       return "mycadet.bot";
     }
 
-    const env = str("VELLUM_ENVIRONMENT")?.trim();
+    const env = str("CADET_ENVIRONMENT")?.trim();
     if (env && env !== "production") {
       return `${env}.mycadet.bot`;
     }

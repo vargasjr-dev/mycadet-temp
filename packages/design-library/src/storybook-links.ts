@@ -9,8 +9,8 @@ export const STORYBOOKS: Record<
   StorybookId,
   { label: string; devPort: string }
 > = {
-  "design-library": { label: "Vellum Design Library", devPort: "6006" },
-  web: { label: "Vellum Web", devPort: "6007" },
+  "design-library": { label: "Cadet Design Library", devPort: "6006" },
+  web: { label: "Cadet Web", devPort: "6007" },
 };
 
 export type LocationLike = {
@@ -19,7 +19,7 @@ export type LocationLike = {
   pathname: string;
 };
 
-const HOSTED_ORIGIN = "https://storybook.vellum.ai";
+const HOSTED_ORIGIN = "https://storybook.mycadet.ai";
 const HOSTED_PATH = /^\/(?:design-library|web)\/([^/]+)\//;
 const DEV_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);
 

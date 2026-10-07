@@ -73,7 +73,7 @@ export async function ensureLocalCA(dataDir: string): Promise<void> {
       "-days",
       "3650",
       "-subj",
-      "/CN=Vellum Local Proxy CA",
+      "/CN=Cadet Local Proxy CA",
       "-addext",
       "basicConstraints=critical,CA:TRUE",
       "-addext",

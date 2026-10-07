@@ -11,7 +11,7 @@ mock.module("../../../platform/managed-speech.js", () => ({
 }));
 
 mock.module("../../../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: async () => mockClient,
   },
 }));

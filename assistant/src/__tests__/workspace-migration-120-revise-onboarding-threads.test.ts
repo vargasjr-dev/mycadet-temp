@@ -48,7 +48,7 @@ const NEW_AVATAR_SNIPPET =
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-migration-120-test-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-migration-120-test-"));
 });
 
 afterEach(() => {

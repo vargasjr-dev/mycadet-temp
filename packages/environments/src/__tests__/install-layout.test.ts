@@ -41,7 +41,7 @@ describe("isRepoCheckoutPath", () => {
 
   test("a repo checkout is", () => {
     expect(
-      isRepoCheckoutPath("/Users/x/dev/vellum/assistant/src/index.ts"),
+      isRepoCheckoutPath("/Users/x/dev/cadet/assistant/src/index.ts"),
     ).toBe(true);
   });
 
@@ -56,7 +56,7 @@ describe("findAssistantCommand", () => {
   test("finds the command shipped beside an installed package", () => {
     const nodeModules = join(root, "cli", "latest", "node_modules");
     const command = seedCommand(nodeModules);
-    const path = join(nodeModules, "@vellumai", "assistant", "src", "index.ts");
+    const path = join(nodeModules, "@mycadet", "assistant", "src", "index.ts");
 
     expect(findAssistantCommand(path)).toBe(command);
   });
@@ -64,9 +64,9 @@ describe("findAssistantCommand", () => {
   test("prefers a nested install over a hoisted one", () => {
     const outer = join(root, "node_modules");
     const outerCommand = seedCommand(outer);
-    const inner = join(outer, "vellum", "node_modules");
+    const inner = join(outer, "cadet", "node_modules");
     const innerCommand = seedCommand(inner);
-    const path = join(inner, "@vellumai", "assistant", "src", "index.ts");
+    const path = join(inner, "@mycadet", "assistant", "src", "index.ts");
 
     expect(findAssistantCommand(path)).toBe(innerCommand);
     expect(innerCommand).not.toBe(outerCommand);
@@ -75,9 +75,9 @@ describe("findAssistantCommand", () => {
   test("falls back to a hoisted install when the nested one has no command", () => {
     const outer = join(root, "node_modules");
     const outerCommand = seedCommand(outer);
-    const inner = join(outer, "vellum", "node_modules");
+    const inner = join(outer, "cadet", "node_modules");
     mkdirSync(inner, { recursive: true });
-    const path = join(inner, "@vellumai", "assistant", "src", "index.ts");
+    const path = join(inner, "@mycadet", "assistant", "src", "index.ts");
 
     expect(findAssistantCommand(path)).toBe(outerCommand);
   });
@@ -91,7 +91,7 @@ describe("findAssistantCommand", () => {
   test("returns null when the install ships no assistant command", () => {
     const nodeModules = join(root, "node_modules");
     mkdirSync(join(nodeModules, ".bin"), { recursive: true });
-    const path = join(nodeModules, "@vellumai", "assistant", "src", "index.ts");
+    const path = join(nodeModules, "@mycadet", "assistant", "src", "index.ts");
 
     expect(findAssistantCommand(path)).toBeNull();
   });

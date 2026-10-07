@@ -13,7 +13,7 @@ export interface UserMessage {
   activeSurfaceId?: string;
   /** The page currently displayed in the WebView (e.g. "settings.html"). */
   currentPage?: string;
-  /** Originating channel identifier (e.g. 'vellum'). Defaults to 'vellum' when absent. */
+  /** Originating channel identifier (e.g. 'cadet'). Defaults to 'cadet' when absent. */
   channel?: ChannelId;
   /** Originating interface identifier (e.g. 'macos'). */
   interface: InterfaceId;

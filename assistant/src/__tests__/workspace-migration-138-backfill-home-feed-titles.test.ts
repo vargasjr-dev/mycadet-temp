@@ -38,7 +38,7 @@ let workspaceDir: string;
 let feedPath: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-migration-138-test-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-migration-138-test-"));
   feedPath = join(workspaceDir, "data", "home-feed.json");
 });
 

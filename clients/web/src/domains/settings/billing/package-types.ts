@@ -1,7 +1,7 @@
 /**
  * Helpers for the Pro package catalog — the named Pro plan presets
  * (Mighty / Super / Ultra) exposed as `ProPlan.packages` in the platform API
- * (cadet-assistant-platform #9200). The catalog is empty while the
+ * (mycadet-platform #9200). The catalog is empty while the
  * `pro-packages` LaunchDarkly flag is off; callers no-op on an empty array.
  */
 

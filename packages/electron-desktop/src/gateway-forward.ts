@@ -67,7 +67,7 @@ export interface GatewayForwardRequest {
  * loopback origin. The gateway token route (`/auth/token`) only accepts
  * loopback web origins (`http(s)://localhost|127.0.0.1`) as a CSRF defense
  * against arbitrary web pages; the renderer issues this request from the
- * packaged app's `app://vellum.ai` origin, but the main process is itself the
+ * packaged app's `app://mycadet.ai` origin, but the main process is itself the
  * trusted loopback client making the hop — exactly as the dev server's browser
  * presents `http://localhost:<port>`. Without the rewrite the gateway rejects
  * the packaged app's origin with 403. Only `Origin` is gated, so the remaining

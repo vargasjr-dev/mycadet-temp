@@ -314,7 +314,7 @@ describe("processMessageInBackground Slack option propagation", () => {
       "conv-background-slack",
       "Regular background wake",
       {
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         sourceInterface: "web",
       },
     );

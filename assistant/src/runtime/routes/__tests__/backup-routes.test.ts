@@ -215,11 +215,11 @@ function writeBackupFile(
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
-  ROOT = mkdtempSync(join(tmpdir(), "vellum-backup-routes-"));
+  ROOT = mkdtempSync(join(tmpdir(), "cadet-backup-routes-"));
   LOCAL_DIR = join(ROOT, "local");
   // The preload's workspace is where getWorkspaceDir()/getWorkspaceConfigPath()
   // resolve (setConfig writes <workspace>/config.json).
-  mockWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR!;
+  mockWorkspaceDir = process.env.CADET_WORKSPACE_DIR!;
   mkdirSync(join(mockWorkspaceDir, ".."), { recursive: true });
   setConfig("backup", makeConfig({ localDirectory: LOCAL_DIR }));
   for (const key of Object.keys(mockCheckpointStore)) {

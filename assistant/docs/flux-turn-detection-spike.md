@@ -61,7 +61,7 @@ If it does not, set the Deepgram key the ordinary way (client Settings, Speech-t
 
 > **Putting a provider on the `flux` model family turns off batch transcription for the whole workspace, not just live voice.** `services.stt.provider` plus `services.stt.providers.<provider>.model` is the single source of truth for every STT route, and Flux is the only family in the catalog with no `daemon-batch` boundary. For as long as it is set, these all stop working: voice-message and inbound-attachment transcription, the `transcribe` skill, the `media-processing` skill's audio segments, `POST /v1/stt/transcribe`, and phone-call transcription. Each reports a message naming Flux as the cause rather than failing silently, but they do not fall back to `deepgram` on their own. **Set `services.stt.providers.deepgram.model` back to `nova-3` when the spike is over**, and do not run the spike on an assistant that is also taking calls or handling voice messages.
 
-Two keys in `config.json`, which lives at `$VELLUM_WORKSPACE_DIR/config.json` (default `~/.vellum/workspace/config.json`):
+Two keys in `config.json`, which lives at `$CADET_WORKSPACE_DIR/config.json` (default `~/.cadet/workspace/config.json`):
 
 ```json
 {
@@ -186,7 +186,7 @@ A drop is not itself an error: the cycle stays open and still commits, on the en
 The dialed URL is logged at `info` on every session open, and it carries the clamped query parameters. The API key travels in an `Authorization` header, never in the URL, so the log line is safe to read and paste.
 
 ```
-grep "Opening Deepgram Flux session" ~/.vellum/workspace/data/logs/assistant-*.log
+grep "Opening Deepgram Flux session" ~/.cadet/workspace/data/logs/assistant-*.log
 ```
 
 Check the URL is `/v2/listen` and contains `model=flux-general-en`, `eot_threshold`, `eot_timeout_ms`, and **no** `eager_eot_threshold`. That is the cheapest confirmation that the tuning you wrote is the tuning in force.

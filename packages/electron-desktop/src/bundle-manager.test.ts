@@ -42,7 +42,7 @@ async function createTestZip(
     zip.file(name, content);
   }
   const buf = await zip.generateAsync({ type: "nodebuffer" });
-  const zipPath = path.join(tmpDir, "test.vellum");
+  const zipPath = path.join(tmpDir, "test.cadet");
   await fs.writeFile(zipPath, buf);
   return zipPath;
 }

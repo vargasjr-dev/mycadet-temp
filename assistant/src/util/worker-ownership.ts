@@ -58,7 +58,7 @@ export function classifyWorkerOwnership(
 }
 
 /** The packaged daemon binary, with or without a Windows extension. */
-const PACKAGED_DAEMON_ARGV0 = /^vellum-daemon(\.exe)?$/i;
+const PACKAGED_DAEMON_ARGV0 = /^cadet-daemon(\.exe)?$/i;
 
 /** The runtime the source daemon is launched under. */
 const BUN_ARGV0 = /^bun(\.exe)?$/i;
@@ -70,7 +70,7 @@ const DAEMON_ENTRY_ARG = /(^|\/)daemon\/main\.(ts|js)$/;
  * Split a command line into argv, keeping quoted paths whole.
  *
  * Splitting on whitespace first would shred the ordinary Windows install path
- * `"C:\\Program Files\\Vellum\\...\\vellum-daemon.exe"` into `"C:\\Program` and
+ * `"C:\\Program Files\\Cadet\\...\\cadet-daemon.exe"` into `"C:\\Program` and
  * make the packaged daemon unrecognisable, which is the very install this
  * recovery path exists for. Separators are normalised per token so a caller
  * can take a basename either way.

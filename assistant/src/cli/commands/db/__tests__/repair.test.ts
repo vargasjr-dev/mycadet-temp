@@ -42,15 +42,15 @@ beforeEach(() => {
   workspaceDir = mkdtempSync(join(tmpdir(), "db-repair-test-"));
   mkdirSync(join(workspaceDir, "data", "db"), { recursive: true });
   dbPath = join(workspaceDir, "data", "db", "assistant.db");
-  originalWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  originalWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
 });
 
 afterEach(() => {
   if (originalWorkspaceEnv === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceEnv;
+    process.env.CADET_WORKSPACE_DIR = originalWorkspaceEnv;
   }
   rmSync(workspaceDir, { recursive: true, force: true });
 });

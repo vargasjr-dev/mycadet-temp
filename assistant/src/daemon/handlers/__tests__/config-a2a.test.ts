@@ -2,7 +2,7 @@
  * Tests for A2A config handler.
  *
  * Uses the real DB (via `initializeDb()`) and the test preload which sets
- * `VELLUM_WORKSPACE_DIR` to a per-file temp directory.
+ * `CADET_WORKSPACE_DIR` to a per-file temp directory.
  */
 
 import { beforeEach, describe, expect, test } from "bun:test";

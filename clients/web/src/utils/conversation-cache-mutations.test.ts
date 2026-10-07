@@ -997,7 +997,7 @@ describe("adjustSectionUnreadCache", () => {
     adjustSectionUnreadCache(
       client,
       ASSISTANT_ID,
-      makeConversation({ conversationId: "c2", originChannel: "vellum" }),
+      makeConversation({ conversationId: "c2", originChannel: "cadet" }),
       -1,
     );
 
@@ -1136,7 +1136,7 @@ describe("applySurfacedConversation", () => {
     // Chats section contents cache: {groupId: system:all, channel: cadet}.
     const chatsKey = conversationListQueryKey(ASSISTANT_ID, {
       groupId: "system:all",
-      originChannel: "vellum",
+      originChannel: "cadet",
     });
     qc.setQueryData(chatsKey, listPage([]));
 

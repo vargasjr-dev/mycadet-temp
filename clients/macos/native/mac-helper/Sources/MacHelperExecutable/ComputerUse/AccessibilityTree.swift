@@ -3,7 +3,7 @@ import AppKit
 import MacHelperCore
 import os
 
-private let log = Logger(subsystem: "ai.vellum.mac-helper", category: "AXTree")
+private let log = Logger(subsystem: "ai.mycadet.mac-helper", category: "AXTree")
 
 struct AXElement: Identifiable, Sendable {
     let id: Int

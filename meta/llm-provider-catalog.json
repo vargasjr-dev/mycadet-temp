@@ -2737,13 +2737,13 @@
       ]
     },
     {
-      "id": "vellum",
-      "displayName": "Vellum",
-      "subtitle": "Models served on Vellum GPU nodes through the managed connection.",
+      "id": "cadet",
+      "displayName": "Cadet",
+      "subtitle": "Models served on Cadet GPU nodes through the managed connection.",
       "setupMode": "api-key",
-      "setupHint": "Uses the assistant API key through the Vellum managed connection. These models cannot use a bring-your-own key.",
+      "setupHint": "Uses the assistant API key through the Cadet managed connection. These models cannot use a bring-your-own key.",
       "supportsPlatformAuth": true,
-      "featureFlag": "vellum-hosted-inference",
+      "featureFlag": "cadet-hosted-inference",
       "defaultModel": "qwen/qwen3-8b",
       "models": [
         {
@@ -2761,7 +2761,7 @@
             "inputPer1mTokens": 0.3,
             "outputPer1mTokens": 0.3
           },
-          "featureFlag": "vellum-hosted-inference"
+          "featureFlag": "cadet-hosted-inference"
         }
       ]
     }

@@ -18,7 +18,7 @@ import {
 } from "../../contacts/guardian-delivery-reader.js";
 
 /**
- * Whether `actorPrincipalId` is the principal currently bound as the vellum
+ * Whether `actorPrincipalId` is the principal currently bound as the cadet
  * guardian. Fails closed when the binding cannot be read (the gateway is
  * unreachable, so the list comes back null) and when the matching row is not
  * active, which is what makes a revoked or rebound principal stop matching.
@@ -40,11 +40,11 @@ export async function matchesBoundGuardian(
     return false;
   }
   const read = options?.fresh ? getGuardianDeliveryFresh : getGuardianDelivery;
-  const guardians = await read({ channelTypes: ["vellum"] });
+  const guardians = await read({ channelTypes: ["cadet"] });
   if (!guardians) {
     return false;
   }
-  const guardian = guardianForChannel(guardians, "vellum");
+  const guardian = guardianForChannel(guardians, "cadet");
   return guardian?.principalId === actorPrincipalId;
 }
 
@@ -55,8 +55,8 @@ export async function matchesBoundGuardian(
  *
  * - A **local IPC caller** (the CLI, or another host-resident process). The IPC
  *   socket is host-local and the host is inside the trust boundary.
- * - The **current bound vellum guardian**, identified by matching the verified
- *   `x-vellum-actor-principal-id` against the live binding. This is what keeps
+ * - The **current bound cadet guardian**, identified by matching the verified
+ *   `x-cadet-actor-principal-id` against the live binding. This is what keeps
  *   the guardian's own web and desktop clients working, since they arrive as
  *   `actor` over HTTP rather than as `local`.
  *
@@ -83,13 +83,13 @@ export async function isOwnerCaller(
   if (isHttpAuthDisabled()) {
     return true;
   }
-  if (headers?.["x-vellum-principal-type"] === "local") {
+  if (headers?.["x-cadet-principal-type"] === "local") {
     return true;
   }
   // Fresh: a deferred wake fires unattended and can recover guardian trust, so
   // a binding revoked or rebound minutes ago must stop qualifying immediately
   // rather than at the next cache expiry.
-  return matchesBoundGuardian(headers?.["x-vellum-actor-principal-id"], {
+  return matchesBoundGuardian(headers?.["x-cadet-actor-principal-id"], {
     fresh: true,
   });
 }

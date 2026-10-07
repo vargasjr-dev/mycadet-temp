@@ -17,10 +17,10 @@ Discovery moves:
 
 ```bash
 # shape of the tree and the extension mix
-bun run <skill-dir>/scripts/inventory.ts "$VELLUM_WORKSPACE_DIR/imports/fathom"
+bun run <skill-dir>/scripts/inventory.ts "$CADET_WORKSPACE_DIR/imports/fathom"
 
 # spot-check one of each file type before trusting any assumption
-find "$VELLUM_WORKSPACE_DIR/imports/fathom" -name '*.vtt' | head -3
+find "$CADET_WORKSPACE_DIR/imports/fathom" -name '*.vtt' | head -3
 ```
 
 (`<skill-dir>` is the installed skill directory. The runnable form lives in

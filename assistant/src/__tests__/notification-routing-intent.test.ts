@@ -21,10 +21,10 @@ function makeDecision(
 ): NotificationDecision {
   return {
     shouldNotify: true,
-    selectedChannels: ["vellum"],
+    selectedChannels: ["cadet"],
     reasoningSummary: "LLM selected cadet only",
     renderedCopy: {
-      vellum: { title: "Reminder", body: "Test reminder" },
+      cadet: { title: "Reminder", body: "Test reminder" },
     },
     dedupeKey: "routing-test-001",
     confidence: 0.9,
@@ -38,8 +38,8 @@ function makeDecision(
 describe("routing intent enforcement", () => {
   describe("all_channels intent", () => {
     test("forces selection to all connected channels", () => {
-      const decision = makeDecision({ selectedChannels: ["vellum"] });
-      const connected: NotificationChannel[] = ["vellum", "telegram"];
+      const decision = makeDecision({ selectedChannels: ["cadet"] });
+      const connected: NotificationChannel[] = ["cadet", "telegram"];
 
       const enforced = enforceRoutingIntent(
         decision,
@@ -47,7 +47,7 @@ describe("routing intent enforcement", () => {
         connected,
       );
 
-      expect(enforced.selectedChannels).toEqual(["vellum", "telegram"]);
+      expect(enforced.selectedChannels).toEqual(["cadet", "telegram"]);
       expect(enforced.reasoningSummary).toContain(
         "routing_intent=all_channels",
       );
@@ -55,7 +55,7 @@ describe("routing intent enforcement", () => {
 
     test("selects all channels even when LLM picked none", () => {
       const decision = makeDecision({ selectedChannels: [] });
-      const connected: NotificationChannel[] = ["vellum", "telegram"];
+      const connected: NotificationChannel[] = ["cadet", "telegram"];
 
       // shouldNotify must be true for enforcement to apply
       const enforced = enforceRoutingIntent(
@@ -63,7 +63,7 @@ describe("routing intent enforcement", () => {
         "all_channels",
         connected,
       );
-      expect(enforced.selectedChannels).toEqual(["vellum", "telegram"]);
+      expect(enforced.selectedChannels).toEqual(["cadet", "telegram"]);
     });
 
     test("does not modify decision when shouldNotify is false", () => {
@@ -71,7 +71,7 @@ describe("routing intent enforcement", () => {
         shouldNotify: false,
         selectedChannels: [],
       });
-      const connected: NotificationChannel[] = ["vellum", "telegram"];
+      const connected: NotificationChannel[] = ["cadet", "telegram"];
 
       const enforced = enforceRoutingIntent(
         decision,
@@ -84,20 +84,20 @@ describe("routing intent enforcement", () => {
     });
 
     test("single connected channel selects that channel", () => {
-      const decision = makeDecision({ selectedChannels: ["vellum"] });
-      const connected: NotificationChannel[] = ["vellum"];
+      const decision = makeDecision({ selectedChannels: ["cadet"] });
+      const connected: NotificationChannel[] = ["cadet"];
 
       const enforced = enforceRoutingIntent(
         decision,
         "all_channels",
         connected,
       );
-      expect(enforced.selectedChannels).toEqual(["vellum"]);
+      expect(enforced.selectedChannels).toEqual(["cadet"]);
     });
 
     test("includes all connected channels in all_channels mode", () => {
-      const decision = makeDecision({ selectedChannels: ["vellum"] });
-      const connected: NotificationChannel[] = ["vellum", "telegram", "slack"];
+      const decision = makeDecision({ selectedChannels: ["cadet"] });
+      const connected: NotificationChannel[] = ["cadet", "telegram", "slack"];
 
       const enforced = enforceRoutingIntent(
         decision,
@@ -106,7 +106,7 @@ describe("routing intent enforcement", () => {
       );
 
       expect(enforced.selectedChannels).toEqual([
-        "vellum",
+        "cadet",
         "telegram",
         "slack",
       ]);
@@ -116,8 +116,8 @@ describe("routing intent enforcement", () => {
     });
 
     test("excludes disconnected channels from all_channels", () => {
-      const decision = makeDecision({ selectedChannels: ["vellum"] });
-      const connected: NotificationChannel[] = ["vellum", "telegram"];
+      const decision = makeDecision({ selectedChannels: ["cadet"] });
+      const connected: NotificationChannel[] = ["cadet", "telegram"];
 
       const enforced = enforceRoutingIntent(
         decision,
@@ -125,15 +125,15 @@ describe("routing intent enforcement", () => {
         connected,
       );
 
-      expect(enforced.selectedChannels).toEqual(["vellum", "telegram"]);
+      expect(enforced.selectedChannels).toEqual(["cadet", "telegram"]);
       expect(enforced.selectedChannels).not.toContain("slack");
     });
   });
 
   describe("multi_channel intent", () => {
     test("expands to at least two channels when LLM picked fewer than 2 and 2+ are connected", () => {
-      const decision = makeDecision({ selectedChannels: ["vellum"] });
-      const connected: NotificationChannel[] = ["vellum", "telegram"];
+      const decision = makeDecision({ selectedChannels: ["cadet"] });
+      const connected: NotificationChannel[] = ["cadet", "telegram"];
 
       const enforced = enforceRoutingIntent(
         decision,
@@ -141,7 +141,7 @@ describe("routing intent enforcement", () => {
         connected,
       );
 
-      expect(enforced.selectedChannels).toEqual(["vellum", "telegram"]);
+      expect(enforced.selectedChannels).toEqual(["cadet", "telegram"]);
       expect(enforced.reasoningSummary).toContain(
         "routing_intent=multi_channel",
       );
@@ -149,7 +149,7 @@ describe("routing intent enforcement", () => {
 
     test("does not expand to all channels when 3+ are connected", () => {
       const decision = makeDecision({ selectedChannels: ["telegram"] });
-      const connected: NotificationChannel[] = ["vellum", "telegram", "slack"];
+      const connected: NotificationChannel[] = ["cadet", "telegram", "slack"];
 
       const enforced = enforceRoutingIntent(
         decision,
@@ -157,15 +157,15 @@ describe("routing intent enforcement", () => {
         connected,
       );
 
-      expect(enforced.selectedChannels).toEqual(["telegram", "vellum"]);
+      expect(enforced.selectedChannels).toEqual(["telegram", "cadet"]);
       expect(enforced.selectedChannels).not.toContain("slack");
     });
 
     test("does not override when LLM already picked 2+ channels", () => {
       const decision = makeDecision({
-        selectedChannels: ["vellum", "telegram"],
+        selectedChannels: ["cadet", "telegram"],
       });
-      const connected: NotificationChannel[] = ["vellum", "telegram"];
+      const connected: NotificationChannel[] = ["cadet", "telegram"];
 
       const enforced = enforceRoutingIntent(
         decision,
@@ -173,7 +173,7 @@ describe("routing intent enforcement", () => {
         connected,
       );
 
-      expect(enforced.selectedChannels).toEqual(["vellum", "telegram"]);
+      expect(enforced.selectedChannels).toEqual(["cadet", "telegram"]);
       // No enforcement annotation since decision already satisfied the intent
       expect(enforced.reasoningSummary).not.toContain(
         "routing_intent=multi_channel",
@@ -181,8 +181,8 @@ describe("routing intent enforcement", () => {
     });
 
     test("does not expand when only 1 channel is connected", () => {
-      const decision = makeDecision({ selectedChannels: ["vellum"] });
-      const connected: NotificationChannel[] = ["vellum"];
+      const decision = makeDecision({ selectedChannels: ["cadet"] });
+      const connected: NotificationChannel[] = ["cadet"];
 
       const enforced = enforceRoutingIntent(
         decision,
@@ -191,7 +191,7 @@ describe("routing intent enforcement", () => {
       );
 
       // Cannot expand to 2+ when only 1 is available
-      expect(enforced.selectedChannels).toEqual(["vellum"]);
+      expect(enforced.selectedChannels).toEqual(["cadet"]);
     });
 
     test("does not modify decision when shouldNotify is false", () => {
@@ -199,7 +199,7 @@ describe("routing intent enforcement", () => {
         shouldNotify: false,
         selectedChannels: [],
       });
-      const connected: NotificationChannel[] = ["vellum", "telegram"];
+      const connected: NotificationChannel[] = ["cadet", "telegram"];
 
       const enforced = enforceRoutingIntent(
         decision,
@@ -214,8 +214,8 @@ describe("routing intent enforcement", () => {
 
   describe("single_channel intent", () => {
     test("does not modify the decision", () => {
-      const decision = makeDecision({ selectedChannels: ["vellum"] });
-      const connected: NotificationChannel[] = ["vellum", "telegram"];
+      const decision = makeDecision({ selectedChannels: ["cadet"] });
+      const connected: NotificationChannel[] = ["cadet", "telegram"];
 
       const enforced = enforceRoutingIntent(
         decision,
@@ -223,31 +223,31 @@ describe("routing intent enforcement", () => {
         connected,
       );
 
-      expect(enforced.selectedChannels).toEqual(["vellum"]);
+      expect(enforced.selectedChannels).toEqual(["cadet"]);
       expect(enforced.reasoningSummary).toBe(decision.reasoningSummary);
     });
   });
 
   describe("undefined routing intent", () => {
     test("does not modify the decision", () => {
-      const decision = makeDecision({ selectedChannels: ["vellum"] });
-      const connected: NotificationChannel[] = ["vellum", "telegram"];
+      const decision = makeDecision({ selectedChannels: ["cadet"] });
+      const connected: NotificationChannel[] = ["cadet", "telegram"];
 
       const enforced = enforceRoutingIntent(decision, undefined, connected);
 
-      expect(enforced.selectedChannels).toEqual(["vellum"]);
+      expect(enforced.selectedChannels).toEqual(["cadet"]);
     });
   });
 
   describe("copy generation at fire time", () => {
     test("existing rendered copy is preserved through enforcement", () => {
       const decision = makeDecision({
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         renderedCopy: {
-          vellum: { title: "Reminder", body: "Pick up groceries" },
+          cadet: { title: "Reminder", body: "Pick up groceries" },
         },
       });
-      const connected: NotificationChannel[] = ["vellum", "telegram"];
+      const connected: NotificationChannel[] = ["cadet", "telegram"];
 
       const enforced = enforceRoutingIntent(
         decision,
@@ -256,8 +256,8 @@ describe("routing intent enforcement", () => {
       );
 
       // Channels expanded but copy from LLM is preserved
-      expect(enforced.selectedChannels).toEqual(["vellum", "telegram"]);
-      expect(enforced.renderedCopy.vellum?.body).toBe("Pick up groceries");
+      expect(enforced.selectedChannels).toEqual(["cadet", "telegram"]);
+      expect(enforced.renderedCopy.cadet?.body).toBe("Pick up groceries");
     });
   });
 });

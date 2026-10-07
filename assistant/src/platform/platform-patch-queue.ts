@@ -22,7 +22,7 @@
  */
 
 import type { getLogger } from "../util/logger.js";
-import { VellumPlatformClient } from "./client.js";
+import { CadetPlatformClient } from "./client.js";
 
 type Logger = ReturnType<typeof getLogger>;
 
@@ -136,7 +136,7 @@ export function createPlatformPatchQueue<T = void>(
       if (requestSeq !== seq) {
         return;
       }
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       const assistantId = client?.platformAssistantId;
       if (!client || !assistantId) {
         return;

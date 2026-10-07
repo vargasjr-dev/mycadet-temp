@@ -19,7 +19,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const testDir = mkdtempSync(join(tmpdir(), "devices-test-"));
-const ORIGINAL_LOCKFILE_DIR = process.env.VELLUM_LOCKFILE_DIR;
+const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ARGV = [...process.argv];
 const ORIGINAL_FETCH = globalThis.fetch;
@@ -95,7 +95,7 @@ function headerKeys(init?: RequestInit): string[] {
 
 describe("cadet devices", () => {
   beforeEach(() => {
-    process.env.VELLUM_LOCKFILE_DIR = testDir;
+    process.env.CADET_LOCKFILE_DIR = testDir;
     process.env.XDG_CONFIG_HOME = testDir;
     fetchCalls = [];
     // Default stub: any unexpected call is recorded and 500s.
@@ -106,8 +106,8 @@ describe("cadet devices", () => {
     process.argv = [...ORIGINAL_ARGV];
     globalThis.fetch = ORIGINAL_FETCH;
     if (ORIGINAL_LOCKFILE_DIR === undefined)
-      delete process.env.VELLUM_LOCKFILE_DIR;
-    else process.env.VELLUM_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
+    else process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
     if (ORIGINAL_CONFIG_HOME === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = ORIGINAL_CONFIG_HOME;
   });
@@ -127,7 +127,7 @@ describe("cadet devices", () => {
   }
 
   test("--help prints usage including Examples", async () => {
-    process.argv = ["bun", "vellum", "devices", "--help"];
+    process.argv = ["bun", "cadet", "devices", "--help"];
     const { logs } = await runDevices();
     expect(logs).toContain("USAGE:");
     expect(logs).toContain("EXAMPLES:");
@@ -147,7 +147,7 @@ describe("cadet devices", () => {
               expiresAt: 1_800_000_000_000,
               lastUsedAt: 1_750_000_000_000,
               clientReportedName: "Alice's Laptop",
-              pairingUserAgent: "vellum-cli/1.2.3 (darwin)",
+              pairingUserAgent: "cadet-cli/1.2.3 (darwin)",
             },
             {
               hashedDeviceId: "hashBBB222",
@@ -162,7 +162,7 @@ describe("cadet devices", () => {
       return jsonResponse({ error: "unexpected" }, 500);
     });
 
-    process.argv = ["bun", "vellum", "devices", "list-host"];
+    process.argv = ["bun", "cadet", "devices", "list-host"];
     const { exited, logs } = await runDevices();
 
     expect(exited).toBe(false);
@@ -174,7 +174,7 @@ describe("cadet devices", () => {
     expect(logs).toContain("never");
     // Reported name + user agent print verbatim when present.
     expect(logs).toContain("Alice's Laptop");
-    expect(logs).toContain("vellum-cli/1.2.3 (darwin)");
+    expect(logs).toContain("cadet-cli/1.2.3 (darwin)");
     // Missing fields print plain-word placeholders, not a dash or "undefined".
     expect(logs).toContain("not reported");
     expect(logs).toContain("not recorded");
@@ -220,7 +220,7 @@ describe("cadet devices", () => {
         : jsonResponse({ error: "unexpected" }, 500),
     );
 
-    process.argv = ["bun", "vellum", "devices", "host-label"];
+    process.argv = ["bun", "cadet", "devices", "host-label"];
     const { exited, logs } = await runDevices();
 
     expect(exited).toBe(false);
@@ -257,7 +257,7 @@ describe("cadet devices", () => {
         : jsonResponse({ error: "unexpected" }, 500),
     );
 
-    process.argv = ["bun", "vellum", "devices", "host-json", "--json"];
+    process.argv = ["bun", "cadet", "devices", "host-json", "--json"];
     const { exited, logs } = await runDevices();
 
     expect(exited).toBe(false);
@@ -280,7 +280,7 @@ describe("cadet devices", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "devices",
       "revoke",
       hostHash(),
@@ -299,7 +299,7 @@ describe("cadet devices", () => {
     seedLocal("empty-host");
     stubFetch(() => jsonResponse({ devices: [] }));
 
-    process.argv = ["bun", "vellum", "devices", "empty-host"];
+    process.argv = ["bun", "cadet", "devices", "empty-host"];
     const { exited, logs } = await runDevices();
 
     expect(exited).toBe(false);
@@ -317,7 +317,7 @@ describe("cadet devices", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "devices",
       "revoke",
       "hashAAA111",
@@ -339,7 +339,7 @@ describe("cadet devices", () => {
   });
 
   test("revoke without a hashedDeviceId errors and makes no request", async () => {
-    process.argv = ["bun", "vellum", "devices", "revoke", "--yes"];
+    process.argv = ["bun", "cadet", "devices", "revoke", "--yes"];
     const { exited, errors } = await runDevices();
 
     expect(exited).toBe(true);
@@ -350,7 +350,7 @@ describe("cadet devices", () => {
   test("revoke refuses without --yes in a non-interactive terminal", async () => {
     seedLocal("rh3");
     // process.stdin.isTTY is falsy under the test runner → not promptable.
-    process.argv = ["bun", "vellum", "devices", "revoke", "hashZZZ", "rh3"];
+    process.argv = ["bun", "cadet", "devices", "revoke", "hashZZZ", "rh3"];
     const { exited, errors } = await runDevices();
 
     expect(exited).toBe(true);
@@ -367,7 +367,7 @@ describe("cadet devices", () => {
       paired: true,
     });
 
-    process.argv = ["bun", "vellum", "devices", "paired-box"];
+    process.argv = ["bun", "cadet", "devices", "paired-box"];
     const { exited, errors } = await runDevices();
 
     expect(exited).toBe(true);
@@ -385,7 +385,7 @@ describe("cadet devices", () => {
         expiresAt: 1_800_000_000_000,
         lastUsedAt: null,
         clientReportedName: "Alice's Laptop",
-        pairingUserAgent: "vellum-cli/1.2.3 (darwin)",
+        pairingUserAgent: "cadet-cli/1.2.3 (darwin)",
       },
     ];
     stubFetch((url) =>
@@ -394,7 +394,7 @@ describe("cadet devices", () => {
         : jsonResponse({ error: "unexpected" }, 500),
     );
 
-    process.argv = ["bun", "vellum", "devices", "json-host", "--json"];
+    process.argv = ["bun", "cadet", "devices", "json-host", "--json"];
     const { exited, logs, errors } = await runDevices();
 
     expect(exited).toBe(false);
@@ -410,7 +410,7 @@ describe("cadet devices", () => {
     seedLocal("json-empty-host");
     stubFetch(() => jsonResponse({ devices: [] }));
 
-    process.argv = ["bun", "vellum", "devices", "json-empty-host", "--json"];
+    process.argv = ["bun", "cadet", "devices", "json-empty-host", "--json"];
     const { exited, logs } = await runDevices();
 
     expect(exited).toBe(false);
@@ -427,7 +427,7 @@ describe("cadet devices", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "devices",
       "revoke",
       "hashAAA111",
@@ -456,7 +456,7 @@ describe("cadet devices", () => {
 
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "devices",
       "revoke",
       "hashAAA111",
@@ -475,7 +475,7 @@ describe("cadet devices", () => {
     seedLocal("json-err-host");
     stubFetch(() => jsonResponse({ error: { code: "FORBIDDEN" } }, 403));
 
-    process.argv = ["bun", "vellum", "devices", "json-err-host", "--json"];
+    process.argv = ["bun", "cadet", "devices", "json-err-host", "--json"];
     const { exited, logs, errors } = await runDevices();
 
     expect(exited).toBe(true);
@@ -487,7 +487,7 @@ describe("cadet devices", () => {
     seedLocal("err-host");
     stubFetch(() => jsonResponse({ error: { code: "FORBIDDEN" } }, 403));
 
-    process.argv = ["bun", "vellum", "devices", "err-host"];
+    process.argv = ["bun", "cadet", "devices", "err-host"];
     const { exited, errors } = await runDevices();
 
     expect(exited).toBe(true);

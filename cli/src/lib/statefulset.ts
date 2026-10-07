@@ -14,7 +14,7 @@ import {
 } from "./environments/paths.js";
 import { PROVIDER_ENV_VAR_NAMES } from "../shared/provider-env-vars.js";
 
-const AVATAR_DEVICE_ENV_VAR = "VELLUM_AVATAR_DEVICE";
+const AVATAR_DEVICE_ENV_VAR = "CADET_AVATAR_DEVICE";
 
 /**
  * In-container path the assistant's extra CA bundle is mounted at when
@@ -22,7 +22,7 @@ const AVATAR_DEVICE_ENV_VAR = "VELLUM_AVATAR_DEVICE";
  * `update-ca-certificates` directory so it's consumed purely via
  * `NODE_EXTRA_CA_CERTS` without touching the system trust store.
  */
-const ASSISTANT_EXTRA_CA_TARGET = "/etc/vellum/extra-ca-cert.pem";
+const ASSISTANT_EXTRA_CA_TARGET = "/etc/cadet/extra-ca-cert.pem";
 
 /** Logical service name used throughout the CLI. */
 export type ServiceName = "assistant" | "gateway" | "credential-executor";
@@ -180,12 +180,12 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
       env: [
         { kind: "static", name: "IS_CONTAINERIZED",         value: "true" },
         { kind: "static", name: "DEBUG_STDOUT_LOGS",         value: "1" },
-        { kind: "static", name: "VELLUM_CLOUD",              value: "docker" },
+        { kind: "static", name: "CADET_CLOUD",              value: "docker" },
         { kind: "static", name: "RUNTIME_HTTP_HOST",         value: "0.0.0.0" },
         { kind: "static", name: "RUNTIME_HTTP_PORT",         value: `${ASSISTANT_INTERNAL_PORT}` },
-        { kind: "static", name: "VELLUM_WORKSPACE_DIR",      value: "/workspace" },
-        { kind: "static", name: "VELLUM_BACKUP_DIR",         value: "/workspace/.backups" },
-        { kind: "static", name: "VELLUM_BACKUP_KEY_PATH",    value: "/workspace/.backup.key" },
+        { kind: "static", name: "CADET_WORKSPACE_DIR",      value: "/workspace" },
+        { kind: "static", name: "CADET_BACKUP_DIR",         value: "/workspace/.backups" },
+        { kind: "static", name: "CADET_BACKUP_KEY_PATH",    value: "/workspace/.backup.key" },
         { kind: "static", name: "CES_CREDENTIAL_URL",        value: "http://localhost:8090" },
         { kind: "static", name: "CES_BOOTSTRAP_SOCKET_DIR",  value: "/run/ces-bootstrap" },
         { kind: "static", name: "GATEWAY_IPC_SOCKET_DIR",    value: "/run/gateway-ipc" },
@@ -197,8 +197,8 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
         ...Object.values(PROVIDER_ENV_VAR_NAMES).map(
           (v): HostEnv => ({ kind: "host", name: v }),
         ),
-        { kind: "host", name: "VELLUM_ENVIRONMENT" },
-        { kind: "host", name: "VELLUM_PLATFORM_URL" },
+        { kind: "host", name: "CADET_ENVIRONMENT" },
+        { kind: "host", name: "CADET_PLATFORM_URL" },
       ],
       volumeMounts: [
         { volumeName: "assistant-workspace",  mountPath: "/workspace" },
@@ -214,7 +214,7 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
       network: "container",
       user: "0",
       env: [
-        { kind: "static", name: "VELLUM_WORKSPACE_DIR",      value: "/workspace" },
+        { kind: "static", name: "CADET_WORKSPACE_DIR",      value: "/workspace" },
         { kind: "static", name: "GATEWAY_SECURITY_DIR",      value: "/gateway-security" },
         { kind: "static", name: "ASSISTANT_HOST",            value: "localhost" },
         { kind: "static", name: "CES_CREDENTIAL_URL",        value: "http://localhost:8090" },
@@ -225,8 +225,8 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
         { kind: "secret", name: "CES_SERVICE_TOKEN",         secret: "cesServiceToken" },
         { kind: "secret", name: "ACTOR_TOKEN_SIGNING_KEY",   secret: "signingKey" },
         { kind: "secret", name: "GUARDIAN_BOOTSTRAP_SECRET", secret: "bootstrapSecret" },
-        { kind: "host",   name: "VELLUM_ENVIRONMENT" },
-        { kind: "host",   name: "VELLUM_PLATFORM_URL" },
+        { kind: "host",   name: "CADET_ENVIRONMENT" },
+        { kind: "host",   name: "CADET_PLATFORM_URL" },
         { kind: "host",   name: "TUNNEL_BASE_URL" },
       ],
       volumeMounts: [
@@ -243,7 +243,7 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
       network: "container",
       env: [
         { kind: "static", name: "CES_MODE",                  value: "managed" },
-        { kind: "static", name: "VELLUM_WORKSPACE_DIR",      value: "/workspace" },
+        { kind: "static", name: "CADET_WORKSPACE_DIR",      value: "/workspace" },
         { kind: "static", name: "CES_BOOTSTRAP_SOCKET_DIR",  value: "/run/ces-bootstrap" },
         { kind: "static", name: "CREDENTIAL_SECURITY_DIR",   value: "/ces-security" },
         { kind: "secret", name: "CES_SERVICE_TOKEN",         secret: "cesServiceToken" },
@@ -333,7 +333,7 @@ export function getBuilderManagedEnvKeys(
 
   // Builder-computed extras added outside the spec env arrays
   if (service === "assistant") {
-    always.add("VELLUM_ASSISTANT_NAME");
+    always.add("CADET_ASSISTANT_NAME");
     always.add("GATEWAY_INTERNAL_URL");
     always.add(AVATAR_DEVICE_ENV_VAR);
   }
@@ -453,7 +453,7 @@ export function buildServiceRunArgs(
       if (svc === "assistant") {
         args.push(
           "-e",
-          `VELLUM_ASSISTANT_NAME=${instanceName}`,
+          `CADET_ASSISTANT_NAME=${instanceName}`,
           "-e",
           `GATEWAY_INTERNAL_URL=http://localhost:${GATEWAY_INTERNAL_PORT}`,
         );

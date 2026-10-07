@@ -152,7 +152,7 @@ mock.module("@/runtime/android-notification-channels", () => ({
 
 // ── @capacitor/app (lazy-imported plugin Proxy) ──────────────────────────────
 
-let bundleId = "ai.vocify-inc.cadet-assistant-ios";
+let bundleId = "ai.vocify-inc.mycadet-ios";
 const getInfoMock = mock(async () => ({
   id: bundleId,
   name: "Cadet",
@@ -266,7 +266,7 @@ beforeEach(() => {
   isNative = true;
   platform = "ios";
   androidPushRegistrationAvailable = true;
-  bundleId = "ai.vocify-inc.cadet-assistant-ios";
+  bundleId = "ai.vocify-inc.mycadet-ios";
   permissionState = "granted";
   resolvedApnsEnvironment = "production";
   resolveSignedApnsEnvironmentMock.mockClear();
@@ -350,7 +350,7 @@ describe("registerForRemotePush", () => {
       body: {
         token: "apns-token-abc",
         platform: "ios",
-        bundle_id: "ai.vocify-inc.cadet-assistant-ios",
+        bundle_id: "ai.vocify-inc.mycadet-ios",
         apns_environment: "production",
       },
       throwOnError: false,
@@ -360,7 +360,7 @@ describe("registerForRemotePush", () => {
 
   test("creates the Android channel before registering and omits APNs fields", async () => {
     platform = "android";
-    bundleId = "ai.cadet.assistant.dev";
+    bundleId = "ai.mycadet.assistant.dev";
     const handler = mock(() => {});
     setForegroundPushHandler(handler);
     androidRegisterMock.mockImplementationOnce(async () => {
@@ -375,7 +375,7 @@ describe("registerForRemotePush", () => {
     expect(lastUpsertArg?.body).toEqual({
       token: "fcm-token-abc",
       platform: "android",
-      bundle_id: "ai.cadet.assistant.dev",
+      bundle_id: "ai.mycadet.assistant.dev",
       capabilities: ["native-notification-render"],
     });
     expect(resolveSignedApnsEnvironmentMock).not.toHaveBeenCalled();
@@ -712,7 +712,7 @@ describe("hasSessionConfirmedRemotePushRegistration", () => {
       "cadet:push_registration",
       JSON.stringify({
         token: "persisted-token",
-        bundleId: "ai.vocify-inc.cadet-assistant-ios",
+        bundleId: "ai.vocify-inc.mycadet-ios",
         assistantId: "assistant-9",
       }),
     );
@@ -751,14 +751,14 @@ describe("unregisterFromRemotePush", () => {
         assistant_id: "11111111-1111-4111-8111-111111111111",
         token: "apns-token-abc",
       },
-      query: { bundle_id: "ai.vocify-inc.cadet-assistant-ios" },
+      query: { bundle_id: "ai.vocify-inc.mycadet-ios" },
       throwOnError: false,
     });
   });
 
   test("replaces a rotated token and unregisters FCM on logout", async () => {
     platform = "android";
-    bundleId = "ai.cadet.assistant.dev";
+    bundleId = "ai.mycadet.assistant.dev";
     await registerForRemotePush("11111111-1111-4111-8111-111111111111");
     registrationHandler?.({ value: "fcm-old" });
     await flushMicrotasks();
@@ -790,7 +790,7 @@ describe("unregisterFromRemotePush", () => {
       "cadet:push_registration",
       JSON.stringify({
         token: "persisted-token",
-        bundleId: "ai.vocify-inc.cadet-assistant-ios",
+        bundleId: "ai.vocify-inc.mycadet-ios",
         assistantId: "assistant-9",
       }),
     );
@@ -800,7 +800,7 @@ describe("unregisterFromRemotePush", () => {
     expect(deleteMock).toHaveBeenCalledTimes(1);
     expect(lastDeleteArg).toEqual({
       path: { assistant_id: "assistant-9", token: "persisted-token" },
-      query: { bundle_id: "ai.vocify-inc.cadet-assistant-ios" },
+      query: { bundle_id: "ai.vocify-inc.mycadet-ios" },
       throwOnError: false,
     });
   });

@@ -18,7 +18,7 @@ import {
 
 afterEach(() => {
   resetMockFetch();
-  delete process.env.VELLUM_PLATFORM_URL;
+  delete process.env.CADET_PLATFORM_URL;
   delete process.env.ASSISTANT_API_KEY;
   _resetPlatformIdentityForTests();
 });
@@ -130,7 +130,7 @@ describe("registerEmailCallbackRoute", () => {
   });
 
   test("uses env assistant key with credential cache for assistant ID", async () => {
-    process.env.VELLUM_PLATFORM_URL = "https://env-platform.example.com";
+    process.env.CADET_PLATFORM_URL = "https://env-platform.example.com";
     process.env.ASSISTANT_API_KEY = "env-key";
 
     const callbackUrl =

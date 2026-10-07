@@ -5,7 +5,7 @@ import UIKit
 // `clients/web/src/components/ios-widget-previews/`. Nothing checks the two
 // against each other, so a change here wants a look there.
 
-/// The one palette the Vellum Home Screen widgets draw from.
+/// The one palette the Cadet Home Screen widgets draw from.
 ///
 /// A widget renders in a process that never runs the SPA, so the CSS custom
 /// properties the rest of the product themes itself with cannot reach it, and
@@ -40,7 +40,7 @@ enum WidgetTheme {
     /// action rather than as one of two peers.
     static let voiceFill = dynamic(light: "#F6F5F4", dark: "#2C2C2E")
 
-    /// Vellum green. Lightened in dark mode, where the light-mode value does
+    /// Cadet green. Lightened in dark mode, where the light-mode value does
     /// not clear contrast against `surface`.
     static let brand = dynamic(light: "#0E9B8B", dark: "#2FC1AE")
 

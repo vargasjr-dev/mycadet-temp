@@ -188,7 +188,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -212,7 +212,7 @@ describe("pairDeliveryWithConversation", () => {
 
     await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -230,7 +230,7 @@ describe("pairDeliveryWithConversation", () => {
 
     await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -249,7 +249,7 @@ describe("pairDeliveryWithConversation", () => {
 
     await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -271,7 +271,7 @@ describe("pairDeliveryWithConversation", () => {
 
     await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -295,7 +295,7 @@ describe("pairDeliveryWithConversation", () => {
 
     await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -311,7 +311,7 @@ describe("pairDeliveryWithConversation", () => {
 
     await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -815,13 +815,13 @@ describe("pairDeliveryWithConversation", () => {
 
   test("binding context does not trigger reuse for start_new_conversation channels", async () => {
     // cadet uses start_new_conversation — binding context should be ignored for reuse
-    mockExistingConversations["conv-bound-vellum"] = {
-      id: "conv-bound-vellum",
+    mockExistingConversations["conv-bound-cadet"] = {
+      id: "conv-bound-cadet",
       source: "notification",
       title: "Cadet Thread",
     };
-    mockBindings["notification:vellum:device-1"] = {
-      conversationId: "conv-bound-vellum",
+    mockBindings["notification:cadet:device-1"] = {
+      conversationId: "conv-bound-cadet",
       sourceChannel: "notification:cadet",
       externalChatId: "device-1",
     };
@@ -829,13 +829,13 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy();
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "vellum" as NotificationChannel,
+      sourceChannel: "cadet" as NotificationChannel,
       externalChatId: "device-1",
     };
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
       { bindingContext },
     );
@@ -856,7 +856,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -884,7 +884,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
       { conversationAction },
     );
@@ -916,7 +916,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       makeCopy({ body: "A short push preview…" }),
     );
 
@@ -948,7 +948,7 @@ describe("pairDeliveryWithConversation", () => {
           },
         },
       }),
-      "vellum",
+      "cadet",
       makeCopy({ body: "The report is ready." }),
     );
 
@@ -978,7 +978,7 @@ describe("pairDeliveryWithConversation", () => {
           },
         },
       }),
-      "vellum",
+      "cadet",
       makeCopy({ body: "The report is ready." }),
     );
 
@@ -1001,7 +1001,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -1048,7 +1048,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -1077,7 +1077,7 @@ describe("pairDeliveryWithConversation", () => {
 
     await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       makeCopy(),
     );
 
@@ -1108,7 +1108,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       makeCopy(),
     );
 
@@ -1126,7 +1126,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       makeCopy(),
     );
 
@@ -1158,7 +1158,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       makeCopy(),
       { conversationAction },
     );
@@ -1182,7 +1182,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -1208,7 +1208,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -1265,7 +1265,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
       { conversationAction },
     );
@@ -1292,7 +1292,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
       { conversationAction },
     );
@@ -1321,7 +1321,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
       { conversationAction },
     );
@@ -1338,7 +1338,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
       { conversationAction },
     );
@@ -1355,7 +1355,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -1374,7 +1374,7 @@ describe("pairDeliveryWithConversation", () => {
     // Should not throw
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -1392,7 +1392,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       copy,
     );
 
@@ -1408,7 +1408,7 @@ describe("pairDeliveryWithConversation", () => {
     for (let i = 0; i < 3; i++) {
       const result = await pairDeliveryWithConversation(
         makeSignal({ signalId: `sig-${i}` }),
-        "vellum" as NotificationChannel,
+        "cadet" as NotificationChannel,
         makeCopy(),
       );
       expect(result.conversationId).toBeNull();
@@ -1461,7 +1461,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       makeCopy(),
     );
 
@@ -1496,7 +1496,7 @@ describe("pairDeliveryWithConversation", () => {
 
       const result = await pairDeliveryWithConversation(
         signal,
-        "vellum",
+        "cadet",
         makeCopy(),
         { assistantInitiatedThread },
       );
@@ -1526,7 +1526,7 @@ describe("pairDeliveryWithConversation", () => {
 
       const result = await pairDeliveryWithConversation(
         signal,
-        "vellum",
+        "cadet",
         makeCopy(),
         { assistantInitiatedThread },
       );
@@ -1601,7 +1601,7 @@ describe("pairDeliveryWithConversation", () => {
 
       const result = await pairDeliveryWithConversation(
         share(),
-        "vellum" as NotificationChannel,
+        "cadet" as NotificationChannel,
         makeCopy({ conversationTitle: "Noticed something" }),
       );
 
@@ -1620,7 +1620,7 @@ describe("pairDeliveryWithConversation", () => {
 
       const result = await pairDeliveryWithConversation(
         share({ sourceContextId: "cli-123" }),
-        "vellum" as NotificationChannel,
+        "cadet" as NotificationChannel,
         makeCopy(),
       );
 
@@ -1643,7 +1643,7 @@ describe("pairDeliveryWithConversation", () => {
 
       const result = await pairDeliveryWithConversation(
         share({ sourceContextId: "conv-user" }),
-        "vellum" as NotificationChannel,
+        "cadet" as NotificationChannel,
         makeCopy(),
       );
 
@@ -1662,7 +1662,7 @@ describe("pairDeliveryWithConversation", () => {
 
       const result = await pairDeliveryWithConversation(
         share(),
-        "vellum" as NotificationChannel,
+        "cadet" as NotificationChannel,
         makeCopy(),
       );
 
@@ -1676,7 +1676,7 @@ describe("pairDeliveryWithConversation", () => {
 
       const result = await pairDeliveryWithConversation(
         share({ conversationMetadata: { source: "schedule" } }),
-        "vellum" as NotificationChannel,
+        "cadet" as NotificationChannel,
         makeCopy(),
       );
 
@@ -1696,7 +1696,7 @@ describe("pairDeliveryWithConversation", () => {
 
       const result = await pairDeliveryWithConversation(
         share({ sourceEventName: "scheduler.reminder_fired" }),
-        "vellum" as NotificationChannel,
+        "cadet" as NotificationChannel,
         makeCopy(),
       );
 

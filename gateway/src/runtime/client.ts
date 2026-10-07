@@ -367,7 +367,7 @@ export type TwilioForwardResponse = {
  * should go. The gateway replaces it with a real JWT before returning TwiML
  * to Twilio, keeping the signing key out of the daemon for this flow.
  */
-const TWILIO_RELAY_TOKEN_PLACEHOLDER = "__VELLUM_RELAY_TOKEN__";
+const TWILIO_RELAY_TOKEN_PLACEHOLDER = "__CADET_RELAY_TOKEN__";
 const PLATFORM_CALLBACK_MARKER = "/gateway/callbacks/";
 
 function toWebSocketBaseUrl(url: string): string {
@@ -555,14 +555,14 @@ export async function forwardTwilioVoiceWebhook(
 
   // Inject relay auth tokens into the TwiML. The daemon embeds a sentinel
   // placeholder wherever a relay token is needed; the gateway replaces each
-  // occurrence with a freshly minted JWT (aud=vellum-gateway) that the
+  // occurrence with a freshly minted JWT (aud=cadet-gateway) that the
   // relay/media-stream WS handlers will validate on the upgrade request.
   if (body.includes(TWILIO_RELAY_TOKEN_PLACEHOLDER)) {
     body = body.replaceAll(TWILIO_RELAY_TOKEN_PLACEHOLDER, mintRelayToken());
   }
 
   // Replace the public base URL placeholder with the real WebSocket URL.
-  // The assistant emits wss://__VELLUM_PUBLIC_BASE_URL__/… so it never
+  // The assistant emits wss://__CADET_PUBLIC_BASE_URL__/… so it never
   // needs ingress.publicBaseUrl — the gateway owns URL resolution.
   if (body.includes(TWILIO_PUBLIC_BASE_WSS_PLACEHOLDER)) {
     if (publicBaseWssUrl) {

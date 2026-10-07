@@ -123,7 +123,7 @@ const ROUTE: IngressRoute = {
 };
 
 const PLUGIN_SECRET = "plugin-webhook-secret";
-const VELLUM_SECRET = "platform-webhook-secret";
+const CADET_SECRET = "platform-webhook-secret";
 /** Held under a field the manifest names, not under `webhook_secret`. */
 const VENDOR_SECRET = "whsec_vendor";
 
@@ -138,7 +138,7 @@ function credentialsFor(entries: Record<string, string>) {
 
 const CREDENTIALS = credentialsFor({
   "credential/meeting-bot/webhook_secret": PLUGIN_SECRET,
-  "credential/vellum/webhook_secret": VELLUM_SECRET,
+  "credential/cadet/webhook_secret": CADET_SECRET,
   "credential/meeting-bot/vendor_webhook_secret": VENDOR_SECRET,
   "credential/meeting-bot/shortcut_ingress_token": "shortcut-static-token",
 });
@@ -185,7 +185,7 @@ function post(path: string, body = "{}", secret = PLUGIN_SECRET): Request {
   return new Request(`http://gateway${path}`, {
     method: "POST",
     body,
-    headers: secret ? { "vellum-signature": sign(body, secret) } : {},
+    headers: secret ? { "cadet-signature": sign(body, secret) } : {},
   });
 }
 
@@ -334,7 +334,7 @@ describe("the gate", () => {
     expect(calls).toEqual([]);
   });
 
-  it("serves a vellum-signed declaration nobody approved", async () => {
+  it("serves a cadet-signed declaration nobody approved", async () => {
     // Only a caller holding the platform secret can reach it, and the user
     // extended that trust when they connected their account.
     const { calls, fetchImpl } = recordingFetch();
@@ -346,7 +346,7 @@ describe("the gate", () => {
           pending: [
             {
               plugin: "meeting-bot",
-              routes: [{ ...ROUTE, signer: "vellum" as const }],
+              routes: [{ ...ROUTE, signer: "cadet" as const }],
               digest: "d".repeat(32),
             },
           ],
@@ -355,7 +355,7 @@ describe("the gate", () => {
     });
 
     const res = await handle(
-      post("/webhooks/plugins/meeting-bot/realtime", "{}", VELLUM_SECRET),
+      post("/webhooks/plugins/meeting-bot/realtime", "{}", CADET_SECRET),
       "meeting-bot",
       "realtime",
     );
@@ -375,7 +375,7 @@ describe("the gate", () => {
           pending: [
             {
               plugin: "meeting-bot",
-              routes: [{ ...ROUTE, signer: "vellum" as const }],
+              routes: [{ ...ROUTE, signer: "cadet" as const }],
               digest: "d".repeat(32),
             },
           ],
@@ -573,7 +573,7 @@ describe("signature verification", () => {
         method: "POST",
         body: '{"event":"tampered"}',
         headers: {
-          "vellum-signature": sign('{"event":"joined"}', PLUGIN_SECRET),
+          "cadet-signature": sign('{"event":"joined"}', PLUGIN_SECRET),
         },
       },
     );
@@ -605,17 +605,17 @@ describe("signature verification", () => {
     expect(calls).toEqual([]);
   });
 
-  it("verifies a vellum-signed route against the platform secret", async () => {
+  it("verifies a cadet-signed route against the platform secret", async () => {
     const { calls, fetchImpl } = recordingFetch();
     const handle = createPluginWebhookHandler({
       config: CONFIG,
       credentials: CREDENTIALS,
-      resolve: () => approvedWith([{ ...ROUTE, signer: "vellum" as const }]),
+      resolve: () => approvedWith([{ ...ROUTE, signer: "cadet" as const }]),
       fetchImpl,
     });
 
     const res = await handle(
-      post("/webhooks/plugins/meeting-bot/realtime", "{}", VELLUM_SECRET),
+      post("/webhooks/plugins/meeting-bot/realtime", "{}", CADET_SECRET),
       "meeting-bot",
       "realtime",
     );
@@ -624,14 +624,14 @@ describe("signature verification", () => {
     expect(calls).toHaveLength(1);
   });
 
-  it("does not accept the plugin's own secret on a vellum-signed route", async () => {
-    // Otherwise declaring `signer: "vellum"` would widen rather than narrow
+  it("does not accept the plugin's own secret on a cadet-signed route", async () => {
+    // Otherwise declaring `signer: "cadet"` would widen rather than narrow
     // who can reach the route.
     const { calls, fetchImpl } = recordingFetch();
     const handle = createPluginWebhookHandler({
       config: CONFIG,
       credentials: CREDENTIALS,
-      resolve: () => approvedWith([{ ...ROUTE, signer: "vellum" as const }]),
+      resolve: () => approvedWith([{ ...ROUTE, signer: "cadet" as const }]),
       fetchImpl,
     });
 
@@ -655,7 +655,7 @@ describe("signature verification", () => {
     });
 
     const res = await handle(
-      post("/webhooks/plugins/meeting-bot/realtime", "{}", VELLUM_SECRET),
+      post("/webhooks/plugins/meeting-bot/realtime", "{}", CADET_SECRET),
       "meeting-bot",
       "realtime",
     );
@@ -999,7 +999,7 @@ describe("standard-webhooks verification", () => {
 
   const STANDARD_CREDENTIALS = credentialsFor({
     "credential/meeting-bot/webhook_secret": PLUGIN_SECRET,
-    "credential/vellum/webhook_secret": VELLUM_SECRET,
+    "credential/cadet/webhook_secret": CADET_SECRET,
     "credential/meeting-bot/standard_webhooks_secret": WHSEC,
   });
 
@@ -1682,7 +1682,7 @@ describe("HMAC URL and form-encoded inbound", () => {
 
   const TWILIO_CREDENTIALS = credentialsFor({
     "credential/meeting-bot/webhook_secret": PLUGIN_SECRET,
-    "credential/vellum/webhook_secret": VELLUM_SECRET,
+    "credential/cadet/webhook_secret": CADET_SECRET,
     "credential/meeting-bot/auth_token": TWILIO_AUTH_TOKEN,
   });
 
@@ -1837,7 +1837,7 @@ describe("HMAC URL and form-encoded inbound", () => {
     const res = await handle(
       twilioPost(params, {
         signature,
-        headers: { "X-Vellum-Ingress-Url": injected },
+        headers: { "X-Cadet-Ingress-Url": injected },
       }),
       "meeting-bot",
       "realtime",

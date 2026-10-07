@@ -5,7 +5,7 @@
  */
 export const DAEMON_INTERNAL_ASSISTANT_ID = "self" as const;
 
-export const FIREWALL_TAG = "vellum-assistant";
+export const FIREWALL_TAG = "mycadet";
 export const GATEWAY_PORT = process.env.GATEWAY_PORT
   ? Number(process.env.GATEWAY_PORT)
   : 7830;

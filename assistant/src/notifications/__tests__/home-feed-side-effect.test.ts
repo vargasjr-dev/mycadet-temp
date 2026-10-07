@@ -138,12 +138,12 @@ function makeSignal(
   };
 }
 
-function makeVellumDelivery(
+function makeCadetDelivery(
   overrides: Partial<NotificationDeliveryResult> = {},
 ): NotificationDeliveryResult {
   return {
-    channel: "vellum",
-    destination: "vellum",
+    channel: "cadet",
+    destination: "cadet",
     status: "sent",
     conversationId: "conv-source-1",
     messageId: "msg-paired",
@@ -220,7 +220,7 @@ describe("writeHomeFeedItemForSignal", () => {
         }),
         status === undefined
           ? undefined
-          : makeVellumDelivery({
+          : makeCadetDelivery({
               status,
               ...(status === "failed"
                 ? { errorMessage: "completion recipient unavailable" }
@@ -264,7 +264,7 @@ describe("writeHomeFeedItemForSignal", () => {
     });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: {
+        cadet: {
           title: "Background job done",
           body: "Summary of what happened.",
         },
@@ -319,7 +319,7 @@ describe("writeHomeFeedItemForSignal", () => {
     // from the notifications bell without changing its delivery policy.
     conversationRow = { conversationType: "standard" };
     const signal = makeSignal({
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       sourceEventName: "chat.assistant_reply",
       contextPayload: {
         requestedTitle: "Project planning",
@@ -345,7 +345,7 @@ describe("writeHomeFeedItemForSignal", () => {
     const item = await writeHomeFeedItemForSignal(
       signal,
       decision,
-      makeVellumDelivery(),
+      makeCadetDelivery(),
     );
 
     expect(item).not.toBeNull();
@@ -379,7 +379,7 @@ describe("writeHomeFeedItemForSignal", () => {
     });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: { title: "Async title", body: "Async body" },
+        cadet: { title: "Async title", body: "Async body" },
       },
     });
 
@@ -414,7 +414,7 @@ describe("writeHomeFeedItemForSignal", () => {
     });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: { title: "Shared from CLI", body: "Body from CLI share" },
+        cadet: { title: "Shared from CLI", body: "Body from CLI share" },
       },
     });
 
@@ -466,13 +466,13 @@ describe("writeHomeFeedItemForSignal", () => {
       sourceContextId: "cli-12345",
       contextPayload: {
         title: "Inbox and telegram",
-        channelAllowlist: ["vellum", "telegram"],
+        channelAllowlist: ["cadet", "telegram"],
       },
     });
     const decision = makeDecision({
-      selectedChannels: ["vellum", "telegram"],
+      selectedChannels: ["cadet", "telegram"],
       renderedCopy: {
-        vellum: { title: "Inbox and telegram", body: "Shared body" },
+        cadet: { title: "Inbox and telegram", body: "Shared body" },
       },
     });
 
@@ -532,7 +532,7 @@ describe("writeHomeFeedItemForSignal", () => {
     });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: { title: "Routed title", body: "Routed body" },
+        cadet: { title: "Routed title", body: "Routed body" },
       },
     });
 
@@ -567,14 +567,14 @@ describe("writeHomeFeedItemForSignal", () => {
     });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: { title: "Watcher alert", body: "Watcher body" },
+        cadet: { title: "Watcher alert", body: "Watcher body" },
       },
     });
 
     const item = await writeHomeFeedItemForSignal(
       signal,
       decision,
-      makeVellumDelivery({ conversationId: "paired-delivery-conv-id" }),
+      makeCadetDelivery({ conversationId: "paired-delivery-conv-id" }),
     );
 
     expect(item).not.toBeNull();
@@ -589,7 +589,7 @@ describe("writeHomeFeedItemForSignal", () => {
     // renders. That thread is the share's surface; a feed item for the
     // same signal put it in the bell a second time.
     const assistantThreadDelivery = () =>
-      makeVellumDelivery({ conversationId: "assistant-thread-1" });
+      makeCadetDelivery({ conversationId: "assistant-thread-1" });
 
     function stampAssistantThread(): void {
       conversationRowsById.set("assistant-thread-1", {
@@ -609,9 +609,9 @@ describe("writeHomeFeedItemForSignal", () => {
 
     const shareDecision = () =>
       makeDecision({
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Doctor checklist built",
             body: "Your doctor-visit one-pager is ready.",
           },
@@ -702,9 +702,9 @@ describe("writeHomeFeedItemForSignal", () => {
       const item = await writeHomeFeedItemForSignal(
         signal,
         makeDecision({
-          selectedChannels: ["vellum"],
+          selectedChannels: ["cadet"],
           renderedCopy: {
-            vellum: { title: "Approve this?", body: "May I send the email?" },
+            cadet: { title: "Approve this?", body: "May I send the email?" },
           },
         }),
         assistantThreadDelivery(),
@@ -726,14 +726,14 @@ describe("writeHomeFeedItemForSignal", () => {
     });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: { title: "Background job done", body: "Summary." },
+        cadet: { title: "Background job done", body: "Summary." },
       },
     });
 
     const item = await writeHomeFeedItemForSignal(
       signal,
       decision,
-      makeVellumDelivery({ conversationId: "paired-delivery-conv-id" }),
+      makeCadetDelivery({ conversationId: "paired-delivery-conv-id" }),
     );
 
     expect(item).not.toBeNull();
@@ -794,7 +794,7 @@ describe("writeHomeFeedItemForSignal", () => {
     });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: {
+        cadet: {
           title: "Nightly sync finished",
           body: "Real body",
         },
@@ -817,7 +817,7 @@ describe("writeHomeFeedItemForSignal", () => {
     });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: {
+        cadet: {
           title: "Model headline",
           body: "A description of what the run did.",
         },
@@ -840,7 +840,7 @@ describe("writeHomeFeedItemForSignal", () => {
     });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: {
+        cadet: {
           title: "Reminder plumbing check",
           body: "Nightly backup failure on db-primary at 02:14. Retry scheduled.",
         },
@@ -863,7 +863,7 @@ describe("writeHomeFeedItemForSignal", () => {
     });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: {
+        cadet: {
           title: "Model headline",
           body: "Test notifications reminder. It fired on schedule.",
         },
@@ -888,7 +888,7 @@ describe("writeHomeFeedItemForSignal", () => {
     });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: {
+        cadet: {
           title: "Let me summarize what happened",
           body: "Disk usage crossed 90 percent. Cleanup ran.",
         },
@@ -910,7 +910,7 @@ describe("writeHomeFeedItemForSignal", () => {
     const signal = makeSignal({ sourceEventName: "example.event" });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: {
+        cadet: {
           title: "",
           body: "The backup job failed.",
           conversationSeedMessage: seed,
@@ -936,7 +936,7 @@ describe("writeHomeFeedItemForSignal", () => {
     const signal = makeSignal({ sourceEventName: "example.event" });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: {
+        cadet: {
           title: "",
           body: "Body text.",
           conversationSeedMessage: seed,
@@ -955,7 +955,7 @@ describe("writeHomeFeedItemForSignal", () => {
     const signal = makeSignal({ sourceEventName: "example.event" });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: {
+        cadet: {
           title: "",
           body: "Check run finished.",
           conversationSeedMessage: seed,
@@ -977,7 +977,7 @@ describe("writeHomeFeedItemForSignal", () => {
     });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: { title: "   ", body: "   " },
+        cadet: { title: "   ", body: "   " },
       },
     });
 
@@ -987,10 +987,10 @@ describe("writeHomeFeedItemForSignal", () => {
     expect(appendCalls).toHaveLength(0);
   });
 
-  test("falls back to a non-vellum channel's rendered copy when cadet copy is absent", async () => {
+  test("falls back to a non-cadet channel's rendered copy when cadet copy is absent", async () => {
     // Regression: when `preferredChannels` narrows an assistant_tool signal
-    // to a non-vellum channel (e.g. telegram), the broadcaster ships real
-    // copy on that channel but `renderedCopy.vellum` is undefined. The
+    // to a non-cadet channel (e.g. telegram), the broadcaster ships real
+    // copy on that channel but `renderedCopy.cadet` is undefined. The
     // guard must still write to the home feed using the first available
     // rendered copy entry rather than skipping silently.
     conversationRow = { conversationType: "background" };
@@ -1076,8 +1076,8 @@ describe("writeHomeFeedItemForSignal", () => {
   test("falls back to requestedTitle/requestedMessage payload keys", async () => {
     // Regression: the `notifications send` CLI surface stores the
     // user-supplied copy on the signal payload under `requestedTitle` and
-    // `requestedMessage`. If the decision strips renderedCopy.vellum (e.g.
-    // routed only to a non-vellum channel that also lacks renderedCopy),
+    // `requestedMessage`. If the decision strips renderedCopy.cadet (e.g.
+    // routed only to a non-cadet channel that also lacks renderedCopy),
     // the home-feed guard must still recover the copy from the payload.
     conversationRow = { conversationType: "background" };
     const signal = makeSignal({
@@ -1160,9 +1160,9 @@ describe("writeHomeFeedItemForSignal", () => {
       },
     });
     const decision = makeDecision({
-      selectedChannels: ["vellum"],
+      selectedChannels: ["cadet"],
       renderedCopy: {
-        vellum: {
+        cadet: {
           title: "Skills refreshed",
           body: "Two skills were refreshed.",
           conversationSeedMessage:
@@ -1462,16 +1462,16 @@ describe("writeHomeFeedItemForSignal", () => {
       conversationRow = { conversationType: "background" };
       const signal = makeSignal();
       const decision = makeDecision({
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         renderedCopy: {
-          vellum: { title: "Nightly briefing", body: "Three things today." },
+          cadet: { title: "Nightly briefing", body: "Three things today." },
         },
       });
 
       const item = await writeHomeFeedItemForSignal(
         signal,
         decision,
-        makeVellumDelivery(),
+        makeCadetDelivery(),
       );
 
       expect(item?.conversationId).toBe("conv-source-1");
@@ -1554,16 +1554,16 @@ describe("writeHomeFeedItemForSignal", () => {
       conversationRow = { conversationType: "background" };
       const signal = makeSignal();
       const decision = makeDecision({
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         renderedCopy: {
-          vellum: { title: "Nightly briefing", body: "Three things today." },
+          cadet: { title: "Nightly briefing", body: "Three things today." },
         },
       });
 
       const item = await writeHomeFeedItemForSignal(
         signal,
         decision,
-        makeVellumDelivery({ status: "failed", messageId: "msg-paired" }),
+        makeCadetDelivery({ status: "failed", messageId: "msg-paired" }),
       );
 
       expect(item?.metadata?.notificationConversationMessageId).toBe(
@@ -1579,16 +1579,16 @@ describe("writeHomeFeedItemForSignal", () => {
       conversationRow = { conversationType: "background" };
       const signal = makeSignal();
       const decision = makeDecision({
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         renderedCopy: {
-          vellum: { title: "Approval needed", body: "Allow this?" },
+          cadet: { title: "Approval needed", body: "Allow this?" },
         },
       });
 
       const item = await writeHomeFeedItemForSignal(
         signal,
         decision,
-        makeVellumDelivery({
+        makeCadetDelivery({
           conversationId: "conv-guardian-request",
           messageId: "msg-guardian",
         }),
@@ -1613,16 +1613,16 @@ describe("writeHomeFeedItemForSignal", () => {
         },
       });
       const decision = makeDecision({
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         renderedCopy: {
-          vellum: { title: "Retries exhausted", body: "Gave up after 3." },
+          cadet: { title: "Retries exhausted", body: "Gave up after 3." },
         },
       });
 
       const item = await writeHomeFeedItemForSignal(
         signal,
         decision,
-        makeVellumDelivery({ conversationId: "conv-paired", messageId: "m-p" }),
+        makeCadetDelivery({ conversationId: "conv-paired", messageId: "m-p" }),
       );
 
       expect(item?.conversationId).toBe("conv-paired");
@@ -1640,16 +1640,16 @@ describe("writeHomeFeedItemForSignal", () => {
         },
       });
       const decision = makeDecision({
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         renderedCopy: {
-          vellum: { title: "Nightly briefing", body: "Three things today." },
+          cadet: { title: "Nightly briefing", body: "Three things today." },
         },
       });
 
       const item = await writeHomeFeedItemForSignal(
         signal,
         decision,
-        makeVellumDelivery(),
+        makeCadetDelivery(),
       );
 
       expect(item?.metadata?.notificationConversationMessageId).toBe(
@@ -1666,16 +1666,16 @@ describe("writeHomeFeedItemForSignal", () => {
         },
       });
       const decision = makeDecision({
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         renderedCopy: {
-          vellum: { title: "Approval needed", body: "Allow this?" },
+          cadet: { title: "Approval needed", body: "Allow this?" },
         },
       });
 
       const item = await writeHomeFeedItemForSignal(
         signal,
         decision,
-        makeVellumDelivery({ conversationId: "conv-guardian-request" }),
+        makeCadetDelivery({ conversationId: "conv-guardian-request" }),
       );
 
       expect(item?.metadata?.notificationConversationMessageId).toBeUndefined();
@@ -1758,7 +1758,7 @@ describe("writeHomeFeedItemForSignal", () => {
     });
 
     test("reports no rewrite when the card owns no message", () => {
-      // The vellum-delivered case: the delivery row carries the handle and
+      // The cadet-delivered case: the delivery row carries the handle and
       // the adapter rewrites it, so there is nothing to do here.
       const rewritten = updateFeedItemConversationMessage(
         makeItem({ scheduleId: "sched-7" }),

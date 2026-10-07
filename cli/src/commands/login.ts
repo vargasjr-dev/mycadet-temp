@@ -376,7 +376,7 @@ export async function login(): Promise<void> {
     try {
       const entry = resolveAssistant();
 
-      // Skip managed ("vellum") assistants — they are handled by the platform.
+      // Skip managed ("cadet") assistants — they are handled by the platform.
       if (entry && !isManagedCloud(entry.cloud)) {
         const orgId = await fetchOrganizationId(token);
         const clientInstallationId = computeDeviceId();

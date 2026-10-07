@@ -30,7 +30,7 @@ let mockPlatformClientCreate: () => Promise<Record<
 > | null> = async () => null;
 
 mock.module("../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: () => mockPlatformClientCreate(),
   },
 }));

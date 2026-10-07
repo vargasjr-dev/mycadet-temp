@@ -41,12 +41,12 @@ let lastRequestBinary: Uint8Array | undefined;
 let origWorkspaceDir: string | undefined;
 let origAssistantIpcDir: string | undefined;
 
-// Save and restore VELLUM_WORKSPACE_DIR + ASSISTANT_IPC_SOCKET_DIR around
+// Save and restore CADET_WORKSPACE_DIR + ASSISTANT_IPC_SOCKET_DIR around
 // each test. The sandbox sets ASSISTANT_IPC_SOCKET_DIR, which would
-// otherwise win over VELLUM_WORKSPACE_DIR in `resolveIpcSocketPath` and
+// otherwise win over CADET_WORKSPACE_DIR in `resolveIpcSocketPath` and
 // route requests to the real daemon socket instead of our test server.
 beforeEach(() => {
-  origWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
+  origWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
   origAssistantIpcDir = process.env.ASSISTANT_IPC_SOCKET_DIR;
   delete process.env.ASSISTANT_IPC_SOCKET_DIR;
   server = undefined;
@@ -55,9 +55,9 @@ beforeEach(() => {
 
 afterEach(async () => {
   if (origWorkspaceDir !== undefined) {
-    process.env.VELLUM_WORKSPACE_DIR = origWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = origWorkspaceDir;
   } else {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   }
 
   if (origAssistantIpcDir !== undefined) {
@@ -75,7 +75,7 @@ afterEach(async () => {
 });
 
 /**
- * Create a fresh temp workspace dir, configure VELLUM_WORKSPACE_DIR to point
+ * Create a fresh temp workspace dir, configure CADET_WORKSPACE_DIR to point
  * at it, and return the socket path that ipcCallAssistant will connect to.
  *
  * resolveIpcSocketPath("assistant") = join(workspaceDir, "assistant.sock")
@@ -85,10 +85,10 @@ afterEach(async () => {
 function setupWorkspace(): string {
   const dir = join(
     tmpdir(),
-    `vellum-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(dir, { recursive: true });
-  process.env.VELLUM_WORKSPACE_DIR = dir;
+  process.env.CADET_WORKSPACE_DIR = dir;
   return join(dir, "assistant.sock");
 }
 

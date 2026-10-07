@@ -30,7 +30,7 @@ mock.module("../util/retry.js", () => ({
   },
 }));
 
-// ── VellumPlatformClient mock state ──────────────────────────────────────────
+// ── CadetPlatformClient mock state ──────────────────────────────────────────
 
 interface FetchCall {
   path: string;
@@ -47,7 +47,7 @@ let clientAvailable = true;
 let onClientCreation: () => Promise<void> = async () => {};
 
 mock.module("../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: async () => {
       await onClientCreation();
       if (!clientAvailable) {
@@ -528,7 +528,7 @@ describe("PlatformPushAdapter", () => {
         copy: {
           title: "**Build** finished",
           body: [
-            "Here is the clip: ![cadet scene](vellum://workspace/a.mp4)",
+            "Here is the clip: ![cadet scene](cadet://workspace/a.mp4)",
             "```ts",
             "const a = 1;",
             "```",
@@ -589,7 +589,7 @@ describe("PlatformPushAdapter", () => {
     describe("copy that flattens to nothing", () => {
       test("names the media instead of dispatching blank fields", async () => {
         const adapter = new PlatformPushAdapter();
-        const embed = "![clip](vellum://workspace/a.mp4)";
+        const embed = "![clip](cadet://workspace/a.mp4)";
         const payload = makePayload({ copy: { title: embed, body: embed } });
 
         const result = await adapter.send(payload, makeDestination());
@@ -602,7 +602,7 @@ describe("PlatformPushAdapter", () => {
       test("counts several embeds", async () => {
         const adapter = new PlatformPushAdapter();
         const embeds =
-          "![one](vellum://workspace/1.mp4) ![two](https://e.com/2.png)";
+          "![one](cadet://workspace/1.mp4) ![two](https://e.com/2.png)";
         const payload = makePayload({ copy: { title: embeds, body: embeds } });
 
         await adapter.send(payload, makeDestination());

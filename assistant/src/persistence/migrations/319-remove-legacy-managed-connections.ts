@@ -2,9 +2,9 @@ import { type DrizzleDb, getSqliteFrom } from "../db-connection.js";
 
 /**
  * Deletes the per-provider `*-managed` connections that the single
- * provider-agnostic `vellum` connection replaced.
+ * provider-agnostic `cadet` connection replaced.
  *
- * The flip (repoint every reference onto `vellum`, stop seeding the
+ * The flip (repoint every reference onto `cadet`, stop seeding the
  * per-provider rows, hide the orphans from the connection list) shipped first
  * and is non-destructive. This migration is the contract step: once nothing
  * references the old rows, delete them so the list filter is no longer needed

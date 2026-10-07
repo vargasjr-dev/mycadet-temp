@@ -60,7 +60,7 @@ export async function updatePublishedAppDeployment(
     } // No change
 
     // 4. Get Vercel token — don't prompt, just skip if unavailable
-    const slug = publishedPage.projectSlug ?? `vellum-app-${appId}`;
+    const slug = publishedPage.projectSlug ?? `cadet-app-${appId}`;
 
     const useResult = await credentialBroker.serverUse({
       service: "vercel",

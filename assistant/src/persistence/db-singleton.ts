@@ -1,7 +1,7 @@
 /**
  * Holds the assistant DB connection singletons and their close callbacks.
  *
- * Four connections live here under the same `globalThis.vellumAssistant`
+ * Four connections live here under the same `globalThis.cadetAssistant`
  * namespace, keyed by slot: the `main` daemon connection, the `logs`
  * connection (`assistant-logs.db`), the `memory` connection
  * (`assistant-memory.db`), and the `telemetry` connection
@@ -15,10 +15,10 @@
  * `node_modules` symlink has historically tripped the env override
  * (see DB ghost #3, /workspace/journal/2026-05-25-db-ghost-3-recovery.md).
  *
- * State is held on `globalThis.vellumAssistant.dbSingletons` so test
+ * State is held on `globalThis.cadetAssistant.dbSingletons` so test
  * helpers in `__tests__/` can read/write it WITHOUT importing this
- * module. Both sides reference the shared ambient `VellumDbSlots` type
- * (declared in `src/vellum-assistant-namespace.d.ts`), which types the
+ * module. Both sides reference the shared ambient `CadetDbSlots` type
+ * (declared in `src/mycadet-namespace.d.ts`), which types the
  * slot without adding a runtime import between them. See
  * `__tests__/db-test-helpers.ts` for the test-side reader.
  *
@@ -35,17 +35,17 @@
 
 /**
  * Which connection a slot holds. The canonical union is the ambient
- * `VellumDbSlotKey` (see `src/vellum-assistant-namespace.d.ts`); this
+ * `CadetDbSlotKey` (see `src/mycadet-namespace.d.ts`); this
  * re-export is the DB layer's public name for it.
  */
-export type DbSlotKey = VellumDbSlotKey;
+export type DbSlotKey = CadetDbSlotKey;
 
-function emptySlot(): VellumDbSlot {
+function emptySlot(): CadetDbSlot {
   return { db: null, closer: null };
 }
 
-function slots(): VellumDbSlots {
-  const ns = (globalThis.vellumAssistant ??= {});
+function slots(): CadetDbSlots {
+  const ns = (globalThis.cadetAssistant ??= {});
   return (ns.dbSingletons ??= {
     main: emptySlot(),
     "main-readonly": emptySlot(),
@@ -55,7 +55,7 @@ function slots(): VellumDbSlots {
   });
 }
 
-function slot(key: DbSlotKey): VellumDbSlot {
+function slot(key: DbSlotKey): CadetDbSlot {
   return slots()[key];
 }
 

@@ -76,7 +76,7 @@ mock.module("../ipc/gateway-client.js", () => ({
       return {
         guardians: [
           {
-            channelType: "vellum",
+            channelType: "cadet",
             contactId: "test-contact-id",
             principalId: "test-principal-id",
             address: "test-principal-id",
@@ -322,9 +322,9 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
     __resetGuardianDeliveryCacheForTest();
 
     createGuardianBinding({
-      channel: "vellum",
+      channel: "cadet",
       guardianExternalUserId: "dev-bypass",
-      guardianDeliveryChatId: "vellum",
+      guardianDeliveryChatId: "cadet",
       guardianPrincipalId: "test-principal-id",
       verifiedVia: "test",
     });
@@ -470,7 +470,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
             conversationKey,
             content: "Continue the task",
             clientMessageId: "client-message-123",
-            sourceChannel: "vellum",
+            sourceChannel: "cadet",
             interface: "macos",
           }),
         });
@@ -519,7 +519,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       body: JSON.stringify({
         conversationKey: "conv-idle",
         content: "Hello",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -559,7 +559,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       body: JSON.stringify({
         conversationKey: "conv-hub",
         content: "Hello hub",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -596,7 +596,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       id: requestId,
       kind: "tool_approval",
       sourceType: "desktop",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       sourceConversationId: conversationId,
       toolName: "call_start",
       guardianPrincipalId: "test-principal-id",
@@ -613,7 +613,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       body: JSON.stringify({
         conversationKey,
         content: "yes",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -722,7 +722,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       id: requestId,
       kind: "tool_approval",
       sourceType: "desktop",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       sourceConversationId: conversationId,
       toolName: "call_start",
       status: "pending",
@@ -739,7 +739,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       body: JSON.stringify({
         conversationKey,
         content: "approve",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -781,7 +781,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       id: requestId,
       kind: "tool_approval",
       sourceType: "desktop",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       sourceConversationId: conversationId,
       toolName: "call_start",
       status: "pending",
@@ -798,7 +798,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       body: JSON.stringify({
         conversationKey,
         content: "approve",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -840,7 +840,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       id: requestId,
       kind: "tool_approval",
       sourceType: "desktop",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       sourceConversationId: conversationId,
       toolName: "call_start",
       status: "pending",
@@ -857,7 +857,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       body: JSON.stringify({
         conversationKey,
         content: "no",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -897,7 +897,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       id: requestId,
       kind: "tool_approval",
       sourceType: "desktop",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       sourceConversationId: conversationId,
       toolName: "call_start",
       status: "pending",
@@ -914,7 +914,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       body: JSON.stringify({
         conversationKey,
         content: "What is the weather today?",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -947,7 +947,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       body: JSON.stringify({
         conversationKey: "conv-busy",
         content: "First",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -969,7 +969,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       body: JSON.stringify({
         conversationKey: "conv-busy",
         content: "Second",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -1012,7 +1012,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       body: JSON.stringify({
         conversationKey: "conv-empty",
         content: "",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -1029,7 +1029,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
       body: JSON.stringify({
         content: "Hello",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -1042,7 +1042,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
     expect(body.conversationId).toBeTruthy();
 
     // The cadet channel never falls through to the shared
-    // `default:vellum:<interface>` thread: each empty-handed send mints
+    // `default:cadet:<interface>` thread: each empty-handed send mints
     // a fresh conversation so the first-message id surfaces to the client.
     expect(getConversationByKey("default:cadet:macos")).toBeNull();
 
@@ -1057,7 +1057,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
       body: JSON.stringify({
         content: "First",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -1069,7 +1069,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
       body: JSON.stringify({
         content: "Second",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });
@@ -1110,7 +1110,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
     expect(res2.status).toBe(202);
     const body2 = (await res2.json()) as { conversationId: string };
 
-    // Non-vellum channels keep the legacy `default:<channel>:<interface>`
+    // Non-cadet channels keep the legacy `default:<channel>:<interface>`
     // co-location so repeated inbound messages from the same external
     // channel/interface land on a single thread.
     expect(body1.conversationId).toBe(body2.conversationId);
@@ -1138,7 +1138,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       id: requestId,
       kind: "tool_approval",
       sourceType: "desktop",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       sourceConversationId: conversationId,
       toolName: "bash",
       guardianPrincipalId: "test-principal-id",
@@ -1159,7 +1159,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       body: JSON.stringify({
         conversationKey,
         content: "do something else instead",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "macos",
       }),
     });

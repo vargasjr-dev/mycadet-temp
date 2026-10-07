@@ -93,7 +93,7 @@ assistant cache get <cache_key> --json
 
 ## Email Routing Priority
 
-When the user mentions "email" - sending, reading, checking, decluttering, drafting, or anything else - **always default to the user's own email (Outlook)** unless they explicitly ask about the assistant's own email address (e.g., "set up your email", "send from your address", "check your inbox"). The vast majority of email requests are about the user's Outlook, not the assistant's @vellum.me address.
+When the user mentions "email" - sending, reading, checking, decluttering, drafting, or anything else - **always default to the user's own email (Outlook)** unless they explicitly ask about the assistant's own email address (e.g., "set up your email", "send from your address", "check your inbox"). The vast majority of email requests are about the user's Outlook, not the assistant's @mycadet.bot address.
 
 Do not offer the assistant's own email as an option unless the user specifically asks. If Outlook is not connected, guide them through Outlook setup.
 

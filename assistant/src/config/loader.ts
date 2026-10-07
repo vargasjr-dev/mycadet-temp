@@ -131,7 +131,7 @@ function cloneDefaultConfig(): AssistantConfig {
  * raw config on disk, so an explicit user choice (e.g. saving "your-own"
  * via the macOS Models & Services UI) always wins.
  *
- * IS_PLATFORM is set by the Vellum platform launcher for all hosted
+ * IS_PLATFORM is set by the Cadet platform launcher for all hosted
  * assistant deployments. Local, Docker, and bare-metal assistants are
  * unaffected.
  */
@@ -937,7 +937,7 @@ function emptyDefaultWorkspaceConfigMergeResult(): DefaultWorkspaceConfigMergeRe
 
 /**
  * Merge default workspace config from the file referenced by
- * VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH into the workspace config on disk.
+ * CADET_DEFAULT_WORKSPACE_CONFIG_PATH into the workspace config on disk.
  *
  * Called once at daemon startup (before the first loadConfig()) so platform
  * overrides are persisted to disk before the daemon's first config read.
@@ -950,7 +950,7 @@ function emptyDefaultWorkspaceConfigMergeResult(): DefaultWorkspaceConfigMergeRe
  * single boot that consumes it.
  */
 export function hasPendingDefaultWorkspaceConfig(): boolean {
-  const defaultConfigPath = process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
+  const defaultConfigPath = process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
   return Boolean(defaultConfigPath && existsSync(defaultConfigPath));
 }
 
@@ -959,7 +959,7 @@ export function mergeDefaultWorkspaceConfig(): DefaultWorkspaceConfigMergeResult
     return emptyDefaultWorkspaceConfigMergeResult();
   }
   const defaultConfigPath = process.env
-    .VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH as string;
+    .CADET_DEFAULT_WORKSPACE_CONFIG_PATH as string;
 
   let defaults: unknown;
   try {

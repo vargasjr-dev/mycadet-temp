@@ -26,7 +26,7 @@ describe("MCP OAuth client metadata", () => {
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
       client_name: "Cadet",
-      logo_uri: "https://www.vellum.ai/favicon.svg",
+      logo_uri: "https://mycadet.ai/favicon.svg",
     });
   });
 

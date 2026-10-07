@@ -79,7 +79,7 @@ named in the wake.
 **macOS or Linux:**
 
 ```bash
-python3 "$VELLUM_WORKSPACE_DIR/watch-together/scripts/rewind.py" \
+python3 "$CADET_WORKSPACE_DIR/watch-together/scripts/rewind.py" \
   <source-file> <output-dir> <start-seconds> <end-seconds>
 ```
 
@@ -88,7 +88,7 @@ The existing `rewind.sh` command remains a POSIX compatibility wrapper.
 **Windows PowerShell:**
 
 ```powershell
-py -3 "$env:VELLUM_WORKSPACE_DIR\watch-together\scripts\rewind.py" `
+py -3 "$env:CADET_WORKSPACE_DIR\watch-together\scripts\rewind.py" `
   <source-file> <output-dir> <start-seconds> <end-seconds>
 ```
 
@@ -106,23 +106,23 @@ Create the session directory:
 
 ```bash
 SESSION_ID="example-show-s1e1"
-mkdir -p "$VELLUM_WORKSPACE_DIR/watch-together/sessions/$SESSION_ID"
+mkdir -p "$CADET_WORKSPACE_DIR/watch-together/sessions/$SESSION_ID"
 ```
 
 Source mode:
 
 ```bash
-python3 "$VELLUM_WORKSPACE_DIR/watch-together/scripts/watch-file.py" \
+python3 "$CADET_WORKSPACE_DIR/watch-together/scripts/watch-file.py" \
   <local-media-file> \
-  "$VELLUM_WORKSPACE_DIR/watch-together/sessions/$SESSION_ID" \
+  "$CADET_WORKSPACE_DIR/watch-together/sessions/$SESSION_ID" \
   <conversation-id>
 ```
 
 Screen mode:
 
 ```bash
-python3 "$VELLUM_WORKSPACE_DIR/watch-together/scripts/capture_live.py" \
-  "$VELLUM_WORKSPACE_DIR/watch-together/sessions/$SESSION_ID" \
+python3 "$CADET_WORKSPACE_DIR/watch-together/scripts/capture_live.py" \
+  "$CADET_WORKSPACE_DIR/watch-together/sessions/$SESSION_ID" \
   <conversation-id>
 ```
 
@@ -134,8 +134,8 @@ On Linux, `$DISPLAY` is used by default. To add system audio, pass chunk seconds
 the X11 display, and a Pulse monitor source:
 
 ```bash
-python3 "$VELLUM_WORKSPACE_DIR/watch-together/scripts/capture_live.py" \
-  "$VELLUM_WORKSPACE_DIR/watch-together/sessions/$SESSION_ID" \
+python3 "$CADET_WORKSPACE_DIR/watch-together/scripts/capture_live.py" \
+  "$CADET_WORKSPACE_DIR/watch-together/sessions/$SESSION_ID" \
   <conversation-id> 60 "$DISPLAY" <pulse-monitor-source>
 ```
 
@@ -145,21 +145,21 @@ Create the session directory:
 
 ```powershell
 $SessionId = "example-show-s1e1"
-$SessionDir = Join-Path $env:VELLUM_WORKSPACE_DIR "watch-together\sessions\$SessionId"
+$SessionDir = Join-Path $env:CADET_WORKSPACE_DIR "watch-together\sessions\$SessionId"
 New-Item -ItemType Directory -Force $SessionDir | Out-Null
 ```
 
 Source mode:
 
 ```powershell
-py -3 "$env:VELLUM_WORKSPACE_DIR\watch-together\scripts\watch-file.py" `
+py -3 "$env:CADET_WORKSPACE_DIR\watch-together\scripts\watch-file.py" `
   <local-media-file> $SessionDir <conversation-id>
 ```
 
 Screen mode, video only:
 
 ```powershell
-py -3 "$env:VELLUM_WORKSPACE_DIR\watch-together\scripts\capture_live.py" `
+py -3 "$env:CADET_WORKSPACE_DIR\watch-together\scripts\capture_live.py" `
   $SessionDir <conversation-id>
 ```
 
@@ -167,7 +167,7 @@ Screen mode with a configured DirectShow playback source:
 
 ```powershell
 ffmpeg -list_devices true -f dshow -i dummy
-py -3 "$env:VELLUM_WORKSPACE_DIR\watch-together\scripts\capture_live.py" `
+py -3 "$env:CADET_WORKSPACE_DIR\watch-together\scripts\capture_live.py" `
   $SessionDir <conversation-id> 60 desktop "<DirectShow-audio-device>"
 ```
 
@@ -245,8 +245,8 @@ sudo dnf install python3 ffmpeg mpv
 
 ## File locations
 
-- Scripts: `$VELLUM_WORKSPACE_DIR/watch-together/scripts/`
-- Sessions: `$VELLUM_WORKSPACE_DIR/watch-together/sessions/<session-id>/`
+- Scripts: `$CADET_WORKSPACE_DIR/watch-together/scripts/`
+- Sessions: `$CADET_WORKSPACE_DIR/watch-together/sessions/<session-id>/`
   - `chunks/`: Recorded segments from screen mode
   - `editor/verdicts/`: Per-window editor output
   - `wakes/wake-NNN/`: Frames attached to each wake
@@ -254,5 +254,5 @@ sudo dnf install python3 ffmpeg mpv
   - `subs.srt`: Extracted source-mode subtitles
   - `mpv.sock`: POSIX source-mode IPC socket; Windows uses a named pipe
 - Signals: JSON files at
-  `$VELLUM_WORKSPACE_DIR/signals/user-message.<requestId>` with optional image
+  `$CADET_WORKSPACE_DIR/signals/user-message.<requestId>` with optional image
   attachments

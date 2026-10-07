@@ -55,7 +55,7 @@ const MAX_WALL_CLOCK_MS = 8 * 60_000;
 // Runaway-cost tripwire (see header). A healthy run is a few cents.
 const MAX_COST_USD = 1;
 
-const TRUST: TrustContext = { sourceChannel: "vellum", trustClass: "guardian" };
+const TRUST: TrustContext = { sourceChannel: "cadet", trustClass: "guardian" };
 
 describe.skipIf(!apiKey)(
   "Workflow fan-out load & cost guard — real provider",

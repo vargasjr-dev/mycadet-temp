@@ -63,7 +63,7 @@ function conversation() {
     currentTurnClientOs: "web",
     currentTurnSourceActorPrincipalId: "user-123",
     getTurnOrRestingTrust: (): TrustContext => ({
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     }),
     hostCuProxy: proxy,
@@ -161,9 +161,9 @@ test("web skill tools include supported desktop actions without a native client"
 
 test("routing uses frozen turn trust even when the resting conversation is guardian", async () => {
   const { ctx, proxy } = conversation();
-  ctx.trustContext = { sourceChannel: "vellum", trustClass: "guardian" };
+  ctx.trustContext = { sourceChannel: "cadet", trustClass: "guardian" };
   ctx.getTurnOrRestingTrust = () => ({
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
     trustClass: "unknown",
   });
   const execute = spyOn(

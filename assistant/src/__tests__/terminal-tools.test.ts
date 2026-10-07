@@ -3,7 +3,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 // ── Mock modules ────────────────────────────────────────────────────────────
 
-const testTmpDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testTmpDir = process.env.CADET_WORKSPACE_DIR!;
 
 const proxyGetOrStartSession = mock(() =>
   Promise.resolve({
@@ -120,24 +120,24 @@ describe("buildSanitizedEnv", () => {
   });
 
   test("only includes Kata apt variables for Kata-family sandbox runtimes", () => {
-    process.env.VELLUM_SANDBOX_RUNTIME = "gvisor";
+    process.env.CADET_SANDBOX_RUNTIME = "gvisor";
     process.env.PATH = "/usr/bin";
     process.env.HOME = "/data";
-    process.env.VELLUM_APT_DATA_ROOT = "/data/system";
+    process.env.CADET_APT_DATA_ROOT = "/data/system";
     process.env.LD_LIBRARY_PATH = "/host/lib";
     process.env.PYTHONPATH = "/host/python";
 
     let env = buildSanitizedEnv();
-    expect(env.VELLUM_APT_DATA_ROOT).toBeUndefined();
+    expect(env.CADET_APT_DATA_ROOT).toBeUndefined();
     expect(env.LD_LIBRARY_PATH).toBeUndefined();
     expect(env.PYTHONPATH).toBeUndefined();
     expect(env.PYTHONUSERBASE).toBeUndefined();
     expect(env.BUN_INSTALL).toBeUndefined();
     expect(env.PATH.split(":")).not.toContain("/data/system/usr/bin");
 
-    process.env.VELLUM_SANDBOX_RUNTIME = "kata";
+    process.env.CADET_SANDBOX_RUNTIME = "kata";
     env = buildSanitizedEnv();
-    expect(env.VELLUM_APT_DATA_ROOT).toBe("/data/system");
+    expect(env.CADET_APT_DATA_ROOT).toBe("/data/system");
     expect(env.PATH.split(":")).toContain("/data/system/usr/bin");
     expect(env.PATH.split(":")).toContain("/data/system/usr/local/bin");
     // Shims must shadow the chroot bin dirs so a shim beats a wrapper script
@@ -163,9 +163,9 @@ describe("buildSanitizedEnv", () => {
     expect(env.PATH.split(":")).toContain("/data/.python/bin");
     expect(env.PATH.split(":")).toContain("/data/.bun/bin");
 
-    process.env.VELLUM_SANDBOX_RUNTIME = "cloud-hypervisor";
+    process.env.CADET_SANDBOX_RUNTIME = "cloud-hypervisor";
     env = buildSanitizedEnv();
-    expect(env.VELLUM_APT_DATA_ROOT).toBe("/data/system");
+    expect(env.CADET_APT_DATA_ROOT).toBe("/data/system");
     expect(env.PATH.split(":")).toContain("/data/system/usr/bin");
   });
 

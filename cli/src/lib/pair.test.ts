@@ -35,7 +35,7 @@ describe("formatWebApproveFailure", () => {
     expect(message).toContain(TTL_NOTE);
     expect(message).toContain("single-use");
     expect(message).toContain("different assistant or environment");
-    expect(message).toContain("VELLUM_ENVIRONMENT");
+    expect(message).toContain("CADET_ENVIRONMENT");
   });
 
   test("EXPIRED_USER_CODE gets the same diagnostic with an expiry lead line", () => {
@@ -47,7 +47,7 @@ describe("formatWebApproveFailure", () => {
     );
     expect(message).toContain(`Pairing code expired on ${GATEWAY_URL}`);
     expect(message).toContain(TTL_NOTE);
-    expect(message).toContain("VELLUM_ENVIRONMENT");
+    expect(message).toContain("CADET_ENVIRONMENT");
   });
 
   test("unknown error codes return null so callers fall back to the generic HTTP error", () => {

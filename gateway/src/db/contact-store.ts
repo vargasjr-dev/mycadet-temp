@@ -42,7 +42,7 @@ export const GUARDIAN_BINDING_REVOKE_REASON = "guardian_binding_revoked";
  * The channel a shared-conversation principal is recorded on. Written only by
  * {@link writeSharedPrincipalChannel}.
  */
-export const SHARED_PRINCIPAL_CHANNEL_TYPE = "vellum-shared";
+export const SHARED_PRINCIPAL_CHANNEL_TYPE = "cadet-shared";
 
 /**
  * Channel types the generic contact writes refuse. Rows under one of these
@@ -60,9 +60,9 @@ export function assertChannelTypeWritable(type: string): void {
 }
 
 /**
- * The only writer of `vellum-shared` rows. Binds `principalId` to the
+ * The only writer of `cadet-shared` rows. Binds `principalId` to the
  * contact-role contact `contactId` and records it as that contact's active
- * `vellum-shared` channel, both or neither. Synchronous, so a caller can
+ * `cadet-shared` channel, both or neither. Synchronous, so a caller can
  * compose it with other gateway writes in one transaction.
  *
  * Throws {@link BindContactPrincipalError} when the contact is missing, is not

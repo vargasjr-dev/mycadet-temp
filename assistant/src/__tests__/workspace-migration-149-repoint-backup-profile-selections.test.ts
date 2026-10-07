@@ -66,7 +66,7 @@ function readPins(table: "conversations" | "cron_jobs"): string[] {
 beforeEach(() => {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-149-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-149-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
 });

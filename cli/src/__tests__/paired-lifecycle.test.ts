@@ -17,7 +17,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const testDir = mkdtempSync(join(tmpdir(), "paired-lifecycle-test-"));
-const ORIGINAL_LOCKFILE_DIR = process.env.VELLUM_LOCKFILE_DIR;
+const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ARGV = [...process.argv];
 
@@ -63,7 +63,7 @@ async function runGuarded(
 
 describe("paired lifecycle guards", () => {
   beforeEach(() => {
-    process.env.VELLUM_LOCKFILE_DIR = testDir;
+    process.env.CADET_LOCKFILE_DIR = testDir;
     process.env.XDG_CONFIG_HOME = testDir;
     seedPairedEntry();
   });
@@ -71,8 +71,8 @@ describe("paired lifecycle guards", () => {
   afterEach(() => {
     process.argv = [...ORIGINAL_ARGV];
     if (ORIGINAL_LOCKFILE_DIR === undefined)
-      delete process.env.VELLUM_LOCKFILE_DIR;
-    else process.env.VELLUM_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
+    else process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
     if (ORIGINAL_CONFIG_HOME === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = ORIGINAL_CONFIG_HOME;
   });
@@ -82,7 +82,7 @@ describe("paired lifecycle guards", () => {
   });
 
   test("wake refuses a paired entry with a host-machine message", async () => {
-    process.argv = ["bun", "vellum", "wake", "px"];
+    process.argv = ["bun", "cadet", "wake", "px"];
     const { exited, errors } = await runGuarded(wake);
 
     expect(exited).toBe(true);
@@ -93,7 +93,7 @@ describe("paired lifecycle guards", () => {
   });
 
   test("sleep refuses a paired entry with a host-machine message", async () => {
-    process.argv = ["bun", "vellum", "sleep", "px"];
+    process.argv = ["bun", "cadet", "sleep", "px"];
     const { exited, errors } = await runGuarded(sleep);
 
     expect(exited).toBe(true);
@@ -103,7 +103,7 @@ describe("paired lifecycle guards", () => {
   });
 
   test("retire refuses a paired entry and points to unpair", async () => {
-    process.argv = ["bun", "vellum", "retire", "px", "--yes"];
+    process.argv = ["bun", "cadet", "retire", "px", "--yes"];
     const { exited, errors } = await runGuarded(retire);
 
     expect(exited).toBe(true);

@@ -4,7 +4,7 @@ import Foundation
 import MacHelperCore
 import os
 
-private let log = Logger(subsystem: "ai.vellum.mac-helper", category: "CaptureSources")
+private let log = Logger(subsystem: "ai.mycadet.mac-helper", category: "CaptureSources")
 
 /// The windows a watch session could be scoped to, as the window server sees
 /// them right now.
@@ -174,7 +174,7 @@ enum CaptureSources {
     }
 
     /// The frontmost ordinary window lying wholly on `displayId`, by the
-    /// window server's front-to-back order, or nil when none does. The Vellum
+    /// window server's front-to-back order, or nil when none does. The Cadet
     /// app's own window counts, because the display's screenshot shows it
     /// (`DisplayCaptureExclusion`); the helper's windows never do.
     ///

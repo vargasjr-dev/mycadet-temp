@@ -12,7 +12,7 @@
  * The loader deliberately:
  *
  * - Uses `getWorkspaceDir()` so each instance loads its own plugin set
- *   when `VELLUM_WORKSPACE_DIR` is set.
+ *   when `CADET_WORKSPACE_DIR` is set.
  * - Prefers `.js` over `.ts` per surface file (compiled-binary semantics);
  *   the rule is applied by `buildExternalPlugin`.
  * - Treats any error from a plugin load as a per-plugin isolation

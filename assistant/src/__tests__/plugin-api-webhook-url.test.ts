@@ -33,7 +33,7 @@ describe("resolveWebhookUrl", () => {
   });
   test("composes the plugin's namespaced path and delegates the tier choice", async () => {
     const spy = spyOn(registration, "resolveCallbackUrl").mockResolvedValue(
-      "https://callbacks.vellum.ai/abc/webhooks/plugins/imessage/events-photon",
+      "https://callbacks.mycadet.ai/abc/webhooks/plugins/imessage/events-photon",
     );
 
     const url = await resolveWebhookUrl({
@@ -42,7 +42,7 @@ describe("resolveWebhookUrl", () => {
     });
 
     expect(url).toBe(
-      "https://callbacks.vellum.ai/abc/webhooks/plugins/imessage/events-photon/",
+      "https://callbacks.mycadet.ai/abc/webhooks/plugins/imessage/events-photon/",
     );
     expect(spy.mock.calls[0]![1]).toBe(
       "webhooks/plugins/imessage/events-photon",
@@ -128,7 +128,7 @@ describe("resolveWebhookUrl", () => {
     // The prefix is fixed so a plugin cannot claim another's routes. That only
     // holds if the segments cannot escape it either.
     for (const options of [
-      { plugin: "../vellum", path: "events" },
+      { plugin: "../cadet", path: "events" },
       { plugin: "imessage", path: "../../admin" },
       { plugin: "imessage", path: "/events" },
       { plugin: "imessage", path: "events/" },
@@ -145,13 +145,13 @@ describe("resolveWebhookUrl", () => {
     // given the slashless spelling is 301'd, and clients that follow a 301
     // on POST typically retry as GET and drop the body.
     const spy = spyOn(registration, "resolveCallbackUrl").mockResolvedValue(
-      "https://callbacks.vellum.ai/abc/webhooks/plugins/imessage/events-comms/",
+      "https://callbacks.mycadet.ai/abc/webhooks/plugins/imessage/events-comms/",
     );
 
     await expect(
       resolveWebhookUrl({ plugin: "imessage", path: "events-comms" }),
     ).resolves.toBe(
-      "https://callbacks.vellum.ai/abc/webhooks/plugins/imessage/events-comms/",
+      "https://callbacks.mycadet.ai/abc/webhooks/plugins/imessage/events-comms/",
     );
     expect(spy.mock.calls[0]![1]).toBe(
       "webhooks/plugins/imessage/events-comms",

@@ -44,11 +44,11 @@ describe("gateway_status route", () => {
   });
 
   test("returns the tunnel URL when a tunnel is connected", async () => {
-    ipcResult = { connected: true, publicUrl: "https://abc123.vellum.ai" };
+    ipcResult = { connected: true, publicUrl: "https://abc123.mycadet.ai" };
 
     const result = await gatewayStatusRoute.handler({});
 
-    expect(result).toEqual({ tunnel: "https://abc123.vellum.ai" });
+    expect(result).toEqual({ tunnel: "https://abc123.mycadet.ai" });
   });
 
   test("returns {} when the tunnel is disconnected", async () => {

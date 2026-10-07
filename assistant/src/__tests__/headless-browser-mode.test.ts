@@ -319,7 +319,7 @@ describe("formatModeSelectionFailure", () => {
     expect(formatted).toContain("Setup details:");
     expect(formatted).toContain("Chrome extension");
     expect(formatted).toContain(CHROME_WEB_STORE_INSTALL_URL);
-    expect(formatted).toContain("www.vellum.ai/downloads");
+    expect(formatted).toContain("mycadet.ai/downloads");
     expect(formatted).toContain("Offer those first");
   });
 
@@ -368,7 +368,7 @@ describe("formatModeSelectionFailure", () => {
 
     expect(formatted).toContain("Setup details:");
     expect(formatted).toContain(CHROME_WEB_STORE_INSTALL_URL);
-    expect(formatted).toContain("www.vellum.ai/downloads");
+    expect(formatted).toContain("mycadet.ai/downloads");
   });
 
   test("phone surfaces do not invent an in-app browser panel", () => {
@@ -391,7 +391,7 @@ describe("formatModeSelectionFailure", () => {
     expect(formatted).toContain("no in-app browser");
     expect(formatted).toContain("Do not describe a browser panel");
     expect(formatted).toContain(CHROME_WEB_STORE_INSTALL_URL);
-    expect(formatted).toContain("www.vellum.ai/downloads");
+    expect(formatted).toContain("mycadet.ai/downloads");
   });
 });
 
@@ -450,7 +450,7 @@ describe("browser_mode wiring through tool execution", () => {
     expect(result.content).toContain("Navigation failed");
     expect(result.content).toContain("timed out");
     expect(result.content).toContain(CHROME_WEB_STORE_INSTALL_URL);
-    expect(result.content).toContain("www.vellum.ai/downloads");
+    expect(result.content).toContain("mycadet.ai/downloads");
     expect(result.content).toContain("Offer those first");
   });
 

@@ -312,7 +312,7 @@ export function pairAssistant(
     };
   }
 
-  // A paired entry is remote by definition (`vellum pair` refuses to advertise
+  // A paired entry is remote by definition (`cadet pair` refuses to advertise
   // loopback URLs), and a loopback runtimeUrl in the lockfile would otherwise
   // read as a local gateway to loopback-port consumers. Refuse it outright so
   // a crafted address cannot point a pairing at this machine's own services.
@@ -321,7 +321,7 @@ export function pairAssistant(
       ok: false,
       status: 422,
       error:
-        "A paired assistant needs a non-loopback gateway URL; run `vellum pair` " +
+        "A paired assistant needs a non-loopback gateway URL; run `cadet pair` " +
         "with --url pointing at a tunnel or public https address.",
     };
   }
@@ -385,7 +385,7 @@ export function pairAssistant(
       name: name ?? `paired (${label})`,
       runtimeUrl: credentials.gatewayUrl,
       // Paired entries are reached by bearer token at the remote runtimeUrl
-      // (a non-"vellum" cloud selects the bearer-token auth path in client.ts).
+      // (a non-"cadet" cloud selects the bearer-token auth path in client.ts).
       // The "paired" topology lets lifecycle/status commands (ps/wake/sleep)
       // recognize this as a remote pairing rather than an on-machine process.
       cloud: "paired",
@@ -1206,7 +1206,7 @@ export function pairingCancel(handle: unknown): boolean {
 
 // ── Legacy base64 bundle import ─────────────────────────────────────────────
 //
-// The pre-pairing-link import path. Its one caller is `vellum connect import`
+// The pre-pairing-link import path. Its one caller is `cadet connect import`
 // (cli/src/commands/connect/import.ts), which falls back to it for a bundle
 // minted by a host on the previous release; nothing mints bundles any more, so
 // this section goes once that release is out of support. It shares

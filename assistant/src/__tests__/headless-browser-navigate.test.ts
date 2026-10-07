@@ -608,7 +608,7 @@ describe("executeBrowserNavigate", () => {
     const unrouteCallsBefore = mockPage.unroute.mock.calls.length;
 
     cdpSendHandler = (method, params) => {
-      if (method === "Vellum.createTab") {
+      if (method === "Cadet.createTab") {
         return { tabId: "42" };
       }
       return defaultCdpHandler(method, params);
@@ -651,7 +651,7 @@ describe("executeBrowserNavigate", () => {
     // navigateAndWait returns a private final URL (simulating a
     // server-side redirect).
     cdpSendHandler = (method, params) => {
-      if (method === "Vellum.createTab") {
+      if (method === "Cadet.createTab") {
         return { tabId: "42" };
       }
       if (method === "Page.navigate") {
@@ -700,7 +700,7 @@ describe("executeBrowserNavigate", () => {
     mockExtensionAvailable = true;
 
     cdpSendHandler = (method, params) => {
-      if (method === "Vellum.createTab") {
+      if (method === "Cadet.createTab") {
         return { tabId: "999" };
       }
       return defaultCdpHandler(method, params);
@@ -713,9 +713,9 @@ describe("executeBrowserNavigate", () => {
 
     expect(result.isError).toBe(false);
 
-    // Vellum.createTab fired and fired BEFORE Page.navigate.
+    // Cadet.createTab fired and fired BEFORE Page.navigate.
     const createIdx = cdpSendCalls.findIndex(
-      (c) => c.method === "Vellum.createTab",
+      (c) => c.method === "Cadet.createTab",
     );
     const navIdx = cdpSendCalls.findIndex((c) => c.method === "Page.navigate");
     expect(createIdx).toBeGreaterThanOrEqual(0);
@@ -732,7 +732,7 @@ describe("executeBrowserNavigate", () => {
     mockExtensionAvailable = true;
 
     cdpSendHandler = (method, params) => {
-      if (method === "Vellum.createTab") {
+      if (method === "Cadet.createTab") {
         throw new Error("createTab returned no tabId");
       }
       return defaultCdpHandler(method, params);
@@ -761,7 +761,7 @@ describe("executeBrowserNavigate", () => {
     mockExtensionAvailable = true;
 
     cdpSendHandler = (method, params) => {
-      if (method === "Vellum.createTab") {
+      if (method === "Cadet.createTab") {
         return {};
       } // no tabId
       return defaultCdpHandler(method, params);
@@ -788,7 +788,7 @@ describe("executeBrowserNavigate", () => {
     mockExtensionAvailable = true;
 
     cdpSendHandler = (method, params) => {
-      if (method === "Vellum.createTab") {
+      if (method === "Cadet.createTab") {
         return {};
       } // no tabId
       return defaultCdpHandler(method, params);
@@ -814,10 +814,10 @@ describe("executeBrowserNavigate", () => {
     );
 
     expect(result.isError).toBe(false);
-    // No Vellum.createTab was issued on the local path — the flag is
+    // No Cadet.createTab was issued on the local path — the flag is
     // silently ignored because Playwright opens its own browser and
     // there's no user-tab to disturb.
-    expect(cdpSendCalls.some((c) => c.method === "Vellum.createTab")).toBe(
+    expect(cdpSendCalls.some((c) => c.method === "Cadet.createTab")).toBe(
       false,
     );
     expect(cdpSetSessionIdCalls).toEqual([]);
@@ -828,7 +828,7 @@ describe("executeBrowserNavigate", () => {
     mockExtensionAvailable = true;
 
     cdpSendHandler = (method, params) => {
-      if (method === "Vellum.createTab") {
+      if (method === "Cadet.createTab") {
         return { tabId: "999" };
       }
       return defaultCdpHandler(method, params);
@@ -843,7 +843,7 @@ describe("executeBrowserNavigate", () => {
     // The dedicated tab is opened BEFORE Page.navigate so the navigation
     // lands on it rather than the user's active tab.
     const createIdx = cdpSendCalls.findIndex(
-      (c) => c.method === "Vellum.createTab",
+      (c) => c.method === "Cadet.createTab",
     );
     const navIdx = cdpSendCalls.findIndex((c) => c.method === "Page.navigate");
     expect(createIdx).toBeGreaterThanOrEqual(0);
@@ -852,7 +852,7 @@ describe("executeBrowserNavigate", () => {
     expect(cdpSetSessionIdCalls).toContain("999");
   });
 
-  test("default reuses an existing pinned tab (no Vellum.createTab)", async () => {
+  test("default reuses an existing pinned tab (no Cadet.createTab)", async () => {
     const { setPinnedTab } = await import("../tools/browser/pinned-tabs.js");
     setPinnedTab(ctx.conversationId, "already-pinned-tab");
 
@@ -868,7 +868,7 @@ describe("executeBrowserNavigate", () => {
     // Conversation already has a dedicated tab; the `cdp` client was
     // constructed routed to it, so no new tab is opened and the live
     // session is left as-is.
-    expect(cdpSendCalls.some((c) => c.method === "Vellum.createTab")).toBe(
+    expect(cdpSendCalls.some((c) => c.method === "Cadet.createTab")).toBe(
       false,
     );
     expect(cdpSetSessionIdCalls).toEqual([]);
@@ -884,7 +884,7 @@ describe("executeBrowserNavigate", () => {
     mockExtensionAvailable = true;
 
     cdpSendHandler = (method, params) => {
-      if (method === "Vellum.createTab") {
+      if (method === "Cadet.createTab") {
         return { tabId: "1001" };
       }
       return defaultCdpHandler(method, params);
@@ -898,7 +898,7 @@ describe("executeBrowserNavigate", () => {
     expect(result.isError).toBe(false);
     // --new-tab overrides the reuse path and opens a brand-new tab,
     // re-pinning the conversation to it.
-    expect(cdpSendCalls.some((c) => c.method === "Vellum.createTab")).toBe(
+    expect(cdpSendCalls.some((c) => c.method === "Cadet.createTab")).toBe(
       true,
     );
     expect(cdpSetSessionIdCalls).toContain("1001");
@@ -921,7 +921,7 @@ describe("executeBrowserNavigate", () => {
     expect(result.isError).toBe(false);
     // Opt-out: no dedicated tab is opened; the pin and live session are
     // cleared so the navigate is authoritative on the active tab.
-    expect(cdpSendCalls.some((c) => c.method === "Vellum.createTab")).toBe(
+    expect(cdpSendCalls.some((c) => c.method === "Cadet.createTab")).toBe(
       false,
     );
     expect(getPinnedTab(ctx.conversationId)).toBeUndefined();

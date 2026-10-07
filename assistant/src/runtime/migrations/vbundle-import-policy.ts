@@ -59,7 +59,7 @@ export function isRetiredArchivePath(archivePath: string): boolean {
 
 /**
  * `gateway/` holds the gateway's own database and logs, added by the debug
- * export profile for Vellum staff to open on a debug clone. It is never
+ * export profile for Cadet staff to open on a debug clone. It is never
  * part of a workspace, so preflight and both importers skip it silently,
  * the same way they skip retired paths.
  */

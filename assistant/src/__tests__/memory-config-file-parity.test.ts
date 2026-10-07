@@ -168,14 +168,14 @@ describe("memory config file parity", () => {
     );
   });
 
-  test("switching VELLUM_WORKSPACE_DIR busts the cache (path is part of the key)", () => {
-    const savedWorkspace = process.env.VELLUM_WORKSPACE_DIR;
+  test("switching CADET_WORKSPACE_DIR busts the cache (path is part of the key)", () => {
+    const savedWorkspace = process.env.CADET_WORKSPACE_DIR;
     try {
       writeConfig({ memory: { enabled: false } });
       expect(getMemoryConfig().enabled).toBe(false);
 
-      const otherWorkspace = mkdtempSync(join(tmpdir(), "vellum-parity-ws-"));
-      process.env.VELLUM_WORKSPACE_DIR = otherWorkspace;
+      const otherWorkspace = mkdtempSync(join(tmpdir(), "cadet-parity-ws-"));
+      process.env.CADET_WORKSPACE_DIR = otherWorkspace;
       // The other workspace has no config.json → schema defaults, not the
       // previous workspace's cached slice.
       expect(getMemoryConfig().enabled).toBe(true);
@@ -188,7 +188,7 @@ describe("memory config file parity", () => {
       expect(getMemoryConfig().v2.enabled).toBe(false);
       expectParity();
     } finally {
-      process.env.VELLUM_WORKSPACE_DIR = savedWorkspace;
+      process.env.CADET_WORKSPACE_DIR = savedWorkspace;
     }
   });
 

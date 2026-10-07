@@ -24,8 +24,8 @@ describe("max tokens reached handler", () => {
       shouldGenerateTitle: false,
       rlog: { warn: () => {} },
       turnChannelContext: {
-        userMessageChannel: "vellum",
-        assistantMessageChannel: "vellum",
+        userMessageChannel: "cadet",
+        assistantMessageChannel: "cadet",
       },
       turnInterfaceContext: {
         userMessageInterface: "web",

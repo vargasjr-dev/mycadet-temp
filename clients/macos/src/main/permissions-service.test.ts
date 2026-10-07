@@ -53,7 +53,7 @@ let helperInputMonitoringStatus = "denied";
 mock.module("electron", () => ({
   app: {
     isPackaged: false,
-    getPath: () => "/tmp/vellum-permissions-test",
+    getPath: () => "/tmp/cadet-permissions-test",
     relaunch: () => undefined,
     quit: () => undefined,
     on: () => undefined,

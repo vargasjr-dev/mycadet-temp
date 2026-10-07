@@ -26,8 +26,8 @@ import { writeOutput } from "../../output.js";
 export async function requirePlatformConnection(
   cmd: Command,
 ): Promise<boolean> {
-  const { VellumPlatformClient } = await import("../../../platform/client.js");
-  const client = await VellumPlatformClient.create();
+  const { CadetPlatformClient } = await import("../../../platform/client.js");
+  const client = await CadetPlatformClient.create();
   if (!client) {
     writeOutput(cmd, {
       ok: false,

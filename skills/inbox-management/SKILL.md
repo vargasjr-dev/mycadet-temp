@@ -106,7 +106,7 @@ Do not create an execute-mode job. Empty inbox fires must not start an agent tur
 - Name: `Inbox Management`
 - Default cadence: `0 */3 * * 1-5` (every 3 hours on weekdays)
 - Mode: `script`
-- Script: `bun "$VELLUM_WORKSPACE_DIR/schedules/$__SCHEDULE_ID/poll.ts"`
+- Script: `bun "$CADET_WORKSPACE_DIR/schedules/$__SCHEDULE_ID/poll.ts"`
 - `timeout_ms: 900000` (the poll's runtime includes the woken assistant turn)
 - `inference_profile: "cost-optimized"` (applies to wake handoff turns)
 - `quiet: true`
@@ -119,10 +119,10 @@ By default the first poll baselines at now and does not escalate pre-existing ma
 2. Copy the shipped poll script into the schedule's directory. Read the id from the create result:
 
 ```bash
-mkdir -p "$VELLUM_WORKSPACE_DIR/schedules/<id>"
-cp "$VELLUM_WORKSPACE_DIR/skills/inbox-management/scripts/poll.ts" \
-   "$VELLUM_WORKSPACE_DIR/skills/inbox-management/scripts/poll-lib.ts" \
-   "$VELLUM_WORKSPACE_DIR/schedules/<id>/"
+mkdir -p "$CADET_WORKSPACE_DIR/schedules/<id>"
+cp "$CADET_WORKSPACE_DIR/skills/inbox-management/scripts/poll.ts" \
+   "$CADET_WORKSPACE_DIR/skills/inbox-management/scripts/poll-lib.ts" \
+   "$CADET_WORKSPACE_DIR/schedules/<id>/"
 ```
 
 The schedule owns this copy. `poll.ts` self-provisions JSON state on first run (`schedules/<id>/state/state.json`).

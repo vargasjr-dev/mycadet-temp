@@ -723,7 +723,7 @@ function stopQuietly(transcriber: StreamingTranscriber | null): void {
 }
 
 /**
- * The actor a watch session observes for: the vellum guardian bound to this
+ * The actor a watch session observes for: the cadet guardian bound to this
  * daemon, read from the gateway-owned binding.
  *
  * The principal comes from that binding rather than from anything the request

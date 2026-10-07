@@ -6,7 +6,7 @@
  * `name`) — the manifest `name` need NOT equal the install directory name.
  * That match must not be required: a plugin is installed under its marketplace
  * slug or GitHub path leaf, which routinely differs from its `package.json`
- * `name` (e.g. cognee installs to `cognee`/`vellum-assistant` while its package
+ * `name` (e.g. cognee installs to `cognee`/`mycadet` while its package
  * is named `cognee-memory`). Requiring the match silently drops the plugin's
  * skills even though the runtime loads its hooks and tools fine.
  */
@@ -67,9 +67,9 @@ describe("discoverPluginResidentSkills (via loadSkillCatalog)", () => {
   });
 
   test("surfaces a plugin skill when the install dir name differs from package.json name", () => {
-    // dir `vellum-assistant` (GitHub path leaf) vs package `cognee-memory`:
+    // dir `mycadet` (GitHub path leaf) vs package `cognee-memory`:
     // the exact cognee shape that was silently dropped before.
-    writePlugin("vellum-assistant", "cognee-memory", [
+    writePlugin("mycadet", "cognee-memory", [
       {
         id: "qa-cognee-sync",
         description: "Sync session memory into the graph.",
@@ -81,7 +81,7 @@ describe("discoverPluginResidentSkills (via loadSkillCatalog)", () => {
     expect(skill!.source).toBe("plugin");
     // Attribution is the install slug (directory name), which is the identity
     // used by `plugins list` and per-conversation plugin scoping.
-    expect(skill!.owner).toEqual({ kind: "plugin", id: "vellum-assistant" });
+    expect(skill!.owner).toEqual({ kind: "plugin", id: "mycadet" });
   });
 
   test("surfaces a plugin skill when dir name equals package.json name", () => {

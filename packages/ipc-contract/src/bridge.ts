@@ -215,7 +215,7 @@ export interface CadetBridge {
     insertIntoFrontApp(text: string): Promise<TextInsertionResult>;
     /**
      * Undo the last edit in the application in front, the way its Edit menu
-     * would. For putting Vellum's dictation in the place of one another app
+     * would. For putting Cadet's dictation in the place of one another app
      * pasted a moment ago. Absent on shells without a voice key, which are
      * the shells with nothing to put in another app's place.
      */
@@ -583,7 +583,7 @@ export interface CadetBridge {
     onAction(callback: (event: NotificationActionEvent) => void): () => void;
     /**
      * Authoritative state of the window this renderer belongs to, pushed from
-     * main. Vellum windows disable background throttling, which also disables
+     * main. Cadet windows disable background throttling, which also disables
      * the Page Visibility API, so the renderer cannot read this for itself.
      */
     onWindowAttention(
@@ -944,7 +944,7 @@ export interface CadetBridge {
      */
     takesPrompts(): Promise<boolean>;
     /**
-     * Bring Vellum forward on the conversation the user was last in, which is
+     * Bring Cadet forward on the conversation the user was last in, which is
      * what pressing the avatar asks for.
      */
     activate(): void;
@@ -992,7 +992,7 @@ export interface CadetBridge {
  * `satisfies` below fails to compile when the interface gains a key this list
  * lacks.
  */
-export const VELLUM_BRIDGE_KEYS = [
+export const CADET_BRIDGE_KEYS = [
   "platform",
   "hostOS",
   "app",
@@ -1032,6 +1032,6 @@ export const VELLUM_BRIDGE_KEYS = [
 ] as const satisfies readonly (keyof CadetBridge)[];
 
 ({}) satisfies Record<
-  Exclude<keyof CadetBridge, (typeof VELLUM_BRIDGE_KEYS)[number]>,
+  Exclude<keyof CadetBridge, (typeof CADET_BRIDGE_KEYS)[number]>,
   never
 >;

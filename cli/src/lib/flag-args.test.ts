@@ -6,7 +6,7 @@ describe("parseFeatureFlagArgs", () => {
   test("single flag produces env var and empty remaining", () => {
     const result = parseFeatureFlagArgs(["--flag", "browser=true"]);
     expect(result).toEqual({
-      envVars: { VELLUM_FLAG_BROWSER: "true" },
+      envVars: { CADET_FLAG_BROWSER: "true" },
       remaining: [],
     });
   });
@@ -14,7 +14,7 @@ describe("parseFeatureFlagArgs", () => {
   test("multiple flags produce multiple env vars", () => {
     const result = parseFeatureFlagArgs(["--flag", "a=1", "--flag", "b=0"]);
     expect(result).toEqual({
-      envVars: { VELLUM_FLAG_A: "1", VELLUM_FLAG_B: "0" },
+      envVars: { CADET_FLAG_A: "1", CADET_FLAG_B: "0" },
       remaining: [],
     });
   });
@@ -28,7 +28,7 @@ describe("parseFeatureFlagArgs", () => {
       "foo",
     ]);
     expect(result).toEqual({
-      envVars: { VELLUM_FLAG_X: "y" },
+      envVars: { CADET_FLAG_X: "y" },
       remaining: ["--watch", "--name", "foo"],
     });
   });

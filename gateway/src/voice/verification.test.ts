@@ -28,7 +28,7 @@ async function setupTestDirs(): Promise<void> {
   const securityDir = join(testRoot, "protected");
   mkdirSync(securityDir, { recursive: true });
 
-  process.env.VELLUM_WORKSPACE_DIR = testRoot;
+  process.env.CADET_WORKSPACE_DIR = testRoot;
   process.env.GATEWAY_SECURITY_DIR = securityDir;
 
   await initGatewayDb();

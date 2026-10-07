@@ -2,7 +2,7 @@ import Foundation
 
 /// Which windows a capture scoped to a display leaves out.
 ///
-/// A shared display shows the user's whole screen, the Vellum app included:
+/// A shared display shows the user's whole screen, the Cadet app included:
 /// the assistant is asked about what the user sees, and the app is part of
 /// that. What stays out is the assistant's own furniture: every window of
 /// this helper, and the app's windows above the ordinary window layer (the

@@ -31,31 +31,31 @@ function getPlatformTokenPath(): string {
  *      non-production XDG layouts because the CLI process has no way to
  *      know which instance to read from without first consulting the
  *      lockfile anyway.
- *   2. `VELLUM_PLATFORM_URL` env var (explicit override, e.g. in CI).
- *   3. The current environment's seed URL (e.g. `https://dev-platform.vellum.ai`
- *      for `VELLUM_ENVIRONMENT=dev`, `https://platform.vellum.ai` for prod).
+ *   2. `CADET_PLATFORM_URL` env var (explicit override, e.g. in CI).
+ *   3. The current environment's seed URL (e.g. `https://dev-cloud.cadet.ai`
+ *      for `CADET_ENVIRONMENT=dev`, `https://cloud.cadet.ai` for prod).
  *      This makes the CLI environment-aware when no lockfile entry exists yet.
  */
 export function getPlatformUrl(): string {
   const lockfileUrl = getLockfilePlatformBaseUrl();
   return (
     lockfileUrl ||
-    process.env.VELLUM_PLATFORM_URL?.trim() ||
+    process.env.CADET_PLATFORM_URL?.trim() ||
     getCurrentEnvironment().platformUrl
   );
 }
 
 /**
  * Resolve the web app (Next.js) base URL for browser-facing pages like
- * `/account/login`. Mirrors `VellumEnvironment.resolvedWebURL` on the
+ * `/account/login`. Mirrors `CadetEnvironment.resolvedWebURL` on the
  * Swift side.
  *
  * Resolution order:
- *   1. `VELLUM_WEB_URL` env var (explicit override)
+ *   1. `CADET_WEB_URL` env var (explicit override)
  *   2. The current environment's seed web URL
  */
 export function getWebUrl(): string {
-  return process.env.VELLUM_WEB_URL?.trim() || getCurrentEnvironment().webUrl;
+  return process.env.CADET_WEB_URL?.trim() || getCurrentEnvironment().webUrl;
 }
 
 export function readPlatformToken(): string | null {
@@ -112,7 +112,7 @@ export function authHeadersForKnownOrganization(
     ...tokenAuthHeader(token),
   };
   if (!token.startsWith(VAK_PREFIX)) {
-    headers["Vellum-Organization-Id"] = organizationId;
+    headers["Cadet-Organization-Id"] = organizationId;
   }
   return headers;
 }
@@ -124,7 +124,7 @@ const ORG_ID_CACHE_TTL_MS = 60_000; // 60 seconds
 /**
  * Drop the cached org ID for a given (token, platformUrl) pair. Used by the
  * one-shot 401-retry path: a 401 on a session-token request frequently means
- * the cached `Vellum-Organization-Id` header is stale (e.g. user switched
+ * the cached `Cadet-Organization-Id` header is stale (e.g. user switched
  * orgs in another tab). Clearing the entry forces the next `authHeaders`
  * call to refetch the org ID from the platform.
  *
@@ -145,7 +145,7 @@ export function invalidateOrgIdCache(
  * - `Content-Type: application/json`
  * - The appropriate auth header (`Authorization: Bearer` for `vak_`
  *   API keys, `X-Session-Token` for session tokens).
- * - `Vellum-Organization-Id` – fetched from the platform.  Only
+ * - `Cadet-Organization-Id` – fetched from the platform.  Only
  *   included for session-token callers; API keys are already org-scoped.
  *
  * The org ID is cached per (token, platformUrl) for 60 seconds to avoid
@@ -175,7 +175,7 @@ export async function authHeaders(
   const cacheKey = `${token}::${platformUrl ?? ""}`;
   const cached = orgIdCache.get(cacheKey);
   if (cached && Date.now() < cached.expiresAt) {
-    return { ...base, "Vellum-Organization-Id": cached.orgId };
+    return { ...base, "Cadet-Organization-Id": cached.orgId };
   }
 
   try {
@@ -184,7 +184,7 @@ export async function authHeaders(
       orgId,
       expiresAt: Date.now() + ORG_ID_CACHE_TTL_MS,
     });
-    return { ...base, "Vellum-Organization-Id": orgId };
+    return { ...base, "Cadet-Organization-Id": orgId };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("401") || msg.includes("403")) {
@@ -259,7 +259,7 @@ export async function ensureSelfHostedLocalRegistration(
         "Content-Type": "application/json",
         Accept: "application/json",
         "X-Session-Token": token,
-        "Vellum-Organization-Id": organizationId,
+        "Cadet-Organization-Id": organizationId,
       },
       body: JSON.stringify(body),
     },
@@ -325,7 +325,7 @@ export async function reprovisionAssistantApiKey(
         "Content-Type": "application/json",
         Accept: "application/json",
         "X-Session-Token": token,
-        "Vellum-Organization-Id": organizationId,
+        "Cadet-Organization-Id": organizationId,
       },
       body: JSON.stringify(body),
     },
@@ -525,13 +525,13 @@ export async function injectCredentialsIntoAssistant(
   const promises: Promise<boolean>[] = [];
 
   if (params.assistantApiKey) {
-    promises.push(inject("vellum:assistant_api_key", params.assistantApiKey));
+    promises.push(inject("cadet:assistant_api_key", params.assistantApiKey));
   }
 
-  promises.push(inject("vellum:platform_base_url", params.platformBaseUrl));
+  promises.push(inject("cadet:platform_base_url", params.platformBaseUrl));
 
   if (params.webhookSecret) {
-    promises.push(inject("vellum:webhook_secret", params.webhookSecret));
+    promises.push(inject("cadet:webhook_secret", params.webhookSecret));
   }
 
   const results = await Promise.all(promises);

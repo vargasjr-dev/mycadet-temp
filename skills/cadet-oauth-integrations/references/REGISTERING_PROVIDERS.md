@@ -1,6 +1,6 @@
 # Registering New OAuth Providers
 
-Vellum comes pre-configured with a number of providers, ready to use. However, you have the tools you need to register _any_ third-party software as a new OAuth provider, as long as it supports OAuth 2.0.
+Cadet comes pre-configured with a number of providers, ready to use. However, you have the tools you need to register _any_ third-party software as a new OAuth provider, as long as it supports OAuth 2.0.
 
 ## When to Register a New Provider
 

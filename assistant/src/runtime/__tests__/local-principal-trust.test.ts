@@ -34,7 +34,7 @@ const { resolveLocalPrincipalTrustContext } =
 const { resolveActorTrust, toTrustContext } =
   await import("../actor-trust-resolver.js");
 
-const SOURCE_CHANNEL: ChannelId = "vellum";
+const SOURCE_CHANNEL: ChannelId = "cadet";
 const CONVERSATION_ID = "conv-1";
 const GUARDIAN_PRINCIPAL_ID = "principal-guardian";
 const GUARDIAN_ADDRESS = "guardian-address";
@@ -48,7 +48,7 @@ describe("resolveLocalPrincipalTrustContext", () => {
   test("principal matching the gateway guardian → guardian ctx", async () => {
     mockGuardianList = [
       {
-        channelType: "vellum",
+        channelType: "cadet",
         contactId: "contact-1",
         principalId: GUARDIAN_PRINCIPAL_ID,
         address: GUARDIAN_ADDRESS,
@@ -78,7 +78,7 @@ describe("resolveLocalPrincipalTrustContext", () => {
     // classifies it guardian and we can compare the two outputs directly.
     mockGuardianList = [
       {
-        channelType: "vellum",
+        channelType: "cadet",
         contactId: "contact-1",
         principalId: GUARDIAN_ADDRESS,
         address: GUARDIAN_ADDRESS,
@@ -109,7 +109,7 @@ describe("resolveLocalPrincipalTrustContext", () => {
   test("non-matching principal → unknown ctx", async () => {
     mockGuardianList = [
       {
-        channelType: "vellum",
+        channelType: "cadet",
         contactId: "contact-1",
         principalId: GUARDIAN_PRINCIPAL_ID,
         address: GUARDIAN_ADDRESS,

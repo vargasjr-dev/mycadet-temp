@@ -239,7 +239,7 @@ class LinuxPermissionsService {
       timeout.unref?.();
 
       const notification = new Notification({
-        title: "Vellum",
+        title: "Cadet",
         body: "Notifications are enabled.",
       });
       notification.once("show", () => settle("granted"));
@@ -268,7 +268,7 @@ const insertIntoFrontApp = async (
   text: string,
 ): Promise<TextInsertionResult> => {
   if (BrowserWindow.getFocusedWindow() !== null) {
-    return { status: "vellum-focused" };
+    return { status: "cadet-focused" };
   }
   if (!nativeProvider) {
     log.warn("[text-insertion] no native insertion provider registered");

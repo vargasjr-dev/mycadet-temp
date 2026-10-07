@@ -46,9 +46,9 @@ function installPluginApp(
 beforeEach(() => {
   workspaceDir = join(
     tmpdir(),
-    `vellum-plugin-serve-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-plugin-serve-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
 });
 
 afterEach(() => {

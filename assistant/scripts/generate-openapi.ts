@@ -494,10 +494,10 @@ function buildSpec(
   return createDocument({
     openapi: "3.1.0",
     info: {
-      title: "Vellum Assistant API",
+      title: "Cadet Assistant API",
       version,
       description:
-        "Auto-generated OpenAPI specification for the Vellum Assistant runtime HTTP server.",
+        "Auto-generated OpenAPI specification for the Cadet Assistant runtime HTTP server.",
     },
     servers: [
       {

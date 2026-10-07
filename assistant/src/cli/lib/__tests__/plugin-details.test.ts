@@ -3,7 +3,7 @@
  *
  * At the default ref, the catalog entry is resolved from the gated plugin
  * catalog (the same source search and install-by-name use): these tests run
- * with platform features disabled (`VELLUM_DISABLE_PLATFORM`) so the catalog is
+ * with platform features disabled (`CADET_DISABLE_PLATFORM`) so the catalog is
  * the bundled manifest — real plugin names / pinned SHAs, zero network. An
  * explicit historical `ref` instead reads the GitHub `plugins/marketplace.json`
  * at that revision (a git lookup, matching pin history / inspect). GitHub is
@@ -144,7 +144,7 @@ function sha16(buf: Buffer): string {
 
 const ORIGINAL_ENV = {
   IS_PLATFORM: process.env.IS_PLATFORM,
-  VELLUM_DISABLE_PLATFORM: process.env.VELLUM_DISABLE_PLATFORM,
+  CADET_DISABLE_PLATFORM: process.env.CADET_DISABLE_PLATFORM,
 };
 
 function restoreEnv(): void {
@@ -163,7 +163,7 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
   beforeEach(() => {
     workspace = mkdtempSync(join(tmpdir(), "plugin-details-"));
     invalidatePluginCatalogCache();
-    process.env.VELLUM_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_PLATFORM = "true";
     delete process.env.IS_PLATFORM;
   });
 
@@ -305,7 +305,7 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
     expect(details.version).toBe("2.0.0");
     expect(details.license).toBe("Apache-2.0");
     expect(details.description).toBe(caveman.description ?? null);
-    // AND a package.json without vellum.icon surfaces icon as null
+    // AND a package.json without cadet.icon surfaces icon as null
     expect(details.icon).toBeNull();
   });
 
@@ -351,13 +351,13 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
     expect(details.license).toBe("MIT");
   });
 
-  test("surfaces the installed copy's vellum.icon", async () => {
-    // GIVEN an installed copy whose package.json declares vellum.icon
+  test("surfaces the installed copy's cadet.icon", async () => {
+    // GIVEN an installed copy whose package.json declares cadet.icon
     const target = join(workspace, "caveman");
     mkdirSync(target, { recursive: true });
     writeFileSync(
       join(target, "package.json"),
-      JSON.stringify({ version: "2.0.0", vellum: { icon: "🦴" } }),
+      JSON.stringify({ version: "2.0.0", cadet: { icon: "🦴" } }),
     );
 
     const fetch = makeFetch({});
@@ -477,7 +477,7 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
         marketplaceRefs.push(new URL(url).searchParams.get("ref") ?? "");
         return new Response(
           JSON.stringify({
-            name: "vellum",
+            name: "cadet",
             plugins: [
               {
                 name: "time-traveler",
@@ -611,9 +611,9 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
     ).rejects.toThrow();
   });
 
-  test("surfaces a well-formed vellum.artifact from the repo package.json", async () => {
+  test("surfaces a well-formed cadet.artifact from the repo package.json", async () => {
     // GIVEN an external plugin whose repo package.json declares a complete
-    // vellum.artifact (https url + 64-hex sha256)
+    // cadet.artifact (https url + 64-hex sha256)
     const notch = bundledMatch("dynamic-notch");
     const sha = "a".repeat(64);
     const fetch = makeFetch({
@@ -623,7 +623,7 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
       raw: {
         "raw://notch/pkg": JSON.stringify({
           version: "1.0.0",
-          vellum: {
+          cadet: {
             artifact: {
               url: "https://example.com/releases/v1.0.0/App.dmg",
               sha256: sha,
@@ -658,7 +658,7 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
     writeFileSync(
       join(target, "package.json"),
       JSON.stringify({
-        vellum: {
+        cadet: {
           artifact: {
             url: "https://example.com/local/App.dmg",
             sha256: localSha,
@@ -674,7 +674,7 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
       },
       raw: {
         "raw://notch/pkg": JSON.stringify({
-          vellum: {
+          cadet: {
             artifact: {
               url: "https://example.com/remote/App.dmg",
               sha256: remoteSha,
@@ -707,7 +707,7 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
       },
       raw: {
         "raw://notch/pkg": JSON.stringify({
-          vellum: {
+          cadet: {
             artifact: {
               url: "https://example.com/releases/v1.0.0/App.dmg",
               sha256: "",
@@ -739,7 +739,7 @@ describe("getPluginDetails (catalog unavailable, platform enabled)", () => {
     workspace = mkdtempSync(join(tmpdir(), "plugin-details-"));
     invalidatePluginCatalogCache();
     delete process.env.IS_PLATFORM;
-    delete process.env.VELLUM_DISABLE_PLATFORM;
+    delete process.env.CADET_DISABLE_PLATFORM;
   });
 
   afterEach(() => {

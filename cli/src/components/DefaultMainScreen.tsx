@@ -87,12 +87,12 @@ const RETRY_TIMEOUT_MS = 30_000;
 // ── Layout constants ──────────────────────────────────────
 const MAX_TOTAL_WIDTH = 72;
 const DEFAULT_TERMINAL_ROWS = 24;
-const HEADER_PREFIX_UNICODE = "── Vellum ";
-const HEADER_PREFIX_ASCII = "-- Vellum ";
+const HEADER_PREFIX_UNICODE = "── Cadet ";
+const HEADER_PREFIX_ASCII = "-- Cadet ";
 
 // Left panel structure: HEADER lines + art + FOOTER lines
 // Header chrome (borders around panel content)
-const HEADER_TOP_BORDER_LINES = 1; // "── Vellum ───..." line
+const HEADER_TOP_BORDER_LINES = 1; // "── Cadet ───..." line
 
 // Selection / Secret windows
 const DIALOG_WINDOW_WIDTH = 60;
@@ -175,7 +175,7 @@ function friendlyErrorMessage(status: number, body: string): string {
  * reconnect — no callback threading needed.
  *
  * SECURITY: the refresh is bound to the paired entry's persisted runtime URL.
- * `vellum client` lets `--url`/`-u` override the runtime URL while still using
+ * `cadet client` lets `--url`/`-u` override the runtime URL while still using
  * the selected paired entry's stored guardian token, so a victim pointed at an
  * attacker-controlled (or poisoned/redirected) URL that returns 401 must NOT
  * cause us to POST the long-lived refreshToken + deviceId to that origin. We
@@ -322,7 +322,7 @@ async function sendMessage(
       body: JSON.stringify({
         conversationKey: assistantId,
         content,
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         interface: "cli",
       }),
       signal,
@@ -641,7 +641,7 @@ function ConnectionScreen({
     }
   });
 
-  const title = `Vellum ${HATCHED_EMOJI}`;
+  const title = `Cadet ${HATCHED_EMOJI}`;
   const width = Math.min(terminalColumns, MAX_TOTAL_WIDTH);
 
   return (
@@ -708,7 +708,7 @@ function CompactHeader({
   const compactIdentity =
     identity.length > 18 ? `${identity.slice(0, 15)}...` : identity;
   const label = ` ${compactIdentity} ${statusEmoji(status)} `;
-  const prefix = "── Vellum";
+  const prefix = "── Cadet";
   const suffix = "──";
   const fillLen = Math.max(
     0,
@@ -1097,7 +1097,7 @@ interface ChatAppProps {
   assistantId: string;
   assistantName?: string;
   /** Pre-built auth headers (e.g. { Authorization: "Bearer ..." } for local,
-   *  { "X-Session-Token": "...", "Vellum-Organization-Id": "..." } for platform). */
+   *  { "X-Session-Token": "...", "Cadet-Organization-Id": "..." } for platform). */
   auth?: Record<string, string>;
   onExit: () => void;
   handleRef: (handle: ChatAppHandle) => void;

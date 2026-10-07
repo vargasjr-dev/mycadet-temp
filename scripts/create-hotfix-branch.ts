@@ -87,7 +87,7 @@ const deps = metaPkg.dependencies as Record<string, string>;
 deps["@mycadet/assistant"] = versionStr;
 deps["@mycadet/cli"] = versionStr;
 deps["@mycadet/credential-executor"] = versionStr;
-deps["@mycadet/vellum-gateway"] = versionStr;
+deps["@mycadet/cadet-gateway"] = versionStr;
 writeJson(metaPkgPath, metaPkg);
 console.log(`  Bumped meta dependencies to ${versionStr}`);
 

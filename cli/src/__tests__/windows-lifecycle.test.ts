@@ -6,8 +6,8 @@ import path from "node:path";
 import {
   executableName,
   isProcessAlive,
-  isVellumCommandLine,
-  isVellumWindowsProcess,
+  isCadetCommandLine,
+  isCadetWindowsProcess,
   pathListDelimiter,
   parseTasklistCsv,
   stopProcess,
@@ -21,18 +21,18 @@ import {
 } from "../lib/orphan-detection";
 
 test("uses Windows executable suffixes without changing Unix names", () => {
-  expect(executableName("vellum-daemon", "win32")).toBe("vellum-daemon.exe");
-  expect(executableName("vellum.exe", "win32")).toBe("vellum.exe");
-  expect(executableName("vellum-daemon", "darwin")).toBe("vellum-daemon");
+  expect(executableName("cadet-daemon", "win32")).toBe("cadet-daemon.exe");
+  expect(executableName("cadet.exe", "win32")).toBe("cadet.exe");
+  expect(executableName("cadet-daemon", "darwin")).toBe("cadet-daemon");
   expect(pathListDelimiter("win32")).toBe(";");
   expect(pathListDelimiter("linux")).toBe(":");
 });
 
 test("parses tasklist rows and ignores informational output", () => {
   const output =
-    '"vellum-daemon.exe","4812","Console","1","20,000 K"\r\nINFO: No tasks match.';
+    '"cadet-daemon.exe","4812","Console","1","20,000 K"\r\nINFO: No tasks match.';
   expect(parseTasklistCsv(output)).toEqual([
-    { imageName: "vellum-daemon.exe", pid: 4812 },
+    { imageName: "cadet-daemon.exe", pid: 4812 },
   ]);
 });
 
@@ -55,14 +55,14 @@ test("selects a direct process-table command with fixed arguments", () => {
 
 test("preserves command lines containing spaces and Unicode usernames", () => {
   const [parsed] = parseRemotePs(
-    "42 1 C:\\Users\\Example User 用户\\Cadet\\vellum-daemon.exe --port 3030",
+    "42 1 C:\\Users\\Example User 用户\\Cadet\\cadet-daemon.exe --port 3030",
   );
   expect(parsed.command).toContain(
-    "Example User 用户\\Cadet\\vellum-daemon.exe",
+    "Example User 用户\\Cadet\\cadet-daemon.exe",
   );
   expect(
     isInteractiveCliSession(
-      '"C:\\Users\\Example User 用户\\Cadet\\vellum.exe" exec -it --service vellum-gateway',
+      '"C:\\Users\\Example User 用户\\Cadet\\cadet.exe" exec -it --service cadet-gateway',
     ),
   ).toBeTrue();
 });
@@ -77,24 +77,24 @@ test("rejects a stale PID file", () => {
 
 test("recognizes only Cadet Bun-hosted process command lines", () => {
   expect(
-    isVellumCommandLine(
-      "bun.exe C:\\Users\\Example User 用户\\.vellum\\runtime\\assistant\\src\\daemon\\main.ts",
+    isCadetCommandLine(
+      "bun.exe C:\\Users\\Example User 用户\\.cadet\\runtime\\assistant\\src\\daemon\\main.ts",
     ),
   ).toBeTrue();
   expect(
-    isVellumCommandLine("bun.exe C:\\work\\unrelated\\server.ts"),
+    isCadetCommandLine("bun.exe C:\\work\\unrelated\\server.ts"),
   ).toBeFalse();
 });
 
 test("verifies Windows Qdrant ownership from its command line", () => {
   expect(
-    isVellumWindowsProcess(
+    isCadetWindowsProcess(
       "qdrant.exe",
-      "C:\\Users\\Example User\\.vellum\\workspace\\data\\qdrant\\bin\\qdrant.exe",
+      "C:\\Users\\Example User\\.cadet\\workspace\\data\\qdrant\\bin\\qdrant.exe",
     ),
   ).toBeTrue();
   expect(
-    isVellumWindowsProcess("qdrant.exe", "C:\\Databases\\qdrant.exe"),
+    isCadetWindowsProcess("qdrant.exe", "C:\\Databases\\qdrant.exe"),
   ).toBeFalse();
 });
 

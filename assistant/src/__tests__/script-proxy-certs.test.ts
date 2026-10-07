@@ -13,7 +13,7 @@ import { writeCombinedCABundle } from "../util/ca-bundle.js";
 let dataDir: string;
 
 beforeAll(async () => {
-  dataDir = await mkdtemp(join(tmpdir(), "vellum-certs-test-"));
+  dataDir = await mkdtemp(join(tmpdir(), "cadet-certs-test-"));
 });
 
 afterAll(async () => {

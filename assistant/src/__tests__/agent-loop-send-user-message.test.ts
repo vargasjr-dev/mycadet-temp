@@ -32,7 +32,7 @@ const userMessage: Message = {
   content: [{ type: "text", text: "What is on my calendar?" }],
 };
 
-const trust = { sourceChannel: "vellum", trustClass: "unknown" } as const;
+const trust = { sourceChannel: "cadet", trustClass: "unknown" } as const;
 
 function collect(events: AgentEvent[]): (event: AgentEvent) => void {
   return (event) => events.push(event);

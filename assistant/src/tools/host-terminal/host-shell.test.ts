@@ -183,7 +183,7 @@ describe("host_bash unavailable desktop-app recovery", () => {
     expect(result.content).toContain(
       "The Cadet desktop app is needed to run commands on your computer",
     );
-    expect(result.content).toContain("https://www.vellum.ai/downloads");
+    expect(result.content).toContain("https://mycadet.ai/downloads");
     expect(result.content).toContain("Open it, then retry.");
   });
 });

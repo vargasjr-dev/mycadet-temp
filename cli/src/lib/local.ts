@@ -65,7 +65,7 @@ const DARWIN_UNIX_SOCKET_MAX_PATH_BYTES = 103;
 // The longest socket filename we place in the workspace directory.
 // assistant.sock = 14 chars, plus 1 for the "/" separator = 15 overhead.
 const LONGEST_SOCKET_FILENAME = "assistant.sock";
-const LOCAL_RUNTIME_PACKAGE = "vellum";
+const LOCAL_RUNTIME_PACKAGE = "cadet";
 const PATH_DELIMITER = pathListDelimiter(platform());
 const DEFAULT_EXECUTABLE_PATH =
   platform() === "win32"
@@ -87,7 +87,7 @@ export function getLocalRuntimeInstallDir(
 ): string {
   return join(
     resources.instanceDir,
-    ".vellum",
+    ".cadet",
     "runtime",
     normalizeRuntimeVersion(version),
   );
@@ -110,7 +110,7 @@ function hasLocalRuntimeComponents(installDir: string): boolean {
   return (
     existsSync(packagePath(installDir, "@mycadet/assistant", "src/index.ts")) &&
     existsSync(
-      packagePath(installDir, "@mycadet/vellum-gateway", "src/index.ts"),
+      packagePath(installDir, "@mycadet/cadet-gateway", "src/index.ts"),
     ) &&
     existsSync(
       packagePath(installDir, "@mycadet/credential-executor", "src/main.ts"),
@@ -157,7 +157,7 @@ function resolveBunExecutable(): string {
     return process.execPath;
   }
 
-  const envBun = process.env.VELLUM_BUN;
+  const envBun = process.env.CADET_BUN;
   if (envBun && existsSync(envBun)) return envBun;
 
   const bunName = executableName("bun", platform());
@@ -214,7 +214,7 @@ function localRuntimeGatewayDir(
 ): string | undefined {
   const installDir = resources?.runtimeInstallDir;
   if (!installDir) return undefined;
-  const candidate = packagePath(installDir, "@mycadet/vellum-gateway", "");
+  const candidate = packagePath(installDir, "@mycadet/cadet-gateway", "");
   return isGatewaySourceDir(candidate) ? candidate : undefined;
 }
 
@@ -296,28 +296,28 @@ export function ensureLocalRuntime(
  * Warn when an assistant appears to have legacy data in the global workspace.
  *
  * Old local startup paths could launch the daemon without
- * `VELLUM_WORKSPACE_DIR`, causing writes to fall back to `~/.vellum/workspace`.
+ * `CADET_WORKSPACE_DIR`, causing writes to fall back to `~/.cadet/workspace`.
  * New local instance launches pin the workspace under
- * `<instanceDir>/.vellum/workspace`. If we detect data only in the legacy
+ * `<instanceDir>/.cadet/workspace`. If we detect data only in the legacy
  * global path, warn with migration instructions so users are not surprised by
  * missing history/settings after the fix.
  */
 function warnIfLegacyWorkspaceFallbackDetected(
   resources: LocalInstanceResources,
 ): void {
-  const instanceWorkspace = join(resources.instanceDir, ".vellum", "workspace");
+  const instanceWorkspace = join(resources.instanceDir, ".cadet", "workspace");
   const instanceDbPath = join(instanceWorkspace, "data", "db", "assistant.db");
 
-  const legacyWorkspace = join(homedir(), ".vellum", "workspace");
+  const legacyWorkspace = join(homedir(), ".cadet", "workspace");
   const legacyDbPath = join(legacyWorkspace, "data", "db", "assistant.db");
 
-  // Legacy "first local" entries use ~/.vellum directly; no drift possible.
+  // Legacy "first local" entries use ~/.cadet directly; no drift possible.
   if (instanceWorkspace === legacyWorkspace) return;
 
   if (existsSync(legacyDbPath) && !existsSync(instanceDbPath)) {
     console.warn("");
     console.warn(
-      "WARNING: Detected legacy workspace data in ~/.vellum/workspace for this local assistant.",
+      "WARNING: Detected legacy workspace data in ~/.cadet/workspace for this local assistant.",
     );
     console.warn("   What this means:");
     console.warn(
@@ -332,10 +332,10 @@ function warnIfLegacyWorkspaceFallbackDetected(
       "   1. Stop the assistant before migrating files (retire/sleep or quit app).",
     );
     console.warn(
-      "   2. Copy needed data from ~/.vellum/workspace into the instance workspace.",
+      "   2. Copy needed data from ~/.cadet/workspace into the instance workspace.",
     );
     console.warn(
-      `      Example: cp -a ~/.vellum/workspace/data/db/assistant.db* ${join(instanceWorkspace, "data", "db")}/`,
+      `      Example: cp -a ~/.cadet/workspace/data/db/assistant.db* ${join(instanceWorkspace, "data", "db")}/`,
     );
     console.warn(
       "   3. Re-launch and confirm history/settings appear as expected.",
@@ -366,7 +366,7 @@ function computeIpcSocketDirOverride(workspaceDir: string): string | undefined {
     .update(workspaceDir)
     .digest("hex")
     .slice(0, 12);
-  return join(tmpdir(), `vellum-ipc-${hash}`);
+  return join(tmpdir(), `cadet-ipc-${hash}`);
 }
 
 /**
@@ -378,7 +378,7 @@ function applyIpcSocketDirOverride(
   env: Record<string, string | undefined>,
 ): void {
   const workspaceDir =
-    env.VELLUM_WORKSPACE_DIR || join(homedir(), ".vellum", "workspace");
+    env.CADET_WORKSPACE_DIR || join(homedir(), ".cadet", "workspace");
   const override = computeIpcSocketDirOverride(workspaceDir);
   if (!override) return;
 
@@ -423,7 +423,7 @@ function isGatewaySourceDir(dir: string): boolean {
     return false;
   try {
     const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
-    return pkg.name === "@mycadet/vellum-gateway";
+    return pkg.name === "@mycadet/cadet-gateway";
   } catch {
     return false;
   }
@@ -481,14 +481,14 @@ function resolveAssistantIndexPath(
     return sourceTreeIndex;
   }
 
-  // bunx layout: @mycadet/cli/src/lib/ -> ../../../.. -> node_modules/vellum/src/index.ts
+  // bunx layout: @mycadet/cli/src/lib/ -> ../../../.. -> node_modules/cadet/src/index.ts
   const bunxIndex = join(
     import.meta.dir,
     "..",
     "..",
     "..",
     "..",
-    "vellum",
+    "cadet",
     "src",
     "index.ts",
   );
@@ -586,7 +586,7 @@ function resolveDaemonMainPath(assistantIndex: string): string {
  * tokens minted by one can be verified by the other. The CLI generates
  * an ephemeral key each time and passes it as `ACTOR_TOKEN_SIGNING_KEY`
  * to both processes — the daemon and gateway each persist it on their
- * own terms (the `.vellum/` directory layout is their concern, not the
+ * own terms (the `.cadet/` directory layout is their concern, not the
  * CLI's).
  */
 export function generateLocalSigningKey(): string {
@@ -612,9 +612,9 @@ function resolveCesBootstrapSocketDir(
   env?: Record<string, string | undefined>,
 ): string {
   const securityDir = resources
-    ? join(resources.instanceDir, ".vellum", "protected")
+    ? join(resources.instanceDir, ".cadet", "protected")
     : env?.CREDENTIAL_SECURITY_DIR?.trim() ||
-      join(homedir(), ".vellum", "protected");
+      join(homedir(), ".cadet", "protected");
   return join(securityDir, "credential-executor");
 }
 
@@ -629,19 +629,19 @@ function applyDaemonEnvOverrides(
   options?: DaemonStartOptions,
 ): void {
   if (resources) {
-    env.VELLUM_WORKSPACE_DIR = join(
+    env.CADET_WORKSPACE_DIR = join(
       resources.instanceDir,
-      ".vellum",
+      ".cadet",
       "workspace",
     );
     env.GATEWAY_SECURITY_DIR = join(
       resources.instanceDir,
-      ".vellum",
+      ".cadet",
       "protected",
     );
     env.CREDENTIAL_SECURITY_DIR = join(
       resources.instanceDir,
-      ".vellum",
+      ".cadet",
       "protected",
     );
     env.RUNTIME_HTTP_PORT = String(resources.daemonPort);
@@ -653,7 +653,7 @@ function applyDaemonEnvOverrides(
     env.ACTOR_TOKEN_SIGNING_KEY = options.signingKey;
   }
   if (options?.defaultWorkspaceConfigPath) {
-    env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH =
+    env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH =
       options.defaultWorkspaceConfigPath;
   }
   // CES and the assistant resolve the socket from CES_BOOTSTRAP_SOCKET_DIR.
@@ -806,7 +806,7 @@ async function startDaemonFromSource(
   const daemonMainPath = resolveDaemonMainPath(assistantIndex);
 
   // Ensure the directory containing PID/socket files exists. For named
-  // instances this is instanceDir/.vellum/workspace/ (matching daemon's getWorkspaceDir()).
+  // instances this is instanceDir/.cadet/workspace/ (matching daemon's getWorkspaceDir()).
   const pidFile = getDaemonPidPath(resources);
   mkdirSync(dirname(pidFile), { recursive: true });
 
@@ -834,15 +834,15 @@ async function startDaemonFromSource(
   const env: Record<string, string | undefined> = {
     ...process.env,
     RUNTIME_HTTP_PORT: process.env.RUNTIME_HTTP_PORT || "7821",
-    VELLUM_CLOUD: "local",
-    VELLUM_ENVIRONMENT: process.env.VELLUM_ENVIRONMENT || "local",
+    CADET_CLOUD: "local",
+    CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
   };
   // "From source" covers both a developer's checkout and the npm-installed
   // runtime the desktop app runs. Only the former is a dev run: marking an
   // installed runtime as dev suppresses its telemetry and skips the
-  // `assistant` command install. An inherited VELLUM_DEV is left alone.
+  // `assistant` command install. An inherited CADET_DEV is left alone.
   if (isRepoCheckoutPath(assistantIndex)) {
-    env.VELLUM_DEV = "1";
+    env.CADET_DEV = "1";
   }
   applyDaemonEnvOverrides(env, resources, options);
 
@@ -926,8 +926,8 @@ async function startDaemonWatchFromSource(
   const env: Record<string, string | undefined> = {
     ...process.env,
     RUNTIME_HTTP_PORT: process.env.RUNTIME_HTTP_PORT || "7821",
-    VELLUM_DEV: "1",
-    VELLUM_ENVIRONMENT: process.env.VELLUM_ENVIRONMENT || "local",
+    CADET_DEV: "1",
+    CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
   };
   applyDaemonEnvOverrides(env, resources, options);
 
@@ -969,13 +969,13 @@ function resolveGatewayDir(resources?: LocalInstanceResources): string {
     return sourceDir;
   }
 
-  // npm-installed: @mycadet/cli and @mycadet/vellum-gateway are siblings
+  // npm-installed: @mycadet/cli and @mycadet/cadet-gateway are siblings
   const npmGatewayDir = join(
     import.meta.dir,
     "..",
     "..",
     "..",
-    "vellum-gateway",
+    "cadet-gateway",
   );
   if (isGatewaySourceDir(npmGatewayDir)) {
     return npmGatewayDir;
@@ -993,11 +993,11 @@ function resolveGatewayDir(resources?: LocalInstanceResources): string {
   }
 
   try {
-    const pkgPath = _require.resolve("@mycadet/vellum-gateway/package.json");
+    const pkgPath = _require.resolve("@mycadet/cadet-gateway/package.json");
     return dirname(pkgPath);
   } catch {
     throw new Error(
-      "Gateway not found. Ensure @mycadet/vellum-gateway is installed or run from the source tree.",
+      "Gateway not found. Ensure @mycadet/cadet-gateway is installed or run from the source tree.",
     );
   }
 }
@@ -1076,16 +1076,16 @@ async function isIpcEndpointReady(endpointPath: string): Promise<boolean> {
  *
  * The sibling runs as an independent process with its lifecycle anchored to
  * SIGTERM, mirroring the gateway: a CLI-owned process with a PID file under
- * `.vellum/ces.pid`, started by `wake` and stopped by `sleep`.
+ * `.cadet/ces.pid`, started by `wake` and stopped by `sleep`.
  */
 export async function startCes(
   watch: boolean = false,
   resources?: LocalInstanceResources,
 ): Promise<void> {
-  const vellumDir = resources
-    ? join(resources.instanceDir, ".vellum")
-    : join(homedir(), ".vellum");
-  const cesPidFile = join(vellumDir, "ces.pid");
+  const cadetDir = resources
+    ? join(resources.instanceDir, ".cadet")
+    : join(homedir(), ".cadet");
+  const cesPidFile = join(cadetDir, "ces.pid");
 
   // Kill any existing sibling first — a stale CES holds the socket and would
   // corrupt the shared credential store if a second copy also bound it.
@@ -1099,11 +1099,11 @@ export async function startCes(
   removeIpcEndpointFile(socketPath);
 
   const securityDir = resources
-    ? join(resources.instanceDir, ".vellum", "protected")
-    : join(homedir(), ".vellum", "protected");
+    ? join(resources.instanceDir, ".cadet", "protected")
+    : join(homedir(), ".cadet", "protected");
   const workspaceDir = resources
-    ? join(resources.instanceDir, ".vellum", "workspace")
-    : join(homedir(), ".vellum", "workspace");
+    ? join(resources.instanceDir, ".cadet", "workspace")
+    : join(homedir(), ".cadet", "workspace");
   const bootstrapDir = resolveCesBootstrapSocketDir(resources);
   mkdirSync(securityDir, { recursive: true });
   mkdirSync(bootstrapDir, { recursive: true });
@@ -1111,7 +1111,7 @@ export async function startCes(
   const cesEnv: Record<string, string | undefined> = {
     ...process.env,
     CREDENTIAL_SECURITY_DIR: securityDir,
-    VELLUM_WORKSPACE_DIR: workspaceDir,
+    CADET_WORKSPACE_DIR: workspaceDir,
     CES_BOOTSTRAP_SOCKET_DIR: bootstrapDir,
   };
 
@@ -1151,7 +1151,7 @@ export async function startCes(
   ces.unref();
 
   if (ces.pid) {
-    mkdirSync(vellumDir, { recursive: true });
+    mkdirSync(cadetDir, { recursive: true });
     writeFileSync(cesPidFile, String(ces.pid), "utf-8");
   }
 
@@ -1482,8 +1482,8 @@ function writeAssistantWrapper(resources: LocalInstanceResources): void {
   const assistantBinary = compiledSibling("assistant");
   if (!isCompiledCli() || !existsSync(assistantBinary)) return;
 
-  const workspaceDir = join(resources.instanceDir, ".vellum", "workspace");
-  const protectedDir = join(resources.instanceDir, ".vellum", "protected");
+  const workspaceDir = join(resources.instanceDir, ".cadet", "workspace");
+  const protectedDir = join(resources.instanceDir, ".cadet", "protected");
   const binDir = join(workspaceDir, "bin");
 
   mkdirSync(binDir, { recursive: true });
@@ -1492,7 +1492,7 @@ function writeAssistantWrapper(resources: LocalInstanceResources): void {
     wrapperPath,
     [
       "#!/bin/sh",
-      `export VELLUM_WORKSPACE_DIR="${workspaceDir}"`,
+      `export CADET_WORKSPACE_DIR="${workspaceDir}"`,
       `export CREDENTIAL_SECURITY_DIR="${protectedDir}"`,
       `export GATEWAY_SECURITY_DIR="${protectedDir}"`,
       `exec "${assistantBinary}" "$@"`,
@@ -1545,10 +1545,10 @@ export async function startLocalDaemon(
 
   const foreground = options?.foreground ?? false;
   // Check for a compiled daemon binary adjacent to the CLI executable.
-  // This covers both the desktop app (VELLUM_DESKTOP_APP) and the case where
+  // This covers both the desktop app (CADET_DESKTOP_APP) and the case where
   // the user runs the compiled CLI directly from the terminal (e.g. via a
-  // /usr/local/bin/vellum symlink into the app bundle).
-  const daemonBinary = compiledSibling("vellum-daemon");
+  // /usr/local/bin/cadet symlink into the app bundle).
+  const daemonBinary = compiledSibling("cadet-daemon");
   if (isCompiledCli() && existsSync(daemonBinary) && !watch) {
     // In watch mode, skip the bundled binary and use source (bun --watch
     // only works with source files, not compiled binaries).
@@ -1635,7 +1635,7 @@ export async function startLocalDaemon(
         }
       }
       // Forward optional config env vars the daemon may need.
-      // `VELLUM_ENVIRONMENT` must be forwarded so the daemon resolves
+      // `CADET_ENVIRONMENT` must be forwarded so the daemon resolves
       // env-scoped paths (device ID, platform/guardian tokens, XDG
       // config dir) to the same location as the CLI that spawned it.
       for (const key of [
@@ -1643,21 +1643,21 @@ export async function startLocalDaemon(
         "APP_VERSION",
         "GATEWAY_SECURITY_DIR",
         "CREDENTIAL_SECURITY_DIR",
-        "VELLUM_ENVIRONMENT",
-        "VELLUM_PLATFORM_URL",
+        "CADET_ENVIRONMENT",
+        "CADET_PLATFORM_URL",
         "QDRANT_HTTP_PORT",
         "QDRANT_URL",
         "RUNTIME_HTTP_PORT",
         "TMPDIR",
         "USER",
         "LANG",
-        "VELLUM_DEBUG",
-        "VELLUM_DEV",
-        "VELLUM_DESKTOP_APP",
-        "VELLUM_DISABLE_PLATFORM",
-        "VELLUM_MIGRATION_EXPORT_ALLOWED_HOSTS",
-        "VELLUM_MIGRATION_IMPORT_ALLOWED_HOSTS",
-        "VELLUM_WORKSPACE_DIR",
+        "CADET_DEBUG",
+        "CADET_DEV",
+        "CADET_DESKTOP_APP",
+        "CADET_DISABLE_PLATFORM",
+        "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
+        "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
+        "CADET_WORKSPACE_DIR",
       ]) {
         if (process.env[key]) {
           daemonEnv[key] = process.env[key]!;
@@ -1785,7 +1785,7 @@ export async function startLocalDaemon(
     const assistantIndex = resolveAssistantIndexPath(resources);
     if (!assistantIndex) {
       throw new Error(
-        "vellum-daemon binary not found and assistant source not available.\n" +
+        "cadet-daemon binary not found and assistant source not available.\n" +
           "  Ensure the daemon binary is bundled alongside the CLI, or run from the source tree.",
       );
     }
@@ -1825,8 +1825,8 @@ export async function startGateway(
   // process holds the port (or lingers after losing it), and every restart
   // attempt spawns yet another process that fails with EADDRINUSE.
   const gwPidDir = resources
-    ? join(resources.instanceDir, ".vellum")
-    : join(homedir(), ".vellum");
+    ? join(resources.instanceDir, ".cadet")
+    : join(homedir(), ".cadet");
   const gwPidFile = join(gwPidDir, "gateway.pid");
   await stopProcessByPidFile(gwPidFile, "gateway");
 
@@ -1856,8 +1856,8 @@ export async function startGateway(
       : {}),
     ...(watch
       ? {
-          VELLUM_DEV: "1",
-          VELLUM_ENVIRONMENT: process.env.VELLUM_ENVIRONMENT || "local",
+          CADET_DEV: "1",
+          CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
         }
       : {}),
     // Pin gateway workspace/security paths to the named instance so parent
@@ -1865,19 +1865,19 @@ export async function startGateway(
     // assistant DB directly for guardian bootstrap.
     ...(resources
       ? {
-          VELLUM_WORKSPACE_DIR: join(
+          CADET_WORKSPACE_DIR: join(
             resources.instanceDir,
-            ".vellum",
+            ".cadet",
             "workspace",
           ),
           GATEWAY_SECURITY_DIR: join(
             resources.instanceDir,
-            ".vellum",
+            ".cadet",
             "protected",
           ),
           CREDENTIAL_SECURITY_DIR: join(
             resources.instanceDir,
-            ".vellum",
+            ".cadet",
             "protected",
           ),
         }
@@ -1891,7 +1891,7 @@ export async function startGateway(
   const runtimeGatewayDir = !watch
     ? localRuntimeGatewayDir(resources)
     : undefined;
-  const gatewayBinary = compiledSibling("vellum-gateway");
+  const gatewayBinary = compiledSibling("cadet-gateway");
   if (
     !runtimeGatewayDir &&
     isCompiledCli() &&
@@ -1913,8 +1913,8 @@ export async function startGateway(
     // Source tree / bunx: resolve the gateway source directory and run via bun.
     const gatewayDir = runtimeGatewayDir ?? resolveGatewayDir(resources);
     const bunArgs = watch
-      ? ["--watch", "run", "src/index.ts", "--vellum-gateway"]
-      : ["run", "src/index.ts", "--vellum-gateway"];
+      ? ["--watch", "run", "src/index.ts", "--cadet-gateway"]
+      : ["run", "src/index.ts", "--cadet-gateway"];
     const gwLogFd = openLogFile("hatch.log");
     gateway = spawn(resolveBunExecutable(), bunArgs, {
       cwd: gatewayDir,
@@ -1933,8 +1933,8 @@ export async function startGateway(
 
   if (gateway.pid) {
     const gwPidDir = resources
-      ? join(resources.instanceDir, ".vellum")
-      : join(homedir(), ".vellum");
+      ? join(resources.instanceDir, ".cadet")
+      : join(homedir(), ".cadet");
     writeFileSync(join(gwPidDir, "gateway.pid"), String(gateway.pid), "utf-8");
   }
 
@@ -1975,14 +1975,14 @@ function isNgrokProcess(pid: number): boolean {
  * so we don't leave orphaned processes with no lock file entry.
  *
  * When `resources` is provided, uses instance-specific paths instead of
- * the default ~/.vellum/ paths.
+ * the default ~/.cadet/ paths.
  */
 export async function stopLocalProcesses(
   resources?: LocalInstanceResources,
 ): Promise<void> {
-  const vellumDir = resources
-    ? join(resources.instanceDir, ".vellum")
-    : join(homedir(), ".vellum");
+  const cadetDir = resources
+    ? join(resources.instanceDir, ".cadet")
+    : join(homedir(), ".cadet");
   const daemonPidFile = getDaemonPidPath(resources);
   await stopProcessByPidFile(
     daemonPidFile,
@@ -1991,19 +1991,19 @@ export async function stopLocalProcesses(
     DAEMON_STOP_TIMEOUT_MS,
   );
 
-  const gatewayPidFile = join(vellumDir, "gateway.pid");
+  const gatewayPidFile = join(cadetDir, "gateway.pid");
   await stopProcessByPidFile(gatewayPidFile, "gateway", undefined, 7000);
 
   // Stop the CES sibling if one was launched. No-op when the
   // PID file is absent.
-  const cesPidFile = join(vellumDir, "ces.pid");
+  const cesPidFile = join(cadetDir, "ces.pid");
   await stopProcessByPidFile(cesPidFile, "credential-executor");
 
   // Kill ngrok directly by PID rather than using stopProcessByPidFile, because
-  // isVellumProcess() won't match the ngrok binary — resulting in a no-op that
+  // isCadetProcess() won't match the ngrok binary — resulting in a no-op that
   // leaves ngrok running. Verify the PID still belongs to ngrok before killing
   // to avoid hitting an unrelated process if the OS has reused the PID.
-  const ngrokPidFile = join(vellumDir, "ngrok.pid");
+  const ngrokPidFile = join(cadetDir, "ngrok.pid");
   if (existsSync(ngrokPidFile)) {
     try {
       const pid = parseInt(readFileSync(ngrokPidFile, "utf-8").trim(), 10);
@@ -2016,5 +2016,5 @@ export async function stopLocalProcesses(
 
   // Stop the nginx ingress if one is fronting this gateway (it guards against
   // PID reuse itself, mirroring the ngrok handling above).
-  await stopIngressNginx(join(vellumDir, "workspace"));
+  await stopIngressNginx(join(cadetDir, "workspace"));
 }

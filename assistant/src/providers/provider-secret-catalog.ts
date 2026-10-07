@@ -41,7 +41,7 @@ import { listCredentialProviderNames as listSttCredentialProviderNames } from ".
  * `ollama` is intentionally included here even though it is `setupMode:
  * "keyless"` — the keyless mode is enforced elsewhere; this list is purely
  * about the set of bare-name credential-store keys accepted by
- * `assistant keys ...`. `vellum` is excluded: those models authenticate
+ * `assistant keys ...`. `cadet` is excluded: those models authenticate
  * with the assistant API key on the managed connection, not a user key.
  *
  * Search providers (`brave`, `perplexity`, `tavily`) have no catalog module
@@ -49,7 +49,7 @@ import { listCredentialProviderNames as listSttCredentialProviderNames } from ".
  */
 const LLM_API_KEY_PROVIDERS: readonly string[] = PROVIDER_CATALOG.map(
   (p) => p.id,
-).filter((id) => id !== "vellum");
+).filter((id) => id !== "cadet");
 
 /**
  * Search API providers, derived from `SEARCH_PROVIDER_CATALOG`. Managed

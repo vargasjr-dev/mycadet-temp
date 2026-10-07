@@ -59,7 +59,7 @@ function makeContext(): ToolContext {
 }
 
 beforeEach(() => {
-  TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+  TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
   mkdirSync(join(TEST_DIR, "skills"), { recursive: true });
   seedUpsertSlugs.length = 0;
   _resetSkillStoreForTests();

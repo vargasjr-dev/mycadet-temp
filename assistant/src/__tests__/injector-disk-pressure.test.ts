@@ -66,7 +66,7 @@ function makeContext(overrides: Partial<TurnContext> = {}): TurnContext {
     requestId: "req-test",
     conversationId: TEST_CONVERSATION_ID,
     turnIndex: 0,
-    trust: { sourceChannel: "vellum", trustClass: "guardian" },
+    trust: { sourceChannel: "cadet", trustClass: "guardian" },
     ...overrides,
   };
 }
@@ -101,7 +101,7 @@ function resetLiveConversation(): void {
     workspaceTopLevelContext: "",
     workspaceTopLevelDirty: false,
     diskPressureCleanupModeActive: false,
-    trustContext: { trustClass: "guardian", sourceChannel: "vellum" },
+    trustContext: { trustClass: "guardian", sourceChannel: "cadet" },
     // The unified-turn-context injector sources the interface label from the
     // live conversation's turn interface context; match the expected blocks.
     currentTurnInterfaceContext: {

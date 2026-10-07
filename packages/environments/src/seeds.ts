@@ -37,7 +37,7 @@ function portBlock(base: number): PortMap {
  * reach a local or per-developer web URL.
  *
  * The `/assistant` suffix is deliberate: booting on the bare host lands on
- * the marketing page, whose CTA redirects to `www.vellum.ai/assistant` and
+ * the marketing page, whose CTA redirects to `mycadet.ai/assistant` and
  * bounces non-prod shells off their own host.
  *
  * NOTE: this module is loaded by Capacitor's single-file TS config loader
@@ -65,12 +65,12 @@ export const SEEDS: Record<string, EnvironmentDefinition> = {
   production: {
     name: "production",
     platformUrl: "https://cloud.mycadet.ai",
-    webUrl: "https://www.vellum.ai",
+    webUrl: "https://mycadet.ai",
   },
   staging: {
     name: "staging",
     platformUrl: "https://staging-cloud.mycadet.ai",
-    webUrl: "https://staging-assistant.vellum.ai",
+    webUrl: "https://staging.cloud.mycadet.ai",
     portsOverride: portBlock(17000),
   },
   test: {
@@ -78,13 +78,13 @@ export const SEEDS: Record<string, EnvironmentDefinition> = {
     // Non-functional URL — used only by unit tests for URL resolution, never
     // hit in production.
     platformUrl: "https://test-cloud.mycadet.ai",
-    webUrl: "https://dev-assistant.vellum.ai",
+    webUrl: "https://dev.cloud.mycadet.ai",
     portsOverride: portBlock(19000),
   },
   dev: {
     name: "dev",
     platformUrl: "https://dev-cloud.mycadet.ai",
-    webUrl: "https://dev-assistant.vellum.ai",
+    webUrl: "https://dev.cloud.mycadet.ai",
     portsOverride: portBlock(18000),
   },
   local: {

@@ -77,7 +77,7 @@ const SkillMetadataSchema = z
  * Origin of a skill in the merged catalog.
  *
  * - `bundled`: ships inside the assistant binary under `bundled-skills/`.
- * - `managed`: installed into `$VELLUM_WORKSPACE_DIR/skills/` from our catalog.
+ * - `managed`: installed into `$CADET_WORKSPACE_DIR/skills/` from our catalog.
  * - `workspace`: user-authored skill living in a conversation's working dir.
  * - `extra`: third-party directory roots passed via `loadSkillCatalog`'s
  *   `extraDirs` argument (primarily for tests).
@@ -529,7 +529,7 @@ function readSkillFromDirectory(
     if (isOutsideSkillsRoot(skillsDir, directoryPath)) {
       log.warn(
         { directoryPath },
-        "Skipping skill directory that resolves outside $VELLUM_WORKSPACE_DIR/skills",
+        "Skipping skill directory that resolves outside $CADET_WORKSPACE_DIR/skills",
       );
       return null;
     }
@@ -546,7 +546,7 @@ function readSkillFromDirectory(
     if (isOutsideSkillsRoot(skillsDir, skillFilePath)) {
       log.warn(
         { skillFilePath },
-        "Skipping SKILL.md that resolves outside $VELLUM_WORKSPACE_DIR/skills",
+        "Skipping SKILL.md that resolves outside $CADET_WORKSPACE_DIR/skills",
       );
       return null;
     }
@@ -1083,7 +1083,7 @@ export function loadSkillCatalog(
   // installed plugins alike. They sit above bundled/extra but below managed and
   // workspace so a user-authored filesystem skill can override a
   // plugin-provided skill by declaring the same id under
-  // `$VELLUM_WORKSPACE_DIR/skills/`. Precedence *within* the plugin source
+  // `$CADET_WORKSPACE_DIR/skills/`. Precedence *within* the plugin source
   // (installed over default) is resolved by the discovery pass.
   const pluginSkills = discoverPluginResidentSkills();
   for (const skill of pluginSkills) {
@@ -1342,7 +1342,7 @@ function loadSkillDefinition(skill: SkillSummary): SkillLookupResult {
     loaded = readBundledSkillFromDirectory(skill.directoryPath);
   } else if (skill.source === "workspace" || skill.source === "plugin") {
     // Workspace and plugin-resident skills live outside
-    // $VELLUM_WORKSPACE_DIR/skills, so use the skill's parent directory as the
+    // $CADET_WORKSPACE_DIR/skills, so use the skill's parent directory as the
     // root to avoid the isOutsideSkillsRoot rejection.
     loaded = readSkillFromDirectory(
       skill.directoryPath,

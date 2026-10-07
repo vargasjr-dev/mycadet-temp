@@ -47,11 +47,11 @@ const EXPIRY_CATCHUP_QUERY = "(in:inbox OR in:sent) newer_than:1d";
 const STATE_FILE = "state.json";
 
 function workspaceEnv(): { workspace: string; scheduleId: string } {
-  const workspace = process.env.VELLUM_WORKSPACE_DIR;
+  const workspace = process.env.CADET_WORKSPACE_DIR;
   const scheduleId = process.env.__SCHEDULE_ID;
   if (!workspace || !scheduleId) {
     throw new Error(
-      "VELLUM_WORKSPACE_DIR and __SCHEDULE_ID must be set. Run as a script-mode schedule.",
+      "CADET_WORKSPACE_DIR and __SCHEDULE_ID must be set. Run as a script-mode schedule.",
     );
   }
   return { workspace, scheduleId };

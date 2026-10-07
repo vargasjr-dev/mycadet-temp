@@ -91,18 +91,18 @@ function fullSeededCallSites(): Record<string, Record<string, unknown>> {
 beforeEach(() => {
   workspaceDir = join(
     tmpdir(),
-    `vellum-migration-111-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-migration-111-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
-  previousOverlayPath = process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
-  delete process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
+  previousOverlayPath = process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
+  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
 });
 
 afterEach(() => {
   if (previousOverlayPath === undefined) {
-    delete process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH;
+    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
   } else {
-    process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH = previousOverlayPath;
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = previousOverlayPath;
   }
   if (existsSync(workspaceDir)) {
     rmSync(workspaceDir, { recursive: true, force: true });

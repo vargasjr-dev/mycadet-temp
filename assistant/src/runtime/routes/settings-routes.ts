@@ -280,10 +280,10 @@ async function handleOAuthConnectStart({ body = {} }: RouteHandlerArgs) {
 
 async function getWorkspaceFiles(): Promise<string[]> {
   const files = ["IDENTITY.md", "SOUL.md", "skills/"];
-  // Warm the vellum guardian-delivery cache so the sync persona resolution
+  // Warm the cadet guardian-delivery cache so the sync persona resolution
   // below hits a fresh key instead of falling back to default.md on a cold or
   // TTL-expired cache.
-  await getGuardianDelivery({ channelTypes: ["vellum"] });
+  await getGuardianDelivery({ channelTypes: ["cadet"] });
   const guardianPath = resolveGuardianPersonaPath();
   if (guardianPath) {
     files.push(`users/${basename(guardianPath)}`);
@@ -769,7 +769,7 @@ const SAFE_ENV_VAR_PREFIXES = [
   "npm_",
   "LC_",
   "XDG_",
-  "VELLUM_",
+  "CADET_",
 ];
 
 function isEnvVarSafe(key: string): boolean {

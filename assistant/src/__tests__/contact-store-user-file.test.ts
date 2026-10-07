@@ -52,8 +52,8 @@ describe("upsertContact user_file selection", () => {
       displayName: "Chris",
       channels: [
         {
-          type: "vellum",
-          address: "vellum-principal-abc",
+          type: "cadet",
+          address: "cadet-principal-abc",
         },
       ],
     });

@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { getCurrentEnvironment, getSeed } from "../resolve.js";
 
 const ENV_VARS_TO_SAVE = [
-  "VELLUM_ENVIRONMENT",
-  "VELLUM_PLATFORM_URL",
-  "VELLUM_ASSISTANT_PLATFORM_URL",
-  "VELLUM_LOCKFILE_DIR",
+  "CADET_ENVIRONMENT",
+  "CADET_PLATFORM_URL",
+  "CADET_ASSISTANT_PLATFORM_URL",
+  "CADET_LOCKFILE_DIR",
 ] as const;
 
 describe("getCurrentEnvironment", () => {
@@ -36,40 +36,40 @@ describe("getCurrentEnvironment", () => {
     expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
   });
 
-  test("returns dev seed when VELLUM_ENVIRONMENT=dev", () => {
-    process.env.VELLUM_ENVIRONMENT = "dev";
+  test("returns dev seed when CADET_ENVIRONMENT=dev", () => {
+    process.env.CADET_ENVIRONMENT = "dev";
     const env = getCurrentEnvironment();
     expect(env.name).toBe("dev");
     expect(env.platformUrl).toBe("https://dev-cloud.mycadet.ai");
   });
 
-  test("returns staging seed when VELLUM_ENVIRONMENT=staging", () => {
-    process.env.VELLUM_ENVIRONMENT = "staging";
+  test("returns staging seed when CADET_ENVIRONMENT=staging", () => {
+    process.env.CADET_ENVIRONMENT = "staging";
     expect(getCurrentEnvironment().platformUrl).toBe(
       "https://staging-cloud.mycadet.ai",
     );
   });
 
   test("returns local seed with localhost URL", () => {
-    process.env.VELLUM_ENVIRONMENT = "local";
+    process.env.CADET_ENVIRONMENT = "local";
     expect(getCurrentEnvironment().platformUrl).toBe("http://localhost:8000");
   });
 
-  test("override argument takes priority over VELLUM_ENVIRONMENT env var", () => {
-    process.env.VELLUM_ENVIRONMENT = "staging";
+  test("override argument takes priority over CADET_ENVIRONMENT env var", () => {
+    process.env.CADET_ENVIRONMENT = "staging";
     const env = getCurrentEnvironment("dev");
     expect(env.name).toBe("dev");
     expect(env.platformUrl).toBe("https://dev-cloud.mycadet.ai");
   });
 
   test("empty override argument falls through to env var", () => {
-    process.env.VELLUM_ENVIRONMENT = "dev";
+    process.env.CADET_ENVIRONMENT = "dev";
     const env = getCurrentEnvironment("");
     expect(env.name).toBe("dev");
   });
 
   test("whitespace-only override argument falls through to env var", () => {
-    process.env.VELLUM_ENVIRONMENT = "dev";
+    process.env.CADET_ENVIRONMENT = "dev";
     const env = getCurrentEnvironment("   ");
     expect(env.name).toBe("dev");
   });
@@ -94,7 +94,7 @@ describe("getCurrentEnvironment", () => {
   });
 
   test("falls back to production seed for unknown env name via env var, warns on stderr", () => {
-    process.env.VELLUM_ENVIRONMENT = "nope";
+    process.env.CADET_ENVIRONMENT = "nope";
     const stderr = spyOn(process.stderr, "write").mockImplementation(
       () => true,
     );
@@ -110,8 +110,8 @@ describe("getCurrentEnvironment", () => {
     }
   });
 
-  test("VELLUM_ENVIRONMENT=production does not emit a warning", () => {
-    process.env.VELLUM_ENVIRONMENT = "production";
+  test("CADET_ENVIRONMENT=production does not emit a warning", () => {
+    process.env.CADET_ENVIRONMENT = "production";
     const stderr = spyOn(process.stderr, "write").mockImplementation(
       () => true,
     );
@@ -124,42 +124,42 @@ describe("getCurrentEnvironment", () => {
     }
   });
 
-  test("VELLUM_PLATFORM_URL overrides platformUrl on the resolved definition", () => {
-    process.env.VELLUM_ENVIRONMENT = "dev";
-    process.env.VELLUM_PLATFORM_URL = "https://custom.example.com";
+  test("CADET_PLATFORM_URL overrides platformUrl on the resolved definition", () => {
+    process.env.CADET_ENVIRONMENT = "dev";
+    process.env.CADET_PLATFORM_URL = "https://custom.example.com";
     const env = getCurrentEnvironment();
     expect(env.name).toBe("dev");
     expect(env.platformUrl).toBe("https://custom.example.com");
   });
 
-  test("VELLUM_PLATFORM_URL override does not affect the seed table", () => {
-    process.env.VELLUM_PLATFORM_URL = "https://custom.example.com";
+  test("CADET_PLATFORM_URL override does not affect the seed table", () => {
+    process.env.CADET_PLATFORM_URL = "https://custom.example.com";
     getCurrentEnvironment();
-    delete process.env.VELLUM_PLATFORM_URL;
+    delete process.env.CADET_PLATFORM_URL;
     const env = getCurrentEnvironment();
     expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
   });
 
-  test("VELLUM_ASSISTANT_PLATFORM_URL overrides assistantPlatformUrl", () => {
-    process.env.VELLUM_ASSISTANT_PLATFORM_URL =
+  test("CADET_ASSISTANT_PLATFORM_URL overrides assistantPlatformUrl", () => {
+    process.env.CADET_ASSISTANT_PLATFORM_URL =
       "http://host.docker.internal:8000";
     const env = getCurrentEnvironment();
     expect(env.assistantPlatformUrl).toBe("http://host.docker.internal:8000");
   });
 
-  test("VELLUM_ASSISTANT_PLATFORM_URL does not shadow platformUrl", () => {
-    process.env.VELLUM_ASSISTANT_PLATFORM_URL = "http://override";
+  test("CADET_ASSISTANT_PLATFORM_URL does not shadow platformUrl", () => {
+    process.env.CADET_ASSISTANT_PLATFORM_URL = "http://override";
     const env = getCurrentEnvironment();
     expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
   });
 
-  test("does not auto-materialize a new environment from VELLUM_PLATFORM_URL alone", () => {
+  test("does not auto-materialize a new environment from CADET_PLATFORM_URL alone", () => {
     // Unknown env names fall back to production (parity with daemon + Swift).
-    // The per-field VELLUM_PLATFORM_URL override is intentionally dropped on
+    // The per-field CADET_PLATFORM_URL override is intentionally dropped on
     // the fallback path — fallback returns a pristine production seed so a
     // typo'd env var can't accidentally stitch together a new environment.
-    process.env.VELLUM_ENVIRONMENT = "my-custom";
-    process.env.VELLUM_PLATFORM_URL = "https://my-custom.example.com";
+    process.env.CADET_ENVIRONMENT = "my-custom";
+    process.env.CADET_PLATFORM_URL = "https://my-custom.example.com";
     const stderr = spyOn(process.stderr, "write").mockImplementation(
       () => true,
     );
@@ -175,20 +175,20 @@ describe("getCurrentEnvironment", () => {
     }
   });
 
-  test("VELLUM_LOCKFILE_DIR populates lockfileDirOverride on the resolved definition", () => {
-    process.env.VELLUM_LOCKFILE_DIR = "/tmp/test-lockfile-dir";
+  test("CADET_LOCKFILE_DIR populates lockfileDirOverride on the resolved definition", () => {
+    process.env.CADET_LOCKFILE_DIR = "/tmp/test-lockfile-dir";
     const env = getCurrentEnvironment();
     expect(env.lockfileDirOverride).toBe("/tmp/test-lockfile-dir");
   });
 
-  test("lockfileDirOverride is undefined when VELLUM_LOCKFILE_DIR is unset", () => {
+  test("lockfileDirOverride is undefined when CADET_LOCKFILE_DIR is unset", () => {
     const env = getCurrentEnvironment();
     expect(env.lockfileDirOverride).toBeUndefined();
   });
 
   test("lockfileDirOverride applies to non-prod envs too", () => {
-    process.env.VELLUM_ENVIRONMENT = "dev";
-    process.env.VELLUM_LOCKFILE_DIR = "/tmp/test-lockfile-dir";
+    process.env.CADET_ENVIRONMENT = "dev";
+    process.env.CADET_LOCKFILE_DIR = "/tmp/test-lockfile-dir";
     const env = getCurrentEnvironment();
     expect(env.name).toBe("dev");
     expect(env.lockfileDirOverride).toBe("/tmp/test-lockfile-dir");

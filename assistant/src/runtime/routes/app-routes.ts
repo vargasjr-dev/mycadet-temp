@@ -101,7 +101,7 @@ function serveCompiledApp(
 
   // Rewrite relative asset paths to absolute HTTP routes so browsers and
   // HTTP-based consumers (e.g. /pages/:appId) can resolve them. The macOS
-  // WebView uses the vellumapp:// scheme handler which resolves on disk,
+  // WebView uses the cadetapp:// scheme handler which resolves on disk,
   // but HTTP clients need the /v1/apps/:appId/dist/ route.
   let html = readFileSync(indexPath, "utf-8");
   html = html.replace(
@@ -448,7 +448,7 @@ export const ROUTES: RouteDefinition[] = [
     tags: ["apps"],
     responseHeaders: {
       "Content-Type": "application/zip",
-      "Content-Disposition": 'attachment; filename="app.vellum"',
+      "Content-Disposition": 'attachment; filename="app.cadet"',
     },
     responseBody: {
       contentType: "application/zip",

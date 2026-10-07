@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import { parse as parseYaml } from "yaml";
 
-const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 import { loadSkillCatalog } from "../config/skills.js";
 import {

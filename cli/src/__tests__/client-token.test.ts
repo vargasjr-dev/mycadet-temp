@@ -24,7 +24,7 @@ import { join } from "node:path";
 // work without one. Env mutation is scoped to each test and restored after, so
 // it can't leak into other test files in the same Bun run.
 const testDir = mkdtempSync(join(tmpdir(), "client-token-test-"));
-const ORIGINAL_LOCKFILE_DIR = process.env.VELLUM_LOCKFILE_DIR;
+const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_ARGV = [...process.argv];
 
 import { isSameOriginRequest, parseArgs } from "../commands/client.js";
@@ -59,15 +59,15 @@ describe("client web proxy credential proof", () => {
 
 describe("client --token (ephemeral)", () => {
   beforeEach(() => {
-    process.env.VELLUM_LOCKFILE_DIR = testDir;
+    process.env.CADET_LOCKFILE_DIR = testDir;
   });
 
   afterEach(() => {
     process.argv = [...ORIGINAL_ARGV];
     if (ORIGINAL_LOCKFILE_DIR === undefined) {
-      delete process.env.VELLUM_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
     } else {
-      process.env.VELLUM_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
+      process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
     }
   });
 
@@ -78,7 +78,7 @@ describe("client --token (ephemeral)", () => {
   test("--url + --token resolves to a bearer session with no lockfile entry", () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "client",
       "--url",
       REMOTE_URL,
@@ -96,7 +96,7 @@ describe("client --token (ephemeral)", () => {
   test("--assistant-id overrides the default 'self' segment", () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "client",
       "--url",
       REMOTE_URL,
@@ -113,7 +113,7 @@ describe("client --token (ephemeral)", () => {
   test("auto-opens the browser by default", () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "client",
       "--url",
       REMOTE_URL,
@@ -126,7 +126,7 @@ describe("client --token (ephemeral)", () => {
   test("--no-open opts out of auto-opening the browser", () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "client",
       "--url",
       REMOTE_URL,

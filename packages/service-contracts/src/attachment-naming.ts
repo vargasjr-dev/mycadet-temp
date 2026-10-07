@@ -1,6 +1,6 @@
 /**
  * Attachment filename contract shared by the daemon (which materializes
- * `vellum://` links and `<vellum-attachment>` directives into stored
+ * `cadet://` links and `<cadet-attachment>` directives into stored
  * attachments) and the web client (which resolves clicked links back to
  * those attachments). Both sides must agree on the stored filename, so the
  * naming rule lives here once.
@@ -68,18 +68,18 @@ export function inferMimeType(filename: string): string {
 /**
  * Pick the stored attachment filename for a materialized file directive.
  *
- * Explicit filenames (`<vellum-attachment filename="..." />` attributes)
+ * Explicit filenames (`<cadet-attachment filename="..." />` attributes)
  * are an authoring contract and always used verbatim. Link display text
- * (`[label](vellum://...)`) is cosmetic: it is only honored as the filename
+ * (`[label](cadet://...)`) is cosmetic: it is only honored as the filename
  * when it carries a recognized extension. A bare label
- * (e.g. `[desktop](vellum://.../shot.png)`) would otherwise produce an
+ * (e.g. `[desktop](cadet://.../shot.png)`) would otherwise produce an
  * extensionless download with an `application/octet-stream` MIME type,
  * which macOS opens as raw text. In that case the label keeps the path's
  * extension (`desktop.png`), staying unique per link even when several
  * links share a basename; the raw basename is the last resort.
  *
  * The basename fallback splits on both `/` and `\\` so it handles POSIX
- * sandbox paths, `vellum://` URL paths, and Windows host paths alike.
+ * sandbox paths, `cadet://` URL paths, and Windows host paths alike.
  * Splitting on both separators regardless of the runtime platform also
  * covers Windows host paths resolved by a non-Windows daemon, which
  * platform-selected `node:path` semantics cannot.

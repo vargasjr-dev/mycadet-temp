@@ -22,8 +22,8 @@ const DEFAULT_PORTS: Readonly<PortMap> = {
 
 /**
  * Config directory for an environment.
- * Production preserves the existing `~/.config/vellum/` location;
- * non-production environments use `$XDG_CONFIG_HOME/vellum-<env>/`.
+ * Production preserves the existing `~/.config/cadet/` location;
+ * non-production environments use `$XDG_CONFIG_HOME/cadet-<env>/`.
  */
 export function getConfigDir(env: EnvironmentDefinition): string {
   return getConfigDirs(env)[0]!;
@@ -36,8 +36,8 @@ export function getConfigDirs(env: EnvironmentDefinition): string[] {
 /**
  * Lockfile candidate paths for an environment, in priority order.
  *
- * For production, returns both the current `.vellum.lock.json` and the
- * legacy `.vellum.lockfile.json` so read-side callers can fall back to the
+ * For production, returns both the current `.cadet.lock.json` and the
+ * legacy `.cadet.lockfile.json` so read-side callers can fall back to the
  * legacy filename on installs that predate the rename. Non-production
  * environments are new and have a single canonical path under the env-scoped
  * XDG config directory.
@@ -48,7 +48,7 @@ export function getConfigDirs(env: EnvironmentDefinition): string[] {
  * (canonical) entry.
  *
  * `env.lockfileDirOverride` (populated by the resolver from
- * `VELLUM_LOCKFILE_DIR`) overrides the directory the lockfile lives in for
+ * `CADET_LOCKFILE_DIR`) overrides the directory the lockfile lives in for
  * both production and non-production environments.
  */
 export function getLockfilePaths(env: EnvironmentDefinition): string[] {
@@ -57,7 +57,7 @@ export function getLockfilePaths(env: EnvironmentDefinition): string[] {
 
 /**
  * Canonical lockfile path for writes. For production this is the current
- * `.vellum.lock.json` (legacy reads handled by {@link getLockfilePaths}).
+ * `.cadet.lock.json` (legacy reads handled by {@link getLockfilePaths}).
  */
 export function getLockfilePath(env: EnvironmentDefinition): string {
   return getLockfilePaths(env)[0]!;
@@ -65,9 +65,9 @@ export function getLockfilePath(env: EnvironmentDefinition): string {
 
 /**
  * Multi-instance root directory for an environment. Production uses
- * `~/.local/share/vellum/assistants/` — the convention already in
+ * `~/.local/share/cadet/assistants/` — the convention already in
  * `cli/src/lib/assistant-config.ts`. Non-production environments use
- * `~/.local/share/vellum-<env>/assistants/`.
+ * `~/.local/share/cadet-<env>/assistants/`.
  */
 export function getMultiInstanceDir(env: EnvironmentDefinition): string {
   return resolveAssistantsDir(process.env, localPathOptions(env));
@@ -88,8 +88,8 @@ export function getDefaultPorts(env: EnvironmentDefinition): PortMap {
 
 /**
  * Runtime state directory for an environment (upgrade logs, etc.).
- * Production uses `~/.local/share/vellum/`; non-production environments
- * use `~/.local/share/vellum-<env>/`.
+ * Production uses `~/.local/share/cadet/`; non-production environments
+ * use `~/.local/share/cadet-<env>/`.
  */
 export function getStateDir(env: EnvironmentDefinition): string {
   return resolveRuntimeDir(process.env, localPathOptions(env));
@@ -105,13 +105,13 @@ export function getLogDir(env: EnvironmentDefinition): string {
  * Follows the XDG Base Directory spec: history files are state data
  * (persistent across runs but not portable / user-owned content), so they
  * belong under `$XDG_STATE_HOME`, mirroring `bash`, `zsh`, `psql`, and `gh`.
- * Defaults to `~/.local/state/vellum/input-history`.
+ * Defaults to `~/.local/state/cadet/input-history`.
  *
  * Not environment-scoped: terminal input history is per-user, not per-assistant,
  * so dev and prod CLIs share the same history file.
  */
 export function getInputHistoryPath(): string {
-  return join(xdgStateHome(), "vellum", "input-history");
+  return join(xdgStateHome(), "cadet", "input-history");
 }
 
 /**

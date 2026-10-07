@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { Logger } from "pino";
 import type { GatewayConfig } from "../config.js";
 import { StringDedupCache } from "../dedup-cache.js";
-import type { VellumEmailPayload } from "../email/normalize.js";
+import type { CadetEmailPayload } from "../email/normalize.js";
 
 const handleInboundMock = mock(() =>
   Promise.resolve({ forwarded: true, rejected: false } as Record<
@@ -54,7 +54,7 @@ const silentLog = {
 
 const config = {} as GatewayConfig;
 
-const payload: VellumEmailPayload = {
+const payload: CadetEmailPayload = {
   from: "alice@example.com",
   fromName: "Alice",
   to: "assistant@example.org",
@@ -74,7 +74,7 @@ function pipelineOpts(
     source: "mailgun",
     dedupCache: new StringDedupCache(60_000),
     dedupKey: "key-1",
-    vellumPayload: payload,
+    cadetPayload: payload,
     traceId: undefined,
     sendReply: undefined,
     ...overrides,
@@ -263,7 +263,7 @@ describe("runEmailInboundPipeline", () => {
     const response = await runEmailInboundPipeline(
       pipelineOpts({
         config: attachmentConfig,
-        vellumPayload: {
+        cadetPayload: {
           ...payload,
           attachments: [
             {
@@ -294,7 +294,7 @@ describe("runEmailInboundPipeline", () => {
       pipelineOpts({
         config: attachmentConfig,
         dedupCache,
-        vellumPayload: {
+        cadetPayload: {
           ...payload,
           attachments: [
             {

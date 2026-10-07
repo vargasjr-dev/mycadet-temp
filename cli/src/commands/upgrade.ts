@@ -1052,7 +1052,7 @@ async function upgradeLocal(
 
   const workspaceDir = join(
     entry.resources.instanceDir,
-    ".vellum",
+    ".cadet",
     "workspace",
   );
   const ngrokChild = await restoreTunnelEdgeAndAutoTunnel(
@@ -1062,7 +1062,7 @@ async function upgradeLocal(
   );
   if (ngrokChild?.pid) {
     writeFileSync(
-      join(entry.resources.instanceDir, ".vellum", "ngrok.pid"),
+      join(entry.resources.instanceDir, ".cadet", "ngrok.pid"),
       String(ngrokChild.pid),
     );
   }
@@ -1120,7 +1120,7 @@ const UPGRADE_IN_PROGRESS_MSG =
   "An upgrade is already in progress for this assistant. Check `cadet ps`.";
 
 function platformUpgradeTimeoutMs(): number {
-  const override = process.env.VELLUM_PLATFORM_UPGRADE_TIMEOUT_MS;
+  const override = process.env.CADET_PLATFORM_UPGRADE_TIMEOUT_MS;
   if (override) {
     const parsed = parseInt(override, 10);
     if (!isNaN(parsed) && parsed > 0) return parsed;
@@ -1550,7 +1550,7 @@ async function resolveLatestAndMaybeSelfUpdate(
     if (flags.force) reexecArgs.push("--force");
 
     console.log(`🚀 Re-running upgrade with updated CLI...\n`);
-    const reexecResult = spawnSync("vellum", reexecArgs, {
+    const reexecResult = spawnSync("cadet", reexecArgs, {
       stdio: "inherit",
       windowsHide: true,
     });
@@ -1624,7 +1624,7 @@ export async function upgrade(): Promise<void> {
     process.exit(1);
   }
 
-  const msg = `Error: Upgrade is not supported for '${cloud}' assistants. Only 'local', 'docker', and 'vellum' assistants can be upgraded via the CLI.`;
+  const msg = `Error: Upgrade is not supported for '${cloud}' assistants. Only 'local', 'docker', and 'cadet' assistants can be upgraded via the CLI.`;
   console.error(msg);
   emitCliError("UNSUPPORTED_TOPOLOGY", msg);
   process.exit(1);

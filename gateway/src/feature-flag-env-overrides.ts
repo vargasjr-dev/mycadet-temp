@@ -3,7 +3,7 @@ import { isFlagDeclared } from "./feature-flag-defaults.js";
 
 const log = getLogger("feature-flag-env-overrides");
 
-const ENV_PREFIX = "VELLUM_FLAG_";
+const ENV_PREFIX = "CADET_FLAG_";
 
 const TRUTHY = new Set(["true", "1", "yes", "on"]);
 const FALSY = new Set(["false", "0", "no", "off"]);
@@ -22,7 +22,7 @@ function parseValue(raw: string): boolean | string {
 }
 
 /**
- * Scan `process.env` for keys starting with `VELLUM_FLAG_`, convert each to a
+ * Scan `process.env` for keys starting with `CADET_FLAG_`, convert each to a
  * kebab-case flag key, parse the value, and validate against the registry.
  *
  * The result is cached for the process lifetime. Unknown keys (not declared in

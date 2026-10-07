@@ -2,7 +2,7 @@
  * Tests for the host-file-result route 403 guard.
  *
  * Covers:
- *  1. Targeted + correct x-vellum-client-id header (and matching actor) → 200
+ *  1. Targeted + correct x-cadet-client-id header (and matching actor) → 200
  *  2. Targeted + missing client-id header → 400 BadRequestError
  *  3. Targeted + wrong client-id header → 403 ForbiddenError, interaction NOT consumed
  *  4. Untargeted (no targetClientId, no header) → 200 accepted (regression)
@@ -127,7 +127,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
 
   // ── 1. Targeted + correct headers (client + actor) → 200 ──────────────────
 
-  describe("targeted + correct x-vellum-client-id header", () => {
+  describe("targeted + correct x-cadet-client-id header", () => {
     test("returns { accepted: true } and resolves the interaction", async () => {
       const requestId = "req-file-targeted-match";
       clientActors.set("client-A", "actor-1");
@@ -136,8 +136,8 @@ describe("handleHostFileResult — targetClientId guard", () => {
       const result = await handleHostFileResult({
         body: fileBody(requestId),
         headers: {
-          "x-vellum-client-id": "client-A",
-          "x-vellum-actor-principal-id": "actor-1",
+          "x-cadet-client-id": "client-A",
+          "x-cadet-actor-principal-id": "actor-1",
         },
       });
 
@@ -155,8 +155,8 @@ describe("handleHostFileResult — targetClientId guard", () => {
       const result = await handleHostFileResult({
         body: fileBody(requestId),
         headers: {
-          "x-vellum-client-id": "  client-A  ",
-          "x-vellum-actor-principal-id": "  actor-1  ",
+          "x-cadet-client-id": "  client-A  ",
+          "x-cadet-actor-principal-id": "  actor-1  ",
         },
       });
 
@@ -166,7 +166,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
 
   // ── 2. Targeted + missing client-id header → 400 ──────────────────────────
 
-  describe("targeted + missing x-vellum-client-id header", () => {
+  describe("targeted + missing x-cadet-client-id header", () => {
     test("throws BadRequestError (400) when header is absent", () => {
       const requestId = "req-file-targeted-no-header";
       registerPending(requestId, { targetClientId: "client-A" });
@@ -183,7 +183,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
       expect(() =>
         handleHostFileResult({
           body: fileBody(requestId),
-          headers: { "x-vellum-client-id": "   " },
+          headers: { "x-cadet-client-id": "   " },
         }),
       ).toThrow(BadRequestError);
     });
@@ -203,7 +203,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
 
   // ── 3. Targeted + wrong client-id header → 403 ────────────────────────────
 
-  describe("targeted + wrong x-vellum-client-id header", () => {
+  describe("targeted + wrong x-cadet-client-id header", () => {
     test("throws ForbiddenError (403) when client ID does not match", () => {
       const requestId = "req-file-targeted-mismatch";
       registerPending(requestId, { targetClientId: "client-A" });
@@ -211,7 +211,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
       expect(() =>
         handleHostFileResult({
           body: fileBody(requestId),
-          headers: { "x-vellum-client-id": "client-B" },
+          headers: { "x-cadet-client-id": "client-B" },
         }),
       ).toThrow(ForbiddenError);
     });
@@ -223,7 +223,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
       let caught: unknown;
       await handleHostFileResult({
         body: fileBody(requestId),
-        headers: { "x-vellum-client-id": "client-B" },
+        headers: { "x-cadet-client-id": "client-B" },
       }).catch((e: unknown) => {
         caught = e;
       });
@@ -240,7 +240,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
 
       await handleHostFileResult({
         body: fileBody(requestId),
-        headers: { "x-vellum-client-id": "client-B" },
+        headers: { "x-cadet-client-id": "client-B" },
       }).catch(() => {
         // expected
       });
@@ -272,7 +272,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
 
       const result = await handleHostFileResult({
         body: fileBody(requestId),
-        headers: { "x-vellum-client-id": "client-whatever" },
+        headers: { "x-cadet-client-id": "client-whatever" },
       });
 
       expect(result).toEqual({ accepted: true });
@@ -288,7 +288,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
       expect(() =>
         handleHostFileResult({
           body: fileBody(requestId),
-          headers: { "x-vellum-actor-principal-id": "principal-attacker" },
+          headers: { "x-cadet-actor-principal-id": "principal-attacker" },
         }),
       ).toThrow(ForbiddenError);
     });
@@ -301,7 +301,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
 
       const result = await handleHostFileResult({
         body: fileBody(requestId),
-        headers: { "x-vellum-actor-principal-id": "principal-owner" },
+        headers: { "x-cadet-actor-principal-id": "principal-owner" },
       });
 
       expect(result).toEqual({ accepted: true });
@@ -321,8 +321,8 @@ describe("handleHostFileResult — targetClientId guard", () => {
         handleHostFileResult({
           body: fileBody(requestId),
           headers: {
-            "x-vellum-client-id": "client-A",
-            "x-vellum-actor-principal-id": "actor-2",
+            "x-cadet-client-id": "client-A",
+            "x-cadet-actor-principal-id": "actor-2",
           },
         }),
       ).toThrow(ForbiddenError);
@@ -336,8 +336,8 @@ describe("handleHostFileResult — targetClientId guard", () => {
       await handleHostFileResult({
         body: fileBody(requestId),
         headers: {
-          "x-vellum-client-id": "client-A",
-          "x-vellum-actor-principal-id": "actor-2",
+          "x-cadet-client-id": "client-A",
+          "x-cadet-actor-principal-id": "actor-2",
         },
       }).catch(() => {
         // expected
@@ -350,7 +350,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
 
   // ── 6. Targeted + matching client but missing actor header → 403 ──────────
 
-  describe("targeted + missing x-vellum-actor-principal-id header", () => {
+  describe("targeted + missing x-cadet-actor-principal-id header", () => {
     test("throws ForbiddenError (403) when submitting actor header is absent", () => {
       const requestId = "req-file-actor-missing";
       clientActors.set("client-A", "actor-1");
@@ -359,7 +359,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
       expect(() =>
         handleHostFileResult({
           body: fileBody(requestId),
-          headers: { "x-vellum-client-id": "client-A" },
+          headers: { "x-cadet-client-id": "client-A" },
         }),
       ).toThrow(ForbiddenError);
     });
@@ -373,8 +373,8 @@ describe("handleHostFileResult — targetClientId guard", () => {
         handleHostFileResult({
           body: fileBody(requestId),
           headers: {
-            "x-vellum-client-id": "client-A",
-            "x-vellum-actor-principal-id": "   ",
+            "x-cadet-client-id": "client-A",
+            "x-cadet-actor-principal-id": "   ",
           },
         }),
       ).toThrow(ForbiddenError);
@@ -387,7 +387,7 @@ describe("handleHostFileResult — targetClientId guard", () => {
 
       await handleHostFileResult({
         body: fileBody(requestId),
-        headers: { "x-vellum-client-id": "client-A" },
+        headers: { "x-cadet-client-id": "client-A" },
       }).catch(() => {
         // expected
       });
@@ -409,8 +409,8 @@ describe("handleHostFileResult — targetClientId guard", () => {
         handleHostFileResult({
           body: fileBody(requestId),
           headers: {
-            "x-vellum-client-id": "client-A",
-            "x-vellum-actor-principal-id": "actor-1",
+            "x-cadet-client-id": "client-A",
+            "x-cadet-actor-principal-id": "actor-1",
           },
         }),
       ).toThrow(ForbiddenError);
@@ -423,8 +423,8 @@ describe("handleHostFileResult — targetClientId guard", () => {
       await handleHostFileResult({
         body: fileBody(requestId),
         headers: {
-          "x-vellum-client-id": "client-A",
-          "x-vellum-actor-principal-id": "actor-1",
+          "x-cadet-client-id": "client-A",
+          "x-cadet-actor-principal-id": "actor-1",
         },
       }).catch(() => {
         // expected

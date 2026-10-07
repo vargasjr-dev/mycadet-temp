@@ -62,10 +62,10 @@ export function makePairingChallengeRequest(
     headers.host = overrides.host;
   }
   if (overrides.edgeForwarded) {
-    headers["x-vellum-edge-forwarded"] = "1";
+    headers["x-cadet-edge-forwarded"] = "1";
   }
   if (overrides.edgeClientIp) {
-    headers["x-vellum-client-ip"] = overrides.edgeClientIp;
+    headers["x-cadet-client-ip"] = overrides.edgeClientIp;
   }
   if (overrides.contentLength != null) {
     headers["content-length"] = String(overrides.contentLength);

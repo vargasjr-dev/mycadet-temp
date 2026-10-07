@@ -241,7 +241,7 @@ describe("parseFrontmatterFields", () => {
       'name: "Test"',
       'description: "A test skill"',
       "metadata:",
-      "  vellum:",
+      "  cadet:",
       "    requires:",
       "      bins:",
       "        - node",
@@ -255,8 +255,8 @@ describe("parseFrontmatterFields", () => {
     const result = parseFrontmatterFields(input);
     expect(result).not.toBeNull();
     const meta = result!.fields.metadata as Record<string, unknown>;
-    const vellum = meta.vellum as Record<string, unknown>;
-    expect(vellum.requires).toEqual({
+    const cadet = meta.cadet as Record<string, unknown>;
+    expect(cadet.requires).toEqual({
       bins: ["node", "npm"],
       env: ["API_KEY", "SECRET"],
     });

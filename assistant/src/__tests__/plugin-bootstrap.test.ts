@@ -33,12 +33,12 @@ import { type InitContext, type Plugin } from "../plugins/types.js";
 import { APP_VERSION } from "../version.js";
 
 // Redirect plugin storage directory creation into a per-process temp tree so
-// the test doesn't touch the developer's real ~/.vellum.
+// the test doesn't touch the developer's real ~/.cadet.
 const TEST_WORKSPACE_DIR = join(
   tmpdir(),
-  `vellum-plugin-bootstrap-test-${process.pid}`,
+  `cadet-plugin-bootstrap-test-${process.pid}`,
 );
-process.env.VELLUM_WORKSPACE_DIR = TEST_WORKSPACE_DIR;
+process.env.CADET_WORKSPACE_DIR = TEST_WORKSPACE_DIR;
 
 /**
  * Test helper. Accepts the new `hooks` bag and ALSO legacy top-level

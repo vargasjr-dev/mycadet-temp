@@ -29,8 +29,8 @@ let mockEmitResult: {
   reason: "ok",
   deliveryResults: [
     {
-      channel: "vellum",
-      destination: "vellum",
+      channel: "cadet",
+      destination: "cadet",
       status: "sent",
       conversationId: "conv-guardian-1",
     },
@@ -56,8 +56,8 @@ mock.module("../notifications/emit-signal.js", () => ({
 mock.module("../contacts/guardian-delivery-reader.js", () => ({
   getGuardianDelivery: async () => [
     {
-      channelType: "vellum",
-      contactId: "guardian-vellum",
+      channelType: "cadet",
+      contactId: "guardian-cadet",
       principalId: "test-principal-id",
       address: "local",
       status: "active",
@@ -125,7 +125,7 @@ function resetTables(): void {
 
   // Seed the cadet guardian binding (gateway does this at startup in production)
   createGuardianBinding({
-    channel: "vellum",
+    channel: "cadet",
     guardianExternalUserId: "test-principal-id",
     guardianDeliveryChatId: "local",
     guardianPrincipalId: "test-principal-id",
@@ -141,8 +141,8 @@ function resetTables(): void {
     reason: "ok",
     deliveryResults: [
       {
-        channel: "vellum",
-        destination: "vellum",
+        channel: "cadet",
+        destination: "cadet",
         status: "sent",
         conversationId: "conv-guardian-1",
       },
@@ -213,8 +213,8 @@ describe("ASK_GUARDIAN notification path", () => {
       reason: "ok",
       deliveryResults: [
         {
-          channel: "vellum",
-          destination: "vellum",
+          channel: "cadet",
+          destination: "cadet",
           status: "sent",
         },
       ],
@@ -251,10 +251,10 @@ describe("ASK_GUARDIAN notification path", () => {
       reason: "ok",
       deliveryResults: [
         {
-          channel: "vellum",
-          destination: "vellum",
+          channel: "cadet",
+          destination: "cadet",
           status: "sent",
-          conversationId: "conv-guardian-vellum",
+          conversationId: "conv-guardian-cadet",
         },
         {
           channel: "telegram",
@@ -289,12 +289,12 @@ describe("ASK_GUARDIAN notification path", () => {
     const telegram = deliveries.find(
       (d) => d.destinationChannel === "telegram",
     );
-    const cadet = deliveries.find((d) => d.destinationChannel === "vellum");
+    const cadet = deliveries.find((d) => d.destinationChannel === "cadet");
     expect(telegram).toBeDefined();
     expect(telegram!.destinationChatId).toBe("tg-chat-abc");
     expect(telegram!.status).toBe("sent");
     expect(cadet).toBeDefined();
-    expect(cadet!.destinationConversationId).toBe("conv-guardian-vellum");
+    expect(cadet!.destinationConversationId).toBe("conv-guardian-cadet");
     expect(cadet!.status).toBe("sent");
   });
 
@@ -329,12 +329,12 @@ describe("ASK_GUARDIAN notification path", () => {
     ).resolves.toBeUndefined();
 
     const request = requestForCallSession(session.id);
-    const vellumDelivery = bridgeState.deliveries.find(
-      (d) => d.requestId === request!.id && d.destinationChannel === "vellum",
+    const cadetDelivery = bridgeState.deliveries.find(
+      (d) => d.requestId === request!.id && d.destinationChannel === "cadet",
     );
 
-    expect(vellumDelivery).toBeDefined();
-    expect(vellumDelivery!.status).toBe("failed");
+    expect(cadetDelivery).toBeDefined();
+    expect(cadetDelivery!.status).toBe("failed");
   });
 
   test("context payload includes callSessionId and activeGuardianRequestCount for candidate-affinity", async () => {
@@ -394,8 +394,8 @@ describe("ASK_GUARDIAN notification path", () => {
       reason: "ok",
       deliveryResults: [
         {
-          channel: "vellum",
-          destination: "vellum",
+          channel: "cadet",
+          destination: "cadet",
           status: "sent",
           conversationId: sharedConvId,
         },
@@ -419,8 +419,8 @@ describe("ASK_GUARDIAN notification path", () => {
       reason: "ok",
       deliveryResults: [
         {
-          channel: "vellum",
-          destination: "vellum",
+          channel: "cadet",
+          destination: "cadet",
           status: "sent",
           conversationId: sharedConvId,
         },
@@ -489,7 +489,7 @@ describe("ASK_GUARDIAN notification path", () => {
     expect(request).toBeDefined();
 
     const delivery = bridgeState.deliveries.find(
-      (d) => d.requestId === request!.id && d.destinationChannel === "vellum",
+      (d) => d.requestId === request!.id && d.destinationChannel === "cadet",
     );
     expect(delivery).toBeDefined();
     expect(delivery!.status).toBe("failed");

@@ -55,7 +55,7 @@ let httpAuthDisabled = false;
 
 // Stub for the shared reset-drift helper. The route under test only consumes
 // its result (a guardian TrustContext or null); the gate itself is covered in
-// runtime/__tests__/guardian-vellum-migration.test.ts. Tests set
+// runtime/__tests__/guardian-cadet-migration.test.ts. Tests set
 // `mockReResolve` per case and read `reResolveCalls` to assert routing.
 const reResolveCalls: string[] = [];
 let mockReResolve: { trustClass: string; sourceChannel: string } | null = null;
@@ -82,7 +82,7 @@ mock.module("../../../config/env.js", () => ({
   isHttpAuthDisabled: () => httpAuthDisabled,
 }));
 
-mock.module("../../guardian-vellum-migration.js", () => ({
+mock.module("../../guardian-cadet-migration.js", () => ({
   reResolveTrustOnResetDrift: async (
     incomingPrincipalId: string,
     _sourceChannel: string,
@@ -387,14 +387,14 @@ describe("triggerSurfaceAction handler", () => {
     expect(rawGetCalls[0]!.params).toEqual([`%"surfaceId":"\\%"%`]);
   });
 
-  test("threads x-vellum-actor-principal-id into handleSurfaceAction", async () => {
+  test("threads x-cadet-actor-principal-id into handleSurfaceAction", async () => {
     const live = makeStub("conv-principal");
     memoryBySurface = live;
 
     const handler = findHandler("triggerSurfaceAction");
     await handler({
       body: { surfaceId: "surf-p", actionId: "act-p" },
-      headers: { "x-vellum-actor-principal-id": "principal-committer" },
+      headers: { "x-cadet-actor-principal-id": "principal-committer" },
     });
 
     expect(live.surfaceActionCalls).toEqual([
@@ -416,7 +416,7 @@ describe("triggerSurfaceAction handler", () => {
     const handler = findHandler("triggerSurfaceAction");
     await handler({
       body: { surfaceId: "surf-dt", actionId: "act-dt" },
-      headers: { "x-vellum-actor-principal-id": "dev-bypass" },
+      headers: { "x-cadet-actor-principal-id": "dev-bypass" },
     });
 
     // dev-bypass is translated so the surface turn matches the SSE host-proxy
@@ -461,14 +461,14 @@ describe("triggerSurfaceAction handler", () => {
 // ---------------------------------------------------------------------------
 
 const GUARDIAN_PRINCIPAL = "principal-guardian";
-// Daemon-minted vellum-principal-* ids: the DB-reset drift signature. The
+// Daemon-minted cadet-principal-* ids: the DB-reset drift signature. The
 // gateway rebinds to a fresh id while the client still holds a JWT for the old.
-const VELLUM_PRINCIPAL_OLD = "vellum-principal-old";
-const VELLUM_PRINCIPAL_NEW = "vellum-principal-new";
+const CADET_PRINCIPAL_OLD = "cadet-principal-old";
+const CADET_PRINCIPAL_NEW = "cadet-principal-new";
 
 function guardianDelivery(principalId: string): Record<string, unknown> {
   return {
-    channelType: "vellum",
+    channelType: "cadet",
     contactId: "contact-1",
     principalId,
     address: "guardian-address",
@@ -479,7 +479,7 @@ function guardianDelivery(principalId: string): Record<string, unknown> {
 
 // A guardian TrustContext the stubbed helper hands back on a recovered drift.
 function guardianCtx(): { trustClass: string; sourceChannel: string } {
-  return { trustClass: "guardian", sourceChannel: "vellum" };
+  return { trustClass: "guardian", sourceChannel: "cadet" };
 }
 
 describe("triggerSurfaceAction trust context", () => {
@@ -491,11 +491,11 @@ describe("triggerSurfaceAction trust context", () => {
     const handler = findHandler("triggerSurfaceAction");
     await handler({
       body: { surfaceId: "surf-g", actionId: "act-g" },
-      headers: { "x-vellum-actor-principal-id": GUARDIAN_PRINCIPAL },
+      headers: { "x-cadet-actor-principal-id": GUARDIAN_PRINCIPAL },
     });
 
     expect(live.lastRequesterTrustContext?.trustClass).toBe("guardian");
-    expect(live.lastRequesterTrustContext?.sourceChannel).toBe("vellum");
+    expect(live.lastRequesterTrustContext?.sourceChannel).toBe("cadet");
     // First-pass resolve already granted guardian, so the drift helper is skipped.
     expect(reResolveCalls).toEqual([]);
   });
@@ -509,15 +509,15 @@ describe("triggerSurfaceAction trust context", () => {
     const handler = findHandler("triggerSurfaceAction");
     await handler({
       body: { surfaceId: "surf-u", actionId: "act-u" },
-      headers: { "x-vellum-actor-principal-id": VELLUM_PRINCIPAL_OLD },
+      headers: { "x-cadet-actor-principal-id": CADET_PRINCIPAL_OLD },
     });
 
-    expect(reResolveCalls).toEqual([VELLUM_PRINCIPAL_OLD]);
+    expect(reResolveCalls).toEqual([CADET_PRINCIPAL_OLD]);
     expect(live.lastRequesterTrustContext?.trustClass).toBe("unknown");
   });
 
   test("reset drift: helper returns guardian → route adopts it", async () => {
-    mockGuardianList = [guardianDelivery(VELLUM_PRINCIPAL_NEW)];
+    mockGuardianList = [guardianDelivery(CADET_PRINCIPAL_NEW)];
     mockReResolve = guardianCtx();
     const live = makeStub("conv-drift");
     memoryBySurface = live;
@@ -525,10 +525,10 @@ describe("triggerSurfaceAction trust context", () => {
     const handler = findHandler("triggerSurfaceAction");
     await handler({
       body: { surfaceId: "surf-d", actionId: "act-d" },
-      headers: { "x-vellum-actor-principal-id": VELLUM_PRINCIPAL_OLD },
+      headers: { "x-cadet-actor-principal-id": CADET_PRINCIPAL_OLD },
     });
 
-    expect(reResolveCalls).toEqual([VELLUM_PRINCIPAL_OLD]);
+    expect(reResolveCalls).toEqual([CADET_PRINCIPAL_OLD]);
     expect(live.lastRequesterTrustContext?.trustClass).toBe("guardian");
   });
 
@@ -541,7 +541,7 @@ describe("triggerSurfaceAction trust context", () => {
     const handler = findHandler("triggerSurfaceAction");
     await handler({
       body: { surfaceId: "surf-dev", actionId: "act-dev" },
-      headers: { "x-vellum-actor-principal-id": "dev-bypass" },
+      headers: { "x-cadet-actor-principal-id": "dev-bypass" },
     });
 
     // The synthetic dev-bypass principal is translated to the real guardian,
@@ -563,7 +563,7 @@ describe("triggerSurfaceAction trust context", () => {
     const handler = findHandler("triggerSurfaceAction");
     await handler({
       body: { surfaceId: "surf-devf", actionId: "act-devf" },
-      headers: { "x-vellum-actor-principal-id": "dev-bypass" },
+      headers: { "x-cadet-actor-principal-id": "dev-bypass" },
     });
 
     expect(live.lastRequesterTrustContext?.trustClass).toBe("unknown");
@@ -578,7 +578,7 @@ describe("triggerSurfaceAction trust context", () => {
     const handler = findHandler("triggerSurfaceAction");
     await handler({
       body: { surfaceId: "surf-idle", actionId: "act-idle" },
-      headers: { "x-vellum-actor-principal-id": GUARDIAN_PRINCIPAL },
+      headers: { "x-cadet-actor-principal-id": GUARDIAN_PRINCIPAL },
     });
 
     expect(live.lastRequesterTrustContext?.trustClass).toBe("guardian");
@@ -603,7 +603,7 @@ describe("triggerSurfaceAction trust context", () => {
     const handler = findHandler("triggerSurfaceAction");
     await handler({
       body: { surfaceId: "surf-busy", actionId: "act-busy" },
-      headers: { "x-vellum-actor-principal-id": GUARDIAN_PRINCIPAL },
+      headers: { "x-cadet-actor-principal-id": GUARDIAN_PRINCIPAL },
     });
 
     // Identical object, so a re-write of an equal value still fails this.

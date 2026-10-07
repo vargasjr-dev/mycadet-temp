@@ -90,11 +90,11 @@ export function buildBillingUsageTotalsQuery(
  *     "full"),
  *   - the platform API is reachable (the default reachability gate is not
  *     "gated" — i.e. the app is not in local mode with
- *     `VELLUM_DISABLE_PLATFORM` set, where `platformFeaturesGate` aborts the
+ *     `CADET_DISABLE_PLATFORM` set, where `platformFeaturesGate` aborts the
  *     request), and
  *   - the assistant is positively resolved as platform-hosted.
  *
- * The `platformHostedOnly` gate deliberately ignores `VELLUM_DISABLE_PLATFORM`
+ * The `platformHostedOnly` gate deliberately ignores `CADET_DISABLE_PLATFORM`
  * and reports "full" during the lifecycle loading window, so neither of the
  * other two checks is redundant: without the reachability gate a local-mode
  * app driving a platform-hosted assistant with the platform API disabled would

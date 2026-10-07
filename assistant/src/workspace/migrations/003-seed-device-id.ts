@@ -23,8 +23,8 @@ export const seedDeviceIdMigration: WorkspaceMigration = {
     "Seed device.json deviceId from the most recent lockfile installationId for continuity",
   run(_workspaceDir: string): void {
     const base = deviceIdBaseDir();
-    const vellumDir = join(base, ".vellum");
-    const devicePath = join(vellumDir, "device.json");
+    const cadetDir = join(base, ".cadet");
+    const devicePath = join(cadetDir, "device.json");
 
     // a. If device.json already has a deviceId, nothing to do.
     if (existsSync(devicePath)) {
@@ -48,8 +48,8 @@ export const seedDeviceIdMigration: WorkspaceMigration = {
     //    Check both the current and legacy filenames.
     const home = homedir();
     const lockCandidates = [
-      join(home, ".vellum.lock.json"),
-      join(home, ".vellum.lockfile.json"),
+      join(home, ".cadet.lock.json"),
+      join(home, ".cadet.lockfile.json"),
     ];
 
     let lockData: Record<string, unknown> | undefined;
@@ -111,7 +111,7 @@ export const seedDeviceIdMigration: WorkspaceMigration = {
     existing.deviceId = seedId;
 
     try {
-      mkdirSync(vellumDir, { recursive: true });
+      mkdirSync(cadetDir, { recursive: true });
       writeFileSync(devicePath, JSON.stringify(existing, null, 2) + "\n", {
         mode: 0o644,
       });
@@ -120,11 +120,11 @@ export const seedDeviceIdMigration: WorkspaceMigration = {
     }
   },
   down(_workspaceDir: string): void {
-    // The forward migration seeds deviceId in ~/.vellum/device.json from the
+    // The forward migration seeds deviceId in ~/.cadet/device.json from the
     // lockfile. Reverse by removing device.json entirely — getDeviceId() will
     // generate a fresh one on next startup if needed.
     const base = deviceIdBaseDir();
-    const devicePath = join(base, ".vellum", "device.json");
+    const devicePath = join(base, ".cadet", "device.json");
     if (existsSync(devicePath)) {
       unlinkSync(devicePath);
     }

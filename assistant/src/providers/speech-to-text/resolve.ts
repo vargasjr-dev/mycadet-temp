@@ -684,7 +684,7 @@ async function createStreamingTranscriber(
         // `language` IS in the relay's param allowlist, and the relay pins
         // the STT model to nova-3 server-side, so "multi" code-switching
         // needs nothing from the platform, only this forward. Source:
-        // cadet-assistant-platform: tunnel/internal/tunnel/deepgram.go
+        // mycadet-platform: tunnel/internal/tunnel/deepgram.go
         // (deepgramSTTParams allowlist; deepgramSTTModel pin).
         ...(options.language ? { language: options.language } : {}),
         ...(options.utteranceBoundaryFinals

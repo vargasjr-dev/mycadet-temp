@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const testDir = mkdtempSync(join(tmpdir(), "connect-import-test-"));
-const ORIGINAL_LOCKFILE_DIR = process.env.VELLUM_LOCKFILE_DIR;
+const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ARGV = [...process.argv];
 
@@ -135,7 +135,7 @@ describe("connect import", () => {
   let sleepSpy: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
-    process.env.VELLUM_LOCKFILE_DIR = testDir;
+    process.env.CADET_LOCKFILE_DIR = testDir;
     process.env.XDG_CONFIG_HOME = testDir;
     waits = [];
     // The command turns the poll cadence straight into a `Bun.sleep`. Freeze
@@ -156,9 +156,9 @@ describe("connect import", () => {
     process.argv = [...ORIGINAL_ARGV];
     globalThis.fetch = originalFetch;
     if (ORIGINAL_LOCKFILE_DIR === undefined) {
-      delete process.env.VELLUM_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
     } else {
-      process.env.VELLUM_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
+      process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
     }
     if (ORIGINAL_CONFIG_HOME === undefined) {
       delete process.env.XDG_CONFIG_HOME;
@@ -174,7 +174,7 @@ describe("connect import", () => {
   test("a pairing link imports on the first poll, with no approval step", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "connect",
       "import",
       PAIRING_LINK,
@@ -217,7 +217,7 @@ describe("connect import", () => {
   test("a bare address prints the approval code and polls until approved", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "connect",
       "import",
       HOST,
@@ -269,7 +269,7 @@ describe("connect import", () => {
   });
 
   test("stops polling and reports expiry instead of looping", async () => {
-    process.argv = ["bun", "vellum", "connect", "import", HOST];
+    process.argv = ["bun", "cadet", "connect", "import", HOST];
     const calls = stubFetch((call) =>
       call.url === CHALLENGE_URL
         ? jsonResponse(challengeBody())
@@ -294,7 +294,7 @@ describe("connect import", () => {
   });
 
   test("surfaces a denied or unknown code as an expiry", async () => {
-    process.argv = ["bun", "vellum", "connect", "import", PAIRING_LINK];
+    process.argv = ["bun", "cadet", "connect", "import", PAIRING_LINK];
     stubFetch(() => jsonResponse({ error: "expired_token" }, 410));
 
     const { exited, out } = await runExpectingExit();
@@ -306,7 +306,7 @@ describe("connect import", () => {
   test("refuses a non-https address before any request", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "connect",
       "import",
       "http://insecure.example.com",
@@ -327,7 +327,7 @@ describe("connect import", () => {
   test("refuses a loopback address before any request", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "connect",
       "import",
       "https://127.0.0.1:7830",
@@ -351,7 +351,7 @@ describe("connect import", () => {
     // rather than rejecting a second machine mid-upgrade.
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "connect",
       "import",
       Buffer.from(
@@ -383,7 +383,7 @@ describe("connect import", () => {
   });
 
   test("a string that is neither an address nor a bundle keeps the address error", async () => {
-    process.argv = ["bun", "vellum", "connect", "import", "not-a-url"];
+    process.argv = ["bun", "cadet", "connect", "import", "not-a-url"];
     let fetched = false;
     globalThis.fetch = (async () => {
       fetched = true;
@@ -402,7 +402,7 @@ describe("connect import", () => {
   test("retries a transient failure and still imports", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "connect",
       "import",
       HOST,
@@ -440,7 +440,7 @@ describe("connect import", () => {
   test("retries a repairable gateway refusal and still imports", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "connect",
       "import",
       HOST,
@@ -475,7 +475,7 @@ describe("connect import", () => {
   });
 
   test("reports expiry once transient failures outlast the code", async () => {
-    process.argv = ["bun", "vellum", "connect", "import", HOST];
+    process.argv = ["bun", "cadet", "connect", "import", HOST];
     let exchanges = 0;
     globalThis.fetch = (async (url: string) => {
       if (url === CHALLENGE_URL) {
@@ -505,7 +505,7 @@ describe("connect import", () => {
     // Nothing proved this address reachable (a link opens its session without
     // a request), so the failure is reported instead of retried for the full
     // ten-minute TTL.
-    process.argv = ["bun", "vellum", "connect", "import", PAIRING_LINK];
+    process.argv = ["bun", "cadet", "connect", "import", PAIRING_LINK];
     let attempts = 0;
     globalThis.fetch = (async () => {
       attempts += 1;
@@ -520,7 +520,7 @@ describe("connect import", () => {
   });
 
   test("missing address exits 1 with usage", async () => {
-    process.argv = ["bun", "vellum", "connect", "import"];
+    process.argv = ["bun", "cadet", "connect", "import"];
 
     const { exited, out } = await runExpectingExit();
 
@@ -530,7 +530,7 @@ describe("connect import", () => {
   });
 
   test("rejects an unknown --flag instead of pairing against it", async () => {
-    process.argv = ["bun", "vellum", "connect", "import", "--qr", HOST];
+    process.argv = ["bun", "cadet", "connect", "import", "--qr", HOST];
     let fetched = false;
     globalThis.fetch = (async () => {
       fetched = true;
@@ -551,7 +551,7 @@ describe("connect import", () => {
   test("rejects an unknown --flag even alongside an address and --name", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "connect",
       "import",
       HOST,
@@ -579,7 +579,7 @@ describe("connect import", () => {
     const outcomes: string[] = [];
     const ids: string[] = [];
     for (const token of ["tok1", "tok2"]) {
-      process.argv = ["bun", "vellum", "connect", "import", PAIRING_LINK];
+      process.argv = ["bun", "cadet", "connect", "import", PAIRING_LINK];
       stubFetch(() => jsonResponse(approvedBody({ accessToken: token })));
       const { logs, restore } = captureLogs();
       try {
@@ -606,7 +606,7 @@ describe("connect import", () => {
     for (const token of ["t1", "t2"]) {
       process.argv = [
         "bun",
-        "vellum",
+        "cadet",
         "connect",
         "import",
         PAIRING_LINK,
@@ -633,7 +633,7 @@ describe("connect import", () => {
     });
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "connect",
       "import",
       PAIRING_LINK,

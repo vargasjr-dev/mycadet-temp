@@ -2,7 +2,7 @@ import { normalizeHttpPublicBaseUrlWithoutTrailingSlash } from "./ingress.js";
 
 export const MCP_OAUTH_CALLBACK_PATH = "/webhooks/oauth/callback";
 export const MCP_OAUTH_CLIENT_METADATA_PATH = "/oauth/client-metadata.json";
-export const MCP_OAUTH_CLIENT_LOGO_URI = "https://www.vellum.ai/favicon.svg";
+export const MCP_OAUTH_CLIENT_LOGO_URI = "https://mycadet.ai/favicon.svg";
 
 export interface McpOAuthClientMetadata {
   client_id?: string;

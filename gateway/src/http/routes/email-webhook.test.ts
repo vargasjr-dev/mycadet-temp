@@ -92,7 +92,7 @@ function makeEmailPayload(overrides?: {
   return JSON.stringify({
     from: overrides?.from ?? "sender@example.com",
     fromName: overrides?.fromName,
-    to: overrides?.to ?? "assistant@vellum.me",
+    to: overrides?.to ?? "assistant@mycadet.bot",
     subject: overrides?.subject ?? "Hello",
     strippedText: overrides?.strippedText ?? "Hi, how are you?",
     bodyText:
@@ -115,7 +115,7 @@ function postRequest(body: string, secret?: string): Request {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "vellum-signature": computeSignature(body, sigSecret),
+      "cadet-signature": computeSignature(body, sigSecret),
     },
     body,
   });
@@ -220,7 +220,7 @@ describe("email-webhook", () => {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "vellum-signature": computeSignature(body, TEST_WEBHOOK_SECRET),
+        "cadet-signature": computeSignature(body, TEST_WEBHOOK_SECRET),
       },
       body,
     });
@@ -281,7 +281,7 @@ describe("email-webhook", () => {
     const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = JSON.stringify({
       from: "test@example.com",
-      to: "bot@vellum.me",
+      to: "bot@mycadet.bot",
       messageId: "<fallback@example.com>",
       conversationId: "conv-fallback",
       bodyText: "Full body content here",
@@ -315,7 +315,7 @@ describe("email-webhook", () => {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "vellum-signature": computeSignature(body, "wrong-secret"),
+        "cadet-signature": computeSignature(body, "wrong-secret"),
       },
       body,
     });
@@ -358,7 +358,7 @@ describe("email-webhook", () => {
       };
     };
     expect(options.sourceMetadata.emailSubject).toBe("Re: Project Update");
-    expect(options.sourceMetadata.emailRecipient).toBe("assistant@vellum.me");
+    expect(options.sourceMetadata.emailRecipient).toBe("assistant@mycadet.bot");
     expect(options.sourceMetadata.emailInReplyTo).toBe("<parent@example.com>");
     expect(options.sourceMetadata.emailReferences).toBe(
       "<root@example.com> <parent@example.com>",
@@ -382,7 +382,7 @@ describe("email-webhook", () => {
   });
 
   // Intercept response-shape pins. The platform email relay
-  // (vellum-assistant-platform django/app/email/views.py) gates only on
+  // (mycadet-platform django/app/email/views.py) gates only on
   // `denied` in the gateway body and returns everything else verbatim — it
   // reads neither intercept flag nor `replyText`. The flags name which
   // intercept fired; keep both shapes stable for relay-side consumers.
@@ -468,7 +468,7 @@ describe("email-webhook", () => {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "vellum-signature": computeSignature(body, "wrong-secret"),
+        "cadet-signature": computeSignature(body, "wrong-secret"),
       },
       body,
     });

@@ -21,7 +21,7 @@
  * The activation-store uses an in-memory SQLite database so writes are
  * real but contained.
  *
- * Tests use a temp workspace (mkdtemp) and never touch `~/.vellum/`. Sample
+ * Tests use a temp workspace (mkdtemp) and never touch `~/.cadet/`. Sample
  * page content uses generic placeholders (Alice, Bob, etc.) per the cross-
  * cutting safety rules.
  */
@@ -315,8 +315,8 @@ let previousWorkspaceEnv: string | undefined;
 
 beforeAll(() => {
   tmpWorkspace = mkdtempSync(join(tmpdir(), "memory-v2-injection-test-"));
-  previousWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = tmpWorkspace;
+  previousWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = tmpWorkspace;
 
   // Seed the v2 directory layout the migration would normally create.
   mkdirSync(join(tmpWorkspace, "memory", "concepts"), { recursive: true });
@@ -378,9 +378,9 @@ afterAll(() => {
   // the connection from their own (restored) workspace path.
   clearStoredDb("memory");
   if (previousWorkspaceEnv === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceEnv;
+    process.env.CADET_WORKSPACE_DIR = previousWorkspaceEnv;
   }
   rmSync(tmpWorkspace, { recursive: true, force: true });
 });

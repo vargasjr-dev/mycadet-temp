@@ -9,7 +9,7 @@
 
 const species = process.env.SPECIES;
 
-async function checkVellum(): Promise<void> {
+async function checkCadet(): Promise<void> {
   const proc = Bun.spawn(["assistant", "credentials", "list", "--json"], {
     windowsHide: true,
     stdout: "pipe",
@@ -59,12 +59,12 @@ async function checkVellum(): Promise<void> {
 
 async function main(): Promise<void> {
   switch (species) {
-    case "vellum":
-      await checkVellum();
+    case "cadet":
+      await checkCadet();
       break;
     default:
       console.error(
-        `Unsupported species: ${species ?? "(not set)"}. This skill currently only supports species=vellum.`,
+        `Unsupported species: ${species ?? "(not set)"}. This skill currently only supports species=cadet.`,
       );
       process.exitCode = 1;
   }

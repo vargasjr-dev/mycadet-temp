@@ -22,15 +22,15 @@ describe("GET /workspace/theme", () => {
 
   beforeEach(() => {
     workspaceDir = mkdtempSync(join(tmpdir(), "theme-route-test-"));
-    prevWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+    prevWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = workspaceDir;
   });
 
   afterEach(() => {
     if (prevWorkspaceDir === undefined) {
-      delete process.env.VELLUM_WORKSPACE_DIR;
+      delete process.env.CADET_WORKSPACE_DIR;
     } else {
-      process.env.VELLUM_WORKSPACE_DIR = prevWorkspaceDir;
+      process.env.CADET_WORKSPACE_DIR = prevWorkspaceDir;
     }
     rmSync(workspaceDir, { recursive: true, force: true });
   });

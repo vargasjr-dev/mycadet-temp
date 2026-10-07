@@ -1,5 +1,5 @@
 /**
- * Platform (cloud="vellum") half of the pre-teleport safety backup.
+ * Platform (cloud="cadet") half of the pre-teleport safety backup.
  *
  * A platform source is snapshotted through Django's user-facing backup
  * endpoint, which cuts a PVC VolumeSnapshot via vembda. The POST returns as

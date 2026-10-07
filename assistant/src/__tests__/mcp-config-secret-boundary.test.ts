@@ -12,16 +12,16 @@ let seededRawText = "";
 let mtimeSeq = 0;
 
 function configJsonPath(): string {
-  return join(process.env.VELLUM_WORKSPACE_DIR!, "config.json");
+  return join(process.env.CADET_WORKSPACE_DIR!, "config.json");
 }
 
 function mcpJsonPath(): string {
-  return join(process.env.VELLUM_WORKSPACE_DIR!, "mcp.json");
+  return join(process.env.CADET_WORKSPACE_DIR!, "mcp.json");
 }
 
 function seedRawConfig(raw: Record<string, unknown>): void {
   seededRawText = JSON.stringify(raw);
-  mkdirSync(process.env.VELLUM_WORKSPACE_DIR!, { recursive: true });
+  mkdirSync(process.env.CADET_WORKSPACE_DIR!, { recursive: true });
   writeFileSync(configJsonPath(), seededRawText);
   mtimeSeq += 1;
   const stamp = new Date(Date.now() + mtimeSeq);

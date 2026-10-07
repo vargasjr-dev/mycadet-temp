@@ -3,9 +3,9 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 // Per-suite tmp data dir so the reembed sentinel never lands in the
-// developer's real ~/.vellum workspace. The real getDataDir() is
+// developer's real ~/.cadet workspace. The real getDataDir() is
 // The preload's workspace already resolves <workspace>/data at call time.
-const TEST_DATA_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DATA_DIR = process.env.CADET_WORKSPACE_DIR!;
 mkdirSync(join(TEST_DATA_DIR, "data"), { recursive: true });
 const REEMBED_SENTINEL_PATH = join(
   TEST_DATA_DIR,

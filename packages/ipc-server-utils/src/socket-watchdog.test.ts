@@ -194,7 +194,7 @@ describe("SocketWatchdog", () => {
   test("named pipes skip filesystem watchdog behavior", async () => {
     const server = createServer();
     harness = buildHarness({
-      socketPathOverride: "\\\\.\\pipe\\vellum-assistant-test",
+      socketPathOverride: "\\\\.\\pipe\\mycadet-test",
       getServerOverride: () => server,
       createServerOverride: () => {
         throw new Error("must not rebind");

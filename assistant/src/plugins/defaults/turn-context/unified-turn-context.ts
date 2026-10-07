@@ -73,7 +73,7 @@ export interface UnifiedTurnContextOptions {
  * - Always emits timestamp and interface (when provided).
  * - When `actorContext` is provided (non-guardian turns): emits full actor
  *   identity, trust fields, and behavioral guidance.
- * - When `channelName` is not `"vellum"`: emits response discretion.
+ * - When `channelName` is not `"cadet"`: emits response discretion.
  */
 export function buildUnifiedTurnContextBlock(
   options: UnifiedTurnContextOptions,
@@ -145,7 +145,7 @@ export function buildUnifiedTurnContextBlock(
 
   // Where the turn is: the chat, and the thread within it when there is one.
   // Channel turns only; an app turn has no external chat.
-  if (options.channelName && options.channelName !== "vellum") {
+  if (options.channelName && options.channelName !== "cadet") {
     if (options.chatId) {
       lines.push(`chat_id: ${sanitizeInlineContextValue(options.chatId)}`);
     }
@@ -277,8 +277,8 @@ export function buildUnifiedTurnContextBlock(
     }
   }
 
-  // Response discretion for non-vellum channels.
-  if (options.channelName && options.channelName !== "vellum") {
+  // Response discretion for non-cadet channels.
+  if (options.channelName && options.channelName !== "cadet") {
     lines.push(
       `response_discretion: Not every message in a channel thread requires your response. If a message is clearly not directed at you (e.g. people talking among themselves, acknowledgements, reactions), output exactly <no_response/> as your entire reply to stay silent.`,
     );

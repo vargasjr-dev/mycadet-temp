@@ -3,9 +3,9 @@ import { join } from "node:path";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 // Per-suite tmp data dir so the rebuild sentinel never lands in the
-// developer's real ~/.vellum workspace. The real getDataDir() is
+// developer's real ~/.cadet workspace. The real getDataDir() is
 // The preload's workspace already resolves <workspace>/data at call time.
-const TEST_DATA_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DATA_DIR = process.env.CADET_WORKSPACE_DIR!;
 mkdirSync(join(TEST_DATA_DIR, "data"), { recursive: true });
 const REBUILD_SENTINEL_PATH = join(
   TEST_DATA_DIR,
@@ -133,8 +133,8 @@ mock.module("@qdrant/js-client-rest", () => ({
 }));
 
 import {
+  CadetQdrantClient,
   clearRebuildSentinel,
-  VellumQdrantClient,
 } from "../persistence/embeddings/qdrant-client.js";
 
 beforeEach(() => {
@@ -151,7 +151,7 @@ describe("Qdrant collection migration", () => {
     mockUseNamedVectors = true;
     mockCollectionSize = 384; // Current collection has 384-dim vectors
 
-    const client = new VellumQdrantClient({
+    const client = new CadetQdrantClient({
       url: "http://localhost:6333",
       collection: "memory",
       vectorSize: 768, // New config expects 768-dim vectors
@@ -179,7 +179,7 @@ describe("Qdrant collection migration", () => {
       embedding_model: "gemini:gemini-embedding-001", // Old model
     };
 
-    const client = new VellumQdrantClient({
+    const client = new CadetQdrantClient({
       url: "http://localhost:6333",
       collection: "memory",
       vectorSize: 768, // Same dimension
@@ -206,7 +206,7 @@ describe("Qdrant collection migration", () => {
       embedding_model: "gemini:gemini-embedding-2",
     };
 
-    const client = new VellumQdrantClient({
+    const client = new CadetQdrantClient({
       url: "http://localhost:6333",
       collection: "memory",
       vectorSize: 768,
@@ -228,7 +228,7 @@ describe("Qdrant collection migration", () => {
     mockCollectionSize = 768;
     mockSentinelPayload = null; // No sentinel — pre-existing collection
 
-    const client = new VellumQdrantClient({
+    const client = new CadetQdrantClient({
       url: "http://localhost:6333",
       collection: "memory",
       vectorSize: 768,
@@ -248,7 +248,7 @@ describe("Qdrant collection migration", () => {
   test("writes sentinel point when creating a new collection", async () => {
     mockCollectionExists = false;
 
-    const client = new VellumQdrantClient({
+    const client = new CadetQdrantClient({
       url: "http://localhost:6333",
       collection: "memory",
       vectorSize: 768,
@@ -271,7 +271,7 @@ describe("Qdrant collection migration", () => {
     mockUseNamedVectors = false; // Legacy unnamed vectors
     mockCollectionSize = 768;
 
-    const client = new VellumQdrantClient({
+    const client = new CadetQdrantClient({
       url: "http://localhost:6333",
       collection: "memory",
       vectorSize: 768, // Same dimension
@@ -293,7 +293,7 @@ describe("Qdrant collection migration", () => {
   test("does not write sentinel when embeddingModel is not provided", async () => {
     mockCollectionExists = false;
 
-    const client = new VellumQdrantClient({
+    const client = new CadetQdrantClient({
       url: "http://localhost:6333",
       collection: "memory",
       vectorSize: 384,
@@ -319,7 +319,7 @@ describe("Qdrant collection migration", () => {
 // the delete — otherwise a delete-then-die would drop the v1 vectors silently.
 describe("Qdrant v1 rebuild sentinel (durable migration signal)", () => {
   const makeClient = () =>
-    new VellumQdrantClient({
+    new CadetQdrantClient({
       url: "http://localhost:6333",
       collection: "memory",
       vectorSize: 768,
@@ -421,7 +421,7 @@ describe("Qdrant v1 rebuild sentinel (durable migration signal)", () => {
 
 describe("sparse index placement reconcile", () => {
   const makeClient = (onDisk: boolean) =>
-    new VellumQdrantClient({
+    new CadetQdrantClient({
       url: "http://localhost:6333",
       collection: "memory",
       vectorSize: 768,

@@ -9,7 +9,7 @@ import { ensureLocalRuntime } from "../lib/local.js";
 // invalid versions throw before any filesystem access, so a minimal stub is
 // sufficient for the rejection cases.
 const resources = {
-  instanceDir: "/tmp/vellum-nonexistent-instance",
+  instanceDir: "/tmp/cadet-nonexistent-instance",
 } as unknown as LocalInstanceResources;
 
 const VALID_VERSIONS = ["latest", "v1.2.3", "1.2.3", "0.6.0-staging.5"];

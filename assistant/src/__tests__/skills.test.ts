@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { parse as parseYaml } from "yaml";
 
-const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 const noopLogger = {
   info: () => {},
@@ -129,7 +129,7 @@ Skill body
     expect(skill!.bundled).toBeUndefined();
   });
 
-  test("discovers symlinked skill directories that point inside $VELLUM_WORKSPACE_DIR/skills", () => {
+  test("discovers symlinked skill directories that point inside $CADET_WORKSPACE_DIR/skills", () => {
     const internalSkillDir = join(
       TEST_DIR,
       "skills",
@@ -150,7 +150,7 @@ Skill body
     expect(catalog[0].name).toBe("Internal Linked Skill");
   });
 
-  test("does not discover symlinked skill directories that point outside $VELLUM_WORKSPACE_DIR/skills", () => {
+  test("does not discover symlinked skill directories that point outside $CADET_WORKSPACE_DIR/skills", () => {
     const externalSkillDir = join(TEST_DIR, "outside", "external-skill");
     mkdirSync(externalSkillDir, { recursive: true });
     writeFileSync(
@@ -164,7 +164,7 @@ Skill body
     expect(catalog).toHaveLength(0);
   });
 
-  test("rejects symlinked SKILL.md files that point outside $VELLUM_WORKSPACE_DIR/skills", () => {
+  test("rejects symlinked SKILL.md files that point outside $CADET_WORKSPACE_DIR/skills", () => {
     const linkedSkillDir = join(TEST_DIR, "skills", "linked-file-skill");
     mkdirSync(linkedSkillDir, { recursive: true });
 
@@ -186,9 +186,9 @@ Skill body
 describe("workspace skills", () => {
   const WORKSPACE_DIR = join(
     tmpdir(),
-    `vellum-workspace-test-${crypto.randomUUID()}`,
+    `cadet-workspace-test-${crypto.randomUUID()}`,
   );
-  const workspaceSkillsDir = join(WORKSPACE_DIR, ".vellum", "skills");
+  const workspaceSkillsDir = join(WORKSPACE_DIR, ".cadet", "skills");
 
   function writeWorkspaceSkill(
     skillId: string,
@@ -373,7 +373,7 @@ describe("plugin-resident skills", () => {
   test("surfaces plugin skills when package.json name differs from the directory", () => {
     // A plugin is installed under its slug (marketplace name or GitHub path
     // leaf), which routinely differs from its authored `package.json` name —
-    // e.g. cognee installs to `cognee`/`vellum-assistant` while its package is
+    // e.g. cognee installs to `cognee`/`mycadet` while its package is
     // named `cognee-memory`. The skill must still surface, attributed to the
     // install directory (the identity every other surface uses).
     writePluginSkill("caveman", "caveman", "Caveman", "Terse mode", "body", {
@@ -433,9 +433,9 @@ describe("plugin-resident skills", () => {
   test("workspace skill overrides a plugin-resident skill with the same id", () => {
     const WORKSPACE_DIR = join(
       tmpdir(),
-      `vellum-workspace-test-${crypto.randomUUID()}`,
+      `cadet-workspace-test-${crypto.randomUUID()}`,
     );
-    const workspaceSkillsDir = join(WORKSPACE_DIR, ".vellum", "skills");
+    const workspaceSkillsDir = join(WORKSPACE_DIR, ".cadet", "skills");
     mkdirSync(join(workspaceSkillsDir, "shared-id"), { recursive: true });
     writeFileSync(
       join(workspaceSkillsDir, "shared-id", "SKILL.md"),
@@ -1034,7 +1034,7 @@ describe("ingress-dependent setup skills declare public-ingress intentionally", 
         const val = line.slice(sep + 1).trim();
         try {
           const parsed = JSON.parse(val);
-          const includes = parsed?.vellum?.includes;
+          const includes = parsed?.cadet?.includes;
           if (Array.isArray(includes)) {
             return includes as string[];
           }

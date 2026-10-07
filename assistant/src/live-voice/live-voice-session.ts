@@ -593,7 +593,7 @@ interface UtteranceCycle {
   latestPartialLanguages: readonly string[] | null;
   // The provider that actually transcribed this cycle, recorded when its
   // transcriber is assigned and kept after teardown nulls `transcriber`.
-  // The resolver can silently dial managed vellum when a BYOK provider has
+  // The resolver can silently dial managed cadet when a BYOK provider has
   // no credential, so the language-pin gate in turnLanguageFor must follow
   // this, not the configured provider.
   dialedSttProvider: SttProviderId | null;
@@ -5824,7 +5824,7 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
     // transcribed honors manual language selection (the shared
     // pinnedListeningLanguage gate). The DIALED transcriber's providerId
     // is authoritative, because the resolver silently falls back to
-    // managed vellum (which honors the pin) when a BYOK provider has no
+    // managed cadet (which honors the pin) when a BYOK provider has no
     // credential; the configured provider is only the last resort when no
     // transcriber reference survives.
     const { language: configured, provider: sttProvider } =
@@ -6604,8 +6604,8 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
         ...(activeTurn.lookFollowUp !== null
           ? { routingUtterance: activeTurn.lookFollowUp.callerUtterance }
           : {}),
-        userMessageChannel: "vellum",
-        assistantMessageChannel: "vellum",
+        userMessageChannel: "cadet",
+        assistantMessageChannel: "cadet",
         // Fixed, and NOT the originating client: this pair resolves the turn's
         // channel capabilities, where `macos` is what grants a live-voice turn
         // desktop UI and dynamic surfaces. Reporting the true client here would
@@ -8383,7 +8383,7 @@ async function defaultStartVoiceTurn(
   // through the telephony path rather than here.
   const createdConversation = ensureConversationExists(
     options.conversationId,
-    "vellum",
+    "cadet",
   );
   if (createdConversation) {
     // The row was created outside the normal send-message route, which is where
@@ -8457,7 +8457,7 @@ async function defaultStartVoiceTurn(
  * normally and only its host-proxy calls are refused, which reads as computer
  * use being unavailable rather than as an untrusted turn.
  *
- * Both are empty only when no vellum guardian binding exists at all, or the
+ * Both are empty only when no cadet guardian binding exists at all, or the
  * gateway answers nothing to either read, and the turn then runs exactly as an
  * unstamped one does.
  */
@@ -8483,7 +8483,7 @@ export async function resolveLocalLiveVoiceIdentity(
   }
   const trustContext = await resolveLocalPrincipalTrustContext({
     actorPrincipalId: trustPrincipalId,
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
     conversationExternalId: conversationId,
   });
   // **Unset beats stale.** A session whose read settled nothing knows the

@@ -67,7 +67,7 @@ Flow, end to end:
    record-time payloads as-is — and deletes the rows after a successful upload.
 3. **Platform ingests** the onboarding events and writes GCS NDJSON.
 4. **BigQuery** exposes them via the external table
-   `vellum-ai-prod.telemetry.onboarding_raw`, which already carries the
+   `mycadet-prod.telemetry.onboarding_raw`, which already carries the
    `session_id / step_name / step_index / completed_at / funnel_version /
 ab_variant` columns. The existing dbt model dedups on `daemon_event_id`
    (earliest-wins).
@@ -195,7 +195,7 @@ whether those rows reach BigQuery (flush gate, dev-disabled).
    a dev session signed in with `share_analytics` consent enabled writes
    record-time rows to SQLite, where they can be inspected directly.
 2. **Dev mode disables the flush entirely.** When the daemon runs in dev mode
-   (`VELLUM_DEV=1`), `assistant/src/daemon/lifecycle.ts` never starts the
+   (`CADET_DEV=1`), `assistant/src/daemon/lifecycle.ts` never starts the
    `UsageTelemetryReporter` — rows accumulate in SQLite (consent permitting) but
    are never POSTed, and the "wait/restart for flush" steps below will never reach
    BigQuery. For an end-to-end smoke test, run the daemon **outside dev mode** (so
@@ -210,7 +210,7 @@ start it from the web prechat flow / activation entry, not an existing chat).
 Note its `conversation_id` — this is the `session_id` you will query on.
 
 If multiple daemons are running, kill ALL `daemon/main.ts` processes, remove
-`~/.vellum/vellum.sock`, and start fresh, so the conversation is served by a known
+`~/.cadet/cadet.sock`, and start fresh, so the conversation is served by a known
 daemon writing to a known SQLite DB.
 
 ### 5.4 Drive the rail through all five model moments
@@ -251,7 +251,7 @@ run the query in §6.
 
 ```sql
 SELECT step_name, step_index, COUNT(*) AS n
-FROM `vellum-ai-prod.telemetry.onboarding_raw`
+FROM `mycadet-prod.telemetry.onboarding_raw`
 WHERE funnel_version = 'activation_v1_2026_06'
   AND session_id = '<dev conversation id>'
 GROUP BY 1, 2
@@ -280,7 +280,7 @@ collapses it earliest-wins).
 > **Activation funnel telemetry — handoff for dashboard ticket.** The activation rail
 > now emits five milestone funnel events into the existing onboarding telemetry
 > substrate (`type: "onboarding"` → `/v1/telemetry/ingest/` → GCS NDJSON →
-> `vellum-ai-prod.telemetry.onboarding_raw`), so no new event type, ingest
+> `mycadet-prod.telemetry.onboarding_raw`), so no new event type, ingest
 > endpoint, or BigQuery table is involved. Cohort is gated by the LaunchDarkly
 > flag **`experiment-activation-flow-2026-06-03`**; only rail (treatment)
 > conversations emit. Every event carries **`funnel_version =

@@ -104,7 +104,7 @@ mock.module("../embedding-backend.js", () => ({
 let liveConfig = {
   memory: {
     qdrant: {
-      collection: "vellum_memory",
+      collection: "cadet_memory",
       vectorSize: 768,
       onDisk: true,
       quantization: "scalar",
@@ -148,7 +148,7 @@ describe("plugin index without a pre-initialized Qdrant client", () => {
     expect(calls.init).toEqual([
       {
         url: "http://127.0.0.1:7777",
-        collection: "vellum_memory",
+        collection: "cadet_memory",
         vectorSize: 768,
         onDisk: true,
         quantization: "scalar",
@@ -195,7 +195,7 @@ describe("plugin index without a pre-initialized Qdrant client", () => {
     expect(calls.init).toEqual([
       {
         url: "http://127.0.0.1:7777",
-        collection: "vellum_memory",
+        collection: "cadet_memory",
         vectorSize: 768,
         onDisk: true,
         quantization: "scalar",

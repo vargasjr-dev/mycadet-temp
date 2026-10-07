@@ -1,6 +1,6 @@
 /**
- * The runtime proxy bills delegated work off `X-Vellum-Subagent-Role` and
- * `X-Vellum-Subagent-Spawn-Mode`. `RetryProvider` resolves both from
+ * The runtime proxy bills delegated work off `X-Cadet-Subagent-Role` and
+ * `X-Cadet-Subagent-Spawn-Mode`. `RetryProvider` resolves both from
  * `config.conversationId`, so the headers only ever materialize in production
  * if `AgentLoop` stamps its own conversation id onto the provider config it
  * sends. These tests drive a real `AgentLoop` through a real `RetryProvider`
@@ -90,7 +90,7 @@ async function runSubagentTurn(
     requestId: "test-request",
     messages: [userMessage],
     onEvent: () => {},
-    trust: { sourceChannel: "vellum", trustClass: "unknown" },
+    trust: { sourceChannel: "cadet", trustClass: "unknown" },
     callSite: "subagentSpawn",
   });
 }
@@ -121,9 +121,9 @@ describe("AgentLoop subagent billing-header attribution", () => {
       string,
       string
     >;
-    expect(headers["X-Vellum-Subagent-Role"]).toBe("advisor");
-    expect(headers["X-Vellum-Subagent-Spawn-Mode"]).toBe("advisor_consult");
-    expect(headers["X-Vellum-LLM-Call-Site"]).toBe("subagentSpawn");
+    expect(headers["X-Cadet-Subagent-Role"]).toBe("advisor");
+    expect(headers["X-Cadet-Subagent-Spawn-Mode"]).toBe("advisor_consult");
+    expect(headers["X-Cadet-LLM-Call-Site"]).toBe("subagentSpawn");
 
     // AND the routing-time id itself never reaches the wire config
     expect(configs()[0]?.conversationId).toBeUndefined();
@@ -146,9 +146,9 @@ describe("AgentLoop subagent billing-header attribution", () => {
       string,
       string
     >;
-    expect(headers["X-Vellum-LLM-Call-Site"]).toBe("subagentSpawn");
-    expect(headers["X-Vellum-Subagent-Role"]).toBeUndefined();
-    expect(headers["X-Vellum-Subagent-Spawn-Mode"]).toBeUndefined();
+    expect(headers["X-Cadet-LLM-Call-Site"]).toBe("subagentSpawn");
+    expect(headers["X-Cadet-Subagent-Role"]).toBeUndefined();
+    expect(headers["X-Cadet-Subagent-Spawn-Mode"]).toBeUndefined();
   });
 
   test("stamps the conversation id on the provider config it sends", async () => {

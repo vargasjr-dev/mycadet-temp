@@ -18,10 +18,10 @@ import { join } from "node:path";
 
 function getWorkspaceDir(): string {
   return (
-    process.env.VELLUM_WORKSPACE_DIR ??
+    process.env.CADET_WORKSPACE_DIR ??
     join(
       process.env.HOME ?? process.env.USERPROFILE ?? "/tmp",
-      ".vellum",
+      ".cadet",
       "workspace",
     )
   );

@@ -207,7 +207,7 @@ describe("admitActorToken: revocation verdict", () => {
 describe("signature-encoding canonicalization (revocation bypass)", () => {
   function mintActorJwt(): string {
     return mintToken({
-      aud: "vellum-gateway",
+      aud: "cadet-gateway",
       sub: ACTOR_SUB,
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -271,7 +271,7 @@ describe("runtime proxy enforcement", () => {
 
   function mintActorJwt(): string {
     return mintToken({
-      aud: "vellum-gateway",
+      aud: "cadet-gateway",
       sub: ACTOR_SUB,
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -310,7 +310,7 @@ describe("/auth/token revocation", () => {
   test("rejects re-minting a token from a revoked source token", async () => {
     const { handleCreateToken } = await import("../http/routes/auth-token.js");
     const jwt = mintToken({
-      aud: "vellum-gateway",
+      aud: "cadet-gateway",
       sub: ACTOR_SUB,
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -337,7 +337,7 @@ describe("/auth/token revocation", () => {
     const { revokeActorTokensByDevice } =
       await import("../auth/guardian-bootstrap.js");
     const sourceJwt = mintToken({
-      aud: "vellum-gateway",
+      aud: "cadet-gateway",
       sub: ACTOR_SUB,
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -378,12 +378,12 @@ describe("/auth/token revocation", () => {
     const { handleCreateToken } = await import("../http/routes/auth-token.js");
 
     // Unrecorded (compatibility) source token: the handler falls back to
-    // ensureVellumGuardianBinding. A residual actor-token row for another
+    // ensureCadetGuardianBinding. A residual actor-token row for another
     // device is evidence of prior onboarding with no guardian contact row,
     // so the fallback mint must refuse rather than diverge.
     insertTokenRecord("residual-evidence-token", "active");
     const jwt = mintToken({
-      aud: "vellum-gateway",
+      aud: "cadet-gateway",
       sub: ACTOR_SUB,
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,
@@ -422,7 +422,7 @@ describe("/auth/token recorded-refresh guardian integrity gate", () => {
 
   function mintRecordedSourceJwt(): string {
     const jwt = mintToken({
-      aud: "vellum-gateway",
+      aud: "cadet-gateway",
       sub: ACTOR_SUB,
       scope_profile: "actor_client_v1",
       policy_epoch: CURRENT_POLICY_EPOCH,

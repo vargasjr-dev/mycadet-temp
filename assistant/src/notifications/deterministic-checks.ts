@@ -258,7 +258,7 @@ function checkDedupe(
  *
  * Only validates channels that the decision engine actually emitted
  * copy for. Channels appended after the decision (urgency-forced
- * `vellum` prepend, `enforceRoutingIntent` expansion) have no entry
+ * `cadet` prepend, `enforceRoutingIntent` expansion) have no entry
  * in `renderedCopy` and are left for the broadcaster's
  * `composeFallbackCopy` rescue at delivery time.
  *

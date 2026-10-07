@@ -31,7 +31,7 @@ import AppIntents
 struct SendMessageToChatIntent: AppIntent {
     static var title: LocalizedStringResource = "Send Message to Chat"
     static var description = IntentDescription(
-        "Open a chosen Vellum chat and send your message there, continuing that conversation."
+        "Open a chosen Cadet chat and send your message there, continuing that conversation."
     )
 
     @Parameter(
@@ -40,7 +40,7 @@ struct SendMessageToChatIntent: AppIntent {
     )
     var chat: ChatEntity
 
-    /// Non-optional on purpose, like `AskVellumIntent.request`: an invocation
+    /// Non-optional on purpose, like `AskCadetIntent.request`: an invocation
     /// with no content should make the system ask for it. A blank value that
     /// arrives anyway (Shortcuts can pass one) degrades in `ThreadDeepLink`
     /// to just opening the chat.

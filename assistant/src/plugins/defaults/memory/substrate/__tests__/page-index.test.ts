@@ -2,7 +2,7 @@
  * Tests for `substrate/page-index.ts` — the router-prompt page index built
  * from concept pages plus seeded skill entries.
  *
- * Tests live in temp workspaces (`mkdtemp`) and never touch `~/.vellum/`. The
+ * Tests live in temp workspaces (`mkdtemp`) and never touch `~/.cadet/`. The
  * skill-store module is mocked so `listSkillEntries()` returns deterministic
  * fixtures, and `page-store.js` is wrapped so we can simulate read failures
  * without breaking writes.
@@ -60,7 +60,7 @@ const { LINK_SEPARATOR } = await import("../page-links.js");
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-memory-v2-page-index-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-memory-v2-page-index-"));
   skillState.entries = [];
   failingSlugs.clear();
 });

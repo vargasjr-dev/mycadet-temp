@@ -1,5 +1,5 @@
 /**
- * Vellum channel adapter: delivers notifications to connected desktop
+ * Cadet channel adapter: delivers notifications to connected desktop
  * and mobile clients via the daemon's event broadcast mechanism.
  *
  * The adapter broadcasts a `notification_intent` message that the client
@@ -40,7 +40,7 @@ import type {
   NotificationChannel,
 } from "../types.js";
 
-const log = getLogger("notif-adapter-vellum");
+const log = getLogger("notif-adapter-cadet");
 
 export type BroadcastFn = (
   msg: AssistantEvent,
@@ -66,8 +66,8 @@ export function isGuardianSensitiveEvent(sourceEventName: string): boolean {
   );
 }
 
-export class VellumAdapter implements ChannelAdapter {
-  readonly channel: NotificationChannel = "vellum";
+export class CadetAdapter implements ChannelAdapter {
+  readonly channel: NotificationChannel = "cadet";
 
   private broadcast: BroadcastFn;
 
@@ -81,7 +81,7 @@ export class VellumAdapter implements ChannelAdapter {
   ): Promise<DeliveryResult> {
     try {
       // For guardian-sensitive events, deliver only to the guardian's own
-      // connections. The guardianPrincipalId comes from the vellum binding
+      // connections. The guardianPrincipalId comes from the cadet binding
       // resolved by the destination resolver.
       const guardianPrincipalId =
         typeof destination.metadata?.guardianPrincipalId === "string"
@@ -129,7 +129,7 @@ export class VellumAdapter implements ChannelAdapter {
           recipientScoped: targetActorPrincipalId != null,
           silent,
         },
-        "Vellum notification intent broadcast",
+        "Cadet notification intent broadcast",
       );
 
       return { success: true };
@@ -137,7 +137,7 @@ export class VellumAdapter implements ChannelAdapter {
       const message = err instanceof Error ? err.message : String(err);
       log.error(
         { err, sourceEventName: payload.sourceEventName },
-        "Failed to broadcast Vellum notification intent",
+        "Failed to broadcast Cadet notification intent",
       );
       return { success: false, error: message };
     }
@@ -146,7 +146,7 @@ export class VellumAdapter implements ChannelAdapter {
   /**
    * Rewrite the conversation message this delivery persisted.
    *
-   * A vellum delivery has no channel-native message to patch, but it does
+   * A cadet delivery has no channel-native message to patch, but it does
    * carry the id of the row written into the conversation the notification
    * card links to. Editing a notification patches the feed item, so without
    * this the card would show the new body while "Go to Conversation" opened
@@ -170,7 +170,7 @@ export class VellumAdapter implements ChannelAdapter {
     if (patch.body === undefined) {
       log.info(
         { deliveryId: delivery.deliveryId, messageId: delivery.messageId },
-        "Vellum notification edit carried no body, conversation message left as is",
+        "Cadet notification edit carried no body, conversation message left as is",
       );
       return { success: true, messageId: delivery.messageId };
     }
@@ -181,14 +181,14 @@ export class VellumAdapter implements ChannelAdapter {
       }
       log.info(
         { deliveryId: delivery.deliveryId, messageId: delivery.messageId },
-        "Vellum notification conversation message updated",
+        "Cadet notification conversation message updated",
       );
       return { success: true, messageId: delivery.messageId };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       log.error(
         { err, deliveryId: delivery.deliveryId, messageId: delivery.messageId },
-        "Failed to update Vellum notification conversation message",
+        "Failed to update Cadet notification conversation message",
       );
       return { success: false, error: message };
     }

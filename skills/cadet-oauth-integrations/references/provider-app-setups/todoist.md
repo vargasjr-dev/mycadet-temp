@@ -37,7 +37,7 @@ Open: `https://developer.todoist.com/appconsole.html`
 
 Then:
 
-> Set the app name to **Vellum Assistant** and click **Create app**.
+> Set the app name to **Cadet Assistant** and click **Create app**.
 
 **Milestone (2 of 6):** "App created - now let's set up the redirect URL."
 
@@ -67,7 +67,7 @@ Then:
 
 Follow the `cadet-oauth-integrations` workflow to collect credentials, register the OAuth app, connect, and verify.
 
-> I'll start the Todoist authorization flow now. You should see a Todoist consent page asking you to allow **Vellum Assistant** to access your account.
+> I'll start the Todoist authorization flow now. You should see a Todoist consent page asking you to allow **Cadet Assistant** to access your account.
 >
 > Review the permissions and click **Agree**.
 

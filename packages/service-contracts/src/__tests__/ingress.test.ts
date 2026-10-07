@@ -197,7 +197,7 @@ describe("parseTunnelRecord", () => {
   });
 
   test("rejects a provider outside the registry", () => {
-    // Readers render the provider into a `vellum tunnel --provider <name>`
+    // Readers render the provider into a `cadet tunnel --provider <name>`
     // command, so a hand-edited config must not reach a terminal.
     for (const provider of ["wireguard", "; rm -rf /", "", 42]) {
       expect(

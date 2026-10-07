@@ -13,24 +13,24 @@ import { assertTestPathIsEphemeral as assertEphemeralInTests } from "@mycadet/en
 import { getWorkspaceDirOverride } from "../config/env-registry.js";
 
 /**
- * The daemon's root data directory (`~/.vellum`).
+ * The daemon's root data directory (`~/.cadet`).
  *
- * Used as a fallback when `VELLUM_WORKSPACE_DIR` is not set, and as a
+ * Used as a fallback when `CADET_WORKSPACE_DIR` is not set, and as a
  * stable constant for paths (like `.env`) that intentionally live at the
  * host home directory regardless of workspace relocation.
  */
-const VELLUM_ROOT = join(homedir(), ".vellum");
+const CADET_ROOT = join(homedir(), ".cadet");
 
 /**
- * Returns the Vellum root directory.
+ * Returns the Cadet root directory.
  *
  * Resolution order (mirrors workspace/migrations/utils.ts):
- * 1. Parent of VELLUM_WORKSPACE_DIR — e.g. /data/.vellum/workspace → /data/.vellum
- * 2. If that parent is "/" (workspace at top level), fall back to ~/.vellum
+ * 1. Parent of CADET_WORKSPACE_DIR — e.g. /data/.cadet/workspace → /data/.cadet
+ * 2. If that parent is "/" (workspace at top level), fall back to ~/.cadet
  */
-export function vellumRoot(): string {
+export function cadetRoot(): string {
   const override = getWorkspaceDirOverride();
-  let root = VELLUM_ROOT;
+  let root = CADET_ROOT;
   if (override) {
     const parent = dirname(override);
     if (parent !== "/") {
@@ -125,7 +125,7 @@ export function getPlatformName(): string {
  *
  * The system uses "self" as the canonical single-tenant identifier
  * (see migration 007-assistant-id-to-self). However, the desktop UI
- * sends the real assistant ID (e.g., "vellum-true-eel") while the
+ * sends the real assistant ID (e.g., "cadet-true-eel") while the
  * inbound call path resolves phone numbers to config keys (typically
  * "self"). This function maps the current assistant's ID to "self"
  * so both sides use a consistent DB key.
@@ -135,7 +135,7 @@ export function normalizeAssistantId(assistantId: string): string {
     return "self";
   }
 
-  const ownName = process.env.VELLUM_ASSISTANT_NAME;
+  const ownName = process.env.CADET_ASSISTANT_NAME;
   if (ownName && assistantId === ownName) {
     return "self";
   }
@@ -144,7 +144,7 @@ export function normalizeAssistantId(assistantId: string): string {
 }
 
 /**
- * Returns the internal data directory ($VELLUM_WORKSPACE_DIR/data). Runtime
+ * Returns the internal data directory ($CADET_WORKSPACE_DIR/data). Runtime
  * databases, logs, memory indices, and other internal state live here.
  */
 export function getDataDir(): string {
@@ -187,7 +187,7 @@ export function getConfigValidationResetNoticePath(): string {
 }
 
 /**
- * Returns the embedding models directory ($VELLUM_WORKSPACE_DIR/embedding-models).
+ * Returns the embedding models directory ($CADET_WORKSPACE_DIR/embedding-models).
  * Downloaded embedding runtime (onnxruntime-node, transformers bundle, model weights)
  * is stored here, downloaded post-hatch rather than shipped with the app.
  */
@@ -196,7 +196,7 @@ export function getEmbeddingModelsDir(): string {
 }
 
 /**
- * Returns the sandbox root directory (~/.vellum/data/sandbox).
+ * Returns the sandbox root directory (~/.cadet/data/sandbox).
  * Global sandbox state lives under this directory.
  */
 export function getSandboxRootDir(): string {
@@ -204,7 +204,7 @@ export function getSandboxRootDir(): string {
 }
 
 /**
- * Returns the default sandbox working directory ($VELLUM_WORKSPACE_DIR).
+ * Returns the default sandbox working directory ($CADET_WORKSPACE_DIR).
  * This is the workspace root — tool working directories should use this
  * path unless explicitly overridden.
  */
@@ -213,24 +213,24 @@ export function getSandboxWorkingDir(): string {
 }
 
 /**
- * Returns the sounds directory ($VELLUM_WORKSPACE_DIR/data/sounds).
+ * Returns the sounds directory ($CADET_WORKSPACE_DIR/data/sounds).
  * Custom sound files and sound configuration live here.
  */
 export function getSoundsDir(): string {
   return join(getWorkspaceDir(), "data", "sounds");
 }
 
-/** Returns the avatar directory ($VELLUM_WORKSPACE_DIR/data/avatar). */
+/** Returns the avatar directory ($CADET_WORKSPACE_DIR/data/avatar). */
 export function getAvatarDir(): string {
   return resolveAvatarDir(getWorkspaceDir());
 }
 
-/** Returns the canonical avatar image path ($VELLUM_WORKSPACE_DIR/data/avatar/avatar-image.png). */
+/** Returns the canonical avatar image path ($CADET_WORKSPACE_DIR/data/avatar/avatar-image.png). */
 export function getAvatarImagePath(): string {
   return join(getAvatarDir(), AVATAR_IMAGE_FILENAME);
 }
 
-/** Returns the canonical avatar manifest path ($VELLUM_WORKSPACE_DIR/data/avatar/avatar.json). */
+/** Returns the canonical avatar manifest path ($CADET_WORKSPACE_DIR/data/avatar/avatar.json). */
 export function getAvatarManifestPath(): string {
   return join(getAvatarDir(), AVATAR_MANIFEST_FILENAME);
 }
@@ -242,24 +242,24 @@ export function getAvatarManifestPath(): string {
 const KNOWN_ENVIRONMENTS: ReadonlySet<string> = new Set(Object.keys(SEEDS));
 
 /**
- * Returns the env-scoped XDG config subdirectory name for Vellum
- * (`vellum` in production, `vellum-<env>` otherwise). Mirrors the Swift
- * side's `VellumPaths.configDir` and the CLI's
+ * Returns the env-scoped XDG config subdirectory name for Cadet
+ * (`cadet` in production, `cadet-<env>` otherwise). Mirrors the Swift
+ * side's `CadetPaths.configDir` and the CLI's
  * `environments/paths.ts:getConfigDir`.
  */
-export function getXdgVellumConfigDirName(): string {
-  const raw = process.env.VELLUM_ENVIRONMENT?.trim();
+export function getXdgCadetConfigDirName(): string {
+  const raw = process.env.CADET_ENVIRONMENT?.trim();
   if (!raw || raw === "production") {
-    return "vellum";
+    return "cadet";
   }
   if (!KNOWN_ENVIRONMENTS.has(raw)) {
-    return "vellum";
+    return "cadet";
   }
-  return `vellum-${raw}`;
+  return `cadet-${raw}`;
 }
 
 export function getPidPath(): string {
-  return join(getWorkspaceDir(), "vellum.pid");
+  return join(getWorkspaceDir(), "cadet.pid");
 }
 
 export function getDbPath(): string {
@@ -289,10 +289,10 @@ export function getHistoryPath(): string {
  * - Skipped in containerized mode (credentials via CES, trust via gateway)
  */
 export function getProtectedDir(): string {
-  return join(vellumRoot(), "protected");
+  return join(cadetRoot(), "protected");
 }
 
-/** Returns $VELLUM_WORKSPACE_DIR/signals — the directory for IPC signal files. */
+/** Returns $CADET_WORKSPACE_DIR/signals — the directory for IPC signal files. */
 export function getSignalsDir(): string {
   return join(getWorkspaceDir(), "signals");
 }
@@ -300,49 +300,49 @@ export function getSignalsDir(): string {
 // These expose specific root-level file paths so callers don't need to
 // import getRootDir() directly. getRootDir() is intentionally unexported.
 
-/** Returns the path to the daemon stderr log ($VELLUM_WORKSPACE_DIR/logs/daemon-stderr.log). */
+/** Returns the path to the daemon stderr log ($CADET_WORKSPACE_DIR/logs/daemon-stderr.log). */
 export function getDaemonStderrLogPath(): string {
   return join(getWorkspaceDir(), "logs", "daemon-stderr.log");
 }
 
-/** Returns the path to the daemon startup lock file ($VELLUM_WORKSPACE_DIR/daemon-startup.lock). */
+/** Returns the path to the daemon startup lock file ($CADET_WORKSPACE_DIR/daemon-startup.lock). */
 export function getDaemonStartupLockPath(): string {
   return join(getWorkspaceDir(), "daemon-startup.lock");
 }
 
-/** Returns the directory for externally-installed packages ($VELLUM_WORKSPACE_DIR/external). */
+/** Returns the directory for externally-installed packages ($CADET_WORKSPACE_DIR/external). */
 export function getExternalDir(): string {
   return join(getWorkspaceDir(), "external");
 }
 
-/** Returns the directory for installed binaries ($VELLUM_WORKSPACE_DIR/bin). */
+/** Returns the directory for installed binaries ($CADET_WORKSPACE_DIR/bin). */
 export function getBinDir(): string {
   return join(getWorkspaceDir(), "bin");
 }
 
-/** Returns the path to the dot-env file (~/.vellum/.env). Stays at root because it contains secrets. */
+/** Returns the path to the dot-env file (~/.cadet/.env). Stays at root because it contains secrets. */
 export function getDotEnvPath(): string {
-  return join(vellumRoot(), ".env");
+  return join(cadetRoot(), ".env");
 }
 
-/** Returns the path to the embed-worker PID file ($VELLUM_WORKSPACE_DIR/embed-worker.pid). */
+/** Returns the path to the embed-worker PID file ($CADET_WORKSPACE_DIR/embed-worker.pid). */
 export function getEmbedWorkerPidPath(): string {
   return join(getWorkspaceDir(), "embed-worker.pid");
 }
 
-/** Returns the path to the memory-worker PID file ($VELLUM_WORKSPACE_DIR/memory-worker.pid). */
+/** Returns the path to the memory-worker PID file ($CADET_WORKSPACE_DIR/memory-worker.pid). */
 export function getMemoryWorkerPidPath(): string {
   return join(getWorkspaceDir(), "memory-worker.pid");
 }
 
-/** Returns the path to the schedule-worker PID file ($VELLUM_WORKSPACE_DIR/schedule-worker.pid). */
+/** Returns the path to the schedule-worker PID file ($CADET_WORKSPACE_DIR/schedule-worker.pid). */
 export function getScheduleWorkerPidPath(): string {
   return join(getWorkspaceDir(), "schedule-worker.pid");
 }
 
 /**
  * Returns the directory where the resource monitor persists its forensics
- * ($VELLUM_WORKSPACE_DIR/data/monitoring). Lives on the workspace volume (the
+ * ($CADET_WORKSPACE_DIR/data/monitoring). Lives on the workspace volume (the
  * PVC) so the sample ring buffer and high-memory snapshots survive an OOM
  * SIGKILL that resets all in-process state. Git-ignored from the workspace
  * tree (see `data/monitoring/` in git-service.ts) so the assistant's own
@@ -359,7 +359,7 @@ export function getMonitoringPidPath(): string {
 
 /**
  * Root holding every daemon-managed subprocess's runtime directory
- * ($VELLUM_WORKSPACE_DIR/procs). Each managed subprocess keeps its IPC socket,
+ * ($CADET_WORKSPACE_DIR/procs). Each managed subprocess keeps its IPC socket,
  * PID file, and per-process scratch under `procs/<name>/`, so `ls procs` is a
  * census of managed subprocesses and cleanup is one `rm -rf` of the subdir.
  */
@@ -395,7 +395,7 @@ export function getProcPidPath(name: string): string {
 
 // --- Live-workspace guard for test processes --------------------------------
 //
-// A test process must never resolve the workspace (or the vellum root) to a
+// A test process must never resolve the workspace (or the cadet root) to a
 // real, non-temp directory: production code exercised by a test would then
 // read and destructively write live state. The containment assertion is
 // shared with the gateway via @mycadet/environments/test-path-guard;
@@ -405,7 +405,7 @@ export function getProcPidPath(name: string): string {
 function assertTestPathIsEphemeral(dir: string): void {
   assertEphemeralInTests(dir, {
     // Shared with assertTestDbIsIsolated() in persistence/db-connection.ts.
-    allowEnvVar: "VELLUM_ALLOW_REAL_WORKSPACE_IN_TESTS",
+    allowEnvVar: "CADET_ALLOW_REAL_WORKSPACE_IN_TESTS",
     runHint: "Run tests from the assistant package root.",
   });
 }
@@ -413,15 +413,15 @@ function assertTestPathIsEphemeral(dir: string): void {
 /**
  * Returns the workspace root for user-facing state.
  *
- * When the VELLUM_WORKSPACE_DIR env var is set, returns that value (used in
+ * When the CADET_WORKSPACE_DIR env var is set, returns that value (used in
  * containerized deployments where the workspace is a separate volume).
- * Otherwise falls back to ~/.vellum/workspace.
+ * Otherwise falls back to ~/.cadet/workspace.
  *
  * In test processes the resolved directory must live under `os.tmpdir()`
  * (see the live-workspace guard above); anything else throws.
  */
 export function getWorkspaceDir(): string {
-  const dir = getWorkspaceDirOverride() ?? join(VELLUM_ROOT, "workspace");
+  const dir = getWorkspaceDirOverride() ?? join(CADET_ROOT, "workspace");
   assertTestPathIsEphemeral(dir);
   return dir;
 }
@@ -432,8 +432,8 @@ export function getWorkspaceDir(): string {
  * so paths stay concise and portable across machines.
  *
  * Examples:
- *   /Users/alice/.vellum/workspace → ~/.vellum/workspace
- *   /data/.vellum/workspace        → /data/.vellum/workspace
+ *   /Users/alice/.cadet/workspace → ~/.cadet/workspace
+ *   /data/.cadet/workspace        → /data/.cadet/workspace
  */
 export function getWorkspaceDirDisplay(): string {
   return formatHomeRelativePath(getWorkspaceDir(), homedir());
@@ -464,7 +464,7 @@ export function formatHomeRelativePath(
   return absolutePath;
 }
 
-/** Returns $VELLUM_WORKSPACE_DIR/config.json */
+/** Returns $CADET_WORKSPACE_DIR/config.json */
 export function getWorkspaceConfigPath(): string {
   return join(getWorkspaceDir(), "config.json");
 }
@@ -472,17 +472,17 @@ export function getWorkspaceConfigPath(): string {
 /** Filename for the user-owned Agent Plugins MCP document. */
 export const WORKSPACE_MCP_FILENAME = "mcp.json";
 
-/** Returns $VELLUM_WORKSPACE_DIR/mcp.json */
+/** Returns $CADET_WORKSPACE_DIR/mcp.json */
 export function getWorkspaceMcpConfigPath(): string {
   return join(getWorkspaceDir(), WORKSPACE_MCP_FILENAME);
 }
 
-/** Returns $VELLUM_WORKSPACE_DIR/skills */
+/** Returns $CADET_WORKSPACE_DIR/skills */
 export function getWorkspaceSkillsDir(): string {
   return join(getWorkspaceDir(), "skills");
 }
 
-/** Returns $VELLUM_WORKSPACE_DIR/hooks */
+/** Returns $CADET_WORKSPACE_DIR/hooks */
 export function getWorkspaceHooksDir(): string {
   return join(getWorkspaceDir(), "hooks");
 }
@@ -498,7 +498,7 @@ export function getWorkspacePluginsDir(): string {
 }
 
 /**
- * Returns $VELLUM_WORKSPACE_DIR/tools — user-defined tool overrides.
+ * Returns $CADET_WORKSPACE_DIR/tools — user-defined tool overrides.
  *
  * Each subdirectory `<name>/` provides either an override of a core tool of
  * the same name or a net-new tool. The single canonical location removes
@@ -514,7 +514,7 @@ export function getWorkspaceToolsDir(): string {
 }
 
 /**
- * Returns $VELLUM_WORKSPACE_DIR/routes — user-defined HTTP route handlers.
+ * Returns $CADET_WORKSPACE_DIR/routes — user-defined HTTP route handlers.
  *
  * Handler modules under this directory are dynamic-imported by the user-route
  * dispatcher and their exported HTTP-method functions are executed on the
@@ -526,7 +526,7 @@ export function getWorkspaceRoutesDir(): string {
 }
 
 /**
- * Returns $VELLUM_WORKSPACE_DIR/workflows — saved (named) workflow scripts.
+ * Returns $CADET_WORKSPACE_DIR/workflows — saved (named) workflow scripts.
  *
  * A file here becomes a saved workflow whose source is executed (in the sandbox,
  * and unattended when triggered by a schedule), so the file risk classifier
@@ -536,12 +536,12 @@ export function getWorkspaceWorkflowsDir(): string {
   return join(getWorkspaceDir(), "workflows");
 }
 
-/** Returns $VELLUM_WORKSPACE_DIR/deprecated — transitional files slated for removal. */
+/** Returns $CADET_WORKSPACE_DIR/deprecated — transitional files slated for removal. */
 export function getDeprecatedDir(): string {
   return join(getWorkspaceDir(), "deprecated");
 }
 
-/** Returns $VELLUM_WORKSPACE_DIR/conversations */
+/** Returns $CADET_WORKSPACE_DIR/conversations */
 export function getConversationsDir(): string {
   return join(getWorkspaceDir(), "conversations");
 }
@@ -595,7 +595,7 @@ export function getProfilerRunDir(runId: string): string {
 }
 
 export function ensureDataDir(): void {
-  const root = vellumRoot();
+  const root = cadetRoot();
   const workspace = getWorkspaceDir();
   const wsData = join(workspace, "data");
   const dirs = [

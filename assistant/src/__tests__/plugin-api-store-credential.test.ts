@@ -41,7 +41,7 @@ import { storeCredentialValue } from "../tools/credentials/store.js";
 
 const TEST_DIR = join(
   tmpdir(),
-  `vellum-plugin-storecred-${randomBytes(4).toString("hex")}`,
+  `cadet-plugin-storecred-${randomBytes(4).toString("hex")}`,
 );
 const META_PATH = join(TEST_DIR, "metadata.json");
 

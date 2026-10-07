@@ -21,7 +21,7 @@ initSigningKey(TEST_SIGNING_KEY);
  */
 function mintEdgeToken(): string {
   return mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub: "svc:gateway:self",
     scope_profile: "gateway_service_v1",
     policy_epoch: CURRENT_POLICY_EPOCH,
@@ -29,13 +29,13 @@ function mintEdgeToken(): string {
   });
 }
 
-/** Mint some other valid edge JWT (aud=vellum-gateway) for test requests. */
+/** Mint some other valid edge JWT (aud=cadet-gateway) for test requests. */
 function mintNonRelayToken(
   sub: string,
   scopeProfile: "oauth_proxy_v1" | "actor_client_v1" | "ui_page_v1",
 ): string {
   return mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub,
     scope_profile: scopeProfile,
     policy_epoch: CURRENT_POLICY_EPOCH,

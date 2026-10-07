@@ -34,9 +34,9 @@ async function confirmReplaceForeignFile(): Promise<boolean> {
     type: "warning",
     message: "Replace existing cadet file?",
     detail:
-      `A "vellum" file already exists at ${getWrapperPath()} but wasn't ` +
+      `A "cadet" file already exists at ${getWrapperPath()} but wasn't ` +
       "installed by Cadet (it may have been installed by npm with a custom " +
-      "prefix). Do you want to replace it with the Vellum-managed command?",
+      "prefix). Do you want to replace it with the Cadet-managed command?",
     buttons: ["Replace", "Cancel"],
     defaultId: 1,
     cancelId: 1,
@@ -74,7 +74,7 @@ async function showInstallSuccessDialog(): Promise<void> {
   } else if (state.kind === "shadowed") {
     detail =
       `The cadet command is installed at ${wrapperPath}, but another ` +
-      `"vellum" was found at ${state.shadowedBy} (likely installed via ` +
+      `"cadet" was found at ${state.shadowedBy} (likely installed via ` +
       "npm) and will take precedence in your terminal. Run " +
       '"npm uninstall -g cadet" to use the app-managed version.';
     if (!state.inPath) {
@@ -84,7 +84,7 @@ async function showInstallSuccessDialog(): Promise<void> {
     // `installed` in PATH, plus a defensive default for anything else.
     detail =
       `The cadet command is installed at ${wrapperPath}. ` +
-      'Open a new terminal and run "vellum".';
+      'Open a new terminal and run "cadet".';
   }
 
   await dialog.showMessageBox({

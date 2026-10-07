@@ -44,7 +44,7 @@ export function TheWorkspaceContent() {
         <p className="mb-8 text-zinc-600">
           On the <strong>desktop app with local hosting</strong>, the same
           workspace lives in a folder on your machine at{" "}
-          <code>$VELLUM_WORKSPACE_DIR</code>, where you can also open it in any
+          <code>$CADET_WORKSPACE_DIR</code>, where you can also open it in any
           text editor. The structure and the files are the same in both
           places.
         </p>
@@ -91,7 +91,7 @@ export function TheWorkspaceContent() {
           </div>
           <p className="mb-0 text-zinc-600">
             Credentials and secrets are kept in a separate, isolated store
-            (the credential vault on Cloud, or <code>~/.vellum/protected/</code>{" "}
+            (the credential vault on Cloud, or <code>~/.cadet/protected/</code>{" "}
             on local). They&apos;re never included in workspace exports or
             diagnostic logs.
           </p>
@@ -463,7 +463,7 @@ export function TheWorkspaceContent() {
             stored in a protected vault that lives outside the workspace.
             On Cloud, this is the managed credential vault tied to your
             account. On local, it&apos;s a separate directory at{" "}
-            <code>~/.vellum/protected/</code>.
+            <code>~/.cadet/protected/</code>.
           </p>
           <p className="mb-0 text-zinc-600">
             Either way, secrets are never included in diagnostic exports or
@@ -510,7 +510,7 @@ export function TheWorkspaceContent() {
                   </td>
                   <td className="px-4 py-3 text-zinc-600">
                     file_read, file_write, file_edit &mdash; restricted
-                    to <code>$VELLUM_WORKSPACE_DIR</code>
+                    to <code>$CADET_WORKSPACE_DIR</code>
                   </td>
                   <td className="px-4 py-3 text-zinc-600">
                     No approval needed

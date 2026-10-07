@@ -291,7 +291,7 @@ export type TtsCadetProviderConfig = z.infer<
   typeof TtsCadetProviderConfigSchema
 >;
 
-const TtsProvidersObjectSchema = z.object({
+const TtsProvidersSchema = z.object({
   elevenlabs: TtsElevenLabsProviderConfigSchema.default(
     TtsElevenLabsProviderConfigSchema.parse({}),
   ),
@@ -306,8 +306,7 @@ const TtsProvidersObjectSchema = z.object({
     TtsCadetProviderConfigSchema.parse({}),
   ),
 });
-const TtsProvidersSchema = TtsProvidersObjectSchema;
-export type TtsProviders = z.infer<typeof TtsProvidersObjectSchema>;
+export type TtsProviders = z.infer<typeof TtsProvidersSchema>;
 
 // ---------------------------------------------------------------------------
 // Catalog-completeness guard
@@ -317,7 +316,7 @@ export type TtsProviders = z.infer<typeof TtsProvidersObjectSchema>;
 // schema entry, this fires at module-load time so the oversight is caught
 // immediately rather than at runtime when a user selects the provider.
 // ---------------------------------------------------------------------------
-const schemaKeys = new Set(Object.keys(TtsProvidersObjectSchema.shape));
+const schemaKeys = new Set(Object.keys(TtsProvidersSchema.shape));
 for (const id of TTS_PROVIDER_IDS) {
   if (!schemaKeys.has(id)) {
     throw new Error(
@@ -359,11 +358,3 @@ export const TtsServiceSchema = z
 
 export type TtsService = z.infer<typeof TtsServiceSchema>;
 
-/**
- * Normalizes a user/config-supplied TTS provider id to its canonical form
- * (legacy rebrand ids like `vellum` map to `cadet`). Exported for tooling
- * that validates provider ids outside the schema parse.
- */
-export function normalizeTtsProviderId(value: string): string {
-  return value === "vellum" ? "cadet" : value;
-}

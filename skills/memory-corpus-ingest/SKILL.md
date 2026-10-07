@@ -49,7 +49,7 @@ material, and anything landed under `imports/` becomes reachable by workspace
 tools, backups, and retrieval flows.
 
 ```bash
-cd "$VELLUM_WORKSPACE_DIR"
+cd "$CADET_WORKSPACE_DIR"
 # 1a. Screen for secret-bearing FILE NAMES; review every hit with the user.
 find /path/to/raw-corpus \( -name '.env*' -o -name '*.key' -o -name '*.pem' \
   -o -name '*credential*' -o -name '*secret*' -o -name 'cookies*' \
@@ -87,9 +87,9 @@ Rules:
 Census the corpus and produce a machine-readable slice plan:
 
 ```bash
-mkdir -p "$VELLUM_WORKSPACE_DIR/imports/<source>/.staging"
-bun run {baseDir}/scripts/inventory.ts "$VELLUM_WORKSPACE_DIR/imports/<source>" \
-  > "$VELLUM_WORKSPACE_DIR/imports/<source>/.staging/plan.json"
+mkdir -p "$CADET_WORKSPACE_DIR/imports/<source>/.staging"
+bun run {baseDir}/scripts/inventory.ts "$CADET_WORKSPACE_DIR/imports/<source>" \
+  > "$CADET_WORKSPACE_DIR/imports/<source>/.staging/plan.json"
 ```
 
 The script prints a human census to stderr (file count, total size, extension mix, date range) and a JSON plan to stdout: `{ files, totalBytes, byExtension, dateRange, suggestedSlices }`. Each suggested slice is a date-windowed group of files sized for one skim pass. Review the plan before skimming:
@@ -114,7 +114,7 @@ A skim pass extracts what a future search needs to route: decisions, recurring t
 Dry-run first, review, then ingest for real:
 
 ```bash
-cd "$VELLUM_WORKSPACE_DIR"
+cd "$CADET_WORKSPACE_DIR"
 assistant memory ingest --dir imports/<source>/.staging --dry-run
 ```
 
@@ -129,7 +129,7 @@ After ingest, the maintain job picks up the new pages and embeds their sections;
 
 ### Step 6: Author the drill-in retrieval skill
 
-The map tells the model a slice exists; the drill-in skill is how it follows the pointer. Author a workspace skill for this corpus under `$VELLUM_WORKSPACE_DIR/skills/<source>-lookup/`:
+The map tells the model a slice exists; the drill-in skill is how it follows the pointer. Author a workspace skill for this corpus under `$CADET_WORKSPACE_DIR/skills/<source>-lookup/`:
 
 - `SKILL.md` with frontmatter per the Agent Skills spec (`name` matching the directory, keyword-rich `description`) and activation hints drawn from the intents you actually observed while scoping (for example "when the user asks what was said in a meeting", "when a question needs the <source> archive").
 - `scripts/` with actually runnable search commands over the cold store, not prose descriptions of searching. A minimal helper is a ripgrep wrapper scoped to the imports directory with date filtering:
@@ -137,7 +137,7 @@ The map tells the model a slice exists; the drill-in skill is how it follows the
 ```bash
 #!/usr/bin/env bash
 # search.sh <pattern> [YYYY-MM]  scoped search over the <source> cold store
-DIR="$VELLUM_WORKSPACE_DIR/imports/<source>"
+DIR="$CADET_WORKSPACE_DIR/imports/<source>"
 if [ -n "$2" ]; then
   # Two globs: a slash-free pattern matches the date in any basename, and
   # the "**/" prefixed pattern matches the date in a directory segment at

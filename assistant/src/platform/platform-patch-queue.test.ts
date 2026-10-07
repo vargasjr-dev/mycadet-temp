@@ -16,7 +16,7 @@ let mockClient: {
 } | null;
 
 mock.module("./client.js", () => ({
-  VellumPlatformClient: { create: async () => mockClient },
+  CadetPlatformClient: { create: async () => mockClient },
 }));
 
 import { getLogger } from "../util/logger.js";

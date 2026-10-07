@@ -34,7 +34,7 @@ export type EntityIndex = Map<string, number[]>;
 /**
  * Build the entity catalog over section headings. `isDistinctive` gates out hub
  * tokens — words common enough across the corpus that an exact match cannot
- * disambiguate (e.g. "vellum", "the", "people"); such pages ride the core/hot
+ * disambiguate (e.g. "cadet", "the", "people"); such pages ride the core/hot
  * lanes instead. The needle's corpus IDF is the natural source: a token is
  * distinctive when its IDF clears a floor. Lead sections (no heading, empty
  * title) contribute nothing.

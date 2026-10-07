@@ -3520,7 +3520,7 @@ export const dispatchWithoutRaising = (
  * simply coming forward. Shared by the avatar's press on a call and the
  * surface's menu.
  */
-const openVellum = (): void => {
+const openCadet = (): void => {
   void ensureMainWindowVisible().then(() => {
     dispatchToMain({ kind: "currentConversation" });
   });
@@ -4296,7 +4296,7 @@ export const installCompanionWindow = (): void => {
    * never the wrong thing to do.
    *
    * This *does* raise the app, unlike Talk. It is the one press on the surface
-   * whose entire purpose is to go back to Vellum.
+   * whose entire purpose is to go back to Cadet.
    */
   // The app answers the announcement before any introduction beat exists.
   on(
@@ -4401,7 +4401,7 @@ export const installCompanionWindow = (): void => {
           options: readCompanionSize("options"),
         },
         {
-          open: openVellum,
+          open: openCadet,
           setSize: setCompanionSurfaceSize,
           resetPosition: resetCompanionSurfacePosition,
           hide: () => {
@@ -4413,7 +4413,7 @@ export const installCompanionWindow = (): void => {
     menu.popup({ window: win });
   });
 
-  on("cadet:companion:activate", z.tuple([]), openVellum);
+  on("cadet:companion:activate", z.tuple([]), openCadet);
 
   // -------------------------------------------------------------------------
   // The running session

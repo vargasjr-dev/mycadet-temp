@@ -71,7 +71,7 @@ export const ONBOARDING_SIDECAR_FILENAME = "onboarding-context.json";
 const VOICE_WRITING_UNLOCK_CONVERSATIONS = 10;
 
 /** Default assistant name when IDENTITY.md cannot be parsed. */
-const DEFAULT_ASSISTANT_NAME = "Vellum";
+const DEFAULT_ASSISTANT_NAME = "Cadet";
 
 /** Default assistant identifier (multi-assistant reserved for future). */
 const DEFAULT_ASSISTANT_ID = "default";
@@ -168,10 +168,10 @@ export async function computeRelationshipState(): Promise<RelationshipState> {
   //      old workspaces that never ran migration 031.
   //   3. Empty string → extraction yields [] and `userName` is undefined.
   // Every step is guarded because the writer must never throw.
-  // Warm the vellum guardian-delivery cache so the sync persona resolution in
+  // Warm the cadet guardian-delivery cache so the sync persona resolution in
   // resolveGuardianUserContent hits a fresh key instead of falling back to
   // default.md on a cold/TTL-expired cache.
-  await getGuardianDelivery({ channelTypes: ["vellum"] });
+  await getGuardianDelivery({ channelTypes: ["cadet"] });
   const userMd = resolveGuardianUserContent();
   const soulMd = safeRead(getWorkspacePromptPath("SOUL.md"));
   const identityPath = getWorkspacePromptPath("IDENTITY.md");

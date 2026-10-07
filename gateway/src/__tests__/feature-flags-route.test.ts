@@ -81,7 +81,7 @@ afterEach(() => {
   clearFeatureFlagStoreCache();
   clearRemoteFeatureFlagStoreCache();
   resetEnvOverridesCache();
-  delete process.env.VELLUM_FLAG_A2A_CHANNEL;
+  delete process.env.CADET_FLAG_A2A_CHANNEL;
 });
 
 const { createFeatureFlagsGetHandler, createFeatureFlagsPatchHandler } =
@@ -528,7 +528,7 @@ describe("GET /v1/feature-flags handler", () => {
     clearFeatureFlagStoreCache();
 
     // Env override sets it to true
-    process.env.VELLUM_FLAG_A2A_CHANNEL = "true";
+    process.env.CADET_FLAG_A2A_CHANNEL = "true";
     resetEnvOverridesCache();
 
     const handler = createFeatureFlagsGetHandler();

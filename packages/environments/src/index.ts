@@ -1,12 +1,12 @@
 /**
- * @mycadet/environments: the single source of truth for how a Vellum install
+ * @mycadet/environments: the single source of truth for how a Cadet install
  * is laid out and which deployment environment it belongs to.
  *
  * Two things live here:
  *
  *   - The known deployment environments (names, platform/web URLs, per-service
  *     port blocks). The Swift client mirrors the same set in
- *     `VellumEnvironment.swift`.
+ *     `CadetEnvironment.swift`.
  *   - Install layout: whether a runtime is a repo checkout or an installed
  *     package, and where the `assistant` command it ships lives.
  *

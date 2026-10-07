@@ -620,9 +620,9 @@ export async function logs(): Promise<void> {
       await showAwsLogs(entry, opts);
       break;
 
-    case "vellum":
+    case "cadet":
       console.error(
-        "Logs for Vellum-managed instances are not yet supported.\n" +
+        "Logs for Cadet-managed instances are not yet supported.\n" +
           "View logs in the Cadet Cloud dashboard.",
       );
       process.exit(1);

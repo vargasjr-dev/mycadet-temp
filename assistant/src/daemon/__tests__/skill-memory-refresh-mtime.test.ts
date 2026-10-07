@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 const WORKSPACE_DIR = mkdtempSync(join(tmpdir(), "skill-md-mtime-refresh-"));
-process.env.VELLUM_WORKSPACE_DIR = WORKSPACE_DIR;
+process.env.CADET_WORKSPACE_DIR = WORKSPACE_DIR;
 
 const seedGraphCalls: number[] = [];
 const seedV2Calls: number[] = [];

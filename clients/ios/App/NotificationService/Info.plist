@@ -37,7 +37,7 @@
 	     readable from Swift, so the identifier travels as this plain string,
 	     populated from the same $(APP_GROUP_ID) variable that fills the
 	     entitlement. -->
-	<key>VellumAppGroupId</key>
+	<key>CadetAppGroupId</key>
 	<string>$(APP_GROUP_ID)</string>
 </dict>
 </plist>

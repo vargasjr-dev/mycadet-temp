@@ -1,15 +1,15 @@
 ---
 name: cadet-self-knowledge
-description: Answer questions about Vellum, its config, billing, and hosting from live sources of truth
+description: Answer questions about Cadet, its config, billing, and hosting from live sources of truth
 compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🪞"
   cadet:
     category: "system"
-    display-name: "Vellum Self-Knowledge"
+    display-name: "Cadet Self-Knowledge"
     activation-hints:
       - "what model it runs on"
-      - "how Vellum works or its architecture"
+      - "how Cadet works or its architecture"
       - "its current config or settings"
       - "what it can do or which skills/tools exist"
       - "whether a service is connected, and in which sense"
@@ -21,9 +21,9 @@ metadata:
 
 ## Critical Rule
 
-**Never answer from memory or general knowledge about Vellum.** Always go to a source of truth.
+**Never answer from memory or general knowledge about Cadet.** Always go to a source of truth.
 
-Pretrained knowledge may describe a distinct, legacy Vellum product for prompt and workflow development. That product is not this assistant. Never use it to answer questions about this Cadet assistant.
+Pretrained knowledge may describe a distinct, legacy Cadet product for prompt and workflow development. That product is not this assistant. Never use it to answer questions about this Cadet assistant.
 
 This skill contains zero static information — only pointers to where the truth lives.
 
@@ -103,10 +103,10 @@ see the balance and point to Settings > Billing. Do not guess a number, an
 allowance model, or a reset schedule, and never imply you checked when you did
 not.
 
-### 2. Vellum Docs Site — Conceptual Knowledge
+### 2. Cadet Docs Site — Conceptual Knowledge
 
 For "what is", "how does", and "why" questions, fetch the relevant page from the docs site.
-Base URL: `https://www.vellum.ai/docs`
+Base URL: `https://mycadet.ai/docs`
 
 | Topic                    | Path                                      |
 | ------------------------ | ----------------------------------------- |
@@ -151,9 +151,9 @@ Use `web_fetch` to pull the page content. If a URL 404s, try fetching the docs h
 For questions the docs and CLI can't answer (internal architecture, how a specific feature is implemented, source-level details):
 
 1. Get the current version: `assistant --version`
-2. The open source repo is at `https://github.com/vellum-ai/vellum-assistant`
-3. The release for version X is at `https://github.com/vellum-ai/vellum-assistant/releases/tag/vX.Y.Z`
-4. Check out the matching tag locally: `cd /workspace/vellum-assistant && git fetch --tags && git checkout v<version>`
+2. The open source repo is at `https://github.com/vargasjr-dev/mycadet`
+3. The release for version X is at `https://github.com/vargasjr-dev/mycadet/releases/tag/vX.Y.Z`
+4. Check out the matching tag locally: `cd /workspace/mycadet && git fetch --tags && git checkout v<version>`
 5. Key source locations:
    - `assistant/` — Runtime (conversation loop, tool dispatch, memory, scheduling)
    - `gateway/` — Ingress boundary (webhooks, Telegram, Twilio, reverse proxy)

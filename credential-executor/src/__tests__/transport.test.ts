@@ -411,9 +411,9 @@ describe("CES data paths", () => {
 
   test("getBootstrapSocketPath uses CES_BOOTSTRAP_SOCKET_DIR via resolveIpcEndpoint", () => {
     const savedDir = process.env["CES_BOOTSTRAP_SOCKET_DIR"];
-    const savedWorkspace = process.env["VELLUM_WORKSPACE_DIR"];
+    const savedWorkspace = process.env["CADET_WORKSPACE_DIR"];
     process.env["CES_BOOTSTRAP_SOCKET_DIR"] = "/tmp/ces-bootstrap";
-    process.env["VELLUM_WORKSPACE_DIR"] = "/tmp/ces-ws";
+    process.env["CADET_WORKSPACE_DIR"] = "/tmp/ces-ws";
     try {
       expect(getBootstrapSocketPath()).toBe(
         resolveIpcEndpoint("ces", {
@@ -430,9 +430,9 @@ describe("CES data paths", () => {
         delete process.env["CES_BOOTSTRAP_SOCKET_DIR"];
       }
       if (savedWorkspace !== undefined) {
-        process.env["VELLUM_WORKSPACE_DIR"] = savedWorkspace;
+        process.env["CADET_WORKSPACE_DIR"] = savedWorkspace;
       } else {
-        delete process.env["VELLUM_WORKSPACE_DIR"];
+        delete process.env["CADET_WORKSPACE_DIR"];
       }
     }
   });

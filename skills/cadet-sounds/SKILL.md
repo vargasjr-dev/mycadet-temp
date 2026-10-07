@@ -14,11 +14,11 @@ metadata:
 
 You are helping the user customize the sound effects their desktop app plays. Sounds are configured in two places: a `data/sounds/` directory of audio files and a `data/sounds/config.json` that controls what plays, at what volume, and whether it is enabled. The Settings > Sounds tab reads the same files on macOS and Windows, so changes appear there live without a restart.
 
-**All commands in this skill use the `bash` tool.** `$VELLUM_WORKSPACE_DIR` is available in the sandbox environment — do not use `host_bash`.
+**All commands in this skill use the `bash` tool.** `$CADET_WORKSPACE_DIR` is available in the sandbox environment — do not use `host_bash`.
 
 ## What you're configuring
 
-Two stores, both under `$VELLUM_WORKSPACE_DIR/data/sounds/`:
+Two stores, both under `$CADET_WORKSPACE_DIR/data/sounds/`:
 
 - **Sound files:** `.aiff`, `.wav`, `.mp3`, `.m4a`, or `.caf`. No other extensions are accepted. The app scans this directory to populate the dropdown for each event. Prefer `.wav`, `.mp3`, or `.m4a` when the same file must play on both macOS and Windows.
 - **`config.json`:** a single JSON file that stores the global on/off switch, the master volume, and a per-event map of `{ enabled, sounds }`. Each event's `sounds` is a **pool** of filenames; the app picks one at random on playback. An empty pool falls back to the platform's default blip.
@@ -44,8 +44,8 @@ macOS supports all nine events below. Windows supports the eight events other th
 Always check current state before making changes — the user may already have things configured.
 
 ```bash
-ls "$VELLUM_WORKSPACE_DIR/data/sounds/" 2>/dev/null || echo "No sounds directory yet"
-cat "$VELLUM_WORKSPACE_DIR/data/sounds/config.json" 2>/dev/null || echo "No config yet"
+ls "$CADET_WORKSPACE_DIR/data/sounds/" 2>/dev/null || echo "No sounds directory yet"
+cat "$CADET_WORKSPACE_DIR/data/sounds/config.json" 2>/dev/null || echo "No config yet"
 ```
 
 Report back what's there: whether sounds are globally enabled, current volume, which events have custom sounds assigned.
@@ -55,8 +55,8 @@ Report back what's there: whether sounds are globally enabled, current volume, w
 The user either sends you an audio file or asks you to fetch/generate one. Copy it into `data/sounds/` with a clean filename:
 
 ```bash
-mkdir -p "$VELLUM_WORKSPACE_DIR/data/sounds"
-cp "<source-path>" "$VELLUM_WORKSPACE_DIR/data/sounds/<descriptive-name>.<ext>"
+mkdir -p "$CADET_WORKSPACE_DIR/data/sounds"
+cp "<source-path>" "$CADET_WORKSPACE_DIR/data/sounds/<descriptive-name>.<ext>"
 ```
 
 Rules:
@@ -118,7 +118,7 @@ The script prints the resulting config slice so you can confirm what changed.
 ## Mode 4: Remove a sound file
 
 ```bash
-rm "$VELLUM_WORKSPACE_DIR/data/sounds/<filename>"
+rm "$CADET_WORKSPACE_DIR/data/sounds/<filename>"
 ```
 
 Then remove it from any event pool that referenced it, so the config doesn't dangle:

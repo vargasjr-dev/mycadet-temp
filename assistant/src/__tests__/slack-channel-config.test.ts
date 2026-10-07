@@ -10,12 +10,12 @@ import {
   test,
 } from "bun:test";
 
-const testDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testDir = process.env.CADET_WORKSPACE_DIR!;
 const secureStorePath = join(testDir, "keys.enc");
 const metadataPath = join(testDir, "metadata.json");
-const originalVellumDev = process.env.VELLUM_DEV;
+const originalCadetDev = process.env.CADET_DEV;
 
-process.env.VELLUM_DEV = "1";
+process.env.CADET_DEV = "1";
 
 // Mock oauth-store (getConnectionByProvider)
 let oauthConnectionStore: Record<
@@ -109,10 +109,10 @@ afterAll(() => {
   _setMetadataPath(null);
   setStorePathForTesting(null);
   _resetBackend();
-  if (originalVellumDev === undefined) {
-    delete process.env.VELLUM_DEV;
+  if (originalCadetDev === undefined) {
+    delete process.env.CADET_DEV;
   } else {
-    process.env.VELLUM_DEV = originalVellumDev;
+    process.env.CADET_DEV = originalCadetDev;
   }
 });
 

@@ -109,7 +109,7 @@ function printHelp(): void {
     "get a PVC snapshot (waited on until restorable); local and docker",
   );
   console.log(
-    "sources get a .vbundle written to ~/.local/share/vellum/backups/ on this",
+    "sources get a .vbundle written to ~/.local/share/cadet/backups/ on this",
   );
   console.log(
     `machine. A backup of the source taken within the last ${RECENT_BACKUP_MAX_AGE_MS / 60_000} minutes is`,
@@ -982,7 +982,7 @@ export async function resolveOrHatchTarget(
       // Validate the existing assistant's cloud matches the requested env
       const existingCloud = existing.cloud;
       const normalizedExisting =
-        existingCloud === "vellum" ? "platform" : existingCloud;
+        existingCloud === "cadet" ? "platform" : existingCloud;
       if (normalizedExisting !== targetEnv) {
         console.error(
           `Error: Assistant '${targetName}' is a ${normalizedExisting} assistant, not ${targetEnv}. ` +
@@ -1332,7 +1332,7 @@ export async function teleport(): Promise<void> {
 
   // Early same-environment guard — compare source cloud against the CLI flag
   // BEFORE exporting or hatching, to avoid creating orphaned assistants.
-  const normalizedSourceEnv = fromCloud === "vellum" ? "platform" : fromCloud;
+  const normalizedSourceEnv = fromCloud === "cadet" ? "platform" : fromCloud;
   if (normalizedSourceEnv === targetEnv) {
     console.error(
       `Cannot teleport between two ${targetEnv} assistants. Teleport transfers data across different environments.`,
@@ -1348,7 +1348,7 @@ export async function teleport(): Promise<void> {
     if (existingTarget) {
       // Target exists — validate cloud matches the flag, then run preflight
       const toCloud = existingTarget.cloud;
-      const normalizedTargetEnv = toCloud === "vellum" ? "platform" : toCloud;
+      const normalizedTargetEnv = toCloud === "cadet" ? "platform" : toCloud;
       if (normalizedTargetEnv !== targetEnv) {
         console.error(
           `Error: Assistant '${targetName}' is a ${normalizedTargetEnv} assistant, not ${targetEnv}. ` +
@@ -1367,7 +1367,7 @@ export async function teleport(): Promise<void> {
       // target topologies including local and docker.
 
       // Version guard: block platform→non-platform when target is behind
-      if (fromCloud === "vellum" && toCloud !== "vellum") {
+      if (fromCloud === "cadet" && toCloud !== "cadet") {
         const [sourceVersion, targetVersion] = await Promise.all([
           fetchCurrentVersion(fromEntry.runtimeUrl),
           fetchCurrentVersion(existingTarget.runtimeUrl),
@@ -1393,9 +1393,9 @@ export async function teleport(): Promise<void> {
       // platform sources it's owned by the source platform. Only one of
       // these branches applies at a time (same-env was rejected earlier).
       const bundlePlatformUrl =
-        toCloud === "vellum"
+        toCloud === "cadet"
           ? existingTarget.runtimeUrl
-          : fromCloud === "vellum"
+          : fromCloud === "cadet"
             ? fromEntry.runtimeUrl
             : undefined;
 
@@ -1442,7 +1442,7 @@ export async function teleport(): Promise<void> {
     const existingTarget = targetName ? findAssistantByName(targetName) : null;
     if (existingTarget) {
       const existingCloud = existingTarget.cloud;
-      if (existingCloud !== "vellum") {
+      if (existingCloud !== "cadet") {
         console.error(
           `Error: Assistant '${targetName}' is a ${existingCloud} assistant, not platform. ` +
             `Use --${existingCloud} to target it.`,
@@ -1524,7 +1524,7 @@ export async function teleport(): Promise<void> {
   // Version guard (pre-hatch): for existing targets, check BEFORE hatching
   // to avoid creating orphaned assistants when the version check would fail.
   let versionGuardPassed = false;
-  if (fromCloud === "vellum" && targetIsLocalOrDocker && targetName) {
+  if (fromCloud === "cadet" && targetIsLocalOrDocker && targetName) {
     const existingTarget = findAssistantByName(targetName);
     if (existingTarget) {
       const [sourceVersion, existingVersion] = await Promise.all([
@@ -1556,7 +1556,7 @@ export async function teleport(): Promise<void> {
   // platform getPlatformUrl() currently resolves to — we resolve it once
   // here so a lockfile change mid-teleport can't split export and import.
   const bundlePlatformUrl =
-    fromCloud === "vellum" ? fromEntry.runtimeUrl : getPlatformUrl();
+    fromCloud === "cadet" ? fromEntry.runtimeUrl : getPlatformUrl();
 
   await backupSourceBeforeTeleport(fromEntry, fromCloud, from);
 
@@ -1574,8 +1574,8 @@ export async function teleport(): Promise<void> {
       const res = dockerResourceNames(fromEntry.assistantId);
       await sleepContainers(res);
     } else if (fromEntry.resources) {
-      const vellumDir = join(fromEntry.resources.instanceDir, ".vellum");
-      const gatewayPidFile = join(vellumDir, "gateway.pid");
+      const cadetDir = join(fromEntry.resources.instanceDir, ".cadet");
+      const gatewayPidFile = join(cadetDir, "gateway.pid");
       await stopProcessByPidFile(
         getDaemonPidPath(fromEntry.resources),
         "assistant",
@@ -1594,7 +1594,7 @@ export async function teleport(): Promise<void> {
   // Post-hatch same-environment safety net — uses resolved clouds in case
   // the resolved target cloud differs from the CLI flag (e.g., --docker
   // targeting a name that is actually a local entry).
-  const normalizedTargetEnv = toCloud === "vellum" ? "platform" : toCloud;
+  const normalizedTargetEnv = toCloud === "cadet" ? "platform" : toCloud;
   if (normalizedSourceEnv === normalizedTargetEnv) {
     console.error(
       `Cannot teleport between two ${normalizedTargetEnv} assistants. Teleport transfers data across different environments.`,
@@ -1606,7 +1606,7 @@ export async function teleport(): Promise<void> {
   // hatch because the assistant doesn't exist yet before. If it fails, clean
   // up the freshly hatched assistant to avoid orphans.
   // Skip if the pre-hatch guard already ran for an existing target.
-  if (!versionGuardPassed && fromCloud === "vellum" && toCloud !== "vellum") {
+  if (!versionGuardPassed && fromCloud === "cadet" && toCloud !== "cadet") {
     const [sourceVersion, targetVersion] = await Promise.all([
       fetchCurrentVersion(fromEntry.runtimeUrl),
       fetchCurrentVersion(toEntry.runtimeUrl),
@@ -1648,9 +1648,9 @@ export async function teleport(): Promise<void> {
   );
 
   // After successful import, inject fresh platform credentials if the
-  // user is logged in — replaces the source's stale vellum:* credentials
+  // user is logged in — replaces the source's stale cadet:* credentials
   // that were filtered during import.
-  if (fromCloud === "vellum") {
+  if (fromCloud === "cadet") {
     await tryInjectPlatformCredentials(toEntry);
   }
 

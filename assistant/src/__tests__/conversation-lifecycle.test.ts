@@ -121,7 +121,7 @@ function makeConversation(
     options,
   );
   // Default to guardian trust so tests load all messages.
-  conv.setTrustContext({ trustClass: "guardian", sourceChannel: "vellum" });
+  conv.setTrustContext({ trustClass: "guardian", sourceChannel: "cadet" });
   return conv;
 }
 
@@ -1328,7 +1328,7 @@ describe("loadFromDb metadata injection rehydration", () => {
 
   test("internal-channel trusted_contact view does not rehydrate memoryV2StaticBlock", async () => {
     // Rehydration keys on the actor, not the surface: a trusted_contact is
-    // denied personal memory on the internal `"vellum"` channel exactly as it
+    // denied personal memory on the internal `"cadet"` channel exactly as it
     // is on a remote one. Injection and rehydration share
     // `canSeePersonalMemory`, so a daemon-restart reload of the same
     // conversation produces an identical prefix.
@@ -1363,7 +1363,7 @@ describe("loadFromDb metadata injection rehydration", () => {
     const conversation = makeConversation();
     conversation.setTrustContext({
       trustClass: "trusted_contact",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
     });
     await conversation.loadFromDb();
     const messages = conversation.getMessages();
@@ -1752,7 +1752,7 @@ describe("loadFromDb metadata injection rehydration", () => {
     // First load: guardian actor → personal memory exposed.
     conversation.setTrustContext({
       trustClass: "guardian",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
     });
     await conversation.ensureActorScopedHistory();
     expect(conversation.getMessages()[0].content).toEqual([

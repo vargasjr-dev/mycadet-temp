@@ -648,7 +648,7 @@ describe("handleUpsertContact (gateway-native)", () => {
   test("returns 400 when a channel carries a reserved type", async () => {
     const { ReservedChannelTypeError } = await import("../db/contact-store.js");
     contactStoreUpsertMock = mock(async () => {
-      throw new ReservedChannelTypeError("vellum-shared");
+      throw new ReservedChannelTypeError("cadet-shared");
     });
 
     const handler = createContactsControlPlaneProxyHandler(makeConfig());
@@ -658,7 +658,7 @@ describe("handleUpsertContact (gateway-native)", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           displayName: "Alice",
-          channels: [{ type: "vellum-shared", address: "user-123" }],
+          channels: [{ type: "cadet-shared", address: "user-123" }],
         }),
       }),
     );
@@ -666,7 +666,7 @@ describe("handleUpsertContact (gateway-native)", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error.code).toBe("RESERVED_CHANNEL_TYPE");
-    expect(body.error.message).toMatch(/vellum-shared/);
+    expect(body.error.message).toMatch(/cadet-shared/);
   });
 
   test("creates contact natively and returns contact shape", async () => {
@@ -991,7 +991,7 @@ describe("handleUpsertContact (gateway-native)", () => {
           displayName: "Cadet Bot",
           contactType: "assistant",
           assistantMetadata: {
-            species: "vellum",
+            species: "cadet",
             metadata: { gatewayUrl: "https://x.example" },
           },
         }),
@@ -1014,7 +1014,7 @@ describe("handleUpsertContact (gateway-native)", () => {
           displayName: "Cadet Bot",
           contactType: "assistant",
           assistantMetadata: {
-            species: "vellum",
+            species: "cadet",
             metadata: { assistantId: "asst_123" },
           },
         }),
@@ -1037,7 +1037,7 @@ describe("handleUpsertContact (gateway-native)", () => {
           displayName: "Cadet Bot",
           contactType: "assistant",
           assistantMetadata: {
-            species: "vellum",
+            species: "cadet",
             metadata: {
               assistantId: "asst_123",
               gatewayUrl: "https://gw.example.com",
@@ -1057,7 +1057,7 @@ describe("handleUpsertContact (gateway-native)", () => {
         };
       },
     ];
-    expect(params.assistantMetadata?.species).toBe("vellum");
+    expect(params.assistantMetadata?.species).toBe("cadet");
     expect(params.assistantMetadata?.metadata?.assistantId).toBe("asst_123");
   });
 });
@@ -1909,7 +1909,7 @@ describe("handleGetContact (gateway-native)", () => {
       id: "c1",
       contactType: "assistant",
       assistantMetadata: {
-        species: "vellum",
+        species: "cadet",
         metadata: { assistantId: "asst_1" },
       },
     };
@@ -1924,7 +1924,7 @@ describe("handleGetContact (gateway-native)", () => {
     const body = await res.json();
     expect(body.assistantMetadata).toEqual({
       contactId: "c1",
-      species: "vellum",
+      species: "cadet",
       metadata: { assistantId: "asst_1" },
     });
   });

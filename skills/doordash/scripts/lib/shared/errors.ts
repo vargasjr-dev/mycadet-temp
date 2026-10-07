@@ -9,14 +9,14 @@ export enum ErrorCode {
   RATE_LIMIT_ERROR = "RATE_LIMIT_ERROR",
 }
 
-export class VellumError extends Error {
+export class CadetError extends Error {
   constructor(message: string, options?: ErrorOptions) {
     super(message, options);
-    this.name = "VellumError";
+    this.name = "CadetError";
   }
 }
 
-export class AssistantError extends VellumError {
+export class AssistantError extends CadetError {
   constructor(
     message: string,
     public readonly code: ErrorCode,
@@ -27,7 +27,7 @@ export class AssistantError extends VellumError {
   }
 }
 
-export class BackendError extends VellumError {
+export class BackendError extends CadetError {
   constructor(message: string, options?: ErrorOptions) {
     super(message, options);
     this.name = "BackendError";

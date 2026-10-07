@@ -1,7 +1,7 @@
 // afterPack hook for electron-builder (macOS only).
 //
 // Runs after files are packaged but before code signing. Handles:
-//   1. Compiling and embedding Quick Look extensions (.appex) for .vellum files.
+//   1. Compiling and embedding Quick Look extensions (.appex) for .cadet files.
 //
 // electron-builder skips signing Contents/PlugIns (intended for kexts but also
 // affects app extensions — see https://github.com/electron-userland/electron-builder/issues/9627),
@@ -16,13 +16,13 @@ const fs = require("fs");
 // and Info.plist with the extension metadata.
 const QL_EXTENSIONS = [
   {
-    name: "VellumQLThumbnail",
+    name: "CadetQLThumbnail",
     sourceFile: "ThumbnailProvider.swift",
     frameworks: ["QuickLookThumbnailing", "AppKit", "CoreGraphics"],
     bundleIdSuffix: "QLThumbnail",
   },
   {
-    name: "VellumQLPreview",
+    name: "CadetQLPreview",
     sourceFile: "PreviewProvider.swift",
     frameworks: ["QuickLookUI", "UniformTypeIdentifiers"],
     bundleIdSuffix: "QLPreview",
@@ -104,7 +104,7 @@ function buildQLExtension(ext, plugInsDir, appBundleId, identity, timestampFlag,
 
   let plistContent = fs.readFileSync(templatePlist, "utf-8");
   // Replace the legacy bundle ID with one scoped to the Electron app.
-  const legacyBundleId = `com.vellum.vellum-assistant.${ext.bundleIdSuffix}`;
+  const legacyBundleId = `com.mycadet.mycadet.${ext.bundleIdSuffix}`;
   const electronBundleId = `${appBundleId}.${ext.bundleIdSuffix}`;
   plistContent = plistContent.replace(legacyBundleId, electronBundleId);
   fs.writeFileSync(destPlist, plistContent);

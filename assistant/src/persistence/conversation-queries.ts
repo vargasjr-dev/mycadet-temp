@@ -463,10 +463,10 @@ function groupIdClause(groupId: string) {
 /**
  * SQL predicate for {@link ConversationListFilter.originChannel}.
  *
- * `'vellum'` additionally matches NULL. `origin_channel` is left NULL at
+ * `'cadet'` additionally matches NULL. `origin_channel` is left NULL at
  * insert precisely so an inbound message can still claim the conversation for
  * its channel (`setConversationOriginChannelIfUnset` is guarded on `isNull`),
- * and migration 288 settles whatever was never claimed to `'vellum'` at daemon
+ * and migration 288 settles whatever was never claimed to `'cadet'` at daemon
  * startup. NULL is therefore "not yet attributed", and it is what the
  * overwhelming majority of rows carry between one boot and the next.
  *

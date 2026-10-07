@@ -199,7 +199,7 @@ export async function isPlatformClientConfigured(): Promise<boolean> {
   return raced;
 }
 
-export class VellumPlatformClient {
+export class CadetPlatformClient {
   private readonly platformBaseUrl: string;
   private readonly apiKey: string;
   private readonly assistantId: string;
@@ -221,12 +221,12 @@ export class VellumPlatformClient {
    * key). The assistant ID is resolved but not required -- callers that need
    * it should check `platformAssistantId` themselves.
    */
-  static async create(): Promise<VellumPlatformClient | null> {
+  static async create(): Promise<CadetPlatformClient | null> {
     const config = await resolvePlatformClientConfig();
     if (!config) {
       return null;
     }
-    return new VellumPlatformClient(
+    return new CadetPlatformClient(
       config.baseUrl,
       config.apiKey,
       config.assistantId,

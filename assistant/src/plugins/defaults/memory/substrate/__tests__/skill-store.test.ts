@@ -618,7 +618,7 @@ describe("seedV2SkillEntries", () => {
 name: "Geo Article Writer"
 description: "Writes local geo articles"
 metadata:
-  vellum:
+  cadet:
     activation-hints:
       - user asks for local article drafts
     avoid-when:

@@ -20,7 +20,7 @@ export interface LifecycleReporter {
 /**
  * Reporter used by the CLI commands: human-readable lines to the console plus
  * structured step events on the desktop progress channel. Reproduces the exact
- * terminal output — and the `HATCH_PROGRESS:` lines under `VELLUM_DESKTOP_APP` —
+ * terminal output — and the `HATCH_PROGRESS:` lines under `CADET_DESKTOP_APP` —
  * that existing subprocess consumers parse.
  */
 export const consoleLifecycleReporter: LifecycleReporter = {

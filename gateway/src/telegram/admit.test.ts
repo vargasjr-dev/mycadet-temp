@@ -12,7 +12,7 @@ const HUMAN = "42";
 
 const policy: TelegramAdmissionPolicy = {
   botUserId: BOT_ID,
-  botUsername: "Vellum_Bot",
+  botUsername: "Cadet_Bot",
 };
 
 /** A supergroup message that would be admitted; tests spoil one field. */
@@ -23,7 +23,7 @@ function candidate(
     chatType: "supergroup",
     authorId: HUMAN,
     authorIsBot: false,
-    mentionedUsernames: ["vellum_bot"],
+    mentionedUsernames: ["cadet_bot"],
     mentionedUserIds: [],
     repliedToAuthorId: undefined,
     ...over,
@@ -45,7 +45,7 @@ describe("admitTelegramMessage", () => {
     expect(
       admitTelegramMessage(candidate(), {
         botUserId: BOT_ID,
-        botUsername: "VELLUM_BOT",
+        botUsername: "CADET_BOT",
       }).admitted,
     ).toBe(true);
   });

@@ -46,7 +46,7 @@ Open: `https://developer.x.com/en/portal/dashboard`
 
 Guide through project creation:
 
-> 1. **Project name:** `Vellum Assistant` (or whatever you prefer)
+> 1. **Project name:** `Cadet Assistant` (or whatever you prefer)
 > 2. **Use case:** Select **Making a bot** or **Exploring the API** - either works
 > 3. **Project description:** Something brief like "Personal assistant integration"
 > 4. Click **Next** through each step
@@ -66,7 +66,7 @@ If the project creation wizard prompts to create an app immediately, follow alon
 
 > Inside your project, look for an **+ Add App** button or a prompt to create a new app.
 >
-> Set the app name to **Vellum Assistant** and click **Next** or **Create**.
+> Set the app name to **Cadet Assistant** and click **Next** or **Create**.
 
 After creation, the portal may show API keys (API Key and Secret, Bearer Token). These are for OAuth 1.0a - we don't need them for OAuth 2.0, but it doesn't hurt to save them somewhere safe.
 
@@ -92,7 +92,7 @@ Guide through the OAuth 2.0 configuration:
 > 2. **Type of App:** Select **Web App, Automated App or Bot**
 > 3. **App info:**
 >    - **Callback URI / Redirect URL:** I'll give you the URL in a moment
->    - **Website URL:** You can use `https://vellum.ai` or any URL you own
+>    - **Website URL:** You can use `https://mycadet.ai` or any URL you own
 
 Before providing the redirect URI, resolve it:
 
@@ -110,7 +110,7 @@ Check the redirect URI situation. Since callbackTransport is `gateway`, public i
 > For the **Callback URI / Redirect URL**, paste this exact URL:
 > `OAUTH_CALLBACK_URL`
 >
-> For the **Website URL**, you can enter `https://vellum.ai` or any website you own.
+> For the **Website URL**, you can enter `https://mycadet.ai` or any website you own.
 >
 > Then click **Save**.
 
@@ -134,7 +134,7 @@ Note: The token endpoint auth method (`basic`) requires both a Client ID and a s
 
 Follow the `cadet-oauth-integrations` workflow to collect credentials, register the OAuth app, connect, and verify.
 
-> You should see a Twitter consent page asking you to authorize **Vellum Assistant** to access your account.
+> You should see a Twitter consent page asking you to authorize **Cadet Assistant** to access your account.
 >
 > Review the permissions - it will ask for permission to read your tweets, post tweets, and read your profile info. Click **Authorize app**.
 

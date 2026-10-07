@@ -20,14 +20,14 @@ import WidgetKit
 struct StatusWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(
-            kind: VellumWidgetKind.status,
+            kind: CadetWidgetKind.status,
             provider: SnapshotProvider()
         ) { entry in
             StatusWidgetView(entry: entry)
                 .containerBackground(WidgetTheme.surface, for: .widget)
         }
         .configurationDisplayName("Status")
-        .description("See what is unread or still working in Vellum, with camera, voice and chat a tap away when nothing is waiting.")
+        .description("See what is unread or still working in Cadet, with camera, voice and chat a tap away when nothing is waiting.")
         .supportedFamilies([.systemSmall])
         .contentMarginsDisabled()
     }

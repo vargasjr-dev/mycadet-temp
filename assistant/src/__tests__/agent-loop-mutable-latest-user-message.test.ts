@@ -106,7 +106,7 @@ describe("AgentLoop.run: persisted pointer in history", () => {
       requestId: "test-request",
       messages: [userMessageWithPointer],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
     });
 
@@ -131,7 +131,7 @@ describe("AgentLoop.run: persisted pointer in history", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
     });
 
@@ -157,7 +157,7 @@ describe("AgentLoop.run: persisted pointer in history", () => {
       requestId: "test-request",
       messages: [userMessageWithPointer],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
     });
 

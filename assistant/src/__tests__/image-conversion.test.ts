@@ -119,7 +119,7 @@ describe("sniffImageMimeType", () => {
   });
 
   test("file variant sniffs from the on-disk head", () => {
-    const dir = mkdtempSync(join(tmpdir(), "vellum-sniff-file-"));
+    const dir = mkdtempSync(join(tmpdir(), "cadet-sniff-file-"));
     // A PNG named .jpg — what arrives when the MIME is extension-derived.
     const pngPath = join(dir, "photo.jpg");
     writeFileSync(pngPath, PNG_1PX_BYTES);
@@ -384,7 +384,7 @@ describe.skipIf(process.platform !== "darwin")(
     test("a poisoned (truncated) cache entry is discarded, not returned", async () => {
       // Distinct quality so this test owns its cache key.
       const quality = 77;
-      const cacheDir = join(tmpdir(), "vellum-optimized-images");
+      const cacheDir = join(tmpdir(), "cadet-optimized-images");
       mkdirSync(cacheDir, { recursive: true });
       const poisonedPath = join(
         cacheDir,

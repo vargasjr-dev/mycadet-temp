@@ -5,7 +5,7 @@ export const APEX_DOMAIN = "cadet.ai";
 export const WWW_DOMAIN = "www.cadet.ai";
 
 /** The eTLD+1 shared by all Cadet domains. Cookie domain uses a leading dot. */
-export const VELLUM_COOKIE_DOMAIN = ".cadet.ai";
+export const CADET_COOKIE_DOMAIN = ".cadet.ai";
 
 /**
  * Hostnames where the assistant is platform-hosted (not local daemon).

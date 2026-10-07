@@ -1,6 +1,6 @@
 # Trusted Contact Access Flow
 
-Design doc defining how unknown users gain access to a Vellum assistant via channel-mediated trusted contact onboarding.
+Design doc defining how unknown users gain access to a Cadet assistant via channel-mediated trusted contact onboarding.
 
 ## Roles
 
@@ -9,7 +9,7 @@ Design doc defining how unknown users gain access to a Vellum assistant via chan
 | `guardian`        | The verified owner/administrator of the assistant on a given channel. Has a record in the gateway DB `contacts` table with `role: 'guardian'` and an active `contact_channels` entry. Approves or denies access requests.                                                                                                                    |
 | `trusted_contact` | An external user who has completed the verification flow and holds a gateway `contact_channels` record with `status: 'active'` and `policy: 'allow'`.                                                                                                                                                                                        |
 | `gateway`         | The ACL and verification engine. Owns the contact ACL, guardian requests + their delivery records, verification sessions, rate limits, secret minting, code interception, and the validate+consume decision. Commits every guardian decision (status CAS + ACL outcome) in one transaction. Stamps a trust verdict on every inbound message. |
-| `assistant`       | The Vellum assistant daemon. Orchestrates the approval workflow around the gateway-owned requests: guardian notification, message composition, channel delivery, and post-decision side effects (cards, notices, grant minting). It never mints or validates verification secrets.                                                           |
+| `assistant`       | The Cadet assistant daemon. Orchestrates the approval workflow around the gateway-owned requests: guardian notification, message composition, channel delivery, and post-decision side effects (cards, notices, grant minting). It never mints or validates verification secrets.                                                           |
 
 ## Data Ownership
 
@@ -22,14 +22,14 @@ Design doc defining how unknown users gain access to a Vellum assistant via chan
 
 1. **Unknown user messages the assistant** on Telegram (or any channel).
 2. **The message is denied at the ingress ACL.** The gateway resolves the actor against its ACL DB and stamps a trust verdict onto the inbound metadata; the daemon's ACL stage (`runtime/routes/inbound-stages/acl-enforcement.ts`) consumes that verdict, finds no active member, replies _"Hmm looks like you don't have access to talk to me. I'll let &lt;guardian&gt; know you tried talking to me and get back to you."_ and returns `{ denied: true, reason: 'not_a_member' }`.
-3. **Notification pipeline alerts the guardian.** The denial triggers `notifyGuardianOfAccessRequest()` (`runtime/access-request-helper.ts`), which creates an access request in the gateway (`guardian_requests`, `kind: 'access_request'`, `toolName: 'ingress_access_request'`, via the `channels/gateway-guardian-requests.ts` client) and calls `emitNotificationSignal()` with `sourceEventName: 'ingress.access_request'`. The notification routes through the decision engine to the guardian's surfaces (vellum app, Telegram, Slack, etc.). The guardian sees who is requesting access, including a request code for approve/reject and an `open invite flow` option to start the Trusted Contacts invite flow.
+3. **Notification pipeline alerts the guardian.** The denial triggers `notifyGuardianOfAccessRequest()` (`runtime/access-request-helper.ts`), which creates an access request in the gateway (`guardian_requests`, `kind: 'access_request'`, `toolName: 'ingress_access_request'`, via the `channels/gateway-guardian-requests.ts` client) and calls `emitNotificationSignal()` with `sourceEventName: 'ingress.access_request'`. The notification routes through the decision engine to the guardian's surfaces (cadet app, Telegram, Slack, etc.). The guardian sees who is requesting access, including a request code for approve/reject and an `open invite flow` option to start the Trusted Contacts invite flow.
 
    **Access-request copy contract:** Every guardian-facing access-request notification carries the requester context (`buildAccessRequestContextText`): best-available identity (display name, username, external ID, source channel) sanitized to prevent control-character injection, the message preview, and a revoked-member warning when applicable (`Note: this user was previously revoked.`). The context also carries the invite directive (`Reply "open invite flow" to start Trusted Contacts invite flow.`), because no surface offers a button for the invite flow and typing the phrase is the only way to start it. The typed-reply mechanics are separate (`buildAccessRequestReplyMechanics`): the request-code directive (`Reply "A1B2C3 verify" ... "A1B2C3 trust" ... "A1B2C3 reject" ... "A1B2C3 block"`, without `verify` when no handshake is offered). It rides only in the card's `plainTextFallback`; a transport appends it when it sends text without buttons, and the decision engine strips any copy of it the model wrote into the composed text, so surfaces with buttons show the context alone.
 
-   **Guardian identity resolution** is anchored on the assistant's vellum principal (`resolveAnchoredGuardian`), so access requests cannot bind to stale or cross-assistant contacts:
-   1. A source-channel guardian binding (from the gateway contact list) that matches the vellum anchor principal.
-   2. The vellum anchor itself when no matching source-channel binding exists.
-   3. No guardian identity — the notification pipeline still delivers via trusted/vellum channels.
+   **Guardian identity resolution** is anchored on the assistant's cadet principal (`resolveAnchoredGuardian`), so access requests cannot bind to stale or cross-assistant contacts:
+   1. A source-channel guardian binding (from the gateway contact list) that matches the cadet anchor principal.
+   2. The cadet anchor itself when no matching source-channel binding exists.
+   3. No guardian identity — the notification pipeline still delivers via trusted/cadet channels.
 
    This ensures unknown inbound access attempts always trigger guardian notification, even when the requester's source channel has no guardian binding.
 
@@ -84,7 +84,7 @@ Identity binding ensures the verification code can only be consumed by the inten
 | Store                                                                                                 | Table                                      | Record                                                                                                                                                                                                                                                                   |
 | ----------------------------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | gateway `guardian-request-store.ts` (via the daemon's `channels/gateway-guardian-requests.ts` client) | `guardian_requests` (gateway DB)           | `status: 'pending'`, `kind: 'access_request'`, `toolName: 'ingress_access_request'`, `requesterExternalUserId`, `requesterChatId`, `guardianExternalUserId`/`guardianPrincipalId` (anchored resolution), `requestCode`, `expiresAt` (GUARDIAN_APPROVAL_TTL_MS from now). |
-| `guardian-delivery-recorder.ts` (single write sink, relays to the gateway)                            | `guardian_request_deliveries` (gateway DB) | Per-surface approval-card delivery records (vellum, Telegram, Slack).                                                                                                                                                                                                    |
+| `guardian-delivery-recorder.ts` (single write sink, relays to the gateway)                            | `guardian_request_deliveries` (gateway DB) | Per-surface approval-card delivery records (cadet, Telegram, Slack).                                                                                                                                                                                                    |
 | notification pipeline (assistant DB)                                                                  | `notification_events`                      | Event with `sourceEventName: 'ingress.access_request'`, deduped via `dedupeKey`.                                                                                                                                                                                         |
 | notification pipeline (assistant DB)                                                                  | `notification_decisions`                   | Decision engine output: `shouldNotify`, `selectedChannels`, `confidence`, reasoning.                                                                                                                                                                                     |
 | notification pipeline (assistant DB)                                                                  | `notification_deliveries`                  | Per-channel delivery records, linked via `notificationDecisionId`.                                                                                                                                                                                                       |
@@ -173,7 +173,7 @@ sequenceDiagram
 
     A->>N: emitNotificationSignal('ingress.access_request')
     N->>N: evaluateSignal() → shouldNotify: true
-    N->>G: Deliver notification (Telegram/vellum)
+    N->>G: Deliver notification (Telegram/cadet)
 
     Note over G: Guardian sees access request<br/>with requester identity
 

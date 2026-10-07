@@ -37,7 +37,7 @@ Tell the user:
 >
 > 1. Sign in or create a free developer account if needed
 > 2. Click **Create app** (choose public app if prompted)
-> 3. Set the app name to **Vellum Assistant**
+> 3. Set the app name to **Cadet Assistant**
 > 4. Click **Save**
 >
 > Let me know when the app is created.

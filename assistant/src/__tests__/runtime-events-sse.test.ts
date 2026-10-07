@@ -20,7 +20,7 @@ import { RuntimeHttpServer } from "../runtime/http-server.js";
 await initializeDb();
 
 const TEST_JWT = mintToken({
-  aud: "vellum-daemon",
+  aud: "cadet-daemon",
   sub: "actor:self:test",
   scope_profile: "actor_client_v1",
   policy_epoch: 1,

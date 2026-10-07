@@ -27,13 +27,13 @@ import {
 // binding lookup (set BEFORE importing the module under test) so the actor
 // path is testable without gateway DB state; the default binding matches
 // `mintEdgeToken`'s default principal.
-let mockFindVellumGuardian = mock(
+let mockFindCadetGuardian = mock(
   async (): Promise<{ principalId: string } | null> => ({
     principalId: GUARDIAN_PRINCIPAL,
   }),
 );
 mock.module("../auth/guardian-bootstrap.js", () => ({
-  findVellumGuardian: () => mockFindVellumGuardian(),
+  findCadetGuardian: () => mockFindCadetGuardian(),
 }));
 
 // The managed/tunnel path cross-checks the attested caller against the stored
@@ -47,7 +47,7 @@ mock.module("../credential-reader.js", () => ({
 }));
 mock.module("../platform-user-id.js", () => ({
   readStoredPlatformUserId: async () => {
-    const userId = await mockReadCredential("vellum:platform_user_id");
+    const userId = await mockReadCredential("cadet:platform_user_id");
     return { userId, unreachable: false };
   },
 }));
@@ -89,7 +89,7 @@ function createFakeUpstreamWs() {
 // Reset both mocks to their success defaults — file-scoped so per-test
 // overrides never leak into later describes.
 beforeEach(() => {
-  mockFindVellumGuardian = mock(async () => ({
+  mockFindCadetGuardian = mock(async () => ({
     principalId: GUARDIAN_PRINCIPAL,
   }));
   mockReadCredential = mock(async () => TUNNEL_USER_ID);
@@ -220,7 +220,7 @@ describe("createLiveVoiceWebsocketHandler", () => {
   // valid actor token whose principal is not the bound guardian must not
   // upgrade.
   test("returns 403 when the actor token is valid but not the bound guardian", async () => {
-    mockFindVellumGuardian = mock(async () => ({
+    mockFindCadetGuardian = mock(async () => ({
       principalId: "someone-else",
     }));
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
@@ -237,7 +237,7 @@ describe("createLiveVoiceWebsocketHandler", () => {
   });
 
   test("returns 403 when no guardian binding exists", async () => {
-    mockFindVellumGuardian = mock(async () => null);
+    mockFindCadetGuardian = mock(async () => null);
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/live-voice?token=${TEST_TOKEN}`,
@@ -252,7 +252,7 @@ describe("createLiveVoiceWebsocketHandler", () => {
   });
 
   test("returns 503 when the guardian binding lookup fails", async () => {
-    mockFindVellumGuardian = mock(async () => {
+    mockFindCadetGuardian = mock(async () => {
       throw new Error("gateway db unavailable");
     });
     const handler = createLiveVoiceWebsocketHandler(makeConfig());

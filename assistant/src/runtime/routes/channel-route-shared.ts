@@ -43,8 +43,8 @@ export function parseCallbackData(
     return null;
   }
   const source =
-    sourceChannel === "vellum"
-      ? ("vellum_surface" as const)
+    sourceChannel === "cadet"
+      ? ("cadet_surface" as const)
       : ("button" as const);
   return { action, source, requestId };
 }

@@ -53,7 +53,7 @@ export type HostBrowserResultResolution =
  * Same-actor binding: when the pending interaction has a
  * `targetClientId` (set by the proxy at request time when an actor is
  * known), the submitting client must (a) identify itself via
- * `x-vellum-client-id` matching the captured target, and (b) the
+ * `x-cadet-client-id` matching the captured target, and (b) the
  * submitting actor's principal must match the actor captured for that
  * client at registration time. Mirrors the host-cu / host-bash result
  * routes.
@@ -104,14 +104,14 @@ export async function resolveHostBrowserResultByRequestId(
   if (peeked.targetClientId != null) {
     const headerMap = headers ?? {};
     const submittingClientId =
-      headerMap["x-vellum-client-id"]?.trim() || undefined;
+      headerMap["x-cadet-client-id"]?.trim() || undefined;
     if (!submittingClientId) {
       return {
         ok: false,
         code: "BAD_REQUEST",
         status: 400,
         message:
-          "x-vellum-client-id header is missing for a targeted host browser request.",
+          "x-cadet-client-id header is missing for a targeted host browser request.",
       };
     }
     if (submittingClientId !== peeked.targetClientId) {
@@ -145,7 +145,7 @@ export async function resolveHostBrowserResultByRequestId(
     // behalf of the targeted client.
     const submittingActorPrincipalId =
       await resolveActorPrincipalIdForLocalGuardian(
-        headerMap["x-vellum-actor-principal-id"]?.trim() || undefined,
+        headerMap["x-cadet-actor-principal-id"]?.trim() || undefined,
       );
     try {
       enforceSameActorOrThrow({
@@ -167,10 +167,10 @@ export async function resolveHostBrowserResultByRequestId(
   } else if (peeked.targetActorPrincipalId) {
     const headerMap = headers ?? {};
     const submittingClientId =
-      headerMap["x-vellum-client-id"]?.trim() || undefined;
+      headerMap["x-cadet-client-id"]?.trim() || undefined;
     const submittingActorPrincipalId =
       await resolveActorPrincipalIdForLocalGuardian(
-        headerMap["x-vellum-actor-principal-id"]?.trim() || undefined,
+        headerMap["x-cadet-actor-principal-id"]?.trim() || undefined,
       );
     try {
       enforceSameActorOrThrow({
@@ -389,7 +389,7 @@ export const ROUTES: RouteDefinition[] = [
     additionalResponses: {
       "400": {
         description:
-          "x-vellum-client-id header is missing for a targeted host browser request.",
+          "x-cadet-client-id header is missing for a targeted host browser request.",
       },
       "403": {
         description: SAME_ACTOR_FORBIDDEN_DESCRIPTION,

@@ -20,7 +20,7 @@ import { use } from "../commands/use.js";
 const testDir = mkdtempSync(join(tmpdir(), "cli-use-test-"));
 const originalArgv = [...process.argv];
 const originalExit = process.exit;
-const originalLockfileDir = process.env.VELLUM_LOCKFILE_DIR;
+const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
 
 let consoleLogSpy: ReturnType<typeof spyOn>;
 let consoleErrorSpy: ReturnType<typeof spyOn>;
@@ -43,7 +43,7 @@ function writeLockfile(
 ): void {
   mkdirSync(testDir, { recursive: true });
   writeFileSync(
-    join(testDir, ".vellum.lock.json"),
+    join(testDir, ".cadet.lock.json"),
     JSON.stringify(
       {
         assistants: entries,
@@ -57,9 +57,9 @@ function writeLockfile(
 
 describe("cadet use", () => {
   beforeEach(() => {
-    process.env.VELLUM_LOCKFILE_DIR = testDir;
-    rmSync(join(testDir, ".vellum.lock.json"), { force: true });
-    process.argv = ["bun", "vellum", "use"];
+    process.env.CADET_LOCKFILE_DIR = testDir;
+    rmSync(join(testDir, ".cadet.lock.json"), { force: true });
+    process.argv = ["bun", "cadet", "use"];
     process.exit = ((code?: number) => {
       throw new Error(`process.exit:${code}`);
     }) as typeof process.exit;
@@ -76,9 +76,9 @@ describe("cadet use", () => {
 
   afterAll(() => {
     if (originalLockfileDir === undefined) {
-      delete process.env.VELLUM_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
     } else {
-      process.env.VELLUM_LOCKFILE_DIR = originalLockfileDir;
+      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
     }
     rmSync(testDir, { recursive: true, force: true });
   });
@@ -88,7 +88,7 @@ describe("cadet use", () => {
       makeEntry("assistant-1", { name: "Alice" }),
       makeEntry("assistant-2", { name: "Bob" }),
     ]);
-    process.argv = ["bun", "vellum", "use", "Alice"];
+    process.argv = ["bun", "cadet", "use", "Alice"];
 
     await use();
 
@@ -103,7 +103,7 @@ describe("cadet use", () => {
       makeEntry("assistant-1", { name: "Example Assistant" }),
       makeEntry("assistant-2", { name: "Bob" }),
     ]);
-    process.argv = ["bun", "vellum", "use", "Example", "Assistant"];
+    process.argv = ["bun", "cadet", "use", "Example", "Assistant"];
 
     await use();
 
@@ -131,7 +131,7 @@ describe("cadet use", () => {
       ],
       "assistant-2",
     );
-    process.argv = ["bun", "vellum", "use", "Alice"];
+    process.argv = ["bun", "cadet", "use", "Alice"];
 
     await expect(use()).rejects.toThrow("process.exit:1");
 

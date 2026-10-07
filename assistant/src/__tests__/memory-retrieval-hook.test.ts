@@ -8,7 +8,7 @@
  * error propagation, and abort-signal forwarding. Uses `mock.module` to stub
  * the persistence helpers, `applyRuntimeInjections`, and the conversation
  * registry / trust resolver so the test doesn't touch the developer's real
- * `~/.vellum`, database, or live conversation state. The memory graph handle,
+ * `~/.cadet`, database, or live conversation state. The memory graph handle,
  * abort signal, and trust class are self-resolved by the hook from a fake
  * conversation installed in the registry mock.
  */

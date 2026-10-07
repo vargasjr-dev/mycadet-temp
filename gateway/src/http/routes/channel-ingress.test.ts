@@ -337,14 +337,14 @@ describe("revoke", () => {
   });
 
   it("keeps the paths approval never gated", async () => {
-    // A `signer: "vellum"` route is served whether or not a grant stands, so
+    // A `signer: "cadet"` route is served whether or not a grant stands, so
     // an allowlist that dropped it would block a route the gateway answers.
     const mixed: IngressRoute[] = [
       ROUTES[0]!,
       {
         path: "platform",
         kind: "http",
-        signer: "vellum",
+        signer: "cadet",
         handshake: "signed-headers",
         description: "platform callback",
       },
@@ -594,14 +594,14 @@ describe("list", () => {
     expect(body.problems[0]!.reason).toContain("path");
   });
 
-  it("reports a vellum-signed route as served while its source waits", async () => {
-    // Approval is the general gate, and a vellum-signed route is the
+  it("reports a cadet-signed route as served while its source waits", async () => {
+    // Approval is the general gate, and a cadet-signed route is the
     // exception: only a caller holding the platform secret can open it. A
     // listing that read servability off the source's state would call a live
     // route dormant, and say nothing about which half of a mixed declaration
     // is already reachable.
     writePlugin("meeting-bot", [
-      { ...ROUTES[0]!, path: "ours", signer: "vellum" },
+      { ...ROUTES[0]!, path: "ours", signer: "cadet" },
       { ...ROUTES[0]!, path: "theirs" },
     ]);
 

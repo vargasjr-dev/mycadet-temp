@@ -224,7 +224,7 @@ bun run scripts/gmail-prefs.ts --action remove-safelist --emails "important@exam
 
 ## Email Routing Priority
 
-When the user mentions "email" - sending, reading, checking, decluttering, drafting, or anything else - **always default to the user's own email (Gmail)** unless they explicitly ask about the assistant's own email address (e.g., "set up your email", "send from your address", "check your inbox"). The vast majority of email requests are about the user's Gmail, not the assistant's @vellum.me address.
+When the user mentions "email" - sending, reading, checking, decluttering, drafting, or anything else - **always default to the user's own email (Gmail)** unless they explicitly ask about the assistant's own email address (e.g., "set up your email", "send from your address", "check your inbox"). The vast majority of email requests are about the user's Gmail, not the assistant's @mycadet.bot address.
 
 Do not offer the assistant's own email as an option unless the user specifically asks. If Gmail is not connected, guide them through Gmail setup.
 
@@ -395,7 +395,7 @@ The `gmail-prefs.ts` script persists sender preferences across cleanup sessions:
 
 ### Company-Domain Sender Handling
 
-When scan results include senders from the user's own company domain (e.g., `@vellum.ai`):
+When scan results include senders from the user's own company domain (e.g., `@mycadet.ai`):
 
 - **Protect individual colleagues**: Cofounders, direct reports, teammates sending from their personal work address (e.g., `akash@company.com`, `aaron@company.com`) — deselect these from cleanup tables.
 - **Archive mailing lists and group addresses**: Addresses like `devops@`, `alerts@`, `noreply@`, `security@`, `billing@` at the company domain are automated forwards, not personal correspondence. These are archivable by default — pre-select them in the cleanup table.

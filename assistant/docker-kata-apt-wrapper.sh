@@ -15,14 +15,14 @@ esac
 
 . /app/assistant/docker-kata-runtime-family.sh
 
-if ! vellum_is_kata_family_runtime; then
+if ! cadet_is_kata_family_runtime; then
   exec "/usr/bin/${TOOL_NAME}" "$@"
 fi
 
 if [ "${TOOL_NAME}" != "dpkg" ]; then
   export DEBIAN_FRONTEND=noninteractive
 fi
-DATA_ROOT="${VELLUM_APT_DATA_ROOT:-/data/system}"
+DATA_ROOT="${CADET_APT_DATA_ROOT:-/data/system}"
 
 /app/assistant/docker-init-apt-root.sh
 if [ -x "${DATA_ROOT}/bin/sh" ] && [ -x "${DATA_ROOT}/usr/bin/${TOOL_NAME}" ] && [ -f "${DATA_ROOT}/.rootfs-initialized" ] && ! grep -qs " ${DATA_ROOT} .*noexec" /proc/mounts; then

@@ -205,10 +205,10 @@ describe("contacts_mirror_upsert_full", () => {
       contactId: "co-bot",
       displayName: "Bot",
       contactType: "assistant",
-      assistantMetadata: { species: "vellum", metadata: { assistantId: "a1" } },
+      assistantMetadata: { species: "cadet", metadata: { assistantId: "a1" } },
     });
     expect(metadataRow("co-bot")).toEqual({
-      species: "vellum",
+      species: "cadet",
       metadata: JSON.stringify({ assistantId: "a1" }),
     });
 
@@ -216,10 +216,10 @@ describe("contacts_mirror_upsert_full", () => {
     upsertFull({
       contactId: "co-bot",
       contactType: "assistant",
-      assistantMetadata: { species: "vellum", metadata: { assistantId: "a2" } },
+      assistantMetadata: { species: "cadet", metadata: { assistantId: "a2" } },
     });
     expect(metadataRow("co-bot")).toEqual({
-      species: "vellum",
+      species: "cadet",
       metadata: JSON.stringify({ assistantId: "a2" }),
     });
   });
@@ -229,7 +229,7 @@ describe("contacts_mirror_upsert_full", () => {
       contactId: "co-human",
       displayName: "Human",
       contactType: "human",
-      assistantMetadata: { species: "vellum" },
+      assistantMetadata: { species: "cadet" },
     });
     expect(metadataRow("co-human")).toBeNull();
 
@@ -237,7 +237,7 @@ describe("contacts_mirror_upsert_full", () => {
     upsertFull({
       contactId: "co-omit",
       displayName: "Omit",
-      assistantMetadata: { species: "vellum" },
+      assistantMetadata: { species: "cadet" },
     });
     expect(metadataRow("co-omit")).toBeNull();
   });

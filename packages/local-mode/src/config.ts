@@ -29,14 +29,14 @@ export function resolveLocalConfigFromEnv(
   env: Record<string, string | undefined>,
   options: LocalPathOptions = {},
 ): LocalEndpointConfig {
-  const vellumEnv = resolveEnvironmentName(env, options);
-  const seed = SEEDS[vellumEnv] ?? SEEDS[PRODUCTION_ENVIRONMENT_NAME]!;
+  const cadetEnv = resolveEnvironmentName(env, options);
+  const seed = SEEDS[cadetEnv] ?? SEEDS[PRODUCTION_ENVIRONMENT_NAME]!;
 
   return {
     lockfilePaths: resolveLockfilePaths(env, options),
     configDir: resolveConfigDir(env, options),
-    webUrl: env.VELLUM_WEB_URL || seed.webUrl,
-    platformUrl: env.VELLUM_PLATFORM_URL || seed.platformUrl,
+    webUrl: env.CADET_WEB_URL || seed.webUrl,
+    platformUrl: env.CADET_PLATFORM_URL || seed.platformUrl,
   };
 }
 
@@ -44,18 +44,18 @@ export function resolveLockfilePaths(
   env: Record<string, string | undefined>,
   options: LocalPathOptions = {},
 ): string[] {
-  const vellumEnv = resolveEnvironmentName(env, options);
+  const cadetEnv = resolveEnvironmentName(env, options);
   const lockfileDir = Object.hasOwn(options, "lockfileDirOverride")
     ? options.lockfileDirOverride
-    : env.VELLUM_LOCKFILE_DIR?.trim();
+    : env.CADET_LOCKFILE_DIR?.trim();
 
   if ((options.platform ?? process.platform) === "win32") {
     const canonicalDir = lockfileDir ?? resolveConfigDir(env, options);
     const canonical = joinLocalPath(options, canonicalDir, "lockfile.json");
     const legacyDir = lockfileDir ?? options.homeDir ?? os.homedir();
     const legacy =
-      vellumEnv === PRODUCTION_ENVIRONMENT_NAME
-        ? [".vellum.lock.json", ".vellum.lockfile.json"].map((name) =>
+      cadetEnv === PRODUCTION_ENVIRONMENT_NAME
+        ? [".cadet.lock.json", ".cadet.lockfile.json"].map((name) =>
             joinLocalPath(options, legacyDir, name),
           )
         : [
@@ -71,11 +71,11 @@ export function resolveLockfilePaths(
     ];
   }
 
-  if (vellumEnv === PRODUCTION_ENVIRONMENT_NAME) {
+  if (cadetEnv === PRODUCTION_ENVIRONMENT_NAME) {
     const dir = lockfileDir ?? options.homeDir ?? os.homedir();
     return [
-      joinLocalPath(options, dir, ".vellum.lock.json"),
-      joinLocalPath(options, dir, ".vellum.lockfile.json"),
+      joinLocalPath(options, dir, ".cadet.lock.json"),
+      joinLocalPath(options, dir, ".cadet.lockfile.json"),
     ];
   }
 
@@ -97,31 +97,31 @@ export function resolveConfigDirPaths(
   if (options.configDirOverride) {
     return [options.configDirOverride];
   }
-  const vellumEnv = resolveEnvironmentName(env, options);
+  const cadetEnv = resolveEnvironmentName(env, options);
   return resolveConfigHomes(env, options).map((home) =>
-    joinLocalPath(options, home, environmentDirectoryName(vellumEnv, options)),
+    joinLocalPath(options, home, environmentDirectoryName(cadetEnv, options)),
   );
 }
 
 function environmentDirectoryName(
-  vellumEnv: string,
+  cadetEnv: string,
   options: LocalPathOptions,
 ): string {
-  assertSafePathSegment(vellumEnv, "environment name", options);
-  return vellumEnv === PRODUCTION_ENVIRONMENT_NAME
-    ? "vellum"
-    : `vellum-${vellumEnv}`;
+  assertSafePathSegment(cadetEnv, "environment name", options);
+  return cadetEnv === PRODUCTION_ENVIRONMENT_NAME
+    ? "cadet"
+    : `cadet-${cadetEnv}`;
 }
 
 function resolveDataDir(
   env: Record<string, string | undefined>,
   options: LocalPathOptions,
 ): string {
-  const vellumEnv = resolveEnvironmentName(env, options);
+  const cadetEnv = resolveEnvironmentName(env, options);
   return joinLocalPath(
     options,
     resolveDataHome(env, options),
-    environmentDirectoryName(vellumEnv, options),
+    environmentDirectoryName(cadetEnv, options),
   );
 }
 

@@ -42,7 +42,7 @@ const saveAssistantEntryMock = mock<typeof assistantConfig.saveAssistantEntry>(
   () => {},
 );
 const getDaemonPidPathMock = mock<typeof assistantConfig.getDaemonPidPath>(
-  (resources) => join(resources!.instanceDir, ".vellum", "daemon.pid"),
+  (resources) => join(resources!.instanceDir, ".cadet", "daemon.pid"),
 );
 
 mock.module("../lib/assistant-config.js", () => ({
@@ -205,8 +205,8 @@ let errorSpy: ReturnType<typeof spyOn>;
 let localEntry: AssistantEntry;
 
 function makeLocalEntry(): AssistantEntry {
-  tempDir = mkdtempSync(join(tmpdir(), "vellum-wake-test-"));
-  mkdirSync(join(tempDir, ".vellum"), { recursive: true });
+  tempDir = mkdtempSync(join(tmpdir(), "cadet-wake-test-"));
+  mkdirSync(join(tempDir, ".cadet"), { recursive: true });
   return {
     assistantId: "local-assistant",
     runtimeUrl: "http://127.0.0.1:7830",
@@ -225,7 +225,7 @@ function makeLocalEntry(): AssistantEntry {
 beforeEach(() => {
   originalArgv = [...process.argv];
   tempDir = "";
-  process.argv = ["bun", "vellum", "wake", "--watch", "local-assistant"];
+  process.argv = ["bun", "cadet", "wake", "--watch", "local-assistant"];
   logSpy = spyOn(console, "log").mockImplementation(() => {});
   warnSpy = spyOn(console, "warn").mockImplementation(() => {});
   errorSpy = spyOn(console, "error").mockImplementation(() => {});
@@ -240,7 +240,7 @@ beforeEach(() => {
   saveAssistantEntryMock.mockReset();
   getDaemonPidPathMock.mockReset();
   getDaemonPidPathMock.mockImplementation((resources) =>
-    join(resources!.instanceDir, ".vellum", "daemon.pid"),
+    join(resources!.instanceDir, ".cadet", "daemon.pid"),
   );
   resolveProcessStateMock.mockReset();
   resolveProcessStateMock.mockImplementation(
@@ -332,7 +332,7 @@ describe("cadet wake", () => {
       }),
     );
     expect(stopProcessByPidFileMock).toHaveBeenCalledWith(
-      join(tempDir, ".vellum", "gateway.pid"),
+      join(tempDir, ".cadet", "gateway.pid"),
       "gateway",
     );
     expect(startGatewayMock).toHaveBeenCalledWith(
@@ -348,7 +348,7 @@ describe("cadet wake", () => {
   test("re-provisions the guardian token when missing and --repair-guardian is passed", async () => {
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "wake",
       "--repair-guardian",
       "local-assistant",
@@ -374,7 +374,7 @@ describe("cadet wake", () => {
     // The automatic connect-repair path spawns `wake <id>` with no flags. A
     // re-lease here would revoke other device-bound tokens (other tabs / local
     // clients), so it must never run from auto-repair.
-    process.argv = ["bun", "vellum", "wake", "local-assistant"];
+    process.argv = ["bun", "cadet", "wake", "local-assistant"];
     loadGuardianTokenMock.mockReturnValue(null);
 
     await wake();
@@ -390,7 +390,7 @@ describe("cadet wake", () => {
     // guessing from local token state and recreating the no-op loop.
     process.argv = [
       "bun",
-      "vellum",
+      "cadet",
       "wake",
       "--repair-guardian",
       "local-assistant",
@@ -500,10 +500,10 @@ describe("cadet wake", () => {
 });
 
 describe("cadet wake: daemon startup failure", () => {
-  const daemonPidOf = (dir: string) => join(dir, ".vellum", "daemon.pid");
+  const daemonPidOf = (dir: string) => join(dir, ".cadet", "daemon.pid");
 
   beforeEach(() => {
-    process.argv = ["bun", "vellum", "wake", "local-assistant"];
+    process.argv = ["bun", "cadet", "wake", "local-assistant"];
     // The daemon needs starting; the gateway is already serving.
     resolveProcessStateMock.mockImplementation(
       async (_pidFile, _port, label) =>
@@ -600,10 +600,10 @@ describe("cadet wake — tunnel edge restore", () => {
   const enabledConfig = {
     ingress: { enabled: true, publicBaseUrl: "https://assistant.example.com" },
   };
-  const workspaceDirOf = (dir: string) => join(dir, ".vellum", "workspace");
+  const workspaceDirOf = (dir: string) => join(dir, ".cadet", "workspace");
 
   beforeEach(() => {
-    process.argv = ["bun", "vellum", "wake", "local-assistant"];
+    process.argv = ["bun", "cadet", "wake", "local-assistant"];
   });
 
   test("webhook-configured wake ensures the edge and tunnels the edge port", async () => {
@@ -644,10 +644,10 @@ describe("cadet wake — tunnel edge restore", () => {
 
   test("a docker wake restores the shared default-workspace edge", async () => {
     const defaultWorkspace = mkdtempSync(
-      join(tmpdir(), "vellum-wake-default-"),
+      join(tmpdir(), "cadet-wake-default-"),
     );
-    const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = defaultWorkspace;
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
@@ -655,7 +655,7 @@ describe("cadet wake — tunnel edge restore", () => {
       ingressUrl: "https://assistant.example.com",
     } as AssistantEntry);
     loadRawConfigMock.mockReturnValue(enabledConfig);
-    process.argv = ["bun", "vellum", "wake", "docker-1"];
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
       await wake();
@@ -671,9 +671,9 @@ describe("cadet wake — tunnel edge restore", () => {
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
       if (originalWorkspaceDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
       }
       rmSync(defaultWorkspace, { recursive: true, force: true });
     }
@@ -681,10 +681,10 @@ describe("cadet wake — tunnel edge restore", () => {
 
   test("a docker wake leaves an edge fronting another container alone", async () => {
     const defaultWorkspace = mkdtempSync(
-      join(tmpdir(), "vellum-wake-default-"),
+      join(tmpdir(), "cadet-wake-default-"),
     );
-    const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = defaultWorkspace;
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
@@ -698,7 +698,7 @@ describe("cadet wake — tunnel edge restore", () => {
       includeWebApp: true,
       gatewayPort: 8030,
     });
-    process.argv = ["bun", "vellum", "wake", "docker-1"];
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
       await wake();
@@ -707,9 +707,9 @@ describe("cadet wake — tunnel edge restore", () => {
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
       if (originalWorkspaceDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
       }
       rmSync(defaultWorkspace, { recursive: true, force: true });
     }
@@ -717,10 +717,10 @@ describe("cadet wake — tunnel edge restore", () => {
 
   test("a docker wake adopts an edge that already fronts it", async () => {
     const defaultWorkspace = mkdtempSync(
-      join(tmpdir(), "vellum-wake-default-"),
+      join(tmpdir(), "cadet-wake-default-"),
     );
-    const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = defaultWorkspace;
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
@@ -741,7 +741,7 @@ describe("cadet wake — tunnel edge restore", () => {
       started: false,
       includesWebApp: true,
     });
-    process.argv = ["bun", "vellum", "wake", "docker-1"];
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
       await wake();
@@ -756,9 +756,9 @@ describe("cadet wake — tunnel edge restore", () => {
       );
     } finally {
       if (originalWorkspaceDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
       }
       rmSync(defaultWorkspace, { recursive: true, force: true });
     }
@@ -766,10 +766,10 @@ describe("cadet wake — tunnel edge restore", () => {
 
   test("a failed docker edge restore does not claim webhooks still work", async () => {
     const defaultWorkspace = mkdtempSync(
-      join(tmpdir(), "vellum-wake-default-"),
+      join(tmpdir(), "cadet-wake-default-"),
     );
-    const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = defaultWorkspace;
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
@@ -780,7 +780,7 @@ describe("cadet wake — tunnel edge restore", () => {
     ensureTunnelEdgeMock.mockRejectedValue(
       new Error("nginx is not installed."),
     );
-    process.argv = ["bun", "vellum", "wake", "docker-1"];
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
       await wake();
@@ -793,9 +793,9 @@ describe("cadet wake — tunnel edge restore", () => {
       );
     } finally {
       if (originalWorkspaceDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
       }
       rmSync(defaultWorkspace, { recursive: true, force: true });
     }
@@ -803,10 +803,10 @@ describe("cadet wake — tunnel edge restore", () => {
 
   test("a docker wake leaves a saved ingress owned by another container alone", async () => {
     const defaultWorkspace = mkdtempSync(
-      join(tmpdir(), "vellum-wake-default-"),
+      join(tmpdir(), "cadet-wake-default-"),
     );
-    const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = defaultWorkspace;
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
     // The edge is stopped, so its gatewayPort record is gone; only the saved
     // publicBaseUrl and its owner's `ingressUrl` say whose endpoint this is.
     resolveTargetAssistantMock.mockReturnValue({
@@ -825,7 +825,7 @@ describe("cadet wake — tunnel edge restore", () => {
     ]);
     loadRawConfigMock.mockReturnValue(enabledConfig);
     isIngressRunningMock.mockReturnValue(false);
-    process.argv = ["bun", "vellum", "wake", "docker-1"];
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
       await wake();
@@ -834,9 +834,9 @@ describe("cadet wake — tunnel edge restore", () => {
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
       if (originalWorkspaceDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
       }
       rmSync(defaultWorkspace, { recursive: true, force: true });
     }
@@ -844,10 +844,10 @@ describe("cadet wake — tunnel edge restore", () => {
 
   test("a docker wake waits for the gateway before restoring the edge", async () => {
     const defaultWorkspace = mkdtempSync(
-      join(tmpdir(), "vellum-wake-default-"),
+      join(tmpdir(), "cadet-wake-default-"),
     );
-    const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = defaultWorkspace;
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
@@ -855,7 +855,7 @@ describe("cadet wake — tunnel edge restore", () => {
       ingressUrl: "https://assistant.example.com",
     } as AssistantEntry);
     loadRawConfigMock.mockReturnValue(enabledConfig);
-    process.argv = ["bun", "vellum", "wake", "docker-1"];
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
       await wake();
@@ -864,9 +864,9 @@ describe("cadet wake — tunnel edge restore", () => {
       expect(ensureTunnelEdgeMock).toHaveBeenCalled();
     } finally {
       if (originalWorkspaceDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
       }
       rmSync(defaultWorkspace, { recursive: true, force: true });
     }
@@ -874,10 +874,10 @@ describe("cadet wake — tunnel edge restore", () => {
 
   test("a docker wake skips the edge when the gateway never comes up", async () => {
     const defaultWorkspace = mkdtempSync(
-      join(tmpdir(), "vellum-wake-default-"),
+      join(tmpdir(), "cadet-wake-default-"),
     );
-    const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = defaultWorkspace;
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
@@ -886,7 +886,7 @@ describe("cadet wake — tunnel edge restore", () => {
     } as AssistantEntry);
     loadRawConfigMock.mockReturnValue(enabledConfig);
     waitForDaemonReadyMock.mockImplementation(async () => false);
-    process.argv = ["bun", "vellum", "wake", "docker-1"];
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
       await wake();
@@ -898,9 +898,9 @@ describe("cadet wake — tunnel edge restore", () => {
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
       if (originalWorkspaceDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
       }
       rmSync(defaultWorkspace, { recursive: true, force: true });
     }
@@ -908,16 +908,16 @@ describe("cadet wake — tunnel edge restore", () => {
 
   test("a docker wake with no ingress config never waits for the gateway", async () => {
     const defaultWorkspace = mkdtempSync(
-      join(tmpdir(), "vellum-wake-default-"),
+      join(tmpdir(), "cadet-wake-default-"),
     );
-    const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = defaultWorkspace;
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
     } as AssistantEntry);
-    process.argv = ["bun", "vellum", "wake", "docker-1"];
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
       await wake();
@@ -926,9 +926,9 @@ describe("cadet wake — tunnel edge restore", () => {
       expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
     } finally {
       if (originalWorkspaceDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
       }
       rmSync(defaultWorkspace, { recursive: true, force: true });
     }
@@ -936,10 +936,10 @@ describe("cadet wake — tunnel edge restore", () => {
 
   test("a docker wake restores a saved ingress that no entry claims", async () => {
     const defaultWorkspace = mkdtempSync(
-      join(tmpdir(), "vellum-wake-default-"),
+      join(tmpdir(), "cadet-wake-default-"),
     );
-    const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = defaultWorkspace;
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
     // Tunneled before the lockfile mirror existed: publicBaseUrl is saved but
     // no entry carries `ingressUrl`. The sole container still owns it.
     resolveTargetAssistantMock.mockReturnValue({
@@ -956,7 +956,7 @@ describe("cadet wake — tunnel edge restore", () => {
     ]);
     loadRawConfigMock.mockReturnValue(enabledConfig);
     isIngressRunningMock.mockReturnValue(false);
-    process.argv = ["bun", "vellum", "wake", "docker-1"];
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
       await wake();
@@ -968,9 +968,9 @@ describe("cadet wake — tunnel edge restore", () => {
       });
     } finally {
       if (originalWorkspaceDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
       }
       rmSync(defaultWorkspace, { recursive: true, force: true });
     }
@@ -978,10 +978,10 @@ describe("cadet wake — tunnel edge restore", () => {
 
   test("a docker wake respects an ingress claim from another environment", async () => {
     const defaultWorkspace = mkdtempSync(
-      join(tmpdir(), "vellum-wake-default-"),
+      join(tmpdir(), "cadet-wake-default-"),
     );
-    const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = defaultWorkspace;
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
@@ -997,7 +997,7 @@ describe("cadet wake — tunnel edge restore", () => {
     ]);
     loadRawConfigMock.mockReturnValue(enabledConfig);
     isIngressRunningMock.mockReturnValue(false);
-    process.argv = ["bun", "vellum", "wake", "docker-1"];
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
       await wake();
@@ -1005,9 +1005,9 @@ describe("cadet wake — tunnel edge restore", () => {
       expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
     } finally {
       if (originalWorkspaceDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
       }
       rmSync(defaultWorkspace, { recursive: true, force: true });
     }
@@ -1015,17 +1015,17 @@ describe("cadet wake — tunnel edge restore", () => {
 
   test("a docker wake without an ingress config leaves the edge alone", async () => {
     const defaultWorkspace = mkdtempSync(
-      join(tmpdir(), "vellum-wake-default-"),
+      join(tmpdir(), "cadet-wake-default-"),
     );
-    const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-    process.env.VELLUM_WORKSPACE_DIR = defaultWorkspace;
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
       ingressUrl: "https://assistant.example.com",
     } as AssistantEntry);
-    process.argv = ["bun", "vellum", "wake", "docker-1"];
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
       await wake();
@@ -1034,9 +1034,9 @@ describe("cadet wake — tunnel edge restore", () => {
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
       if (originalWorkspaceDir === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
       }
       rmSync(defaultWorkspace, { recursive: true, force: true });
     }

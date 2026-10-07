@@ -146,7 +146,7 @@ mock.module("../oauth/manual-token-connection.js", () => ({
 }));
 
 mock.module("../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: async () => {
       if (!platformAvailable) {
         return null;
@@ -1166,7 +1166,7 @@ describe("POST oauth/managed-connect/start", () => {
     mockFetchImpl = async () => ({
       ok: true,
       status: 200,
-      json: async () => ({ connect_url: "https://app.vellum.ai/connect/abc" }),
+      json: async () => ({ connect_url: "https://app.mycadet.ai/connect/abc" }),
       text: async () => "",
     });
     const result = (await getRoute(
@@ -1175,7 +1175,7 @@ describe("POST oauth/managed-connect/start", () => {
     ).handler(
       makeArgs({ body: { provider: "google", scopes: ["email"] } }),
     )) as { ok: boolean; connect_url: string };
-    expect(result.connect_url).toBe("https://app.vellum.ai/connect/abc");
+    expect(result.connect_url).toBe("https://app.mycadet.ai/connect/abc");
   });
 
   test("forwards tenant_host to the platform only when one is supplied", async () => {
@@ -1188,7 +1188,7 @@ describe("POST oauth/managed-connect/start", () => {
         ok: true,
         status: 200,
         json: async () => ({
-          connect_url: "https://app.vellum.ai/connect/abc",
+          connect_url: "https://app.mycadet.ai/connect/abc",
         }),
         text: async () => "",
       };

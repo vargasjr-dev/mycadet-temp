@@ -80,7 +80,7 @@ beforeEach(() => {
 describe("maybeEnqueueGraphBootstrap", () => {
   // A journal directory counts as historical data to bootstrap from, so on a
   // v1 config an empty graph plus this directory triggers an enqueue.
-  const journalDir = join(process.env.VELLUM_WORKSPACE_DIR!, "journal");
+  const journalDir = join(process.env.CADET_WORKSPACE_DIR!, "journal");
 
   beforeEach(() => {
     mkdirSync(journalDir, { recursive: true });

@@ -88,7 +88,7 @@ function seedSignalAt(
     id: crypto.randomUUID(),
     notificationEventId: eventId,
     shouldNotify: outcome !== "declined",
-    selectedChannels: outcome === "declined" ? [] : ["vellum"],
+    selectedChannels: outcome === "declined" ? [] : ["cadet"],
     reasoningSummary: "test",
     confidence: 1,
     fallbackUsed: false,
@@ -99,8 +99,8 @@ function seedSignalAt(
   createDelivery({
     id: crypto.randomUUID(),
     notificationDecisionId: decision.id,
-    channel: "vellum",
-    destination: "vellum",
+    channel: "cadet",
+    destination: "cadet",
     status: outcome,
     attempt: 1,
   });

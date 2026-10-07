@@ -1,10 +1,10 @@
 /**
  * Integration tests confirming both importers preserve the target's
- * `vellum:*` credential metadata entries across a bundle import.
+ * `cadet:*` credential metadata entries across a bundle import.
  *
  * Covers:
  * - Buffer-based `commitImport`: target has all 4 cadet entries, bundle
- *   carries non-vellum user entries → target retains its cadet entries
+ *   carries non-cadet user entries → target retains its cadet entries
  *   and gains the bundle's user entries.
  * - Streaming `streamCommitImport`: same scenario via the atomic-swap
  *   path.
@@ -47,7 +47,7 @@ interface Record {
   updatedAt: number;
 }
 
-const VELLUM_FIELDS = [
+const CADET_FIELDS = [
   "platform_base_url",
   "assistant_api_key",
   "platform_assistant_id",
@@ -71,8 +71,8 @@ function metadataJson(records: Record[]): string {
   return JSON.stringify({ version: 5, credentials: records });
 }
 
-function vellumRecords(prefix = "target"): Record[] {
-  return VELLUM_FIELDS.map((field) => record("vellum", field, prefix));
+function cadetRecords(prefix = "target"): Record[] {
+  return CADET_FIELDS.map((field) => record("cadet", field, prefix));
 }
 
 function readMetadata(path: string): { credentials: Record[] } {
@@ -130,8 +130,8 @@ describe("commitImport — credential metadata merge", () => {
     }
   });
 
-  test("target vellum:* entries survive; bundle user entries land", () => {
-    const metadataPath = seedTargetMetadata(workspaceDir, vellumRecords());
+  test("target cadet:* entries survive; bundle user entries land", () => {
+    const metadataPath = seedTargetMetadata(workspaceDir, cadetRecords());
 
     const bundleMetadata = metadataJson([
       record("telegram", "bot_token", "source"),
@@ -162,25 +162,25 @@ describe("commitImport — credential metadata merge", () => {
     expect(result.ok).toBe(true);
     const merged = readMetadata(metadataPath);
     const mergedKeys = keys(merged.credentials);
-    for (const field of VELLUM_FIELDS) {
-      expect(mergedKeys.has(`vellum:${field}`)).toBe(true);
+    for (const field of CADET_FIELDS) {
+      expect(mergedKeys.has(`cadet:${field}`)).toBe(true);
     }
     expect(mergedKeys.has("telegram:bot_token")).toBe(true);
     expect(mergedKeys.has("slack_channel:app_token")).toBe(true);
 
     // Preserved cadet entries must carry target's credentialIds.
     for (const r of merged.credentials) {
-      if (r.service === "vellum") {
+      if (r.service === "cadet") {
         expect(r.credentialId.startsWith("target-")).toBe(true);
       }
     }
   });
 
   test("rogue cadet entries in the bundle are dropped", () => {
-    const metadataPath = seedTargetMetadata(workspaceDir, vellumRecords());
+    const metadataPath = seedTargetMetadata(workspaceDir, cadetRecords());
     const bundleMetadata = metadataJson([
-      record("vellum", "assistant_api_key", "source-rogue"),
-      record("vellum", "platform_base_url", "source-rogue"),
+      record("cadet", "assistant_api_key", "source-rogue"),
+      record("cadet", "platform_base_url", "source-rogue"),
       record("telegram", "bot_token", "source"),
     ]);
     const { archive } = buildVBundle({
@@ -206,7 +206,7 @@ describe("commitImport — credential metadata merge", () => {
     expect(result.ok).toBe(true);
 
     const merged = readMetadata(metadataPath);
-    const legacyRows = merged.credentials.filter((r) => r.service === "vellum");
+    const legacyRows = merged.credentials.filter((r) => r.service === "cadet");
     expect(legacyRows.length).toBe(4);
     for (const r of legacyRows) {
       expect(r.credentialId.startsWith("target-")).toBe(true);
@@ -215,7 +215,7 @@ describe("commitImport — credential metadata merge", () => {
   });
 
   test("bundle without metadata.json still leaves target's cadet entries on disk", () => {
-    const metadataPath = seedTargetMetadata(workspaceDir, vellumRecords());
+    const metadataPath = seedTargetMetadata(workspaceDir, cadetRecords());
 
     const { archive } = buildVBundle({
       files: [
@@ -235,8 +235,8 @@ describe("commitImport — credential metadata merge", () => {
     expect(existsSync(metadataPath)).toBe(true);
     const merged = readMetadata(metadataPath);
     const mergedKeys = keys(merged.credentials);
-    for (const field of VELLUM_FIELDS) {
-      expect(mergedKeys.has(`vellum:${field}`)).toBe(true);
+    for (const field of CADET_FIELDS) {
+      expect(mergedKeys.has(`cadet:${field}`)).toBe(true);
     }
   });
 
@@ -291,8 +291,8 @@ describe("streamCommitImport — credential metadata merge", () => {
     }
   });
 
-  test("target vellum:* entries survive atomic swap; bundle user entries land", async () => {
-    const metadataPath = seedTargetMetadata(workspaceDir, vellumRecords());
+  test("target cadet:* entries survive atomic swap; bundle user entries land", async () => {
+    const metadataPath = seedTargetMetadata(workspaceDir, cadetRecords());
 
     const bundleMetadata = metadataJson([
       record("telegram", "bot_token", "source"),
@@ -322,21 +322,21 @@ describe("streamCommitImport — credential metadata merge", () => {
 
     const merged = readMetadata(metadataPath);
     const mergedKeys = keys(merged.credentials);
-    for (const field of VELLUM_FIELDS) {
-      expect(mergedKeys.has(`vellum:${field}`)).toBe(true);
+    for (const field of CADET_FIELDS) {
+      expect(mergedKeys.has(`cadet:${field}`)).toBe(true);
     }
     expect(mergedKeys.has("telegram:bot_token")).toBe(true);
     for (const r of merged.credentials) {
-      if (r.service === "vellum") {
+      if (r.service === "cadet") {
         expect(r.credentialId.startsWith("target-")).toBe(true);
       }
     }
   });
 
   test("rogue cadet entries in bundle are dropped on streaming path", async () => {
-    const metadataPath = seedTargetMetadata(workspaceDir, vellumRecords());
+    const metadataPath = seedTargetMetadata(workspaceDir, cadetRecords());
     const bundleMetadata = metadataJson([
-      record("vellum", "assistant_api_key", "source-rogue"),
+      record("cadet", "assistant_api_key", "source-rogue"),
       record("telegram", "bot_token", "source"),
     ]);
     const { archive } = buildVBundle({
@@ -363,7 +363,7 @@ describe("streamCommitImport — credential metadata merge", () => {
 
     const merged = readMetadata(metadataPath);
     for (const r of merged.credentials) {
-      if (r.service === "vellum") {
+      if (r.service === "cadet") {
         expect(r.credentialId.startsWith("target-")).toBe(true);
       }
     }
@@ -371,7 +371,7 @@ describe("streamCommitImport — credential metadata merge", () => {
   });
 
   test("bundle without metadata.json keeps target's cadet entries after swap", async () => {
-    const metadataPath = seedTargetMetadata(workspaceDir, vellumRecords());
+    const metadataPath = seedTargetMetadata(workspaceDir, cadetRecords());
 
     const { archive } = buildVBundle({
       files: [
@@ -391,8 +391,8 @@ describe("streamCommitImport — credential metadata merge", () => {
     expect(existsSync(metadataPath)).toBe(true);
     const merged = readMetadata(metadataPath);
     const mergedKeys = keys(merged.credentials);
-    for (const field of VELLUM_FIELDS) {
-      expect(mergedKeys.has(`vellum:${field}`)).toBe(true);
+    for (const field of CADET_FIELDS) {
+      expect(mergedKeys.has(`cadet:${field}`)).toBe(true);
     }
   });
 

@@ -67,7 +67,7 @@ async function handleHostFileResult({ body, headers }: RouteHandlerArgs) {
     targetActorPrincipalId: peeked.targetActorPrincipalId,
     op: "host_file",
     missingClientIdMessage:
-      "x-vellum-client-id header is missing for a targeted host file request.",
+      "x-cadet-client-id header is missing for a targeted host file request.",
   });
 
   HostFileProxy.instance.resolve(requestId, {
@@ -106,7 +106,7 @@ export const ROUTES: RouteDefinition[] = [
     additionalResponses: {
       "400": {
         description:
-          "x-vellum-client-id header is missing for a targeted host file request.",
+          "x-cadet-client-id header is missing for a targeted host file request.",
       },
       "403": {
         description: SAME_ACTOR_FORBIDDEN_DESCRIPTION,

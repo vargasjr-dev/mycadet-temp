@@ -118,7 +118,7 @@ function verificationView(verification: IngressVerification): {
  * keys it are what a decision turns on.
  *
  * `served` is answered by asking `findServableRoute` the same question the
- * request path asks, rather than by restating its rule. A `signer: "vellum"`
+ * request path asks, rather than by restating its rule. A `signer: "cadet"`
  * route is served out of a pending declaration, so approval state alone does
  * not say whether a route is live, and a listing that reimplemented the
  * exception could come to disagree with the surface it describes.
@@ -147,7 +147,7 @@ function routeView(
     credential: route.verification
       ? credentialKey(plugin, route.verification.secret.field)
       : credentialKey(
-          route.signer === "vellum" ? "vellum" : plugin,
+          route.signer === "cadet" ? "cadet" : plugin,
           "webhook_secret",
         ),
     verification: route.verification
@@ -166,7 +166,7 @@ function routeView(
  * caller is anyone on the internet, and wrong here.
  *
  * `state` is the approval state and nothing more, because approval and
- * servability are not the same question: a `signer: "vellum"` route is served
+ * servability are not the same question: a `signer: "cadet"` route is served
  * out of a pending declaration. Each route carries its own `served`, so a
  * source can report accurately that it is waiting on a decision while some of
  * what it declared is already live.
@@ -334,7 +334,7 @@ export function createChannelIngressApproveHandler(
  * remain servable, which is not the same question.
  *
  * Withdrawing a grant does not withdraw every path the source holds. A
- * `signer: "vellum"` route is served without approval, so it keeps its claim,
+ * `signer: "cadet"` route is served without approval, so it keeps its claim,
  * and an allowlist that dropped it would block a route the gateway still
  * answers.
  */

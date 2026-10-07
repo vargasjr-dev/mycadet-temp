@@ -15,11 +15,11 @@ import {
 
 const SERVICE_ALIASES: Record<string, ServiceName> = {
   assistant: "assistant",
-  "vellum-assistant": "assistant",
+  "mycadet": "assistant",
   gateway: "gateway",
-  "vellum-gateway": "gateway",
+  "cadet-gateway": "gateway",
   "credential-executor": "credential-executor",
-  "vellum-credential-executor": "credential-executor",
+  "cadet-credential-executor": "credential-executor",
 };
 
 function normalizeService(raw: string): ServiceName {
@@ -89,9 +89,9 @@ export async function exec(): Promise<void> {
     );
     console.log("");
     console.log("Services:");
-    console.log("  assistant (or vellum-assistant)");
-    console.log("  gateway (or vellum-gateway)");
-    console.log("  credential-executor (or vellum-credential-executor)");
+    console.log("  assistant (or mycadet)");
+    console.log("  gateway (or cadet-gateway)");
+    console.log("  credential-executor (or cadet-credential-executor)");
     console.log("");
     console.log("Examples:");
     console.log("  cadet exec -- ls -la /workspace");
@@ -176,7 +176,7 @@ export async function exec(): Promise<void> {
   }
 
   if (cloud === "apple-container") {
-    const fullServiceName = `vellum-${service}`;
+    const fullServiceName = `cadet-${service}`;
     if (interactive) {
       await sshAppleContainer(entry, command, fullServiceName);
     } else {

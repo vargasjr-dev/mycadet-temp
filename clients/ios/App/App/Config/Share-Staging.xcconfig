@@ -4,9 +4,9 @@
 
 #include "Share-Base.xcconfig"
 
-APP_GROUP_ID = group.ai.vocify-inc.vellum-assistant-ios.staging
-BUNDLE_DISPLAY_NAME = Vellum Staging
-BUNDLE_URL_SCHEME = vellum-assistant-staging
-PRODUCT_BUNDLE_IDENTIFIER = ai.vocify-inc.vellum-assistant-ios.staging.Share
+APP_GROUP_ID = group.ai.mycadet.ios.staging
+BUNDLE_DISPLAY_NAME = Cadet Staging
+BUNDLE_URL_SCHEME = mycadet-staging
+PRODUCT_BUNDLE_IDENTIFIER = ai.mycadet.ios.staging.Share
 
-PROVISIONING_PROFILE_SPECIFIER_Manual = Vellum Assistant iOS Staging Share Distribution
+PROVISIONING_PROFILE_SPECIFIER_Manual = Cadet Assistant iOS Staging Share Distribution

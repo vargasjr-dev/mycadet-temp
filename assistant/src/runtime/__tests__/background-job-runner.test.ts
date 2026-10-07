@@ -123,7 +123,7 @@ const { runBackgroundJob } = await import("../background-job-runner.js");
 // ── Shared fixtures ──────────────────────────────────────────────────
 
 const TRUST_CONTEXT: TrustContext = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "guardian",
 };
 

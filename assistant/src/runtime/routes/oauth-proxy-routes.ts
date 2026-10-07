@@ -81,7 +81,7 @@ export async function handleOAuthProxy(
   // compare against.
   if (
     !isPlatformAuthBypassActive() &&
-    args.headers?.["x-vellum-subject"] !== proxyGrantSubject(provider, account)
+    args.headers?.["x-cadet-subject"] !== proxyGrantSubject(provider, account)
   ) {
     throw new ForbiddenError(
       "This grant was minted for a different provider or account",

@@ -6,7 +6,7 @@
  * *discloses* trace collection — identified by its accepted version.
  *
  * This mirrors the platform's authoritative ingest gate in
- * `vellum-assistant-platform`:
+ * `mycadet-platform`:
  *   - `django/app/core/trace_collection.py` (`is_trace_collection_enabled`)
  *   - `config.settings.TRACE_COLLECTION_MIN_DIAGNOSTICS_CONSENT_VERSION`
  *

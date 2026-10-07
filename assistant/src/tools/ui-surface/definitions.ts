@@ -208,7 +208,7 @@ function isDynamicPageAppSubstitute(input: Record<string, unknown>): boolean {
 }
 
 const INTERACTIVE_HTML_RE =
-  /<script\b|on[a-z]+\s*=|addEventListener|new Chart\b|window\.vellum\b/i;
+  /<script\b|on[a-z]+\s*=|addEventListener|new Chart\b|window\.cadet\b/i;
 
 function isSubstantialInteractiveHtml(input: Record<string, unknown>): boolean {
   const html = dynamicPageHtml(input);

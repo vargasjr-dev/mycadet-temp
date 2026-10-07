@@ -3532,7 +3532,7 @@ export async function surfaceProxyResolver(
             ? ack.submittedData.reason
             : "unknown";
         return {
-          content: `The channel setup panel could not be opened by the connected client (reason: ${reason}). Do NOT tell the user the panel is open. Troubleshoot with the user (e.g. ask them to reopen or refresh the Vellum app), then retry ui_show.`,
+          content: `The channel setup panel could not be opened by the connected client (reason: ${reason}). Do NOT tell the user the panel is open. Troubleshoot with the user (e.g. ask them to reopen or refresh the Cadet app), then retry ui_show.`,
           isError: true,
         };
       }
@@ -3540,7 +3540,7 @@ export async function surfaceProxyResolver(
       if (ack.status === "timed_out") {
         return {
           content:
-            "No connected client confirmed opening the channel setup panel. Do NOT tell the user the panel is open. The user's app may be closed, viewing a different conversation, or running a version that cannot show this panel. Ask the user to open this conversation in the Vellum app (web or desktop), then retry ui_show.",
+            "No connected client confirmed opening the channel setup panel. Do NOT tell the user the panel is open. The user's app may be closed, viewing a different conversation, or running a version that cannot show this panel. Ask the user to open this conversation in the Cadet app (web or desktop), then retry ui_show.",
           isError: true,
         };
       }
@@ -3548,7 +3548,7 @@ export async function surfaceProxyResolver(
       // cancelled — no interactive client, or the turn was aborted.
       return {
         content:
-          "The channel setup panel could not be opened — no connected client can render interactive UI. Do NOT tell the user the panel is open. Ask the user to open the Vellum app (web or desktop), then retry ui_show.",
+          "The channel setup panel could not be opened — no connected client can render interactive UI. Do NOT tell the user the panel is open. Ask the user to open the Cadet app (web or desktop), then retry ui_show.",
         isError: true,
       };
     }
@@ -3880,7 +3880,7 @@ export async function surfaceProxyResolver(
     if (!canShowInteractiveUi(ctx)) {
       return {
         content:
-          "app_open needs a connected client that can display app surfaces (the Vellum macOS or web app), and none is available for this conversation. The app is saved — the user can open it from a connected client.",
+          "app_open needs a connected client that can display app surfaces (the Cadet macOS or web app), and none is available for this conversation. The app is saved — the user can open it from a connected client.",
         isError: true,
       };
     }

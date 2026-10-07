@@ -24,12 +24,12 @@
 // APP_GROUP_ID: a container is shared only between bundles naming the
 // identical group, so the appex restates the app's value verbatim. It
 // reaches the entitlement below and, so Swift can read it at runtime,
-// the VellumAppGroupId Info.plist key, which exists because the
+// the CadetAppGroupId Info.plist key, which exists because the
 // entitlement itself is not readable from Swift.
 //
 // BUNDLE_URL_SCHEME: the Live Activity's widgetURL has to deep-link into
 // its *own* containing app — a mismatch sends a Dev build's island tap
-// into the production app. It reaches Swift as the VellumURLScheme
+// into the production app. It reaches Swift as the CadetURLScheme
 // Info.plist key, never as CFBundleURLTypes: an appex must not register
 // a URL type.
 //

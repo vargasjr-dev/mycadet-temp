@@ -18,7 +18,7 @@ import {
 
 const TEST_DIR = join(
   tmpdir(),
-  `vellum-credresolve-test-${randomBytes(4).toString("hex")}`,
+  `cadet-credresolve-test-${randomBytes(4).toString("hex")}`,
 );
 const META_PATH = join(TEST_DIR, "metadata.json");
 

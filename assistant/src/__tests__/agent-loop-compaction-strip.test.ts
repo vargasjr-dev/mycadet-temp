@@ -128,7 +128,7 @@ function installCapturingManager(capture: CompactionInputCapture): {
       };
     }) as unknown as typeof manager.recoverContextOverflow;
   }
-  return { trust: { sourceChannel: "vellum", trustClass: "unknown" } };
+  return { trust: { sourceChannel: "cadet", trustClass: "unknown" } };
 }
 
 function serialize(messages: Message[] | null): string {

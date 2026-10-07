@@ -325,7 +325,7 @@ export async function maybeStartNgrokTunnel(
 export interface RunNgrokTunnelOptions {
   /** Local edge port to forward. Defaults to the global GATEWAY_PORT. */
   port?: number;
-  /** Workspace directory for config read/write. Defaults to ~/.vellum/workspace. */
+  /** Workspace directory for config read/write. Defaults to ~/.cadet/workspace. */
   workspaceDir?: string;
   /** Lockfile entry to mirror the ingress URL onto (`ingressUrl`). */
   assistantId?: string;

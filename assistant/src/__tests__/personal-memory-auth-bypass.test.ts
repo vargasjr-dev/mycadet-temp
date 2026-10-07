@@ -68,7 +68,7 @@ describe("isPersonalMemoryAllowed — no exposure to non-guardian channel actors
     // reason: a surface is not an actor.
     expect(
       isPersonalMemoryAllowed({
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         trustClass: "unverified_contact",
       }),
     ).toBe(false);

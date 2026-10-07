@@ -190,7 +190,7 @@ describe("DesktopSessionManager process tree", () => {
         LANG: "C.UTF-8",
         // Neither the kata chroot overlay nor secrets reach the desktop.
         LD_LIBRARY_PATH: "/data/system/usr/lib",
-        VELLUM_SANDBOX_RUNTIME: "kata",
+        CADET_SANDBOX_RUNTIME: "kata",
         OPENAI_API_KEY: "sk-secret",
       },
     });

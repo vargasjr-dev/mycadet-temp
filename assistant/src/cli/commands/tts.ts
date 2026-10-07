@@ -158,7 +158,7 @@ export function registerTtsCommand(program: Command): void {
             opts.output ??
             join(
               tmpdir(),
-              `vellum-tts-${randomUUID()}.${extensionForMime(contentType)}`,
+              `cadet-tts-${randomUUID()}.${extensionForMime(contentType)}`,
             );
 
           // Write audio to disk.

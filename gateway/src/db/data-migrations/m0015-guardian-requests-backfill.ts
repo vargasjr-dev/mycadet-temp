@@ -10,7 +10,7 @@
  * Column mapping: assistant `conversation_id` → gateway
  * `source_conversation_id`; assistant `source_type` has no gateway column
  * (derived from source_channel at read time), so legacy desktop/voice rows
- * with a null source_channel get the sentinel channel (vellum/phone) that
+ * with a null source_channel get the sentinel channel (cadet/phone) that
  * derives back to the same source type; everything else copies 1:1.
  *
  * Copy, not move: never writes to the assistant DB (the drop migration is
@@ -38,7 +38,7 @@ function getRawGatewayDb(): Database {
 // source_channel; give them the sentinel channel that derives back to the
 // stored source_type so they keep matching desktop/voice filters.
 const SENTINEL_CHANNEL_BY_SOURCE_TYPE: Record<string, string> = {
-  desktop: "vellum",
+  desktop: "cadet",
   voice: "phone",
 };
 

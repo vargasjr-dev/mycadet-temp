@@ -1174,11 +1174,11 @@ describe("startVoiceTurn channel capabilities", () => {
       );
   }
 
-  test("a vellum/macos (live-voice) turn keeps its channel's dynamic UI", async () => {
+  test("a cadet/macos (live-voice) turn keeps its channel's dynamic UI", async () => {
     const installed = captureInstalledCapabilities();
     await startVoiceTurn({
       ...makeTurnOptions(),
-      userMessageChannel: "vellum",
+      userMessageChannel: "cadet",
       userMessageInterface: "macos",
     });
     const caps = installed();
@@ -1244,7 +1244,7 @@ describe("startVoiceTurn guardian approvals", () => {
   // it closes: a guardian call used to allow every confirmation outright.
   test("leaves a sensitive tool pending for the user to answer", async () => {
     const fake = await runVoiceTurn({
-      userMessageChannel: "vellum",
+      userMessageChannel: "cadet",
       userMessageInterface: "macos",
     });
 
@@ -1260,7 +1260,7 @@ describe("startVoiceTurn guardian approvals", () => {
   // gating them would interrupt the conversation constantly.
   test("still allows a tool with no sensitive reach", async () => {
     const fake = await runVoiceTurn({
-      userMessageChannel: "vellum",
+      userMessageChannel: "cadet",
       userMessageInterface: "macos",
     });
 
@@ -1292,7 +1292,7 @@ describe("startVoiceTurn guardian approvals", () => {
   // lands on the auto-allow.
   test("an out-of-workspace path prompts even on a sandbox target", async () => {
     const fake = await runVoiceTurn(
-      { userMessageChannel: "vellum", userMessageInterface: "macos" },
+      { userMessageChannel: "cadet", userMessageInterface: "macos" },
       { workingDir: "/tmp/workspace-voice-bridge-test" },
     );
 
@@ -1307,7 +1307,7 @@ describe("startVoiceTurn guardian approvals", () => {
   // interrupt the conversation for every file the assistant touches.
   test("an in-workspace read is still allowed outright", async () => {
     const fake = await runVoiceTurn(
-      { userMessageChannel: "vellum", userMessageInterface: "macos" },
+      { userMessageChannel: "cadet", userMessageInterface: "macos" },
       { workingDir: "/tmp/workspace-voice-bridge-test" },
     );
 
@@ -1326,7 +1326,7 @@ describe("startVoiceTurn guardian approvals", () => {
   // and the safe reading of "cannot tell" is "ask".
   test("a missing workspace boundary fails closed", async () => {
     const fake = await runVoiceTurn(
-      { userMessageChannel: "vellum", userMessageInterface: "macos" },
+      { userMessageChannel: "cadet", userMessageInterface: "macos" },
       { workingDir: "" },
     );
 
@@ -1340,7 +1340,7 @@ describe("startVoiceTurn guardian approvals", () => {
   // costs less than an unreviewed action on their machine.
   test("prompts when the execution target is unknown", async () => {
     const fake = await runVoiceTurn({
-      userMessageChannel: "vellum",
+      userMessageChannel: "cadet",
       userMessageInterface: "macos",
     });
 
@@ -2072,8 +2072,8 @@ describe("startVoiceTurn race-loss state restore", () => {
       trustClass: "owner-overwrite",
     };
     const overwrittenChannelContext = {
-      userMessageChannel: "vellum",
-      assistantMessageChannel: "vellum",
+      userMessageChannel: "cadet",
+      assistantMessageChannel: "cadet",
     };
     const statesDuringWait: FakeTurnState[] = [];
     const fake = makeFakeConversation({

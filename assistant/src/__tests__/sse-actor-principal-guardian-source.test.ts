@@ -37,8 +37,8 @@ import {
   findLocalGuardianPrincipalIdFromStore,
 } from "../runtime/local-actor-identity.js";
 
-const gatewayVellumGuardian: GuardianDelivery = {
-  channelType: "vellum",
+const gatewayCadetGuardian: GuardianDelivery = {
+  channelType: "cadet",
   contactId: "contact-gw",
   principalId: "guardian-from-gateway",
   address: "cadet:self",
@@ -52,7 +52,7 @@ describe("SSE actor principal resolves from the same guardian source as send/res
   });
 
   test("warm gateway cache: sync (SSE) and async (send/result) resolve the SAME principal", async () => {
-    ipcGuardians = [gatewayVellumGuardian];
+    ipcGuardians = [gatewayCadetGuardian];
 
     // Prime the cache the way the async hot paths do.
     const asyncPrincipalId = await findLocalGuardianPrincipalId();
@@ -67,12 +67,12 @@ describe("SSE actor principal resolves from the same guardian source as send/res
     expect(findLocalGuardianPrincipalIdFromStore()).toBeUndefined();
   });
 
-  test("warm gateway cache primes via the vellum-filtered read the async path uses", async () => {
-    ipcGuardians = [gatewayVellumGuardian];
+  test("warm gateway cache primes via the cadet-filtered read the async path uses", async () => {
+    ipcGuardians = [gatewayCadetGuardian];
 
     // The async path filters by channelType cadet; the sync peek must read
     // the same cache key, not the unfiltered "ALL" entry.
-    await getGuardianDelivery({ channelTypes: ["vellum"] });
+    await getGuardianDelivery({ channelTypes: ["cadet"] });
 
     expect(findLocalGuardianPrincipalIdFromStore()).toBe(
       "guardian-from-gateway",

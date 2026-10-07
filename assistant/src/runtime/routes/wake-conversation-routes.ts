@@ -76,7 +76,7 @@ export const ROUTES: RouteDefinition[] = [
       // client. A remote `actor` (reachable via the gateway) stays
       // `unknown`/interactive. The body's `cronRunId` is trusted only from a
       // local caller.
-      const isLocal = headers?.["x-vellum-principal-type"] === "local";
+      const isLocal = headers?.["x-cadet-principal-type"] === "local";
 
       // A script-mode schedule hands off to the agent loop through this route,
       // so the schedule's pinned profile has to be applied here for the woken

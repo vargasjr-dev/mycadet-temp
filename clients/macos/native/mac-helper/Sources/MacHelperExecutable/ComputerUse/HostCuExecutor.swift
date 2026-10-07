@@ -4,7 +4,7 @@ import AppKit
 import MacHelperCore
 import os
 
-private let log = Logger(subsystem: "ai.vellum.mac-helper", category: "HostCu")
+private let log = Logger(subsystem: "ai.mycadet.mac-helper", category: "HostCu")
 
 // MARK: - Phase Timing
 
@@ -188,7 +188,7 @@ enum HostCuActionRunner {
                     enumerator: enumerator,
                     screenCapture: screenCapture,
                     executionResult: nil,
-                    executionError: "Accessibility permission not granted. Grant Vellum access in System Settings > Privacy & Security > Accessibility, then retry.",
+                    executionError: "Accessibility permission not granted. Grant Cadet access in System Settings > Privacy & Security > Accessibility, then retry.",
                     stepNumber: stepNumber,
                     conversationId: conversationId,
                     timer: timer,
@@ -376,7 +376,7 @@ enum HostCuActionRunner {
             // returns an empty tree without Accessibility. Surface the same hint the
             // action path gives instead of returning a bare empty observation.
             if !ActionExecutor.checkAccessibilityPermission(prompt: true) {
-                executionError = "Accessibility permission not granted. Grant Vellum access in System Settings > Privacy & Security > Accessibility, then retry."
+                executionError = "Accessibility permission not granted. Grant Cadet access in System Settings > Privacy & Security > Accessibility, then retry."
             }
         }
 

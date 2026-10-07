@@ -122,7 +122,7 @@ import { seedDefaultUserGuardrailsMigration } from "./121-seed-default-user-guar
 import { relocateDefaultUserBoundaryMigration } from "./122-relocate-default-user-boundary.js";
 import { swapQualityProfileToFableMigration } from "./123-swap-quality-profile-to-fable.js";
 import { correctDefaultUserBoundaryCommentsMigration } from "./124-correct-default-user-boundary-comments.js";
-import { repointManagedConnectionsToVellumMigration } from "./125-repoint-managed-connections-to-vellum.js";
+import { repointManagedConnectionsToCadetMigration } from "./125-repoint-managed-connections-to-cadet.js";
 import { stripManagedProfileBodiesMigration } from "./126-strip-managed-profile-bodies.js";
 import { backfillDefaultProviderMigration } from "./127-backfill-default-provider.js";
 import { repairStaleOpenrouterGrokModelIdsMigration } from "./128-repair-stale-openrouter-grok-model-ids.js";
@@ -292,7 +292,7 @@ export const WORKSPACE_MIGRATIONS: WorkspaceMigration[] = [
   relocateDefaultUserBoundaryMigration,
   swapQualityProfileToFableMigration,
   correctDefaultUserBoundaryCommentsMigration,
-  repointManagedConnectionsToVellumMigration,
+  repointManagedConnectionsToCadetMigration,
   stripManagedProfileBodiesMigration,
   backfillDefaultProviderMigration,
   repairStaleOpenrouterGrokModelIdsMigration,

@@ -187,9 +187,9 @@ type GuardianDeliveryFetch = (input?: {
 
 /**
  * Warm both guardian-binding cache keys the sync persona resolvers read: the
- * `"vellum"`-channel key for `peekGuardianForChannel("vellum")` and the
+ * `"cadet"`-channel key for `peekGuardianForChannel("cadet")` and the
  * unfiltered key for the `peekAnyGuardian()` fallback. Warming only one key
- * still resolves `users/default.md` when the guardian lives on a non-vellum
+ * still resolves `users/default.md` when the guardian lives on a non-cadet
  * channel (phone / Telegram).
  *
  * Uses the FRESH reader so warmup bypasses a stale/empty cached entry: a
@@ -203,7 +203,7 @@ export async function warmGuardianBindings(
   fetchDelivery: GuardianDeliveryFetch = getGuardianDeliveryFresh,
 ): Promise<void> {
   await Promise.all([
-    fetchDelivery({ channelTypes: ["vellum"] }),
+    fetchDelivery({ channelTypes: ["cadet"] }),
     fetchDelivery(),
   ]);
 }

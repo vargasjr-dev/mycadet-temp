@@ -75,7 +75,7 @@ function captureWith(conversationCount: number): StallCapture {
           conversationId: `01a0c9a0-0000-7000-8000-00000000000${i % 10}`,
           title:
             "A long title drawn from the user's own first message x".repeat(2),
-          originChannel: "vellum",
+          originChannel: "cadet",
           originInterface: "web",
           processingStartedAt: 1,
         }),

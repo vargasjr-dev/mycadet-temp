@@ -106,7 +106,7 @@ function makeRefreshRequest(
   } = {},
 ): Request {
   const headers: Record<string, string> = {
-    cookie: `vellum_web_refresh=${encodeURIComponent(refreshToken)}`,
+    cookie: `cadet_web_refresh=${encodeURIComponent(refreshToken)}`,
   };
   const secFetchSite = Object.prototype.hasOwnProperty.call(
     opts,
@@ -160,7 +160,7 @@ function cookieValue(cookies: string[], name: string): string {
   return decodeURIComponent(cookie!.split(";")[0].slice(name.length + 1));
 }
 
-// findVellumGuardian() now reads the gateway DB, so seed the guardian there.
+// findCadetGuardian() now reads the gateway DB, so seed the guardian there.
 function seedGatewayGuardian() {
   const now = Date.now();
   getGatewayDb()
@@ -179,7 +179,7 @@ function seedGatewayGuardian() {
     .values({
       id: "channel-guardian",
       contactId: "contact-guardian",
-      type: "vellum",
+      type: "cadet",
       address: GUARDIAN_ID,
       isPrimary: true,
       status: "active",
@@ -293,7 +293,7 @@ describe("remote web pairing token exchange", () => {
       expect(cookie).toContain("Path=/v1/guardian/refresh");
     }
 
-    const refreshToken = cookieValue(cookies, "vellum_web_refresh");
+    const refreshToken = cookieValue(cookies, "cadet_web_refresh");
     const tokens = activeTokens();
     const refreshTokens = activeRefreshTokens();
     expect(tokens).toHaveLength(1);
@@ -325,7 +325,7 @@ describe("remote web pairing token exchange", () => {
     );
     const originalRefreshToken = cookieValue(
       setCookies(exchange),
-      "vellum_web_refresh",
+      "cadet_web_refresh",
     );
     const originalRefreshRecord = activeRefreshTokens()[0];
 
@@ -344,7 +344,7 @@ describe("remote web pairing token exchange", () => {
 
     const rotatedRefreshToken = cookieValue(
       setCookies(refresh),
-      "vellum_web_refresh",
+      "cadet_web_refresh",
     );
     expect(rotatedRefreshToken).not.toBe(originalRefreshToken);
 
@@ -377,7 +377,7 @@ describe("remote web pairing token exchange", () => {
     );
     const originalRefreshToken = cookieValue(
       setCookies(exchange),
-      "vellum_web_refresh",
+      "cadet_web_refresh",
     );
 
     for (const secFetchSite of ["cross-site", "same-site", "none"]) {
@@ -418,7 +418,7 @@ describe("remote web pairing token exchange", () => {
     );
     const originRefreshToken = cookieValue(
       setCookies(originExchange),
-      "vellum_web_refresh",
+      "cadet_web_refresh",
     );
 
     const originRefresh = await handleGuardianRefresh(
@@ -431,7 +431,7 @@ describe("remote web pairing token exchange", () => {
 
     expect(originRefresh.status).toBe(200);
     expect(
-      cookieValue(setCookies(originRefresh), "vellum_web_refresh"),
+      cookieValue(setCookies(originRefresh), "cadet_web_refresh"),
     ).not.toBe(originRefreshToken);
 
     const refererChallenge = createRemoteWebPairingChallenge(
@@ -446,7 +446,7 @@ describe("remote web pairing token exchange", () => {
     );
     const refererRefreshToken = cookieValue(
       setCookies(refererExchange),
-      "vellum_web_refresh",
+      "cadet_web_refresh",
     );
 
     const refererRefresh = await handleGuardianRefresh(
@@ -458,7 +458,7 @@ describe("remote web pairing token exchange", () => {
 
     expect(refererRefresh.status).toBe(200);
     expect(
-      cookieValue(setCookies(refererRefresh), "vellum_web_refresh"),
+      cookieValue(setCookies(refererRefresh), "cadet_web_refresh"),
     ).not.toBe(refererRefreshToken);
   });
 
@@ -476,7 +476,7 @@ describe("remote web pairing token exchange", () => {
     );
     const originalRefreshToken = cookieValue(
       setCookies(exchange),
-      "vellum_web_refresh",
+      "cadet_web_refresh",
     );
 
     for (const opts of [
@@ -552,7 +552,7 @@ describe("remote web pairing token exchange", () => {
     expect(exchangeCookies[0]).toContain(`Path=${expectedCookiePath}`);
     const originalRefreshToken = cookieValue(
       exchangeCookies,
-      "vellum_web_refresh",
+      "cadet_web_refresh",
     );
     expect(activeRefreshTokens()[0].browserRefreshCookiePath).toBe(
       expectedCookiePath,
@@ -599,7 +599,7 @@ describe("remote web pairing token exchange", () => {
       "approved",
     );
 
-    // No gateway guardian: resolveOrCreateVellumGuardian mints fresh via
+    // No gateway guardian: resolveOrCreateCadetGuardian mints fresh via
     // createGuardianBinding, which writes the authoritative gateway binding
     // first, then mirrors identity to the assistant DB. The mirror write fails
     // this once; the gateway binding is now authoritative so the mint succeeds.
@@ -622,7 +622,7 @@ describe("remote web pairing token exchange", () => {
       .where(eq(contacts.role, "guardian"))
       .all();
     expect(gwGuardian).toHaveLength(1);
-    expect(gwGuardian[0].principalId).toMatch(/^vellum-principal-/);
+    expect(gwGuardian[0].principalId).toMatch(/^cadet-principal-/);
   });
 
   test("gateway binding write failure fails the mint and leaves the code retryable", async () => {
@@ -641,13 +641,13 @@ describe("remote web pairing token exchange", () => {
     const gwDb = getGatewayDb();
     const realTransaction = gwDb.transaction.bind(gwDb);
     let failedOnce = false;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (gwDb as any).transaction = (...args: unknown[]) => {
       if (!failedOnce) {
         failedOnce = true;
         throw new Error("gateway binding write failed");
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       return (realTransaction as any)(...args);
     };
 
@@ -658,7 +658,7 @@ describe("remote web pairing token exchange", () => {
         ),
       ).rejects.toThrow("gateway binding write failed");
     } finally {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (gwDb as any).transaction = realTransaction;
     }
 
@@ -1136,7 +1136,7 @@ describe("pairing token refresh delivery discriminator", () => {
     expect(res.status).toBe(200);
     const cookies = setCookies(res);
     expect(cookies).toHaveLength(1);
-    expect(cookies[0]).toContain("vellum_web_refresh=");
+    expect(cookies[0]).toContain("cadet_web_refresh=");
     expect(cookies[0]).toContain("HttpOnly");
 
     const body = (await res.json()) as Record<string, unknown>;

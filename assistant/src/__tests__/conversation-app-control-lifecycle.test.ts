@@ -108,7 +108,7 @@ function makeConversation(): Conversation {
     "/tmp",
     { maxTokens: 4096 },
   );
-  conv.setTrustContext({ trustClass: "guardian", sourceChannel: "vellum" });
+  conv.setTrustContext({ trustClass: "guardian", sourceChannel: "cadet" });
   return conv;
 }
 

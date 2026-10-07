@@ -9,7 +9,7 @@ import WidgetKit
 /// and Quick Actions (`Widgets/QuickActionsWidget.swift`), and two Control
 /// Center / Lock Screen controls, one starting a voice conversation
 /// (`StartVoiceControl.swift`) and one opening the app
-/// (`OpenVellumControl.swift`). A `WidgetBundle` holds Home Screen widgets
+/// (`OpenCadetControl.swift`). A `WidgetBundle` holds Home Screen widgets
 /// alongside the rest, which is why the widgets join this list rather than
 /// needing another extension target.
 ///
@@ -29,7 +29,7 @@ struct VoiceActivityBundle: WidgetBundle {
         QuickActionsWidget()
         if #available(iOS 18.0, *) {
             StartVoiceControl()
-            OpenVellumControl()
+            OpenCadetControl()
         }
     }
 }

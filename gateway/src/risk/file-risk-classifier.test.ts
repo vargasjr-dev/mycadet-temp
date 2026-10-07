@@ -11,14 +11,14 @@ import {
 
 // -- Test context -------------------------------------------------------------
 
-const MOCK_PROTECTED_DIR = join(homedir(), ".vellum", "protected");
+const MOCK_PROTECTED_DIR = join(homedir(), ".cadet", "protected");
 const MOCK_DEPRECATED_DIR = join(
   homedir(),
-  ".vellum",
+  ".cadet",
   "workspace",
   "deprecated",
 );
-const MOCK_WORKSPACE_DIR = join(homedir(), ".vellum", "workspace");
+const MOCK_WORKSPACE_DIR = join(homedir(), ".cadet", "workspace");
 const MOCK_HOOKS_DIR = join(MOCK_WORKSPACE_DIR, "hooks");
 const MOCK_PLUGINS_DIR = join(MOCK_WORKSPACE_DIR, "plugins");
 const MOCK_TOOLS_DIR = join(MOCK_WORKSPACE_DIR, "tools");
@@ -116,7 +116,7 @@ describe("FileRiskClassifier", () => {
       testSkillSourceDirs = [];
       const legacyPath = join(
         homedir(),
-        ".vellum",
+        ".cadet",
         "protected",
         "actor-token-signing-key",
       );
@@ -290,7 +290,7 @@ describe("FileRiskClassifier", () => {
       testSkillSourceDirs = [];
       const result = await classifyInput({
         toolName: "file_write",
-        filePath: join(homedir(), ".vellum", "workspace", "plugins-data", "x"),
+        filePath: join(homedir(), ".cadet", "workspace", "plugins-data", "x"),
         workingDir: "/",
       });
       expect(result.riskLevel).toBe("low");
@@ -337,7 +337,7 @@ describe("FileRiskClassifier", () => {
       testSkillSourceDirs = [];
       const result = await classifyInput({
         toolName: "file_write",
-        filePath: join(homedir(), ".vellum", "workspace", "tools-data", "x"),
+        filePath: join(homedir(), ".cadet", "workspace", "tools-data", "x"),
         workingDir: "/",
       });
       expect(result.riskLevel).toBe("low");
@@ -410,7 +410,7 @@ describe("FileRiskClassifier", () => {
         toolName: "file_write",
         filePath: join(
           homedir(),
-          ".vellum",
+          ".cadet",
           "workspace",
           "workflows-data",
           "x",
@@ -498,7 +498,7 @@ describe("FileRiskClassifier", () => {
         toolName: "file_write",
         filePath: join(
           homedir(),
-          ".vellum",
+          ".cadet",
           "workspace",
           "monitoring-data",
           "x",

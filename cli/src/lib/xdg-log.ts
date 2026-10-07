@@ -20,8 +20,8 @@ const PINO_TIME_RE = /^\[\d{2}:\d{2}:\d{2}\.\d{3}\]\s*/;
 /**
  * Returns the XDG-compatible log directory for Cadet CLI logs.
  *
- * Environment-aware: production uses `$XDG_CONFIG_HOME/vellum/logs`,
- * non-production environments use `$XDG_CONFIG_HOME/vellum-<env>/logs`.
+ * Environment-aware: production uses `$XDG_CONFIG_HOME/cadet/logs`,
+ * non-production environments use `$XDG_CONFIG_HOME/cadet-<env>/logs`.
  */
 export function getLogDir(): string {
   return getEnvironmentLogDir(getCurrentEnvironment());

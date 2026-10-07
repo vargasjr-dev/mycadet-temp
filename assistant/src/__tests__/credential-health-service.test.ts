@@ -117,7 +117,7 @@ mock.module("../security/token-manager.js", () => ({
 // a managed test scenario is exercised. The managed/your-own service mode is
 // seeded into the real workspace config via `seedGoogleOAuthMode` below.
 mock.module("../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: async () => {
       if (!platformClientAvailable) {
         return null;

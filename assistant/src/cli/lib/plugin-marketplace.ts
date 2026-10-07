@@ -28,8 +28,8 @@ import type { FetchLike } from "./fetch-like.js";
 import { USER_AGENT } from "./user-agent.js";
 
 /** Canonical location of the marketplace manifest. */
-const MARKETPLACE_SOURCE_OWNER = "vellum-ai";
-const MARKETPLACE_SOURCE_REPO = "vellum-assistant";
+const MARKETPLACE_SOURCE_OWNER = "vargasjr-dev";
+const MARKETPLACE_SOURCE_REPO = "mycadet";
 const MARKETPLACE_FILE_PATH = "plugins/marketplace.json";
 
 /**

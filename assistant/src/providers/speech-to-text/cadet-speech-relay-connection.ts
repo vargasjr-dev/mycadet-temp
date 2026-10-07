@@ -6,7 +6,7 @@
  * The daemon never dials tunnel itself — tunnel contact is gateway-only so
  * deterministic policy stays in a process the agent cannot rewrite. The
  * gateway route authenticates the daemon with a self-minted service JWT
- * (both processes share the HMAC signing key), attaches the Vellum
+ * (both processes share the HMAC signing key), attaches the Cadet
  * assistant API key on its own upstream leg to tunnel, and pipes Deepgram
  * wire frames verbatim. The gateway mirrors tunnel's error contract:
  * rejections are JSON `{code, detail}` bodies, and mid-session failures
@@ -57,7 +57,7 @@ export interface SpeechRelayConnection {
 export async function resolveSpeechRelayConnection(): Promise<SpeechRelayConnection | null> {
   const mintServiceToken = () =>
     mintToken({
-      aud: "vellum-gateway",
+      aud: "cadet-gateway",
       sub: DAEMON_SERVICE_SUB,
       // Least-privilege (ATL-1033): this token rides in the dial URL, so it
       // must open nothing but the speech relay.
@@ -104,13 +104,13 @@ export function mapTunnelError(error: TunnelErrorInfo): {
       return {
         category: "auth",
         message:
-          "The Vellum speech relay rejected this assistant's API key — the assistant's platform environment may not match the relay it is dialing (set TUNNEL_BASE_URL on the gateway to the matching environment, e.g. https://tunnel-staging.mycadet.ai for staging).",
+          "The Cadet speech relay rejected this assistant's API key — the assistant's platform environment may not match the relay it is dialing (set TUNNEL_BASE_URL on the gateway to the matching environment, e.g. https://tunnel-staging.mycadet.ai for staging).",
       };
     case "missing_platform_connection":
       return {
         category: "auth",
         message:
-          "Managed speech needs a working Vellum platform connection — reconnect with 'assistant platform connect'.",
+          "Managed speech needs a working Cadet platform connection — reconnect with 'assistant platform connect'.",
       };
     case "invalid_token":
       return {

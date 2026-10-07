@@ -13,7 +13,7 @@
  * when the guardian lookup is unavailable.
  */
 
-import { VellumPlatformClient } from "../../platform/client.js";
+import { CadetPlatformClient } from "../../platform/client.js";
 import { getLogger } from "../../util/logger.js";
 import {
   isRetryableNetworkError,
@@ -121,7 +121,7 @@ export class PlatformPushAdapter implements ChannelAdapter {
     if (isCompletionRecipientUnavailable(payload, destination)) {
       return { success: false, error: "completion recipient unavailable" };
     }
-    const client = await VellumPlatformClient.create();
+    const client = await CadetPlatformClient.create();
     if (!client) {
       log.warn(
         { sourceEventName: payload.sourceEventName },

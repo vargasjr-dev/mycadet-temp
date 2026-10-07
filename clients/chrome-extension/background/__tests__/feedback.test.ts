@@ -14,20 +14,20 @@ mock.module("../client-identity.js", () => ({
         };
       }
     ).chrome;
-    const stored = await chromeApi?.storage?.local?.get("vellum.clientId");
-    const clientId = stored?.["vellum.clientId"];
+    const stored = await chromeApi?.storage?.local?.get("cadet.clientId");
+    const clientId = stored?.["cadet.clientId"];
     return typeof clientId === "string" && clientId.length > 0
       ? clientId
       : "client-uuid";
   },
   getClientRegistrationHeaders: async () => ({
-    "X-Vellum-Client-Id": "ext-test-id",
-    "X-Vellum-Interface-Id": "chrome-extension",
+    "X-Cadet-Client-Id": "ext-test-id",
+    "X-Cadet-Interface-Id": "chrome-extension",
   }),
   clientCapabilityHeaders: (version?: string, watchdogEnabled?: boolean) => {
     const headers: Record<string, string> = {};
-    if (version) headers["X-Vellum-Client-Version"] = version;
-    if (watchdogEnabled) headers["X-Vellum-Sse-Watchdog"] = "1";
+    if (version) headers["X-Cadet-Client-Version"] = version;
+    if (watchdogEnabled) headers["X-Cadet-Sse-Watchdog"] = "1";
     return headers;
   },
 }));
@@ -132,7 +132,7 @@ function installChromeMock(stores: MockStores): void {
 const TEST_EMAIL = "user@example.com";
 
 function makeEnv(): EnvironmentContext {
-  return { environment: "dev", apiBaseUrl: "https://dev-platform.vellum.ai" };
+  return { environment: "dev", apiBaseUrl: "https://dev-cloud.cadet.ai" };
 }
 
 function seedStorage(stores: MockStores, opts: {
@@ -142,19 +142,19 @@ function seedStorage(stores: MockStores, opts: {
   clientId?: string;
 } = {}): void {
   if (opts.session) {
-    stores.local["vellum.cloudSession"] = {
+    stores.local["cadet.cloudSession"] = {
       environment: "dev",
       ...opts.session,
     };
   }
   if (opts.selectedAssistant !== undefined && opts.selectedAssistant !== null) {
-    stores.local["vellum.selectedAssistant"] = opts.selectedAssistant;
+    stores.local["cadet.selectedAssistant"] = opts.selectedAssistant;
   }
   if (opts.organizationId) {
-    stores.local["vellum.connectedOrganizationId"] = opts.organizationId;
+    stores.local["cadet.connectedOrganizationId"] = opts.organizationId;
   }
   if (opts.clientId) {
-    stores.local["vellum.clientId"] = opts.clientId;
+    stores.local["cadet.clientId"] = opts.clientId;
   }
 }
 
@@ -269,7 +269,7 @@ describe("feedback.collectDiagnosticBundle", () => {
 
     expect(bundle.extension.version).toBe("1.2.3");
     expect(bundle.extension.environment).toBe("dev");
-    expect(bundle.extension.apiBaseUrl).toBe("https://dev-platform.vellum.ai");
+    expect(bundle.extension.apiBaseUrl).toBe("https://dev-cloud.cadet.ai");
     expect(bundle.mode).toBe("cloud");
     expect(bundle.sse).toEqual({ state: "connected", detail: { reason: "ok" } });
     expect(bundle.assistant).toEqual({ id: "asst_1", name: "Jaxon" });
@@ -283,8 +283,8 @@ describe("feedback.collectDiagnosticBundle", () => {
       session: { sessionToken: "VERY_SECRET_TOKEN", email: TEST_EMAIL },
       clientId: "abc",
     });
-    stores.local["vellum.pairToken"] = "PAIR_SHOULD_NOT_LEAK";
-    stores.local["vellum.cloudSession"] = {
+    stores.local["cadet.pairToken"] = "PAIR_SHOULD_NOT_LEAK";
+    stores.local["cadet.cloudSession"] = {
       sessionToken: "VERY_SECRET_TOKEN",
       email: TEST_EMAIL,
     };
@@ -300,8 +300,8 @@ describe("feedback.collectDiagnosticBundle", () => {
     expect(serialized).not.toContain("PAIR_SHOULD_NOT_LEAK");
     // The email lives on the bundle's top-level `email` field, which is OK
     // for support correlation; we just confirm the secret keys aren't here.
-    expect(bundle.storage).not.toHaveProperty("vellum.cloudSession");
-    expect(bundle.storage).not.toHaveProperty("vellum.pairToken");
+    expect(bundle.storage).not.toHaveProperty("cadet.cloudSession");
+    expect(bundle.storage).not.toHaveProperty("cadet.pairToken");
   });
 
   test("includes recent operations and event log entries", async () => {
@@ -370,7 +370,7 @@ describe("feedback.submitFeedback", () => {
 
     expect(calls.length).toBe(1);
     expect(calls[0]!.url).toBe(
-      "https://dev-platform.vellum.ai/v1/upload/feedback/",
+      "https://dev-cloud.cadet.ai/v1/upload/feedback/",
     );
     expect(calls[0]!.init.method).toBe("POST");
     expect(calls[0]!.init.body).toBeInstanceOf(FormData);
@@ -400,7 +400,7 @@ describe("feedback.submitFeedback", () => {
     const file = formData.get("logs_file") as File | null;
     expect(file).not.toBeNull();
     expect(file!.type).toBe("application/gzip");
-    expect(file!.name).toBe("vellum-extension-diagnostics.tar.gz");
+    expect(file!.name).toBe("cadet-extension-diagnostics.tar.gz");
     expect(file!.size).toBeGreaterThan(0);
 
     // Gzip magic bytes — sanity check that the file is actually gzipped.
@@ -422,7 +422,7 @@ describe("feedback.submitFeedback", () => {
     expect((parsed.extension as { version: string }).version).toBe("1.2.3");
   });
 
-  test("attaches X-Session-Token + Vellum-Organization-Id in cloud mode", async () => {
+  test("attaches X-Session-Token + Cadet-Organization-Id in cloud mode", async () => {
     seedStorage(stores, {
       session: { email: TEST_EMAIL, sessionToken: "sess_xyz" },
       organizationId: "org_42",
@@ -435,7 +435,7 @@ describe("feedback.submitFeedback", () => {
 
     const headers = calls[0]!.init.headers as Record<string, string>;
     expect(headers["X-Session-Token"]).toBe("sess_xyz");
-    expect(headers["Vellum-Organization-Id"]).toBe("org_42");
+    expect(headers["Cadet-Organization-Id"]).toBe("org_42");
 
     const formData = calls[0]!.init.body as FormData;
     expect(formData.get("assistant_id")).toBe("asst_1");
@@ -449,7 +449,7 @@ describe("feedback.submitFeedback", () => {
 
     const headers = calls[0]!.init.headers as Record<string, string>;
     expect(headers["X-Session-Token"]).toBeUndefined();
-    expect(headers["Vellum-Organization-Id"]).toBeUndefined();
+    expect(headers["Cadet-Organization-Id"]).toBeUndefined();
   });
 
   test("throws when the platform returns a non-2xx", async () => {

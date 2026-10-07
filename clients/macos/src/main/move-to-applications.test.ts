@@ -228,7 +228,7 @@ describe("promptToRelocateIfStranded", () => {
     expect(dialogCalls).toHaveLength(0);
   });
 
-  // A `.vellum` file or deep-link launch defers relocation on purpose: the
+  // A `.cadet` file or deep-link launch defers relocation on purpose: the
   // event lives only in this process's pending buffers, so the relaunch that
   // accepting the offer triggers would drop it.
   test("stays quiet on a launch that deferred relocation for a pending open", async () => {

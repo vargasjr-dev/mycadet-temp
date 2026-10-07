@@ -237,8 +237,8 @@ describe("LLM catalog parity: daemon vs client", () => {
     expect(catalogModelSupportsText("typesafe", "jev-latest")).toBe(false);
     // A managed Jev profile is configured as `cadet`; the routing identity
     // owns no catalog models, so the lookup must judge by the catalog owner.
-    expect(catalogModelSupportsText("vellum", "jev-latest")).toBe(false);
-    expect(catalogModelSupportsText("vellum", "claude-opus-5")).toBe(true);
+    expect(catalogModelSupportsText("cadet", "jev-latest")).toBe(false);
+    expect(catalogModelSupportsText("cadet", "claude-opus-5")).toBe(true);
     expect(catalogModelSupportsText("anthropic", "claude-opus-4-8")).toBe(true);
     expect(catalogModelSupportsText("openai-compatible", "local-model")).toBe(
       true,

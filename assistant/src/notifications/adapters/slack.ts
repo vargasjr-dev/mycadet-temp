@@ -279,7 +279,7 @@ function buildAccessRequestCardBlocks(
   });
 
   if (
-    (view.guardianResolutionSource === "vellum-anchor" ||
+    (view.guardianResolutionSource === "cadet-anchor" ||
       view.guardianResolutionSource === "none") &&
     view.sourceChannel
   ) {

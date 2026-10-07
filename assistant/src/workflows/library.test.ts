@@ -5,22 +5,22 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { getWorkflow, listWorkflows } from "./library.js";
 
-// Each test points VELLUM_WORKSPACE_DIR at a fresh temp dir, so `getWorkspaceDir`
+// Each test points CADET_WORKSPACE_DIR at a fresh temp dir, so `getWorkspaceDir`
 // resolves there and saved workflows live at `<temp>/workflows/*.workflow.ts`.
 let workspaceDir: string;
 let prevOverride: string | undefined;
 
 beforeEach(() => {
   workspaceDir = mkdtempSync(join(tmpdir(), "wf-library-"));
-  prevOverride = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  prevOverride = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
 });
 
 afterEach(() => {
   if (prevOverride === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = prevOverride;
+    process.env.CADET_WORKSPACE_DIR = prevOverride;
   }
   rmSync(workspaceDir, { recursive: true, force: true });
 });

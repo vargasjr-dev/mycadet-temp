@@ -86,7 +86,7 @@ export function DeveloperGuideContributingContent() {
           </SectionHeading>
           <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
             {`git clone https://github.com/vargasjr-dev/mycadet.git
-cd cadet-assistant
+cd mycadet
 ./setup.sh`}
           </pre>
           <p className="mb-4 text-zinc-600">The setup script will:</p>

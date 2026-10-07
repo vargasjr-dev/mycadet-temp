@@ -13,7 +13,7 @@
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="vellum-alerts" />
+            android:value="cadet-alerts" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_notification" />
@@ -36,7 +36,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="${vellumAuthScheme}"
+                    android:scheme="${cadetAuthScheme}"
                     android:host="auth"
                     android:path="/callback" />
             </intent-filter>
@@ -48,7 +48,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="${vellumAuthScheme}"
+                    android:scheme="${cadetAuthScheme}"
                     android:host="oauth-complete" />
             </intent-filter>
 
@@ -59,7 +59,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="${vellumAuthScheme}"
+                    android:scheme="${cadetAuthScheme}"
                     android:host="billing"
                     android:path="/checkout-complete" />
             </intent-filter>
@@ -71,7 +71,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="${vellumAuthScheme}"
+                    android:scheme="${cadetAuthScheme}"
                     android:host="connect" />
             </intent-filter>
 
@@ -82,7 +82,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="${vellumAuthScheme}"
+                    android:scheme="${cadetAuthScheme}"
                     android:host="voice" />
             </intent-filter>
 
@@ -94,43 +94,43 @@
 
                 <data
                     android:scheme="https"
-                    android:host="${vellumAppLinkHost}"
+                    android:host="${cadetAppLinkHost}"
                     android:path="/assistant" />
                 <data
                     android:scheme="https"
-                    android:host="${vellumAppLinkHost}"
+                    android:host="${cadetAppLinkHost}"
                     android:path="/assistant/pair" />
                 <data
                     android:scheme="https"
-                    android:host="${vellumAppLinkHost}"
+                    android:host="${cadetAppLinkHost}"
                     android:pathPrefix="/assistant/conversations/" />
                 <data
                     android:scheme="https"
-                    android:host="${vellumAppLinkHost}"
+                    android:host="${cadetAppLinkHost}"
                     android:path="/assistant/settings/voice" />
                 <data
                     android:scheme="https"
-                    android:host="${vellumAppLinkHost}"
+                    android:host="${cadetAppLinkHost}"
                     android:path="/account/oauth/complete" />
                 <data
                     android:scheme="https"
-                    android:host="${vellumAppLinkHost}"
+                    android:host="${cadetAppLinkHost}"
                     android:path="/assistant/checkout" />
                 <data
                     android:scheme="https"
-                    android:host="${vellumAppLinkHost}"
+                    android:host="${cadetAppLinkHost}"
                     android:path="/assistant/plans" />
                 <data
                     android:scheme="https"
-                    android:host="${vellumAppLinkHost}"
+                    android:host="${cadetAppLinkHost}"
                     android:path="/assistant/settings/billing" />
                 <data
                     android:scheme="https"
-                    android:host="${vellumAppLinkHost}"
+                    android:host="${cadetAppLinkHost}"
                     android:pathPrefix="/assistant/settings/billing/" />
                 <data
                     android:scheme="https"
-                    android:host="${vellumAppLinkHost}"
+                    android:host="${cadetAppLinkHost}"
                     android:path="/assistant/settings/usage" />
             </intent-filter>
 

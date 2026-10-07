@@ -1001,7 +1001,7 @@ describe("web_search tool", () => {
     expect(capturedBody.sources).toEqual(["web"]);
     expect(capturedBody.tbs).toBe("qdr:m");
     expect(capturedHeaders.get("authorization")).toBe("Bearer fc-test-key");
-    expect(capturedHeaders.get("x-client-source")).toBe("vellum-assistant");
+    expect(capturedHeaders.get("x-client-source")).toBe("mycadet");
   });
 
   test("Firecrawl skips invalid freshness values", async () => {
@@ -1481,7 +1481,7 @@ describe("web_search tool", () => {
     expect(capturedInit?.method).toBe("GET");
     const headers = new Headers(capturedInit?.headers);
     expect(headers.get("x-api-key")).toBe("serply_test");
-    expect(headers.get("user-agent")).toBe("vellum-assistant");
+    expect(headers.get("user-agent")).toBe("mycadet");
     expect(result.content).toContain("Serply Result");
     expect(result.content).toContain("Fresh from Serply");
     expect(result.activityMetadata?.webSearch?.provider).toBe("serply");

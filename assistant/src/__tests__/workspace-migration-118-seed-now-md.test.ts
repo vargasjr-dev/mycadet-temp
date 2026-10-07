@@ -31,7 +31,7 @@ const UPGRADE_CTX: MigrationRunContext = { isNewWorkspace: false };
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-migration-118-test-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-migration-118-test-"));
 });
 
 afterEach(() => {

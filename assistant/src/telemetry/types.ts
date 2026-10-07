@@ -348,7 +348,7 @@ export interface TurnTelemetryEvent extends TelemetryEventBase {
   interface_id: string | null;
   /**
    * Canonical `ChannelId` enum value identifying the messaging fabric the
-   * user message arrived on (`"vellum"` for in-app from macos/ios/web/
+   * user message arrived on (`"cadet"` for in-app from macos/ios/web/
    * cli/chrome-extension; `"slack"`/`"telegram"`/`"whatsapp"`/`"email"`/
    * `"phone"` for channel-based interfaces). The 7th `ChannelId` value
    * (`"platform"`) is APNs-push outbound-only and should never appear
@@ -460,7 +460,7 @@ export interface ToolExecutedTelemetryEvent extends ModelTelemetryEventBase {
 
 /**
  * Skill-loaded event — one per skill load. Emitted only for
- * Vellum-produced skills (bundled, or managed with vellum origin).
+ * Cadet-produced skills (bundled, or managed with cadet origin).
  * Metadata only — no skill output or conversation content.
  */
 export interface SkillLoadedTelemetryEvent extends ModelTelemetryEventBase {

@@ -452,7 +452,7 @@ function handleGetConversationSections() {
   }
 
   for (const row of counts.channels) {
-    if (row.channel === "vellum") {
+    if (row.channel === "cadet") {
       sections.push({ kind: "chats", total: row.total, unread: row.unread });
       continue;
     }
@@ -494,7 +494,7 @@ function handleRecordSeen({ body = {}, headers }: RouteHandlerArgs) {
 
     recordConversationSeenSignal({
       conversationId,
-      sourceChannel: (body.sourceChannel as string) ?? "vellum",
+      sourceChannel: (body.sourceChannel as string) ?? "cadet",
       signalType: ((body.signalType as string) ??
         "macos_conversation_opened") as SignalType,
       confidence: ((body.confidence as string) ?? "explicit") as Confidence,
@@ -508,7 +508,7 @@ function handleRecordSeen({ body = {}, headers }: RouteHandlerArgs) {
       publishConversationListAndMetadataChanged(
         "seen_changed",
         conversationId,
-        headers?.["x-vellum-client-id"]?.trim() || undefined,
+        headers?.["x-cadet-client-id"]?.trim() || undefined,
       );
     }
 
@@ -525,7 +525,7 @@ function handleRecordSeenBulk({ body = {}, headers }: RouteHandlerArgs) {
     throw new BadRequestError("conversationIds must be a non-empty array");
   }
 
-  const originClientId = headers?.["x-vellum-client-id"]?.trim() || undefined;
+  const originClientId = headers?.["x-cadet-client-id"]?.trim() || undefined;
   const changedIds: string[] = [];
 
   for (const rawId of rawIds) {
@@ -543,7 +543,7 @@ function handleRecordSeenBulk({ body = {}, headers }: RouteHandlerArgs) {
 
       recordConversationSeenSignal({
         conversationId,
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         signalType: "web_bulk_mark_read",
         confidence: "explicit",
         source: "http-api",
@@ -581,7 +581,7 @@ function handleMarkUnread({ body = {}, headers }: RouteHandlerArgs) {
       publishConversationListAndMetadataChanged(
         "seen_changed",
         conversationId,
-        headers?.["x-vellum-client-id"]?.trim() || undefined,
+        headers?.["x-cadet-client-id"]?.trim() || undefined,
       );
     }
     return { ok: true };

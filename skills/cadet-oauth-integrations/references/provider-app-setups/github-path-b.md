@@ -38,8 +38,8 @@ Tell the user:
 > 1. Click the **OAuth Apps** tab if not already selected
 > 2. Click **New OAuth App**
 > 3. Fill in:
->    - **Application name:** `Vellum Assistant`
->    - **Homepage URL:** `https://vellum.ai`
+>    - **Application name:** `Cadet Assistant`
+>    - **Homepage URL:** `https://mycadet.ai`
 >    - **Authorization callback URL:** `OAUTH_CALLBACK_URL`
 > 4. Click **Register application**
 >

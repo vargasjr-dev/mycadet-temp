@@ -19,11 +19,11 @@ import { Database } from "bun:sqlite";
 import { existsSync, mkdirSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 
-const workspace = process.env.VELLUM_WORKSPACE_DIR;
+const workspace = process.env.CADET_WORKSPACE_DIR;
 const scheduleId = process.env.__SCHEDULE_ID;
 if (!workspace || !scheduleId) {
   console.error(
-    "VELLUM_WORKSPACE_DIR and __SCHEDULE_ID must be set — run as a script-mode schedule.",
+    "CADET_WORKSPACE_DIR and __SCHEDULE_ID must be set — run as a script-mode schedule.",
   );
   process.exit(1);
 }

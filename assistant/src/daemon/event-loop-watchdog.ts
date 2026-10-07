@@ -6,7 +6,7 @@
  * runs long — a large conversation-history load, a memory retrospective
  * assembling an oversized conversation, a VACUUM or WAL checkpoint — blocks that
  * thread, so the daemon stops answering health probes and SSE for the duration
- * (a proxied `vellum ps` health check then reports `timeout` even though the
+ * (a proxied `cadet ps` health check then reports `timeout` even though the
  * process is alive). Such a freeze is otherwise invisible: the blocked thread is
  * too busy to emit logs, so it leaves only a gap that self-heals when the
  * operation returns, and is noticed only by chance.

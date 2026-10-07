@@ -18,6 +18,6 @@ that skips the re-render fails there.
 `scripts/identity-assets.test.ts` holds the size set and the
 one-ICO-per-environment guarantee.
 
-`electron-builder.config.cjs` selects the icon from `VELLUM_ENVIRONMENT` for
+`electron-builder.config.cjs` selects the icon from `CADET_ENVIRONMENT` for
 the application executable, installer, and uninstaller. Unknown environment
 names use the production icon.

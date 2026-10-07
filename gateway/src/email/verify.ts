@@ -1,9 +1,9 @@
-import { verifyVellumSignature } from "../http/vellum-signature.js";
+import { verifyCadetSignature } from "../http/cadet-signature.js";
 
 /**
- * Verify the Vellum-Signature header sent by the Cadet platform.
+ * Verify the Cadet-Signature header sent by the Cadet platform.
  *
- * The scheme itself lives in `http/vellum-signature.ts`, shared with the
+ * The scheme itself lives in `http/cadet-signature.ts`, shared with the
  * plugin webhook routes so one comparison serves both.
  */
 export function verifyEmailWebhookSignature(
@@ -11,5 +11,5 @@ export function verifyEmailWebhookSignature(
   rawBody: string,
   webhookSecret: string,
 ): boolean {
-  return verifyVellumSignature(headers, rawBody, webhookSecret);
+  return verifyCadetSignature(headers, rawBody, webhookSecret);
 }

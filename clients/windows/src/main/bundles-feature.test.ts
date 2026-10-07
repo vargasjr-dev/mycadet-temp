@@ -8,7 +8,7 @@ const onFileOpenMock = mock(
 );
 const appOnceMock = mock((_event: string, _handler: () => void) => undefined);
 const resolveInvocationMock = mock(async () => ({
-  command: "vellum.exe",
+  command: "cadet.exe",
   baseArgs: [] as string[],
 }));
 const getGuardianAccessTokenMock = mock(async () => ({
@@ -79,10 +79,10 @@ describe("Windows bundle workflow", () => {
     expect(registry.get(bundleFileHandlerToken)).toBe(handleBundleFileMock);
     expect(installBundleFlowMock).toHaveBeenCalledTimes(1);
     expect(onFileOpenMock).toHaveBeenCalledTimes(1);
-    onFileOpenMock.mock.calls[0]![0]("C:\\bundle.vellum");
-    expect(handleBundleFileMock).toHaveBeenCalledWith("C:\\bundle.vellum");
+    onFileOpenMock.mock.calls[0]![0]("C:\\bundle.cadet");
+    expect(handleBundleFileMock).toHaveBeenCalledWith("C:\\bundle.cadet");
     expect(appOnceMock).toHaveBeenCalledWith("before-quit", stopFileOpenMock);
-    expect(getBundlePlatform().bundlesRoot()).toBe("C:\\Vellum/bundles");
+    expect(getBundlePlatform().bundlesRoot()).toBe("C:\\Cadet/bundles");
   });
 
   test("mints gateway tokens through the CLI provider installed later", async () => {
@@ -94,7 +94,7 @@ describe("Windows bundle workflow", () => {
       getBundlePlatform().acquireGatewayToken("assistant-1"),
     ).resolves.toBeNull();
 
-    // A cold launch from a `.vellum` file asks for the token in the same
+    // A cold launch from a `.cadet` file asks for the token in the same
     // tick that installs the remaining modules, including the CLI provider.
     const pending = getBundlePlatform().acquireGatewayToken("assistant-1");
     registry.provide(LOCAL_MODE_CLI, {
@@ -104,7 +104,7 @@ describe("Windows bundle workflow", () => {
     expect(getGuardianAccessTokenMock).toHaveBeenCalledWith(
       "assistant-1",
       "C:\\Cadet\\config",
-      { command: "vellum.exe", baseArgs: [] },
+      { command: "cadet.exe", baseArgs: [] },
       true,
     );
   });

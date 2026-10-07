@@ -7,8 +7,8 @@ import {
   admitActorToken,
 } from "../../auth/actor-token-revocation.js";
 import {
-  ensureVellumGuardianBinding,
-  VellumGuardianMintRefusedError,
+  ensureCadetGuardianBinding,
+  CadetGuardianMintRefusedError,
 } from "../../auth/guardian-bootstrap.js";
 import { guardianIntegrityState } from "../../auth/guardian-integrity.js";
 import { CURRENT_POLICY_EPOCH } from "../../auth/policy.js";
@@ -138,7 +138,7 @@ export async function handleCreateToken(
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const bearerToken = authHeader.slice(7);
-  const verifyResult = verifyToken(bearerToken, "vellum-gateway");
+  const verifyResult = verifyToken(bearerToken, "cadet-gateway");
   if (!verifyResult.ok) {
     log.warn(
       { reason: verifyResult.reason },
@@ -176,13 +176,13 @@ export async function handleCreateToken(
     }
   } else {
     try {
-      guardianPrincipalId = await ensureVellumGuardianBinding();
+      guardianPrincipalId = await ensureCadetGuardianBinding();
     } catch (err) {
       // Guardian rows lost but the DB shows prior onboarding: minting here
       // would diverge from prior clients' tokens. Fail closed as a 401 — the
       // status the web client treats as repairable — so callers offer the
       // guardian re-init flow instead of dead-ending on a generic retry.
-      if (err instanceof VellumGuardianMintRefusedError) {
+      if (err instanceof CadetGuardianMintRefusedError) {
         log.error(
           "Token create refused: guardian binding missing over evidence of prior onboarding — repair via guardian init",
         );
@@ -193,7 +193,7 @@ export async function handleCreateToken(
   }
 
   const token = mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub: `actor:self:${guardianPrincipalId}`,
     scope_profile: "actor_client_v1",
     policy_epoch: CURRENT_POLICY_EPOCH,

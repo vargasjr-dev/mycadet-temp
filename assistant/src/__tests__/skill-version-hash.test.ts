@@ -109,13 +109,13 @@ describe("computeSkillVersionHash", () => {
     expect(computeSkillVersionHash(dir1)).toBe(computeSkillVersionHash(dir2));
   });
 
-  test("excludes .vellum-skill-run directory", () => {
+  test("excludes .cadet-skill-run directory", () => {
     const dir = makeTempSkill();
     writeFileSync(join(dir, "SKILL.md"), "# Skill\n");
     const hash1 = computeSkillVersionHash(dir);
 
-    mkdirSync(join(dir, ".vellum-skill-run"), { recursive: true });
-    writeFileSync(join(dir, ".vellum-skill-run", "state.json"), "{}");
+    mkdirSync(join(dir, ".cadet-skill-run"), { recursive: true });
+    writeFileSync(join(dir, ".cadet-skill-run", "state.json"), "{}");
     const hash2 = computeSkillVersionHash(dir);
 
     expect(hash1).toBe(hash2);

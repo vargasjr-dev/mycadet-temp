@@ -170,7 +170,7 @@ export const buildWindowsMenu = ({
       {
         label: "Cadet Documentation",
         click: () => {
-          void shell.openExternal("https://www.vellum.ai/docs");
+          void shell.openExternal("https://mycadet.ai/docs");
         },
       },
       { type: "separator" },

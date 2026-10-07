@@ -4,7 +4,7 @@
  * Covers GET /transfers/:transferId/content, PUT /transfers/:transferId/content,
  * and POST /host-transfer-result ownership checks.
  *
- *  1. Targeted + correct x-vellum-client-id header → success
+ *  1. Targeted + correct x-cadet-client-id header → success
  *  2. Targeted + missing header → 400 BadRequestError
  *  3. Targeted + wrong header → 403 ForbiddenError, operation NOT performed
  *  4. Untargeted (no targetClientId, no header) → success (regression)
@@ -149,15 +149,15 @@ describe("handleTransferContentGet — Phase 3 targetClientId guard", () => {
 
   // ── 1. Targeted + correct header → success ────────────────────────────────
 
-  describe("targeted + correct x-vellum-client-id header", () => {
+  describe("targeted + correct x-cadet-client-id header", () => {
     test("returns Uint8Array and calls getTransferContent", async () => {
       stubTargetClientId = "client-A";
       clientActors.set("client-A", "actor-1");
       const result = await handleTransferContentGet({
         pathParams: { transferId: TEST_TRANSFER_ID },
         headers: {
-          "x-vellum-client-id": "client-A",
-          "x-vellum-actor-principal-id": "actor-1",
+          "x-cadet-client-id": "client-A",
+          "x-cadet-actor-principal-id": "actor-1",
         },
       });
 
@@ -171,8 +171,8 @@ describe("handleTransferContentGet — Phase 3 targetClientId guard", () => {
       const result = await handleTransferContentGet({
         pathParams: { transferId: TEST_TRANSFER_ID },
         headers: {
-          "x-vellum-client-id": "  client-A  ",
-          "x-vellum-actor-principal-id": "  actor-1  ",
+          "x-cadet-client-id": "  client-A  ",
+          "x-cadet-actor-principal-id": "  actor-1  ",
         },
       });
 
@@ -182,7 +182,7 @@ describe("handleTransferContentGet — Phase 3 targetClientId guard", () => {
 
   // ── 2. Targeted + missing header → 400 ───────────────────────────────────
 
-  describe("targeted + missing x-vellum-client-id header", () => {
+  describe("targeted + missing x-cadet-client-id header", () => {
     test("throws BadRequestError when header is absent", () => {
       stubTargetClientId = "client-A";
       expect(() =>
@@ -205,13 +205,13 @@ describe("handleTransferContentGet — Phase 3 targetClientId guard", () => {
 
   // ── 3. Targeted + wrong header → 403 ─────────────────────────────────────
 
-  describe("targeted + wrong x-vellum-client-id header", () => {
+  describe("targeted + wrong x-cadet-client-id header", () => {
     test("throws ForbiddenError when client ID does not match", () => {
       stubTargetClientId = "client-A";
       expect(() =>
         handleTransferContentGet({
           pathParams: { transferId: TEST_TRANSFER_ID },
-          headers: { "x-vellum-client-id": "client-B" },
+          headers: { "x-cadet-client-id": "client-B" },
         }),
       ).toThrow(ForbiddenError);
     });
@@ -220,7 +220,7 @@ describe("handleTransferContentGet — Phase 3 targetClientId guard", () => {
       stubTargetClientId = "client-A";
       await handleTransferContentGet({
         pathParams: { transferId: TEST_TRANSFER_ID },
-        headers: { "x-vellum-client-id": "client-B" },
+        headers: { "x-cadet-client-id": "client-B" },
       }).catch(() => {
         // expected
       });
@@ -247,7 +247,7 @@ describe("handleTransferContentGet — Phase 3 targetClientId guard", () => {
       expect(() =>
         handleTransferContentGet({
           pathParams: { transferId: TEST_TRANSFER_ID },
-          headers: { "x-vellum-actor-principal-id": "principal-attacker" },
+          headers: { "x-cadet-actor-principal-id": "principal-attacker" },
         }),
       ).toThrow(ForbiddenError);
       expect(getTransferContentCalls).toHaveLength(0);
@@ -258,7 +258,7 @@ describe("handleTransferContentGet — Phase 3 targetClientId guard", () => {
       stubTargetActorPrincipalId = "principal-owner";
       const result = await handleTransferContentGet({
         pathParams: { transferId: TEST_TRANSFER_ID },
-        headers: { "x-vellum-actor-principal-id": "principal-owner" },
+        headers: { "x-cadet-actor-principal-id": "principal-owner" },
       });
 
       expect(result).toBeInstanceOf(Uint8Array);
@@ -276,8 +276,8 @@ describe("handleTransferContentGet — Phase 3 targetClientId guard", () => {
         handleTransferContentGet({
           pathParams: { transferId: TEST_TRANSFER_ID },
           headers: {
-            "x-vellum-client-id": "client-A",
-            "x-vellum-actor-principal-id": "actor-attacker",
+            "x-cadet-client-id": "client-A",
+            "x-cadet-actor-principal-id": "actor-attacker",
           },
         }),
       ).toThrow(ForbiddenError);
@@ -290,7 +290,7 @@ describe("handleTransferContentGet — Phase 3 targetClientId guard", () => {
       expect(() =>
         handleTransferContentGet({
           pathParams: { transferId: TEST_TRANSFER_ID },
-          headers: { "x-vellum-client-id": "client-A" },
+          headers: { "x-cadet-client-id": "client-A" },
         }),
       ).toThrow(ForbiddenError);
       expect(getTransferContentCalls).toHaveLength(0);
@@ -303,8 +303,8 @@ describe("handleTransferContentGet — Phase 3 targetClientId guard", () => {
         handleTransferContentGet({
           pathParams: { transferId: TEST_TRANSFER_ID },
           headers: {
-            "x-vellum-client-id": "client-A",
-            "x-vellum-actor-principal-id": "actor-1",
+            "x-cadet-client-id": "client-A",
+            "x-cadet-actor-principal-id": "actor-1",
           },
         }),
       ).toThrow(ForbiddenError);
@@ -324,15 +324,15 @@ describe("handleTransferContentPut — Phase 3 targetClientId guard", () => {
 
   // ── 1. Targeted + correct header → success ────────────────────────────────
 
-  describe("targeted + correct x-vellum-client-id header", () => {
+  describe("targeted + correct x-cadet-client-id header", () => {
     test("returns { accepted: true } and calls receiveTransferContent", async () => {
       stubTargetClientId = "client-A";
       clientActors.set("client-A", "actor-1");
       const result = await handleTransferContentPut({
         pathParams: { transferId: TEST_TRANSFER_ID },
         headers: {
-          "x-vellum-client-id": "client-A",
-          "x-vellum-actor-principal-id": "actor-1",
+          "x-cadet-client-id": "client-A",
+          "x-cadet-actor-principal-id": "actor-1",
           "x-transfer-sha256": "abc",
         },
         rawBody: new Uint8Array(Buffer.from("data")),
@@ -348,8 +348,8 @@ describe("handleTransferContentPut — Phase 3 targetClientId guard", () => {
       const result = await handleTransferContentPut({
         pathParams: { transferId: TEST_TRANSFER_ID },
         headers: {
-          "x-vellum-client-id": "  client-A  ",
-          "x-vellum-actor-principal-id": "  actor-1  ",
+          "x-cadet-client-id": "  client-A  ",
+          "x-cadet-actor-principal-id": "  actor-1  ",
           "x-transfer-sha256": "abc",
         },
         rawBody: new Uint8Array(Buffer.from("data")),
@@ -361,7 +361,7 @@ describe("handleTransferContentPut — Phase 3 targetClientId guard", () => {
 
   // ── 2. Targeted + missing header → 400 ───────────────────────────────────
 
-  describe("targeted + missing x-vellum-client-id header", () => {
+  describe("targeted + missing x-cadet-client-id header", () => {
     test("throws BadRequestError when header is absent", async () => {
       stubTargetClientId = "client-A";
       await expect(
@@ -390,14 +390,14 @@ describe("handleTransferContentPut — Phase 3 targetClientId guard", () => {
 
   // ── 3. Targeted + wrong header → 403 ─────────────────────────────────────
 
-  describe("targeted + wrong x-vellum-client-id header", () => {
+  describe("targeted + wrong x-cadet-client-id header", () => {
     test("throws ForbiddenError when client ID does not match", async () => {
       stubTargetClientId = "client-A";
       await expect(
         handleTransferContentPut({
           pathParams: { transferId: TEST_TRANSFER_ID },
           headers: {
-            "x-vellum-client-id": "client-B",
+            "x-cadet-client-id": "client-B",
             "x-transfer-sha256": "abc",
           },
           rawBody: new Uint8Array(Buffer.from("data")),
@@ -411,7 +411,7 @@ describe("handleTransferContentPut — Phase 3 targetClientId guard", () => {
         await handleTransferContentPut({
           pathParams: { transferId: TEST_TRANSFER_ID },
           headers: {
-            "x-vellum-client-id": "client-B",
+            "x-cadet-client-id": "client-B",
             "x-transfer-sha256": "abc",
           },
           rawBody: new Uint8Array(Buffer.from("data")),
@@ -445,7 +445,7 @@ describe("handleTransferContentPut — Phase 3 targetClientId guard", () => {
         handleTransferContentPut({
           pathParams: { transferId: TEST_TRANSFER_ID },
           headers: {
-            "x-vellum-actor-principal-id": "principal-attacker",
+            "x-cadet-actor-principal-id": "principal-attacker",
             "x-transfer-sha256": "abc",
           },
           rawBody: new Uint8Array(Buffer.from("data")),
@@ -460,7 +460,7 @@ describe("handleTransferContentPut — Phase 3 targetClientId guard", () => {
       const result = await handleTransferContentPut({
         pathParams: { transferId: TEST_TRANSFER_ID },
         headers: {
-          "x-vellum-actor-principal-id": "principal-owner",
+          "x-cadet-actor-principal-id": "principal-owner",
           "x-transfer-sha256": "abc",
         },
         rawBody: new Uint8Array(Buffer.from("data")),
@@ -481,8 +481,8 @@ describe("handleTransferContentPut — Phase 3 targetClientId guard", () => {
         handleTransferContentPut({
           pathParams: { transferId: TEST_TRANSFER_ID },
           headers: {
-            "x-vellum-client-id": "client-A",
-            "x-vellum-actor-principal-id": "actor-attacker",
+            "x-cadet-client-id": "client-A",
+            "x-cadet-actor-principal-id": "actor-attacker",
             "x-transfer-sha256": "abc",
           },
           rawBody: new Uint8Array(Buffer.from("data")),
@@ -498,7 +498,7 @@ describe("handleTransferContentPut — Phase 3 targetClientId guard", () => {
         handleTransferContentPut({
           pathParams: { transferId: TEST_TRANSFER_ID },
           headers: {
-            "x-vellum-client-id": "client-A",
+            "x-cadet-client-id": "client-A",
             "x-transfer-sha256": "abc",
           },
           rawBody: new Uint8Array(Buffer.from("data")),
@@ -514,8 +514,8 @@ describe("handleTransferContentPut — Phase 3 targetClientId guard", () => {
         handleTransferContentPut({
           pathParams: { transferId: TEST_TRANSFER_ID },
           headers: {
-            "x-vellum-client-id": "client-A",
-            "x-vellum-actor-principal-id": "actor-1",
+            "x-cadet-client-id": "client-A",
+            "x-cadet-actor-principal-id": "actor-1",
             "x-transfer-sha256": "abc",
           },
           rawBody: new Uint8Array(Buffer.from("data")),
@@ -545,15 +545,15 @@ describe("handleTransferResult — Phase 3 targetClientId guard", () => {
 
   // ── 1. Targeted + correct header → success ────────────────────────────────
 
-  describe("targeted + correct x-vellum-client-id header", () => {
+  describe("targeted + correct x-cadet-client-id header", () => {
     test("returns { accepted: true } and calls resolveTransferResult", async () => {
       clientActors.set("client-A", "actor-1");
       registerHostTransferPending("client-A");
       const result = await handleTransferResult({
         body: resultBody(),
         headers: {
-          "x-vellum-client-id": "client-A",
-          "x-vellum-actor-principal-id": "actor-1",
+          "x-cadet-client-id": "client-A",
+          "x-cadet-actor-principal-id": "actor-1",
         },
       });
 
@@ -567,8 +567,8 @@ describe("handleTransferResult — Phase 3 targetClientId guard", () => {
       const result = await handleTransferResult({
         body: resultBody(),
         headers: {
-          "x-vellum-client-id": "  client-A  ",
-          "x-vellum-actor-principal-id": "  actor-1  ",
+          "x-cadet-client-id": "  client-A  ",
+          "x-cadet-actor-principal-id": "  actor-1  ",
         },
       });
 
@@ -578,7 +578,7 @@ describe("handleTransferResult — Phase 3 targetClientId guard", () => {
 
   // ── 2. Targeted + missing header → 400 ───────────────────────────────────
 
-  describe("targeted + missing x-vellum-client-id header", () => {
+  describe("targeted + missing x-cadet-client-id header", () => {
     test("throws BadRequestError when header is absent", () => {
       registerHostTransferPending("client-A");
       expect(() => handleTransferResult({ body: resultBody() })).toThrow(
@@ -605,13 +605,13 @@ describe("handleTransferResult — Phase 3 targetClientId guard", () => {
 
   // ── 3. Targeted + wrong header → 403 ─────────────────────────────────────
 
-  describe("targeted + wrong x-vellum-client-id header", () => {
+  describe("targeted + wrong x-cadet-client-id header", () => {
     test("throws ForbiddenError when client ID does not match", () => {
       registerHostTransferPending("client-A");
       expect(() =>
         handleTransferResult({
           body: resultBody(),
-          headers: { "x-vellum-client-id": "client-B" },
+          headers: { "x-cadet-client-id": "client-B" },
         }),
       ).toThrow(ForbiddenError);
     });
@@ -620,7 +620,7 @@ describe("handleTransferResult — Phase 3 targetClientId guard", () => {
       registerHostTransferPending("client-A");
       await handleTransferResult({
         body: resultBody(),
-        headers: { "x-vellum-client-id": "client-B" },
+        headers: { "x-cadet-client-id": "client-B" },
       }).catch(() => {
         // expected
       });
@@ -631,7 +631,7 @@ describe("handleTransferResult — Phase 3 targetClientId guard", () => {
       registerHostTransferPending("client-A");
       await handleTransferResult({
         body: resultBody(),
-        headers: { "x-vellum-client-id": "client-B" },
+        headers: { "x-cadet-client-id": "client-B" },
       }).catch(() => {
         // expected
       });
@@ -656,7 +656,7 @@ describe("handleTransferResult — Phase 3 targetClientId guard", () => {
       registerHostTransferPending();
       const result = await handleTransferResult({
         body: resultBody(),
-        headers: { "x-vellum-client-id": "client-whatever" },
+        headers: { "x-cadet-client-id": "client-whatever" },
       });
 
       expect(result).toEqual({ accepted: true });
@@ -667,7 +667,7 @@ describe("handleTransferResult — Phase 3 targetClientId guard", () => {
       expect(() =>
         handleTransferResult({
           body: resultBody(),
-          headers: { "x-vellum-actor-principal-id": "principal-attacker" },
+          headers: { "x-cadet-actor-principal-id": "principal-attacker" },
         }),
       ).toThrow(ForbiddenError);
       expect(resolveTransferResultCalls).toHaveLength(0);
@@ -678,7 +678,7 @@ describe("handleTransferResult — Phase 3 targetClientId guard", () => {
       registerPending({ targetActorPrincipalId: "principal-owner" });
       const result = await handleTransferResult({
         body: resultBody(),
-        headers: { "x-vellum-actor-principal-id": "principal-owner" },
+        headers: { "x-cadet-actor-principal-id": "principal-owner" },
       });
 
       expect(result).toEqual({ accepted: true });
@@ -696,8 +696,8 @@ describe("handleTransferResult — Phase 3 targetClientId guard", () => {
         handleTransferResult({
           body: resultBody(),
           headers: {
-            "x-vellum-client-id": "client-A",
-            "x-vellum-actor-principal-id": "actor-attacker",
+            "x-cadet-client-id": "client-A",
+            "x-cadet-actor-principal-id": "actor-attacker",
           },
         }),
       ).toThrow(ForbiddenError);
@@ -712,7 +712,7 @@ describe("handleTransferResult — Phase 3 targetClientId guard", () => {
       expect(() =>
         handleTransferResult({
           body: resultBody(),
-          headers: { "x-vellum-client-id": "client-A" },
+          headers: { "x-cadet-client-id": "client-A" },
         }),
       ).toThrow(ForbiddenError);
       expect(resolveTransferResultCalls).toHaveLength(0);
@@ -726,8 +726,8 @@ describe("handleTransferResult — Phase 3 targetClientId guard", () => {
         handleTransferResult({
           body: resultBody(),
           headers: {
-            "x-vellum-client-id": "client-A",
-            "x-vellum-actor-principal-id": "actor-1",
+            "x-cadet-client-id": "client-A",
+            "x-cadet-actor-principal-id": "actor-1",
           },
         }),
       ).toThrow(ForbiddenError);

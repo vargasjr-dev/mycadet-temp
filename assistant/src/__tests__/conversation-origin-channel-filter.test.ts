@@ -20,7 +20,7 @@ function getRawDb(): Database {
  *
  * The asymmetry under test: `origin_channel` is deliberately NULL at insert so
  * an inbound message can claim the conversation for its channel, and migration
- * 288 settles the unclaimed ones to 'vellum' at daemon startup. So NULL means
+ * 288 settles the unclaimed ones to 'cadet' at daemon startup. So NULL means
  * "not yet attributed", and between one boot and the next it is what most rows
  * carry. Reading `cadet` strictly would leave every one of them in no section
  * at all: not native, not any channel.
@@ -49,14 +49,14 @@ describe("listConversations originChannel filter", () => {
     createConversation({ id: "conv-unattributed", source: "user" });
     stamp("conv-unattributed", null);
 
-    expect(listedIds("vellum")).toEqual(["conv-unattributed"]);
+    expect(listedIds("cadet")).toEqual(["conv-unattributed"]);
   });
 
   test("cadet matches rows explicitly stamped cadet", () => {
     createConversation({ id: "conv-native", source: "user" });
-    stamp("conv-native", "vellum");
+    stamp("conv-native", "cadet");
 
-    expect(listedIds("vellum")).toEqual(["conv-native"]);
+    expect(listedIds("cadet")).toEqual(["conv-native"]);
   });
 
   /* The whole point: an unattributed row and a stamped native row are the same
@@ -64,11 +64,11 @@ describe("listConversations originChannel filter", () => {
      is what fails if the predicate goes back to a strict equality. */
   test("cadet returns unattributed and stamped rows together", () => {
     createConversation({ id: "conv-native", source: "user" });
-    stamp("conv-native", "vellum");
+    stamp("conv-native", "cadet");
     createConversation({ id: "conv-unattributed", source: "user" });
     stamp("conv-unattributed", null);
 
-    expect(listedIds("vellum").sort()).toEqual([
+    expect(listedIds("cadet").sort()).toEqual([
       "conv-native",
       "conv-unattributed",
     ]);
@@ -78,7 +78,7 @@ describe("listConversations originChannel filter", () => {
     createConversation({ id: "conv-slack", source: "user" });
     stamp("conv-slack", "slack");
 
-    expect(listedIds("vellum")).toEqual([]);
+    expect(listedIds("cadet")).toEqual([]);
   });
 
   /* Only `cadet` is tolerant. A row is claimed for a channel by that channel

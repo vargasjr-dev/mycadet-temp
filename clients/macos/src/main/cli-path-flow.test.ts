@@ -6,7 +6,7 @@ import type { CliPathInstallState } from "./cli-path-installer";
 // Stubs and mocks
 // ---------------------------------------------------------------------------
 
-const WRAPPER_PATH = "/Users/test/.local/bin/vellum";
+const WRAPPER_PATH = "/Users/test/.local/bin/cadet";
 const PATH_EXPORT_LINE = 'export PATH="$HOME/.local/bin:$PATH"';
 const FISH_ADD_PATH_LINE = 'fish_add_path "$HOME/.local/bin"';
 
@@ -178,7 +178,7 @@ describe("runInstallCliCommandFlow", () => {
     expect(writeTextMock).not.toHaveBeenCalled();
     expect(lastDialog()?.message).toBe("Cadet CLI installed");
     expect(lastDialog()?.detail).toContain(WRAPPER_PATH);
-    expect(lastDialog()?.detail).toContain('run "vellum"');
+    expect(lastDialog()?.detail).toContain('run "cadet"');
   });
 
   test("installed but not in PATH copies the export line to the clipboard", async () => {
@@ -208,7 +208,7 @@ describe("runInstallCliCommandFlow", () => {
   test("shadowed + inPath names the winning binary and the npm uninstall fix", async () => {
     setState({
       kind: "shadowed",
-      shadowedBy: "/opt/homebrew/bin/vellum",
+      shadowedBy: "/opt/homebrew/bin/cadet",
       inPath: true,
       runtimeReady: true,
     });
@@ -216,7 +216,7 @@ describe("runInstallCliCommandFlow", () => {
     await runInstallCliCommandFlow();
 
     expect(writeTextMock).not.toHaveBeenCalled();
-    expect(lastDialog()?.detail).toContain("/opt/homebrew/bin/vellum");
+    expect(lastDialog()?.detail).toContain("/opt/homebrew/bin/cadet");
     expect(lastDialog()?.detail).toContain("npm uninstall -g cadet");
     expect(lastDialog()?.detail).not.toContain("clipboard");
   });
@@ -224,7 +224,7 @@ describe("runInstallCliCommandFlow", () => {
   test("shadowed without PATH adds the export-line help alongside the npm advice", async () => {
     setState({
       kind: "shadowed",
-      shadowedBy: "/opt/homebrew/bin/vellum",
+      shadowedBy: "/opt/homebrew/bin/cadet",
       inPath: false,
       runtimeReady: true,
     });
@@ -241,7 +241,7 @@ describe("runInstallCliCommandFlow", () => {
     isFishShellMock.mockReturnValue(true);
     setState({
       kind: "shadowed",
-      shadowedBy: "/opt/homebrew/bin/vellum",
+      shadowedBy: "/opt/homebrew/bin/cadet",
       inPath: false,
       runtimeReady: true,
     });

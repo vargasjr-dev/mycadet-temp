@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { roadmapHelp } from "../roadmap.help.js";
 
-const DISCORD_URL = "https://vellum.ai/community";
+const DISCORD_URL = "https://mycadet.ai/community";
 
 describe("roadmap help is feature-proposal-only", () => {
   test("top-level help describes feature proposals and routes bugs to Discord", () => {

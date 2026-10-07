@@ -19,7 +19,7 @@
 import { v4 as uuid } from "uuid";
 
 import { getPlatformOrganizationId, getPlatformUserId } from "../config/env.js";
-import { VellumPlatformClient } from "../platform/client.js";
+import { CadetPlatformClient } from "../platform/client.js";
 import { getRawShareAnalytics } from "../platform/consent-cache.js";
 import { arePlatformFeaturesEnabled } from "../platform/feature-gate.js";
 import { getDeviceId } from "../util/device-id.js";
@@ -58,7 +58,7 @@ export async function emitWatchdogEventDirect(
 
     // Authenticated-only. Null before the CES handshake resolves credentials;
     // the event is simply dropped (no durable backlog to retry from).
-    const client = await VellumPlatformClient.create();
+    const client = await CadetPlatformClient.create();
     if (!client) {
       return;
     }

@@ -1,7 +1,7 @@
 /**
  * The one place that answers "does this assistant have a managed inbox?".
  *
- * Managed email registration lives on the Vellum platform: the
+ * Managed email registration lives on the Cadet platform: the
  * `/v1/assistants/:id/email-addresses/` API is the only writer and the only
  * source of truth. Nothing about a registration lands in workspace config, so
  * any reader that wants the inbox address has to ask the platform. Every
@@ -18,7 +18,7 @@
 
 import { z } from "zod";
 
-import { VellumPlatformClient } from "../platform/client.js";
+import { CadetPlatformClient } from "../platform/client.js";
 
 export type RegisteredInboxState =
   /** The platform holds a registered inbox address for this assistant. */
@@ -65,7 +65,7 @@ const EmailAddressListSchema = z.object({
  * missing platform connection) keeps its own error semantics.
  */
 export async function listEmailAddresses(
-  client: VellumPlatformClient,
+  client: CadetPlatformClient,
 ): Promise<EmailAddressListResult> {
   let response: Response;
   try {
@@ -145,9 +145,9 @@ async function fetchRegisteredInbox(): Promise<RegisteredInboxState> {
   // Creation resolves the managed-proxy context and the credential store,
   // either of which can reject; a backend blip there is "could not ask",
   // not an error the caller should surface as a failed request.
-  let client: VellumPlatformClient | null;
+  let client: CadetPlatformClient | null;
   try {
-    client = await VellumPlatformClient.create();
+    client = await CadetPlatformClient.create();
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     return { status: "unavailable", detail };

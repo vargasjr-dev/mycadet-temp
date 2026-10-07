@@ -442,7 +442,7 @@ conversations (Slack, email, Telegram) have keys like
    (< 0.8.6, or version not yet known) lives in
    [`lib/backwards-compat/conversation-id-wire-field.ts`](../src/lib/backwards-compat/conversation-id-wire-field.ts).
    The legacy `conversationKey` path is supported indefinitely for
-   non-vellum channel adapters (Telegram, WhatsApp, etc.); web code
+   non-cadet channel adapters (Telegram, WhatsApp, etc.); web code
    reaches it only through that gate, never by hand.
 
    ```ts
@@ -1211,7 +1211,7 @@ correct in isolation. Don't add a second instance.
 
 ### Auth-related headers stay inside the auth boundary
 
-The headers `Vellum-Organization-Id`, `X-CSRFToken`, and `X-Session-Token`
+The headers `Cadet-Organization-Id`, `X-CSRFToken`, and `X-Session-Token`
 only appear inside `src/lib/auth/` and `src/lib/api-interceptors.ts`.
 Everywhere else, an ESLint rule (`no-restricted-syntax` literal
 selectors) flags string-literal uses of those header names.
@@ -1274,7 +1274,7 @@ which UI surfaces are available:
 | ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `isLocalClient()`      | `src/lib/local-mode.ts`    | `true` when `VITE_PLATFORM_MODE` is unset — the app is running against a local/self-hosted daemon, not the Cadet platform                                                            |
 | `hasPlatformSession`   | `src/stores/auth-store.ts` | `true` when the user has a valid session with the Cadet platform (set asynchronously after probing the allauth session endpoint)                                                     |
-| `isPlatformDisabled()` | `src/lib/local-mode.ts`    | Env var / config setting (`VITE_VELLUM_DISABLE_PLATFORM` or `__CADET_CONFIG__.disablePlatform`). When `true` in local mode, the API interceptor no-ops all platform client requests |
+| `isPlatformDisabled()` | `src/lib/local-mode.ts`    | Env var / config setting (`VITE_CADET_DISABLE_PLATFORM` or `__CADET_CONFIG__.disablePlatform`). When `true` in local mode, the API interceptor no-ops all platform client requests |
 
 ### The five user states
 
@@ -1293,7 +1293,7 @@ returns one of three states:
 | ------------ | -------------------------------------------- | ---------------------------------------------------------------- |
 | `"full"`     | Feature is fully functional                  | `hasPlatformSession` is `true`                                   |
 | `"disabled"` | Show the UI but disable it (prompt re-login) | `hasPlatformSession` is `false`, platform features still enabled |
-| `"gated"`    | Hide the UI entirely                         | Local mode AND `VITE_VELLUM_DISABLE_PLATFORM` is set             |
+| `"gated"`    | Hide the UI entirely                         | Local mode AND `VITE_CADET_DISABLE_PLATFORM` is set             |
 
 Use this hook for any UI surface that depends on the Cadet platform
 API. The three actions map to concrete UI patterns:
@@ -1313,7 +1313,7 @@ Some UI surfaces only make sense on platform-hosted assistants — plan
 management, machine sizing, release channels, sleep policy, system
 events. They have no meaningful behavior on a self-hosted assistant
 and should be hidden whenever the active assistant is self-hosted,
-regardless of platform login or the `VITE_VELLUM_DISABLE_PLATFORM` env var.
+regardless of platform login or the `VITE_CADET_DISABLE_PLATFORM` env var.
 
 Pass `{ platformHostedOnly: true }` to `usePlatformGate` for these:
 
@@ -1336,7 +1336,7 @@ The decision is "is the **active assistant** self-hosted?" — not "is the
 app running in local mode?" Two cases this matters for:
 
 1. A **local-mode app** can be acting on a platform-hosted assistant
-   (lockfile entry with `cloud === "vellum"`). The platform billing /
+   (lockfile entry with `cloud === "cadet"`). The platform billing /
    plan UI for that assistant IS meaningful.
 2. A **platform-mode app** can be acting on a self-hosted assistant —
    when the platform API returns `is_local: true`,
@@ -1361,7 +1361,7 @@ Truth table when `platformHostedOnly` is `true`:
 | none resolved (loading etc) | yes              | `"full"`     |
 | none resolved               | no               | `"disabled"` |
 
-The `VITE_VELLUM_DISABLE_PLATFORM` env var does NOT apply to this
+The `VITE_CADET_DISABLE_PLATFORM` env var does NOT apply to this
 branch — that setting gates the daemon-side API interceptor in local
 mode, which is orthogonal to "is this UI's target assistant
 platform-hosted?"
@@ -1503,7 +1503,7 @@ Home, Workspace, Contacts.
 The organization store (`src/stores/organization-store.ts`) only
 fetches when `hasPlatformSession` is `true`. Organizations are a
 platform concept — in self-hosted mode the interceptor already strips
-the `Vellum-Organization-Id` header and uses bearer auth instead.
+the `Cadet-Organization-Id` header and uses bearer auth instead.
 
 ---
 

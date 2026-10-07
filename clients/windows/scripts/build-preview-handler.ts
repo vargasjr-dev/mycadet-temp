@@ -11,8 +11,8 @@ export type PreviewArchitecture = "x64" | "arm64";
 
 const windowsRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const nativeRoot = join(windowsRoot, "native");
-const handlerRoot = join(nativeRoot, "Vellum.PreviewHandler");
-const fixtureRoot = join(nativeRoot, "fixtures", "vellum-bundle-contract");
+const handlerRoot = join(nativeRoot, "Cadet.PreviewHandler");
+const fixtureRoot = join(nativeRoot, "fixtures", "cadet-bundle-contract");
 const managedBuildToolsRoot = join(windowsRoot, ".build-tools");
 const vcpkgManifest = join(handlerRoot, "vcpkg.json");
 const vcpkgRepository = "https://github.com/microsoft/vcpkg.git";
@@ -38,8 +38,8 @@ export function resolveArchitectures(
 export function registrationMetadata(architecture: PreviewArchitecture) {
   return {
     architecture,
-    dll: "Vellum.PreviewHandler.dll",
-    extension: ".vellum",
+    dll: "Cadet.PreviewHandler.dll",
+    extension: ".cadet",
     isolation: { previewHost: "prevhost.exe", disableProcessIsolation: false },
     classes: {
       [previewClsid]: {
@@ -194,7 +194,7 @@ function testArchitectureSelection() {
     "/p:VcpkgManifestInstall=false",
   ]);
   const project = readFileSync(
-    join(handlerRoot, "Vellum.PreviewHandler.vcxproj"),
+    join(handlerRoot, "Cadet.PreviewHandler.vcxproj"),
     "utf8",
   );
   assert.match(project, /\$\(VcpkgInstalledDir\)\$\(VcpkgTriplet\)\\include/);
@@ -226,7 +226,7 @@ async function portableTest() {
     throw new Error("vcpkg is required for portable parser tests");
   }
   const triplet = `${process.arch}-${process.platform === "darwin" ? "osx" : "linux"}`;
-  const scratch = await mkdtemp(join(tmpdir(), "vellum-preview-test-"));
+  const scratch = await mkdtemp(join(tmpdir(), "cadet-preview-test-"));
   const installed = join(scratch, "vcpkg");
   try {
     await runNativeCommand([
@@ -244,7 +244,7 @@ async function portableTest() {
       "-Wextra",
       "-Werror",
       join(handlerRoot, "BundleReader.cpp"),
-      join(nativeRoot, "Vellum.PreviewHandler.Tests", "BundleReaderTests.cpp"),
+      join(nativeRoot, "Cadet.PreviewHandler.Tests", "BundleReaderTests.cpp"),
       `-I${handlerRoot}`,
       `-I${join(installed, triplet, "include")}`,
       `-L${join(installed, triplet, "lib")}`,
@@ -287,7 +287,7 @@ async function main() {
   )) {
     const platform = architecture === "arm64" ? "ARM64" : "x64";
     const triplet = `${architecture}-windows-static-md`;
-    const project = join(handlerRoot, "Vellum.PreviewHandler.vcxproj");
+    const project = join(handlerRoot, "Cadet.PreviewHandler.vcxproj");
     await runNativeCommand([
       vcpkg,
       "install",

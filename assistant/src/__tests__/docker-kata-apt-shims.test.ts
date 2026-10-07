@@ -55,7 +55,7 @@ function refreshShims(dataRoot: string, pathPrefix?: string): void {
       PATH: pathPrefix
         ? `${pathPrefix}:${process.env.PATH ?? ""}`
         : process.env.PATH,
-      VELLUM_APT_DATA_ROOT: dataRoot,
+      CADET_APT_DATA_ROOT: dataRoot,
     },
   });
 }
@@ -67,8 +67,8 @@ describe("docker-kata-apt-shims", () => {
       const dataRoot = createDataRoot();
 
       const suffix = basename(dataRoot);
-      const firstTarget = `/vellum-apt-shim-test/${suffix}-1`;
-      const secondTarget = `/vellum-apt-shim-test/${suffix}-2`;
+      const firstTarget = `/cadet-apt-shim-test/${suffix}-1`;
+      const secondTarget = `/cadet-apt-shim-test/${suffix}-2`;
       const source = join(dataRoot, "usr/bin/example-tool");
       const shim = join(dataRoot, ".host-shims/example-tool");
 
@@ -113,7 +113,7 @@ exec /bin/mv "$@"
     () => {
       const dataRoot = createDataRoot();
       const suffix = basename(dataRoot);
-      const target = `/vellum-apt-shim-test/${suffix}`;
+      const target = `/cadet-apt-shim-test/${suffix}`;
       const chrootTarget = `${dataRoot}${target}`;
       const lowerSource = join(dataRoot, "usr/sbin/example-tool");
       const higherSource = join(dataRoot, "usr/local/bin/example-tool");

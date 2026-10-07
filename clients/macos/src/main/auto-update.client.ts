@@ -8,11 +8,11 @@ import {
 import { handle } from "./ipc";
 import log from "./logger";
 
-declare const __VELLUM_ENVIRONMENT__: string;
+declare const __CADET_ENVIRONMENT__: string;
 
 const ENVIRONMENT: string =
-  typeof __VELLUM_ENVIRONMENT__ === "string"
-    ? __VELLUM_ENVIRONMENT__
+  typeof __CADET_ENVIRONMENT__ === "string"
+    ? __CADET_ENVIRONMENT__
     : "production";
 
 configureAutoUpdate({

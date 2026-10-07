@@ -22,7 +22,7 @@ let platformContextEnabled = false;
 
 const registerCallbackRouteMock = mock(
   async (callbackPath: string, _type: string) =>
-    `https://gateway.vellum.ai/assistant-123/${callbackPath}`,
+    `https://gateway.cadet.ai/assistant-123/${callbackPath}`,
 );
 
 // Spread the real module: it is a shared barrel and replacing it wholesale
@@ -34,7 +34,7 @@ mock.module("../inbound/platform-callback-registration.js", () => ({
   registerCallbackRoute: registerCallbackRouteMock,
   resolvePlatformCallbackRegistrationContext: async () => ({
     isPlatform: false,
-    platformBaseUrl: platformContextEnabled ? "https://api.vellum.ai" : "",
+    platformBaseUrl: platformContextEnabled ? "https://api.cadet.ai" : "",
     assistantId: platformContextEnabled ? "assistant-123" : "",
     hasAssistantApiKey: platformContextEnabled,
     authHeader: platformContextEnabled ? "Api-Key secret" : null,

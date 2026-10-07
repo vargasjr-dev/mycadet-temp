@@ -566,8 +566,8 @@ describe("voice-session-bridge", () => {
     await startVoiceTurn({
       conversationId: conversation.id,
       voiceSessionId: "live-voice-session-1",
-      userMessageChannel: "vellum",
-      assistantMessageChannel: "vellum",
+      userMessageChannel: "cadet",
+      assistantMessageChannel: "cadet",
       userMessageInterface: "macos",
       assistantMessageInterface: "macos",
       // Synthetic fixture — this test only asserts pass-through of a
@@ -603,8 +603,8 @@ describe("voice-session-bridge", () => {
     const metadata = parsePersistedMetadata(persisted?.metadata);
     expect(persisted).toBeDefined();
     expect(metadata).toMatchObject({
-      userMessageChannel: "vellum",
-      assistantMessageChannel: "vellum",
+      userMessageChannel: "cadet",
+      assistantMessageChannel: "cadet",
       userMessageInterface: "macos",
       assistantMessageInterface: "macos",
     });
@@ -898,7 +898,7 @@ describe("voice-session-bridge", () => {
       runAgentLoop: async () => {
         clientHandler({
           type: "confirmation_request",
-          requestId: "req-voice-vellum",
+          requestId: "req-voice-cadet",
           toolName: "host_bash",
           input: { command: "touch /tmp/x" },
           riskLevel: "medium",
@@ -930,7 +930,7 @@ describe("voice-session-bridge", () => {
     // failed rather than implying they lack guardian access.
     await startVoiceTurn({
       conversationId: conversation.id,
-      userMessageChannel: "vellum",
+      userMessageChannel: "cadet",
       userMessageInterface: "macos",
       content: "run a command",
       isInbound: true,

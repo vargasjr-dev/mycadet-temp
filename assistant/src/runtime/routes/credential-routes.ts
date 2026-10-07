@@ -207,8 +207,8 @@ function resolveCredentialLookup(
 /**
  * Refuse any use of a credential the platform provisions for itself, whatever
  * the calling principal. Reads are refused because the API key spends
- * inference on Vellum's account. Writes are refused because they are a read
- * by another name: repointing `vellum:platform_base_url` sends the next
+ * inference on Cadet's account. Writes are refused because they are a read
+ * by another name: repointing `cadet:platform_base_url` sends the next
  * platform call, bearing that same key, to a host of the writer's choosing.
  *
  * The platform's own provisioning does not come through here. It writes over
@@ -395,11 +395,11 @@ async function handleCredentialsReveal({ body, headers }: RouteHandlerArgs) {
   // (verified by the adapters, never caller-supplied), but the principal
   // check alone is not enough: in local mode the gateway derives `local`
   // from the verified JWT sub and forwards it for web calls too, stamping
-  // `x-vellum-proxy-server: ipc` — a header a direct CLI never sends — so
+  // `x-cadet-proxy-server: ipc` — a header a direct CLI never sends — so
   // proxied Settings-row/chat-chip reveals are excluded.
   const directLocalInvocation =
-    headers?.["x-vellum-principal-type"] === "local" &&
-    headers?.["x-vellum-proxy-server"] !== "ipc";
+    headers?.["x-cadet-principal-type"] === "local" &&
+    headers?.["x-cadet-proxy-server"] !== "ipc";
 
   if (forChat) {
     // Both lookup forms resolve service+field (or throw); the narrow check

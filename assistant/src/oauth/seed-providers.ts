@@ -39,7 +39,7 @@ const SLACK_PROVIDER_INJECTION_TEMPLATES: NonNullable<
  * Protocol-level seed data for each well-known OAuth provider.
  *
  * These values are upserted into the `oauth_providers` SQLite table on
- * every startup. Only Vellum implementation fields (authorizeUrl, tokenExchangeUrl,
+ * every startup. Only Cadet implementation fields (authorizeUrl, tokenExchangeUrl,
  * refreshUrl, tokenEndpointAuthMethod, userinfoUrl, authorizeParams,
  * pingUrl, pingMethod, pingHeaders, pingBody, revokeUrl, revokeBodyTemplate,
  * managedServiceConfigKey, managedServiceIsPaid,
@@ -1373,7 +1373,7 @@ export const PROVIDER_SEED_DATA: Record<
     ],
     tokenEndpointAuthMethod: "client_secret_post",
     // Link's authorize request also needs a `key` param holding the Stripe
-    // publishable key of the account behind the OAuth client. Vellum's own
+    // publishable key of the account behind the OAuth client. Cadet's own
     // key lives in the platform registry, which is the only place it is the
     // right answer: it pairs with the platform's client_id. Seeding it here
     // would hand every self-hosted install our merchant identity to send

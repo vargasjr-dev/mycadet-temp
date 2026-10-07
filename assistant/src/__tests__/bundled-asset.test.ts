@@ -21,7 +21,7 @@ describe("resolveBundledDir", () => {
     expect(isBunVirtualPath("/$bunfs/root/src/config")).toBeTrue();
     expect(isBunVirtualPath("B:\\~BUN\\root")).toBeTrue();
     expect(isBunVirtualPath("B:/~BUN/root/src/config")).toBeTrue();
-    expect(isBunVirtualPath("C:\\dev\\vellum-assistant")).toBeFalse();
+    expect(isBunVirtualPath("C:\\dev\\mycadet")).toBeFalse();
   });
 
   test("source mode: returns join(callerDir, relativePath) when callerDir is a normal path", () => {
@@ -58,13 +58,13 @@ describe("resolveBundledDir", () => {
     });
 
     test("prefers Contents/Resources/<bundleName> when it exists", () => {
-      // Simulate macOS .app bundle: binary at Contents/MacOS/vellum-daemon
+      // Simulate macOS .app bundle: binary at Contents/MacOS/cadet-daemon
       const macosDir = join(tempDir, "Contents", "MacOS");
       const resourcesDir = join(tempDir, "Contents", "Resources");
       mkdirSync(macosDir, { recursive: true });
       mkdirSync(join(resourcesDir, "templates"), { recursive: true });
 
-      process.execPath = join(macosDir, "vellum-daemon");
+      process.execPath = join(macosDir, "cadet-daemon");
 
       const result = resolveBundledDir(
         "/$bunfs/root/src/config",
@@ -79,7 +79,7 @@ describe("resolveBundledDir", () => {
       const binDir = join(tempDir, "bin");
       mkdirSync(join(binDir, "templates"), { recursive: true });
 
-      process.execPath = join(binDir, "vellum-daemon");
+      process.execPath = join(binDir, "cadet-daemon");
 
       const result = resolveBundledDir(
         "/$bunfs/root/src/config",
@@ -93,7 +93,7 @@ describe("resolveBundledDir", () => {
       const binDir = join(tempDir, "bin");
       mkdirSync(join(binDir, "default-plugins"), { recursive: true });
 
-      process.execPath = join(binDir, "vellum-daemon.exe");
+      process.execPath = join(binDir, "cadet-daemon.exe");
 
       const result = resolveBundledDir(
         "B:\\~BUN\\root",
@@ -108,7 +108,7 @@ describe("resolveBundledDir", () => {
       mkdirSync(binDir, { recursive: true });
       // Don't create any asset directories
 
-      process.execPath = join(binDir, "vellum-daemon");
+      process.execPath = join(binDir, "cadet-daemon");
 
       const result = resolveBundledDir(
         "/$bunfs/root/src/config",
@@ -126,7 +126,7 @@ describe("resolveBundledDir", () => {
       // Also create at execDir level
       mkdirSync(join(macosDir, "templates"), { recursive: true });
 
-      process.execPath = join(macosDir, "vellum-daemon");
+      process.execPath = join(macosDir, "cadet-daemon");
 
       const result = resolveBundledDir(
         "/$bunfs/root/src/prompts",
@@ -142,7 +142,7 @@ describe("resolveBundledDir", () => {
       mkdirSync(macosDir, { recursive: true });
       mkdirSync(join(resourcesDir, "prebuilt"), { recursive: true });
 
-      process.execPath = join(macosDir, "vellum-daemon");
+      process.execPath = join(macosDir, "cadet-daemon");
 
       const result = resolveBundledDir(
         "/$bunfs/root/src/widgets/prebuilt",

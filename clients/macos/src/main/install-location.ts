@@ -40,7 +40,7 @@ export const isStrandedOutsideApplications = (): boolean =>
   app.isPackaged && !app.isInApplicationsFolder();
 
 /**
- * Record that a launch carrying a `.vellum` file or a deep link bypassed the
+ * Record that a launch carrying a `.cadet` file or a deep link bypassed the
  * relocation, so a packaged app left outside /Applications is attributable to
  * that skip rather than to a failed move.
  */

@@ -306,7 +306,7 @@ describe("resolveCallSiteConfig", () => {
 
   test("a winning profile's fallbackProfile metadata never leaks into the resolved config", () => {
     const llm = LLMSchema.parse({
-      defaultProvider: { provider: "vellum" },
+      defaultProvider: { provider: "cadet" },
       profiles: {
         "quality-optimized": {
           source: "managed",

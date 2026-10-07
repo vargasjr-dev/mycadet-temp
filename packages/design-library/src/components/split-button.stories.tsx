@@ -24,9 +24,9 @@ const meta: Meta<typeof SplitButton> = {
     fullWidth: false,
     menuItems: [
       <ActionMenu.Item
-        key="vellum"
+        key="cadet"
         icon={ShieldCheck}
-        label="Sign in through Vellum"
+        label="Sign in through Cadet"
       />,
       <ActionMenu.Item
         key="own"

@@ -7,15 +7,15 @@
 /** Explicit opt-in to the focused tab. Must match the daemon sentinel. */
 export const ACTIVE_TAB_SESSION_ID = "active";
 
-const VELLUM_WITHOUT_TARGET = new Set([
-  "Vellum.createTab",
-  "Vellum.findTab",
-  "Vellum.listTabs",
-  "Vellum.selectTab",
-  "Vellum.closeTab",
+const CADET_WITHOUT_TARGET = new Set([
+  "Cadet.createTab",
+  "Cadet.findTab",
+  "Cadet.listTabs",
+  "Cadet.selectTab",
+  "Cadet.closeTab",
 ]);
 
-const VELLUM_WITH_TARGET = new Set(["Vellum.attach", "Vellum.detach"]);
+const CADET_WITH_TARGET = new Set(["Cadet.attach", "Cadet.detach"]);
 
 const ALLOWED_PREFIXES = [
   "Page.",
@@ -33,7 +33,7 @@ const ALLOWED_NETWORK = new Set([
 ]);
 
 export function isAllowedCdpMethod(method: string): boolean {
-  if (VELLUM_WITHOUT_TARGET.has(method) || VELLUM_WITH_TARGET.has(method)) {
+  if (CADET_WITHOUT_TARGET.has(method) || CADET_WITH_TARGET.has(method)) {
     return true;
   }
   if (ALLOWED_NETWORK.has(method)) {
@@ -43,7 +43,7 @@ export function isAllowedCdpMethod(method: string): boolean {
 }
 
 export function commandRequiresTabBinding(method: string): boolean {
-  if (VELLUM_WITHOUT_TARGET.has(method)) {
+  if (CADET_WITHOUT_TARGET.has(method)) {
     return false;
   }
   return isAllowedCdpMethod(method);

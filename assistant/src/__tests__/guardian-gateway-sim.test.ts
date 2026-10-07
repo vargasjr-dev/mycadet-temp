@@ -101,7 +101,7 @@ describe("guardian gateway sim: decision arbitration contract", () => {
     sim.seedDelivery({
       id: "flipped",
       requestId: "exp",
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
       status: "sent",
     });

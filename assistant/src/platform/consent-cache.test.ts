@@ -18,7 +18,7 @@ let createCallCount = 0;
 // ---------------------------------------------------------------------------
 
 mock.module("./client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: async () => {
       createCallCount += 1;
       return mockClient;
@@ -94,11 +94,11 @@ describe("consent-cache", () => {
     // flush will ever drain the outbox, so record-time gates must stay
     // closed (confirmed false) instead of accumulating rows forever.
     __setCachedShareAnalyticsForTest(true);
-    process.env.VELLUM_DISABLE_PLATFORM = "1";
+    process.env.CADET_DISABLE_PLATFORM = "1";
     try {
       await refreshConsentCache();
     } finally {
-      delete process.env.VELLUM_DISABLE_PLATFORM;
+      delete process.env.CADET_DISABLE_PLATFORM;
     }
     expect(getRawShareAnalytics()).toBe(false);
     expect(getCachedShareDiagnostics()).toBe(false);

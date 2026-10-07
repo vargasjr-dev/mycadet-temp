@@ -32,7 +32,7 @@ export type IngressRouteKind = z.infer<typeof IngressRouteKindSchema>;
  * Party whose `webhook_secret` must have signed an inbound request. Every
  * public plugin route is signature-checked; this only selects the key.
  */
-export const IngressSignerSchema = z.enum(["plugin", "vellum"]);
+export const IngressSignerSchema = z.enum(["plugin", "cadet"]);
 export type IngressSigner = z.infer<typeof IngressSignerSchema>;
 
 /**
@@ -121,7 +121,7 @@ export const IngressRouteSchema = z.object({
    * How the caller proves it holds the signing secret.
    *
    * `signed-headers` (the default) is the platform's scheme: the signature
-   * travels in `Vellum-Signature`, over the body for HTTP and over
+   * travels in `Cadet-Signature`, over the body for HTTP and over
    * `<timestamp>.<pathname>` for a WebSocket upgrade.
    *
    * `signed-query` puts the same HMAC in the URL instead, for a caller that
@@ -142,7 +142,7 @@ export const IngressRouteSchema = z.object({
   /**
    * How a third-party caller's signature is checked, when it is not ours.
    *
-   * Absent (the default) means the platform scheme: `Vellum-Signature` over
+   * Absent (the default) means the platform scheme: `Cadet-Signature` over
    * the body, keyed by whichever `webhook_secret` {@link signer} selects.
    * That is right for a caller Cadet controls and wrong for every other one
    * — Comms signs `X-Osis-Signature`, Photon signs `X-Spectrum-Signature` over
@@ -159,7 +159,7 @@ export const IngressRouteSchema = z.object({
    *
    * The descriptor supersedes {@link signer} — it names its own credential
    * field, under this plugin's own service — so declaring it alongside
-   * `signer: "vellum"` is rejected: `cadet` routes are served without a
+   * `signer: "cadet"` is rejected: `cadet` routes are served without a
    * guardian approval (see `findServableRoute`), and a route that both skips
    * approval and verifies against a secret the plugin chose would be reach a
    * plugin grants itself. HTTP only, for the same reason `signed-query` is
@@ -181,7 +181,7 @@ export const IngressRouteSchema = z.object({
    * channel's would be. See `ingress-inbound.ts` for the declaration and
    * `plugin-inbound.ts` for what the gateway supplies rather than reads.
    *
-   * Rejected alongside `signer: "vellum"`. A `cadet`-signed route is served
+   * Rejected alongside `signer: "cadet"`. A `cadet`-signed route is served
    * without a guardian approval (see `findServableRoute`), which is defensible
    * for a path only Cadet can drive and carrying no authority over the
    * assistant. Delivering messages *is* such authority — it is how a
@@ -313,9 +313,9 @@ export function parsePluginIngressManifest(
       );
     }
     if (route.verification) {
-      if (route.signer === "vellum") {
+      if (route.signer === "cadet") {
         throw new Error(
-          `route ${route.path}: declared verification cannot be combined with signer "vellum"`,
+          `route ${route.path}: declared verification cannot be combined with signer "cadet"`,
         );
       }
       if (route.kind !== "http") {
@@ -325,9 +325,9 @@ export function parsePluginIngressManifest(
       }
     }
     if (route.inbound) {
-      if (route.signer === "vellum") {
+      if (route.signer === "cadet") {
         throw new Error(
-          `route ${route.path}: inbound delivery cannot be combined with signer "vellum"`,
+          `route ${route.path}: inbound delivery cannot be combined with signer "cadet"`,
         );
       }
       if (route.kind !== "http") {

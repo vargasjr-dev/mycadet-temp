@@ -37,11 +37,11 @@ mock.module("../plugins/defaults/memory/v1/jobs/embed-pkb-file.js", () => ({
   },
 }));
 
-// Override workspace dir via VELLUM_WORKSPACE_DIR so PKB-root detection
+// Override workspace dir via CADET_WORKSPACE_DIR so PKB-root detection
 // targets a temp directory without having to mock platform.js wholesale
 // (which would destabilize the rest of the tool registry's dependency tree).
 function setWorkspaceDir(dir: string): void {
-  process.env.VELLUM_WORKSPACE_DIR = dir;
+  process.env.CADET_WORKSPACE_DIR = dir;
 }
 
 import { finalizeTool } from "../tools/tool-defaults.js";
@@ -70,23 +70,23 @@ afterEach(() => {
   }
 });
 
-const originalWorkspaceDirEnv = process.env.VELLUM_WORKSPACE_DIR;
+const originalWorkspaceDirEnv = process.env.CADET_WORKSPACE_DIR;
 
 beforeEach(() => {
   enqueueCalls.length = 0;
   enqueueThrows = false;
   // Reset to a stable tmp path so the sandbox tests (which don't use pkb/)
   // deterministically land outside any configured PKB root. A subdirectory
-  // rather than tmpdir() itself, so vellumRoot() (the parent) also stays
+  // rather than tmpdir() itself, so cadetRoot() (the parent) also stays
   // inside the temp directory for the live-workspace guard.
-  process.env.VELLUM_WORKSPACE_DIR = join(tmpdir(), "file-write-tool-ws");
+  process.env.CADET_WORKSPACE_DIR = join(tmpdir(), "file-write-tool-ws");
 });
 
 afterEach(() => {
   if (originalWorkspaceDirEnv === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDirEnv;
+    process.env.CADET_WORKSPACE_DIR = originalWorkspaceDirEnv;
   }
 });
 

@@ -141,12 +141,12 @@ describe("CES bootstrap socket discovery", () => {
     }
   });
 
-  test("does not discover CES from VELLUM_WORKSPACE_DIR", () => {
+  test("does not discover CES from CADET_WORKSPACE_DIR", () => {
     const bootstrapDir = mkdtempSync(join(tmpdir(), "ces-bootstrap-"));
     const restore = withBootstrapDir(bootstrapDir);
     try {
       const result = discoverCes();
-      const workspaceDir = process.env.VELLUM_WORKSPACE_DIR;
+      const workspaceDir = process.env.CADET_WORKSPACE_DIR;
       expect(workspaceDir).toBeDefined();
       const workspaceSocket = resolveIpcEndpoint("ces", {
         workspaceDir: workspaceDir!,
@@ -401,7 +401,7 @@ describe("CES boundary guard", () => {
         /from\s+['"]credential-executor/,
         /require\s*\(\s*['"]\.\.\/.*credential-executor/,
         /require\s*\(\s*['"]credential-executor/,
-        /from\s+['"]@vellumai\/credential-executor/,
+        /from\s+['"]@mycadet\/credential-executor/,
       ];
 
       for (const pattern of patterns) {

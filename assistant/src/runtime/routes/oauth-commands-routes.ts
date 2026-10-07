@@ -46,7 +46,7 @@ import {
   type OAuthProviderRow,
 } from "../../oauth/oauth-store.js";
 import { missingScopesForStoredToken } from "../../oauth/scope-utils.js";
-import { VellumPlatformClient } from "../../platform/client.js";
+import { CadetPlatformClient } from "../../platform/client.js";
 import { withValidToken } from "../../security/token-manager.js";
 import { matchHostPattern } from "../../tools/credentials/host-pattern-match.js";
 import { parseJsonSafe } from "../../util/json.js";
@@ -97,23 +97,23 @@ function isManagedMode(provider: string): boolean {
   }
 }
 
-async function requirePlatformClient(): Promise<VellumPlatformClient> {
-  const client = await VellumPlatformClient.create();
+async function requirePlatformClient(): Promise<CadetPlatformClient> {
+  const client = await CadetPlatformClient.create();
   if (!client) {
     throw new BadRequestError(
-      "Not connected to Vellum platform. Run `vellum platform connect` to connect first.",
+      "Not connected to Cadet platform. Run `cadet platform connect` to connect first.",
     );
   }
   if (!client.platformAssistantId) {
     throw new BadRequestError(
-      "Connected to Vellum platform but no assistant ID is configured. Ensure the assistant is registered on the platform.",
+      "Connected to Cadet platform but no assistant ID is configured. Ensure the assistant is registered on the platform.",
     );
   }
   return client;
 }
 
 async function fetchActiveConnections(
-  client: VellumPlatformClient,
+  client: CadetPlatformClient,
   provider: string,
 ): Promise<PlatformConnectionEntry[]> {
   const params = new URLSearchParams();
@@ -126,7 +126,7 @@ async function fetchActiveConnections(
   if (!response.ok) {
     const hint =
       response.status === 401 || response.status === 403
-        ? `. Your platform session may have expired. Run \`vellum platform connect\` to reconnect.`
+        ? `. Your platform session may have expired. Run \`cadet platform connect\` to reconnect.`
         : "";
     throw new InternalError(`Platform returned HTTP ${response.status}${hint}`);
   }
@@ -145,7 +145,7 @@ async function fetchActiveConnections(
  */
 async function countManagedConnections(provider: string): Promise<number> {
   try {
-    const client = await VellumPlatformClient.create();
+    const client = await CadetPlatformClient.create();
     if (!client || !client.platformAssistantId) {
       return 0;
     }
@@ -519,10 +519,10 @@ async function handleModeSet({ body = {} }: RouteHandlerArgs) {
 
   // Require platform connection when switching to managed mode
   if (b.mode === "managed") {
-    const client = await VellumPlatformClient.create();
+    const client = await CadetPlatformClient.create();
     if (!client) {
       throw new BadRequestError(
-        "Not connected to Vellum platform. Run `vellum platform connect` to connect first.",
+        "Not connected to Cadet platform. Run `cadet platform connect` to connect first.",
       );
     }
   }
@@ -765,7 +765,7 @@ async function handleToken({ body = {} }: RouteHandlerArgs) {
   if (isManagedMode(b.provider)) {
     throw new BadRequestError(
       "Token retrieval is not supported for platform-managed providers. " +
-        "When a provider is in managed mode, Vellum handles OAuth tokens on your behalf — " +
+        "When a provider is in managed mode, Cadet handles OAuth tokens on your behalf — " +
         "they are not exposed directly.\n\n" +
         `To verify your connection is working, run 'assistant oauth ping ${b.provider}'.\n` +
         `To make authenticated requests, use 'assistant oauth request --provider ${b.provider} <url>'.`,
@@ -1104,7 +1104,7 @@ async function handleManagedConnect({ body = {} }: RouteHandlerArgs) {
     const baseMsg = `Platform returned HTTP ${response.status}${errorText ? `: ${errorText}` : ""}`;
     if (response.status === 401 || response.status === 403) {
       throw new InternalError(
-        `${baseMsg}. Your platform session may have expired. Run \`vellum platform connect\` to reconnect.`,
+        `${baseMsg}. Your platform session may have expired. Run \`cadet platform connect\` to reconnect.`,
       );
     }
     throw new InternalError(baseMsg);

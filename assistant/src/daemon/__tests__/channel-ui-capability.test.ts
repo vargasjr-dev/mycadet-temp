@@ -18,7 +18,7 @@ describe("channelSupportsInlineOptions", () => {
   });
 
   test("false for the app and text/voice-only channels", () => {
-    expect(channelSupportsInlineOptions("vellum")).toBe(false);
+    expect(channelSupportsInlineOptions("cadet")).toBe(false);
     expect(channelSupportsInlineOptions("phone")).toBe(false);
     expect(channelSupportsInlineOptions("email")).toBe(false);
   });
@@ -45,7 +45,7 @@ describe("channelSupportsGuardianQuestionCards", () => {
   });
 
   test("false for the app, voice, unknown, and empty ids", () => {
-    expect(channelSupportsGuardianQuestionCards("vellum")).toBe(false);
+    expect(channelSupportsGuardianQuestionCards("cadet")).toBe(false);
     expect(channelSupportsGuardianQuestionCards("phone")).toBe(false);
     expect(channelSupportsGuardianQuestionCards("")).toBe(false);
     expect(channelSupportsGuardianQuestionCards("mystery")).toBe(false);

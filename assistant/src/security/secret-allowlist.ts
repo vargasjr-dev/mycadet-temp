@@ -1,7 +1,7 @@
 /**
  * User-defined allowlist for suppressing secret scanner false positives.
  *
- * Reads `$VELLUM_WORKSPACE_DIR/data/secret-allowlist.json` (if present) and provides
+ * Reads `$CADET_WORKSPACE_DIR/data/secret-allowlist.json` (if present) and provides
  * `isAllowlisted(value)` to check whether a matched value should be
  * suppressed.
  *

@@ -425,12 +425,12 @@ describe("renderHistoryContent", () => {
         type: "server_tool_use",
         id: "srvtu_1",
         name: "web_search",
-        input: { query: "vellum" },
+        input: { query: "cadet" },
       },
     ]);
 
     expect(output.toolCalls).toEqual([
-      { id: "srvtu_1", name: "web_search", input: { query: "vellum" } },
+      { id: "srvtu_1", name: "web_search", input: { query: "cadet" } },
     ]);
   });
 
@@ -531,8 +531,8 @@ describe("renderHistoryContent", () => {
           {
             rank: 1,
             title: "Cadet",
-            url: "https://vellum.ai",
-            domain: "vellum.ai",
+            url: "https://mycadet.ai",
+            domain: "mycadet.ai",
           },
         ],
       },

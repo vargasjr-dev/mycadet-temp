@@ -77,7 +77,7 @@ const cliPathFlowItem = (
 });
 
 const cliPathItems = (): MenuItemConstructorOptions[] => {
-  // Only packaged builds manage the shared ~/.local/bin/vellum wrapper.
+  // Only packaged builds manage the shared ~/.local/bin/cadet wrapper.
   if (!app.isPackaged) return [];
   const cliState = cliPathState;
   if (cliState?.kind === "installed" || cliState?.kind === "shadowed") {
@@ -306,7 +306,7 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
         {
           label: "Cadet Documentation",
           click: () => {
-            void shell.openExternal("https://www.vellum.ai/docs");
+            void shell.openExternal("https://mycadet.ai/docs");
           },
         },
       ],

@@ -32,13 +32,13 @@ const { _resetPlatformIdentityEnsureForTests } =
 const { rehydratePlatformCredentials } =
   await import("../platform-rehydration.js");
 
-const PROD_URL = "https://platform.vellum.ai";
+const PROD_URL = "https://cloud.cadet.ai";
 const ASSISTANT_ID = "11111111-2222-4333-8444-555555555555";
 const ORG_ID = "22222222-3333-4444-8555-666666666666";
 const USER_ID = "33333333-4444-4555-8666-777777777777";
 
 describe("rehydratePlatformCredentials", () => {
-  const originalPlatformUrlEnv = process.env.VELLUM_PLATFORM_URL;
+  const originalPlatformUrlEnv = process.env.CADET_PLATFORM_URL;
   const originalOrgEnv = process.env.PLATFORM_ORGANIZATION_ID;
   const originalUserEnv = process.env.PLATFORM_USER_ID;
   const originalAssistantApiKeyEnv = process.env.ASSISTANT_API_KEY;
@@ -65,7 +65,7 @@ describe("rehydratePlatformCredentials", () => {
     }) as unknown as typeof fetch;
     // Env vars take precedence over the rehydrated overrides for some fields;
     // clear them so the credential-store values are what we observe.
-    delete process.env.VELLUM_PLATFORM_URL;
+    delete process.env.CADET_PLATFORM_URL;
     delete process.env.PLATFORM_ORGANIZATION_ID;
     delete process.env.PLATFORM_USER_ID;
     delete process.env.ASSISTANT_API_KEY;
@@ -80,9 +80,9 @@ describe("rehydratePlatformCredentials", () => {
   afterEach(() => {
     globalThis.fetch = originalFetch;
     if (originalPlatformUrlEnv === undefined) {
-      delete process.env.VELLUM_PLATFORM_URL;
+      delete process.env.CADET_PLATFORM_URL;
     } else {
-      process.env.VELLUM_PLATFORM_URL = originalPlatformUrlEnv;
+      process.env.CADET_PLATFORM_URL = originalPlatformUrlEnv;
     }
     if (originalOrgEnv === undefined) {
       delete process.env.PLATFORM_ORGANIZATION_ID;

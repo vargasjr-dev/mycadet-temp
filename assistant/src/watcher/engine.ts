@@ -456,7 +456,7 @@ export async function runWatchersOnce(
       // the kickoff so persistUserMessage has content.
       prompt: "",
       systemHint: `Watcher: ${watcher.name}`,
-      trustContext: { sourceChannel: "vellum", trustClass: "guardian" },
+      trustContext: { sourceChannel: "cadet", trustClass: "guardian" },
       callSite: "mainAgent",
       timeoutMs: WATCHER_JOB_TIMEOUT_MS,
       origin: "watcher",

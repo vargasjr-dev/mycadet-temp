@@ -594,7 +594,7 @@ describe("forwardAppControlProxyTool", () => {
     expect(result.content).toContain(
       "The Cadet desktop app is needed to control apps on your computer",
     );
-    expect(result.content).toContain("https://www.vellum.ai/downloads");
+    expect(result.content).toContain("https://mycadet.ai/downloads");
     expect(result.content).not.toContain("app_control_click");
   });
 

@@ -120,7 +120,7 @@ function installCopy(
     writeFileSync(
       join(dir, "install-meta.json"),
       JSON.stringify({
-        origin: "vellum",
+        origin: "cadet",
         name,
         source: {
           kind: "github",

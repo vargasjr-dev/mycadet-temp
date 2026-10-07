@@ -19,7 +19,7 @@
  * in-memory DB, and asserts the on-disk side-effects (concept pages,
  * edges.json, promotions, sentinel) plus the enqueued embed jobs.
  *
- * Tests use temp workspaces (mkdtemp) and never touch `~/.vellum/`.
+ * Tests use temp workspaces (mkdtemp) and never touch `~/.cadet/`.
  * Sample content uses generic placeholders (Alice, Bob, user@example.com).
  */
 
@@ -664,14 +664,14 @@ describe("runMemoryV2Migration", () => {
     insertEdge(database, a, b);
     writeFileSync(
       join(workspaceDir, "pkb", "ides.md"),
-      "VS Code is preferred at Vellum.\n",
+      "VS Code is preferred at Cadet.\n",
       "utf-8",
     );
 
     const provider = buildStubProvider([
-      "Alice works at Vellum.\n",
+      "Alice works at Cadet.\n",
       "Alice prefers VS Code over Vim.\n",
-      "VS Code is preferred at Vellum.\n",
+      "VS Code is preferred at Cadet.\n",
     ]);
     const result = await runMemoryV2Migration({
       workspaceDir,

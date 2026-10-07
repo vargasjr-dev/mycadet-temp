@@ -409,8 +409,8 @@ async function checkManagedProvider(
   const results: CredentialHealthResult[] = [];
 
   try {
-    const { VellumPlatformClient } = await import("../platform/client.js");
-    const client = await VellumPlatformClient.create();
+    const { CadetPlatformClient } = await import("../platform/client.js");
+    const client = await CadetPlatformClient.create();
     if (!client?.platformAssistantId) {
       return results;
     }
@@ -458,7 +458,7 @@ async function checkManagedProvider(
         provider: providerRow.provider,
         accountInfo: allConnections[0]?.account_label ?? null,
         status: "missing_token",
-        details: `No active managed connection for ${providerRow.provider}. Reconnect on the Vellum platform.`,
+        details: `No active managed connection for ${providerRow.provider}. Reconnect on the Cadet platform.`,
         missingScopes: [],
         canAutoRecover: false,
       });
@@ -555,7 +555,7 @@ async function checkManagedProvider(
           results.push({
             ...base,
             status: "ping_failed",
-            details: `${providerRow.provider} managed liveness check returned ${pingResp.status} from the upstream provider. The Vellum platform may not have refreshed the token before forwarding; will retry next cycle.`,
+            details: `${providerRow.provider} managed liveness check returned ${pingResp.status} from the upstream provider. The Cadet platform may not have refreshed the token before forwarding; will retry next cycle.`,
             canAutoRecover: false,
           });
         } else {
@@ -582,7 +582,7 @@ async function checkManagedProvider(
           results.push({
             ...base,
             status: "revoked",
-            details: `${providerRow.provider} managed connection cannot be refreshed by the Vellum platform. Reconnect on the Vellum platform.`,
+            details: `${providerRow.provider} managed connection cannot be refreshed by the Cadet platform. Reconnect on the Cadet platform.`,
             canAutoRecover: false,
           });
         } else {
@@ -610,17 +610,17 @@ async function checkManagedProvider(
 }
 
 /**
- * Connection id for the Vellum-managed assistant credential.
+ * Connection id for the Cadet-managed assistant credential.
  *
  * The credential is a single workspace-wide slot rather than one row per
  * account, so it carries the credential-store key as its id instead of a
  * connection uuid.
  */
-const ASSISTANT_API_KEY_CONNECTION_ID = "vellum:assistant_api_key";
+const ASSISTANT_API_KEY_CONNECTION_ID = "cadet:assistant_api_key";
 
 /**
  * Health of the platform-provisioned assistant API key, the credential that
- * authenticates Vellum-managed inference.
+ * authenticates Cadet-managed inference.
  *
  * Deliberately not part of {@link checkAllCredentials} yet. Adding it there
  * makes the heartbeat raise a `credential.health_alert` for this credential,
@@ -651,7 +651,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
     "status" | "details" | "canAutoRecover"
   > = {
     connectionId: ASSISTANT_API_KEY_CONNECTION_ID,
-    provider: "vellum",
+    provider: "cadet",
     accountInfo: null,
     missingScopes: [],
   };
@@ -665,7 +665,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
       ...base,
       status: "unreachable",
       details:
-        "The credential store is unreachable, so Vellum's managed credentials could not be checked.",
+        "The credential store is unreachable, so Cadet's managed credentials could not be checked.",
       canAutoRecover: false,
     };
   }
@@ -684,19 +684,19 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
       ...base,
       status: "missing_token",
       details:
-        "No Vellum-managed credentials are stored yet. Log in to the Vellum platform to set them up.",
+        "No Cadet-managed credentials are stored yet. Log in to the Cadet platform to set them up.",
       canAutoRecover: true,
     };
   }
 
-  const { VellumPlatformClient } = await import("../platform/client.js");
-  const client = await VellumPlatformClient.create();
+  const { CadetPlatformClient } = await import("../platform/client.js");
+  const client = await CadetPlatformClient.create();
   if (!client) {
     return {
       ...base,
       status: "unreachable",
       details:
-        "The Vellum platform client could not be built, so Vellum's managed credentials could not be checked.",
+        "The Cadet platform client could not be built, so Cadet's managed credentials could not be checked.",
       canAutoRecover: false,
     };
   }
@@ -712,7 +712,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
       // action rather than at reconnecting something the reader never
       // connected.
       details:
-        "Vellum's managed credentials stopped working, so chat and background tasks that use them are paused. Restoring takes a moment and will not affect anything else.",
+        "Cadet's managed credentials stopped working, so chat and background tasks that use them are paused. Restoring takes a moment and will not affect anything else.",
       canAutoRecover: true,
     };
   }
@@ -721,7 +721,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
       ...base,
       status: "unreachable",
       details:
-        "Vellum did not answer the managed-credential check. Health is unknown until the next check.",
+        "Cadet did not answer the managed-credential check. Health is unknown until the next check.",
       canAutoRecover: false,
     };
   }
@@ -729,7 +729,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
   return {
     ...base,
     status: "healthy",
-    details: "Vellum's managed credentials are working.",
+    details: "Cadet's managed credentials are working.",
     canAutoRecover: true,
   };
 }

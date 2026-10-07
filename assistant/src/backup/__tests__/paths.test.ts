@@ -31,55 +31,55 @@ describe("getLocalBackupsDir", () => {
 });
 
 // ---------------------------------------------------------------------------
-// VELLUM_BACKUP_DIR env var override
+// CADET_BACKUP_DIR env var override
 // ---------------------------------------------------------------------------
 
-describe("VELLUM_BACKUP_DIR override", () => {
-  const ORIGINAL = process.env.VELLUM_BACKUP_DIR;
+describe("CADET_BACKUP_DIR override", () => {
+  const ORIGINAL = process.env.CADET_BACKUP_DIR;
 
   afterEach(() => {
     if (ORIGINAL === undefined) {
-      delete process.env.VELLUM_BACKUP_DIR;
+      delete process.env.CADET_BACKUP_DIR;
     } else {
-      process.env.VELLUM_BACKUP_DIR = ORIGINAL;
+      process.env.CADET_BACKUP_DIR = ORIGINAL;
     }
   });
 
-  test("getBackupRootDir() uses VELLUM_BACKUP_DIR when set", () => {
-    process.env.VELLUM_BACKUP_DIR = "/workspace/.backups";
+  test("getBackupRootDir() uses CADET_BACKUP_DIR when set", () => {
+    process.env.CADET_BACKUP_DIR = "/workspace/.backups";
     expect(getBackupRootDir()).toBe("/workspace/.backups");
   });
 
-  test("getBackupRootDir() falls back to ~/.vellum/backups when unset", () => {
-    delete process.env.VELLUM_BACKUP_DIR;
+  test("getBackupRootDir() falls back to ~/.cadet/backups when unset", () => {
+    delete process.env.CADET_BACKUP_DIR;
     const dir = getBackupRootDir();
-    expect(dir).toMatch(/\/\.vellum\/backups$/);
+    expect(dir).toMatch(/\/\.cadet\/backups$/);
   });
 
-  test("getLocalBackupsDir() resolves under VELLUM_BACKUP_DIR", () => {
-    process.env.VELLUM_BACKUP_DIR = "/workspace/.backups";
+  test("getLocalBackupsDir() resolves under CADET_BACKUP_DIR", () => {
+    process.env.CADET_BACKUP_DIR = "/workspace/.backups";
     expect(getLocalBackupsDir()).toBe("/workspace/.backups/local");
   });
 
   test("getLocalBackupsDir() falls back to default when env var is unset", () => {
-    delete process.env.VELLUM_BACKUP_DIR;
-    expect(getLocalBackupsDir()).toMatch(/\/\.vellum\/backups\/local$/);
+    delete process.env.CADET_BACKUP_DIR;
+    expect(getLocalBackupsDir()).toMatch(/\/\.cadet\/backups\/local$/);
   });
 
-  test("config override still takes precedence over VELLUM_BACKUP_DIR", () => {
-    process.env.VELLUM_BACKUP_DIR = "/workspace/.backups";
+  test("config override still takes precedence over CADET_BACKUP_DIR", () => {
+    process.env.CADET_BACKUP_DIR = "/workspace/.backups";
     expect(getLocalBackupsDir("/custom/dir")).toBe("/custom/dir");
   });
 
-  test("getSnapshotLockPath() resolves under VELLUM_BACKUP_DIR", () => {
-    process.env.VELLUM_BACKUP_DIR = "/workspace/.backups";
+  test("getSnapshotLockPath() resolves under CADET_BACKUP_DIR", () => {
+    process.env.CADET_BACKUP_DIR = "/workspace/.backups";
     expect(getSnapshotLockPath()).toBe("/workspace/.backups/.snapshot.lock");
   });
 
   test("getSnapshotLockPath() falls back to default when env var is unset", () => {
-    delete process.env.VELLUM_BACKUP_DIR;
+    delete process.env.CADET_BACKUP_DIR;
     expect(getSnapshotLockPath()).toMatch(
-      /\/\.vellum\/backups\/\.snapshot\.lock$/,
+      /\/\.cadet\/backups\/\.snapshot\.lock$/,
     );
   });
 });
@@ -88,7 +88,7 @@ describe("deriveSafeAncestor", () => {
   test("iCloud Drive subtree anchors on the iCloud Drive root", () => {
     const iCloudRoot = getICloudDriveRoot();
     expect(
-      deriveSafeAncestor(join(iCloudRoot, "VellumAssistant", "backups")),
+      deriveSafeAncestor(join(iCloudRoot, "CadetAssistant", "backups")),
     ).toBe(iCloudRoot);
     // The default offsite path specifically — this is the regression the
     // feature exists to fix.
@@ -101,7 +101,7 @@ describe("deriveSafeAncestor", () => {
   });
 
   test("paths under /Volumes/<name> anchor on the volume root", () => {
-    expect(deriveSafeAncestor("/Volumes/MyExtSSD/vellum/backups")).toBe(
+    expect(deriveSafeAncestor("/Volumes/MyExtSSD/cadet/backups")).toBe(
       "/Volumes/MyExtSSD",
     );
     expect(deriveSafeAncestor("/Volumes/MyExtSSD")).toBe("/Volumes/MyExtSSD");
@@ -115,7 +115,7 @@ describe("deriveSafeAncestor", () => {
       "/tmp/some/where",
     );
     expect(
-      deriveSafeAncestor(join(homedir(), "Documents", "vellum-backups")),
+      deriveSafeAncestor(join(homedir(), "Documents", "cadet-backups")),
     ).toBe(join(homedir(), "Documents"));
   });
 
@@ -126,9 +126,9 @@ describe("deriveSafeAncestor", () => {
 });
 
 describe("getDefaultOffsiteBackupsDir", () => {
-  test("points at the iCloud Drive VellumAssistant backups folder", () => {
+  test("points at the iCloud Drive CadetAssistant backups folder", () => {
     const dir = getDefaultOffsiteBackupsDir();
-    expect(dir).toContain("com~apple~CloudDocs/VellumAssistant/backups");
+    expect(dir).toContain("com~apple~CloudDocs/CadetAssistant/backups");
   });
 });
 
@@ -138,7 +138,7 @@ describe("resolveOffsiteDestinations", () => {
     expect(result).toHaveLength(1);
     expect(result[0].encrypt).toBe(true);
     expect(result[0].path).toContain(
-      "com~apple~CloudDocs/VellumAssistant/backups",
+      "com~apple~CloudDocs/CadetAssistant/backups",
     );
   });
 

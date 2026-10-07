@@ -118,9 +118,9 @@ describe("guardian-delivery cache cold→warm transition for sync trust", () => 
     expect(warm.trustClass).toBe("guardian");
   });
 
-  test("startup vellum-only warm leaves the phone key cold", async () => {
+  test("startup cadet-only warm leaves the phone key cold", async () => {
     // Daemon startup warms only `cadet`; that must not populate the `phone` key.
-    await getGuardianDelivery({ channelTypes: ["vellum"] });
+    await getGuardianDelivery({ channelTypes: ["cadet"] });
     expect(
       peekCachedGuardianDelivery({ channelTypes: ["phone"] }),
     ).toBeUndefined();

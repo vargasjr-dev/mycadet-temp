@@ -6,7 +6,7 @@
  * by absolute URL, so two tests cannot reuse the same `<name>.ts` path and
  * still see fresh module evaluation.
  *
- * `VELLUM_WORKSPACE_DIR` is rewritten before each test so
+ * `CADET_WORKSPACE_DIR` is rewritten before each test so
  * `getWorkspaceToolsDir()` walks the isolated tree.
  *
  * Covers:
@@ -55,14 +55,14 @@ let testCaseCounter = 0;
 let currentWorkspaceDir: string;
 const TEST_BASE_DIR = join(
   tmpdir(),
-  `vellum-workspace-tool-loader-test-${process.pid}-${Date.now()}`,
+  `cadet-workspace-tool-loader-test-${process.pid}-${Date.now()}`,
 );
 
 function freshWorkspace(): string {
   testCaseCounter += 1;
   const dir = join(TEST_BASE_DIR, `case-${testCaseCounter}`);
   mkdirSync(dir, { recursive: true });
-  process.env.VELLUM_WORKSPACE_DIR = dir;
+  process.env.CADET_WORKSPACE_DIR = dir;
   currentWorkspaceDir = dir;
   return dir;
 }
@@ -162,7 +162,7 @@ describe("workspace tool loader", () => {
 
   afterAll(() => {
     rmSync(TEST_BASE_DIR, { recursive: true, force: true });
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   });
 
   test("registers a net-new tool from <workspaceDir>/tools/<name>.ts", async () => {

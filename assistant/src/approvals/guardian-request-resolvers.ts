@@ -673,7 +673,7 @@ function deriveAccessRequestDecision(
     request.sourceChannel,
   )
     ? request.sourceChannel
-    : "vellum";
+    : "cadet";
   const requesterExternalUserId = request.requesterExternalUserId ?? "";
   const requesterChatId =
     request.requesterChatId ?? request.requesterExternalUserId ?? "";
@@ -923,9 +923,9 @@ const accessRequestResolver: GuardianRequestResolver = {
     if (outcome === "leave_unverified") {
       // Persist the denied sender as an unverified_contact so future inbound
       // resolves as unverified_contact rather than re-triggering discovery.
-      // Skipped for desktop-origin (vellum) requests, which carry no channel
+      // Skipped for desktop-origin (cadet) requests, which carry no channel
       // identity — those deny as a plain status CAS.
-      if (!requesterExternalUserId || channel === "vellum") {
+      if (!requesterExternalUserId || channel === "cadet") {
         return { ok: true, persistFailureReason: "decision_persist_failed" };
       }
       return {
@@ -943,7 +943,7 @@ const accessRequestResolver: GuardianRequestResolver = {
     }
 
     if (outcome === "block") {
-      if (!requesterExternalUserId || channel === "vellum") {
+      if (!requesterExternalUserId || channel === "cadet") {
         // No channel identity to revoke — nothing can land on the gateway,
         // so the decision is aborted before any status write.
         return { ok: false, reason: "block_missing_channel_identity" };
@@ -992,7 +992,7 @@ const accessRequestResolver: GuardianRequestResolver = {
     if (outcome === "trust") {
       // A trust without a channel identity cannot land on the gateway ACL —
       // fail closed before any status write, mirroring the block guard.
-      if (!requesterExternalUserId || channel === "vellum") {
+      if (!requesterExternalUserId || channel === "cadet") {
         return { ok: false, reason: "trust_missing_channel_identity" };
       }
       const binding = resolveTrustBinding(channel, signals);
@@ -1140,10 +1140,10 @@ const accessRequestResolver: GuardianRequestResolver = {
       return {
         ok: true,
         applied: true,
-        // Desktop actors (vellum channel) receive inline reply text; channel
+        // Desktop actors (cadet channel) receive inline reply text; channel
         // actors get replies delivered via the channel delivery context. An
         // admitted sender keeps whatever access the floor grants.
-        ...(ctx.actor.channel === "vellum"
+        ...(ctx.actor.channel === "cadet"
           ? {
               guardianReplyText:
                 mode.leaveUnverifiedGuardianReply(requesterLabel),
@@ -1177,7 +1177,7 @@ const accessRequestResolver: GuardianRequestResolver = {
       return {
         ok: true,
         applied: true,
-        ...(ctx.actor.channel === "vellum"
+        ...(ctx.actor.channel === "cadet"
           ? {
               guardianReplyText: `Blocked ${requesterLabel}. Their messages will no longer reach the assistant.`,
             }
@@ -1229,7 +1229,7 @@ const accessRequestResolver: GuardianRequestResolver = {
       return {
         ok: true,
         applied: true,
-        ...(ctx.actor.channel === "vellum"
+        ...(ctx.actor.channel === "cadet"
           ? {
               guardianReplyText: `Trusted ${requesterLabel}. They can now message the assistant — no verification code needed.`,
             }
@@ -1330,7 +1330,7 @@ const accessRequestResolver: GuardianRequestResolver = {
           );
         }
       }
-    } else if (ctx.actor.channel === "vellum") {
+    } else if (ctx.actor.channel === "cadet") {
       // A desktop guardian receives the code inline via `guardianReplyText`.
       codeDelivered = true;
     } else if (guardianDmUrl && decidedByExternalUserId) {
@@ -1464,9 +1464,9 @@ const accessRequestResolver: GuardianRequestResolver = {
     return {
       ok: true,
       applied: true,
-      // Desktop actors (vellum channel) receive inline reply text; channel
+      // Desktop actors (cadet channel) receive inline reply text; channel
       // actors get replies delivered via the channel delivery context.
-      ...(ctx.actor.channel === "vellum"
+      ...(ctx.actor.channel === "cadet"
         ? { guardianReplyText: verificationReplyText }
         : {}),
     };

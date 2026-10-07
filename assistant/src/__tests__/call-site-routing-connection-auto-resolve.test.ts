@@ -75,7 +75,7 @@ beforeEach(() => {
     default: {
       provider: "anthropic",
       model: "claude-opus-4-8",
-      provider_connection: "vellum",
+      provider_connection: "cadet",
     },
     profiles: {
       byok: { provider: "anthropic", model: "claude-fable-5" },

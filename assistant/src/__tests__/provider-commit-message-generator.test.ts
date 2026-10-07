@@ -340,7 +340,7 @@ describe("ProviderCommitMessageGenerator", () => {
     reseedMemorySecureKeys(mockSecureKeys);
     resolvedProvider = {
       provider: mockProvider,
-      configuredProviderName: "vellum",
+      configuredProviderName: "cadet",
     };
     const commitMsg = "fix: managed-route commit";
     mockSendMessage.mockResolvedValueOnce(makeSuccessResponse(commitMsg));

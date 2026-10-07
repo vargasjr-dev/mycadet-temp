@@ -8,7 +8,7 @@ import {
   installCapabilityModules,
   type CapabilityModuleExport,
 } from "@mycadet/electron-desktop/capability-registry";
-import { VELLUM_BRIDGE_KEYS, type CadetBridge } from "@mycadet/ipc-contract";
+import { CADET_BRIDGE_KEYS, type CadetBridge } from "@mycadet/ipc-contract";
 
 const exposed = new Map<string, unknown>();
 const ipcRenderer = {
@@ -68,7 +68,7 @@ const surface = (value: unknown, prefix = ""): string[] => {
 };
 
 const NOT_APPLICABLE: readonly string[] = LINUX_NOT_APPLICABLE_CAPABILITIES;
-const required = VELLUM_BRIDGE_KEYS.filter(
+const required = CADET_BRIDGE_KEYS.filter(
   (key) => !NOT_APPLICABLE.includes(key),
 );
 
@@ -115,7 +115,7 @@ test("the composed Linux bridge satisfies every applicable CadetBridge key", () 
 test("the Linux bridge matches the macOS bridge surface up to the documented deltas", () => {
   expect(macBridge).toBeDefined();
   expect(macBridge.hostOS).toBe("macos");
-  expect(Object.keys(macBridge).sort()).toEqual([...VELLUM_BRIDGE_KEYS].sort());
+  expect(Object.keys(macBridge).sort()).toEqual([...CADET_BRIDGE_KEYS].sort());
 
   const bridge = composeLinuxBridge();
   const shared = required.filter((key) => key !== "hostOS");

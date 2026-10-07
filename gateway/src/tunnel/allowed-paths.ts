@@ -3,7 +3,7 @@
  * {@link TUNNEL_ALLOWED_PATHS_HEADER} HTTP header. Tunnel parses the JSON-encoded
  * regex array on the platform side
  * ({@link
- *   https://github.com/vellum-ai/vellum-assistant-platform/blob/main/tunnel/internal/tunnel/protocol.go
+ *   https://github.com/vargasjr-dev/mycadet-platform/blob/main/tunnel/internal/tunnel/protocol.go
  *   `RegistrationAllowedPathsHeader`})
  * and enforces it for every inbound HTTP and WebSocket proxy request routed
  * to this tunnel.
@@ -94,7 +94,7 @@ export const TUNNEL_STATIC_ALLOWED_PATHS: readonly string[] = Object.freeze([
  * path allowlist to Tunnel. Mirrors `RegistrationAllowedPathsHeader` on the
  * platform side.
  */
-export const TUNNEL_ALLOWED_PATHS_HEADER = "X-Vellum-Tunnel-Allowed-Paths";
+export const TUNNEL_ALLOWED_PATHS_HEADER = "X-Cadet-Tunnel-Allowed-Paths";
 
 /** Encoded header value advertised while `tunnel-webhooks` is off. */
 export const TUNNEL_ALLOWED_PATHS_HEADER_VALUE =

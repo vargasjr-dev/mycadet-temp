@@ -21,10 +21,10 @@ import {
   createAbortReason,
 } from "../util/abort-reasons.js";
 import {
+  CadetError,
   ConfigError,
   ProviderError,
   ProviderNotConfiguredError,
-  VellumError,
 } from "../util/errors.js";
 
 describe("isUserCancellation", () => {
@@ -207,7 +207,7 @@ describe("classifyConversationError", () => {
 
       const result = classifyConversationError(err, {
         ...baseCtx,
-        connectionName: "vellum",
+        connectionName: "cadet",
         profileName: "managed",
         isManagedRoute: true,
       });
@@ -948,7 +948,7 @@ describe("classifyConversationError", () => {
       const err = new ProviderError("Unauthorized", "anthropic", 401);
       err.attachRouteAttribution({
         credentialSource: "cadet-managed",
-        connectionName: "vellum",
+        connectionName: "cadet",
       });
 
       const result = classifyConversationError(err, baseCtx);
@@ -1734,9 +1734,9 @@ describe("ConnectionResolutionError classification", () => {
     expect(result.userMessage).toContain("Restart the assistant");
   });
 
-  it("classifies adapter_unavailable for a Vellum-hosted GPU model", () => {
+  it("classifies adapter_unavailable for a Cadet-hosted GPU model", () => {
     const err = new ConnectionResolutionError(
-      "vellum",
+      "cadet",
       "adapter_unavailable",
       "no adapter",
       { model: "qwen/qwen3-8b", profileName: "steer" },
@@ -1767,7 +1767,7 @@ describe("ConnectionResolutionError classification", () => {
 
   it("classifies platform_unauthenticated with a log-in fix on a non-platform install", () => {
     const err = new ConnectionResolutionError(
-      "vellum",
+      "cadet",
       "platform_unauthenticated",
       "not logged in",
     );
@@ -1778,7 +1778,7 @@ describe("ConnectionResolutionError classification", () => {
 
   it("classifies platform_unauthenticated as a re-provision hint on a platform-managed assistant", () => {
     const err = new ConnectionResolutionError(
-      "vellum",
+      "cadet",
       "platform_unauthenticated",
       "unavailable",
     );
@@ -1792,9 +1792,9 @@ describe("ConnectionResolutionError classification", () => {
     }
   });
 
-  it("is a structured VellumError (ConfigError) for logging/monitoring", () => {
+  it("is a structured CadetError (ConfigError) for logging/monitoring", () => {
     const err = new ConnectionResolutionError("x", "not_found", "m");
-    expect(err).toBeInstanceOf(VellumError);
+    expect(err).toBeInstanceOf(CadetError);
     expect(err).toBeInstanceOf(ConfigError);
     expect(err.name).toBe("ConnectionResolutionError");
   });

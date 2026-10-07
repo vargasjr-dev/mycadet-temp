@@ -13,7 +13,7 @@ mock.module("electron", () => ({
 }));
 
 let currentLockfile: Lockfile = {
-  assistants: [{ assistantId: "assistant-1", cloud: "vellum" }],
+  assistants: [{ assistantId: "assistant-1", cloud: "cadet" }],
   activeAssistant: "assistant-1",
 };
 const getWatchedLockfile = mock(() => currentLockfile);
@@ -71,7 +71,7 @@ const { installFeatureFlagsIpc, isFeatureEnabled } =
 beforeEach(() => {
   trayRuntime = null;
   currentLockfile = {
-    assistants: [{ assistantId: "assistant-1", cloud: "vellum" }],
+    assistants: [{ assistantId: "assistant-1", cloud: "cadet" }],
     activeAssistant: "assistant-1",
   };
   getWatchedLockfile.mockClear();

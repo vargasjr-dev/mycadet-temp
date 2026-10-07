@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 
 import { eq } from "drizzle-orm";
 
-const testDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testDir = process.env.CADET_WORKSPACE_DIR!;
 const conversationsDir = join(testDir, "conversations");
 mkdirSync(conversationsDir, { recursive: true });
 

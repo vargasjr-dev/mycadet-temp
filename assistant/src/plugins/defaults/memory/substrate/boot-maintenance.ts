@@ -95,7 +95,7 @@ async function settledWithin(
  *
  * On a brand-new managed assistant the memory worker fires the startup seed
  * (`maybeSeedCapabilitySkills` / `maybeSeedCliCommandCards`) seconds after
- * boot, but the platform pushes `vellum:assistant_api_key` (the credential the
+ * boot, but the platform pushes `cadet:assistant_api_key` (the credential the
  * managed Gemini embedding backend needs) tens of seconds later. The seed's
  * `embedWithBackend` call throws `EmbeddingBackendUnavailableError` before the
  * skill/CLI `entries` cache is replaced, so `listSkillEntries()` /

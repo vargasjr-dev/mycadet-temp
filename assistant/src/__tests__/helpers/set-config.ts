@@ -2,7 +2,7 @@
  * Shared test helper: seed workspace config for real instead of mocking
  * `config/loader`.
  *
- * Writes a top-level key into `$VELLUM_WORKSPACE_DIR/config.json`
+ * Writes a top-level key into `$CADET_WORKSPACE_DIR/config.json`
  * (read-modify-write, so seeding several keys composes) and bumps the file
  * mtime monotonically so the loader's file-signature cache re-reads on the
  * next `getConfig()`/`getConfigReadOnly()`. The production loader
@@ -17,7 +17,7 @@ import { join } from "node:path";
 let mtimeSeq = 0;
 
 export function setConfig(key: string, value: unknown): void {
-  const path = join(process.env.VELLUM_WORKSPACE_DIR!, "config.json");
+  const path = join(process.env.CADET_WORKSPACE_DIR!, "config.json");
   let config: Record<string, unknown> = {};
   if (existsSync(path)) {
     try {

@@ -1,6 +1,6 @@
 import type { MessageAudience } from "@mycadet/gateway-client";
 
-import { stripVellumLinks } from "../daemon/assistant-attachments.js";
+import { stripCadetLinks } from "../daemon/assistant-attachments.js";
 import type { RenderedHistoryContent } from "../daemon/handlers/shared.js";
 import { renderHistoryContent } from "../daemon/handlers/shared.js";
 import { DEFAULT_LOCALE } from "../i18n/index.js";
@@ -76,7 +76,7 @@ function toDeliverableTextSegments(
   // leaks into the channel as visible text.
   const nonEmptySegments = textSegments
     .map((segment) => {
-      const stripped = stripVellumLinks(segment);
+      const stripped = stripCadetLinks(segment);
       return containsNoResponseMarker(stripped)
         ? stripNoResponseMarkers(stripped)
         : stripped;

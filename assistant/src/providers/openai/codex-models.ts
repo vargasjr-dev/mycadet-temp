@@ -1,5 +1,5 @@
 /**
- * Model IDs Vellum allows through the ChatGPT Codex subscription endpoint
+ * Model IDs Cadet allows through the ChatGPT Codex subscription endpoint
  * (`https://chatgpt.com/backend-api/codex`).
  *
  * `oauth_subscription` OpenAI connections hard-route every request to that

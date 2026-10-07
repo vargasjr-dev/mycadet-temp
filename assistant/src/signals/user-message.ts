@@ -381,7 +381,7 @@ export async function handleUserMessageSignal(filename: string): Promise<void> {
     const result = await dispatchUserMessage({
       conversationKey: parsed.conversationKey,
       content: parsed.content,
-      sourceChannel: parsed.sourceChannel ?? "vellum",
+      sourceChannel: parsed.sourceChannel ?? "cadet",
       sourceInterface: parsed.interface ?? "cli",
       bypassSecretCheck: parsed.bypassSecretCheck === true,
       ...(attachments.length > 0 ? { attachments } : {}),

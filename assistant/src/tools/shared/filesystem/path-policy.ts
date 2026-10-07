@@ -241,11 +241,11 @@ const SECURITY_DIR_ENV_VARS = [
  *   data flows through the gateway and CES APIs (root AGENTS.md). The
  *   env-based resolution mirrors the owning services', since the
  *   cross-package import boundary bars importing it; the shared bare-metal
- *   default `<home>/.vellum/protected` is always denied. Only absolute
+ *   default `<home>/.cadet/protected` is always denied. Only absolute
  *   overrides join the set — a relative override is unmirrorable and
  *   disables the host fallback outright (see
  *   {@link securityDirConfigMirrorable}).
- * - The daemon dotenv (`<vellumRoot>/.env`), which carries provider
+ * - The daemon dotenv (`<cadetRoot>/.env`), which carries provider
  *   secrets.
  */
 function getProtectedServicePaths(): string[] {
@@ -253,7 +253,7 @@ function getProtectedServicePaths(): string[] {
   paths.add(
     join(
       process.env.HOME || safeUserInfoHomedir() || homedir(),
-      ".vellum",
+      ".cadet",
       "protected",
     ),
   );

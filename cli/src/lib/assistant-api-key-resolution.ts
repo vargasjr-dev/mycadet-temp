@@ -64,7 +64,7 @@ export async function resolveAssistantApiKeyForInjection(
   if (status !== "rejected") {
     const cached = await readGatewayCredential(
       args.runtimeUrl,
-      "vellum:assistant_api_key",
+      "cadet:assistant_api_key",
       args.bearerToken,
     );
     if (cached.value) {

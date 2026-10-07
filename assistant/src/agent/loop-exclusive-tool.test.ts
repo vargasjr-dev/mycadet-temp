@@ -73,7 +73,7 @@ const baseRun = {
   requestId: "req-excl",
   onEvent: () => {},
   callSite: "mainAgent" as const,
-  trust: { sourceChannel: "vellum" as const, trustClass: "unknown" as const },
+  trust: { sourceChannel: "cadet" as const, trustClass: "unknown" as const },
 };
 
 describe("AgentLoop — exclusive tool deferral", () => {

@@ -1,7 +1,7 @@
 ---
 name: document-editor
 description: Use whenever the user wants to write or draft an article, blog post, essay, report, or any long-form content. Creates the content in a rich text editor instead of dumping it in chat, so it can be streamed, reviewed, edited, and exported.
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "✍️"
   cadet:

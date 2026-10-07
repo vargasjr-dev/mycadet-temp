@@ -124,13 +124,13 @@ describe("parsePluginIngressManifest", () => {
         {
           path: "realtime",
           kind: "websocket",
-          signer: "vellum",
+          signer: "cadet",
           handshake: "signed-headers" as const,
           description: "platform-signed events",
         },
       ],
     });
-    expect(manifest.routes[0]!.signer).toBe("vellum");
+    expect(manifest.routes[0]!.signer).toBe("cadet");
   });
 
   it("defaults an undeclared handshake to the header scheme", () => {
@@ -252,7 +252,7 @@ describe("parsePluginIngressManifest", () => {
           {
             path: "hook",
             kind: "http",
-            signer: "vellum",
+            signer: "cadet",
             verification: {
               kind: "hmac",
               algorithm: "sha256",
@@ -264,7 +264,7 @@ describe("parsePluginIngressManifest", () => {
           },
         ],
       }),
-    ).toThrow(/cannot be combined with signer "vellum"/);
+    ).toThrow(/cannot be combined with signer "cadet"/);
   });
 
   it("rejects verification on a websocket route", () => {
@@ -313,13 +313,13 @@ describe("parsePluginIngressManifest", () => {
           {
             path: "hook",
             kind: "http",
-            signer: "vellum",
+            signer: "cadet",
             inbound: {},
             description: "d",
           },
         ],
       }),
-    ).toThrow(/inbound delivery cannot be combined with signer "vellum"/);
+    ).toThrow(/inbound delivery cannot be combined with signer "cadet"/);
   });
 
   it("rejects inbound delivery on a websocket route", () => {
@@ -371,7 +371,7 @@ describe("parsePluginIngressManifest", () => {
             verification: {
               kind: "hmac",
               algorithm: "sha256",
-              secret: { field: "../vellum/webhook_secret" },
+              secret: { field: "../cadet/webhook_secret" },
               signature: { header: "X-Sig", encoding: "hex" },
               payload: ["body"],
             },

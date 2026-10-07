@@ -551,7 +551,7 @@ describe("handleGetContact relay", () => {
       contact: gatewayContact(),
       assistantMetadata: {
         contactId: "gw-1",
-        species: "vellum",
+        species: "cadet",
         metadata: { model: "opus" },
       },
     });
@@ -559,7 +559,7 @@ describe("handleGetContact relay", () => {
     const result = await handleGetContact("gw-1");
     expect(result.assistantMetadata).toEqual({
       contactId: "gw-1",
-      species: "vellum",
+      species: "cadet",
       metadata: { model: "opus" },
     });
   });

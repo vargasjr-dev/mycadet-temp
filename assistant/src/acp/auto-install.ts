@@ -160,7 +160,7 @@ async function runInstall(
   // Fresh empty dir guaranteed to have no project-local node_modules,
   // bunfig.toml, or .npmrc - this neutralizes the cwd-based resolution
   // hijacks the untrusted task dir would otherwise enable.
-  const installDir = await mkdtemp(join(tmpdir(), "vellum-acp-install-"));
+  const installDir = await mkdtemp(join(tmpdir(), "cadet-acp-install-"));
   try {
     await execFileWithTimeout(
       bunPath,

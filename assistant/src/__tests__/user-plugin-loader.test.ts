@@ -2,7 +2,7 @@
  * Tests for the user plugin loader.
  *
  * Redirects `getWorkspaceDir()` into a per-test temp directory via
- * `VELLUM_WORKSPACE_DIR` so `loadUserPlugins()` walks an isolated tree
+ * `CADET_WORKSPACE_DIR` so `loadUserPlugins()` walks an isolated tree
  * that we populate on demand.
  *
  * The loader's own responsibility is directory discovery and dispatch: it
@@ -35,9 +35,9 @@ import { loadUserPlugins } from "../plugins/user-loader.js";
 // repeated runs of this file) cannot collide on `<workspaceDir>/plugins/`.
 const TEST_WORKSPACE_DIR = join(
   tmpdir(),
-  `vellum-user-plugin-loader-test-${process.pid}-${Date.now()}`,
+  `cadet-user-plugin-loader-test-${process.pid}-${Date.now()}`,
 );
-process.env.VELLUM_WORKSPACE_DIR = TEST_WORKSPACE_DIR;
+process.env.CADET_WORKSPACE_DIR = TEST_WORKSPACE_DIR;
 
 /** The plugins directory the loader will walk. */
 const PLUGINS_DIR = join(TEST_WORKSPACE_DIR, "plugins");

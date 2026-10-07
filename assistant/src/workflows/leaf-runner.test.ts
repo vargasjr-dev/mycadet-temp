@@ -142,7 +142,7 @@ import { runLeaf, WorkflowUnknownProfileError } from "./leaf-runner.js";
 await initializeDb();
 
 const trustContext = {
-  sourceChannel: "vellum" as const,
+  sourceChannel: "cadet" as const,
   trustClass: "guardian" as const,
 };
 

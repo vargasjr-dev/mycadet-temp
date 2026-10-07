@@ -1399,7 +1399,7 @@ async function executeTavilySearch(
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
-          "X-Client-Name": "vellum-assistant",
+          "X-Client-Name": "mycadet",
         },
         body: JSON.stringify(body),
         signal,
@@ -1495,7 +1495,7 @@ async function executeFirecrawlCompatSearch(
   const startedAt = Date.now();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "X-Client-Source": "vellum-assistant",
+    "X-Client-Source": "mycadet",
   };
   const trimmedKey = apiKey.trim();
   if (trimmedKey.length > 0) {
@@ -2138,7 +2138,7 @@ async function executeSerplySearch(
   const headers = {
     Accept: "application/json",
     "X-Api-Key": apiKey.trim(),
-    "User-Agent": "vellum-assistant",
+    "User-Agent": "mycadet",
   };
 
   for (let attempt = 0; attempt <= DEFAULT_MAX_RETRIES; attempt++) {
@@ -2416,7 +2416,7 @@ export const webSearchTool = {
     const startedAt = Date.now();
     // An explicit Cadet choice is unconditionally managed: proxy errors
     // (including 402) surface to the user and never fall back to BYOK keys.
-    // The config schema normalizes the legacy `vellum` id to `cadet` on
+    // The config schema normalizes the legacy `cadet` id to `cadet` on
     // parse, so this is the only spelling that survives here.
     const managedSearch =
       getConfig().services["web-search"].provider === "cadet";

@@ -82,7 +82,7 @@ bun run src/index.ts assistant start
 
 ### Sandbox and Host Access Model
 
-- Default tool workspace: `$VELLUM_WORKSPACE_DIR` (persistent global sandbox filesystem).
+- Default tool workspace: `$CADET_WORKSPACE_DIR` (persistent global sandbox filesystem).
 - Sandbox-scoped tools: `file_read`, `file_write`, `file_edit`, and `bash`.
 - Explicit host tools: `host_file_read`, `host_file_write`, `host_file_edit`, and `host_bash` (absolute host paths only for host file tools).
 - Host/computer-use prompts: `host_*` and `computer_use_*` tools default to `ask` unless allowlisted/denylisted in trust rules.
@@ -90,7 +90,7 @@ bun run src/index.ts assistant start
 
 #### Sandbox Backend
 
-Sandbox tools are workspace-scoped in software: `file_read`, `file_write`, and `file_edit` validate that every resolved path (including symlinks) stays inside `$VELLUM_WORKSPACE_DIR`, and `bash` runs in the workspace directory with a sanitized environment (env allowlist, secret values stripped).
+Sandbox tools are workspace-scoped in software: `file_read`, `file_write`, and `file_edit` validate that every resolved path (including symlinks) stays inside `$CADET_WORKSPACE_DIR`, and `bash` runs in the workspace directory with a sanitized environment (env allowlist, secret values stripped).
 
 There is no OS-level sandbox for shell commands on a local install. OS-level isolation comes from containerized deployments (`cadet hatch --remote docker` or a remote host), where the whole assistant runs inside a container boundary.
 
@@ -106,7 +106,7 @@ Host tools (`host_bash`, `host_file_read`, `host_file_write`, `host_file_edit`) 
 
 The assistant can store and use credentials (API keys, tokens, passwords) without exposing secret values to the LLM or logs.
 
-- **Storage**: Secret values are stored via the Credential Execution Service (CES) or the encrypted file store (`~/.vellum/protected/keys.enc`). The daemon resolves credential storage via CES RPC (primary), CES HTTP (containerized/Docker), or encrypted file store (fallback). Credential identity and policy (`allowedTools`, `allowedDomains`, `injectionTemplates`) live in the CES metadata store (`<cesDataRoot>/metadata.json`).
+- **Storage**: Secret values are stored via the Credential Execution Service (CES) or the encrypted file store (`~/.cadet/protected/keys.enc`). The daemon resolves credential storage via CES RPC (primary), CES HTTP (containerized/Docker), or encrypted file store (fallback). Credential identity and policy (`allowedTools`, `allowedDomains`, `injectionTemplates`) live in the CES metadata store (`<cesDataRoot>/metadata.json`).
 - **Secret prompt**: When a credential is needed, a floating `SecretPromptView` panel appears. The user enters the value in a `SecureField` — the LLM never sees it.
 - **Usage policy**: Each credential can specify `allowedTools` and `allowedDomains`. The `CredentialBroker` enforces these policies at use time.
 - **One-time send**: When `secretDetection.allowOneTimeSend` is enabled (default: `false`), a "Send Once" button lets users provide a value for immediate use without persisting it.
@@ -226,17 +226,17 @@ The assistant can create, test, and persist new skills at runtime. This is usefu
 #### Workflow
 
 1. **Evaluate**: The assistant drafts the script and runs it with `bash` in the sandbox, iterating until it works; the exact file that ran is what `scaffold_managed_skill` copies in (`copy_from`).
-2. **Persist**: After successful evaluation and explicit user consent, the assistant calls `scaffold_managed_skill` to write the skill to `$VELLUM_WORKSPACE_DIR/skills/<id>/SKILL.md`.
+2. **Persist**: After successful evaluation and explicit user consent, the assistant calls `scaffold_managed_skill` to write the skill to `$CADET_WORKSPACE_DIR/skills/<id>/SKILL.md`.
 3. **Load**: The assistant calls `skill_load` with the new skill ID to load its instructions.
 4. **Delete**: To remove a managed skill, use `delete_managed_skill`.
 
-Installed managed skills are discovered from valid directories under `$VELLUM_WORKSPACE_DIR/skills/<id>/` that contain a top-level `SKILL.md` with standardized frontmatter. On startup and skill directory changes, the assistant parses that frontmatter and seeds the skill's capabilities into the memory concept-page collection (see [Memory Architecture](https://www.mycadet.ai/docs/developer-guide/internals/memory)); those entries represent available skills to the assistant. The legacy `SKILLS.md` index is removed by workspace migration and is no longer created by current install or scaffold paths.
+Installed managed skills are discovered from valid directories under `$CADET_WORKSPACE_DIR/skills/<id>/` that contain a top-level `SKILL.md` with standardized frontmatter. On startup and skill directory changes, the assistant parses that frontmatter and seeds the skill's capabilities into the memory concept-page collection (see [Memory Architecture](https://www.mycadet.ai/docs/developer-guide/internals/memory)); those entries represent available skills to the assistant. The legacy `SKILLS.md` index is removed by workspace migration and is no longer created by current install or scaffold paths.
 
 #### Tools
 
 | Tool                     | Risk Level | Description                                                                                                                                         |
 | ------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scaffold_managed_skill` | High       | Write a managed skill to `$VELLUM_WORKSPACE_DIR/skills/<id>/`. Creates `SKILL.md` with frontmatter, including optional `includes` for child skills. |
+| `scaffold_managed_skill` | High       | Write a managed skill to `$CADET_WORKSPACE_DIR/skills/<id>/`. Creates `SKILL.md` with frontmatter, including optional `includes` for child skills. |
 | `delete_managed_skill`   | High       | Remove a managed skill directory.                                                                                                                   |
 
 Both tools require explicit user approval before execution (Risk Level = High).
@@ -322,7 +322,7 @@ Attachments are sent inline (base64) in `message_complete` and `generation_hando
 
 #### Runtime HTTP API
 
-The `GET /v1/assistants/:id/messages?conversationId=<id>` endpoint returns attachment metadata on each message. The endpoint accepts either `conversationId` (the assistant-minted internal UUID; preferred) or the legacy `conversationKey` (the external key used by non-vellum channel adapters):
+The `GET /v1/assistants/:id/messages?conversationId=<id>` endpoint returns attachment metadata on each message. The endpoint accepts either `conversationId` (the assistant-minted internal UUID; preferred) or the legacy `conversationKey` (the external key used by non-cadet channel adapters):
 
 ```json
 {
@@ -349,7 +349,7 @@ The assistant's Telegram transport (`assistant/src/messaging/providers/telegram-
 
 The assistant creates attachments from two sources:
 
-1. **Directives**: `<vellum-attachment source="sandbox|host" path="..." />` tags in response text. Sandbox paths are relative to the working directory; host paths require user approval.
+1. **Directives**: `<cadet-attachment source="sandbox|host" path="..." />` tags in response text. Sandbox paths are relative to the working directory; host paths require user approval.
 2. **Tool output**: Image and file content blocks from tool results are persisted as attachments. For computer-use calls, every screenshot remains linked to its tool-result row and only the final screenshot-bearing call is also linked automatically to the reply. Explicit attachments remain independent. Files and channel delivery continue to read reply links, so they receive that final screenshot plus any explicit or unrelated reply attachments.
 
 Limits: 100 MB per attachment (50 MB for Telegram, the Bot API `sendDocument` upload limit).
@@ -367,7 +367,7 @@ URLs inside code blocks and code spans are never converted to embeds.
 
 #### Settings
 
-Media embeds are controlled by settings under `ui.mediaEmbeds` in `$VELLUM_WORKSPACE_DIR/config.json`. These settings are also accessible from the standalone Settings window and the main-window settings panel.
+Media embeds are controlled by settings under `ui.mediaEmbeds` in `$CADET_WORKSPACE_DIR/config.json`. These settings are also accessible from the standalone Settings window and the main-window settings panel.
 
 | Setting                 | Default                                                | Description                                                                                                                          |
 | ----------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -401,7 +401,7 @@ GET /v1/events?conversationId=<id>
 | Parameter         | Required | Description                                                                                                                                                                                                                                                        |
 | ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `conversationId`  | No       | The assistant-minted internal conversation UUID. Preferred for cadet-managed conversations. When supplied, looks up the conversation directly; 404 if it doesn't exist. When omitted (along with `conversationKey`), subscribes to events from all conversations. |
-| `conversationKey` | No       | The external key used by non-vellum channel adapters (Telegram, WhatsApp, etc.) — same key used for `POST /v1/assistants/:id/runs`. Legacy alias on this endpoint; supported indefinitely for external clients. When both are supplied, `conversationId` wins.     |
+| `conversationKey` | No       | The external key used by non-cadet channel adapters (Telegram, WhatsApp, etc.) — same key used for `POST /v1/assistants/:id/runs`. Legacy alias on this endpoint; supported indefinitely for external clients. When both are supplied, `conversationId` wins.     |
 
 **Response**: `200 OK` with `Content-Type: text/event-stream`. Each frame is a standard SSE event:
 
@@ -502,10 +502,10 @@ The CLI connects via HTTP. Forward the assistant's HTTP port with SSH:
 
 ```bash
 ssh -L 8741:localhost:8741 user@remote-host -N &
-VELLUM_DAEMON_URL=http://localhost:8741 cadet
+CADET_DAEMON_URL=http://localhost:8741 cadet
 ```
 
-When connecting to a remote assistant, autostart is disabled by default. Set `VELLUM_DAEMON_AUTOSTART=1` to override.
+When connecting to a remote assistant, autostart is disabled by default. Set `CADET_DAEMON_AUTOSTART=1` to override.
 
 #### macOS app (SSH port forwarding)
 
@@ -513,15 +513,15 @@ The macOS app also supports remote connections. Launch it from the terminal:
 
 ```bash
 ssh -L 8741:localhost:8741 user@remote-host -N &
-VELLUM_DAEMON_URL=http://localhost:8741 open -a Cadet
+CADET_DAEMON_URL=http://localhost:8741 open -a Cadet
 ```
 
 #### Troubleshooting
 
 | Symptom                                               | Check                                                    |
 | ----------------------------------------------------- | -------------------------------------------------------- |
-| CLI: "could not connect to assistant"                 | Is the SSH port tunnel active? Check `VELLUM_DAEMON_URL` |
-| CLI: assistant starts locally despite remote override | Check that `VELLUM_DAEMON_AUTOSTART` is not set to `1`   |
+| CLI: "could not connect to assistant"                 | Is the SSH port tunnel active? Check `CADET_DAEMON_URL` |
+| CLI: assistant starts locally despite remote override | Check that `CADET_DAEMON_AUTOSTART` is not set to `1`   |
 | macOS: not connecting                                 | Verify the assistant URL is reachable                    |
 | Any: "connection refused"                             | Is the remote assistant running? (`cadet ps` on remote)  |
 
@@ -535,7 +535,7 @@ Releases follow a two-step pipeline: a branch cut with a staging bake, then a pr
 
 1. Dispatch `create-release-branch.yml` with the bump type (`patch|minor|major|hotfix`). The workflow computes the version from the latest tag, deletes any stale `release/vX.Y.Z` branch, cuts a fresh one from `main` HEAD with the version-bump commit ("Release vX.Y.Z"), and pushes it, which triggers a **staging** `Release` run on the branch (push-triggered and main-dispatched `Release` runs are always staging). The Tue/Thu 7:52am ET cron on `create-release-branch.yml` is disabled, so this runs only from a manual dispatch
 2. Wait for the staging bake to succeed — it is the CI bake for the exact release payload; a failure means fixing `main` and re-cutting
-3. Dispatch `release.yml` on `release/vX.Y.Z` — "manual dispatch on a release branch" is the **full production release**: tags `vX.Y.Z`, publishes npm packages, builds/signs/notarizes and publishes the macOS DMG, pushes Docker Hub images, uploads iOS to TestFlight, creates the GitHub Release, updates the `vellum-assistant-platform` dependency, and merges the release branch back to `main`
+3. Dispatch `release.yml` on `release/vX.Y.Z` — "manual dispatch on a release branch" is the **full production release**: tags `vX.Y.Z`, publishes npm packages, builds/signs/notarizes and publishes the macOS DMG, pushes Docker Hub images, uploads iOS to TestFlight, creates the GitHub Release, updates the `mycadet-platform` dependency, and merges the release branch back to `main`
 
 A lingering `release/vX.Y.Z` branch with no matching GitHub Release means a branch cut was never promoted to production; re-running step 1 refreshes it from current `main`.
 
@@ -543,7 +543,7 @@ A lingering `release/vX.Y.Z` branch with no matching GitHub Release means a bran
 
 Creating the GitHub Release triggers three workflows in parallel:
 
-- **Build Electron macOS App** (`build-electron` job in `release.yml`): Builds the Electron `.app` for each architecture, code-signs it with a Developer ID certificate, notarizes it with Apple, creates a DMG installer, and publishes the per-arch update artifacts to the Google Cloud Storage generic feed at `mac-electron/{channel}/{arch}/`. The arm64 DMG is also attached to the GitHub Release as `vellum-assistant.dmg`.
+- **Build Electron macOS App** (`build-electron` job in `release.yml`): Builds the Electron `.app` for each architecture, code-signs it with a Developer ID certificate, notarizes it with Apple, creates a DMG installer, and publishes the per-arch update artifacts to the Google Cloud Storage generic feed at `mac-electron/{channel}/{arch}/`. The arm64 DMG is also attached to the GitHub Release as `mycadet.dmg`.
 - **Publish velly to npm** (`publish-velly.yml`): Publishes the `velly` CLI package to npm with provenance.
 - **Slack Release Notification** (`slack-release-notification.yml`): Posts a summary message to the releases Slack channel with a threaded changelog.
 
@@ -555,7 +555,7 @@ The macOS app updates via [`electron-updater`](https://www.electron.build/auto-u
 
 #### First-time installation
 
-New users download `vellum-assistant.dmg` from the [releases page](https://github.com/vellum-ai/vellum-assistant/releases/latest), open it, and drag the app to their Applications folder. All subsequent updates are handled automatically by `electron-updater`.
+New users download `mycadet.dmg` from the [releases page](https://github.com/vargasjr-dev/mycadet/releases/latest), open it, and drag the app to their Applications folder. All subsequent updates are handled automatically by `electron-updater`.
 
 ---
 

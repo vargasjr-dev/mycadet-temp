@@ -10,7 +10,7 @@ bundled `resources/cli-runtime/web-dist` over a privileged `app://` protocol.
 - `src/main/index.ts` boots the hardened shell (single-instance lock,
   per-environment `userData`, `app://` serving with path-traversal protection,
   local, paired, and platform request forwarding, paired-request frame-origin
-  enforcement, CSP, a permission allowlist, and sandboxed `vellumapp://`
+  enforcement, CSP, a permission allowlist, and sandboxed `cadetapp://`
   serving) and then composes `src/main/features/*`.
 - `src/main/features/*` and `src/preload/features/*` are capability modules
   installed through the registries in `@mycadet/electron-desktop`. Every
@@ -19,11 +19,11 @@ bundled `resources/cli-runtime/web-dist` over a privileged `app://` protocol.
 - `src/preload/core-capabilities.ts` is the always-present core of
   `window.cadet`; `src/preload/bridge-parity.test.ts` holds the composed
   bridge to the full `CadetBridge` contract against the macOS preload.
-- `native/Vellum.WindowsHelper` is the same-user, non-elevated JSON-RPC helper
+- `native/Cadet.WindowsHelper` is the same-user, non-elevated JSON-RPC helper
   behind UI Automation observation, verified input, dictation, toasts, and
   text insertion (security model in `native/README.md`).
-  `native/Vellum.PreviewHandler` is the Explorer preview and thumbnail handler
-  for `.vellum` bundles.
+  `native/Cadet.PreviewHandler` is the Explorer preview and thumbnail handler
+  for `.cadet` bundles.
 - `src/main/features/voice-mode-chord.ts` registers the voice mode shortcut's
   bare-modifier binding with the helper's low-level keyboard hook, because an
   Electron `globalShortcut` cannot express one. A clean tap (chord down, chord
@@ -64,7 +64,7 @@ Packaged Windows startup installs the bundled CLI runtime for the current user:
 - The launcher directory is added to `HKCU\Environment\Path`. The app broadcasts
   the environment change to the Windows shell after a successful write.
 - Machine PATH entries are evaluated before user entries. If another
-  `vellum.exe` wins resolution, startup records the launcher as shadowed.
+  `cadet.exe` wins resolution, startup records the launcher as shadowed.
 
 `cadet retire` stages assistant data before archiving it. On Windows the
 background archive uses PowerShell and the built-in `tar.exe`; other platforms
@@ -85,9 +85,9 @@ time.
 ## Updates and troubleshooting
 
 Packaged builds poll the channel-, platform-, and architecture-isolated feed
-`https://storage.googleapis.com/vellum-ai-<env>-releases/win-electron/<arch>/`
+`https://storage.googleapis.com/mycadet-<env>-releases/win-electron/<arch>/`
 through `electron-updater`, download in the background, and install on quit
-(`src/main/auto-update.ts`). Main-process logs land in `vellum.log` under
+(`src/main/auto-update.ts`). Main-process logs land in `cadet.log` under
 `%APPDATA%\<product name>\logs`; the helper's state and restart action are on
 `window.cadet.helper`, and the tray menu offers a restart.
 
@@ -105,8 +105,8 @@ To test local web changes against the deployed dev platform without starting
 Vite or opening a local development port, run this from PowerShell:
 
 ```powershell
-$env:VELLUM_ENVIRONMENT="dev"
-$env:VELLUM_DEV_URL="https://dev-assistant.vellum.ai/assistant"
+$env:CADET_ENVIRONMENT="dev"
+$env:CADET_DEV_URL="https://dev.cloud.mycadet.ai/assistant"
 bun run dev:electron-local-web
 ```
 
@@ -168,9 +168,9 @@ The workflow verifies every manifest binary and the installer with
 publisher while allowing Azure certificate rotation. Three bundled Microsoft
 runtime DLL paths also accept valid Microsoft Windows catalog signatures,
 which PowerShell prefers over embedded signatures. The publish workflow writes to the
-`vellum-ai-<env>-releases/win-electron/<arch>/` feed: installer and blockmap
+`mycadet-<env>-releases/win-electron/<arch>/` feed: installer and blockmap
 first, then the `<env>.yml` channel manifest. Dev also publishes the installer
-as `vellum-assistant-dev-<arch>.exe` for stable download-page links.
+as `mycadet-dev-<arch>.exe` for stable download-page links.
 
 The builder always writes `latest.yml`, including for prerelease versions;
 CD uploads it under the environment's `<env>.yml` channel name.

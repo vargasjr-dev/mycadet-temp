@@ -52,46 +52,46 @@ async function readSource(filePath: string): Promise<string> {
 const FORBIDDEN_PATTERNS = [
   // Assistant runtime internals
   /from\s+['"].*\/assistant\/src\//,
-  /from\s+['"]@vellumai\/assistant/,
+  /from\s+['"]@mycadet\/assistant/,
   /import\s*\(.*\/assistant\/src\//,
   /require\s*\(.*\/assistant\/src\//,
   /import\s+['"].*\/assistant\/src\//,
-  /import\s+['"]@vellumai\/assistant/,
+  /import\s+['"]@mycadet\/assistant/,
 
   // CES server modules (future — reserve the boundary now)
   /from\s+['"].*\/ces\/src\//,
-  /from\s+['"]@vellumai\/ces/,
+  /from\s+['"]@mycadet\/ces/,
   /import\s*\(.*\/ces\/src\//,
   /require\s*\(.*\/ces\/src\//,
   /import\s+['"].*\/ces\/src\//,
-  /import\s+['"]@vellumai\/ces/,
+  /import\s+['"]@mycadet\/ces/,
 
   // Gateway internals
   /from\s+['"].*\/gateway\/src\//,
-  /from\s+['"]@vellumai\/vellum-gateway/,
+  /from\s+['"]@mycadet\/cadet-gateway/,
   /import\s*\(.*\/gateway\/src\//,
   /require\s*\(.*\/gateway\/src\//,
   /import\s+['"].*\/gateway\/src\//,
-  /import\s+['"]@vellumai\/vellum-gateway/,
+  /import\s+['"]@mycadet\/cadet-gateway/,
 
   // x-client packages (must not depend on any typed service client)
-  /from\s+['"]@vellumai\/assistant-client(?:\/|['"])/,
-  /import\s+['"]@vellumai\/assistant-client(?:\/|['"])/,
-  /require\s*\(['"]@vellumai\/assistant-client(?:\/|['"])/,
-  /from\s+['"]@vellumai\/ces-client(?:\/|['"])/,
-  /import\s+['"]@vellumai\/ces-client(?:\/|['"])/,
-  /require\s*\(['"]@vellumai\/ces-client(?:\/|['"])/,
-  /from\s+['"]@vellumai\/gateway-client(?:\/|['"])/,
-  /import\s+['"]@vellumai\/gateway-client(?:\/|['"])/,
-  /require\s*\(['"]@vellumai\/gateway-client(?:\/|['"])/,
+  /from\s+['"]@mycadet\/assistant-client(?:\/|['"])/,
+  /import\s+['"]@mycadet\/assistant-client(?:\/|['"])/,
+  /require\s*\(['"]@mycadet\/assistant-client(?:\/|['"])/,
+  /from\s+['"]@mycadet\/ces-client(?:\/|['"])/,
+  /import\s+['"]@mycadet\/ces-client(?:\/|['"])/,
+  /require\s*\(['"]@mycadet\/ces-client(?:\/|['"])/,
+  /from\s+['"]@mycadet\/gateway-client(?:\/|['"])/,
+  /import\s+['"]@mycadet\/gateway-client(?:\/|['"])/,
+  /require\s*\(['"]@mycadet\/gateway-client(?:\/|['"])/,
 
   // service-contracts (RPC protocol types — egress-proxy must not depend on CES wire types)
-  /from\s+['"]@vellumai\/service-contracts(?:\/|['"])/,
-  /import\s+['"]@vellumai\/service-contracts(?:\/|['"])/,
-  /require\s*\(['"]@vellumai\/service-contracts(?:\/|['"])/,
-  /from\s+['"]@vellumai\/ces-contracts(?:\/|['"])/,
-  /import\s+['"]@vellumai\/ces-contracts(?:\/|['"])/,
-  /require\s*\(['"]@vellumai\/ces-contracts(?:\/|['"])/,
+  /from\s+['"]@mycadet\/service-contracts(?:\/|['"])/,
+  /import\s+['"]@mycadet\/service-contracts(?:\/|['"])/,
+  /require\s*\(['"]@mycadet\/service-contracts(?:\/|['"])/,
+  /from\s+['"]@mycadet\/ces-contracts(?:\/|['"])/,
+  /import\s+['"]@mycadet\/ces-contracts(?:\/|['"])/,
+  /require\s*\(['"]@mycadet\/ces-contracts(?:\/|['"])/,
 ];
 
 describe("package boundary", () => {
@@ -134,7 +134,7 @@ describe("package boundary", () => {
     const forbidden = [
       "@mycadet/assistant",
       "@mycadet/ces",
-      "@mycadet/vellum-gateway",
+      "@mycadet/cadet-gateway",
       "@mycadet/assistant-client",
       "@mycadet/ces-client",
       "@mycadet/ces-contracts",

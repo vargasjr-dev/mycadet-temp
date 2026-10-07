@@ -49,7 +49,7 @@ export interface CliLauncherInstallOptions extends CliLauncherFileOperations {
 }
 
 const LAUNCHER_VERSION = 1;
-const LEGACY_LAUNCHER_ENTRIES = ["vellum.exe", "bun.exe"] as const;
+const LEGACY_LAUNCHER_ENTRIES = ["cadet.exe", "bun.exe"] as const;
 
 export type RegistryRunner = (
   command: string,
@@ -81,12 +81,12 @@ export function resolveCliLauncherPaths(
   const installName =
     releaseChannel === "production"
       ? "Cadet"
-      : `Vellum-${channelSegment || "nonproduction"}`;
+      : `Cadet-${channelSegment || "nonproduction"}`;
   const binDir = path.join(localAppData, installName, "bin");
   return {
     binDir,
-    executable: path.join(binDir, "vellum.exe"),
-    ownership: path.join(binDir, ".vellum-owned.json"),
+    executable: path.join(binDir, "cadet.exe"),
+    ownership: path.join(binDir, ".cadet-owned.json"),
   };
 }
 
@@ -154,7 +154,7 @@ export function getCliLauncherState(
     );
     if (
       earlierEntries.some((entry) =>
-        existsSync(path.join(normalizeWindowsPathEntry(entry), "vellum.exe")),
+        existsSync(path.join(normalizeWindowsPathEntry(entry), "cadet.exe")),
       )
     ) {
       return "shadowed";
@@ -268,7 +268,7 @@ function ensureLauncherPath(
 
 function removeLegacyRuntimeEntries(paths: CliLauncherPaths): void {
   for (const name of CLI_RUNTIME_ENTRIES) {
-    if (name === "vellum.exe") {
+    if (name === "cadet.exe") {
       continue;
     }
     try {

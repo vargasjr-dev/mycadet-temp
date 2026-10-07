@@ -887,7 +887,7 @@ describe("Permission Checker (gateway IPC)", () => {
     });
 
     // ── Memory-retrospective skill-authoring auto-grant ─────────────────────
-    // The background retrospective guardian session (sourceChannel "vellum",
+    // The background retrospective guardian session (sourceChannel "cadet",
     // trustClass "guardian", origin "memory_retrospective") cannot answer
     // interactive prompts, so `scaffold_managed_skill`, `find_similar_skills`,
     // and `skill_load skill-management` resolve to allow without prompting. The
@@ -897,7 +897,7 @@ describe("Permission Checker (gateway IPC)", () => {
     const retrospectiveContext = {
       requestOrigin: "memory_retrospective",
       trustClass: "guardian",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       executionContext: "background" as const,
       procToSkillsActive: true,
     };
@@ -996,7 +996,7 @@ describe("Permission Checker (gateway IPC)", () => {
         matchType: "registry",
         scopeOptions: [],
       };
-      // Same guardian/vellum background trust and active feature: the
+      // Same guardian/cadet background trust and active feature: the
       // consolidation origin does not authorize skill authoring; only the
       // retrospective origin holds this grant.
       const result = await check(
@@ -1006,7 +1006,7 @@ describe("Permission Checker (gateway IPC)", () => {
         {
           requestOrigin: "memory_consolidation",
           trustClass: "guardian",
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           executionContext: "background",
           procToSkillsActive: true,
         },
@@ -1021,7 +1021,7 @@ describe("Permission Checker (gateway IPC)", () => {
         matchType: "registry",
         scopeOptions: [],
       };
-      // Same guardian/vellum background trust, but a different origin (e.g.
+      // Same guardian/cadet background trust, but a different origin (e.g.
       // the memory sweep job) must not inherit the retrospective grant.
       const result = await check(
         "scaffold_managed_skill",
@@ -1030,7 +1030,7 @@ describe("Permission Checker (gateway IPC)", () => {
         {
           requestOrigin: "schedule",
           trustClass: "guardian",
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           executionContext: "background",
           procToSkillsActive: true,
         },
@@ -1052,7 +1052,7 @@ describe("Permission Checker (gateway IPC)", () => {
         {
           requestOrigin: "memory_retrospective",
           trustClass: "unknown",
-          sourceChannel: "vellum",
+          sourceChannel: "cadet",
           executionContext: "background",
           procToSkillsActive: true,
         },
@@ -1097,7 +1097,7 @@ describe("Permission Checker (gateway IPC)", () => {
       conversationId: "conv-retro",
       workingDir: "/home/user/project",
       trustClass: "guardian",
-      executionChannel: "vellum",
+      executionChannel: "cadet",
       requestOrigin: "memory_retrospective",
       isInteractive: false,
     };
@@ -1118,7 +1118,7 @@ describe("Permission Checker (gateway IPC)", () => {
       // and stamped the active proc-to-skills gate.
       expect(policyContext.requestOrigin).toBe("memory_retrospective");
       expect(policyContext.trustClass).toBe("guardian");
-      expect(policyContext.sourceChannel).toBe("vellum");
+      expect(policyContext.sourceChannel).toBe("cadet");
       expect(policyContext.procToSkillsActive).toBe(true);
 
       const result = await check(
@@ -1144,7 +1144,7 @@ describe("Permission Checker (gateway IPC)", () => {
         conversationId: "conv-chat",
         workingDir: "/home/user/project",
         trustClass: "guardian",
-        executionChannel: "vellum",
+        executionChannel: "cadet",
         isInteractive: true,
       };
       const policyContext = buildPolicyContext(

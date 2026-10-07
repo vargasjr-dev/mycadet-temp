@@ -31,7 +31,7 @@
 
 import type { Database } from "bun:sqlite";
 
-import { ensureVellumGuardianBinding } from "./auth/guardian-bootstrap.js";
+import { ensureCadetGuardianBinding } from "./auth/guardian-bootstrap.js";
 import { getGatewayDb, type GatewayDb } from "./db/connection.js";
 import { runDataMigrations } from "./db/data-migrations/index.js";
 import { IpcTransportError, ipcCallAssistant } from "./ipc/assistant-client.js";
@@ -142,7 +142,7 @@ async function executeDeferredTasks(): Promise<void> {
   //    guardian from those instead of leaving it unresolved. This is the single
   //    boot-time self-heal seam; runtime token/pairing callers stay fail-closed.
   try {
-    await ensureVellumGuardianBinding({ recoverFromActorTokens: true });
+    await ensureCadetGuardianBinding({ recoverFromActorTokens: true });
   } catch (err) {
     log.warn({ err }, "Post-ready guardian binding backfill failed");
   }

@@ -82,7 +82,7 @@ const log = getLogger("schedule-routes");
 /**
  * Refuse a state change that touches a deferred-wake schedule unless the caller
  * holds owner authority right now ({@link isOwnerCaller}: a local IPC caller,
- * or the current bound vellum guardian).
+ * or the current bound cadet guardian).
  *
  * A wake row is guardian-owned deferral state. Its target and trigger text
  * decide what an unattended, potentially guardian-trust turn will do, and even

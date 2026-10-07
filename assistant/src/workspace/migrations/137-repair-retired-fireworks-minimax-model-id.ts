@@ -21,9 +21,9 @@ import type { WorkspaceMigration } from "./types.js";
  * would make it read as unedited to `ensureByokDefaultProfiles`.
  *
  * Provider guard: the retired ID belongs to the `fireworks` provider and
- * also appears in managed profiles stamped `provider: "vellum"` (which
+ * also appears in managed profiles stamped `provider: "cadet"` (which
  * route Fireworks-account model IDs through the managed proxy). A fragment
- * is repaired when its `provider` is `"fireworks"`, `"vellum"`, or absent;
+ * is repaired when its `provider` is `"fireworks"`, `"cadet"`, or absent;
  * an explicit other provider (e.g. an `openai-compatible` endpoint serving
  * a model by the same name) is left untouched.
  */
@@ -104,7 +104,7 @@ export const repairRetiredFireworksMinimaxModelIdMigration: WorkspaceMigration =
 
 const RETIRED_MODEL_ID = "accounts/fireworks/models/minimax-m2p5";
 const REPLACEMENT_MODEL_ID = "accounts/fireworks/models/minimax-m2p7";
-const REPAIRABLE_PROVIDERS = new Set(["fireworks", "vellum"]);
+const REPAIRABLE_PROVIDERS = new Set(["fireworks", "cadet"]);
 
 function repairFragment(fragment: Record<string, unknown> | null): boolean {
   if (fragment === null) {

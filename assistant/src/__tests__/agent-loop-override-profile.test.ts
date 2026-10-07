@@ -124,7 +124,7 @@ describe("AgentLoop.run — overrideProfile plumbing", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
       overrideProfile: "fast",
     });
@@ -149,7 +149,7 @@ describe("AgentLoop.run — overrideProfile plumbing", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
     // Single send, no overrideProfile field at all.
@@ -175,7 +175,7 @@ describe("AgentLoop.run — overrideProfile plumbing", () => {
       requestId: "test-request",
       messages: [userMessage],
       onEvent: () => {},
-      trust: { sourceChannel: "vellum", trustClass: "unknown" },
+      trust: { sourceChannel: "cadet", trustClass: "unknown" },
       callSite: "mainAgent",
       overrideProfile: "does-not-exist",
     });

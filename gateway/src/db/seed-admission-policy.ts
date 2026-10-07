@@ -39,22 +39,22 @@ import {
  * the narrowest set that still leaves the channel usable and makes widening it
  * an explicit choice in the Channel Trust Floors UI.
  *
- * `vellum-shared` (conversations a guardian shares with a contact) defaults to
+ * `cadet-shared` (conversations a guardian shares with a contact) defaults to
  * `guardian_only` and is a hidden channel, so the floor admits no contact.
  */
 export const CHANNEL_ADMISSION_DEFAULTS: Partial<
   Record<ChannelId, AdmissionPolicy>
 > = {
-  vellum: "guardian_only",
+  cadet: "guardian_only",
   plugin: "guardian_only",
-  "vellum-shared": "guardian_only",
+  "cadet-shared": "guardian_only",
 };
 
 /**
  * Insert a default row for every enforced channel that has none. Exempt
  * channels (`platform`/`a2a`) are skipped — they carry no floor.
  *
- * Hidden channels (`cadet`/`vellum-shared`/`whatsapp`) are not surfaced in
+ * Hidden channels (`cadet`/`cadet-shared`/`whatsapp`) are not surfaced in
  * the Channel Trust Floors UI, so a legacy or stale row would strand the
  * channel at a floor the user can no longer see or reset. They are pinned to
  * their default here, overwriting any drifted row, unlike the non-destructive

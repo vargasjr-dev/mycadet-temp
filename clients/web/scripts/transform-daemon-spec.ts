@@ -231,7 +231,7 @@ const counter = { value: 0 };
 spec.paths = hoistInlineDefs(spec.paths, componentSchemas, counter);
 
 const info = spec.info as Record<string, unknown>;
-info.title = "Vellum Assistant Daemon API (gateway paths)";
+info.title = "Cadet Assistant Daemon API (gateway paths)";
 info.description =
   "Daemon spec with gateway-prefixed paths for web app codegen. " +
   "Auto-generated — do not edit. Regenerate: cd clients/web && bun run scripts/transform-daemon-spec.ts";

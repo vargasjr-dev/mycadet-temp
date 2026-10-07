@@ -600,7 +600,7 @@ index aa18ca78d0d73ceceeae4eee2d23a83a802bab03..965390b69654778a5d6f84042e6ffd5e
                      self.previewView = nil
                  }
 -                self.webView?.isOpaque = true
-+                // Vellum's WKWebView stays non-opaque so its native safe-area
++                // Cadet's WKWebView stays non-opaque so its native safe-area
 +                // backdrop can track the active web theme after the preview is
 +                // removed.
 +                self.webView?.isOpaque = false

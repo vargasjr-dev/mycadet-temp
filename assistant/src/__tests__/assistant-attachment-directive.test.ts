@@ -11,7 +11,7 @@ import {
 } from "../daemon/assistant-attachments.js";
 
 // Use realpath to avoid macOS /tmp → /private/tmp symlink mismatches
-const RAW_TEST_DIR = join(tmpdir(), `vellum-sandbox-test-${Date.now()}`);
+const RAW_TEST_DIR = join(tmpdir(), `cadet-sandbox-test-${Date.now()}`);
 mkdirSync(RAW_TEST_DIR, { recursive: true });
 const TEST_DIR = realpathSync(RAW_TEST_DIR);
 
@@ -22,7 +22,7 @@ const TEST_DIR = realpathSync(RAW_TEST_DIR);
 describe("parseDirectives", () => {
   test("parses a single sandbox directive with all attributes", () => {
     const text =
-      'Here is the report:\n<vellum-attachment source="sandbox" path="output/report.pdf" filename="report.pdf" mime_type="application/pdf" />';
+      'Here is the report:\n<cadet-attachment source="sandbox" path="output/report.pdf" filename="report.pdf" mime_type="application/pdf" />';
     const result = parseDirectives(text);
 
     expect(result.directiveRequests).toHaveLength(1);
@@ -38,7 +38,7 @@ describe("parseDirectives", () => {
   });
 
   test("defaults source to sandbox when omitted", () => {
-    const text = '<vellum-attachment path="chart.png" />';
+    const text = '<cadet-attachment path="chart.png" />';
     const result = parseDirectives(text);
 
     expect(result.directiveRequests).toHaveLength(1);
@@ -46,7 +46,7 @@ describe("parseDirectives", () => {
   });
 
   test("parses host source", () => {
-    const text = '<vellum-attachment source="host" path="/Users/me/doc.pdf" />';
+    const text = '<cadet-attachment source="host" path="/Users/me/doc.pdf" />';
     const result = parseDirectives(text);
 
     expect(result.directiveRequests).toHaveLength(1);
@@ -55,7 +55,7 @@ describe("parseDirectives", () => {
   });
 
   test("leaves optional filename and mime_type undefined when absent", () => {
-    const text = '<vellum-attachment path="file.txt" />';
+    const text = '<cadet-attachment path="file.txt" />';
     const result = parseDirectives(text);
 
     expect(result.directiveRequests[0].filename).toBeUndefined();
@@ -65,9 +65,9 @@ describe("parseDirectives", () => {
   test("parses multiple directives preserving order", () => {
     const text = [
       "Results:",
-      '<vellum-attachment path="a.png" />',
+      '<cadet-attachment path="a.png" />',
       "And also:",
-      '<vellum-attachment path="b.pdf" />',
+      '<cadet-attachment path="b.pdf" />',
     ].join("\n");
 
     const result = parseDirectives(text);
@@ -79,31 +79,31 @@ describe("parseDirectives", () => {
   });
 
   test("rejects directive without path attribute", () => {
-    const text = '<vellum-attachment source="sandbox" />';
+    const text = '<cadet-attachment source="sandbox" />';
     const result = parseDirectives(text);
 
     expect(result.directiveRequests).toHaveLength(0);
     expect(result.parseWarnings).toHaveLength(1);
     expect(result.parseWarnings[0]).toContain('missing required "path"');
     // Malformed tag preserved in text
-    expect(result.cleanText).toContain("<vellum-attachment");
+    expect(result.cleanText).toContain("<cadet-attachment");
   });
 
   test("rejects directive with invalid source value", () => {
-    const text = '<vellum-attachment source="cloud" path="x.txt" />';
+    const text = '<cadet-attachment source="cloud" path="x.txt" />';
     const result = parseDirectives(text);
 
     expect(result.directiveRequests).toHaveLength(0);
     expect(result.parseWarnings).toHaveLength(1);
     expect(result.parseWarnings[0]).toContain('invalid source="cloud"');
-    expect(result.cleanText).toContain("<vellum-attachment");
+    expect(result.cleanText).toContain("<cadet-attachment");
   });
 
   test("handles mixed valid and invalid directives", () => {
     const text = [
-      '<vellum-attachment path="good.png" />',
-      '<vellum-attachment source="nope" path="bad.txt" />',
-      '<vellum-attachment path="also-good.pdf" />',
+      '<cadet-attachment path="good.png" />',
+      '<cadet-attachment source="nope" path="bad.txt" />',
+      '<cadet-attachment path="also-good.pdf" />',
     ].join("\n");
 
     const result = parseDirectives(text);
@@ -133,17 +133,17 @@ describe("parseDirectives", () => {
 
   test("preserves non-self-closing tags as plain text", () => {
     const text =
-      '<vellum-attachment path="file.txt">content</vellum-attachment>';
+      '<cadet-attachment path="file.txt">content</cadet-attachment>';
     const result = parseDirectives(text);
 
     // The regex only matches self-closing tags, so non-self-closing is not matched
     expect(result.directiveRequests).toHaveLength(0);
-    expect(result.cleanText).toContain("content</vellum-attachment>");
+    expect(result.cleanText).toContain("content</cadet-attachment>");
   });
 
   test("handles single-quoted attributes", () => {
     const text =
-      "<vellum-attachment path='report.pdf' filename='my report.pdf' />";
+      "<cadet-attachment path='report.pdf' filename='my report.pdf' />";
     const result = parseDirectives(text);
 
     expect(result.directiveRequests).toHaveLength(1);
@@ -152,7 +152,7 @@ describe("parseDirectives", () => {
   });
 
   test("collapses excess blank lines after tag removal", () => {
-    const text = 'Before\n\n<vellum-attachment path="x.png" />\n\n\nAfter';
+    const text = 'Before\n\n<cadet-attachment path="x.png" />\n\n\nAfter';
     const result = parseDirectives(text);
 
     // Should not have triple+ newlines
@@ -162,7 +162,7 @@ describe("parseDirectives", () => {
 
   test("handles directive with multiline attributes", () => {
     const text = [
-      "<vellum-attachment",
+      "<cadet-attachment",
       '  source="host"',
       '  path="/tmp/data.csv"',
       '  mime_type="text/csv"',

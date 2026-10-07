@@ -1,5 +1,5 @@
 {
-  "description": "Manifest of first-party Vellum skills. Fetched from GitHub at runtime so the assistant can discover and install new skills maintained by Vellum.",
+  "description": "Manifest of first-party Cadet skills. Fetched from GitHub at runtime so the assistant can discover and install new skills maintained by Cadet.",
   "version": 1,
   "skills": [
     {
@@ -38,7 +38,7 @@
     {
       "id": "assistant-migration",
       "name": "assistant-migration",
-      "description": "Migrate from ChatGPT, Claude, OpenClaw, Hermes, Manus, and other AI assistants into Vellum by inspecting their data exports, conversation archives, files, prompts, custom instructions, memory, saved memories, tools, GPTs, workflows, integrations, and relationships, then mapping as much as safely possible into Vellum primitives. Handles single-source and multi-source migrations with a unified, deduplicated inventory.",
+      "description": "Migrate from ChatGPT, Claude, OpenClaw, Hermes, Manus, and other AI assistants into Cadet by inspecting their data exports, conversation archives, files, prompts, custom instructions, memory, saved memories, tools, GPTs, workflows, integrations, and relationships, then mapping as much as safely possible into Cadet primitives. Handles single-source and multi-source migrations with a unified, deduplicated inventory.",
       "metadata": {
         "emoji": "🧳",
         "cadet": {
@@ -48,14 +48,14 @@
             "chatgpt-import"
           ],
           "activation-hints": [
-            "User wants to migrate from ChatGPT, Claude, OpenClaw, Hermes, Manus, or another AI assistant into Vellum",
-            "User wants to migrate from ChatGPT or Claude into Vellum",
+            "User wants to migrate from ChatGPT, Claude, OpenClaw, Hermes, Manus, or another AI assistant into Cadet",
+            "User wants to migrate from ChatGPT or Claude into Cadet",
             "User has a ChatGPT data export ZIP or Claude conversation/summary export",
             "User has an assistant export, workspace, prompt bundle, memory dump, tool config, or migration request from another assistant system",
             "User asks what can be preserved when switching from another assistant"
           ],
           "avoid-when": [
-            "User is moving an existing Vellum assistant between Vellum homes; use backup/restore or teleport workflows instead"
+            "User is moving an existing Cadet assistant between Cadet homes; use backup/restore or teleport workflows instead"
           ]
         }
       },
@@ -83,13 +83,13 @@
           ]
         }
       },
-      "compatibility": "Works on both the Vellum desktop app (local daemon) and the Vellum web app (platform-hosted). Requires an Unstructured account to authorize during the OAuth step.",
+      "compatibility": "Works on both the Cadet desktop app (local daemon) and the Cadet web app (platform-hosted). Requires an Unstructured account to authorize during the OAuth step.",
       "updatedAt": "2026-07-13T20:48:26.000Z"
     },
     {
       "id": "chatgpt-import",
       "name": "chatgpt-import",
-      "description": "Import conversation history from ChatGPT into Vellum",
+      "description": "Import conversation history from ChatGPT into Cadet",
       "metadata": {
         "emoji": "📥",
         "cadet": {
@@ -160,7 +160,7 @@
     {
       "id": "deploy-fullstack-vercel",
       "name": "deploy-fullstack-vercel",
-      "description": "Build and deploy a full-stack app (React frontend + Python/FastAPI backend) or a Vellum app to Vercel as a serverless demo with seeded data",
+      "description": "Build and deploy a full-stack app (React frontend + Python/FastAPI backend) or a Cadet app to Vercel as a serverless demo with seeded data",
       "metadata": {
         "emoji": "🚀",
         "cadet": {
@@ -219,7 +219,7 @@
     {
       "id": "email-setup",
       "name": "email-setup",
-      "description": "Set up this assistant's own `[name].vellum.me` domain and email address (one-time setup)",
+      "description": "Set up this assistant's own `[name].mycadet.bot` domain and email address (one-time setup)",
       "metadata": {
         "emoji": "📧",
         "cadet": {
@@ -404,7 +404,7 @@
           "category": "development",
           "display-name": "Headless Claude Code",
           "avoid-when": [
-            "Setting up or authenticating Claude Code inside a Vellum assistant: the ACP skill owns that path"
+            "Setting up or authenticating Claude Code inside a Cadet assistant: the ACP skill owns that path"
           ]
         }
       },
@@ -578,7 +578,7 @@
           "display-name": "MCP Setup"
         }
       },
-      "compatibility": "Works on both the Vellum desktop app (local daemon) and the Vellum web app (platform-hosted). Auth flow differs by environment.",
+      "compatibility": "Works on both the Cadet desktop app (local daemon) and the Cadet web app (platform-hosted). Auth flow differs by environment.",
       "updatedAt": "2026-09-14T10:34:19.000Z"
     },
     {
@@ -741,21 +741,21 @@
     {
       "id": "plugin-builder",
       "name": "plugin-builder",
-      "description": "Use when the user wants to build, scaffold, ship, or edit a Vellum plugin that bundles multiple surfaces (hooks, tools, skills, and more) into one installable package.",
+      "description": "Use when the user wants to build, scaffold, ship, or edit a Cadet plugin that bundles multiple surfaces (hooks, tools, skills, and more) into one installable package.",
       "metadata": {
         "emoji": "🧩",
         "cadet": {
           "category": "development",
           "display-name": "Plugin Builder",
           "activation-hints": [
-            "User wants to build, scaffold, or author a Vellum plugin",
+            "User wants to build, scaffold, or author a Cadet plugin",
             "User wants to edit, update, or push changes to an existing plugin's GitHub repo",
             "User wants to package skills, hooks, or tools into an installable plugin",
             "User wants to ship MCP servers as part of a plugin (mcp.json)",
             "User wants a plugin to receive public webhooks or become a channel (channels/ingress.json)",
             "User wants to extend their assistant with a new capability shipped as a plugin",
-            "User wants to publish a plugin to the Vellum marketplace catalog",
-            "User asks how to ship or distribute extensions for Vellum"
+            "User wants to publish a plugin to the Cadet marketplace catalog",
+            "User asks how to ship or distribute extensions for Cadet"
           ],
           "avoid-when": [
             "User only wants to install or upgrade an existing plugin (use the `assistant plugins` CLI directly)",
@@ -840,7 +840,7 @@
     {
       "id": "self-upgrade",
       "name": "self-upgrade",
-      "description": "Upgrade vellum to the latest version, restart the assistant, and restart the gateway",
+      "description": "Upgrade cadet to the latest version, restart the assistant, and restart the gateway",
       "metadata": {
         "emoji": "⬆️",
         "cadet": {
@@ -869,7 +869,7 @@
     {
       "id": "slack-app-setup",
       "name": "slack-app-setup",
-      "description": "Connect a Slack app to the Vellum Assistant via Socket Mode. Use whenever the user wants to set up Slack for their assistant, connect a workspace, or get the assistant talking in Slack — opens a guided setup wizard in the side panel so the user can create the app, generate tokens, and connect in one flow.",
+      "description": "Connect a Slack app to the Cadet Assistant via Socket Mode. Use whenever the user wants to set up Slack for their assistant, connect a workspace, or get the assistant talking in Slack — opens a guided setup wizard in the side panel so the user can create the app, generate tokens, and connect in one flow.",
       "metadata": {
         "emoji": "💬",
         "cadet": {
@@ -981,7 +981,7 @@
     {
       "id": "telegram-setup",
       "name": "telegram-setup",
-      "description": "Connect a Telegram bot to the Vellum Assistant gateway with automated webhook registration and credential storage",
+      "description": "Connect a Telegram bot to the Cadet Assistant gateway with automated webhook registration and credential storage",
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🤖",
@@ -1067,12 +1067,12 @@
     {
       "id": "cadet-client-capabilities",
       "name": "cadet-client-capabilities",
-      "description": "Truthful answers about what the Vellum client apps can and cannot do on the user's device. Device location and GPS are unavailable in every client and there is no location permission prompt to approve, so location requests are answered by asking for a typed city or address instead.",
+      "description": "Truthful answers about what the Cadet client apps can and cannot do on the user's device. Device location and GPS are unavailable in every client and there is no location permission prompt to approve, so location requests are answered by asking for a typed city or address instead.",
       "metadata": {
         "emoji": "📍",
         "cadet": {
           "category": "system",
-          "display-name": "Vellum Client Capabilities",
+          "display-name": "Cadet Client Capabilities",
           "activation-hints": [
             "asked to use the user's current location, GPS, or device position",
             "whether the app can access a device sensor, permission, or hardware feature",
@@ -1192,7 +1192,7 @@
         "emoji": "🔌",
         "cadet": {
           "category": "integrations",
-          "display-name": "Vellum OAuth Integrations"
+          "display-name": "Cadet OAuth Integrations"
         }
       },
       "compatibility": "Designed for Cadet personal assistants",
@@ -1201,15 +1201,15 @@
     {
       "id": "cadet-self-knowledge",
       "name": "cadet-self-knowledge",
-      "description": "Answer questions about Vellum, its config, billing, and hosting from live sources of truth",
+      "description": "Answer questions about Cadet, its config, billing, and hosting from live sources of truth",
       "metadata": {
         "emoji": "🪞",
         "cadet": {
           "category": "system",
-          "display-name": "Vellum Self-Knowledge",
+          "display-name": "Cadet Self-Knowledge",
           "activation-hints": [
             "what model it runs on",
-            "how Vellum works or its architecture",
+            "how Cadet works or its architecture",
             "its current config or settings",
             "what it can do or which skills/tools exist",
             "whether a service is connected, and in which sense",

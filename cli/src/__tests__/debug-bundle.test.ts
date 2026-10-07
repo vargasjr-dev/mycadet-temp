@@ -14,7 +14,7 @@ import { join } from "node:path";
 
 // Lockfile isolation (mirrors backup.test.ts)
 const testDir = mkdtempSync(join(tmpdir(), "cli-debug-bundle-test-"));
-process.env.VELLUM_LOCKFILE_DIR = testDir;
+process.env.CADET_LOCKFILE_DIR = testDir;
 
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as guardianToken from "../lib/guardian-token.js";
@@ -73,7 +73,7 @@ const LOCAL_ENTRY = {
   cloud: "local",
   hatchedAt: new Date().toISOString(),
   platformAssistantId: "11111111-2222-3333-4444-555555555555",
-  platformBaseUrl: "https://platform.vellum.ai",
+  platformBaseUrl: "https://cloud.cadet.ai",
   platformOrganizationId: "org-1",
 } as unknown as assistantConfig.AssistantEntry;
 
@@ -83,7 +83,7 @@ let fetchCalls: { url: string; init?: RequestInit }[] = [];
 let uploadUrlStatus = 201;
 
 beforeEach(() => {
-  process.argv = ["bun", "vellum", "debug-bundle"];
+  process.argv = ["bun", "cadet", "debug-bundle"];
   originalFetch = globalThis.fetch;
   originalExit = process.exit;
   process.exit = mock((code?: number) => {
@@ -136,12 +136,12 @@ describe("cadet debug-bundle", () => {
 
     expect(fetchCalls).toHaveLength(1);
     expect(fetchCalls[0].url).toBe(
-      "https://platform.vellum.ai/v1/assistants/11111111-2222-3333-4444-555555555555/debug-bundle-upload-url/",
+      "https://cloud.cadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/debug-bundle-upload-url/",
     );
     expect(fetchCalls[0].init?.method).toBe("POST");
     expect(
       (fetchCalls[0].init?.headers as Record<string, string>)[
-        "Vellum-Organization-Id"
+        "Cadet-Organization-Id"
       ],
     ).toBe("org-1");
 
@@ -160,7 +160,7 @@ describe("cadet debug-bundle", () => {
   });
 
   test("passes an unquoted multi-word display name through to the shared resolver", async () => {
-    process.argv = ["bun", "vellum", "debug-bundle", "Support", "Bot"];
+    process.argv = ["bun", "cadet", "debug-bundle", "Support", "Bot"];
     await debugBundle();
     expect(resolveTargetMock).toHaveBeenCalledWith("Support Bot");
   });
@@ -222,10 +222,10 @@ describe("cadet debug-bundle", () => {
     expect(exportMock).not.toHaveBeenCalled();
   });
 
-  test("refuses a Vellum-hosted assistant, which needs no bundle", async () => {
+  test("refuses a Cadet-hosted assistant, which needs no bundle", async () => {
     resolveTargetMock.mockReturnValue({
       ...LOCAL_ENTRY,
-      cloud: "vellum",
+      cloud: "cadet",
     } as unknown as assistantConfig.AssistantEntry);
     const errorSpy = spyOn(console, "error").mockImplementation(() => {});
     try {

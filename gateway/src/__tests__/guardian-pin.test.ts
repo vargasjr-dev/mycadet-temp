@@ -11,13 +11,13 @@ import {
 
 // Both lookups are mocked BEFORE the module under test is imported, so the
 // pin is testable without gateway DB state.
-let mockFindVellumGuardian = mock(
+let mockFindCadetGuardian = mock(
   async (): Promise<{ principalId: string } | null> => ({
     principalId: GUARDIAN_PRINCIPAL,
   }),
 );
 mock.module("../auth/guardian-bootstrap.js", () => ({
-  findVellumGuardian: () => mockFindVellumGuardian(),
+  findCadetGuardian: () => mockFindCadetGuardian(),
 }));
 
 let mockReadCredential = mock(
@@ -25,7 +25,7 @@ let mockReadCredential = mock(
 );
 mock.module("../platform-user-id.js", () => ({
   readStoredPlatformUserId: async () => ({
-    userId: await mockReadCredential("vellum:platform_user_id"),
+    userId: await mockReadCredential("cadet:platform_user_id"),
     unreachable: false,
   }),
 }));
@@ -37,7 +37,7 @@ const log = getLogger("guardian-pin-test");
 const STREAM_URL = "http://localhost:7830/v1/watch/stream";
 
 beforeEach(() => {
-  mockFindVellumGuardian = mock(async () => ({
+  mockFindCadetGuardian = mock(async () => ({
     principalId: GUARDIAN_PRINCIPAL,
   }));
   mockReadCredential = mock(async (_key: string) => TUNNEL_USER_ID);
@@ -73,7 +73,7 @@ describe("authorizeGuardianStream: the actor token path", () => {
   });
 
   test("refuses when no guardian binding exists", async () => {
-    mockFindVellumGuardian = mock(async () => null);
+    mockFindCadetGuardian = mock(async () => null);
 
     const res = await authorize(mintEdgeToken(GUARDIAN_PRINCIPAL));
 
@@ -85,7 +85,7 @@ describe("authorizeGuardianStream: the actor token path", () => {
    * "forbidden" would misread a database problem as a permission one.
    */
   test("answers 503 when the binding lookup fails", async () => {
-    mockFindVellumGuardian = mock(async () => {
+    mockFindCadetGuardian = mock(async () => {
       throw new Error("db down");
     });
 
@@ -98,7 +98,7 @@ describe("authorizeGuardianStream: the actor token path", () => {
     const res = await authorize();
 
     expect(res!.status).toBe(401);
-    expect(mockFindVellumGuardian).not.toHaveBeenCalled();
+    expect(mockFindCadetGuardian).not.toHaveBeenCalled();
   });
 
   test("returns 401 for a service token, which has no actor principal", async () => {
@@ -125,7 +125,7 @@ describe("authorizeGuardianStream: the actor token path", () => {
     );
 
     expect(res).toBeNull();
-    expect(mockFindVellumGuardian).not.toHaveBeenCalled();
+    expect(mockFindCadetGuardian).not.toHaveBeenCalled();
   });
 });
 

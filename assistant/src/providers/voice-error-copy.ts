@@ -24,7 +24,7 @@ export function describeSttFailure(
   providerId?: SttProviderId,
 ): string {
   // Adapters that already produce user-facing, provider-appropriate copy
-  // (managed speech: reconnect the platform, top up Vellum credits) mark the
+  // (managed speech: reconnect the platform, top up Cadet credits) mark the
   // error so its remediation survives verbatim instead of being rewritten to
   // the BYOK "check your API key" copy — which is wrong for managed users, who
   // hold no speech-to-text key.

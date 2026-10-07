@@ -44,7 +44,7 @@ export const memoryRouterCostOptimizedProfileMigration: WorkspaceMigration = {
   description:
     "Set callSites.memoryRouter to the shipped cost-optimized default (with 1M context) for workspaces still carrying the 087-seeded balanced profile",
   run(workspaceDir: string): void {
-    if (process.env.VELLUM_DEFAULT_WORKSPACE_CONFIG_PATH) {
+    if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
       return;
     }
 

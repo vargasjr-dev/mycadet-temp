@@ -9,7 +9,7 @@ type ServiceCredentialsRead =
 
 const specs = [
   { service: "telegram", requiredFields: ["bot_token", "webhook_secret"] },
-  { service: "vellum", requiredFields: ["platform_assistant_id"] },
+  { service: "cadet", requiredFields: ["platform_assistant_id"] },
 ] as const;
 
 const reads = new Map<string, ServiceCredentialsRead>();

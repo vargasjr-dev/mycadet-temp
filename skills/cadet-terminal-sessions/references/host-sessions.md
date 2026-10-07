@@ -111,7 +111,7 @@ bash <skill-dir>/scripts/setup-auto-tmux.sh             # Install the hook
 bash <skill-dir>/scripts/setup-auto-tmux.sh --uninstall  # Remove the hook
 ```
 
-The auto-created session names include the terminal app context (`iterm-`, `vscode-`, or `sh-`) plus the TTY and PID for uniqueness. The user can skip auto-tmux for a single shell by setting `VELLUM_NO_AUTO_TMUX=1`.
+The auto-created session names include the terminal app context (`iterm-`, `vscode-`, or `sh-`) plus the TTY and PID for uniqueness. The user can skip auto-tmux for a single shell by setting `CADET_NO_AUTO_TMUX=1`.
 
 **Note:** This is more opinionated than `tt` — some users may not want tmux in every shell (different scrollback behavior, keybindings, copy/paste). Offer it as an option, don't push it. `tt` is the lower-friction default.
 

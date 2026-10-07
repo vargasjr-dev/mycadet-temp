@@ -182,7 +182,7 @@ describe("helper toast factory", () => {
   });
 
   test("a sender puts the avatar in the logo slot and demotes the title", async () => {
-    const dir = await mkdtemp(path.join(tmpdir(), "vellum-toast-avatar-"));
+    const dir = await mkdtemp(path.join(tmpdir(), "cadet-toast-avatar-"));
     userDataDir = dir;
     try {
       const avatarPng = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
@@ -224,7 +224,7 @@ describe("helper toast factory", () => {
   test("an unwritable avatar directory falls back to the plain toast", async () => {
     // A file, not a directory, so the cache write cannot succeed.
     const file = path.join(
-      await mkdtemp(path.join(tmpdir(), "vellum-toast-")),
+      await mkdtemp(path.join(tmpdir(), "cadet-toast-")),
       "blocked",
     );
     await writeFile(file, "");
@@ -300,7 +300,7 @@ describe("share feature", () => {
   });
 
   test("writes the bytes to the picked path and cancelling writes nothing", async () => {
-    const dir = await mkdtemp(path.join(tmpdir(), "vellum-share-test-"));
+    const dir = await mkdtemp(path.join(tmpdir(), "cadet-share-test-"));
     try {
       const target = path.join(dir, "out.bin");
       saveDialogResult = { canceled: false, filePath: target };

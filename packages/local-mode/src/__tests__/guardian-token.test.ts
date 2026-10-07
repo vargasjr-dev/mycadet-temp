@@ -79,7 +79,7 @@ describe("getGuardianAccessToken", () => {
     expect(result).toEqual({
       ok: false,
       status: 401,
-      error: "Guardian token expired. Re-run `vellum hatch` or `vellum wake`.",
+      error: "Guardian token expired. Re-run `cadet hatch` or `cadet wake`.",
     });
   });
 
@@ -106,7 +106,7 @@ describe("getGuardianAccessToken", () => {
       ok: false,
       status: 401,
       error:
-        "Guardian token expired. Run `vellum pair` on the assistant's machine, then re-import it from the app's connect flow or with `vellum connect import`.",
+        "Guardian token expired. Run `cadet pair` on the assistant's machine, then re-import it from the app's connect flow or with `cadet connect import`.",
     });
   });
 
@@ -130,7 +130,7 @@ describe("getGuardianAccessToken", () => {
     if (result.ok) {
       return;
     }
-    expect(result.error).toContain("vellum hatch");
+    expect(result.error).toContain("cadet hatch");
   });
 
   test("returns a paired token only for its stored gateway target", async () => {

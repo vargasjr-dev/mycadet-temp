@@ -115,7 +115,7 @@ describe("executeFirecrawlScrape", () => {
     expect(capturedBody.formats).toEqual(["markdown"]);
     expect(capturedBody.onlyMainContent).toBe(true);
     expect(capturedHeaders!.get("authorization")).toBe("Bearer fc-test-key");
-    expect(capturedHeaders!.get("x-client-source")).toBe("vellum-assistant");
+    expect(capturedHeaders!.get("x-client-source")).toBe("mycadet");
   });
 
   test("honors max_chars windowing and emits a truncation notice", async () => {

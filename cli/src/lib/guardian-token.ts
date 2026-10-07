@@ -29,7 +29,7 @@ import { getConfigDir, getConfigDirs } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 
-const DEVICE_ID_SALT = "vellum-assistant-host-id";
+const DEVICE_ID_SALT = "mycadet-host-id";
 
 export type { GuardianTokenData };
 
@@ -527,7 +527,7 @@ function readClientHostname(): string | undefined {
 /**
  * Call POST /v1/guardian/init on the remote gateway to bootstrap a JWT
  * credential pair. The returned tokens are persisted locally under
- * `$XDG_CONFIG_HOME/vellum{-env}/assistants/<assistantId>/guardian-token.json`.
+ * `$XDG_CONFIG_HOME/cadet{-env}/assistants/<assistantId>/guardian-token.json`.
  */
 export async function leaseGuardianToken(
   gatewayUrl: string,
@@ -605,12 +605,12 @@ export async function resetGuardianBootstrap(
  * Copy a guardian token from a sibling environment's config directory into
  * the current environment's dir when the current one is missing it.
  *
- * The CLI's per-environment config layout (`~/.config/vellum{-env}/`) scopes
- * the lockfile and the guardian token by VELLUM_ENVIRONMENT. Lockfiles are
+ * The CLI's per-environment config layout (`~/.config/cadet{-env}/`) scopes
+ * the lockfile and the guardian token by CADET_ENVIRONMENT. Lockfiles are
  * cross-written at hatch time, but a guardian token is only written under
  * the env the assistant was hatched in. If the user later wakes the same
  * assistant under a different env (e.g. a freshly built desktop app ships
- * with VELLUM_ENVIRONMENT=local while the original hatch was under dev),
+ * with CADET_ENVIRONMENT=local while the original hatch was under dev),
  * the app cannot locate a bearer token and falls into a 401 → auth-rate-
  * limit → 429 cascade against the local gateway.
  *

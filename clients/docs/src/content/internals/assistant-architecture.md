@@ -59,8 +59,8 @@ All HTTP API requests use a single `Authorization: Bearer <jwt>` header for auth
 
 | Claim           | Type                                    | Description                                                        |
 | --------------- | --------------------------------------- | ------------------------------------------------------------------ |
-| `iss`           | `'vellum-auth'`                         | Issuer — always `vellum-auth`                                      |
-| `aud`           | `'vellum-daemon'` or `'vellum-gateway'` | Audience — which service the token targets                         |
+| `iss`           | `'cadet-auth'`                         | Issuer — always `cadet-auth`                                      |
+| `aud`           | `'cadet-daemon'` or `'cadet-gateway'` | Audience — which service the token targets                         |
 | `sub`           | string                                  | Subject — encodes principal type and identity (see patterns below) |
 | `scope_profile` | string                                  | Named permission bundle (see profiles below)                       |
 | `exp`           | number                                  | Expiry timestamp (seconds since epoch)                             |
@@ -103,7 +103,7 @@ All HTTP API requests use a single `Authorization: Bearer <jwt>` header for auth
 
 **Route policy enforcement:** Every protected endpoint declares required scopes and allowed principal types in `src/runtime/auth/route-policy.ts`. The `enforcePolicy()` function checks the AuthContext against these requirements and returns 403 when access is denied. A guard test ensures every dispatched endpoint has a corresponding policy entry.
 
-**Trust class enforcement:** A policy's `allowedTrustClasses` names whose turn may call a route, and an absent list means guardian only. A token whose scope profile is trust-checked (`isTrustCheckedScopeProfile` in `@vellumai/gateway-client`: every profile not on its exempt list, which is `contact_client_v1` today plus any unknown profile) reaches only a route whose list admits the trust class its principal resolves to on the `vellum-shared` channel. That class is read per request, so a revoked contact is refused on its next request. A trust-exempt token counts as the guardian with no lookup, so it reaches only a route whose list admits `guardian`, which every route naming no classes does. A refused caller gets 404, as an unmatched path does. The daemon's HTTP router and the gateway's IPC proxy both apply this rule (`tokenMayReachRoute` in `@vellumai/gateway-client`), since the daemon's IPC server runs no policy check of its own.
+**Trust class enforcement:** A policy's `allowedTrustClasses` names whose turn may call a route, and an absent list means guardian only. A token whose scope profile is trust-checked (`isTrustCheckedScopeProfile` in `@mycadet/gateway-client`: every profile not on its exempt list, which is `contact_client_v1` today plus any unknown profile) reaches only a route whose list admits the trust class its principal resolves to on the `cadet-shared` channel. That class is read per request, so a revoked contact is refused on its next request. A trust-exempt token counts as the guardian with no lookup, so it reaches only a route whose list admits `guardian`, which every route naming no classes does. A refused caller gets 404, as an unmatched path does. The daemon's HTTP router and the gateway's IPC proxy both apply this rule (`tokenMayReachRoute` in `@mycadet/gateway-client`), since the daemon's IPC server runs no policy check of its own.
 
 **Credential storage:** Only hashed tokens are persisted. Access token hashes go in `credential_records`; refresh token hashes in `refresh_token_records`. Raw tokens are returned once and never stored server-side.
 
@@ -808,11 +808,11 @@ The assistant feature-flag resolver (`src/config/assistant-feature-flags.ts`) is
 
 **Resolution priority** (highest wins):
 
-1. `~/.vellum/protected/feature-flags.json` overrides (local) or gateway HTTP API (Docker/containerized) — written by the gateway's PATCH endpoint
+1. `~/.cadet/protected/feature-flags.json` overrides (local) or gateway HTTP API (Docker/containerized) — written by the gateway's PATCH endpoint
 2. Defaults registry `defaultEnabled` — from the unified registry (`meta/feature-flags/feature-flag-registry.json`, filtered to `scope: "assistant"`)
 3. `false` — unknown/undeclared flags with no override fail closed
 
-**Storage:** Flags are persisted in `~/.vellum/protected/feature-flags.json` (local) or `GATEWAY_SECURITY_DIR/feature-flags.json` (Docker), managed by the gateway's `/v1/feature-flags` API (see [`gateway/ARCHITECTURE.md`](../gateway/ARCHITECTURE.md)). The daemon's config watcher monitors the protected directory and hot-reloads flag changes, so mutations take effect on the next tool resolution or session.
+**Storage:** Flags are persisted in `~/.cadet/protected/feature-flags.json` (local) or `GATEWAY_SECURITY_DIR/feature-flags.json` (Docker), managed by the gateway's `/v1/feature-flags` API (see [`gateway/ARCHITECTURE.md`](../gateway/ARCHITECTURE.md)). The daemon's config watcher monitors the protected directory and hot-reloads flag changes, so mutations take effect on the next tool resolution or session.
 
 **Public API:**
 
@@ -855,7 +855,7 @@ All six enforcement points derive the flag key via `skillFlagKey(skill)` — whi
 ```mermaid
 graph LR
     subgraph "Credential Store"
-        K1["API Key<br/>service: vellum-assistant<br/>account: anthropic<br/>stored via CES"]
+        K1["API Key<br/>service: mycadet<br/>account: anthropic<br/>stored via CES"]
         K2["Credential Secrets<br/>key: credential/{service}/{field}<br/>stored via secure-keys.ts<br/>(encrypted file fallback)"]
     end
 
@@ -868,19 +868,19 @@ graph LR
         UD6["maxStepsPerSession"]
     end
 
-    subgraph "~/Library/Application Support/vellum-assistant/"
+    subgraph "~/Library/Application Support/mycadet/"
         direction TB
         SL["logs/session-*.json<br/>───────────────<br/>Per-session JSON log<br/>task, start/end times, result<br/>Per-turn: AX tree, screenshot,<br/>action, token usage"]
     end
 
-    subgraph "$VELLUM_WORKSPACE_DIR/data/db/assistant-memory.db (SQLite + WAL)"
+    subgraph "$CADET_WORKSPACE_DIR/data/db/assistant-memory.db (SQLite + WAL)"
         direction TB
         SEG["memory_segments<br/>───────────────<br/>Text chunks for retrieval<br/>Linked to messages<br/>token_estimate per segment"]
         SUM["memory_summaries<br/>───────────────<br/>scope: conversation | weekly<br/>Compressed history for context<br/>window management"]
         EMB["memory_embeddings<br/>───────────────<br/>target: segment | item | summary<br/>provider + model metadata<br/>vector_json (float array)<br/>Powers semantic search"]
     end
 
-    subgraph "$VELLUM_WORKSPACE_DIR/data/db/assistant.db (SQLite + WAL)"
+    subgraph "$CADET_WORKSPACE_DIR/data/db/assistant.db (SQLite + WAL)"
         direction TB
         CONV["conversations<br/>───────────────<br/>id, title, timestamps<br/>token counts, estimated cost<br/>context_summary (compaction)<br/>conversation_type: 'standard' | 'background' | 'scheduled'"]
         MSG["messages<br/>───────────────<br/>id, conversation_id (FK)<br/>role: user | assistant<br/>content: JSON array<br/>created_at"]
@@ -894,11 +894,11 @@ graph LR
         TASK_RUNS["task_runs<br/>───────────────<br/>Execution history per task<br/>taskId (FK → tasks)<br/>conversationId, status<br/>startedAt, finishedAt, error"]
     end
 
-    subgraph "~/.vellum/ (Root Files)"
+    subgraph "~/.cadet/ (Root Files)"
         TRUST["protected/trust.json<br/>Tool permission rules"]
     end
 
-    subgraph "$VELLUM_WORKSPACE_DIR/ (Workspace Files)"
+    subgraph "$CADET_WORKSPACE_DIR/ (Workspace Files)"
         CONFIG["config files<br/>Hot-reloaded by daemon"]
         ONBOARD_PLAYBOOKS["onboarding/playbooks/<br/>[channel]_onboarding.md<br/>assistant-updatable checklists"]
         ONBOARD_REGISTRY["onboarding/playbooks/registry.json<br/>channel-start index for fast-path + reconciliation"]
@@ -1015,7 +1015,7 @@ graph TB
         LOCAL_CLIENT["RuntimeClient"]
         LOCAL_HTTP["HTTP API<br/>localhost:RUNTIME_HTTP_PORT"]
         LOCAL_DAEMON["Local Daemon<br/>(same machine)"]
-        LOCAL_DB["$VELLUM_WORKSPACE_DIR/data/db/assistant.db"]
+        LOCAL_DB["$CADET_WORKSPACE_DIR/data/db/assistant.db"]
     end
 
     subgraph "Cloud Mode"
@@ -1244,8 +1244,8 @@ graph TB
     SB_FILE_TOOLS --> SB_FS
 
     EXEC -->|"bash"| WRAP["buildShellInvocation()<br/>(packages/environments/shell)"]
-    WRAP --> SHELL["bash -c in $VELLUM_WORKSPACE_DIR<br/>sanitized env (safe-env allowlist)"]
-    SHELL --> SB_FS["Workspace filesystem root<br/>$VELLUM_WORKSPACE_DIR"]
+    WRAP --> SHELL["bash -c in $CADET_WORKSPACE_DIR<br/>sanitized env (safe-env allowlist)"]
+    SHELL --> SB_FS["Workspace filesystem root<br/>$CADET_WORKSPACE_DIR"]
     SHELL -.->|containerized deployments| CONTAINER["Container boundary<br/>(Docker / remote host) provides<br/>OS-level isolation"]
 
     EXEC -->|"host_file_* / host_bash"| HOST_TOOLS["Host-target tools<br/>(unchanged by backend choice)"]
@@ -1260,9 +1260,9 @@ graph TB
     USER --> CHECK
 ```
 
-- **Workspace scoping (software-enforced)**: `file_read`, `file_write`, and `file_edit` path-check every access against `$VELLUM_WORKSPACE_DIR`, including symlink resolution. `bash` spawns `bash -c` in the workspace directory with a sanitized environment and is not OS-confined on local installs; commands are gated by risk classification and the conversation's auto-approve threshold, with workspace path checks applied to allowlisted commands on non-containerized installs. Containerized deployments (`cadet hatch --remote docker`, remote hosts) get OS-level isolation from the container boundary. Workflow scripts run in a separate QuickJS-WASM sandbox with no ambient capabilities.
+- **Workspace scoping (software-enforced)**: `file_read`, `file_write`, and `file_edit` path-check every access against `$CADET_WORKSPACE_DIR`, including symlink resolution. `bash` spawns `bash -c` in the workspace directory with a sanitized environment and is not OS-confined on local installs; commands are gated by risk classification and the conversation's auto-approve threshold, with workspace path checks applied to allowlisted commands on non-containerized installs. Containerized deployments (`cadet hatch --remote docker`, remote hosts) get OS-level isolation from the container boundary. Workflow scripts run in a separate QuickJS-WASM sandbox with no ambient capabilities.
 - **Host tools unchanged**: `host_bash`, `host_file_read`, `host_file_write`, and `host_file_edit` always execute directly on the host regardless of deployment mode.
-- Sandbox defaults: `file_*` and `bash` execute within `$VELLUM_WORKSPACE_DIR`.
+- Sandbox defaults: `file_*` and `bash` execute within `$CADET_WORKSPACE_DIR`.
 - Host access is explicit: `host_file_read`, `host_file_write`, `host_file_edit`, and `host_bash` are separate tools.
 - Prompt defaults: host tools and `computer_use_*` skill-projected actions default to `ask` unless a trust rule allowlists/denylists them.
 - Browser tool defaults: all `browser_*` tools are auto-allowed by default via seeded allow rules at priority 100, preserving the frictionless UX from when browser was a core tool.
@@ -1296,14 +1296,14 @@ Key behaviors:
 
 ## Dynamic Skill Authoring — Tool Flow
 
-The assistant can author, test, and persist new skills at runtime through a three-tool workflow. All operations target `$VELLUM_WORKSPACE_DIR/skills/` (managed skills directory) and require explicit user confirmation.
+The assistant can author, test, and persist new skills at runtime through a three-tool workflow. All operations target `$CADET_WORKSPACE_DIR/skills/` (managed skills directory) and require explicit user confirmation.
 
 ```mermaid
 graph TB
     subgraph "1. Evaluate (Sandbox)"
         SNIPPET["Model drafts<br/>TypeScript snippet"]
         EVAL_TOOL["evaluate_typescript_code<br/>───────────────<br/>RiskLevel: High<br/>Always sandboxed"]
-        TEMP["Temp dir:<br/>workingDir/.vellum-eval/&lt;uuid&gt;"]
+        TEMP["Temp dir:<br/>workingDir/.cadet-eval/&lt;uuid&gt;"]
         WRAPPER["Wrapper runner<br/>imports snippet, calls<br/>default() or run()"]
         SANDBOX["wrapCommand()<br/>forced sandbox=true"]
         RESULT["JSON result:<br/>ok, exitCode, result,<br/>stdout, stderr,<br/>durationMs, timeout"]
@@ -1312,7 +1312,7 @@ graph TB
     subgraph "2. Persist (Filesystem)"
         SCAFFOLD["scaffold_managed_skill<br/>───────────────<br/>RiskLevel: High<br/>Requires user consent"]
         MANAGED_STORE["managed-store.ts<br/>───────────────<br/>validateManagedSkillId()<br/>buildSkillMarkdown()<br/>createManagedSkill()"]
-        SKILL_DIR["$VELLUM_WORKSPACE_DIR/skills/&lt;id&gt;/<br/>SKILL.md (frontmatter + body)"]
+        SKILL_DIR["$CADET_WORKSPACE_DIR/skills/&lt;id&gt;/<br/>SKILL.md (frontmatter + body)"]
     end
 
     subgraph "3. Load & Use"
@@ -1702,7 +1702,7 @@ When set to `"none"`, every tool invocation requires explicit approval. Explicit
 
 ### Trust Rules (v3 Schema)
 
-Rules are stored in `~/.vellum/protected/trust.json` with version `3`. Each rule can include the following fields:
+Rules are stored in `~/.cadet/protected/trust.json` with version `3`. Each rule can include the following fields:
 
 | Field             | Type                   | Purpose                                                                  |
 | ----------------- | ---------------------- | ------------------------------------------------------------------------ |
@@ -2051,7 +2051,7 @@ When the decision engine routes multiple guardian questions to the same conversa
 - **Multiple pending deliveries**: The guardian must prefix their reply with the 6-char hex request code (e.g. `A1B2C3 yes, allow it`). Case-insensitive matching.
 - **No match**: A disambiguation message is sent listing all active request codes.
 
-This invariant is enforced identically on mac/vellum (`conversation-process.ts`) and Telegram (`inbound-message-handler.ts`). All disambiguation messages are generated through the guardian action message composer (LLM with deterministic fallback).
+This invariant is enforced identically on mac/cadet (`conversation-process.ts`) and Telegram (`inbound-message-handler.ts`). All disambiguation messages are generated through the guardian action message composer (LLM with deterministic fallback).
 
 ### Reminder Routing Metadata
 
@@ -2061,7 +2061,7 @@ Reminders carry optional `routingIntent` (`single_channel` | `multi_channel` | `
 
 Notifications are delivered to five channel types. The daemon sends to external channels itself, calling each provider's API through the send modules in `src/messaging/providers/<channel>/`; nothing goes through the gateway.
 
-- **Cadet (always connected)**: SSE via the daemon's broadcast mechanism. The `VellumAdapter` emits a `notification_intent` message with rendered copy and optional `deepLinkMetadata` (includes `conversationId` for conversation navigation and `messageId` for message-level scroll anchoring).
+- **Cadet (always connected)**: SSE via the daemon's broadcast mechanism. The `CadetAdapter` emits a `notification_intent` message with rendered copy and optional `deepLinkMetadata` (includes `conversationId` for conversation navigation and `messageId` for message-level scroll anchoring).
 - **Platform (always connected)**: the `PlatformPushAdapter` posts the notification to the platform's `/v1/assistants/{id}/push/dispatch/` endpoint for native mobile push. Without platform credentials the delivery is recorded as failed.
 - **Telegram (when the guardian has a chat ID)**: the `TelegramAdapter` calls the Telegram Bot API through `telegram-bot/send.ts`. Approval cards carry inline keyboard buttons and fall back to plain text with typed-reply instructions if the rich send fails.
 - **Slack (when the guardian's chat is a DM)**: the `SlackAdapter` posts through `slack/send.ts`. Only `D`-prefixed DM channels qualify, so a binding made from a shared channel never receives notifications.
@@ -2108,41 +2108,41 @@ Connected channels are resolved at signal emission time by `getConnectedChannels
 | Integration OAuth tokens                 | CES / encrypted file store (via `secure-keys.ts`)      | Encrypted binary                    | `TokenManager` auto-refresh        | Until disconnected or revoked                           |
 | User preferences                         | UserDefaults                                           | plist                               | Foundation                         | Permanent                                               |
 | Session logs                             | `~/Library/.../logs/session-*.json`                    | JSON per session                    | Swift Codable                      | Unbounded                                               |
-| Conversations & messages                 | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite + WAL                        | Drizzle ORM (Bun)                  | Permanent                                               |
-| Memory segments                          | `$VELLUM_WORKSPACE_DIR/data/db/assistant-memory.db`    | SQLite                              | Drizzle ORM                        | Permanent                                               |
-| Extracted facts                          | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent, deduped                                      |
-| Embeddings                               | `$VELLUM_WORKSPACE_DIR/data/db/assistant-memory.db`    | JSON float arrays                   | Drizzle ORM                        | Permanent                                               |
-| Async job queue                          | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Completed jobs persist                                  |
-| Attachments                              | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | Base64 in SQLite                    | Drizzle ORM                        | Permanent                                               |
-| Sandbox filesystem                       | `$VELLUM_WORKSPACE_DIR`                                | Real filesystem tree                | Node FS APIs                       | Persistent across sessions                              |
-| Tool permission rules                    | `~/.vellum/protected/trust.json`                       | JSON                                | File I/O                           | Permanent                                               |
+| Conversations & messages                 | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite + WAL                        | Drizzle ORM (Bun)                  | Permanent                                               |
+| Memory segments                          | `$CADET_WORKSPACE_DIR/data/db/assistant-memory.db`    | SQLite                              | Drizzle ORM                        | Permanent                                               |
+| Extracted facts                          | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent, deduped                                      |
+| Embeddings                               | `$CADET_WORKSPACE_DIR/data/db/assistant-memory.db`    | JSON float arrays                   | Drizzle ORM                        | Permanent                                               |
+| Async job queue                          | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Completed jobs persist                                  |
+| Attachments                              | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | Base64 in SQLite                    | Drizzle ORM                        | Permanent                                               |
+| Sandbox filesystem                       | `$CADET_WORKSPACE_DIR`                                | Real filesystem tree                | Node FS APIs                       | Persistent across sessions                              |
+| Tool permission rules                    | `~/.cadet/protected/trust.json`                       | JSON                                | File I/O                           | Permanent                                               |
 | Web users & assistants                   | PostgreSQL                                             | Relational                          | Drizzle ORM (pg)                   | Permanent                                               |
-| Media embed settings                     | `$VELLUM_WORKSPACE_DIR/config.json` (`ui.mediaEmbeds`) | JSON                                | `WorkspaceConfigIO` (atomic merge) | Permanent                                               |
+| Media embed settings                     | `$CADET_WORKSPACE_DIR/config.json` (`ui.mediaEmbeds`) | JSON                                | `WorkspaceConfigIO` (atomic merge) | Permanent                                               |
 | Media embed MIME cache                   | In-memory (`ImageMIMEProbe`)                           | `NSCache` (500 entries)             | HTTP HEAD                          | Ephemeral; cleared on app restart                       |
-| Tasks & task runs                        | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent                                               |
-| Work items (Task Queue)                  | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; archived items retained                      |
-| Recurrence schedules & runs              | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; supports cron and RRULE syntax               |
-| Watchers & events                        | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent, cascade on watcher delete                    |
+| Tasks & task runs                        | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent                                               |
+| Work items (Task Queue)                  | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; archived items retained                      |
+| Recurrence schedules & runs              | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; supports cron and RRULE syntax               |
+| Watchers & events                        | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent, cascade on watcher delete                    |
 | Proxy CA cert + key                      | `{dataDir}/proxy-ca/`                                  | PEM files (ca.pem, ca-key.pem)      | openssl CLI                        | Permanent (10-year validity)                            |
 | Proxy leaf certs                         | `{dataDir}/proxy-ca/issued/`                           | PEM files per hostname              | openssl CLI, cached                | 1-year validity, re-issued on CA change                 |
 | Proxy sessions                           | In-memory (SessionManager)                             | Map<ProxySessionId, ManagedSession> | Manual lifecycle                   | Ephemeral; 5min idle timeout, cleared on shutdown       |
-| Call sessions, events, pending questions | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent, cascade on session delete                    |
+| Call sessions, events, pending questions | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent, cascade on session delete                    |
 | Active call controllers                  | In-memory (CallState)                                  | Map<callSessionId, CallController>  | Manual lifecycle                   | Ephemeral; cleared on call end or destroy               |
-| Guardian bindings                        | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; revoked bindings retained                    |
-| Channel verification sessions            | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; consumed/expired sessions retained           |
-| Guardian approval requests               | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; decision outcome retained                    |
-| Contact invites                          | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; token hash stored, raw token never persisted |
-| Contacts & channels                      | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; revoked/blocked contacts retained            |
-| Notification events                      | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; deduplicated by dedupeKey                    |
-| Notification decisions                   | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; FK to notification_events                    |
-| Notification deliveries                  | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; FK to notification_decisions                 |
-| Notification preferences                 | `$VELLUM_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; per-assistant conversational preferences     |
+| Guardian bindings                        | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; revoked bindings retained                    |
+| Channel verification sessions            | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; consumed/expired sessions retained           |
+| Guardian approval requests               | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; decision outcome retained                    |
+| Contact invites                          | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; token hash stored, raw token never persisted |
+| Contacts & channels                      | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; revoked/blocked contacts retained            |
+| Notification events                      | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; deduplicated by dedupeKey                    |
+| Notification decisions                   | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; FK to notification_events                    |
+| Notification deliveries                  | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; FK to notification_decisions                 |
+| Notification preferences                 | `$CADET_WORKSPACE_DIR/data/db/assistant.db`           | SQLite                              | Drizzle ORM                        | Permanent; per-assistant conversational preferences     |
 
 ### Sensitive Tool Output Placeholder Substitution
 
 Some tool outputs contain values that must reach the user's final reply but should never be visible to the LLM (e.g., invite tokens). The system handles this with a three-stage pipeline:
 
-1. **Directive extraction** (`src/tools/sensitive-output-placeholders.ts`): Tool output may include `<vellum-sensitive-output kind="invite_code" value="<raw>" />` directives. The executor strips directives, replaces raw values with deterministic placeholders (`VELLUM_ASSISTANT_INVITE_CODE_<shortId>`), and attaches `sensitiveBindings` metadata to the tool result.
+1. **Directive extraction** (`src/tools/sensitive-output-placeholders.ts`): Tool output may include `<cadet-sensitive-output kind="invite_code" value="<raw>" />` directives. The executor strips directives, replaces raw values with deterministic placeholders (`CADET_ASSISTANT_INVITE_CODE_<shortId>`), and attaches `sensitiveBindings` metadata to the tool result.
 
 2. **Placeholder-only model context**: The agent loop stores placeholder->value bindings in a per-run `substitutionMap`. Tool results sent to the LLM contain only placeholders — the model generates conversational text referencing them without ever seeing the real values.
 
@@ -2203,7 +2203,7 @@ A parallel **client artifact** (`meta/tts-provider-catalog.json`) captures the s
 
 | Field                         | Type   | Default        | Description                                                                              |
 | ----------------------------- | ------ | -------------- | ---------------------------------------------------------------------------------------- |
-| `services.tts.provider`       | enum   | `"elevenlabs"` | Active TTS provider (must be a catalog-known provider ID); `"vellum"` = platform-managed |
+| `services.tts.provider`       | enum   | `"elevenlabs"` | Active TTS provider (must be a catalog-known provider ID); `"cadet"` = platform-managed |
 | `services.tts.providers.<id>` | object | _(defaults)_   | Provider-specific settings, one block per catalog entry                                  |
 
 Provider-specific config is nested under `services.tts.providers.<id>`. All legacy top-level keys (`elevenlabs.*`, `fishAudio.*`) were removed by workspace migration 032 — only canonical `services.tts` paths are supported at runtime.
@@ -2262,7 +2262,7 @@ No hardcoded enum edits are required — the `TtsProviderId` union in `types.ts`
 
 Managed cloud assistants use Bun's built-in CPU and heap profiling to capture runtime performance data. The profiler subsystem consists of a persistent on-disk run store, a retention/pruning sweep, and HTTP routes for remote management.
 
-**Bun profiler flags:** Managed containers activate profiling by setting `VELLUM_PROFILER_MODE` (e.g. `cpu`, `heap`, `cpu+heap`) and `VELLUM_PROFILER_RUN_ID` environment variables before boot. Bun writes profiler artifacts (`.cpuprofile`, `.heapsnapshot`, markdown summaries) into the run directory.
+**Bun profiler flags:** Managed containers activate profiling by setting `CADET_PROFILER_MODE` (e.g. `cpu`, `heap`, `cpu+heap`) and `CADET_PROFILER_RUN_ID` environment variables before boot. Bun writes profiler artifacts (`.cpuprofile`, `.heapsnapshot`, markdown summaries) into the run directory.
 
 **Directory contract:**
 
@@ -2276,15 +2276,15 @@ Managed cloud assistants use Bun's built-in CPU and heap profiling to capture ru
       *.heapsnapshot          — Bun heap profile output (when heap mode active)
 ```
 
-Each profiler run lives in its own sub-directory under `<workspace>/data/profiler/runs/<runId>/`. A `manifest.json` in each run directory records metadata: status (`active` or `completed`), creation/update timestamps, and total byte count. The active run (identified by `VELLUM_PROFILER_RUN_ID`) is never pruned.
+Each profiler run lives in its own sub-directory under `<workspace>/data/profiler/runs/<runId>/`. A `manifest.json` in each run directory records metadata: status (`active` or `completed`), creation/update timestamps, and total byte count. The active run (identified by `CADET_PROFILER_RUN_ID`) is never pruned.
 
 **Retention budgets:** On daemon startup and after explicit cleanup operations, the profiler sweep enforces three budgets:
 
 | Budget                                | Env var                       | Default |
 | ------------------------------------- | ----------------------------- | ------- |
-| Max total bytes across all runs       | `VELLUM_PROFILER_MAX_BYTES`   | 500 MB  |
-| Max number of completed runs retained | `VELLUM_PROFILER_MAX_RUNS`    | 10      |
-| Minimum free disk space               | `VELLUM_PROFILER_MIN_FREE_MB` | 200 MB  |
+| Max total bytes across all runs       | `CADET_PROFILER_MAX_BYTES`   | 500 MB  |
+| Max number of completed runs retained | `CADET_PROFILER_MAX_RUNS`    | 10      |
+| Minimum free disk space               | `CADET_PROFILER_MIN_FREE_MB` | 200 MB  |
 
 Completed runs are pruned oldest-first until all budgets are satisfied. The active run is never deleted, even if it alone exceeds the byte budget.
 

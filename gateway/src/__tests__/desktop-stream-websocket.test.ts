@@ -16,7 +16,7 @@ import {
 // The pin itself is covered in `guardian-pin.test.ts`; the binding is mocked
 // here only so the route can be shown to wire it in.
 mock.module("../auth/guardian-bootstrap.js", () => ({
-  findVellumGuardian: async () => ({ principalId: GUARDIAN_PRINCIPAL }),
+  findCadetGuardian: async () => ({ principalId: GUARDIAN_PRINCIPAL }),
 }));
 
 const {

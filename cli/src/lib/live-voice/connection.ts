@@ -21,7 +21,7 @@
  * `leaseGuardianToken` POSTs `/v1/guardian/init`, which resolves the *cadet*
  * guardian principal and mints an access token subject
  * `actor:<assistantId>:<guardianPrincipalId>`, the same principal
- * `findVellumGuardian()` returns on the other side of the check. So the pin
+ * `findCadetGuardian()` returns on the other side of the check. So the pin
  * passes by construction, and there is nothing new to provision here.
  */
 

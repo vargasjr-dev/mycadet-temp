@@ -44,7 +44,7 @@ const TTS_STREAM_PATH = "/v1/speech/tts/stream";
  * The platform's PCM format is fixed at 16 kHz, 16-bit LE mono — the
  * media-stream transcoder needs to know the rate regardless of hints.
  */
-const VELLUM_PCM_SAMPLE_RATE_HZ = 16_000;
+const CADET_PCM_SAMPLE_RATE_HZ = 16_000;
 
 type ManagedSpeechFailure = Extract<ManagedSpeechResult<never>, { ok: false }>;
 
@@ -126,7 +126,7 @@ async function performStreamingSynthesis(
   const params = new URLSearchParams({
     key: connection.mintServiceToken(),
     encoding: "linear16",
-    sample_rate: String(VELLUM_PCM_SAMPLE_RATE_HZ),
+    sample_rate: String(CADET_PCM_SAMPLE_RATE_HZ),
     // Deepgram defaults linear16 to a WAV container; the media-stream path
     // consumes headerless PCM, so RIFF header bytes would play as static.
     container: "none",
@@ -198,7 +198,7 @@ export function createCadetProvider(): TtsProvider {
     // Per the TtsProvider contract this returns undefined for non-PCM
     // output; the platform's PCM format is pinned to 16 kHz.
     resolveOutputSampleRateHz: (request) =>
-      request.outputFormat === "pcm" ? VELLUM_PCM_SAMPLE_RATE_HZ : undefined,
+      request.outputFormat === "pcm" ? CADET_PCM_SAMPLE_RATE_HZ : undefined,
     synthesize: performSynthesis,
     synthesizeStream: performStreamingSynthesis,
   };

@@ -22,12 +22,12 @@
  *
  * Authenticated-only: events are sent via the managed proxy context
  * (Api-Key header). When no platform credentials are available, or when
- * platform features are disabled (VELLUM_DISABLE_PLATFORM in local mode), the
+ * platform features are disabled (CADET_DISABLE_PLATFORM in local mode), the
  * flush is skipped and retried next cycle.
  */
 
 import { getPlatformOrganizationId, getPlatformUserId } from "../config/env.js";
-import { VellumPlatformClient } from "../platform/client.js";
+import { CadetPlatformClient } from "../platform/client.js";
 import { getRawShareAnalytics } from "../platform/consent-cache.js";
 import { arePlatformFeaturesEnabled } from "../platform/feature-gate.js";
 import { getDeviceId } from "../util/device-id.js";
@@ -120,7 +120,7 @@ function startReporterWithSources(
   sources: readonly TelemetryEventSource[],
   label: string,
 ): void {
-  if (process.env.VELLUM_DEV === "1") {
+  if (process.env.CADET_DEV === "1") {
     return;
   }
   if (_instance) {
@@ -133,7 +133,7 @@ function startReporterWithSources(
 
 /**
  * Construct and start the daemon's singleton telemetry reporter, flushing
- * the daemon-owned sources (turn events). No-op in dev mode (VELLUM_DEV=1)
+ * the daemon-owned sources (turn events). No-op in dev mode (CADET_DEV=1)
  * and idempotent if already started.
  *
  * Started even when share_analytics consent is opted out: flush() re-checks
@@ -150,7 +150,7 @@ function startReporterWithSources(
  * provide (the monitor boots concurrently with the daemon serving turns).
  */
 export function startUsageTelemetryReporter(): void {
-  if (process.env.VELLUM_DEV === "1") {
+  if (process.env.CADET_DEV === "1") {
     return;
   }
   initToolExecutedWatermarkIfAbsent(telemetryDbFlushCheckpointStore);
@@ -160,7 +160,7 @@ export function startUsageTelemetryReporter(): void {
 /**
  * Construct and start the resource monitor process's singleton telemetry
  * reporter, flushing every non-turn source off the daemon's event loop.
- * No-op in dev mode (VELLUM_DEV=1) and idempotent if already started.
+ * No-op in dev mode (CADET_DEV=1) and idempotent if already started.
  *
  * Switches this process's telemetry main-DB reads to the dedicated
  * read-only connection first: the monitor observes the daemon's main DB
@@ -169,7 +169,7 @@ export function startUsageTelemetryReporter(): void {
  * refresh loop the share_analytics gate reads.
  */
 export function startMonitorUsageTelemetryReporter(): void {
-  if (process.env.VELLUM_DEV === "1") {
+  if (process.env.CADET_DEV === "1") {
     return;
   }
   useReadOnlyMainDbForTelemetry();
@@ -257,7 +257,7 @@ export class UsageTelemetryReporter {
 
   start(): void {
     // Delay the first flush to allow the credential infrastructure (CES
-    // handshake) to complete. Without this delay, VellumPlatformClient.create()
+    // handshake) to complete. Without this delay, CadetPlatformClient.create()
     // returns null because the credential backend hasn't resolved yet, causing
     // the initial flush to be skipped (we send authenticated-only); the
     // delay lets credentials resolve so the first flush can actually ship.
@@ -338,9 +338,9 @@ export class UsageTelemetryReporter {
         }
       }
 
-      // Skip when platform features are disabled (VELLUM_DISABLE_PLATFORM in
+      // Skip when platform features are disabled (CADET_DISABLE_PLATFORM in
       // local mode; the flag is ignored when IS_PLATFORM is set, matching
-      // VellumPlatformClient.create()). Watermarks are NOT advanced here: this
+      // CadetPlatformClient.create()). Watermarks are NOT advanced here: this
       // is a deployment/local-mode toggle, not a privacy opt-out, so the unsent
       // backlog ships once the flag is cleared.
       if (!arePlatformFeaturesEnabled()) {
@@ -468,7 +468,7 @@ export class UsageTelemetryReporter {
       // Resolve auth context. We send authenticated-only: if no platform
       // credentials are available yet, skip without advancing watermarks so the
       // backlog ships on a later cycle once credentials resolve.
-      const client = await VellumPlatformClient.create();
+      const client = await CadetPlatformClient.create();
       if (!client) {
         log.debug(
           {

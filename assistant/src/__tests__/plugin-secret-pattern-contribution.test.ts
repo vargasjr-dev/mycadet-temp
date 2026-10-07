@@ -54,7 +54,7 @@ import { getPluginSecretPatterns } from "../security/plugin-secret-patterns.js";
 // on platforms where the tempdir is itself behind a symlink (macOS /var).
 const ROOT = join(
   realpathSync(tmpdir()),
-  `vellum-plugin-secret-pattern-contrib-test-${process.pid}-${Date.now()}`,
+  `cadet-plugin-secret-pattern-contrib-test-${process.pid}-${Date.now()}`,
 );
 
 const PLUGINS_DIR = join(ROOT, "plugins");
@@ -122,7 +122,7 @@ async function publishAndDispatch(): Promise<void> {
 // ─── Setup / teardown ────────────────────────────────────────────────────────
 
 beforeAll(() => {
-  process.env.VELLUM_WORKSPACE_DIR = ROOT;
+  process.env.CADET_WORKSPACE_DIR = ROOT;
 });
 
 beforeEach(() => {

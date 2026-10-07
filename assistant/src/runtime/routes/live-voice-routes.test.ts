@@ -70,7 +70,7 @@ describe("live_voice_preflight_post", () => {
     readiness = {
       status: "not-ready",
       missing: [
-        { kind: "tts", providerId: "vellum", reason: "needs a connection" },
+        { kind: "tts", providerId: "cadet", reason: "needs a connection" },
       ],
       userMessage: "Live voice is unavailable because it requires X.",
     };

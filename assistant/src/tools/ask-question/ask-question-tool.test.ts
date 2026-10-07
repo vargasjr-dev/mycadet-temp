@@ -987,7 +987,7 @@ test("desktop help does not park on a guardian channel without desktop controls"
     }),
   );
   expect(result.isError).toBe(true);
-  expect(result.content).toContain("continue in the Vellum app");
+  expect(result.content).toContain("continue in the Cadet app");
   expect(prepareDesktopHelp).not.toHaveBeenCalled();
   expect(calls).toHaveLength(0);
 });

@@ -1,7 +1,7 @@
 /**
  * Tests for the HTTP adapter's passthrough primitives: wire-exact `rawUrl`,
  * unparsed `rawBody` under `rawRequestBody`, and the verified
- * `x-vellum-subject` header.
+ * `x-cadet-subject` header.
  *
  * A proxy handler forwards what the caller actually sent, so the adapter must
  * not normalize the URL, parse the body, or trust a caller-supplied subject.
@@ -38,7 +38,7 @@ function echoRoute(rawRequestBody?: boolean): RouteDefinition {
       rawPathname: rawUrl?.pathname ?? null,
       rawSearch: rawUrl?.search ?? null,
       queryParams: queryParams ?? {},
-      subject: headers?.["x-vellum-subject"] ?? null,
+      subject: headers?.["x-cadet-subject"] ?? null,
     }),
   };
 }
@@ -165,7 +165,7 @@ describe("http-adapter subject header", () => {
     const result = await invokeEcho({
       contentType: "application/json",
       body: JSON.stringify({}),
-      requestHeaders: { "x-vellum-subject": "local:self:spoofed" },
+      requestHeaders: { "x-cadet-subject": "local:self:spoofed" },
       authContext: buildAuthContext({ subject: "local:self:abc" }),
     });
 

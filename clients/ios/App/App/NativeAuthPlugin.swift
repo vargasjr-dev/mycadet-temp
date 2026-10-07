@@ -48,23 +48,23 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
     /// none, so a misconfigured build still reaches a working callback rather
     /// than failing sign-in; unlike a voice deep link, this is not a cross-app
     /// launch.
-    private static let callbackScheme: String = BundleURLScheme.current ?? "vellum-assistant"
+    private static let callbackScheme: String = BundleURLScheme.current ?? "mycadet"
 
     /// The host this build target is allowed to authenticate against,
-    /// read from the `VellumAssociatedDomain` Info.plist key (set per
+    /// read from the `CadetAssociatedDomain` Info.plist key (set per
     /// target via `ASSOCIATED_DOMAIN` in xcconfig). Falls back to
-    /// `www.vellum.ai` if the plist entry is missing or un-substituted.
+    /// `mycadet.ai` if the plist entry is missing or un-substituted.
     ///
     /// This prevents non-prod builds from driving production SSO:
-    /// a dev build's associated domain is `dev-assistant.vellum.ai`,
-    /// so `startAuth({ baseURL: "https://www.vellum.ai" })` is rejected.
+    /// a dev build's associated domain is `dev.cloud.mycadet.ai`,
+    /// so `startAuth({ baseURL: "https://mycadet.ai" })` is rejected.
     /// See ATL-425.
     private static let allowedAuthHost: String = {
-        guard let domain = Bundle.main.infoDictionary?["VellumAssociatedDomain"] as? String,
+        guard let domain = Bundle.main.infoDictionary?["CadetAssociatedDomain"] as? String,
               !domain.isEmpty,
               !domain.contains("$")
         else {
-            return "www.vellum.ai"
+            return "mycadet.ai"
         }
         return domain.lowercased()
     }()
@@ -80,7 +80,7 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
         }
         // Defense in depth: this value is sourced from
         // `window.location.origin` inside the Capacitor shell today, so it's
-        // always a vellum.ai host. Validating here means a compromised web
+        // always a mycadet.ai host. Validating here means a compromised web
         // bundle or rogue plugin call can't trick the user into
         // authenticating against a phishing login page rendered inside the
         // system auth sheet — the sheet shows the URL, but a plausible-
@@ -428,11 +428,11 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
 
     /// True only if `url`'s host exactly matches this build target's
     /// `ASSOCIATED_DOMAIN` (read from Info.plist at launch). A dev build
-    /// only authenticates against `dev-assistant.vellum.ai`, staging
-    /// against `staging-assistant.vellum.ai`, and production against
-    /// `www.vellum.ai`. This is the primary defense against ATL-425:
+    /// only authenticates against `dev.cloud.mycadet.ai`, staging
+    /// against `staging.cloud.mycadet.ai`, and production against
+    /// `mycadet.ai`. This is the primary defense against ATL-425:
     /// non-prod JS cannot drive production SSO because the host check
-    /// rejects `www.vellum.ai` in non-prod builds.
+    /// rejects `mycadet.ai` in non-prod builds.
     private static func isAllowedBaseURL(_ url: URL) -> Bool {
         guard let host = url.host?.lowercased(), !host.isEmpty else { return false }
         return host == allowedAuthHost

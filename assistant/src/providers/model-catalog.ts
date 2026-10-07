@@ -54,7 +54,7 @@ export interface CatalogModel {
    * When true, the model predates adaptive thinking and rejects
    * `thinking: { type: "adaptive" }` (Anthropic 400s such calls). It only
    * supports the legacy `{ type: "enabled", budget_tokens }` form, which
-   * Vellum never sends. The daemon drops an enabled thinking config for these
+   * Cadet never sends. The daemon drops an enabled thinking config for these
    * models before dispatching to the Anthropic wire. Mutually exclusive with
    * `adaptiveThinkingOnly`.
    */
@@ -94,7 +94,7 @@ export interface CatalogModel {
   pricing?: CatalogModelPricing;
   /**
    * Upper bound for `reasoning_effort` accepted by this model's upstream API.
-   * Used by providers (e.g. Fireworks) to clamp Vellum's `xhigh`/`max` tiers
+   * Used by providers (e.g. Fireworks) to clamp Cadet's `xhigh`/`max` tiers
    * down to whatever the model documents. Omit to inherit the provider
    * default.
    */
@@ -163,10 +163,10 @@ export interface ProviderCatalogEntry {
     linkLabel: string;
   };
   /**
-   * Whether this provider supports the `platform` auth type (Vellum-managed
+   * Whether this provider supports the `platform` auth type (Cadet-managed
    * keys routed through the platform proxy). Derived from
    * `PLATFORM_PROVIDER_META` at catalog build time so the two stay in lock
-   * step. Clients use this field to hide the "Platform (managed by Vellum)"
+   * step. Clients use this field to hide the "Platform (managed by Cadet)"
    * option from the auth-type dropdown for providers like Fireworks or
    * OpenRouter where managed keys are not available.
    */
@@ -1871,7 +1871,7 @@ const RAW_PROVIDER_CATALOG: ProviderCatalogEntry[] = [
         supportsVision: true,
         supportsToolUse: true,
         // xAI's Grok 4.5 API accepts only low|medium|high reasoning effort;
-        // clamp Vellum's xhigh/max tiers down so inherited efforts don't 4xx.
+        // clamp Cadet's xhigh/max tiers down so inherited efforts don't 4xx.
         maxEffort: "high",
         pricing: {
           inputPer1mTokens: 2,
@@ -2974,7 +2974,7 @@ export const PROMPT_CACHE_BREAKPOINT_MODEL_IDS: ReadonlySet<string> = new Set(
  * Per-model `reasoning_effort` ceilings for a provider, keyed by model ID and
  * derived from each model's `maxEffort`. Providers whose per-model APIs accept
  * a narrower effort range than the provider default (e.g. Fireworks, OpenRouter)
- * consult this in `resolveMaxReasoningEffort` to clamp Vellum's xhigh/max tiers
+ * consult this in `resolveMaxReasoningEffort` to clamp Cadet's xhigh/max tiers
  * down. Models without `maxEffort` are absent and inherit the provider default.
  */
 export function modelEffortCeilings(

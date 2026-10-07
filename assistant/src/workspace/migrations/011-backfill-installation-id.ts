@@ -93,8 +93,8 @@ export const backfillInstallationIdMigration: WorkspaceMigration = {
     //    platform.ts — the lockfile is a per-user file, not per-instance.
     const home = homedir();
     const lockCandidates = [
-      join(home, ".vellum.lock.json"),
-      join(home, ".vellum.lockfile.json"),
+      join(home, ".cadet.lock.json"),
+      join(home, ".cadet.lockfile.json"),
     ];
 
     let lockPath: string | undefined;
@@ -119,7 +119,7 @@ export const backfillInstallationIdMigration: WorkspaceMigration = {
     }
 
     // c. Find the assistant entry that corresponds to this daemon instance.
-    //    The external assistant ID comes from the VELLUM_ASSISTANT_NAME env
+    //    The external assistant ID comes from the CADET_ASSISTANT_NAME env
     //    var, set by CLI hatch and Docker setup.
     const assistants = lockData.assistants as
       | Array<Record<string, unknown>>
@@ -128,7 +128,7 @@ export const backfillInstallationIdMigration: WorkspaceMigration = {
       return;
     }
 
-    const externalId = process.env.VELLUM_ASSISTANT_NAME || undefined;
+    const externalId = process.env.CADET_ASSISTANT_NAME || undefined;
     const entry = assistants.find((a) => a.assistantId === externalId);
     if (!entry) {
       return;

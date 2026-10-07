@@ -22,7 +22,7 @@
 import { execFileSync } from "node:child_process";
 
 const DEFAULT_PORT = 5173;
-const port = Number(process.argv[2] ?? process.env.VELLUM_DEV_PORT ?? DEFAULT_PORT);
+const port = Number(process.argv[2] ?? process.env.CADET_DEV_PORT ?? DEFAULT_PORT);
 
 /** PIDs currently LISTENing on the port, or [] if none / lookup failed. */
 function listenersOn(p: number): number[] {

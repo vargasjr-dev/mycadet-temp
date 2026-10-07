@@ -99,13 +99,13 @@ export interface GuardianBootstrapResult {
  * would permanently diverge from prior clients' tokens. Recovery is the
  * explicit /v1/guardian/init flow.
  */
-export class VellumGuardianMintRefusedError extends Error {
+export class CadetGuardianMintRefusedError extends Error {
   constructor() {
     super(
       "refusing to mint a cadet guardian principal: the gateway DB has " +
         "evidence of a prior guardian — re-pair via guardian init to recover",
     );
-    this.name = "VellumGuardianMintRefusedError";
+    this.name = "CadetGuardianMintRefusedError";
   }
 }
 
@@ -150,7 +150,7 @@ function uuid(): string {
 
 export function getExternalAssistantId(): string {
   return (
-    process.env.VELLUM_ASSISTANT_NAME?.trim() || DAEMON_INTERNAL_ASSISTANT_ID
+    process.env.CADET_ASSISTANT_NAME?.trim() || DAEMON_INTERNAL_ASSISTANT_ID
   );
 }
 
@@ -159,10 +159,10 @@ export function getExternalAssistantId(): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Find the existing guardian contact for the "vellum" channel.
- * Mirrors assistant's `findGuardianForChannel("vellum")`.
+ * Find the existing guardian contact for the "cadet" channel.
+ * Mirrors assistant's `findGuardianForChannel("cadet")`.
  */
-export async function findVellumGuardian(): Promise<{
+export async function findCadetGuardian(): Promise<{
   principalId: string;
 } | null> {
   const row = getGatewayDb()
@@ -175,7 +175,7 @@ export async function findVellumGuardian(): Promise<{
     .where(
       and(
         eq(gwContacts.role, "guardian"),
-        eq(gwContactChannels.type, "vellum"),
+        eq(gwContactChannels.type, "cadet"),
         eq(gwContactChannels.status, "active"),
       ),
     )
@@ -278,7 +278,7 @@ export function recoverGuardianPrincipalFromActorTokens(): string | null {
 // ---------------------------------------------------------------------------
 
 export interface CreateGuardianBindingParams {
-  /** Channel type (e.g. "vellum", "telegram", "slack", "phone", "whatsapp"). */
+  /** Channel type (e.g. "cadet", "telegram", "slack", "phone", "whatsapp"). */
   channel: string;
   /** Canonical external user ID for this channel (pre-canonicalized by caller). */
   externalUserId: string;
@@ -844,7 +844,7 @@ function mintAccessToken(
   const sub = `actor:${externalAssistantId}:${guardianPrincipalId}`;
 
   const token = mintToken({
-    aud: "vellum-gateway",
+    aud: "cadet-gateway",
     sub,
     scope_profile: SCOPE_PROFILE_BY_ROLE[role],
     policy_epoch: CURRENT_POLICY_EPOCH,
@@ -1103,7 +1103,7 @@ async function fetchPlatformOwnerDisplayName(): Promise<string | null> {
  *  - Only ACTIVE tokens are recovered, so a properly offboarded (revoked)
  *    guardian is never brought back.
  */
-async function recoverAbsentVellumGuardianFromActorTokens(): Promise<
+async function recoverAbsentCadetGuardianFromActorTokens(): Promise<
   string | null
 > {
   if (hasGuardianContactWithPrincipal()) {
@@ -1114,7 +1114,7 @@ async function recoverAbsentVellumGuardianFromActorTokens(): Promise<
     return null;
   }
   await createGuardianBinding({
-    channel: "vellum",
+    channel: "cadet",
     externalUserId: recoveredPrincipalId,
     deliveryChatId: "local",
     guardianPrincipalId: recoveredPrincipalId,
@@ -1135,7 +1135,7 @@ async function recoverAbsentVellumGuardianFromActorTokens(): Promise<
  * Resolve the cadet guardian principal: (a) gateway fast path, then
  * (b) mint a fresh principal when the gateway has no guardian.
  *
- * Shared by ensureVellumGuardianBinding + bootstrapGuardian. `isNew` is true
+ * Shared by ensureCadetGuardianBinding + bootstrapGuardian. `isNew` is true
  * only on the mint path.
  *
  * A gateway miss with evidence of a prior guardian (guardian-integrity.ts)
@@ -1143,9 +1143,9 @@ async function recoverAbsentVellumGuardianFromActorTokens(): Promise<
  * mint there would permanently diverge from prior clients' tokens. Only the
  * explicit operator-driven guardian init may mint over evidence
  * (`allowMintWithEvidence`); implicit paths throw
- * {@link VellumGuardianMintRefusedError} instead.
+ * {@link CadetGuardianMintRefusedError} instead.
  */
-async function resolveOrCreateVellumGuardian(options: {
+async function resolveOrCreateCadetGuardian(options: {
   allowMintWithEvidence: boolean;
   /**
    * Boot-time backfill only: when the gateway has no cadet guardian binding
@@ -1160,7 +1160,7 @@ async function resolveOrCreateVellumGuardian(options: {
   isNew: boolean;
   mintedOverPriorEvidence: boolean;
 }> {
-  const gw = await findVellumGuardian();
+  const gw = await findCadetGuardian();
   if (gw) {
     log.debug(
       { guardianPrincipalId: gw.principalId },
@@ -1175,12 +1175,12 @@ async function resolveOrCreateVellumGuardian(options: {
 
   // Boot-time self-heal: recover an absent guardian from the gateway's own
   // active actor tokens before the evidence-based refusal below. The full
-  // safety contract lives on recoverAbsentVellumGuardianFromActorTokens.
+  // safety contract lives on recoverAbsentCadetGuardianFromActorTokens.
   // Runtime token/pairing callers leave recoverFromActorTokens off and stay
   // fail-closed (repairable 401/503), so the boot backfill is the single
   // self-heal seam.
   if (options.recoverFromActorTokens) {
-    const recovered = await recoverAbsentVellumGuardianFromActorTokens();
+    const recovered = await recoverAbsentCadetGuardianFromActorTokens();
     if (recovered) {
       return {
         guardianPrincipalId: recovered,
@@ -1209,7 +1209,7 @@ async function resolveOrCreateVellumGuardian(options: {
     log.error(
       "no active cadet guardian binding but the gateway DB carries evidence of prior onboarding — refusing to mint a divergent principal; re-pair via guardian init to recover",
     );
-    throw new VellumGuardianMintRefusedError();
+    throw new CadetGuardianMintRefusedError();
   }
   if (priorEvidence) {
     log.warn(
@@ -1219,9 +1219,9 @@ async function resolveOrCreateVellumGuardian(options: {
 
   // No gateway guardian — mint a fresh principal.
   const displayName = await fetchPlatformOwnerDisplayName();
-  const guardianPrincipalId = `vellum-principal-${uuid()}`;
+  const guardianPrincipalId = `cadet-principal-${uuid()}`;
   await createGuardianBinding({
-    channel: "vellum",
+    channel: "cadet",
     externalUserId: guardianPrincipalId,
     deliveryChatId: "local",
     guardianPrincipalId,
@@ -1243,7 +1243,7 @@ async function resolveOrCreateVellumGuardian(options: {
  * Ensure a cadet guardian binding exists, returning its principalId.
  * Resolves from the gateway DB, minting a fresh principal on a miss — unless
  * the DB carries evidence of a prior guardian, in which case it throws
- * {@link VellumGuardianMintRefusedError}. Every caller must handle that
+ * {@link CadetGuardianMintRefusedError}. Every caller must handle that
  * refusal explicitly: the startup backfill degrades boot non-fatally
  * (post-assistant-ready), /auth/token maps it to a repairable 401
  * (`guardian_repair_required`), and the remote-web pairing route to a 503
@@ -1257,10 +1257,10 @@ async function resolveOrCreateVellumGuardian(options: {
  * from its own tokens instead of refusing. Runtime callers leave it off and
  * keep their fail-closed repair path.
  */
-export async function ensureVellumGuardianBinding(
+export async function ensureCadetGuardianBinding(
   opts: { recoverFromActorTokens?: boolean } = {},
 ): Promise<string> {
-  const { guardianPrincipalId } = await resolveOrCreateVellumGuardian({
+  const { guardianPrincipalId } = await resolveOrCreateCadetGuardian({
     allowMintWithEvidence: false,
     recoverFromActorTokens: opts.recoverFromActorTokens ?? false,
   });
@@ -1300,7 +1300,7 @@ export async function bootstrapGuardian(params: {
   //    sanctioned operator-driven recovery path, so it may mint over evidence
   //    of a prior guardian (loud warn inside).
   const { guardianPrincipalId, isNew, mintedOverPriorEvidence } =
-    await resolveOrCreateVellumGuardian({ allowMintWithEvidence: true });
+    await resolveOrCreateCadetGuardian({ allowMintWithEvidence: true });
 
   // 2. Revoke existing credentials for this device and mint a fresh pair.
   const pair = mintAndRecordDeviceBoundTokenPair({

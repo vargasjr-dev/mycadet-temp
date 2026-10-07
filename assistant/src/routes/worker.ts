@@ -3,7 +3,7 @@
  *
  * A dedicated OS process that runs user-defined `/x/*` route handlers off the
  * daemon, receiving invocations from the daemon over a Unix domain socket at
- * `$VELLUM_WORKSPACE_DIR/procs/routes/routes.sock`. Because it's a separate
+ * `$CADET_WORKSPACE_DIR/procs/routes/routes.sock`. Because it's a separate
  * process, a handler that blocks synchronously pins only this process (the
  * daemon stays responsive), and a wedged handler can be reclaimed with a hard
  * `kill` — the guarantee a worker thread could not give on Bun.

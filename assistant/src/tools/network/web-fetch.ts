@@ -762,7 +762,7 @@ export async function executeWebFetch(
       "Accept-Encoding": "identity",
       "User-Agent":
         process.env.HTTP_USER_AGENT ||
-        "VellumAssistant/1.0 (+https://vellum.ai)",
+        "CadetAssistant/1.0 (+https://mycadet.ai)",
     };
 
     let response: Response | null = null;
@@ -1315,7 +1315,7 @@ export async function executeFirecrawlCompatScrape(
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "X-Client-Source": "vellum-assistant",
+    "X-Client-Source": "mycadet",
   };
   const trimmedKey = options.apiKey.trim();
   if (trimmedKey.length > 0) {

@@ -126,7 +126,7 @@ export async function run(
   }
   // Backend and managed-ness resolve together: an explicit model re-routes
   // to the model's backend (e.g. `gpt-image-2` under a gemini config routes
-  // to OpenAI), and provider "vellum" runs managed with a model-derived
+  // to OpenAI), and provider "cadet" runs managed with a model-derived
   // backend.
   const { backendProvider: provider, managed } = resolveImageGenRouting(
     svc,
@@ -234,7 +234,7 @@ export async function run(
       content += ` Saved to:\n${savedPaths.map((p) => `- ${p}`).join("\n")}`;
     }
     if (savedPaths.length > 0) {
-      content += `\n\nShow the user an image by embedding it in your reply: ![description](vellum://workspace/${savedPaths[0]}). To iterate on a result, pass its saved path via source_paths with mode "edit".`;
+      content += `\n\nShow the user an image by embedding it in your reply: ![description](cadet://workspace/${savedPaths[0]}). To iterate on a result, pass its saved path via source_paths with mode "edit".`;
     }
     if (saveError) {
       content += `\n\nCould not save to the workspace (${saveError}); the image${imageCount !== 1 ? "s" : ""} will be attached to your reply automatically instead.`;

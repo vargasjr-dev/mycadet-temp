@@ -101,14 +101,14 @@ describe("startCes", () => {
 
     // Create the socket file asynchronously after startCes unlinks it.
     // We use a small setTimeout to create it during the wait loop.
-    const vellumDir = join(tempDir, ".vellum");
-    mkdirSync(vellumDir, { recursive: true });
+    const cadetDir = join(tempDir, ".cadet");
+    mkdirSync(cadetDir, { recursive: true });
 
     // Pre-create the socket so it exists when startCes checks after unlinking.
     // startCes unlinks the stale socket, then polls for it. We create it with
     // a slight delay so the poll catches it.
     setTimeout(() => {
-      const socketDir = join(vellumDir, "protected", "credential-executor");
+      const socketDir = join(cadetDir, "protected", "credential-executor");
       mkdirSync(socketDir, { recursive: true });
       writeFileSync(join(socketDir, "ces.sock"), "");
     }, 50);
@@ -129,13 +129,13 @@ describe("startCes", () => {
     // Verify env vars
     const env = lastSpawnCall!.options.env!;
     expect(env["CES_BOOTSTRAP_SOCKET_DIR"]).toBe(
-      join(tempDir, ".vellum", "protected", "credential-executor"),
+      join(tempDir, ".cadet", "protected", "credential-executor"),
     );
     expect(env["CREDENTIAL_SECURITY_DIR"]).toBeDefined();
-    expect(env["VELLUM_WORKSPACE_DIR"]).toBeDefined();
+    expect(env["CADET_WORKSPACE_DIR"]).toBeDefined();
 
     // Verify PID file was written
-    const cesPidFile = join(vellumDir, "ces.pid");
+    const cesPidFile = join(cadetDir, "ces.pid");
     expect(existsSync(cesPidFile)).toBe(true);
   }, 15_000);
   test("uses a Windows named pipe for the local CES seam", () => {
@@ -144,7 +144,7 @@ describe("startCes", () => {
     } as Parameters<typeof resolveCesSocketPath>[0];
 
     const socketPath = resolveCesSocketPath(resources, "win32");
-    expect(socketPath.startsWith("\\\\.\\pipe\\vellum-ces-")).toBe(true);
+    expect(socketPath.startsWith("\\\\.\\pipe\\cadet-ces-")).toBe(true);
     expect(socketPath).not.toContain("Example");
   });
 
@@ -158,7 +158,7 @@ describe("startCes", () => {
       resolveIpcEndpoint("ces", {
         workspaceDir: join(
           "/tmp/assistant-123",
-          ".vellum",
+          ".cadet",
           "protected",
           "credential-executor",
         ),

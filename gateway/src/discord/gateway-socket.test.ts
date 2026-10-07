@@ -162,7 +162,7 @@ function ready(ws: FakeSocket): void {
     d: {
       session_id: "sess-1",
       resume_gateway_url: "wss://resume.test",
-      user: { id: "bot-1", username: "vellum" },
+      user: { id: "bot-1", username: "cadet" },
     },
   });
 }

@@ -12,10 +12,10 @@ import {
 type Listener = (...args: unknown[]) => void;
 
 const listeners = new Map<string, Listener>();
-const invoke = mock(() => Promise.resolve(["C:\\例.vellum"]));
+const invoke = mock(() => Promise.resolve(["C:\\例.cadet"]));
 const send = mock(() => undefined);
 const off = mock(() => undefined);
-const getPathForFile = mock(() => "C:\\Projects\\例.vellum");
+const getPathForFile = mock(() => "C:\\Projects\\例.cadet");
 
 mock.module("electron", () => ({
   ipcRenderer: {
@@ -35,9 +35,9 @@ pathsModule.install(registry);
 const bridge = registry.build();
 
 test("resolves only native File paths and returns null when unavailable", () => {
-  const file = new File(["bundle"], "例.vellum");
+  const file = new File(["bundle"], "例.cadet");
 
-  expect(bridge.paths?.getPathForFile(file)).toBe("C:\\Projects\\例.vellum");
+  expect(bridge.paths?.getPathForFile(file)).toBe("C:\\Projects\\例.cadet");
   getPathForFile.mockImplementationOnce(() => "");
   expect(bridge.paths?.getPathForFile(file)).toBeNull();
   getPathForFile.mockImplementationOnce(() => {
@@ -47,15 +47,15 @@ test("resolves only native File paths and returns null when unavailable", () => 
 });
 
 test("drains and subscribes through the committed file-open bridge", async () => {
-  expect(await bridge.fileOpen?.drain()).toEqual(["C:\\例.vellum"]);
+  expect(await bridge.fileOpen?.drain()).toEqual(["C:\\例.cadet"]);
   expect(invoke).toHaveBeenCalledWith(FILE_OPEN_DRAIN);
 
   const received: string[] = [];
   const unsubscribe = bridge.fileOpen?.onFile((filePath) => {
     received.push(filePath);
   });
-  listeners.get(FILE_OPEN_EVENT)?.({}, "C:\\live.vellum");
-  expect(received).toEqual(["C:\\live.vellum"]);
+  listeners.get(FILE_OPEN_EVENT)?.({}, "C:\\live.cadet");
+  expect(received).toEqual(["C:\\live.cadet"]);
   expect(send).toHaveBeenCalledWith(FILE_OPEN_SUBSCRIBE);
 
   unsubscribe?.();

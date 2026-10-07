@@ -75,11 +75,11 @@ function sourceTypeCondition(sourceType: string) {
     return eq(guardianRequests.sourceChannel, "phone");
   }
   if (sourceType === "desktop") {
-    return eq(guardianRequests.sourceChannel, "vellum");
+    return eq(guardianRequests.sourceChannel, "cadet");
   }
   return or(
     isNull(guardianRequests.sourceChannel),
-    notInArray(guardianRequests.sourceChannel, ["phone", "vellum"]),
+    notInArray(guardianRequests.sourceChannel, ["phone", "cadet"]),
   );
 }
 

@@ -158,7 +158,7 @@ async function handleSlackChannelNameResolve({
   updateExternalChatName(conversationId, channelName);
   await publishSyncInvalidation(
     [SYNC_TAGS.conversationsList, conversationMetadataSyncTag(conversationId)],
-    headers?.["x-vellum-client-id"]?.trim() || undefined,
+    headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
 
   return {

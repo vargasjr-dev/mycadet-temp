@@ -152,7 +152,7 @@ describe("local CES standalone sibling (real entrypoint)", () => {
     const env: Record<string, string | undefined> = {
       ...process.env,
       CREDENTIAL_SECURITY_DIR: securityDir,
-      VELLUM_WORKSPACE_DIR: workspaceDir,
+      CADET_WORKSPACE_DIR: workspaceDir,
       CES_BOOTSTRAP_SOCKET_DIR: bootstrapDir,
     };
 

@@ -113,13 +113,13 @@ export function isCompletionRecipientUnavailable(
   const ownedCompletion = hasCompletionOwnership(event);
   if (
     ownedCompletion &&
-    destination.channel !== "vellum" &&
+    destination.channel !== "cadet" &&
     destination.channel !== "platform"
   ) {
     return true;
   }
   const requiresRecipient =
     ownedCompletion ||
-    (destination.channel === "vellum" && isCompletionNotification(event));
+    (destination.channel === "cadet" && isCompletionNotification(event));
   return requiresRecipient && !resolveCompletionRecipient(event, destination);
 }

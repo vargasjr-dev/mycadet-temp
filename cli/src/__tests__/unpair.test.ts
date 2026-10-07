@@ -16,7 +16,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const testDir = mkdtempSync(join(tmpdir(), "unpair-test-"));
-const ORIGINAL_LOCKFILE_DIR = process.env.VELLUM_LOCKFILE_DIR;
+const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ARGV = [...process.argv];
 
@@ -72,15 +72,15 @@ async function runUnpair(): Promise<{ exited: boolean; errors: string }> {
 
 describe("cadet unpair", () => {
   beforeEach(() => {
-    process.env.VELLUM_LOCKFILE_DIR = testDir;
+    process.env.CADET_LOCKFILE_DIR = testDir;
     process.env.XDG_CONFIG_HOME = testDir;
   });
 
   afterEach(() => {
     process.argv = [...ORIGINAL_ARGV];
     if (ORIGINAL_LOCKFILE_DIR === undefined)
-      delete process.env.VELLUM_LOCKFILE_DIR;
-    else process.env.VELLUM_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
+    else process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
     if (ORIGINAL_CONFIG_HOME === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = ORIGINAL_CONFIG_HOME;
   });
@@ -102,7 +102,7 @@ describe("cadet unpair", () => {
     expect(loadGuardianToken("px")).not.toBeNull();
 
     // Non-interactive test env → use --yes to bypass the confirmation prompt.
-    process.argv = ["bun", "vellum", "unpair", "px", "--yes"];
+    process.argv = ["bun", "cadet", "unpair", "px", "--yes"];
     const { exited } = await runUnpair();
 
     expect(exited).toBe(false);
@@ -120,7 +120,7 @@ describe("cadet unpair", () => {
     });
     seedToken("py");
 
-    process.argv = ["bun", "vellum", "unpair", "py"]; // no --yes
+    process.argv = ["bun", "cadet", "unpair", "py"]; // no --yes
     const { exited, errors } = await runUnpair();
 
     expect(exited).toBe(true);
@@ -138,7 +138,7 @@ describe("cadet unpair", () => {
       cloud: "local",
     });
 
-    process.argv = ["bun", "vellum", "unpair", "desk"];
+    process.argv = ["bun", "cadet", "unpair", "desk"];
     const { exited, errors } = await runUnpair();
 
     expect(exited).toBe(true);
@@ -147,7 +147,7 @@ describe("cadet unpair", () => {
   });
 
   test("errors on an unknown name", async () => {
-    process.argv = ["bun", "vellum", "unpair", "nope"];
+    process.argv = ["bun", "cadet", "unpair", "nope"];
     const { exited } = await runUnpair();
     expect(exited).toBe(true);
   });

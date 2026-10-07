@@ -37,7 +37,7 @@ function db(): Database {
 // against the in-memory mirror instead of being skipped as unreachable.
 const TEST_SOCKET_PATH = join(
   tmpdir(),
-  `vellum-guardian-binding-reuse-test-${process.pid}.sock`,
+  `cadet-guardian-binding-reuse-test-${process.pid}.sock`,
 );
 mock.module("../ipc/endpoint.js", () => ({
   resolveIpcSocketPath: () => ({ path: TEST_SOCKET_PATH }),
@@ -335,7 +335,7 @@ describe("createGuardianBinding id resolution", () => {
 
   // Adopting the row would rewrite the contact to role guardian, leaving a
   // principal that still holds a credential resolving as the guardian.
-  function seedContactHoldingVellumAddress(): void {
+  function seedContactHoldingCadetAddress(): void {
     seedGwGuardianContact();
     getGatewayDb()
       .insert(contacts)
@@ -353,7 +353,7 @@ describe("createGuardianBinding id resolution", () => {
       .values({
         id: "contact-channel",
         contactId: "contact-with-principal",
-        type: "vellum",
+        type: "cadet",
         address: "contact-principal",
         isPrimary: true,
         status: "active",
@@ -408,7 +408,7 @@ describe("createGuardianBinding id resolution", () => {
 
   function bindGuardianToContactAddress() {
     return createGuardianBinding({
-      channel: "vellum",
+      channel: "cadet",
       externalUserId: "contact-principal",
       deliveryChatId: "local",
       guardianPrincipalId: "guardian-principal",
@@ -425,7 +425,7 @@ describe("createGuardianBinding id resolution", () => {
   }
 
   test("refuses an address held by a contact with an unexpired access token", async () => {
-    seedContactHoldingVellumAddress();
+    seedContactHoldingCadetAddress();
     seedContactAccessToken(Date.now() + 86_400_000);
 
     await expect(bindGuardianToContactAddress()).rejects.toBeInstanceOf(
@@ -438,7 +438,7 @@ describe("createGuardianBinding id resolution", () => {
   });
 
   test("refuses an address held by a contact whose only credential is a refresh token", async () => {
-    seedContactHoldingVellumAddress();
+    seedContactHoldingCadetAddress();
     seedContactRefreshToken();
 
     await expect(bindGuardianToContactAddress()).rejects.toBeInstanceOf(
@@ -450,7 +450,7 @@ describe("createGuardianBinding id resolution", () => {
   test("adopts an address whose contact holds only expired credentials", async () => {
     // Expiry, not row status, decides: an expired access row keeps status
     // 'active', so status alone would block adoption forever.
-    seedContactHoldingVellumAddress();
+    seedContactHoldingCadetAddress();
     seedContactAccessToken(Date.now() - 1000);
 
     await expect(bindGuardianToContactAddress()).resolves.toBeDefined();
@@ -595,7 +595,7 @@ describe("createGuardianBinding id resolution", () => {
         `INSERT INTO assistant_contact_metadata (contact_id, species, metadata)
          VALUES (?, ?, ?)`,
       )
-      .run("seed-contact", "vellum", "{}");
+      .run("seed-contact", "cadet", "{}");
 
     await createGuardianBinding({
       channel: "slack",

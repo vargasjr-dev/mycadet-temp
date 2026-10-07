@@ -110,7 +110,7 @@ const generateLocalSigningKeyMock = mock<typeof local.generateLocalSigningKey>(
 const ensureLocalRuntimeMock = mock<typeof local.ensureLocalRuntime>(
   (resources, version) => ({
     version,
-    installDir: join(resources.instanceDir, ".vellum", "runtime", version),
+    installDir: join(resources.instanceDir, ".cadet", "runtime", version),
   }),
 );
 const startLocalDaemonMock = mock<typeof local.startLocalDaemon>(
@@ -190,8 +190,8 @@ let consoleErrorSpy: ReturnType<typeof spyOn>;
 let exitSpy: ReturnType<typeof spyOn>;
 
 function makeLocalEntry(): AssistantEntry {
-  tempDir = mkdtempSync(join(tmpdir(), "vellum-upgrade-local-test-"));
-  mkdirSync(join(tempDir, ".vellum"), { recursive: true });
+  tempDir = mkdtempSync(join(tmpdir(), "cadet-upgrade-local-test-"));
+  mkdirSync(join(tempDir, ".cadet"), { recursive: true });
   return {
     assistantId: "local-assistant",
     runtimeUrl: "http://lan.local:7830",
@@ -214,7 +214,7 @@ beforeEach(() => {
   tempDir = "";
   process.argv = [
     "bun",
-    "vellum",
+    "cadet",
     "upgrade",
     "local-assistant",
     "--version",
@@ -255,7 +255,7 @@ beforeEach(() => {
   ensureLocalRuntimeMock.mockReset();
   ensureLocalRuntimeMock.mockImplementation((resources, version) => ({
     version,
-    installDir: join(resources.instanceDir, ".vellum", "runtime", version),
+    installDir: join(resources.instanceDir, ".cadet", "runtime", version),
   }));
   startLocalDaemonMock.mockReset();
   startLocalDaemonMock.mockResolvedValue(undefined);
@@ -422,7 +422,7 @@ describe("cadet upgrade local", () => {
     );
     expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
       7830,
-      join(tempDir, ".vellum", "workspace"),
+      join(tempDir, ".cadet", "workspace"),
       "local-assistant",
     );
     expect(waitForReadyMock).toHaveBeenCalledWith("http://127.0.0.1:7830");
@@ -476,7 +476,7 @@ describe("cadet upgrade assistant targeting", () => {
   function argvFor(...positional: string[]): string[] {
     return [
       "bun",
-      "vellum",
+      "cadet",
       "upgrade",
       ...positional,
       "--version",

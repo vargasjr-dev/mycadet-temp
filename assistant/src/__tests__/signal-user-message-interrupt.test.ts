@@ -90,7 +90,7 @@ mock.module("../security/secret-ingress.js", () => ({
 }));
 
 // The preload's workspace is where getSignalsDir() resolves <workspace>/signals.
-const signalsRoot = process.env.VELLUM_WORKSPACE_DIR!;
+const signalsRoot = process.env.CADET_WORKSPACE_DIR!;
 const signalsDir = join(signalsRoot, "signals");
 mkdirSync(signalsDir, { recursive: true });
 

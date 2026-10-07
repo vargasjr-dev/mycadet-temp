@@ -18,7 +18,7 @@ import { type ChannelId, parseChannelId } from "../channels/types.js";
  * downstream can recover that fact once the moment has passed.
  *
  * A bare {@link ChannelId} covers the cases where the origin is known
- * outright, including `"vellum"` for a conversation started in the app.
+ * outright, including `"cadet"` for a conversation started in the app.
  * `inheritFrom` covers the derived ones, where the conversation belongs to
  * whatever surface its parent belongs to: forks, subagent spawns, and
  * scheduled wakes.
@@ -262,7 +262,7 @@ export function isSuppressedQueuedMessage(
  *
  * This marker is the only durable signal for that: the channel/interface fields
  * cannot stand in, because an in-app live-voice turn persists as
- * `vellum`/`macos`, indistinguishable from a typed desktop send.
+ * `cadet`/`macos`, indistinguishable from a typed desktop send.
  */
 export function isVoiceSessionUserMessage(
   metadata: Record<string, unknown> | undefined,
@@ -375,7 +375,7 @@ function isChannelOriginatedUserMessage(
   metadata: Record<string, unknown> | undefined,
 ): boolean {
   const channel = parseChannelId(metadata?.userMessageChannel);
-  return channel != null && channel !== "vellum";
+  return channel != null && channel !== "cadet";
 }
 
 /**
@@ -484,12 +484,12 @@ export const ASSISTANT_INITIATED_SOURCE = "assistant_initiated";
 export const ASSISTANT_INITIATED_GROUP_ID = "system:assistant";
 
 /**
- * The `origin_channel` value for a conversation started in Vellum itself
+ * The `origin_channel` value for a conversation started in Cadet itself
  * rather than arriving from an external channel.
  *
- * Named because reads have to treat it as "vellum or not yet attributed":
+ * Named because reads have to treat it as "cadet or not yet attributed":
  * `origin_channel` is deliberately NULL at insert so an inbound message can
  * claim the conversation for its own channel, and migration 288 settles the
  * unclaimed ones to this value at daemon startup.
  */
-export const NATIVE_ORIGIN_CHANNEL = "vellum";
+export const NATIVE_ORIGIN_CHANNEL = "cadet";

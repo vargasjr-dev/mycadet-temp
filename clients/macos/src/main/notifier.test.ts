@@ -17,7 +17,7 @@ import type {
   NotifierCategory,
 } from "./notifier";
 
-const appPath = mkdtempSync(path.join(tmpdir(), "vellum-notifier-"));
+const appPath = mkdtempSync(path.join(tmpdir(), "cadet-notifier-"));
 
 const electronApp = {
   isPackaged: false,
@@ -84,7 +84,7 @@ const addonPath = path.join(
   "resources",
   "notifier",
   process.arch,
-  "vellum-notifier.node",
+  "cadet-notifier.node",
 );
 
 const writeFakeAddon = (): void => {
@@ -163,14 +163,14 @@ describe("notifier addon path in a packaged app", () => {
         "bin",
         "notifier",
         process.arch,
-        "vellum-notifier.node",
+        "cadet-notifier.node",
       ),
     );
   });
 });
 
 describe("native notifier kill switch", () => {
-  const originalValue = process.env.VELLUM_DISABLE_NATIVE_NOTIFIER;
+  const originalValue = process.env.CADET_DISABLE_NATIVE_NOTIFIER;
 
   beforeEach(() => {
     __resetNotifierForTesting();
@@ -181,23 +181,23 @@ describe("native notifier kill switch", () => {
 
   afterEach(() => {
     if (originalValue === undefined) {
-      delete process.env.VELLUM_DISABLE_NATIVE_NOTIFIER;
+      delete process.env.CADET_DISABLE_NATIVE_NOTIFIER;
     } else {
-      process.env.VELLUM_DISABLE_NATIVE_NOTIFIER = originalValue;
+      process.env.CADET_DISABLE_NATIVE_NOTIFIER = originalValue;
     }
     rmSync(path.join(appPath, "resources"), { recursive: true, force: true });
   });
 
   test("reports unavailable without touching the addon on disk", () => {
-    process.env.VELLUM_DISABLE_NATIVE_NOTIFIER = "1";
+    process.env.CADET_DISABLE_NATIVE_NOTIFIER = "1";
 
     expect(getNotifier()).toBeNull();
     expect(warnings.length).toBe(0);
-    expect(String(infos[0]?.[0])).toContain("VELLUM_DISABLE_NATIVE_NOTIFIER=1");
+    expect(String(infos[0]?.[0])).toContain("CADET_DISABLE_NATIVE_NOTIFIER=1");
   });
 
   test("leaves the addon alone for any other value", () => {
-    process.env.VELLUM_DISABLE_NATIVE_NOTIFIER = "0";
+    process.env.CADET_DISABLE_NATIVE_NOTIFIER = "0";
 
     expect(getNotifier()).toBeNull();
     expect(warnings.length).toBe(1);

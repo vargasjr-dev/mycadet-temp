@@ -308,7 +308,7 @@ describe("SubagentManager — provider call-site routing", () => {
     setLlmConfig(makeLlmFixture());
 
     const parentTrustContext: TrustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
       guardianPrincipalId: "guardian-1",
       guardianExternalUserId: "guardian-1",

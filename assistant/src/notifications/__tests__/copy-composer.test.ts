@@ -33,7 +33,7 @@ function makeSignal(
   };
 }
 
-const CHANNELS: NotificationChannel[] = ["vellum" as NotificationChannel];
+const CHANNELS: NotificationChannel[] = ["cadet" as NotificationChannel];
 
 // ── activity.failed rendering ─────────────────────────────────────────
 
@@ -58,8 +58,8 @@ describe("activity.failed copy", () => {
       }),
       CHANNELS,
     );
-    expect(copy.vellum?.title).toBe("Background job failed: schedule:PR scan");
-    expect(copy.vellum?.body).toBe(
+    expect(copy.cadet?.title).toBe("Background job failed: schedule:PR scan");
+    expect(copy.cadet?.body).toBe(
       "You're out of credits. Add credits in Settings to continue.",
     );
   });
@@ -74,8 +74,8 @@ describe("activity.failed copy", () => {
       }),
       CHANNELS,
     );
-    expect((copy.vellum?.body ?? "").length).toBeLessThanOrEqual(303);
-    expect(copy.vellum?.body).toEndWith("...");
+    expect((copy.cadet?.body ?? "").length).toBeLessThanOrEqual(303);
+    expect(copy.cadet?.body).toEndWith("...");
   });
 
   test("constant-shaped raw detail never reaches the body", () => {
@@ -87,8 +87,8 @@ describe("activity.failed copy", () => {
       }),
       CHANNELS,
     );
-    expect(copy.vellum?.body).toBe("The model provider did not respond.");
-    expect(copy.vellum?.body).not.toContain("PROVIDER_BILLING");
+    expect(copy.cadet?.body).toBe("The model provider did not respond.");
+    expect(copy.cadet?.body).not.toContain("PROVIDER_BILLING");
   });
 
   test("readable raw detail is appended to the kind prose", () => {
@@ -100,7 +100,7 @@ describe("activity.failed copy", () => {
       }),
       CHANNELS,
     );
-    expect(copy.vellum?.body).toBe(
+    expect(copy.cadet?.body).toBe(
       "It stopped with an error. The feed endpoint returned an empty document.",
     );
   });
@@ -114,7 +114,7 @@ describe("activity.failed copy", () => {
       }),
       CHANNELS,
     );
-    expect(copy.vellum?.body).toContain("It ran out of time before finishing.");
+    expect(copy.cadet?.body).toContain("It ran out of time before finishing.");
   });
 });
 
@@ -130,9 +130,9 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.body).toBe("Take out the trash");
-    expect(copy.vellum?.title).toBe("Household Reminder");
-    expect(copy.vellum?.conversationSeedMessage).toBe("Take out the trash");
+    expect(copy.cadet?.body).toBe("Take out the trash");
+    expect(copy.cadet?.title).toBe("Household Reminder");
+    expect(copy.cadet?.conversationSeedMessage).toBe("Take out the trash");
   });
 
   test("derives title from body when requestedTitle is absent", () => {
@@ -143,8 +143,8 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.body).toBe("First sentence. Second sentence follows.");
-    expect(copy.vellum?.title).toBe("First sentence.");
+    expect(copy.cadet?.body).toBe("First sentence. Second sentence follows.");
+    expect(copy.cadet?.title).toBe("First sentence.");
   });
 
   test("derives title from body when requestedTitle is empty string", () => {
@@ -156,8 +156,8 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.body).toBe("Some message body here");
-    expect(copy.vellum?.title).toBe("Some message body here");
+    expect(copy.cadet?.body).toBe("Some message body here");
+    expect(copy.cadet?.title).toBe("Some message body here");
   });
 
   test("derives title from body when requestedTitle is whitespace", () => {
@@ -169,8 +169,8 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.body).toBe("Whitespace title test");
-    expect(copy.vellum?.title).toBe("Whitespace title test");
+    expect(copy.cadet?.body).toBe("Whitespace title test");
+    expect(copy.cadet?.title).toBe("Whitespace title test");
   });
 
   test("trims whitespace from requestedMessage", () => {
@@ -182,13 +182,13 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.body).toBe("padded message");
-    expect(copy.vellum?.title).toBe("padded title");
+    expect(copy.cadet?.body).toBe("padded message");
+    expect(copy.cadet?.title).toBe("padded title");
   });
 
   test("populates copy for all requested channels", () => {
     const channels = [
-      "vellum" as NotificationChannel,
+      "cadet" as NotificationChannel,
       "telegram" as NotificationChannel,
     ];
     const signal = makeSignal({
@@ -199,8 +199,8 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, channels);
 
-    expect(copy.vellum?.body).toBe("Multi-channel test");
-    expect(copy.vellum?.title).toBe("Multi Title");
+    expect(copy.cadet?.body).toBe("Multi-channel test");
+    expect(copy.cadet?.title).toBe("Multi Title");
     expect(copy.telegram?.body).toBe("Multi-channel test");
     expect(copy.telegram?.title).toBe("Multi Title");
   });
@@ -215,8 +215,8 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.title).toBe("Daily Standup");
-    expect(copy.vellum?.body).toBe("Standup time");
+    expect(copy.cadet?.title).toBe("Daily Standup");
+    expect(copy.cadet?.body).toBe("Standup time");
   });
 
   test("falls through to template when requestedMessage is empty string", () => {
@@ -229,8 +229,8 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.title).toBe("Reminder");
-    expect(copy.vellum?.body).toBe("Standup time");
+    expect(copy.cadet?.title).toBe("Reminder");
+    expect(copy.cadet?.body).toBe("Standup time");
   });
 
   test("falls through to template when requestedMessage is whitespace", () => {
@@ -243,8 +243,8 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.title).toBe("Reminder");
-    expect(copy.vellum?.body).toBe("Standup time");
+    expect(copy.cadet?.title).toBe("Reminder");
+    expect(copy.cadet?.body).toBe("Standup time");
   });
 
   test("falls through to generic copy when no requestedMessage and no template match", () => {
@@ -254,8 +254,8 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.title).toBe("Notification");
-    expect(copy.vellum?.body).toBe("");
+    expect(copy.cadet?.title).toBe("Notification");
+    expect(copy.cadet?.body).toBe("");
   });
 
   test("requestedMessage takes priority over event-name template", () => {
@@ -270,8 +270,8 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.body).toBe("User-supplied content");
-    expect(copy.vellum?.title).toBe("User Title");
+    expect(copy.cadet?.body).toBe("User-supplied content");
+    expect(copy.cadet?.title).toBe("User Title");
   });
 
   test("strips markdown and quotes from a producer-supplied title", () => {
@@ -283,7 +283,7 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.title).toBe("Deploy finished");
+    expect(copy.cadet?.title).toBe("Deploy finished");
   });
 
   test("derives the title when requestedTitle reads as leaked prose", () => {
@@ -295,7 +295,7 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.title).toBe("Backup finished.");
+    expect(copy.cadet?.title).toBe("Backup finished.");
   });
 
   test("derives the title when requestedTitle spans multiple lines", () => {
@@ -307,7 +307,7 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.title).toBe("The nightly job is done.");
+    expect(copy.cadet?.title).toBe("The nightly job is done.");
   });
 
   test("truncates an over-long requestedTitle to the shared title budget", () => {
@@ -320,7 +320,7 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.title).toBe("Alpha bravo charlie delta echo");
+    expect(copy.cadet?.title).toBe("Alpha bravo charlie delta echo");
   });
 
   test("works with non-assistant_tool source channels", () => {
@@ -333,7 +333,7 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
       });
       const copy = composeFallbackCopy(signal, CHANNELS);
 
-      expect(copy.vellum?.body).toBe(`Message from ${sourceChannel}`);
+      expect(copy.cadet?.body).toBe(`Message from ${sourceChannel}`);
     }
   });
 });
@@ -353,10 +353,10 @@ describe("composeFallbackCopy plugin schedule templates", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.title).toBe("New plugin schedule: digest");
-    expect(copy.vellum?.body).toContain('Plugin "news"');
-    expect(copy.vellum?.body).toContain('"digest"');
-    expect(copy.vellum?.body).toContain("0 9 * * *");
+    expect(copy.cadet?.title).toBe("New plugin schedule: digest");
+    expect(copy.cadet?.body).toContain('Plugin "news"');
+    expect(copy.cadet?.body).toContain('"digest"');
+    expect(copy.cadet?.body).toContain("0 9 * * *");
   });
 
   test("schedule.declared omits the cadence suffix when absent", () => {
@@ -366,8 +366,8 @@ describe("composeFallbackCopy plugin schedule templates", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.body).not.toContain("(");
-    expect(copy.vellum?.body).toContain('"digest"');
+    expect(copy.cadet?.body).not.toContain("(");
+    expect(copy.cadet?.body).toContain('"digest"');
   });
 
   test("schedule.definition_changed renders plugin and schedule name", () => {
@@ -381,8 +381,8 @@ describe("composeFallbackCopy plugin schedule templates", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.title).toBe("Plugin schedule changed: digest");
-    expect(copy.vellum?.body).toBe(
+    expect(copy.cadet?.title).toBe("Plugin schedule changed: digest");
+    expect(copy.cadet?.body).toBe(
       'Plugin "news" changed the definition of its schedule "digest".',
     );
   });
@@ -399,12 +399,12 @@ describe("composeFallbackCopy plugin schedule templates", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.title).toBe("Plugin schedule error: digest");
-    expect(copy.vellum?.body).toContain('Plugin "news"');
-    expect(copy.vellum?.body).toContain("invalid cron expression");
+    expect(copy.cadet?.title).toBe("Plugin schedule error: digest");
+    expect(copy.cadet?.body).toContain('Plugin "news"');
+    expect(copy.cadet?.body).toContain("invalid cron expression");
     // A non-empty body means the broadcaster's empty-body skip never
     // suppresses a definition error when the notification LLM is down.
-    expect(copy.vellum?.body?.length).toBeGreaterThan(0);
+    expect(copy.cadet?.body?.length).toBeGreaterThan(0);
   });
 
   test("schedule.definition_error says so when the schedule was paused", () => {
@@ -420,8 +420,8 @@ describe("composeFallbackCopy plugin schedule templates", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.body).toContain("config.json is not valid JSON");
-    expect(copy.vellum?.body).toContain("paused until the declaration loads");
+    expect(copy.cadet?.body).toContain("config.json is not valid JSON");
+    expect(copy.cadet?.body).toContain("paused until the declaration loads");
   });
 
   test("schedule.definition_error omits the pause line when the row kept running", () => {
@@ -436,7 +436,7 @@ describe("composeFallbackCopy plugin schedule templates", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.body).not.toContain("paused");
+    expect(copy.cadet?.body).not.toContain("paused");
   });
 
   test("schedule.definition_error still renders with an empty payload", () => {
@@ -446,7 +446,7 @@ describe("composeFallbackCopy plugin schedule templates", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.body?.length).toBeGreaterThan(0);
+    expect(copy.cadet?.body?.length).toBeGreaterThan(0);
   });
 
   test("schedule.declared sanitizes plugin-controlled fields", () => {
@@ -462,12 +462,12 @@ describe("composeFallbackCopy plugin schedule templates", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.title).toBe("New plugin schedule: digest");
-    expect(copy.vellum?.body).toContain('Plugin "newsext"');
-    expect(copy.vellum?.body).toContain("0 9 * * *");
-    expect(copy.vellum?.body).not.toContain("\u001b");
-    expect(copy.vellum?.body).not.toContain("\u0007");
-    expect(copy.vellum?.body).not.toContain("pwned");
+    expect(copy.cadet?.title).toBe("New plugin schedule: digest");
+    expect(copy.cadet?.body).toContain('Plugin "newsext"');
+    expect(copy.cadet?.body).toContain("0 9 * * *");
+    expect(copy.cadet?.body).not.toContain("\u001b");
+    expect(copy.cadet?.body).not.toContain("\u0007");
+    expect(copy.cadet?.body).not.toContain("pwned");
   });
 
   test("schedule.declared omits a cadence that sanitizes to nothing", () => {
@@ -481,8 +481,8 @@ describe("composeFallbackCopy plugin schedule templates", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.body).not.toContain("(");
-    expect(copy.vellum?.body).not.toContain("\u001b");
+    expect(copy.cadet?.body).not.toContain("(");
+    expect(copy.cadet?.body).not.toContain("\u001b");
   });
 
   test("schedule.definition_error sanitizes and flattens the reason", () => {
@@ -496,10 +496,10 @@ describe("composeFallbackCopy plugin schedule templates", () => {
     });
     const copy = composeFallbackCopy(signal, CHANNELS);
 
-    expect(copy.vellum?.body).toContain('Plugin "news"');
-    expect(copy.vellum?.body).toContain("bad expression");
-    expect(copy.vellum?.body).not.toContain("\u001b");
-    expect(copy.vellum?.body).not.toContain("\n");
+    expect(copy.cadet?.body).toContain('Plugin "news"');
+    expect(copy.cadet?.body).toContain("bad expression");
+    expect(copy.cadet?.body).not.toContain("\u001b");
+    expect(copy.cadet?.body).not.toContain("\n");
   });
 });
 
@@ -525,8 +525,8 @@ describe("activity.complete copy", () => {
       }),
       CHANNELS,
     );
-    expect(copy.vellum?.title).toBe("Skill updated: Weekly Report Export");
-    expect(copy.vellum?.body).toBe("Added the retry after an expired session.");
+    expect(copy.cadet?.title).toBe("Skill updated: Weekly Report Export");
+    expect(copy.cadet?.body).toBe("Added the retry after an expired session.");
   });
 
   test("the pass-through's requestedTitle is honored when no title is set", () => {
@@ -537,7 +537,7 @@ describe("activity.complete copy", () => {
       }),
       CHANNELS,
     );
-    expect(copy.vellum?.title).toBe("Nightly export finished");
+    expect(copy.cadet?.title).toBe("Nightly export finished");
   });
 
   test("without an authored title the headline is the summary's first sentence", () => {
@@ -548,7 +548,7 @@ describe("activity.complete copy", () => {
       }),
       CHANNELS,
     );
-    expect(copy.vellum?.title).toBe(
+    expect(copy.cadet?.title).toBe(
       "Added the retry after an expired session.",
     );
   });
@@ -561,15 +561,15 @@ describe("activity.complete copy", () => {
       }),
       CHANNELS,
     );
-    expect(copy.vellum?.title).toBe(
+    expect(copy.cadet?.title).toBe(
       "Added the retry after an expired session.",
     );
   });
 
   test("neither a title nor a summary still says something happened", () => {
     const copy = composeFallbackCopy(completeSignal({}), CHANNELS);
-    expect(copy.vellum?.title).toBe("Activity complete");
-    expect(copy.vellum?.body).toBe("An activity has completed");
+    expect(copy.cadet?.title).toBe("Activity complete");
+    expect(copy.cadet?.body).toBe("An activity has completed");
   });
 });
 

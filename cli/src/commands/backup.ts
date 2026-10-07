@@ -41,7 +41,7 @@ export async function backup(): Promise<void> {
     console.log("Options:");
     console.log("  --output <path>          Path to save the .vbundle file");
     console.log(
-      "                           (default: ~/.local/share/vellum/backups/<name>-<timestamp>.vbundle)",
+      "                           (default: ~/.local/share/cadet/backups/<name>-<timestamp>.vbundle)",
     );
     console.log(
       `  --export-timeout <secs>  Export request timeout in seconds (default: ${DEFAULT_EXPORT_TIMEOUT_MS / 1000})`,
@@ -227,7 +227,7 @@ export async function backup(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Platform-managed (cloud="vellum") backup over GCS.
+// Platform-managed (cloud="cadet") backup over GCS.
 //
 // The runtime exports the bundle straight to a platform-issued signed GCS
 // URL; the CLI then downloads from GCS to local disk. Bytes never flow
@@ -236,7 +236,7 @@ export async function backup(): Promise<void> {
 // (runtime-direct local backup) so users see one consistent UX.
 //
 // Lifecycle: the GCS bucket has a 1-day TTL on `uploads/<org>/*` objects
-// (see `vellum-assistant-platform/django/app/assistant/migration/views.py`
+// (see `mycadet-platform/django/app/assistant/migration/views.py`
 // and `migration/services.py`). Backup is single-shot with no import to
 // trigger best-effort cleanup, so the bundle sits in GCS up to 24h before
 // TTL deletion. No explicit cleanup endpoint exists; relying on TTL is
@@ -296,7 +296,7 @@ async function backupPlatform(
 
   // Step 2 — Kick off runtime export-to-GCS through the platform's
   // wildcard runtime proxy. `localRuntimeExportToGcs` builds the
-  // `/v1/assistants/<id>/migrations/export-to-gcs` URL for cloud="vellum"
+  // `/v1/assistants/<id>/migrations/export-to-gcs` URL for cloud="cadet"
   // and uses platform-token auth (no guardian-token bootstrap).
   let jobId: string;
   try {

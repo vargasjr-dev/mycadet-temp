@@ -2,13 +2,13 @@
 
 Plugins ship through a curated marketplace and install by name from the CLI. This reference covers the catalog, the install flow, the manifest that lists every installable plugin, and how to install a plugin directly from a GitHub URL before it is in the catalog.
 
-A plugin does not have to live in your workspace to be installed. Vellum keeps a curated catalog of external plugins, and the CLI installs any of them by name. The catalog is a single manifest the Vellum team reviews and approves, so installing a catalog plugin only ever pulls code that has been vetted into that list.
+A plugin does not have to live in your workspace to be installed. Cadet keeps a curated catalog of external plugins, and the CLI installs any of them by name. The catalog is a single manifest the Cadet team reviews and approves, so installing a catalog plugin only ever pulls code that has been vetted into that list.
 
 For plugins not yet in the catalog, the CLI also accepts a GitHub URL directly. See "Installing from a GitHub URL (untrusted)" below.
 
 ## Publishing your plugin
 
-Once your plugin works locally, you can list it in the marketplace catalog so anyone can install it by name. The catalog is a curated allowlist: you open a PR adding an entry, the Vellum team reviews it, and once merged the plugin is discoverable via `assistant plugins search` and installable via `assistant plugins install`.
+Once your plugin works locally, you can list it in the marketplace catalog so anyone can install it by name. The catalog is a curated allowlist: you open a PR adding an entry, the Cadet team reviews it, and once merged the plugin is discoverable via `assistant plugins search` and installable via `assistant plugins install`.
 
 ### 1. Push your plugin to a public GitHub repo
 
@@ -26,7 +26,7 @@ Your plugin can live at the root of its own repo or in a subdirectory. If it is 
 
 ### 2. Add your entry to `marketplace.json`
 
-Open a PR against [`vellum-ai/vellum-assistant`](https://github.com/vellum-ai/vellum-assistant) adding your plugin to `plugins/marketplace.json`. Copy this template and fill in your details:
+Open a PR against [`vargasjr-dev/mycadet`](https://github.com/vargasjr-dev/mycadet) adding your plugin to `plugins/marketplace.json`. Copy this template and fill in your details:
 
 ```json
 {
@@ -47,7 +47,7 @@ The `name` must be a single kebab-case segment (e.g. `my-plugin`, not `myPlugin`
 
 ### 3. Wait for review
 
-The Vellum team reviews each entry before it lands in the catalog. The review checks that:
+The Cadet team reviews each entry before it lands in the catalog. The review checks that:
 
 - The pinned commit matches a public, reachable revision of the repo.
 - The plugin has a valid `package.json` with a `@mycadet/plugin-api` peer dependency.
@@ -58,9 +58,9 @@ Once the review approves and the PR merges, the plugin appears in `assistant plu
 
 ## The marketplace catalog
 
-The catalog is computed live from [`plugins/marketplace.json`](https://github.com/vellum-ai/vellum-assistant/blob/main/plugins/marketplace.json) in the assistant repo. It lets Vellum surface plugins that live in other repositories without copying their code, and its shape is a subset of the [Claude Code marketplace schema](https://code.claude.com/docs/en/plugin-marketplaces), so the format is familiar if you have published there.
+The catalog is computed live from [`plugins/marketplace.json`](https://github.com/vargasjr-dev/mycadet/blob/main/plugins/marketplace.json) in the assistant repo. It lets Cadet surface plugins that live in other repositories without copying their code, and its shape is a subset of the [Claude Code marketplace schema](https://code.claude.com/docs/en/plugin-marketplaces), so the format is familiar if you have published there.
 
-- **Curation is the allowlist.** Only repositories listed in the manifest appear in the catalog. There is no open registry, and the Vellum team reviews each entry before it lands.
+- **Curation is the allowlist.** Only repositories listed in the manifest appear in the catalog. There is no open registry, and the Cadet team reviews each entry before it lands.
 - **The manifest is the catalog.** It is the sole source of installable plugins. A missing or malformed manifest yields an empty catalog rather than falling back to anything else.
 - **One surface, two clients.** The same catalog backs `assistant plugins search` and the in-product Plugins tab.
 
@@ -72,11 +72,11 @@ Install by name. The CLI resolves the entry, shallow-clones the repository at it
 # Find a plugin in the catalog
 $ assistant plugins search memory
 NAME           PATH
-simple-memory  vellum-ai/simple-memory
+simple-memory  vargasjr-dev/simple-memory
 
 # Install it by name (clones the pinned commit)
 $ assistant plugins install simple-memory
-Installed plugin "simple-memory" (12 files) at ed09a4c -> ~/.vellum/workspace/plugins/simple-memory
+Installed plugin "simple-memory" (12 files) at ed09a4c -> ~/.cadet/workspace/plugins/simple-memory
 The new plugin is picked up automatically.
 
 # Confirm what is installed
@@ -95,9 +95,9 @@ While a plugin is still under development, before it is whitelisted in the catal
 # Install from a repo URL (default branch)
 $ assistant plugins install https://github.com/owner/repo
 ⚠ Installing "repo" from an unreviewed GitHub source: owner/repo @ default branch.
- This plugin is NOT in the Vellum marketplace and has not been reviewed.
+ This plugin is NOT in the Cadet marketplace and has not been reviewed.
  Its hooks and tools run inside the assistant with full access — install it only if you trust the source.
-Installed untrusted plugin "repo" (8 files) → ~/.vellum/workspace/plugins/repo
+Installed untrusted plugin "repo" (8 files) → ~/.cadet/workspace/plugins/repo
 
 # Install from a specific branch and sub-path
 $ assistant plugins install https://github.com/owner/repo/tree/my-branch/packages/cool-plugin
@@ -139,7 +139,7 @@ Search the catalog for plugin names matching `<query>` (a case-insensitive regex
 Resolve `<name>` in the catalog, shallow-clone its repo at the pinned commit, and materialize it under `<workspaceDir>/plugins/<name>/`. The resolved commit is recorded for provenance. Or pass a GitHub URL (or `owner/repo` shorthand) to install directly from an untrusted source, bypassing the catalog. See "Installing from a GitHub URL (untrusted)" below.
 
 - `--force`: Overwrite an existing install of the same name.
-- `--ref <ref>`: Advanced. Read the catalog (and any adapter stub) from a different ref of the vellum-assistant repo; defaults to main. The external plugin itself is still fetched at the commit pinned in the manifest, never this ref. Marketplace installs only; for a GitHub URL, put the ref in the URL (`.../tree/<ref>/...`).
+- `--ref <ref>`: Advanced. Read the catalog (and any adapter stub) from a different ref of the mycadet repo; defaults to main. The external plugin itself is still fetched at the commit pinned in the manifest, never this ref. Marketplace installs only; for a GitHub URL, put the ref in the URL (`.../tree/<ref>/...`).
 - `--pin <sha>`: Install a specific reviewed marketplace pin (full commit SHA). Run `plugins versions <name>` to list them. Marketplace installs only.
 - `--allow-unreviewed`: With `--pin`, install a SHA that is not in the reviewed marketplace history. Marketplace installs only.
 - `--name <name>`: Install directory name for a GitHub-URL install (default: derived from the repo or sub-path leaf). Ignored for marketplace installs.
@@ -238,7 +238,7 @@ drift       none
 remote
   timestamp 2026-06-05T08:12:24
   hash      3eae182
-  location  https://github.com/vellum-ai/simple-memory
+  location  https://github.com/vargasjr-dev/simple-memory
 
 # Preview the move, then upgrade to the current pin
 $ assistant plugins upgrade simple-memory --dry-run
@@ -264,10 +264,10 @@ The manifest has a top-level `name`, an optional `owner`, and a `plugins` array.
 
 ```json
 {
-  "name": "vellum-assistant",
+  "name": "mycadet",
   "owner": {
-    "name": "Vellum",
-    "url": "https://github.com/vellum-ai/vellum-assistant"
+    "name": "Cadet",
+    "url": "https://github.com/vargasjr-dev/mycadet"
   },
   "plugins": [
     {
@@ -314,4 +314,4 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290  refs/tags/v1.2.0^{}
 
 ## Adapting external plugins
 
-Listing a plugin makes it install by name, but a plugin authored for another ecosystem may not match this loader's conventions and so contribute nothing on boot. A **postinstall adapter** bridges that gap: a small, curated transform committed alongside the marketplace entry that reshapes the cloned tree into Vellum's layout during install.
+Listing a plugin makes it install by name, but a plugin authored for another ecosystem may not match this loader's conventions and so contribute nothing on boot. A **postinstall adapter** bridges that gap: a small, curated transform committed alongside the marketplace entry that reshapes the cloned tree into Cadet's layout during install.

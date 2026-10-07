@@ -244,7 +244,7 @@ export const typeIntoFrontAppWithDeps = async (
   deps: TextInsertionDeps,
 ): Promise<TextInsertionResult> => {
   if (deps.getFocusedWindow() !== null) {
-    return { status: "vellum-focused" };
+    return { status: "cadet-focused" };
   }
 
   // **Asked before the clipboard is touched.** A paste sent where nothing
@@ -299,7 +299,7 @@ export const undoInFrontAppWithDeps = async (
   >,
 ): Promise<TextInsertionResult> => {
   if (deps.getFocusedWindow() !== null) {
-    return { status: "vellum-focused" };
+    return { status: "cadet-focused" };
   }
   return sendShortcut(deps, "z", UNDO_SHORTCUT_SCRIPT, "undo");
 };

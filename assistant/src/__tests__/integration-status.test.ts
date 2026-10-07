@@ -51,7 +51,7 @@ mock.module("../oauth/oauth-store.js", () => ({
 }));
 
 mock.module("../platform/client.js", () => ({
-  VellumPlatformClient: {
+  CadetPlatformClient: {
     create: async () => ({
       platformAssistantId: "test-assistant",
       fetch: async (path: string) => {

@@ -128,25 +128,25 @@ describe("parseGitHubPluginSpec", () => {
   describe("with an explicit refOverride", () => {
     test("recovers a slash-containing ref from a copied /tree/ URL, stripping it from the sub-path", () => {
       const spec = parseGitHubPluginSpec(
-        "https://github.com/ZeebBoyBlue/virlo-integrations/tree/feat/results-viewer/integrations/vellum",
+        "https://github.com/ZeebBoyBlue/virlo-integrations/tree/feat/results-viewer/integrations/cadet",
         "feat/results-viewer",
       );
       expect(spec).toEqual({
         owner: "ZeebBoyBlue",
         repo: "virlo-integrations",
-        path: "integrations/vellum",
+        path: "integrations/cadet",
         ref: "feat/results-viewer",
-        defaultName: "vellum",
+        defaultName: "cadet",
       });
     });
 
     test("applies the ref to the non-tree form, keeping all trailing segments as the sub-path", () => {
       const spec = parseGitHubPluginSpec(
-        "github.com/owner/repo/integrations/vellum",
+        "github.com/owner/repo/integrations/cadet",
         "feature/x",
       );
       expect(spec.ref).toBe("feature/x");
-      expect(spec.path).toBe("integrations/vellum");
+      expect(spec.path).toBe("integrations/cadet");
     });
 
     test("wins over a single-segment ref present in the URL", () => {

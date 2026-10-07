@@ -16,7 +16,7 @@ import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
 const TEST_DIR = join(
   tmpdir(),
-  `vellum-broker-test-${randomBytes(4).toString("hex")}`,
+  `cadet-broker-test-${randomBytes(4).toString("hex")}`,
 );
 const STORE_PATH = join(TEST_DIR, "keys.enc");
 

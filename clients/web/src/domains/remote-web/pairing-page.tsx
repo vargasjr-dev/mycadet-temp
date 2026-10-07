@@ -142,16 +142,16 @@ function clearDeviceCodeFromUrl(): void {
 
 /**
  * Custom URL scheme registered by the shipped mobile apps. Dev and staging app
- * builds register suffixed schemes (e.g. `cadet-assistant-dev`), so this
+ * builds register suffixed schemes (e.g. `mycadet-dev`), so this
  * handoff link intentionally targets the production app — the common case for
  * a phone that scanned a pairing QR with its camera.
  */
-const VELLUM_APP_SCHEME = "cadet-assistant";
-const VELLUM_ANDROID_PACKAGE = "ai.cadet.assistant";
+const CADET_APP_SCHEME = "mycadet";
+const CADET_ANDROID_PACKAGE = "ai.mycadet.assistant";
 type AppHandoffPlatform = "ios" | "android";
 
 /**
- * Build the `cadet-assistant://connect?url=<base>&code=<device-code>` deep
+ * Build the `mycadet://connect?url=<base>&code=<device-code>` deep
  * link the mobile app consumes to persist this server and finish pairing inside
  * the app. `url` is the page's own public base (origin + served path prefix)
  * so the app reconnects to the same self-hosted assistant this browser is
@@ -174,14 +174,14 @@ function buildAppHandoffUrl(
   // the iOS app's Foundation URLComponents parser keeps as a literal plus.
   const query = params.toString().replace(/\+/g, "%20");
   if (platform === "ios") {
-    return `${VELLUM_APP_SCHEME}://connect?${query}`;
+    return `${CADET_APP_SCHEME}://connect?${query}`;
   }
 
   const fallbackUrl = encodeURIComponent(window.location.href);
   return (
     `intent://connect?${query}` +
-    `#Intent;scheme=${VELLUM_APP_SCHEME};` +
-    `package=${VELLUM_ANDROID_PACKAGE};` +
+    `#Intent;scheme=${CADET_APP_SCHEME};` +
+    `package=${CADET_ANDROID_PACKAGE};` +
     `S.browser_fallback_url=${fallbackUrl};end`
   );
 }

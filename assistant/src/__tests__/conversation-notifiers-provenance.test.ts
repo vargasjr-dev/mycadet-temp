@@ -41,7 +41,7 @@ describe("live-call question provenance", () => {
       // finished voice turn's contact.
       trustContext: {
         trustClass: "guardian",
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
       },
       currentTurnTrustContext: {
         trustClass: "trusted_contact",

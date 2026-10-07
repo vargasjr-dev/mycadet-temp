@@ -58,7 +58,7 @@ describe("parallel-tasks system prompt section", () => {
     expect(
       buildSystemPrompt({
         canSpawnSubagents: true,
-        channelCapabilities: channel("vellum"),
+        channelCapabilities: channel("cadet"),
       }),
     ).toContain(HEADING);
   });

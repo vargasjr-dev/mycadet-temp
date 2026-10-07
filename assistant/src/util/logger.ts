@@ -244,12 +244,12 @@ function getRootLogger(): Logger {
     if (isTest) {
       // Silent by default so test output stays readable without per-file
       // `mock.module("../util/logger.js", …)` boilerplate — the mocks this
-      // replaces did exactly this, module-wide. Set VELLUM_TEST_LOG_LEVEL
+      // replaces did exactly this, module-wide. Set CADET_TEST_LOG_LEVEL
       // (e.g. "info", "debug") to see log output on stderr when debugging
       // a test run.
       rootLogger = pino(
         {
-          level: process.env.VELLUM_TEST_LOG_LEVEL ?? "silent",
+          level: process.env.CADET_TEST_LOG_LEVEL ?? "silent",
           serializers: logSerializers,
         },
         pino.destination(2),

@@ -3,7 +3,7 @@
  *
  * Resolution order:
  * 1. CES HTTP API (when CES_CREDENTIAL_URL is set)
- * 2. Encrypted-at-rest file (~/.vellum/protected/keys.enc)
+ * 2. Encrypted-at-rest file (~/.cadet/protected/keys.enc)
  */
 
 import { createDecipheriv, pbkdf2Sync } from "node:crypto";
@@ -80,7 +80,7 @@ function deriveKey(salt: Buffer): Buffer {
 }
 
 /**
- * Read the v2 store key file (~/.vellum/protected/store.key).
+ * Read the v2 store key file (~/.cadet/protected/store.key).
  * Returns null if the file doesn't exist or isn't exactly 32 bytes.
  */
 function readStoreKey(): Buffer | null {
@@ -402,8 +402,8 @@ export const DISCORD_CHANNEL_CREDENTIAL_SPEC: ServiceCredentialSpec = {
   requiredFields: ["bot_token"],
 } as const;
 
-export const VELLUM_CREDENTIAL_SPEC: ServiceCredentialSpec = {
-  service: "vellum",
+export const CADET_CREDENTIAL_SPEC: ServiceCredentialSpec = {
+  service: "cadet",
   requiredFields: ["platform_base_url", "assistant_api_key", "webhook_secret"],
 } as const;
 
@@ -413,5 +413,5 @@ export const ALL_CREDENTIAL_SPECS: readonly ServiceCredentialSpec[] = [
   WHATSAPP_CREDENTIAL_SPEC,
   SLACK_CHANNEL_CREDENTIAL_SPEC,
   DISCORD_CHANNEL_CREDENTIAL_SPEC,
-  VELLUM_CREDENTIAL_SPEC,
+  CADET_CREDENTIAL_SPEC,
 ];

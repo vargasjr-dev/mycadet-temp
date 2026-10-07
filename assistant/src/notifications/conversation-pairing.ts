@@ -6,7 +6,7 @@
  * macOS/iOS client can deep-link into it. What is written before the send
  * depends on the channel's strategy:
  *
- * - `start_new_conversation` (vellum): the conversation and its seed
+ * - `start_new_conversation` (cadet): the conversation and its seed
  *   message are materialized here. The send is a local broadcast, and the
  *   feed card's deep link and rewritable row depend on the row existing.
  * - `continue_existing_conversation` (every external channel adapter): only
@@ -17,7 +17,7 @@
  *
  * Guardian-request deliveries to channels are the exception: they are
  * delivery projections of a canonical request and pair nothing (see the
- * guard below); only their vellum delivery carries a conversation.
+ * guard below); only their cadet delivery carries a conversation.
  *
  * Resolution order for a channel delivery's home
  * (`resolveChannelDeliveryHome`, `resolveProactiveHomeConversation`):
@@ -121,7 +121,7 @@ export interface PairingOptions {
  *
  * Invalid/stale targets fall through to the next step.
  *
- * Passive vellum notifications (those without `requiresConversation`) never
+ * Passive cadet notifications (those without `requiresConversation`) never
  * reach that order. They create nothing, and instead append their body to the
  * producing conversation named by `sourceContextId` when it resolves, since
  * that is the row the home feed's "Go to Conversation" button already targets.
@@ -139,11 +139,11 @@ export async function pairDeliveryWithConversation(
 ): Promise<PairingResult> {
   try {
     const signal =
-      channel === "vellum"
+      channel === "cadet"
         ? (
             options?.assistantInitiatedThread ??
             resolveAssistantInitiatedThread(rawSignal)
-          ).vellumSignal
+          ).cadetSignal
         : rawSignal;
     const strategy = getConversationStrategy(channel as ChannelId);
 
@@ -161,7 +161,7 @@ export async function pairDeliveryWithConversation(
     // approvals, questions, and access requests alike) is a delivery
     // projection of a canonical guardian request, not conversation
     // content: its in-app homes are the home-feed "Needs attention"
-    // item and the source conversation's card (the vellum delivery,
+    // item and the source conversation's card (the cadet delivery,
     // which still pairs below). Pairing a channel card here would
     // either write it into the guardian's bound chat transcript or
     // mint a fresh conversation for a transient work item, so it gets
@@ -170,7 +170,7 @@ export async function pairDeliveryWithConversation(
     // envelope.
     if (
       isGuardianRequestSignalEvent(signal.sourceEventName) &&
-      channel !== "vellum"
+      channel !== "cadet"
     ) {
       return {
         conversationId: null,
@@ -193,7 +193,7 @@ export async function pairDeliveryWithConversation(
         ? copy.conversationSeedMessage
         : composeConversationSeed(signal, channel, copy);
 
-    // Passive vellum notifications link back to the originating conversation
+    // Passive cadet notifications link back to the originating conversation
     // via `signal.sourceContextId` rather than materializing one of their own.
     // A fresh per-notification conversation just to host the seed message
     // leaves a graveyard entry in the sidebar, so nothing is created here when
@@ -207,7 +207,7 @@ export async function pairDeliveryWithConversation(
     // `sourceContextId` resolves, because every route the user has into this
     // notification ends at that conversation. Tapping the banner deep-links
     // there, and resolves there with or without this append, since the
-    // broadcaster falls back to `sourceContextId` for the vellum deep link.
+    // broadcaster falls back to `sourceContextId` for the cadet deep link.
     // The client suppresses the banner outright when that conversation is
     // already on screen, leaving the transcript as the only place the
     // notification can appear. The home feed aims its "Go to Conversation"
@@ -707,9 +707,9 @@ async function resolveChannelDeliveryHome(params: {
  * `access-req-*` strings) as `sourceContextId`; those resolve to nothing and
  * append nothing, which matches the button staying hidden for them.
  *
- * This covers vellum deliveries only, since no other channel takes the
- * passive branch. A signal routed away from vellum still gets a card, so
- * `writeHomeFeedItemForSignal` writes the body itself when no vellum
+ * This covers cadet deliveries only, since no other channel takes the
+ * passive branch. A signal routed away from cadet still gets a card, so
+ * `writeHomeFeedItemForSignal` writes the body itself when no cadet
  * conversation was paired. Between them the button holds whatever the
  * routing was, and only one of the two ever writes.
  *

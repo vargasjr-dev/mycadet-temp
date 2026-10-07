@@ -3,12 +3,12 @@
  * Probe-and-dispatch shim for `bun run dev`.
  *
  * Decides whether `vel up` is running by probing its edge proxy at
- * http://localhost:3000 (the URL Swift Vellum hits today; see
- * `cli/commands/up.ts::ensureEdgeProxyRunning` in the Vellum platform
+ * http://localhost:3000 (the URL Swift Cadet hits today; see
+ * `cli/commands/up.ts::ensureEdgeProxyRunning` in the Cadet platform
  * repo) and dispatches accordingly:
  *
  *   - vel up detected → `bun run dev:electron-only` with
- *     `VELLUM_DEV_URL=http://localhost:3000/assistant`. The renderer
+ *     `CADET_DEV_URL=http://localhost:3000/assistant`. The renderer
  *     attaches to the running stack and the BrowserWindow loads the
  *     edge proxy at the `/assistant` path (the bare root is the
  *     marketing site), so backend calls work the same way they do for
@@ -27,7 +27,7 @@ import { spawn } from "node:child_process";
 // at the bare root and reverse-proxies `/assistant/*` to clients/web's Vite,
 // so we probe the origin and load `/assistant` (the renderer path) when
 // attaching. clients/web's `vite.config.ts` declares `base: "/assistant/"`,
-// which is the same path Swift Vellum hits today.
+// which is the same path Swift Cadet hits today.
 const VEL_EDGE_PROXY_ORIGIN = "http://localhost:3000";
 const VEL_RENDERER_URL = `${VEL_EDGE_PROXY_ORIGIN}/assistant`;
 const PROBE_TIMEOUT_MS = 1_500;
@@ -56,13 +56,13 @@ const downstreamScript = velRunning ? "dev:electron-only" : "dev:standalone";
 // Match the native Swift app's default of "local".
 const env: NodeJS.ProcessEnv = {
   ...process.env,
-  VELLUM_ENVIRONMENT: process.env.VELLUM_ENVIRONMENT || "local",
-  ...(velRunning ? { VELLUM_DEV_URL: VEL_RENDERER_URL } : {}),
+  CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
+  ...(velRunning ? { CADET_DEV_URL: VEL_RENDERER_URL } : {}),
 };
 
 if (velRunning) {
   console.log(
-    `[dev] detected vel up at ${VEL_EDGE_PROXY_ORIGIN} - attaching Electron to ${VEL_RENDERER_URL} (env: ${env.VELLUM_ENVIRONMENT})`,
+    `[dev] detected vel up at ${VEL_EDGE_PROXY_ORIGIN} - attaching Electron to ${VEL_RENDERER_URL} (env: ${env.CADET_ENVIRONMENT})`,
   );
 } else {
   console.log(

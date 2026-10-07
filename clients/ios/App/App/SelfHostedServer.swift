@@ -1,12 +1,12 @@
 import Foundation
 
 /// The self-hosted assistant origin the shell points its `WKWebView` at instead
-/// of the baked Vellum Cloud URL.
+/// of the baked Cadet Cloud URL.
 ///
 /// The active value lives in `UserDefaults` under `self_hosted_server_url`,
 /// written either from the native Settings pane (`Settings.bundle`), a
-/// confirmed `vellum-assistant://connect` deep link, or the `SelfHostedServers` plugin.
-/// An empty or absent value means the shell uses its baked default (Vellum
+/// confirmed `mycadet://connect` deep link, or the `SelfHostedServers` plugin.
+/// An empty or absent value means the shell uses its baked default (Cadet
 /// Cloud), which is the unchanged default experience. Alongside the active
 /// slot, `self_hosted_servers` remembers every paired origin as a
 /// `{name?, url}` list so the web chooser can switch between them. This type
@@ -124,7 +124,7 @@ enum SelfHostedServer {
 
     /// The active origin as the single string every widget-snapshot comparison
     /// is made on: the canonical configured origin, or `""` when none is set,
-    /// meaning the shell serves its baked Vellum Cloud URL.
+    /// meaning the shell serves its baked Cadet Cloud URL.
     ///
     /// The cloud case is a value rather than an absence so that leaving it, or
     /// returning to it, reads as a change like any other; `nil` stays free to
@@ -235,7 +235,7 @@ enum SelfHostedServer {
         setActive(url.absoluteString, defaults: defaults)
     }
 
-    /// Clear the preference, returning the shell to the baked Vellum Cloud URL.
+    /// Clear the preference, returning the shell to the baked Cadet Cloud URL.
     static func clear(defaults: UserDefaults = .standard) {
         setActive(nil, defaults: defaults)
     }

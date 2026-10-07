@@ -51,13 +51,13 @@ describe("safe-env Qdrant forwarding", () => {
 });
 
 describe("safe-env plugin name stripping", () => {
-  test("does not forward a parent-supplied VELLUM_PLUGIN_NAME", () => {
-    expect(SAFE_ENV_VARS).not.toContain("VELLUM_PLUGIN_NAME");
+  test("does not forward a parent-supplied CADET_PLUGIN_NAME", () => {
+    expect(SAFE_ENV_VARS).not.toContain("CADET_PLUGIN_NAME");
 
     const env = buildSanitizedEnv("linux", {
-      VELLUM_PLUGIN_NAME: "forged-plugin",
+      CADET_PLUGIN_NAME: "forged-plugin",
     });
-    expect(env.VELLUM_PLUGIN_NAME).toBeUndefined();
+    expect(env.CADET_PLUGIN_NAME).toBeUndefined();
   });
 });
 
@@ -129,7 +129,7 @@ describe("safe-env Windows forwarding", () => {
       const env = buildSanitizedEnv(
         "win32",
         { Path: "C:\\Windows\\System32" },
-        { execPath: join(dir, "vellum-daemon.exe") },
+        { execPath: join(dir, "cadet-daemon.exe") },
       );
       expect(env.PATH).toBe(`${dir};C:\\Windows\\System32`);
     } finally {
@@ -143,7 +143,7 @@ describe("safe-env Windows forwarding", () => {
       const env = buildSanitizedEnv(
         "win32",
         { Path: "C:\\Windows\\System32" },
-        { execPath: join(dir, "vellum-daemon.exe") },
+        { execPath: join(dir, "cadet-daemon.exe") },
       );
       expect(env.PATH).toBe("C:\\Windows\\System32");
     } finally {

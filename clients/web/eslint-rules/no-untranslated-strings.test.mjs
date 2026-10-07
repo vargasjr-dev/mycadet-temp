@@ -127,7 +127,7 @@ ruleTester.run("no-untranslated-strings", noUntranslatedStrings, {
       filename: COMPONENT,
       // Nothing here is word separated: the fragments are a file extension
       // and an id segment, which no translator should receive.
-      code: `const C = () => <span title={\`\${app.name}.vellum\`} id={\`\${id}-opt\`} />;`,
+      code: `const C = () => <span title={\`\${app.name}.cadet\`} id={\`\${id}-opt\`} />;`,
     },
     {
       name: "a toast options bag holding no copy of its own",

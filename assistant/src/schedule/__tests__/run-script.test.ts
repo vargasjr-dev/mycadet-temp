@@ -1,7 +1,7 @@
 /**
  * `runScript` injects the schedule's ids into the spawned command's env so a
  * saved command can reference its own dir, e.g.
- * `cd "$VELLUM_WORKSPACE_DIR/schedules/$__SCHEDULE_ID" && bun poll.ts`.
+ * `cd "$CADET_WORKSPACE_DIR/schedules/$__SCHEDULE_ID" && bun poll.ts`.
  */
 
 import { tmpdir } from "node:os";

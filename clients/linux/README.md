@@ -1,4 +1,4 @@
-# Vellum Assistant - Linux (Electron)
+# Cadet Assistant - Linux (Electron)
 
 The Linux desktop client. Like `clients/macos` and `clients/windows`, this is
 an Electron shell around the `clients/web` renderer: in dev it loads the Vite
@@ -8,7 +8,7 @@ protocol. Packaged builds are AppImages.
 
 This is the first iteration toward a Linux distribution. It re-homes the
 community Linux packaging work from
-[#39066](https://github.com/vellum-ai/vellum-assistant/pull/39066) onto the
+[#39066](https://github.com/vargasjr-dev/mycadet/pull/39066) onto the
 current `@mycadet/electron-desktop` adapter used by Windows.
 
 ## What works now

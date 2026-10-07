@@ -15,7 +15,7 @@ describe("readLockfileAssistantAvatar", () => {
   let instanceDir: string;
   let avatarDir: string;
 
-  const env = { VELLUM_ENVIRONMENT: "production", XDG_DATA_HOME: "" };
+  const env = { CADET_ENVIRONMENT: "production", XDG_DATA_HOME: "" };
   const read = (assistantId = "asst-1") =>
     readLockfileAssistantAvatar([lockfilePath], assistantId, env);
 
@@ -51,7 +51,7 @@ describe("readLockfileAssistantAvatar", () => {
     instanceDir = path.join(tempDir, "instance");
     avatarDir = path.join(
       instanceDir,
-      ".vellum",
+      ".cadet",
       "workspace",
       "data",
       "avatar",
@@ -142,10 +142,10 @@ describe("readLockfileAssistantAvatar", () => {
     writeLockfileEntry({ gatewayPort: 1, daemonPort: 2 });
     const defaultAvatarDir = path.join(
       env.XDG_DATA_HOME,
-      "vellum",
+      "cadet",
       "assistants",
       "asst-1",
-      ".vellum",
+      ".cadet",
       "workspace",
       "data",
       "avatar",

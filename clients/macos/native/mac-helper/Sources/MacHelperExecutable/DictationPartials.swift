@@ -64,7 +64,7 @@ final class DictationPartialsSession: @unchecked Sendable {
     // authorization gates too — the scripted recognizer touches no
     // privacy API, so they are skipped wholesale.
     static let fakeRecognition =
-        ProcessInfo.processInfo.environment["VELLUM_HELPER_FAKE_RECOGNITION"] == "1"
+        ProcessInfo.processInfo.environment["CADET_HELPER_FAKE_RECOGNITION"] == "1"
     private var fakeAppendedFrames: AVAudioFrameCount = 0
 
     /// Whether any captured buffer carried non-silence. Distinguishes "the

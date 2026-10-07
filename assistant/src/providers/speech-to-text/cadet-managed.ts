@@ -21,7 +21,7 @@ type ManagedSpeechFailure = Extract<ManagedSpeechResult<never>, { ok: false }>;
 /**
  * Whether managed speech can be used at all: a platform connection with a
  * platform assistant ID. The credential-store lookup used for API-key
- * providers does not apply to `vellum`.
+ * providers does not apply to `cadet`.
  */
 export async function cadetManagedSpeechAvailable(): Promise<boolean> {
   return managedSpeechAvailable();

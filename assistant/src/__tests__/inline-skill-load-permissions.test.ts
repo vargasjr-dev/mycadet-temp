@@ -19,7 +19,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 // ── Mock setup (must be before any imports from the project) ──────────────
 
-const testDir = process.env.VELLUM_WORKSPACE_DIR!;
+const testDir = process.env.CADET_WORKSPACE_DIR!;
 
 // Point the file-based trust backend at the test temp dir.
 process.env.GATEWAY_SECURITY_DIR = join(testDir, "protected");

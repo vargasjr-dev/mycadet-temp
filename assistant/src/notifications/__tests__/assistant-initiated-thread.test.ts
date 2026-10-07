@@ -67,7 +67,7 @@ describe("resolveAssistantInitiatedThread", () => {
       const resolution = resolveAssistantInitiatedThread(signal);
 
       expect(resolution.isCandidate).toBe(true);
-      expect(resolution.vellumSignal).toEqual({
+      expect(resolution.cadetSignal).toEqual({
         ...signal,
         requiresConversation: true,
         conversationMetadata: { source: "assistant_initiated" },
@@ -84,7 +84,7 @@ describe("resolveAssistantInitiatedThread", () => {
     });
     expect(resolveAssistantInitiatedThread(signal)).toEqual({
       isCandidate: false,
-      vellumSignal: signal,
+      cadetSignal: signal,
     });
   });
 
@@ -92,7 +92,7 @@ describe("resolveAssistantInitiatedThread", () => {
     const resolution = resolveAssistantInitiatedThread(share());
 
     expect(resolution.isCandidate).toBe(true);
-    expect(resolution.vellumSignal.requiresConversation).toBe(true);
+    expect(resolution.cadetSignal.requiresConversation).toBe(true);
   });
 
   test.each([{ conversationType: "standard" }, {}] as const)(
@@ -104,7 +104,7 @@ describe("resolveAssistantInitiatedThread", () => {
       const resolution = resolveAssistantInitiatedThread(signal);
 
       expect(resolution.isCandidate).toBe(false);
-      expect(resolution.vellumSignal).toBe(signal);
+      expect(resolution.cadetSignal).toBe(signal);
     },
   );
 
@@ -116,7 +116,7 @@ describe("resolveAssistantInitiatedThread", () => {
     const resolution = resolveAssistantInitiatedThread(signal);
 
     expect(resolution.isCandidate).toBe(false);
-    expect(resolution.vellumSignal).toBe(signal);
+    expect(resolution.cadetSignal).toBe(signal);
     expect(getConversationMock).not.toHaveBeenCalled();
   });
 
@@ -137,7 +137,7 @@ describe("resolveAssistantInitiatedThread", () => {
       const resolution = resolveAssistantInitiatedThread(signal);
 
       expect(resolution.isCandidate).toBe(false);
-      expect(resolution.vellumSignal).toBe(signal);
+      expect(resolution.cadetSignal).toBe(signal);
       expect(getConversationMock).not.toHaveBeenCalled();
     },
   );
@@ -156,7 +156,7 @@ describe("resolveAssistantInitiatedThread", () => {
     const resolution = resolveAssistantInitiatedThread(signal);
 
     expect(resolution.isCandidate).toBe(true);
-    expect(resolution.vellumSignal.conversationMetadata).toEqual({
+    expect(resolution.cadetSignal.conversationMetadata).toEqual({
       ...signal.conversationMetadata,
       source: "assistant_initiated",
     });

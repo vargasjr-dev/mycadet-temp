@@ -174,8 +174,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - name: Find release workflow run
         id: find-run
@@ -258,8 +258,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
-          app-id: ${{ secrets.VELLUM_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.VELLUM_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -344,7 +344,7 @@ jobs:
             .dependencies["@mycadet/assistant"] = $v |
             .dependencies["@mycadet/cli"] = $v |
             .dependencies["@mycadet/credential-executor"] = $v |
-            .dependencies["@mycadet/vellum-gateway"] = $v |
+            .dependencies["@mycadet/cadet-gateway"] = $v |
             .dependencies["@mycadet/web"] = $v
           ' meta/package.json > tmp && mv tmp meta/package.json
 

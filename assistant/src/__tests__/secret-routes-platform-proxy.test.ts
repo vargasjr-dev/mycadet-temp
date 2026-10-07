@@ -210,11 +210,11 @@ describe("secret routes managed proxy registry sync", () => {
     await initializeProviders(getConfig());
   });
 
-  test("adding vellum:assistant_api_key bootstraps managed fallback providers immediately", async () => {
+  test("adding cadet:assistant_api_key bootstraps managed fallback providers immediately", async () => {
     expect(listProviders()).toEqual([]);
 
     const result = await addCredential(
-      "vellum:assistant_api_key",
+      "cadet:assistant_api_key",
       "ast-managed-key",
     );
 
@@ -279,13 +279,13 @@ describe("secret routes managed proxy registry sync", () => {
     await initializeProviders(getConfig());
 
     for (const name of [
-      "vellum:assistant_api_key",
-      "vellum:platform_base_url",
-      "vellum:webhook_secret",
-      "vellum:platform_assistant_id",
+      "cadet:assistant_api_key",
+      "cadet:platform_base_url",
+      "cadet:webhook_secret",
+      "cadet:platform_assistant_id",
     ]) {
       await expect(deleteCredential(name)).rejects.toThrow(
-        "Vellum credentials cannot be deleted",
+        "Cadet credentials cannot be deleted",
       );
     }
 
@@ -300,7 +300,7 @@ describe("secret routes managed proxy registry sync", () => {
   });
 
   test("managed proxy credential writes notify live-conversation refresh listeners", async () => {
-    await addCredential("vellum:assistant_api_key", "ast-managed-key");
+    await addCredential("cadet:assistant_api_key", "ast-managed-key");
 
     expect(providerRefreshCalls).toBe(1);
   });
@@ -348,8 +348,8 @@ describe("secret routes managed proxy registry sync", () => {
 
   test("storing a platform registration credential enqueues name and avatar syncs", async () => {
     for (const name of [
-      "vellum:assistant_api_key",
-      "vellum:platform_base_url",
+      "cadet:assistant_api_key",
+      "cadet:platform_base_url",
     ]) {
       identitySyncCalls = 0;
       avatarSyncCalls = 0;
@@ -370,7 +370,7 @@ describe("secret routes managed proxy registry sync", () => {
     failSecureKeyWrites = true;
 
     await expect(
-      addCredential("vellum:platform_base_url", "https://managed.example.com"),
+      addCredential("cadet:platform_base_url", "https://managed.example.com"),
     ).rejects.toThrow("Failed to store credential");
 
     expect(identitySyncCalls).toBe(0);
@@ -383,14 +383,14 @@ describe("secret routes managed proxy registry sync", () => {
     platformUserIdOverride = "existing-user";
 
     await expect(
-      addCredential("vellum:platform_assistant_id", "asst-1"),
-    ).rejects.toThrow("Unknown vellum credential: platform_assistant_id");
+      addCredential("cadet:platform_assistant_id", "asst-1"),
+    ).rejects.toThrow("Unknown cadet credential: platform_assistant_id");
     await expect(
-      addCredential("vellum:platform_organization_id", "org-1"),
-    ).rejects.toThrow("Unknown vellum credential: platform_organization_id");
+      addCredential("cadet:platform_organization_id", "org-1"),
+    ).rejects.toThrow("Unknown cadet credential: platform_organization_id");
     await expect(
-      addCredential("vellum:platform_user_id", "user-1"),
-    ).rejects.toThrow("Unknown vellum credential: platform_user_id");
+      addCredential("cadet:platform_user_id", "user-1"),
+    ).rejects.toThrow("Unknown cadet credential: platform_user_id");
 
     expect(
       secureKeyStore[credentialKey("cadet", "platform_assistant_id")],
@@ -415,8 +415,8 @@ describe("secret routes managed proxy registry sync", () => {
     platformAssistantIdOverride = "asst-1";
 
     await expect(
-      addCredential("vellum:platform_assistant_id", "   "),
-    ).rejects.toThrow("Unknown vellum credential: platform_assistant_id");
+      addCredential("cadet:platform_assistant_id", "   "),
+    ).rejects.toThrow("Unknown cadet credential: platform_assistant_id");
 
     expect(secureKeyStore[key]).toBe("leftover-asst");
     expect(platformAssistantIdOverride).toBe("asst-1");
@@ -425,9 +425,9 @@ describe("secret routes managed proxy registry sync", () => {
     expect(avatarSyncCalls).toBe(0);
   });
 
-  test("storing vellum:platform_base_url sets override and triggers initializeProviders", async () => {
+  test("storing cadet:platform_base_url sets override and triggers initializeProviders", async () => {
     await addCredential(
-      "vellum:platform_base_url",
+      "cadet:platform_base_url",
       "https://managed.example.com",
     );
 
@@ -440,16 +440,16 @@ describe("secret routes managed proxy registry sync", () => {
     ]);
   });
 
-  test("storing both vellum:platform_base_url and vellum:assistant_api_key enables managed proxy", async () => {
+  test("storing both cadet:platform_base_url and cadet:assistant_api_key enables managed proxy", async () => {
     expect(listProviders()).toEqual([]);
 
     await addCredential(
-      "vellum:platform_base_url",
+      "cadet:platform_base_url",
       "https://managed.example.com",
     );
     expect(platformBaseUrlOverride).toBe("https://managed.example.com");
 
-    await addCredential("vellum:assistant_api_key", "ast-managed-key");
+    await addCredential("cadet:assistant_api_key", "ast-managed-key");
 
     const providers = listProviders();
     expect(providers).toHaveLength(MANAGED_PROVIDERS.length);

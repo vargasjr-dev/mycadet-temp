@@ -202,7 +202,7 @@ describe("next config redirects", () => {
         permanent: true,
       },
       {
-        source: "/docs/vellum-survey-giveaway-official-rules",
+        source: "/docs/cadet-survey-giveaway-official-rules",
         destination: "/docs",
         permanent: true,
       },

@@ -24,7 +24,7 @@ export interface ProcessGuardianDecisionParams {
   requestId: string;
   action: string;
   conversationId?: string;
-  channel: string; // e.g. "vellum"
+  channel: string; // e.g. "cadet"
   actorContext: {
     actorPrincipalId: string | undefined;
     guardianPrincipalId: string | undefined;
@@ -99,7 +99,7 @@ export async function processGuardianDecision(
   //    Deliberately not narrowed by delivery channel: a delivery row's
   //    destinationConversationId is always an internal conversation id, and
   //    a channel card's paired conversation renders the same actionable
-  //    in-app card, so its taps are as legitimate as the vellum card's.
+  //    in-app card, so its taps are as legitimate as the cadet card's.
   //    Reads degrade fail-closed: an unreachable gateway scopes to not_found
   //    (and the decide below fails loudly anyway).
   if (conversationId) {

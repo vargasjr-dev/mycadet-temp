@@ -16,14 +16,14 @@ import type { TrustContext } from "../../daemon/trust-context-types.js";
 import type { AuthContext, Scope } from "../../runtime/auth/types.js";
 
 /**
- * A complete `TrustContext`. Defaults to the guardian on the vellum channel;
+ * A complete `TrustContext`. Defaults to the guardian on the cadet channel;
  * pass overrides for anything the test cares about.
  */
 export function mockTrustContext(
   overrides: Partial<TrustContext> = {},
 ): TrustContext {
   return {
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
     trustClass: "guardian",
     ...overrides,
   };

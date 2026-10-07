@@ -39,7 +39,7 @@ export async function transcribeSegmentAudio(
   transcriber?: BatchTranscriber | null,
   signal?: AbortSignal,
 ): Promise<string> {
-  const tmpWav = join(tmpdir(), `vellum-seg-audio-${randomUUID()}.wav`);
+  const tmpWav = join(tmpdir(), `cadet-seg-audio-${randomUUID()}.wav`);
 
   try {
     // Use the provided transcriber or resolve on demand.

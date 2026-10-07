@@ -16,13 +16,13 @@ import {
 // principal that no token below matches, so any consultation of it would
 // refuse every case in this file. Mocked before the module under test is
 // imported, the way the guardian-only handlers' tests do it.
-const mockFindVellumGuardian = mock(
+const mockFindCadetGuardian = mock(
   async (): Promise<{ principalId: string } | null> => ({
     principalId: "somebody-who-is-not-the-caller",
   }),
 );
 mock.module("../auth/guardian-bootstrap.js", () => ({
-  findVellumGuardian: () => mockFindVellumGuardian(),
+  findCadetGuardian: () => mockFindCadetGuardian(),
 }));
 
 const { createSttStreamWebsocketHandler, getSttStreamWebsocketHandlers } =
@@ -414,7 +414,7 @@ describe("dictation is not a guardian-only surface", () => {
 
     handler(req, makeFakeServer());
 
-    expect(mockFindVellumGuardian).not.toHaveBeenCalled();
+    expect(mockFindCadetGuardian).not.toHaveBeenCalled();
   });
 
   /**

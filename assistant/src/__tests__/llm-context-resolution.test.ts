@@ -14,7 +14,7 @@ mock.module("../providers/inference/connections.js", () => ({
   getConnection: (_db: unknown, name: string) =>
     connectionRows.get(name) ?? null,
   listConnections: () => [],
-  canonicalVellumConnection: () => null,
+  canonicalCadetConnection: () => null,
 }));
 
 import { resolveEffectiveContextWindow } from "../config/llm-context-resolution.js";
@@ -133,7 +133,7 @@ describe("resolveEffectiveContextWindow", () => {
   test("a routing-identity profile resolves the model's own context limits", () => {
     const llm = LLMSchema.parse({
       profiles: {
-        managed: { provider: "vellum", model: "gpt-5.5" },
+        managed: { provider: "cadet", model: "gpt-5.5" },
       },
       activeProfile: "managed",
     });
@@ -143,7 +143,7 @@ describe("resolveEffectiveContextWindow", () => {
       callSite: "mainAgent",
     });
 
-    // The catalog owner (openai) carries gpt-5.5's limits; a raw "vellum"
+    // The catalog owner (openai) carries gpt-5.5's limits; a raw "cadet"
     // lookup would miss and misreport the model max as the 200k default.
     expect(resolved.modelMaxInputTokens).toBe(1050000);
   });

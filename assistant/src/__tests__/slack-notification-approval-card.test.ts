@@ -177,7 +177,7 @@ describe("Slack access-request card blocks", () => {
   test("guardian verification note appears for fallback guardian resolution", () => {
     const texts = contextTexts(
       buildApprovalNotificationBlocks(
-        buildPayload({ ...BASE, guardianResolutionSource: "vellum-anchor" }),
+        buildPayload({ ...BASE, guardianResolutionSource: "cadet-anchor" }),
         "msg",
       ),
     );

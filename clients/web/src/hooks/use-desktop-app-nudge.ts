@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { DesktopAppPlatform } from "@/runtime/desktop-app-platform";
 import { emitNativeAppNudgeEvent } from "@/utils/native-app-nudge-telemetry";
-import { VELLUM_DOWNLOADS_URL } from "@/utils/external-urls";
+import { CADET_DOWNLOADS_URL } from "@/utils/external-urls";
 import {
   getLocalBool,
   setLocalBool,
@@ -131,7 +131,7 @@ export function useDesktopAppNudgeState(platform: DesktopAppPlatform): {
 }
 
 export function openDesktopAppDownload(): void {
-  window.open(VELLUM_DOWNLOADS_URL, "_blank", "noopener,noreferrer");
+  window.open(CADET_DOWNLOADS_URL, "_blank", "noopener,noreferrer");
 }
 
 export const __testing = {

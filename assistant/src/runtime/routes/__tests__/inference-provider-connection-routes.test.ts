@@ -207,7 +207,7 @@ describe("POST inference/provider-connections (create)", () => {
       {
         body: {
           name: "managed-openai",
-          provider: "vellum",
+          provider: "cadet",
           auth: { type: "platform" },
         },
       },
@@ -229,7 +229,7 @@ describe("POST inference/provider-connections (create)", () => {
 
     expect(err).toBeInstanceOf(BadRequestError);
     expect((err as BadRequestError).message).toContain("platform");
-    expect((err as BadRequestError).message).toContain("vellum");
+    expect((err as BadRequestError).message).toContain("cadet");
   });
 
   test("rejects a chatgpt identity row under a non-canonical name", async () => {
@@ -292,15 +292,15 @@ describe("POST inference/provider-connections (create)", () => {
       findHandler("inference_provider_connections_create"),
       {
         body: {
-          name: "keyed-vellum",
-          provider: "vellum",
-          auth: { type: "api_key", credential: "vault/vellum/key" },
+          name: "keyed-cadet",
+          provider: "cadet",
+          auth: { type: "api_key", credential: "vault/cadet/key" },
         },
       },
     ).catch((e: unknown) => e);
 
     expect(err).toBeInstanceOf(BadRequestError);
-    expect((err as BadRequestError).message).toContain("vellum");
+    expect((err as BadRequestError).message).toContain("cadet");
   });
 
   test("creates connection with none auth (e.g. ollama)", async () => {
@@ -399,7 +399,7 @@ describe("POST inference/provider-connections (create)", () => {
     const result = (await call(
       findHandler("inference_provider_connections_create"),
       {
-        body: { name: "derived-vellum", provider: "vellum" },
+        body: { name: "derived-cadet", provider: "cadet" },
       },
     )) as { auth: object };
     expect(result.auth).toEqual({ type: "platform" });
@@ -683,7 +683,7 @@ describe("POST inference/provider-connections (create)", () => {
     await expect(
       call(findHandler("inference_provider_connections_create"), {
         body: {
-          name: "vellum",
+          name: "cadet",
           provider: "openai",
           credential: "credential/openai/api_key",
         },
@@ -1290,15 +1290,15 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
 
   test("managed-connection rejection still takes precedence over the defaultProvider guard", async () => {
     seedConnection({
-      name: "vellum",
-      provider: "vellum",
+      name: "cadet",
+      provider: "cadet",
       auth: { type: "platform" },
     });
-    setConfig("llm", { defaultProvider: { provider: "vellum" } });
+    setConfig("llm", { defaultProvider: { provider: "cadet" } });
 
     const err = await call(
       findHandler("inference_provider_connections_delete"),
-      { pathParams: { name: "vellum" } },
+      { pathParams: { name: "cadet" } },
     ).catch((e: unknown) => e);
 
     expect(err).toBeInstanceOf(BadRequestError);
@@ -1343,7 +1343,7 @@ describe("PATCH with label", () => {
   test("updates label to a string", async () => {
     seedConnection({
       name: "set-label",
-      provider: "vellum",
+      provider: "cadet",
       auth: { type: "platform" },
     });
 
@@ -1360,7 +1360,7 @@ describe("PATCH with label", () => {
   test("clears label by setting it to null", async () => {
     seedConnection({
       name: "clear-label",
-      provider: "vellum",
+      provider: "cadet",
       auth: { type: "platform" },
     });
     // First set a label.
@@ -1382,7 +1382,7 @@ describe("PATCH with label", () => {
   test("rejects label: empty string with 400", async () => {
     seedConnection({
       name: "reject-empty",
-      provider: "vellum",
+      provider: "cadet",
       auth: { type: "platform" },
     });
 
@@ -1398,7 +1398,7 @@ describe("PATCH with label", () => {
 // ── Managed-connection write protection ──────────────────────────────────────
 
 describe("Managed connection write protection", () => {
-  const MANAGED_NAMES = ["vellum"] as const;
+  const MANAGED_NAMES = ["cadet"] as const;
 
   describe("DELETE", () => {
     for (const name of MANAGED_NAMES) {
@@ -1424,19 +1424,19 @@ describe("Managed connection write protection", () => {
       // Even though a profile references the managed connection, the error
       // should be the managed-protection 400, not the references-409.
       seedConnection({
-        name: "vellum",
-        provider: "vellum",
+        name: "cadet",
+        provider: "cadet",
         auth: { type: "platform" },
       });
       setConfig("llm", {
         profiles: {
-          balanced: { provider_connection: "vellum" },
+          balanced: { provider_connection: "cadet" },
         },
       });
 
       const err = await call(
         findHandler("inference_provider_connections_delete"),
-        { pathParams: { name: "vellum" } },
+        { pathParams: { name: "cadet" } },
       ).catch((e: unknown) => e);
 
       expect(err).toBeInstanceOf(BadRequestError);
@@ -1449,14 +1449,14 @@ describe("Managed connection write protection", () => {
       // default resolves to this same name, and that guard must not block the
       // delete either: the next boot re-seeds the row it points at.
       seedConnection({
-        name: "vellum",
+        name: "cadet",
         provider: "openai",
         auth: { type: "api_key", credential: "credential/openai/api_key" },
       });
-      setConfig("llm", { defaultProvider: { provider: "vellum" } });
+      setConfig("llm", { defaultProvider: { provider: "cadet" } });
 
       await call(findHandler("inference_provider_connections_delete"), {
-        pathParams: { name: "vellum" },
+        pathParams: { name: "cadet" },
       });
 
       const remaining = (await call(
@@ -1511,37 +1511,37 @@ describe("Managed connection write protection", () => {
 
     test("allows PATCH with auth still set to platform (no-op auth change)", async () => {
       seedConnection({
-        name: "vellum",
-        provider: "vellum",
+        name: "cadet",
+        provider: "cadet",
         auth: { type: "platform" },
       });
 
       const result = (await call(
         findHandler("inference_provider_connections_update"),
         {
-          pathParams: { name: "vellum" },
+          pathParams: { name: "cadet" },
           body: {
             auth: { type: "platform" },
-            label: "Vellum-managed Anthropic",
+            label: "Cadet-managed Anthropic",
           },
         },
       )) as { label: string | null };
-      expect(result.label).toBe("Vellum-managed Anthropic");
+      expect(result.label).toBe("Cadet-managed Anthropic");
     });
   });
 
   describe("PATCH label (allowed)", () => {
     test("allows relabeling a managed connection", async () => {
       seedConnection({
-        name: "vellum",
-        provider: "vellum",
+        name: "cadet",
+        provider: "cadet",
         auth: { type: "platform" },
       });
 
       const result = (await call(
         findHandler("inference_provider_connections_update"),
         {
-          pathParams: { name: "vellum" },
+          pathParams: { name: "cadet" },
           body: { auth: { type: "platform" }, label: "Custom Label" },
         },
       )) as { label: string | null };
@@ -1553,7 +1553,7 @@ describe("Managed connection write protection", () => {
 // ── isManaged response flag ───────────────────────────────────────────────────
 
 describe("isManaged flag on connection responses", () => {
-  const MANAGED_NAMES = ["vellum"] as const;
+  const MANAGED_NAMES = ["cadet"] as const;
 
   describe("GET list", () => {
     test("returns isManaged: true for canonical names and false for user-created rows", async () => {
@@ -1578,7 +1578,7 @@ describe("isManaged flag on connection responses", () => {
       const byName = Object.fromEntries(
         result.connections.map((c) => [c.name, c.isManaged]),
       );
-      expect(byName["vellum"]).toBe(true);
+      expect(byName["cadet"]).toBe(true);
       expect(byName["my-custom-anthropic"]).toBe(false);
     });
 
@@ -1600,8 +1600,8 @@ describe("isManaged flag on connection responses", () => {
         });
       }
       seedConnection({
-        name: "vellum",
-        provider: "vellum",
+        name: "cadet",
+        provider: "cadet",
         auth: { type: "platform" },
       });
       seedConnection({
@@ -1616,7 +1616,7 @@ describe("isManaged flag on connection responses", () => {
       )) as { connections: Array<{ name: string }> };
       const names = result.connections.map((c) => c.name);
 
-      expect(names).toContain("vellum");
+      expect(names).toContain("cadet");
       expect(names).toContain("my-openai");
       for (const legacy of [
         "anthropic-managed",
@@ -1633,14 +1633,14 @@ describe("isManaged flag on connection responses", () => {
   describe("GET single", () => {
     test("returns isManaged: true for a managed name", async () => {
       seedConnection({
-        name: "vellum",
-        provider: "vellum",
+        name: "cadet",
+        provider: "cadet",
         auth: { type: "platform" },
       });
 
       const result = (await call(
         findHandler("inference_provider_connections_get"),
-        { pathParams: { name: "vellum" } },
+        { pathParams: { name: "cadet" } },
       )) as { name: string; isManaged: boolean };
 
       expect(result.isManaged).toBe(true);
@@ -1651,14 +1651,14 @@ describe("isManaged flag on connection responses", () => {
       // report as the ordinary connection it is or the collision cannot be
       // cleared from the UI.
       seedConnection({
-        name: "vellum",
+        name: "cadet",
         provider: "openai",
         auth: { type: "api_key", credential: "credential/openai/api_key" },
       });
 
       const result = (await call(
         findHandler("inference_provider_connections_get"),
-        { pathParams: { name: "vellum" } },
+        { pathParams: { name: "cadet" } },
       )) as { name: string; isManaged: boolean };
 
       expect(result.isManaged).toBe(false);
@@ -1700,15 +1700,15 @@ describe("isManaged flag on connection responses", () => {
   describe("PATCH update", () => {
     test("returns isManaged: true after relabeling a managed connection", async () => {
       seedConnection({
-        name: "vellum",
-        provider: "vellum",
+        name: "cadet",
+        provider: "cadet",
         auth: { type: "platform" },
       });
 
       const result = (await call(
         findHandler("inference_provider_connections_update"),
         {
-          pathParams: { name: "vellum" },
+          pathParams: { name: "cadet" },
           body: { auth: { type: "platform" }, label: "Cadet Anthropic" },
         },
       )) as { name: string; isManaged: boolean };

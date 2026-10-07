@@ -21,7 +21,7 @@ import {
 import {
   CHATGPT_CONNECTION_PROVIDER,
   OPENAI_COMPATIBLE_PROVIDER,
-  VELLUM_CONNECTION_PROVIDER,
+  CADET_CONNECTION_PROVIDER,
 } from "@/domains/settings/ai/constants";
 import { resolveModelDisplayName } from "@/assistant/model-display";
 import { connectionServesProvider } from "@/domains/settings/ai/provider-availability";
@@ -338,7 +338,7 @@ export function useProfileEditor({
   // derivation.
   const routedModel = useMemo(
     () =>
-      provider === VELLUM_CONNECTION_PROVIDER
+      provider === CADET_CONNECTION_PROVIDER
         ? parseCadetRoutedModel(model)
         : null,
     [provider, model],
@@ -368,7 +368,7 @@ export function useProfileEditor({
   const visibility = useMemo(
     () =>
       resolveProfileParamVisibility(
-        provider === VELLUM_CONNECTION_PROVIDER
+        provider === CADET_CONNECTION_PROVIDER
           ? (routedModel?.provider ??
               getManagedUpstreamForModel(model) ??
               initialValues?.provider ??
@@ -450,7 +450,7 @@ export function useProfileEditor({
   // connections prove the bound row is the managed sentinel. Skipped once the
   // user changes the provider themselves.
   useEffect(() => {
-    if (initialValues?.provider_connection !== VELLUM_CONNECTION_PROVIDER) {
+    if (initialValues?.provider_connection !== CADET_CONNECTION_PROVIDER) {
       return;
     }
     if (provider !== (initialValues?.provider ?? "")) {
@@ -459,8 +459,8 @@ export function useProfileEditor({
     const boundRow = connections?.find(
       (c) => c.name === initialValues.provider_connection,
     );
-    if (boundRow?.provider === VELLUM_CONNECTION_PROVIDER) {
-      setProvider(VELLUM_CONNECTION_PROVIDER);
+    if (boundRow?.provider === CADET_CONNECTION_PROVIDER) {
+      setProvider(CADET_CONNECTION_PROVIDER);
     }
   }, [connections, provider, initialValues]);
 
@@ -478,7 +478,7 @@ export function useProfileEditor({
     // name must not pin or re-vendor the profile on open.
     if (
       CONNECTION_PROVIDERS.includes(stored as ConnectionProvider) ||
-      stored === VELLUM_CONNECTION_PROVIDER ||
+      stored === CADET_CONNECTION_PROVIDER ||
       stored === CHATGPT_CONNECTION_PROVIDER
     ) {
       return;
@@ -486,7 +486,7 @@ export function useProfileEditor({
     const row = connections?.find((c) => c.name === stored);
     if (
       !row ||
-      row.provider === VELLUM_CONNECTION_PROVIDER ||
+      row.provider === CADET_CONNECTION_PROVIDER ||
       row.provider === CHATGPT_CONNECTION_PROVIDER
     ) {
       return;
@@ -756,12 +756,12 @@ export function useProfileEditor({
       // daemons that understand the identity payload do.
       const writesIdentityPayload =
         provider === CHATGPT_CONNECTION_PROVIDER ||
-        (provider === VELLUM_CONNECTION_PROVIDER &&
+        (provider === CADET_CONNECTION_PROVIDER &&
           (await assistantSupportsCadetProviderProfiles(assistantId)));
       const wireProvider =
-        provider === VELLUM_CONNECTION_PROVIDER
+        provider === CADET_CONNECTION_PROVIDER
           ? writesIdentityPayload
-            ? VELLUM_CONNECTION_PROVIDER
+            ? CADET_CONNECTION_PROVIDER
             : (routedModel?.provider ??
               getManagedUpstreamForModel(model) ??
               initialValues?.provider ??
@@ -789,16 +789,16 @@ export function useProfileEditor({
       // the row: all of those keep the legacy shape so the pin survives.
       const bindingInexpressibleAsEntryName =
         boundRow !== undefined &&
-        (boundRow.provider === VELLUM_CONNECTION_PROVIDER ||
+        (boundRow.provider === CADET_CONNECTION_PROVIDER ||
           boundRow.provider === CHATGPT_CONNECTION_PROVIDER ||
-          boundRow.name === VELLUM_CONNECTION_PROVIDER ||
+          boundRow.name === CADET_CONNECTION_PROVIDER ||
           boundRow.name === CHATGPT_CONNECTION_PROVIDER ||
           CONNECTION_PROVIDERS.includes(boundRow.name as ConnectionProvider));
       let entryWireProvider = wireProvider;
       if (
         !writesIdentityPayload &&
         provider !== "" &&
-        provider !== VELLUM_CONNECTION_PROVIDER &&
+        provider !== CADET_CONNECTION_PROVIDER &&
         !bindingInexpressibleAsEntryName &&
         (await assistantSupportsEntryProviderBinding(assistantId))
       ) {

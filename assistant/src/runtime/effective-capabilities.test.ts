@@ -27,7 +27,7 @@ describe("canActOnPrivilegedDocuments", () => {
     expect(
       canActOnPrivilegedDocuments({
         trustClass: "trusted_contact",
-        executionChannel: "vellum",
+        executionChannel: "cadet",
       }),
     ).toBe(true);
   });
@@ -36,7 +36,7 @@ describe("canActOnPrivilegedDocuments", () => {
     expect(
       canActOnPrivilegedDocuments({
         trustClass: "unknown",
-        executionChannel: "vellum",
+        executionChannel: "cadet",
       }),
     ).toBe(true);
     expect(canActOnPrivilegedDocuments({ trustClass: "unknown" })).toBe(false);

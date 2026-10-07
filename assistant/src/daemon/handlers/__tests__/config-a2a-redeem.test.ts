@@ -2,7 +2,7 @@
  * Tests for A2A invite redemption handler (receiver side).
  *
  * Uses the real DB (via `initializeDb()`) and the test preload which sets
- * `VELLUM_WORKSPACE_DIR` to a per-file temp directory.
+ * `CADET_WORKSPACE_DIR` to a per-file temp directory.
  */
 
 import { beforeEach, describe, expect, test } from "bun:test";
@@ -93,7 +93,7 @@ describe("redeemA2AInvite", () => {
 
     const metadata = getAssistantContactMetadata(result.contactId!);
     expect(metadata).not.toBeNull();
-    expect(metadata!.species).toBe("vellum");
+    expect(metadata!.species).toBe("cadet");
     expect(metadata!.metadata).toEqual({
       assistantId: "sender-assistant-123",
       gatewayUrl: "https://sender.example.com",

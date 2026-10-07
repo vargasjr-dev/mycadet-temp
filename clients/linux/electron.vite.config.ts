@@ -30,23 +30,23 @@ const resolveBunVersion = (): string => {
 };
 
 const LOCAL_CLI_ENTRY =
-  (process.env.VELLUM_ENVIRONMENT || "local") === "local"
+  (process.env.CADET_ENVIRONMENT || "local") === "local"
     ? path.resolve(__dirname, "../../cli/src/index.ts")
     : "";
 
 const BUILD_DEFINES = {
-  __VELLUM_BUILD_SHA__: JSON.stringify(resolveShortBuildCommitSha()),
-  __VELLUM_ENVIRONMENT__: JSON.stringify(
-    process.env.VELLUM_ENVIRONMENT || "local",
+  __CADET_BUILD_SHA__: JSON.stringify(resolveShortBuildCommitSha()),
+  __CADET_ENVIRONMENT__: JSON.stringify(
+    process.env.CADET_ENVIRONMENT || "local",
   ),
-  __VELLUM_LOCAL_CLI_ENTRY__: JSON.stringify(LOCAL_CLI_ENTRY),
-  __VELLUM_BUN_VERSION__: JSON.stringify(resolveBunVersion()),
-  __VELLUM_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(
-    process.env.VELLUM_ENABLE_CHROME_DEVTOOLS === "true" ||
-      process.env.VELLUM_ENABLE_CHROME_DEVTOOLS === "1",
+  __CADET_LOCAL_CLI_ENTRY__: JSON.stringify(LOCAL_CLI_ENTRY),
+  __CADET_BUN_VERSION__: JSON.stringify(resolveBunVersion()),
+  __CADET_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(
+    process.env.CADET_ENABLE_CHROME_DEVTOOLS === "true" ||
+      process.env.CADET_ENABLE_CHROME_DEVTOOLS === "1",
   ),
-  __VELLUM_ROOT_HOSTNAME__: JSON.stringify(
-    process.env.VITE_ROOT_HOSTNAME || ".vellum.ai",
+  __CADET_ROOT_HOSTNAME__: JSON.stringify(
+    process.env.VITE_ROOT_HOSTNAME || ".mycadet.ai",
   ),
 };
 

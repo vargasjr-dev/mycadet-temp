@@ -29,7 +29,7 @@ import {
 } from "bun:test";
 
 // Captured at module scope: the preload cleans up its env var between suites.
-const PRELOAD_WS = process.env.VELLUM_WORKSPACE_DIR!;
+const PRELOAD_WS = process.env.CADET_WORKSPACE_DIR!;
 
 // ── Mock state ────────────────────────────────────────────────────
 
@@ -54,11 +54,11 @@ let pendingWarmDeliveries: GuardianDeliveryStub[] | null = null;
  * Seed a cadet guardian: a gateway delivery for the cadet channel plus the
  * local contact (by address) carrying its userFile.
  */
-function seedVellumGuardian(userFile: string | null): void {
+function seedCadetGuardian(userFile: string | null): void {
   mockGuardianDeliveries = [
-    { channelType: "vellum", address: "cadet:self", status: "active" },
+    { channelType: "cadet", address: "cadet:self", status: "active" },
   ];
-  mockContactsByAddress["vellum:cadet:self"] = { userFile };
+  mockContactsByAddress["cadet:cadet:self"] = { userFile };
 }
 
 // ── Mock modules (must precede imports from the module under test) ──
@@ -118,7 +118,7 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  // The preload owns VELLUM_WORKSPACE_DIR (a real temp workspace); give this
+  // The preload owns CADET_WORKSPACE_DIR (a real temp workspace); give this
   // test a clean one by wiping its contents.
   mockWorkspaceDir = PRELOAD_WS;
   rmSync(mockWorkspaceDir, { recursive: true, force: true });
@@ -136,7 +136,7 @@ describe("resolveGuardianPersonaPath", () => {
   });
 
   test("returns absolute path when guardian has userFile set", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
 
     const result = resolveGuardianPersonaPath();
     expect(result).toBe(join(mockWorkspaceDir, "users", "alice.md"));
@@ -146,15 +146,15 @@ describe("resolveGuardianPersonaPath", () => {
     // Cold start: the guardian binding exists upstream but the sync cache is
     // empty, so a bare sync resolution misses it and falls back to default.
     pendingWarmDeliveries = [
-      { channelType: "vellum", address: "cadet:self", status: "active" },
+      { channelType: "cadet", address: "cadet:self", status: "active" },
     ];
-    mockContactsByAddress["vellum:cadet:self"] = { userFile: "alice.md" };
+    mockContactsByAddress["cadet:cadet:self"] = { userFile: "alice.md" };
 
     expect(resolveGuardianPersonaPath()).toBeNull();
 
     // Async callers warm the cadet guardian-delivery cache before the sync
     // resolution; afterwards the guardian slug resolves instead of default.md.
-    await getGuardianDelivery({ channelTypes: ["vellum"] });
+    await getGuardianDelivery({ channelTypes: ["cadet"] });
 
     expect(resolveGuardianPersonaPath()).toBe(
       join(mockWorkspaceDir, "users", "alice.md"),
@@ -209,7 +209,7 @@ describe("resolveGuardianPersonaStrict", () => {
   });
 
   test("returns null when the guardian's own file is missing, even if default.md exists", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
 
     // default.md is populated but alice.md is not on disk.
     const usersDir = join(mockWorkspaceDir, "users");
@@ -228,7 +228,7 @@ describe("resolveGuardianPersonaStrict", () => {
   });
 
   test("returns guardian file content when present", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
 
     const usersDir = join(mockWorkspaceDir, "users");
     mkdirSync(usersDir, { recursive: true });
@@ -300,10 +300,10 @@ describe("isGuardianPersonaCustomized", () => {
 
 describe("resolveUserSlug (guardian trust, no requester identity)", () => {
   test("guardian trust context without requesterExternalUserId resolves the guardian user file", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
 
     const trustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     } as TrustContext;
 
@@ -311,10 +311,10 @@ describe("resolveUserSlug (guardian trust, no requester identity)", () => {
   });
 
   test("non-guardian trust context without requesterExternalUserId does not borrow the guardian persona", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
 
     const trustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "trusted_contact",
     } as TrustContext;
 
@@ -325,7 +325,7 @@ describe("resolveUserSlug (guardian trust, no requester identity)", () => {
     // The verdict-bound guardian is looked up by its address, not by the
     // most-recently-verified channel guardian, so a different channel guardian
     // does not shadow the verdict's binding.
-    seedVellumGuardian("wrong-guardian.md");
+    seedCadetGuardian("wrong-guardian.md");
     mockContactsByAddress["telegram:guardian-tg"] = {
       userFile: "alice.md",
     };
@@ -340,10 +340,10 @@ describe("resolveUserSlug (guardian trust, no requester identity)", () => {
   });
 
   test("falls back to the channel guardian when the verdict carries no guardian identity", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
 
     const trustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     } as TrustContext;
 
@@ -364,12 +364,12 @@ describe("resolveUserSlug (guardian trust, no requester identity)", () => {
 describe("resolveUserSlug (guardian trust WITH requester identity)", () => {
   test("null-userFile guardian contact falls through to the guardian file, not default", () => {
     // Guardian contact exists but has no explicit userFile (post-hatch state).
-    seedVellumGuardian(null);
+    seedCadetGuardian(null);
     // The requester principal id resolves to that same null-userFile contact.
-    mockContactsByAddress["vellum:principal-123"] = { userFile: null };
+    mockContactsByAddress["cadet:principal-123"] = { userFile: null };
 
     const trustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
       requesterExternalUserId: "principal-123",
       guardianExternalUserId: "cadet:self",
@@ -379,11 +379,11 @@ describe("resolveUserSlug (guardian trust WITH requester identity)", () => {
   });
 
   test("an explicit requester userFile still wins over the guardian fallback", () => {
-    seedVellumGuardian(null);
-    mockContactsByAddress["vellum:principal-123"] = { userFile: "alice.md" };
+    seedCadetGuardian(null);
+    mockContactsByAddress["cadet:principal-123"] = { userFile: "alice.md" };
 
     const trustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
       requesterExternalUserId: "principal-123",
       guardianExternalUserId: "cadet:self",
@@ -393,11 +393,11 @@ describe("resolveUserSlug (guardian trust WITH requester identity)", () => {
   });
 
   test("non-guardian turn with a null-userFile contact does not borrow the guardian persona", () => {
-    seedVellumGuardian(null);
-    mockContactsByAddress["vellum:principal-123"] = { userFile: null };
+    seedCadetGuardian(null);
+    mockContactsByAddress["cadet:principal-123"] = { userFile: null };
 
     const trustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "trusted_contact",
       requesterExternalUserId: "principal-123",
       guardianExternalUserId: "cadet:self",
@@ -407,14 +407,14 @@ describe("resolveUserSlug (guardian trust WITH requester identity)", () => {
   });
 });
 
-// ── resolveUserSlug — guardian bound on a non-vellum channel ───────
+// ── resolveUserSlug — guardian bound on a non-cadet channel ───────
 //
 // warmGuardianBindings warms both the channel-filtered and unfiltered cache
-// keys, but a guardian may be bound only on a non-vellum channel (phone,
+// keys, but a guardian may be bound only on a non-cadet channel (phone,
 // Telegram). A guardian-class turn sourced elsewhere must still resolve that
 // guardian instead of silently landing on users/default.md.
 
-describe("resolveUserSlug (guardian bound on a non-vellum channel)", () => {
+describe("resolveUserSlug (guardian bound on a non-cadet channel)", () => {
   test("falls back to the any-channel guardian when the source channel has none", () => {
     mockGuardianDeliveries = [
       { channelType: "telegram", address: "guardian-tg", status: "active" },
@@ -422,7 +422,7 @@ describe("resolveUserSlug (guardian bound on a non-vellum channel)", () => {
     mockContactsByAddress["telegram:guardian-tg"] = { userFile: "alice.md" };
 
     const trustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     } as TrustContext;
 
@@ -436,7 +436,7 @@ describe("resolveUserSlug (guardian bound on a non-vellum channel)", () => {
     mockContactsByAddress["telegram:guardian-tg"] = { userFile: null };
 
     const trustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     } as TrustContext;
 
@@ -453,12 +453,12 @@ describe("resolveUserSlug (guardian bound on a non-vellum channel)", () => {
 describe("resolveUserSlug (cold cache, background shape)", () => {
   test("misses on a cold cache, resolves the guardian after the construction-time warm", async () => {
     pendingWarmDeliveries = [
-      { channelType: "vellum", address: "cadet:self", status: "active" },
+      { channelType: "cadet", address: "cadet:self", status: "active" },
     ];
-    mockContactsByAddress["vellum:cadet:self"] = { userFile: "alice.md" };
+    mockContactsByAddress["cadet:cadet:self"] = { userFile: "alice.md" };
 
     const trustContext = {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     } as TrustContext;
 
@@ -467,7 +467,7 @@ describe("resolveUserSlug (cold cache, background shape)", () => {
 
     // resolveInitialSystemPrompt warms guardian bindings for guardian-class
     // contexts before building; afterwards the same resolution succeeds.
-    await getGuardianDelivery({ channelTypes: ["vellum"] });
+    await getGuardianDelivery({ channelTypes: ["cadet"] });
 
     expect(resolveUserSlug(trustContext)).toBe("alice");
   });
@@ -481,7 +481,7 @@ describe("resolveUserSlug (cold cache, background shape)", () => {
 
 describe("resolveUserName", () => {
   test("prefers the Name label from the guardian's own persona file over default.md", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
     const usersDir = join(mockWorkspaceDir, "users");
     mkdirSync(usersDir, { recursive: true });
     writeFileSync(join(usersDir, "alice.md"), "**Name:** Alice\n", "utf-8");
@@ -495,7 +495,7 @@ describe("resolveUserName", () => {
   });
 
   test("reads the onboarding-written Preferred name bullet", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
     const usersDir = join(mockWorkspaceDir, "users");
     mkdirSync(usersDir, { recursive: true });
     writeFileSync(
@@ -508,7 +508,7 @@ describe("resolveUserName", () => {
   });
 
   test("reads the scaffold's filled Preferred name/reference line", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
     const usersDir = join(mockWorkspaceDir, "users");
     mkdirSync(usersDir, { recursive: true });
     writeFileSync(
@@ -521,7 +521,7 @@ describe("resolveUserName", () => {
   });
 
   test("an unfilled scaffold does not swallow the next line and falls back to default.md", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
     const usersDir = join(mockWorkspaceDir, "users");
     mkdirSync(usersDir, { recursive: true });
     // The bare scaffold: every label present, every value unfilled.
@@ -532,7 +532,7 @@ describe("resolveUserName", () => {
   });
 
   test("a declined_by_user sentinel is not used as a name", () => {
-    seedVellumGuardian("alice.md");
+    seedCadetGuardian("alice.md");
     const usersDir = join(mockWorkspaceDir, "users");
     mkdirSync(usersDir, { recursive: true });
     writeFileSync(

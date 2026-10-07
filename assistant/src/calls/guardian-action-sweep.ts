@@ -2,7 +2,7 @@
  * Guardian action expiry notices.
  *
  * Sends "this request has expired" notices to guardian delivery
- * destinations: vellum conversations get an assistant message, and external
+ * destinations: cadet conversations get an assistant message, and external
  * channels get a direct channel reply on the route
  * `resolveDeliverCallbackUrlForChannel` names for the channel.
  */
@@ -28,7 +28,7 @@ export interface ExpiryDeliveryInfo {
 
 /**
  * Send expiry notices to all delivery destinations for a guardian action
- * request. Handles both vellum/mac conversation messages and external channel
+ * request. Handles both cadet/mac conversation messages and external channel
  * replies.
  *
  * A channel delivery's `destinationChatId` is the notification endpoint the
@@ -57,10 +57,10 @@ export async function sendGuardianExpiryNotices(
       });
 
       if (
-        delivery.destinationChannel === "vellum" &&
+        delivery.destinationChannel === "cadet" &&
         delivery.destinationConversationId
       ) {
-        // Add expiry message to vellum guardian conversation.
+        // Add expiry message to cadet guardian conversation.
         await addMessage(
           delivery.destinationConversationId,
           "assistant",
@@ -68,7 +68,7 @@ export async function sendGuardianExpiryNotices(
           {
             metadata: {
               userMessageChannel: "phone",
-              assistantMessageChannel: "vellum",
+              assistantMessageChannel: "cadet",
               userMessageInterface: "phone",
               assistantMessageInterface: "web",
             },

@@ -59,7 +59,7 @@ export const ROUTES: RouteDefinition[] = [
       publishConversationTitleChanged(
         conversationId,
         title,
-        headers?.["x-vellum-client-id"]?.trim() || undefined,
+        headers?.["x-cadet-client-id"]?.trim() || undefined,
       );
 
       return { ok: true };

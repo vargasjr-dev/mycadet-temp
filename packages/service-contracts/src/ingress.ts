@@ -77,7 +77,7 @@ export function trimmedNonEmptyString(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-// Records `vellum tunnel` leaves in the workspace config's `ingress` section.
+// Records `cadet tunnel` leaves in the workspace config's `ingress` section.
 // The CLI writes them and the daemon reads them, and the two are separate
 // build units that cannot import each other, so the key names, the provider
 // allowlist, and the validation all live here rather than in a copy on each
@@ -101,7 +101,7 @@ export const INGRESS_ASSISTANT_ID_KEY = "assistantId";
 
 /**
  * The local tunnel providers the CLI can start, in the order they are offered.
- * `vellum tunnel`'s accepted `--provider` values and the persisted-record
+ * `cadet tunnel`'s accepted `--provider` values and the persisted-record
  * validation below both derive from it.
  */
 export const TUNNEL_PROVIDERS = ["ngrok", "cloudflare", "tailscale"] as const;

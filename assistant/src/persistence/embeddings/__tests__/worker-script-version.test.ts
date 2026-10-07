@@ -69,7 +69,7 @@ describe("worker script cache invalidation", () => {
       generateWorkerScript(),
       generateRerankWorkerScript(),
     ]) {
-      expect(script).toContain("VELLUM_ONNX_INTRA_OP_THREADS");
+      expect(script).toContain("CADET_ONNX_INTRA_OP_THREADS");
       expect(script).toContain("session_options: sessionOptions");
     }
   });

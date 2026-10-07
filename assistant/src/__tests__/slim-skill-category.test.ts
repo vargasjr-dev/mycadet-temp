@@ -42,7 +42,7 @@ mock.module("../skills/catalog-cache.js", () => ({
 
 mock.module("../skills/catalog-files.js", () => ({
   catalogSkillToSlim: () => ({}),
-  createVellumCatalogProvider: () => ({}),
+  createCadetCatalogProvider: () => ({}),
   hasHiddenOrSkippedSegment: () => false,
   readCatalogSkillFiles: async () => null,
   readCatalogSkillFileContent: async () => null,

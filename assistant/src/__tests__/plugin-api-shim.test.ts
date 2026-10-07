@@ -38,13 +38,13 @@ describe("buildShimSource", () => {
   test("emits a globalThis trampoline with a direct-import fallback + one binding per export", () => {
     const source = buildShimSource(
       ["foo", "bar"],
-      Symbol.for("vellum.plugin-api"),
+      Symbol.for("cadet.plugin-api"),
       "file:///somewhere/plugin-api/index.ts",
     );
     // Prefers the host-installed namespace and falls back to importing
     // the baked plugin-api entry directly.
     expect(source).toBe(
-      `let api = globalThis[Symbol.for("vellum.plugin-api")];\n` +
+      `let api = globalThis[Symbol.for("cadet.plugin-api")];\n` +
         `if (api === undefined) {\n` +
         `  api = await import("file:///somewhere/plugin-api/index.ts");\n` +
         `}\n` +
@@ -54,14 +54,14 @@ describe("buildShimSource", () => {
   });
 
   test("bakes the entry resolved from this source tree by default", () => {
-    const source = buildShimSource(["foo"], Symbol.for("vellum.plugin-api"));
+    const source = buildShimSource(["foo"], Symbol.for("cadet.plugin-api"));
     expect(source).toContain(pluginApiFallbackEntry());
     // The default entry points at the real file next to this repo's source.
     expect(existsSync(fileURLToPath(pluginApiFallbackEntry()))).toBe(true);
   });
 
   test("handles an empty export list (types-only surface)", () => {
-    const source = buildShimSource([], Symbol.for("vellum.plugin-api"));
+    const source = buildShimSource([], Symbol.for("cadet.plugin-api"));
     expect(source).not.toContain("export const");
     expect(source).toContain(`let api = globalThis[`);
   });
@@ -138,8 +138,8 @@ describe("ensurePluginApiShim", () => {
 
     // Explicit env spread: under bun test, a child's default env reflects the
     // process-start environ, not later process.env mutations. Without this
-    // the child misses the preload's VELLUM_WORKSPACE_DIR and resolves the
-    // real ~/.vellum/workspace (refused by the live-workspace guard).
+    // the child misses the preload's CADET_WORKSPACE_DIR and resolves the
+    // real ~/.cadet/workspace (refused by the live-workspace guard).
     const result = spawnSync(process.execPath, ["run", probe], {
       encoding: "utf8",
       timeout: 30_000,

@@ -93,7 +93,7 @@ function readUpdates(contextPayload: unknown): FeedItemUpdate[] | undefined {
  * Append a `FeedItem` for the given notification signal when the
  * filter criteria pass.
  *
- * `vellumDelivery` is this signal's vellum delivery outcome, and it settles
+ * `cadetDelivery` is this signal's cadet delivery outcome, and it settles
  * two questions here.
  *
  * Its conversation is a navigation target standing in for a
@@ -112,16 +112,16 @@ function readUpdates(contextPayload: unknown): FeedItemUpdate[] | undefined {
 export async function writeHomeFeedItemForSignal(
   signal: NotificationSignal,
   decision: NotificationDecision,
-  vellumDelivery?: NotificationDeliveryResult,
+  cadetDelivery?: NotificationDeliveryResult,
 ): Promise<FeedItem | null> {
   const { mirror, sourceConversationId, sourceScheduleJobId } =
-    resolveHomeFeedMirror(signal, vellumDelivery?.conversationId);
+    resolveHomeFeedMirror(signal, cadetDelivery?.conversationId);
   if (!mirror) {
     return null;
   }
 
   const renderedCopy =
-    decision.renderedCopy.vellum ??
+    decision.renderedCopy.cadet ??
     firstSelectedRenderedCopy(decision.renderedCopy, decision.selectedChannels);
   const payloadTitle =
     readPayloadString(signal.contextPayload, "title") ??
@@ -260,7 +260,7 @@ export async function writeHomeFeedItemForSignal(
   // free-form metadata, which no schema rule can turn away.
   const conversationMessageId = await resolveOwnedConversationMessageId(
     signal,
-    vellumDelivery,
+    cadetDelivery,
     sourceConversationId,
     resolvedSummary,
   );
@@ -299,7 +299,7 @@ export async function writeHomeFeedItemForSignal(
  * write, leaving a row that reads pending. `editNotification` settles that
  * question by rewriting through the card only when the delivery walk did not.
  *
- * A vellum delivery that paired a conversation already wrote the body there,
+ * A cadet delivery that paired a conversation already wrote the body there,
  * so its row is the one to record. Guardian producers pair a fresh
  * conversation instead of the one the card opens, and their row is left
  * unrecorded: a handle has to address the conversation behind the button, and
@@ -307,7 +307,7 @@ export async function writeHomeFeedItemForSignal(
  */
 async function resolveOwnedConversationMessageId(
   signal: NotificationSignal,
-  vellumDelivery: NotificationDeliveryResult | undefined,
+  cadetDelivery: NotificationDeliveryResult | undefined,
   sourceConversationId: string | undefined,
   summary: string,
 ): Promise<string | undefined> {
@@ -316,9 +316,9 @@ async function resolveOwnedConversationMessageId(
   if (signal.sourceEventName === "chat.assistant_reply") {
     return undefined;
   }
-  if (vellumDelivery?.conversationId) {
-    return vellumDelivery.conversationId === sourceConversationId
-      ? vellumDelivery.messageId
+  if (cadetDelivery?.conversationId) {
+    return cadetDelivery.conversationId === sourceConversationId
+      ? cadetDelivery.messageId
       : undefined;
   }
   if (!sourceConversationId) {
@@ -332,11 +332,11 @@ async function resolveOwnedConversationMessageId(
  * button opens, returning the id of the row written.
  *
  * That button targets the producing conversation whatever the routing, but
- * only the vellum delivery writes a notification body into a conversation
+ * only the cadet delivery writes a notification body into a conversation
  * (`pairDeliveryWithConversation` appends there for passive signals). A
  * signal the decision engine routes to Slack or Telegram alone pairs no
- * vellum conversation, so without this the button opens a conversation that
- * never received what the card shows. A paired vellum id means that write
+ * cadet conversation, so without this the button opens a conversation that
+ * never received what the card shows. A paired cadet id means that write
  * already happened, and this is skipped.
  *
  * The caller has already read `sourceConversationId` back from the store to
@@ -386,7 +386,7 @@ async function appendSummaryToFeedTarget(
  * the conversation it opens in step.
  *
  * Notification edits reach conversation content through the delivery rows the
- * broadcaster recorded, which is how the vellum adapter rewrites the row its
+ * broadcaster recorded, which is how the cadet adapter rewrites the row its
  * pairing wrote. That walk covers a row only while its delivery reads sent, so
  * this is the backstop for every way it can miss one: a delivery that failed,
  * a row that was never recorded, a signal with no deliveries at all, and a
@@ -598,7 +598,7 @@ function resolveHomeFeedMirror(
 }
 
 /**
- * Whether the vellum delivery this signal produced landed in a thread the
+ * Whether the cadet delivery this signal produced landed in a thread the
  * sidebar's assistant section already shows.
  *
  * Best-effort like the source lookup above: a missing id, a missing row, or

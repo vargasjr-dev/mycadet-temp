@@ -185,7 +185,7 @@ describe("getMostRecentChannelGuardianTimestamp", () => {
 describe("resolveCanonicalPrincipal", () => {
   test("returns the guardian's principal from the active cadet channel", async () => {
     seedContact({ id: "g1", role: "guardian", principalId: "principal-owner" });
-    seedChannel({ contactId: "g1", type: "vellum", status: "active" });
+    seedChannel({ contactId: "g1", type: "cadet", status: "active" });
 
     expect(await resolveCanonicalPrincipal("fallback")).toBe("principal-owner");
   });

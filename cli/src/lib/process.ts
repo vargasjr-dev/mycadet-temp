@@ -9,14 +9,14 @@ import {
   waitForDaemonReady,
 } from "./http-client.js";
 
-const VELLUM_COMMAND_PATTERN =
-  /vellum-daemon|vellum-cli|vellum-gateway|credential-executor|@vellumai|[\\/]\.?cadet[\\/]|[\\/]daemon[\\/]main|[\\/]\.vellum[\\/].*qdrant[\\/]bin[\\/]qdrant/;
+const CADET_COMMAND_PATTERN =
+  /cadet-daemon|cadet-cli|cadet-gateway|credential-executor|@mycadet|[\\/]\.?cadet[\\/]|[\\/]daemon[\\/]main|[\\/]\.cadet[\\/].*qdrant[\\/]bin[\\/]qdrant/;
 
-export const isVellumCommandLine = (command: string): boolean =>
-  VELLUM_COMMAND_PATTERN.test(command);
+export const isCadetCommandLine = (command: string): boolean =>
+  CADET_COMMAND_PATTERN.test(command);
 
 /**
- * Verify that a PID belongs to a vellum-related process by inspecting its
+ * Verify that a PID belongs to a cadet-related process by inspecting its
  * command line via `ps`. Prevents killing unrelated processes when a PID file
  * is stale and the OS has reused the PID.
  */
@@ -94,21 +94,21 @@ export function readProcessCommandLine(
   }).trim();
 }
 
-export function isVellumWindowsProcess(
+export function isCadetWindowsProcess(
   imageName: string,
   commandLine = "",
 ): boolean {
   if (/^qdrant\.exe$/i.test(imageName)) {
-    return isVellumCommandLine(commandLine);
+    return isCadetCommandLine(commandLine);
   }
   if (
-    /^(?:cadet|vellum-cli|vellum-daemon|vellum-gateway|credential-executor)\.exe$/i.test(
+    /^(?:cadet|cadet-cli|cadet-daemon|cadet-gateway|credential-executor)\.exe$/i.test(
       imageName,
     )
   ) {
     return true;
   }
-  return /^bun\.exe$/i.test(imageName) && isVellumCommandLine(commandLine);
+  return /^bun\.exe$/i.test(imageName) && isCadetCommandLine(commandLine);
 }
 
 /**
@@ -126,7 +126,7 @@ export function readPosixCommandLine(pid: number): string | null {
   }
 }
 
-export function isVellumProcess(
+export function isCadetProcess(
   pid: number,
   hostPlatform: NodeJS.Platform = platform(),
 ): boolean {
@@ -136,10 +136,10 @@ export function isVellumProcess(
       const commandLine = /^(?:bun|qdrant)\.exe$/i.test(imageName)
         ? readProcessCommandLine(pid, hostPlatform)
         : "";
-      return isVellumWindowsProcess(imageName, commandLine);
+      return isCadetWindowsProcess(imageName, commandLine);
     }
     const output = readProcessCommandLine(pid, hostPlatform);
-    return isVellumCommandLine(output);
+    return isCadetCommandLine(output);
   } catch {
     return false;
   }
@@ -255,7 +255,7 @@ export async function resolveProcessState(
     );
     if (!becameHealthy) {
       // Genuinely hung — kill if it belongs to Cadet, otherwise just clean up.
-      if (isVellumProcess(result.pid)) {
+      if (isCadetProcess(result.pid)) {
         console.log(
           `${label} process alive (pid ${result.pid}) but not responding — killing and restarting...`,
         );
@@ -441,7 +441,7 @@ export async function stopProcessByPidFile(
     label: string,
     timeoutMs?: number,
   ) => Promise<boolean> = stopProcess,
-  ownsProcess: (pid: number) => boolean = isVellumProcess,
+  ownsProcess: (pid: number) => boolean = isCadetProcess,
 ): Promise<boolean> {
   const { alive, pid } = isProcessAlive(pidFile);
 
@@ -470,7 +470,7 @@ export async function stopProcessByPidFile(
 
 /**
  * Find and stop any cadet daemon processes that may not be tracked by a PID
- * file. Scans `ps` output for the `vellum-daemon` binary name.
+ * file. Scans `ps` output for the `cadet-daemon` binary name.
  *
  * Returns true if at least one process was stopped.
  */
@@ -486,9 +486,9 @@ export async function stopOrphanedDaemonProcesses(
             ({ imageName, pid }) =>
               pid !== process.pid &&
               !excludePids.has(String(pid)) &&
-              (/^vellum-daemon\.exe$/i.test(imageName) ||
+              (/^cadet-daemon\.exe$/i.test(imageName) ||
                 (/^bun\.exe$/i.test(imageName) &&
-                  /vellum-daemon|[\\/]assistant[\\/]src[\\/](?:index|daemon[\\/]main)\.ts/i.test(
+                  /cadet-daemon|[\\/]assistant[\\/]src[\\/](?:index|daemon[\\/]main)\.ts/i.test(
                     readProcessCommandLine(pid, hostPlatform),
                   ))),
           )
@@ -525,7 +525,7 @@ export async function stopOrphanedDaemonProcesses(
     }
     const cmd = trimmed.slice(spaceIdx + 1);
 
-    if (cmd.includes("vellum-daemon")) {
+    if (cmd.includes("cadet-daemon")) {
       const result = await stopProcess(pid, "orphaned daemon");
       if (result) stopped = true;
     }

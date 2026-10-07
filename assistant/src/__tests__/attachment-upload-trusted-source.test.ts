@@ -2,14 +2,14 @@
  * Tests the trustedSource flag plumbing through the attachment upload route.
  * The flag is forwarded by the gateway when a channel actor resolves to
  * a guardian binding; the assistant only honors it when the request
- * carries the x-vellum-principal-type: svc_gateway header (injected by
+ * carries the x-cadet-principal-type: svc_gateway header (injected by
  * the HTTP adapter from AuthContext).
  */
 import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 mock.module("../config/env.js", () => ({
   isHttpAuthDisabled: () => true,
-  getAssistantDomain: () => "vellum.me",
+  getAssistantDomain: () => "mycadet.bot",
 }));
 
 import { initializeDb } from "../persistence/db-init.js";
@@ -42,7 +42,7 @@ function makeUploadArgs(
     rawBody: new TextEncoder().encode(jsonBody),
     headers: {
       "content-type": "application/json",
-      "x-vellum-principal-type": principalType,
+      "x-cadet-principal-type": principalType,
     },
     queryParams: {},
   };

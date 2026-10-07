@@ -46,10 +46,10 @@ export async function assertHostProxyResultBinding(args: {
   missingClientIdMessage: string;
 }): Promise<void> {
   const submittingClientId =
-    args.headers?.["x-vellum-client-id"]?.trim() || undefined;
+    args.headers?.["x-cadet-client-id"]?.trim() || undefined;
   const submittingActorPrincipalId =
     await resolveActorPrincipalIdForLocalGuardian(
-      args.headers?.["x-vellum-actor-principal-id"]?.trim() || undefined,
+      args.headers?.["x-cadet-actor-principal-id"]?.trim() || undefined,
     );
 
   if (args.targetClientId) {

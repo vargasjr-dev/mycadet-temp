@@ -37,7 +37,7 @@ Tell the user:
 >
 > 1. Scroll down to the **OAuth Applications** section
 > 2. Click **Create new OAuth application**
-> 3. Set the application name to **Vellum Assistant**
+> 3. Set the application name to **Cadet Assistant**
 > 4. Set the **Redirect URL** to `OAUTH_CALLBACK_URL`
 > 5. Click **Create**
 >

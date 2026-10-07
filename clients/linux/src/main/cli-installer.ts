@@ -29,10 +29,10 @@ const LATEST_INSTALL_DIR = "latest";
 const INSTALL_APP_VERSION_MARKER = ".app-version";
 
 // Injected by `electron.vite.config.ts` at build time.
-declare const __VELLUM_ENVIRONMENT__: string;
-const VELLUM_ENVIRONMENT =
-  typeof __VELLUM_ENVIRONMENT__ === "string"
-    ? __VELLUM_ENVIRONMENT__
+declare const __CADET_ENVIRONMENT__: string;
+const CADET_ENVIRONMENT =
+  typeof __CADET_ENVIRONMENT__ === "string"
+    ? __CADET_ENVIRONMENT__
     : "production";
 
 /**
@@ -41,10 +41,10 @@ const VELLUM_ENVIRONMENT =
  * tracks production `latest`. Keep in sync with generate-cli-lockfile.sh.
  */
 function getCliDistTag(): string {
-  if (VELLUM_ENVIRONMENT === "dev") {
+  if (CADET_ENVIRONMENT === "dev") {
     return "dev";
   }
-  if (VELLUM_ENVIRONMENT === "staging") {
+  if (CADET_ENVIRONMENT === "staging") {
     return "staging";
   }
   return "latest";
@@ -52,17 +52,17 @@ function getCliDistTag(): string {
 
 // Baked by electron.vite.config.ts: the repo CLI entry for local builds,
 // empty for release builds (and absent under bun test).
-declare const __VELLUM_LOCAL_CLI_ENTRY__: string;
+declare const __CADET_LOCAL_CLI_ENTRY__: string;
 const LOCAL_CLI_ENTRY =
-  typeof __VELLUM_LOCAL_CLI_ENTRY__ === "string"
-    ? __VELLUM_LOCAL_CLI_ENTRY__
+  typeof __CADET_LOCAL_CLI_ENTRY__ === "string"
+    ? __CADET_LOCAL_CLI_ENTRY__
     : "";
 
 // Baked by electron.vite.config.ts from .tool-versions: the version of the
 // bundled bun. Empty outside a packaged build (e.g. under bun test).
-declare const __VELLUM_BUN_VERSION__: string;
+declare const __CADET_BUN_VERSION__: string;
 const BUNDLED_BUN_VERSION =
-  typeof __VELLUM_BUN_VERSION__ === "string" ? __VELLUM_BUN_VERSION__ : "";
+  typeof __CADET_BUN_VERSION__ === "string" ? __CADET_BUN_VERSION__ : "";
 
 /**
  * Repo CLI entry for local builds, when the checkout is actually runnable:
@@ -85,9 +85,9 @@ export function getCliRootDir(): string {
   return path.join(app.getPath("userData"), "cli");
 }
 
-/** The `vellum` bin path within an install directory. */
+/** The `cadet` bin path within an install directory. */
 function binPathIn(dir: string): string {
-  return path.join(dir, "node_modules", ".bin", "vellum");
+  return path.join(dir, "node_modules", ".bin", "cadet");
 }
 
 /** Compare two version-like dir names numerically (so 0.10.0 > 0.9.0). */
@@ -105,7 +105,7 @@ function compareVersions(a: string, b: string): number {
 }
 
 /**
- * Newest existing install under `cli/` whose `vellum` bin is present: prefer
+ * Newest existing install under `cli/` whose `cadet` bin is present: prefer
  * `cli/latest`, otherwise the highest semver-named dir (including an old
  * pinned dir like `cli/0.9.0`). Returns `null` when nothing is installed.
  */
@@ -191,7 +191,7 @@ export function migrateStaleInstallDir(): void {
 
 /**
  * Absolute path of what the bundled bun should execute as the CLI: the repo
- * source entry in local builds, otherwise the installed `vellum` binary.
+ * source entry in local builds, otherwise the installed `cadet` binary.
  * Everything downstream (invocation, locator, PATH wrapper) flows through
  * this, so local builds never touch the npm install path.
  */
@@ -234,7 +234,7 @@ export function writeFileAtomicSync(
 }
 
 /**
- * Atomically write the locator file the `~/.local/bin/vellum` wrapper
+ * Atomically write the locator file the `~/.local/bin/cadet` wrapper
  * sources to find the bundled bun and the current CLI bin. Refreshed on
  * every launch so app moves and version bumps self-heal. Non-fatal:
  * failures are logged but never block app startup.
@@ -255,9 +255,9 @@ export function writeCliLocator(): void {
     mkdirSync(path.dirname(locatorPath), { recursive: true });
 
     const content =
-      "# Written by Vellum.app on every launch. Do not edit.\n" +
-      `VELLUM_BUN=${shQuote(getBundledBunPath())}\n` +
-      `VELLUM_CLI_BIN=${shQuote(getCliBinPath())}\n`;
+      "# Written by Cadet.app on every launch. Do not edit.\n" +
+      `CADET_BUN=${shQuote(getBundledBunPath())}\n` +
+      `CADET_CLI_BIN=${shQuote(getCliBinPath())}\n`;
 
     writeFileAtomicSync(locatorPath, content);
   } catch (err) {
@@ -366,7 +366,7 @@ function anchorInstallDir(installDir: string): void {
   }
   writeFileAtomicSync(
     pkgPath,
-    `${JSON.stringify({ name: "vellum-cli-install", private: true }, null, 2)}\n`,
+    `${JSON.stringify({ name: "cadet-cli-install", private: true }, null, 2)}\n`,
   );
 }
 
@@ -482,7 +482,7 @@ async function bunInstallCli(): Promise<void> {
   mkdirSync(installDir, { recursive: true });
 
   // Recover from a corrupt prior install. When `node_modules` already exists
-  // but no longer exposes the `vellum` bin (e.g. a partial tree left behind
+  // but no longer exposes the `cadet` bin (e.g. a partial tree left behind
   // by an app upgrade), `bun add` treats the lockfile as satisfied and exits
   // 0 without relinking the bin, so every relaunch repeats the same no-op and
   // the app stays wedged on "Failed to connect". Wipe the stale tree (and its
@@ -491,7 +491,7 @@ async function bunInstallCli(): Promise<void> {
   const nodeModulesDir = path.join(installDir, "node_modules");
   if (existsSync(nodeModulesDir) && !existsSync(binPathIn(installDir))) {
     log.warn(
-      "[cli-installer] stale CLI node_modules without a vellum bin; reinstalling clean",
+      "[cli-installer] stale CLI node_modules without a cadet bin; reinstalling clean",
     );
     rmSync(nodeModulesDir, { recursive: true, force: true });
     rmSync(path.join(installDir, "bun.lock"), { force: true });
@@ -504,12 +504,12 @@ async function bunInstallCli(): Promise<void> {
     const seeded = seedCliLockfile(installDir);
     const args = seeded
       ? ["install", "--frozen-lockfile", "--ignore-scripts"]
-      : ["add", `vellum@${PINNED_CLI_VERSION}`, "--ignore-scripts"];
+      : ["add", `cadet@${PINNED_CLI_VERSION}`, "--ignore-scripts"];
     await runBun(args, installDir);
   } else {
     // Unpinned: float to the environment's dist-tag, falling back to the seeded
     // frozen lockfile (resolved at build time) when the registry is unreachable.
-    const spec = `vellum@${getCliDistTag()}`;
+    const spec = `cadet@${getCliDistTag()}`;
     try {
       await runBun(["add", spec, "--ignore-scripts"], installDir);
     } catch (err) {
@@ -545,7 +545,7 @@ export function _resetInstallLock(): void {
 }
 
 /**
- * Install the vellum meta-package if it isn't already present.
+ * Install the cadet meta-package if it isn't already present.
  *
  * Packaged builds ship a pre-resolved lockfile so `bun install
  * --frozen-lockfile` pins the exact dependency graph from build time;
@@ -584,7 +584,7 @@ export async function ensureCliInstalled(): Promise<void> {
   // it surface downstream as a cryptic `bun run` "Module not found".
   if (!isCliInstalled()) {
     throw new Error(
-      `CLI install reported success but no vellum binary was found at ${getCliBinPath()}.`,
+      `CLI install reported success but no cadet binary was found at ${getCliBinPath()}.`,
     );
   }
 }

@@ -1852,7 +1852,7 @@ final class MacHelper: @unchecked Sendable {
     }
 
     private func log(_ message: String) {
-        FileHandle.standardError.write(Data("[vellum-mac-helper] \(message)\n".utf8))
+        FileHandle.standardError.write(Data("[cadet-mac-helper] \(message)\n".utf8))
     }
 }
 
@@ -1893,7 +1893,7 @@ private func writePermissionStatusAndExit() {
         let outputPath = argumentValue(after: "--status-output")
     else {
         FileHandle.standardError.write(
-            Data("[vellum-mac-helper] permission status requires kind and output path\n".utf8)
+            Data("[cadet-mac-helper] permission status requires kind and output path\n".utf8)
         )
         exit(2)
     }
@@ -1908,7 +1908,7 @@ private func writePermissionStatusAndExit() {
         exit(0)
     } catch {
         FileHandle.standardError.write(
-            Data("[vellum-mac-helper] failed to write permission status: \(error.localizedDescription)\n".utf8)
+            Data("[cadet-mac-helper] failed to write permission status: \(error.localizedDescription)\n".utf8)
         )
         exit(1)
     }

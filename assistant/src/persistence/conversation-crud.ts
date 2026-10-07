@@ -303,7 +303,7 @@ function deleteRequestLogsForConversation(id: string): void {
 // extra keys are allowed via passthrough so callers can attach ad-hoc data.
 
 const channelIdSchema = z.enum(CHANNEL_IDS);
-// Accept both canonical INTERFACE_IDS and the legacy "vellum" alias,
+// Accept both canonical INTERFACE_IDS and the legacy "cadet" alias,
 // normalizing to "web" on read so downstream code only handles canonical IDs.
 const interfaceIdSchema = z
   .string()
@@ -361,7 +361,7 @@ export const messageMetadataSchema = z
      * "web" for the web, mobile, and desktop apps alike, so this is the only
      * per-platform attribution. `browser_family` / `browser_version` /
      * `interface_version` (and an `os` override) come from the sanitized
-     * `x-vellum-*` client-metadata headers read by `handleSendMessage`
+     * `x-cadet-*` client-metadata headers read by `handleSendMessage`
      * (see `@mycadet/service-contracts/client-metadata`). Forwarded
      * verbatim onto `TurnTelemetryEvent.client` for downstream analytics.
      * Kept as a permissive `record` so adding a new client field doesn't

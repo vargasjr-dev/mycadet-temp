@@ -14,7 +14,7 @@ const mockAppVersion = "1.2.3";
 // Baked from .tool-versions by electron.vite.config.ts in a real build; set here
 // (before the module import below reads it) so the packageManager stamp is live.
 const mockBunVersion = "1.3.11";
-(globalThis as Record<string, unknown>).__VELLUM_BUN_VERSION__ = mockBunVersion;
+(globalThis as Record<string, unknown>).__CADET_BUN_VERSION__ = mockBunVersion;
 
 // `process.resourcesPath` is only defined inside a packaged Electron app.
 // Set a known value so `path.join(process.resourcesPath, "bun")` works.
@@ -46,7 +46,7 @@ let readdirSyncReturn: Array<{ name: string; isDirectory: () => boolean }> = [];
 let readdirSyncError: Error | null = null;
 let writeFileSyncError: Error | null = null;
 // Contents returned by readFileSync (the install package.json stampPackageManager reads).
-let readFileSyncReturn = '{"dependencies":{"vellum":"latest"}}';
+let readFileSyncReturn = '{"dependencies":{"cadet":"latest"}}';
 // Per-path readFileSync overrides (e.g. the .app-version marker). Falls back to
 // readFileSyncReturn.
 const readFileSyncByPath: Record<string, string> = {};
@@ -135,10 +135,10 @@ const seedLockPath = `${mockResourcesPath}/cli-lockfile/bun.lock`;
 const locatorPath = `${userDataPath}/cli/locator.sh`;
 // Default (unpinned) install dir when nothing exists yet.
 const latestInstallDir = `${userDataPath}/cli/latest`;
-const cliBinPath = `${latestInstallDir}/node_modules/.bin/vellum`;
+const cliBinPath = `${latestInstallDir}/node_modules/.bin/cadet`;
 /** Bin path for an install dir under `cli/`. */
 const binPathFor = (name: string) =>
-  `${userDataPath}/cli/${name}/node_modules/.bin/vellum`;
+  `${userDataPath}/cli/${name}/node_modules/.bin/cadet`;
 /** `.app-version` marker path for an install dir under `cli/`. */
 const markerPathFor = (name: string) =>
   `${userDataPath}/cli/${name}/.app-version`;
@@ -149,7 +149,7 @@ afterEach(() => {
   readdirSyncReturn.length = 0;
   readdirSyncError = null;
   writeFileSyncError = null;
-  readFileSyncReturn = '{"dependencies":{"vellum":"latest"}}';
+  readFileSyncReturn = '{"dependencies":{"cadet":"latest"}}';
   for (const key of Object.keys(readFileSyncByPath))
     delete readFileSyncByPath[key];
   readFileSyncError = null;
@@ -197,7 +197,7 @@ describe("getCliInstallDir", () => {
 });
 
 describe("getCliBinPath", () => {
-  test("returns <installDir>/node_modules/.bin/vellum", () => {
+  test("returns <installDir>/node_modules/.bin/cadet", () => {
     readdirSyncReturn = [];
     expect(getCliBinPath()).toBe(cliBinPath);
   });
@@ -273,8 +273,8 @@ describe("writeCliLocator", () => {
     writeCliLocator();
 
     const content = writeFileSyncCalls[0][1];
-    expect(content).toContain(`VELLUM_BUN='${mockResourcesPath}/bun'\n`);
-    expect(content).toContain(`VELLUM_CLI_BIN='${cliBinPath}'\n`);
+    expect(content).toContain(`CADET_BUN='${mockResourcesPath}/bun'\n`);
+    expect(content).toContain(`CADET_CLI_BIN='${cliBinPath}'\n`);
     expect(content.endsWith("\n")).toBe(true);
     expect(content.startsWith("#!")).toBe(false);
   });
@@ -375,7 +375,7 @@ describe("ensureCliInstalled", () => {
     // reinstall, so the post-install stamp is never reached — heal it here so
     // installs predating the field (or on an older bun) don't drift (LUM-2649).
     existsSyncDefault = true;
-    readFileSyncReturn = '{"dependencies":{"vellum":"latest"}}';
+    readFileSyncReturn = '{"dependencies":{"cadet":"latest"}}';
     readFileSyncByPath[markerPathFor("latest")] = mockAppVersion;
 
     await ensureCliInstalled();
@@ -392,7 +392,7 @@ describe("ensureCliInstalled", () => {
 
   test("does not rewrite an already-stamped install on the upgrade path", async () => {
     existsSyncDefault = true;
-    readFileSyncReturn = `{"packageManager":"bun@${mockBunVersion}","dependencies":{"vellum":"latest"}}`;
+    readFileSyncReturn = `{"packageManager":"bun@${mockBunVersion}","dependencies":{"cadet":"latest"}}`;
     readFileSyncByPath[markerPathFor("latest")] = mockAppVersion;
 
     await ensureCliInstalled();
@@ -724,7 +724,7 @@ describe("ensureCliInstalled", () => {
 
   test("stamps packageManager into the freshly installed package.json", async () => {
     existsSyncDefault = false;
-    readFileSyncReturn = '{"dependencies":{"vellum":"latest"}}';
+    readFileSyncReturn = '{"dependencies":{"cadet":"latest"}}';
 
     const promise = ensureCliInstalled();
     existsSyncByPath[cliBinPath] = true;
@@ -740,7 +740,7 @@ describe("ensureCliInstalled", () => {
     const written = JSON.parse(pkgWrites.at(-1)![1]);
     expect(written.packageManager).toBe(`bun@${mockBunVersion}`);
     // Existing fields are preserved.
-    expect(written.dependencies).toEqual({ vellum: "latest" });
+    expect(written.dependencies).toEqual({ cadet: "latest" });
     expect(renameSyncCalls).toContainEqual([
       `${latestInstallDir}/package.json.tmp`,
       `${latestInstallDir}/package.json`,
@@ -750,7 +750,7 @@ describe("ensureCliInstalled", () => {
   test("does not rewrite package.json when packageManager already matches", async () => {
     existsSyncDefault = false;
     existsSyncByPath[`${latestInstallDir}/package.json`] = true;
-    readFileSyncReturn = `{"packageManager":"bun@${mockBunVersion}","dependencies":{"vellum":"latest"}}`;
+    readFileSyncReturn = `{"packageManager":"bun@${mockBunVersion}","dependencies":{"cadet":"latest"}}`;
 
     const promise = ensureCliInstalled();
     existsSyncByPath[cliBinPath] = true;
@@ -790,7 +790,7 @@ describe("ensureCliInstalled", () => {
     );
     expect(anchorWrite).toBeDefined();
     expect(JSON.parse(anchorWrite![1])).toEqual({
-      name: "vellum-cli-install",
+      name: "cadet-cli-install",
       private: true,
     });
     // The anchor lands before the install spawns.
@@ -802,7 +802,7 @@ describe("ensureCliInstalled", () => {
   test("does not overwrite an existing package.json when anchoring", async () => {
     existsSyncDefault = false;
     existsSyncByPath[`${latestInstallDir}/package.json`] = true;
-    readFileSyncReturn = `{"packageManager":"bun@${mockBunVersion}","dependencies":{"vellum":"latest"}}`;
+    readFileSyncReturn = `{"packageManager":"bun@${mockBunVersion}","dependencies":{"cadet":"latest"}}`;
 
     const promise = ensureCliInstalled();
     existsSyncByPath[cliBinPath] = true;
@@ -819,7 +819,7 @@ describe("ensureCliInstalled", () => {
     existsSyncDefault = false;
 
     const promise = ensureCliInstalled();
-    // bun exits 0 without ever creating node_modules/.bin/vellum.
+    // bun exits 0 without ever creating node_modules/.bin/cadet.
     lastChild.emit("close", 0);
 
     await expect(promise).rejects.toThrow(/no cadet binary was found/);

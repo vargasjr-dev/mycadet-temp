@@ -35,7 +35,7 @@ const ITEM = {
   slug: "dark-mode",
   title: "Add dark mode",
   status: "open",
-  url: "https://www.vellum.ai/roadmap/dark-mode",
+  url: "https://mycadet.ai/roadmap/dark-mode",
   upvoteCount: 12,
   commentCount: 1,
   tags: [{ slug: "ui", name: "UI" }],
@@ -94,7 +94,7 @@ describe("roadmap list", () => {
     expect(stdout).toContain("Add dark mode");
     expect(stdout).toContain("▲12 (upvoted)");
     expect(stdout).toContain("[ui]");
-    expect(stdout).toContain("https://www.vellum.ai/roadmap/dark-mode");
+    expect(stdout).toContain("https://mycadet.ai/roadmap/dark-mode");
   });
 
   test("strips terminal control sequences out of public text", async () => {

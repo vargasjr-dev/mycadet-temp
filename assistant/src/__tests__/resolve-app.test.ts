@@ -17,7 +17,7 @@ let previousWorkspaceDir: string | undefined;
 function freshWorkspace(): string {
   return join(
     tmpdir(),
-    `vellum-resolve-app-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-resolve-app-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
 }
 
@@ -38,17 +38,17 @@ function bundleApp(pluginDir: string, app: string): void {
 }
 
 beforeEach(() => {
-  previousWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
+  previousWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
   workspaceDir = freshWorkspace();
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
 });
 
 afterEach(() => {
   rmSync(workspaceDir, { recursive: true, force: true });
   if (previousWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = previousWorkspaceDir;
   }
 });
 

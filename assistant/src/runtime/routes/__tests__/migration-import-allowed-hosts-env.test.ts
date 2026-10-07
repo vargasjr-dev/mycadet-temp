@@ -1,6 +1,6 @@
 /**
  * Tests for the import-only host-allowlist plumbing derived from the
- * platform-injected `VELLUM_MIGRATION_IMPORT_ALLOWED_HOSTS` env var.
+ * platform-injected `CADET_MIGRATION_IMPORT_ALLOWED_HOSTS` env var.
  *
  * Covers:
  * - `parseMigrationImportAllowedHostsEnv`: unset / empty / whitespace-only

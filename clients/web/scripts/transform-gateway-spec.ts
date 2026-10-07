@@ -83,7 +83,7 @@ for (const [path, methods] of Object.entries(sourcePaths)) {
 spec.paths = transformedPaths;
 
 const info = spec.info as Record<string, unknown>;
-info.title = "Vellum Gateway API (assistant-scoped paths)";
+info.title = "Cadet Gateway API (assistant-scoped paths)";
 info.description =
   "Gateway spec with assistant-prefixed paths for web app codegen. " +
   "Auto-generated — do not edit. Regenerate: cd clients/web && bun run scripts/transform-gateway-spec.ts";

@@ -130,10 +130,10 @@ function makeDecision(
 ): NotificationDecision {
   return {
     shouldNotify: true,
-    selectedChannels: ["vellum"],
+    selectedChannels: ["cadet"],
     reasoningSummary: "Test decision",
     renderedCopy: {
-      vellum: { title: "Test Alert", body: "Something happened" },
+      cadet: { title: "Test Alert", body: "Something happened" },
     },
     dedupeKey: "broadcast-test-001",
     confidence: 0.9,
@@ -171,31 +171,31 @@ describe("notification broadcaster", () => {
     nextPairingResult = null;
   });
   test("dispatches to the cadet adapter when selected", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
 
     const signal = makeSignal();
     const decision = makeDecision();
 
     const results = await broadcaster.broadcastDecision(signal, decision);
 
-    expect(vellumAdapter.sent).toHaveLength(1);
-    expect(vellumAdapter.sent[0].copy.title).toBe("Test Alert");
+    expect(cadetAdapter.sent).toHaveLength(1);
+    expect(cadetAdapter.sent[0].copy.title).toBe("Test Alert");
     expect(
-      results.some((r) => r.channel === "vellum" && r.status === "sent"),
+      results.some((r) => r.channel === "cadet" && r.status === "sent"),
     ).toBe(true);
   });
 
   test("skips channels without registered adapters", async () => {
     // Register only cadet, but decision selects both
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
 
     const signal = makeSignal();
     const decision = makeDecision({
-      selectedChannels: ["vellum", "telegram"],
+      selectedChannels: ["cadet", "telegram"],
       renderedCopy: {
-        vellum: { title: "Test", body: "Body" },
+        cadet: { title: "Test", body: "Body" },
         telegram: { title: "Test", body: "Body" },
       },
     });
@@ -204,16 +204,16 @@ describe("notification broadcaster", () => {
 
     // Cadet should succeed, telegram should be skipped (no adapter registered)
     expect(results).toHaveLength(2);
-    const vellumResult = results.find((r) => r.channel === "vellum");
+    const cadetResult = results.find((r) => r.channel === "cadet");
     const telegramResult = results.find((r) => r.channel === "telegram");
-    expect(vellumResult?.status).toBe("sent");
+    expect(cadetResult?.status).toBe("sent");
     expect(telegramResult?.status).toBe("skipped");
   });
 
   test("reports failed delivery when adapter returns error", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    vellumAdapter.shouldFail = true;
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    cadetAdapter.shouldFail = true;
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
 
     const signal = makeSignal();
     const decision = makeDecision();
@@ -226,8 +226,8 @@ describe("notification broadcaster", () => {
   });
 
   test("passes deepLinkTarget through to adapter payload", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
 
     const signal = makeSignal();
     const decision = makeDecision({
@@ -236,12 +236,12 @@ describe("notification broadcaster", () => {
 
     await broadcaster.broadcastDecision(signal, decision);
 
-    expect(vellumAdapter.sent).toHaveLength(1);
+    expect(cadetAdapter.sent).toHaveLength(1);
     // The broadcaster overwrites deepLinkTarget.conversationId with the
     // paired conversation ID, so the original 'conv-123' is replaced.
     // Verify the structure is correct and that conversationId comes from
     // the pairing result, not the pre-pairing placeholder.
-    const deepLink = vellumAdapter.sent[0].deepLinkTarget;
+    const deepLink = cadetAdapter.sent[0].deepLinkTarget;
     expect(deepLink).toBeDefined();
     expect(deepLink!.screen).toBe("thread");
     expect(deepLink!.conversationId).toBeDefined();
@@ -251,34 +251,34 @@ describe("notification broadcaster", () => {
   });
 
   test("multiple channels receive independent copy from the decision", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
+    const cadetAdapter = new MockAdapter("cadet");
     const telegramAdapter = new MockAdapter("telegram");
     const broadcaster = new NotificationBroadcaster([
-      vellumAdapter,
+      cadetAdapter,
       telegramAdapter,
     ]);
 
     const signal = makeSignal();
     const decision = makeDecision({
-      selectedChannels: ["vellum", "telegram"],
+      selectedChannels: ["cadet", "telegram"],
       renderedCopy: {
-        vellum: { title: "Desktop Alert", body: "For desktop" },
+        cadet: { title: "Desktop Alert", body: "For desktop" },
         telegram: { title: "Mobile Alert", body: "For mobile" },
       },
     });
 
     await broadcaster.broadcastDecision(signal, decision);
 
-    expect(vellumAdapter.sent).toHaveLength(1);
-    expect(vellumAdapter.sent[0].copy.title).toBe("Desktop Alert");
+    expect(cadetAdapter.sent).toHaveLength(1);
+    expect(cadetAdapter.sent[0].copy.title).toBe("Desktop Alert");
 
     expect(telegramAdapter.sent).toHaveLength(1);
     expect(telegramAdapter.sent[0].copy.title).toBe("Mobile Alert");
   });
 
   test("uses fallback copy when decision is missing copy for a channel", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
 
     const signal = makeSignal({ sourceEventName: "schedule.notify" });
     const decision = makeDecision({
@@ -288,20 +288,20 @@ describe("notification broadcaster", () => {
 
     await broadcaster.broadcastDecision(signal, decision);
 
-    expect(vellumAdapter.sent).toHaveLength(1);
+    expect(cadetAdapter.sent).toHaveLength(1);
     // The fallback should produce some copy (either from template or generic)
-    expect(vellumAdapter.sent[0].copy.title).toBeDefined();
-    expect(vellumAdapter.sent[0].copy.body).toBeDefined();
+    expect(cadetAdapter.sent[0].copy.title).toBeDefined();
+    expect(cadetAdapter.sent[0].copy.body).toBeDefined();
   });
 
   test("adapter receives concise copy (title/body), not the conversation seed message", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
 
     const signal = makeSignal();
     const decision = makeDecision({
       renderedCopy: {
-        vellum: {
+        cadet: {
           title: "Reminder",
           body: "Take out the trash",
           conversationSeedMessage:
@@ -312,17 +312,17 @@ describe("notification broadcaster", () => {
 
     await broadcaster.broadcastDecision(signal, decision);
 
-    expect(vellumAdapter.sent).toHaveLength(1);
+    expect(cadetAdapter.sent).toHaveLength(1);
     // The adapter payload uses the full copy object — title/body are what
     // the native notification displays. The conversationSeedMessage is only consumed
     // by conversation pairing, not by the adapter's display logic.
-    expect(vellumAdapter.sent[0].copy.title).toBe("Reminder");
-    expect(vellumAdapter.sent[0].copy.body).toBe("Take out the trash");
+    expect(cadetAdapter.sent[0].copy.title).toBe("Reminder");
+    expect(cadetAdapter.sent[0].copy.body).toBe("Take out the trash");
   });
 
   test("empty selectedChannels produces no deliveries", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
 
     const signal = makeSignal();
     const decision = makeDecision({
@@ -332,14 +332,14 @@ describe("notification broadcaster", () => {
     const results = await broadcaster.broadcastDecision(signal, decision);
 
     expect(results).toHaveLength(0);
-    expect(vellumAdapter.sent).toHaveLength(0);
+    expect(cadetAdapter.sent).toHaveLength(0);
   });
 
   // ── Conversation-created event emission ─────────────────────────────
 
   test("fires onConversationCreated when a new cadet conversation is created (start_new)", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
     const conversationCreatedCalls: ConversationCreatedInfo[] = [];
     broadcaster.setOnConversationCreated((info) => {
       conversationCreatedCalls.push(info);
@@ -357,8 +357,8 @@ describe("notification broadcaster", () => {
   });
 
   test("fires per-dispatch onConversationCreated callback on new conversation", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
     const dispatchCalls: ConversationCreatedInfo[] = [];
 
     const signal = makeSignal();
@@ -374,8 +374,8 @@ describe("notification broadcaster", () => {
   });
 
   test("does NOT fire class-level onConversationCreated when reusing an existing conversation", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
     const eventCalls: ConversationCreatedInfo[] = [];
     const dispatchCalls: ConversationCreatedInfo[] = [];
     broadcaster.setOnConversationCreated((info) => {
@@ -397,7 +397,7 @@ describe("notification broadcaster", () => {
     const signal = makeSignal();
     const decision = makeDecision({
       conversationActions: {
-        vellum: {
+        cadet: {
           action: "reuse_existing",
           conversationId: "conv-existing-123",
         },
@@ -494,8 +494,8 @@ describe("notification broadcaster", () => {
   });
 
   test("reused conversation via binding-key continuation does NOT emit class-level onConversationCreated", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
     const eventCalls: ConversationCreatedInfo[] = [];
     broadcaster.setOnConversationCreated((info) => {
       eventCalls.push(info);
@@ -523,8 +523,8 @@ describe("notification broadcaster", () => {
   });
 
   test("fresh conversation for continue_existing_conversation does NOT emit class-level onConversationCreated", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
     const eventCalls: ConversationCreatedInfo[] = [];
     broadcaster.setOnConversationCreated((info) => {
       eventCalls.push(info);
@@ -553,8 +553,8 @@ describe("notification broadcaster", () => {
   });
 
   test("per-dispatch onConversationCreated fires for reused binding-key conversation", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
     const dispatchCalls: ConversationCreatedInfo[] = [];
 
     // Binding-key reuse: conversation already exists
@@ -582,24 +582,24 @@ describe("notification broadcaster", () => {
   });
 
   test("cadet delivery does NOT carry binding context into pairing", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
 
     const signal = makeSignal();
     const decision = makeDecision();
 
     await broadcaster.broadcastDecision(signal, decision);
 
-    const vellumCall = pairingCalls.find((c) => c.channel === "vellum");
-    expect(vellumCall).toBeDefined();
-    expect(vellumCall!.options?.bindingContext).toBeUndefined();
+    const cadetCall = pairingCalls.find((c) => c.channel === "cadet");
+    expect(cadetCall).toBeDefined();
+    expect(cadetCall!.options?.bindingContext).toBeUndefined();
   });
 
   // ── conversationMetadata propagation ──────────────────────────────
 
   test("onConversationCreated includes groupId and source from conversationMetadata", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
     const createdCalls: ConversationCreatedInfo[] = [];
     broadcaster.setOnConversationCreated((info) => {
       createdCalls.push(info);
@@ -624,8 +624,8 @@ describe("notification broadcaster", () => {
   });
 
   test("onConversationCreated omits groupId and source when conversationMetadata is absent", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
     const createdCalls: ConversationCreatedInfo[] = [];
     broadcaster.setOnConversationCreated((info) => {
       createdCalls.push(info);
@@ -642,8 +642,8 @@ describe("notification broadcaster", () => {
   });
 
   test("per-dispatch callback receives conversationMetadata fields", async () => {
-    const vellumAdapter = new MockAdapter("vellum");
-    const broadcaster = new NotificationBroadcaster([vellumAdapter]);
+    const cadetAdapter = new MockAdapter("cadet");
+    const broadcaster = new NotificationBroadcaster([cadetAdapter]);
     const dispatchCalls: ConversationCreatedInfo[] = [];
 
     const signal = makeSignal({

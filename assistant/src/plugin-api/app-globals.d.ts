@@ -1,7 +1,7 @@
 /**
- * Ambient global types for the **app-side** Vellum bridge — `window.cadet`.
+ * Ambient global types for the **app-side** Cadet bridge — `window.cadet`.
  *
- * A Vellum plugin app runs inside a sandboxed iframe, and the host injects a
+ * A Cadet plugin app runs inside a sandboxed iframe, and the host injects a
  * `window.cadet` object into it at load time (see the assistant's
  * `sandbox-bridge` runtime). This file is the type-only counterpart to that
  * injection: it teaches TypeScript the shape of `window.cadet` so an app can
@@ -21,19 +21,19 @@
  * ```
  *
  * or by adding `"@mycadet/plugin-api/app"` to `compilerOptions.types` in
- * `tsconfig.json`. Either way the app no longer needs its own `vellum.d.ts`.
+ * `tsconfig.json`. Either way the app no longer needs its own `cadet.d.ts`.
  *
  * The named types below are also exported, so app code that wants to annotate
- * a variable can `import type { VellumAppBridge } from "@mycadet/plugin-api/app"`.
+ * a variable can `import type { CadetAppBridge } from "@mycadet/plugin-api/app"`.
  */
 
 /**
- * Request init accepted by {@link VellumAppBridge.fetch}. A subset of the DOM
+ * Request init accepted by {@link CadetAppBridge.fetch}. A subset of the DOM
  * `RequestInit`: the bridge serializes the request across `postMessage`, so
  * `headers` must be a plain object and `body` a string (not a `Headers`
  * instance, `FormData`, or a stream).
  */
-export interface VellumAppFetchInit {
+export interface CadetAppFetchInit {
   /** HTTP method. Defaults to `"GET"`. */
   method?: string;
   /** Request headers as a plain object. */
@@ -43,11 +43,11 @@ export interface VellumAppFetchInit {
 }
 
 /**
- * Response returned by {@link VellumAppBridge.fetch}. A `fetch`-like subset,
+ * Response returned by {@link CadetAppBridge.fetch}. A `fetch`-like subset,
  * not a full DOM `Response`: the body is delivered as text across the bridge,
  * so only `json()` and `text()` are available (no `blob()`, `body`, etc.).
  */
-export interface VellumAppFetchResponse {
+export interface CadetAppFetchResponse {
   /** True when `status` is in the 2xx range. */
   ok: boolean;
   status: number;
@@ -64,7 +64,7 @@ export interface VellumAppFetchResponse {
  * The `window.cadet` bridge the host injects into a plugin app's sandboxed
  * iframe. Mirrors the runtime built by the assistant's `sandbox-bridge`.
  */
-export interface VellumAppBridge {
+export interface CadetAppBridge {
   /**
    * Authenticated `fetch` to the app's own custom routes under `/v1/x/` (a
    * leading `/x/` is accepted and normalized). Proxied through the host so the
@@ -73,12 +73,12 @@ export interface VellumAppBridge {
    */
   fetch(
     path: string,
-    options?: VellumAppFetchInit,
-  ): Promise<VellumAppFetchResponse>;
+    options?: CadetAppFetchInit,
+  ): Promise<CadetAppFetchResponse>;
 }
 
 declare global {
   interface Window {
-    vellum: VellumAppBridge;
+    cadet: CadetAppBridge;
   }
 }

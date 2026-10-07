@@ -26,8 +26,8 @@ describe("recordGuardianRequestDeliveries", () => {
   test("records rows only for addressable channels, skipping platform", async () => {
     const deliveryResults: NotificationDeliveryResult[] = [
       {
-        channel: "vellum",
-        destination: "vellum",
+        channel: "cadet",
+        destination: "cadet",
         status: "sent",
         conversationId: "conv-1",
       },
@@ -56,7 +56,7 @@ describe("recordGuardianRequestDeliveries", () => {
     const channels = createGuardianRequestDeliveryMock.mock.calls.map(
       (call) => (call[0] as { destinationChannel: string }).destinationChannel,
     );
-    expect(channels).toEqual(["vellum", "telegram"]);
+    expect(channels).toEqual(["cadet", "telegram"]);
 
     const telegramRow = createGuardianRequestDeliveryMock.mock.calls[1]![0] as {
       destinationChatId?: string;

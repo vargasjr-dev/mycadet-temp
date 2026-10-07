@@ -66,8 +66,8 @@ describe("isInterfaceId", () => {
     expect(isInterfaceId("safari-extension")).toBe(false);
   });
 
-  test("returns false for legacy alias 'vellum' (use parseInterfaceId to normalize)", () => {
-    expect(isInterfaceId("vellum")).toBe(false);
+  test("returns false for legacy alias 'cadet' (use parseInterfaceId to normalize)", () => {
+    expect(isInterfaceId("cadet")).toBe(false);
   });
 });
 
@@ -79,8 +79,8 @@ describe("parseInterfaceId", () => {
     expect(parseInterfaceId("linux")).toBe("linux");
   });
 
-  test("normalizes legacy 'vellum' alias to 'web'", () => {
-    expect(parseInterfaceId("vellum")).toBe("web");
+  test("normalizes legacy 'cadet' alias to 'web'", () => {
+    expect(parseInterfaceId("cadet")).toBe("web");
   });
 
   test("returns null for unknown interface", () => {
@@ -228,7 +228,7 @@ describe("parseClientOs", () => {
     // "cli"/"telegram" (real interfaces) are not valid OS surfaces.
     expect(parseClientOs("cli")).toBeNull();
     expect(parseClientOs("telegram")).toBeNull();
-    expect(parseClientOs("vellum")).toBeNull();
+    expect(parseClientOs("cadet")).toBeNull();
     expect(parseClientOs("plan9")).toBeNull();
     expect(parseClientOs(undefined)).toBeNull();
     expect(parseClientOs(42)).toBeNull();

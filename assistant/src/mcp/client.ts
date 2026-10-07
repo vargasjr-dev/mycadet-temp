@@ -82,7 +82,7 @@ export class McpClient {
     this.serverConfig =
       typeof sourceOrConfig === "string" ? null : sourceOrConfig;
     this.client = new Client({
-      name: "vellum-assistant",
+      name: "mycadet",
       version: "1.0.0",
     });
 

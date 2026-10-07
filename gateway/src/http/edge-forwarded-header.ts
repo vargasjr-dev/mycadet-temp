@@ -7,7 +7,7 @@
  * The gateway-side guard (this constant + the checks in the guardian-init and
  * pair handlers) lands first and is inert until an edge actually sets the
  * header — i.e. it ships dark. The nginx injection
- * (`proxy_set_header X-Vellum-Edge-Forwarded "1"`) is added with the
+ * (`proxy_set_header X-Cadet-Edge-Forwarded "1"`) is added with the
  * SPA-serving edge itself.
  *
  * Loopback-only endpoints (`/v1/guardian/init`, `/v1/pair`) treat its presence
@@ -24,13 +24,13 @@
  * ingress does not, so guards may check it unconditionally across deploy modes.
  *
  * NOTE: The literal value is mirrored as a hardcoded string in the nginx
- * configs (`proxy_set_header X-Vellum-Edge-Forwarded`). Keep them in sync.
+ * configs (`proxy_set_header X-Cadet-Edge-Forwarded`). Keep them in sync.
  */
-export const EDGE_FORWARDED_HEADER = "x-vellum-edge-forwarded" as const;
+export const EDGE_FORWARDED_HEADER = "x-cadet-edge-forwarded" as const;
 
 /**
  * Edge-observed client address, stamped by the same nginx edge on every
- * proxied request (`proxy_set_header X-Vellum-Client-Ip ...`, which REPLACES
+ * proxied request (`proxy_set_header X-Cadet-Client-Ip ...`, which REPLACES
  * any client-supplied value, so it cannot be smuggled). The edge derives it
  * from the rightmost `X-Forwarded-For` entry written by the TLS-terminating
  * front, falling back to its raw peer address when the front sets none.
@@ -38,7 +38,7 @@ export const EDGE_FORWARDED_HEADER = "x-vellum-edge-forwarded" as const;
  * Only meaningful on requests that provably arrived via the trusted edge
  * (edge marker present AND loopback raw peer); read it nowhere else.
  */
-export const EDGE_CLIENT_IP_HEADER = "x-vellum-client-ip" as const;
+export const EDGE_CLIENT_IP_HEADER = "x-cadet-client-ip" as const;
 
 /**
  * True when the request carries the unspoofable edge-proxy marker, i.e. it was

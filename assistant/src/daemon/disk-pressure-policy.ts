@@ -37,7 +37,7 @@ export interface DiskPressureTurnMetadata {
   callSite?: LLMCallSite | (string & {}) | null;
   isInteractive?: boolean | null;
   sourceChannel?: TrustContext["sourceChannel"] | (string & {}) | null;
-  sourceInterface?: InterfaceId | "vellum" | (string & {}) | null;
+  sourceInterface?: InterfaceId | "cadet" | (string & {}) | null;
   trustContext?: DiskPressureTurnTrustContext | null;
   isDirectWake?: boolean | null;
 }
@@ -61,7 +61,7 @@ const LOCAL_OWNER_INTERFACES = new Set([
   "macos",
   "windows",
   "web",
-  "vellum",
+  "cadet",
   "cli",
 ]);
 
@@ -152,7 +152,7 @@ function isLocalOwnerTurnWithoutTrust(
 
   const channel = metadata.sourceChannel;
   const sourceInterface = metadata.sourceInterface;
-  if (channel !== "vellum" || sourceInterface == null) {
+  if (channel !== "cadet" || sourceInterface == null) {
     return false;
   }
   return LOCAL_OWNER_INTERFACES.has(sourceInterface);
@@ -166,7 +166,7 @@ function isExplicitLocalOwnerCleanupTurn(
   }
   const sourceInterface = metadata.sourceInterface;
   if (
-    metadata.sourceChannel !== "vellum" ||
+    metadata.sourceChannel !== "cadet" ||
     sourceInterface == null ||
     !LOCAL_OWNER_INTERFACES.has(sourceInterface)
   ) {

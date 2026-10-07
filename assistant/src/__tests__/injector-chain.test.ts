@@ -109,7 +109,7 @@ function makeTurnContext(): TurnContext {
     conversationId: TEST_CONVERSATION_ID,
     turnIndex: 0,
     trust: {
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     },
   };
@@ -585,7 +585,7 @@ describe("injector chain", () => {
         workingDir: "/sandbox",
         workspaceTopLevelContext: "",
         workspaceTopLevelDirty: false,
-        trustContext: { trustClass: "guardian", sourceChannel: "vellum" },
+        trustContext: { trustClass: "guardian", sourceChannel: "cadet" },
         channelCapabilities: {
           channel: "slack",
           dashboardCapable: false,

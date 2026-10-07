@@ -39,7 +39,7 @@ import {
 import { installExternalSkill } from "../skills/skillssh-registry.js";
 import { makeTar } from "./helpers/tar-fixtures.js";
 
-const originalWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
+const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 const originalFetch = globalThis.fetch;
 
 let workspaceDir: string;
@@ -63,7 +63,7 @@ function writeInstalledSkill(skillId: string, name: string): void {
 
 beforeEach(() => {
   workspaceDir = mkdtempSync(join(tmpdir(), "skills-install-staging-"));
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
   mkdirSync(join(workspaceDir, "skills"), { recursive: true });
   mockSpawn.mockClear();
   spawnArgv.length = 0;
@@ -72,9 +72,9 @@ beforeEach(() => {
 afterEach(() => {
   globalThis.fetch = originalFetch;
   if (originalWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = originalWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
   }
   rmSync(workspaceDir, { recursive: true, force: true });
 });

@@ -1,4 +1,4 @@
-# Vellum Gateway
+# Cadet Gateway
 
 Standalone service that serves as the public ingress boundary for all external webhooks and callbacks. It owns Telegram integration end-to-end, routes Twilio voice webhooks, handles OAuth callbacks, and acts as an authenticated reverse proxy for the assistant runtime.
 
@@ -28,11 +28,11 @@ bun run dev
 
 | Variable                  | Required | Default | Description                                                                                                                                                                                                                                                                         |
 | ------------------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TELEGRAM_BOT_TOKEN`      | No       | —       | Bot token from @BotFather (Telegram disabled when unset). When not set as an env var, the gateway reads from the assistant's secure credential store: CES HTTP API first (when `CES_CREDENTIAL_URL` is configured), then the encrypted file store (`~/.vellum/protected/keys.enc`). |
+| `TELEGRAM_BOT_TOKEN`      | No       | —       | Bot token from @BotFather (Telegram disabled when unset). When not set as an env var, the gateway reads from the assistant's secure credential store: CES HTTP API first (when `CES_CREDENTIAL_URL` is configured), then the encrypted file store (`~/.cadet/protected/keys.enc`). |
 | `TELEGRAM_WEBHOOK_SECRET` | No       | —       | Secret for verifying webhook requests (Telegram disabled when unset). Same credential reader fallback behavior as `TELEGRAM_BOT_TOKEN`.                                                                                                                                             |
 | `GATEWAY_PORT`            | No       | `7830`  | Port for the gateway HTTP server                                                                                                                                                                                                                                                    |
 
-Most gateway behavior is now configured via hardcoded defaults or workspace config (`$VELLUM_WORKSPACE_DIR/config.json`) rather than environment variables. Channel operational settings (Telegram API base URL, timeouts, deliver auth bypass flags, runtime base URL, routing, proxy settings, attachment limits, shutdown drain) are managed via `workspace/config.json` through `ConfigFileCache`. See the channel-specific sections in `ARCHITECTURE.md` for details.
+Most gateway behavior is now configured via hardcoded defaults or workspace config (`$CADET_WORKSPACE_DIR/config.json`) rather than environment variables. Channel operational settings (Telegram API base URL, timeouts, deliver auth bypass flags, runtime base URL, routing, proxy settings, attachment limits, shutdown drain) are managed via `workspace/config.json` through `ConfigFileCache`. See the channel-specific sections in `ARCHITECTURE.md` for details.
 
 ## Routing
 
@@ -156,7 +156,7 @@ Control-plane routes are listed with their flat paths. Clients emit assistant-sc
 | `/v1/contacts/invites/:id`                            | DELETE          | Gateway-native invite revoke                                                                                                                  |
 | `/v1/contacts/invites/:id/call`                       | POST            | Gateway-native invite-call relay — validates the invite row, then delegates the provider call to the assistant                                |
 | `/v1/contacts/invites/redeem`                         | POST            | Gateway-native invite redemption (voice code and link token)                                                                                  |
-| `/v1/shared/invites/redeem`                           | POST            | Unauthenticated `vellum-shared` invite redemption for a contact principal and token pair; 404 while `vellum-trusted-contacts` is off          |
+| `/v1/shared/invites/redeem`                           | POST            | Unauthenticated `cadet-shared` invite redemption for a contact principal and token pair; 404 while `cadet-trusted-contacts` is off          |
 | `/v1/health`                                          | GET             | Authenticated runtime health proxy (`/v1/health` on runtime)                                                                                  |
 | `/healthz`                                            | GET             | Liveness probe                                                                                                                                |
 | `/readyz`                                             | GET             | Readiness probe                                                                                                                               |
@@ -178,7 +178,7 @@ To receive external callbacks during local development, point a tunnel service a
 
 #### Test Gateway Source Changes Locally (No Release Needed)
 
-Use this flow when you are changing files under `gateway/` and need to validate immediately without publishing `@mycadet/vellum-gateway`.
+Use this flow when you are changing files under `gateway/` and need to validate immediately without publishing `@mycadet/cadet-gateway`.
 
 ```bash
 # Terminal 1: restart assistant runtime HTTP server
@@ -214,7 +214,7 @@ Tunnel is a managed ingress transport for assistant-hosted HTTP and WebSocket tr
 
 Use Tunnel when testing Twilio voice webhooks or Twilio WebSocket upgrades through the platform-managed tunnel:
 
-1. In `vellum-assistant-platform`, start the local Tunnel service:
+1. In `mycadet-platform`, start the local Tunnel service:
 
    ```bash
    vel up tunnel
@@ -314,13 +314,13 @@ On `SIGTERM` the gateway enters drain mode: `/readyz` begins returning `503` so 
 
 ```bash
 # Build
-docker build -t vellum-gateway:local gateway
+docker build -t cadet-gateway:local gateway
 
 # Run (pass required env vars)
 docker run --rm -p 7830:7830 \
   -e TELEGRAM_BOT_TOKEN=... \
   -e TELEGRAM_WEBHOOK_SECRET=... \
-  vellum-gateway:local
+  cadet-gateway:local
 ```
 
 The image runs as non-root user `gateway` (uid 1001) and exposes port `7830`.
@@ -351,7 +351,7 @@ The CD workflow requires these GitHub repository variables:
 - `GCP_WORKLOAD_IDENTITY_PROVIDER` — OIDC provider for keyless auth
 - `GCP_SERVICE_ACCOUNT` — Service account with push permissions
 - `GCP_PROJECT_ID` — GCP project ID
-- `GATEWAY_IMAGE_NAME` — Image name (e.g. `vellum-gateway`)
+- `GATEWAY_IMAGE_NAME` — Image name (e.g. `cadet-gateway`)
 - `GCP_REGISTRY_HOST` — Registry host (e.g. `gcr.io`)
 
 ## Load Testing
@@ -367,7 +367,7 @@ See [`benchmarking/gateway/README.md`](../benchmarking/gateway/README.md) for lo
 | Inbound messages silently dropped | Routing only drops events with no conversation _and_ no actor id (`"No routable identity"` in the `routing` logger). Anything else resolves; if it still never reaches the assistant, check the channel's admission policy floor. |
 | Runtime errors                    | Is the assistant runtime reachable? Check runtime logs.                                                                                                                                                                           |
 | No reply from assistant           | Is the assistant runtime processing messages? Check that the runtime HTTP server is running.                                                                                                                                      |
-| 403 on channel inbound            | The runtime rejected the request because JWT authentication failed. Ensure the gateway and runtime share the same signing key (`~/.vellum/protected/actor-token-signing-key`).                                                    |
+| 403 on channel inbound            | The runtime rejected the request because JWT authentication failed. Ensure the gateway and runtime share the same signing key (`~/.cadet/protected/actor-token-signing-key`).                                                    |
 
 ### Guardian-Specific Troubleshooting
 
@@ -381,7 +381,7 @@ See [`benchmarking/gateway/README.md`](../benchmarking/gateway/README.md) for lo
 
 ### Binary virtual desktop tunnel
 
-The gateway advertises `X-Vellum-Tunnel-Binary-WebSocket: 1` when registering.
+The gateway advertises `X-Cadet-Tunnel-Binary-WebSocket: 1` when registering.
 It uses binary tunnel messages only when Tunnel sends `binary_messages: true`
 on a `/v1/desktop/stream` open frame. The envelope is byte `0x01`, 32 lowercase
 ASCII hex connection-ID bytes, then the unchanged payload (including empty

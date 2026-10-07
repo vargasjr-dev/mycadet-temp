@@ -394,7 +394,7 @@ Focused Android command attempted at `92e14958c7`:
 
 ```sh
 cd clients/android
-./gradlew :app:testDevDebugUnitTest --tests ai.vellum.assistant.AndroidPushRegistrationPluginTest --tests ai.vellum.assistant.AndroidSenderNotificationPluginTest --tests ai.vellum.assistant.SafeMessagingServiceTest --tests ai.vellum.assistant.push.NotificationDeliveryCoordinatorTest --tests ai.vellum.assistant.push.PushDataMessageTest
+./gradlew :app:testDevDebugUnitTest --tests ai.mycadet.assistant.AndroidPushRegistrationPluginTest --tests ai.mycadet.assistant.AndroidSenderNotificationPluginTest --tests ai.mycadet.assistant.SafeMessagingServiceTest --tests ai.mycadet.assistant.push.NotificationDeliveryCoordinatorTest --tests ai.mycadet.assistant.push.PushDataMessageTest
 ```
 
 | Check | Status | Evidence |
@@ -411,7 +411,7 @@ cd clients/android
 ## Prerequisites
 
 1. The companion platform PR,
-   [vellum-assistant-platform#10502](https://github.com/vellum-ai/vellum-assistant-platform/pull/10502),
+   [mycadet-platform#10502](https://github.com/vargasjr-dev/mycadet-platform/pull/10502),
    is open and green, but is not merged or applied. Before the app consumer PR
    merges, both flag definitions must exist in the target platform
    configuration, that configuration must be applied, and both flags must be

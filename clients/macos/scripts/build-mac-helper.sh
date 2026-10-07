@@ -35,13 +35,13 @@ fi
 # bundle id. Mirrors the app's appId/productName scheme in
 # electron-builder.config.cjs; production keeps the bare id + name so existing
 # grants persist.
-ENV="${VELLUM_ENVIRONMENT:-local}"
+ENV="${CADET_ENVIRONMENT:-local}"
 if [ "$ENV" = "production" ]; then
-  HELPER_BUNDLE_ID="ai.vellum.assistant.mac-helper"
+  HELPER_BUNDLE_ID="ai.mycadet.assistant.mac-helper"
   HELPER_DISPLAY_NAME="Cadet Helper"
 else
   ENV_CAP="$(printf '%s' "${ENV:0:1}" | tr '[:lower:]' '[:upper:]')${ENV:1}"
-  HELPER_BUNDLE_ID="ai.vellum.assistant-${ENV}.mac-helper"
+  HELPER_BUNDLE_ID="ai.mycadet.assistant-${ENV}.mac-helper"
   HELPER_DISPLAY_NAME="Cadet Helper ${ENV_CAP}"
 fi
 
@@ -58,9 +58,9 @@ OUTPUT="$OUTPUT_BUNDLE/Contents/MacOS/$HELPER_EXEC_NAME"
 OUTPUT_INFO_PLIST="$OUTPUT_BUNDLE/Contents/Info.plist"
 # Sidecar so the runtime can resolve the .app folder without hardcoding the
 # env→name mapping in TS. electron-builder copies this alongside the bundle
-# into Vellum.app/Contents/Resources/bin/. macOS Finder hides it, but the
+# into Cadet.app/Contents/Resources/bin/. macOS Finder hides it, but the
 # runtime doesn't care.
-HELPER_BUNDLE_NAME_SIDECAR="$OUTPUT_DIR/.vellum-mac-helper.bundle-name"
+HELPER_BUNDLE_NAME_SIDECAR="$OUTPUT_DIR/.cadet-mac-helper.bundle-name"
 
 mkdir -p "$OUTPUT_DIR"
 # Render the templated Info.plist, then embed it into the bare executable's
@@ -69,13 +69,13 @@ mkdir -p "$OUTPUT_DIR"
 # filename: llbuild ignores content changes to a fixed -sectcreate input path
 # and would skip relinking on an env switch, embedding a stale plist — a new
 # identity must yield a new path to force the relink.
-rm -f "$OUTPUT_DIR"/.vellum-mac-helper.*.Info.plist
+rm -f "$OUTPUT_DIR"/.cadet-mac-helper.*.Info.plist
 RENDERED_TMP="$(mktemp)"
 sed -e "s|__HELPER_BUNDLE_ID__|${HELPER_BUNDLE_ID}|g" \
     -e "s|__HELPER_DISPLAY_NAME__|${HELPER_DISPLAY_NAME}|g" \
     -e "s|__HELPER_EXEC_NAME__|${HELPER_EXEC_NAME}|g" \
     "$TEMPLATE_PLIST" > "$RENDERED_TMP"
-RENDERED_PLIST="$OUTPUT_DIR/.vellum-mac-helper.$(shasum -a 256 "$RENDERED_TMP" | cut -c1-16).Info.plist"
+RENDERED_PLIST="$OUTPUT_DIR/.cadet-mac-helper.$(shasum -a 256 "$RENDERED_TMP" | cut -c1-16).Info.plist"
 mv -f "$RENDERED_TMP" "$RENDERED_PLIST"
 BUILD_ARGS+=(
   -Xlinker -sectcreate
@@ -84,12 +84,12 @@ BUILD_ARGS+=(
   -Xlinker "$RENDERED_PLIST"
 )
 
-# Clear any bare binary / `vellum-mac-helper.app` outputs so a rebuild never
+# Clear any bare binary / `cadet-mac-helper.app` outputs so a rebuild never
 # leaves an orphan bundle on disk next to the per-env one; the corresponding
 # TCC row in Settings persists until manually toggled off (or
-# `tccutil reset Accessibility ai.vellum.assistant.mac-helper`).
-rm -f "$OUTPUT_DIR/hotkey-helper" "$OUTPUT_DIR/vellum-mac-helper" "$OUTPUT_DIR/Info.plist"
-rm -rf "$OUTPUT_DIR/vellum-mac-helper.app"
+# `tccutil reset Accessibility ai.mycadet.assistant.mac-helper`).
+rm -f "$OUTPUT_DIR/hotkey-helper" "$OUTPUT_DIR/cadet-mac-helper" "$OUTPUT_DIR/Info.plist"
+rm -rf "$OUTPUT_DIR/cadet-mac-helper.app"
 xcrun swift build "${BUILD_ARGS[@]}"
 BUILD_DIR="$(xcrun swift build "${BUILD_ARGS[@]}" --show-bin-path)"
 
@@ -104,10 +104,10 @@ ICON_SRC="$ROOT_DIR/build/icon.icns"
 # no-op rebuild (e.g. `bun run dev`'s postinstall) would re-prompt. The
 # signed binary never byte-matches the unsigned build output, so compare
 # against a hash marker of the inputs recorded at install time.
-HASH_INPUTS=("$BUILD_DIR/vellum-mac-helper" "$RENDERED_PLIST" "$ROOT_DIR/scripts/entitlements/helper.plist")
+HASH_INPUTS=("$BUILD_DIR/cadet-mac-helper" "$RENDERED_PLIST" "$ROOT_DIR/scripts/entitlements/helper.plist")
 [ -f "$ICON_SRC" ] && HASH_INPUTS+=("$ICON_SRC")
 SOURCE_HASH="$(cat "${HASH_INPUTS[@]}" | shasum -a 256 | cut -d' ' -f1)"
-HASH_MARKER="$OUTPUT_DIR/.vellum-mac-helper.source-hash"
+HASH_MARKER="$OUTPUT_DIR/.cadet-mac-helper.source-hash"
 if [ -x "$OUTPUT" ] && [ -f "$HASH_MARKER" ] && [ "$(cat "$HASH_MARKER")" = "$SOURCE_HASH" ]; then
   echo "build-mac-helper: bundle unchanged; keeping existing copy"
 else
@@ -116,7 +116,7 @@ else
   # spawn (exit 137). A fresh bundle sidesteps it.
   rm -rf "$OUTPUT_BUNDLE"
   mkdir -p "$OUTPUT_BUNDLE/Contents/MacOS"
-  cp "$BUILD_DIR/vellum-mac-helper" "$OUTPUT"
+  cp "$BUILD_DIR/cadet-mac-helper" "$OUTPUT"
   cp "$RENDERED_PLIST" "$OUTPUT_INFO_PLIST"
   chmod 755 "$OUTPUT"
   if [ -f "$ICON_SRC" ]; then
@@ -134,10 +134,10 @@ else
   # because the previous decision is still on file.
   #
   # A certificate gives a requirement of identifier plus authority, which
-  # survives rebuilds. `VELLUM_HELPER_SIGN_IDENTITY` names one explicitly;
+  # survives rebuilds. `CADET_HELPER_SIGN_IDENTITY` names one explicitly;
   # otherwise the first Developer ID on the keychain is used, and a machine
   # with none falls back to ad-hoc exactly as before.
-  SIGN_IDENTITY="${VELLUM_HELPER_SIGN_IDENTITY:-}"
+  SIGN_IDENTITY="${CADET_HELPER_SIGN_IDENTITY:-}"
   if [ -z "$SIGN_IDENTITY" ]; then
     SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null \
       | grep -m1 "Developer ID Application" \

@@ -150,7 +150,7 @@ describe("skills list", () => {
               id: "caveman",
               name: "Caveman",
               description: "Ultra-compressed communication mode",
-              origin: "vellum",
+              origin: "cadet",
               kind: "bundled",
               status: "enabled",
               owner: { kind: "plugin", id: "caveman" },
@@ -159,7 +159,7 @@ describe("skills list", () => {
               id: "weather",
               name: "Weather",
               description: "Get weather",
-              origin: "vellum",
+              origin: "cadet",
               kind: "bundled",
               status: "enabled",
             },
@@ -220,7 +220,7 @@ describe("skills inspect", () => {
           name: "Weather",
           description: "Get weather",
           emoji: null,
-          source: "vellum",
+          source: "cadet",
           state: "enabled",
           directoryPath: "/path/to/weather",
           featureFlag: null,
@@ -506,7 +506,7 @@ describe("skills search", () => {
               id: "react-tools",
               name: "React Tools",
               description: "React helpers",
-              origin: "vellum",
+              origin: "cadet",
               kind: "catalog",
               status: "available",
             },
@@ -562,7 +562,7 @@ describe("skills search", () => {
               id: "react-tools",
               name: "React Tools",
               description: "Cadet version",
-              origin: "vellum",
+              origin: "cadet",
               kind: "catalog",
               status: "available",
             },
@@ -596,7 +596,7 @@ describe("skills search", () => {
     const parsed = JSON.parse(stdout);
     // cadet skill should be in catalog
     expect(parsed.catalog).toHaveLength(1);
-    expect(parsed.catalog[0].origin).toBe("vellum");
+    expect(parsed.catalog[0].origin).toBe("cadet");
     // community skill with same id should be deduplicated out
     expect(parsed.community).toHaveLength(0);
   });

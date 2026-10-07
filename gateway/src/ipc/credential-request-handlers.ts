@@ -2,7 +2,7 @@
  * IPC surface for minting one-time credential-collection links.
  *
  * The daemon (settings page via its credential-requests route, and the
- * secret prompter's non-vellum-channel fallback) calls
+ * secret prompter's non-cadet-channel fallback) calls
  * `create_credential_request` over the gateway IPC socket. The gateway owns
  * all link/token state; the plaintext token leaves this process only inside
  * the returned URL.

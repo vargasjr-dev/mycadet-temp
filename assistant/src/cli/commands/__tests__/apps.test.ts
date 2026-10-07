@@ -51,7 +51,7 @@ let previousWorkspaceDir: string | undefined;
 function freshWorkspace(): string {
   return join(
     tmpdir(),
-    `vellum-apps-cli-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    `cadet-apps-cli-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
 }
 
@@ -60,9 +60,9 @@ function uniqueAppName(prefix: string): string {
 }
 
 beforeEach(() => {
-  previousWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
+  previousWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
   workspaceDir = freshWorkspace();
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
   lastIpcCall = null;
   mockIpcResult = {
     ok: true,
@@ -79,9 +79,9 @@ beforeEach(() => {
 afterEach(() => {
   rmSync(workspaceDir, { recursive: true, force: true });
   if (previousWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = previousWorkspaceDir;
   }
 });
 

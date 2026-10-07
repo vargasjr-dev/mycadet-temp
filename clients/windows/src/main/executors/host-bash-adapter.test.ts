@@ -171,7 +171,7 @@ describe("windows host-bash adapter", () => {
   test("posts an error result when PowerShell is missing, with no shell fallback", async () => {
     const { poster, posts } = capturingPoster();
     const missing = createWindowsHostBashExecutor(
-      "vellum-missing-powershell.exe",
+      "cadet-missing-powershell.exe",
     );
 
     missing.handleRequest(

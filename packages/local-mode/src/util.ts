@@ -7,7 +7,7 @@ import { SENSITIVE_KEYS } from "./lockfile-contract";
 const CLI_PACKAGE_NAME = "@mycadet/cli";
 
 /**
- * How to invoke the Vellum CLI as a child process: a base command plus the
+ * How to invoke the Cadet CLI as a child process: a base command plus the
  * leading arguments that precede the subcommand. Each host resolves its own
  * invocation — the dev hosts run the CLI from source via `bun run <entry>`,
  * a packaged host would point at its bundled runtime — and the shared
@@ -137,7 +137,7 @@ function resolveCliPath(baseDir: string, importMetaUrl?: string): string {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8")) as {
       bin?: Record<string, string>;
     };
-    const binEntry = pkg.bin?.["vellum"];
+    const binEntry = pkg.bin?.["cadet"];
     if (binEntry) {
       const entryPoint = path.resolve(path.dirname(pkgPath), binEntry);
       if (fs.existsSync(entryPoint)) {
@@ -150,7 +150,7 @@ function resolveCliPath(baseDir: string, importMetaUrl?: string): string {
   }
 
   throw new Error(
-    `Vellum CLI not found. Looked for source tree at ${sourceTreePath} and npm package ${CLI_PACKAGE_NAME}.`,
+    `Cadet CLI not found. Looked for source tree at ${sourceTreePath} and npm package ${CLI_PACKAGE_NAME}.`,
   );
 }
 

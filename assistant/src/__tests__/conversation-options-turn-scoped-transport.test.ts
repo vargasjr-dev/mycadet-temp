@@ -18,7 +18,7 @@ describe("withoutTurnScopedTransport", () => {
   test("drops the visible app while keeping durable transport fields", () => {
     const options: ConversationCreateOptions = {
       transport: {
-        channelId: "vellum",
+        channelId: "cadet",
         interfaceId: "web",
         clientOs: "macos",
         clientTimezone: "America/Denver",
@@ -37,7 +37,7 @@ describe("withoutTurnScopedTransport", () => {
   test("does not mutate the caller's options, which still drive this turn", () => {
     const options: ConversationCreateOptions = {
       transport: {
-        channelId: "vellum",
+        channelId: "cadet",
         interfaceId: "web",
         visibleAppId: "app-on-screen",
       },
@@ -50,7 +50,7 @@ describe("withoutTurnScopedTransport", () => {
 
   test("passes options through untouched when there is no app in view", () => {
     const options: ConversationCreateOptions = {
-      transport: { channelId: "vellum", interfaceId: "web", clientOs: "ios" },
+      transport: { channelId: "cadet", interfaceId: "web", clientOs: "ios" },
     };
 
     expect(withoutTurnScopedTransport(options)).toBe(options);

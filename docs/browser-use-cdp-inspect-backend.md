@@ -104,7 +104,7 @@ below automatically.
 ### JSON config
 
 Add or update the following keys in your assistant config
-(`$VELLUM_WORKSPACE_DIR/config.json`):
+(`$CADET_WORKSPACE_DIR/config.json`):
 
 ```json
 {

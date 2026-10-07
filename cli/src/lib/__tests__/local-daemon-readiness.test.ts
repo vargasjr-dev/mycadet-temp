@@ -22,7 +22,7 @@ describe("reportFreshSpawnReadiness", () => {
   });
 
   beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), "vellum-readiness-"));
+    tempDir = mkdtempSync(join(tmpdir(), "cadet-readiness-"));
     pidFile = join(tempDir, "daemon.pid");
     logSpy = spyOn(console, "log").mockImplementation(() => {});
   });

@@ -36,9 +36,9 @@ const ASSISTANT_NAME = "my-assistant";
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// The preload sets VELLUM_WORKSPACE_DIR under a per-process temp root; its
+// The preload sets CADET_WORKSPACE_DIR under a per-process temp root; its
 // parent is a writable temp base we can carve fresh dirs out of.
-const TMP_BASE = dirname(process.env.VELLUM_WORKSPACE_DIR ?? "");
+const TMP_BASE = dirname(process.env.CADET_WORKSPACE_DIR ?? "");
 
 let workspaceDir: string;
 let dbPath: string;
@@ -47,15 +47,15 @@ let legacyLockPath: string;
 let originalAssistantName: string | undefined;
 
 beforeEach(() => {
-  originalAssistantName = process.env.VELLUM_ASSISTANT_NAME;
-  process.env.VELLUM_ASSISTANT_NAME = ASSISTANT_NAME;
+  originalAssistantName = process.env.CADET_ASSISTANT_NAME;
+  process.env.CADET_ASSISTANT_NAME = ASSISTANT_NAME;
 
-  mockHome = mkdtempSync(join(TMP_BASE, "vellum-migration-011-home-"));
-  workspaceDir = mkdtempSync(join(TMP_BASE, "vellum-migration-011-ws-"));
+  mockHome = mkdtempSync(join(TMP_BASE, "cadet-migration-011-home-"));
+  workspaceDir = mkdtempSync(join(TMP_BASE, "cadet-migration-011-ws-"));
   homedirFn.mockClear();
 
-  lockPath = join(mockHome, ".vellum.lock.json");
-  legacyLockPath = join(mockHome, ".vellum.lockfile.json");
+  lockPath = join(mockHome, ".cadet.lock.json");
+  legacyLockPath = join(mockHome, ".cadet.lockfile.json");
 
   const dbDir = join(workspaceDir, "data", "db");
   mkdirSync(dbDir, { recursive: true });
@@ -64,9 +64,9 @@ beforeEach(() => {
 
 afterEach(() => {
   if (originalAssistantName === undefined) {
-    delete process.env.VELLUM_ASSISTANT_NAME;
+    delete process.env.CADET_ASSISTANT_NAME;
   } else {
-    process.env.VELLUM_ASSISTANT_NAME = originalAssistantName;
+    process.env.CADET_ASSISTANT_NAME = originalAssistantName;
   }
   for (const dir of [mockHome, workspaceDir]) {
     if (dir && existsSync(dir)) {
@@ -257,7 +257,7 @@ describe("011-backfill-installation-id migration", () => {
     expect(readCheckpoint()).toBeNull();
   });
 
-  test("reads from legacy .vellum.lockfile.json when primary is absent", () => {
+  test("reads from legacy .cadet.lockfile.json when primary is absent", () => {
     seedCheckpoint("sqlite-id");
     writeLock(legacyLockPath, makeLockfile([{ assistantId: ASSISTANT_NAME }]));
 

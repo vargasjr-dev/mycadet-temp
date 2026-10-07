@@ -6,9 +6,9 @@ import { buildReplayEnv, buildReplayState } from "../lib/upgrade-lifecycle.js";
 import { snapshotEnv } from "./helpers/env.js";
 
 const restoreEnv = snapshotEnv([
-  "VELLUM_PLATFORM_URL",
+  "CADET_PLATFORM_URL",
   "ANTHROPIC_API_KEY",
-  "VELLUM_DEVICE_ID",
+  "CADET_DEVICE_ID",
 ]);
 
 afterEach(() => {
@@ -24,40 +24,40 @@ describe("buildReplayEnv", () => {
       ACTOR_TOKEN_SIGNING_KEY: "s3",
       PATH: "/usr/bin",
       GATEWAY_PORT: "18080",
-      VELLUM_DISABLE_PLATFORM: "1",
-      VELLUM_DEVICE_ID: "abc",
+      CADET_DISABLE_PLATFORM: "1",
+      CADET_DEVICE_ID: "abc",
     };
 
     expect(buildReplayEnv(captured, "gateway")).toEqual({
-      VELLUM_DISABLE_PLATFORM: "1",
-      VELLUM_DEVICE_ID: "abc",
+      CADET_DISABLE_PLATFORM: "1",
+      CADET_DEVICE_ID: "abc",
     });
   });
 
-  test("gateway: captured VELLUM_PLATFORM_URL dropped when set on host", () => {
-    process.env.VELLUM_PLATFORM_URL = "https://host.example.com";
+  test("gateway: captured CADET_PLATFORM_URL dropped when set on host", () => {
+    process.env.CADET_PLATFORM_URL = "https://host.example.com";
     const replay = buildReplayEnv(
-      { VELLUM_PLATFORM_URL: "https://stale.example.com" },
+      { CADET_PLATFORM_URL: "https://stale.example.com" },
       "gateway",
     );
     expect(replay).toEqual({});
   });
 
-  test("gateway: captured VELLUM_PLATFORM_URL kept when unset on host", () => {
-    delete process.env.VELLUM_PLATFORM_URL;
+  test("gateway: captured CADET_PLATFORM_URL kept when unset on host", () => {
+    delete process.env.CADET_PLATFORM_URL;
     const replay = buildReplayEnv(
-      { VELLUM_PLATFORM_URL: "https://stale.example.com" },
+      { CADET_PLATFORM_URL: "https://stale.example.com" },
       "gateway",
     );
     expect(replay).toEqual({
-      VELLUM_PLATFORM_URL: "https://stale.example.com",
+      CADET_PLATFORM_URL: "https://stale.example.com",
     });
   });
 
   test("assistant: drops builder-computed extras, secrets, and PATH; keeps custom flags", () => {
     delete process.env.ANTHROPIC_API_KEY;
     const captured = {
-      VELLUM_ASSISTANT_NAME: "my-assistant",
+      CADET_ASSISTANT_NAME: "my-assistant",
       GATEWAY_INTERNAL_URL: "http://localhost:8080",
       GUARDIAN_BOOTSTRAP_SECRET: "s1",
       CES_SERVICE_TOKEN: "s2",
@@ -101,49 +101,49 @@ describe("buildReplayEnv", () => {
     };
 
     const replay = buildReplayEnv(
-      { FUTURE_SECRET: "leaky", VELLUM_DEVICE_ID: "abc" },
+      { FUTURE_SECRET: "leaky", CADET_DEVICE_ID: "abc" },
       "gateway",
       spec,
     );
-    expect(replay).toEqual({ VELLUM_DEVICE_ID: "abc" });
+    expect(replay).toEqual({ CADET_DEVICE_ID: "abc" });
   });
 });
 
 describe("buildReplayState", () => {
   beforeEach(() => {
-    // VELLUM_DEVICE_ID env precedence keeps getOrCreateHostDeviceId off the
+    // CADET_DEVICE_ID env precedence keeps getOrCreateHostDeviceId off the
     // filesystem in tests.
-    process.env.VELLUM_DEVICE_ID = "host-device-id";
+    process.env.CADET_DEVICE_ID = "host-device-id";
     resetHostDeviceIdCache();
   });
 
-  test("backfills VELLUM_DEVICE_ID on gateway replay env when absent", () => {
-    const state = buildReplayState({}, { VELLUM_DISABLE_PLATFORM: "1" });
+  test("backfills CADET_DEVICE_ID on gateway replay env when absent", () => {
+    const state = buildReplayState({}, { CADET_DISABLE_PLATFORM: "1" });
     expect(state.extraGatewayEnv).toEqual({
-      VELLUM_DISABLE_PLATFORM: "1",
-      VELLUM_DEVICE_ID: "host-device-id",
+      CADET_DISABLE_PLATFORM: "1",
+      CADET_DEVICE_ID: "host-device-id",
     });
   });
 
-  test("captured VELLUM_DEVICE_ID wins over host-derived id", () => {
-    const state = buildReplayState({}, { VELLUM_DEVICE_ID: "existing" });
-    expect(state.extraGatewayEnv.VELLUM_DEVICE_ID).toBe("existing");
+  test("captured CADET_DEVICE_ID wins over host-derived id", () => {
+    const state = buildReplayState({}, { CADET_DEVICE_ID: "existing" });
+    expect(state.extraGatewayEnv.CADET_DEVICE_ID).toBe("existing");
   });
 
-  test("backfills VELLUM_DEVICE_ID on assistant replay env when absent", () => {
+  test("backfills CADET_DEVICE_ID on assistant replay env when absent", () => {
     const state = buildReplayState({}, {});
-    expect(state.extraAssistantEnv.VELLUM_DEVICE_ID).toBe("host-device-id");
+    expect(state.extraAssistantEnv.CADET_DEVICE_ID).toBe("host-device-id");
   });
 
-  test("assistant backfill inherits captured gateway VELLUM_DEVICE_ID", () => {
-    const state = buildReplayState({}, { VELLUM_DEVICE_ID: "gw-captured" });
-    expect(state.extraGatewayEnv.VELLUM_DEVICE_ID).toBe("gw-captured");
-    expect(state.extraAssistantEnv.VELLUM_DEVICE_ID).toBe("gw-captured");
+  test("assistant backfill inherits captured gateway CADET_DEVICE_ID", () => {
+    const state = buildReplayState({}, { CADET_DEVICE_ID: "gw-captured" });
+    expect(state.extraGatewayEnv.CADET_DEVICE_ID).toBe("gw-captured");
+    expect(state.extraAssistantEnv.CADET_DEVICE_ID).toBe("gw-captured");
   });
 
-  test("captured assistant VELLUM_DEVICE_ID wins over host-derived id", () => {
-    const state = buildReplayState({ VELLUM_DEVICE_ID: "existing" }, {});
-    expect(state.extraAssistantEnv.VELLUM_DEVICE_ID).toBe("existing");
+  test("captured assistant CADET_DEVICE_ID wins over host-derived id", () => {
+    const state = buildReplayState({ CADET_DEVICE_ID: "existing" }, {});
+    expect(state.extraAssistantEnv.CADET_DEVICE_ID).toBe("existing");
   });
 
   test("plucks secrets from the captured envs", () => {

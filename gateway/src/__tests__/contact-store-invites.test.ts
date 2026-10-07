@@ -64,7 +64,7 @@ describe("ContactStore ingress_invites", () => {
 
     const row = store.createInvite({
       id: "inv1",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       inviteCodeHash: "hash-1",
       contactId: "c1",
       note: "hello",
@@ -73,7 +73,7 @@ describe("ContactStore ingress_invites", () => {
     });
 
     expect(row.id).toBe("inv1");
-    expect(row.sourceChannel).toBe("vellum");
+    expect(row.sourceChannel).toBe("cadet");
     expect(row.inviteCodeHash).toBe("hash-1");
     expect(row.note).toBe("hello");
     expect(row.maxUses).toBe(3);
@@ -90,7 +90,7 @@ describe("ContactStore ingress_invites", () => {
     seedContact("c1");
     const row = new ContactStore().createInvite({
       id: "inv1",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       inviteCodeHash: "hash-1",
       contactId: "c1",
       expiresAt: 9999,
@@ -104,7 +104,7 @@ describe("ContactStore ingress_invites", () => {
     const store = new ContactStore();
     store.createInvite({
       id: "inv1",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       inviteCodeHash: "hash-1",
       contactId: "c1",
       expiresAt: 9999,
@@ -121,7 +121,7 @@ describe("ContactStore ingress_invites", () => {
 
     store.createInvite({
       id: "inv1",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       inviteCodeHash: "h1",
       contactId: "c1",
       expiresAt: 9999,
@@ -135,7 +135,7 @@ describe("ContactStore ingress_invites", () => {
     });
     store.createInvite({
       id: "inv3",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       inviteCodeHash: "h3",
       contactId: "c2",
       expiresAt: 9999,
@@ -146,7 +146,7 @@ describe("ContactStore ingress_invites", () => {
     expect(all.map((r) => r.id)).toEqual(["inv3", "inv2", "inv1"]);
 
     expect(
-      store.listInvites({ sourceChannel: "vellum" }).map((r) => r.id),
+      store.listInvites({ sourceChannel: "cadet" }).map((r) => r.id),
     ).toEqual(["inv3", "inv1"]);
     expect(store.listInvites({ contactId: "c1" }).map((r) => r.id)).toEqual([
       "inv2",
@@ -157,7 +157,7 @@ describe("ContactStore ingress_invites", () => {
     // Combined filters.
     expect(
       store
-        .listInvites({ sourceChannel: "vellum", contactId: "c1" })
+        .listInvites({ sourceChannel: "cadet", contactId: "c1" })
         .map((r) => r.id),
     ).toEqual(["inv1"]);
   });
@@ -168,7 +168,7 @@ describe("ContactStore ingress_invites", () => {
     for (const id of ["inv1", "inv2", "inv3"]) {
       store.createInvite({
         id,
-        sourceChannel: "vellum",
+        sourceChannel: "cadet",
         inviteCodeHash: `h-${id}`,
         contactId: "c1",
         expiresAt: 9999,
@@ -188,7 +188,7 @@ describe("ContactStore ingress_invites", () => {
     const store = new ContactStore();
     store.createInvite({
       id: "inv1",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       inviteCodeHash: "h1",
       contactId: "c1",
       maxUses: 1,
@@ -219,7 +219,7 @@ describe("ContactStore ingress_invites", () => {
     const store = new ContactStore();
     store.createInvite({
       id: "inv1",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       inviteCodeHash: "h1",
       contactId: "c1",
       maxUses: 2,
@@ -248,7 +248,7 @@ describe("ContactStore ingress_invites", () => {
     const store = new ContactStore();
     store.createInvite({
       id: "inv1",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       inviteCodeHash: "h1",
       contactId: "c1",
       expiresAt: 9999,
@@ -270,7 +270,7 @@ describe("ContactStore ingress_invites", () => {
     const store = new ContactStore();
     store.createInvite({
       id: "inv1",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       inviteCodeHash: "h1",
       contactId: "c1",
       maxUses: 5,
@@ -328,7 +328,7 @@ describe("ContactStore ingress_invites", () => {
     seedContact("c1");
     const row = new ContactStore().createInvite({
       id: "inv1",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       inviteCodeHash: "h1",
       contactId: "c1",
       expiresAt: 9999,
@@ -347,7 +347,7 @@ describe("ContactStore ingress_invites", () => {
     const store = new ContactStore();
     store.createInvite({
       id: "inv1",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       contactId: "c1",
       expiresAt: 9999,
       tokenHash: "tok-1",
@@ -382,7 +382,7 @@ describe("ContactStore ingress_invites", () => {
     // Same code hash on two channels → the channel scope disambiguates.
     expect(store.findInviteByCodeHash("code-1", "sms")?.id).toBe("inv-sms");
     expect(store.findInviteByCodeHash("code-1", "telegram")?.id).toBe("inv-tg");
-    expect(store.findInviteByCodeHash("code-1", "vellum")).toBeNull();
+    expect(store.findInviteByCodeHash("code-1", "cadet")).toBeNull();
 
     // Active-only: a revoked invite no longer matches.
     store.revokeInvite("inv-sms");
@@ -491,7 +491,7 @@ describe("ContactStore ingress_invites", () => {
     const store = new ContactStore();
     store.createInvite({
       id: "inv1",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       inviteCodeHash: "h1",
       contactId: "c1",
       expiresAt: 9999,
@@ -516,7 +516,7 @@ describe("ContactStore ingress_invites", () => {
     const store = new ContactStore();
     store.createInvite({
       id: "inv1",
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       inviteCodeHash: "h1",
       contactId: "c1",
       expiresAt: 9999,

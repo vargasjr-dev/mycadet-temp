@@ -39,7 +39,7 @@ const PLUGINS_DIR = join(ROOT, "plugins");
 const WORKSPACE_HOOKS_DIR = join(ROOT, "hooks");
 
 beforeAll(() => {
-  process.env.VELLUM_WORKSPACE_DIR = ROOT;
+  process.env.CADET_WORKSPACE_DIR = ROOT;
 });
 
 afterAll(() => {

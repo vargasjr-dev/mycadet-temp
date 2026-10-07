@@ -17,7 +17,7 @@ import {
 } from "./run-manager.js";
 
 const TRUST: TrustContext = {
-  sourceChannel: "vellum",
+  sourceChannel: "cadet",
   trustClass: "guardian",
 };
 

@@ -80,7 +80,7 @@ describe("withdrawGuardianRequestCards", () => {
     const req = makeRequest();
     bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
 
@@ -102,14 +102,14 @@ describe("withdrawGuardianRequestCards", () => {
     const req = makeRequest();
     bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
 
     await withdrawGuardianRequestCards({
       request: req,
       status: "approved",
-      originChannel: "vellum",
+      originChannel: "cadet",
     });
 
     // The acting client's optimistic completion is in-memory only, so the
@@ -130,14 +130,14 @@ describe("withdrawGuardianRequestCards", () => {
     const req = makeRequest();
     bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
 
     await withdrawGuardianRequestCards({
       request: req,
       status: "denied",
-      originChannel: "vellum",
+      originChannel: "cadet",
       decidedAction: "leave_unverified",
     });
 
@@ -160,7 +160,7 @@ describe("withdrawGuardianRequestCards", () => {
     await withdrawGuardianRequestCards({
       request: req,
       status: "denied",
-      originChannel: "vellum",
+      originChannel: "cadet",
     });
 
     expect(withdrawSlackApprovalCard).toHaveBeenCalledTimes(1);
@@ -193,7 +193,7 @@ describe("withdrawGuardianRequestCards", () => {
     const req = makeRequest();
     bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
     bridgeState.seedDelivery({
@@ -225,7 +225,7 @@ describe("withdrawGuardianRequestCards", () => {
     await withdrawGuardianRequestCards({
       request: req,
       status: "approved",
-      originChannel: "vellum",
+      originChannel: "cadet",
     });
 
     expect(withdrawSlackApprovalCard).not.toHaveBeenCalled();
@@ -250,7 +250,7 @@ describe("withdrawGuardianRequestCards", () => {
     await withdrawGuardianRequestCards({
       request: req,
       status: "approved",
-      originChannel: "vellum",
+      originChannel: "cadet",
     });
 
     expect(withdrawTelegramApprovalCard).not.toHaveBeenCalled();
@@ -345,7 +345,7 @@ describe("withdrawGuardianRequestCards", () => {
     });
     bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
 
@@ -398,7 +398,7 @@ describe("withdrawGuardianRequestCards", () => {
     const req = makeRequest({ kind: "tool_approval", toolName: "shell" });
     bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-acting",
     });
     bridgeState.seedDelivery({
@@ -412,7 +412,7 @@ describe("withdrawGuardianRequestCards", () => {
     await withdrawGuardianRequestCards({
       request: req,
       status: "approved",
-      originChannel: "vellum",
+      originChannel: "cadet",
       originConversationId: "conv-acting",
     });
 
@@ -457,7 +457,7 @@ describe("withdrawGuardianRequestCards", () => {
     const req = makeRequest({ kind: "tool_approval", toolName: "shell" });
     bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
 
@@ -478,7 +478,7 @@ describe("withdrawGuardianRequestCards", () => {
     const req = makeRequest({ decidedByExternalUserId: "U-guardian" });
     bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
     bridgeState.seedDelivery({
@@ -513,7 +513,7 @@ describe("withdrawGuardianRequestCards", () => {
     const req = makeRequest();
     bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
 
@@ -559,7 +559,7 @@ describe("withdrawGuardianRequestCards", () => {
     const req = makeRequest();
     bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
     completeSurfaceAndNotify.mockReturnValueOnce(false);
@@ -599,7 +599,7 @@ describe("withdrawGuardianRequestCards", () => {
     });
     const cadet = bridgeState.seedDelivery({
       requestId: req.id,
-      destinationChannel: "vellum",
+      destinationChannel: "cadet",
       destinationConversationId: "conv-1",
     });
 
@@ -679,7 +679,7 @@ describe("recordApprovalCardDelivery", () => {
     const req = makeRequest();
     const delivery = await recordApprovalCardDelivery({
       requestId: req.id,
-      channel: "vellum",
+      channel: "cadet",
       conversationId: "conv-x",
     });
     expect(delivery?.destinationConversationId).toBe("conv-x");
@@ -696,11 +696,11 @@ describe("recordGuardianRequestDeliveries", () => {
 
   test("records each delivery with addressing + status and returns the cadet id", async () => {
     const req = makeRequest();
-    const vellumId = await recordGuardianRequestDeliveries({
+    const cadetId = await recordGuardianRequestDeliveries({
       requestId: req.id,
       deliveryResults: [
         {
-          channel: "vellum",
+          channel: "cadet",
           destination: "",
           status: "sent",
           conversationId: "conv-1",
@@ -716,9 +716,9 @@ describe("recordGuardianRequestDeliveries", () => {
 
     const deliveries = deliveriesFor(req.id);
     expect(deliveries).toHaveLength(2);
-    const cadet = deliveries.find((d) => d.destinationChannel === "vellum");
+    const cadet = deliveries.find((d) => d.destinationChannel === "cadet");
     const slack = deliveries.find((d) => d.destinationChannel === "slack");
-    expect(vellumId).toBe(cadet?.id);
+    expect(cadetId).toBe(cadet?.id);
     expect(cadet?.destinationConversationId).toBe("conv-1");
     expect(cadet?.status).toBe("sent");
     expect(slack?.destinationChatId).toBe("C999");
@@ -730,24 +730,24 @@ describe("recordGuardianRequestDeliveries", () => {
     const req = makeRequest();
     const pre = await recordApprovalCardDelivery({
       requestId: req.id,
-      channel: "vellum",
+      channel: "cadet",
       conversationId: "conv-1",
     });
 
-    const vellumId = await recordGuardianRequestDeliveries({
+    const cadetId = await recordGuardianRequestDeliveries({
       requestId: req.id,
       deliveryResults: [
         {
-          channel: "vellum",
+          channel: "cadet",
           destination: "",
           status: "sent",
           conversationId: "conv-1",
         },
       ],
-      vellumDeliveryId: pre?.id,
+      cadetDeliveryId: pre?.id,
     });
 
-    expect(vellumId).toBe(pre?.id);
+    expect(cadetId).toBe(pre?.id);
     const deliveries = deliveriesFor(req.id);
     expect(deliveries).toHaveLength(1);
     expect(deliveries[0].status).toBe("sent");
@@ -830,7 +830,7 @@ describe("recordGuardianRequestDeliveries", () => {
     const req = makeRequest({ status: "approved" });
     const pre = await recordApprovalCardDelivery({
       requestId: req.id,
-      channel: "vellum",
+      channel: "cadet",
       conversationId: "conv-1",
     });
     await bridgeState.module.updateGuardianRequestDelivery(pre!.id, {
@@ -841,13 +841,13 @@ describe("recordGuardianRequestDeliveries", () => {
       requestId: req.id,
       deliveryResults: [
         {
-          channel: "vellum",
+          channel: "cadet",
           destination: "",
           status: "sent",
           conversationId: "conv-1",
         },
       ],
-      vellumDeliveryId: pre?.id,
+      cadetDeliveryId: pre?.id,
     });
 
     const [delivery] = deliveriesFor(req.id);
@@ -871,7 +871,7 @@ describe("recordGuardianRequestDeliveries", () => {
     await withdrawGuardianRequestCards({
       request: req,
       status: "approved",
-      originChannel: "vellum",
+      originChannel: "cadet",
     });
     const [params] = withdrawSlackApprovalCard.mock.calls[0];
     expect((params as { messageTs?: string }).messageTs).toBe(

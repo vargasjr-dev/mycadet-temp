@@ -23,7 +23,7 @@ import {
 import {
   CHATGPT_CONNECTION_PROVIDER,
   OPENAI_COMPATIBLE_PROVIDER,
-  VELLUM_CONNECTION_PROVIDER,
+  CADET_CONNECTION_PROVIDER,
 } from "@/domains/settings/ai/constants";
 import {
   CATALOG_PROVIDERS,
@@ -430,7 +430,7 @@ export function ProfileEditorProviderSection({
     }
     const row = connections?.find((c) => c.name === providerConnection);
     return row &&
-      (row.provider === VELLUM_CONNECTION_PROVIDER ||
+      (row.provider === CADET_CONNECTION_PROVIDER ||
         row.provider === CHATGPT_CONNECTION_PROVIDER)
       ? row.provider
       : null;

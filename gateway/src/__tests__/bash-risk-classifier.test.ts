@@ -215,13 +215,13 @@ describe("risk rule cache integration", () => {
 
   test("generalized action: rule with positional tokens applies (beyond registry subcommands)", () => {
     // `ls` has no registry subcommands, but the rule editor offers positional
-    // action patterns such as `action:ls vellumtestfile` (for `ls vellumtestfile *`).
+    // action patterns such as `action:ls cadettestfile` (for `ls cadettestfile *`).
     // The matcher must probe positional-derived action keys, not just the
     // registry subcommand pattern (which would only see `ls`), or the saved
     // rule is silently ignored.
     store.create({
       tool: "bash",
-      pattern: "action:ls vellumtestfile",
+      pattern: "action:ls cadettestfile",
       risk: "high",
       description: "Generalized ls rule",
     });
@@ -229,7 +229,7 @@ describe("risk rule cache integration", () => {
     initTrustRuleCache(store);
 
     const result = classifySegment(
-      segment("ls vellumtestfile extra"),
+      segment("ls cadettestfile extra"),
       DEFAULT_COMMAND_REGISTRY,
     );
 

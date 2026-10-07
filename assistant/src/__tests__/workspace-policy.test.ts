@@ -437,7 +437,7 @@ describe("isOutOfWorkspaceFileInvocation", () => {
 // Using the scaffold would let the probe root and the getters diverge, and the
 // tests would pass without exercising the real comparison.
 describe("isControlPlaneWorkspaceWrite / executable sinks", () => {
-  const wsRoot = process.env.VELLUM_WORKSPACE_DIR!;
+  const wsRoot = process.env.CADET_WORKSPACE_DIR!;
 
   beforeAll(() => {
     mkdirSync(join(wsRoot, "hooks"), { recursive: true });
@@ -524,7 +524,7 @@ describe("isControlPlaneWorkspaceWrite / executable sinks", () => {
 // ---------------------------------------------------------------------------
 
 describe("isControlPlaneWorkspaceWrite / prompt surfaces", () => {
-  const wsRoot = process.env.VELLUM_WORKSPACE_DIR!;
+  const wsRoot = process.env.CADET_WORKSPACE_DIR!;
 
   test.each([
     "IDENTITY.md",

@@ -51,7 +51,7 @@ Tell the user:
 > https://vercel.com/account/tokens
 >
 > 1. Click **"Create"** (or **"Create Token"**)
-> 2. Set the token name to **"Vellum Assistant"**
+> 2. Set the token name to **"Cadet Assistant"**
 > 3. Select scope: **"Full Account"**
 > 4. Set expiration to the longest option available (or **"No Expiration"** if offered)
 > 5. Click **"Create Token"**
@@ -156,7 +156,7 @@ Take a screenshot and snapshot to check the page state:
 
 ## Step 3: Create Token
 
-**Goal:** A new API token named "Vellum Assistant" is created.
+**Goal:** A new API token named "Cadet Assistant" is created.
 
 Take a screenshot and snapshot. Find and click the button to create a new token (typically labeled "Create" or "Create Token"):
 
@@ -167,7 +167,7 @@ assistant browser --session vercel --json snapshot
 
 On the creation form:
 
-- Token name: **"Vellum Assistant"**
+- Token name: **"Cadet Assistant"**
 - Scope: Select **"Full Account"** (or the broadest scope available)
 - Expiration: Select the longest option available, or **"No Expiration"** if offered
 - Click create/submit

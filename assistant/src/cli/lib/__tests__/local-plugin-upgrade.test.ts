@@ -48,7 +48,7 @@ function marketplaceFetch(version: string): FetchLike {
   return (async () =>
     new Response(
       JSON.stringify({
-        name: "vellum-assistant",
+        name: "mycadet",
         plugins: [
           {
             name: "fathom",

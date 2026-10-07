@@ -97,13 +97,13 @@ interface SkillDetailBase {
   category: string;
 }
 
-interface VellumSkillDetail extends SkillDetailBase {
+interface CadetSkillDetail extends SkillDetailBase {
   origin: "cadet";
   /**
    * Extension that ships this skill, reusing the tool registry's
    * {@link OwnerInfo} model. Set for plugin-resident skills as
    * `{ kind: "plugin", id: <plugin dir name> }` — plugin skills are mapped to
-   * the `vellum` origin, so this is where their attribution is preserved.
+   * the `cadet` origin, so this is where their attribution is preserved.
    */
   owner?: OwnerInfo;
 }
@@ -140,14 +140,14 @@ interface SkillsshSkillDetail extends SkillDetailBase {
 
 interface CustomSkillDetail extends SkillDetailBase {
   origin: "custom";
-  /** See {@link VellumSkillDetail.owner}. */
+  /** See {@link CadetSkillDetail.owner}. */
   owner?: OwnerInfo;
 }
 
 /** Detail counterpart of {@link AssistantMemorySlimSkill}. */
 interface AssistantMemorySkillDetail extends SkillDetailBase {
   origin: "assistant-memory";
-  /** See {@link VellumSkillDetail.owner}. */
+  /** See {@link CadetSkillDetail.owner}. */
   owner?: OwnerInfo;
   /**
    * Conversation whose trace the retrospective distilled this skill from —
@@ -158,7 +158,7 @@ interface AssistantMemorySkillDetail extends SkillDetailBase {
 }
 
 export type SkillDetailResponse =
-  | VellumSkillDetail
+  | CadetSkillDetail
   | ClawhubSkillDetail
   | SkillsshSkillDetail
   | CustomSkillDetail

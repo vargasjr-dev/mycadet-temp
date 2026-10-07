@@ -36,11 +36,11 @@ import {
 import { getLogger } from "../../logger.js";
 import { verifySignedQueryHandshake } from "../plugin-ingress-handshake.js";
 import {
-  VELLUM_TIMESTAMP_HEADER,
+  CADET_TIMESTAMP_HEADER,
   handshakeSignedPayload,
   timestampWithinTolerance,
-  verifyVellumSignature,
-} from "../vellum-signature.js";
+  verifyCadetSignature,
+} from "../cadet-signature.js";
 
 const log = getLogger("plugin-webhook-ws");
 
@@ -102,7 +102,7 @@ export function isPluginWebhookSocketData(
 
 function signingCredentialKey(plugin: string, signer: IngressSigner): string {
   return credentialKey(
-    signer === "vellum" ? "vellum" : plugin,
+    signer === "cadet" ? "cadet" : plugin,
     "webhook_secret",
   );
 }
@@ -199,7 +199,7 @@ export function createPluginWebhookWebsocketHandler(deps: PluginWebhookWsDeps) {
       // A handshake carries no body to sign, so the signature covers the
       // timestamp and the path instead, and the timestamp bounds how long a
       // captured handshake stays usable.
-      const timestamp = req.headers.get(VELLUM_TIMESTAMP_HEADER);
+      const timestamp = req.headers.get(CADET_TIMESTAMP_HEADER);
       if (!timestamp || !timestampWithinTolerance(timestamp)) {
         log.warn(
           { plugin, path },
@@ -212,7 +212,7 @@ export function createPluginWebhookWebsocketHandler(deps: PluginWebhookWsDeps) {
         credentials,
         key: secretKey,
         verify: (candidate) =>
-          verifyVellumSignature(req.headers, signed, candidate),
+          verifyCadetSignature(req.headers, signed, candidate),
         log,
         label: "Plugin webhook WS handshake",
       });

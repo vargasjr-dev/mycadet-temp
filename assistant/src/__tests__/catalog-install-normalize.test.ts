@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
-process.env.VELLUM_PLATFORM_URL = "https://platform.example.com";
+process.env.CADET_PLATFORM_URL = "https://platform.example.com";
 
 import { fetchCatalog, readLocalCatalog } from "../skills/catalog-install.js";
 
@@ -103,7 +103,7 @@ describe("fetchCatalog normalization", () => {
 
 describe("readLocalCatalog normalization", () => {
   test("reads the nested metadata.cadet.category from catalog.json", () => {
-    const dir = mkdtempSync(join(tmpdir(), "vellum-catalog-"));
+    const dir = mkdtempSync(join(tmpdir(), "cadet-catalog-"));
     try {
       writeFileSync(
         join(dir, "catalog.json"),

@@ -172,9 +172,9 @@ let workspaceDir: string;
 let origWorkspaceDir: string | undefined;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "vellum-edit-notif-"));
-  origWorkspaceDir = process.env.VELLUM_WORKSPACE_DIR;
-  process.env.VELLUM_WORKSPACE_DIR = workspaceDir;
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-edit-notif-"));
+  origWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+  process.env.CADET_WORKSPACE_DIR = workspaceDir;
   decisionRow = null;
   deliveryRows = [];
   renderedCopyPatches.length = 0;
@@ -190,9 +190,9 @@ beforeEach(() => {
 
 afterEach(() => {
   if (origWorkspaceDir === undefined) {
-    delete process.env.VELLUM_WORKSPACE_DIR;
+    delete process.env.CADET_WORKSPACE_DIR;
   } else {
-    process.env.VELLUM_WORKSPACE_DIR = origWorkspaceDir;
+    process.env.CADET_WORKSPACE_DIR = origWorkspaceDir;
   }
   try {
     rmSync(workspaceDir, { recursive: true, force: true });
@@ -473,7 +473,7 @@ describe("editNotification", () => {
       // so the card must not write it a second time.
       await appendFeedItem(makeItem(OWNED));
       decisionRow = { id: "dec-1" };
-      deliveryRows = [makeDelivery({ channel: "vellum", messageId: "msg-9" })];
+      deliveryRows = [makeDelivery({ channel: "cadet", messageId: "msg-9" })];
 
       await editNotification({ id: FEED_ITEM_ID, body: "New body" });
 
@@ -488,7 +488,7 @@ describe("editNotification", () => {
       decisionRow = { id: "dec-1" };
       deliveryRows = [
         makeDelivery({
-          channel: "vellum",
+          channel: "cadet",
           messageId: "msg-9",
           status: "pending",
         }),
@@ -505,7 +505,7 @@ describe("editNotification", () => {
     test("rewrites when the adapter update failed", async () => {
       await appendFeedItem(makeItem(OWNED));
       decisionRow = { id: "dec-1" };
-      deliveryRows = [makeDelivery({ channel: "vellum", messageId: "msg-9" })];
+      deliveryRows = [makeDelivery({ channel: "cadet", messageId: "msg-9" })];
       adapterSupportsUpdate = false;
 
       await editNotification({ id: FEED_ITEM_ID, body: "New body" });
@@ -516,7 +516,7 @@ describe("editNotification", () => {
     test("a title-only edit leaves the row alone even with deliveries", async () => {
       await appendFeedItem(makeItem(OWNED));
       decisionRow = { id: "dec-1" };
-      deliveryRows = [makeDelivery({ channel: "vellum", messageId: "msg-9" })];
+      deliveryRows = [makeDelivery({ channel: "cadet", messageId: "msg-9" })];
 
       await editNotification({ id: FEED_ITEM_ID, title: "Renamed" });
 

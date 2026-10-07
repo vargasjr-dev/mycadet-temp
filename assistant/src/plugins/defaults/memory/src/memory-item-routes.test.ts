@@ -1164,15 +1164,15 @@ describe("Memory Item Routes", () => {
 
     beforeAll(() => {
       tmpWorkspace = mkdtempSync(join(tmpdir(), "create-memory-route-test-"));
-      previousWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-      process.env.VELLUM_WORKSPACE_DIR = tmpWorkspace;
+      previousWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+      process.env.CADET_WORKSPACE_DIR = tmpWorkspace;
     });
 
     afterAll(() => {
       if (previousWorkspaceEnv === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceEnv;
+        process.env.CADET_WORKSPACE_DIR = previousWorkspaceEnv;
       }
       rmSync(tmpWorkspace, { recursive: true, force: true });
     });
@@ -1307,15 +1307,15 @@ describe("Memory Item Routes", () => {
 
   describe("GET /v1/memory/stats (getMemoryStats)", () => {
     // handleGetMemoryStats reads concept pages from getWorkspaceDir(); point
-    // it at a throwaway tmpdir so the page scan stays isolated from ~/.vellum.
+    // it at a throwaway tmpdir so the page scan stays isolated from ~/.cadet.
     // A fresh workspace per test keeps each concept count independent.
     let tmpWorkspace: string;
     let previousWorkspaceEnv: string | undefined;
 
     beforeEach(() => {
       tmpWorkspace = mkdtempSync(join(tmpdir(), "memory-stats-route-test-"));
-      previousWorkspaceEnv = process.env.VELLUM_WORKSPACE_DIR;
-      process.env.VELLUM_WORKSPACE_DIR = tmpWorkspace;
+      previousWorkspaceEnv = process.env.CADET_WORKSPACE_DIR;
+      process.env.CADET_WORKSPACE_DIR = tmpWorkspace;
       // A no-skill baseline; the exclusion test seeds synthetic rows itself.
       mockSkillEntries = [];
       // Drop any cached index so each run re-scans this fresh workspace.
@@ -1324,9 +1324,9 @@ describe("Memory Item Routes", () => {
 
     afterEach(() => {
       if (previousWorkspaceEnv === undefined) {
-        delete process.env.VELLUM_WORKSPACE_DIR;
+        delete process.env.CADET_WORKSPACE_DIR;
       } else {
-        process.env.VELLUM_WORKSPACE_DIR = previousWorkspaceEnv;
+        process.env.CADET_WORKSPACE_DIR = previousWorkspaceEnv;
       }
       rmSync(tmpWorkspace, { recursive: true, force: true });
       invalidatePageIndex();

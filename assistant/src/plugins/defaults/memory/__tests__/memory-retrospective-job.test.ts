@@ -1750,14 +1750,14 @@ describe("memoryRetrospectiveJob", () => {
   // Source-derived persona override
   // -------------------------------------------------------------------------
 
-  test("local/vellum source → wake carries the guardian persona + cadet channel override", async () => {
+  test("local/cadet source → wake carries the guardian persona + cadet channel override", async () => {
     // Default source stub has no originChannel — a local/desktop conversation.
     await memoryRetrospectiveJob(makeJob(), stubConfig);
 
     expect(wakeCalls).toHaveLength(1);
     expect(wakeCalls[0]!.opts.personaOverride).toEqual({
       userSlug: "alice",
-      channelSlug: "vellum",
+      channelSlug: "cadet",
       hasNoClient: false,
     });
     // Resolved via the live-turn guardian branch: undefined trust context,
@@ -1770,7 +1770,7 @@ describe("memoryRetrospectiveJob", () => {
       source: "user",
       forkParentMessageId: null,
       title: "Source conversation",
-      originChannel: "vellum",
+      originChannel: "cadet",
     };
 
     await memoryRetrospectiveJob(makeJob(), stubConfig);
@@ -1778,7 +1778,7 @@ describe("memoryRetrospectiveJob", () => {
     expect(wakeCalls).toHaveLength(1);
     expect(wakeCalls[0]!.opts.personaOverride).toEqual({
       userSlug: "alice",
-      channelSlug: "vellum",
+      channelSlug: "cadet",
       hasNoClient: false,
     });
   });
@@ -1811,7 +1811,7 @@ describe("memoryRetrospectiveJob", () => {
     expect(wakeCalls).toHaveLength(1);
     expect(wakeCalls[0]!.opts.personaOverride).toEqual({
       userSlug: "default",
-      channelSlug: "vellum",
+      channelSlug: "cadet",
       hasNoClient: false,
     });
   });
@@ -1825,7 +1825,7 @@ describe("memoryRetrospectiveJob", () => {
     expect(wakeCalls).toHaveLength(1);
     expect(wakeCalls[0]!.opts.personaOverride).toEqual({
       userSlug: "alice",
-      channelSlug: "vellum",
+      channelSlug: "cadet",
       hasNoClient: false,
     });
   });

@@ -28,7 +28,7 @@ export function classifyProcess(command: string): string {
   if (/\.app\/Contents\/MacOS\//.test(command)) return "unknown";
   // Match cadet CLI commands (e.g. "cadet hatch", "cadet sleep") but NOT
   // unrelated processes whose working directory or repo path happens to contain
-  // e.g. /Users/runner/work/vellum-assistant/vellum-assistant/... repo
+  // e.g. /Users/runner/work/mycadet/mycadet/... repo
   // checkouts must not classify as the cadet CLI.
   if (/(?:^|\/)cadet(?:\s|$)/.test(command)) return "cadet";
   return "unknown";
@@ -124,7 +124,7 @@ export function getKnownPidsFromAssistants(
   const pids = new Set<string>();
   for (const entry of entries) {
     if (entry.cloud === "local" && entry.resources) {
-      const legacyDir = join(entry.resources.instanceDir, ".vellum");
+      const legacyDir = join(entry.resources.instanceDir, ".cadet");
       const candidates = [
         getDaemonPidPath(entry.resources),
         join(legacyDir, "gateway.pid"),

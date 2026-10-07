@@ -22,7 +22,7 @@ const DOCK_BUST_MARKER = path.join(
   "node_modules",
   "electron",
   "dist",
-  ".vellum-dock-busted",
+  ".cadet-dock-busted",
 );
 
 // macOS keys notification authorization to the bundle identifier. The stock
@@ -31,9 +31,9 @@ const DOCK_BUST_MARKER = path.join(
 // makes `new Notification().show()` fail with `UNErrorDomain error 1`
 // (notificationsNotAllowed). Stamp our own owned identifier so the dev app
 // gets a clean authorization prompt, mirroring electron-builder's dev scheme
-// (`com.vellum.vellum-assistant-electron-${env}`) in electron-builder.config.cjs.
-const VELLUM_ENVIRONMENT = process.env.VELLUM_ENVIRONMENT || "local";
-const DEV_BUNDLE_ID = `com.vellum.vellum-assistant-electron-${VELLUM_ENVIRONMENT}`;
+// (`com.mycadet.mycadet-electron-${env}`) in electron-builder.config.cjs.
+const CADET_ENVIRONMENT = process.env.CADET_ENVIRONMENT || "local";
+const DEV_BUNDLE_ID = `com.mycadet.mycadet-electron-${CADET_ENVIRONMENT}`;
 
 const REQUIRED_PLIST_STRINGS: Record<string, string> = {
   CFBundleDisplayName: "Cadet Electron",

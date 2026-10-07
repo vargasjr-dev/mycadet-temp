@@ -61,7 +61,7 @@ describe("email register", () => {
     mockIpcCallFn = mock(() =>
       Promise.resolve({
         ok: true,
-        result: { address: "bot@vellum.me", id: "1", created_at: "2026-01-01" },
+        result: { address: "bot@mycadet.bot", id: "1", created_at: "2026-01-01" },
       }),
     );
 
@@ -102,7 +102,7 @@ describe("email register", () => {
     mockIpcCallFn = mock(() =>
       Promise.resolve({
         ok: true,
-        result: { address: "bot@vellum.me", id: "1", created_at: "2026-01-01" },
+        result: { address: "bot@mycadet.bot", id: "1", created_at: "2026-01-01" },
       }),
     );
 
@@ -150,7 +150,7 @@ describe("email register", () => {
     }
 
     const stdout = stdoutChunks.join("");
-    expect(stdout).toContain("bot@vellum.me");
+    expect(stdout).toContain("bot@mycadet.bot");
   });
 
   test("propagates IPC error", async () => {
@@ -490,7 +490,7 @@ describe("email status", () => {
       Promise.resolve({
         ok: true,
         result: {
-          address: "bot@vellum.me",
+          address: "bot@mycadet.bot",
           status: "active",
           created_at: "2026-01-01T00:00:00Z",
           usage: {
@@ -536,7 +536,7 @@ describe("email unregister", () => {
     mockIpcCallFn = mock(() =>
       Promise.resolve({
         ok: true,
-        result: { unregistered: "bot@vellum.me" },
+        result: { unregistered: "bot@mycadet.bot" },
       }),
     );
 

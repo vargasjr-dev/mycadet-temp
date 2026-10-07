@@ -317,7 +317,7 @@ export function registerNotificationsCommand(program: Command): void {
                 },
                 ...(opts.dedupeKey ? { dedupeKey: opts.dedupeKey } : {}),
                 ...(conversationId
-                  ? { conversationAffinityHint: { vellum: conversationId } }
+                  ? { conversationAffinityHint: { cadet: conversationId } }
                   : {}),
                 throwOnError: true,
               },

@@ -17,13 +17,13 @@ export type GetRawPeerIp = () => string;
 /**
  * Auth strategy for a route:
  * - "none"         — no auth check, handler called directly
- * - "edge"         — edge JWT token required (aud=vellum-gateway)
+ * - "edge"         — edge JWT token required (aud=cadet-gateway)
  * - "edge-scoped"  — edge JWT + scope check (requires `scope` field)
  * - "edge-guardian" — caller must be the bound cadet guardian. In the default
  *                      path, edge JWT is validated and the caller's actor
  *                      principal must match the guardian's principal id.
  *                      When DISABLE_HTTP_AUTH=true (platform-managed), the
- *                      caller is asserted via X-Vellum-User-Id forwarded by
+ *                      caller is asserted via X-Cadet-User-Id forwarded by
  *                      vembda, cross-referenced with the bound platform
  *                      user id.
  * - "track-failures" — no gateway-level auth, but downstream 401s are

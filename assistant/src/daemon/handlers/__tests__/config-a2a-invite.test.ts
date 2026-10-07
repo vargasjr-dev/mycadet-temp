@@ -2,7 +2,7 @@
  * Tests for A2A invite creation handler.
  *
  * Uses the real DB (via `initializeDb()`) and the test preload which sets
- * `VELLUM_WORKSPACE_DIR` to a per-file temp directory.
+ * `CADET_WORKSPACE_DIR` to a per-file temp directory.
  */
 
 import { beforeEach, describe, expect, test } from "bun:test";
@@ -67,7 +67,7 @@ describe("createA2AInvite", () => {
     resetTables();
     setConfig({
       a2aEnabled: false,
-      publicBaseUrl: "https://example.vellum.ai",
+      publicBaseUrl: "https://example.mycadet.ai",
       ingressEnabled: true,
     });
   });
@@ -78,7 +78,7 @@ describe("createA2AInvite", () => {
     expect(result.inviteId).toBeDefined();
     expect(result.token).toBeDefined();
     expect(result.expiresAt).toBeDefined();
-    expect(result.senderGatewayUrl).toBe("https://example.vellum.ai");
+    expect(result.senderGatewayUrl).toBe("https://example.mycadet.ai");
     expect(result.error).toBeUndefined();
   });
 

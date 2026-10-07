@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-const TEST_DIR = process.env.VELLUM_WORKSPACE_DIR!;
+const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 const noopLogger = new Proxy({} as Record<string, unknown>, {
   get: (_target, prop) => (prop === "child" ? () => noopLogger : () => {}),
@@ -24,7 +24,7 @@ describe("Dynamic Skill Authoring Workflow moved to tool descriptions", () => {
   });
 
   test("system prompt no longer contains Dynamic Skill Authoring section", () => {
-    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "I am Vellum.");
+    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "I am Cadet.");
     const result = buildSystemPrompt();
     expect(result).not.toContain("## Dynamic Skill Authoring Workflow");
     expect(result).not.toContain("### Community Skills Discovery");
@@ -37,7 +37,7 @@ describe("Dynamic Skill Authoring Workflow moved to tool descriptions", () => {
       join(skillsDir, "test-skill", "SKILL.md"),
       '---\nname: "Test Skill"\ndescription: "For testing."\n---\n\nDo testing.\n',
     );
-    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "I am Vellum.");
+    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "I am Cadet.");
 
     const result = buildSystemPrompt();
     expect(result).not.toContain("## Available Skills");
@@ -54,7 +54,7 @@ describe("Dynamic Skill Authoring Workflow moved to tool descriptions", () => {
   });
 
   test("browser skill activation hints no longer appear in system prompt", () => {
-    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "I am Vellum.");
+    writeFileSync(join(TEST_DIR, "IDENTITY.md"), "I am Cadet.");
     const result = buildSystemPrompt();
     expect(result).not.toContain("Browser Skill Prerequisite");
     // Skills catalog removed from system prompt — activation hints live in capability memories

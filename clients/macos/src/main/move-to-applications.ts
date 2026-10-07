@@ -9,9 +9,9 @@ import {
 } from "./install-location";
 import log from "./logger";
 
-// Build-time define (see electron.vite.config.ts) — the same VELLUM_ENVIRONMENT
+// Build-time define (see electron.vite.config.ts) — the same CADET_ENVIRONMENT
 // that electron-builder.config.cjs derives `productName` from.
-declare const __VELLUM_ENVIRONMENT__: string;
+declare const __CADET_ENVIRONMENT__: string;
 
 /**
  * The app's user-facing product name ("Cadet", "Cadet Local", "Cadet Dev",
@@ -24,8 +24,8 @@ declare const __VELLUM_ENVIRONMENT__: string;
  */
 function productDisplayName(): string {
   const env =
-    typeof __VELLUM_ENVIRONMENT__ === "string"
-      ? __VELLUM_ENVIRONMENT__
+    typeof __CADET_ENVIRONMENT__ === "string"
+      ? __CADET_ENVIRONMENT__
       : "production";
   if (env === "production") return "Cadet";
   return `Cadet ${env.charAt(0).toUpperCase()}${env.slice(1)}`;
@@ -204,7 +204,7 @@ export async function relocateToApplicationsFolder(): Promise<boolean> {
  * Finder when even that fails. Declining is remembered so this asks at most
  * once per install for a user who wants to run from where they are.
  *
- * Silent on a launch that a `.vellum` file or a deep link triggered: accepting
+ * Silent on a launch that a `.cadet` file or a deep link triggered: accepting
  * the offer relaunches, and those events live only in this process's pending
  * buffers until the renderer drains them, so the relaunch would drop the file
  * or link the user actually opened. Such a launch is the one case where being

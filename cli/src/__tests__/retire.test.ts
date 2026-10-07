@@ -27,8 +27,8 @@ import * as retireLocalModule from "../lib/retire-local.js";
 const testDir = mkdtempSync(join(tmpdir(), "cli-retire-test-"));
 const originalArgv = [...process.argv];
 const originalExit = process.exit;
-const originalLockfileDir = process.env.VELLUM_LOCKFILE_DIR;
-const originalPlatformToken = process.env.VELLUM_PLATFORM_TOKEN;
+const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
+const originalPlatformToken = process.env.CADET_PLATFORM_TOKEN;
 const originalStdinIsTTY = process.stdin.isTTY;
 const originalStdoutIsTTY = process.stdout.isTTY;
 const originalStdinIsRaw = process.stdin.isRaw;
@@ -48,7 +48,7 @@ const authHeadersForKnownOrganizationMock = mock(
   (token: string, organizationId: string) => ({
     "Content-Type": "application/json",
     "X-Session-Token": token,
-    "Vellum-Organization-Id": organizationId,
+    "Cadet-Organization-Id": organizationId,
   }),
 );
 const getPlatformUrlMock = mock(() => "https://platform.example.com");
@@ -111,13 +111,13 @@ function makeEntry(
 function writeLockfile(entries: AssistantEntry[]): void {
   mkdirSync(testDir, { recursive: true });
   writeFileSync(
-    join(testDir, ".vellum.lock.json"),
+    join(testDir, ".cadet.lock.json"),
     JSON.stringify({ assistants: entries }, null, 2) + "\n",
   );
 }
 
 function readLockfile(): string {
-  return readFileSync(join(testDir, ".vellum.lock.json"), "utf-8");
+  return readFileSync(join(testDir, ".cadet.lock.json"), "utf-8");
 }
 
 function setTerminalMode(isTTY: boolean): void {
@@ -166,10 +166,10 @@ function restoreTerminal(): void {
 
 describe("cadet retire", () => {
   beforeEach(() => {
-    process.env.VELLUM_LOCKFILE_DIR = testDir;
-    delete process.env.VELLUM_PLATFORM_TOKEN;
-    rmSync(join(testDir, ".vellum.lock.json"), { force: true });
-    process.argv = ["bun", "vellum", "retire"];
+    process.env.CADET_LOCKFILE_DIR = testDir;
+    delete process.env.CADET_PLATFORM_TOKEN;
+    rmSync(join(testDir, ".cadet.lock.json"), { force: true });
+    process.argv = ["bun", "cadet", "retire"];
     process.exit = ((code?: number) => {
       throw new Error(`process.exit:${code}`);
     }) as typeof process.exit;
@@ -187,7 +187,7 @@ describe("cadet retire", () => {
       (token: string, organizationId: string) => ({
         "Content-Type": "application/json",
         "X-Session-Token": token,
-        "Vellum-Organization-Id": organizationId,
+        "Cadet-Organization-Id": organizationId,
       }),
     );
     getPlatformUrlMock.mockReset();
@@ -221,14 +221,14 @@ describe("cadet retire", () => {
     mock.module("../lib/platform-client.js", () => realPlatformClientModule);
     mock.module("../lib/loopback-fetch.js", () => realLoopbackFetchModule);
     if (originalLockfileDir === undefined) {
-      delete process.env.VELLUM_LOCKFILE_DIR;
+      delete process.env.CADET_LOCKFILE_DIR;
     } else {
-      process.env.VELLUM_LOCKFILE_DIR = originalLockfileDir;
+      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
     }
     if (originalPlatformToken === undefined) {
-      delete process.env.VELLUM_PLATFORM_TOKEN;
+      delete process.env.CADET_PLATFORM_TOKEN;
     } else {
-      process.env.VELLUM_PLATFORM_TOKEN = originalPlatformToken;
+      process.env.CADET_PLATFORM_TOKEN = originalPlatformToken;
     }
     rmSync(testDir, { recursive: true, force: true });
   });
@@ -236,7 +236,7 @@ describe("cadet retire", () => {
   test("--yes retires by unquoted display name and removes by assistant ID", async () => {
     const entry = makeEntry("assistant-1", { name: "Example Assistant" });
     writeLockfile([entry]);
-    process.argv = ["bun", "vellum", "retire", "Example", "Assistant", "--yes"];
+    process.argv = ["bun", "cadet", "retire", "Example", "Assistant", "--yes"];
 
     await retire();
 
@@ -256,24 +256,24 @@ describe("cadet retire", () => {
     readPlatformTokenMock.mockReturnValue("session-token");
     getPlatformUrlMock.mockReturnValue("https://platform.example.test/api");
     readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
-      if (name === "vellum:platform_assistant_id") {
+      if (name === "cadet:platform_assistant_id") {
         return { value: "platform-assistant-1", unreachable: false };
       }
-      if (name === "vellum:platform_base_url") {
+      if (name === "cadet:platform_base_url") {
         return { value: "https://platform.example.test", unreachable: false };
       }
-      if (name === "vellum:platform_organization_id") {
+      if (name === "cadet:platform_organization_id") {
         return { value: "org-123", unreachable: false };
       }
       return { value: null, unreachable: false };
     });
-    process.argv = ["bun", "vellum", "retire", "assistant-1", "--yes"];
+    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
     await retire();
 
     expect(readGatewayCredentialMock).toHaveBeenCalledWith(
       entry.localUrl ?? entry.runtimeUrl,
-      "vellum:platform_assistant_id",
+      "cadet:platform_assistant_id",
       entry.bearerToken,
     );
     expect(authHeadersMock).not.toHaveBeenCalled();
@@ -284,7 +284,7 @@ describe("cadet retire", () => {
         headers: {
           "Content-Type": "application/json",
           "X-Session-Token": "session-token",
-          "Vellum-Organization-Id": "org-123",
+          "Cadet-Organization-Id": "org-123",
         },
       },
     );
@@ -304,34 +304,34 @@ describe("cadet retire", () => {
     getPlatformUrlMock.mockReturnValue("https://platform.example.test");
     readGatewayCredentialMock.mockImplementation(async (gatewayUrl, name) => {
       expect(gatewayUrl).toBe(localGatewayUrl);
-      if (name === "vellum:platform_assistant_id") {
+      if (name === "cadet:platform_assistant_id") {
         return { value: "platform-assistant-1", unreachable: false };
       }
-      if (name === "vellum:platform_base_url") {
+      if (name === "cadet:platform_base_url") {
         return { value: "https://platform.example.test", unreachable: false };
       }
-      if (name === "vellum:platform_organization_id") {
+      if (name === "cadet:platform_organization_id") {
         return { value: "org-123", unreachable: false };
       }
       return { value: null, unreachable: false };
     });
-    process.argv = ["bun", "vellum", "retire", "assistant-1", "--yes"];
+    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
     await retire();
 
     expect(readGatewayCredentialMock).toHaveBeenCalledWith(
       localGatewayUrl,
-      "vellum:platform_assistant_id",
+      "cadet:platform_assistant_id",
       entry.bearerToken,
     );
     expect(readGatewayCredentialMock).toHaveBeenCalledWith(
       localGatewayUrl,
-      "vellum:platform_base_url",
+      "cadet:platform_base_url",
       entry.bearerToken,
     );
     expect(readGatewayCredentialMock).toHaveBeenCalledWith(
       localGatewayUrl,
-      "vellum:platform_organization_id",
+      "cadet:platform_organization_id",
       entry.bearerToken,
     );
     expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
@@ -355,13 +355,13 @@ describe("cadet retire", () => {
       value: null,
       unreachable: true,
     });
-    process.argv = ["bun", "vellum", "retire", "assistant-1", "--yes"];
+    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
     await retire();
 
     expect(readGatewayCredentialMock).toHaveBeenCalledWith(
       entry.localUrl ?? entry.runtimeUrl,
-      "vellum:platform_assistant_id",
+      "cadet:platform_assistant_id",
       entry.bearerToken,
     );
     expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
@@ -371,7 +371,7 @@ describe("cadet retire", () => {
         headers: {
           "Content-Type": "application/json",
           "X-Session-Token": "session-token",
-          "Vellum-Organization-Id": "org-123",
+          "Cadet-Organization-Id": "org-123",
         },
       },
     );
@@ -390,7 +390,7 @@ describe("cadet retire", () => {
       value: null,
       unreachable: true,
     });
-    process.argv = ["bun", "vellum", "retire", "assistant-1", "--yes"];
+    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
     await retire();
 
@@ -408,18 +408,18 @@ describe("cadet retire", () => {
     readPlatformTokenMock.mockReturnValue("session-token");
     getPlatformUrlMock.mockReturnValue("https://platform.example.com");
     readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
-      if (name === "vellum:platform_assistant_id") {
+      if (name === "cadet:platform_assistant_id") {
         return { value: "platform-assistant-1", unreachable: false };
       }
-      if (name === "vellum:platform_base_url") {
+      if (name === "cadet:platform_base_url") {
         return { value: "https://malicious.example.test", unreachable: false };
       }
-      if (name === "vellum:platform_organization_id") {
+      if (name === "cadet:platform_organization_id") {
         return { value: "org-123", unreachable: false };
       }
       return { value: null, unreachable: false };
     });
-    process.argv = ["bun", "vellum", "retire", "assistant-1", "--yes"];
+    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
     await retire();
 
@@ -436,15 +436,15 @@ describe("cadet retire", () => {
     readPlatformTokenMock.mockReturnValue("session-token");
     getPlatformUrlMock.mockReturnValue("https://platform.example.test");
     readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
-      if (name === "vellum:platform_assistant_id") {
+      if (name === "cadet:platform_assistant_id") {
         return { value: "platform-assistant-1", unreachable: false };
       }
-      if (name === "vellum:platform_base_url") {
+      if (name === "cadet:platform_base_url") {
         return { value: "https://platform.example.test", unreachable: false };
       }
       return { value: null, unreachable: false };
     });
-    process.argv = ["bun", "vellum", "retire", "assistant-1", "--yes"];
+    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
     await retire();
 
@@ -459,22 +459,22 @@ describe("cadet retire", () => {
   test("local retire uses injected platform token from the app host", async () => {
     const entry = makeEntry("assistant-1", { name: "Example Assistant" });
     writeLockfile([entry]);
-    process.env.VELLUM_PLATFORM_TOKEN = "host-session-token";
+    process.env.CADET_PLATFORM_TOKEN = "host-session-token";
     readPlatformTokenMock.mockReturnValue(null);
     getPlatformUrlMock.mockReturnValue("https://platform.example.test");
     readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
-      if (name === "vellum:platform_assistant_id") {
+      if (name === "cadet:platform_assistant_id") {
         return { value: "platform-assistant-1", unreachable: false };
       }
-      if (name === "vellum:platform_base_url") {
+      if (name === "cadet:platform_base_url") {
         return { value: "https://platform.example.test", unreachable: false };
       }
-      if (name === "vellum:platform_organization_id") {
+      if (name === "cadet:platform_organization_id") {
         return { value: "org-123", unreachable: false };
       }
       return { value: null, unreachable: false };
     });
-    process.argv = ["bun", "vellum", "retire", "assistant-1", "--yes"];
+    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
     await retire();
 
@@ -485,7 +485,7 @@ describe("cadet retire", () => {
         headers: {
           "Content-Type": "application/json",
           "X-Session-Token": "host-session-token",
-          "Vellum-Organization-Id": "org-123",
+          "Cadet-Organization-Id": "org-123",
         },
       },
     );
@@ -498,13 +498,13 @@ describe("cadet retire", () => {
     readPlatformTokenMock.mockReturnValue("session-token");
     getPlatformUrlMock.mockReturnValue("https://platform.example.test");
     readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
-      if (name === "vellum:platform_assistant_id") {
+      if (name === "cadet:platform_assistant_id") {
         return { value: "platform-assistant-1", unreachable: false };
       }
-      if (name === "vellum:platform_base_url") {
+      if (name === "cadet:platform_base_url") {
         return { value: "https://platform.example.test", unreachable: false };
       }
-      if (name === "vellum:platform_organization_id") {
+      if (name === "cadet:platform_organization_id") {
         return { value: "org-123", unreachable: false };
       }
       return { value: null, unreachable: false };
@@ -512,7 +512,7 @@ describe("cadet retire", () => {
     loopbackSafeFetchMock.mockResolvedValue(
       new Response("platform unavailable", { status: 503 }),
     );
-    process.argv = ["bun", "vellum", "retire", "assistant-1", "--yes"];
+    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
     await retire();
 
@@ -527,7 +527,7 @@ describe("cadet retire", () => {
     const entry = makeEntry("assistant-1", { name: "Example Assistant" });
     writeLockfile([entry]);
     const before = readLockfile();
-    process.argv = ["bun", "vellum", "retire", "Example", "Assistant"];
+    process.argv = ["bun", "cadet", "retire", "Example", "Assistant"];
 
     await expect(retire()).rejects.toThrow("process.exit:1");
 
@@ -543,7 +543,7 @@ describe("cadet retire", () => {
     writeLockfile([entry]);
     const before = readLockfile();
     setInteractiveTerminal();
-    process.argv = ["bun", "vellum", "retire", "Example", "Assistant"];
+    process.argv = ["bun", "cadet", "retire", "Example", "Assistant"];
 
     const pending = retire();
     queueMicrotask(() => {
@@ -562,7 +562,7 @@ describe("cadet retire", () => {
     const entry = makeEntry("assistant-1", { name: "Example Assistant" });
     writeLockfile([entry]);
     setInteractiveTerminal();
-    process.argv = ["bun", "vellum", "retire", "Example", "Assistant"];
+    process.argv = ["bun", "cadet", "retire", "Example", "Assistant"];
 
     const pending = retire();
     queueMicrotask(() => {
@@ -580,7 +580,7 @@ describe("cadet retire", () => {
       makeEntry("assistant-2", { name: "Example Assistant" }),
     ]);
     const before = readLockfile();
-    process.argv = ["bun", "vellum", "retire", "Example", "Assistant", "--yes"];
+    process.argv = ["bun", "cadet", "retire", "Example", "Assistant", "--yes"];
 
     await expect(retire()).rejects.toThrow("process.exit:1");
 

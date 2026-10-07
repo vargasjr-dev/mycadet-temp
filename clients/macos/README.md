@@ -12,7 +12,7 @@ This package is the macOS distribution surface (outside the App Store).
 **What:** The web UI (`clients/web/`) is bundled as static files inside the
 `.app` package. The Electron main process serves them via a custom
 [`app://` protocol](https://www.electronjs.org/docs/latest/api/protocol#protocolhandlescheme-handler)
-— the `BrowserWindow` loads `app://vellum.ai/assistant`, which resolves
+— the `BrowserWindow` loads `app://mycadet.ai/assistant`, which resolves
 to files on disk at `process.resourcesPath/web-dist`.
 
 **How:** At build time, `bun run build:web` runs `vite build` in
@@ -76,7 +76,7 @@ which is a fast no-op when the lockfile already matches).
 proxy) with a 1.5s timeout and picks one of two paths:
 
 1. **vel up is running** → dispatches to `dev:electron-only` with
-   `VELLUM_DEV_URL=http://localhost:3000/assistant`. No Vite is spawned
+   `CADET_DEV_URL=http://localhost:3000/assistant`. No Vite is spawned
    here; the Electron BrowserWindow loads the edge proxy at the
    `/assistant` path (the bare root is the marketing site) and reuses
    vel's backends (Django, gateway, daemon) the same way Swift Cadet
@@ -104,26 +104,26 @@ proxy) with a 1.5s timeout and picks one of two paths:
    chrome), not for feature development against the real stack.
 
 The main-process URL choice lives in `src/main/index.ts`:
-`process.env.VELLUM_DEV_URL ?? "http://localhost:5173/assistant"`.
-`VELLUM_DEV_URL` is treated as the full URL — callers must include the
+`process.env.CADET_DEV_URL ?? "http://localhost:5173/assistant"`.
+`CADET_DEV_URL` is treated as the full URL — callers must include the
 `/assistant` path themselves because `clients/web/vite.config.ts` sets
 `base: "/assistant/"` (so the bare origin lands the BrowserWindow on
 the marketing page in vel-up mode, or on a Vite 404 in standalone).
 Override the env var yourself (e.g.,
-`VELLUM_DEV_URL=http://localhost:3002/assistant bun run dev:electron-only`)
+`CADET_DEV_URL=http://localhost:3002/assistant bun run dev:electron-only`)
 if you need to point at a non-default service.
 
 The app shows up as **Cadet Electron** in the menu bar and Dock
 (via `app.setName`, gated to `!app.isPackaged` in `src/main/index.ts`),
 and writes preferences / electron-store data under
-`~/Library/Application Support/Vellum Electron/`. That keeps it cleanly
-separate from the Swift `Vellum.app`, `Cadet Local.app`, and
+`~/Library/Application Support/Cadet Electron/`. That keeps it cleanly
+separate from the Swift `Cadet.app`, `Cadet Local.app`, and
 `Cadet Dev.app` installs — running this locally won't clobber
 whichever Swift channel you have around.
 
 - **Dev (vel up)** — Electron loads `http://localhost:3000/assistant` (edge proxy + the path clients/web's Vite is configured for).
 - **Dev (standalone)** — Electron loads `http://localhost:5173/assistant` (our Vite, same path).
-- **Prod** — A custom `app://vellum.ai/` protocol serves the bundled
+- **Prod** — A custom `app://mycadet.ai/` protocol serves the bundled
   `web-dist/` files. See [Web content delivery](#web-content-delivery).
 - **Assistant process** — The app does not run or supervise any background
   process of its own. Each local assistant runs its own processes, spawned and
@@ -205,7 +205,7 @@ with no built addon reports unavailable and the app falls back to Electron's
 own notifications, and so does an addon that loads but answers
 `isSupported()` with false, which is what an unbundled run does because
 `UNUserNotificationCenter` raises there. Set
-`VELLUM_DISABLE_NATIVE_NOTIFIER=1` to force that fallback in a build that
+`CADET_DISABLE_NATIVE_NOTIFIER=1` to force that fallback in a build that
 would otherwise use the addon.
 
 **Which notifications the addon posts.** The addon posts only notifications
@@ -282,7 +282,7 @@ bash scripts/build-notifier.sh   # also runs as part of `bun run setup` and `bun
 ```
 
 It compiles against the headers for the Electron version pinned in
-`package.json` and writes `resources/notifier/<arch>/vellum-notifier.node`,
+`package.json` and writes `resources/notifier/<arch>/cadet-notifier.node`,
 which `electron-builder` packs to `bin/notifier/` and `scripts/afterSign.js`
 re-signs with `inherit.plist`. `ELECTRON_TARGET_ARCH` picks the architecture,
 defaulting to the host's so a local `bun run setup` on any Mac builds an addon
@@ -297,7 +297,7 @@ not load and the app quietly falls back to plain notifications.
 **Provisioning profile switch.** `com.apple.developer.usernotifications.communication`
 is a restricted entitlement: an app declaring it without an authorizing
 provisioning profile is killed at launch. `electron-builder.config.cjs` sets
-`mac.provisioningProfile` only when `VELLUM_MAC_PROVISIONING_PROFILE` names a
+`mac.provisioningProfile` only when `CADET_MAC_PROVISIONING_PROFILE` names a
 profile that exists on disk, and throws when the variable is set to a file that
 is not there rather than quietly signing the plain entitlements under a name
 that says otherwise. The release workflows decode one there from the
@@ -323,7 +323,7 @@ plainly.
 ```sh
 bun run dev                # probe vel-up at :3000, dispatch to dev:electron-only or dev:standalone
 bun run dev:standalone     # explicit: spawn our Vite (:5173) + electron-vite dev (no backends)
-bun run dev:electron-only  # explicit: electron-vite dev only, honors $VELLUM_DEV_URL (default :5173)
+bun run dev:electron-only  # explicit: electron-vite dev only, honors $CADET_DEV_URL (default :5173)
 bun run install:all        # workspace bun install + Electron setup (called automatically by dev)
 bun run dev:web            # clients/web Vite (port 5173, strict) — invoked by dev:standalone
 bun run dev:electron       # wait for :5173 (hang capture on timeout) then electron-vite dev — invoked by dev:standalone
@@ -425,7 +425,7 @@ The preload script exposes a typed `window.cadet` API to the renderer:
 The native helper lives in `native/mac-helper/` as a small Swift package.
 `MacHelperCore` owns JSON-RPC 2.0 NDJSON framing, standard error codes, and
 method routing so protocol behavior is unit-testable without spawning a
-process. The `vellum-mac-helper` executable is the thin AppKit/Carbon entrypoint;
+process. The `cadet-mac-helper` executable is the thin AppKit/Carbon entrypoint;
 it logs to stderr and keeps stdout reserved for RPC frames and notifications.
 
 Verify the bridge from the renderer:

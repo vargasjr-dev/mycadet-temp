@@ -4,7 +4,7 @@ import Foundation
 /// bundle rather than hardcoded.
 ///
 /// Each environment sets `BUNDLE_URL_SCHEME` in its xcconfig
-/// (`vellum-assistant`, `vellum-assistant-staging`, `vellum-assistant-dev`), so
+/// (`mycadet`, `mycadet-staging`, `mycadet-dev`), so
 /// a hardcoded literal would make a Dev or Staging build hand out production
 /// links — and if the production app happens to be installed, iOS would open
 /// *that* app instead.
@@ -34,7 +34,7 @@ import Foundation
 ///   is strictly better than launching voice mode in the wrong app.
 enum BundleURLScheme {
     /// Info.plist key carrying the scheme where `CFBundleURLTypes` is absent.
-    static let infoPlistKey = "VellumURLScheme"
+    static let infoPlistKey = "CadetURLScheme"
 
     /// The scheme for the currently running bundle, or `nil` when the bundle
     /// declares none. See the type docs for why there is no default.

@@ -230,7 +230,7 @@ describe("probeTunnel", () => {
           disablePlatform: true,
           assistantName: "Ada",
           assistantId: "asst_1",
-          hubUrl: "https://app.vellum.ai",
+          hubUrl: "https://app.mycadet.ai",
         }),
       },
     });

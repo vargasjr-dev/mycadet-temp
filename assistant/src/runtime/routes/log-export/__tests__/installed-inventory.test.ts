@@ -7,7 +7,7 @@
  * recomputed); that entries without a sidecar report `null` for those fields;
  * and that assembly is sorted, stamped, and never throws.
  *
- * The shared `test-preload.ts` sets `VELLUM_WORKSPACE_DIR` to a per-file temp
+ * The shared `test-preload.ts` sets `CADET_WORKSPACE_DIR` to a per-file temp
  * directory, so `getWorkspaceSkillsDir()` / `getWorkspacePluginsDir()` already
  * resolve under our temp workspace. We seed those subdirectories per test.
  */
@@ -72,7 +72,7 @@ function seedPlugin(
       JSON.stringify(
         {
           name,
-          origin: "vellum",
+          origin: "cadet",
           source: { kind: "github", owner: "o", repo: "r", ref: "main" },
           ...meta,
         },

@@ -15,13 +15,13 @@ const windowsRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const nativeRoot = join(windowsRoot, "native");
 const helperProject = join(
   nativeRoot,
-  "Vellum.WindowsHelper",
-  "Vellum.WindowsHelper.csproj",
+  "Cadet.WindowsHelper",
+  "Cadet.WindowsHelper.csproj",
 );
 const testProject = join(
   nativeRoot,
-  "Vellum.WindowsHelper.Tests",
-  "Vellum.WindowsHelper.Tests.csproj",
+  "Cadet.WindowsHelper.Tests",
+  "Cadet.WindowsHelper.Tests.csproj",
 );
 const dotnetSdkVersion = "10.0.302";
 const dotnetDownloads = {

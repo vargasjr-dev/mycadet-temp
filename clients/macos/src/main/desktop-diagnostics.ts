@@ -20,11 +20,11 @@ import { handle, on } from "./ipc";
 import { getLogFilePaths } from "./logger";
 import { getSessionToken } from "./session-token-store.client";
 
-declare const __VELLUM_ENVIRONMENT__: string;
+declare const __CADET_ENVIRONMENT__: string;
 
 const releaseChannel =
-  typeof __VELLUM_ENVIRONMENT__ === "string"
-    ? __VELLUM_ENVIRONMENT__
+  typeof __CADET_ENVIRONMENT__ === "string"
+    ? __CADET_ENVIRONMENT__
     : "production";
 
 configureFeedback({

@@ -159,9 +159,9 @@ describe("doesSupportVision", () => {
 
   test("resolves a routing-identity profile through the model's catalog owner", () => {
     setMockConfig({
-      managed: { provider: "vellum", model: "claude-fable-5" },
+      managed: { provider: "cadet", model: "claude-fable-5" },
       "managed-text": {
-        provider: "vellum",
+        provider: "cadet",
         model: "accounts/fireworks/models/glm-5p3",
       },
     });
@@ -237,7 +237,7 @@ describe("doesSupportVision", () => {
 
 describe("doesSupportVision with a BYO default provider", () => {
   test("judges a default profile against the default provider's column model", () => {
-    // Managed/vellum column: cost-optimized → deepseek-v4p1-flash
+    // Managed/cadet column: cost-optimized → deepseek-v4p1-flash
     // (supportsVision: true). OpenRouter column: cost-optimized →
     // deepseek/deepseek-v4-flash (text-only, supportsVision: false).
     // The judged model must be the one the BYO install actually runs.

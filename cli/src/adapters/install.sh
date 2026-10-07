@@ -230,11 +230,11 @@ symlink_cadet() {
     symlink_cli "assistant"
 }
 
-# Append PATH setup to ~/.config/vellum/env so callers can pick up PATH
+# Append PATH setup to ~/.config/cadet/env so callers can pick up PATH
 # changes without restarting their shell:
-#   curl -fsSL https://vellum.ai/install.sh | bash && . ~/.config/vellum/env
+#   curl -fsSL https://mycadet.ai/install.sh | bash && . ~/.config/cadet/env
 write_env_file() {
-    local env_dir="${XDG_CONFIG_HOME:-$HOME/.config}/vellum"
+    local env_dir="${XDG_CONFIG_HOME:-$HOME/.config}/cadet"
     local env_file="$env_dir/env"
     mkdir -p "$env_dir"
     cat >> "$env_file" <<'ENVEOF'
@@ -265,7 +265,7 @@ install_cadet() {
 
 main() {
     printf "\n"
-    printf '  %bVellum Installer%b\n' "$BOLD" "$RESET"
+    printf '  %bCadet Installer%b\n' "$BOLD" "$RESET"
     printf "\n"
 
     ensure_git
@@ -281,7 +281,7 @@ main() {
 
     # Append PATH config to the env file so the quickstart one-liner can
     # pick up PATH changes in the caller's shell:
-    #   curl ... | bash && . ~/.config/vellum/env
+    #   curl ... | bash && . ~/.config/cadet/env
     write_env_file
 
     # Source the shell profile so cadet hatch runs with the correct PATH
@@ -292,8 +292,8 @@ main() {
 
     info "Running cadet hatch..."
     printf "\n"
-    if [ -n "${VELLUM_SSH_USER:-}" ] && [ "$(id -u)" = "0" ]; then
-        su - "$VELLUM_SSH_USER" -c "set -a; [ -f \"\$HOME/.config/vellum/env\" ] && . \"\$HOME/.config/vellum/env\"; set +a; export PATH=\"$HOME/.bun/bin:\$PATH\"; cadet hatch"
+    if [ -n "${CADET_SSH_USER:-}" ] && [ "$(id -u)" = "0" ]; then
+        su - "$CADET_SSH_USER" -c "set -a; [ -f \"\$HOME/.config/cadet/env\" ] && . \"\$HOME/.config/cadet/env\"; set +a; export PATH=\"$HOME/.bun/bin:\$PATH\"; cadet hatch"
     else
         cadet hatch
     fi

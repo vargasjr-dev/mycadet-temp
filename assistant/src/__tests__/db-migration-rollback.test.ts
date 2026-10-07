@@ -39,7 +39,7 @@ import { downLlmUsageEventsDropAssistantId } from "../persistence/migrations/009
 import { downBackfillInboxThreadState } from "../persistence/migrations/014-backfill-inbox-thread-state.js";
 import { downDropActiveSearchIndex } from "../persistence/migrations/015-drop-active-search-index.js";
 import { downNotificationTablesSchema } from "../persistence/migrations/019-notification-tables-schema-migration.js";
-import { downRenameChannelToVellum } from "../persistence/migrations/020-rename-macos-ios-channel-to-vellum.js";
+import { downRenameChannelToCadet } from "../persistence/migrations/020-rename-macos-ios-channel-to-cadet.js";
 import { downEmbeddingVectorBlob } from "../persistence/migrations/024-embedding-vector-blob.js";
 import { downEmbeddingsNullableVectorJson } from "../persistence/migrations/026a-embeddings-nullable-vector-json.js";
 import { downNormalizePhoneIdentities } from "../persistence/migrations/036-normalize-phone-identities.js";
@@ -2061,20 +2061,20 @@ describe("memory migration down() functions", () => {
     });
   });
 
-  // ── v11: downRenameChannelToVellum (value rename) ───────────────────
+  // ── v11: downRenameChannelToCadet (value rename) ───────────────────
 
-  describe("v11: downRenameChannelToVellum", () => {
-    test("renames 'vellum' values back to 'macos'", () => {
+  describe("v11: downRenameChannelToCadet", () => {
+    test("renames 'cadet' values back to 'macos'", () => {
       const db = createTestDb();
       const raw = getRaw(db);
 
       raw.exec(/*sql*/ `
         CREATE TABLE guardian_action_deliveries (id TEXT PRIMARY KEY, destination_channel TEXT NOT NULL);
-        INSERT INTO guardian_action_deliveries VALUES ('d1', 'vellum');
+        INSERT INTO guardian_action_deliveries VALUES ('d1', 'cadet');
         INSERT INTO guardian_action_deliveries VALUES ('d2', 'sms');
       `);
 
-      downRenameChannelToVellum(db);
+      downRenameChannelToCadet(db);
 
       const row = raw
         .query(
@@ -2083,7 +2083,7 @@ describe("memory migration down() functions", () => {
         .get() as { destination_channel: string };
       expect(row.destination_channel).toBe("macos");
 
-      // Non-vellum values are unchanged.
+      // Non-cadet values are unchanged.
       const row2 = raw
         .query(
           `SELECT destination_channel FROM guardian_action_deliveries WHERE id = 'd2'`,
@@ -2099,11 +2099,11 @@ describe("memory migration down() functions", () => {
         `CREATE TABLE guardian_action_deliveries (id TEXT PRIMARY KEY, destination_channel TEXT NOT NULL)`,
       );
       raw.exec(
-        `INSERT INTO guardian_action_deliveries VALUES ('d1', 'vellum')`,
+        `INSERT INTO guardian_action_deliveries VALUES ('d1', 'cadet')`,
       );
 
-      downRenameChannelToVellum(db);
-      downRenameChannelToVellum(db);
+      downRenameChannelToCadet(db);
+      downRenameChannelToCadet(db);
 
       const row = raw
         .query(
@@ -2909,7 +2909,7 @@ describe("memory migration down() functions", () => {
 
       const now = Date.now();
       raw.exec(
-        `INSERT INTO channel_guardian_bindings VALUES ('b1', 'self', 'vellum', 'user1', 'chat1', 'principal1', 'active', ${now}, 'challenge', NULL, ${now}, ${now})`,
+        `INSERT INTO channel_guardian_bindings VALUES ('b1', 'self', 'cadet', 'user1', 'chat1', 'principal1', 'active', ${now}, 'challenge', NULL, ${now}, ${now})`,
       );
 
       downBackfillGuardianPrincipalId(db);
@@ -3022,13 +3022,13 @@ describe("memory migration down() functions", () => {
       // Insert with epoch ms values (post-forward-migration state).
       const epochMs = 1700000000000; // 2023-11-14T22:13:20.000Z
       raw.exec(
-        `INSERT INTO canonical_guardian_requests VALUES ('r1', 'approval', 'desktop', 'vellum', 'pending', NULL, ${epochMs}, ${epochMs})`,
+        `INSERT INTO canonical_guardian_requests VALUES ('r1', 'approval', 'desktop', 'cadet', 'pending', NULL, ${epochMs}, ${epochMs})`,
       );
       raw.exec(
-        `INSERT INTO canonical_guardian_deliveries VALUES ('d1', 'r1', 'vellum', 'pending', ${epochMs}, ${epochMs})`,
+        `INSERT INTO canonical_guardian_deliveries VALUES ('d1', 'r1', 'cadet', 'pending', ${epochMs}, ${epochMs})`,
       );
       raw.exec(
-        `INSERT INTO scoped_approval_grants VALUES ('g1', 'once', 'vellum', 'vellum', 'active', ${epochMs}, NULL, ${epochMs}, ${epochMs})`,
+        `INSERT INTO scoped_approval_grants VALUES ('g1', 'once', 'cadet', 'cadet', 'active', ${epochMs}, NULL, ${epochMs}, ${epochMs})`,
       );
 
       migrateGuardianTimestampsEpochMsDown(db);
@@ -3058,7 +3058,7 @@ describe("memory migration down() functions", () => {
 
       const epochMs = 1700000000000;
       raw.exec(
-        `INSERT INTO canonical_guardian_requests VALUES ('r1', 'approval', 'desktop', 'vellum', 'pending', NULL, ${epochMs}, ${epochMs})`,
+        `INSERT INTO canonical_guardian_requests VALUES ('r1', 'approval', 'desktop', 'cadet', 'pending', NULL, ${epochMs}, ${epochMs})`,
       );
 
       migrateGuardianTimestampsEpochMsDown(db);

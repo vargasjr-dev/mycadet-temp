@@ -49,8 +49,8 @@ export function registerAvatarCommand(program: Command): void {
           const resolvedSource = isAbsolute(opts.image)
             ? opts.image
             : join(
-                process.env.VELLUM_WORKSPACE_DIR ||
-                  join(homedir(), ".vellum", "workspace"),
+                process.env.CADET_WORKSPACE_DIR ||
+                  join(homedir(), ".cadet", "workspace"),
                 opts.image,
               );
 

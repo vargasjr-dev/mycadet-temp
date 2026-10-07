@@ -117,7 +117,7 @@ describe("provider secret helpers", () => {
 
     await expect(
       readGatewayApiKey(
-        "https://platform.vellum.ai",
+        "https://cloud.cadet.ai",
         "anthropic",
         undefined,
         fetchImpl,

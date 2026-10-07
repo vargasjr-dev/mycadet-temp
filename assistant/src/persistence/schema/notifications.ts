@@ -107,8 +107,8 @@ export const notificationDeliveries = sqliteTable(
     /**
      * The assistant row a successful channel delivery was recorded as, once
      * the channel acknowledged it. `messageId` keeps its meaning (provider
-     * id for a channel delivery, row id for a vellum delivery); this names
-     * the row for the edit and delete paths. NULL for vellum and platform
+     * id for a channel delivery, row id for a cadet delivery); this names
+     * the row for the edit and delete paths. NULL for cadet and platform
      * deliveries and for any channel delivery that did not succeed.
      */
     canonicalMessageId: text("canonical_message_id"),

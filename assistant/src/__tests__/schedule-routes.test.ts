@@ -214,7 +214,7 @@ describe("schedule run-now trust propagation", () => {
     expect(result.schedules).toBeDefined();
     expect(getOrCreateCalls).toHaveLength(1);
     expect(getOrCreateCalls[0].options?.trustContext).toEqual({
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       trustClass: "guardian",
     });
     expect(processCalls).toHaveLength(1);
@@ -1742,7 +1742,7 @@ describe("wake mode in schedule routes", () => {
     const result = (await route.handler({
       pathParams: { id: schedule.id },
       body: { mode: "wake", wakeConversationId: "conv-xyz" },
-      headers: { "x-vellum-principal-type": "local" },
+      headers: { "x-cadet-principal-type": "local" },
     })) as {
       schedules: Array<{
         id: string;
@@ -1926,7 +1926,7 @@ describe("GET /schedules - inference_profile filter", () => {
         from: "cost-optimized",
         to: resolveDefaultScheduleInferenceProfile()!,
       },
-      headers: { "x-vellum-principal-type": "local" },
+      headers: { "x-cadet-principal-type": "local" },
     })) as { reassigned: number };
     expect(moved.reassigned).toBe(result.schedules.length);
   });
@@ -2016,7 +2016,7 @@ describe("POST /schedules/reassign-profile", () => {
 
     const result = (await reassignRoute().handler({
       body: { from: "cost-optimized", to: resolvedDefault! },
-      headers: { "x-vellum-principal-type": "local" },
+      headers: { "x-cadet-principal-type": "local" },
     })) as { reassigned: number };
 
     expect(result.reassigned).toBe(1);
@@ -2047,7 +2047,7 @@ describe("POST /schedules/reassign-profile", () => {
     await expect(
       reassignRoute().handler({
         body: { from: "cost-optimized", to: resolvedDefault! },
-        headers: { "x-vellum-principal-type": "actor" },
+        headers: { "x-cadet-principal-type": "actor" },
       }),
     ).rejects.toThrow(
       "Deferred wake schedules can only be changed by the assistant's owner",
@@ -2278,7 +2278,7 @@ describe("POST /schedules/reassign-profile", () => {
     await expect(
       reassignRoute().handler({
         body: { to: resolvedDefault! },
-        headers: { "x-vellum-principal-type": "actor" },
+        headers: { "x-cadet-principal-type": "actor" },
       }),
     ).rejects.toThrow(
       "Deferred wake schedules can only be changed by the assistant's owner",

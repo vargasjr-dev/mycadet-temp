@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // ── Mocks (must precede imports from mocked modules) ──────────────────
 
 mock.module("../channels/config.js", () => ({
-  getDeliverableChannels: () => ["vellum"],
+  getDeliverableChannels: () => ["cadet"],
 }));
 
 mock.module("../notifications/decisions-store.js", () => ({
@@ -110,7 +110,7 @@ describe("identity context in notification decision engine", () => {
       name: "record_notification_decision",
       input: {
         shouldNotify: true,
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         reasoningSummary: "LLM decision with identity",
         renderedCopy: {
           cadet: {
@@ -124,7 +124,7 @@ describe("identity context in notification decision engine", () => {
     };
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["vellum"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).toContain("<assistant-identity>");
@@ -146,7 +146,7 @@ describe("identity context in notification decision engine", () => {
       name: "record_notification_decision",
       input: {
         shouldNotify: true,
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         reasoningSummary: "LLM decision without identity",
         renderedCopy: {
           cadet: {
@@ -160,7 +160,7 @@ describe("identity context in notification decision engine", () => {
     };
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["vellum"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).not.toContain("<assistant-identity>");
@@ -182,7 +182,7 @@ describe("identity context in notification decision engine", () => {
       name: "record_notification_decision",
       input: {
         shouldNotify: true,
-        selectedChannels: ["vellum"],
+        selectedChannels: ["cadet"],
         reasoningSummary: "LLM decision with truncated identity",
         renderedCopy: {
           cadet: {
@@ -196,7 +196,7 @@ describe("identity context in notification decision engine", () => {
     };
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["vellum"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).toContain("<assistant-identity>");
@@ -224,14 +224,14 @@ describe("identity context in notification decision engine", () => {
 
     const signal = makeSignal();
     const decision = await evaluateSignal(signal, [
-      "vellum",
+      "cadet",
     ] as NotificationChannel[]);
 
     // Fallback should produce valid copy regardless of identity context
     expect(decision.fallbackUsed).toBe(true);
     expect(decision.shouldNotify).toBe(true);
-    expect(decision.renderedCopy.vellum?.title).toBeDefined();
-    expect(decision.renderedCopy.vellum?.body).toBeDefined();
+    expect(decision.renderedCopy.cadet?.title).toBeDefined();
+    expect(decision.renderedCopy.cadet?.body).toBeDefined();
 
     // No LLM call was made so no system prompt was captured
     expect(capturedSystemPrompt).toBeUndefined();

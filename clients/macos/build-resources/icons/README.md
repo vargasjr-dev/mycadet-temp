@@ -1,6 +1,6 @@
 # Per-environment macOS app icons
 
-Each subdirectory is one `VELLUM_ENVIRONMENT` value and holds the Icon Composer
+Each subdirectory is one `CADET_ENVIRONMENT` value and holds the Icon Composer
 sources `scripts/generate-icon.sh` renders into the packaged app.
 
 ```
@@ -40,7 +40,7 @@ build, and the guard test fails if the two mirrors drift apart.
 `scripts/pack.sh` runs `scripts/generate-icon.sh` before electron-builder. That
 script:
 
-1. Resolves `build-resources/icons/$VELLUM_ENVIRONMENT/`, falling back to
+1. Resolves `build-resources/icons/$CADET_ENVIRONMENT/`, falling back to
    `production/` when no directory matches.
 2. Renders a 1024x1024 master PNG with an inline Swift program. It reads
    `fill.solid` into a `CGColor` in the Display P3 color space, pulls the `d`
@@ -66,5 +66,5 @@ directories here are the source of truth.
 2. Copy `production/icon.json` and `production/Assets/white-V.svg` into it.
 3. Set `fill.solid` to the environment's ground.
 4. Mirror the same directory under `clients/linux/build-resources/icons/`.
-5. Build with `VELLUM_ENVIRONMENT=<name> bash scripts/pack.sh` and check the
+5. Build with `CADET_ENVIRONMENT=<name> bash scripts/pack.sh` and check the
    icon Finder displays.

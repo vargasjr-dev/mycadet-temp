@@ -2,7 +2,7 @@
  * Tests for A2A invite completion handler (sender side).
  *
  * Uses the real DB (via `initializeDb()`) and the test preload which sets
- * `VELLUM_WORKSPACE_DIR` to a per-file temp directory.
+ * `CADET_WORKSPACE_DIR` to a per-file temp directory.
  */
 
 import { beforeEach, describe, expect, test } from "bun:test";
@@ -138,7 +138,7 @@ describe("completeA2AInvite", () => {
     const invite = getInviteRow(created.inviteId!);
     const metadata = getAssistantContactMetadata(invite!.contact_id);
     expect(metadata).not.toBeNull();
-    expect(metadata!.species).toBe("vellum");
+    expect(metadata!.species).toBe("cadet");
     expect(metadata!.metadata).toEqual({
       assistantId: "acceptor-assistant-123",
       gatewayUrl: "https://acceptor.example.com",

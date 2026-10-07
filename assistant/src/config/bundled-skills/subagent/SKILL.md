@@ -1,7 +1,7 @@
 ---
 name: subagent
 description: Spawn and manage autonomous background agents for parallel work
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🤖"
   cadet:

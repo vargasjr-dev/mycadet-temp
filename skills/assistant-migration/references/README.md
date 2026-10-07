@@ -17,12 +17,12 @@ ChatGPT conversation history is delegated to the separate `chatgpt-import` skill
 
 ## Optimized Flow: tar-and-transport
 
-The migration skill is optimized for a **single archive** that moves from the source machine to the Vellum assistant. Each reference describes:
+The migration skill is optimized for a **single archive** that moves from the source machine to the Cadet assistant. Each reference describes:
 
 1. **Locate** — where the assistant stores its internals (per-platform paths)
 2. **Bundle** — an explicit `tar` recipe with `--exclude` flags for known secret-bearing paths
-3. **Transport** — the creator attaches the archive directly to the Vellum conversation. For archives that exceed the current channel's chat-attachment limit, split the bundle into smaller pieces (metadata-only first; memory, conversations, and skills as separate follow-ups) and upload them in sequence; the migration skill stitches them back together server-side during inspection. If a chunk is still too large to upload, the creator can copy it onto the assistant's host out-of-band (scp/rsync/USB) and tell the assistant the on-disk path — no chat-supplied URL fetches.
-4. **Inspect** — once the archive is in the assistant's workspace, the migration skill takes over: extract to a scratch directory, classify per the Vellum Primitive Map, walk the creator through the Review Surface
+3. **Transport** — the creator attaches the archive directly to the Cadet conversation. For archives that exceed the current channel's chat-attachment limit, split the bundle into smaller pieces (metadata-only first; memory, conversations, and skills as separate follow-ups) and upload them in sequence; the migration skill stitches them back together server-side during inspection. If a chunk is still too large to upload, the creator can copy it onto the assistant's host out-of-band (scp/rsync/USB) and tell the assistant the on-disk path — no chat-supplied URL fetches.
+4. **Inspect** — once the archive is in the assistant's workspace, the migration skill takes over: extract to a scratch directory, classify per the Cadet Primitive Map, walk the creator through the Review Surface
 5. **Rebind** — every credential is reconnected via the credential vault, OAuth flows, or per-setup skills. The archive **never** carries raw secrets
 
 ## Rules each reference must follow

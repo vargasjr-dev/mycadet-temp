@@ -181,7 +181,7 @@ describe("gateway status", () => {
   test("--json passes through the connected tunnel payload", async () => {
     mockResponses.push({
       ok: true,
-      result: { tunnel: "https://abc123.vellum.ai" },
+      result: { tunnel: "https://abc123.mycadet.ai" },
     });
 
     const { stdout, exitCode } = await runCommand([
@@ -193,7 +193,7 @@ describe("gateway status", () => {
     expect(exitCode).toBe(0);
     expect(ipcCalls[0].method).toBe("gateway_status");
     expect(JSON.parse(stdout.trim())).toEqual({
-      tunnel: "https://abc123.vellum.ai",
+      tunnel: "https://abc123.mycadet.ai",
     });
   });
 

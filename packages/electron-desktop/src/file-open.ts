@@ -12,7 +12,7 @@ import {
 import type { createIpcRegistrar } from "./ipc";
 
 /**
- * Inbound file-open events for `.vellum` bundles.
+ * Inbound file-open events for `.cadet` bundles.
  *
  * The OS delivers paths through `open-file` or process argv. This module
  * captures, validates, and routes them through the same buffer, broadcast,
@@ -30,7 +30,7 @@ import type { createIpcRegistrar } from "./ipc";
  * windows still receive broadcasts (same model as deep links).
  */
 
-const VELLUM_EXT_RE = /\.vellum$/i;
+const CADET_EXT_RE = /\.cadet$/i;
 
 type IpcRegistrar = ReturnType<typeof createIpcRegistrar>;
 
@@ -53,24 +53,24 @@ const getDependencies = (): FileOpenDependencies => {
   return dependencies;
 };
 
-export const canonicalizeVellumFilePath = (
+export const canonicalizeCadetFilePath = (
   filePath: string,
   workingDirectory = process.cwd(),
 ): string | null => {
-  if (!VELLUM_EXT_RE.test(filePath)) {
+  if (!CADET_EXT_RE.test(filePath)) {
     return null;
   }
   return path.resolve(workingDirectory, filePath);
 };
 
-export const extractVellumFilePathsFromArgv = (
+export const extractCadetFilePathsFromArgv = (
   argv: readonly string[],
   workingDirectory = process.cwd(),
 ): string[] => {
   const seen = new Set<string>();
   const paths: string[] = [];
   for (const arg of argv) {
-    const filePath = canonicalizeVellumFilePath(arg, workingDirectory);
+    const filePath = canonicalizeCadetFilePath(arg, workingDirectory);
     if (!filePath) {
       continue;
     }
@@ -107,7 +107,7 @@ const notifyCallbacks = (filePath: string): void => {
 };
 
 export const handleFileOpen = (filePath: string): void => {
-  const canonicalPath = canonicalizeVellumFilePath(filePath);
+  const canonicalPath = canonicalizeCadetFilePath(filePath);
   if (!canonicalPath) {
     return;
   }
@@ -125,7 +125,7 @@ export const handleFileOpenArgv = (
   argv: readonly string[],
   workingDirectory = process.cwd(),
 ): void => {
-  for (const filePath of extractVellumFilePathsFromArgv(
+  for (const filePath of extractCadetFilePathsFromArgv(
     argv,
     workingDirectory,
   )) {
@@ -134,10 +134,10 @@ export const handleFileOpenArgv = (
 };
 
 /**
- * Register a main-process callback invoked for every `.vellum` file-open event.
+ * Register a main-process callback invoked for every `.cadet` file-open event.
  * Returns an unsubscribe function. Any paths already buffered in `pending[]`
  * (cold-launch files that arrived before this callback was registered) are
- * replayed immediately so cold-launch `.vellum` files reach handlers like
+ * replayed immediately so cold-launch `.cadet` files reach handlers like
  * `handleBundleFile` even though they arrived before `whenReady`.
  */
 export const onFileOpen = (callback: (path: string) => void): (() => void) => {
@@ -192,7 +192,7 @@ export const installFileOpen = (): void => {
 };
 
 /**
- * Whether any `.vellum` file paths have been buffered before the
+ * Whether any `.cadet` file paths have been buffered before the
  * renderer drained them. Used by the move-to-Applications guard to
  * skip the prompt when the launch was triggered by a file open.
  */

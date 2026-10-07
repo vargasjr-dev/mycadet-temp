@@ -8,23 +8,23 @@ import { cloudAssistantHubUrl } from "@mycadet/environments/seeds";
 
 // `server.url` is baked into native Capacitor config by `cap sync`, so
 // whatever URL resolves here at sync time is what the archived mobile build
-// ships with. Defaults to dev; set `VELLUM_ENVIRONMENT=production` before
+// ships with. Defaults to dev; set `CADET_ENVIRONMENT=production` before
 // syncing a production mobile build.
 //
 // The environment-to-hub mapping (including the deliberate `/assistant`
 // suffix) is shared with the CLI's remote-web edge via
 // `@mycadet/environments`; see `cloudAssistantHubUrl` for the rationale.
-const env = process.env.VELLUM_ENVIRONMENT ?? "dev";
+const env = process.env.CADET_ENVIRONMENT ?? "dev";
 
 const ENV_SERVER_URL = cloudAssistantHubUrl(env);
 
-// `VELLUM_SERVER_URL` points the shell at a self-hosted assistant's own HTTPS
-// origin, taking precedence over the environment-derived Vellum Cloud URL. It
+// `CADET_SERVER_URL` points the shell at a self-hosted assistant's own HTTPS
+// origin, taking precedence over the environment-derived Cadet Cloud URL. It
 // must parse as an `https:` URL and `server.cleartext` stays false, so an
 // invalid value fails `cap sync` loudly instead of baking a broken URL into a
 // native build.
 function resolveServerUrl(): string {
-  const override = process.env.VELLUM_SERVER_URL?.trim();
+  const override = process.env.CADET_SERVER_URL?.trim();
   if (!override) {
     return ENV_SERVER_URL;
   }
@@ -34,13 +34,13 @@ function resolveServerUrl(): string {
     parsed = new URL(override);
   } catch {
     throw new Error(
-      `VELLUM_SERVER_URL is not a valid URL: ${JSON.stringify(override)}`,
+      `CADET_SERVER_URL is not a valid URL: ${JSON.stringify(override)}`,
     );
   }
 
   if (parsed.protocol !== "https:") {
     throw new Error(
-      `VELLUM_SERVER_URL must use https: (got ${JSON.stringify(override)}); native builds require valid TLS.`,
+      `CADET_SERVER_URL must use https: (got ${JSON.stringify(override)}); native builds require valid TLS.`,
     );
   }
 
@@ -59,8 +59,8 @@ const config: CapacitorConfig = {
   // NOTE: Capacitor's CLI requires Java-package form here because Android
   // uses this value as its application namespace. The real iOS bundle IDs are
   // set via `PRODUCT_BUNDLE_IDENTIFIER` in the Xcode project.
-  appId: "ai.vellum.assistant",
-  appName: "Vellum",
+  appId: "ai.mycadet.assistant",
+  appName: "Cadet",
   webDir: "capacitor-shell",
   server: {
     url: SERVER_URL,

@@ -43,7 +43,7 @@ let TEST_DIR: string;
 beforeEach(() => {
   TEST_DIR = join(
     tmpdir(),
-    `vellum-restore-test-${randomBytes(6).toString("hex")}`,
+    `cadet-restore-test-${randomBytes(6).toString("hex")}`,
   );
   mkdirSync(TEST_DIR, { recursive: true });
 });

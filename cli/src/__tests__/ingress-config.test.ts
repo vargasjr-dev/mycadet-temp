@@ -3,9 +3,9 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-// Real assistant-config reads the lockfile from VELLUM_LOCKFILE_DIR.
+// Real assistant-config reads the lockfile from CADET_LOCKFILE_DIR.
 const testDir = mkdtempSync(join(tmpdir(), "ingress-config-test-"));
-process.env.VELLUM_LOCKFILE_DIR = testDir;
+process.env.CADET_LOCKFILE_DIR = testDir;
 
 import {
   parseTunnelRecord,
@@ -23,14 +23,14 @@ import {
 
 function writeLockfile(entry: Record<string, unknown>): void {
   writeFileSync(
-    join(testDir, ".vellum.lock.json"),
+    join(testDir, ".cadet.lock.json"),
     JSON.stringify({ assistants: [entry], activeAssistant: "ingress-test" }),
   );
 }
 
 function readLockfileEntry(): Record<string, unknown> {
   const data = JSON.parse(
-    readFileSync(join(testDir, ".vellum.lock.json"), "utf-8"),
+    readFileSync(join(testDir, ".cadet.lock.json"), "utf-8"),
   ) as { assistants: Record<string, unknown>[] };
   return data.assistants[0];
 }

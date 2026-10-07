@@ -76,17 +76,17 @@ mock.module("electron", () => ({
 let exists = true;
 // getMacHelperPath reads CFBundleExecutable from the bundle's Info.plist to
 // resolve the (per-environment) executable filename. getMacHelperAppPath
-// reads a sidecar (.vellum-mac-helper.bundle-name) to discover the .app
+// reads a sidecar (.cadet-mac-helper.bundle-name) to discover the .app
 // folder name — the same pattern, lifted one level. The default bundle name
-// is `vellum-mac-helper`, so tests that don't override it resolve the
-// `vellum-mac-helper.app` path.
-let helperExecutableName = "vellum-mac-helper";
-let helperBundleName = "vellum-mac-helper";
+// is `cadet-mac-helper`, so tests that don't override it resolve the
+// `cadet-mac-helper.app` path.
+let helperExecutableName = "cadet-mac-helper";
+let helperBundleName = "cadet-mac-helper";
 mock.module("node:fs", () => ({
   existsSync: () => exists,
   readFileSync: (target: unknown) => {
     const targetPath = String(target);
-    if (targetPath.endsWith(".vellum-mac-helper.bundle-name")) {
+    if (targetPath.endsWith(".cadet-mac-helper.bundle-name")) {
       return helperBundleName;
     }
     return `<plist><dict><key>CFBundleExecutable</key><string>${helperExecutableName}</string></dict></plist>`;
@@ -112,7 +112,7 @@ mock.module("./logger", () => ({
 
 mock.module("./app-origin", () => ({
   isAllowedOrigin: () => true,
-  resolveAllowedOrigin: () => ({ protocol: "app:", host: "vellum.ai" }),
+  resolveAllowedOrigin: () => ({ protocol: "app:", host: "mycadet.ai" }),
 }));
 
 Object.defineProperty(process, "resourcesPath", {
@@ -243,8 +243,8 @@ beforeEach(() => {
   spawnCalls.length = 0;
   lastChild = null;
   exists = true;
-  helperExecutableName = "vellum-mac-helper";
-  helperBundleName = "vellum-mac-helper";
+  helperExecutableName = "cadet-mac-helper";
+  helperBundleName = "cadet-mac-helper";
   appState.isPackaged = false;
   appState.appPath = "/repo/clients/macos";
   nextWebContentsId = 1;
@@ -261,44 +261,44 @@ afterEach(() => {
 describe("getMacHelperPath", () => {
   test("resolves dev helper app from app path resources", () => {
     expect(getMacHelperAppPath()).toBe(
-      "/repo/clients/macos/resources/vellum-mac-helper.app",
+      "/repo/clients/macos/resources/cadet-mac-helper.app",
     );
   });
 
   test("resolves dev helper from app path resources", () => {
     expect(getMacHelperPath()).toBe(
-      "/repo/clients/macos/resources/vellum-mac-helper.app/Contents/MacOS/vellum-mac-helper",
+      "/repo/clients/macos/resources/cadet-mac-helper.app/Contents/MacOS/cadet-mac-helper",
     );
   });
 
   test("resolves packaged helper app from process.resourcesPath", () => {
     appState.isPackaged = true;
     expect(getMacHelperAppPath()).toBe(
-      "/mock/resources/bin/vellum-mac-helper.app",
+      "/mock/resources/bin/cadet-mac-helper.app",
     );
   });
 
   test("resolves packaged helper from process.resourcesPath", () => {
     appState.isPackaged = true;
     expect(getMacHelperPath()).toBe(
-      "/mock/resources/bin/vellum-mac-helper.app/Contents/MacOS/vellum-mac-helper",
+      "/mock/resources/bin/cadet-mac-helper.app/Contents/MacOS/cadet-mac-helper",
     );
   });
 
   test("resolves the per-environment executable name from CFBundleExecutable", () => {
     helperExecutableName = "Cadet Helper Dev";
     expect(getMacHelperPath()).toBe(
-      "/repo/clients/macos/resources/vellum-mac-helper.app/Contents/MacOS/Vellum Helper Dev",
+      "/repo/clients/macos/resources/cadet-mac-helper.app/Contents/MacOS/Cadet Helper Dev",
     );
   });
 
   test("resolves the per-environment bundle folder name from the sidecar", () => {
     helperBundleName = "Cadet Helper Dev";
     expect(getMacHelperAppPath()).toBe(
-      "/repo/clients/macos/resources/Vellum Helper Dev.app",
+      "/repo/clients/macos/resources/Cadet Helper Dev.app",
     );
     expect(getMacHelperPath()).toBe(
-      "/repo/clients/macos/resources/Vellum Helper Dev.app/Contents/MacOS/vellum-mac-helper",
+      "/repo/clients/macos/resources/Cadet Helper Dev.app/Contents/MacOS/cadet-mac-helper",
     );
   });
 
@@ -306,7 +306,7 @@ describe("getMacHelperPath", () => {
     appState.isPackaged = true;
     helperBundleName = "Cadet Helper Staging";
     expect(getMacHelperAppPath()).toBe(
-      "/mock/resources/bin/Vellum Helper Staging.app",
+      "/mock/resources/bin/Cadet Helper Staging.app",
     );
   });
 });
@@ -320,7 +320,7 @@ describe("permission request launchers", () => {
     const args = spawnCalls[0]?.[1] ?? [];
     expect(args.slice(0, 4)).toEqual([
       "-n",
-      "/repo/clients/macos/resources/vellum-mac-helper.app",
+      "/repo/clients/macos/resources/cadet-mac-helper.app",
       "--args",
       "--permission-status",
     ]);
@@ -339,7 +339,7 @@ describe("permission request launchers", () => {
     expect(spawnCalls[0]?.[0]).toBe("open");
     expect(spawnCalls[0]?.[1]).toEqual([
       "-n",
-      "/repo/clients/macos/resources/vellum-mac-helper.app",
+      "/repo/clients/macos/resources/cadet-mac-helper.app",
       "--args",
       "--request-speech-recognition",
     ]);
@@ -354,7 +354,7 @@ describe("permission request launchers", () => {
     expect(spawnCalls[0]?.[0]).toBe("open");
     expect(spawnCalls[0]?.[1]).toEqual([
       "-n",
-      "/repo/clients/macos/resources/vellum-mac-helper.app",
+      "/repo/clients/macos/resources/cadet-mac-helper.app",
       "--args",
       "--request-input-monitoring",
     ]);
@@ -399,7 +399,7 @@ describe("installHotkeyHelper", () => {
       state: { status: "running" },
     });
     expect(spawnCalls[0]?.[0]).toBe(
-      "/repo/clients/macos/resources/vellum-mac-helper.app/Contents/MacOS/vellum-mac-helper",
+      "/repo/clients/macos/resources/cadet-mac-helper.app/Contents/MacOS/cadet-mac-helper",
     );
   });
 
@@ -463,7 +463,7 @@ describe("installHotkeyHelper", () => {
     await wait(5);
 
     expect(spawnCalls[0]?.[0]).toBe(
-      "/repo/clients/macos/resources/vellum-mac-helper.app/Contents/MacOS/vellum-mac-helper",
+      "/repo/clients/macos/resources/cadet-mac-helper.app/Contents/MacOS/cadet-mac-helper",
     );
     expect(lastChild?.stdin.writes[0]).toContain('"jsonrpc":"2.0"');
     expect(lastChild?.stdin.writes[0]).toContain(

@@ -3,13 +3,13 @@
  *
  * Reads or creates a stable per-device UUID stored in device.json. The file
  * is shared with the daemon (TypeScript) and Swift client so all three
- * runtimes use the same identifier for X-Vellum-Client-Id headers.
+ * runtimes use the same identifier for X-Cadet-Client-Id headers.
  *
- * Path resolution mirrors VellumPaths.deviceIdFile (Swift) and
+ * Path resolution mirrors CadetPaths.deviceIdFile (Swift) and
  * assistant/src/util/device-id.ts (daemon):
- *   - Production:     ~/.vellum/device.json  (legacy shared path)
+ *   - Production:     ~/.cadet/device.json  (legacy shared path)
  *   - Non-production: <configDir>/device.json where configDir is
- *                     $XDG_CONFIG_HOME/vellum-<env>
+ *                     $XDG_CONFIG_HOME/cadet-<env>
  */
 
 import { randomUUID } from "node:crypto";
@@ -23,13 +23,13 @@ let cached: string | undefined;
 
 /**
  * Resolve the directory containing device.json. Production uses the legacy
- * ~/.vellum path (shared with the Swift client and daemon); non-production
+ * ~/.cadet path (shared with the Swift client and daemon); non-production
  * uses resolveConfigDir from @mycadet/local-mode.
  */
 function resolveDeviceDir(): string {
   const env = resolveEnvironmentName(process.env);
   if (env === "production") {
-    return join(homedir(), ".vellum");
+    return join(homedir(), ".cadet");
   }
   return resolveConfigDir(process.env);
 }

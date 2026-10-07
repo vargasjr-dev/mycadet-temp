@@ -1,7 +1,7 @@
 // Fail-loud reporting for guardian-integrity failures: a gateway DB that has
 // lost its guardian rows while carrying evidence of prior onboarding
 // (`gateway_guardian_missing`, see auth/guardian-integrity.ts) and a refused
-// vellum-guardian mint (`gateway_guardian_mint_refused`, see
+// cadet-guardian mint (`gateway_guardian_mint_refused`, see
 // auth/guardian-bootstrap.ts). Emits an error-level log and relays a watchdog
 // telemetry event to the daemon's internal telemetry route, which POSTs it
 // directly to platform ingest — bypassing any state owned by the broken trust
@@ -19,7 +19,7 @@ import { createWatchdogReporter } from "./watchdog-reporter.js";
 export const GUARDIAN_MISSING_CHECK_NAME = "gateway_guardian_missing";
 
 /**
- * Watchdog `check_name` for a refused vellum-guardian mint (evidence of a
+ * Watchdog `check_name` for a refused cadet-guardian mint (evidence of a
  * prior guardian, no active cadet binding). Fires even when the integrity
  * state is `ok` — a guardian contact row can be intact while the cadet
  * binding is lost/inactive, and clients see `guardian_repair_required` 401s.
@@ -49,10 +49,10 @@ export function reportMissingGuardian(detail: Record<string, unknown>): void {
 }
 
 /**
- * Report a refused vellum-guardian mint: error log + telemetry relay. Same
+ * Report a refused cadet-guardian mint: error log + telemetry relay. Same
  * per-check rate limiting and fire-and-forget semantics as
  * {@link reportMissingGuardian}; the sibling check_name distinguishes the
- * vellum-binding-lost-but-contact-intact refusal, which the missing-guardian
+ * cadet-binding-lost-but-contact-intact refusal, which the missing-guardian
  * state check cannot see.
  */
 export function reportGuardianMintRefused(

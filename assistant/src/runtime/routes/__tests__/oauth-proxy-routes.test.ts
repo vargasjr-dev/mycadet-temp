@@ -5,7 +5,7 @@
  * fidelity guarantees: the provider sees the path, query, headers, and bytes
  * the caller wrote, minus the daemon's own credential, and the caller sees the
  * provider's status, headers, and bytes back. Requests run through the real
- * HTTP adapter so the injected `x-vellum-*` headers and the raw-body path are
+ * HTTP adapter so the injected `x-cadet-*` headers and the raw-body path are
  * exercised rather than simulated.
  */
 
@@ -23,7 +23,7 @@ import {
   PlatformOAuthConnection,
   ProviderUnreachableError,
 } from "../../../oauth/platform-connection.js";
-import type { VellumPlatformClient } from "../../../platform/client.js";
+import type { CadetPlatformClient } from "../../../platform/client.js";
 import { resolveScopeProfile } from "../../auth/scopes.js";
 import type { AuthContext } from "../../auth/types.js";
 import { routeDefinitionsToHTTPRoutes } from "../http-adapter.js";
@@ -85,7 +85,7 @@ function realManagedConnection(
     client: {
       platformAssistantId: "asst-1",
       fetch: fetchImpl,
-    } as unknown as VellumPlatformClient,
+    } as unknown as CadetPlatformClient,
   });
 }
 
@@ -329,7 +329,7 @@ describe("path and query fidelity", () => {
   test("normalizes an inner dot segment", async () => {
     await handleOAuthProxy("GET", {
       pathParams: { provider: "stripe_link" },
-      headers: { "x-vellum-subject": SUBJECT },
+      headers: { "x-cadet-subject": SUBJECT },
       rawUrl: rawUrlStub("/v1/oauth/proxy/stripe_link/v1/a/../b"),
     });
 
@@ -530,7 +530,7 @@ describe("header handling", () => {
         cookie: "session=abc",
         "x-forwarded-for": "203.0.113.9",
         "x-trace-id": "trace-123",
-        "x-vellum-subject": "local:self:spoofed",
+        "x-cadet-subject": "local:self:spoofed",
         "user-agent": "link-cli/1.0",
         accept: "application/json",
         "content-type": "application/json",
@@ -546,8 +546,8 @@ describe("header handling", () => {
       "cookie",
       "x-forwarded-for",
       "x-trace-id",
-      "x-vellum-subject",
-      "x-vellum-principal-type",
+      "x-cadet-subject",
+      "x-cadet-principal-type",
     ]) {
       expect(headers[stripped]).toBeUndefined();
     }
@@ -722,7 +722,7 @@ describe("response emission", () => {
     // The target moves off `location` so no client auto-follows it back to the
     // provider carrying the proxy grant as its bearer token.
     expect(response.headers.get("location")).toBeNull();
-    expect(response.headers.get("x-vellum-proxy-location")).toBe(
+    expect(response.headers.get("x-cadet-proxy-location")).toBe(
       "https://files.stripe.com/blob/abc",
     );
   });
@@ -962,7 +962,7 @@ describe("path safety", () => {
     await expect(
       handleOAuthProxy("GET", {
         pathParams: { provider: "stripe_link" },
-        headers: { "x-vellum-subject": SUBJECT },
+        headers: { "x-cadet-subject": SUBJECT },
         rawUrl: rawUrlStub("/v1/oauth/proxy/stripe_link/../../etc"),
       }),
     ).rejects.toMatchObject({ statusCode: 400 });
@@ -984,7 +984,7 @@ describe("transport guard", () => {
   test("an IPC invocation never reaches the provider and asks for HTTP", async () => {
     const args: RouteHandlerArgs = {
       pathParams: { provider: "stripe_link" },
-      headers: { "x-vellum-subject": SUBJECT },
+      headers: { "x-cadet-subject": SUBJECT },
     };
 
     // The gateway's IPC proxy reads this code as "retry over HTTP", so the
@@ -1005,7 +1005,7 @@ describe("transport guard", () => {
     // to a real provider call carrying the user's credential.
     const args = {
       pathParams: { provider: "stripe_link" },
-      headers: { "x-vellum-subject": SUBJECT },
+      headers: { "x-cadet-subject": SUBJECT },
       rawUrl: { pathname: "/v1/oauth/proxy/stripe_link/v1/me", search: "" },
     } as unknown as RouteHandlerArgs;
 

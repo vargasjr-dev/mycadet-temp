@@ -50,10 +50,10 @@ function makeDecision(
 ): NotificationDecision {
   return {
     shouldNotify: true,
-    selectedChannels: ["vellum"],
+    selectedChannels: ["cadet"],
     reasoningSummary: "test",
     renderedCopy: {
-      vellum: { title: "Reminder", body: "Time to drink water" },
+      cadet: { title: "Reminder", body: "Time to drink water" },
     },
     dedupeKey: `dk-${crypto.randomUUID()}`,
     confidence: 0.9,
@@ -63,7 +63,7 @@ function makeDecision(
 }
 
 const context: DeterministicCheckContext = {
-  connectedChannels: ["vellum"],
+  connectedChannels: ["cadet"],
 };
 
 describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
@@ -79,7 +79,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
   test("fails when body is empty", async () => {
     const decision = makeDecision({
       renderedCopy: {
-        vellum: { title: "Reminder", body: "" },
+        cadet: { title: "Reminder", body: "" },
       },
     });
     const result = await runDeterministicChecks(
@@ -94,7 +94,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
   test("fails when body is whitespace only", async () => {
     const decision = makeDecision({
       renderedCopy: {
-        vellum: { title: "Reminder", body: "   \n  " },
+        cadet: { title: "Reminder", body: "   \n  " },
       },
     });
     const result = await runDeterministicChecks(
@@ -110,7 +110,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
     const signal = makeSignal({ sourceEventName: "assistant.share" });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: { title: "Reminder", body: "assistant.share" },
+        cadet: { title: "Reminder", body: "assistant.share" },
       },
     });
     const result = await runDeterministicChecks(signal, decision, context);
@@ -122,7 +122,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
     const signal = makeSignal({ sourceEventName: "assistant.share" });
     const decision = makeDecision({
       renderedCopy: {
-        vellum: { title: "Reminder", body: "assistant share" },
+        cadet: { title: "Reminder", body: "assistant share" },
       },
     });
     const result = await runDeterministicChecks(signal, decision, context);
@@ -132,7 +132,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
 
   test("passes when channel was appended post-decision (urgency-forced cadet prepend)", async () => {
     // Regression: emit-signal.ts prepends `cadet` to selectedChannels for
-    // high/critical urgency without populating renderedCopy.vellum. The
+    // high/critical urgency without populating renderedCopy.cadet. The
     // broadcaster's composeFallbackCopy rescue handles those channels at
     // delivery time, so the deterministic check must not fail-closed here.
     const signal = makeSignal({
@@ -144,13 +144,13 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
       },
     });
     const decision = makeDecision({
-      selectedChannels: ["vellum", "telegram"],
+      selectedChannels: ["cadet", "telegram"],
       renderedCopy: {
         telegram: { title: "Reminder", body: "Time to drink water" },
       },
     });
     const result = await runDeterministicChecks(signal, decision, {
-      connectedChannels: ["vellum", "telegram"],
+      connectedChannels: ["cadet", "telegram"],
     });
     expect(result.passed).toBe(true);
   });
@@ -160,13 +160,13 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
     // all_channels / multi_channel without populating renderedCopy for the
     // added channels. Broadcaster fallback covers them — check must allow.
     const decision = makeDecision({
-      selectedChannels: ["vellum", "telegram", "slack"],
+      selectedChannels: ["cadet", "telegram", "slack"],
       renderedCopy: {
-        vellum: { title: "Reminder", body: "Time to drink water" },
+        cadet: { title: "Reminder", body: "Time to drink water" },
       },
     });
     const result = await runDeterministicChecks(makeSignal(), decision, {
-      connectedChannels: ["vellum", "telegram", "slack"],
+      connectedChannels: ["cadet", "telegram", "slack"],
     });
     expect(result.passed).toBe(true);
   });
@@ -176,13 +176,13 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
     // channels that DO have copy must still pass the empty/event-name checks.
     const signal = makeSignal({ sourceEventName: "assistant.share" });
     const decision = makeDecision({
-      selectedChannels: ["vellum", "telegram"],
+      selectedChannels: ["cadet", "telegram"],
       renderedCopy: {
         telegram: { title: "Reminder", body: "assistant.share" },
       },
     });
     const result = await runDeterministicChecks(signal, decision, {
-      connectedChannels: ["vellum", "telegram"],
+      connectedChannels: ["cadet", "telegram"],
     });
     expect(result.passed).toBe(false);
     expect(result.reason).toContain("fallback leak");
@@ -196,7 +196,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
     // dispatchDecision report 0/N sent.
     const signal = makeSignal({ sourceEventName: "assistant.share" });
     const decision = makeDecision({
-      selectedChannels: ["vellum"],
+      selectedChannels: ["cadet"],
       renderedCopy: {},
     });
     const result = await runDeterministicChecks(signal, decision, context);
@@ -210,7 +210,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
     // deliver, so the deterministic gate must allow it through.
     const signal = makeSignal({ sourceEventName: "schedule.notify" });
     const decision = makeDecision({
-      selectedChannels: ["vellum"],
+      selectedChannels: ["cadet"],
       renderedCopy: {},
     });
     const result = await runDeterministicChecks(signal, decision, context);
@@ -224,7 +224,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
       // Empty body + event-name body would both fail the copy check if
       // shouldNotify were true. Short-circuit must skip the check.
       renderedCopy: {
-        vellum: { title: "", body: "" },
+        cadet: { title: "", body: "" },
       },
     });
     const result = await runDeterministicChecks(signal, decision, context);
@@ -243,7 +243,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
       reasoningSummary: "assistant_tool pass-through",
       verbatimCopy: true,
       renderedCopy: {
-        vellum: { title: "Assistant share", body: "assistant share" },
+        cadet: { title: "Assistant share", body: "assistant share" },
       },
     });
     const result = await runDeterministicChecks(signal, decision, context);
@@ -256,7 +256,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
       reasoningSummary: "assistant_tool pass-through",
       verbatimCopy: true,
       renderedCopy: {
-        vellum: { title: "Reminder", body: "" },
+        cadet: { title: "Reminder", body: "" },
       },
     });
     const result = await runDeterministicChecks(signal, decision, context);
@@ -268,7 +268,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
     // `emit-signal` and routing-intent enforcement append suffixes to
     // `reasoningSummary`, so the exemption must key off `verbatimCopy`.
     const signal = makeSignal({
-      sourceChannel: "vellum",
+      sourceChannel: "cadet",
       sourceEventName: "chat.assistant_reply",
     });
     const decision = makeDecision({
@@ -276,7 +276,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
         "assistant_reply pass-through (cadet forced: high urgency)",
       verbatimCopy: true,
       renderedCopy: {
-        vellum: { title: "Assistant", body: "chat assistant reply" },
+        cadet: { title: "Assistant", body: "chat assistant reply" },
       },
     });
     const result = await runDeterministicChecks(signal, decision, context);
@@ -290,7 +290,7 @@ describe("checkRenderedCopyQuality (via runDeterministicChecks)", () => {
     const decision = makeDecision({
       reasoningSummary: "llm classification",
       renderedCopy: {
-        vellum: { title: "Reminder", body: "assistant.share" },
+        cadet: { title: "Reminder", body: "assistant.share" },
       },
     });
     const result = await runDeterministicChecks(signal, decision, context);

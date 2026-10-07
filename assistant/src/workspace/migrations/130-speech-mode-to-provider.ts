@@ -6,7 +6,7 @@ import type { WorkspaceMigration } from "./types.js";
 /**
  * Fold `services.stt.mode` / `services.tts.mode` into the provider field.
  *
- * Managed speech used to be a second axis: `mode: "managed"` routed to Vellum
+ * Managed speech used to be a second axis: `mode: "managed"` routed to Cadet
  * while `provider` held the untouched BYOK choice. Provider is now the only
  * axis, with `"cadet"` meaning managed, so a managed service must be rewritten
  * to `provider: "cadet"` before the new schema reads it — otherwise the

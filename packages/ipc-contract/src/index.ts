@@ -26,7 +26,7 @@ export {
   type LocalUpgradeOptions,
   type LocalWakeOptions,
   type CadetBridge,
-  VELLUM_BRIDGE_KEYS,
+  CADET_BRIDGE_KEYS,
 } from "./bridge";
 export * from "./channels";
 export * from "./fn-claimants";

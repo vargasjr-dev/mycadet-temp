@@ -64,18 +64,18 @@ import { UNPARSEABLE_TOOL_ARGS_SDK_MESSAGE } from "./unparseable-tool-args.js";
 const log = getLogger("retry");
 
 const USAGE_ATTRIBUTION_HEADER_NAMES = {
-  callSite: "X-Vellum-LLM-Call-Site",
-  inferenceProfile: "X-Vellum-Inference-Profile",
-  inferenceProfileSource: "X-Vellum-Inference-Profile-Source",
-  resolvedProvider: "X-Vellum-Resolved-Provider",
-  resolvedModel: "X-Vellum-Resolved-Model",
-  resolvedMixArm: "X-Vellum-Resolved-Mix-Arm",
+  callSite: "X-Cadet-LLM-Call-Site",
+  inferenceProfile: "X-Cadet-Inference-Profile",
+  inferenceProfileSource: "X-Cadet-Inference-Profile-Source",
+  resolvedProvider: "X-Cadet-Resolved-Provider",
+  resolvedModel: "X-Cadet-Resolved-Model",
+  resolvedMixArm: "X-Cadet-Resolved-Mix-Arm",
   // Delegated-work attribution. Every subagent variety shares
   // `llm_call_site = "subagentSpawn"`, so on the authoritative billing path
   // these two orthogonal dimensions are the only way to tell an advisor
   // consult from a fork from a regular spawn.
-  subagentRole: "X-Vellum-Subagent-Role",
-  subagentSpawnMode: "X-Vellum-Subagent-Spawn-Mode",
+  subagentRole: "X-Cadet-Subagent-Role",
+  subagentSpawnMode: "X-Cadet-Subagent-Spawn-Mode",
 } as const;
 
 /** Providers whose transports consume `promptCacheKey` (OpenAI Responses /
@@ -448,10 +448,9 @@ function retryErrorType(error: unknown): string {
  * (a route problem, not a request problem), so it is fallback-eligible even
  * though 400s are otherwise final.
  */
-// Matches the platform preflight's copy in both its pre- and post-rebrand
-// spellings, so detection survives the platform-side rename.
+// Matches the platform preflight's copy for an unsupported managed model.
 const MANAGED_PROXY_UNSUPPORTED_MODEL_PATTERN =
-  /is not yet supported on the (?:Vellum|Cadet) hosted service/;
+  /is not yet supported on the Cadet hosted service/;
 
 /**
  * Whether the failure indicts one model rather than the upstream serving it: a
@@ -691,7 +690,7 @@ function normalizeSendMessageOptions(
   }
 
   if (providerName === "fireworks") {
-    // Covers BYOK Fireworks and the Vellum-managed Fireworks upstream, which
+    // Covers BYOK Fireworks and the Cadet-managed Fireworks upstream, which
     // both dispatch through `FireworksProvider`. Keyless calls send no header.
     const sessionKey = [config.selectionSeed, config.conversationId].find(
       (value): value is string =>
@@ -889,7 +888,7 @@ function normalizeSendMessageOptions(
   }
 
   // Pre-adaptive Claude models (Haiku 4.5, Opus 4.5, Sonnet 4.5) reject
-  // `thinking: { type: "adaptive" }` (Anthropic 400s the request), and Vellum
+  // `thinking: { type: "adaptive" }` (Anthropic 400s the request), and Cadet
   // never sends the legacy budget_tokens form. Drop an adaptive thinking
   // config for these models so the request goes out without thinking instead
   // of failing. A pass-through `{ type: "enabled", budget_tokens }` config is
@@ -1245,7 +1244,7 @@ export class RetryProvider implements Provider {
        * `forwardUsageAttributionHeaders` must describe the BACKUP route, not
        * the primary: managed-proxy routes pass true, BYOK and other
        * third-party routes pass false. The fallback send normalizes with the
-       * returned policy so `X-Vellum-*` billing metadata never leaks to a
+       * returned policy so `X-Cadet-*` billing metadata never leaks to a
        * third party and is never omitted from the managed proxy. One hop max:
        * the returned adapter must be RAW, so the backup can never escalate
        * again whatever happens to it. Whether the backup send gets a retry

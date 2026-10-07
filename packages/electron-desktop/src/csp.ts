@@ -1,15 +1,15 @@
 import { session } from "electron";
 
-// Root hostname (leading dot, e.g. ".vellum.ai") injected at build time via
+// Root hostname (leading dot, e.g. ".mycadet.ai") injected at build time via
 // electron-vite `define` from VITE_ROOT_HOSTNAME — the same var the web bundle
 // reads. Falls back to the production default when unset (e.g. under `bun
 // test`, which doesn't run the bundler).
-declare const __VELLUM_ROOT_HOSTNAME__: string;
+declare const __CADET_ROOT_HOSTNAME__: string;
 const ROOT_HOSTNAME =
-  typeof __VELLUM_ROOT_HOSTNAME__ === "string"
-    ? __VELLUM_ROOT_HOSTNAME__
-    : ".vellum.ai";
-// Wildcard host for CSP source lists, e.g. "*.vellum.ai".
+  typeof __CADET_ROOT_HOSTNAME__ === "string"
+    ? __CADET_ROOT_HOSTNAME__
+    : ".mycadet.ai";
+// Wildcard host for CSP source lists, e.g. "*.mycadet.ai".
 const WILDCARD_HOST = `*${ROOT_HOSTNAME}`;
 
 // 'unsafe-inline' in script-src: required because sandboxed srcdoc iframes

@@ -13,13 +13,13 @@ const log = getLogger("migrations/145-collapse-profile-bindings-to-entries");
 // an explicit binding needs no second field.
 //
 // Rules per `llm.profiles.<key>`:
-// - Routing-identity providers ("vellum"/"chatgpt") carry no binding by
+// - Routing-identity providers ("cadet"/"chatgpt") carry no binding by
 //   definition: a stray `provider_connection` is deleted verbatim.
 // - A binding whose row EXISTS and whose kind AGREES with the profile's
 //   declared provider becomes the provider value (the entry name), and the
 //   binding field is deleted. Kind agreement, with the identity kinds
 //   mapped the way dispatch maps them: a row of the same provider, a
-//   "chatgpt" row for a declared "openai", or a "vellum" row for a declared
+//   "chatgpt" row for a declared "openai", or a "cadet" row for a declared
 //   managed-routable provider.
 // - A dangling binding (row deleted) or a kind-disagreeing binding keeps
 //   the declared provider and deletes only the binding, with a structured
@@ -41,7 +41,7 @@ const log = getLogger("migrations/145-collapse-profile-bindings-to-entries");
 // together as of 2026-08-10. A provider outside the snapshot takes the
 // conservative keep-provider path.
 
-const ROUTING_IDENTITIES = new Set(["vellum", "chatgpt"]);
+const ROUTING_IDENTITIES = new Set(["cadet", "chatgpt"]);
 const MANAGED_ROUTABLE = new Set([
   "openai",
   "anthropic",
@@ -50,13 +50,13 @@ const MANAGED_ROUTABLE = new Set([
   "together",
 ]);
 
-// A binding literally named "vellum" or "chatgpt" folds into the ROUTING
+// A binding literally named "cadet" or "chatgpt" folds into the ROUTING
 // IDENTITY value, whose model the read-path schema validates (an unroutable
 // pair strips the whole profile on read). Folding is therefore gated on the
 // model being servable by that identity, judged against frozen snapshots of
 // the routing tables as of 2026-08-10; a model outside the snapshot leaves
 // the profile untouched (dispatch keeps honoring the legacy binding).
-const VELLUM_ROUTABLE_MODELS = new Set([
+const CADET_ROUTABLE_MODELS = new Set([
   "claude-fable-5",
   "claude-opus-5",
   "claude-opus-4-8",
@@ -109,8 +109,8 @@ function identitySafeModel(identity: string, model: unknown): boolean {
   if (typeof model !== "string") {
     return false;
   }
-  return identity === "vellum"
-    ? VELLUM_ROUTABLE_MODELS.has(model)
+  return identity === "cadet"
+    ? CADET_ROUTABLE_MODELS.has(model)
     : CODEX_MODELS.has(model);
 }
 
@@ -293,7 +293,7 @@ function kindAgrees(rowKind: string, provider: string | undefined): boolean {
   if (rowKind === "chatgpt") {
     return provider === "openai";
   }
-  if (rowKind === "vellum") {
+  if (rowKind === "cadet") {
     return MANAGED_ROUTABLE.has(provider);
   }
   return false;

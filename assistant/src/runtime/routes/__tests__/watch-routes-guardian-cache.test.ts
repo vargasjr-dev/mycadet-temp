@@ -49,7 +49,7 @@ afterAll(() => {
 function guardian(principalId: string): GuardianDelivery {
   return {
     principalId,
-    channelType: "vellum",
+    channelType: "cadet",
     status: "active",
   } as unknown as GuardianDelivery;
 }

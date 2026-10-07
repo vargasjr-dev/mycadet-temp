@@ -243,7 +243,7 @@ export const dropUserMdMigration: WorkspaceMigration = {
       } // ACL columns dropped — cleanup is a no-op.
 
       // Resolve the guardian contact from the local DB. Prefer the
-      // vellum-channel binding (the canonical native guardian); fall back to
+      // cadet-channel binding (the canonical native guardian); fall back to
       // whichever guardian has the most recently verified active channel.
       let guardianRow: GuardianRow | null;
       try {
@@ -253,7 +253,7 @@ export const dropUserMdMigration: WorkspaceMigration = {
               `SELECT c.id AS id, c.display_name AS display_name, c.user_file AS user_file
                  FROM contacts c JOIN contact_channels cc ON cc.contact_id = c.id
                 WHERE c.role = 'guardian' AND cc.status = 'active'
-                ORDER BY (cc.type = 'vellum') DESC, cc.verified_at DESC
+                ORDER BY (cc.type = 'cadet') DESC, cc.verified_at DESC
                 LIMIT 1`,
             )
             .get() ?? null;
