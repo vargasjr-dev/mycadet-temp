@@ -4,11 +4,21 @@ on:
   pull_request:
     types: [synchronize, opened, reopened]
     paths:
+      # Only what @mycadet/cadet-gateway actually consumes (its workspace:*
+      # dep closure — kept in lockstep with gateway/package.json), plus the
+      # shared inputs its checks read.
       - "package.json"
       - "bun.lock"
       - "patches/**"
       - "gateway/**"
-      - "packages/**"
+      - "packages/assistant-client/**"
+      - "packages/ces-client/**"
+      - "packages/environments/**"
+      - "packages/gateway-client/**"
+      - "packages/ipc-server-utils/**"
+      - "packages/service-contracts/**"
+      - "packages/slack-text/**"
+      - "packages/twilio-client/**"
       - "meta/feature-flags/**"
       - "meta/sync-bundled-copies.ts"
       - ".github/workflows/pr-gateway.yaml"
