@@ -12,22 +12,11 @@
  * boundary, and `buildCompactionRequest` runs the deterministic history
  * repair so even a malformed input history reaches the provider valid.
  */
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  getMessages: () => [],
-}));
+import { initializeDb } from "../persistence/db-init.js";
 
-mock.module("../persistence/attachments-store.js", () => ({
-  getAttachmentMetadataForMessage: () => [],
-  getAttachmentContent: () => null,
-}));
-
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-}));
+await initializeDb();
 
 import { runAssistantDrivenCompaction } from "../context/compactor.js";
 import { estimatePromptTokens } from "../context/token-estimator.js";

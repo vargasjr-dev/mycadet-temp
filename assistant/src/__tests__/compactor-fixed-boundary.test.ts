@@ -6,22 +6,11 @@
  * forward-cut applies. Only the tool-pairing back-walk still adjusts the
  * boundary, as defense-in-depth.
  */
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  getMessages: () => [],
-}));
+import { initializeDb } from "../persistence/db-init.js";
 
-mock.module("../persistence/attachments-store.js", () => ({
-  getAttachmentMetadataForMessage: () => [],
-  getAttachmentContent: () => null,
-}));
-
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-}));
+await initializeDb();
 
 import { runAssistantDrivenCompaction } from "../context/compactor.js";
 import type { Message, Provider } from "../providers/types.js";

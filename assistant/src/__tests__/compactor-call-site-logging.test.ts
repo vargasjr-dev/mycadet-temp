@@ -6,52 +6,17 @@
  * dispatcher. This test pins the explicit instrumentation in
  * `compactor.ts` so visibility doesn't silently regress.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  getMessages: () => [],
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
+import { initializeDb } from "../persistence/db-init.js";
 
-mock.module("../persistence/attachments-store.js", () => ({
-  getAttachmentMetadataForMessage: () => [],
-  getAttachmentContent: () => null,
-}));
-
-const recordRequestLogCalls: Array<{
-  conversationId: string;
-  requestPayload: string;
-  responsePayload: string;
-  messageId: string | undefined;
-  provider: string | undefined;
-  callSite: string | undefined;
-}> = [];
-
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: (
-    conversationId: string,
-    requestPayload: string,
-    responsePayload: string,
-    messageId?: string,
-    provider?: string,
-    callSite?: string,
-  ): string => {
-    recordRequestLogCalls.push({
-      conversationId,
-      requestPayload,
-      responsePayload,
-      messageId,
-      provider,
-      callSite,
-    });
-    return `mock-log-${recordRequestLogCalls.length}`;
-  },
-}));
+await initializeDb();
 
 import { runAssistantDrivenCompaction } from "../context/compactor.js";
+import { getRequestLogsByConversationId } from "../persistence/llm-request-log-store.js";
 import type { Message, Provider } from "../providers/types.js";
+
+const loggedRows = () => getRequestLogsByConversationId(convId);
 
 const TAIL_TIMESTAMP =
   "2026-05-21 (Thursday) 10:00:00 -05:00 (America/Chicago)";
@@ -101,6 +66,8 @@ function makeProviderWithoutRaw(): Provider {
   };
 }
 
+let convSeq = 0;
+
 const userText = (text: string): Message => ({
   role: "user",
   content: [{ type: "text", text }],
@@ -132,8 +99,9 @@ function buildMessages(): Message[] {
   ];
 }
 
+let convId = "";
 const args = (provider: Provider) => ({
-  conversationId: "conv-compaction-log-1",
+  conversationId: (convId = `conv-compaction-log-${++convSeq}`),
   messages: buildMessages(),
   provider,
   systemPrompt: "you are a test assistant",
@@ -144,36 +112,27 @@ const args = (provider: Provider) => ({
 });
 
 describe("compactor records llm_request_logs with call_site=compactionAgent", () => {
-  beforeEach(() => {
-    recordRequestLogCalls.length = 0;
-  });
-
   test("successful compaction call stamps call_site = compactionAgent", async () => {
     const result = await runAssistantDrivenCompaction(args(makeProvider()));
 
-    expect(recordRequestLogCalls.length).toBe(1);
-    expect(recordRequestLogCalls[0]!.callSite).toBe("compactionAgent");
+    const rows = loggedRows();
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.callSite).toBe("compactionAgent");
     expect(result.summaryCallSite).toBe("compactionAgent");
     expect(result.summaryResolutionCallSite).toBe("mainAgent");
-    expect(recordRequestLogCalls[0]!.conversationId).toBe(
-      "conv-compaction-log-1",
-    );
+    expect(rows[0]!.conversationId).toBe(convId);
     // Provider name comes from actualProvider when present.
-    expect(recordRequestLogCalls[0]!.provider).toBe("actual-mock-provider");
+    expect(rows[0]!.provider).toBe("actual-mock-provider");
     // Payloads should be JSON-stringified.
-    expect(recordRequestLogCalls[0]!.requestPayload).toBe(
-      JSON.stringify(RAW_REQUEST),
-    );
-    expect(recordRequestLogCalls[0]!.responsePayload).toBe(
-      JSON.stringify(RAW_RESPONSE),
-    );
+    expect(rows[0]!.requestPayload).toBe(JSON.stringify(RAW_REQUEST));
+    expect(rows[0]!.responsePayload).toBe(JSON.stringify(RAW_RESPONSE));
   });
 
   test("skips persistence when provider returns no rawRequest/rawResponse", async () => {
     await runAssistantDrivenCompaction(args(makeProviderWithoutRaw()));
 
     // Helper short-circuits when raw payloads are absent — non-fatal.
-    expect(recordRequestLogCalls.length).toBe(0);
+    expect(loggedRows().length).toBe(0);
   });
 
   test("uses provider.name when actualProvider is absent", async () => {
@@ -191,17 +150,14 @@ describe("compactor records llm_request_logs with call_site=compactionAgent", ()
 
     await runAssistantDrivenCompaction(args(provider));
 
-    expect(recordRequestLogCalls.length).toBe(1);
-    expect(recordRequestLogCalls[0]!.provider).toBe("fallback-provider-name");
-    expect(recordRequestLogCalls[0]!.callSite).toBe("compactionAgent");
+    const rows = loggedRows();
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.provider).toBe("fallback-provider-name");
+    expect(rows[0]!.callSite).toBe("compactionAgent");
   });
 });
 
 describe("compaction result reports what actually served the summary", () => {
-  beforeEach(() => {
-    recordRequestLogCalls.length = 0;
-  });
-
   test("rerouted summary carries the backup provider and profile", async () => {
     // `RetryProvider` escalated the summary call to a backup profile on
     // another provider and stamped the response, so the result must report
@@ -233,9 +189,9 @@ describe("compaction result reports what actually served the summary", () => {
     // Request log and usage attribution share the observability call site.
     expect(result.summaryCallSite).toBe("compactionAgent");
     expect(result.summaryResolutionCallSite).toBe("mainAgent");
-    expect(recordRequestLogCalls[0]!.callSite).toBe("compactionAgent");
+    expect(loggedRows()[0]!.callSite).toBe("compactionAgent");
     // Same value the request log recorded: one source of truth, not two.
-    expect(recordRequestLogCalls[0]!.provider).toBe("anthropic");
+    expect(loggedRows()[0]!.provider).toBe("anthropic");
   });
 
   test("non-rerouted summary carries the configured provider and no profile", async () => {

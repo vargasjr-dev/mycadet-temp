@@ -8,22 +8,11 @@
  * most-recent-complete-exchange floor and never orphaning tool_use/tool_result
  * pairs.
  */
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  getMessages: () => [],
-}));
+import { initializeDb } from "../persistence/db-init.js";
 
-mock.module("../persistence/attachments-store.js", () => ({
-  getAttachmentMetadataForMessage: () => [],
-  getAttachmentContent: () => null,
-}));
-
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-}));
+await initializeDb();
 
 import {
   runAssistantDrivenCompaction,

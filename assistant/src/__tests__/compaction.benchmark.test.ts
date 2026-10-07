@@ -7,22 +7,14 @@
  * - token reduction below the low-watermark target budget
  * - single-pass summarization (exactly 1 call)
  */
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
+
+import { initializeDb } from "../persistence/db-init.js";
+
+await initializeDb();
 
 // The compactor reads the conversation's image attachments from the DB to
 // build its manifest; with no images these return empty.
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  getMessages: () => [],
-}));
-mock.module("../persistence/attachments-store.js", () => ({
-  getAttachmentMetadataForMessage: () => [],
-  getAttachmentContent: () => null,
-}));
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-}));
 
 import { DEFAULT_CONFIG } from "../config/defaults.js";
 import { resolveCallSiteConfig } from "../config/llm-resolver.js";

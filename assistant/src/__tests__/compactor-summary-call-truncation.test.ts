@@ -8,22 +8,11 @@
  * request is sent untouched so its prefix stays byte-aligned with the agent's
  * warm cache (the budget-path cache reuse must not regress).
  */
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  getMessages: () => [],
-}));
+import { initializeDb } from "../persistence/db-init.js";
 
-mock.module("../persistence/attachments-store.js", () => ({
-  getAttachmentMetadataForMessage: () => [],
-  getAttachmentContent: () => null,
-}));
-
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-}));
+await initializeDb();
 
 import { runAssistantDrivenCompaction } from "../context/compactor.js";
 import { estimatePromptTokens } from "../context/token-estimator.js";

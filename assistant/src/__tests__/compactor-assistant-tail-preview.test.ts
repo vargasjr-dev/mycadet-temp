@@ -4,22 +4,11 @@
  * matching must accept that hit and let the tool-pairing walk land on the
  * preceding clean user message, instead of aborting the compaction.
  */
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  getMessages: () => [],
-}));
+import { initializeDb } from "../persistence/db-init.js";
 
-mock.module("../persistence/attachments-store.js", () => ({
-  getAttachmentMetadataForMessage: () => [],
-  getAttachmentContent: () => null,
-}));
-
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-}));
+await initializeDb();
 
 import { runAssistantDrivenCompaction } from "../context/compactor.js";
 import type { Message, Provider } from "../providers/types.js";
