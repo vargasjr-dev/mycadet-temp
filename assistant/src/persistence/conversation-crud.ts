@@ -163,6 +163,33 @@ import { deleteSubagentRecordsByParent } from "./subagent-store.js";
 const log = getLogger("conversation-store");
 
 /**
+ * Per-function overrides installed by tests via
+ * {@link setConversationCrudOverridesForTesting} — keyed by export name.
+ * Replaces individual functions without `mock.module`, so the rest of the
+ * module (and every un-overridden export) stays real.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CrudOverrideFn = (...args: any[]) => unknown;
+
+const _crudOverridesForTesting = new Map<string, CrudOverrideFn>();
+
+/**
+ * Test seam: replace individual conversation-crud functions (keyed by export
+ * name, e.g. `{ getConversation: (id) => row }`) without `mock.module`.
+ * Call with no arguments to clear all overrides.
+ */
+export function setConversationCrudOverridesForTesting(
+  overrides?: Record<string, CrudOverrideFn>,
+): void {
+  _crudOverridesForTesting.clear();
+  if (overrides) {
+    for (const [name, fn] of Object.entries(overrides)) {
+      _crudOverridesForTesting.set(name, fn);
+    }
+  }
+}
+
+/**
  * The logs connection (`assistant-logs.db`), where `llm_request_logs` lives.
  * Throws if the file cannot be opened — the few call sites here that touch
  * request logs (conversation deletes, turn-window anchoring) have no fallback.
@@ -1487,6 +1514,10 @@ export function ensureConversationExists(
 }
 
 export function getConversation(id: string): ConversationRow | null {
+  const _override = _crudOverridesForTesting.get("getConversation");
+  if (_override) {
+    return _override(id) as ConversationRow | null;
+  }
   const db = getDb();
   const row = db
     .select()

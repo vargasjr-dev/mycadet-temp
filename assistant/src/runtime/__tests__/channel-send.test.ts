@@ -4,6 +4,7 @@ import type {
   ChannelTransport,
   ProactiveTarget,
 } from "../../messaging/providers/channel-transport.js";
+import { setConversationCrudOverridesForTesting } from "../../persistence/conversation-crud.js";
 
 // The seam under test is the send function: it must ask the transport for
 // the address, deliver through it, and record only what the channel
@@ -80,9 +81,9 @@ mock.module("../../notifications/conversation-pairing.js", () => ({
 mock.module("../../notifications/delivered-post-record.js", () => ({
   recordDeliveredChannelPost: recordMock,
 }));
-mock.module("../../persistence/conversation-crud.js", () => ({
+setConversationCrudOverridesForTesting({
   getConversation: (id: string) => ({ id, createdAt: 1700000000000 }),
-}));
+});
 mock.module("../../persistence/conversation-disk-view.js", () => ({
   syncMessageToDisk: () => {},
 }));
