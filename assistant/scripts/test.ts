@@ -61,6 +61,12 @@ const TEST_DURATIONS_OUTPUT = Bun.env.TEST_DURATIONS_OUTPUT ?? "";
 // cannot be computed.
 const TEST_DIFF_ONLY = Bun.env.TEST_DIFF_ONLY === "true";
 const TEST_DIFF_BASE = Bun.env.TEST_DIFF_BASE ?? "origin/main";
+// TEST_SHARD="i/N" runs only the files at positions i, i+N, i+2N, ... of
+// the final (longest-first sorted) list. dev-release.yaml fans the full
+// suite out across N matrix jobs; round-robin after the slow-first sort
+// spreads the heavy files evenly so shard wall-clocks stay balanced.
+// Unset = run everything (pr-assistant's behavior is unchanged).
+const TEST_SHARD = Bun.env.TEST_SHARD ?? "";
 
 const EXPERIMENTAL_FILES = new Set([
   "skill-load-tool.test.ts",
@@ -593,6 +599,27 @@ async function main(): Promise<void> {
     }
   }
   testFiles = sortLongestFirst(testFiles);
+
+  if (TEST_SHARD) {
+    const m = /^(\d+)\/(\d+)$/.exec(TEST_SHARD);
+    if (!m || Number(m[2]) < 1 || Number(m[1]) >= Number(m[2])) {
+      console.error(
+        `TEST_SHARD must be "i/N" with 0 <= i < N (got "${TEST_SHARD}")`,
+      );
+      process.exit(1);
+    }
+    const shard = Number(m[1]);
+    const total = Number(m[2]);
+    const before = testFiles.length;
+    testFiles = testFiles.filter((_, idx) => idx % total === shard);
+    console.log(
+      `Shard ${shard}/${total}: running ${testFiles.length} of ${before} test file(s)`,
+    );
+    if (testFiles.length === 0) {
+      console.log("Nothing to run in this shard");
+      process.exit(0);
+    }
+  }
 
   const fixturesRoot = mkdtempSync(join(tmpdir(), "vellum-test-fixtures-"));
   await buildMigratedFixture(join(fixturesRoot, "migrated"));

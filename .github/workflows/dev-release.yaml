@@ -62,7 +62,12 @@ jobs:
 
   # ── CI Checks (gate image builds) ───────────────────────────────────────
 
-  ci-assistant:
+  # The assistant suite outgrew a single ci-assistant job (pass 7 died at
+  # the 15-minute cap), so lint and types run standalone and the tests fan
+  # out across 4 shards. Each shard takes every 4th file of the
+  # longest-first-sorted list (TEST_SHARD=i/N in scripts/test.ts), which
+  # spreads the slow files evenly across shards.
+  ci-assistant-lint:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -90,18 +95,71 @@ jobs:
         run: bun run lint
         working-directory: assistant
 
+  ci-assistant-types:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/vellum-gateway
+        working-directory: assistant
+
+      - name: Install bundled skill dependencies
+        run: |
+          for dir in skills/*/; do
+            [ -f "${dir}/package.json" ] || continue
+            (cd "${dir}" && bun install --frozen-lockfile 2>/dev/null || bun install)
+          done
+
+      - name: Sync feature flag registry
+        run: bun run meta/sync-bundled-copies.ts
+
       - name: Typecheck
         run: bunx tsc --noEmit
         working-directory: assistant
         env:
           NODE_OPTIONS: --max-old-space-size=8192
 
-      - name: Test
+  ci-assistant-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ["0", "1", "2", "3"]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/vellum-gateway
+        working-directory: assistant
+
+      - name: Install bundled skill dependencies
+        run: |
+          for dir in skills/*/; do
+            [ -f "${dir}/package.json" ] || continue
+            (cd "${dir}" && bun install --frozen-lockfile 2>/dev/null || bun install)
+          done
+
+      - name: Sync feature flag registry
+        run: bun run meta/sync-bundled-copies.ts
+
+      - name: Test (shard ${{ matrix.shard }} of 4)
         run: bun run test
         working-directory: assistant
         env:
           EXCLUDE_EXPERIMENTAL: "true"
           TEST_WORKERS: "8"
+          TEST_SHARD: "${{ matrix.shard }}/4"
 
   ci-gateway:
     runs-on: ubuntu-latest
@@ -213,7 +271,7 @@ jobs:
   # ── Docker Images ──────────────────────────────────────────────────────
 
   push-assistant-image:
-    needs: [compute-version, ci-assistant]
+    needs: [compute-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
     runs-on: ubuntu-latest
     # 2-core ubuntu-latest builds the assistant image slower than the
     # 8-core runner this repo no longer has access to.
@@ -1435,7 +1493,9 @@ jobs:
     needs:
       [
         compute-version,
-        ci-assistant,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
         ci-cli,
         ci-gateway,
         ci-credential-executor,
@@ -1524,7 +1584,9 @@ jobs:
     needs:
       [
         compute-version,
-        ci-assistant,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
         ci-cli,
         ci-gateway,
         ci-credential-executor,
@@ -1600,7 +1662,9 @@ jobs:
     needs:
       [
         compute-version,
-        ci-assistant,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
         ci-cli,
         ci-gateway,
         ci-credential-executor,
@@ -1778,7 +1842,7 @@ jobs:
 
   notify-releases:
     name: Notify #releases on first failure
-    needs: [ci-assistant, ci-gateway, ci-credential-executor]
+    needs: [ci-assistant-lint, ci-assistant-types, ci-assistant-tests, ci-gateway, ci-credential-executor]
     if: always()
     continue-on-error: true
     runs-on: ubuntu-latest
@@ -1786,7 +1850,9 @@ jobs:
       - name: Determine if any CI job failed
         id: check
         run: |
-          if [[ "${{ needs.ci-assistant.result }}" == "failure" || \
+          if [[ "${{ needs.ci-assistant-lint.result }}" == "failure" || \
+                "${{ needs.ci-assistant-types.result }}" == "failure" || \
+                "${{ needs.ci-assistant-tests.result }}" == "failure" || \
                 "${{ needs.ci-gateway.result }}" == "failure" || \
                 "${{ needs.ci-credential-executor.result }}" == "failure" ]]; then
             echo "failed=true" >> "$GITHUB_OUTPUT"
