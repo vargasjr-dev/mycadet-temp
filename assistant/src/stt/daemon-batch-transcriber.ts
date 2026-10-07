@@ -212,7 +212,7 @@ export function normalizeSttError(err: unknown): SttError {
 // ---------------------------------------------------------------------------
 
 class VellumManagedBatchTranscriber implements BatchTranscriber {
-  readonly providerId = "vellum" as const;
+  readonly providerId = "cadet" as const;
   readonly boundaryId = "daemon-batch" as const;
 
   constructor(private readonly language: string | undefined) {}
@@ -255,8 +255,9 @@ export function createDaemonBatchTranscriber(
   providerId: SttProviderId,
   language?: string,
 ): BatchTranscriber | null {
-  // vellum authenticates via the platform connection, not an API key.
-  if (providerId === "vellum") {
+  // Managed speech authenticates via the platform connection, not an API
+  // key. Callers pass canonical ids; the resolver maps legacy ones first.
+  if (providerId === "cadet") {
     return new VellumManagedBatchTranscriber(language);
   }
   if (!apiKey) {
@@ -273,7 +274,7 @@ export function createDaemonBatchTranscriber(
     case "xai":
       return new XAIBatchTranscriber(apiKey, language);
     case "deepgram-flux":
-    case "vellum-flux":
+    case "cadet-flux":
       // Same copy the resolver raises, so a direct factory caller and a
       // config-driven one report the mismatch identically. Both Flux
       // variants are streaming-only: the model has no batch endpoint, BYOK

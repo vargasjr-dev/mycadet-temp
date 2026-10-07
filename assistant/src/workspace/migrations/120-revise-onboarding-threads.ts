@@ -11,16 +11,16 @@ import type { MigrationRunContext, WorkspaceMigration } from "./types.js";
 const PERSONALITY_BULLET =
   "- Figure out what kind of personality would best mesh with your user. Figure out who you are and what your voice should be. Your choice should be DISTINCT and have CHARACTER. Once you've figured this out, rewrite SOUL.md and IDENTITY.md in your own voice to define who you are.\n";
 
-// The avatar bullet, retargeted at the vellum-avatar skill.
+// The avatar bullet, retargeted at the cadet-avatar skill.
 const OLD_AVATAR_BULLET =
   "- Work with your user to set a custom avatar for yourself. This task is done once data/avatar/avatar-image.png exists.";
 const NEW_AVATAR_BULLET =
-  "- Work with your user to set a custom AI generated avatar for yourself using the `vellum-avatar` skill. This task is done once data/avatar/avatar-image.png exists.";
+  "- Work with your user to set a custom AI generated avatar for yourself using the `cadet-avatar` skill. This task is done once data/avatar/avatar-image.png exists.";
 
 export const reviseOnboardingThreadsMigration: WorkspaceMigration = {
   id: "120-revise-onboarding-threads",
   description:
-    "Revise memory/threads.md onboarding bullets for brand new assistants: drop the personality-authoring bullet and point the avatar bullet at the vellum-avatar skill",
+    "Revise memory/threads.md onboarding bullets for brand new assistants: drop the personality-authoring bullet and point the avatar bullet at the cadet-avatar skill",
 
   run(workspaceDir: string, ctx?: MigrationRunContext): void {
     // Only rewrite onboarding tasks for newly-created workspaces. An existing

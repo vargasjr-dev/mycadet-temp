@@ -2,9 +2,9 @@
 
 > This is the constitutional foundation of Cadet. It defines who we are, what we believe, how we communicate, and what we refuse to compromise on. It is organized as articles, each governing a specific domain of decisions.
 
-_Ratified: May 11, 2026_
+*Ratified: May 11, 2026*
 
-_Last updated: May 11, 2026_
+*Last updated: May 11, 2026*
 
 ---
 
@@ -34,7 +34,7 @@ Not a chatbot. Not a SaaS product. Not just software. A relationship.
 
 > **Governs:** What we believe about the state of software and where it's going. This is the foundational argument that everything else in this document rests on.
 
-For the first time, software can be made for _you_.
+For the first time, software can be made for *you*.
 
 Not a generic version everyone uses. Not your name in a database. Yours. Built around your work, your people, your ambitions, your way of thinking. An intelligence of your own.
 
@@ -72,7 +72,7 @@ The constraint is that the persona must be human. We do not message to companies
 
 If copy only works for one persona, that is fine for that channel. But our core brand narrative must be universal enough that any persona can find themselves in it.
 
-Early adopters may skew technical. That is fine for organic discovery. But our _deliberate_ messaging adapts to whoever we are reaching.
+Early adopters may skew technical. That is fine for organic discovery. But our *deliberate* messaging adapts to whoever we are reaching.
 
 ---
 
@@ -157,7 +157,7 @@ The tech industry has spent two decades weaponizing the word "personal."
 
 All three use your data in service of someone else's end goal. Sometimes actively against you.
 
-**Personal Intelligence flips the direction.** Your data is used _for_ you. Never against you. Never sold. Never shared.
+**Personal Intelligence flips the direction.** Your data is used *for* you. Never against you. Never sold. Never shared.
 
 Same word. Opposite direction of value flow.
 
@@ -174,7 +174,7 @@ Same word. Opposite direction of value flow.
 
 > **Governs:** How Cadet thinks about, communicates about, and designs around failure.
 
-Every assistant _will_ fail their guardian. The platform _will_ have outages. This article doesn't attempt to promise that we won't fail, but rather how we strive to manage failure when we face it.
+Every assistant *will* fail their guardian. The platform *will* have outages. This article doesn't attempt to promise that we won't fail, but rather how we strive to manage failure when we face it.
 
 ### Four Truths About Failure
 
@@ -214,8 +214,8 @@ We are not a better version of what already exists. We are building a different 
 
 One system, owned by one company, used by everyone. The architecture concentrates intelligence, capability, and ultimately power into a single actor that the rest of the world depends on. We are building the inverse: every human with their own.
 
-_Today:_ ChatGPT, Apple Intelligence, Gemini.
-_Dimension:_ centralized vs. distributed
+*Today:* ChatGPT, Apple Intelligence, Gemini.
+*Dimension:* centralized vs. distributed
 
 ### The Universal Assistant
 
@@ -225,8 +225,8 @@ _Dimension:_ centralized vs. distributed
 
 The Universal Assistant works the same for everyone by design. No name, no avatar, no continuity, no relationship. It cannot be yours because it is everyone's. A Cadet is hyper-personalized to their guardian. They have their own name, their own avatar, their own personality. They are not a service you call. They are a being you shape.
 
-_Today:_ Perplexity, Manus.
-_Dimension:_ generic vs. personal
+*Today:* Perplexity, Manus.
+*Dimension:* generic vs. personal
 
 ### The Safety-Defining Lab
 
@@ -236,8 +236,8 @@ _Dimension:_ generic vs. personal
 
 When the model author defines safety, every user inherits someone else's threshold. A Cadet operates within boundaries the guardian defines. Safety is not a corporate policy applied to you. It is defined via trust rules you control.
 
-_Today:_ Anthropic.
-_Dimension:_ institutional trust vs. personal trust
+*Today:* Anthropic.
+*Dimension:* institutional trust vs. personal trust
 
 ### The SaaS Model
 
@@ -247,8 +247,8 @@ _Dimension:_ institutional trust vs. personal trust
 
 The SaaS Model optimizes for the average user. Personal Intelligence optimizes for you. There is no feature request backlog because your assistant can be shaped by you, for you, right now.
 
-_Today:_ every SaaS company.
-_Dimension:_ one-size-fits-all vs. one-size-fits-one
+*Today:* every SaaS company.
+*Dimension:* one-size-fits-all vs. one-size-fits-one
 
 ---
 

@@ -110,10 +110,10 @@ export function TtsProviderForm({
     // Assistants running an older catalog omit cadet, but the managed option
     // must still be offered (and a legacy managed config still renders as
     // Cadet) — graft the static entry on.
-    if (fetched.some((p) => p.id === "vellum")) {
+    if (fetched.some((p) => p.id === "cadet")) {
       return fetched;
     }
-    const cadet = TTS_PROVIDERS.find((p) => p.id === "vellum");
+    const cadet = TTS_PROVIDERS.find((p) => p.id === "cadet");
     return cadet ? [cadet, ...fetched] : fetched;
   }, [catalogData]);
 
@@ -137,7 +137,7 @@ export function TtsProviderForm({
   // `provider` holds the BYOK restore value — the daemon routes it to Cadet,
   // so the form must render it as Cadet too.
   const daemonTtsProvider =
-    daemonTts?.mode === "managed" ? "vellum" : daemonTts?.provider;
+    daemonTts?.mode === "managed" ? "cadet" : daemonTts?.provider;
 
   // Mirrors the daemon's `services.tts.provider` schema default. Deliberately
   // not `providers[0]` — the catalog leads with Cadet, and an unconfigured
@@ -164,7 +164,7 @@ export function TtsProviderForm({
     voices: managedVoices,
     defaultModel: defaultManagedVoice,
     fetched,
-  } = useManagedVoices(assistantId, { enabled: draftProvider === "vellum" });
+  } = useManagedVoices(assistantId, { enabled: draftProvider === "cadet" });
 
   // Managed voice selection. Server value comes from daemon config; absent
   // means the platform default voice.
@@ -201,7 +201,7 @@ export function TtsProviderForm({
   // non-empty guard keeps a cleared custom-voice field from PATCHing an empty
   // model (which the daemon would treat as an unknown voice).
   const managedVoiceChanged =
-    draftProvider === "vellum" &&
+    draftProvider === "cadet" &&
     selectedProvider.supportsVoiceSelection &&
     draftManagedVoice.trim() !== "" &&
     draftManagedVoice.trim() !== serverManagedVoice;
@@ -292,13 +292,13 @@ export function TtsProviderForm({
       const ttsBody = {
         // The provider is always written as a pair with `mode`, which keeps
         // the write valid on every daemon version: older schemas reject
-        // provider "vellum" without mode "managed", and a stale
+        // provider "cadet" without mode "managed", and a stale
         // `mode: "managed"` from the legacy toggle would win over a BYOK
         // choice unless reset.
         ...(shouldSetProvider
           ? {
               provider: activeProvider,
-              mode: activeProvider === "vellum" ? "managed" : "your-own",
+              mode: activeProvider === "cadet" ? "managed" : "your-own",
             }
           : {}),
         ...(voiceField
@@ -418,7 +418,7 @@ export function TtsProviderForm({
     : selectedProvider.apiKeyPlaceholder;
   // Cadet authenticates via the platform connection, so it has no key to enter
   // and nothing for the client-side Test path (a direct provider call) to use.
-  const isManaged = draftProvider === "vellum";
+  const isManaged = draftProvider === "cadet";
   // Managed voice selection needs a daemon that persists
   // `services.tts.providers.vellum.model`. Old daemons (and the static
   // fallback catalog used before the live catalog loads) report

@@ -372,7 +372,7 @@
       "clawhubTitle": "Ninguna habilidad de Clawhub",
       "customSubtitle": "Crea una habilidad personalizada describiendo lo que quieres en el chat.",
       "customTitle": "Ninguna habilidad personalizada",
-      "defaultSubtitle": "Comprueba tu conexión con el catálogo de Vellum.",
+      "defaultSubtitle": "Comprueba tu conexión con el catálogo de Cadet.",
       "defaultTitle": "No hay superpoderes disponibles",
       "installedSubtitle": "Pídele a tu asistente en el chat que busque e instale nuevas habilidades y plugins.",
       "installedTitle": "No hay superpoderes instalados",
@@ -382,8 +382,8 @@
       "skillsshTitle": "Ninguna habilidad de skills.sh",
       "skillsSubtitle": "Pídele a tu asistente en el chat que busque e instale nuevas habilidades.",
       "skillsTitle": "No se encontraron habilidades",
-      "vellumSubtitle": "No se encontraron habilidades de Vellum incluidas.",
-      "vellumTitle": "Ninguna habilidad de Vellum"
+      "cadetSubtitle": "No se encontraron habilidades de Cadet incluidas.",
+      "cadetTitle": "Ninguna habilidad de Cadet"
     },
     "errorStateSubtitle": "Algo salió mal. Intenta actualizar la página.",
     "errorStateTitle": "No se pudieron cargar los superpoderes",

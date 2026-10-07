@@ -31,7 +31,7 @@ export const TTS_VOICE_FIELD_BY_PROVIDER: Record<string, TtsVoiceField> = {
     alphanumericOnly: true,
   },
   vellum: {
-    path: "services.tts.providers.vellum.model",
+    path: "services.tts.providers.cadet.model",
     label: "Vellum managed voice",
     alphanumericOnly: false,
   },

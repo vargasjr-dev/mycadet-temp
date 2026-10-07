@@ -996,8 +996,8 @@ type TranslateEmptyStateCopy = (
     | "superpowersTab.emptyState.skillsSubtitle"
     | "superpowersTab.emptyState.pluginsTitle"
     | "superpowersTab.emptyState.pluginsSubtitle"
-    | "superpowersTab.emptyState.vellumTitle"
-    | "superpowersTab.emptyState.vellumSubtitle"
+    | "superpowersTab.emptyState.cadetTitle"
+    | "superpowersTab.emptyState.cadetSubtitle"
     | "superpowersTab.emptyState.clawhubTitle"
     | "superpowersTab.emptyState.clawhubSubtitle"
     | "superpowersTab.emptyState.skillsshTitle"
@@ -1050,8 +1050,8 @@ function getEmptyStateCopy(
       };
     case "vellum":
       return {
-        title: t("superpowersTab.emptyState.vellumTitle"),
-        subtitle: t("superpowersTab.emptyState.vellumSubtitle"),
+        title: t("superpowersTab.emptyState.cadetTitle"),
+        subtitle: t("superpowersTab.emptyState.cadetSubtitle"),
         Icon: Zap,
       };
     case "clawhub":

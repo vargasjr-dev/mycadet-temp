@@ -4,7 +4,7 @@ description: Create images from a text description, or edit photos and graphics 
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🎨"
-  vellum:
+  cadet:
     display-name: "Image Studio"
     category: "content"
     activation-hints:

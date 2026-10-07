@@ -4,7 +4,7 @@ description: Point at things on the screen the user is showing you
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🫵"
-  vellum:
+  cadet:
     display-name: "Screen Annotation"
     category: "system"
     activation-hints:

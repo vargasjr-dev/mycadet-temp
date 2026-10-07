@@ -218,7 +218,7 @@ describe("134-image-generation-mode-to-provider", () => {
     imageGenerationModeToProviderMigration.run(workspaceDir);
     const parsed = AssistantConfigSchema.parse(readConfig());
 
-    expect(parsed.services["image-generation"].provider).toBe("vellum");
+    expect(parsed.services["image-generation"].provider).toBe("cadet");
     expect(parsed.services["image-generation"].model).toBe("gpt-image-2");
   });
 

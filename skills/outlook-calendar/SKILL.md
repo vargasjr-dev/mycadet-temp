@@ -1,7 +1,7 @@
 ---
 name: outlook-calendar
 description: View Outlook Calendar events for any day, create and manage events, and check availability
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "📅"
@@ -61,7 +61,7 @@ Every subcommand accepts `--account <email>` to select which connected Outlook/M
 
 1. **Check connection health first.** Run `assistant oauth status outlook`. This checks whether the user's Outlook/Microsoft account is connected and the token is valid. Outlook Calendar shares the same OAuth connection as Outlook email — if the user already connected Outlook email, calendar access is included.
    - **If the status output shows more than one active connection, you MUST pass `--account <email>` on every `scripts/outlook-cal.ts` invocation**, matching the calendar the user is asking about. When the user references a calendar by name or company (e.g. "my Acme calendar"), map it to the connected account email before querying. **Omitting `--account` with multiple connections silently queries one arbitrary account** — an empty or partial result then looks like a genuinely free calendar when it is really the wrong account. Confirm the `account` field in each response matches the account you intended.
-2. **If no connection is found or the status check fails:** Load the `vellum-oauth-integrations` skill. The skill will evaluate whether managed or your-own mode is appropriate and guide the user accordingly.
+2. **If no connection is found or the status check fails:** Load the `cadet-oauth-integrations` skill. The skill will evaluate whether managed or your-own mode is appropriate and guide the user accordingly.
 
 ## Scheduling Playbook
 
@@ -92,6 +92,6 @@ Create and RSVP are **medium-risk** operations:
 When a calendar script fails with a token or authorization error:
 
 1. **Try to reconnect silently.** Run `assistant oauth ping outlook`. This often resolves expired tokens automatically.
-2. **If reconnection fails, go straight to setup.** Don't present options, ask which route the user prefers, or explain what went wrong technically. Just tell the user briefly (e.g., "Outlook Calendar needs to be reconnected - let me set that up") and immediately load the `vellum-oauth-integrations` skill. The user came to you to get something done, not to troubleshoot - make it seamless.
+2. **If reconnection fails, go straight to setup.** Don't present options, ask which route the user prefers, or explain what went wrong technically. Just tell the user briefly (e.g., "Outlook Calendar needs to be reconnected - let me set that up") and immediately load the `cadet-oauth-integrations` skill. The user came to you to get something done, not to troubleshoot - make it seamless.
 3. **Never try alternative approaches.** Don't use curl, browser automation, or any workaround. If the scripts can't do it, the reconnection flow is the answer.
 4. **Never expose error details.** The user doesn't need to see error messages about tokens, OAuth, or API failures. Translate errors into plain language.

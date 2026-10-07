@@ -4,7 +4,7 @@ description: "Handle disk pressure, critically low storage, safe storage limits,
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "\U0001F9F9"
-  vellum:
+  cadet:
     display-name: "System Storage Cleanup"
     category: "system"
     activation-hints:

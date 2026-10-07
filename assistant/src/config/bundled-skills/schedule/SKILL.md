@@ -4,7 +4,7 @@ description: Reminders, automations, and recurring page, dashboard, or status mo
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "📅"
-  vellum:
+  cadet:
     display-name: "Schedule"
     category: "productivity"
     activation-hints:

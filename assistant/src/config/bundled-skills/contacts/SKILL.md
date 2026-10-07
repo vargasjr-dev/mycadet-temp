@@ -4,7 +4,7 @@ description: Manage contacts, communication channels, access control, and invite
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "👥"
-  vellum:
+  cadet:
     display-name: "Contacts"
     category: "productivity"
     activation-hints:

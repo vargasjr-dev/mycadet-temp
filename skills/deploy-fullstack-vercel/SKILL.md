@@ -1,7 +1,7 @@
 ---
 name: deploy-fullstack-vercel
 description: Build and deploy a full-stack app (React frontend + Python/FastAPI backend) or a Vellum app to Vercel as a serverless demo with seeded data
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🚀"
   cadet:

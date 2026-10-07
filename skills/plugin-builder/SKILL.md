@@ -1,7 +1,7 @@
 ---
 name: plugin-builder
 description: "Use when the user wants to build, scaffold, ship, or edit a Vellum plugin that bundles multiple surfaces (hooks, tools, skills, and more) into one installable package."
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🧩"
   cadet:

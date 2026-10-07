@@ -58,7 +58,7 @@
     "redeploySubtitle": "Publish the current version",
     "share": "Share",
     "shareAndDeploy": "Share & deploy",
-    "shareExportSubtitle": "Export as .vellum file",
+    "shareExportSubtitle": "Export as .cadet file",
     "sharing": "Sharing…"
   },
   "appViewerContainer": {
@@ -185,7 +185,7 @@
       "title": "Make it easy to talk to me"
     },
     "meet": {
-      "body": "I stay on your desktop, even when Vellum isn’t visible."
+      "body": "I stay on your desktop, even when Cadet isn’t visible."
     },
     "mute": {
       "body": "Click the mic to mute yourself or the speaker to mute me",
@@ -209,7 +209,7 @@
     },
     "permission": {
       "microphoneAction": "Enable microphone",
-      "microphoneSettingsHint": "Turn on Vellum’s microphone switch in System Settings, then return here.",
+      "microphoneSettingsHint": "Turn on Cadet’s microphone switch in System Settings, then return here.",
       "microphonePromptHint": "macOS will ask you to allow microphone access.",
       "microphoneBody": "Let me use your microphone for voice conversations.",
       "shortcutBody": "Let me hear the shortcut while you use other apps.",
@@ -238,7 +238,7 @@
     "needsCredentialsFor": "Need credentials for {service}",
     "needsOkCount": "{count, plural, one {Need your OK on # thing} other {Need your OK on # things}}",
     "notNow": "Not Now",
-    "openApp": "Open Vellum",
+    "openApp": "Open Cadet",
     "pendingBadge": "{count, plural, one {# thing needs your OK} other {# things need your OK}}",
     "previewVoice": "Preview {voice}",
     "review": "Review",
@@ -281,9 +281,9 @@
     "offerNowhere": "Nowhere to put these",
     "offerPasteFailed": "Couldn't paste these",
     "offerQuit": "Quit {app}",
-    "offerUse": "Use Vellum's",
-    "offerVersion": "Vellum heard",
-    "openVellum": "Open Vellum",
+    "offerUse": "Use Cadet's",
+    "offerVersion": "Cadet heard",
+    "openCadet": "Open Cadet",
     "share": "Share",
     "sharePicker": "What to share",
     "showSummary": "Show summary",
@@ -369,7 +369,7 @@
     "stopRecording": "Stop recording"
   },
   "discordNudgeBanner": {
-    "ariaLabel": "Join the Vellum Discord community",
+    "ariaLabel": "Join the Cadet Discord community",
     "ctaLong": "Join Discord",
     "ctaShort": "Join",
     "subtitleLong": "Talk to the team - share feedback, request features, get answers faster",
@@ -462,11 +462,11 @@
     "tryAgain": "Try Again"
   },
   "githubNudgeBanner": {
-    "ariaLabel": "Vellum is open source on GitHub",
-    "ctaAriaLabel": "Star Vellum on GitHub",
+    "ariaLabel": "Cadet is open source on GitHub",
+    "ctaAriaLabel": "Star Cadet on GitHub",
     "ctaLabel": "Star us",
     "subtitle": "Star us on GitHub or contribute",
-    "title": "Vellum is open source"
+    "title": "Cadet is open source"
   },
   "lazyBoundary": {
     "loadError": "This section couldn't load. Reload the page to try again."
@@ -486,13 +486,13 @@
   },
   "nativeAppBanner": {
     "bannerAria": "Download the {appName} app",
-    "bannerAriaGeneric": "Download the Vellum mobile app",
+    "bannerAriaGeneric": "Download the Cadet mobile app",
     "download": "Download",
     "downloadAppAria": "Download {appName} app",
-    "downloadAppAriaGeneric": "Download Vellum mobile app",
+    "downloadAppAriaGeneric": "Download Cadet mobile app",
     "subtitle": "Push notifications · biometric login · haptics",
     "title": "Get the {appName} app",
-    "titleGeneric": "Get the Vellum app"
+    "titleGeneric": "Get the Cadet app"
   },
   "notFound": {
     "backToAssistant": "Back to your assistant",
@@ -538,14 +538,14 @@
     "created": "Profile \"{name}\" created"
   },
   "quickInputPage": {
-    "logoAlt": "Vellum",
-    "placeholder": "Ask Vellum anything...",
+    "logoAlt": "Cadet",
+    "placeholder": "Ask Cadet anything...",
     "send": "Send message"
   },
   "removeFromDeviceDialog": {
     "confirm": "Remove",
     "messageOrigin": "This won't affect {assistantName} or sign you out there. It only forgets the entry on this device. Add it again anytime.",
-    "messagePaired": "This won't affect {assistantName} on its host machine. It only forgets the pairing on this device. Pair again anytime with vellum connect import.",
+    "messagePaired": "This won't affect {assistantName} on its host machine. It only forgets the pairing on this device. Pair again anytime with cadet connect import.",
     "messagePlatform": "This won't delete {assistantName}. It only removes it from this device. Logging in will make it available again.",
     "title": "Remove from this device?"
   },
@@ -744,7 +744,7 @@
     "saveSuccess": "Speech-to-text settings saved",
     "spokenLanguage": "Spoken language",
     "spokenLanguageApplies": "Applies from your next spoken turn.",
-    "vellumTranscription": "Transcription runs through your Vellum account.",
+    "cadetTranscription": "Transcription runs through your Cadet account.",
     "windowsNativeDisplayName": "Windows Native Dictation",
     "windowsNativeSetupWarning": "Requires Basic speech recognition for your Windows display language: open Settings > Time & language > Language & region, select the three dots next to the display language, choose Language options, then under Language features download Basic speech recognition.",
     "windowsNativeSubtitle": "Windows on-device speech recognition, running locally through the Windows helper. Works offline and needs no API key."
@@ -869,7 +869,7 @@
     "available": "Update available. Starting download…",
     "closeAriaLabel": "Close",
     "downloading": "Downloading update…",
-    "ready": "Vellum {version} is ready.",
+    "ready": "Cadet {version} is ready.",
     "restartToInstall": "Restart to install",
     "versionFallback": "update"
   },
@@ -984,7 +984,7 @@
     "setupRequiredTitle": "This domain has not been provisioned with the email provider. It cannot send or receive email until setup is complete."
   },
   "managedServicesBanner": {
-    "body": "Managed services are metered and deducted from your Vellum account balance. <link>View pricing</link>"
+    "body": "Managed services are metered and deducted from your Cadet account balance. <link>View pricing</link>"
   },
   "serviceCard": {
     "managedLabel": "Managed",

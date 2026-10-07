@@ -1,6 +1,6 @@
 /**
  * Vellum-managed TTS: synthesis through the platform's managed speech
- * surfaces (Vellum-held Deepgram key, billed to Vellum credits). No provider
+ * surfaces (Cadet-held Deepgram key, billed to Cadet credits). No provider
  * API key exists on this machine — the platform connection is the credential.
  *
  * Two paths:
@@ -36,7 +36,7 @@ import type {
 } from "../types.js";
 import { synthesizeOverVellumTtsSocket } from "./vellum-tts-socket.js";
 
-const log = getLogger("vellum-tts");
+const log = getLogger("cadet-tts");
 
 const TTS_STREAM_PATH = "/v1/speech/tts/stream";
 
@@ -65,18 +65,18 @@ function resolveManagedFormat(
  * config; undefined means the platform's default voice.
  */
 function resolveManagedVoice(request: TtsSynthesisRequest): string | undefined {
-  return request.voiceId ?? getConfig().services.tts.providers.vellum.model;
+  return request.voiceId ?? getConfig().services.tts.providers.cadet.model;
 }
 
 function synthesisError(failure: ManagedSpeechFailure): Error {
   if (failure.code === "insufficient_balance") {
     return new Error(
-      "Vellum credits are exhausted — add funds to your Vellum account to continue using managed speech.",
+      "Cadet credits are exhausted — add funds to your Cadet account to continue using managed speech.",
     );
   }
   if (failure.kind === "unavailable") {
     return new Error(
-      `Managed speech is unavailable: ${failure.message} Run 'assistant platform connect' to connect your Vellum account.`,
+      `Managed speech is unavailable: ${failure.message} Run 'assistant platform connect' to connect your Cadet account.`,
     );
   }
   return new Error(failure.message);
@@ -119,7 +119,7 @@ async function performStreamingSynthesis(
   const connection = await resolveSpeechRelayConnection();
   if (!connection) {
     throw new Error(
-      "Managed speech is unavailable: the assistant cannot reach its speech relay. Run 'assistant platform connect' to connect your Vellum account.",
+      "Managed speech is unavailable: the assistant cannot reach its speech relay. Run 'assistant platform connect' to connect your Cadet account.",
     );
   }
 
@@ -193,7 +193,7 @@ export function createVellumProvider(): TtsProvider {
   };
 
   return {
-    id: "vellum",
+    id: "cadet",
     capabilities,
     // Per the TtsProvider contract this returns undefined for non-PCM
     // output; the platform's PCM format is pinned to 16 kHz.
@@ -205,23 +205,23 @@ export function createVellumProvider(): TtsProvider {
 }
 
 /**
- * The complete Vellum managed provider definition — catalog metadata plus
+ * The complete Cadet managed provider definition — catalog metadata plus
  * the runtime adapter — assembled into the canonical catalog by
  * `provider-catalog.ts`.
  */
-export const vellumTtsProviderDefinition: TtsProviderDefinition = {
-  id: "vellum",
-  displayName: "Vellum",
+export const cadetTtsProviderDefinition: TtsProviderDefinition = {
+  id: "cadet",
+  displayName: "Cadet",
   subtitle:
-    "Text-to-speech through your Vellum account — billed to Vellum credits, no separate API key needed.",
-  // Advertises managed voice selection (`services.tts.providers.vellum.model`)
+    "Text-to-speech through your Cadet account — billed to Cadet credits, no separate API key needed.",
+  // Advertises managed voice selection (`services.tts.providers.cadet.model`)
   // to clients; web gates its voice dropdown on this flag, so daemons that
   // predate the field never show a selector whose writes they would ignore.
   supportsVoiceSelection: true,
-  apiKeyPlaceholder: "Connected via your Vellum account",
+  apiKeyPlaceholder: "Connected via your Cadet account",
   credentialsGuide: {
     description:
-      "Connect this assistant to your Vellum account; managed speech uses that connection instead of a provider API key.",
+      "Connect this assistant to your Cadet account; managed speech uses that connection instead of a provider API key.",
     url: "https://cloud.mycadet.ai/",
     linkLabel: "Open Vellum Platform",
   },
@@ -236,7 +236,7 @@ export const vellumTtsProviderDefinition: TtsProviderDefinition = {
   secretRequirements: [
     {
       credentialStoreKey: "credential/vellum/assistant_api_key",
-      displayName: "Vellum account connection",
+      displayName: "Cadet account connection",
       setCommand: "assistant platform connect",
     },
   ],

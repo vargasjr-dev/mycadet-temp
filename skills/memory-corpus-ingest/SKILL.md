@@ -1,7 +1,7 @@
 ---
 name: memory-corpus-ingest
 description: Ingest a large dataset into memory as a skimmed map. Cold-store the raw files under a workspace imports directory, census them into a slice plan, skim each slice into compact map pages that point back at the raw files, ingest the map with the memory ingest CLI, and author a drill-in retrieval skill so the corpus stays searchable on demand. For recording archives, transcript collections, document dumps, and any corpus too large to hold in memory directly.
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🗺️"
   cadet:

@@ -4,7 +4,7 @@ description: Create and manage automated email drip sequences
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "📧"
-  vellum:
+  cadet:
     display-name: "Email Sequences"
     category: "email"
 ---

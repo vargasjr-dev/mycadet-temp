@@ -3,7 +3,7 @@ name: app-builder
 description: Build and edit small, personal visual tools and artifacts — dashboards, trackers, calculators, data visualizations, charts, simple landing pages, and slide decks the user wants for THEMSELVES. This is the right skill whenever the user asks to "visualize this," "make a chart," or "build an artifact" for their own use, or to edit an app they already built here. Do NOT reach for a ui_show dynamic_page to fake an artifact — build a real persistent app here. A one-off diagram, chart, or explainer that just accompanies an answer belongs to the visualize skill (ui_show visual), not an app. NOT for complex, multi-user, or shippable products — those go to a real project folder with a coding agent (see Scope below).
 metadata:
   emoji: "🛠️"
-  vellum:
+  cadet:
     display-name: "App Builder"
     category: "development"
     includes: ["frontend-design"]

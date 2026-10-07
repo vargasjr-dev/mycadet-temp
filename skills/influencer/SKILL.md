@@ -1,13 +1,13 @@
 ---
 name: influencer
 description: Research influencers on Instagram, TikTok, and X/Twitter through your browser
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🔍"
   cadet:
     category: "browsing"
     display-name: "Influencer Research"
-    includes: ["vellum-browser-use"]
+    includes: ["cadet-browser-use"]
 ---
 
 Use browser automation for collection and `host_bash` helper scripts for deterministic parsing, scoring, and comparison. All browser operations are executed through the `assistant browser` CLI, invoked via `host_bash`.

@@ -58,7 +58,7 @@
     "redeploySubtitle": "Publicar la versión actual",
     "share": "Compartir",
     "shareAndDeploy": "Compartir y desplegar",
-    "shareExportSubtitle": "Exportar como archivo .vellum",
+    "shareExportSubtitle": "Exportar como archivo .cadet",
     "sharing": "Compartiendo…"
   },
   "appViewerContainer": {
@@ -185,7 +185,7 @@
       "title": "Haz que sea fácil hablar conmigo"
     },
     "meet": {
-      "body": "Me quedo en tu escritorio, aunque Vellum no esté a la vista."
+      "body": "Me quedo en tu escritorio, aunque Cadet no esté a la vista."
     },
     "mute": {
       "body": "Toca el micrófono para silenciarte o el altavoz para silenciarme",
@@ -209,7 +209,7 @@
     },
     "permission": {
       "microphoneAction": "Activar micrófono",
-      "microphoneSettingsHint": "Activa el interruptor del micrófono de Vellum en Ajustes del Sistema y vuelve aquí.",
+      "microphoneSettingsHint": "Activa el interruptor del micrófono de Cadet en Ajustes del Sistema y vuelve aquí.",
       "microphonePromptHint": "macOS te pedirá permiso para acceder al micrófono.",
       "microphoneBody": "Permíteme usar tu micrófono para conversar por voz.",
       "shortcutBody": "Permíteme detectar el atajo mientras usas otras apps.",
@@ -238,7 +238,7 @@
     "needsCredentialsFor": "Necesito credenciales para {service}",
     "needsOkCount": "{count, plural, one {Necesito tu aprobación para # cosa} other {Necesito tu aprobación para # cosas}}",
     "notNow": "Ahora no",
-    "openApp": "Abrir Vellum",
+    "openApp": "Abrir Cadet",
     "pendingBadge": "{count, plural, one {# cosa necesita tu aprobación} other {# cosas necesitan tu aprobación}}",
     "previewVoice": "Escuchar {voice}",
     "review": "Revisar",
@@ -279,9 +279,9 @@
     "offerNowhere": "No hay dónde ponerlas",
     "offerPasteFailed": "No se pudieron pegar",
     "offerQuit": "Salir de {app}",
-    "offerUse": "Usar la de Vellum",
-    "offerVersion": "Vellum oyó",
-    "openVellum": "Abrir Vellum",
+    "offerUse": "Usar la de Cadet",
+    "offerVersion": "Cadet oyó",
+    "openCadet": "Abrir Cadet",
     "share": "Compartir",
     "sharePicker": "Qué compartir",
     "showSummary": "Mostrar resumen",
@@ -367,7 +367,7 @@
     "stopRecording": "Detener grabación"
   },
   "discordNudgeBanner": {
-    "ariaLabel": "Únete a la comunidad de Discord de Vellum",
+    "ariaLabel": "Únete a la comunidad de Discord de Cadet",
     "ctaLong": "Unirse a Discord",
     "ctaShort": "Unirse",
     "subtitleLong": "Habla con el equipo: comparte comentarios, solicita funciones y obtén respuestas más rápido",
@@ -460,11 +460,11 @@
     "tryAgain": "Reintentar"
   },
   "githubNudgeBanner": {
-    "ariaLabel": "Vellum es de código abierto en GitHub",
-    "ctaAriaLabel": "Dar una estrella a Vellum en GitHub",
+    "ariaLabel": "Cadet es de código abierto en GitHub",
+    "ctaAriaLabel": "Dar una estrella a Cadet en GitHub",
     "ctaLabel": "Danos una estrella",
     "subtitle": "Danos una estrella en GitHub o contribuye",
-    "title": "Vellum es de código abierto"
+    "title": "Cadet es de código abierto"
   },
   "lazyBoundary": {
     "loadError": "Esta sección no se pudo cargar. Recarga la página para intentarlo de nuevo."
@@ -484,13 +484,13 @@
   },
   "nativeAppBanner": {
     "bannerAria": "Descargar la app de {appName}",
-    "bannerAriaGeneric": "Descargar la app móvil de Vellum",
+    "bannerAriaGeneric": "Descargar la app móvil de Cadet",
     "download": "Descargar",
     "downloadAppAria": "Descargar la app de {appName}",
-    "downloadAppAriaGeneric": "Descargar la app móvil de Vellum",
+    "downloadAppAriaGeneric": "Descargar la app móvil de Cadet",
     "subtitle": "Notificaciones push · inicio biométrico · háptica",
     "title": "Obtén la app de {appName}",
-    "titleGeneric": "Obtén la app de Vellum"
+    "titleGeneric": "Obtén la app de Cadet"
   },
   "notFound": {
     "backToAssistant": "Volver a tu asistente",
@@ -536,14 +536,14 @@
     "created": "Perfil \"{name}\" creado"
   },
   "quickInputPage": {
-    "logoAlt": "Vellum",
-    "placeholder": "Pregunta lo que quieras a Vellum...",
+    "logoAlt": "Cadet",
+    "placeholder": "Pregunta lo que quieras a Cadet...",
     "send": "Enviar mensaje"
   },
   "removeFromDeviceDialog": {
     "confirm": "Eliminar",
     "messageOrigin": "Esto no afectará a {assistantName} ni cerrará tu sesión allí. Solo olvida la entrada en este dispositivo. Puedes añadirla de nuevo cuando quieras.",
-    "messagePaired": "Esto no afectará a {assistantName} en su máquina anfitriona. Solo olvida el emparejamiento en este dispositivo. Puedes emparejarlo de nuevo cuando quieras con vellum connect import.",
+    "messagePaired": "Esto no afectará a {assistantName} en su máquina anfitriona. Solo olvida el emparejamiento en este dispositivo. Puedes emparejarlo de nuevo cuando quieras con cadet connect import.",
     "messagePlatform": "Esto no eliminará a {assistantName}. Solo lo quita de este dispositivo. Al iniciar sesión volverá a estar disponible.",
     "title": "¿Eliminar de este dispositivo?"
   },
@@ -742,7 +742,7 @@
     "saveSuccess": "Ajustes de voz a texto guardados",
     "spokenLanguage": "Idioma hablado",
     "spokenLanguageApplies": "Se aplica a partir de tu próximo turno hablado.",
-    "vellumTranscription": "La transcripción se realiza a través de tu cuenta de Vellum.",
+    "cadetTranscription": "La transcripción se realiza a través de tu cuenta de Cadet.",
     "windowsNativeDisplayName": "Dictado nativo de Windows",
     "windowsNativeSetupWarning": "Requiere Reconocimiento de voz básico para el idioma de visualización de Windows: abre Configuración > Hora e idioma > Idioma y región, selecciona los tres puntos junto al idioma de visualización, elige Opciones de idioma y, en Características de idioma, descarga Reconocimiento de voz básico.",
     "windowsNativeSubtitle": "Reconocimiento de voz integrado de Windows, ejecutado localmente mediante el asistente nativo de Windows. Funciona sin conexión y no necesita una clave de API."
@@ -867,7 +867,7 @@
     "available": "Actualización disponible. Iniciando descarga…",
     "closeAriaLabel": "Cerrar",
     "downloading": "Descargando actualización…",
-    "ready": "Vellum {version} está listo.",
+    "ready": "Cadet {version} está listo.",
     "restartToInstall": "Reiniciar para instalar",
     "versionFallback": "actualización"
   },
@@ -978,7 +978,7 @@
     "setupRequiredTitle": "Este dominio no se ha aprovisionado con el proveedor de correo. No puede enviar ni recibir correo hasta completar la configuración."
   },
   "managedServicesBanner": {
-    "body": "Los servicios administrados se miden y se deducen del saldo de tu cuenta de Vellum. <link>Ver precios</link>"
+    "body": "Los servicios administrados se miden y se deducen del saldo de tu cuenta de Cadet. <link>Ver precios</link>"
   },
   "serviceCard": {
     "managedLabel": "Administrado",

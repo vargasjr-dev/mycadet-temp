@@ -3,7 +3,7 @@ name: visualize
 description: Render a polished visual inline in the chat as part of your answer — a diagram, a chart, an interactive explainer, or a UI mockup. Load it proactively whenever an explanation would land better as a picture than as prose. Do not wait to be asked.
 metadata:
   emoji: "📊"
-  vellum:
+  cadet:
     display-name: "Visualize"
     category: "content"
     always-candidate: true

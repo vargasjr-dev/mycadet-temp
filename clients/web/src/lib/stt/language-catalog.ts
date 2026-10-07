@@ -158,7 +158,7 @@ export const STT_LANGUAGES: readonly SttLanguageOption[] = [
  */
 const MULTI_CAPABLE_DAEMON_PROVIDERS: ReadonlySet<string> = new Set([
   "deepgram",
-  "vellum",
+  "cadet",
 ]);
 
 /**
@@ -172,7 +172,7 @@ const MULTI_CAPABLE_DAEMON_PROVIDERS: ReadonlySet<string> = new Set([
  */
 const NOVA3_ROSTER_DAEMON_PROVIDERS: ReadonlySet<string> = new Set([
   "deepgram",
-  "vellum",
+  "cadet",
 ]);
 
 /**
@@ -202,7 +202,7 @@ export const AUTO_DETECT_WHEN_UNSET_DAEMON_PROVIDERS: ReadonlySet<string> =
  */
 export const MULTI_DEFAULT_DAEMON_PROVIDERS: ReadonlySet<string> = new Set([
   "deepgram",
-  "vellum",
+  "cadet",
 ]);
 
 /**

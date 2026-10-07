@@ -21,7 +21,7 @@ let warnings: unknown[][];
 const logger = { warn: (...args: unknown[]) => warnings.push(args) };
 
 beforeEach(() => {
-  userDataDir = mkdtempSync(path.join(tmpdir(), "vellum-avatar-path-"));
+  userDataDir = mkdtempSync(path.join(tmpdir(), "cadet-avatar-path-"));
   warnings = [];
 });
 

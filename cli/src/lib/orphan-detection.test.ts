@@ -116,9 +116,6 @@ describe("classifyProcess", () => {
     );
     expect(classifyProcess("bun /x/bin/cadet-daemon start")).toBe("assistant");
     expect(classifyProcess("node daemon start")).toBe("assistant");
-    expect(
-      classifyProcess("bun /x/bin/cadet-openclaw-adapter --port 9000"),
-    ).toBe("openclaw-adapter");
   });
 
   test("macOS desktop app processes stay excluded", () => {

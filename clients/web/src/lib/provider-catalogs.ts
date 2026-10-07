@@ -32,7 +32,7 @@ export interface TTSProvider {
 
 export const TTS_PROVIDERS: readonly TTSProvider[] = [
   {
-    id: "vellum",
+    id: "cadet",
     displayName: "Cadet",
     subtitle:
       "Text-to-speech through your Cadet account — billed to Cadet credits, no separate API key needed.",
@@ -147,7 +147,7 @@ export const MACOS_NATIVE_STT_PROVIDER_ID = "macos-native";
 
 export const STT_PROVIDERS: readonly STTProvider[] = [
   {
-    id: "vellum",
+    id: "cadet",
     displayName: "Cadet",
     subtitle:
       "Transcription through your Cadet account — billed to Cadet credits, no separate API key needed.",
@@ -255,14 +255,14 @@ export const IMAGE_GEN_MODEL_DISPLAY_NAMES: Record<string, string> = {
  * model list: its catalog is live.
  */
 export const IMAGE_GEN_PROVIDERS = [
-  "vellum",
+  "cadet",
   "gemini",
   "openai",
   "openrouter",
 ] as const;
 
 export const IMAGE_GEN_PROVIDER_DISPLAY_NAMES: Record<string, string> = {
-  vellum: "Cadet",
+  cadet: "Cadet",
   gemini: "Gemini",
   openai: "OpenAI",
   openrouter: "OpenRouter",
@@ -280,7 +280,7 @@ export function imageGenModelsForProvider(provider: string): string[] {
   if (provider === "openrouter") {
     return [];
   }
-  if (provider === "vellum") {
+  if (provider === "cadet") {
     return [...AVAILABLE_IMAGE_GEN_MODELS];
   }
   return AVAILABLE_IMAGE_GEN_MODELS.filter(

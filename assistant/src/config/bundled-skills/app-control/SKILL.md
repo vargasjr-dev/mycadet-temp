@@ -4,7 +4,7 @@ description: Drive a specific named macOS app via raw input bypassing the Access
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🎯"
-  vellum:
+  cadet:
     display-name: "App Control"
     category: "system"
     feature-flag: "app-control"

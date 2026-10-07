@@ -102,11 +102,11 @@ describe("AssistantConfigSchema", () => {
   test("accepts cadet as an image generation provider", () => {
     const result = AssistantConfigSchema.parse({
       services: {
-        "image-generation": { provider: "vellum", model: "gpt-image-2" },
+        "image-generation": { provider: "cadet", model: "gpt-image-2" },
       },
     });
 
-    expect(result.services["image-generation"].provider).toBe("vellum");
+    expect(result.services["image-generation"].provider).toBe("cadet");
     expect(result.services["image-generation"].model).toBe("gpt-image-2");
   });
 
@@ -1530,7 +1530,7 @@ describe("AssistantConfigSchema", () => {
     expect(result.services.tts.providers.deepgram.languageVoices).toEqual({
       hi: "aura-2-hi-voice",
     });
-    expect(result.services.tts.providers.vellum.languageVoices).toEqual({
+    expect(result.services.tts.providers.cadet.languageVoices).toEqual({
       hi: "aura-2-hi-voice",
     });
   });
@@ -1596,7 +1596,7 @@ describe("AssistantConfigSchema", () => {
         },
       },
     });
-    expect(result.services.tts.providers.vellum.languageVoices).toEqual({
+    expect(result.services.tts.providers.cadet.languageVoices).toEqual({
       hi: "voice-hindi",
     });
   });
@@ -1609,11 +1609,11 @@ describe("AssistantConfigSchema", () => {
     expect(
       result.services.tts.providers.deepgram.languageVoices,
     ).toBeUndefined();
-    expect(result.services.tts.providers.vellum.languageVoices).toBeUndefined();
+    expect(result.services.tts.providers.cadet.languageVoices).toBeUndefined();
   });
 
   test("rejects non-string services.tts.providers languageVoices values", () => {
-    for (const provider of ["elevenlabs", "deepgram", "vellum"]) {
+    for (const provider of ["elevenlabs", "deepgram", "cadet"]) {
       const result = AssistantConfigSchema.safeParse({
         services: {
           tts: {
@@ -1647,7 +1647,7 @@ describe("AssistantConfigSchema", () => {
 
   test("accepts tts provider cadet as an ordinary choice", () => {
     const result = AssistantConfigSchema.safeParse({
-      services: { tts: { provider: "vellum" } },
+      services: { tts: { provider: "cadet" } },
     });
     expect(result.success).toBe(true);
   });
@@ -1717,7 +1717,7 @@ describe("AssistantConfigSchema", () => {
       expect(defaulted.data.provider).toBe("elevenlabs");
     }
 
-    expect(TtsServiceSchema.safeParse({ provider: "vellum" }).success).toBe(
+    expect(TtsServiceSchema.safeParse({ provider: "cadet" }).success).toBe(
       true,
     );
     expect(
@@ -1809,7 +1809,7 @@ describe("AssistantConfigSchema", () => {
 
   test("accepts stt provider cadet as an ordinary choice", () => {
     const result = AssistantConfigSchema.safeParse({
-      services: { stt: { provider: "vellum" } },
+      services: { stt: { provider: "cadet" } },
     });
     expect(result.success).toBe(true);
   });
@@ -1890,7 +1890,7 @@ describe("AssistantConfigSchema", () => {
     expect(
       SttServiceSchema.safeParse({ provider: "openai-whisper" }).success,
     ).toBe(true);
-    expect(SttServiceSchema.safeParse({ provider: "vellum" }).success).toBe(
+    expect(SttServiceSchema.safeParse({ provider: "cadet" }).success).toBe(
       true,
     );
     expect(
@@ -2089,13 +2089,13 @@ describe("TTS provider catalog integration", () => {
   test("resolveTtsConfig returns correct defaults for each catalog provider", () => {
     for (const providerId of listCatalogProviderIds()) {
       // cadet is connection-based and only valid under managed mode.
-      const mode = providerId === "vellum" ? "managed" : "your-own";
+      const mode = providerId === "cadet" ? "managed" : "your-own";
       const config = AssistantConfigSchema.parse({
         services: { tts: { mode, provider: providerId } },
       });
       const resolved = resolveTtsConfig(config);
       expect(resolved.provider).toBe(providerId);
-      if (providerId === "vellum") {
+      if (providerId === "cadet") {
         // The cadet config block is intentionally empty — the platform
         // pins the voice and model.
         expect(resolved.providerConfig).toEqual({});

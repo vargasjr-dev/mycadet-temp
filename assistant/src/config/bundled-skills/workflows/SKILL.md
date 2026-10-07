@@ -4,7 +4,7 @@ description: Delegate a big or high-stakes job to a fleet of parallel subagents,
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "⚙️"
-  vellum:
+  cadet:
     display-name: "Workflows"
     category: "system"
     always-candidate: true

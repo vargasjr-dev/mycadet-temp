@@ -1,7 +1,7 @@
 ---
 name: notion
 description: Read and write Notion pages and databases using the Notion API
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "📝"
@@ -14,7 +14,7 @@ metadata:
       - "User wants to create, update, append to, or query Notion pages or databases"
       - "User asks anything that requires reading or writing Notion data, including checking a task list or workspace held in Notion"
     avoid-when:
-      - "User wants to set up, connect, or reconnect the Notion OAuth integration for the first time; load vellum-oauth-integrations instead"
+      - "User wants to set up, connect, or reconnect the Notion OAuth integration for the first time; load cadet-oauth-integrations instead"
 ---
 
 You have access to the Notion API via the managed OAuth connection or an internal integration secret stored in the credential vault. Both paths inject the Authorization header automatically. Never reveal credential values or echo token values into the shell.
@@ -31,7 +31,7 @@ Look at the results to decide which path to use:
 
 - **Managed OAuth (preferred):** No `service: "notion"` entry is needed in the vault. The OAuth connection is managed by the platform. Use **Path A** below.
 - **Internal integration secret:** An entry with `service: "notion"` and `field: "internal_secret"` is present. Use **Path A** below (recommended) or **Path B** if the credential has the required metadata (see Path B for details).
-- **Neither configured:** Tell the user: "Notion is not connected yet. Load the **vellum-oauth-integrations** skill to set it up first."
+- **Neither configured:** Tell the user: "Notion is not connected yet. Load the **cadet-oauth-integrations** skill to set it up first."
 
 **Step 2 - Make authenticated API calls:**
 
@@ -62,7 +62,7 @@ General shape: `assistant oauth request --provider notion -X <METHOD> -H "Notion
 
 ### Path B. Proxied bash with credential auto-injection
 
-> **Note:** The standard Notion setup flow (`vellum-oauth-integrations`) does not currently produce credentials with the metadata required by this path. Most users should use **Path A** instead. Path B is documented for credentials that have been manually configured with the required metadata.
+> **Note:** The standard Notion setup flow (`cadet-oauth-integrations`) does not currently produce credentials with the metadata required by this path. Most users should use **Path A** instead. Path B is documented for credentials that have been manually configured with the required metadata.
 
 For internal integration secrets registered with `allowedTools: ["bash"]` and an `injection_templates` entry for `api.notion.com`. The proxy adds `Authorization: Bearer <token>` automatically. Do not include an Authorization header in the curl command.
 
@@ -296,7 +296,7 @@ When a response includes `"has_more": true`, pass `"start_cursor": response.next
 
 ## Error Handling
 
-- **401 Unauthorized**: The token is missing, invalid, or expired. For Internal integrations, ask the user to re-run the **vellum-oauth-integrations** skill. For OAuth connections, the access token may need to be refreshed or re-authorized.
+- **401 Unauthorized**: The token is missing, invalid, or expired. For Internal integrations, ask the user to re-run the **cadet-oauth-integrations** skill. For OAuth connections, the access token may need to be refreshed or re-authorized.
 - **403 Forbidden**: The integration doesn't have access to the requested page or database. Remind the user that they need to share the page/database with the "Vellum Assistant" integration in Notion (via the Share menu → "Add connections").
 - **404 Not Found**: The page or database ID doesn't exist or the integration can't see it. Verify the ID and check sharing settings.
 - **400 Bad Request**: Check the request body structure. The Notion API error response includes a `message` field with details.

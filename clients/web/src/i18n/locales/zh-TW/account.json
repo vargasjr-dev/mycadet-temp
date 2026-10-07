@@ -19,12 +19,12 @@
   },
   "signupClosedScreen": {
     "title": "目前已暫停註冊",
-    "message": "很抱歉，Vellum 目前不接受新用戶註冊。歡迎稍後再試。你也可以自行託管 Vellum。<selfHostingLink>點此</selfHostingLink>進一步了解自行託管。",
+    "message": "很抱歉，Cadet 目前不接受新用戶註冊。歡迎稍後再試。你也可以自行託管 Cadet。<selfHostingLink>點此</selfHostingLink>進一步了解自行託管。",
     "haveAccountPrompt": "已有帳號？<signIn>登入</signIn>"
   },
   "accountPage": {
     "loading": "載入中...",
-    "welcomeTitle": "歡迎使用 Vellum",
+    "welcomeTitle": "歡迎使用 Cadet",
     "welcomeSubtitle": "請登入以開始使用。",
     "signIn": "登入",
     "signedInTitle": "歡迎！",
@@ -49,7 +49,7 @@
   },
   "providerCallbackPage": {
     "signupClosedTitle": "目前已暫停註冊",
-    "signupClosedSubtitle": "很抱歉，Vellum 目前不接受新用戶註冊。歡迎稍後再試。",
+    "signupClosedSubtitle": "很抱歉，Cadet 目前不接受新用戶註冊。歡迎稍後再試。",
     "backToSignIn": "返回登入",
     "failedTitle": "驗證失敗",
     "failedSubtitle": "社群登入時發生問題。請再試一次或使用其他方式。",
@@ -79,10 +79,10 @@
   },
   "authErrors": {
     "genericFailure": "發生錯誤。請再試一次。",
-    "signupClosed": "很抱歉，Vellum 目前不接受新用戶註冊。歡迎稍後再試。",
-    "providerSignup": "該登入尚未連結 Vellum 帳號。請先註冊，然後登入。",
+    "signupClosed": "很抱歉，Cadet 目前不接受新用戶註冊。歡迎稍後再試。",
+    "providerSignup": "該登入尚未連結 Cadet 帳號。請先註冊，然後登入。",
     "loginIncomplete": "您的帳號需要額外步驟才能完成登入。請在網頁上登入，然後再試一次。",
-    "desktopUpdateRequired": "此版本的 Vellum 桌面應用程式無法登入。請更新應用程式，然後再試一次。",
+    "desktopUpdateRequired": "此版本的 Cadet 桌面應用程式無法登入。請更新應用程式，然後再試一次。",
     "loopbackStateMismatch": "登入失敗：狀態不符。請再試一次。",
     "loopbackNoToken": "登入失敗：未收到工作階段權杖。請再試一次。",
     "loopbackInvalidToken": "登入失敗：工作階段權杖無效。"

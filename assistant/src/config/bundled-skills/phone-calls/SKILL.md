@@ -4,7 +4,7 @@ description: "Make outgoing phone calls, receive incoming calls, and pull up pas
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "📞"
-  vellum:
+  cadet:
     display-name: "Phone Calls"
     category: "voice"
     includes:

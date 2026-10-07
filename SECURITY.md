@@ -5,7 +5,6 @@
 If you discover a security vulnerability in Cadet, please report it responsibly. **Do not open a public GitHub issue.**
 
 Email **support@mycadet.ai** with:
-
 - A description of the vulnerability
 - Steps to reproduce
 - The potential impact
@@ -16,7 +15,6 @@ We will acknowledge receipt within 48 hours and aim to provide a resolution time
 ## Scope
 
 This policy covers the code in this repository, including:
-
 - The assistant runtime (`assistant/`)
 - The gateway (`gateway/`)
 - The CLI (`cli/`)

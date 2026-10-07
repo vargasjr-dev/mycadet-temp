@@ -16,7 +16,7 @@ const meta: Meta<typeof SttLanguagePicker> = {
   component: SttLanguagePicker,
   args: {
     currentCode: "es",
-    configuredProviderId: "vellum",
+    configuredProviderId: "cadet",
     suggestedCode: "ta",
     selecting: false,
   },

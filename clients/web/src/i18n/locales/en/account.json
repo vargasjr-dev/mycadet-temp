@@ -19,12 +19,12 @@
   },
   "signupClosedScreen": {
     "title": "Signups are currently closed",
-    "message": "Sorry, Vellum is not accepting new signups at this time. Feel free to try again later. Alternatively, you can self-host Vellum. Learn more about self-hosting <selfHostingLink>here</selfHostingLink>.",
+    "message": "Sorry, Cadet is not accepting new signups at this time. Feel free to try again later. Alternatively, you can self-host Cadet. Learn more about self-hosting <selfHostingLink>here</selfHostingLink>.",
     "haveAccountPrompt": "Already have an account? <signIn>Sign in</signIn>"
   },
   "accountPage": {
     "loading": "Loading...",
-    "welcomeTitle": "Welcome to Vellum",
+    "welcomeTitle": "Welcome to Cadet",
     "welcomeSubtitle": "Sign in to get started.",
     "signIn": "Sign in",
     "signedInTitle": "Welcome!",
@@ -49,7 +49,7 @@
   },
   "providerCallbackPage": {
     "signupClosedTitle": "Signups are currently closed",
-    "signupClosedSubtitle": "Sorry, Vellum is not accepting new signups at this time. Feel free to try again later.",
+    "signupClosedSubtitle": "Sorry, Cadet is not accepting new signups at this time. Feel free to try again later.",
     "backToSignIn": "Back to sign in",
     "failedTitle": "Authentication failed",
     "failedSubtitle": "Something went wrong during social sign-in. Please try again or use a different method.",
@@ -79,10 +79,10 @@
   },
   "authErrors": {
     "genericFailure": "Something went wrong. Please try again.",
-    "signupClosed": "Sorry, Vellum is not accepting new signups at this time. Feel free to try again later.",
-    "providerSignup": "No Vellum account is linked to that login yet. Sign up first, then sign in.",
+    "signupClosed": "Sorry, Cadet is not accepting new signups at this time. Feel free to try again later.",
+    "providerSignup": "No Cadet account is linked to that login yet. Sign up first, then sign in.",
     "loginIncomplete": "Your account needs another step to finish signing in. Please sign in on the web, then try again.",
-    "desktopUpdateRequired": "This version of the Vellum desktop app can't sign in. Update the app, then try again.",
+    "desktopUpdateRequired": "This version of the Cadet desktop app can't sign in. Update the app, then try again.",
     "loopbackStateMismatch": "Login failed: state mismatch. Please try again.",
     "loopbackNoToken": "Login failed: no session token received. Please try again.",
     "loopbackInvalidToken": "Login failed: invalid session token."

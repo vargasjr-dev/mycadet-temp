@@ -61,7 +61,7 @@ const STT_DAEMON_PROVIDER: Record<
   string,
   { provider: string; credentialService?: string }
 > = {
-  vellum: { provider: "vellum" },
+  cadet: { provider: "cadet" },
   deepgram: { provider: "deepgram", credentialService: "deepgram" },
   openai: { provider: "openai-whisper", credentialService: "openai" },
 };
@@ -73,7 +73,7 @@ const STT_DAEMON_PROVIDER: Record<
  * (e.g. google-gemini/xai) are intentionally absent so we never coerce them.
  */
 const CARD_ID_BY_DAEMON_PROVIDER: Record<string, string> = {
-  vellum: "vellum",
+  cadet: "cadet",
   deepgram: "deepgram",
   "openai-whisper": "openai",
 };
@@ -150,7 +150,7 @@ export function SttProviderForm({
   // `provider` holds the BYOK restore value — the daemon routes it to Cadet,
   // so the form must render it as Cadet too.
   const daemonSttProvider =
-    daemonStt?.mode === "managed" ? "vellum" : daemonStt?.provider;
+    daemonStt?.mode === "managed" ? "cadet" : daemonStt?.provider;
 
   const serverProvider = useMemo(() => {
     const mapped = daemonSttProvider
@@ -296,7 +296,7 @@ export function SttProviderForm({
       // that choice has no daemon mapping, so without it the daemon would stay
       // on Cadet and a refetch would snap the dropdown back.
       const leavingVellum =
-        daemonSttProvider === "vellum" && draftProvider !== "vellum";
+        daemonSttProvider === "cadet" && draftProvider !== "cadet";
       const writeProvider =
         (!!daemon &&
           (draftProvider !== serverProvider || !daemonHasProvider)) ||
@@ -310,11 +310,11 @@ export function SttProviderForm({
               stt: {
                 // The provider is always written as a pair with `mode`, which
                 // keeps the write valid on every daemon version: older schemas
-                // reject provider "vellum" without mode "managed", and a stale
+                // reject provider "cadet" without mode "managed", and a stale
                 // `mode: "managed"` from the legacy toggle would win over a
                 // BYOK choice unless reset.
                 provider: providerValue,
-                mode: providerValue === "vellum" ? "managed" : "your-own",
+                mode: providerValue === "cadet" ? "managed" : "your-own",
               },
             },
           },
@@ -444,9 +444,9 @@ export function SttProviderForm({
         <CredentialsGuide guide={selectedProvider.credentialsGuide} />
       )}
 
-      {draftProvider === "vellum" && (
+      {draftProvider === "cadet" && (
         <p className="text-body-medium-lighter text-[var(--content-tertiary)]">
-          {t("sttProviderForm.vellumTranscription")}
+          {t("sttProviderForm.cadetTranscription")}
         </p>
       )}
 

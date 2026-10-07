@@ -58,7 +58,7 @@
     "redeploySubtitle": "發佈目前版本",
     "share": "分享",
     "shareAndDeploy": "分享並部署",
-    "shareExportSubtitle": "匯出為 .vellum 檔案",
+    "shareExportSubtitle": "匯出為 .cadet 檔案",
     "sharing": "正在分享…"
   },
   "appViewerContainer": {
@@ -185,7 +185,7 @@
       "title": "讓我更方便地和你交談"
     },
     "meet": {
-      "body": "我會留在您的桌面上，即使 Vellum 沒有顯示。"
+      "body": "我會留在您的桌面上，即使 Cadet 沒有顯示。"
     },
     "mute": {
       "body": "點擊麥克風把自己靜音，點擊喇叭把我靜音",
@@ -209,7 +209,7 @@
     },
     "permission": {
       "microphoneAction": "啟用麥克風",
-      "microphoneSettingsHint": "在系統設定中開啟 Vellum 的麥克風開關，然後返回這裡。",
+      "microphoneSettingsHint": "在系統設定中開啟 Cadet 的麥克風開關，然後返回這裡。",
       "microphonePromptHint": "macOS 會請求你允許使用麥克風。",
       "microphoneBody": "允許我使用你的麥克風進行語音對話。",
       "shortcutBody": "允許我在你使用其他 App 時辨識快捷鍵。",
@@ -238,7 +238,7 @@
     "needsCredentialsFor": "需要 {service} 的憑證",
     "needsOkCount": "{count, plural, other {有 # 項需要你的同意}}",
     "notNow": "暫不",
-    "openApp": "開啟 Vellum",
+    "openApp": "開啟 Cadet",
     "pendingBadge": "{count, plural, other {有 # 項需要你的同意}}",
     "previewVoice": "試聽 {voice}",
     "review": "檢視",
@@ -270,9 +270,9 @@
     "offerNowhere": "沒有地方可以放",
     "offerPasteFailed": "無法貼上這些內容",
     "offerQuit": "結束 {app}",
-    "offerUse": "使用 Vellum 的版本",
-    "offerVersion": "Vellum 聽到的是",
-    "openVellum": "開啟 Vellum",
+    "offerUse": "使用 Cadet 的版本",
+    "offerVersion": "Cadet 聽到的是",
+    "openCadet": "開啟 Cadet",
     "share": "共享",
     "sharePicker": "共享來源",
     "showSummary": "顯示摘要",
@@ -369,7 +369,7 @@
     "stopRecording": "停止錄音"
   },
   "discordNudgeBanner": {
-    "ariaLabel": "加入 Vellum Discord 社群",
+    "ariaLabel": "加入 Cadet Discord 社群",
     "ctaLong": "加入 Discord",
     "ctaShort": "加入",
     "subtitleLong": "與團隊交流 - 分享意見回饋、提出功能需求、更快獲得解答",
@@ -462,11 +462,11 @@
     "tryAgain": "再試一次"
   },
   "githubNudgeBanner": {
-    "ariaLabel": "Vellum 在 GitHub 上是開放原始碼",
-    "ctaAriaLabel": "在 GitHub 上為 Vellum 加星",
+    "ariaLabel": "Cadet 在 GitHub 上是開放原始碼",
+    "ctaAriaLabel": "在 GitHub 上為 Cadet 加星",
     "ctaLabel": "為我們加星",
     "subtitle": "在 GitHub 上為我們加星或貢獻",
-    "title": "Vellum 是開放原始碼"
+    "title": "Cadet 是開放原始碼"
   },
   "lazyBoundary": {
     "loadError": "此區段無法載入。請重新載入頁面再試一次。"
@@ -486,13 +486,13 @@
   },
   "nativeAppBanner": {
     "bannerAria": "下載 {appName} 應用程式",
-    "bannerAriaGeneric": "下載 Vellum 行動應用程式",
+    "bannerAriaGeneric": "下載 Cadet 行動應用程式",
     "download": "下載",
     "downloadAppAria": "下載 {appName} 應用程式",
-    "downloadAppAriaGeneric": "下載 Vellum 行動應用程式",
+    "downloadAppAriaGeneric": "下載 Cadet 行動應用程式",
     "subtitle": "推播通知 · 生物辨識登入 · 觸覺回饋",
     "title": "取得 {appName} 應用程式",
-    "titleGeneric": "取得 Vellum 應用程式"
+    "titleGeneric": "取得 Cadet 應用程式"
   },
   "notFound": {
     "backToAssistant": "返回您的助理",
@@ -538,14 +538,14 @@
     "created": "已建立個人資料「{name}」"
   },
   "quickInputPage": {
-    "logoAlt": "Vellum",
-    "placeholder": "詢問 Vellum 任何問題…",
+    "logoAlt": "Cadet",
+    "placeholder": "詢問 Cadet 任何問題…",
     "send": "傳送訊息"
   },
   "removeFromDeviceDialog": {
     "confirm": "移除",
     "messageOrigin": "這不會影響 {assistantName} 或讓您在那裡登出。它只會忘記此裝置上的項目。您可以隨時再次新增。",
-    "messagePaired": "這不會影響 {assistantName} 在其主機上的狀態。它只會忘記此裝置上的配對。您可以隨時使用 vellum connect import 再次配對。",
+    "messagePaired": "這不會影響 {assistantName} 在其主機上的狀態。它只會忘記此裝置上的配對。您可以隨時使用 cadet connect import 再次配對。",
     "messagePlatform": "這不會刪除 {assistantName}。它只會將其從此裝置移除。登入後它將再次可用。",
     "title": "從此裝置移除？"
   },
@@ -744,7 +744,7 @@
     "saveSuccess": "語音轉文字設定已儲存",
     "spokenLanguage": "口說語言",
     "spokenLanguageApplies": "從您下次語音輸入開始生效。",
-    "vellumTranscription": "轉錄會透過您的 Vellum 帳戶執行。",
+    "cadetTranscription": "轉錄會透過您的 Cadet 帳戶執行。",
     "windowsNativeDisplayName": "Windows 原生聽寫",
     "windowsNativeSetupWarning": "需要為您的 Windows 顯示語言啟用基本語音辨識：開啟「設定」>「時間與語言」>「語言與區域」，選取顯示語言旁邊的三個點，選擇「語言選項」，然後在「語言功能」下下載「基本語音辨識」。",
     "windowsNativeSubtitle": "Windows 裝置上的語音辨識，透過 Windows 輔助程式在本機執行。可離線運作且不需要 API 金鑰。"
@@ -869,7 +869,7 @@
     "available": "有可用的更新。正在開始下載…",
     "closeAriaLabel": "關閉",
     "downloading": "正在下載更新…",
-    "ready": "Vellum {version} 已備妥。",
+    "ready": "Cadet {version} 已備妥。",
     "restartToInstall": "重新啟動以安裝",
     "versionFallback": "更新"
   },
@@ -984,7 +984,7 @@
     "setupRequiredTitle": "此網域尚未在電子郵件提供者完成佈建。在完成設定前，它無法傳送或接收電子郵件。"
   },
   "managedServicesBanner": {
-    "body": "受管服務按用量計費，並從您的 Vellum 帳戶餘額中扣除。<link>檢視定價</link>"
+    "body": "受管服務按用量計費，並從您的 Cadet 帳戶餘額中扣除。<link>檢視定價</link>"
   },
   "serviceCard": {
     "managedLabel": "受管",

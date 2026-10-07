@@ -87,11 +87,12 @@ export interface SearchProviderCatalogEntry {
 }
 
 export const SEARCH_PROVIDER_CATALOG: readonly SearchProviderCatalogEntry[] = [
-  // vellum leads: it is the managed option, selected like any other provider.
+  // cadet leads: it is the managed option, selected like any other provider.
+  // Legacy configs carrying the pre-rebrand id `vellum` normalize on parse.
   {
-    id: "vellum",
-    displayName: "Vellum",
-    displayNameLong: "Vellum Managed Search",
+    id: "cadet",
+    displayName: "Cadet",
+    displayNameLong: "Cadet Managed Search",
     kind: "managed",
   },
   {

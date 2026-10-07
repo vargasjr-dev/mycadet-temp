@@ -1,7 +1,7 @@
 ---
 name: oura-setup
 description: Connect an Oura Ring via OAuth2 — app registration, token exchange, and credential storage
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "💍"
   cadet:

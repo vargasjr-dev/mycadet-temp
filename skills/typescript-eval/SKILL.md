@@ -1,7 +1,7 @@
 ---
 name: typescript-eval
 description: Test TypeScript code snippets before persisting as skills
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🧪"
   cadet:

@@ -61,21 +61,22 @@ bun run typecheck
 
 ## Project Structure
 
-| Directory              | What it is                                                                                  |
-| ---------------------- | ------------------------------------------------------------------------------------------- |
-| `assistant/`           | Core assistant runtime — memory, tools, skills, scheduling, integrations                    |
-| `gateway/`             | Public ingress — webhooks, API routes, OAuth callbacks                                      |
-| `cli/`                 | The `cadet` CLI                                                                             |
-| `clients/`             | End-user app surfaces (web, iOS, macOS/Electron) and the public docs site (`clients/docs/`) |
-| `credential-executor/` | Isolated credential execution service                                                       |
-| `packages/`            | Shared internal packages                                                                    |
-| `skills/`              | Skill definitions                                                                           |
+| Directory | What it is |
+|---|---|
+| `assistant/` | Core assistant runtime — memory, tools, skills, scheduling, integrations |
+| `gateway/` | Public ingress — webhooks, API routes, OAuth callbacks |
+| `cli/` | The `cadet` CLI |
+| `clients/` | End-user app surfaces (web, iOS, macOS/Electron) and the public docs site (`clients/docs/`) |
+| `credential-executor/` | Isolated credential execution service |
+| `packages/` | Shared internal packages |
+| `skills/` | Skill definitions |
+
 
 ## Personalizing Your Assistant vs. Changing the Core
 
 Before opening a PR, ask: **does this belong in everyone's assistant, or just mine?**
 
-A lot of "new feature" ideas are really _personal customization_: for example, a morning briefing, a recurring cleanup, a custom routine, or stitching existing capabilities together. These belong in **your assistant's own workspace**, not in the shared runtime. You don't need to fork the repo or wait for a review to get them, just ask your assistant to build it for you!
+A lot of "new feature" ideas are really *personal customization*: for example, a morning briefing, a recurring cleanup, a custom routine, or stitching existing capabilities together. These belong in **your assistant's own workspace**, not in the shared runtime. You don't need to fork the repo or wait for a review to get them, just ask your assistant to build it for you!
 
 ### When a Core Change Is the Right Call
 

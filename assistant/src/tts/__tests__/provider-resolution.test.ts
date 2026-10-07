@@ -90,8 +90,8 @@ describe("managed TTS provider resolution", () => {
     >[0];
 
   test("resolves the cadet provider", () => {
-    const config = configWith({ provider: "vellum", providers: {} });
-    expect(resolveTtsConfig(config).provider).toBe("vellum");
+    const config = configWith({ provider: "cadet", providers: {} });
+    expect(resolveTtsConfig(config).provider).toBe("cadet");
   });
 
   test("resolves a BYOK provider", () => {

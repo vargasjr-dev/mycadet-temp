@@ -117,7 +117,7 @@ export async function evaluateTelephonyTtsPlayability(
   // needs the platform assistant identity, or synthesis fails before any
   // request is made — with allowNativeFallback false, that would mean
   // silent call failures instead of a BYOK fallback.
-  if (entry.id === "vellum") {
+  if (entry.id === "cadet") {
     const { managedSpeechAvailable } =
       await import("../platform/managed-speech.js");
     if (!(await managedSpeechAvailable())) {

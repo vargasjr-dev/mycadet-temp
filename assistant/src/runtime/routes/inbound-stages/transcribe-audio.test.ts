@@ -206,7 +206,7 @@ describe("tryTranscribeAudioAttachments", () => {
     const managedMessage =
       "Managed speech needs a working Cadet platform connection — reconnect with 'assistant platform connect'.";
     mockTranscriber = {
-      providerId: "vellum",
+      providerId: "cadet",
       boundaryId: "daemon-batch",
       transcribe: async () => {
         // Managed adapters flag their SttError userFacing so the friendly
@@ -231,7 +231,7 @@ describe("tryTranscribeAudioAttachments", () => {
     const creditsMessage =
       "Cadet credits are exhausted — add funds to your Cadet account to continue using managed transcription.";
     mockTranscriber = {
-      providerId: "vellum",
+      providerId: "cadet",
       boundaryId: "daemon-batch",
       transcribe: async () => {
         throw new SttError("provider-error", creditsMessage, {

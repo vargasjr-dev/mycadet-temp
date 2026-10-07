@@ -71,7 +71,7 @@ describe("SttServiceSchema", () => {
     // infer one from an absent key. Omitting the param entirely is not a
     // neutral state on Deepgram and the managed relay: it decodes as
     // English, which is what this default exists to stop.
-    const parsed = SttServiceSchema.parse({ provider: "vellum" });
+    const parsed = SttServiceSchema.parse({ provider: "cadet" });
     expect(parsed.language).toBe("multi");
   });
 
@@ -86,8 +86,7 @@ describe("SttServiceSchema", () => {
 
   test("language round-trips a code and the multi code-switching mode", () => {
     expect(
-      SttServiceSchema.parse({ provider: "vellum", language: "multi" })
-        .language,
+      SttServiceSchema.parse({ provider: "cadet", language: "multi" }).language,
     ).toBe("multi");
     expect(
       SttServiceSchema.parse({ provider: "deepgram", language: "hi" }).language,
@@ -96,19 +95,19 @@ describe("SttServiceSchema", () => {
 
   test("language is trimmed and rejects blank strings", () => {
     expect(
-      SttServiceSchema.parse({ provider: "vellum", language: "  multi  " })
+      SttServiceSchema.parse({ provider: "cadet", language: "  multi  " })
         .language,
     ).toBe("multi");
     expect(() =>
-      SttServiceSchema.parse({ provider: "vellum", language: "   " }),
+      SttServiceSchema.parse({ provider: "cadet", language: "   " }),
     ).toThrow(/must not be empty/);
   });
 });
 
 describe("managed provider", () => {
   test("accepts cadet as an ordinary provider choice", () => {
-    const parsed = SttServiceSchema.parse({ provider: "vellum" });
-    expect(parsed.provider).toBe("vellum");
+    const parsed = SttServiceSchema.parse({ provider: "cadet" });
+    expect(parsed.provider).toBe("cadet");
   });
 
   // Migration 130 folds mode into provider; a stale key must not resurrect
@@ -116,10 +115,10 @@ describe("managed provider", () => {
   test("ignores a legacy mode key", () => {
     const parsed = SttServiceSchema.parse({
       mode: "managed",
-      provider: "vellum",
+      provider: "cadet",
     });
     expect(parsed).toEqual({
-      provider: "vellum",
+      provider: "cadet",
       language: "multi",
       providers: {},
       roles: {},

@@ -20,10 +20,11 @@ export const VALID_INFERENCE_PROVIDERS = [
   "openrouter",
 ] as const;
 
-// `vellum` generates through the platform runtime proxy; the backend
+// `cadet` generates through the platform runtime proxy; the backend
 // (gemini/openai) derives from the selected model's prefix at request time.
+// Legacy configs carrying the pre-rebrand id `vellum` are normalized on parse.
 const VALID_IMAGE_GEN_PROVIDERS = [
-  "vellum",
+  "cadet",
   "gemini",
   "openai",
   "openrouter",
@@ -59,20 +60,25 @@ const BaseServiceSchema = z.object({
 const InferenceServiceSchema = z.object({});
 
 /**
- * Image generation carries no `mode`: `provider` is the only axis. `"vellum"`
+ * Image generation carries no `mode`: `provider` is the only axis. `"cadet"`
  * generates through the platform runtime proxy for the model-appropriate
- * backend, billed to Vellum credits; `"gemini"`/`"openai"`/`"openrouter"`
+ * backend, billed to Cadet credits; `"gemini"`/`"openai"`/`"openrouter"`
  * use the user's key. A `mode` key sent by an older client is stripped at
  * parse.
  */
 const ImageGenerationServiceSchema = z.object({
-  provider: z.enum(VALID_IMAGE_GEN_PROVIDERS).default("gemini"),
+  provider: z
+    .preprocess(
+      (v) => (v === "vellum" ? "cadet" : v),
+      z.enum(VALID_IMAGE_GEN_PROVIDERS),
+    )
+    .default("gemini"),
   model: z.string().default(DEFAULT_IMAGE_MODEL),
 });
 
 /**
- * Web-search carries no `mode`: `provider` is the only axis. `"vellum"`
- * searches through the Vellum platform search proxy, billed to Vellum
+ * Web-search carries no `mode`: `provider` is the only axis. `"cadet"`
+ * searches through the Cadet platform search proxy, billed to Cadet
  * credits; `"inference-provider-native"` prefers the inference model's own
  * hosted search, falling back to the user's keys and then the platform
  * proxy; any other provider uses the user's own API key. A `mode` key sent
@@ -80,7 +86,10 @@ const ImageGenerationServiceSchema = z.object({
  */
 const WebSearchServiceSchema = z.object({
   provider: z
-    .enum(VALID_WEB_SEARCH_PROVIDERS)
+    .preprocess(
+      (v) => (v === "vellum" ? "cadet" : v),
+      z.enum(VALID_WEB_SEARCH_PROVIDERS),
+    )
     .default("inference-provider-native"),
   // Origin for providers that support a custom API base (e.g. fastCRW,
   // SearXNG, TinyFish). Empty / omitted uses the provider's cloud default

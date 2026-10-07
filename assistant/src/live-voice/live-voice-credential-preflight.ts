@@ -143,7 +143,7 @@ async function resolveSttGap(
         reason: sttCredentialGapReason(entry.credentialProvider),
       },
       clause:
-        entry.credentialProvider === "vellum"
+        entry.credentialProvider === "cadet"
           ? `a Vellum platform connection for managed speech (run 'assistant platform connect')`
           : `an API key for the speech-to-text provider "${entry.id}"`,
     };
@@ -201,7 +201,7 @@ async function resolveTtsGap(
   // availability (API key + assistant ID) is the credential, so the
   // stored-secret loop below would pass half-connected states that
   // synthesis rejects.
-  if (entry.id === "vellum") {
+  if (entry.id === "cadet") {
     if (!(await managedSpeechAvailable())) {
       return {
         gap: {

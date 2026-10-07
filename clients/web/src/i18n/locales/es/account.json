@@ -19,12 +19,12 @@
   },
   "signupClosedScreen": {
     "title": "Los registros están cerrados por ahora",
-    "message": "Lo sentimos, Vellum no acepta nuevos registros en este momento. Vuelve a intentarlo más tarde. Como alternativa, puedes alojar Vellum por tu cuenta. Más información sobre el autoalojamiento <selfHostingLink>aquí</selfHostingLink>.",
+    "message": "Lo sentimos, Cadet no acepta nuevos registros en este momento. Vuelve a intentarlo más tarde. Como alternativa, puedes alojar Cadet por tu cuenta. Más información sobre el autoalojamiento <selfHostingLink>aquí</selfHostingLink>.",
     "haveAccountPrompt": "¿Ya tienes una cuenta? <signIn>Inicia sesión</signIn>"
   },
   "accountPage": {
     "loading": "Cargando...",
-    "welcomeTitle": "Te damos la bienvenida a Vellum",
+    "welcomeTitle": "Te damos la bienvenida a Cadet",
     "welcomeSubtitle": "Inicia sesión para empezar.",
     "signIn": "Iniciar sesión",
     "signedInTitle": "¡Hola!",
@@ -49,7 +49,7 @@
   },
   "providerCallbackPage": {
     "signupClosedTitle": "Los registros están cerrados por ahora",
-    "signupClosedSubtitle": "Lo sentimos, Vellum no acepta nuevos registros en este momento. Vuelve a intentarlo más tarde.",
+    "signupClosedSubtitle": "Lo sentimos, Cadet no acepta nuevos registros en este momento. Vuelve a intentarlo más tarde.",
     "backToSignIn": "Volver al inicio de sesión",
     "failedTitle": "No se pudo autenticar",
     "failedSubtitle": "Algo ha ido mal durante el inicio de sesión con redes sociales. Inténtalo de nuevo o usa otro método.",
@@ -79,10 +79,10 @@
   },
   "authErrors": {
     "genericFailure": "Algo ha ido mal. Inténtalo de nuevo.",
-    "signupClosed": "Lo sentimos, Vellum no acepta nuevos registros en este momento. Vuelve a intentarlo más tarde.",
-    "providerSignup": "Todavía no hay ninguna cuenta de Vellum vinculada a ese inicio de sesión. Regístrate primero y luego inicia sesión.",
+    "signupClosed": "Lo sentimos, Cadet no acepta nuevos registros en este momento. Vuelve a intentarlo más tarde.",
+    "providerSignup": "Todavía no hay ninguna cuenta de Cadet vinculada a ese inicio de sesión. Regístrate primero y luego inicia sesión.",
     "loginIncomplete": "Tu cuenta necesita un paso más para terminar de iniciar sesión. Inicia sesión en la web y vuelve a intentarlo.",
-    "desktopUpdateRequired": "Esta versión de la aplicación de escritorio de Vellum no puede iniciar sesión. Actualiza la aplicación y vuelve a intentarlo.",
+    "desktopUpdateRequired": "Esta versión de la aplicación de escritorio de Cadet no puede iniciar sesión. Actualiza la aplicación y vuelve a intentarlo.",
     "loopbackStateMismatch": "No se pudo iniciar sesión: el estado no coincide. Inténtalo de nuevo.",
     "loopbackNoToken": "No se pudo iniciar sesión: no se recibió ningún token de sesión. Inténtalo de nuevo.",
     "loopbackInvalidToken": "No se pudo iniciar sesión: el token de sesión no es válido."

@@ -4,7 +4,7 @@ description: Generate memes from 170+ classic templates using the free Memegen.l
 compatibility: "Requires curl and python3. Works on macOS and Linux."
 metadata:
   emoji: "🐸"
-  author: vellum-ai
+  author: vargasjr-dev
   version: "0.1"
   cadet:
     category: "content"

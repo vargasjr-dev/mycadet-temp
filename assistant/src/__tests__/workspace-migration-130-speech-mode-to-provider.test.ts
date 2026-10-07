@@ -88,8 +88,8 @@ describe("130-speech-mode-to-provider", () => {
     speechModeToProviderMigration.run(workspaceDir);
 
     const svc = services(readConfig());
-    expect(svc.stt).toEqual({ provider: "vellum", providers: {} });
-    expect(svc.tts).toEqual({ provider: "vellum" });
+    expect(svc.stt).toEqual({ provider: "cadet", providers: {} });
+    expect(svc.tts).toEqual({ provider: "cadet" });
   });
 
   test("keeps the BYOK provider and drops mode for your-own", () => {
@@ -107,14 +107,14 @@ describe("130-speech-mode-to-provider", () => {
     expect(svc.tts).toEqual({ provider: "fish-audio" });
   });
 
-  // The pre-migration schema allowed provider "vellum" alongside mode
+  // The pre-migration schema allowed provider "cadet" alongside mode
   // "managed"; that pair must survive rather than double-rewrite.
   test("preserves an already-vellum managed service", () => {
-    writeConfig({ services: { stt: { mode: "managed", provider: "vellum" } } });
+    writeConfig({ services: { stt: { mode: "managed", provider: "cadet" } } });
 
     speechModeToProviderMigration.run(workspaceDir);
 
-    expect(services(readConfig()).stt).toEqual({ provider: "vellum" });
+    expect(services(readConfig()).stt).toEqual({ provider: "cadet" });
   });
 
   test("is idempotent", () => {
@@ -159,15 +159,15 @@ describe("130-speech-mode-to-provider", () => {
     speechModeToProviderMigration.run(workspaceDir);
     const parsed = AssistantConfigSchema.parse(readConfig());
 
-    expect(parsed.services.stt.provider).toBe("vellum");
-    expect(parsed.services.tts.provider).toBe("vellum");
+    expect(parsed.services.stt.provider).toBe("cadet");
+    expect(parsed.services.tts.provider).toBe("cadet");
   });
 
   describe("down", () => {
     test("restores mode from the provider", () => {
       writeConfig({
         services: {
-          stt: { provider: "vellum" },
+          stt: { provider: "cadet" },
           tts: { provider: "elevenlabs" },
         },
       });
@@ -175,7 +175,7 @@ describe("130-speech-mode-to-provider", () => {
       speechModeToProviderMigration.down(workspaceDir);
 
       const svc = services(readConfig());
-      expect(svc.stt).toEqual({ mode: "managed", provider: "vellum" });
+      expect(svc.stt).toEqual({ mode: "managed", provider: "cadet" });
       expect(svc.tts).toEqual({ mode: "your-own", provider: "elevenlabs" });
     });
 

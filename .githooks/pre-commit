@@ -232,6 +232,10 @@ declare -a SAFE_LINE_PATTERNS=(
     # hint made of letters and spaces, then the closing quote) so a real secret
     # appended after the bullets is never prefix-matched as safe.
     "['\"][a-zA-Z0-9_]+['\"][[:space:]]*:[[:space:]]*['\"]•+([[:space:]]*\([a-zA-Z][a-zA-Z[:space:]]*\))?['\"]"
+    # Provider-catalog credential-key references — `secretKey: "perplexity"`
+    # names the credential-service key for a BYOK provider row. The value is
+    # always a short kebab-case slug (a lookup label, never a credential).
+    "['\"]?secret[_]?[Kk]ey['\"]?[[:space:]]*:[[:space:]]*['\"][a-z][a-z0-9-]{1,40}['\"]"
     # OAuth managed-service config key — always a `<provider>-oauth` slug that
     # crosses the 16-char threshold for some providers (e.g. salesforce-oauth).
     # The value is a routing identifier, not a credential.

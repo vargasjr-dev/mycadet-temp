@@ -14,17 +14,11 @@ export interface RemoteProcess {
   command: string;
 }
 
-const CADET_PROCESS_MARKER = /cadet|qdrant|openclaw/;
+const CADET_PROCESS_MARKER = /cadet|qdrant/;
 
 export function classifyProcess(command: string): string {
   if (/qdrant/.test(command)) return "qdrant";
   if (/cadet-gateway/.test(command)) return "gateway";
-  if (
-    /cadet-openclaw-adapter|openclaw-runtime-server|openclaw-http-server/.test(
-      command,
-    )
-  )
-    return "openclaw-adapter";
   if (/cadet-daemon|[\\/]daemon[\\/]main/.test(command)) return "assistant";
   if (/daemon\s+(start|restart)/.test(command)) return "assistant";
   if (/(?:cadet)-cli|[\\/](?:cadet)(?:-cli)?\.exe/.test(command))

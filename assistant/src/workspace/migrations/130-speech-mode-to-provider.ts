@@ -8,8 +8,8 @@ import type { WorkspaceMigration } from "./types.js";
  *
  * Managed speech used to be a second axis: `mode: "managed"` routed to Vellum
  * while `provider` held the untouched BYOK choice. Provider is now the only
- * axis, with `"vellum"` meaning managed, so a managed service must be rewritten
- * to `provider: "vellum"` before the new schema reads it — otherwise the
+ * axis, with `"cadet"` meaning managed, so a managed service must be rewritten
+ * to `provider: "cadet"` before the new schema reads it — otherwise the
  * lingering BYOK provider would be taken at face value and a managed user would
  * silently fall back to a provider they have no key for.
  *
@@ -18,7 +18,7 @@ import type { WorkspaceMigration } from "./types.js";
 export const speechModeToProviderMigration: WorkspaceMigration = {
   id: "130-speech-mode-to-provider",
   description:
-    "Fold services.stt/tts mode into provider (managed -> provider: vellum)",
+    "Fold services.stt/tts mode into provider (managed -> provider: cadet)",
   run(workspaceDir: string): void {
     const configPath = join(workspaceDir, "config.json");
     if (!existsSync(configPath)) {
@@ -49,7 +49,8 @@ export const speechModeToProviderMigration: WorkspaceMigration = {
       }
 
       if (service.mode === "managed") {
-        service.provider = "vellum";
+        // Canonical managed id; legacy "vellum" configs normalize on parse.
+        service.provider = "cadet";
       }
       delete service.mode;
       changed = true;
@@ -92,7 +93,10 @@ export const speechModeToProviderMigration: WorkspaceMigration = {
       // "managed", so the managed pair round-trips exactly. What a managed
       // service had chosen for BYOK before is not recoverable — it was
       // overwritten on the way up.
-      service.mode = service.provider === "vellum" ? "managed" : "your-own";
+      service.mode =
+        service.provider === "cadet" || service.provider === "vellum"
+          ? "managed"
+          : "your-own";
       changed = true;
     }
 

@@ -2,11 +2,11 @@
  * Managed-speech defaulting.
  *
  * When the platform connection is usable and a speech service has no working
- * BYOK credential, that service's effective provider is `"vellum"` so a fresh
- * Vellum connection gets voice features with zero configuration. A service
- * whose BYOK credential is configured is never redirected — connecting Vellum
+ * BYOK credential, that service's effective provider is `"cadet"` so a fresh
+ * Cadet connection gets voice features with zero configuration. A service
+ * whose BYOK credential is configured is never redirected — connecting Cadet
  * must not silently reroute an existing voice setup — and a service already on
- * Vellum is left alone.
+ * Cadet is left alone.
  *
  * {@link resolveEffectiveSpeechProviders} is the single definition of that
  * rule. It writes nothing, so runtime paths that only need to know which
@@ -91,13 +91,13 @@ function managedStandInFor(
   language: string | undefined,
 ): SttProviderId {
   if (!supportsProviderTurnDetection(configured)) {
-    return "vellum";
+    return "cadet";
   }
   // Flux has a model for ten languages. Outside them the relay rejects the
   // dial outright, so standing in with it would hand the speaker a mic that
   // does not work at all rather than one that detects turns less well. The
   // language is the one the resolver will actually send.
-  return fluxModelForLanguage(language) === null ? "vellum" : "vellum-flux";
+  return fluxModelForLanguage(language) === null ? "cadet" : "cadet-flux";
 }
 
 /** The speech providers a runtime path uses, after managed-speech defaulting. */
@@ -140,9 +140,9 @@ export async function resolveEffectiveSpeechProviders(
       : configuredStt;
 
   const tts =
-    configuredTts !== "vellum" &&
+    configuredTts !== "cadet" &&
     !(await ttsByokCredentialsResolve(configuredTts))
-      ? "vellum"
+      ? "cadet"
       : configuredTts;
 
   return {
@@ -155,14 +155,14 @@ export async function resolveEffectiveSpeechProviders(
  * Managed live voice runs Flux.
  *
  * Turn detection is the reason to reach for Flux at all, and managed users
- * cannot ask for it: the provider picker offers no model family, so `vellum`
+ * cannot ask for it: the provider picker offers no model family, so `cadet`
  * is as specific as they can be. Deciding it here rather than persisting a
  * `services.stt.roles.liveVoice` entry keeps managed opinionated without
  * writing config on anyone's behalf, and reaches installs already on `vellum`
  * that a substitution rule never sees.
  *
  * Two things still win over it. A family the user named is honoured, because
- * `services.stt.providers.vellum.model` accepts `nova-3` and quietly ignoring
+ * `services.stt.providers.cadet.model` accepts `nova-3` and quietly ignoring
  * a valid setting is the silent substitution roles exist to prevent. And a
  * language outside Flux's roster stays on nova-3, since the relay refuses the
  * dial rather than degrading (see `managedStandInFor`).
@@ -175,19 +175,19 @@ function managedLiveVoiceModelFamily(
   role: SttRole | undefined,
   stt: AssistantConfig["services"]["stt"],
 ): SttProviderId {
-  if (role !== "liveVoice" || resolved !== "vellum") {
+  if (role !== "liveVoice" || resolved !== "cadet") {
     return resolved;
   }
   if (sttSelectionForRole(stt, role).model !== undefined) {
     return resolved;
   }
-  return fluxModelForLanguage(stt.language) === null ? "vellum" : "vellum-flux";
+  return fluxModelForLanguage(stt.language) === null ? "cadet" : "cadet-flux";
 }
 
 /**
  * Whether a provider can serve every consumer, or only the one that chose it.
  *
- * `vellum` covers every boundary, so substituting it is safe everywhere. A
+ * `cadet` covers every boundary, so substituting it is safe everywhere. A
  * narrowing row like `vellum-flux` streams and nothing else, and the roles it
  * fails are exactly the consumers that must not be moved onto it.
  */

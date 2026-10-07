@@ -4,7 +4,7 @@
  * The migration revises the onboarding bullets in `memory/threads.md` (seeded
  * by 069, retightened by 091) only for newly-created workspaces
  * (`ctx.isNewWorkspace === true`): it drops the personality-authoring bullet and
- * retargets the avatar bullet at the vellum-avatar skill. It is a no-op on
+ * retargets the avatar bullet at the cadet-avatar skill. It is a no-op on
  * upgrade, when the known bullets are absent, and when the file is missing. It
  * must be idempotent and compose with 069 and 091.
  */
@@ -43,7 +43,7 @@ const PERSONALITY_SNIPPET = "Figure out what kind of personality";
 const OLD_AVATAR_BULLET =
   "- Work with your user to set a custom avatar for yourself. This task is done once data/avatar/avatar-image.png exists.";
 const NEW_AVATAR_SNIPPET =
-  "custom AI generated avatar for yourself using the `vellum-avatar` skill";
+  "custom AI generated avatar for yourself using the `cadet-avatar` skill";
 
 let workspaceDir: string;
 
@@ -88,7 +88,7 @@ describe("120-revise-onboarding-threads migration", () => {
     const content = readThreads();
     // The personality-authoring bullet is gone.
     expect(content).not.toContain(PERSONALITY_SNIPPET);
-    // The avatar bullet is retargeted at the vellum-avatar skill.
+    // The avatar bullet is retargeted at the cadet-avatar skill.
     expect(content).not.toContain(OLD_AVATAR_BULLET);
     expect(content).toContain(NEW_AVATAR_SNIPPET);
     // The other two onboarding bullets are preserved verbatim.

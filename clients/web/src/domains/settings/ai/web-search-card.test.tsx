@@ -78,12 +78,12 @@ mock.module("@/hooks/use-is-org-ready", () => ({
 
 // Version gate for `provider: "vellum"` — supported by default; the
 // old-daemon test flips it off.
-let daemonSupportsVellumProvider = true;
+let daemonSupportsCadetProvider = true;
 mock.module(
-  "@/lib/backwards-compat/use-supports-web-search-vellum-provider",
+  "@/lib/backwards-compat/use-supports-web-search-cadet-provider",
   () => ({
-    MIN_VERSION: "0.10.12",
-    supportsWebSearchVellumProvider: () => daemonSupportsVellumProvider,
+    MIN_VERSION: "0.13.0",
+    supportsWebSearchCadetProvider: () => daemonSupportsCadetProvider,
   }),
 );
 mock.module("@/lib/backwards-compat/utils", () => ({
@@ -139,7 +139,7 @@ describe("WebSearchCard — provider-only configuration", () => {
     configPatchCalls.length = 0;
     provisionedKeys.length = 0;
     hasStoredCredential = false;
-    daemonSupportsVellumProvider = true;
+    daemonSupportsCadetProvider = true;
     daemonConfigData = { services: {} };
   });
 
@@ -196,11 +196,11 @@ describe("WebSearchCard — provider-only configuration", () => {
     // still couples provider "vellum" to mode "managed".
     expect(configPatchCalls[0]!.body).toMatchObject({
       services: {
-        "web-search": { provider: "vellum", mode: "managed" },
+        "web-search": { provider: "cadet", mode: "managed" },
       },
     });
     expect(provisionedKeys).toHaveLength(0);
-    expect(localStorage.getItem(LS_WEB_SEARCH_PROVIDER)).toBe("vellum");
+    expect(localStorage.getItem(LS_WEB_SEARCH_PROVIDER)).toBe("cadet");
   });
 
   test("Provider Native needs no key and saves with mode your-own", async () => {
@@ -352,7 +352,7 @@ describe("WebSearchCard — provider-only configuration", () => {
     // selection must degrade to the legacy Managed representation — mode
     // only, letting the deep-merge keep the stored provider so the read
     // bridge renders the pair as Cadet again.
-    daemonSupportsVellumProvider = false;
+    daemonSupportsCadetProvider = false;
     renderCard();
 
     fireEvent.click(providerTrigger());

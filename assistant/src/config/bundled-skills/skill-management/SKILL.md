@@ -3,7 +3,7 @@ name: skill-management
 description: Create, edit, and delete custom managed skills in the user's workspace. Use whenever the user wants to author a new skill from a description, scaffold a SKILL.md, or remove a skill they no longer need.
 metadata:
   emoji: "\U0001F9E9"
-  vellum:
+  cadet:
     display-name: "Skill Management"
     category: "system"
     activation-hints:
@@ -58,7 +58,7 @@ description: Build anything visual — apps, landing pages, dashboards, trackers
 
 ```yaml
 metadata:
-  vellum:
+  cadet:
     activation-hints:
       - "build me an app"
       - "make a dashboard"

@@ -378,7 +378,7 @@
     "deviceInUse": "另一个应用程序正在使用相机。",
     "noDevice": "未找到相机。",
     "notDelivered": "正在重新连接。请重新拍摄。",
-    "permissionDenied": "Vellum 未获得相机访问权限。",
+    "permissionDenied": "Cadet 未获得相机访问权限。",
     "refused": "您的助手目前无法接收照片。",
     "storeFailed": "无法将该照片添加到对话中。",
     "unknown": "无法打开相机。",
@@ -467,7 +467,7 @@
     "assistantSender": "助手",
     "closeAria": "关闭渠道线程",
     "closeTooltip": "关闭",
-    "emptyNoMessageDetail": "{channel} 不会向 Vellum 发送此视图所需的每条消息详细信息，因此此处没有可列出的内容。请在 {channel} 中打开对话以阅读完整内容。",
+    "emptyNoMessageDetail": "{channel} 不会向 Cadet 发送此视图所需的每条消息详细信息，因此此处没有可列出的内容。请在 {channel} 中打开对话以阅读完整内容。",
     "emptyThread": "此对话中尚无 {channel} 消息。",
     "namedTitle": "{channel} · {thread}",
     "noText": "无文本内容",
@@ -475,11 +475,11 @@
     "reactionAdded": "使用 {emoji} 表情回应",
     "reactionRemoved": "移除了 {emoji} 表情回应",
     "readOnly": "只读",
-    "readOnlyNote": "这是 {channel} 中的对话现状。Vellum 的编辑器是您唯一可以写入的地方。",
-    "reference": "在 Vellum 中引用",
-    "referenceAria": "在 Vellum 中引用此 {channel} 消息",
+    "readOnlyNote": "这是 {channel} 中的对话现状。Cadet 的编辑器是您唯一可以写入的地方。",
+    "reference": "在 Cadet 中引用",
+    "referenceAria": "在 Cadet 中引用此 {channel} 消息",
     "referenced": "已引用",
-    "removeReferenceAria": "从 Vellum 编辑器中移除此引用",
+    "removeReferenceAria": "从 Cadet 编辑器中移除此引用",
     "title": "{channel} 线程",
     "unknownSender": "未知发件人"
   },
@@ -615,7 +615,7 @@
     "hintAlmostDone": "即将完成…",
     "hintCleaning": "正在清理您的助手…",
     "hintWrapping": "正在收尾…",
-    "timeoutBody": "尝试运行 Vellum Doctor 以诊断问题，或<communityLink>向社区寻求帮助</communityLink>。",
+    "timeoutBody": "尝试运行 Cadet Doctor 以诊断问题，或<communityLink>向社区寻求帮助</communityLink>。",
     "timeoutTitle": "清理时间超出预期",
     "title": "正在清理您的助手…",
     "warningAria": "警告"
@@ -772,7 +772,7 @@
   "conversationAssetActions": {
     "delete": "删除",
     "downloadPdf": "下载PDF",
-    "exportAsVellum": "导出为.vellum文件",
+    "exportAsCadet": "导出为.cadet文件",
     "open": "打开",
     "optionsFor": "{name}的选项",
     "pin": "置顶",
@@ -813,7 +813,7 @@
     "credits": "积分"
   },
   "creditsUpsellCard": {
-    "loginToAddCredits": "登录Vellum平台以添加积分。"
+    "loginToAddCredits": "登录Cadet平台以添加积分。"
   },
   "csvPreview": {
     "emptyFile": "此文件为空",
@@ -824,7 +824,7 @@
     "skipConfirmTitle": "跳过今日积分限制？",
     "skipError": "无法跳过今日限制。请重试。",
     "skipForToday": "今日跳过",
-    "subtitle": "Vellum积分消费已暂停，直到您的限制在{resetPhrase}重置。",
+    "subtitle": "Cadet积分消费已暂停，直到您的限制在{resetPhrase}重置。",
     "title": "已达到每日积分限制"
   },
   "deleteConversationConfirmDialog": {
@@ -1128,7 +1128,7 @@
   },
   "maintenanceModeBanner": {
     "body": "您的助手工作区当前已连接到调试终端。在恢复模式下，聊天不可用。",
-    "loginHint": "登录 Vellum 平台以退出恢复模式。",
+    "loginHint": "登录 Cadet 平台以退出恢复模式。",
     "resume": "恢复助手",
     "title": "助手处于恢复模式"
   },
@@ -1969,7 +1969,7 @@
     "commandFailed": "无法运行该命令。请重试。",
     "doctorUnavailable": "此助手上无法使用医生功能。"
   },
-  "vellumFileActionModal": {
+  "cadetFileActionModal": {
     "downloadFile": "下载文件",
     "goToFile": "前往文件"
   },
@@ -2170,11 +2170,11 @@
   "restoreManagedCredentialButton": {
     "restore": "恢复访问",
     "restoring": "正在恢复...",
-    "restored": "已恢复。由 Vellum 托管的模型重新可用。",
+    "restored": "已恢复。由 Cadet 托管的模型重新可用。",
     "failedNoAssistant": "请选择一个助手，然后重试。",
     "failedCannotActHere": "此应用无法为该助手恢复凭据。请在运行该助手的电脑上打开它。",
-    "failedReplacementRejected": "Vellum 拒绝了新的凭据。请登录 Vellum 平台后重试。",
-    "failedUnconfirmed": "新凭据已保存，但无法与 Vellum 确认。它可能很快就会生效。",
+    "failedReplacementRejected": "Cadet 拒绝了新的凭据。请登录 Cadet 平台后重试。",
+    "failedUnconfirmed": "新凭据已保存，但无法与 Cadet 确认。它可能很快就会生效。",
     "failedGeneric": "无法恢复访问。请稍后重试。"
   },
   "assistantSection": {

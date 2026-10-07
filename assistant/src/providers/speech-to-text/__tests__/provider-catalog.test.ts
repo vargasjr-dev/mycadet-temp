@@ -177,7 +177,7 @@ describe("STT provider catalog", () => {
 
   const expectedLanguageSelection = [
     ["deepgram", "manual"],
-    ["vellum", "manual"],
+    ["cadet", "manual"],
     ["xai", "manual"],
     // Flux takes no language parameter: its model is monolingual English.
     ["deepgram-flux", "auto"],
@@ -253,7 +253,7 @@ describe("STT provider catalog", () => {
 
 describe("connection-based providers", () => {
   test("cadet is excluded from the API-key credential provider list", () => {
-    expect(listCredentialProviderNames()).not.toContain("vellum");
+    expect(listCredentialProviderNames()).not.toContain("cadet");
   });
 
   test("API-key providers remain listed", () => {
@@ -268,12 +268,12 @@ describe("model families", () => {
   test("flux rows are variants, not separately selectable providers", () => {
     // The whole point of folding these back: a model choice must not cost a
     // provider enum entry and a picker row.
-    for (const id of ["deepgram-flux", "vellum-flux"] as const) {
+    for (const id of ["deepgram-flux", "cadet-flux"] as const) {
       expect(getProviderEntry(id)?.variantOf).toBeDefined();
       expect(listSelectableProviderIds()).not.toContain(id);
     }
     expect(listSelectableProviderIds()).toEqual(
-      expect.arrayContaining(["deepgram", "vellum"]),
+      expect.arrayContaining(["deepgram", "cadet"]),
     );
   });
 
@@ -286,10 +286,10 @@ describe("model families", () => {
     ).toBe("deepgram-flux");
     expect(
       resolveSttCatalogKey({
-        provider: "vellum",
-        providers: { vellum: { model: "flux" } },
+        provider: "cadet",
+        providers: { cadet: { model: "flux" } },
       }),
-    ).toBe("vellum-flux");
+    ).toBe("cadet-flux");
   });
 
   test("no model, or one the provider does not offer, resolves to the base row", () => {
@@ -314,7 +314,7 @@ describe("model families", () => {
     expect(
       resolveSttCatalogKey({
         provider: "deepgram",
-        providers: { vellum: { model: "flux" } },
+        providers: { cadet: { model: "flux" } },
       }),
     ).toBe("deepgram");
   });
@@ -322,18 +322,18 @@ describe("model families", () => {
   test("names the base family so a stale variant model can be overwritten", () => {
     // Substituting away from a variant has to write something: leaving the
     // old model behind resolves straight back to the variant on next load.
-    expect(baseModelFamilyFor("vellum")).toBe("nova-3");
+    expect(baseModelFamilyFor("cadet")).toBe("nova-3");
     expect(baseModelFamilyFor("deepgram")).toBe("nova-3");
     // Nothing to write, and no variant that could have left a stale value.
     expect(baseModelFamilyFor("openai-whisper")).toBeUndefined();
-    expect(baseModelFamilyFor("vellum-flux")).toBeUndefined();
+    expect(baseModelFamilyFor("cadet-flux")).toBeUndefined();
   });
 
   test("round-trips a resolved key back to the config that selects it", () => {
     // Anything persisting a resolved provider needs this: the key itself is
     // not a valid services.stt.provider value.
-    expect(sttConfigForCatalogKey("vellum-flux")).toEqual({
-      provider: "vellum",
+    expect(sttConfigForCatalogKey("cadet-flux")).toEqual({
+      provider: "cadet",
       model: "flux",
     });
     expect(sttConfigForCatalogKey("deepgram")).toEqual({
@@ -350,30 +350,30 @@ describe("model families", () => {
 
 describe("vellum-flux (managed Flux)", () => {
   test("shares the cadet connection rather than a second credential", () => {
-    expect(getProviderEntry("vellum-flux")?.credentialProvider).toBe("vellum");
-    expect(listCredentialProviderNames()).not.toContain("vellum-flux");
+    expect(getProviderEntry("cadet-flux")?.credentialProvider).toBe("vellum");
+    expect(listCredentialProviderNames()).not.toContain("cadet-flux");
   });
 
   test("is streaming-only, like the BYOK Flux entry", () => {
-    expect(supportsBoundary("vellum-flux", "daemon-streaming")).toBe(true);
-    expect(supportsBoundary("vellum-flux", "daemon-batch")).toBe(false);
+    expect(supportsBoundary("cadet-flux", "daemon-streaming")).toBe(true);
+    expect(supportsBoundary("cadet-flux", "daemon-batch")).toBe(false);
   });
 
   test("decides end-of-turn itself, unlike plain cadet", () => {
     // The relay is dialed with contract=flux, so Flux's turn events survive.
-    expect(supportsProviderTurnDetection("vellum-flux")).toBe(true);
-    expect(supportsProviderTurnDetection("vellum")).toBe(false);
+    expect(supportsProviderTurnDetection("cadet-flux")).toBe(true);
+    expect(supportsProviderTurnDetection("cadet")).toBe(false);
   });
 
   test("stays off telephony", () => {
     // The relay maps Finalize onto CloseStream and utterance-boundary finals
     // are a nova-3 concept, so calls stay on `cadet`.
-    expect(getProviderEntry("vellum-flux")?.telephonyMode).toBe("none");
+    expect(getProviderEntry("cadet-flux")?.telephonyMode).toBe("none");
   });
 
   test("exposes a language picker, unlike BYOK Flux", () => {
     // The relay picks flux-general-en or flux-general-multi from the language
     // it is sent, so the selection is meaningful here.
-    expect(getProviderEntry("vellum-flux")?.languageSelection).toBe("manual");
+    expect(getProviderEntry("cadet-flux")?.languageSelection).toBe("manual");
   });
 });

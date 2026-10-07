@@ -147,9 +147,9 @@
   },
   "emailChannelSection": {
     "apiKeyConfigured": "API-ключ {providerName} настроен. Повторная настройка: запуск навыка <code>{setupSkill}</code>.",
-    "connecting": "Подключение к платформе Vellum…",
+    "connecting": "Подключение к платформе Cadet…",
     "openProvider": "Открыть {providerName}",
-    "platformLoginNotice": "Вход на платформу Vellum для управления настройками почты.",
+    "platformLoginNotice": "Вход на платформу Cadet для управления настройками почты.",
     "providerLabel": "Провайдер",
     "saveSuccessToast": "Настройки почты сохранены.",
     "setupInstructions": "Настройка {providerName} через CLI ассистента: запрос ассистенту запустить навык <code>{setupSkill}</code>. Он поможет сохранить API-ключ, определить домен и (по желанию) подключить входящий webhook.",

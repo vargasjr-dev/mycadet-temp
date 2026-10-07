@@ -459,7 +459,7 @@ export async function run(
   const wantsManagedSpeech =
     (setting === "stt_provider" &&
       isManagedSttProvider(validation.coerced as SttProviderId)) ||
-    (setting === "tts_provider" && validation.coerced === "vellum");
+    (setting === "tts_provider" && validation.coerced === "cadet");
   if (wantsManagedSpeech && !(await managedSpeechAvailable())) {
     return {
       content:
@@ -602,7 +602,7 @@ export async function run(
       ? ` Note: the configured STT provider (${activeSttProviderId}) auto-detects the spoken language natively and ignores this setting.`
       : "";
   const pickerNote =
-    setting === "tts_voice_id" && activeTtsProviderId === "vellum"
+    setting === "tts_voice_id" && activeTtsProviderId === "cadet"
       ? ` ${MANAGED_VOICE_PICKER_HINT}`
       : "";
   return {

@@ -1,7 +1,7 @@
 ---
 name: guardian-verify-setup
 description: Set up channel verification for phone, Telegram, Slack, Discord, or email channels via outbound verification flow
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🔐"
   cadet:

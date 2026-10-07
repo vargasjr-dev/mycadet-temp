@@ -4,7 +4,7 @@ description: Set up, authenticate, and run external coding agents (Claude Code, 
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🔗"
-  vellum:
+  cadet:
     display-name: "ACP"
     category: "development"
     activation-hints:

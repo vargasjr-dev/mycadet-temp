@@ -147,9 +147,9 @@
   },
   "emailChannelSection": {
     "apiKeyConfigured": "Clave API de {providerName} configurada. Para reconfigurar, ejecuta la habilidad <code>{setupSkill}</code>.",
-    "connecting": "Conectando con la plataforma Vellum…",
+    "connecting": "Conectando con la plataforma Cadet…",
     "openProvider": "Abrir {providerName}",
-    "platformLoginNotice": "Inicia sesión en la plataforma Vellum para administrar la configuración de correo.",
+    "platformLoginNotice": "Inicia sesión en la plataforma Cadet para administrar la configuración de correo.",
     "providerLabel": "Proveedor",
     "saveSuccessToast": "Configuración de correo guardada.",
     "setupInstructions": "Configura {providerName} mediante la CLI del asistente: pídele al asistente que ejecute la habilidad <code>{setupSkill}</code>. Te guiará para guardar la clave API, detectar el dominio y (opcionalmente) configurar un webhook entrante.",

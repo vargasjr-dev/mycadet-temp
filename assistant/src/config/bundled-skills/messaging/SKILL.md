@@ -4,7 +4,7 @@ description: Read, search, send, and manage messages across Gmail, Outlook, Tele
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "\U0001F4AC"
-  vellum:
+  cadet:
     display-name: "Messaging"
     category: "messaging"
     activation-hints:
@@ -42,7 +42,7 @@ Before using any messaging tool, verify that the platform is connected by callin
 
 ### Public Ingress (required for Telegram)
 
-Telegram setup requires webhook routing, but it does **not** always require ngrok. Before suggesting public ingress for Telegram, check managed callback availability with `assistant platform status --json`. If that reports `available: true` with a non-empty `assistantId`, use the platform callback route flow and do not prompt for ngrok; this applies to managed pods and platform-connected local assistants alike, so do not require `isPlatform: true`. Only use the **public-ingress** skill for local assistants that genuinely need a public gateway URL. Slack uses Socket Mode and does not require public ingress. Gmail/Outlook on the desktop app uses a loopback callback and does not require public ingress; the channel path (Path B in the vellum-oauth-integrations skill) handles public ingress internally when needed.
+Telegram setup requires webhook routing, but it does **not** always require ngrok. Before suggesting public ingress for Telegram, check managed callback availability with `assistant platform status --json`. If that reports `available: true` with a non-empty `assistantId`, use the platform callback route flow and do not prompt for ngrok; this applies to managed pods and platform-connected local assistants alike, so do not require `isPlatform: true`. Only use the **public-ingress** skill for local assistants that genuinely need a public gateway URL. Slack uses Socket Mode and does not require public ingress. Gmail/Outlook on the desktop app uses a loopback callback and does not require public ingress; the channel path (Path B in the cadet-oauth-integrations skill) handles public ingress internally when needed.
 
 ### Email Connection Flow
 
@@ -55,12 +55,12 @@ When the user asks to "connect my email", "set up email", "manage my email", or 
 ### Gmail
 
 1. **Check the connection.** Run `assistant oauth status google`. If a connection exists, the user is ready to go — proceed with their request.
-2. **If no connections are found, render the connect button in one step:** call `ui_show` with `surface_type: "oauth_connect"` and `data.providerKey: "google"`. That surface is always available — do **not** run `assistant channels`, `oauth providers get`, or load `vellum-oauth-integrations` just to display the button, and do **not** fall back to `assistant oauth connect`. Only load `vellum-oauth-integrations` when the managed-vs-your-own-credentials decision genuinely needs handling (e.g. a BYOK setup where the managed connect surface isn't available).
+2. **If no connections are found, render the connect button in one step:** call `ui_show` with `surface_type: "oauth_connect"` and `data.providerKey: "google"`. That surface is always available — do **not** run `assistant channels`, `oauth providers get`, or load `cadet-oauth-integrations` just to display the button, and do **not** fall back to `assistant oauth connect`. Only load `cadet-oauth-integrations` when the managed-vs-your-own-credentials decision genuinely needs handling (e.g. a BYOK setup where the managed connect surface isn't available).
 
 ### Outlook
 
 1. **Check the connection.** Run `assistant oauth status outlook`. If a connection exists, the user is ready to go — proceed with their request.
-2. **If no connections are found, render the connect button in one step:** call `ui_show` with `surface_type: "oauth_connect"` and `data.providerKey: "outlook"`. The same rules as Gmail apply — don't probe further or load a setup skill just to show the button; only load `vellum-oauth-integrations` when a managed-vs-your-own-credentials decision genuinely needs handling.
+2. **If no connections are found, render the connect button in one step:** call `ui_show` with `surface_type: "oauth_connect"` and `data.providerKey: "outlook"`. The same rules as Gmail apply — don't probe further or load a setup skill just to show the button; only load `cadet-oauth-integrations` when a managed-vs-your-own-credentials decision genuinely needs handling.
 
 ### Slack
 
@@ -91,7 +91,7 @@ The guardian-verify-setup skill handles the full outbound verification flow for 
 When a messaging tool fails with a token or authorization error:
 
 1. **Try to reconnect silently.** Run `assistant oauth ping <provider>`. This often resolves expired tokens automatically.
-2. **If reconnection fails, go straight to setup.** Don't present options, ask which route the user prefers, or explain what went wrong technically. Just tell the user briefly (e.g., "Gmail needs to be reconnected - let me set that up") and immediately load **vellum-oauth-integrations**. The user came to you to get something done, not to troubleshoot OAuth - make it seamless.
+2. **If reconnection fails, go straight to setup.** Don't present options, ask which route the user prefers, or explain what went wrong technically. Just tell the user briefly (e.g., "Gmail needs to be reconnected - let me set that up") and immediately load **cadet-oauth-integrations**. The user came to you to get something done, not to troubleshoot OAuth - make it seamless.
 3. **Never try alternative approaches.** Don't use bash, curl, browser automation, or any workaround. If the messaging tools can't do it, the reconnection flow is the answer.
 4. **Never expose error details.** The user doesn't need to see error messages about tokens, OAuth, or API failures. Translate errors into plain language.
 

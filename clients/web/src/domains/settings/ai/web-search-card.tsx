@@ -44,7 +44,7 @@ import {
   credentialPresenceQueryKey,
   useStoredCredentialPresence,
 } from "@/domains/settings/ai/use-stored-credential-presence";
-import { supportsWebSearchVellumProvider } from "@/lib/backwards-compat/use-supports-web-search-vellum-provider";
+import { supportsWebSearchCadetProvider } from "@/lib/backwards-compat/use-supports-web-search-cadet-provider";
 import { whenAssistantVersionKnown } from "@/lib/backwards-compat/utils";
 
 export function WebSearchCard() {
@@ -90,7 +90,7 @@ export function WebSearchCard() {
     const daemonProvider =
       wsService?.mode === "managed" &&
       wsService?.provider !== "inference-provider-native"
-        ? "vellum"
+        ? "cadet"
         : wsService?.provider;
     return (
       daemonProvider ||
@@ -180,9 +180,9 @@ export function WebSearchCard() {
         mode: "managed" | "your-own";
         apiBase?: string;
       } =
-        webSearchProvider === "vellum"
-          ? supportsWebSearchVellumProvider()
-            ? { provider: "vellum", mode: "managed" }
+        webSearchProvider === "cadet"
+          ? supportsWebSearchCadetProvider()
+            ? { provider: "cadet", mode: "managed" }
             : { mode: "managed" }
           : {
               provider: webSearchProvider,
@@ -275,9 +275,9 @@ export function WebSearchCard() {
           />
         </div>
 
-        {webSearchProvider === "vellum" && (
+        {webSearchProvider === "cadet" && (
           <p className="text-body-medium-lighter text-[var(--content-tertiary)]">
-            {t("webSearchCard.vellumNote")}
+            {t("webSearchCard.cadetNote")}
           </p>
         )}
 

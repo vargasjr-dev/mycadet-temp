@@ -144,7 +144,7 @@ class FailingTranscriber implements StreamingTranscriber {
  * mirroring the managed relay's mapped dial rejection.
  */
 class ManagedFailingTranscriber implements StreamingTranscriber {
-  readonly providerId = "vellum" as const;
+  readonly providerId = "cadet" as const;
   readonly boundaryId = "daemon-streaming" as const;
 
   constructor(private readonly message: string) {}
@@ -357,7 +357,7 @@ describe("SttStreamSession", () => {
     });
 
     test("managed start failure surfaces its remediation verbatim", async () => {
-      const { ws, session } = createSession("vellum");
+      const { ws, session } = createSession("cadet");
       const managedMessage =
         "Managed speech needs a working Cadet platform connection — reconnect with 'assistant platform connect'.";
 

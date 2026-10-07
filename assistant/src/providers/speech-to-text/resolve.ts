@@ -21,6 +21,20 @@ import {
 
 const log = getLogger("stt-resolver");
 
+/**
+ * Legacy pre-rebrand managed provider ids, mapped to their canonical catalog
+ * ids so configs and call sites persisted before the rename keep resolving.
+ */
+function canonicalSttProviderId(id: SttProviderId): SttProviderId {
+  if (id === ("vellum" as SttProviderId)) {
+    return "cadet";
+  }
+  if (id === ("vellum-flux" as SttProviderId)) {
+    return "cadet-flux";
+  }
+  return id;
+}
+
 // ---------------------------------------------------------------------------
 // Default spoken language
 // ---------------------------------------------------------------------------
@@ -37,11 +51,11 @@ const log = getLogger("stt-resolver");
  */
 const MULTILINGUAL_DEFAULT_PROVIDERS: ReadonlySet<SttProviderId> = new Set([
   "deepgram",
-  "vellum",
+  "cadet",
   // Managed Flux resolves an absent language to `flux-general-en` relay-side,
   // so unset is an English pin here too. With "multi" the relay selects
   // `flux-general-multi` and lets Flux detect and code-switch.
-  "vellum-flux",
+  "cadet-flux",
 ] as SttProviderId[]);
 
 /**
@@ -134,7 +148,9 @@ export async function resolveBatchTranscriber(
   // Snapshot the stt config once, before any await, so a concurrent config
   // change cannot pair one setting's old value with another's new value.
   const stt = getConfig().services.stt;
-  const provider = sttCatalogKeyForRole(stt, options.role);
+  const provider = canonicalSttProviderId(
+    sttCatalogKeyForRole(stt, options.role),
+  );
   logRoleSelection(options.role, provider, resolveSttCatalogKey(stt));
   const language = effectiveSttLanguage(
     provider as SttProviderId,
@@ -156,13 +172,13 @@ export async function resolveBatchTranscriber(
     throw new SttError("provider-error", reason, { userFacing: true });
   }
 
-  if (provider === "vellum") {
+  if (provider === "cadet") {
     // Managed batch rides the platform's speech proxy, which forwards the
     // language to Deepgram server-side. A platform build predating that
     // field ignores it rather than failing, so the daemon can send one
     // before the platform side deploys.
     return (await sttProviderKeyResolves("vellum"))
-      ? createDaemonBatchTranscriber(null, "vellum", language)
+      ? createDaemonBatchTranscriber(null, "cadet", language)
       : null;
   }
 
@@ -454,8 +470,9 @@ export async function resolveStreamingTranscriber(
   // change cannot pair one setting's old value with another's new value
   // (e.g. the old provider with the new language).
   const stt = getConfig().services.stt;
-  const provider =
-    options.providerId ?? sttCatalogKeyForRole(stt, options.role);
+  const provider = canonicalSttProviderId(
+    options.providerId ?? sttCatalogKeyForRole(stt, options.role),
+  );
   if (options.providerId === undefined) {
     logRoleSelection(options.role, provider, resolveSttCatalogKey(stt));
   }
@@ -656,7 +673,7 @@ async function createStreamingTranscriber(
         ...(options.diarize ? { diarize: true } : {}),
       });
     }
-    case "vellum": {
+    case "cadet": {
       // Managed speech dials the GATEWAY's speech relay (tunnel contact is
       // gateway-only); the apiKey argument is unused. Diarization is
       // unsupported (not in the relay's param allowlist) and silently
@@ -693,8 +710,8 @@ async function createStreamingTranscriber(
           : {}),
       });
     }
-    case "vellum-flux": {
-      // Managed Flux: same relay as `vellum`, but the STT v2 endpoint with
+    case "cadet-flux": {
+      // Managed Flux: same relay as `cadet`, but the STT v2 endpoint with
       // `contract=flux` so the turn events arrive intact instead of being
       // translated into the released v1 Deepgram dialect. Gated on the local
       // platform connection for the same reason as `vellum` above.
@@ -782,8 +799,13 @@ async function createStreamingTranscriber(
  * entering an API key.
  */
 export function sttCredentialGapReason(credentialProviderName: string): string {
-  if (credentialProviderName === "vellum") {
-    return "No Vellum platform connection for managed speech — run 'assistant platform connect'";
+  // Called with either the catalog id ("cadet") or its credential-service
+  // key ("vellum", the persisted identity family) — both mean managed speech.
+  if (
+    credentialProviderName === "cadet" ||
+    credentialProviderName === "vellum"
+  ) {
+    return "No Cadet platform connection for managed speech — run 'assistant platform connect'";
   }
   return `No API key configured for credential provider "${credentialProviderName}"`;
 }

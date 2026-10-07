@@ -267,9 +267,9 @@ export const TtsXaiProviderConfigSchema = z
 export type TtsXaiProviderConfig = z.infer<typeof TtsXaiProviderConfigSchema>;
 
 /**
- * Vellum managed provider configuration under `services.tts.providers`.
+ * Cadet managed provider configuration under `services.tts.providers`.
  */
-const TtsVellumProviderConfigSchema = z
+const TtsCadetProviderConfigSchema = z
   .object({
     model: z
       .string()
@@ -278,20 +278,20 @@ const TtsVellumProviderConfigSchema = z
         "Managed TTS voice model (e.g. aura-2-thalia-en). Unset means the platform's default voice. The platform rejects voices it does not offer.",
       ),
     languageVoices: languageVoicesSchema(
-      "vellum",
+      "cadet",
       "values are managed TTS voice models (e.g. aura-2-thalia-en) and must " +
         "be voices offered by the platform rate card: an unpriced model is " +
         "rejected by the relay (missing_price), the same contract as " +
-        "services.tts.providers.vellum.model.",
+        "services.tts.providers.cadet.model.",
     ),
   })
-  .describe("Vellum managed provider configuration under services.tts");
+  .describe("Cadet managed provider configuration under services.tts");
 
-export type TtsVellumProviderConfig = z.infer<
-  typeof TtsVellumProviderConfigSchema
+export type TtsCadetProviderConfig = z.infer<
+  typeof TtsCadetProviderConfigSchema
 >;
 
-const TtsProvidersSchema = z.object({
+const TtsProvidersObjectSchema = z.object({
   elevenlabs: TtsElevenLabsProviderConfigSchema.default(
     TtsElevenLabsProviderConfigSchema.parse({}),
   ),
@@ -302,11 +302,26 @@ const TtsProvidersSchema = z.object({
     TtsDeepgramProviderConfigSchema.parse({}),
   ),
   xai: TtsXaiProviderConfigSchema.default(TtsXaiProviderConfigSchema.parse({})),
-  vellum: TtsVellumProviderConfigSchema.default(
-    TtsVellumProviderConfigSchema.parse({}),
+  cadet: TtsCadetProviderConfigSchema.default(
+    TtsCadetProviderConfigSchema.parse({}),
   ),
 });
-export type TtsProviders = z.infer<typeof TtsProvidersSchema>;
+const TtsProvidersSchema = z.preprocess((raw) => {
+  // Legacy provider key from before the rebrand: normalize
+  // `providers.vellum` to `providers.cadet` so existing configs keep
+  // round-tripping under the canonical id.
+  if (
+    raw != null &&
+    typeof raw === "object" &&
+    "vellum" in (raw as Record<string, unknown>) &&
+    !("cadet" in (raw as Record<string, unknown>))
+  ) {
+    const { vellum, ...rest } = raw as Record<string, unknown>;
+    return { ...rest, cadet: vellum };
+  }
+  return raw;
+}, TtsProvidersObjectSchema);
+export type TtsProviders = z.infer<typeof TtsProvidersObjectSchema>;
 
 // ---------------------------------------------------------------------------
 // Catalog-completeness guard
@@ -316,7 +331,7 @@ export type TtsProviders = z.infer<typeof TtsProvidersSchema>;
 // schema entry, this fires at module-load time so the oversight is caught
 // immediately rather than at runtime when a user selects the provider.
 // ---------------------------------------------------------------------------
-const schemaKeys = new Set(Object.keys(TtsProvidersSchema.shape));
+const schemaKeys = new Set(Object.keys(TtsProvidersObjectSchema.shape));
 for (const id of TTS_PROVIDER_IDS) {
   if (!schemaKeys.has(id)) {
     throw new Error(
@@ -339,15 +354,18 @@ for (const id of schemaKeys) {
 /**
  * Canonical TTS service configuration.
  *
- * `provider` is the only axis: `"vellum"` synthesizes through the platform,
+ * `provider` is the only axis: `"cadet"` synthesizes through the platform,
  * billed to Vellum credits; any other provider uses the user's own API key.
  */
 export const TtsServiceSchema = z
   .object({
     provider: z
-      .enum(TTS_PROVIDER_IDS, {
-        error: `services.tts.provider must be one of: ${TTS_PROVIDER_IDS.join(", ")}`,
-      })
+      .preprocess(
+        (v) => (v === "vellum" ? "cadet" : v),
+        z.enum(TTS_PROVIDER_IDS, {
+          error: `services.tts.provider must be one of: ${TTS_PROVIDER_IDS.join(", ")}`,
+        }),
+      )
       .default("elevenlabs")
       .describe("Active TTS provider used for speech synthesis"),
     providers: TtsProvidersSchema.default(TtsProvidersSchema.parse({})),

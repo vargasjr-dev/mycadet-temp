@@ -94,12 +94,12 @@ export function VellumFileActionModal({
           {target.workspacePath ? (
             <Button variant="outlined" onClick={onGoToFile}>
               <ExternalLink aria-hidden className="h-4 w-4" />
-              {t("vellumFileActionModal.goToFile")}
+              {t("cadetFileActionModal.goToFile")}
             </Button>
           ) : null}
           <Button variant="primary" onClick={onDownload}>
             <ArrowDownToLine aria-hidden className="h-4 w-4" />
-            {t("vellumFileActionModal.downloadFile")}
+            {t("cadetFileActionModal.downloadFile")}
           </Button>
         </Modal.Footer>
       </Modal.Content>

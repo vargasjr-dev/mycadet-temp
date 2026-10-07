@@ -9,11 +9,11 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🛒",
-        "vellum": {
+        "cadet": {
           "category": "commerce",
           "display-name": "Amazon",
           "includes": [
-            "vellum-browser-use"
+            "cadet-browser-use"
           ]
         }
       },
@@ -27,7 +27,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🗺️",
-        "vellum": {
+        "cadet": {
           "category": "development",
           "display-name": "API Mapping"
         }
@@ -41,7 +41,7 @@
       "description": "Migrate from ChatGPT, Claude, OpenClaw, Hermes, Manus, and other AI assistants into Vellum by inspecting their data exports, conversation archives, files, prompts, custom instructions, memory, saved memories, tools, GPTs, workflows, integrations, and relationships, then mapping as much as safely possible into Vellum primitives. Handles single-source and multi-source migrations with a unified, deduplicated inventory.",
       "metadata": {
         "emoji": "🧳",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "Assistant Migration",
           "includes": [
@@ -69,7 +69,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "📄",
-        "vellum": {
+        "cadet": {
           "category": "integrations",
           "display-name": "Chat with Complex Documents",
           "user-invocable": "true",
@@ -92,7 +92,7 @@
       "description": "Import conversation history from ChatGPT into Vellum",
       "metadata": {
         "emoji": "📥",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "ChatGPT Import"
         }
@@ -106,7 +106,7 @@
       "description": "Discover which CLI tools are installed, their versions, and authentication status",
       "metadata": {
         "emoji": "🔍",
-        "vellum": {
+        "cadet": {
           "category": "development",
           "display-name": "CLI Discovery"
         }
@@ -120,7 +120,7 @@
       "description": "Offer the user several spin-off conversations as clickable buttons on a single persistent card. Each click spawns a fresh seeded conversation in the sidebar; the user keeps their place in the current conversation. Use when you want to branch into N focused threads (research directions, draft choices, pending replies, triage of N items) without losing the current context. Not for single-destination pivots — just reply inline.",
       "metadata": {
         "emoji": "🧭",
-        "vellum": {
+        "cadet": {
           "category": "productivity",
           "display-name": "Conversation Launcher"
         }
@@ -134,7 +134,7 @@
       "description": "Proactive daily briefing that fires on a recurring schedule, pulls recent memory and workspace context, composes a structured summary (action items, progress, radar, next steps), and delivers it to all active channels. Enable with a time like \"set up my daily briefing at 9am\". Disable, reschedule, or check status at any time.",
       "metadata": {
         "emoji": "📋",
-        "vellum": {
+        "cadet": {
           "category": "productivity",
           "display-name": "Daily Briefing"
         }
@@ -149,7 +149,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🎤",
-        "vellum": {
+        "cadet": {
           "category": "voice",
           "display-name": "Deepgram Voice"
         }
@@ -163,7 +163,7 @@
       "description": "Build and deploy a full-stack app (React frontend + Python/FastAPI backend) or a Vellum app to Vercel as a serverless demo with seeded data",
       "metadata": {
         "emoji": "🚀",
-        "vellum": {
+        "cadet": {
           "category": "development",
           "display-name": "Deploy Fullstack to Vercel"
         }
@@ -178,7 +178,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🎮",
-        "vellum": {
+        "cadet": {
           "category": "messaging",
           "display-name": "Discord App Setup"
         }
@@ -193,7 +193,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🍕",
-        "vellum": {
+        "cadet": {
           "category": "commerce",
           "display-name": "DoorDash"
         }
@@ -208,7 +208,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🗣️",
-        "vellum": {
+        "cadet": {
           "category": "voice",
           "display-name": "ElevenLabs Voice"
         }
@@ -222,7 +222,7 @@
       "description": "Set up this assistant's own `[name].vellum.me` domain and email address (one-time setup)",
       "metadata": {
         "emoji": "📧",
-        "vellum": {
+        "cadet": {
           "category": "email",
           "display-name": "Email Setup"
         }
@@ -236,7 +236,7 @@
       "description": "Generate expressive audio clips using Fish Audio S2 TTS with bracket emotion tags. Record voice memos, narration, audio messages, or any spoken content.",
       "metadata": {
         "emoji": "🎙️",
-        "vellum": {
+        "cadet": {
           "category": "voice",
           "display-name": "Fish Audio TTS"
         }
@@ -251,7 +251,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🎨",
-        "vellum": {
+        "cadet": {
           "category": "development",
           "display-name": "Frontend Design",
           "activation-hints": [
@@ -273,7 +273,7 @@
       "description": "Runs a one-command technical GEO audit on any domain. Checks AI crawler access, llms.txt presence, server-side rendering, sitemap, and schema markup. Streams results live and ends with a 0–100 score plus the top 3 prioritized fixes. Built to be both genuinely useful and great to demo on camera.",
       "metadata": {
         "emoji": "🔎",
-        "vellum": {
+        "cadet": {
           "display-name": "GEO Audit",
           "category": "development",
           "activation-hints": [
@@ -297,7 +297,7 @@
       "description": "Generates GEO/AEO-optimized articles designed to get AI engines (ChatGPT, Perplexity, Claude, Gemini) to cite your brand. Handles research, writing, and file output. Suggests listicle or head-to-head as starting formats if the user is unsure.",
       "metadata": {
         "emoji": "✍️",
-        "vellum": {
+        "cadet": {
           "category": "content",
           "display-name": "GEO Article Writer",
           "activation-hints": [
@@ -316,7 +316,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "📨",
-        "vellum": {
+        "cadet": {
           "category": "email",
           "display-name": "Gmail",
           "user-invocable": "true"
@@ -331,7 +331,7 @@
       "description": "Beta. Act on new Gmail as it arrives: get pinged only for urgent mail, digest newsletters, forward invoices — any standing instruction, across one or several accounts.",
       "metadata": {
         "emoji": "📬",
-        "vellum": {
+        "cadet": {
           "category": "email",
           "display-name": "Gmail Triggers (Beta)",
           "includes": [
@@ -358,7 +358,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "📅",
-        "vellum": {
+        "cadet": {
           "category": "calendar",
           "display-name": "Google Calendar",
           "user-invocable": "true",
@@ -378,7 +378,7 @@
       "description": "Set up channel verification for phone, Telegram, Slack, Discord, or email channels via outbound verification flow",
       "metadata": {
         "emoji": "🔐",
-        "vellum": {
+        "cadet": {
           "category": "integrations",
           "display-name": "Guardian Verify Setup",
           "activation-hints": [
@@ -400,7 +400,7 @@
       "description": "Reference guide for running Claude Code in third-party headless, container, and CI environments. Covers auth strategies, interactive mode pitfalls, tmux orchestration, root user workarounds, and git auth without SSH agents or keychains",
       "metadata": {
         "emoji": "🖥️",
-        "vellum": {
+        "cadet": {
           "category": "development",
           "display-name": "Headless Claude Code",
           "avoid-when": [
@@ -418,7 +418,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "📭",
-        "vellum": {
+        "cadet": {
           "category": "email",
           "display-name": "Inbox Cleanup",
           "includes": [
@@ -445,7 +445,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "📬",
-        "vellum": {
+        "cadet": {
           "category": "email",
           "display-name": "Inbox Management",
           "includes": [
@@ -474,11 +474,11 @@
       "description": "Research influencers on Instagram, TikTok, and X/Twitter through your browser",
       "metadata": {
         "emoji": "🔍",
-        "vellum": {
+        "cadet": {
           "category": "browsing",
           "display-name": "Influencer Research",
           "includes": [
-            "vellum-browser-use"
+            "cadet-browser-use"
           ]
         }
       },
@@ -492,7 +492,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🔷",
-        "vellum": {
+        "cadet": {
           "category": "development",
           "display-name": "Linear App Setup",
           "user-invocable": "true"
@@ -507,7 +507,7 @@
       "description": "Analyze and reduce LLM spend: read usage breakdowns by call site, model, and inference profile, understand single-winner profile resolution, and pin call sites to managed profiles (Balanced / Quality / Budget / Fast) only where they should deviate from shipped defaults.",
       "metadata": {
         "emoji": "💸",
-        "vellum": {
+        "cadet": {
           "category": "development",
           "display-name": "LLM Cost Optimizer"
         }
@@ -520,7 +520,7 @@
       "description": "Set up a new LLM provider connection, discover valid model ids, create and validate a model profile — securely and end-to-end via CLI. Covers managed vs BYO keys, secure credential collection, model discovery, profile creation, and live verification.",
       "metadata": {
         "emoji": "🔌",
-        "vellum": {
+        "cadet": {
           "category": "development",
           "display-name": "LLM Provider Setup"
         }
@@ -534,7 +534,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🍎",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "macOS Automation",
           "platforms": [
@@ -558,7 +558,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "📬",
-        "vellum": {
+        "cadet": {
           "category": "email",
           "display-name": "Mailgun Email Setup",
           "user-invocable": "true"
@@ -573,7 +573,7 @@
       "description": "Add, authenticate, list, and remove MCP (Model Context Protocol) servers — connect any external tool or service that publishes an MCP endpoint to the assistant",
       "metadata": {
         "emoji": "🔌",
-        "vellum": {
+        "cadet": {
           "category": "integrations",
           "display-name": "MCP Setup"
         }
@@ -587,9 +587,9 @@
       "description": "Generate memes from 170+ classic templates using the free Memegen.link API. Search templates, generate captioned images, and download them for posting. No API key required.",
       "metadata": {
         "emoji": "🐸",
-        "author": "vellum-ai",
+        "author": "vargasjr-dev",
         "version": "0.1",
-        "vellum": {
+        "cadet": {
           "category": "content",
           "display-name": "Meme Generator",
           "activation-hints": [
@@ -613,7 +613,7 @@
       "description": "Ingest a large dataset into memory as a skimmed map. Cold-store the raw files under a workspace imports directory, census them into a slice plan, skim each slice into compact map pages that point back at the raw files, ingest the map with the memory ingest CLI, and author a drill-in retrieval skill so the corpus stays searchable on demand. For recording archives, transcript collections, document dumps, and any corpus too large to hold in memory directly.",
       "metadata": {
         "emoji": "🗺️",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "Corpus Ingest",
           "user-invocable": "true",
@@ -638,7 +638,7 @@
       "description": "Send notifications through the unified notification router",
       "metadata": {
         "emoji": "🔔",
-        "vellum": {
+        "cadet": {
           "category": "messaging",
           "display-name": "Notifications"
         }
@@ -653,7 +653,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "📝",
-        "vellum": {
+        "cadet": {
           "category": "productivity",
           "display-name": "Notion",
           "activation-hints": [
@@ -663,7 +663,7 @@
             "User asks anything that requires reading or writing Notion data, including checking a task list or workspace held in Notion"
           ],
           "avoid-when": [
-            "User wants to set up, connect, or reconnect the Notion OAuth integration for the first time; load vellum-oauth-integrations instead"
+            "User wants to set up, connect, or reconnect the Notion OAuth integration for the first time; load cadet-oauth-integrations instead"
           ]
         }
       },
@@ -676,7 +676,7 @@
       "description": "Pull sleep, activity, readiness, heart rate, and other health data from a connected Oura Ring via the Oura Cloud API V2",
       "metadata": {
         "emoji": "💍",
-        "vellum": {
+        "cadet": {
           "category": "health",
           "display-name": "Oura Ring",
           "includes": [
@@ -693,7 +693,7 @@
       "description": "Connect an Oura Ring via OAuth2 — app registration, token exchange, and credential storage",
       "metadata": {
         "emoji": "💍",
-        "vellum": {
+        "cadet": {
           "category": "health",
           "display-name": "Oura Ring Setup"
         }
@@ -708,7 +708,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "📧",
-        "vellum": {
+        "cadet": {
           "category": "email",
           "display-name": "Outlook",
           "user-invocable": "true"
@@ -724,7 +724,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "📅",
-        "vellum": {
+        "cadet": {
           "category": "calendar",
           "display-name": "Outlook Calendar",
           "user-invocable": "true",
@@ -744,7 +744,7 @@
       "description": "Use when the user wants to build, scaffold, ship, or edit a Vellum plugin that bundles multiple surfaces (hooks, tools, skills, and more) into one installable package.",
       "metadata": {
         "emoji": "🧩",
-        "vellum": {
+        "cadet": {
           "category": "development",
           "display-name": "Plugin Builder",
           "activation-hints": [
@@ -773,7 +773,7 @@
       "description": "Set up and manage ngrok-based public ingress for local assistants; do not use this in managed mode when platform callback routing is available",
       "metadata": {
         "emoji": "🌍",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "Public Ingress",
           "activation-hints": [
@@ -794,7 +794,7 @@
       "description": "Set up and send emails via a user-provided Resend account (BYO email provider)",
       "metadata": {
         "emoji": "📤",
-        "vellum": {
+        "cadet": {
           "category": "email",
           "display-name": "Resend Email Setup",
           "user-invocable": "true"
@@ -809,11 +809,11 @@
       "description": "Book reservations on OpenTable or Resy with explicit confirmations",
       "metadata": {
         "emoji": "🍽️",
-        "vellum": {
+        "cadet": {
           "category": "commerce",
           "display-name": "Restaurant Reservation Booking",
           "includes": [
-            "vellum-browser-use"
+            "cadet-browser-use"
           ]
         }
       },
@@ -826,7 +826,7 @@
       "description": "Record the user's screen as a video file",
       "metadata": {
         "emoji": "🎬",
-        "vellum": {
+        "cadet": {
           "platforms": [
             "macos"
           ],
@@ -843,7 +843,7 @@
       "description": "Upgrade vellum to the latest version, restart the assistant, and restart the gateway",
       "metadata": {
         "emoji": "⬆️",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "Self Upgrade"
         }
@@ -858,7 +858,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "💬",
-        "vellum": {
+        "cadet": {
           "category": "messaging",
           "display-name": "Slack"
         }
@@ -872,7 +872,7 @@
       "description": "Connect a Slack app to the Vellum Assistant via Socket Mode. Use whenever the user wants to set up Slack for their assistant, connect a workspace, or get the assistant talking in Slack — opens a guided setup wizard in the side panel so the user can create the app, generate tokens, and connect in one flow.",
       "metadata": {
         "emoji": "💬",
-        "vellum": {
+        "cadet": {
           "category": "messaging",
           "display-name": "Slack App Setup",
           "includes": [
@@ -898,7 +898,7 @@
       "description": "Create and edit Excel spreadsheets (.xlsx) whose formulas carry their computed values, so sums and totals show in every viewer, plus date and time formats, recalculating and verifying an existing workbook.",
       "metadata": {
         "emoji": "📊",
-        "vellum": {
+        "cadet": {
           "category": "productivity",
           "display-name": "Spreadsheet Authoring",
           "activation-hints": [
@@ -921,7 +921,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🌅",
-        "vellum": {
+        "cadet": {
           "category": "productivity",
           "display-name": "Start the Day",
           "user-invocable": "true",
@@ -946,7 +946,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "💳",
-        "vellum": {
+        "cadet": {
           "category": "commerce",
           "display-name": "Stripe App Setup",
           "user-invocable": "true",
@@ -965,7 +965,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "💳",
-        "vellum": {
+        "cadet": {
           "category": "commerce",
           "display-name": "Stripe Link Wallet",
           "activation-hints": [
@@ -985,7 +985,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🤖",
-        "vellum": {
+        "cadet": {
           "category": "messaging",
           "display-name": "Telegram Setup",
           "activation-hints": [
@@ -1008,7 +1008,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "📱",
-        "vellum": {
+        "cadet": {
           "category": "integrations",
           "display-name": "Twilio Setup",
           "includes": [
@@ -1025,7 +1025,7 @@
       "description": "Test TypeScript code snippets before persisting as skills",
       "metadata": {
         "emoji": "🧪",
-        "vellum": {
+        "cadet": {
           "category": "development",
           "display-name": "TypeScript Evaluation"
         }
@@ -1034,12 +1034,12 @@
       "updatedAt": "2026-09-03T18:19:51.000Z"
     },
     {
-      "id": "vellum-avatar",
-      "name": "vellum-avatar",
+      "id": "cadet-avatar",
+      "name": "cadet-avatar",
       "description": "Customize the assistant's avatar - build a native character, upload an image, or generate one with AI",
       "metadata": {
         "emoji": "🎨",
-        "vellum": {
+        "cadet": {
           "category": "content",
           "display-name": "Avatar"
         }
@@ -1048,12 +1048,12 @@
       "updatedAt": "2026-06-03T03:10:07.000Z"
     },
     {
-      "id": "vellum-browser-use",
-      "name": "vellum-browser-use",
+      "id": "cadet-browser-use",
+      "name": "cadet-browser-use",
       "description": "Browse the web using `assistant browser` CLI commands",
       "metadata": {
         "emoji": "🌐",
-        "vellum": {
+        "cadet": {
           "category": "browsing",
           "display-name": "Browser",
           "activation-hints": [
@@ -1065,12 +1065,12 @@
       "updatedAt": "2026-09-21T19:48:23.000Z"
     },
     {
-      "id": "vellum-client-capabilities",
-      "name": "vellum-client-capabilities",
+      "id": "cadet-client-capabilities",
+      "name": "cadet-client-capabilities",
       "description": "Truthful answers about what the Vellum client apps can and cannot do on the user's device. Device location and GPS are unavailable in every client and there is no location permission prompt to approve, so location requests are answered by asking for a typed city or address instead.",
       "metadata": {
         "emoji": "📍",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "Vellum Client Capabilities",
           "activation-hints": [
@@ -1088,12 +1088,12 @@
       "updatedAt": "2026-09-10T21:49:56.000Z"
     },
     {
-      "id": "vellum-conversation-management",
-      "name": "vellum-conversation-management",
+      "id": "cadet-conversation-management",
+      "name": "cadet-conversation-management",
       "description": "Manage conversation threads (rename, list, search, export)",
       "metadata": {
         "emoji": "💬",
-        "vellum": {
+        "cadet": {
           "category": "productivity",
           "display-name": "Conversations"
         }
@@ -1102,15 +1102,15 @@
       "updatedAt": "2026-08-20T21:25:08.000Z"
     },
     {
-      "id": "vellum-github-app-setup",
-      "name": "vellum-github-app-setup",
+      "id": "cadet-github-app-setup",
+      "name": "cadet-github-app-setup",
       "description": "Create and configure a GitHub App so the assistant can push commits, open PRs, and comment under its own bot identity. Use when the user wants the assistant to have its own GitHub identity, or when setting up git push access for the first time.",
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🤖",
-        "author": "vellum-ai",
+        "author": "vargasjr-dev",
         "version": "1.0",
-        "vellum": {
+        "cadet": {
           "category": "development",
           "display-name": "GitHub App Setup"
         }
@@ -1119,12 +1119,12 @@
       "updatedAt": "2026-08-28T21:17:09.000Z"
     },
     {
-      "id": "vellum-heartbeat",
-      "name": "vellum-heartbeat",
+      "id": "cadet-heartbeat",
+      "name": "cadet-heartbeat",
       "description": "Configure periodic background checklist runs",
       "metadata": {
         "emoji": "💓",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "Heartbeat",
           "activation-hints": [
@@ -1139,12 +1139,12 @@
       "updatedAt": "2026-09-08T20:16:38.000Z"
     },
     {
-      "id": "vellum-memory-v2-migration",
-      "name": "vellum-memory-v2-migration",
+      "id": "cadet-memory-v2-migration",
+      "name": "cadet-memory-v2-migration",
       "description": "Perform a one-time migration from memory v1, to memory v2, which was introduced in 0.8.0.",
       "metadata": {
         "emoji": "🧠",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "Memory v2 Migration",
           "user-invocable": "true",
@@ -1162,12 +1162,12 @@
       "updatedAt": "2026-09-03T18:19:51.000Z"
     },
     {
-      "id": "vellum-memory-v3-migration",
-      "name": "vellum-memory-v3-migration",
+      "id": "cadet-memory-v3-migration",
+      "name": "cadet-memory-v3-migration",
       "description": "One-time migration of an existing memory-v2 concept corpus into the memory-v3 section-grain \"wiki\" — topical articles with a stand-alone lead and queryable sections — with loss-proof staging, assistant-reviewed authoring, and a retrieval-eval gate before cutover.",
       "metadata": {
         "emoji": "🗂️",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "Memory v3 Migration",
           "user-invocable": "true",
@@ -1177,7 +1177,7 @@
           ],
           "avoid-when": [
             "When the corpus is already in v3 article shape (leads + ## sections, no summary:) and memory.v3.live is already true",
-            "When memory/concepts/ is empty or near-empty (run vellum-memory-v2-migration first — there is nothing to reform)"
+            "When memory/concepts/ is empty or near-empty (run cadet-memory-v2-migration first — there is nothing to reform)"
           ]
         }
       },
@@ -1185,12 +1185,12 @@
       "updatedAt": "2026-09-06T10:00:02.000Z"
     },
     {
-      "id": "vellum-oauth-integrations",
-      "name": "vellum-oauth-integrations",
+      "id": "cadet-oauth-integrations",
+      "name": "cadet-oauth-integrations",
       "description": "Act on behalf of your user in any third-party software that supports OAuth 2.0",
       "metadata": {
         "emoji": "🔌",
-        "vellum": {
+        "cadet": {
           "category": "integrations",
           "display-name": "Vellum OAuth Integrations"
         }
@@ -1204,7 +1204,7 @@
       "description": "Answer questions about Vellum, its config, billing, and hosting from live sources of truth",
       "metadata": {
         "emoji": "🪞",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "Vellum Self-Knowledge",
           "activation-hints": [
@@ -1225,12 +1225,12 @@
       "updatedAt": "2026-09-12T11:45:18.000Z"
     },
     {
-      "id": "vellum-skills-catalog",
-      "name": "vellum-skills-catalog",
+      "id": "cadet-skills-catalog",
+      "name": "cadet-skills-catalog",
       "description": "Discover bundled skills and search/install community skills from the skills.sh registry",
       "metadata": {
         "emoji": "🧩",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "Skills Catalog",
           "activation-hints": [
@@ -1250,12 +1250,12 @@
       "updatedAt": "2026-06-03T03:10:07.000Z"
     },
     {
-      "id": "vellum-sounds",
-      "name": "vellum-sounds",
+      "id": "cadet-sounds",
+      "name": "cadet-sounds",
       "description": "Customize the desktop app's sound effects by adding sound files to the workspace, enabling sounds, setting volume, and assigning sounds to app events",
       "metadata": {
         "emoji": "🔊",
-        "vellum": {
+        "cadet": {
           "platforms": [
             "macos",
             "windows"
@@ -1268,14 +1268,14 @@
       "updatedAt": "2026-08-26T00:15:53.000Z"
     },
     {
-      "id": "vellum-terminal-sessions",
-      "name": "vellum-terminal-sessions",
+      "id": "cadet-terminal-sessions",
+      "name": "cadet-terminal-sessions",
       "description": "Manage persistent tmux terminal sessions: create, read, write to, list, and close named shell sessions. For Claude Code or Codex, use the ACP skill instead.",
       "metadata": {
         "emoji": "🖥️",
-        "author": "vellum-ai",
+        "author": "vargasjr-dev",
         "version": "0.2",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "Terminal Sessions",
           "activation-hints": [
@@ -1295,12 +1295,12 @@
       "updatedAt": "2026-08-25T23:32:13.000Z"
     },
     {
-      "id": "vellum-workspace-theme",
-      "name": "vellum-workspace-theme",
+      "id": "cadet-workspace-theme",
+      "name": "cadet-workspace-theme",
       "description": "Customize the app's visual theme — author design-token overrides (accent, background, surfaces, text, message-bubble colors) in the workspace ui/theme.json, validated by the assistant runtime and applied live to connected clients. Covers the token slots, the all-or-none override groups, the contrast floor, and reading back validation issues.",
       "metadata": {
         "emoji": "🖌️",
-        "vellum": {
+        "cadet": {
           "category": "content",
           "display-name": "Workspace Theme"
         }
@@ -1315,11 +1315,11 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "▲",
-        "vellum": {
+        "cadet": {
           "category": "development",
           "display-name": "Vercel Token Setup",
           "includes": [
-            "vellum-browser-use"
+            "cadet-browser-use"
           ]
         }
       },
@@ -1333,7 +1333,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🎙️",
-        "vellum": {
+        "cadet": {
           "platforms": [
             "macos",
             "windows",
@@ -1363,7 +1363,7 @@
       "description": "Watch local TV shows and movies with the user in real time. An editor model watches each playback window, transcribes dialogue, and picks story-critical frames. Source mode plays local media in mpv; screen mode captures supported desktops as a fallback.",
       "metadata": {
         "emoji": "📺",
-        "vellum": {
+        "cadet": {
           "category": "content",
           "display-name": "Watch Together",
           "emoji": "📺",
@@ -1382,7 +1382,7 @@
       "description": "Create and manage polling watchers that monitor external services (Gmail, Google Calendar, GitHub, Linear, Outlook) for events and process them with custom action prompts",
       "metadata": {
         "emoji": "👀",
-        "vellum": {
+        "cadet": {
           "category": "productivity",
           "display-name": "Watcher"
         }
@@ -1397,7 +1397,7 @@
       "metadata": {
         "icon": "assets/icon.svg",
         "emoji": "🌤️",
-        "vellum": {
+        "cadet": {
           "category": "productivity"
         }
       },
@@ -1409,7 +1409,7 @@
       "description": "Automate native Windows apps and system interactions with PowerShell, documented COM APIs, and Microsoft UI Automation through the Windows host executor. Use for launching or inspecting desktop apps, opening Windows Settings, controlling scriptable Microsoft Office apps, and interacting with native UI when no direct CLI or API is available.",
       "metadata": {
         "emoji": "🪟",
-        "vellum": {
+        "cadet": {
           "category": "system",
           "display-name": "Windows Automation",
           "platforms": [

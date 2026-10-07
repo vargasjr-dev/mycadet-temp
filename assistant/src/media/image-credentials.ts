@@ -29,8 +29,11 @@ export function resolveImageGenRouting(
   svc: { provider: string; model: string },
   modelOverride?: unknown,
 ): { backendProvider: ImageGenProvider; managed: boolean } {
-  const managed = svc.provider === "vellum";
-  if (svc.provider === "vellum") {
+  // Legacy configs may still carry the pre-rebrand id; the schema normalizes
+  // it on parse, but a raw reader can see either spelling.
+  const legacyManaged = (svc.provider as string) === "vellum";
+  const managed = svc.provider === "cadet" || legacyManaged;
+  if (managed) {
     const model =
       typeof modelOverride === "string" && modelOverride
         ? modelOverride

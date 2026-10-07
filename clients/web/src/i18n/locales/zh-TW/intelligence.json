@@ -372,7 +372,7 @@
       "clawhubTitle": "無 Clawhub 技能",
       "customSubtitle": "透過在聊天中描述您的需求來建立自訂技能。",
       "customTitle": "無自訂技能",
-      "defaultSubtitle": "請檢查您與 Vellum 目錄的連線。",
+      "defaultSubtitle": "請檢查您與 Cadet 目錄的連線。",
       "defaultTitle": "無可用技能",
       "installedSubtitle": "在聊天中要求您的助理搜尋並安裝新的技能和外掛程式。",
       "installedTitle": "未安裝技能",
@@ -382,8 +382,8 @@
       "skillsshTitle": "無 skills.sh 技能",
       "skillsSubtitle": "在聊天中要求您的助理搜尋並安裝新的技能。",
       "skillsTitle": "未找到技能",
-      "vellumSubtitle": "未找到隨附的 Vellum 技能。",
-      "vellumTitle": "無 Vellum 技能"
+      "cadetSubtitle": "未找到隨附的 Cadet 技能。",
+      "cadetTitle": "無 Cadet 技能"
     },
     "errorStateSubtitle": "發生錯誤。請嘗試重新整理頁面。",
     "errorStateTitle": "載入技能失敗",

@@ -284,7 +284,7 @@ export function CommunityPage() {
 
       <div className="flex flex-col gap-4">
         <h2 className="text-label-medium-default uppercase tracking-wider text-[color:var(--content-tertiary)]">
-          {t("communityPage.moreFromVellum")}
+          {t("communityPage.moreFromCadet")}
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <ResourceCard

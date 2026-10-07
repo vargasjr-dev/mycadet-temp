@@ -54,8 +54,8 @@ mock.module("../providers/vellum-tts-socket.js", () => ({
 }));
 
 import {
+  cadetTtsProviderDefinition,
   createVellumProvider,
-  vellumTtsProviderDefinition,
 } from "../providers/vellum-provider.js";
 import type { TtsSynthesisRequest } from "../types.js";
 
@@ -127,7 +127,7 @@ describe("cadet TTS adapter", () => {
     };
     const provider = createVellumProvider();
     await expect(provider.synthesize(request())).rejects.toThrow(
-      /Vellum credits/,
+      /Cadet credits/,
     );
   });
 
@@ -228,21 +228,21 @@ describe("cadet TTS streaming", () => {
 
 describe("cadet TTS definition", () => {
   test("declares streaming synthesized-play with PCM media-stream playback", () => {
-    expect(vellumTtsProviderDefinition.capabilities.supportsStreaming).toBe(
+    expect(cadetTtsProviderDefinition.capabilities.supportsStreaming).toBe(
       true,
     );
-    expect(vellumTtsProviderDefinition.callMode).toBe("synthesized-play");
-    expect(vellumTtsProviderDefinition.allowNativeFallback).toBe(false);
-    expect(vellumTtsProviderDefinition.mediaStreamPlayback.outputFormat).toBe(
+    expect(cadetTtsProviderDefinition.callMode).toBe("synthesized-play");
+    expect(cadetTtsProviderDefinition.allowNativeFallback).toBe(false);
+    expect(cadetTtsProviderDefinition.mediaStreamPlayback.outputFormat).toBe(
       "pcm",
     );
     // True since managed voice selection: clients gate their voice dropdown
     // on this flag (old daemons report false and show no selector).
-    expect(vellumTtsProviderDefinition.supportsVoiceSelection).toBe(true);
+    expect(cadetTtsProviderDefinition.supportsVoiceSelection).toBe(true);
   });
 
   test("requires only the platform connection credential", () => {
-    expect(vellumTtsProviderDefinition.secretRequirements).toEqual([
+    expect(cadetTtsProviderDefinition.secretRequirements).toEqual([
       {
         credentialStoreKey: "credential/vellum/assistant_api_key",
         displayName: "Cadet account connection",

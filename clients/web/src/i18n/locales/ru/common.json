@@ -86,7 +86,7 @@
       "title": "Сделайте общение со мной проще"
     },
     "meet": {
-      "body": "Я остаюсь на рабочем столе, даже когда Vellum не видно."
+      "body": "Я остаюсь на рабочем столе, даже когда Cadet не видно."
     },
     "mute": {
       "body": "Нажмите микрофон, чтобы отключить себя, или динамик, чтобы отключить меня",
@@ -110,7 +110,7 @@
     },
     "permission": {
       "microphoneAction": "Включить микрофон",
-      "microphoneSettingsHint": "Включите доступ Vellum к микрофону в Системных настройках, затем вернитесь сюда.",
+      "microphoneSettingsHint": "Включите доступ Cadet к микрофону в Системных настройках, затем вернитесь сюда.",
       "microphonePromptHint": "macOS попросит разрешить доступ к микрофону.",
       "microphoneBody": "Разрешите использовать микрофон для голосовых разговоров.",
       "shortcutBody": "Разрешите горячую клавишу в других приложениях.",
@@ -219,17 +219,17 @@
     "goToConversation": "Перейти к диалогу"
   },
   "managedServicesBanner": {
-    "body": "Управляемые сервисы тарифицируются и списываются с баланса аккаунта Vellum. <link>Смотреть цены</link>"
+    "body": "Управляемые сервисы тарифицируются и списываются с баланса аккаунта Cadet. <link>Смотреть цены</link>"
   },
   "nativeAppBanner": {
     "bannerAria": "Скачать приложение {appName}",
-    "bannerAriaGeneric": "Скачать приложение Vellum",
+    "bannerAriaGeneric": "Скачать приложение Cadet",
     "download": "Скачать",
     "downloadAppAria": "Скачать приложение {appName}",
-    "downloadAppAriaGeneric": "Скачать приложение Vellum",
+    "downloadAppAriaGeneric": "Скачать приложение Cadet",
     "subtitle": "Push-уведомления · биометрический вход · тактильная отдача",
     "title": "Приложение {appName}",
-    "titleGeneric": "Приложение Vellum"
+    "titleGeneric": "Приложение Cadet"
   },
   "notFound": {
     "badge": "Ошибка 404",

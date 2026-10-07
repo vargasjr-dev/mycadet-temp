@@ -47,7 +47,7 @@ const seedCacheEntry = (bytes: Buffer): string => {
 };
 
 beforeEach(() => {
-  userDataDir = mkdtempSync(path.join(tmpdir(), "vellum-avatar-file-"));
+  userDataDir = mkdtempSync(path.join(tmpdir(), "cadet-avatar-file-"));
 });
 
 afterEach(() => {

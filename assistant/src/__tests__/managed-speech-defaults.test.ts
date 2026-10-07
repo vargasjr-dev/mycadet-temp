@@ -72,9 +72,9 @@ describe("maybeDefaultSpeechToManaged", () => {
     await maybeDefaultSpeechToManaged();
 
     const config = readConfig();
-    expect((config.services as any)?.stt?.provider).toBe("vellum");
-    expect((config.services as any)?.tts?.provider).toBe("vellum");
-    expect(getConfig().services.stt.provider).toBe("vellum");
+    expect((config.services as any)?.stt?.provider).toBe("cadet");
+    expect((config.services as any)?.tts?.provider).toBe("cadet");
+    expect(getConfig().services.stt.provider).toBe("cadet");
   });
 
   test("leaves a service alone when its BYOK credential resolves", async () => {
@@ -85,7 +85,7 @@ describe("maybeDefaultSpeechToManaged", () => {
 
     const config = readConfig();
     expect((config.services as any)?.stt?.provider).toBeUndefined();
-    expect((config.services as any)?.tts?.provider).toBe("vellum");
+    expect((config.services as any)?.tts?.provider).toBe("cadet");
   });
 
   test("no-ops when both BYOK credentials resolve", async () => {
@@ -103,8 +103,8 @@ describe("maybeDefaultSpeechToManaged", () => {
     mockManagedSpeechAvailable = true;
     writeConfig({
       services: {
-        stt: { provider: "vellum" },
-        tts: { provider: "vellum" },
+        stt: { provider: "cadet" },
+        tts: { provider: "cadet" },
       },
     });
 
@@ -113,8 +113,8 @@ describe("maybeDefaultSpeechToManaged", () => {
     const config = readConfig();
     expect(config).toEqual({
       services: {
-        stt: { provider: "vellum" },
-        tts: { provider: "vellum" },
+        stt: { provider: "cadet" },
+        tts: { provider: "cadet" },
       },
     });
   });
@@ -130,17 +130,17 @@ describe("maybeDefaultSpeechToManaged", () => {
           provider: "deepgram",
           providers: { deepgram: { model: "flux" } },
         },
-        tts: { provider: "vellum" },
+        tts: { provider: "cadet" },
       },
     });
 
     await maybeDefaultSpeechToManaged();
 
     const stt = (readConfig().services as any).stt;
-    expect(stt.roles.liveVoice).toEqual({ provider: "vellum", model: "flux" });
+    expect(stt.roles.liveVoice).toEqual({ provider: "cadet", model: "flux" });
     // The other consumers land on the stand-in's base, which serves them all.
-    expect(stt.provider).toBe("vellum");
-    expect(stt.providers.vellum.model).toBe("nova-3");
+    expect(stt.provider).toBe("cadet");
+    expect(stt.providers.cadet.model).toBe("nova-3");
   });
 
   test("the role write leaves batch and telephony on a provider that answers", async () => {
@@ -151,7 +151,7 @@ describe("maybeDefaultSpeechToManaged", () => {
           provider: "deepgram",
           providers: { deepgram: { model: "flux" } },
         },
-        tts: { provider: "vellum" },
+        tts: { provider: "cadet" },
       },
     });
 
@@ -159,9 +159,9 @@ describe("maybeDefaultSpeechToManaged", () => {
 
     invalidateConfigCache();
     const stt = getConfig().services.stt;
-    expect(sttCatalogKeyForRole(stt, "liveVoice")).toBe("vellum-flux");
-    expect(sttCatalogKeyForRole(stt, "batch")).toBe("vellum");
-    expect(sttCatalogKeyForRole(stt, "telephony")).toBe("vellum");
+    expect(sttCatalogKeyForRole(stt, "liveVoice")).toBe("cadet-flux");
+    expect(sttCatalogKeyForRole(stt, "batch")).toBe("cadet");
+    expect(sttCatalogKeyForRole(stt, "telephony")).toBe("cadet");
   });
 
   test("a language Flux has no model for keeps live voice on nova-3", async () => {
@@ -176,15 +176,15 @@ describe("maybeDefaultSpeechToManaged", () => {
           language: "ko",
           providers: { deepgram: { model: "flux" } },
         },
-        tts: { provider: "vellum" },
+        tts: { provider: "cadet" },
       },
     });
 
     await maybeDefaultSpeechToManaged();
 
     const stt = (readConfig().services as any).stt;
-    expect(stt.provider).toBe("vellum");
-    expect(stt.providers.vellum.model).toBe("nova-3");
+    expect(stt.provider).toBe("cadet");
+    expect(stt.providers.cadet.model).toBe("nova-3");
     expect(stt.roles).toBeUndefined();
   });
 
@@ -197,14 +197,14 @@ describe("maybeDefaultSpeechToManaged", () => {
           language: "hi",
           providers: { deepgram: { model: "flux" } },
         },
-        tts: { provider: "vellum" },
+        tts: { provider: "cadet" },
       },
     });
 
     await maybeDefaultSpeechToManaged();
 
     const stt = (readConfig().services as any).stt;
-    expect(stt.roles.liveVoice).toEqual({ provider: "vellum", model: "flux" });
+    expect(stt.roles.liveVoice).toEqual({ provider: "cadet", model: "flux" });
   });
 
   test("a capability-preserving stand-in still writes the global provider", async () => {
@@ -214,14 +214,14 @@ describe("maybeDefaultSpeechToManaged", () => {
     writeConfig({
       services: {
         stt: { provider: "deepgram" },
-        tts: { provider: "vellum" },
+        tts: { provider: "cadet" },
       },
     });
 
     await maybeDefaultSpeechToManaged();
 
     const stt = (readConfig().services as any).stt;
-    expect(stt.provider).toBe("vellum");
+    expect(stt.provider).toBe("cadet");
     expect(stt.roles).toBeUndefined();
   });
 
@@ -250,38 +250,38 @@ describe("managed live voice runs Flux", () => {
   // is as specific as they can be.
   test("live voice upgrades to the flux family", async () => {
     mockManagedSpeechAvailable = true;
-    writeConfig({ services: { stt: { provider: "vellum" } } });
+    writeConfig({ services: { stt: { provider: "cadet" } } });
 
     const { stt } = await resolveEffectiveSpeechProviders(undefined, {
       role: "liveVoice",
     });
 
-    expect(stt).toBe("vellum-flux");
+    expect(stt).toBe("cadet-flux");
   });
 
   test("no other consumer follows it there", async () => {
     // The family streams and nothing else, so batch and telephony would lose
     // their transcriber entirely.
     mockManagedSpeechAvailable = true;
-    writeConfig({ services: { stt: { provider: "vellum" } } });
+    writeConfig({ services: { stt: { provider: "cadet" } } });
 
     for (const role of ["batch", "telephony", "dictation", "watch"] as const) {
       const { stt } = await resolveEffectiveSpeechProviders(undefined, {
         role,
       });
-      expect(stt).toBe("vellum");
+      expect(stt).toBe("cadet");
     }
     const { stt: roleless } = await resolveEffectiveSpeechProviders();
-    expect(roleless).toBe("vellum");
+    expect(roleless).toBe("cadet");
   });
 
   test("a family the user named wins", async () => {
-    // `services.stt.providers.vellum.model` accepts nova-3, so quietly
+    // `services.stt.providers.cadet.model` accepts nova-3, so quietly
     // overriding it would be the silent substitution roles exist to prevent.
     mockManagedSpeechAvailable = true;
     writeConfig({
       services: {
-        stt: { provider: "vellum", providers: { cadet: { model: "nova-3" } } },
+        stt: { provider: "cadet", providers: { cadet: { model: "nova-3" } } },
       },
     });
 
@@ -289,38 +289,38 @@ describe("managed live voice runs Flux", () => {
       role: "liveVoice",
     });
 
-    expect(stt).toBe("vellum");
+    expect(stt).toBe("cadet");
   });
 
   test("a language the family cannot serve stays on nova-3", async () => {
     mockManagedSpeechAvailable = true;
     writeConfig({
-      services: { stt: { provider: "vellum", language: "ko" } },
+      services: { stt: { provider: "cadet", language: "ko" } },
     });
 
     const { stt } = await resolveEffectiveSpeechProviders(undefined, {
       role: "liveVoice",
     });
 
-    expect(stt).toBe("vellum");
+    expect(stt).toBe("cadet");
   });
 
   test("nothing is upgraded while managed speech is unavailable", async () => {
     mockManagedSpeechAvailable = false;
-    writeConfig({ services: { stt: { provider: "vellum" } } });
+    writeConfig({ services: { stt: { provider: "cadet" } } });
 
     const { stt } = await resolveEffectiveSpeechProviders(undefined, {
       role: "liveVoice",
     });
 
-    expect(stt).toBe("vellum");
+    expect(stt).toBe("cadet");
   });
 
   test("the upgrade writes no config", async () => {
     // A resolution rule, not a substitution: nothing lands on disk for a user
     // to discover, reset, or have to migrate.
     mockManagedSpeechAvailable = true;
-    writeConfig({ services: { stt: { provider: "vellum" } } });
+    writeConfig({ services: { stt: { provider: "cadet" } } });
     const before = JSON.stringify(readConfig());
 
     await resolveEffectiveSpeechProviders(undefined, { role: "liveVoice" });

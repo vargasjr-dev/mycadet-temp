@@ -53,14 +53,14 @@ export type SttProviderId =
   | "deepgram-flux"
   | "google-gemini"
   | "xai"
-  | "vellum"
+  | "cadet"
   /**
    * Managed Flux: the same conversational model as `deepgram-flux`, reached
    * through the platform's speech relay instead of a Deepgram key. Dials the
    * relay's STT v2 endpoint asking for native Flux frames, so it keeps the
    * turn events the relay's default v1-shaped translation drops.
    */
-  | "vellum-flux";
+  | "cadet-flux";
 
 /**
  * Telephony-specific STT capability class.

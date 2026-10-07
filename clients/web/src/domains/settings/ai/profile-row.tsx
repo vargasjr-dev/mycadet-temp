@@ -86,7 +86,7 @@ export function ProfileRow({
     );
   }
   if (isManaged) {
-    subtitleParts.push(t("profileRow.managedByVellum"));
+    subtitleParts.push(t("profileRow.managedByCadet"));
   }
 
   const availability = profile.availability;

@@ -372,7 +372,7 @@
       "clawhubTitle": "Нет навыков Clawhub",
       "customSubtitle": "Создание навыка: описание в диалоге, что нужно.",
       "customTitle": "Нет своих навыков",
-      "defaultSubtitle": "Проверка связи с каталогом Vellum.",
+      "defaultSubtitle": "Проверка связи с каталогом Cadet.",
       "defaultTitle": "Нет доступных суперсил",
       "installedSubtitle": "В диалоге можно попросить ассистента найти и установить новые навыки и плагины.",
       "installedTitle": "Нет установленных суперсил",
@@ -382,8 +382,8 @@
       "skillsshTitle": "Нет навыков skills.sh",
       "skillsSubtitle": "В диалоге можно попросить ассистента найти и установить новые навыки.",
       "skillsTitle": "Навыки не найдены",
-      "vellumSubtitle": "Встроенных навыков Vellum нет.",
-      "vellumTitle": "Нет навыков Vellum"
+      "cadetSubtitle": "Встроенных навыков Cadet нет.",
+      "cadetTitle": "Нет навыков Cadet"
     },
     "errorStateSubtitle": "Что-то пошло не так. Обновите страницу.",
     "errorStateTitle": "Не получилось загрузить суперсилы",

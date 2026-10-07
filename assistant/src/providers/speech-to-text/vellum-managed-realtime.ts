@@ -52,7 +52,7 @@ export interface VellumManagedRealtimeOptions {
 }
 
 export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
-  readonly providerId = "vellum" as const;
+  readonly providerId = "cadet" as const;
   readonly boundaryId = "daemon-streaming" as const;
 
   private readonly connection: SpeechRelayConnection;

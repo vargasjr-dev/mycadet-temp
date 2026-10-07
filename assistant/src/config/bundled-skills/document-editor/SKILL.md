@@ -4,7 +4,7 @@ description: Use whenever the user wants to write or draft an article, blog post
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "✍️"
-  vellum:
+  cadet:
     display-name: "Document Writer"
     category: "content"
     activation-hints:

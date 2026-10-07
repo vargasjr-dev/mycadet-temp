@@ -1,7 +1,7 @@
 ---
 name: chatgpt-import
 description: Import conversation history from ChatGPT into Vellum
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "📥"
   cadet:

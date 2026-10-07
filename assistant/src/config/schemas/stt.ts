@@ -18,7 +18,7 @@ export const VALID_STT_PROVIDERS = [
   "google-gemini",
   "openai-whisper",
   "xai",
-  "vellum",
+  "cadet",
 ] as const;
 
 /**
@@ -32,6 +32,9 @@ const STT_PROVIDER_ALIASES: Record<
 > = {
   openai: "openai-whisper",
   whisper: "openai-whisper",
+  // Legacy id from before the rebrand; normalized so existing configs and
+  // automation keep resolving to the managed provider.
+  vellum: "cadet",
 };
 
 /**
@@ -169,7 +172,7 @@ export { STT_ROLE_REQUIREMENTS, STT_ROLES, type SttRole };
 /**
  * Canonical STT service configuration.
  *
- * `provider` is the only axis: `"vellum"` transcribes through the platform,
+ * `provider` is the only axis: `"cadet"` transcribes through the platform,
  * billed to Vellum credits; any other provider uses the user's own API key.
  */
 export const SttServiceSchema = z

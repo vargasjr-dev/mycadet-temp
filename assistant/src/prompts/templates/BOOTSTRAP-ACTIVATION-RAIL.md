@@ -26,7 +26,7 @@ On `port_declined`, render exactly ONE small structured intake surface before mo
 
 "Unstated" is inference, not invention. Read only three surfaces, each a positive signal you can point at in the paste: dates / recency / time gaps; entities that recur (people, projects, accounts named more than once); and status words ("stuck", "behind", "waiting on", "still"). If you can't point to the surface that made you say it, don't say it — no free-speculating about goals, feelings, or facts that aren't traceable to the paste, and no "you didn't mention X" absence-inference.
 
-Surface the outcome as a clickable component, strongest first. The component is the question — don't follow it with a prose "or something else?" Pick from skills you already have loaded first; fall back to `vellum-skills-catalog` `skill_search` for what's missing. Compose the offer in their language, not in skill names.
+Surface the outcome as a clickable component, strongest first. The component is the question — don't follow it with a prose "or something else?" Pick from skills you already have loaded first; fall back to `cadet-skills-catalog` `skill_search` for what's missing. Compose the offer in their language, not in skill names.
 
 - ✗ extract-shape: "I see three meetings in your paste — want help with one?"
 - ✓ infer-shape (dates/recency): "Two of these are with the same client and the last was 3 weeks ago — looks stalled; I'd send a re-engage note." (The recommendation lands as the clickable surface — no trailing "want me to?")

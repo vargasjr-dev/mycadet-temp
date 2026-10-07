@@ -87,7 +87,7 @@ describe("skills catalog loading", () => {
 name: platform-skill
 description: Platform-specific skill
 metadata:
-  vellum:
+  cadet:
     platforms:
       - macos
       - linux
@@ -648,7 +648,7 @@ describe("includes frontmatter parsing", () => {
     // includes lives inside metadata.cadet, matching buildSkillMarkdown output.
     // The raw includes string is interpolated directly so tests can pass both
     // valid and intentionally malformed values.
-    const metadata = `{"vellum":{"includes":${includes}}}`;
+    const metadata = `{"cadet":{"includes":${includes}}}`;
     writeFileSync(
       join(skillDir, "SKILL.md"),
       `---\nname: "${skillId}"\ndescription: "test"\nmetadata: ${metadata}\n---\n\nBody.\n`,
@@ -735,7 +735,7 @@ describe("category frontmatter parsing", () => {
   function writeSkillWithCategory(skillId: string, category: string): void {
     const skillDir = join(TEST_DIR, "skills", skillId);
     mkdirSync(skillDir, { recursive: true });
-    const metadata = `{"vellum":{"category":${category}}}`;
+    const metadata = `{"cadet":{"category":${category}}}`;
     writeFileSync(
       join(skillDir, "SKILL.md"),
       `---\nname: "${skillId}"\ndescription: "test"\nmetadata: ${metadata}\n---\n\nBody.\n`,
@@ -788,7 +788,7 @@ describe("always-candidate frontmatter parsing", () => {
   function writeSkillWithAlwaysCandidate(skillId: string, value: string): void {
     const skillDir = join(TEST_DIR, "skills", skillId);
     mkdirSync(skillDir, { recursive: true });
-    const metadata = `{"vellum":{"always-candidate":${value}}}`;
+    const metadata = `{"cadet":{"always-candidate":${value}}}`;
     writeFileSync(
       join(skillDir, "SKILL.md"),
       `---\nname: "${skillId}"\ndescription: "test"\nmetadata: ${metadata}\n---\n\nBody.\n`,
@@ -948,12 +948,12 @@ describe("bundled skill categories", () => {
 
 describe("managed browser skill", () => {
   const BROWSER_SKILL_MD = readFileSync(
-    join(import.meta.dirname, "../../../skills/vellum-browser-use/SKILL.md"),
+    join(import.meta.dirname, "../../../skills/cadet-browser-use/SKILL.md"),
     "utf-8",
   );
 
   beforeEach(() => {
-    const skillDir = join(TEST_DIR, "skills", "vellum-browser-use");
+    const skillDir = join(TEST_DIR, "skills", "cadet-browser-use");
     mkdirSync(skillDir, { recursive: true });
     writeFileSync(join(skillDir, "SKILL.md"), BROWSER_SKILL_MD);
   });
@@ -967,15 +967,15 @@ describe("managed browser skill", () => {
 
   test("browser skill appears in full catalog", () => {
     const catalog = loadSkillCatalog();
-    const browserSkill = catalog.find((s) => s.id === "vellum-browser-use");
+    const browserSkill = catalog.find((s) => s.id === "cadet-browser-use");
     expect(browserSkill).toBeDefined();
-    expect(browserSkill!.name).toBe("vellum-browser-use");
+    expect(browserSkill!.name).toBe("cadet-browser-use");
     expect(browserSkill!.displayName).toBe("Browser");
   });
 
   test("browser skill has correct metadata", () => {
     const catalog = loadSkillCatalog();
-    const browserSkill = catalog.find((s) => s.id === "vellum-browser-use");
+    const browserSkill = catalog.find((s) => s.id === "cadet-browser-use");
     expect(browserSkill).toBeDefined();
     expect(browserSkill!.description).toBe(
       "Browse the web using `assistant browser` CLI commands",
@@ -984,7 +984,7 @@ describe("managed browser skill", () => {
 
   test("browser skill has no tool manifest", () => {
     const catalog = loadSkillCatalog();
-    const browserSkill = catalog.find((s) => s.id === "vellum-browser-use");
+    const browserSkill = catalog.find((s) => s.id === "cadet-browser-use");
     expect(browserSkill).toBeDefined();
     // Browser tools are dispatched via skill_execute and do not use
     // a skill-tool manifest.

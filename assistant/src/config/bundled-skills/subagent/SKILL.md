@@ -4,7 +4,7 @@ description: Spawn and manage autonomous background agents for parallel work
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🤖"
-  vellum:
+  cadet:
     display-name: "Subagent"
     category: "system"
     activation-hints:

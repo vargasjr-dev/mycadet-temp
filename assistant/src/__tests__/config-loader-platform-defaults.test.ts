@@ -136,7 +136,7 @@ describe("platform-managed config defaults", () => {
     }
   });
 
-  test("IS_PLATFORM=true, no config file → all 6 managed service modes written as 'managed', image-generation provider written as 'vellum'", () => {
+  test("IS_PLATFORM=true, no config file → all 6 managed service modes written as 'managed', image-generation provider written as 'cadet'", () => {
     process.env.IS_PLATFORM = "true";
 
     loadConfig();
@@ -158,7 +158,7 @@ describe("platform-managed config defaults", () => {
       provider?: string;
       mode?: string;
     };
-    expect(imageGen?.provider).toBe("vellum");
+    expect(imageGen?.provider).toBe("cadet");
     expect(imageGen?.mode).not.toBe("managed");
   });
 
@@ -226,7 +226,7 @@ describe("platform-managed config defaults", () => {
     // The parsed config strips the legacy key and carries the filled
     // provider; no mode survives the schema.
     expect(config.services["image-generation"]).not.toHaveProperty("mode");
-    expect(config.services["image-generation"].provider).toBe("vellum");
+    expect(config.services["image-generation"].provider).toBe("cadet");
   });
 
   test("IS_PLATFORM=true, config file with explicit notion-oauth mode='your-own' → preserved (schema default is 'managed')", () => {
@@ -295,8 +295,8 @@ describe("platform-managed config defaults", () => {
           .mode,
       ).toBe("managed");
     }
-    // ...and for image-generation's provider, whose fill is "vellum".
-    expect(config.services["image-generation"].provider).toBe("vellum");
+    // ...and for image-generation's provider, whose fill is "cadet".
+    expect(config.services["image-generation"].provider).toBe("cadet");
 
     // The on-disk file is NOT modified by the fill pass — disk reflects only
     // what was already there. Existing-file branch never re-writes config.json.
@@ -429,7 +429,7 @@ describe("GET /v1/config handler — context-default fill on raw response", () =
       expect(services[svc]!.mode).toBe("managed");
     }
     // image-generation is filled by provider, not mode.
-    expect(services["image-generation"]!.provider).toBe("vellum");
+    expect(services["image-generation"]!.provider).toBe("cadet");
     expect(services["image-generation"]!.mode).toBeUndefined();
   });
 
@@ -456,7 +456,7 @@ describe("GET /v1/config handler — context-default fill on raw response", () =
       { mode?: string; provider?: string }
     >;
     expect(services["image-generation"]!.mode).toBe("your-own");
-    expect(services["image-generation"]!.provider).toBe("vellum");
+    expect(services["image-generation"]!.provider).toBe("cadet");
     // web-search is not context-filled: a filled `mode` would override BYOK
     // configs on every load.
     expect(services["web-search"]).toBeUndefined();

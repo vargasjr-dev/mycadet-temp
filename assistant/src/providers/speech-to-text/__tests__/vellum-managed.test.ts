@@ -236,7 +236,7 @@ describe("describeSttFailure over managed STT failures", () => {
       detail: "Too many requests, retry in 30s.",
       message: "Too many requests, retry in 30s.",
     });
-    expect(describeSttFailure(err, "vellum")).toBe(
+    expect(describeSttFailure(err, "cadet")).toBe(
       "Too many requests, retry in 30s.",
     );
   });
@@ -248,7 +248,7 @@ describe("describeSttFailure over managed STT failures", () => {
       status: 429,
       message: "Managed speech transcription failed (platform returned 429).",
     });
-    const copy = describeSttFailure(err, "vellum");
+    const copy = describeSttFailure(err, "cadet");
     expect(copy).not.toContain("platform returned 429");
     expect(copy).toContain("rate-limiting");
   });
@@ -260,7 +260,7 @@ describe("describeSttFailure over managed STT failures", () => {
       status: 401,
       message: "Managed speech transcription failed (platform returned 401).",
     });
-    const copy = describeSttFailure(err, "vellum");
+    const copy = describeSttFailure(err, "cadet");
     // Managed STT holds no local key: the "check your API key in Settings →
     // Voice" guidance is wrong, and the raw HTTP status must not leak.
     expect(copy).toContain("reconnect your Cadet account");

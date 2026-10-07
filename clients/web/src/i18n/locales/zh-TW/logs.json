@@ -33,10 +33,10 @@
     "loadOlder": "載入較舊的事件"
   },
   "emailsPage": {
-    "platformLoginNotice": "請登入 Vellum 平台以查看電子郵件。"
+    "platformLoginNotice": "請登入 Cadet 平台以查看電子郵件。"
   },
   "systemEventsPage": {
-    "platformLoginNotice": "請登入 Vellum 平台以查看系統事件。",
+    "platformLoginNotice": "請登入 Cadet 平台以查看系統事件。",
     "notAvailable": "目前助理無法使用系統事件。"
   }
 }

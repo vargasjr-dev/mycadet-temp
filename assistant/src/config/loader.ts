@@ -156,13 +156,13 @@ export function getDeploymentContextDefaults(): Record<string, unknown> {
     // default (`gemini-embedding-2`).
     memory: { embeddings: { provider: "gemini" } },
     services: {
-      // Image-generation is provider-only for the managed axis: `vellum`
+      // Image-generation is provider-only for the managed axis: `cadet`
       // generates through the platform runtime proxy (the backend derives
       // from the selected model's prefix at request time). Hosted assistants
       // default to it here; fill-only, so an explicit on-disk BYOK provider
       // (gemini/openai) always wins. Filling a `mode` instead would
       // re-manage BYOK configs on every load.
-      "image-generation": { provider: "vellum" },
+      "image-generation": { provider: "cadet" },
       "google-oauth": managed,
       "outlook-oauth": managed,
       "linear-oauth": managed,

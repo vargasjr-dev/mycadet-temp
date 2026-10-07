@@ -43,7 +43,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useDraftOverride } from "@/hooks/use-draft-override";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { modelImagegenPut } from "@/generated/daemon/sdk.gen";
-import { supportsImageGenVellumProvider } from "@/lib/backwards-compat/use-supports-image-gen-vellum-provider";
+import { supportsImageGenCadetProvider } from "@/lib/backwards-compat/use-supports-image-gen-cadet-provider";
 import { whenAssistantVersionKnown } from "@/lib/backwards-compat/utils";
 
 const DEFAULT_IMAGE_GEN_MODEL = "gemini-3.1-flash-image-preview";
@@ -91,7 +91,7 @@ export function ImageGenerationCard() {
     // A config written by the legacy mode toggle marks managed via `mode` —
     // the daemon routes it to Cadet, so the card renders it as Cadet too.
     if (imageGenService?.mode === "managed") {
-      return "vellum";
+      return "cadet";
     }
     return (
       imageGenService?.provider ||
@@ -187,7 +187,7 @@ export function ImageGenerationCard() {
         );
       }
       const vellumUnsupported =
-        provider === "vellum" && !supportsImageGenVellumProvider();
+        provider === "cadet" && !supportsImageGenCadetProvider();
       const imageGenServiceBody: {
         provider?: string;
         mode: "managed" | "your-own";
@@ -195,7 +195,7 @@ export function ImageGenerationCard() {
         ? { mode: "managed" }
         : {
             provider,
-            mode: provider === "vellum" ? "managed" : "your-own",
+            mode: provider === "cadet" ? "managed" : "your-own",
           };
       await configMutation
         .mutateAsync({
@@ -295,9 +295,9 @@ export function ImageGenerationCard() {
           />
         </div>
 
-        {provider === "vellum" && (
+        {provider === "cadet" && (
           <p className="text-body-medium-lighter text-[var(--content-tertiary)]">
-            {t("imageGenerationCard.vellumNote")}
+            {t("imageGenerationCard.cadetNote")}
           </p>
         )}
 

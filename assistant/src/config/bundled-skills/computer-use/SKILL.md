@@ -4,7 +4,7 @@ description: Control a connected desktop
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🖥️"
-  vellum:
+  cadet:
     display-name: "Computer Use"
     category: "system"
     activation-hints:

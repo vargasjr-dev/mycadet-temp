@@ -147,9 +147,9 @@
   },
   "emailChannelSection": {
     "apiKeyConfigured": "{providerName} API 密钥已配置。要重新配置，请运行 <code>{setupSkill}</code> 技能。",
-    "connecting": "正在连接到 Vellum 平台…",
+    "connecting": "正在连接到 Cadet 平台…",
     "openProvider": "打开 {providerName}",
-    "platformLoginNotice": "登录 Vellum 平台以管理电子邮件设置。",
+    "platformLoginNotice": "登录 Cadet 平台以管理电子邮件设置。",
     "providerLabel": "提供商",
     "saveSuccessToast": "电子邮件设置已保存。",
     "setupInstructions": "通过助手 CLI 配置 {providerName}：要求助手运行 <code>{setupSkill}</code> 技能。它将引导您存储 API 密钥、检测域并（可选）连接入站 Webhook。",

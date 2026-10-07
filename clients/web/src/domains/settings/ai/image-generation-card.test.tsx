@@ -87,14 +87,14 @@ mock.module("@/domains/settings/ai/use-daemon-config", () => ({
   },
 }));
 
-// Version gate for `provider: "vellum"` — supported by default; the
+// Version gate for `provider: "cadet"` — supported by default; the
 // old-daemon test flips it off.
-let daemonSupportsVellumProvider = true;
+let daemonSupportsCadetProvider = true;
 mock.module(
-  "@/lib/backwards-compat/use-supports-image-gen-vellum-provider",
+  "@/lib/backwards-compat/use-supports-image-gen-cadet-provider",
   () => ({
     MIN_VERSION: "0.11.0",
-    supportsImageGenVellumProvider: () => daemonSupportsVellumProvider,
+    supportsImageGenCadetProvider: () => daemonSupportsCadetProvider,
   }),
 );
 mock.module("@/lib/backwards-compat/utils", () => ({
@@ -163,7 +163,7 @@ describe("ImageGenerationCard — provider-only configuration", () => {
     configPatchCalls.length = 0;
     modelPutCalls.length = 0;
     provisionedKeys.length = 0;
-    daemonSupportsVellumProvider = true;
+    daemonSupportsCadetProvider = true;
     daemonConfigData = { services: {} };
   });
 
@@ -215,16 +215,16 @@ describe("ImageGenerationCard — provider-only configuration", () => {
 
     await waitFor(() => expect(configPatchCalls.length).toBe(1));
     // Written as a pair so the save stays valid on daemons whose schema
-    // still couples provider "vellum" to mode "managed".
+    // still couples the managed provider to mode "managed".
     expect(configPatchCalls[0]!.body).toMatchObject({
       services: {
-        "image-generation": { provider: "vellum", mode: "managed" },
+        "image-generation": { provider: "cadet", mode: "managed" },
       },
     });
     await waitFor(() => expect(modelPutCalls.length).toBe(1));
     expect(modelPutCalls[0]!.body).toMatchObject({ modelId: "gpt-image-2" });
     expect(provisionedKeys).toHaveLength(0);
-    expect(localStorage.getItem(LS_IMAGE_GEN_PROVIDER)).toBe("vellum");
+    expect(localStorage.getItem(LS_IMAGE_GEN_PROVIDER)).toBe("cadet");
   });
 
   test("Gemini lists only gemini models and snaps an off-list model", async () => {
@@ -321,7 +321,7 @@ describe("ImageGenerationCard — provider-only configuration", () => {
   test("a daemon predating the cadet enum still gets explicit BYOK provider writes", async () => {
     // Only "vellum" is unrepresentable on old daemons; gemini/openai are in
     // the old enum, so a provider switch must not be dropped.
-    daemonSupportsVellumProvider = false;
+    daemonSupportsCadetProvider = false;
     renderCard();
 
     fireEvent.click(trigger("Image generation provider"));
@@ -486,7 +486,7 @@ describe("ImageGenerationCard — provider-only configuration", () => {
     // Old daemon schemas reject provider "vellum" outright; the Cadet
     // selection degrades to the legacy mode-only representation the read
     // bridge renders as Cadet again.
-    daemonSupportsVellumProvider = false;
+    daemonSupportsCadetProvider = false;
     renderCard();
 
     fireEvent.click(trigger("Image generation provider"));

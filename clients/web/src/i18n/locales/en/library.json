@@ -25,7 +25,7 @@
     "unpin": "Unpin",
     "pin": "Pin",
     "share": "Share",
-    "shareSub": "Export as .vellum file",
+    "shareSub": "Export as .cadet file",
     "deployed": "Deployed to Vercel",
     "copyLink": "Copy link",
     "redeploy": "Redeploy",

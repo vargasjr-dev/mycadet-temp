@@ -145,9 +145,9 @@ const SSH_OPTS = [
 ];
 
 const REMOTE_PS_CMD = [
-  // List vellum-related processes: daemon, gateway, qdrant, and any bun children
+  // List Cadet-related processes: daemon, gateway, qdrant, and any bun children
   "ps ax -o pid=,ppid=,args=",
-  "| grep -E 'cadet|vellum-gateway|qdrant|openclaw'",
+  "| grep -E 'cadet|qdrant'",
   "| grep -v grep",
 ].join(" ");
 

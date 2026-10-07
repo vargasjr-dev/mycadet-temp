@@ -1,7 +1,7 @@
 ---
 name: slack
 description: Send, read, and manage Slack messages
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "💬"

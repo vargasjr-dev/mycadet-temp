@@ -263,7 +263,7 @@ describe("detectOrphanedProcesses", () => {
   test("excludes PIDs passed via excludePids", async () => {
     // The orphan detector calls `ps ax` and filters by regex. The process
     // running this test (bun) is itself a node-family process whose pid will
-    // not match the cadet/qdrant/openclaw regex, so the natural result of
+    // not match the cadet/qdrant regex, so the natural result of
     // the scan is "no rows". To assert exclusion semantics deterministically,
     // we just confirm the function accepts an excludePids option and returns
     // an array — the meaningful behavior assertion lives in the integration

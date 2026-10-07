@@ -1,6 +1,6 @@
 /**
- * Vellum-managed batch STT: transcription through the platform's managed
- * speech endpoint (Vellum-held Deepgram key, billed to Vellum credits). No
+ * Cadet-managed batch STT: transcription through the platform's managed
+ * speech endpoint (Cadet-held Deepgram key, billed to Cadet credits). No
  * provider API key exists on this machine — availability is the platform
  * connection itself.
  */
@@ -31,7 +31,7 @@ export async function vellumManagedSpeechAvailable(): Promise<boolean> {
  * Map a managed-speech failure onto the normalized STT error categories.
  *
  * `insufficient_balance` gets a user-actionable message — the fix is topping
- * up Vellum credits, not editing provider config.
+ * up Cadet credits, not editing provider config.
  *
  * Managed speech has no provider API key on this machine, so the BYOK "check
  * your API key" rewrite never applies. A failure is flagged `userFacing` —
@@ -61,7 +61,7 @@ export function sttErrorFromManagedSpeech(
   if (failure.code === "insufficient_balance") {
     return managed(
       "provider-error",
-      "Vellum credits are exhausted — add funds to your Vellum account to continue using managed transcription.",
+      "Cadet credits are exhausted — add funds to your Cadet account to continue using managed transcription.",
     );
   }
   switch (failure.status) {
@@ -75,7 +75,7 @@ export function sttErrorFromManagedSpeech(
         ? managed("auth", failure.message)
         : new SttError(
             "auth",
-            "Vellum couldn't authenticate with the platform while transcribing — reconnect your Vellum account, then retry.",
+            "Cadet couldn't authenticate with the platform while transcribing — reconnect your Cadet account, then retry.",
             { userFacing: true },
           );
     case 429:

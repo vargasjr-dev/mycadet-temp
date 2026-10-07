@@ -612,8 +612,8 @@ describe("normalizeSttError", () => {
 
 describe("cadet factory case", () => {
   test("constructs the managed transcriber with no API key", () => {
-    const transcriber = createDaemonBatchTranscriber(null, "vellum");
-    expect(transcriber?.providerId).toBe("vellum");
+    const transcriber = createDaemonBatchTranscriber(null, "cadet");
+    expect(transcriber?.providerId).toBe("cadet");
     expect(transcriber?.boundaryId).toBe("daemon-batch");
   });
 

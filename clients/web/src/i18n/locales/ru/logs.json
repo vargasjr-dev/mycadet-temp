@@ -30,10 +30,10 @@
     "loadOlder": "Загрузить более старые события"
   },
   "emailsPage": {
-    "platformLoginNotice": "Вход на платформу Vellum для просмотра писем."
+    "platformLoginNotice": "Вход на платформу Cadet для просмотра писем."
   },
   "systemEventsPage": {
-    "platformLoginNotice": "Вход на платформу Vellum для просмотра системных событий.",
+    "platformLoginNotice": "Вход на платформу Cadet для просмотра системных событий.",
     "notAvailable": "Системные события недоступны для текущего ассистента."
   }
 }

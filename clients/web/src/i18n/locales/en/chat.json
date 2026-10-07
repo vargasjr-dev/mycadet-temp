@@ -392,7 +392,7 @@
     "deviceInUse": "Another app is using the camera.",
     "noDevice": "No camera found.",
     "notDelivered": "Reconnecting. Take that one again.",
-    "permissionDenied": "Camera access is off for Vellum.",
+    "permissionDenied": "Camera access is off for Cadet.",
     "refused": "Your assistant can't receive photos yet.",
     "storeFailed": "Couldn't add that photo to the conversation.",
     "unknown": "Couldn't open the camera.",
@@ -481,7 +481,7 @@
     "assistantSender": "Assistant",
     "closeAria": "Close the channel thread",
     "closeTooltip": "Close",
-    "emptyNoMessageDetail": "{channel} does not send Vellum the per-message details this view needs, so there is nothing to list here. Open the conversation in {channel} to read it in full.",
+    "emptyNoMessageDetail": "{channel} does not send Cadet the per-message details this view needs, so there is nothing to list here. Open the conversation in {channel} to read it in full.",
     "emptyThread": "No {channel} messages in this conversation yet.",
     "namedTitle": "{channel} · {thread}",
     "noText": "No text content",
@@ -489,11 +489,11 @@
     "reactionAdded": "Reacted with {emoji}",
     "reactionRemoved": "Removed the {emoji} reaction",
     "readOnly": "Read only",
-    "readOnlyNote": "This is the conversation as it stands in {channel}. Vellum's composer is the only place you can write.",
-    "reference": "Reference in Vellum",
-    "referenceAria": "Reference this {channel} message in Vellum",
+    "readOnlyNote": "This is the conversation as it stands in {channel}. Cadet's composer is the only place you can write.",
+    "reference": "Reference in Cadet",
+    "referenceAria": "Reference this {channel} message in Cadet",
     "referenced": "Referenced",
-    "removeReferenceAria": "Remove this reference from the Vellum composer",
+    "removeReferenceAria": "Remove this reference from the Cadet composer",
     "title": "{channel} thread",
     "unknownSender": "Unknown sender"
   },
@@ -629,7 +629,7 @@
     "hintAlmostDone": "Almost done…",
     "hintCleaning": "Cleaning up your assistant…",
     "hintWrapping": "Wrapping things up…",
-    "timeoutBody": "Try running Vellum Doctor to diagnose the issue, or <communityLink>ask the community</communityLink> for help.",
+    "timeoutBody": "Try running Cadet Doctor to diagnose the issue, or <communityLink>ask the community</communityLink> for help.",
     "timeoutTitle": "Cleanup is taking longer than expected",
     "title": "Cleaning up your assistant…",
     "warningAria": "warning"
@@ -789,7 +789,7 @@
   "conversationAssetActions": {
     "delete": "Delete",
     "downloadPdf": "Download PDF",
-    "exportAsVellum": "Export as .vellum file",
+    "exportAsCadet": "Export as .cadet file",
     "open": "Open",
     "optionsFor": "Options for {name}",
     "pin": "Pin",
@@ -830,7 +830,7 @@
     "credits": "Credits"
   },
   "creditsUpsellCard": {
-    "loginToAddCredits": "Log in to the Vellum platform to add credits."
+    "loginToAddCredits": "Log in to the Cadet platform to add credits."
   },
   "csvPreview": {
     "emptyFile": "This file is empty",
@@ -841,7 +841,7 @@
     "skipConfirmTitle": "Skip today's credit limit?",
     "skipError": "Could not skip today's limit. Please try again.",
     "skipForToday": "Skip for today",
-    "subtitle": "Vellum credit spend is paused until your limit resets at {resetPhrase}.",
+    "subtitle": "Cadet credit spend is paused until your limit resets at {resetPhrase}.",
     "title": "Daily credit limit reached"
   },
   "deleteConversationConfirmDialog": {
@@ -1145,7 +1145,7 @@
   },
   "maintenanceModeBanner": {
     "body": "Your assistant workspace is currently connected to a debug terminal. Chat is unavailable while in Recovery Mode.",
-    "loginHint": "Log in to the Vellum platform to exit Recovery Mode.",
+    "loginHint": "Log in to the Cadet platform to exit Recovery Mode.",
     "resume": "Resume Assistant",
     "title": "Assistant in Recovery Mode"
   },
@@ -1986,7 +1986,7 @@
     "commandFailed": "Couldn't run that command. Please try again.",
     "doctorUnavailable": "The Doctor isn't available on this assistant."
   },
-  "vellumFileActionModal": {
+  "cadetFileActionModal": {
     "downloadFile": "Download file",
     "goToFile": "Go to file"
   },
@@ -2187,11 +2187,11 @@
   "restoreManagedCredentialButton": {
     "restore": "Restore access",
     "restoring": "Restoring...",
-    "restored": "Restored. Vellum-managed models are working again.",
+    "restored": "Restored. Cadet-managed models are working again.",
     "failedNoAssistant": "Select an assistant, then try again.",
     "failedCannotActHere": "This app cannot restore the credential for this assistant. Open the assistant on the computer that runs it.",
-    "failedReplacementRejected": "Vellum rejected the replacement credential. Log in to the Vellum platform, then try again.",
-    "failedUnconfirmed": "The replacement was saved but could not be confirmed with Vellum. It may start working shortly.",
+    "failedReplacementRejected": "Cadet rejected the replacement credential. Log in to the Cadet platform, then try again.",
+    "failedUnconfirmed": "The replacement was saved but could not be confirmed with Cadet. It may start working shortly.",
     "failedGeneric": "Could not restore access. Try again in a moment."
   },
   "sidebarExpandRow": {

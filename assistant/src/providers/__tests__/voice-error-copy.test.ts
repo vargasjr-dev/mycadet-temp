@@ -33,7 +33,7 @@ describe("describeSttFailure", () => {
     test("timeout uses provider-agnostic copy", () => {
       const copy = describeSttFailure(
         new SttError("timeout", "The operation was aborted"),
-        "vellum",
+        "cadet",
       );
       // A managed timeout (AbortError) carries no marker, so it still gets the
       // friendly copy rather than the raw abort string.
@@ -56,7 +56,7 @@ describe("describeSttFailure", () => {
         "Managed speech needs a working Cadet platform connection — reconnect with 'assistant platform connect'.";
       const copy = describeSttFailure(
         new SttError("auth", message, { userFacing: true }),
-        "vellum",
+        "cadet",
       );
       // The BYOK "check your API key in Settings → Voice" rewrite must not
       // clobber managed remediation — managed users hold no speech key.
@@ -70,7 +70,7 @@ describe("describeSttFailure", () => {
         "Cadet credits are exhausted — add funds to your Cadet account to continue using managed transcription.";
       const copy = describeSttFailure(
         new SttError("provider-error", message, { userFacing: true }),
-        "vellum",
+        "cadet",
       );
       expect(copy).toBe(message);
       expect(copy).not.toContain("returned an error while transcribing");

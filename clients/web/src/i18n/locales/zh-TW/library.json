@@ -25,7 +25,7 @@
     "unpin": "取消釘選",
     "pin": "釘選",
     "share": "分享",
-    "shareSub": "匯出為 .vellum 檔案",
+    "shareSub": "匯出為 .cadet 檔案",
     "deployed": "已部署至 Vercel",
     "copyLink": "複製連結",
     "redeploy": "重新部署",

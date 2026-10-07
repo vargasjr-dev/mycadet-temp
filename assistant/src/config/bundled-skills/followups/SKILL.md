@@ -4,7 +4,7 @@ description: Track sent messages awaiting responses across communication channel
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "📨"
-  vellum:
+  cadet:
     display-name: "Followups"
     category: "messaging"
 ---

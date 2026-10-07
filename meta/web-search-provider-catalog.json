@@ -2,9 +2,9 @@
   "version": 1,
   "providers": [
     {
-      "id": "vellum",
-      "displayName": "Vellum",
-      "displayNameLong": "Vellum Managed Search",
+      "id": "cadet",
+      "displayName": "Cadet",
+      "displayNameLong": "Cadet Managed Search",
       "kind": "managed"
     },
     {

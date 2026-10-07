@@ -1,7 +1,7 @@
 ---
 name: gmail-trigger
 description: "Beta. Act on new Gmail as it arrives: get pinged only for urgent mail, digest newsletters, forward invoices — any standing instruction, across one or several accounts."
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "📬"
   cadet:
@@ -39,7 +39,7 @@ The trigger reads Gmail through the user's Google OAuth connection with Gmail re
 assistant oauth status google
 ```
 
-If no connection is found, load the `vellum-oauth-integrations` skill — it evaluates whether managed or your-own mode is appropriate and guides the user through connecting. Managed (proxy) and your-own OAuth both work — `poll.ts` calls Gmail via `assistant oauth request`, which resolves either automatically.
+If no connection is found, load the `cadet-oauth-integrations` skill — it evaluates whether managed or your-own mode is appropriate and guides the user through connecting. Managed (proxy) and your-own OAuth both work — `poll.ts` calls Gmail via `assistant oauth request`, which resolves either automatically.
 
 ### 2. Choose the accounts to watch
 
@@ -100,4 +100,4 @@ The first run records `{"ok":true,"new":0,"accounts":[{"account":"you@example.co
 - Update to a newer shipped script: re-copy `poll.ts` from the skill directory into `schedules/<id>/`, re-applying any custom edits.
 - Pause / resume: disable / enable the schedule.
 - Remove: delete the schedule; optionally clean up its `schedules/<id>/` directory.
-- If polls start failing on auth, try `assistant oauth ping google` (often refreshes an expired token); if that fails, load the `vellum-oauth-integrations` skill to reconnect.
+- If polls start failing on auth, try `assistant oauth ping google` (often refreshes an expired token); if that fails, load the `cadet-oauth-integrations` skill to reconnect.

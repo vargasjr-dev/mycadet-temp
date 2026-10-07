@@ -4,7 +4,7 @@ description: "Ingest and process media files (video, audio, image)"
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🎬"
-  vellum:
+  cadet:
     display-name: "Media Processing"
     category: "content"
     activation-hints:

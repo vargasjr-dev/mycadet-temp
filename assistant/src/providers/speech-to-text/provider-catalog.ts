@@ -285,15 +285,16 @@ const CATALOG: ReadonlyMap<SttProviderId, SttProviderEntry> = new Map<
     },
   ],
   [
-    "vellum",
+    "cadet",
     {
-      id: "vellum",
+      id: "cadet",
       baseModelFamily: "nova-3",
-      displayName: "Vellum",
+      displayName: "Cadet",
       subtitle:
-        "Speech-to-text through your Vellum account — billed to Vellum credits, no separate API key needed.",
+        "Speech-to-text through your Cadet account — billed to Cadet credits, no separate API key needed.",
       setupMode: "connection",
-      setupHint: "Connect your Vellum account to enable managed transcription.",
+      setupHint: "Connect your Cadet account to enable managed transcription.",
+      // Legacy credential-service key (persisted identity rows).
       credentialProvider: "vellum",
       supportedBoundaries: new Set<SttBoundaryId>([
         "daemon-batch",
@@ -309,16 +310,16 @@ const CATALOG: ReadonlyMap<SttProviderId, SttProviderEntry> = new Map<
     },
   ],
   [
-    "vellum-flux",
+    "cadet-flux",
     {
-      id: "vellum-flux",
-      variantOf: "vellum",
+      id: "cadet-flux",
+      variantOf: "cadet",
       variantModel: "flux",
-      displayName: "Vellum (Flux)",
+      displayName: "Cadet (Flux)",
       subtitle:
-        "Conversational speech-to-text with model-native turn detection, through your Vellum account. No separate API key needed.",
+        "Conversational speech-to-text with model-native turn detection, through your Cadet account. No separate API key needed.",
       setupMode: "connection",
-      setupHint: "Connect your Vellum account to enable managed transcription.",
+      setupHint: "Connect your Cadet account to enable managed transcription.",
       // Shared with `vellum`: the platform connection is the credential, and
       // Flux is a different endpoint on the same relay, not a second account.
       credentialProvider: "vellum",

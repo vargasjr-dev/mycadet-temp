@@ -372,7 +372,7 @@
       "clawhubTitle": "No Clawhub Skills",
       "customSubtitle": "Create a custom skill by describing what you want in chat.",
       "customTitle": "No Custom Skills",
-      "defaultSubtitle": "Check your connection to the Vellum catalog.",
+      "defaultSubtitle": "Check your connection to the Cadet catalog.",
       "defaultTitle": "No Superpowers Available",
       "installedSubtitle": "Ask your assistant in chat to search for and install new skills and plugins.",
       "installedTitle": "No Superpowers Installed",
@@ -382,8 +382,8 @@
       "skillsshTitle": "No skills.sh Skills",
       "skillsSubtitle": "Ask your assistant in chat to search for and install new skills.",
       "skillsTitle": "No Skills Found",
-      "vellumSubtitle": "No bundled Vellum skills found.",
-      "vellumTitle": "No Vellum Skills"
+      "cadetSubtitle": "No bundled Cadet skills found.",
+      "cadetTitle": "No Cadet Skills"
     },
     "errorStateSubtitle": "Something went wrong. Try refreshing the page.",
     "errorStateTitle": "Failed to load superpowers",

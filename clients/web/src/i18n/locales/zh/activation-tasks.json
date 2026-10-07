@@ -526,7 +526,7 @@
       "prompt": "向我展示你在我电脑上能实现的电脑操作功能。首先截取一张屏幕截图并描述当前画面，然后提议两件你可以帮我完成的事情。",
       "link": {
         "label": "下载桌面客户端",
-        "url": "https://www.vellum.ai/downloads"
+        "url": "https://www.cadet.ai/downloads"
       }
     }
   }

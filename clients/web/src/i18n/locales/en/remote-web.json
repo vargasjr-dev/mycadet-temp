@@ -1,6 +1,6 @@
 {
   "pairingPage": {
-    "openInApp": "Open in the Vellum app",
+    "openInApp": "Open in the Cadet app",
     "continueInBrowser": "Continue in this browser",
     "pairingCode": "Pairing code",
     "expiresAt": "Expires {time}.",

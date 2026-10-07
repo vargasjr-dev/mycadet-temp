@@ -1,7 +1,7 @@
 ---
 name: frontend-design
 description: Design-quality layer for frontend code — typography, color, motion, spatial composition, and avoiding generic "AI slop" aesthetics. Use this as a companion when you are already writing or styling frontend code and want it to look distinctive and production-grade. For building an app, dashboard, tracker, calculator, visualization, landing page, or slide deck the user wants inside the assistant, load `app-builder` instead — it loads this skill itself for the design pass.
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 license: Complete terms in LICENSE.txt
 metadata:
   icon: assets/icon.svg

@@ -1,7 +1,7 @@
 ---
 name: inbox-management
 description: Ongoing Gmail inbox management via scheduled runs. Archives known noise, flags urgent items, drafts replies in-thread (never auto-sends), and catches stale follow-ups. Empty polls spend no model tokens. Starts in flag-only mode.
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "📬"
@@ -302,7 +302,7 @@ Cursor state is JSON at `schedules/<id>/state/state.json` (same idea as the gmai
 - Update to a newer shipped script: re-copy both files from the skill directory into `schedules/<id>/`, re-applying any custom edits.
 - Pause / resume: disable / enable the schedule.
 - Remove: delete the schedule; optionally clean up its `schedules/<id>/` directory.
-- If polls start failing on auth, try `assistant oauth ping google`; if that fails, load the `vellum-oauth-integrations` skill to reconnect.
+- If polls start failing on auth, try `assistant oauth ping google`; if that fails, load the `cadet-oauth-integrations` skill to reconnect.
 
 ---
 

@@ -237,7 +237,7 @@ export function IntegrationConnectModal({
       case "mcp-manual":
         return t("integrationConnect.tagMcp");
       case "managed-oauth":
-        return t("integrationConnect.tagVellum");
+        return t("integrationConnect.tagCadet");
       case "own-oauth":
         return t("integrationConnect.tagOwnApp");
     }

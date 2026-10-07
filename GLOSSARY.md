@@ -34,7 +34,7 @@ A named entity that the guardian has granted permission to interact with their a
 
 Where secrets the assistant is allowed to use are stored: API keys, tokens, passwords. The assistant reads from the vault to perform tasks; access is mediated by trust rules the guardian defines, which can require explicit approval, allow specific patterns autonomously, or deny entirely.
 
-_Note: the internal name is "credential executor" (see `credential-executor/`)._
+*Note: the internal name is "credential executor" (see `credential-executor/`).*
 
 ### Gateway
 

@@ -1170,8 +1170,8 @@ describe("LiveVoiceSession Flux end-of-turn", () => {
   test.each([
     { providerId: "deepgram-flux" as const, flagOn: true },
     { providerId: "deepgram-flux" as const, flagOn: false },
-    { providerId: "vellum-flux" as const, flagOn: true },
-    { providerId: "vellum-flux" as const, flagOn: false },
+    { providerId: "cadet-flux" as const, flagOn: true },
+    { providerId: "cadet-flux" as const, flagOn: false },
   ])(
     "only provider speech starts interrupt playback: %j",
     async ({ providerId, flagOn }) => {
@@ -1518,7 +1518,7 @@ describe("LiveVoiceSession Flux end-of-turn during the STT dial", () => {
     async (flagOn) => {
       const gate = createDialGate();
       const { frames, session } = createHarness({
-        providerId: "vellum",
+        providerId: "cadet",
         fluxConfig: flagOn ? FLUX_ON : FLUX_OFF,
         silenceThresholdMs: 10_000,
         resolveGate: gate.promise,
@@ -1539,9 +1539,9 @@ describe("LiveVoiceSession Flux end-of-turn during the STT dial", () => {
   );
 
   test.each([
-    { providerId: "vellum" as const, audio: LOUD_CHUNK, interrupts: false },
+    { providerId: "cadet" as const, audio: LOUD_CHUNK, interrupts: false },
     {
-      providerId: "vellum" as const,
+      providerId: "cadet" as const,
       audio: SUSTAINED_LOUD_CHUNK,
       interrupts: true,
     },
@@ -1616,7 +1616,7 @@ describe("LiveVoiceSession Flux end-of-turn during the STT dial", () => {
       // The first input is released but cannot dispatch until its final arrives.
       await session.handleBinaryAudio(SUSTAINED_LOUD_CHUNK);
       await sleep(PAST_SILENCE_BOUNDARY_MS);
-      options.providerId = "vellum";
+      options.providerId = "cadet";
       first.flushStopEvents();
       await waitFor(() => countFrames(frames, "thinking") === 1);
       expect(countFrames(frames, "turn_cancelled")).toBe(0);

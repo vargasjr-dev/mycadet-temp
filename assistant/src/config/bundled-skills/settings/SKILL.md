@@ -4,7 +4,7 @@ description: Manage assistant voice and system settings
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "\u2699\uFE0F"
-  vellum:
+  cadet:
     display-name: "Settings"
     category: "system"
     activation-hints:

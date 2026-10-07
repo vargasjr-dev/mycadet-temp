@@ -4,7 +4,7 @@ description: Transcribe audio and video files using the configured speech-to-tex
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🎙️"
-  vellum:
+  cadet:
     display-name: "Transcribe"
     category: "voice"
     activation-hints:

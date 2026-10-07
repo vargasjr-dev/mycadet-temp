@@ -113,7 +113,7 @@ export const AppAssetActions: FC<AppAssetActionsProps> = ({
       <ActionMenu.Item
         icon={ArrowUp}
         label={t("chat:conversationAssetActions.share")}
-        description={t("chat:conversationAssetActions.exportAsVellum")}
+        description={t("chat:conversationAssetActions.exportAsCadet")}
         onSelect={() => void share()}
       />
       <ActionMenu.Item

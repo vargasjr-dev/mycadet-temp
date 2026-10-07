@@ -378,7 +378,7 @@
     "deviceInUse": "Otra aplicación está usando la cámara.",
     "noDevice": "No se encontró ninguna cámara.",
     "notDelivered": "Reconectando. Toma esa foto de nuevo.",
-    "permissionDenied": "El acceso a la cámara está desactivado para Vellum.",
+    "permissionDenied": "El acceso a la cámara está desactivado para Cadet.",
     "refused": "Tu asistente todavía no puede recibir fotos.",
     "storeFailed": "No se pudo añadir esa foto a la conversación.",
     "unknown": "No se pudo abrir la cámara.",
@@ -467,7 +467,7 @@
     "assistantSender": "Asistente",
     "closeAria": "Cerrar el hilo del canal",
     "closeTooltip": "Cerrar",
-    "emptyNoMessageDetail": "{channel} no envía a Vellum los detalles por mensaje que necesita esta vista, así que no hay nada que mostrar aquí. Abre la conversación en {channel} para leerla completa.",
+    "emptyNoMessageDetail": "{channel} no envía a Cadet los detalles por mensaje que necesita esta vista, así que no hay nada que mostrar aquí. Abre la conversación en {channel} para leerla completa.",
     "emptyThread": "Todavía no hay mensajes de {channel} en esta conversación.",
     "namedTitle": "{channel} · {thread}",
     "noText": "Sin contenido de texto",
@@ -475,11 +475,11 @@
     "reactionAdded": "Reaccionó con {emoji}",
     "reactionRemoved": "Quitó la reacción {emoji}",
     "readOnly": "Solo lectura",
-    "readOnlyNote": "Esta es la conversación tal como está en {channel}. El campo de escritura de Vellum es el único lugar donde puedes escribir.",
-    "reference": "Referenciar en Vellum",
-    "referenceAria": "Referenciar este mensaje de {channel} en Vellum",
+    "readOnlyNote": "Esta es la conversación tal como está en {channel}. El campo de escritura de Cadet es el único lugar donde puedes escribir.",
+    "reference": "Referenciar en Cadet",
+    "referenceAria": "Referenciar este mensaje de {channel} en Cadet",
     "referenced": "Referenciado",
-    "removeReferenceAria": "Quitar esta referencia del campo de escritura de Vellum",
+    "removeReferenceAria": "Quitar esta referencia del campo de escritura de Cadet",
     "title": "Hilo de {channel}",
     "unknownSender": "Remitente desconocido"
   },
@@ -615,7 +615,7 @@
     "hintAlmostDone": "Casi listo…",
     "hintCleaning": "Limpiando tu asistente…",
     "hintWrapping": "Cerrando todo…",
-    "timeoutBody": "Prueba a ejecutar Vellum Doctor para diagnosticar el problema, o <communityLink>pregunta a la comunidad</communityLink> para pedir ayuda.",
+    "timeoutBody": "Prueba a ejecutar Cadet Doctor para diagnosticar el problema, o <communityLink>pregunta a la comunidad</communityLink> para pedir ayuda.",
     "timeoutTitle": "La limpieza está tardando más de lo esperado",
     "title": "Limpiando tu asistente…",
     "warningAria": "advertencia"
@@ -775,7 +775,7 @@
   "conversationAssetActions": {
     "delete": "Eliminar",
     "downloadPdf": "Descargar PDF",
-    "exportAsVellum": "Exportar como archivo .vellum",
+    "exportAsCadet": "Exportar como archivo .cadet",
     "open": "Abrir",
     "optionsFor": "Opciones para {name}",
     "pin": "Anclar",
@@ -816,7 +816,7 @@
     "credits": "Créditos"
   },
   "creditsUpsellCard": {
-    "loginToAddCredits": "Inicia sesión en la plataforma Vellum para agregar créditos."
+    "loginToAddCredits": "Inicia sesión en la plataforma Cadet para agregar créditos."
   },
   "csvPreview": {
     "emptyFile": "Este archivo está vacío",
@@ -827,7 +827,7 @@
     "skipConfirmTitle": "¿Omitir el límite de créditos de hoy?",
     "skipError": "No se pudo omitir el límite de hoy. Inténtalo de nuevo.",
     "skipForToday": "Omitir por hoy",
-    "subtitle": "El gasto de créditos de Vellum está pausado hasta que tu límite se reinicie a las {resetPhrase}.",
+    "subtitle": "El gasto de créditos de Cadet está pausado hasta que tu límite se reinicie a las {resetPhrase}.",
     "title": "Límite diario de créditos alcanzado"
   },
   "deleteConversationConfirmDialog": {
@@ -1090,7 +1090,7 @@
   },
   "maintenanceModeBanner": {
     "body": "El espacio de trabajo de tu asistente está conectado actualmente a un terminal de depuración. El chat no está disponible en el modo de recuperación.",
-    "loginHint": "Inicia sesión en la plataforma Vellum para salir del modo de recuperación.",
+    "loginHint": "Inicia sesión en la plataforma Cadet para salir del modo de recuperación.",
     "resume": "Reanudar asistente",
     "title": "Asistente en modo de recuperación"
   },
@@ -1937,7 +1937,7 @@
     "commandFailed": "No se pudo ejecutar ese comando. Inténtalo de nuevo.",
     "doctorUnavailable": "El Doctor no está disponible en este asistente."
   },
-  "vellumFileActionModal": {
+  "cadetFileActionModal": {
     "downloadFile": "Descargar archivo",
     "goToFile": "Ir al archivo"
   },
@@ -2121,11 +2121,11 @@
   "restoreManagedCredentialButton": {
     "restore": "Restaurar acceso",
     "restoring": "Restaurando...",
-    "restored": "Restaurado. Los modelos gestionados por Vellum vuelven a funcionar.",
+    "restored": "Restaurado. Los modelos gestionados por Cadet vuelven a funcionar.",
     "failedNoAssistant": "Selecciona un asistente y vuelve a intentarlo.",
     "failedCannotActHere": "Esta aplicación no puede restaurar la credencial de este asistente. Abre el asistente en el equipo que lo ejecuta.",
-    "failedReplacementRejected": "Vellum rechazó la credencial de reemplazo. Inicia sesión en la plataforma Vellum y vuelve a intentarlo.",
-    "failedUnconfirmed": "El reemplazo se guardó, pero no se pudo confirmar con Vellum. Puede que empiece a funcionar en breve.",
+    "failedReplacementRejected": "Cadet rechazó la credencial de reemplazo. Inicia sesión en la plataforma Cadet y vuelve a intentarlo.",
+    "failedUnconfirmed": "El reemplazo se guardó, pero no se pudo confirmar con Cadet. Puede que empiece a funcionar en breve.",
     "failedGeneric": "No se pudo restaurar el acceso. Inténtalo de nuevo en un momento."
   },
   "sidebarExpandRow": {

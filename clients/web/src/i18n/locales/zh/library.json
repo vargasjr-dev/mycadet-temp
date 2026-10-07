@@ -25,7 +25,7 @@
     "unpin": "取消置顶",
     "pin": "置顶",
     "share": "分享",
-    "shareSub": "导出为 .vellum 文件",
+    "shareSub": "导出为 .cadet 文件",
     "deployed": "已部署到 Vercel",
     "copyLink": "复制链接",
     "redeploy": "重新部署",

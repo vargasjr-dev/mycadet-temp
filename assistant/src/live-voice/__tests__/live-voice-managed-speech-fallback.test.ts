@@ -5,7 +5,7 @@
  * caller's `settings.write` scope — so the WebSocket transport must never
  * persist `services.stt/tts.provider`. Instead every live-voice leg resolves
  * the EFFECTIVE providers: while managed speech is available, a configured
- * BYOK provider whose credential does not resolve is served by `"vellum"`.
+ * BYOK provider whose credential does not resolve is served by `"cadet"`.
  * These tests pin both halves of that contract — the readiness verdict and
  * the runtime legs agree, and `config.json` is byte-identical afterwards.
  *
@@ -57,7 +57,7 @@ function transcriberFor(providerId: string | undefined): boolean {
   // Both managed rows ride the same platform connection, so neither has a
   // credential of its own. Live voice asks for the flux row specifically,
   // since managed live voice resolves to it when no family is named.
-  return providerId === "vellum" || providerId === "vellum-flux"
+  return providerId === "cadet" || providerId === "cadet-flux"
     ? managedAvailable
     : providerId !== undefined && providerKeys[providerId] !== undefined;
 }
@@ -137,7 +137,7 @@ function readConfigFile(): string {
 /** A streaming TTS adapter standing in for the managed `cadet` provider. */
 function registerManagedTtsProvider(): TtsProvider {
   const provider: TtsProvider = {
-    id: "vellum",
+    id: "cadet",
     capabilities: { supportsStreaming: true, supportedFormats: ["pcm", "mp3"] },
     async synthesize(): Promise<TtsSynthesisResult> {
       throw new Error("buffered synthesis should not be used");
@@ -180,7 +180,7 @@ describe("live voice on managed speech", () => {
     const configBefore = readConfigFile();
 
     const effective = await resolveEffectiveSpeechProviders();
-    expect(effective).toEqual({ stt: "deepgram", tts: "vellum" });
+    expect(effective).toEqual({ stt: "deepgram", tts: "cadet" });
 
     const readiness = await resolveLiveVoiceCredentialReadiness();
     expect(readiness).toEqual({ status: "ready" });
@@ -203,7 +203,7 @@ describe("live voice on managed speech", () => {
       },
     });
 
-    expect(result.provider).toBe("vellum");
+    expect(result.provider).toBe("cadet");
     expect(chunks).toHaveLength(1);
     expect(getConfig().services.tts.provider).toBe("elevenlabs");
     expect(readConfigFile()).toBe(configBefore);
@@ -215,7 +215,7 @@ describe("live voice on managed speech", () => {
     const configBefore = readConfigFile();
 
     const effective = await resolveEffectiveSpeechProviders();
-    expect(effective).toEqual({ stt: "vellum", tts: "elevenlabs" });
+    expect(effective).toEqual({ stt: "cadet", tts: "elevenlabs" });
 
     const readiness = await resolveLiveVoiceCredentialReadiness();
     expect(readiness).toEqual({ status: "ready" });
@@ -224,7 +224,7 @@ describe("live voice on managed speech", () => {
     // readiness verdict was earned on. Live voice resolves the flux row while
     // the roleless verdict above stays on the base one, which is the whole
     // point of resolving per role.
-    expect(requestedSttProviders).toEqual(["vellum-flux"]);
+    expect(requestedSttProviders).toEqual(["cadet-flux"]);
     expect(readConfigFile()).toBe(configBefore);
   });
 

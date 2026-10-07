@@ -1804,7 +1804,7 @@ export function CompanionSurface({
         // an idle one starts a call.
         label={
           phase === "call"
-            ? t("companionSurface.openVellum")
+            ? t("companionSurface.openCadet")
             : t("companionSurface.talk")
         }
         accentHex={accentHex}

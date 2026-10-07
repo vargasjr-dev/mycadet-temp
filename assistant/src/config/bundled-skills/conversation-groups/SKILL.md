@@ -4,7 +4,7 @@ description: Organize conversations into custom sidebar groups — list groups, 
 compatibility: "Designed for Vellum personal assistants"
 metadata:
   emoji: "🗂️"
-  vellum:
+  cadet:
     display-name: "Conversation Groups"
     category: "productivity"
 ---

@@ -184,7 +184,7 @@ describe("TextToSpeechCard — daemon provisioning on Save", () => {
   });
 
   test("selecting a BYOK provider from a Cadet daemon writes that provider", async () => {
-    daemonConfigData = { services: { tts: { provider: "vellum" } } };
+    daemonConfigData = { services: { tts: { provider: "cadet" } } };
     renderCard();
 
     selectProvider("Fish Audio");
@@ -222,7 +222,7 @@ describe("TextToSpeechCard — Cadet provider", () => {
   });
 
   test("a cadet daemon provider hides the API key field and the Test button", () => {
-    daemonConfigData = { services: { tts: { provider: "vellum" } } };
+    daemonConfigData = { services: { tts: { provider: "cadet" } } };
     renderCard();
 
     const trigger = document.querySelector<HTMLButtonElement>(
@@ -243,9 +243,9 @@ describe("TextToSpeechCard — Cadet provider", () => {
 
     await waitFor(() => expect(configPatchCalls.length).toBe(1));
     // Written as a pair so the save stays valid on daemons whose schema
-    // still couples provider "vellum" to mode "managed".
+    // still couples the managed provider to mode "managed".
     expect(configPatchCalls[0]!.body).toMatchObject({
-      services: { tts: { provider: "vellum", mode: "managed" } },
+      services: { tts: { provider: "cadet", mode: "managed" } },
     });
     expect(credentialsSetCalls).toHaveLength(0);
   });
@@ -287,11 +287,11 @@ describe("TextToSpeechCard — Cadet provider", () => {
     // the dropdown must offer the fetched voices (not the static fallback)
     // and decorate the platform's default.
     orgReady = true;
-    daemonConfigData = { services: { tts: { provider: "vellum" } } };
+    daemonConfigData = { services: { tts: { provider: "cadet" } } };
     ttsCatalogData = {
       providers: [
         {
-          id: "vellum",
+          id: "cadet",
           displayName: "Cadet",
           subtitle: "Managed TTS.",
           supportsVoiceSelection: true,
@@ -362,11 +362,11 @@ describe("TextToSpeechCard — Cadet provider", () => {
 
   test("the per-row preview is hidden for voices without a hosted sample", () => {
     orgReady = true;
-    daemonConfigData = { services: { tts: { provider: "vellum" } } };
+    daemonConfigData = { services: { tts: { provider: "cadet" } } };
     ttsCatalogData = {
       providers: [
         {
-          id: "vellum",
+          id: "cadet",
           displayName: "Cadet",
           subtitle: "Managed TTS.",
           supportsVoiceSelection: true,
@@ -403,11 +403,11 @@ describe("TextToSpeechCard — Cadet provider", () => {
     // An empty catalog is authoritative ("nothing offered right now") — the
     // static fallback must not resurface voices the platform would reject.
     orgReady = true;
-    daemonConfigData = { services: { tts: { provider: "vellum" } } };
+    daemonConfigData = { services: { tts: { provider: "cadet" } } };
     ttsCatalogData = {
       providers: [
         {
-          id: "vellum",
+          id: "cadet",
           displayName: "Cadet",
           subtitle: "Managed TTS.",
           supportsVoiceSelection: true,

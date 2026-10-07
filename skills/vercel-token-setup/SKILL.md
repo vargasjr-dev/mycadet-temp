@@ -1,14 +1,14 @@
 ---
 name: vercel-token-setup
 description: Set up a Vercel API token for publishing apps using browser automation
-compatibility: "Designed for Cadet personal assistants"
+compatibility: "Designed for Vellum personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "▲"
   cadet:
     category: "development"
     display-name: "Vercel Token Setup"
-    includes: ["vellum-browser-use"]
+    includes: ["cadet-browser-use"]
 ---
 
 You are helping your user set up a Vercel API token so they can publish apps to the web.

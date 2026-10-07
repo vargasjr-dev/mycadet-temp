@@ -118,9 +118,7 @@ let database: DrizzleDb;
 let sqlite: Database;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(
-    join(tmpdir(), "vellum-memory-v2-migration-test-"),
-  );
+  workspaceDir = mkdtempSync(join(tmpdir(), "cadet-memory-v2-migration-test-"));
   mkdirSync(join(workspaceDir, "memory", "concepts"), { recursive: true });
   mkdirSync(join(workspaceDir, "memory", "archive"), { recursive: true });
   mkdirSync(join(workspaceDir, "memory", ".v2-state"), { recursive: true });

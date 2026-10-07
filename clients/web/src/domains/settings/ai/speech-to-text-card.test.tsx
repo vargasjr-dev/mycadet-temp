@@ -288,7 +288,7 @@ describe("SpeechToTextCard — macOS Native Dictation option", () => {
   });
 
   test("selecting a provider from a Cadet daemon writes that provider", async () => {
-    daemonConfigData = { services: { stt: { provider: "vellum" } } };
+    daemonConfigData = { services: { stt: { provider: "cadet" } } };
     renderCard();
 
     openProviderSelect();
@@ -327,7 +327,7 @@ describe("SpeechToTextCard — Cadet provider", () => {
   });
 
   test("a cadet daemon provider renders as the selected option with no API key field", () => {
-    daemonConfigData = { services: { stt: { provider: "vellum" } } };
+    daemonConfigData = { services: { stt: { provider: "cadet" } } };
     renderCard();
 
     const trigger = document.querySelector<HTMLButtonElement>(
@@ -350,12 +350,12 @@ describe("SpeechToTextCard — Cadet provider", () => {
 
     await waitFor(() => expect(configPatchCalls.length).toBe(1));
     // Written as a pair so the save stays valid on daemons whose schema
-    // still couples provider "vellum" to mode "managed".
+    // still couples the managed provider to mode "managed".
     expect(configPatchCalls[0]!.body).toMatchObject({
-      services: { stt: { provider: "vellum", mode: "managed" } },
+      services: { stt: { provider: "cadet", mode: "managed" } },
     });
     expect(credentialsSetCalls).toHaveLength(0);
-    expect(localStorage.getItem(LS_STT_PROVIDER)).toBe("vellum");
+    expect(localStorage.getItem(LS_STT_PROVIDER)).toBe("cadet");
   });
 
   // A config written by the legacy mode toggle marks managed via `mode` while
@@ -396,7 +396,7 @@ describe("SpeechToTextCard — Cadet provider", () => {
     // the daemon would stay on Cadet and a refetch would snap the dropdown
     // back to it.
     nativeDictationSupported = true;
-    daemonConfigData = { services: { stt: { provider: "vellum" } } };
+    daemonConfigData = { services: { stt: { provider: "cadet" } } };
     renderCard();
 
     openProviderSelect();
@@ -547,10 +547,10 @@ describe("SpeechToTextCard: Spoken language picker", () => {
     // Saved provider cadet (manual), dropdown switched to OpenAI without
     // saving: Whisper auto-detects, so a picker here would offer a language
     // the drafted provider ignores.
-    daemonConfigData = { services: { stt: { provider: "vellum" } } };
+    daemonConfigData = { services: { stt: { provider: "cadet" } } };
     providerCatalogData = {
       providers: [
-        { id: "vellum", displayName: "Cadet", languageSelection: "manual" },
+        { id: "cadet", displayName: "Cadet", languageSelection: "manual" },
         {
           id: "openai-whisper",
           displayName: "Whisper",
@@ -581,7 +581,7 @@ describe("SpeechToTextCard: Spoken language picker", () => {
           displayName: "Deepgram",
           languageSelection: "manual",
         },
-        { id: "vellum", displayName: "Cadet", languageSelection: "manual" },
+        { id: "cadet", displayName: "Cadet", languageSelection: "manual" },
       ],
     };
     renderCard();

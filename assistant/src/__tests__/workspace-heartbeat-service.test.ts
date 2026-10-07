@@ -43,7 +43,7 @@ describe("WorkspaceHeartbeatService", () => {
   beforeEach(async () => {
     testDir = join(
       tmpdir(),
-      `vellum-heartbeat-test-${Date.now()}-${Math.random()
+      `cadet-heartbeat-test-${Date.now()}-${Math.random()
         .toString(36)
         .slice(2)}`,
     );
@@ -313,7 +313,7 @@ describe("WorkspaceHeartbeatService", () => {
     test("shutdown commits multiple workspaces", async () => {
       const testDir2 = join(
         tmpdir(),
-        `vellum-heartbeat-test2-${Date.now()}-${Math.random()
+        `cadet-heartbeat-test2-${Date.now()}-${Math.random()
           .toString(36)
           .slice(2)}`,
       );

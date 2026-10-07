@@ -18,7 +18,7 @@ export type LastSeenAvatar =
 
 type StoredAvatar = LastSeenAvatar & { id: string; updatedAt: number };
 
-const DB_NAME = "vellum-avatar-cache";
+const DB_NAME = "cadet-avatar-cache";
 const DB_VERSION = 1;
 const STORE_NAME = "avatars";
 

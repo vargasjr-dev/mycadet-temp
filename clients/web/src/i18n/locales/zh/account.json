@@ -19,12 +19,12 @@
   },
   "signupClosedScreen": {
     "title": "注册目前已关闭",
-    "message": "抱歉，Vellum 目前不接受新用户注册。欢迎稍后再试。你也可以自行托管 Vellum。<selfHostingLink>点击此处</selfHostingLink>了解自托管的更多信息。",
+    "message": "抱歉，Cadet 目前不接受新用户注册。欢迎稍后再试。你也可以自行托管 Cadet。<selfHostingLink>点击此处</selfHostingLink>了解自托管的更多信息。",
     "haveAccountPrompt": "已有账户？<signIn>登录</signIn>"
   },
   "accountPage": {
     "loading": "加载中...",
-    "welcomeTitle": "欢迎使用 Vellum",
+    "welcomeTitle": "欢迎使用 Cadet",
     "welcomeSubtitle": "请登录以开始使用。",
     "signIn": "登录",
     "signedInTitle": "欢迎！",
@@ -49,7 +49,7 @@
   },
   "providerCallbackPage": {
     "signupClosedTitle": "注册目前已关闭",
-    "signupClosedSubtitle": "抱歉，Vellum 目前不接受新用户注册。欢迎稍后再试。",
+    "signupClosedSubtitle": "抱歉，Cadet 目前不接受新用户注册。欢迎稍后再试。",
     "backToSignIn": "返回登录",
     "failedTitle": "身份验证失败",
     "failedSubtitle": "社交登录时出现问题。请重试或使用其他方式。",
@@ -79,10 +79,10 @@
   },
   "authErrors": {
     "genericFailure": "发生错误。请重试。",
-    "signupClosed": "抱歉，Vellum 目前不接受新用户注册。欢迎稍后再试。",
-    "providerSignup": "该登录尚未关联 Vellum 账户。请先注册，然后登录。",
+    "signupClosed": "抱歉，Cadet 目前不接受新用户注册。欢迎稍后再试。",
+    "providerSignup": "该登录尚未关联 Cadet 账户。请先注册，然后登录。",
     "loginIncomplete": "您的账户需要额外步骤才能完成登录。请在网页上登录，然后重试。",
-    "desktopUpdateRequired": "此版本的 Vellum 桌面应用无法登录。请更新应用，然后重试。",
+    "desktopUpdateRequired": "此版本的 Cadet 桌面应用无法登录。请更新应用，然后重试。",
     "loopbackStateMismatch": "登录失败：状态不匹配。请重试。",
     "loopbackNoToken": "登录失败：未收到会话令牌。请重试。",
     "loopbackInvalidToken": "登录失败：会话令牌无效。"
