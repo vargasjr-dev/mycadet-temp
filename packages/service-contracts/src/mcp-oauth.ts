@@ -33,7 +33,7 @@ export function buildMcpOAuthClientMetadata(
     token_endpoint_auth_method: "none",
     grant_types: ["authorization_code", "refresh_token"],
     response_types: ["code"],
-    client_name: options.clientName ?? "Vellum Assistant",
+    client_name: options.clientName ?? "Cadet",
     logo_uri: MCP_OAUTH_CLIENT_LOGO_URI,
     ...(options.softwareId && { software_id: options.softwareId }),
     ...(options.softwareVersion && {
