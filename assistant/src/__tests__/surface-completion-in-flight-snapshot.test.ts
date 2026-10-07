@@ -14,7 +14,7 @@
  * The genuinely-ephemeral case is asserted alongside: a standalone surface owns
  * neither a persisted block nor a snapshot, and must still complete.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
 
@@ -22,41 +22,6 @@ let broadcasts: AssistantEvent[] = [];
 setBroadcastOverrideForTesting((msg: AssistantEvent) => {
   broadcasts.push(msg);
 });
-
-/**
- * Stand-in message store. `getMessages` stays empty for the in-flight cases so
- * the completion write finds nothing to patch, which is the whole premise;
- * `getMessageById` serves the reserved assistant row the tool-result appender
- * rewrites.
- */
-let reservedRow: Array<Record<string, unknown>> | null = null;
-let updates: Array<{ id: string; blocks: Array<Record<string, unknown>> }> = [];
-
-const realCrud = await import("../persistence/conversation-crud.js");
-mock.module("../persistence/conversation-crud.js", () => ({
-  ...realCrud,
-  getMessages: () => [],
-  getMessageById: (id: string) =>
-    reservedRow ? { id, content: reservedRow } : null,
-  updateMessageContent: (id: string, content: string) => {
-    updates.push({
-      id,
-      blocks: JSON.parse(content) as Array<Record<string, unknown>>,
-    });
-  },
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  addMessage: () => ({ id: "mock-msg-id" }),
-  provenanceFromTrustContext: () => ({}),
-  reserveMessage: async () => ({ id: "msg-reserve" }),
-}));
-
-const realLogStore = await import("../persistence/llm-request-log-store.js");
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  ...realLogStore,
-  recordRequestLog: () => {},
-  backfillMessageIdOnLogs: () => {},
-}));
 
 // Imports must follow the mocks so both modules bind the stubs above.
 const { createSurfaceMutex, handleSurfaceAction, markSurfaceCompleted } =
@@ -75,11 +40,29 @@ import type {
 import type { CurrentTurnSurface } from "../daemon/conversation-surface-state.js";
 import type { SurfaceStateEntry } from "../daemon/conversation-surface-state.js";
 import type { SurfaceType } from "../daemon/message-protocol.js";
+import {
+  ensureConversationExists,
+  getMessageById,
+  reserveMessage,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+beforeAll(async () => {
+  await initializeDb();
+});
 
-const CONVERSATION_ID = "conv-in-flight-surface-1";
-const SURFACE_ID = "surface-in-flight-1";
+let CONVERSATION_ID = "conv-in-flight-surface-1";
+let SURFACE_ID = "surface-in-flight-1";
+let idSeq = 0;
+beforeEach(() => {
+  // Fresh ids per test: the real rows these flows persist must not bleed
+  // into the next test's `findPersistedSurfaceBlock` scan.
+  idSeq += 1;
+  CONVERSATION_ID = `conv-in-flight-surface-${idSeq}`;
+  SURFACE_ID = `surface-in-flight-${idSeq}`;
+  broadcasts = [];
+});
 const CHOICE_DATA = {
   options: [
     { id: "inbox", title: "Clean up my inbox" },
@@ -166,10 +149,17 @@ function makeHandlerDeps(ctx: Conversation): EventHandlerDeps {
   } as EventHandlerDeps;
 }
 
+/** Create the real reserved assistant row the tool-result appender rewrites. */
+async function seedReservedRow(): Promise<string> {
+  ensureConversationExists(CONVERSATION_ID, undefined);
+  const row = await reserveMessage(CONVERSATION_ID, "assistant");
+  return row.id;
+}
+
 /** Prime a finished tool call so the tool-result appender runs. */
-function makeToolState(toolUseId: string): EventHandlerState {
+function makeToolState(toolUseId: string, rowId: string): EventHandlerState {
   const state = createEventHandlerState();
-  state.lastAssistantMessageId = "msg-reserve";
+  state.lastAssistantMessageId = rowId;
   state.toolUseIdToName.set(toolUseId, "ui_show");
   state.toolCallTimestamps.set(toolUseId, { startedAt: 1 });
   state.currentTurnToolUseIds.push(toolUseId);
@@ -185,12 +175,6 @@ function surfaceBlockFrom(
 }
 
 describe("a one-shot surface answered before its turn persists", () => {
-  beforeEach(() => {
-    broadcasts = [];
-    updates = [];
-    reservedRow = null;
-  });
-
   test("carries its completion through the message_complete appender", async () => {
     const ctx = makeContext();
     showOneShotChoice(ctx);
@@ -214,20 +198,20 @@ describe("a one-shot surface answered before its turn persists", () => {
   test("carries its completion through the tool-result appender", async () => {
     const ctx = makeContext();
     showOneShotChoice(ctx);
-    reservedRow = [{ type: "text", text: "Which one?" }];
+    const rowId = await seedReservedRow();
 
     await handleSurfaceAction(ctx, SURFACE_ID, "inbox", CHOICE_PAYLOAD);
 
     const toolUseId = "toolu_ui_show_1";
-    handleToolResult(makeToolState(toolUseId), makeHandlerDeps(ctx), {
+    handleToolResult(makeToolState(toolUseId, rowId), makeHandlerDeps(ctx), {
       type: "tool_result",
       toolUseId,
       content: "Surface displayed",
       isError: false,
     });
 
-    expect(updates).toHaveLength(1);
-    const block = surfaceBlockFrom(updates[0].blocks);
+    const row = getMessageById(rowId);
+    const block = surfaceBlockFrom(row!.content as never);
     expect(block?.completed).toBe(true);
     expect(block?.completionSummary).toBe(EXPECTED_SUMMARY);
   });
@@ -254,18 +238,11 @@ describe("a one-shot surface answered before its turn persists", () => {
 });
 
 describe("a surface with neither a persisted block nor a turn snapshot", () => {
-  beforeEach(() => {
-    broadcasts = [];
-    updates = [];
-    reservedRow = null;
-  });
-
   test("still reports the completion as safe to announce", () => {
     const ctx = makeContext();
 
     expect(markSurfaceCompleted(ctx, "surface-ephemeral-1", "Done")).toBe(true);
     expect(ctx.currentTurnSurfaces).toHaveLength(0);
-    expect(updates).toHaveLength(0);
   });
 
   test("completes a standalone surface and broadcasts it", async () => {

@@ -20,28 +20,7 @@
  * Read-side coverage (renderHistoryContent in handlers/shared.ts) lives in
  * server-history-render.test.ts.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
-
-let mockedRowContent = "";
-const updates: Array<{ id: string; content: string }> = [];
-
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  addMessage: () => ({ id: "mock-msg-id" }),
-  getMessageById: (id: string) =>
-    mockedRowContent ? { id, content: JSON.parse(mockedRowContent) } : null,
-  updateMessageContent: (id: string, content: string) => {
-    updates.push({ id, content });
-  },
-  provenanceFromTrustContext: () => ({}),
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
-
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-  backfillMessageIdOnLogs: () => {},
-}));
+import { beforeAll, describe, expect, test } from "bun:test";
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 import type { ToolActivityMetadata } from "../api/events/tool-result.js";
@@ -53,7 +32,30 @@ import {
   createEventHandlerState,
   handleToolResult,
 } from "../daemon/conversation-agent-loop-handlers.js";
+import {
+  addMessage,
+  ensureConversationExists,
+  getMessageById,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
+import type { ContentBlock } from "../providers/types.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+beforeAll(async () => {
+  await initializeDb();
+});
+
+let convSeq = 0;
+/** Create a real conversation + assistant row carrying `blocks` as content. */
+async function seedAssistantMessage(blocks: unknown): Promise<string> {
+  const conversationId = `conv-annotate-${++convSeq}`;
+  ensureConversationExists(conversationId, undefined);
+  const row = await addMessage(
+    conversationId,
+    "assistant",
+    JSON.stringify(blocks),
+  );
+  return row.id;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -97,10 +99,12 @@ function setupState(toolUseId: string): EventHandlerState {
 }
 
 function findBlockById(
-  rawContent: string,
+  rawContent: ContentBlock[] | string,
   id: string,
 ): Record<string, unknown> {
-  const parsed = JSON.parse(rawContent) as Array<Record<string, unknown>>;
+  const parsed = (
+    typeof rawContent === "string" ? JSON.parse(rawContent) : rawContent
+  ) as Array<Record<string, unknown>>;
   const block = parsed.find((b) => b.id === id);
   if (!block) {
     throw new Error(`block ${id} not found`);
@@ -134,16 +138,11 @@ const webSearchActivity: ToolActivityMetadata = {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("annotatePersistedAssistantMessage — activityMetadata", () => {
-  beforeEach(() => {
-    updates.length = 0;
-    mockedRowContent = "";
-  });
-
-  test("persists activityMetadata from the live tool_result event onto the tool_use block", () => {
+  test("persists activityMetadata from the live tool_result event onto the tool_use block", async () => {
     // GIVEN a persisted tool_use block for an external web_search tool
     const toolUseId = "tu_web_search";
     const state = setupState(toolUseId);
-    mockedRowContent = JSON.stringify([
+    state.lastAssistantMessageId = await seedAssistantMessage([
       {
         type: "tool_use",
         id: toolUseId,
@@ -162,19 +161,19 @@ describe("annotatePersistedAssistantMessage — activityMetadata", () => {
     });
 
     // THEN the metadata is stamped on the persisted block verbatim
-    expect(updates).toHaveLength(1);
-    const block = findBlockById(updates[0].content, toolUseId);
+    const row = getMessageById(state.lastAssistantMessageId!);
+    const block = findBlockById(row!.content as ContentBlock[], toolUseId);
     expect(block._activityMetadata).toEqual(webSearchActivity);
   });
 
-  test("leaves native server_tool_use blocks untouched (stamped at persist time)", () => {
+  test("leaves native server_tool_use blocks untouched (stamped at persist time)", async () => {
     // GIVEN an external tool completes (to trigger annotation) AND a native
     // server_tool_use block whose activity was captured at server_tool_complete
     const externalId = "tu_external";
     const nativeId = "srvtu_native_search";
     const state = setupState(externalId);
     state.toolActivityMetadata.set(nativeId, webSearchActivity);
-    mockedRowContent = JSON.stringify([
+    state.lastAssistantMessageId = await seedAssistantMessage([
       {
         type: "server_tool_use",
         id: nativeId,
@@ -201,19 +200,22 @@ describe("annotatePersistedAssistantMessage — activityMetadata", () => {
     // activity is stamped earlier by `buildPersistedAssistantContent` (covered
     // in build-persisted-content.test.ts), and the unrelated external tool_use
     // block carries no activity of its own
-    expect(updates).toHaveLength(1);
-    const nativeBlock = findBlockById(updates[0].content, nativeId);
+    const row = getMessageById(state.lastAssistantMessageId!);
+    const nativeBlock = findBlockById(row!.content as ContentBlock[], nativeId);
     expect(nativeBlock._activityMetadata).toBeUndefined();
-    const externalBlock = findBlockById(updates[0].content, externalId);
+    const externalBlock = findBlockById(
+      row!.content as ContentBlock[],
+      externalId,
+    );
     expect(externalBlock._activityMetadata).toBeUndefined();
   });
 
-  test("omits activityMetadata when the tool produced none", () => {
+  test("omits activityMetadata when the tool produced none", async () => {
     // GIVEN a non-activity tool
     const toolUseId = "tu_plain";
     const state = setupState(toolUseId);
     state.toolUseIdToName.set(toolUseId, "bash");
-    mockedRowContent = JSON.stringify([
+    state.lastAssistantMessageId = await seedAssistantMessage([
       {
         type: "tool_use",
         id: toolUseId,
@@ -231,8 +233,8 @@ describe("annotatePersistedAssistantMessage — activityMetadata", () => {
     });
 
     // THEN no _activityMetadata is written
-    expect(updates).toHaveLength(1);
-    const block = findBlockById(updates[0].content, toolUseId);
+    const row = getMessageById(state.lastAssistantMessageId!);
+    const block = findBlockById(row!.content as ContentBlock[], toolUseId);
     expect(block._activityMetadata).toBeUndefined();
   });
 });

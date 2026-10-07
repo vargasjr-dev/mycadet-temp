@@ -8,58 +8,21 @@
  * requests land in their originating conversation via the affinity hint.
  */
 
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
 // ── Mocks — declared before imports that depend on them ─────────────
-
-let nextConversationSeq = 0;
-
-/** Simulated existing conversations for getConversation mock. */
-let mockExistingConversations: Record<
-  string,
-  { id: string; source: string; title: string | null }
-> = {};
-
-const createdConversationIds: string[] = [];
-const appendedMessages: Array<{ conversationId: string }> = [];
-
-const createConversationMock = mock((_opts?: unknown) => {
-  nextConversationSeq += 1;
-  const id = `conv-new-${nextConversationSeq}`;
-  createdConversationIds.push(id);
-  return { id };
-});
-
-const addMessageMock = mock(
-  (
-    conversationId: string,
-    _role: string,
-    _content: string,
-    _options?: unknown,
-  ) => {
-    appendedMessages.push({ conversationId });
-    return { id: `msg-${conversationId}` };
-  },
-);
-
-const getConversationMock = mock((id: string) => {
-  return mockExistingConversations[id] ?? null;
-});
-
-mock.module("../persistence/conversation-crud.js", () => ({
-  createConversation: createConversationMock,
-  addMessage: addMessageMock,
-  getConversation: getConversationMock,
-}));
-
-mock.module("../persistence/external-conversation-store.js", () => ({
-  getBindingByChannelChat: () => null,
-  upsertOutboundBinding: () => {},
-}));
-
 import { pairDeliveryWithConversation } from "../notifications/conversation-pairing.js";
 import { enforceGuardianRequestConversationAffinity } from "../notifications/decision-engine.js";
 import type { NotificationSignal } from "../notifications/signal.js";
+import {
+  ensureConversationExists,
+  getMessages,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
+beforeAll(async () => {
+  await initializeDb();
+});
+
 import type {
   ConversationAction,
   NotificationDecision,
@@ -126,22 +89,9 @@ async function routeCadetDelivery(
 
 describe("guardian cadet destination pinning", () => {
   beforeEach(() => {
-    nextConversationSeq = 0;
-    createdConversationIds.length = 0;
-    appendedMessages.length = 0;
-    mockExistingConversations = {
-      // The "catch-all" — a recent guardian conversation the LLM keeps
-      // offering as a reuse candidate.
-      "conv-catchall": {
-        id: "conv-catchall",
-        source: "notification",
-        title: "Access Request",
-      },
-      // An originating inbound conversation a producer can pin to.
-      "conv-origin": { id: "conv-origin", source: "user", title: "Slack chat" },
-    };
-    createConversationMock.mockClear();
-    addMessageMock.mockClear();
+    // Seed the two conversations the LLM decisions reference, for real.
+    ensureConversationExists("conv-catchall", "cadet");
+    ensureConversationExists("conv-origin", "cadet");
   });
 
   test("two unrelated un-pinned guardian requests land in two different conversations", async () => {
@@ -174,9 +124,7 @@ describe("guardian cadet destination pinning", () => {
     expect(first.createdNewConversation).toBe(true);
     expect(second.createdNewConversation).toBe(true);
     // The catch-all never receives either card.
-    expect(
-      appendedMessages.filter((m) => m.conversationId === "conv-catchall"),
-    ).toHaveLength(0);
+    expect(getMessages("conv-catchall")).toHaveLength(0);
   });
 
   test("a pinned guardian request lands in its originating conversation", async () => {
@@ -216,6 +164,6 @@ describe("guardian cadet destination pinning", () => {
 
     expect(pairing.conversationId).toBe("conv-origin");
     expect(pairing.createdNewConversation).toBe(false);
-    expect(appendedMessages).toEqual([{ conversationId: "conv-origin" }]);
+    expect(getMessages("conv-origin")).toHaveLength(1);
   });
 });

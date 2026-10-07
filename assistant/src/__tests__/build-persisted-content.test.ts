@@ -9,22 +9,7 @@
  * stamping must happen here or the WebSearchProgressCard is lost on a history
  * reopen. Read-side coverage lives in server-history-render.test.ts.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
-
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  addMessage: () => ({ id: "mock-msg-id" }),
-  getMessageById: () => null,
-  updateMessageContent: () => {},
-  provenanceFromTrustContext: () => ({}),
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
-
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-  backfillMessageIdOnLogs: () => {},
-}));
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 import { REDACTED_SENTINEL_OPEN } from "@mycadet/service-contracts/redacted-credential";
@@ -35,7 +20,12 @@ import {
   buildPersistedAssistantContent,
   stampThinkingTiming,
 } from "../daemon/conversation-agent-loop-handlers.js";
+import { initializeDb } from "../persistence/db-init.js";
 import type { ContentBlock } from "../providers/types.js";
+beforeAll(async () => {
+  await initializeDb();
+});
+
 import {
   OPENAI_PROJECT_KEY_REDACTION_MARKER,
   SYNTHETIC_OPAQUE_CREDENTIAL,

@@ -15,28 +15,7 @@
  * Read-side coverage (renderHistoryContent in handlers/shared.ts) lives in
  * server-history-render.test.ts.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
-
-let mockedRowContent = "";
-const updates: Array<{ id: string; content: string }> = [];
-
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  addMessage: () => ({ id: "mock-msg-id" }),
-  getMessageById: (id: string) =>
-    mockedRowContent ? { id, content: JSON.parse(mockedRowContent) } : null,
-  updateMessageContent: (id: string, content: string) => {
-    updates.push({ id, content });
-  },
-  provenanceFromTrustContext: () => ({}),
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
-
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-  backfillMessageIdOnLogs: () => {},
-}));
+import { beforeAll, describe, expect, test } from "bun:test";
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 import type {
@@ -47,7 +26,30 @@ import {
   createEventHandlerState,
   handleToolResult,
 } from "../daemon/conversation-agent-loop-handlers.js";
+import {
+  addMessage,
+  ensureConversationExists,
+  getMessageById,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
+import type { ContentBlock } from "../providers/types.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+beforeAll(async () => {
+  await initializeDb();
+});
+
+let convSeq = 0;
+/** Create a real conversation + assistant row carrying `blocks` as content. */
+async function seedAssistantMessage(blocks: unknown): Promise<string> {
+  const conversationId = `conv-risk-${++convSeq}`;
+  ensureConversationExists(conversationId, undefined);
+  const row = await addMessage(
+    conversationId,
+    "assistant",
+    JSON.stringify(blocks),
+  );
+  return row.id;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -91,10 +93,12 @@ function setupState(toolUseId: string): EventHandlerState {
 }
 
 function findPersistedToolUse(
-  rawContent: string,
+  rawContent: ContentBlock[] | string,
   toolUseId: string,
 ): Record<string, unknown> {
-  const parsed = JSON.parse(rawContent) as Array<Record<string, unknown>>;
+  const parsed = (
+    typeof rawContent === "string" ? JSON.parse(rawContent) : rawContent
+  ) as Array<Record<string, unknown>>;
   const block = parsed.find((b) => b.type === "tool_use" && b.id === toolUseId);
   if (!block) {
     throw new Error(`tool_use block ${toolUseId} not found`);
@@ -105,16 +109,11 @@ function findPersistedToolUse(
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("annotatePersistedAssistantMessage — risk-option arrays (Phase B)", () => {
-  beforeEach(() => {
-    updates.length = 0;
-    mockedRowContent = "";
-  });
-
-  test("persists all 3 risk-option arrays from the live tool_result event", () => {
+  test("persists all 3 risk-option arrays from the live tool_result event", async () => {
     const toolUseId = "tu_persist_full";
     const state = setupState(toolUseId);
 
-    mockedRowContent = JSON.stringify([
+    state.lastAssistantMessageId = await seedAssistantMessage([
       {
         type: "tool_use",
         id: toolUseId,
@@ -152,8 +151,11 @@ describe("annotatePersistedAssistantMessage — risk-option arrays (Phase B)", (
       riskThreshold: "relaxed",
     });
 
-    expect(updates).toHaveLength(1);
-    const block = findPersistedToolUse(updates[0].content, toolUseId);
+    const row = getMessageById(state.lastAssistantMessageId!);
+    const block = findPersistedToolUse(
+      row!.content as ContentBlock[],
+      toolUseId,
+    );
     // Existing scalars still flow through.
     expect(block._riskLevel).toBe("high");
     expect(block._riskReason).toBe("Modifies state");
@@ -167,11 +169,11 @@ describe("annotatePersistedAssistantMessage — risk-option arrays (Phase B)", (
     expect(block._riskDirectoryScopeOptions).toEqual(directoryScopeOptions);
   });
 
-  test("omits empty arrays from the persisted block (saves DB space)", () => {
+  test("omits empty arrays from the persisted block (saves DB space)", async () => {
     const toolUseId = "tu_persist_empty";
     const state = setupState(toolUseId);
 
-    mockedRowContent = JSON.stringify([
+    state.lastAssistantMessageId = await seedAssistantMessage([
       {
         type: "tool_use",
         id: toolUseId,
@@ -191,21 +193,24 @@ describe("annotatePersistedAssistantMessage — risk-option arrays (Phase B)", (
       riskDirectoryScopeOptions: [],
     });
 
-    expect(updates).toHaveLength(1);
-    const block = findPersistedToolUse(updates[0].content, toolUseId);
+    const row = getMessageById(state.lastAssistantMessageId!);
+    const block = findPersistedToolUse(
+      row!.content as ContentBlock[],
+      toolUseId,
+    );
     expect(block._riskLevel).toBe("low");
     expect(block._riskScopeOptions).toBeUndefined();
     expect(block._riskAllowlistOptions).toBeUndefined();
     expect(block._riskDirectoryScopeOptions).toBeUndefined();
   });
 
-  test("omits absent (undefined) arrays from the persisted block", () => {
+  test("omits absent (undefined) arrays from the persisted block", async () => {
     // Mirrors classic bash/file tools that don't always emit all 3 arrays —
     // e.g. recall, file_read with riskLevel=low and no allowlist coverage.
     const toolUseId = "tu_persist_absent";
     const state = setupState(toolUseId);
 
-    mockedRowContent = JSON.stringify([
+    state.lastAssistantMessageId = await seedAssistantMessage([
       {
         type: "tool_use",
         id: toolUseId,
@@ -223,19 +228,22 @@ describe("annotatePersistedAssistantMessage — risk-option arrays (Phase B)", (
       // No risk-option arrays passed at all.
     });
 
-    expect(updates).toHaveLength(1);
-    const block = findPersistedToolUse(updates[0].content, toolUseId);
+    const row = getMessageById(state.lastAssistantMessageId!);
+    const block = findPersistedToolUse(
+      row!.content as ContentBlock[],
+      toolUseId,
+    );
     expect(block._riskLevel).toBe("low");
     expect(block._riskScopeOptions).toBeUndefined();
     expect(block._riskAllowlistOptions).toBeUndefined();
     expect(block._riskDirectoryScopeOptions).toBeUndefined();
   });
 
-  test("partial coverage — only allowlist options present (e.g. tools with classifier but no scope ladder)", () => {
+  test("partial coverage — only allowlist options present (e.g. tools with classifier but no scope ladder)", async () => {
     const toolUseId = "tu_partial";
     const state = setupState(toolUseId);
 
-    mockedRowContent = JSON.stringify([
+    state.lastAssistantMessageId = await seedAssistantMessage([
       {
         type: "tool_use",
         id: toolUseId,
@@ -257,8 +265,11 @@ describe("annotatePersistedAssistantMessage — risk-option arrays (Phase B)", (
       riskAllowlistOptions: allowlistOptions,
     });
 
-    expect(updates).toHaveLength(1);
-    const block = findPersistedToolUse(updates[0].content, toolUseId);
+    const row = getMessageById(state.lastAssistantMessageId!);
+    const block = findPersistedToolUse(
+      row!.content as ContentBlock[],
+      toolUseId,
+    );
     expect(block._riskLevel).toBe("medium");
     expect(block._riskAllowlistOptions).toEqual(allowlistOptions);
     expect(block._riskScopeOptions).toBeUndefined();

@@ -1,22 +1,14 @@
-import { describe, expect, mock, test } from "bun:test";
-
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  getMessages: () => [],
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
-
-mock.module("../persistence/attachments-store.js", () => ({
-  getAttachmentMetadataForMessage: () => [],
-  getAttachmentContent: () => null,
-}));
+import { beforeAll, describe, expect, test } from "bun:test";
 
 import {
   runAssistantDrivenCompaction,
   runEmergencyCompaction,
 } from "../context/compactor.js";
+import { initializeDb } from "../persistence/db-init.js";
 import type { Message, Provider } from "../providers/types.js";
+beforeAll(async () => {
+  await initializeDb();
+});
 
 const TAIL_TIMESTAMP =
   "2026-05-21 (Thursday) 10:00:00 -05:00 (America/Chicago)";

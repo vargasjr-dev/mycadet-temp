@@ -12,29 +12,7 @@
  * The read half (renderHistoryContent in handlers/shared.ts) lives in
  * server-history-render.test.ts.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
-
-let mockedRowContent = "";
-const updates: Array<{ id: string; content: string }> = [];
-
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  addMessage: () => ({ id: "mock-msg-id" }),
-  getMessageById: (id: string) =>
-    mockedRowContent ? { id, content: JSON.parse(mockedRowContent) } : null,
-  updateMessageContent: (id: string, content: string) => {
-    updates.push({ id, content });
-    mockedRowContent = content;
-  },
-  provenanceFromTrustContext: () => ({}),
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
-
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-  backfillMessageIdOnLogs: () => {},
-}));
+import { beforeAll, describe, expect, test } from "bun:test";
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 import type { AnsweredQuestion } from "../api/events/question-answered.js";
@@ -46,7 +24,20 @@ import {
   createEventHandlerState,
   handleToolResult,
 } from "../daemon/conversation-agent-loop-handlers.js";
+import {
+  addMessage,
+  ensureConversationExists,
+  getMessageById,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
+import type { ContentBlock } from "../providers/types.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+beforeAll(async () => {
+  await initializeDb();
+});
+
+let convSeq = 0;
+let currentRowId = "";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -89,28 +80,42 @@ function makeDeps(): EventHandlerDeps {
  * them `ask_question` unless stated otherwise. Every id is registered as
  * in-flight, so end-of-turn annotation only runs once each has a result.
  */
-function setupState(toolUseIds: string[]): EventHandlerState {
+async function setupState(toolUseIds: string[]): Promise<EventHandlerState> {
   const state = createEventHandlerState();
-  state.lastAssistantMessageId = "msg-1";
   for (const id of toolUseIds) {
     state.toolUseIdToName.set(id, "ask_question");
     state.toolCallTimestamps.set(id, { startedAt: Date.now() });
     state.currentTurnToolUseIds.push(id);
   }
-  mockedRowContent = JSON.stringify(
-    toolUseIds.map((id) => ({
-      type: "tool_use",
-      id,
-      name: "ask_question",
-      input: { questions: [{ question: "Which Alice?", options: [] }] },
-    })),
+  const conversationId = `conv-answered-${++convSeq}`;
+  ensureConversationExists(conversationId, undefined);
+  const row = await addMessage(
+    conversationId,
+    "assistant",
+    JSON.stringify(
+      toolUseIds.map((id) => ({
+        type: "tool_use",
+        id,
+        name: "ask_question",
+        input: { questions: [{ question: "Which Alice?", options: [] }] },
+      })),
+    ),
   );
+  currentRowId = row.id;
+  state.lastAssistantMessageId = row.id;
   return state;
 }
 
 function persistedToolUse(toolUseId: string): Record<string, unknown> {
-  const parsed = JSON.parse(mockedRowContent) as Array<Record<string, unknown>>;
-  const block = parsed.find((b) => b.type === "tool_use" && b.id === toolUseId);
+  const row = getMessageById(currentRowId);
+  if (!row) {
+    throw new Error(`row ${currentRowId} not found`);
+  }
+  const block = (row.content as unknown as ContentBlock[]).find(
+    (b) =>
+      b.type === "tool_use" &&
+      (b as unknown as Record<string, unknown>).id === toolUseId,
+  ) as unknown as Record<string, unknown> | undefined;
   if (!block) {
     throw new Error(`tool_use block ${toolUseId} not found`);
   }
@@ -136,14 +141,8 @@ const ANSWERED: AnsweredQuestion = {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("answered ask_question persistence", () => {
-  beforeEach(() => {
-    updates.length = 0;
-    emitted.length = 0;
-    mockedRowContent = "";
-  });
-
-  test("stamps the answered record on the tool_use block and forwards it to clients", () => {
-    const state = setupState(["tu_q"]);
+  test("stamps the answered record on the tool_use block and forwards it to clients", async () => {
+    const state = await setupState(["tu_q"]);
 
     handleToolResult(state, makeDeps(), {
       type: "tool_result",
@@ -158,12 +157,12 @@ describe("answered ask_question persistence", () => {
     expect(toolResult?.answeredQuestion).toEqual(ANSWERED);
   });
 
-  test("stamps immediately, before the turn's other tools have finished", () => {
+  test("stamps immediately, before the turn's other tools have finished", async () => {
     // A batch where `ask_question` settles first: the user can switch away
     // (forcing a history refetch) while the sibling tool still runs, so the
     // answer must already be durable rather than waiting for end-of-turn
     // annotation.
-    const state = setupState(["tu_q", "tu_slow"]);
+    const state = await setupState(["tu_q", "tu_slow"]);
 
     handleToolResult(state, makeDeps(), {
       type: "tool_result",
@@ -179,8 +178,8 @@ describe("answered ask_question persistence", () => {
     expect(persistedToolUse("tu_q")._answeredQuestion).toEqual(ANSWERED);
   });
 
-  test("survives the end-of-turn annotation that re-stamps the row", () => {
-    const state = setupState(["tu_q"]);
+  test("survives the end-of-turn annotation that re-stamps the row", async () => {
+    const state = await setupState(["tu_q"]);
     const deps = makeDeps();
 
     handleToolResult(state, deps, {
@@ -199,8 +198,8 @@ describe("answered ask_question persistence", () => {
     expect(block._startedAt).toBeNumber();
   });
 
-  test("re-stamping the same record does not rewrite the row", () => {
-    const state = setupState(["tu_q"]);
+  test("re-stamping the same record does not rewrite the row", async () => {
+    const state = await setupState(["tu_q"]);
     const deps = makeDeps();
 
     handleToolResult(state, deps, {
@@ -211,7 +210,9 @@ describe("answered ask_question persistence", () => {
       answeredQuestion: ANSWERED,
     });
     // Early stamp + end-of-turn annotation.
-    expect(updates).toHaveLength(2);
+    const contentAfterFirstStamp = JSON.stringify(
+      getMessageById(currentRowId)!.content,
+    );
 
     handleToolResult(state, deps, {
       type: "tool_result",
@@ -223,12 +224,14 @@ describe("answered ask_question persistence", () => {
 
     // The second result re-runs the early stamp; the identical requestId makes
     // it a no-op, so the row is not rewritten.
-    expect(updates).toHaveLength(2);
+    expect(JSON.stringify(getMessageById(currentRowId)!.content)).toBe(
+      contentAfterFirstStamp,
+    );
     expect(persistedToolUse("tu_q")._answeredQuestion).toEqual(ANSWERED);
   });
 
-  test("leaves the block unstamped when the result carries no answered record", () => {
-    const state = setupState(["tu_q"]);
+  test("leaves the block unstamped when the result carries no answered record", async () => {
+    const state = await setupState(["tu_q"]);
 
     handleToolResult(state, makeDeps(), {
       type: "tool_result",
