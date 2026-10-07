@@ -157,7 +157,7 @@ describe("web_search tool", () => {
   // ---- Provider cadet (managed, provider is the only axis) ---------------
 
   test("provider cadet with no mode routes to the platform proxy", async () => {
-    seedWebSearch(undefined, "vellum");
+    seedWebSearch(undefined, "cadet");
 
     const result = await execute({ query: "cadet managed query" });
 
@@ -168,7 +168,7 @@ describe("web_search tool", () => {
 
   test("provider cadet routes managed even under a stale your-own mode", async () => {
     // The provider choice wins over a leftover legacy mode key.
-    seedWebSearch("your-own", "vellum");
+    seedWebSearch("your-own", "cadet");
 
     const result = await execute({ query: "stale mode query" });
 
@@ -179,7 +179,7 @@ describe("web_search tool", () => {
   test("provider cadet surfaces a 402 hard error and never falls back to BYOK keys", async () => {
     // Billing rule: an explicit cadet choice must never silently reroute to
     // a user's paid third-party key (and vice versa).
-    seedWebSearch(undefined, "vellum");
+    seedWebSearch(undefined, "cadet");
     mockPerplexitySecureKey = "pplx-should-not-be-used";
     mockManagedSearchProxyResult = {
       ok: false,
@@ -513,7 +513,7 @@ describe("web_search tool", () => {
   // ---- Managed Brave provider -------------------------------------------
 
   test("provider cadet uses Brave proxy without BYOK provider keys", async () => {
-    seedWebSearch(undefined, "vellum");
+    seedWebSearch(undefined, "cadet");
     mockManagedSearchProxyResult = {
       ok: true,
       status: 200,
@@ -586,7 +586,7 @@ describe("web_search tool", () => {
 
     const directResult = await execute({ query: "same query" });
 
-    seedWebSearch(undefined, "vellum");
+    seedWebSearch(undefined, "cadet");
     mockBraveSecureKey = undefined;
     mockManagedSearchProxyResult = {
       ok: true,
@@ -605,7 +605,7 @@ describe("web_search tool", () => {
   });
 
   test("provider cadet passes abort signal to the platform proxy", async () => {
-    seedWebSearch(undefined, "vellum");
+    seedWebSearch(undefined, "cadet");
     const controller = new AbortController();
 
     await execute({ query: "abortable query" }, { signal: controller.signal });
@@ -615,7 +615,7 @@ describe("web_search tool", () => {
   });
 
   test("provider cadet maps insufficient balance to a managed usage error", async () => {
-    seedWebSearch(undefined, "vellum");
+    seedWebSearch(undefined, "cadet");
     mockManagedSearchProxyResult = {
       ok: false,
       kind: "platform-error",
@@ -634,7 +634,7 @@ describe("web_search tool", () => {
   });
 
   test("provider cadet maps proxied provider errors to a tool error", async () => {
-    seedWebSearch(undefined, "vellum");
+    seedWebSearch(undefined, "cadet");
     mockManagedSearchProxyResult = {
       ok: true,
       status: 400,
@@ -651,7 +651,7 @@ describe("web_search tool", () => {
   });
 
   test("provider cadet returns a clear error when platform context is unavailable", async () => {
-    seedWebSearch(undefined, "vellum");
+    seedWebSearch(undefined, "cadet");
     mockManagedSearchProxyResult = {
       ok: false,
       kind: "unavailable",

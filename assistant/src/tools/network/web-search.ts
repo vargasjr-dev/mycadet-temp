@@ -242,10 +242,10 @@ function getWebSearchProvider(): WebSearchProvider {
   // In Your Own mode, `inference-provider-native` is only executable when the
   // inference provider swaps this tool for a native hosted-search definition.
   // If this app-executed tool is still invoked, fall back to the existing BYOK
-  // provider chain. `vellum` short-circuits into the managed branch before
+  // provider chain. `cadet` short-circuits into the managed branch before
   // this function runs, so its coercion here only satisfies the return type
   // and keeps an undefined WEB_SEARCH_ADAPTERS lookup unreachable.
-  if (configured === "inference-provider-native" || configured === "vellum") {
+  if (configured === "inference-provider-native" || configured === "cadet") {
     return "perplexity";
   }
   return configured as WebSearchProvider;
@@ -1240,7 +1240,7 @@ async function executeManagedBraveSearch(
       query,
       "brave",
       startedAt,
-      "Managed Brave Search is not authenticated correctly. This is a Vellum platform configuration issue.",
+      "Managed Brave Search is not authenticated correctly. This is a Cadet platform configuration issue.",
     );
   }
 
@@ -1271,11 +1271,11 @@ function managedSearchProxyErrorMessage(
   result: Exclude<ManagedSearchProxyResult, { ok: true }>,
 ): string {
   if (result.kind === "unavailable") {
-    return `${result.message} Log in to Vellum or choose a different web search provider in Settings.`;
+    return `${result.message} Log in to Cadet or choose a different web search provider in Settings.`;
   }
 
   if (result.kind === "platform-error" && result.status === 402) {
-    return "Managed web search is unavailable because your Vellum account balance is too low. Add funds or choose a different web search provider in Settings.";
+    return "Managed web search is unavailable because your Cadet account balance is too low. Add funds or choose a different web search provider in Settings.";
   }
 
   if (result.kind === "platform-error") {
@@ -1654,7 +1654,7 @@ async function executeKeenableSearch(
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         Accept: "application/json",
-        "X-Keenable-Title": "Vellum Assistant",
+        "X-Keenable-Title": "Cadet",
       };
       if (trimmedKey) {
         headers["X-API-Key"] = trimmedKey;
@@ -2414,10 +2414,12 @@ export const webSearchTool = {
     }
 
     const startedAt = Date.now();
-    // An explicit vellum choice is unconditionally managed: proxy errors
+    // An explicit Cadet choice is unconditionally managed: proxy errors
     // (including 402) surface to the user and never fall back to BYOK keys.
+    // The config schema normalizes the legacy `vellum` id to `cadet` on
+    // parse, so this is the only spelling that survives here.
     const managedSearch =
-      getConfig().services["web-search"].provider === "vellum";
+      getConfig().services["web-search"].provider === "cadet";
 
     const count =
       typeof input.count === "number"
