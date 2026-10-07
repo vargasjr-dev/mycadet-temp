@@ -1,8 +1,7 @@
-import { afterAll, beforeAll, describe, expect, mock, spyOn, test } from "bun:test";
+import { describe, expect, mock, spyOn, test } from "bun:test";
 
 import { eq } from "drizzle-orm";
 
-import { installFastTimers } from "../../__tests__/fast-timers.js";
 import {
   createMockProvider,
   textResponse,
@@ -354,14 +353,6 @@ async function attachmentLinkedElsewhere(
   linkAttachmentToMessage(elsewhere.id, attachment.id, 0);
   return attachment.id;
 }
-
-let restoreFastTimers: (() => void) | undefined;
-beforeAll(() => {
-  restoreFastTimers = installFastTimers();
-});
-afterAll(() => {
-  restoreFastTimers?.();
-});
 
 describe("persistLiveVoicePhoto", () => {
   test("persists and echoes the image with human-readable context", async () => {

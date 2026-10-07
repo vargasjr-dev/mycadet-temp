@@ -1,6 +1,5 @@
-import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
-import { installFastTimers } from "../../__tests__/fast-timers.js";
 import { sanitizeForTts } from "../../calls/tts-text-sanitizer.js";
 import type { VoiceTurnOptions } from "../../calls/voice-session-bridge.js";
 import {
@@ -197,14 +196,6 @@ function spokenText(frames: LiveVoiceServerFrame[]): string {
     .map((frame) => (frame as { text: string }).text)
     .join("");
 }
-
-let restoreFastTimers: (() => void) | undefined;
-beforeAll(() => {
-  restoreFastTimers = installFastTimers();
-});
-afterAll(() => {
-  restoreFastTimers?.();
-});
 
 describe("live-voice triage-and-escalate routing", () => {
   test("screen-action escalation carries its retrieval policy without speaking the marker", async () => {

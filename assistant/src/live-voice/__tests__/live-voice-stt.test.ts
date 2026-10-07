@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
-import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
-import { installFastTimers } from "../../__tests__/fast-timers.js";
 import type { VoiceTurnOptions } from "../../calls/voice-session-bridge.js";
 import { loadRawConfig, saveRawConfig } from "../../config/loader.js";
 import type {
@@ -236,14 +235,6 @@ async function waitFor(
   }
   throw new Error(message);
 }
-
-let restoreFastTimers: (() => void) | undefined;
-beforeAll(() => {
-  restoreFastTimers = installFastTimers();
-});
-afterAll(() => {
-  restoreFastTimers?.();
-});
 
 describe("LiveVoiceSession STT", () => {
   test("resolves streaming STT through the injected resolver and sends ready", async () => {

@@ -1,6 +1,5 @@
-import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
-import { installFastTimers } from "../../__tests__/fast-timers.js";
 import type {
   VoiceTurnCallbacks,
   VoiceTurnOptions,
@@ -237,14 +236,6 @@ function assistantDeltaTexts(frames: LiveVoiceServerFrame[]): string[] {
     frame.type === "assistant_text_delta" ? [frame.text] : [],
   );
 }
-
-let restoreFastTimers: (() => void) | undefined;
-beforeAll(() => {
-  restoreFastTimers = installFastTimers();
-});
-afterAll(() => {
-  restoreFastTimers?.();
-});
 
 describe("LiveVoiceSession assistant turn", () => {
   test.each([true, false])(
