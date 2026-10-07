@@ -1,4 +1,4 @@
-# Cadet Assistant - Windows (Electron)
+# Cadet - Windows (Electron)
 
 The Windows desktop client. Like `clients/macos`, this is an Electron shell
 around the `clients/web` renderer: in dev it loads the Vite dev server (or

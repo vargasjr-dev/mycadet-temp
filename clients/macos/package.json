@@ -2,7 +2,7 @@
   "name": "@mycadet/macos",
   "version": "0.0.1",
   "private": true,
-  "description": "Electron wrapper for the Cadet Assistant macOS app.",
+  "description": "Electron wrapper for the Cadet macOS app.",
   "main": "out/main/index.js",
   "scripts": {
     "setup": "node node_modules/electron/install.js && bash scripts/build-mac-helper.sh && (bash scripts/build-notifier.sh || echo 'notifier unavailable; notifications fall back to Electron')",

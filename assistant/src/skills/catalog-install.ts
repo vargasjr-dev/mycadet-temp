@@ -80,7 +80,7 @@ export interface CatalogSkill {
   metadata?: {
     icon?: string;
     emoji?: string;
-    vellum?: {
+    cadet?: {
       "display-name"?: string;
       "activation-hints"?: string[];
       "avoid-when"?: string[];
@@ -142,7 +142,7 @@ export function getRepoSkillsDir(): string | undefined {
  * Raw skill entry as returned by the platform `/v1/skills/` API. The platform
  * serializer flattens the skill's metadata into top-level fields
  * (`category`, `display_name`, `icon`) rather than the nested
- * `metadata.vellum.*` shape used by the local `catalog.json`. Both shapes are
+ * `metadata.cadet.*` shape used by the local `catalog.json`. Both shapes are
  * accepted here so the daemon has a single canonical representation downstream.
  */
 const CatalogPlatformsSchema = z
@@ -150,7 +150,7 @@ const CatalogPlatformsSchema = z
   .transform((platforms) =>
     platforms.filter((platform): platform is SkillPlatform => platform != null),
   );
-const CatalogVellumMetadataSchema = z
+const CatalogCadetMetadataSchema = z
   .object({
     "display-name": z.string().optional().catch(undefined),
     "activation-hints": z.array(z.string()).optional().catch(undefined),
@@ -164,7 +164,7 @@ const CatalogMetadataSchema = z
   .object({
     icon: z.string().optional().catch(undefined),
     emoji: z.string().optional().catch(undefined),
-    vellum: CatalogVellumMetadataSchema.optional().catch(undefined),
+    cadet: CatalogCadetMetadataSchema.optional().catch(undefined),
   })
   .passthrough();
 const RawCatalogEntrySchema = z.object({
@@ -194,9 +194,9 @@ function asStr(value: unknown): string | undefined {
  * Normalize a platform API entry into a canonical {@link CatalogSkill}.
  *
  * The platform flattens `category`, `display_name`, and `icon` to the top
- * level, so re-nest them under `metadata.vellum` to match the local catalog
- * shape that the rest of the daemon reads (`metadata.vellum.category`,
- * `metadata.vellum["display-name"]`). Existing nested values take precedence
+ * level, so re-nest them under `metadata.cadet` to match the local catalog
+ * shape that the rest of the daemon reads (`metadata.cadet.category`,
+ * `metadata.cadet["display-name"]`). Existing nested values take precedence
  * so a future API change to the nested shape keeps working.
  */
 function normalizeCatalogEntry(raw: unknown): CatalogSkill | null {
@@ -211,7 +211,7 @@ function normalizeCatalogEntry(raw: unknown): CatalogSkill | null {
     return null;
   }
 
-  const nested = entry.metadata?.vellum;
+  const nested = entry.metadata?.cadet;
   const category = nested?.category ?? asStr(entry.category);
   const displayName = nested?.["display-name"] ?? asStr(entry.display_name);
   const icon = asStr(entry.icon) ?? asStr(entry.metadata?.icon);
@@ -233,7 +233,7 @@ function normalizeCatalogEntry(raw: unknown): CatalogSkill | null {
     metadata: {
       ...entry.metadata,
       ...(icon ? { icon } : {}),
-      vellum: {
+      cadet: {
         ...nested,
         ...(displayName ? { "display-name": displayName } : {}),
         ...(category ? { category } : {}),

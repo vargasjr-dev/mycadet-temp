@@ -1,10 +1,10 @@
 ---
 name: vellum-oauth-integrations
 description: Act on behalf of your user in any third-party software that supports OAuth 2.0
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🔌"
-  vellum:
+  cadet:
     category: "integrations"
     display-name: "Vellum OAuth Integrations"
 ---

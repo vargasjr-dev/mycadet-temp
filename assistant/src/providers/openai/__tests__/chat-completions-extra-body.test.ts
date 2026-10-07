@@ -54,7 +54,7 @@ describe("chat-completions extraBody", () => {
 
   test("attaches the SDK create params as ProviderError.rawRequest on 4xx", async () => {
     const provider = new ExtraBodyProvider("test-key", "qwen/qwen3-8b", {
-      providerName: "vellum",
+      providerName: "cadet",
       providerLabel: "Cadet",
     });
     (
@@ -97,7 +97,7 @@ describe("chat-completions extraBody", () => {
 
   test("attaches the SDK create params as ContextOverflowError.rawRequest", async () => {
     const provider = new ExtraBodyProvider("test-key", "qwen/qwen3-8b", {
-      providerName: "vellum",
+      providerName: "cadet",
       providerLabel: "Cadet",
     });
     (

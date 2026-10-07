@@ -1,10 +1,10 @@
 ---
 name: vellum-avatar
 description: Customize the assistant's avatar - build a native character, upload an image, or generate one with AI
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🎨"
-  vellum:
+  cadet:
     category: "content"
     display-name: "Avatar"
 ---

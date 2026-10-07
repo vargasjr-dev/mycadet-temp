@@ -1,10 +1,10 @@
 ---
 name: daily-briefing
 description: Proactive daily briefing that fires on a recurring schedule, pulls recent memory and workspace context, composes a structured summary (action items, progress, radar, next steps), and delivers it to all active channels. Enable with a time like "set up my daily briefing at 9am". Disable, reschedule, or check status at any time.
-compatibility: Designed for Vellum personal assistants
+compatibility: Designed for Cadet personal assistants
 metadata:
   emoji: "📋"
-  vellum:
+  cadet:
     category: productivity
     display-name: "Daily Briefing"
 ---

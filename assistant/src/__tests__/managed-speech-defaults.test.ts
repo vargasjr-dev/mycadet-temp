@@ -281,7 +281,7 @@ describe("managed live voice runs Flux", () => {
     mockManagedSpeechAvailable = true;
     writeConfig({
       services: {
-        stt: { provider: "vellum", providers: { vellum: { model: "nova-3" } } },
+        stt: { provider: "vellum", providers: { cadet: { model: "nova-3" } } },
       },
     });
 

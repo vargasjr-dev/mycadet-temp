@@ -1,10 +1,10 @@
 ---
 name: vellum-workspace-theme
 description: Customize the app's visual theme — author design-token overrides (accent, background, surfaces, text, message-bubble colors) in the workspace ui/theme.json, validated by the assistant runtime and applied live to connected clients. Covers the token slots, the all-or-none override groups, the contrast floor, and reading back validation issues.
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🖌️"
-  vellum:
+  cadet:
     category: "content"
     display-name: "Workspace Theme"
 ---

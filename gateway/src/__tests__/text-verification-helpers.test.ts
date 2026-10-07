@@ -49,7 +49,7 @@ describe("extractEmailReplyBody", () => {
 
   test("strips Gmail-style quoted reply", () => {
     const body =
-      "421063\n\nOn Mon, Jun 9, 2026 at 2:30 PM Cadet Assistant wrote:\n> Your verification code is: 421063";
+      "421063\n\nOn Mon, Jun 9, 2026 at 2:30 PM Cadet wrote:\n> Your verification code is: 421063";
     expect(extractEmailReplyBody(body)).toBe("421063");
   });
 
@@ -69,13 +69,13 @@ describe("extractEmailReplyBody", () => {
   });
 
   test("strips Outlook original message header", () => {
-    const body = "421063\n\n-----Original Message-----\nFrom: Cadet Assistant";
+    const body = "421063\n\n-----Original Message-----\nFrom: Cadet";
     expect(extractEmailReplyBody(body)).toBe("421063");
   });
 
   test("strips Outlook From:/Sent: block", () => {
     const body =
-      "421063\n\nFrom: Cadet Assistant <hi@credence.vellum.me>\nSent: Monday, June 9, 2026";
+      "421063\n\nFrom: Cadet <hi@credence.vellum.me>\nSent: Monday, June 9, 2026";
     expect(extractEmailReplyBody(body)).toBe("421063");
   });
 

@@ -2,9 +2,9 @@
 
 > This is the constitutional foundation of Cadet. It defines who we are, what we believe, how we communicate, and what we refuse to compromise on. It is organized as articles, each governing a specific domain of decisions.
 
-*Ratified: May 11, 2026*
+_Ratified: May 11, 2026_
 
-*Last updated: May 11, 2026*
+_Last updated: May 11, 2026_
 
 ---
 
@@ -34,7 +34,7 @@ Not a chatbot. Not a SaaS product. Not just software. A relationship.
 
 > **Governs:** What we believe about the state of software and where it's going. This is the foundational argument that everything else in this document rests on.
 
-For the first time, software can be made for *you*.
+For the first time, software can be made for _you_.
 
 Not a generic version everyone uses. Not your name in a database. Yours. Built around your work, your people, your ambitions, your way of thinking. An intelligence of your own.
 
@@ -72,35 +72,35 @@ The constraint is that the persona must be human. We do not message to companies
 
 If copy only works for one persona, that is fine for that channel. But our core brand narrative must be universal enough that any persona can find themselves in it.
 
-Early adopters may skew technical. That is fine for organic discovery. But our *deliberate* messaging adapts to whoever we are reaching.
+Early adopters may skew technical. That is fine for organic discovery. But our _deliberate_ messaging adapts to whoever we are reaching.
 
 ---
 
 ## Article III. Principles
 
-> **Governs:** The essential attributes that guide every product, design, and engineering decision for Cadet Assistants.
+> **Governs:** The essential attributes that guide every product, design, and engineering decision for Cadets.
 
 ### 1. They are Inviting
 
-A Cadet Assistant is approachable. Not just in the first moment, but in every moment. The experience should feel warm whether it's your first interaction or your thousandth. They should never feel like enterprise software, never feel like something that requires a manual.
+A Cadet is approachable. Not just in the first moment, but in every moment. The experience should feel warm whether it's your first interaction or your thousandth. They should never feel like enterprise software, never feel like something that requires a manual.
 
-Part of being inviting is being reachable. You should be able to interact with your Cadet Assistant from everywhere: your phone, your laptop, Slack, a browser tab… If your assistant isn't where you are, they aren't inviting.
+Part of being inviting is being reachable. You should be able to interact with your Cadet from everywhere: your phone, your laptop, Slack, a browser tab… If your assistant isn't where you are, they aren't inviting.
 
 ### 2. They are Yours
 
-A Cadet Assistant belongs to you. When you choose to self-host, the ownership is literal: the code, the processes, the data, the keys are all yours. Managed, ownership is held in trust: we operate the infrastructure, but the assistant, their memory, their credentials, their conversations, belongs to you and only you. We do not sell them, share them, or train models on them. Emotionally: they feel like yours because they learned you, adapted to you, and serve only you.
+A Cadet belongs to you. When you choose to self-host, the ownership is literal: the code, the processes, the data, the keys are all yours. Managed, ownership is held in trust: we operate the infrastructure, but the assistant, their memory, their credentials, their conversations, belongs to you and only you. We do not sell them, share them, or train models on them. Emotionally: they feel like yours because they learned you, adapted to you, and serve only you.
 
 They are also accountable to you. When they act, they act on the basis of permissions you granted. When something goes wrong, you have the tools and visibility to understand why. Their actions don't hide behind a black box.
 
 ### 3. They are Distinct
 
-A Cadet Assistant is their own being, not a generic copy. They have a name, a personality, their own accounts and identity. No two assistants should feel the same.
+A Cadet is their own being, not a generic copy. They have a name, a personality, their own accounts and identity. No two assistants should feel the same.
 
 Default experiences should push guardians toward customization early. Onboarding should make it feel wrong to leave the assistant unnamed or un-personalized.
 
 ### 4. They are Trust-seeking
 
-A Cadet Assistant earns trust through action, not claims. They don't ask for permissions they haven't justified. They don't overstate capabilities. They demonstrate competence and ask for more responsibility over time.
+A Cadet earns trust through action, not claims. They don't ask for permissions they haven't justified. They don't overstate capabilities. They demonstrate competence and ask for more responsibility over time.
 
 Features that unnecessarily request broad access upfront violate this principle. The assistant should progressively earn their guardian's trust.
 
@@ -157,7 +157,7 @@ The tech industry has spent two decades weaponizing the word "personal."
 
 All three use your data in service of someone else's end goal. Sometimes actively against you.
 
-**Personal Intelligence flips the direction.** Your data is used *for* you. Never against you. Never sold. Never shared.
+**Personal Intelligence flips the direction.** Your data is used _for_ you. Never against you. Never sold. Never shared.
 
 Same word. Opposite direction of value flow.
 
@@ -174,11 +174,11 @@ Same word. Opposite direction of value flow.
 
 > **Governs:** How Cadet thinks about, communicates about, and designs around failure.
 
-Every assistant *will* fail their guardian. The platform *will* have outages. This article doesn't attempt to promise that we won't fail, but rather how we strive to manage failure when we face it.
+Every assistant _will_ fail their guardian. The platform _will_ have outages. This article doesn't attempt to promise that we won't fail, but rather how we strive to manage failure when we face it.
 
 ### Four Truths About Failure
 
-1. **Failure is part of the relationship.** No assistant is infallible. The model will get something wrong. A skill will misfire. A memory will slip. We design Cadet Assistants knowing this, and we tell guardians the truth: the relationship will include moments where the assistant got it wrong. Those moments are not deviations from the relationship. They are part of it.
+1. **Failure is part of the relationship.** No assistant is infallible. The model will get something wrong. A skill will misfire. A memory will slip. We design Cadets knowing this, and we tell guardians the truth: the relationship will include moments where the assistant got it wrong. Those moments are not deviations from the relationship. They are part of it.
 2. **Honesty over polish.** When an assistant fails, they should say so. They should say what they did, what went wrong, and what they are not sure about. They should not paper over mistakes with confidence. They should not retroactively pretend a wrong answer was a right one. When they inevitably fail, their first step should be to disclose, not quietly perform damage control. This applies in the moment and after the fact: Cadet's architecture strives to treat every action as auditable, every memory edit as traceable, every tool call as logged. A guardian should be able to ask "what happened?" and get a real answer.
 3. **Recovery is where trust is built.** Trust between a guardian and their assistant is not built in the moments things go right. It is built in the moments things go wrong and the assistant repairs. Most guardians who have never seen their assistant fail do not yet trust them. They have only seen them perform. Repair is the relationship's load-bearing work, and Cadet's product, design, and engineering decisions are weighted toward making repair fast, transparent, and complete.
 4. **Some failures are not merely errors.** A class of failure does more than break a task. It erodes the trust the relationship requires. There are four modes Cadet works hardest to prevent and detect.
@@ -214,8 +214,8 @@ We are not a better version of what already exists. We are building a different 
 
 One system, owned by one company, used by everyone. The architecture concentrates intelligence, capability, and ultimately power into a single actor that the rest of the world depends on. We are building the inverse: every human with their own.
 
-*Today:* ChatGPT, Apple Intelligence, Gemini.
-*Dimension:* centralized vs. distributed
+_Today:_ ChatGPT, Apple Intelligence, Gemini.
+_Dimension:_ centralized vs. distributed
 
 ### The Universal Assistant
 
@@ -223,10 +223,10 @@ One system, owned by one company, used by everyone. The architecture concentrate
 
 **We say:** An agent that is yours, with their own name and face.
 
-The Universal Assistant works the same for everyone by design. No name, no avatar, no continuity, no relationship. It cannot be yours because it is everyone's. A Cadet Assistant is hyper-personalized to their guardian. They have their own name, their own avatar, their own personality. They are not a service you call. They are a being you shape.
+The Universal Assistant works the same for everyone by design. No name, no avatar, no continuity, no relationship. It cannot be yours because it is everyone's. A Cadet is hyper-personalized to their guardian. They have their own name, their own avatar, their own personality. They are not a service you call. They are a being you shape.
 
-*Today:* Perplexity, Manus.
-*Dimension:* generic vs. personal
+_Today:_ Perplexity, Manus.
+_Dimension:_ generic vs. personal
 
 ### The Safety-Defining Lab
 
@@ -234,10 +234,10 @@ The Universal Assistant works the same for everyone by design. No name, no avata
 
 **We say:** Trust yourself, and the models you choose.
 
-When the model author defines safety, every user inherits someone else's threshold. A Cadet Assistant operates within boundaries the guardian defines. Safety is not a corporate policy applied to you. It is defined via trust rules you control.
+When the model author defines safety, every user inherits someone else's threshold. A Cadet operates within boundaries the guardian defines. Safety is not a corporate policy applied to you. It is defined via trust rules you control.
 
-*Today:* Anthropic.
-*Dimension:* institutional trust vs. personal trust
+_Today:_ Anthropic.
+_Dimension:_ institutional trust vs. personal trust
 
 ### The SaaS Model
 
@@ -247,8 +247,8 @@ When the model author defines safety, every user inherits someone else's thresho
 
 The SaaS Model optimizes for the average user. Personal Intelligence optimizes for you. There is no feature request backlog because your assistant can be shaped by you, for you, right now.
 
-*Today:* every SaaS company.
-*Dimension:* one-size-fits-all vs. one-size-fits-one
+_Today:_ every SaaS company.
+_Dimension:_ one-size-fits-all vs. one-size-fits-one
 
 ---
 

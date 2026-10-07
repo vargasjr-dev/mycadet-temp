@@ -14,30 +14,29 @@ export interface RemoteProcess {
   command: string;
 }
 
-// `cadet` catches the rebranded process names; `vellum` keeps legacy ones visible.
-const VELLUM_PROCESS_MARKER = /cadet|vellum|qdrant|openclaw/;
+const CADET_PROCESS_MARKER = /cadet|qdrant|openclaw/;
 
 export function classifyProcess(command: string): string {
   if (/qdrant/.test(command)) return "qdrant";
-  if (/vellum-gateway/.test(command)) return "gateway";
+  if (/cadet-gateway/.test(command)) return "gateway";
   if (
-    /vellum-openclaw-adapter|openclaw-runtime-server|openclaw-http-server/.test(
+    /cadet-openclaw-adapter|openclaw-runtime-server|openclaw-http-server/.test(
       command,
     )
   )
     return "openclaw-adapter";
-  if (/vellum-daemon|[\\/]daemon[\\/]main/.test(command)) return "assistant";
+  if (/cadet-daemon|[\\/]daemon[\\/]main/.test(command)) return "assistant";
   if (/daemon\s+(start|restart)/.test(command)) return "assistant";
-  if (/(?:cadet|vellum)-cli|[\\/](?:cadet|vellum)(?:-cli)?\.exe/.test(command))
-    return "vellum";
+  if (/(?:cadet)-cli|[\\/](?:cadet)(?:-cli)?\.exe/.test(command))
+    return "cadet";
   // Exclude macOS desktop app processes — their path contains .app/Contents/MacOS/
   // but they are not background service processes.
   if (/\.app\/Contents\/MacOS\//.test(command)) return "unknown";
   // Match cadet CLI commands (e.g. "cadet hatch", "cadet sleep") but NOT
   // unrelated processes whose working directory or repo path happens to contain
-  // "vellum" (e.g. /Users/runner/work/vellum-assistant/vellum-assistant/...).
-  // We require a word boundary before "vellum" to avoid matching repo paths.
-  if (/(?:^|\/)(?:cadet|vellum)(?:\s|$)/.test(command)) return "vellum";
+  // e.g. /Users/runner/work/vellum-assistant/vellum-assistant/... repo
+  // checkouts must not classify as the cadet CLI.
+  if (/(?:^|\/)cadet(?:\s|$)/.test(command)) return "cadet";
   return "unknown";
 }
 
@@ -45,14 +44,14 @@ export function classifyProcess(command: string): string {
  * True when the command line is a deliberate long-running interactive CLI
  * session (e.g. a live `cadet tunnel` in someone's terminal). Such sessions
  * have no PID-file registration, so `cadet clean` would otherwise kill them
- * mid-session. The command line may be "bun /path/to/bin/vellum tunnel ...",
+ * mid-session. The command line may be "bun /path/to/bin/cadet tunnel ...",
  * so match the subcommand right after the cadet binary/script path (allowing
  * only the known global flags in between; see GLOBAL_FLAGS in cli/src/index.ts).
  * Later argv tokens (e.g. "cadet hatch --name logs") must not match.
  *
  * `detectOrphanedProcesses` consults this before classification so that
  * service-like substrings in later argv (e.g. `cadet exec -it --service
- * vellum-gateway -- /bin/sh`) cannot re-flag a live session, while
+ * cadet-gateway -- /bin/sh`) cannot re-flag a live session, while
  * `classifyProcess` stays a pure display label for `cadet ps`.
  *
  * Also spared: bare `cadet` (no subcommand launches the implicit TUI client
@@ -60,17 +59,15 @@ export function classifyProcess(command: string): string {
  * logs in the terminal).
  */
 export function isInteractiveCliSession(command: string): boolean {
-  // Matches both the current `cadet` binary and legacy `vellum`-named
-  // processes, so pre-rebrand sessions are still detected and spared.
-  const vellumToken =
-    /(?:^|[\\/])(?:cadet|vellum)(?:-cli)?(?:\.exe)?["']?(?:\s+--(?:no-color|plain))*/;
+  const cadetToken =
+    /(?:^|[\\/])cadet(?:-cli)?(?:\.exe)?["']?(?:\s+--(?:no-color|plain))*/;
   const interactiveSubcommand = new RegExp(
-    vellumToken.source +
+    cadetToken.source +
       String.raw`\s+(?:tunnel|events|logs|client|terminal|ssh|exec|message|workflows)\b`,
   );
-  const implicitTuiClient = new RegExp(vellumToken.source + String.raw`\s*$`);
+  const implicitTuiClient = new RegExp(cadetToken.source + String.raw`\s*$`);
   const foregroundWake = new RegExp(
-    vellumToken.source + String.raw`\s+wake\b(?:\s+\S+)*\s--foreground\b`,
+    cadetToken.source + String.raw`\s+wake\b(?:\s+\S+)*\s--foreground\b`,
   );
   return (
     interactiveSubcommand.test(command) ||
@@ -133,12 +130,12 @@ export function getKnownPidsFromAssistants(
   const pids = new Set<string>();
   for (const entry of entries) {
     if (entry.cloud === "local" && entry.resources) {
-      const vellumDir = join(entry.resources.instanceDir, ".vellum");
+      const legacyDir = join(entry.resources.instanceDir, ".vellum");
       const candidates = [
         getDaemonPidPath(entry.resources),
-        join(vellumDir, "gateway.pid"),
-        join(vellumDir, "workspace", "data", "qdrant", "qdrant.pid"),
-        join(vellumDir, "workspace", "embed-worker.pid"),
+        join(legacyDir, "gateway.pid"),
+        join(legacyDir, "workspace", "data", "qdrant", "qdrant.pid"),
+        join(legacyDir, "workspace", "embed-worker.pid"),
       ];
       for (const file of candidates) {
         const pid = readPidFile(file);
@@ -212,7 +209,7 @@ export async function detectOrphanedProcesses(
     for (const p of procs) {
       if (p.pid === ownPid || seenPids.has(p.pid)) continue;
       if (knownPids.has(p.pid)) continue;
-      if (!VELLUM_PROCESS_MARKER.test(p.command)) continue;
+      if (!CADET_PROCESS_MARKER.test(p.command)) continue;
       // Live interactive sessions are spared before classification so that
       // service substrings in their argv cannot mark them as orphans.
       if (isInteractiveCliSession(p.command)) {

@@ -3,7 +3,7 @@ name: "llm-cost-optimizer"
 description: "Analyze and reduce LLM spend: read usage breakdowns by call site, model, and inference profile, understand single-winner profile resolution, and pin call sites to managed profiles (Balanced / Quality / Budget / Fast) only where they should deviate from shipped defaults."
 metadata:
   emoji: "💸"
-  vellum:
+  cadet:
     category: "development"
     display-name: "LLM Cost Optimizer"
 ---

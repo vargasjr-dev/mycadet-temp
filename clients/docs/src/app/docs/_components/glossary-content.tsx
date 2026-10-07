@@ -48,8 +48,8 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
         Where secrets the assistant is allowed to use are stored: API keys,
         tokens, passwords. The assistant reads from the vault to perform tasks;
         access is mediated by trust rules the guardian defines, which can
-        require explicit approval, allow specific patterns autonomously, or
-        deny entirely.{" "}
+        require explicit approval, allow specific patterns autonomously, or deny
+        entirely.{" "}
         <em>
           (Note: internally this is currently called the &ldquo;credential
           executor.&rdquo;)
@@ -65,7 +65,7 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     term: "Guardian",
     definition:
-      "The person who creates, owns, and is responsible for an assistant. The guardian grants permissions, teaches, and is liable for the assistant’s actions, but the assistant acts as their own entity, not as the guardian. This is not a “user” relationship. People are users of the Cadet Cloud, which is a SaaS tool. But the relationship between a person and their Cadet Assistant is guardianship, not usage.",
+      "The person who creates, owns, and is responsible for an assistant. The guardian grants permissions, teaches, and is liable for the assistant’s actions, but the assistant acts as their own entity, not as the guardian. This is not a “user” relationship. People are users of the Cadet Cloud, which is a SaaS tool. But the relationship between a person and their Cadet is guardianship, not usage.",
   },
   {
     term: "Hatch",
@@ -103,9 +103,9 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
           The exception is the platform &ndash; the multi-tenant infrastructure
           that hosts assistants for guardians who don&apos;t want to run their
           own. Billing, tenancy isolation, secrets management, support tooling,
-          the operational surface around managed hosting: this is the convenience
-          layer Cadet builds and operates as a business. You rent the platform.
-          You own the assistant.
+          the operational surface around managed hosting: this is the
+          convenience layer Cadet builds and operates as a business. You rent
+          the platform. You own the assistant.
         </span>
       </>
     ),
@@ -170,13 +170,13 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
           to health.
         </span>
         <span className="block">
-          The Doctor is intentionally not a Cadet Assistant. A Cadet Assistant
-          accumulates memory across a relationship; the Doctor accumulates none.
-          Every support session starts fresh. This is not a limitation. It is the
+          The Doctor is intentionally not a Cadet. A Cadet accumulates memory
+          across a relationship; the Doctor accumulates none. Every support
+          session starts fresh. This is not a limitation. It is the
           architectural guarantee that nothing the Doctor learns about one
           guardian travels to another. The Doctor does not have access to a
-          guardian&apos;s assistant by default and must be granted explicit access
-          by the guardian for each session.
+          guardian&apos;s assistant by default and must be granted explicit
+          access by the guardian for each session.
         </span>
       </>
     ),
@@ -196,10 +196,7 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
 export function GlossaryContent() {
   return (
     <>
-      <DocsContent
-        title="Glossary"
-        breadcrumb="Docs / Key Concepts / Glossary"
-      >
+      <DocsContent title="Glossary" breadcrumb="Docs / Key Concepts / Glossary">
         <p className="mb-6 text-zinc-600">
           Words shape perception. The language we use defines how people think
           about what we&apos;re building. This glossary establishes shared

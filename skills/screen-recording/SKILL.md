@@ -1,10 +1,10 @@
 ---
 name: screen-recording
 description: Record the user's screen as a video file
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🎬"
-  vellum:
+  cadet:
     platforms:
       - macos
     category: "content"

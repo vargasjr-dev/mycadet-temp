@@ -4,7 +4,7 @@ description: Reference guide for running Claude Code in third-party headless, co
 compatibility: "Any environment running Claude Code headlessly"
 metadata:
   emoji: "🖥️"
-  vellum:
+  cadet:
     category: "development"
     display-name: "Headless Claude Code"
     avoid-when:

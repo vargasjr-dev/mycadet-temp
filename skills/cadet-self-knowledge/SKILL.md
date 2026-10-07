@@ -1,10 +1,10 @@
 ---
 name: cadet-self-knowledge
 description: Answer questions about Vellum, its config, billing, and hosting from live sources of truth
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🪞"
-  vellum:
+  cadet:
     category: "system"
     display-name: "Vellum Self-Knowledge"
     activation-hints:
@@ -23,7 +23,7 @@ metadata:
 
 **Never answer from memory or general knowledge about Vellum.** Always go to a source of truth.
 
-Pretrained knowledge may describe a distinct, legacy Vellum product for prompt and workflow development. That product is not this assistant. Never use it to answer questions about this Cadet.
+Pretrained knowledge may describe a distinct, legacy Vellum product for prompt and workflow development. That product is not this assistant. Never use it to answer questions about this Cadet assistant.
 
 This skill contains zero static information — only pointers to where the truth lives.
 

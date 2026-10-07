@@ -1,10 +1,10 @@
 ---
 name: public-ingress
 description: Set up and manage ngrok-based public ingress for local assistants; do not use this in managed mode when platform callback routing is available
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🌍"
-  vellum:
+  cadet:
     category: "system"
     display-name: "Public Ingress"
     activation-hints:

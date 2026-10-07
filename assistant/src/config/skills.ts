@@ -51,7 +51,7 @@ const log = getLogger("skills");
 
 // ─── Zod schemas for frontmatter metadata validation ─────────────────────────
 
-const VellumMetadataSchema = z
+const CadetMetadataSchema = z
   .object({
     emoji: z.string().optional(),
     "display-name": z.string().optional(),
@@ -69,7 +69,7 @@ const SkillMetadataSchema = z
   .object({
     icon: z.string().optional(),
     emoji: z.string().optional(),
-    vellum: VellumMetadataSchema.optional(),
+    cadet: CadetMetadataSchema.optional(),
   })
   .passthrough();
 
@@ -131,7 +131,7 @@ export interface SkillSummary {
   activationHints?: string[];
   /** Conditions under which this skill should NOT be loaded. */
   avoidWhen?: string[];
-  /** Category slug declared in frontmatter, used as a fallback when the skill is not in the Vellum catalog. */
+  /** Category slug declared in frontmatter, used as a fallback when the skill is not in the Cadet catalog. */
   category?: string;
   /**
    * When true, this skill is pinned into the memory-v3 selector's stable-prefix
@@ -307,7 +307,7 @@ export function parseFrontmatter(
   let icon: string | undefined;
   let emoji: string | undefined;
   let parsedMeta: z.infer<typeof SkillMetadataSchema> | undefined;
-  let vellum: z.infer<typeof VellumMetadataSchema> | undefined;
+  let cadetMeta: z.infer<typeof CadetMetadataSchema> | undefined;
 
   const metadataRaw = fields.metadata;
   if (metadataRaw != null) {
@@ -322,9 +322,9 @@ export function parseFrontmatter(
       const zodResult = SkillMetadataSchema.safeParse(metadataRaw);
       if (zodResult.success) {
         parsedMeta = zodResult.data;
-        vellum = parsedMeta.vellum;
+        cadetMeta = parsedMeta.cadet;
         icon = parsedMeta.icon;
-        emoji = vellum?.emoji ?? parsedMeta.emoji;
+        emoji = cadetMeta?.emoji ?? parsedMeta.emoji;
       } else {
         // Zod validation failed — fall back to raw parsed object so we don't
         // lose all metadata because of a single bad field value.  We coerce
@@ -336,12 +336,13 @@ export function parseFrontmatter(
         );
         const raw = metadataRaw as Record<string, unknown>;
         parsedMeta = raw as z.infer<typeof SkillMetadataSchema>;
-        vellum = raw?.vellum as z.infer<typeof VellumMetadataSchema>;
+        cadetMeta = raw?.cadet as z.infer<typeof CadetMetadataSchema>;
         if (typeof parsedMeta?.icon === "string") {
           icon = parsedMeta.icon;
         }
-        if (vellum && typeof vellum === "object") {
-          emoji = typeof vellum.emoji === "string" ? vellum.emoji : undefined;
+        if (cadetMeta && typeof cadetMeta === "object") {
+          emoji =
+            typeof cadetMeta.emoji === "string" ? cadetMeta.emoji : undefined;
         }
         if (!emoji && typeof parsedMeta?.emoji === "string") {
           emoji = parsedMeta.emoji;
@@ -351,10 +352,10 @@ export function parseFrontmatter(
   }
 
   let includes: string[] | undefined;
-  if (Array.isArray(vellum?.includes)) {
+  if (Array.isArray(cadetMeta?.includes)) {
     const normalized = [
       ...new Set(
-        vellum.includes
+        cadetMeta.includes
           .filter((item: unknown): item is string => typeof item === "string")
           .map((s: string) => s.trim())
           .filter((s: string) => s.length > 0),
@@ -364,29 +365,30 @@ export function parseFrontmatter(
   }
 
   const featureFlag =
-    typeof vellum?.["feature-flag"] === "string"
-      ? vellum["feature-flag"]
+    typeof cadetMeta?.["feature-flag"] === "string"
+      ? cadetMeta["feature-flag"]
       : undefined;
 
   const displayName =
-    (typeof vellum?.["display-name"] === "string"
-      ? vellum["display-name"]
+    (typeof cadetMeta?.["display-name"] === "string"
+      ? cadetMeta["display-name"]
       : undefined) ?? name;
 
-  const activationHints = normalizeStringArray(vellum?.["activation-hints"]);
-  const avoidWhen = normalizeStringArray(vellum?.["avoid-when"]);
+  const activationHints = normalizeStringArray(cadetMeta?.["activation-hints"]);
+  const avoidWhen = normalizeStringArray(cadetMeta?.["avoid-when"]);
 
   const category =
-    typeof vellum?.category === "string" && vellum.category.trim().length > 0
-      ? vellum.category.trim()
+    typeof cadetMeta?.category === "string" &&
+    cadetMeta.category.trim().length > 0
+      ? cadetMeta.category.trim()
       : undefined;
 
   const alwaysCandidate =
-    typeof vellum?.["always-candidate"] === "boolean"
-      ? vellum["always-candidate"]
+    typeof cadetMeta?.["always-candidate"] === "boolean"
+      ? cadetMeta["always-candidate"]
       : undefined;
 
-  const platforms = normalizeSkillPlatforms(vellum?.platforms);
+  const platforms = normalizeSkillPlatforms(cadetMeta?.platforms);
 
   const strippedBody = stripCommentLines(body);
 

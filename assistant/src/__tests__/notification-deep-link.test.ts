@@ -845,7 +845,7 @@ describe("notification deep-link metadata", () => {
       ]);
 
       pairingResultsByChannel = {
-        vellum: {
+        cadet: {
           conversationId: "conv-vellum-created",
           messageId: "msg-vellum-seed",
           strategy: "start_new_conversation",
@@ -904,7 +904,7 @@ describe("notification deep-link metadata", () => {
       ]);
 
       pairingResultsByChannel = {
-        vellum: {
+        cadet: {
           conversationId: "conv-approval-thread",
           messageId: "msg-approval-card",
           strategy: "start_new_conversation",
@@ -954,7 +954,7 @@ describe("notification deep-link metadata", () => {
       // (with the paired conversation), so the cadet channel skips as a
       // duplicate before any fresh pairing runs.
       existingDeliveriesByChannel = {
-        vellum: {
+        cadet: {
           id: "delivery-vellum-existing",
           conversationId: "conv-from-existing-row",
           messageId: "msg-from-existing-row",
@@ -1011,7 +1011,7 @@ describe("notification deep-link metadata", () => {
 
       // Passive cadet signal: pairing skips conversation creation.
       pairingResultsByChannel = {
-        vellum: {
+        cadet: {
           conversationId: null,
           messageId: null,
           strategy: "start_new_conversation",

@@ -53,15 +53,15 @@ function fromSkillSummary(entry: SkillSummary): SkillCapabilityInput {
 
 /**
  * Project a remote-catalog entry to its capability fields. Display name and
- * hints live inside the entry's nested vellum metadata.
+ * hints live inside the entry's nested cadet metadata.
  */
 function fromCatalogSkill(entry: RemoteCatalogSkill): SkillCapabilityInput {
   return {
     id: entry.id,
-    displayName: entry.metadata?.vellum?.["display-name"] ?? entry.name,
+    displayName: entry.metadata?.cadet?.["display-name"] ?? entry.name,
     description: entry.description,
-    activationHints: entry.metadata?.vellum?.["activation-hints"],
-    avoidWhen: entry.metadata?.vellum?.["avoid-when"],
+    activationHints: entry.metadata?.cadet?.["activation-hints"],
+    avoidWhen: entry.metadata?.cadet?.["avoid-when"],
   };
 }
 
@@ -161,7 +161,7 @@ export function seedSkillGraphNodes(): void {
       }
     } else {
       for (const entry of cachedCatalog) {
-        const flagKey = entry.metadata?.vellum?.["feature-flag"];
+        const flagKey = entry.metadata?.cadet?.["feature-flag"];
         if (flagKey && !isAssistantFeatureFlagEnabled(flagKey, config)) {
           continue;
         }
@@ -220,7 +220,7 @@ export async function seedUninstalledCatalogSkillMemories(): Promise<void> {
         continue;
       }
 
-      const flagKey = entry.metadata?.vellum?.["feature-flag"];
+      const flagKey = entry.metadata?.cadet?.["feature-flag"];
       if (flagKey && !isAssistantFeatureFlagEnabled(flagKey, config)) {
         continue;
       }

@@ -3,7 +3,7 @@ name: "llm-provider-setup"
 description: "Set up a new LLM provider connection, discover valid model ids, create and validate a model profile — securely and end-to-end via CLI. Covers managed vs BYO keys, secure credential collection, model discovery, profile creation, and live verification."
 metadata:
   emoji: "🔌"
-  vellum:
+  cadet:
     category: "development"
     display-name: "LLM Provider Setup"
 ---

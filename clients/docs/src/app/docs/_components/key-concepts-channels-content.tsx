@@ -33,10 +33,7 @@ const TOC_ITEMS = [
 export function KeyConceptsChannelsContent() {
   return (
     <>
-      <DocsContent
-        title="Channels"
-        breadcrumb="Docs / Key Concepts / Channels"
-      >
+      <DocsContent title="Channels" breadcrumb="Docs / Key Concepts / Channels">
         <p className="mb-8 text-zinc-600">
           A channel is how you talk to your assistant. Your assistant is the
           same everywhere — same personality, same memories, same skills. The
@@ -56,24 +53,24 @@ export function KeyConceptsChannelsContent() {
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              <strong>Chat</strong> &mdash; full conversational UI with
-              cards, tables, forms, and other rich surfaces
+              <strong>Chat</strong> &mdash; full conversational UI with cards,
+              tables, forms, and other rich surfaces
             </li>
             <li>
-              <strong>About your assistant</strong> &mdash; browse identity, skills,
-              workspace files, contacts, and memories
+              <strong>About your assistant</strong> &mdash; browse identity,
+              skills, workspace files, contacts, and memories
             </li>
             <li>
-              <strong>Document editor</strong> &mdash; long-form writing
-              with your assistant as collaborator
+              <strong>Document editor</strong> &mdash; long-form writing with
+              your assistant as collaborator
             </li>
             <li>
               <strong>App viewer</strong> &mdash; interactive apps your
               assistant builds render right in the page
             </li>
             <li>
-              <strong>Voice input</strong> &mdash; press to talk using
-              your browser&apos;s microphone
+              <strong>Voice input</strong> &mdash; press to talk using your
+              browser&apos;s microphone
             </li>
             <li>
               <strong>Approvals</strong> &mdash; native in-page permission
@@ -81,12 +78,11 @@ export function KeyConceptsChannelsContent() {
             </li>
           </ul>
           <p className="mb-0 text-zinc-600">
-            Web is cloud-only by design &mdash; the assistant runs in your
-            Cadet Cloud account, with the workspace and sandbox living
-            there. The browser doesn&apos;t have access to your local
-            machine, so host file access, shell commands, computer use, and
-            screen watch aren&apos;t available here. For those, use the
-            desktop app.
+            Web is cloud-only by design &mdash; the assistant runs in your Cadet
+            Cloud account, with the workspace and sandbox living there. The
+            browser doesn&apos;t have access to your local machine, so host file
+            access, shell commands, computer use, and screen watch aren&apos;t
+            available here. For those, use the desktop app.
           </p>
         </section>
 
@@ -96,8 +92,8 @@ export function KeyConceptsChannelsContent() {
             Desktop App
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            The desktop experience is available on macOS and Windows, with a menu bar
-            presence on Mac and a system tray icon on Windows:
+            The desktop experience is available on macOS and Windows, with a
+            menu bar presence on Mac and a system tray icon on Windows:
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
@@ -109,8 +105,8 @@ export function KeyConceptsChannelsContent() {
               and control your Mac or Windows PC directly
             </li>
             <li>
-              <strong>Voice input</strong>: use the in-app voice controls or configure
-              your voice shortcut in Settings
+              <strong>Voice input</strong>: use the in-app voice controls or
+              configure your voice shortcut in Settings
             </li>
             <li>
               <strong>Document editor</strong> — long-form writing with your
@@ -130,12 +126,14 @@ export function KeyConceptsChannelsContent() {
             </li>
           </ul>
           <p className="mb-0 text-zinc-600">
-            Some features depend on the operating system. The Fn voice key and floating
-            companion are macOS-only. Windows uses a configurable voice mode shortcut
-            and supports computer control in normal, non-elevated windows. See{" "}
+            Some features depend on the operating system. The Fn voice key and
+            floating companion are macOS-only. Windows uses a configurable voice
+            mode shortcut and supports computer control in normal, non-elevated
+            windows. See{" "}
             <a href="/docs/trust-security/the-permissions-model#windows-system-permissions">
               Windows system permissions
-            </a>.
+            </a>
+            .
           </p>
         </section>
 
@@ -145,41 +143,37 @@ export function KeyConceptsChannelsContent() {
             iOS
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            The pocket experience. The Cadet Assistant app on iPhone
-            and iPad signs into your Cadet Cloud account and gives you
-            the same assistant you talk to on the web and desktop, with
-            the same memory and the same conversations carried across.
+            The pocket experience. The Cadet app on iPhone and iPad signs into
+            your Cadet Cloud account and gives you the same assistant you talk
+            to on the web and desktop, with the same memory and the same
+            conversations carried across.
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              <strong>Chat anywhere</strong> &mdash; full conversational
-              UI on the go
+              <strong>Chat anywhere</strong> &mdash; full conversational UI on
+              the go
             </li>
             <li>
-              <strong>Conversation continuity</strong> &mdash; pick up
-              where you left off on Mac or web; history is shared
+              <strong>Conversation continuity</strong> &mdash; pick up where you
+              left off on Mac or web; history is shared
             </li>
             <li>
-              <strong>Push notifications</strong> &mdash; your assistant
-              can reach you when something needs your attention
+              <strong>Push notifications</strong> &mdash; your assistant can
+              reach you when something needs your attention
             </li>
             <li>
-              <strong>Approvals</strong> &mdash; native iOS prompts when
-              a tool call needs your go-ahead
+              <strong>Approvals</strong> &mdash; native iOS prompts when a tool
+              call needs your go-ahead
             </li>
           </ul>
           <p className="mb-4 text-zinc-600">
-            Like Web, iOS is cloud-only by design. The assistant runs in
-            your Cadet Cloud account, so host file access, shell
-            commands, computer use, and screen watch live with the
-            desktop app.
+            Like Web, iOS is cloud-only by design. The assistant runs in your
+            Cadet Cloud account, so host file access, shell commands, computer
+            use, and screen watch live with the desktop app.
           </p>
           <p className="mb-0 text-zinc-600">
-            Available on the{" "}
-            <a href={routes.iosAppStore}>
-              App Store
-            </a>{" "}
-            for iPhone and iPad.
+            Available on the <a href={routes.iosAppStore}>App Store</a> for
+            iPhone and iPad.
           </p>
         </section>
 
@@ -194,11 +188,7 @@ export function KeyConceptsChannelsContent() {
             computer use, and screen watch stay on the desktop app.
           </p>
           <p className="mb-0 text-zinc-600">
-            Available on{" "}
-            <a href={routes.androidPlayStore}>
-              Google Play
-            </a>
-            .
+            Available on <a href={routes.androidPlayStore}>Google Play</a>.
           </p>
         </section>
 
@@ -246,9 +236,9 @@ export function KeyConceptsChannelsContent() {
             channels are not supported.
           </p>
           <p className="mb-0 text-zinc-600">
-            Telegram is also one of the channels your assistant can use to
-            reach you — notifications, follow-ups, and alerts can all land in
-            your Telegram chat.
+            Telegram is also one of the channels your assistant can use to reach
+            you — notifications, follow-ups, and alerts can all land in your
+            Telegram chat.
           </p>
         </section>
 
@@ -305,12 +295,15 @@ export function KeyConceptsChannelsContent() {
           <p className="mb-4 text-zinc-600">
             Connect your Gmail account via Google OAuth and your assistant
             becomes a full email manager. This is what happens when you say
-            &ldquo;check my email&rdquo; or &ldquo;clean up my inbox&rdquo; —
-            it defaults to your Gmail, not the assistant&apos;s own address.
+            &ldquo;check my email&rdquo; or &ldquo;clean up my inbox&rdquo; — it
+            defaults to your Gmail, not the assistant&apos;s own address.
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>Read, search, and triage your inbox</li>
-            <li>Draft and send emails on your behalf (draft-first workflow — nothing sends without your approval)</li>
+            <li>
+              Draft and send emails on your behalf (draft-first workflow —
+              nothing sends without your approval)
+            </li>
             <li>Archive, label, trash, and organize messages</li>
             <li>Unsubscribe from mailing lists</li>
             <li>Bulk declutter with sender digest scanning</li>
@@ -328,8 +321,8 @@ export function KeyConceptsChannelsContent() {
             Assistant&apos;s own email (AgentMail)
           </h4>
           <p className="mb-4 text-zinc-600">
-            Your assistant can also have its own email address. This is behind
-            a feature flag (
+            Your assistant can also have its own email address. This is behind a
+            feature flag (
             <code className="rounded bg-zinc-100 px-1 py-0.5 text-sm">
               email-channel
             </code>
@@ -337,7 +330,9 @@ export function KeyConceptsChannelsContent() {
             AgentMail.
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
-            <li>Receive and process inbound emails to the assistant&apos;s address</li>
+            <li>
+              Receive and process inbound emails to the assistant&apos;s address
+            </li>
             <li>Draft, approve, and send outbound emails as the assistant</li>
             <li>Thread-aware conversations</li>
             <li>Custom domain setup with DNS verification</li>
@@ -422,11 +417,15 @@ export function KeyConceptsChannelsContent() {
             . Every message has a channel.
           </p>
           <p className="mb-4 text-zinc-600">
-            <strong>Interfaces</strong> are more specific &mdash; they
-            include the channels plus the specific clients used to send the
-            message. The <code className="rounded bg-zinc-100 px-1 py-0.5 text-sm">cadet</code>{" "}
+            <strong>Interfaces</strong> are more specific &mdash; they include
+            the channels plus the specific clients used to send the message. The{" "}
+            <code className="rounded bg-zinc-100 px-1 py-0.5 text-sm">
+              cadet
+            </code>{" "}
             channel has four interfaces:{" "}
-            <code className="rounded bg-zinc-100 px-1 py-0.5 text-sm">macos</code>{" "}
+            <code className="rounded bg-zinc-100 px-1 py-0.5 text-sm">
+              macos
+            </code>{" "}
             (the desktop app),{" "}
             <code className="rounded bg-zinc-100 px-1 py-0.5 text-sm">web</code>{" "}
             (the browser),{" "}
@@ -434,16 +433,18 @@ export function KeyConceptsChannelsContent() {
             (the iPhone and iPad app), and{" "}
             <code className="rounded bg-zinc-100 px-1 py-0.5 text-sm">cli</code>{" "}
             (the terminal). A message on the{" "}
-            <code className="rounded bg-zinc-100 px-1 py-0.5 text-sm">cadet</code>{" "}
-            channel might come from any of these &mdash; the interface tells
-            the system which one.
+            <code className="rounded bg-zinc-100 px-1 py-0.5 text-sm">
+              cadet
+            </code>{" "}
+            channel might come from any of these &mdash; the interface tells the
+            system which one.
           </p>
           <p className="mb-0 text-zinc-600">
-            The distinction matters for capabilities. The macOS, web, iOS,
-            and CLI interfaces are <strong>interactive</strong> &mdash; they
-            have an SSE client capable of displaying native permission prompts.
-            Channel interfaces (Telegram, Slack, etc.) route approvals
-            through the guardian system instead.
+            The distinction matters for capabilities. The macOS, web, iOS, and
+            CLI interfaces are <strong>interactive</strong> &mdash; they have an
+            SSE client capable of displaying native permission prompts. Channel
+            interfaces (Telegram, Slack, etc.) route approvals through the
+            guardian system instead.
           </p>
         </section>
 
@@ -615,9 +616,7 @@ export function KeyConceptsChannelsContent() {
                   <td className="px-3 py-2">All (cloud)</td>
                   <td className="px-3 py-2">All</td>
                   <td className="px-3 py-2">All</td>
-                  <td className="px-3 py-2">
-                    All (with channel permissions)
-                  </td>
+                  <td className="px-3 py-2">All (with channel permissions)</td>
                   <td className="px-3 py-2">All</td>
                   <td className="px-3 py-2">Limited</td>
                 </tr>
@@ -625,9 +624,9 @@ export function KeyConceptsChannelsContent() {
             </table>
           </div>
           <p className="mb-0 text-zinc-600">
-            Your assistant adapts its output to what the channel supports. If
-            it would normally show you an interactive card, it&apos;ll send
-            plain text on Telegram or speak it on a phone call instead.
+            Your assistant adapts its output to what the channel supports. If it
+            would normally show you an interactive card, it&apos;ll send plain
+            text on Telegram or speak it on a phone call instead.
           </p>
         </section>
 
@@ -643,8 +642,8 @@ export function KeyConceptsChannelsContent() {
             remembered in Slack.
           </p>
           <p className="mb-0 text-zinc-600">
-            What ties it together is the guardian system &mdash; covered in
-            the next section.
+            What ties it together is the guardian system &mdash; covered in the
+            next section.
           </p>
         </section>
 
@@ -656,45 +655,44 @@ export function KeyConceptsChannelsContent() {
           <p className="mb-4 text-zinc-600">
             The <strong>guardian</strong> is you &mdash; the primary owner of
             the assistant. Guardians have full access to memories, workspace
-            files, tools, and credentials, and are the only ones who can
-            grant approval for sensitive actions. Channels are how the
-            guardian system stretches that trust across the places you
-            actually live.
+            files, tools, and credentials, and are the only ones who can grant
+            approval for sensitive actions. Channels are how the guardian system
+            stretches that trust across the places you actually live.
           </p>
           <p className="mb-3 text-zinc-600">
             Three things the guardian system does on every channel:
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              <strong>Verifies who&apos;s talking.</strong> The first time
-              you message your assistant on a new channel, you go through a
-              short challenge-response flow that links that channel identity
-              (your Telegram chat ID, Slack handle, phone number, email
-              address) to your guardian account. Once verified, the
-              assistant trusts that messages from there are coming from you.
+              <strong>Verifies who&apos;s talking.</strong> The first time you
+              message your assistant on a new channel, you go through a short
+              challenge-response flow that links that channel identity (your
+              Telegram chat ID, Slack handle, phone number, email address) to
+              your guardian account. Once verified, the assistant trusts that
+              messages from there are coming from you.
             </li>
             <li>
               <strong>Routes approvals.</strong> When the assistant needs
               permission to do something sensitive, it asks the guardian. On
               interactive channels (web, desktop, CLI) the prompt appears
-              inline. On other channels (Telegram, Slack, email), the
-              approval is sent through the channel itself &mdash; you reply
-              there to allow or deny. Approvals routed through a channel are
-              always downgraded to one-time grants.
+              inline. On other channels (Telegram, Slack, email), the approval
+              is sent through the channel itself &mdash; you reply there to
+              allow or deny. Approvals routed through a channel are always
+              downgraded to one-time grants.
             </li>
             <li>
-              <strong>Gates memory extraction.</strong> Long-term memories
-              are only extracted from messages by trusted guardians.
-              Messages from contacts or unverified parties are indexed for
-              search inside that conversation but can&apos;t reshape what
-              your assistant knows about you.
+              <strong>Gates memory extraction.</strong> Long-term memories are
+              only extracted from messages by trusted guardians. Messages from
+              contacts or unverified parties are indexed for search inside that
+              conversation but can&apos;t reshape what your assistant knows
+              about you.
             </li>
           </ul>
           <p className="mb-0 text-zinc-600">
             Multiple channels can point to the same guardian. Once your
-            Telegram, Slack, phone, and email are all linked to your
-            account, your assistant treats them as one person across
-            conversations. For the full model and how trust rules work, see{" "}
+            Telegram, Slack, phone, and email are all linked to your account,
+            your assistant treats them as one person across conversations. For
+            the full model and how trust rules work, see{" "}
             <a href="/docs/trust-security/the-permissions-model">
               The permissions model
             </a>
@@ -710,8 +708,8 @@ export function KeyConceptsChannelsContent() {
           <p className="mb-4 text-zinc-600">
             Web and desktop don&apos;t need setup beyond signing in to your
             Cadet Cloud account (or installing the app, for desktop). Other
-            channels are configured through your assistant. You can say
-            things like:
+            channels are configured through your assistant. You can say things
+            like:
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>&ldquo;Set up Telegram&rdquo;</li>
@@ -721,14 +719,14 @@ export function KeyConceptsChannelsContent() {
           </ul>
           <p className="mb-4 text-zinc-600">
             Your assistant walks you through the setup conversationally —
-            providing API keys, authorizing OAuth, configuring webhooks —
-            rather than through a separate settings panel. Each channel has its
-            own setup skill that handles the end-to-end flow.
+            providing API keys, authorizing OAuth, configuring webhooks — rather
+            than through a separate settings panel. Each channel has its own
+            setup skill that handles the end-to-end flow.
           </p>
           <p className="mb-0 text-zinc-600">
             Some channels require external service accounts (Twilio for phone,
-            BotFather for Telegram). Your
-            assistant will guide you through creating those when needed.
+            BotFather for Telegram). Your assistant will guide you through
+            creating those when needed.
           </p>
         </section>
       </DocsContent>

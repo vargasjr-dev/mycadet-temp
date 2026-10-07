@@ -1,10 +1,10 @@
 ---
 name: vellum-skills-catalog
 description: Discover bundled skills and search/install community skills from the skills.sh registry
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🧩"
-  vellum:
+  cadet:
     category: "system"
     display-name: "Skills Catalog"
     activation-hints:

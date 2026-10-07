@@ -3345,8 +3345,8 @@ describe("OpenRouterProvider — Anthropic dispatch", () => {
 
     expect(_lastStreamOptions?.headers).toEqual(
       expect.objectContaining({
-        "HTTP-Referer": "https://www.vellum.ai",
-        "X-OpenRouter-Title": "Cadet Assistant",
+        "HTTP-Referer": "https://mycadet.ai",
+        "X-OpenRouter-Title": "Cadet",
         "X-OpenRouter-Categories": "personal-agent,cli-agent",
         "Vellum-Organization-Id": "org-123",
       }),

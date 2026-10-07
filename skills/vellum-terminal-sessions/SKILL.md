@@ -6,7 +6,7 @@ metadata:
   emoji: "🖥️"
   author: vellum-ai
   version: "0.2"
-  vellum:
+  cadet:
     category: "system"
     display-name: "Terminal Sessions"
     activation-hints:

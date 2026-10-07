@@ -6,7 +6,7 @@ metadata:
   emoji: "🐸"
   author: vellum-ai
   version: "0.1"
-  vellum:
+  cadet:
     category: "content"
     display-name: "Meme Generator"
     activation-hints:

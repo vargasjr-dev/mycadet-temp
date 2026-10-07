@@ -1518,7 +1518,7 @@ describe("AssistantConfigSchema", () => {
               languageVoices: { hi: "voice-hindi", ja: "voice-japanese" },
             },
             deepgram: { languageVoices: { hi: "aura-2-hi-voice" } },
-            vellum: { languageVoices: { hi: "aura-2-hi-voice" } },
+            cadet: { languageVoices: { hi: "aura-2-hi-voice" } },
           },
         },
       },
@@ -1584,7 +1584,7 @@ describe("AssistantConfigSchema", () => {
       services: {
         tts: {
           providers: {
-            vellum: {
+            cadet: {
               languageVoices: {
                 "": "voice-empty",
                 "  ": "voice-blank",

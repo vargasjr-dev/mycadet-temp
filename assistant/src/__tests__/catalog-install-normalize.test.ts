@@ -3,9 +3,9 @@
  *
  * The platform `/v1/skills/` API flattens skill metadata into top-level
  * fields (`category`, `display_name`, `icon`) rather than the nested
- * `metadata.vellum.*` shape used by the local `catalog.json`. Both
+ * `metadata.cadet.*` shape used by the local `catalog.json`. Both
  * `fetchCatalog` (remote) and `readLocalCatalog` (local file) must produce a
- * canonical `CatalogSkill` whose `metadata.vellum.category` is populated, so
+ * canonical `CatalogSkill` whose `metadata.cadet.category` is populated, so
  * downstream category assignment doesn't fall back to "system" for every skill.
  */
 
@@ -40,7 +40,7 @@ function stubFetchJson(payload: unknown): typeof fetch {
 }
 
 describe("fetchCatalog normalization", () => {
-  test("re-nests the platform's flattened category under metadata.vellum", async () => {
+  test("re-nests the platform's flattened category under metadata.cadet", async () => {
     globalThis.fetch = stubFetchJson({
       skills: [
         {
@@ -61,13 +61,13 @@ describe("fetchCatalog normalization", () => {
     expect(catalog).toHaveLength(1);
     const [skill] = catalog;
     expect(skill.id).toBe("amazon");
-    expect(skill.metadata?.vellum?.category).toBe("commerce");
-    expect(skill.metadata?.vellum?.["display-name"]).toBe("Amazon");
+    expect(skill.metadata?.cadet?.category).toBe("commerce");
+    expect(skill.metadata?.cadet?.["display-name"]).toBe("Amazon");
     expect(skill.icon).toBe("🛒");
     expect(skill.metadata?.icon).toBe("🛒");
     expect(skill.updatedAt).toBe("2026-04-19T19:26:17Z");
     expect(skill.platforms).toEqual(["windows"]);
-    expect(skill.metadata?.vellum?.platforms).toEqual(["windows"]);
+    expect(skill.metadata?.cadet?.platforms).toEqual(["windows"]);
   });
 
   test("leaves category undefined when the API omits it", async () => {
@@ -78,7 +78,7 @@ describe("fetchCatalog normalization", () => {
     const catalog = await fetchCatalog();
 
     expect(catalog).toHaveLength(1);
-    expect(catalog[0].metadata?.vellum?.category).toBeUndefined();
+    expect(catalog[0].metadata?.cadet?.category).toBeUndefined();
   });
 
   test("drops malformed entries without throwing", async () => {
@@ -97,12 +97,12 @@ describe("fetchCatalog normalization", () => {
 
     expect(catalog).toHaveLength(1);
     expect(catalog[0].id).toBe("valid");
-    expect(catalog[0].metadata?.vellum?.category).toBe("email");
+    expect(catalog[0].metadata?.cadet?.category).toBe("email");
   });
 });
 
 describe("readLocalCatalog normalization", () => {
-  test("reads the nested metadata.vellum.category from catalog.json", () => {
+  test("reads the nested metadata.cadet.category from catalog.json", () => {
     const dir = mkdtempSync(join(tmpdir(), "vellum-catalog-"));
     try {
       writeFileSync(
@@ -116,7 +116,7 @@ describe("readLocalCatalog normalization", () => {
               description: "Task management",
               metadata: {
                 icon: "✅",
-                vellum: {
+                cadet: {
                   "display-name": "Tasks",
                   category: "productivity",
                   platforms: ["macos", "linux"],
@@ -130,8 +130,8 @@ describe("readLocalCatalog normalization", () => {
       const catalog = readLocalCatalog(dir);
 
       expect(catalog).toHaveLength(1);
-      expect(catalog[0].metadata?.vellum?.category).toBe("productivity");
-      expect(catalog[0].metadata?.vellum?.["display-name"]).toBe("Tasks");
+      expect(catalog[0].metadata?.cadet?.category).toBe("productivity");
+      expect(catalog[0].metadata?.cadet?.["display-name"]).toBe("Tasks");
       expect(catalog[0].platforms).toEqual(["macos", "linux"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });

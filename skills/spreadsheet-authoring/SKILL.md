@@ -4,7 +4,7 @@ description: Create and edit Excel spreadsheets (.xlsx) whose formulas carry the
 compatibility: "Needs Python in the assistant's environment with the XlsxWriter package for writing and openpyxl for verifying. Works on desktop and web."
 metadata:
   emoji: "📊"
-  vellum:
+  cadet:
     category: "productivity"
     display-name: "Spreadsheet Authoring"
     activation-hints:

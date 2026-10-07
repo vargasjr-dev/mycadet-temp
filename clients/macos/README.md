@@ -1,6 +1,6 @@
 # Electron wrapper
 
-Desktop shell for the Cadet Assistant macOS app. Wraps [`clients/web/`](../web/)
+Desktop shell for the Cadet macOS app. Wraps [`clients/web/`](../web/)
 in an Electron `BrowserWindow`. Each assistant's background processes are owned
 entirely by the `cadet` CLI, which the app invokes as a subprocess — the
 Electron app is a GUI client, not a process manager.

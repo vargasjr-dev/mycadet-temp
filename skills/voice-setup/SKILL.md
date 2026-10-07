@@ -1,11 +1,11 @@
 ---
 name: voice-setup
 description: Complete voice configuration in chat - desktop Talk and PTT shortcuts, microphone permissions, ElevenLabs/Deepgram TTS, and troubleshooting
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "🎙️"
-  vellum:
+  cadet:
     platforms:
       - macos
       - windows

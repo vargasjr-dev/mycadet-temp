@@ -144,7 +144,7 @@ function makeCatalogSkill(id: string, category: string): CatalogSkill {
     id,
     name: id,
     description: "",
-    metadata: { vellum: { category } },
+    metadata: { cadet: { category } },
   };
 }
 

@@ -1,7 +1,7 @@
 /**
  * Backwards-compat gate: vision attachment filtering.
  *
- * Cadet Assistant dev build `0.10.0-dev.202606211252.5cf8576` is the
+ * Cadet dev build `0.10.0-dev.202606211252.5cf8576` is the
  * first version with the image-fallback plugin that handles image
  * captioning server-side, so the web client no longer needs to
  * pre-filter images for non-vision models — all file types can be

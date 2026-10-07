@@ -4,7 +4,7 @@ description: Get current weather conditions and forecasts for any location
 metadata:
   icon: assets/icon.svg
   emoji: "🌤️"
-  vellum:
+  cadet:
     category: "productivity"
 ---
 

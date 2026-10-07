@@ -90,7 +90,7 @@ describe("buildSkillMarkdown", () => {
     expect(result.endsWith("\n")).toBe(true);
   });
 
-  test("includes optional emoji in metadata.vellum", () => {
+  test("includes optional emoji in metadata.cadet", () => {
     const result = buildSkillMarkdown({
       name: "Emoji Skill",
       description: "Has an emoji",
@@ -100,7 +100,7 @@ describe("buildSkillMarkdown", () => {
     expect(result).toContain("metadata:");
     const fmMatch = result.match(/^---\n([\s\S]*?)\n---/);
     const parsed = parseYaml(fmMatch![1]);
-    expect(parsed.metadata.vellum.emoji).toBe("🧪");
+    expect(parsed.metadata.cadet.emoji).toBe("🧪");
   });
 
   test("escapes double quotes in name and description", () => {
@@ -165,7 +165,7 @@ describe("buildSkillMarkdown", () => {
     expect(skill!.name).toBe("path\\name");
   });
 
-  test("includes field emits YAML list in metadata.vellum", () => {
+  test("includes field emits YAML list in metadata.cadet", () => {
     const result = buildSkillMarkdown({
       name: "Parent",
       description: "Has children",
@@ -174,10 +174,10 @@ describe("buildSkillMarkdown", () => {
     });
     const fmMatch = result.match(/^---\n([\s\S]*?)\n---/);
     const parsed = parseYaml(fmMatch![1]);
-    expect(parsed.metadata.vellum.includes).toEqual(["child-a", "child-b"]);
+    expect(parsed.metadata.cadet.includes).toEqual(["child-a", "child-b"]);
   });
 
-  test("activation-hints and avoid-when emit kebab-case YAML lists in metadata.vellum", () => {
+  test("activation-hints and avoid-when emit kebab-case YAML lists in metadata.cadet", () => {
     const result = buildSkillMarkdown({
       name: "Hinted Skill",
       description: "Has trigger phrases",
@@ -188,13 +188,11 @@ describe("buildSkillMarkdown", () => {
     const fmMatch = result.match(/^---\n([\s\S]*?)\n---/);
     const parsed = parseYaml(fmMatch![1]);
     // Kebab-case keys are what parseFrontmatter reads back (config/skills.ts).
-    expect(parsed.metadata.vellum["activation-hints"]).toEqual([
+    expect(parsed.metadata.cadet["activation-hints"]).toEqual([
       "user asks to deploy staging",
       "needs a release cut",
     ]);
-    expect(parsed.metadata.vellum["avoid-when"]).toEqual([
-      "local-only changes",
-    ]);
+    expect(parsed.metadata.cadet["avoid-when"]).toEqual(["local-only changes"]);
   });
 
   test("omits activation-hints / avoid-when when empty and no other cadet fields", () => {
@@ -208,7 +206,7 @@ describe("buildSkillMarkdown", () => {
     expect(result).not.toContain("metadata:");
   });
 
-  test("includes optional category in metadata.vellum", () => {
+  test("includes optional category in metadata.cadet", () => {
     const result = buildSkillMarkdown({
       name: "Categorized Skill",
       description: "Has a category",
@@ -217,7 +215,7 @@ describe("buildSkillMarkdown", () => {
     });
     const fmMatch = result.match(/^---\n([\s\S]*?)\n---/);
     const parsed = parseYaml(fmMatch![1]);
-    expect(parsed.metadata.vellum.category).toBe("development");
+    expect(parsed.metadata.cadet.category).toBe("development");
   });
 
   test("omits metadata when no cadet fields provided", () => {
@@ -404,11 +402,11 @@ describe("createManagedSkill", () => {
       readFileSync(result.path, "utf-8").match(/^---\n([\s\S]*?)\n---/)![1],
     );
     expect(fm.metadata.custom).toBe("kept");
-    expect(fm.metadata.vellum["display-name"]).toBe("Hand Edited Skill");
-    expect(fm.metadata.vellum.platforms).toEqual(["macos"]);
-    expect(fm.metadata.vellum["always-candidate"]).toBe(true);
-    expect(fm.metadata.vellum.emoji).toBe("📊");
-    expect(fm.metadata.vellum.category).toBe("productivity");
+    expect(fm.metadata.cadet["display-name"]).toBe("Hand Edited Skill");
+    expect(fm.metadata.cadet.platforms).toEqual(["macos"]);
+    expect(fm.metadata.cadet["always-candidate"]).toBe(true);
+    expect(fm.metadata.cadet.emoji).toBe("📊");
+    expect(fm.metadata.cadet.category).toBe("productivity");
     const skill = loadSkillCatalog(undefined, [join(TEST_DIR, "skills")]).find(
       (s) => s.id === "hand-edited",
     )!;

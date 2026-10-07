@@ -557,7 +557,7 @@ export async function readCatalogSkillFileContent(
  * otherwise be reachable via the handler module.
  */
 export function catalogSkillToSlim(cs: CatalogSkill): SlimSkillResponse {
-  const name = cs.metadata?.vellum?.["display-name"] ?? cs.name;
+  const name = cs.metadata?.cadet?.["display-name"] ?? cs.name;
   return {
     id: cs.id,
     name,
@@ -567,7 +567,7 @@ export function catalogSkillToSlim(cs: CatalogSkill): SlimSkillResponse {
     kind: "catalog",
     origin: "vellum",
     status: "available",
-    category: cs.metadata?.vellum?.category ?? "system",
+    category: cs.metadata?.cadet?.category ?? "system",
   };
 }
 

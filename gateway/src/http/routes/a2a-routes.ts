@@ -82,12 +82,12 @@ function readAssistantName(): string {
   try {
     const wsDir = getWorkspaceDir();
     const identityPath = join(wsDir, "prompts", "IDENTITY.md");
-    if (!existsSync(identityPath)) return "Cadet Assistant";
+    if (!existsSync(identityPath)) return "Cadet";
     const content = readFileSync(identityPath, "utf-8");
     const match = content.match(/\*\*Name:\*\*\s*(.+)/);
-    return match?.[1]?.trim() || "Cadet Assistant";
+    return match?.[1]?.trim() || "Cadet";
   } catch {
-    return "Cadet Assistant";
+    return "Cadet";
   }
 }
 

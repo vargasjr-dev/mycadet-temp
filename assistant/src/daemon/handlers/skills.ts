@@ -319,7 +319,7 @@ function getCatalogCategoryMap(): Map<string, string> {
   }
   _catalogCategoryMap = new Map();
   for (const s of catalog) {
-    const cat = s.metadata?.vellum?.category;
+    const cat = s.metadata?.cadet?.category;
     if (cat) {
       _catalogCategoryMap.set(s.id, cat);
     }

@@ -857,7 +857,7 @@ describe("catalogSkillToSlim", () => {
       id: "test-skill",
       name: "test-skill",
       description: "A test skill",
-      metadata: { vellum: { "display-name": "Pretty Name" } },
+      metadata: { cadet: { "display-name": "Pretty Name" } },
     };
     const slim = catalogSkillToSlim(cs);
     expect(slim.name).toBe("Pretty Name");
@@ -942,7 +942,7 @@ describe("createVellumCatalogProvider", () => {
         name: "my-skill",
         description: "A skill",
         emoji: "🔧",
-        metadata: { vellum: { "display-name": "My Skill" } },
+        metadata: { cadet: { "display-name": "My Skill" } },
       },
     ];
 

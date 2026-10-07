@@ -3,7 +3,7 @@ name: geo-audit
 description: Runs a one-command technical GEO audit on any domain. Checks AI crawler access, llms.txt presence, server-side rendering, sitemap, and schema markup. Streams results live and ends with a 0–100 score plus the top 3 prioritized fixes. Built to be both genuinely useful and great to demo on camera.
 metadata:
   emoji: "🔎"
-  vellum:
+  cadet:
     display-name: "GEO Audit"
     category: "development"
     activation-hints:

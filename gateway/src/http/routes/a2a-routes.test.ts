@@ -82,7 +82,7 @@ describe("Agent Card", () => {
       supported_interfaces: Array<{ url: string }>;
       capabilities: { push_notifications: boolean };
     };
-    expect(card.name).toBe("Cadet Assistant");
+    expect(card.name).toBe("Cadet");
     expect(card.capabilities.push_notifications).toBe(true);
   });
 

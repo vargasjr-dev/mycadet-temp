@@ -2,7 +2,7 @@
   "name": "@mycadet/windows",
   "version": "0.0.1",
   "private": true,
-  "description": "Electron wrapper for the Cadet Assistant Windows app.",
+  "description": "Electron wrapper for the Cadet Windows app.",
   "main": "out/main/index.js",
   "scripts": {
     "setup": "node node_modules/electron/install.js",

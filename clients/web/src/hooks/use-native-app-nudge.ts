@@ -21,7 +21,7 @@ export interface NativeAppPromotion {
 
 export const NATIVE_APP_BANNER_MIN_TURNS = 5;
 
-/** App Store listing for Cadet Assistant (id6759934423). */
+/** App Store listing for Cadet (id6759934423). */
 export const IOS_APP_STORE_URL =
   "https://apps.apple.com/us/app/vellum-assistant/id6759934423";
 

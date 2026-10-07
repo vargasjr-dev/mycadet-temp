@@ -1,10 +1,10 @@
 ---
 name: email-setup
 description: Set up this assistant's own `[name].vellum.me` domain and email address (one-time setup)
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "📧"
-  vellum:
+  cadet:
     category: "email"
     display-name: "Email Setup"
 ---

@@ -3,7 +3,7 @@ name: "watch-together"
 description: "Watch local TV shows and movies with the user in real time. An editor model watches each playback window, transcribes dialogue, and picks story-critical frames. Source mode plays local media in mpv; screen mode captures supported desktops as a fallback."
 metadata:
   emoji: "📺"
-  vellum:
+  cadet:
     category: "content"
     display-name: "Watch Together"
     emoji: 📺

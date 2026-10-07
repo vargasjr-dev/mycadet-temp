@@ -32,9 +32,9 @@ export function HelpCommonIssuesContent() {
         breadcrumb="Docs / Help / Common Issues"
       >
         <p className="mb-8 text-zinc-600">
-          Things that go wrong, and how to unblock yourself. Most fixes
-          start with the same move: ask your assistant. It can usually
-          tell you what&apos;s broken faster than this page can.
+          Things that go wrong, and how to unblock yourself. Most fixes start
+          with the same move: ask your assistant. It can usually tell you
+          what&apos;s broken faster than this page can.
         </p>
 
         <section id="first-things-first">
@@ -47,24 +47,23 @@ export function HelpCommonIssuesContent() {
           <ol className="mb-0 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>
               <strong>Ask your assistant directly.</strong> &ldquo;Why
-              didn&apos;t that work?&rdquo; or &ldquo;What&apos;s
-              wrong with my Gmail connection?&rdquo; It has access to
-              its own tools and recent errors and will usually tell
-              you exactly what needs fixing.
+              didn&apos;t that work?&rdquo; or &ldquo;What&apos;s wrong with my
+              Gmail connection?&rdquo; It has access to its own tools and recent
+              errors and will usually tell you exactly what needs fixing.
             </li>
             <li>
-              <strong>Refresh.</strong> Reload the web app, restart the
-              desktop app, or close and reopen the iPhone app. Most
-              transient issues clear here.
+              <strong>Refresh.</strong> Reload the web app, restart the desktop
+              app, or close and reopen the iPhone app. Most transient issues
+              clear here.
             </li>
             <li>
-              <strong>Try a different surface.</strong> If the iPhone
-              app is acting up, try the web at{" "}
+              <strong>Try a different surface.</strong> If the iPhone app is
+              acting up, try the web at{" "}
               <a href="https://cadet.ai" className={linkClass}>
                 cadet.ai
               </a>
-              . If web is acting up, try the iPhone app or desktop. The
-              same assistant lives on each surface.
+              . If web is acting up, try the iPhone app or desktop. The same
+              assistant lives on each surface.
             </li>
           </ol>
         </section>
@@ -79,30 +78,29 @@ export function HelpCommonIssuesContent() {
           </SectionHeading>
           <ol className="mb-6 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>
-              Make sure you&apos;re using the same email address you
-              signed up with.
+              Make sure you&apos;re using the same email address you signed up
+              with.
             </li>
             <li>
-              Check your spam folder for the magic link or
-              verification email if one was sent.
+              Check your spam folder for the magic link or verification email if
+              one was sent.
             </li>
             <li>
-              If you have multiple Cadet accounts, sign out fully
-              first, then sign in with the right one.
+              If you have multiple Cadet accounts, sign out fully first, then
+              sign in with the right one.
             </li>
           </ol>
 
           <SectionHeading id="signed-in-different-assistant" level={3}>
-            I&apos;m signed in but I&apos;m talking to a different
-            assistant than usual
+            I&apos;m signed in but I&apos;m talking to a different assistant
+            than usual
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            You probably have more than one assistant on your account
-            (one provisioned in Cadet Cloud, one running on your
-            Mac), and the surface you&apos;re on is pointed at a
-            different one. Switch which assistant the surface is
-            connected to from the app&apos;s settings, or sign out
-            and sign back in to the right account.
+            You probably have more than one assistant on your account (one
+            provisioned in Cadet Cloud, one running on your Mac), and the
+            surface you&apos;re on is pointed at a different one. Switch which
+            assistant the surface is connected to from the app&apos;s settings,
+            or sign out and sign back in to the right account.
           </p>
         </section>
 
@@ -116,35 +114,32 @@ export function HelpCommonIssuesContent() {
           </SectionHeading>
           <ol className="mb-6 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>
-              In iOS Settings, find Cadet Assistant and confirm
-              Notifications are turned on, plus Sounds and Banners.
+              In iOS Settings, find Cadet and confirm Notifications are turned
+              on, plus Sounds and Banners.
             </li>
             <li>
-              In Focus modes (Do Not Disturb, Sleep, Work), confirm
-              Cadet Assistant isn&apos;t silenced.
+              In Focus modes (Do Not Disturb, Sleep, Work), confirm Cadet
+              isn&apos;t silenced.
             </li>
             <li>
-              Open the app once. iOS sometimes drops the push token
-              if the app hasn&apos;t been opened in a while.
+              Open the app once. iOS sometimes drops the push token if the app
+              hasn&apos;t been opened in a while.
             </li>
             <li>
-              If your assistant is asking for an approval and you want
-              the prompt to come through as a push, the device needs
-              to be online and notifications need to be allowed.
-              Otherwise the approval lives in the chat until you open
-              the app.
+              If your assistant is asking for an approval and you want the
+              prompt to come through as a push, the device needs to be online
+              and notifications need to be allowed. Otherwise the approval lives
+              in the chat until you open the app.
             </li>
           </ol>
 
           <SectionHeading id="ios-history-missing" level={3}>
-            My conversation history isn&apos;t showing up on the
-            iPhone
+            My conversation history isn&apos;t showing up on the iPhone
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            Pull down to refresh on the conversations list. If
-            it&apos;s still empty, confirm you&apos;re signed in to
-            the same account you use on the web. History syncs across
-            surfaces but only within one account.
+            Pull down to refresh on the conversations list. If it&apos;s still
+            empty, confirm you&apos;re signed in to the same account you use on
+            the web. History syncs across surfaces but only within one account.
           </p>
         </section>
 
@@ -154,14 +149,13 @@ export function HelpCommonIssuesContent() {
           </SectionHeading>
 
           <SectionHeading id="unidentified-developer" level={3}>
-            &ldquo;Cadet can&apos;t be opened because it is from an
-            unidentified developer&rdquo;
+            &ldquo;Cadet can&apos;t be opened because it is from an unidentified
+            developer&rdquo;
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            Standard macOS Gatekeeper warning. Right-click the app in
-            Finder, choose <strong>Open</strong>, then click{" "}
-            <strong>Open</strong> again in the dialog. This only
-            happens once.
+            Standard macOS Gatekeeper warning. Right-click the app in Finder,
+            choose <strong>Open</strong>, then click <strong>Open</strong> again
+            in the dialog. This only happens once.
           </p>
 
           <SectionHeading id="app-wont-launch" level={3}>
@@ -170,45 +164,40 @@ export function HelpCommonIssuesContent() {
           <ol className="mb-6 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>Make sure you&apos;re on macOS 14 (Sonoma) or later.</li>
             <li>
-              Check the menu bar for the Cadet icon. If it&apos;s
-              missing, the assistant daemon isn&apos;t running.
-              Relaunch the app.
+              Check the menu bar for the Cadet icon. If it&apos;s missing, the
+              assistant daemon isn&apos;t running. Relaunch the app.
             </li>
             <li>
               Open Console.app and filter on{" "}
-              <code>com.vellum.vellum-assistant</code> for crash
-              logs.
+              <code>com.vellum.vellum-assistant</code> for crash logs.
             </li>
-            <li>
-              As a last resort, delete the app and reinstall.
-            </li>
+            <li>As a last resort, delete the app and reinstall.</li>
           </ol>
 
           <SectionHeading id="macos-permissions" level={3}>
-            &ldquo;Operation not permitted&rdquo; or a feature
-            isn&apos;t working
+            &ldquo;Operation not permitted&rdquo; or a feature isn&apos;t
+            working
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
             Your Mac is missing a system permission. Open{" "}
-            <strong>System Settings &rsaquo; Privacy &amp; Security</strong>{" "}
-            and toggle Cadet on for whichever category you need:
+            <strong>System Settings &rsaquo; Privacy &amp; Security</strong> and
+            toggle Cadet on for whichever category you need:
           </p>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              <strong>Accessibility</strong> for keyboard and mouse
-              control during computer use
+              <strong>Accessibility</strong> for keyboard and mouse control
+              during computer use
             </li>
             <li>
-              <strong>Screen Recording</strong> for seeing what&apos;s
-              on screen
+              <strong>Screen Recording</strong> for seeing what&apos;s on screen
             </li>
             <li>
               <strong>Microphone</strong> for voice input
             </li>
             <li>
-              <strong>Files and folders / Full Disk Access</strong> if
-              your assistant is hitting permission errors reading or
-              writing local files
+              <strong>Files and folders / Full Disk Access</strong> if your
+              assistant is hitting permission errors reading or writing local
+              files
             </li>
           </ul>
         </section>
@@ -224,35 +213,38 @@ export function HelpCommonIssuesContent() {
             Download the Windows installer from the{" "}
             <a href="https://www.mycadet.ai/download">Cadet download page</a>.
             Use x64 for Intel or AMD PCs and ARM64 for Windows on Arm. Check the
-            system tray for Cadet if the main window is closed. The tray menu offers
-            a restart action.
+            system tray for Cadet if the main window is closed. The tray menu
+            offers a restart action.
           </p>
           <SectionHeading id="windows-permissions" level={3}>
             Voice, screen capture, or computer control is unavailable
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Open Settings &gt; Permissions &amp; Privacy in Cadet and use the settings
-            link beside the affected permission. Windows controls microphone, screen
-            capture, speech, and notification access. There is no Accessibility
-            permission to enable. Elevated apps, UAC prompts, and protected windows
-            cannot be controlled; use a normal, non-administrator app window.
+            Open Settings &gt; Permissions &amp; Privacy in Cadet and use the
+            settings link beside the affected permission. Windows controls
+            microphone, screen capture, speech, and notification access. There
+            is no Accessibility permission to enable. Elevated apps, UAC
+            prompts, and protected windows cannot be controlled; use a normal,
+            non-administrator app window.
           </p>
           <SectionHeading id="windows-cli" level={3}>
             The cadet command is not found
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Launch Cadet once to provision its bundled CLI, then open a new terminal.
-            The dev build adds <code>{"%LOCALAPPDATA%\\Cadet-dev\\bin"}</code> to
-            your user PATH; production builds use <code>{"%LOCALAPPDATA%\\Cadet\\bin"}</code>. Run <code>where.exe cadet</code> to check which installation
-            your terminal finds if another version takes precedence.
+            Launch Cadet once to provision its bundled CLI, then open a new
+            terminal. The dev build adds{" "}
+            <code>{"%LOCALAPPDATA%\\Cadet-dev\\bin"}</code> to your user PATH;
+            production builds use <code>{"%LOCALAPPDATA%\\Cadet\\bin"}</code>.
+            Run <code>where.exe cadet</code> to check which installation your
+            terminal finds if another version takes precedence.
           </p>
           <SectionHeading id="windows-logs" level={3}>
             Sending logs with a bug report
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            Use Help &gt; Send Feedback in the app to send a report with recent logs.
-            Include your Windows version, installer architecture, and the steps that
-            reproduce the problem.
+            Use Help &gt; Send Feedback in the app to send a report with recent
+            logs. Include your Windows version, installer architecture, and the
+            steps that reproduce the problem.
           </p>
         </section>
 
@@ -262,28 +254,24 @@ export function HelpCommonIssuesContent() {
           </SectionHeading>
 
           <SectionHeading id="too-many-prompts" level={3}>
-            My assistant keeps asking me to approve the same kind of
-            thing
+            My assistant keeps asking me to approve the same kind of thing
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Each individual action gets its own approval by default,
-            so reading three files means three prompts. To cut down on
-            this:
+            Each individual action gets its own approval by default, so reading
+            three files means three prompts. To cut down on this:
           </p>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              When you approve, choose <strong>Allow &amp; Create
-              Rule</strong> to make similar future actions
-              auto-approve.
+              When you approve, choose <strong>Allow &amp; Create Rule</strong>{" "}
+              to make similar future actions auto-approve.
             </li>
             <li>
               In <strong>Settings &rsaquo; Permissions &amp; Privacy</strong>,
-              raise your risk tolerance to auto-approve more action
-              types.
+              raise your risk tolerance to auto-approve more action types.
             </li>
             <li>
-              Review and edit your trust rules in the same settings
-              area whenever the pattern is too narrow or too wide.
+              Review and edit your trust rules in the same settings area
+              whenever the pattern is too narrow or too wide.
             </li>
           </ul>
 
@@ -291,18 +279,18 @@ export function HelpCommonIssuesContent() {
             The approval prompt disappeared before I could click it
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            Approval requests expire after about 5 minutes of no
-            response. Just tell your assistant &ldquo;try that
-            again&rdquo; and it&apos;ll send a new one.
+            Approval requests expire after about 5 minutes of no response. Just
+            tell your assistant &ldquo;try that again&rdquo; and it&apos;ll send
+            a new one.
           </p>
 
           <SectionHeading id="accidentally-denied" level={3}>
             I clicked Deny by accident
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            Tell your assistant to retry: &ldquo;go ahead and read
-            that file&rdquo; or &ldquo;try sending that email
-            again.&rdquo; A new approval prompt will appear.
+            Tell your assistant to retry: &ldquo;go ahead and read that
+            file&rdquo; or &ldquo;try sending that email again.&rdquo; A new
+            approval prompt will appear.
           </p>
         </section>
 
@@ -314,28 +302,25 @@ export function HelpCommonIssuesContent() {
           <SectionHeading id="forgot-something" level={3}>
             My assistant forgot something I told it
           </SectionHeading>
-          <p className="mb-4 text-zinc-600">
-            A few possibilities:
-          </p>
+          <p className="mb-4 text-zinc-600">A few possibilities:</p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              <strong>It wasn&apos;t saved as a memory.</strong>{" "}
-              Filler messages get filtered out. For anything you want
-              kept, be explicit: &ldquo;Remember this: I prefer
-              meetings before noon.&rdquo;
+              <strong>It wasn&apos;t saved as a memory.</strong> Filler messages
+              get filtered out. For anything you want kept, be explicit:
+              &ldquo;Remember this: I prefer meetings before noon.&rdquo;
             </li>
             <li>
-              <strong>It&apos;s saved but wasn&apos;t recalled this
-              turn.</strong> Memories surface based on relevance to
-              the current conversation. Ask more specifically:
-              &ldquo;What do you remember about Project
+              <strong>
+                It&apos;s saved but wasn&apos;t recalled this turn.
+              </strong>{" "}
+              Memories surface based on relevance to the current conversation.
+              Ask more specifically: &ldquo;What do you remember about Project
               Moonshot?&rdquo;
             </li>
             <li>
-              <strong>It aged out.</strong> Memories have lifetimes
-              based on type, and ones that don&apos;t come up again
-              eventually fade. If something important slipped, just
-              tell your assistant again.
+              <strong>It aged out.</strong> Memories have lifetimes based on
+              type, and ones that don&apos;t come up again eventually fade. If
+              something important slipped, just tell your assistant again.
             </li>
           </ul>
           <p className="mb-0 text-zinc-600">
@@ -353,10 +338,10 @@ export function HelpCommonIssuesContent() {
             My assistant remembers something I want it to forget
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            Tell it directly: &ldquo;Forget that I work at Acme&rdquo;
-            or &ldquo;Drop everything you remember about that
-            project.&rdquo; You can also browse and delete memories
-            from the Memories tab in Settings.
+            Tell it directly: &ldquo;Forget that I work at Acme&rdquo; or
+            &ldquo;Drop everything you remember about that project.&rdquo; You
+            can also browse and delete memories from the Memories tab in
+            Settings.
           </p>
         </section>
 
@@ -373,22 +358,20 @@ export function HelpCommonIssuesContent() {
           </p>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              <strong>Web</strong>: confirm your browser has
-              microphone permission for cadet.ai. The first time you
-              use voice in a browser, you&apos;ll get a permission
-              prompt.
+              <strong>Web</strong>: confirm your browser has microphone
+              permission for cadet.ai. The first time you use voice in a
+              browser, you&apos;ll get a permission prompt.
             </li>
             <li>
-              <strong>iPhone</strong>: confirm Cadet Assistant has
-              microphone access in iOS Settings &rsaquo; Privacy
-              &amp; Security &rsaquo; Microphone.
+              <strong>iPhone</strong>: confirm Cadet has microphone access in
+              iOS Settings &rsaquo; Privacy &amp; Security &rsaquo; Microphone.
             </li>
             <li>
-              <strong>Desktop</strong>: confirm Cadet has microphone
-              access in System Settings &rsaquo; Privacy &amp;
-              Security &rsaquo; Microphone, and that you&apos;re
-              holding the activation key long enough (there&apos;s a
-              short hold to filter out accidental presses).
+              <strong>Desktop</strong>: confirm Cadet has microphone access in
+              System Settings &rsaquo; Privacy &amp; Security &rsaquo;
+              Microphone, and that you&apos;re holding the activation key long
+              enough (there&apos;s a short hold to filter out accidental
+              presses).
             </li>
           </ul>
 
@@ -396,10 +379,9 @@ export function HelpCommonIssuesContent() {
             Voice transcription is inaccurate
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            Accuracy depends on the microphone, background noise, and
-            accent. Try speaking more slowly, get closer to the mic,
-            or use a headset. For tricky proper nouns or critical
-            instructions, type instead.
+            Accuracy depends on the microphone, background noise, and accent.
+            Try speaking more slowly, get closer to the mic, or use a headset.
+            For tricky proper nouns or critical instructions, type instead.
           </p>
         </section>
 
@@ -413,21 +395,19 @@ export function HelpCommonIssuesContent() {
           </SectionHeading>
           <ol className="mb-6 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>
-              Confirm the bot is connected. Ask your assistant:
-              &ldquo;Is my Telegram bot set up?&rdquo;
+              Confirm the bot is connected. Ask your assistant: &ldquo;Is my
+              Telegram bot set up?&rdquo;
             </li>
             <li>
-              If you&apos;re running a local install, confirm your Mac
-              is on and the assistant daemon is running. Cloud
-              installs don&apos;t need this.
+              If you&apos;re running a local install, confirm your Mac is on and
+              the assistant daemon is running. Cloud installs don&apos;t need
+              this.
             </li>
             <li>
-              Try re-registering the webhook: &ldquo;Reconnect
-              Telegram.&rdquo;
+              Try re-registering the webhook: &ldquo;Reconnect Telegram.&rdquo;
             </li>
             <li>
-              Verify your bot token is still valid in Telegram&apos;s
-              BotFather.
+              Verify your bot token is still valid in Telegram&apos;s BotFather.
             </li>
           </ol>
 
@@ -436,18 +416,16 @@ export function HelpCommonIssuesContent() {
           </SectionHeading>
           <ol className="mb-6 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>
-              Slack uses Socket Mode and needs both a Bot Token and
-              an App Token. Confirm both are configured.
+              Slack uses Socket Mode and needs both a Bot Token and an App
+              Token. Confirm both are configured.
             </li>
             <li>
-              If the connection drops, it usually reconnects on its
-              own. If it doesn&apos;t, ask your assistant to
-              &ldquo;reconnect Slack.&rdquo;
+              If the connection drops, it usually reconnects on its own. If it
+              doesn&apos;t, ask your assistant to &ldquo;reconnect Slack.&rdquo;
             </li>
             <li>
-              Confirm the Slack app has the right scopes
-              (channels:history, chat:write, app_mentions:read at
-              minimum).
+              Confirm the Slack app has the right scopes (channels:history,
+              chat:write, app_mentions:read at minimum).
             </li>
           </ol>
 
@@ -455,11 +433,10 @@ export function HelpCommonIssuesContent() {
             Phone calls aren&apos;t working
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            Confirm the phone channel is set up by asking &ldquo;Is
-            my phone number working?&rdquo; If you haven&apos;t gone
-            through verification, your assistant will walk you
-            through claiming a number. If you have, ask it to test
-            the connection.
+            Confirm the phone channel is set up by asking &ldquo;Is my phone
+            number working?&rdquo; If you haven&apos;t gone through
+            verification, your assistant will walk you through claiming a
+            number. If you have, ask it to test the connection.
           </p>
         </section>
 
@@ -473,18 +450,14 @@ export function HelpCommonIssuesContent() {
           </SectionHeading>
           <ol className="mb-6 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>Check your internet connection.</li>
+            <li>Try the connection again: &ldquo;Reconnect my Gmail.&rdquo;</li>
             <li>
-              Try the connection again: &ldquo;Reconnect my
-              Gmail.&rdquo;
+              Confirm you&apos;re signing in with the right account (personal vs
+              work).
             </li>
             <li>
-              Confirm you&apos;re signing in with the right account
-              (personal vs work).
-            </li>
-            <li>
-              If you&apos;re on a corporate Google or Slack workspace,
-              your IT team may block third-party OAuth. Ask them to
-              allow Cadet.
+              If you&apos;re on a corporate Google or Slack workspace, your IT
+              team may block third-party OAuth. Ask them to allow Cadet.
             </li>
           </ol>
 
@@ -493,20 +466,19 @@ export function HelpCommonIssuesContent() {
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
             OAuth tokens expire. Tell your assistant to reconnect it
-            (&ldquo;Reconnect my Gmail&rdquo;), and it&apos;ll walk
-            you through a fresh sign-in.
+            (&ldquo;Reconnect my Gmail&rdquo;), and it&apos;ll walk you through
+            a fresh sign-in.
           </p>
 
           <SectionHeading id="custom-skill-not-loading" level={3}>
             A custom skill isn&apos;t loading
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            Custom skills live in your assistant&apos;s skills
-            directory and need a valid <code>SKILL.md</code>. If
-            yours isn&apos;t showing up, ask your assistant
-            &ldquo;Why isn&apos;t the [skill name] skill
-            loading?&rdquo; and it can read the file and tell you
-            what&apos;s wrong. For more on building skills, see the{" "}
+            Custom skills live in your assistant&apos;s skills directory and
+            need a valid <code>SKILL.md</code>. If yours isn&apos;t showing up,
+            ask your assistant &ldquo;Why isn&apos;t the [skill name] skill
+            loading?&rdquo; and it can read the file and tell you what&apos;s
+            wrong. For more on building skills, see the{" "}
             <Link
               href="/docs/getting-started/your-first-skill"
               className={linkClass}
@@ -526,23 +498,22 @@ export function HelpCommonIssuesContent() {
             My assistant is slow to respond
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Response time depends on the model provider, how complex
-            the task is, how many tools it has to use, and how long
-            the conversation is. Some quick wins:
+            Response time depends on the model provider, how complex the task
+            is, how many tools it has to use, and how long the conversation is.
+            Some quick wins:
           </p>
           <ul className="mb-6 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              Start a fresh conversation if the current one has been
-              going for a while. Long context slows things down.
+              Start a fresh conversation if the current one has been going for a
+              while. Long context slows things down.
             </li>
             <li>
-              Confirm your internet connection is healthy. Voice and
-              streaming responses are especially sensitive.
+              Confirm your internet connection is healthy. Voice and streaming
+              responses are especially sensitive.
             </li>
             <li>
-              If a specific provider feels slow, switch your default
-              model in <strong>Settings &rsaquo; Models &amp;
-              Services</strong>.
+              If a specific provider feels slow, switch your default model in{" "}
+              <strong>Settings &rsaquo; Models &amp; Services</strong>.
             </li>
           </ul>
 
@@ -550,12 +521,11 @@ export function HelpCommonIssuesContent() {
             A computer-use session is stuck or repeating itself
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            Sessions are capped at 50 steps and your assistant has
-            loop detection that pauses if the screen stops changing.
-            If something looks off, cancel the session and try again
-            with a more specific instruction (&ldquo;click the blue
-            Submit button at the bottom right,&rdquo; not just
-            &ldquo;submit&rdquo;).
+            Sessions are capped at 50 steps and your assistant has loop
+            detection that pauses if the screen stops changing. If something
+            looks off, cancel the session and try again with a more specific
+            instruction (&ldquo;click the blue Submit button at the bottom
+            right,&rdquo; not just &ldquo;submit&rdquo;).
           </p>
         </section>
 
@@ -564,13 +534,13 @@ export function HelpCommonIssuesContent() {
             Still stuck?
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
-            If your assistant can&apos;t self-diagnose and nothing
-            here matches, head to{" "}
+            If your assistant can&apos;t self-diagnose and nothing here matches,
+            head to{" "}
             <Link href="/docs/help/getting-help" className={linkClass}>
               Getting Help
             </Link>{" "}
-            for where to ask. Bring a description of what you tried,
-            what surface you were on, and any error message you saw.
+            for where to ask. Bring a description of what you tried, what
+            surface you were on, and any error message you saw.
           </p>
         </section>
       </DocsContent>

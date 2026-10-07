@@ -209,7 +209,7 @@ describe("notification decision fallback copy", () => {
         selectedChannels: ["vellum"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Guardian Question",
             body: 'Allow running host_bash? Reply "A1B2C3 approve" to allow it. Use reference code A1B2C3 for this request.',
           },
@@ -248,7 +248,7 @@ describe("notification decision fallback copy", () => {
         selectedChannels: ["vellum"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Reply A1B2C3 approve",
             body: "Allow running host_bash?",
           },
@@ -471,7 +471,7 @@ describe("guardian copy carries no reply mechanics", () => {
         selectedChannels: ["vellum", "platform"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Tool Grant Request",
             body: 'Alice is asking to run ls /tmp.\nApproval code: A1B2C3\nReply "A1B2C3 approve" or "A1B2C3 reject".',
             conversationSeedMessage:
@@ -574,7 +574,7 @@ describe("access-request instruction enforcement", () => {
         selectedChannels: ["vellum"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Access Request",
             body: "Someone wants access to your assistant.",
           },
@@ -606,7 +606,7 @@ describe("access-request instruction enforcement", () => {
         selectedChannels: ["vellum"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Access Request",
             body: 'Alice wants access. Reply "A1B2C3 approve" or "A1B2C3 reject".',
           },
@@ -640,7 +640,7 @@ describe("access-request instruction enforcement", () => {
         selectedChannels: ["vellum"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Access Request",
             body: fullBody,
           },
@@ -745,7 +745,7 @@ describe("access-request instruction enforcement", () => {
         selectedChannels: ["vellum"],
         reasoningSummary: "LLM decision",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Access Request",
             body: 'Someone wants access to your assistant.\nReply "open invite flow" to start Trusted Contacts invite flow.',
           },

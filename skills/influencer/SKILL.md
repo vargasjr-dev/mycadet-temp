@@ -1,10 +1,10 @@
 ---
 name: influencer
 description: Research influencers on Instagram, TikTok, and X/Twitter through your browser
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🔍"
-  vellum:
+  cadet:
     category: "browsing"
     display-name: "Influencer Research"
     includes: ["vellum-browser-use"]

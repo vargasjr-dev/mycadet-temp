@@ -157,7 +157,7 @@ function isSizeGuardExempt(relPath: string): boolean {
 }
 
 /** Default identity for automated workspace commits. */
-const DEFAULT_GIT_NAME = "Vellum Assistant";
+const DEFAULT_GIT_NAME = "Cadet";
 // generic-examples:ignore-next-line — reason: real daemon commit identity, not an example
 const DEFAULT_GIT_EMAIL = "assistant@vellum.ai";
 

@@ -12,7 +12,7 @@ export function DocsGithubLink() {
       href={GITHUB_REPO_URL}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Cadet Assistant on GitHub"
+      aria-label="Cadet on GitHub"
       className="docs-github-link"
     >
       <Image

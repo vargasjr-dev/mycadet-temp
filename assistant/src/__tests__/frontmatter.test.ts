@@ -228,7 +228,7 @@ describe("parseFrontmatterFields", () => {
     expect(result!.fields.name).toBe("Test");
     expect(result!.fields.metadata).toEqual({
       emoji: "\uD83D\uDD0C",
-      vellum: {
+      cadet: {
         "display-name": "Test Skill",
         "some-custom-field": true,
       },

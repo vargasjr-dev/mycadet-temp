@@ -33,7 +33,7 @@ const SKILL_MD_WITH_FLAG = `---
 name: "Email Setup"
 description: "Set up email integration"
 metadata:
-  vellum:
+  cadet:
     feature-flag: a2a-channel
 ---
 
@@ -45,7 +45,7 @@ const SKILL_MD_WITHOUT_FLAG = `---
 name: "Plain Skill"
 description: "A skill with no feature flag"
 metadata:
-  vellum: {}
+  cadet: {}
 ---
 
 Instructions for the plain skill.
@@ -94,7 +94,7 @@ function buildSkillSummary(
   let featureFlag: string | undefined;
   const metadataObj = parsed.fields.metadata;
   if (metadataObj != null && typeof metadataObj === "object") {
-    const cadet = (metadataObj as Record<string, unknown>).vellum as
+    const cadet = (metadataObj as Record<string, unknown>).cadet as
       | Record<string, unknown>
       | undefined;
     featureFlag =

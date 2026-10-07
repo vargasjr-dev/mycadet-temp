@@ -4,14 +4,14 @@ description: "Agent wallet on the Stripe Link CLI (link-cli). Connect the wallet
 metadata:
   icon: assets/icon.svg
   emoji: "💳"
-  vellum:
+  cadet:
     category: "commerce"
     display-name: "Stripe Link Wallet"
     activation-hints:
       - "the user wants to set up, connect, or log in to Stripe Link"
       - "the user asks to buy, purchase, pay for, or spend up to an amount"
       - "a tool returns a checkout URL or payment session"
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 ---
 
 # Stripe Link Wallet

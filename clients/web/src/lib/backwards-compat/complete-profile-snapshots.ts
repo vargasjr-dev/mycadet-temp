@@ -1,7 +1,7 @@
 /**
  * Backwards-compat gate: complete-override profile snapshots.
  *
- * Cadet Assistant 0.10.8 (M6) completes custom profiles at write time:
+ * Cadet 0.10.8 (M6) completes custom profiles at write time:
  * fields left blank in the editor are baked with the current defaults and
  * no longer track later default changes. Older assistants still deep-merge
  * at resolution time, so blanks DO live-inherit there — the editor's

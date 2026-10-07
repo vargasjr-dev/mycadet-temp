@@ -1,10 +1,10 @@
 ---
 name: vellum-memory-v2-migration
 description: Perform a one-time migration from memory v1, to memory v2, which was introduced in 0.8.0.
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🧠"
-  vellum:
+  cadet:
     category: "system"
     display-name: "Memory v2 Migration"
     user-invocable: true

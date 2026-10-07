@@ -51,7 +51,7 @@ import { ensureVisible } from "./main-window";
 import { installWebContentsSecurity } from "./windows.client";
 
 /**
- * Windows shell for the Cadet Assistant: a hardened BrowserWindow loading
+ * Windows shell for the Cadet: a hardened BrowserWindow loading
  * the clients/web renderer (Vite dev server in dev, `app://` static serving
  * of `resources/cli-runtime/web-dist` in packaged builds). Every desktop
  * capability is a module under `./features/`, composed through the capability

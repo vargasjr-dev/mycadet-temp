@@ -835,7 +835,7 @@ describe("web_search tool", () => {
     expect(result.isError).toBe(false);
     expect(capturedUrl).toContain("api.keenable.ai/v1/search/public");
     expect(capturedHeaders.get("x-api-key")).toBeNull();
-    expect(capturedHeaders.get("x-keenable-title")).toBe("Cadet Assistant");
+    expect(capturedHeaders.get("x-keenable-title")).toBe("Cadet");
     expect(result.content).toContain("Keenable Result 1");
     expect(result.content).toContain("https://example.com/keenable-1");
   });

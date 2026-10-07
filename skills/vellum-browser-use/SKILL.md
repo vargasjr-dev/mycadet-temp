@@ -1,10 +1,10 @@
 ---
 name: vellum-browser-use
 description: Browse the web using `assistant browser` CLI commands
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🌐"
-  vellum:
+  cadet:
     category: "browsing"
     display-name: "Browser"
     activation-hints:

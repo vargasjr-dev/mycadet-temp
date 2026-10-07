@@ -129,7 +129,7 @@ function setupLLMProvider() {
       selectedChannels: ["vellum"],
       reasoningSummary: "LLM decision with recipient context",
       renderedCopy: {
-        vellum: {
+        cadet: {
           title: "Guardian Question",
           body: "What is the gate code?",
         },

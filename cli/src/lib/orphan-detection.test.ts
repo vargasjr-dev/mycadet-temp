@@ -14,7 +14,7 @@ describe("isInteractiveCliSession", () => {
   test("matches a live tunnel session launched via a script path", () => {
     expect(
       isInteractiveCliSession(
-        "bun /Users/x/.nvm/versions/node/v22.14.0/bin/vellum tunnel --provider ngrok",
+        "bun /Users/x/.nvm/versions/node/v22.14.0/bin/cadet tunnel --provider ngrok",
       ),
     ).toBe(true);
   });
@@ -30,7 +30,7 @@ describe("isInteractiveCliSession", () => {
     expect(isInteractiveCliSession("cadet ssh quiet-finch")).toBe(true);
     expect(isInteractiveCliSession("cadet message quiet-finch hi")).toBe(true);
     expect(isInteractiveCliSession("cadet workflows")).toBe(true);
-    expect(isInteractiveCliSession("vellum-cli tunnel --provider ngrok")).toBe(
+    expect(isInteractiveCliSession("cadet-cli tunnel --provider ngrok")).toBe(
       true,
     );
   });
@@ -46,21 +46,21 @@ describe("isInteractiveCliSession", () => {
   test("matches exec sessions even when argv mentions a service name", () => {
     expect(
       isInteractiveCliSession(
-        "cadet exec -it --service vellum-gateway -- /bin/sh",
+        "cadet exec -it --service cadet-gateway -- /bin/sh",
       ),
     ).toBe(true);
   });
 
   test("does not match non-interactive CLI wrappers", () => {
     expect(isInteractiveCliSession("cadet hatch")).toBe(false);
-    expect(isInteractiveCliSession("/usr/bin/vellum sleep")).toBe(false);
+    expect(isInteractiveCliSession("/usr/bin/cadet sleep")).toBe(false);
     expect(isInteractiveCliSession("cadet wake")).toBe(false);
     expect(isInteractiveCliSession("cadet wake --watch")).toBe(false);
   });
 
   test("matches the implicit TUI client (bare cadet)", () => {
-    expect(isInteractiveCliSession("vellum")).toBe(true);
-    expect(isInteractiveCliSession("bun /Users/x/.nvm/bin/vellum")).toBe(true);
+    expect(isInteractiveCliSession("cadet")).toBe(true);
+    expect(isInteractiveCliSession("bun /Users/x/.nvm/bin/cadet")).toBe(true);
     expect(isInteractiveCliSession("cadet --plain")).toBe(true);
   });
 
@@ -70,7 +70,7 @@ describe("isInteractiveCliSession", () => {
       true,
     );
     expect(
-      isInteractiveCliSession("bun /Users/x/bin/vellum wake --foreground"),
+      isInteractiveCliSession("bun /Users/x/bin/cadet wake --foreground"),
     ).toBe(true);
   });
 
@@ -94,32 +94,30 @@ describe("isInteractiveCliSession", () => {
 
 describe("classifyProcess", () => {
   test("labels interactive CLI sessions as cadet like any other wrapper", () => {
-    expect(classifyProcess("cadet tunnel --provider ngrok")).toBe("vellum");
-    expect(classifyProcess("cadet logs foo")).toBe("vellum");
-    expect(classifyProcess("vellum-cli tunnel --provider ngrok")).toBe(
-      "vellum",
-    );
+    expect(classifyProcess("cadet tunnel --provider ngrok")).toBe("cadet");
+    expect(classifyProcess("cadet logs foo")).toBe("cadet");
+    expect(classifyProcess("cadet-cli tunnel --provider ngrok")).toBe("cadet");
   });
 
   test("classifies non-interactive CLI wrappers as cadet", () => {
-    expect(classifyProcess("cadet hatch")).toBe("vellum");
-    expect(classifyProcess("vellum")).toBe("vellum");
-    expect(classifyProcess("/usr/bin/vellum sleep")).toBe("vellum");
-    expect(classifyProcess("cadet hatch --name logs")).toBe("vellum");
-    expect(classifyProcess("cadet sleep logs")).toBe("vellum");
+    expect(classifyProcess("cadet hatch")).toBe("cadet");
+    expect(classifyProcess("cadet")).toBe("cadet");
+    expect(classifyProcess("/usr/bin/cadet sleep")).toBe("cadet");
+    expect(classifyProcess("cadet hatch --name logs")).toBe("cadet");
+    expect(classifyProcess("cadet sleep logs")).toBe("cadet");
   });
 
   test("service process classifications are unchanged", () => {
     expect(classifyProcess("/opt/homebrew/bin/qdrant --config foo")).toBe(
       "qdrant",
     );
-    expect(classifyProcess("bun /x/bin/vellum-gateway --port 7830")).toBe(
+    expect(classifyProcess("bun /x/bin/cadet-gateway --port 7830")).toBe(
       "gateway",
     );
-    expect(classifyProcess("bun /x/bin/vellum-daemon start")).toBe("assistant");
+    expect(classifyProcess("bun /x/bin/cadet-daemon start")).toBe("assistant");
     expect(classifyProcess("node daemon start")).toBe("assistant");
     expect(
-      classifyProcess("bun /x/bin/vellum-openclaw-adapter --port 9000"),
+      classifyProcess("bun /x/bin/cadet-openclaw-adapter --port 9000"),
     ).toBe("openclaw-adapter");
   });
 
@@ -145,14 +143,14 @@ describe("detectOrphanedProcesses", () => {
 
   test("skips live interactive sessions but still reports orphaned services", async () => {
     const psOutput = [
-      "101 1 bun /Users/x/bin/vellum tunnel --provider ngrok",
-      "102 1 cadet exec -it --service vellum-gateway -- /bin/sh",
+      "101 1 bun /Users/x/bin/cadet tunnel --provider ngrok",
+      "102 1 cadet exec -it --service cadet-gateway -- /bin/sh",
       "103 1 cadet --plain logs foo",
-      "104 1 bun /x/bin/vellum-gateway --port 7830",
+      "104 1 bun /x/bin/cadet-gateway --port 7830",
       "105 1 cadet hatch",
       "106 1 node /opt/unrelated-service/daemon/main.ts",
       "107 1 node ./tools daemon start",
-      "108 1 node /opt/VELLUM/daemon/main.ts",
+      "108 1 node /opt/CADET/daemon/main.ts",
     ].join("\n");
     mock.module("./step-runner", () => ({
       ...realStepRunner,
@@ -165,6 +163,6 @@ describe("detectOrphanedProcesses", () => {
 
     expect(orphans.map((o) => o.pid).sort()).toEqual(["104", "105"]);
     expect(orphans.find((o) => o.pid === "104")?.name).toBe("gateway");
-    expect(orphans.find((o) => o.pid === "105")?.name).toBe("vellum");
+    expect(orphans.find((o) => o.pid === "105")?.name).toBe("cadet");
   });
 });

@@ -34,7 +34,7 @@ A named entity that the guardian has granted permission to interact with their a
 
 Where secrets the assistant is allowed to use are stored: API keys, tokens, passwords. The assistant reads from the vault to perform tasks; access is mediated by trust rules the guardian defines, which can require explicit approval, allow specific patterns autonomously, or deny entirely.
 
-*Note: the internal name is "credential executor" (see `credential-executor/`).*
+_Note: the internal name is "credential executor" (see `credential-executor/`)._
 
 ### Gateway
 
@@ -42,7 +42,7 @@ The security-driven server that controls who is allowed to communicate with the 
 
 ### Guardian
 
-The person who creates, owns, and is responsible for an assistant. The guardian grants permissions, teaches, and is liable for the assistant's actions, but the assistant acts as their own entity, not as the guardian. This is not a "user" relationship. People are users of the Cadet Cloud, which is a SaaS tool. But the relationship between a person and their Cadet Assistant is guardianship, not usage.
+The person who creates, owns, and is responsible for an assistant. The guardian grants permissions, teaches, and is liable for the assistant's actions, but the assistant acts as their own entity, not as the guardian. This is not a "user" relationship. People are users of the Cadet Cloud, which is a SaaS tool. But the relationship between a person and their Cadet is guardianship, not usage.
 
 ### Hatch
 
@@ -58,7 +58,7 @@ Where the assistant runs: Cadet's managed platform, a self-hosted machine, a Doc
 
 ### Memory
 
-Memory is what makes a Cadet Assistant a Cadet Assistant. Memory is the assistant's persistent, structured knowledge of their guardian – their preferences, their history, the world around them – and it is what allows the relationship to deepen over time. It is not a chat log. It is curated understanding the assistant actively maintains and draws on. Without memory, an assistant is a chatbot.
+Memory is what makes a Cadet a Cadet. Memory is the assistant's persistent, structured knowledge of their guardian – their preferences, their history, the world around them – and it is what allows the relationship to deepen over time. It is not a chat log. It is curated understanding the assistant actively maintains and draws on. Without memory, an assistant is a chatbot.
 
 ### Open Source
 
@@ -110,7 +110,7 @@ A person who uses the Cadet Cloud. This is a standard SaaS relationship. Importa
 
 Cadet's customer support tool. The Doctor helps guardians troubleshoot issues, diagnose problems, and nurse their assistant back to health.
 
-The Doctor is intentionally not a Cadet Assistant. A Cadet Assistant accumulates memory across a relationship; the Doctor accumulates none. Every support session starts fresh. This is not a limitation. It is the architectural guarantee that nothing the Doctor learns about one guardian travels to another. The Doctor does not have access to a guardian's assistant by default and must be granted explicit access by the guardian for each session.
+The Doctor is intentionally not a Cadet. A Cadet accumulates memory across a relationship; the Doctor accumulates none. Every support session starts fresh. This is not a limitation. It is the architectural guarantee that nothing the Doctor learns about one guardian travels to another. The Doctor does not have access to a guardian's assistant by default and must be granted explicit access by the guardian for each session.
 
 ### Widget
 

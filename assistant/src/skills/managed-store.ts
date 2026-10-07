@@ -229,7 +229,7 @@ interface BuildSkillMarkdownInput {
 }
 
 /**
- * Apply one tool-owned field to the vellum block: an input left `undefined`
+ * Apply one tool-owned field to the cadet block: an input left `undefined`
  * keeps the preserved value, an input given but empty (`value` undefined)
  * clears it, and a value sets it.
  */
@@ -266,29 +266,29 @@ export function buildSkillMarkdown(input: BuildSkillMarkdownInput): string {
 
   // Everything but name and description is emitted from one object: the
   // preserved frontmatter with the tool-owned fields applied over it, under
-  // `metadata.vellum` where parseFrontmatter reads them back (kebab-case for
+  // `metadata.cadet` where parseFrontmatter reads them back (kebab-case for
   // the two list fields). stringifyYaml quotes and escapes values, so no
   // manual sanitization is needed here.
   const rest: Record<string, unknown> = structuredClone(input.preserve ?? {});
   delete rest.name;
   delete rest.description;
   const metadata = isPlainObject(rest.metadata) ? rest.metadata : {};
-  const vellum = isPlainObject(metadata.vellum) ? metadata.vellum : {};
-  setOrClear(vellum, "emoji", input.emoji?.trim() || undefined, input.emoji);
+  const cadet = isPlainObject(metadata.cadet) ? metadata.cadet : {};
+  setOrClear(cadet, "emoji", input.emoji?.trim() || undefined, input.emoji);
   // An emoji at the legacy `metadata.emoji` location wins over an absent
-  // vellum one on read, so a call that states the emoji retires it.
+  // cadet one on read, so a call that states the emoji retires it.
   if (input.emoji !== undefined) {
     delete metadata.emoji;
   }
-  setOrClear(vellum, "includes", nonEmptyList(input.includes), input.includes);
+  setOrClear(cadet, "includes", nonEmptyList(input.includes), input.includes);
   setOrClear(
-    vellum,
+    cadet,
     "activation-hints",
     nonEmptyList(input.activationHints),
     input.activationHints,
   );
   setOrClear(
-    vellum,
+    cadet,
     "avoid-when",
     nonEmptyList(input.avoidWhen),
     input.avoidWhen,
@@ -296,15 +296,15 @@ export function buildSkillMarkdown(input: BuildSkillMarkdownInput): string {
   // The web Skills UI buckets skills by this value; a blank one is a clear,
   // never an empty bucket in the file.
   setOrClear(
-    vellum,
+    cadet,
     "category",
     input.category?.trim() || undefined,
     input.category,
   );
-  if (Object.keys(vellum).length > 0) {
-    metadata.vellum = vellum;
+  if (Object.keys(cadet).length > 0) {
+    metadata.cadet = cadet;
   } else {
-    delete metadata.vellum;
+    delete metadata.cadet;
   }
   if (Object.keys(metadata).length > 0) {
     rest.metadata = metadata;

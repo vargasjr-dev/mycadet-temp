@@ -46,7 +46,7 @@ function writeSkillWithIncludes(
   writeFileSync(
     join(skillDir, "SKILL.md"),
     `---\nname: "${name}"\ndescription: "${description}"\nmetadata: ${JSON.stringify(
-      { vellum: { includes } },
+      { cadet: { includes } },
     )}\n---\n\n${body}\n`,
   );
 }

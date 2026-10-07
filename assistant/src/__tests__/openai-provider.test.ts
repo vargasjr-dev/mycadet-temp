@@ -1734,7 +1734,7 @@ describe("OpenRouterProvider reasoning", () => {
     expect(lastCreateOptions?.headers).toEqual(
       expect.objectContaining({
         "HTTP-Referer": "https://www.vellum.ai",
-        "X-OpenRouter-Title": "Cadet Assistant",
+        "X-OpenRouter-Title": "Cadet",
         "X-OpenRouter-Categories": "personal-agent,cli-agent",
         "Vellum-Organization-Id": "org-123",
       }),

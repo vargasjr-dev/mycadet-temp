@@ -123,7 +123,7 @@ export async function listCatalogSkills(): Promise<ResolvedSkillEntry[]> {
   const catalog = await getCatalog();
   const config = getConfig();
   return catalog.map((entry) => {
-    const flagKey = entry.metadata?.vellum?.["feature-flag"];
+    const flagKey = entry.metadata?.cadet?.["feature-flag"];
     const gated =
       typeof flagKey === "string" &&
       flagKey.length > 0 &&
@@ -131,10 +131,10 @@ export async function listCatalogSkills(): Promise<ResolvedSkillEntry[]> {
     const incompatible = !isSkillCompatibleWithPlatform(entry);
     return {
       id: entry.id,
-      displayName: entry.metadata?.vellum?.["display-name"] ?? entry.name,
+      displayName: entry.metadata?.cadet?.["display-name"] ?? entry.name,
       description: entry.description,
-      activationHints: entry.metadata?.vellum?.["activation-hints"],
-      avoidWhen: entry.metadata?.vellum?.["avoid-when"],
+      activationHints: entry.metadata?.cadet?.["activation-hints"],
+      avoidWhen: entry.metadata?.cadet?.["avoid-when"],
       platforms: entry.platforms,
       installed: false,
       state: gated || incompatible ? "unavailable" : "available",

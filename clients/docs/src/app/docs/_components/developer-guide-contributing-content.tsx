@@ -27,10 +27,14 @@ const TOC_ITEMS = [
 export function DeveloperGuideContributingContent() {
   return (
     <>
-      <DocsContent title="Contributing" breadcrumb="Docs / Developer Guide / Contributing">
+      <DocsContent
+        title="Contributing"
+        breadcrumb="Docs / Developer Guide / Contributing"
+      >
         <p className="mb-8 text-zinc-600">
-          Everything you need to set up the Cadet Assistant repo locally, run tests, and submit a pull request.
-          Whether you&apos;re fixing a bug, adding a feature, or improving docs — this page has you covered.
+          Everything you need to set up the Cadet repo locally, run tests, and
+          submit a pull request. Whether you&apos;re fixing a bug, adding a
+          feature, or improving docs — this page has you covered.
         </p>
 
         {/* Prerequisites */}
@@ -40,23 +44,33 @@ export function DeveloperGuideContributingContent() {
           </SectionHeading>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              <strong><a href="https://bun.sh" className="text-emerald-600 hover:text-emerald-500 dark:text-emerald-400">Bun</a></strong> — the
-              only hard requirement. The setup script handles everything else.
+              <strong>
+                <a
+                  href="https://bun.sh"
+                  className="text-emerald-600 hover:text-emerald-500 dark:text-emerald-400"
+                >
+                  Bun
+                </a>
+              </strong>{" "}
+              — the only hard requirement. The setup script handles everything
+              else.
             </li>
             <li>
               <strong>macOS or Linux for the shell-based setup below.</strong>
             </li>
             <li>
-              <strong>Git</strong> — the setup script configures custom git hooks automatically.
+              <strong>Git</strong> — the setup script configures custom git
+              hooks automatically.
             </li>
           </ul>
           <p className="mb-4 text-zinc-600">
             For Windows desktop development, start with the{" "}
             <a href="https://github.com/vargasjr-dev/mycadet/blob/main/clients/windows/README.md">
               Windows client README
-            </a>. It covers Git Bash or WSL for POSIX scripts, a PowerShell development
-            flow, and native packaging. The packaged Windows app includes its runtime
-            and does not require this contributor setup.
+            </a>
+            . It covers Git Bash or WSL for POSIX scripts, a PowerShell
+            development flow, and native packaging. The packaged Windows app
+            includes its runtime and does not require this contributor setup.
           </p>
           <p className="text-sm text-zinc-500">
             Docker Desktop is optional. It is only needed if you want to run or
@@ -71,18 +85,35 @@ export function DeveloperGuideContributingContent() {
             Local Development Setup
           </SectionHeading>
           <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-{`git clone https://github.com/vargasjr-dev/mycadet.git
+            {`git clone https://github.com/vargasjr-dev/mycadet.git
 cd cadet-assistant
 ./setup.sh`}
           </pre>
-          <p className="mb-4 text-zinc-600">
-            The setup script will:
-          </p>
+          <p className="mb-4 text-zinc-600">The setup script will:</p>
           <ol className="mb-4 list-decimal space-y-2 pl-6 text-zinc-600">
-            <li>Configure git to use <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">.githooks/</code> for pre-commit and pre-push hooks</li>
-            <li>Install dependencies for each package (<code className="text-sm">assistant</code>, <code className="text-sm">cli</code>, <code className="text-sm">gateway</code>, <code className="text-sm">credential-executor</code>, <code className="text-sm">scripts</code>)</li>
-            <li>Register local packages as linkable and wire them together via <code className="text-sm">bun link</code></li>
-            <li>Link the global <code className="text-sm">cadet</code> CLI so it&apos;s available from anywhere</li>
+            <li>
+              Configure git to use{" "}
+              <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">
+                .githooks/
+              </code>{" "}
+              for pre-commit and pre-push hooks
+            </li>
+            <li>
+              Install dependencies for each package (
+              <code className="text-sm">assistant</code>,{" "}
+              <code className="text-sm">cli</code>,{" "}
+              <code className="text-sm">gateway</code>,{" "}
+              <code className="text-sm">credential-executor</code>,{" "}
+              <code className="text-sm">scripts</code>)
+            </li>
+            <li>
+              Register local packages as linkable and wire them together via{" "}
+              <code className="text-sm">bun link</code>
+            </li>
+            <li>
+              Link the global <code className="text-sm">cadet</code> CLI so
+              it&apos;s available from anywhere
+            </li>
             <li>Install shell completions for Bash and Zsh</li>
           </ol>
 
@@ -91,7 +122,7 @@ cd cadet-assistant
               Repository Structure
             </SectionHeading>
             <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-{`├── assistant/            # Bun-based assistant runtime (core logic, HTTP API)
+              {`├── assistant/            # Bun-based assistant runtime (core logic, HTTP API)
 ├── cli/                  # Cadet CLI (multi-assistant management)
 ├── clients/              # Web, desktop (macOS, Windows, Linux), and mobile clients
 ├── gateway/              # Channel gateway (Telegram, Twilio, OAuth, reverse proxy)
@@ -104,8 +135,9 @@ cd cadet-assistant
 └── .github/              # GitHub Actions workflows`}
             </pre>
             <p className="text-sm text-zinc-500">
-              The root <code className="text-sm">AGENTS.md</code> documents project-wide conventions.
-              Read it before making changes in a new area.
+              The root <code className="text-sm">AGENTS.md</code> documents
+              project-wide conventions. Read it before making changes in a new
+              area.
             </p>
           </section>
 
@@ -114,7 +146,7 @@ cd cadet-assistant
               Running the Assistant
             </SectionHeading>
             <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-{`cadet hatch            # first-time setup (creates config, provisions keys)
+              {`cadet hatch            # first-time setup (creates config, provisions keys)
 cadet wake             # start assistant + gateway
 cadet ps               # check process status
 cadet sleep            # stop everything
@@ -128,18 +160,20 @@ cadet doctor           # diagnose issues`}
               Running from Source
             </SectionHeading>
             <p className="mb-4 text-zinc-600">
-              For development, you can run the assistant directly without the CLI wrapper:
+              For development, you can run the assistant directly without the
+              CLI wrapper:
             </p>
             <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-{`export PATH="$HOME/.bun/bin:$PATH"
+              {`export PATH="$HOME/.bun/bin:$PATH"
 cd assistant
 bun install
 bun run src/index.ts assistant start`}
             </pre>
             <p className="text-sm text-zinc-500">
               Some dependencies (<code className="text-sm">agentmail</code>,{" "}
-              <code className="text-sm">@pydantic/logfire-node</code>) are optional at runtime but required
-              for full <code className="text-sm">tsc --noEmit</code> type-checking.
+              <code className="text-sm">@pydantic/logfire-node</code>) are
+              optional at runtime but required for full{" "}
+              <code className="text-sm">tsc --noEmit</code> type-checking.
             </p>
           </section>
         </section>
@@ -155,11 +189,15 @@ bun run src/index.ts assistant start`}
               Running Tests
             </SectionHeading>
             <p className="mb-4 text-zinc-600">
-              The full test suite is large. <strong>Never run <code className="text-sm">bun test</code> without specifying file paths</strong> — it
-              will hang or timeout.
+              The full test suite is large.{" "}
+              <strong>
+                Never run <code className="text-sm">bun test</code> without
+                specifying file paths
+              </strong>{" "}
+              — it will hang or timeout.
             </p>
             <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-{`# Run tests for specific files you changed
+              {`# Run tests for specific files you changed
 cd assistant && bun test src/path/to/file.test.ts
 
 # Run tests matching a pattern
@@ -169,8 +207,9 @@ cd assistant && bun test src/path/to/file.test.ts --grep "pattern"
 cd assistant && bunx tsc --noEmit`}
             </pre>
             <p className="text-sm text-zinc-500">
-              The pre-push hook automatically finds and runs tests matching changed source files, so you&apos;ll get
-              coverage feedback before pushing.
+              The pre-push hook automatically finds and runs tests matching
+              changed source files, so you&apos;ll get coverage feedback before
+              pushing.
             </p>
           </section>
 
@@ -179,11 +218,12 @@ cd assistant && bunx tsc --noEmit`}
               Type Checking
             </SectionHeading>
             <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-{`cd assistant && bunx tsc --noEmit`}
+              {`cd assistant && bunx tsc --noEmit`}
             </pre>
             <p className="mb-4 text-zinc-600">
-              This is the fastest way to validate your changes across the full project. The pre-push hook also runs this
-              automatically when TypeScript files are changed.
+              This is the fastest way to validate your changes across the full
+              project. The pre-push hook also runs this automatically when
+              TypeScript files are changed.
             </p>
           </section>
 
@@ -192,11 +232,26 @@ cd assistant && bunx tsc --noEmit`}
               Writing Tests
             </SectionHeading>
             <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
-              <li>Place test files next to the source: <code className="text-sm">src/path/to/file.test.ts</code></li>
-              <li>Use <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">test.todo(&quot;description&quot;, () =&gt; {'{}'})
-              </code> for tests that reproduce unfixed bugs — never commit failing <code className="text-sm">test()</code> cases</li>
-              <li>Convert <code className="text-sm">test.todo</code> to <code className="text-sm">test</code> when the fix lands</li>
-              <li>Look at existing tests in the same directory for patterns and conventions</li>
+              <li>
+                Place test files next to the source:{" "}
+                <code className="text-sm">src/path/to/file.test.ts</code>
+              </li>
+              <li>
+                Use{" "}
+                <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">
+                  test.todo(&quot;description&quot;, () =&gt; {"{}"})
+                </code>{" "}
+                for tests that reproduce unfixed bugs — never commit failing{" "}
+                <code className="text-sm">test()</code> cases
+              </li>
+              <li>
+                Convert <code className="text-sm">test.todo</code> to{" "}
+                <code className="text-sm">test</code> when the fix lands
+              </li>
+              <li>
+                Look at existing tests in the same directory for patterns and
+                conventions
+              </li>
             </ul>
           </section>
         </section>
@@ -207,7 +262,7 @@ cd assistant && bunx tsc --noEmit`}
             Code Style &amp; Linting
           </SectionHeading>
           <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-{`cd assistant && bun run lint    # Run ESLint`}
+            {`cd assistant && bun run lint    # Run ESLint`}
           </pre>
 
           <section id="git-hooks" className="mt-6">
@@ -215,32 +270,47 @@ cd assistant && bunx tsc --noEmit`}
               Git Hooks
             </SectionHeading>
             <p className="mb-4 text-zinc-600">
-              Git hooks are configured automatically by <code className="text-sm">setup.sh</code>. They run on every commit and push:
+              Git hooks are configured automatically by{" "}
+              <code className="text-sm">setup.sh</code>. They run on every
+              commit and push:
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                    <th className="py-2 pr-4 text-left font-medium text-zinc-900 dark:text-zinc-100">Hook</th>
-                    <th className="py-2 text-left font-medium text-zinc-900 dark:text-zinc-100">What It Does</th>
+                    <th className="py-2 pr-4 text-left font-medium text-zinc-900 dark:text-zinc-100">
+                      Hook
+                    </th>
+                    <th className="py-2 text-left font-medium text-zinc-900 dark:text-zinc-100">
+                      What It Does
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="text-zinc-600 dark:text-zinc-400">
                   <tr className="border-b border-zinc-100 dark:border-zinc-800">
                     <td className="py-2 pr-4 font-medium">pre-commit</td>
-                    <td className="py-2">Secret scanning, Prettier formatting, ESLint, message contract verification, tool registration guard</td>
+                    <td className="py-2">
+                      Secret scanning, Prettier formatting, ESLint, message
+                      contract verification, tool registration guard
+                    </td>
                   </tr>
                   <tr>
                     <td className="py-2 pr-4 font-medium">pre-push</td>
-                    <td className="py-2">TypeScript type check, ESLint on changed files, runs related test files</td>
+                    <td className="py-2">
+                      TypeScript type check, ESLint on changed files, runs
+                      related test files
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p className="mt-4 text-sm text-zinc-500">
-              Bypass with <code className="text-sm">--no-verify</code> in exceptional cases, but this is strongly discouraged.
-              See{" "}
-              <a href="https://github.com/vargasjr-dev/mycadet/blob/main/.githooks/README.md" className="text-emerald-600 hover:text-emerald-500 dark:text-emerald-400">
+              Bypass with <code className="text-sm">--no-verify</code> in
+              exceptional cases, but this is strongly discouraged. See{" "}
+              <a
+                href="https://github.com/vargasjr-dev/mycadet/blob/main/.githooks/README.md"
+                className="text-emerald-600 hover:text-emerald-500 dark:text-emerald-400"
+              >
                 .githooks/README.md
               </a>{" "}
               for full details.
@@ -252,9 +322,24 @@ cd assistant && bunx tsc --noEmit`}
               Import Conventions
             </SectionHeading>
             <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
-              <li>All imports use <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">.js</code> extensions (NodeNext module resolution)</li>
-              <li>Use <code className="text-sm">bun install</code> for dependencies — each package has its own <code className="text-sm">bun.lock</code></li>
-              <li>Ensure <code className="text-sm">PATH</code> includes Bun: <code className="text-sm">export PATH=&quot;$HOME/.bun/bin:$PATH&quot;</code></li>
+              <li>
+                All imports use{" "}
+                <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-sm dark:bg-zinc-800">
+                  .js
+                </code>{" "}
+                extensions (NodeNext module resolution)
+              </li>
+              <li>
+                Use <code className="text-sm">bun install</code> for
+                dependencies — each package has its own{" "}
+                <code className="text-sm">bun.lock</code>
+              </li>
+              <li>
+                Ensure <code className="text-sm">PATH</code> includes Bun:{" "}
+                <code className="text-sm">
+                  export PATH=&quot;$HOME/.bun/bin:$PATH&quot;
+                </code>
+              </li>
             </ul>
           </section>
         </section>
@@ -270,11 +355,26 @@ cd assistant && bunx tsc --noEmit`}
               PR Conventions
             </SectionHeading>
             <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
-              <li><strong>Squash-merge only</strong> — all PRs are squash-merged into main</li>
-              <li><strong>Worktree isolation</strong> — parallel work uses git worktrees to avoid conflicts</li>
-              <li><strong>Dead code removal</strong> — proactively remove unused code in every change. Ask yourself: &ldquo;After my change, is there any code nothing calls?&rdquo;</li>
-              <li><strong>Linear tickets</strong> — if your PR relates to a Linear issue, include the identifier (e.g. <code className="text-sm">JARVIS-123</code>) in
-                the branch name and use <code className="text-sm">Closes JARVIS-123</code> in the commit body for auto-close</li>
+              <li>
+                <strong>Squash-merge only</strong> — all PRs are squash-merged
+                into main
+              </li>
+              <li>
+                <strong>Worktree isolation</strong> — parallel work uses git
+                worktrees to avoid conflicts
+              </li>
+              <li>
+                <strong>Dead code removal</strong> — proactively remove unused
+                code in every change. Ask yourself: &ldquo;After my change, is
+                there any code nothing calls?&rdquo;
+              </li>
+              <li>
+                <strong>Linear tickets</strong> — if your PR relates to a Linear
+                issue, include the identifier (e.g.{" "}
+                <code className="text-sm">JARVIS-123</code>) in the branch name
+                and use <code className="text-sm">Closes JARVIS-123</code> in
+                the commit body for auto-close
+              </li>
             </ul>
           </section>
 
@@ -283,7 +383,8 @@ cd assistant && bunx tsc --noEmit`}
               Review Process
             </SectionHeading>
             <p className="mb-4 text-zinc-600">
-              PRs go through automated review (Codex/Devin) with up to 3 fix cycles before human review. The automated reviewers check for:
+              PRs go through automated review (Codex/Devin) with up to 3 fix
+              cycles before human review. The automated reviewers check for:
             </p>
             <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
               <li>Type safety and correctness</li>
@@ -292,8 +393,9 @@ cd assistant && bunx tsc --noEmit`}
               <li>Backwards compatibility</li>
             </ul>
             <p className="mb-4 text-zinc-600">
-              For non-routine changes (architectural decisions, security, complex logic, deletions), leave a PR comment
-              highlighting where to focus review and the risk level.
+              For non-routine changes (architectural decisions, security,
+              complex logic, deletions), leave a PR comment highlighting where
+              to focus review and the risk level.
             </p>
           </section>
         </section>
@@ -304,32 +406,52 @@ cd assistant && bunx tsc --noEmit`}
             Keeping Docs Current
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            When your PR changes behavior, update the relevant docs in the same PR:
+            When your PR changes behavior, update the relevant docs in the same
+            PR:
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                  <th className="py-2 pr-4 text-left font-medium text-zinc-900 dark:text-zinc-100">What Changed</th>
-                  <th className="py-2 text-left font-medium text-zinc-900 dark:text-zinc-100">What to Update</th>
+                  <th className="py-2 pr-4 text-left font-medium text-zinc-900 dark:text-zinc-100">
+                    What Changed
+                  </th>
+                  <th className="py-2 text-left font-medium text-zinc-900 dark:text-zinc-100">
+                    What to Update
+                  </th>
                 </tr>
               </thead>
               <tbody className="text-zinc-600 dark:text-zinc-400">
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-4">Slash commands in <code className="text-xs">.claude/commands/</code></td>
-                  <td className="py-2">README&apos;s &ldquo;Slash Commands&rdquo; section</td>
+                  <td className="py-2 pr-4">
+                    Slash commands in{" "}
+                    <code className="text-xs">.claude/commands/</code>
+                  </td>
+                  <td className="py-2">
+                    README&apos;s &ldquo;Slash Commands&rdquo; section
+                  </td>
                 </tr>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-4">Services, modules, or data flows</td>
+                  <td className="py-2 pr-4">
+                    Services, modules, or data flows
+                  </td>
                   <td className="py-2">Impacted domain docs</td>
                 </tr>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-4">New project-wide patterns or constraints</td>
-                  <td className="py-2"><code className="text-xs">AGENTS.md</code></td>
+                  <td className="py-2 pr-4">
+                    New project-wide patterns or constraints
+                  </td>
+                  <td className="py-2">
+                    <code className="text-xs">AGENTS.md</code>
+                  </td>
                 </tr>
                 <tr>
                   <td className="py-2 pr-4">User/assistant-facing features</td>
-                  <td className="py-2"><code className="text-xs">assistant/src/prompts/templates/UPDATES.md</code></td>
+                  <td className="py-2">
+                    <code className="text-xs">
+                      assistant/src/prompts/templates/UPDATES.md
+                    </code>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -342,38 +464,57 @@ cd assistant && bunx tsc --noEmit`}
             Backwards Compatibility
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Cadet has real users — maintain backwards compatibility for all interfaces, persisted state, and data.
-            Never ship a change that silently breaks existing behavior.
+            Cadet has real users — maintain backwards compatibility for all
+            interfaces, persisted state, and data. Never ship a change that
+            silently breaks existing behavior.
           </p>
           <p className="mb-4 text-zinc-600">
-            When a change alters workspace file paths, directory structure, data shapes, or storage formats, include a migration in the same PR:
+            When a change alters workspace file paths, directory structure, data
+            shapes, or storage formats, include a migration in the same PR:
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                  <th className="py-2 pr-4 text-left font-medium text-zinc-900 dark:text-zinc-100">What Changed</th>
-                  <th className="py-2 pr-4 text-left font-medium text-zinc-900 dark:text-zinc-100">Migration Type</th>
-                  <th className="py-2 text-left font-medium text-zinc-900 dark:text-zinc-100">Location</th>
+                  <th className="py-2 pr-4 text-left font-medium text-zinc-900 dark:text-zinc-100">
+                    What Changed
+                  </th>
+                  <th className="py-2 pr-4 text-left font-medium text-zinc-900 dark:text-zinc-100">
+                    Migration Type
+                  </th>
+                  <th className="py-2 text-left font-medium text-zinc-900 dark:text-zinc-100">
+                    Location
+                  </th>
                 </tr>
               </thead>
               <tbody className="text-zinc-600 dark:text-zinc-400">
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-4">Workspace files (renames, moves, format changes)</td>
+                  <td className="py-2 pr-4">
+                    Workspace files (renames, moves, format changes)
+                  </td>
                   <td className="py-2 pr-4">Workspace migration</td>
-                  <td className="py-2"><code className="text-xs">assistant/src/workspace/migrations/</code></td>
+                  <td className="py-2">
+                    <code className="text-xs">
+                      assistant/src/workspace/migrations/
+                    </code>
+                  </td>
                 </tr>
                 <tr>
                   <td className="py-2 pr-4">Database schema or data</td>
                   <td className="py-2 pr-4">DB migration</td>
-                  <td className="py-2"><code className="text-xs">assistant/src/memory/migrations/</code></td>
+                  <td className="py-2">
+                    <code className="text-xs">
+                      assistant/src/memory/migrations/
+                    </code>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
           <p className="mt-4 text-sm text-zinc-500">
-            Migrations must be idempotent (safe to re-run) and append-only (never reorder or remove existing entries).
-            Flag breaking changes in PR descriptions.
+            Migrations must be idempotent (safe to re-run) and append-only
+            (never reorder or remove existing entries). Flag breaking changes in
+            PR descriptions.
           </p>
         </section>
       </DocsContent>

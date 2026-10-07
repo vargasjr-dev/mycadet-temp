@@ -1,11 +1,11 @@
 ---
 name: telegram-setup
 description: Connect a Telegram bot to the Vellum Assistant gateway with automated webhook registration and credential storage
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "🤖"
-  vellum:
+  cadet:
     category: "messaging"
     display-name: "Telegram Setup"
     activation-hints:

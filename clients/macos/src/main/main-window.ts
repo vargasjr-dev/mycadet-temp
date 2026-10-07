@@ -189,7 +189,7 @@ const createMainWindow = (): BrowserWindow => {
   const win = createWindow({
     // `titleBarStyle: "hidden"` removes the native title bar chrome and its
     // title text (otherwise inherited from the renderer's `<title>` —
-    // "Cadet Assistant") while keeping the macOS traffic lights, so the
+    // "Cadet") while keeping the macOS traffic lights, so the
     // renderer content extends up to the top edge behind them.
     browserWindow: { ...sizing, titleBarStyle: "hidden", show: false },
     navigation: { installGuard: installSameOriginNavigationGuard },
@@ -204,7 +204,7 @@ const createMainWindow = (): BrowserWindow => {
   win.setFullScreenable(true);
 
   // Main owns the window title (the active assistant's name). Block the
-  // renderer's static `<title>` ("Cadet Assistant") from overriding it via
+  // renderer's static `<title>` ("Cadet") from overriding it via
   // page-title updates, then seed the current name — `installMainWindow`'s
   // `onNameChange` subscription keeps it live as identity loads or changes.
   win.webContents.on("page-title-updated", (event) => {

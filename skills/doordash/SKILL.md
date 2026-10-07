@@ -1,11 +1,11 @@
 ---
 name: doordash
 description: Order food, groceries, and convenience items from DoorDash using the built-in CLI integration
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "🍕"
-  vellum:
+  cadet:
     category: "commerce"
     display-name: "DoorDash"
 ---

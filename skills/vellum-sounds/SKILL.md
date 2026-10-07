@@ -1,10 +1,10 @@
 ---
 name: vellum-sounds
 description: Customize the desktop app's sound effects by adding sound files to the workspace, enabling sounds, setting volume, and assigning sounds to app events
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🔊"
-  vellum:
+  cadet:
     platforms:
       - macos
       - windows

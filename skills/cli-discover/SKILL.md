@@ -1,10 +1,10 @@
 ---
 name: cli-discover
 description: Discover which CLI tools are installed, their versions, and authentication status
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🔍"
-  vellum:
+  cadet:
     category: "development"
     display-name: "CLI Discovery"
 ---

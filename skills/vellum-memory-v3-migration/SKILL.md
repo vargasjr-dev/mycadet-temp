@@ -1,10 +1,10 @@
 ---
 name: vellum-memory-v3-migration
 description: One-time migration of an existing memory-v2 concept corpus into the memory-v3 section-grain "wiki" — topical articles with a stand-alone lead and queryable sections — with loss-proof staging, assistant-reviewed authoring, and a retrieval-eval gate before cutover.
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🗂️"
-  vellum:
+  cadet:
     category: "system"
     display-name: "Memory v3 Migration"
     user-invocable: true

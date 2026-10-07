@@ -1,11 +1,11 @@
 ---
 name: deepgram-voice
 description: Select and tune a Deepgram TTS voice - curated voice list, full Aura voice catalog via API key, and tuning parameters
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "🎤"
-  vellum:
+  cadet:
     category: "voice"
     display-name: "Deepgram Voice"
 ---

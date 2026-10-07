@@ -210,7 +210,7 @@ describe("listCatalogSkills", () => {
         name: "rich-skill",
         description: "Remote skill with metadata",
         metadata: {
-          vellum: {
+          cadet: {
             "display-name": "Rich Skill",
             "activation-hints": ["when remote"],
             "avoid-when": ["when local"],
@@ -227,7 +227,7 @@ describe("listCatalogSkills", () => {
         id: "gated-skill",
         name: "gated-skill",
         description: "Remote skill behind a disabled flag",
-        metadata: { vellum: { "feature-flag": "off-flag" } },
+        metadata: { cadet: { "feature-flag": "off-flag" } },
       },
     ];
 
@@ -285,7 +285,7 @@ describe("listCatalogSkills", () => {
         name: "incompatible",
         description: "Only works elsewhere",
         platforms: [incompatiblePlatform],
-        metadata: { vellum: { platforms: [incompatiblePlatform] } },
+        metadata: { cadet: { platforms: [incompatiblePlatform] } },
       },
     ];
 

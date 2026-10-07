@@ -174,7 +174,7 @@ describe("emitNotificationSignal chat reply preference", () => {
         selectedChannels,
         reasoningSummary: "Selected reply delivery",
         renderedCopy: {
-          vellum: { title: "Answer", body: "The result is ready." },
+          cadet: { title: "Answer", body: "The result is ready." },
         },
         dedupeKey: "reply-1",
         confidence: 1,
@@ -230,7 +230,7 @@ describe("emitNotificationSignal chat reply preference", () => {
       shouldNotify: true,
       selectedChannels: ["vellum", "platform"],
       reasoningSummary: "Urgent delivery",
-      renderedCopy: { vellum: { title: "Alert", body: "Action required." } },
+      renderedCopy: { cadet: { title: "Alert", body: "Action required." } },
       dedupeKey: "alert-1",
       confidence: 1,
       fallbackUsed: false,
@@ -259,7 +259,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
       selectedChannels: ["vellum"],
       reasoningSummary: "LLM selected cadet only",
       renderedCopy: {
-        vellum: { title: "Reminder", body: "Take out trash" },
+        cadet: { title: "Reminder", body: "Take out trash" },
       },
       dedupeKey: "dedupe-rem-1",
       confidence: 0.9,
@@ -309,7 +309,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
       selectedChannels: ["vellum"],
       reasoningSummary: "No routing override needed",
       renderedCopy: {
-        vellum: { title: "Reminder", body: "Drink water" },
+        cadet: { title: "Reminder", body: "Drink water" },
       },
       dedupeKey: "dedupe-rem-2",
       confidence: 0.8,
@@ -345,7 +345,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
       selectedChannels: ["vellum"],
       reasoningSummary: "Local only",
       renderedCopy: {
-        vellum: { title: "Reminder", body: "Check this" },
+        cadet: { title: "Reminder", body: "Check this" },
       },
       dedupeKey: "dedupe-rem-3",
       confidence: 0.8,
@@ -1057,7 +1057,7 @@ describe("emitNotificationSignal From me push defaults", () => {
     shouldNotify: true,
     selectedChannels,
     reasoningSummary: "Assistant-authored share",
-    renderedCopy: { vellum: { title: "An update", body: "A useful result." } },
+    renderedCopy: { cadet: { title: "An update", body: "A useful result." } },
     dedupeKey: "share-1",
     confidence: 1,
     fallbackUsed: false,

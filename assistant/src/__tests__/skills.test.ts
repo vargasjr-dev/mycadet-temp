@@ -645,7 +645,7 @@ describe("includes frontmatter parsing", () => {
   function writeSkillWithIncludes(skillId: string, includes: string): void {
     const skillDir = join(TEST_DIR, "skills", skillId);
     mkdirSync(skillDir, { recursive: true });
-    // includes lives inside metadata.vellum, matching buildSkillMarkdown output.
+    // includes lives inside metadata.cadet, matching buildSkillMarkdown output.
     // The raw includes string is interpolated directly so tests can pass both
     // valid and intentionally malformed values.
     const metadata = `{"vellum":{"includes":${includes}}}`;
@@ -742,7 +742,7 @@ describe("category frontmatter parsing", () => {
     );
   }
 
-  test("parses category from metadata.vellum", () => {
+  test("parses category from metadata.cadet", () => {
     writeSkillWithCategory("categorized", '"productivity"');
     const skill = loadUserSkillCatalog().find((s) => s.id === "categorized");
     expect(skill!.category).toBe("productivity");
@@ -795,7 +795,7 @@ describe("always-candidate frontmatter parsing", () => {
     );
   }
 
-  test("parses always-candidate: true from metadata.vellum", () => {
+  test("parses always-candidate: true from metadata.cadet", () => {
     writeSkillWithAlwaysCandidate("pinned", "true");
     const skill = loadUserSkillCatalog().find((s) => s.id === "pinned");
     expect(skill!.alwaysCandidate).toBe(true);
@@ -1029,7 +1029,7 @@ describe("ingress-dependent setup skills declare public-ingress intentionally", 
           /* ignore */
         }
       }
-      // Check metadata.vellum.includes (spec-compliant format)
+      // Check metadata.cadet.includes (spec-compliant format)
       if (key === "metadata") {
         const val = line.slice(sep + 1).trim();
         try {

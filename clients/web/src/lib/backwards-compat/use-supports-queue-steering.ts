@@ -2,7 +2,7 @@
  * Backwards-compat gate: the "Push to agent" steer button on queued
  * messages.
  *
- * Cadet Assistant 0.8.4 added `POST /v1/messages/queued/:id/steer` (the
+ * Cadet 0.8.4 added `POST /v1/messages/queued/:id/steer` (the
  * endpoint that promotes a queued message to the head of the queue and
  * aborts the in-flight generation; PR #31307). Older assistants 404 that
  * route, so the web app hides the steer arrow on queued-message rows —

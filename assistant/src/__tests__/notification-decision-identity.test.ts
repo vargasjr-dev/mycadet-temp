@@ -113,7 +113,7 @@ describe("identity context in notification decision engine", () => {
         selectedChannels: ["vellum"],
         reasoningSummary: "LLM decision with identity",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Guardian Question",
             body: "What is the gate code?",
           },
@@ -149,7 +149,7 @@ describe("identity context in notification decision engine", () => {
         selectedChannels: ["vellum"],
         reasoningSummary: "LLM decision without identity",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Guardian Question",
             body: "What is the gate code?",
           },
@@ -185,7 +185,7 @@ describe("identity context in notification decision engine", () => {
         selectedChannels: ["vellum"],
         reasoningSummary: "LLM decision with truncated identity",
         renderedCopy: {
-          vellum: {
+          cadet: {
             title: "Guardian Question",
             body: "What is the gate code?",
           },

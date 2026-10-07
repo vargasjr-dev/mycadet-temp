@@ -1,10 +1,10 @@
 ---
 name: windows-automation
 description: Automate native Windows apps and system interactions with PowerShell, documented COM APIs, and Microsoft UI Automation through the Windows host executor. Use for launching or inspecting desktop apps, opening Windows Settings, controlling scriptable Microsoft Office apps, and interacting with native UI when no direct CLI or API is available.
-compatibility: "Designed for Vellum personal assistants on Windows"
+compatibility: "Designed for Cadet personal assistants on Windows"
 metadata:
   emoji: "🪟"
-  vellum:
+  cadet:
     category: "system"
     display-name: "Windows Automation"
     platforms:

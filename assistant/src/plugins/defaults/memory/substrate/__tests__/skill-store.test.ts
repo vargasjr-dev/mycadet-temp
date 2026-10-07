@@ -415,7 +415,7 @@ describe("seedV2SkillEntries", () => {
         id: "gated-remote",
         name: "gated-remote",
         description: "Remote skill behind a disabled flag",
-        metadata: { vellum: { "feature-flag": "off-flag" } },
+        metadata: { cadet: { "feature-flag": "off-flag" } },
       },
       { id: "open-remote", name: "open-remote", description: "Open remote" },
     ];

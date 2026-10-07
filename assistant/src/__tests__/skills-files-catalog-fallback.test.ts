@@ -14,7 +14,7 @@
  *   - Neither installed nor handled by any provider: returns 404.
  *   - Installed skill: preserves the disk-read behavior with inline `content`.
  *   - Installed skill with missing directory: returns 404 without consulting providers.
- *   - `catalogSkillToSlim` mapping: `metadata.vellum["display-name"]` wins over `cs.name`.
+ *   - `catalogSkillToSlim` mapping: `metadata.cadet["display-name"]` wins over `cs.name`.
  *   - skills.sh-shaped ID not in cadet catalog returns files from skills.sh provider.
  *   - clawhub-shaped ID not in cadet catalog returns files from clawhub provider.
  *   - ID that no provider handles returns 404.
@@ -462,7 +462,7 @@ describe("getSkillFiles — provider chain fallback", () => {
     expect(result.error).toContain("directory missing");
   });
 
-  test("catalogSkillToSlim falls back to cs.name when metadata.vellum.display-name is absent", async () => {
+  test("catalogSkillToSlim falls back to cs.name when metadata.cadet.display-name is absent", async () => {
     mockVellumProvider = {
       canHandle: () => true,
       listFiles: async () => [],
@@ -490,7 +490,7 @@ describe("getSkillFiles — provider chain fallback", () => {
     expect(result.skill.status).toBe("available");
   });
 
-  test("catalogSkillToSlim prefers metadata.vellum.display-name over cs.name", async () => {
+  test("catalogSkillToSlim prefers metadata.cadet.display-name over cs.name", async () => {
     mockVellumProvider = {
       canHandle: () => true,
       listFiles: async () => [],

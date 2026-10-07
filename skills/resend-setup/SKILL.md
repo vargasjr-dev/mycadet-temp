@@ -1,10 +1,10 @@
 ---
 name: resend-setup
 description: Set up and send emails via a user-provided Resend account (BYO email provider)
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "📤"
-  vellum:
+  cadet:
     category: "email"
     display-name: "Resend Email Setup"
     user-invocable: true

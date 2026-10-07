@@ -1,7 +1,7 @@
 /**
  * Backwards-compat gates for feature-flag query freshness.
  *
- * Cadet Assistant 0.8.5 introduced `sync_changed` broadcasts for the
+ * Cadet 0.8.5 introduced `sync_changed` broadcasts for the
  * feature-flag tags (PR #31921 / #31932). Web subscribers use those pushes
  * and `sse.opened` reconnect invalidation to keep flag query caches fresh.
  *

@@ -42,7 +42,7 @@ export const DOCS_VIDEOS = {
     youtubeId: "Bg3Wx7J7b-s",
     title: "Connect your Stripe Link wallet to your AI assistant",
     description:
-      "A walkthrough of connecting a Stripe Link wallet to Cadet Assistant through Settings or by asking the assistant directly.",
+      "A walkthrough of connecting a Stripe Link wallet to Cadet through Settings or by asking the assistant directly.",
     durationSeconds: 67,
     uploadDate: "2026-09-10T18:11:11+00:00",
     poster: "/docs/video-agentic-payments-link-wallet.webp",

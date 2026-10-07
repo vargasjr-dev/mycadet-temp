@@ -1,11 +1,11 @@
 ---
 name: google-calendar
 description: View Google Calendar events for any day, create and manage events, and check availability
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "📅"
-  vellum:
+  cadet:
     category: "calendar"
     display-name: "Google Calendar"
     user-invocable: true
