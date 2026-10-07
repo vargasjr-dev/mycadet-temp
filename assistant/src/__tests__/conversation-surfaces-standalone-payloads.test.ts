@@ -17,14 +17,12 @@
  * and dispatches them in ChatActionHandler → ChatViewModel+SurfaceHandling.
  */
 
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
 
 let broadcastImpl: (msg: AssistantEvent) => void = () => {};
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: AssistantEvent) => broadcastImpl(msg),
-}));
+setBroadcastOverrideForTesting((msg: AssistantEvent) => broadcastImpl(msg));
 
 import type { Conversation } from "../daemon/conversation.js";
 import {
@@ -33,6 +31,7 @@ import {
   handleSurfaceAction,
   showStandaloneSurface,
 } from "../daemon/conversation-surfaces.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import {
   asConversation,
   mockChannelCapabilities,

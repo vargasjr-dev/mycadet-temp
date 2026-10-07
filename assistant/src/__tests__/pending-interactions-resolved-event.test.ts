@@ -8,24 +8,22 @@
  * without spinning up a Conversation, prompter, or proxy.
  */
 
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../runtime/assistant-event-hub.js";
 
 // Capture every broadcast emitted by the tracker. The real hub is replaced
 // with a thin recorder so we can assert payloads deterministically.
 const publishedMessages: AssistantEvent[] = [];
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: AssistantEvent) => {
-    publishedMessages.push(msg);
-  },
-  capabilityForMessageType: () => undefined,
-  assistantEventHub: {
-    publish: async () => {},
-    subscribe: () => ({ dispose: () => {}, active: true }),
-  },
-}));
+setBroadcastOverrideForTesting((msg: AssistantEvent) => {
+  publishedMessages.push(msg);
+});
+setHubPublishOverrideForTesting(() => {});
 
 const pendingInteractions = await import("../runtime/pending-interactions.js");
 

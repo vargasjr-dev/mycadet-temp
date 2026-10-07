@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+  setHubSubscribeOverrideForTesting,
+} from "../runtime/assistant-event-hub.js";
 import type { DiskUsageInfo } from "../util/disk-usage.js";
 
 let diskSample: DiskUsageInfo | null = null;
@@ -19,31 +24,27 @@ mock.module("../runtime/assistant-event.js", () => ({
   }),
 }));
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  AssistantEventHub: class {},
-  broadcastMessage: (message: unknown, conversationId?: string) => {
-    const event = { message, conversationId };
-    for (const callback of eventSubscribers) {
-      callback(event);
-    }
+setBroadcastOverrideForTesting((message: unknown, conversationId?: string) => {
+  const event = { message, conversationId };
+  for (const callback of eventSubscribers) {
+    callback(event);
+  }
+});
+setHubPublishOverrideForTesting(async (event: unknown) => {
+  for (const callback of eventSubscribers) {
+    callback(event);
+  }
+});
+setHubSubscribeOverrideForTesting(
+  ({ callback }: { callback: (event: unknown) => void }) => {
+    eventSubscribers.add(callback);
+    return {
+      dispose: () => {
+        eventSubscribers.delete(callback);
+      },
+    };
   },
-  capabilityForMessageType: () => undefined,
-  assistantEventHub: {
-    publish: async (event: unknown) => {
-      for (const callback of eventSubscribers) {
-        callback(event);
-      }
-    },
-    subscribe: ({ callback }: { callback: (event: unknown) => void }) => {
-      eventSubscribers.add(callback);
-      return {
-        dispose: () => {
-          eventSubscribers.delete(callback);
-        },
-      };
-    },
-  },
-}));
+);
 
 const {
   DISK_PRESSURE_OVERRIDE_CONFIRMATION,

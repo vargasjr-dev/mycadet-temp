@@ -215,6 +215,10 @@ import type {
   CredentialHealthResult,
   CredentialHealthStatus,
 } from "../credential-health/credential-health-service.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../runtime/assistant-event-hub.js";
 
 let mockCredentialHealthReport: CredentialHealthReport | null = null;
 let mockCheckAllCredentialsFail = false;
@@ -339,15 +343,10 @@ const { LLMSchema } = await import("../config/schemas/llm.js");
 type BroadcastedMessage = { type: string; [key: string]: unknown };
 const broadcastedMessages: BroadcastedMessage[] = [];
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    publish: async () => {},
-    subscribe: () => () => {},
-  },
-  broadcastMessage: (msg: BroadcastedMessage) => {
-    broadcastedMessages.push(msg);
-  },
-}));
+setBroadcastOverrideForTesting((msg: BroadcastedMessage) => {
+  broadcastedMessages.push(msg);
+});
+setHubPublishOverrideForTesting(() => {});
 
 describe("HeartbeatService", () => {
   let processMessageCalls: Array<{

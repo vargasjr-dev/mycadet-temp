@@ -24,6 +24,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
+import { setHubPublishOverrideForTesting } from "../../runtime/assistant-event-hub.js";
 
 // ── Module-level mocks ─────────────────────────────────────────────
 
@@ -32,16 +33,10 @@ import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
 // `formatSseFrame` on assistant-event) stay accessible to other
 // importers loaded indirectly through `conversation-surfaces.ts`.
 const publishCalls: Array<unknown> = [];
-const realHub = await import("../../runtime/assistant-event-hub.js");
 const realEvent = await import("../../runtime/assistant-event.js");
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  ...realHub,
-  assistantEventHub: {
-    publish: async (event: unknown) => {
-      publishCalls.push(event);
-    },
-  },
-}));
+setHubPublishOverrideForTesting(async (event: unknown) => {
+  publishCalls.push(event);
+});
 mock.module("../../runtime/assistant-event.js", () => ({
   ...realEvent,
   // Pass-through so `focus` / `conversationId` can be asserted directly

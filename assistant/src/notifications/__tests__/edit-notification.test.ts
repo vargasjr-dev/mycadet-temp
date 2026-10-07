@@ -4,6 +4,10 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { FeedItem } from "../../home/feed-types.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../../runtime/assistant-event-hub.js";
 import type { NotificationDeliveryRow } from "../deliveries-store.js";
 
 // ── Module mocks ───────────────────────────────────────────────────────
@@ -14,13 +18,8 @@ import type { NotificationDeliveryRow } from "../deliveries-store.js";
 // end. Only the sqlite-backed stores, the broadcaster, and the SSE hub
 // are intercepted.
 
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    publish: async () => {},
-    subscribe: () => () => {},
-  },
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
+setHubPublishOverrideForTesting(() => {});
 
 let decisionRow: { id: string } | null = null;
 let deliveryRows: NotificationDeliveryRow[] = [];

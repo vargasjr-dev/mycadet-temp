@@ -4,6 +4,10 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { setConfig } from "../../__tests__/helpers/set-config.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../../runtime/assistant-event-hub.js";
 
 // Seed the heartbeat config for real. Active hours are pinned null so the
 // scheduling guard is time-of-day independent; maxConsecutiveRuns defaults to
@@ -37,16 +41,11 @@ type BroadcastedMessage = { type: string; [key: string]: unknown };
 const broadcastedMessages: BroadcastedMessage[] = [];
 let onBroadcast: ((msg: BroadcastedMessage) => void) | null = null;
 
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    publish: publishSpy,
-    subscribe: () => () => {},
-  },
-  broadcastMessage: (msg: BroadcastedMessage) => {
-    broadcastedMessages.push(msg);
-    onBroadcast?.(msg);
-  },
-}));
+setBroadcastOverrideForTesting((msg: BroadcastedMessage) => {
+  broadcastedMessages.push(msg);
+  onBroadcast?.(msg);
+});
+setHubPublishOverrideForTesting(publishSpy);
 
 // Stub workspace prompt reads so the heartbeat service doesn't try to
 // read real workspace files. Use a fallback for early module-load calls

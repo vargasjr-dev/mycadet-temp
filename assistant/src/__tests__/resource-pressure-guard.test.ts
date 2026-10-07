@@ -2,19 +2,17 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { ResourcePressureStatusChangedEventSchema } from "../api/events/resource-pressure-status-changed.js";
 import type { ResourcePressureStatus } from "../daemon/resource-pressure-guard.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../runtime/assistant-event-hub.js";
 
 const broadcasts: unknown[] = [];
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  AssistantEventHub: class {},
-  broadcastMessage: (message: unknown) => {
-    broadcasts.push(message);
-  },
-  capabilityForMessageType: () => undefined,
-  assistantEventHub: {
-    publish: async () => {},
-  },
-}));
+setBroadcastOverrideForTesting((message: unknown) => {
+  broadcasts.push(message);
+});
+setHubPublishOverrideForTesting(() => {});
 
 // Default readers report no container accounting, so tests that exercise the
 // default samplers see both signals unavailable. Individual tests override

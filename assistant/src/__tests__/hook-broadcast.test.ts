@@ -22,9 +22,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 const broadcastMessageMock = mock(
   (_msg: unknown, _conversationId?: string) => {},
 );
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: broadcastMessageMock,
-}));
+setBroadcastOverrideForTesting(broadcastMessageMock);
 
 import { HookEventSchema } from "../api/events/hook-event.js";
 import type { UserPromptSubmitContext } from "../plugin-api/types.js";
@@ -34,6 +32,7 @@ import {
   resetPluginRegistryForTests,
 } from "../plugins/registry.js";
 import type { HookFunction, Plugin } from "../plugins/types.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 
 // Point the workspace at an empty temp dir so the user-land hook loader finds
 // nothing; only the in-process hooks registered below participate.

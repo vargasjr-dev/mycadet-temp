@@ -67,15 +67,12 @@ mock.module("../auto-archive-activity.js", () => ({
 mock.module("../../runtime/sync/resource-sync-events.js", () => ({
   publishConversationListAndMetadataChanged: publish,
 }));
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    subscribe: (input: { callback: typeof callback }) => {
-      callback = input.callback;
-      return { dispose, active: true, connectionId: "test" };
-    },
-  },
-}));
+setHubSubscribeOverrideForTesting((input: { callback: typeof callback }) => {
+  callback = input.callback;
+  return { dispose, active: true, connectionId: "test" };
+});
 
+import { setHubSubscribeOverrideForTesting } from "../../runtime/assistant-event-hub.js";
 import { ConversationAutoArchiveWorker } from "../auto-archive.js";
 
 let worker: ConversationAutoArchiveWorker;

@@ -9,6 +9,8 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setBroadcastOverrideForTesting } from "../../assistant-event-hub.js";
+
 type Broadcast = Record<string, unknown>;
 
 let broadcasts: Broadcast[] = [];
@@ -17,11 +19,7 @@ const broadcastMock = mock((message: Broadcast) => {
   broadcasts.push(message);
 });
 
-const actualHub = await import("../../assistant-event-hub.js");
-mock.module("../../assistant-event-hub.js", () => ({
-  ...actualHub,
-  broadcastMessage: broadcastMock,
-}));
+setBroadcastOverrideForTesting(broadcastMock);
 
 const { CONTACT_PROMPT_ROUTES } = await import("../contact-prompt-routes.js");
 const { resolveGuardianForm } = await import("../../guardian-form-registry.js");

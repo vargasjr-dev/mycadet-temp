@@ -16,13 +16,8 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 // Avoid spinning up the real event hub for the pinned/groups branches.
-mock.module("../../assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    publish: async () => {},
-    subscribe: () => () => {},
-  },
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
+setHubPublishOverrideForTesting(() => {});
 
 let flagEnabled = false;
 mock.module("../../../config/assistant-initiated-threads-gate.js", () => ({
@@ -36,6 +31,10 @@ import { initializeDb } from "../../../persistence/db-init.js";
 import { createGroup } from "../../../persistence/group-crud.js";
 import { rawRun } from "../../../persistence/raw-query.js";
 import { conversations } from "../../../persistence/schema/index.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../../assistant-event-hub.js";
 import { ROUTES as CONVERSATION_LIST_ROUTES } from "../conversation-list-routes.js";
 import type { RouteDefinition } from "../types.js";
 

@@ -20,9 +20,7 @@ import type { ToolContext, ToolExecutionResult } from "../tools/types.js";
 // Module mocks (must precede the import of the module under test)
 // ---------------------------------------------------------------------------
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: mock(() => {}),
-}));
+setBroadcastOverrideForTesting(mock(() => {}));
 
 mock.module("../daemon/conversation-surfaces.js", () => ({
   refreshSurfacesForApp: mock(() => {}),
@@ -71,6 +69,7 @@ import {
   createToolExecutor,
   resolveConversationAttribution,
 } from "../daemon/conversation-tool-setup.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 import { setConfig } from "./helpers/set-config.js";
 

@@ -28,9 +28,7 @@ const refreshSpy = mock(() => {});
 const updatePublishedSpy = mock(() => Promise.resolve());
 const broadcastSpy = mock(() => {});
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: broadcastSpy,
-}));
+setBroadcastOverrideForTesting(broadcastSpy);
 
 // Mock session-surfaces so refreshSurfacesForApp is captured
 mock.module("../daemon/conversation-surfaces.js", () => ({
@@ -65,6 +63,7 @@ mock.module("../apps/app-store.js", () => ({
 
 import { createSurfaceMutex } from "../daemon/conversation-surfaces.js";
 import { createToolExecutor } from "../daemon/conversation-tool-setup.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 // ---------------------------------------------------------------------------

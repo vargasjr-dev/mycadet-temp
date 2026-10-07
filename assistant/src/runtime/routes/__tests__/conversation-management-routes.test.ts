@@ -11,13 +11,8 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 // Stub the event hub to avoid spinning up real SSE infrastructure.
-mock.module("../../assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    publish: async () => {},
-    subscribe: () => () => {},
-  },
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
+setHubPublishOverrideForTesting(() => {});
 
 // Pinning consults connection availability, which reads the credential store.
 // Report a stored key so a seeded connection counts as credentialed.
@@ -43,6 +38,10 @@ import {
   getSchedule,
   upsertDeclaredSchedule,
 } from "../../../schedule/schedule-store.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../../assistant-event-hub.js";
 import { ROUTES as CONVERSATION_MANAGEMENT_ROUTES } from "../conversation-management-routes.js";
 import { ROUTES as INFERENCE_PROFILE_SESSION_ROUTES } from "../inference-profile-session-routes.js";
 import type { RouteDefinition } from "../types.js";

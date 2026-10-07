@@ -234,6 +234,11 @@ export class AssistantEventHub {
    * it can close its SSE stream) and its entry is removed from the hub.
    */
   subscribe(subscriber: SubscriberInput): AssistantEventSubscription {
+    if (_hubSubscribeOverrideForTesting) {
+      return _hubSubscribeOverrideForTesting(
+        subscriber,
+      ) as AssistantEventSubscription;
+    }
     // Deduplicate: dispose stale subscribers for the same clientId.
     if (subscriber.type === "client") {
       const stale: SubscriberEntry[] = [];
@@ -622,6 +627,11 @@ export class AssistantEventHub {
    * sorted by `lastActiveAt` descending.
    */
   listClientsByInterface(interfaceId: InterfaceId): ClientEntry[] {
+    if (_hubClientsOverrideForTesting?.listClientsByInterface) {
+      return _hubClientsOverrideForTesting.listClientsByInterface(
+        interfaceId,
+      ) as ClientEntry[];
+    }
     return this.clientEntries().filter((c) => c.interfaceId === interfaceId);
   }
 
@@ -790,6 +800,7 @@ export interface HubClientsOverride {
   getMostRecentClientByCapability?(
     capability: HostProxyCapability,
   ): LooseClientEntry | undefined;
+  listClientsByInterface?(interfaceId: string): LooseClientEntry[];
 }
 
 let _hubClientsOverrideForTesting: HubClientsOverride | undefined;
@@ -821,6 +832,25 @@ export function setHubPublishOverrideForTesting(
   ) => void | Promise<void>,
 ): void {
   _hubPublishOverrideForTesting = fn;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LooseSubscription = any;
+
+let _hubSubscribeOverrideForTesting:
+  | ((subscriber: LooseSubscription) => LooseSubscription)
+  | undefined;
+
+/**
+ * Test seam: intercept `assistantEventHub.subscribe` calls so tests can
+ * capture subscription callbacks or hand back a stub subscription. Fixtures
+ * may return a partial subscription; call with no arguments to restore the
+ * real subscribe.
+ */
+export function setHubSubscribeOverrideForTesting(
+  fn?: (subscriber: LooseSubscription) => LooseSubscription,
+): void {
+  _hubSubscribeOverrideForTesting = fn;
 }
 
 /** Targeting a caller of {@link broadcastMessage} may request. */

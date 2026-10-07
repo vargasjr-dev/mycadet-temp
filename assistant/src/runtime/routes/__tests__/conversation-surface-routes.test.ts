@@ -12,13 +12,8 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 // Stub the event hub to avoid spinning up real SSE infrastructure.
-mock.module("../../assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    publish: async () => {},
-    subscribe: () => () => {},
-  },
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
+setHubPublishOverrideForTesting(() => {});
 
 // Spy on the sync publish so we can assert the invalidation fires after a
 // successful write without standing up the real broadcast machinery.
@@ -44,6 +39,10 @@ import {
 import { getDb } from "../../../persistence/db-connection.js";
 import { initializeDb } from "../../../persistence/db-init.js";
 import { conversations } from "../../../persistence/schema/index.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../../assistant-event-hub.js";
 import { ROUTES as CONVERSATION_LIST_ROUTES } from "../conversation-list-routes.js";
 import { ROUTES as CONVERSATION_MANAGEMENT_ROUTES } from "../conversation-management-routes.js";
 import { BadRequestError, NotFoundError } from "../errors.js";

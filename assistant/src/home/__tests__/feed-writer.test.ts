@@ -18,6 +18,11 @@ import {
   test,
 } from "bun:test";
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../../runtime/assistant-event-hub.js";
+
 // ─── assistantEventHub mock ────────────────────────────────────────────
 // We spy on `publish` so the SSE-publish test can assert the writer
 // fires a `home_feed_updated` event with the correct `newItemCount`.
@@ -28,17 +33,10 @@ import {
 // us to thread the full `AssistantEvent` type through the tests.
 const publishSpy = mock<(event: unknown) => Promise<void>>(async () => {});
 
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    publish: publishSpy,
-    // Minimal stubs — the writer only touches `.publish`, but the
-    // hub's real shape has more fields. Tests never call them.
-    subscribe: () => () => {},
-  },
-  broadcastMessage: (message: unknown, conversationId?: string) => {
-    void publishSpy({ message, conversationId });
-  },
-}));
+setBroadcastOverrideForTesting((message: unknown, conversationId?: string) => {
+  void publishSpy({ message, conversationId });
+});
+setHubPublishOverrideForTesting(publishSpy);
 
 // Dynamic import so the module resolves after the mock above is in
 // place. Bun's `mock.module` needs to run before the real import is

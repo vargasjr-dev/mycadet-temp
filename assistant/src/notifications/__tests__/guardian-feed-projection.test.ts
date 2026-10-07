@@ -12,16 +12,16 @@ import {
   test,
 } from "bun:test";
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../../runtime/assistant-event-hub.js";
+
 // The feed writer publishes `home_feed_updated` on every write; the hub is
 // stubbed so tests run without an SSE server. Mocked before the writer
 // module is imported so the import picks it up.
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    publish: async () => {},
-    subscribe: () => () => {},
-  },
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
+setHubPublishOverrideForTesting(() => {});
 
 // Gateway reads used by reconciliation. Stubs are swapped per test; the
 // spread keeps every other export real so transitive importers keep

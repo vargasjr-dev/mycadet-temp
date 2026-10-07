@@ -9,23 +9,18 @@
  *   - SSE event publication on create AND delete
  */
 
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
 // Capture publish() invocations so the tests can assert on emitted events
 // without spinning up real SSE infrastructure.
 const publishCalls: unknown[] = [];
 
-mock.module("../../assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    publish: async (event: unknown) => {
-      publishCalls.push(event);
-    },
-    subscribe: () => () => {},
-  },
-  broadcastMessage: (message: unknown, conversationId?: string) => {
-    publishCalls.push({ message, conversationId });
-  },
-}));
+setBroadcastOverrideForTesting((message: unknown, conversationId?: string) => {
+  publishCalls.push({ message, conversationId });
+});
+setHubPublishOverrideForTesting(async (event: unknown) => {
+  publishCalls.push(event);
+});
 
 import { getDb } from "../../../persistence/db-connection.js";
 import { initializeDb } from "../../../persistence/db-init.js";
@@ -34,6 +29,10 @@ import {
   messageBookmarks,
   messages,
 } from "../../../persistence/schema/index.js";
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../../assistant-event-hub.js";
 import { ROUTES as BOOKMARK_ROUTES } from "../bookmark-routes.js";
 import type { RouteDefinition, RouteHandlerArgs } from "../types.js";
 

@@ -1,4 +1,10 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import {
+  setBroadcastOverrideForTesting,
+  setHubClientsForTesting,
+  setHubPublishOverrideForTesting,
+} from "../runtime/assistant-event-hub.js";
 
 // ── Module mocks ─────────────────────────────────────────────────────
 
@@ -21,38 +27,34 @@ type MockClient = {
 };
 let mockClients: MockClient[] = [];
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    publish: async (event: unknown, _options?: unknown) => {
-      // `interaction_resolved` envelopes are emitted by the
-      // pending-interactions tracker for every resolution. They are
-      // orthogonal to the host-browser wire messages these tests assert
-      // on, so swallow them here.
-      if (
-        (event as { type?: string } | null)?.type === "interaction_resolved"
-      ) {
-        return;
-      }
-      publishedEvents.push(event);
-    },
-    getMostRecentClientByCapability: (cap: string) =>
-      mockClients.find((c) => c.capabilities.includes(cap)),
-    listClientsByCapability: (cap: string) =>
-      mockClients.filter((c) => c.capabilities.includes(cap)),
-    listClientsByInterface: (interfaceId: string) =>
-      mockClients.filter((c) => c.interfaceId === interfaceId),
-    getClientById: (clientId: string) =>
-      mockClients.find((c) => c.clientId === clientId),
-    getActorPrincipalIdForClient: (clientId: string) =>
-      mockClients.find((c) => c.clientId === clientId)?.actorPrincipalId,
-  },
-  broadcastMessage: (msg: unknown) => {
-    if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
-      return;
-    }
-    publishedEvents.push(msg);
-  },
-}));
+setBroadcastOverrideForTesting((msg: unknown) => {
+  if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
+    return;
+  }
+  publishedEvents.push(msg);
+});
+setHubClientsForTesting({
+  getClientById: (clientId: string) =>
+    mockClients.find((c) => c.clientId === clientId),
+  getActorPrincipalIdForClient: (clientId: string) =>
+    mockClients.find((c) => c.clientId === clientId)?.actorPrincipalId,
+  listClientsByCapability: (cap: string) =>
+    mockClients.filter((c) => c.capabilities.includes(cap)),
+  getMostRecentClientByCapability: (cap: string) =>
+    mockClients.find((c) => c.capabilities.includes(cap)),
+  listClientsByInterface: (interfaceId: string) =>
+    mockClients.filter((c) => c.interfaceId === interfaceId),
+});
+setHubPublishOverrideForTesting(async (event: unknown, _options?: unknown) => {
+  // `interaction_resolved` envelopes are emitted by the
+  // pending-interactions tracker for every resolution. They are
+  // orthogonal to the host-browser wire messages these tests assert
+  // on, so swallow them here.
+  if ((event as { type?: string } | null)?.type === "interaction_resolved") {
+    return;
+  }
+  publishedEvents.push(event);
+});
 
 // ── Real imports (after mocks) ───────────────────────────────────────
 

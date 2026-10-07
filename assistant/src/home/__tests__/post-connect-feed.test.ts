@@ -3,16 +3,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import {
+  setBroadcastOverrideForTesting,
+  setHubPublishOverrideForTesting,
+} from "../../runtime/assistant-event-hub.js";
+
 // ─── assistantEventHub mock ────────────────────────────────────────────
 const publishSpy = mock<(event: unknown) => Promise<void>>(async () => {});
 
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  assistantEventHub: {
-    publish: publishSpy,
-    subscribe: () => () => {},
-  },
-  broadcastMessage: async () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
+setHubPublishOverrideForTesting(publishSpy);
 
 const { emitPostConnectNudge } = await import("../post-connect-feed.js");
 const { readHomeFeed } = await import("../feed-writer.js");

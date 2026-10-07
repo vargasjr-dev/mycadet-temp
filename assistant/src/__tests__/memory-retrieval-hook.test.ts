@@ -60,9 +60,7 @@ mock.module("../daemon/trust-context.js", () => ({
 // `prepareMemory` for `memory_status`) through the shared `broadcastMessage`
 // hub. Stub it so tests can assert what the hook emits.
 const broadcastMessageMock = mock((_msg: unknown) => {});
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: broadcastMessageMock,
-}));
+setBroadcastOverrideForTesting(broadcastMessageMock);
 
 import {
   type UserPromptSubmitContext,
@@ -77,6 +75,7 @@ import type { QdrantSparseVector } from "../persistence/embeddings/qdrant-client
 import type { ConversationGraphMemory } from "../plugins/defaults/memory/graph/conversation-graph-memory.js";
 import userPromptSubmitMemoryRetrieval from "../plugins/defaults/memory/hooks/user-prompt-submit.js";
 import type { Message } from "../providers/types.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 import { setConfig } from "./helpers/set-config.js";
 
