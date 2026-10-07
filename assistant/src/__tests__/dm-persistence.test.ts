@@ -15,51 +15,22 @@
  * point used by `inbound-slack-persistence.test.ts` — to keep the assertion
  * focused on the DM-vs-channel parity rather than the full HTTP plumbing.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
-const addMessageCalls: Array<{
-  conversationId: string;
-  role: string;
-  content: string;
-  metadata?: Record<string, unknown>;
-}> = [];
+import {
+  ensureConversationExists,
+  getMessages,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  addMessage: async (
-    conversationId: string,
-    role: string,
-    content: string,
-    options?: { metadata?: Record<string, unknown> },
-  ) => {
-    addMessageCalls.push({
-      conversationId,
-      role,
-      content,
-      metadata: options?.metadata,
-    });
-    return { id: `persisted-${addMessageCalls.length}` };
-  },
-  getConversation: () => null,
-  provenanceFromTrustContext: () => ({}),
-  setConversationOriginChannelIfUnset: () => {},
-  setConversationOriginInterfaceIfUnset: () => {},
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
+beforeAll(async () => {
+  await initializeDb();
+});
 
-mock.module("../persistence/conversation-disk-view.js", () => ({
-  syncMessageToDisk: () => {},
-  updateMetaFile: () => {},
-}));
-
-mock.module("../persistence/attachments-store.js", () => ({
-  attachmentExists: () => false,
-  linkAttachmentToMessage: () => {},
-  attachInlineAttachmentToMessage: () => {},
-  validateAttachmentUpload: () => ({ ok: true }),
-  AttachmentUploadError: class extends Error {},
-}));
+// Real rows persist across tests in a file — give every test its own
+// conversation so "the last persisted row" is unambiguous.
+let convSeq = 0;
+let conversationId: string;
 
 import type {
   TurnChannelContext,
@@ -94,7 +65,7 @@ function createSlackTurnContext(): MessagingConversationContext {
   let processing = false;
   let owner = 0;
   return {
-    conversationId: "conv-dm-test",
+    conversationId,
     messages: [],
     isProcessing: () => processing,
     setProcessing: (value: boolean) => {
@@ -123,10 +94,13 @@ function createSlackTurnContext(): MessagingConversationContext {
 }
 
 function lastPersistedSlackMeta(): SlackMessageMetadata | null {
-  expect(addMessageCalls.length).toBeGreaterThan(0);
-  const metadata = addMessageCalls.at(-1)?.metadata;
-  expect(metadata).toBeDefined();
-  const raw = metadata?.slackMeta;
+  const rows = getMessages(conversationId);
+  expect(rows.length).toBeGreaterThan(0);
+  const metadata = JSON.parse(rows.at(-1)!.metadata!) as Record<
+    string,
+    unknown
+  >;
+  const raw = metadata.slackMeta;
   if (raw === undefined) {
     return null;
   }
@@ -136,7 +110,8 @@ function lastPersistedSlackMeta(): SlackMessageMetadata | null {
 
 describe("PR 16 — Slack DM persistence parity", () => {
   beforeEach(() => {
-    addMessageCalls.length = 0;
+    conversationId = `conv-dm-${++convSeq}`;
+    ensureConversationExists(conversationId, "cadet");
   });
 
   test("DM inbound persists slackMeta with channelId/channelTs and no threadTs", async () => {
@@ -169,9 +144,10 @@ describe("PR 16 — Slack DM persistence parity", () => {
 
     // The transient `slackInbound` carrier key must not leak into the stored
     // metadata column — it's an in-memory plumbing field only.
-    const persistedMeta = addMessageCalls.at(-1)!.metadata;
-    expect(persistedMeta).toBeDefined();
-    expect(persistedMeta!.slackInbound).toBeUndefined();
+    const persistedMeta = JSON.parse(
+      getMessages(conversationId).at(-1)!.metadata!,
+    ) as Record<string, unknown>;
+    expect(persistedMeta.slackInbound).toBeUndefined();
   });
 
   test("DM persists slackMeta even when displayName is omitted", async () => {
@@ -249,7 +225,6 @@ describe("PR 16 — Slack DM persistence parity", () => {
 
     // Now dispatch a DM and assert that every shared field has the same
     // shape — only `threadTs` (and the inputs themselves) differ.
-    addMessageCalls.length = 0;
     await persistQueuedMessageBody(ctx, {
       content: "DM reply",
       requestId: "req-dm-2",

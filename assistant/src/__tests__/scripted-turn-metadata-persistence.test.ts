@@ -20,51 +20,22 @@
  * Mirrors the mock harness of `client-os-metadata-persistence.test.ts`:
  * exercises `persistQueuedMessageBody` directly with a captured `addMessage`.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
-const addMessageCalls: Array<{
-  conversationId: string;
-  role: string;
-  content: string;
-  metadata?: Record<string, unknown>;
-}> = [];
+import {
+  ensureConversationExists,
+  getMessages,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
 
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  addMessage: async (
-    conversationId: string,
-    role: string,
-    content: string,
-    options?: { metadata?: Record<string, unknown> },
-  ) => {
-    addMessageCalls.push({
-      conversationId,
-      role,
-      content,
-      metadata: options?.metadata,
-    });
-    return { id: `persisted-${addMessageCalls.length}` };
-  },
-  getConversation: () => null,
-  provenanceFromTrustContext: () => ({}),
-  setConversationOriginChannelIfUnset: () => {},
-  setConversationOriginInterfaceIfUnset: () => {},
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
+beforeAll(async () => {
+  await initializeDb();
+});
 
-mock.module("../persistence/conversation-disk-view.js", () => ({
-  syncMessageToDisk: () => {},
-  updateMetaFile: () => {},
-}));
-
-mock.module("../persistence/attachments-store.js", () => ({
-  attachmentExists: () => false,
-  linkAttachmentToMessage: () => {},
-  attachInlineAttachmentToMessage: () => {},
-  validateAttachmentUpload: () => ({ ok: true }),
-  AttachmentUploadError: class extends Error {},
-}));
+// Real rows persist across tests in a file — give every test its own
+// conversation so "the last persisted row" is unambiguous.
+let convSeq = 0;
+let conversationId: string;
 
 import type {
   TurnChannelContext,
@@ -92,7 +63,7 @@ function createContext(): MessagingConversationContext {
   let processing = false;
   let owner = 0;
   return {
-    conversationId: "conv-scripted-test",
+    conversationId,
     messages: [],
     isProcessing: () => processing,
     setProcessing: (value: boolean) => {
@@ -122,15 +93,17 @@ function createContext(): MessagingConversationContext {
 }
 
 function lastUserMetadata(): Record<string, unknown> {
-  expect(addMessageCalls.length).toBeGreaterThan(0);
-  const metadata = addMessageCalls.at(-1)?.metadata;
-  expect(metadata).toBeDefined();
-  return metadata!;
+  const rows = getMessages(conversationId);
+  expect(rows.length).toBeGreaterThan(0);
+  const metadata = rows.at(-1)!.metadata;
+  expect(metadata).not.toBeNull();
+  return JSON.parse(metadata!) as Record<string, unknown>;
 }
 
 describe("scripted-turn metadata persistence", () => {
   beforeEach(() => {
-    addMessageCalls.length = 0;
+    conversationId = `conv-scripted-${++convSeq}`;
+    ensureConversationExists(conversationId, "cadet");
   });
 
   test("stamps the typed option", async () => {
@@ -233,7 +206,8 @@ describe("author contact id on a persisted user message", () => {
   };
 
   beforeEach(() => {
-    addMessageCalls.length = 0;
+    conversationId = `conv-scripted-${++convSeq}`;
+    ensureConversationExists(conversationId, "cadet");
   });
 
   test("a message relayed from the sender names them as its author", async () => {

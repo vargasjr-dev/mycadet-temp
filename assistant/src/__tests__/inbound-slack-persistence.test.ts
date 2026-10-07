@@ -16,55 +16,26 @@
  * A non-Slack control case asserts that the enrichment is silent for other
  * channels — no `slackMeta` key appears in the persisted metadata.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
+
+import {
+  ensureConversationExists,
+  getMessages,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
+
+beforeAll(async () => {
+  await initializeDb();
+});
+
+// Real rows persist across tests in a file — give every test its own
+// conversation so "the last persisted row" is unambiguous.
+let convSeq = 0;
+let conversationId: string;
 
 // ---------------------------------------------------------------------------
 // Mocks (must precede module imports under test)
 // ---------------------------------------------------------------------------
-
-const addMessageCalls: Array<{
-  conversationId: string;
-  role: string;
-  content: string;
-  metadata?: Record<string, unknown>;
-}> = [];
-
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  addMessage: async (
-    conversationId: string,
-    role: string,
-    content: string,
-    options?: { metadata?: Record<string, unknown> },
-  ) => {
-    addMessageCalls.push({
-      conversationId,
-      role,
-      content,
-      metadata: options?.metadata,
-    });
-    return { id: `persisted-${addMessageCalls.length}` };
-  },
-  getConversation: () => null,
-  provenanceFromTrustContext: () => ({}),
-  setConversationOriginChannelIfUnset: () => {},
-  setConversationOriginInterfaceIfUnset: () => {},
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
-
-mock.module("../persistence/conversation-disk-view.js", () => ({
-  syncMessageToDisk: () => {},
-  updateMetaFile: () => {},
-}));
-
-mock.module("../persistence/attachments-store.js", () => ({
-  attachmentExists: () => false,
-  linkAttachmentToMessage: () => {},
-  attachInlineAttachmentToMessage: () => {},
-  validateAttachmentUpload: () => ({ ok: true }),
-  AttachmentUploadError: class extends Error {},
-}));
 
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
@@ -105,7 +76,7 @@ function createTestContext(
   let processing = false;
   let owner = 0;
   return {
-    conversationId: "conv-test",
+    conversationId,
     messages: [],
     isProcessing: () => processing,
     setProcessing: (value: boolean) => {
@@ -134,10 +105,11 @@ function createTestContext(
 }
 
 function lastPersistedMetadata(): Record<string, unknown> {
-  expect(addMessageCalls.length).toBeGreaterThan(0);
-  const metadata = addMessageCalls.at(-1)?.metadata;
-  expect(metadata).toBeDefined();
-  return metadata!;
+  const rows = getMessages(conversationId);
+  expect(rows.length).toBeGreaterThan(0);
+  const metadata = rows.at(-1)!.metadata;
+  expect(metadata).not.toBeNull();
+  return JSON.parse(metadata!) as Record<string, unknown>;
 }
 
 function readPersistedSlackMeta(): SlackMessageMetadata | null {
@@ -156,7 +128,8 @@ function readPersistedSlackMeta(): SlackMessageMetadata | null {
 
 describe("PR 11 — inbound Slack message metadata persistence", () => {
   beforeEach(() => {
-    addMessageCalls.length = 0;
+    conversationId = `conv-slack-in-${++convSeq}`;
+    ensureConversationExists(conversationId, "cadet");
   });
 
   test("Slack thread reply: slackMeta.threadTs reflects sourceMetadata.threadId", async () => {
@@ -236,7 +209,7 @@ describe("PR 11 — inbound Slack message metadata persistence", () => {
       },
     });
 
-    expect(JSON.parse(addMessageCalls.at(-1)!.content)).toEqual([
+    expect(getMessages(conversationId).at(-1)!.content).toEqual([
       { type: "text", text: "@leo can you check this?" },
     ]);
 
