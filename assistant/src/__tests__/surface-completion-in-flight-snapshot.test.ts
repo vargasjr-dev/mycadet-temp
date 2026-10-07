@@ -19,13 +19,9 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type { AssistantEvent } from "../api/index.js";
 
 let broadcasts: AssistantEvent[] = [];
-const realEventHub = await import("../runtime/assistant-event-hub.js");
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  ...realEventHub,
-  broadcastMessage: (msg: AssistantEvent) => {
-    broadcasts.push(msg);
-  },
-}));
+setBroadcastOverrideForTesting((msg: AssistantEvent) => {
+  broadcasts.push(msg);
+});
 
 /**
  * Stand-in message store. `getMessages` stays empty for the in-flight cases so
@@ -79,6 +75,7 @@ import type {
 import type { CurrentTurnSurface } from "../daemon/conversation-surface-state.js";
 import type { SurfaceStateEntry } from "../daemon/conversation-surface-state.js";
 import type { SurfaceType } from "../daemon/message-protocol.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
 
 const CONVERSATION_ID = "conv-in-flight-surface-1";

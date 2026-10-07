@@ -2,12 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
 
-const realEventHub = await import("../runtime/assistant-event-hub.js");
-
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  ...realEventHub,
-  broadcastMessage: (_msg: AssistantEvent) => {},
-}));
+setBroadcastOverrideForTesting(() => {});
 
 // Mock the persistence layer the surface helpers reach into so we can
 // observe writes without touching SQLite. We swap this out per test by
@@ -52,6 +47,7 @@ import type {
   SurfaceData,
   SurfaceType,
 } from "../daemon/message-protocol.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 function makeContext(sent: AssistantEvent[] = []): Conversation {

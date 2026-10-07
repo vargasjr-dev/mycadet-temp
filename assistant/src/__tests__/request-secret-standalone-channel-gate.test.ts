@@ -9,6 +9,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { setConfig } from "./helpers/set-config.js";
 
 // A short permission timeout keeps a leaked prompt from lingering; the default
@@ -16,9 +17,9 @@ import { setConfig } from "./helpers/set-config.js";
 setConfig("timeouts", { permissionTimeoutSec: 0.01 });
 
 let broadcastMessages: AssistantEvent[] = [];
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: AssistantEvent) => broadcastMessages.push(msg),
-}));
+setBroadcastOverrideForTesting((msg: AssistantEvent) =>
+  broadcastMessages.push(msg),
+);
 
 const _piStore = new Map<string, { rpcResolve?: (value: unknown) => void }>();
 mock.module("../runtime/pending-interactions.js", () => ({

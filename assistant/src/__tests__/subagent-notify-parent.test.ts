@@ -97,9 +97,7 @@ mock.module("../persistence/subagent-store.js", () => ({
     records.get(conversationId),
 }));
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
 
 import type { Conversation } from "../daemon/conversation.js";
 import { isToolActiveForContext } from "../daemon/conversation-tool-setup.js";
@@ -107,6 +105,7 @@ import { beginTurnFinalization } from "../daemon/turn-finalization.js";
 import { setLiveVoiceSessionManagerForTesting } from "../live-voice/live-voice-manager.js";
 import { LiveVoiceSessionManager } from "../live-voice/live-voice-session-manager.js";
 import type { SubagentRecord } from "../persistence/subagent-store.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import {
   injectMessageIntoParent,
   notifyParentFromChild,

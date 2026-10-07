@@ -197,9 +197,7 @@ mock.module("../../../../persistence/conversation-disk-view.js", () => ({
   syncMessageToDisk: () => {},
 }));
 
-mock.module("../../../../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
 
 mock.module("../../../../runtime/sync/resource-sync-events.js", () => ({
   publishConversationMessagesChanged: () => {},
@@ -258,6 +256,7 @@ import type {
   ProviderResponse,
   SendMessageOptions,
 } from "../../../../providers/types.js";
+import { setBroadcastOverrideForTesting } from "../../../../runtime/assistant-event-hub.js";
 import { ProviderError } from "../../../../util/errors.js";
 import { memoryRetrospectiveJob } from "../memory-retrospective-job.js";
 

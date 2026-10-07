@@ -31,11 +31,10 @@ mock.module("../daemon/conversation-registry.js", () => ({
   }),
 }));
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
 
 import type { AssistantEvent } from "../api/index.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { SubagentManager } from "../subagent/manager.js";
 import type { SubagentState } from "../subagent/types.js";
 

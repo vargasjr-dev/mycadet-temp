@@ -74,9 +74,7 @@ mock.module(
   }),
 );
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
 
 // Captures the most recent provider resolution + sendMessage invocation so
 // tests can assert on call site, overrideProfile, tool_choice, and signal.
@@ -136,6 +134,7 @@ mock.module("../providers/provider-send-message.js", () => ({
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { conversations } from "../persistence/schema/index.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 import { getWorkspaceDir } from "../util/platform.js";
 import { runLeaf, WorkflowUnknownProfileError } from "./leaf-runner.js";

@@ -10,11 +10,9 @@ mock.module("../platform/consent-cache.js", () => ({
 }));
 
 let broadcastedMessages: AssistantEvent[] = [];
-const realEventHub = await import("../runtime/assistant-event-hub.js");
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  ...realEventHub,
-  broadcastMessage: (msg: AssistantEvent) => broadcastedMessages.push(msg),
-}));
+setBroadcastOverrideForTesting((msg: AssistantEvent) =>
+  broadcastedMessages.push(msg),
+);
 
 // Stub the child-conversation launcher so the launch_conversation commit path
 // runs without spinning up a real conversation.
@@ -42,6 +40,7 @@ import {
   isActivationSession,
   markActivationSession,
 } from "../plugins/defaults/memory/activation-session-store.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { queryTelemetryOutboxBatch } from "../telemetry/telemetry-events-outbox.js";
 import type { OnboardingTelemetryEvent } from "../telemetry/types.js";
 

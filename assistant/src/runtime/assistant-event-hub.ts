@@ -725,6 +725,29 @@ export const assistantEventHub = new AssistantEventHub({ maxSubscribers: 100 });
  */
 let _hubChain = Promise.resolve();
 
+/**
+ * Signature of {@link broadcastMessage} — the override receives exactly the
+ * arguments the SUT passed.
+ */
+export type BroadcastOverride = (
+  msg: AssistantEvent,
+  conversationId?: string,
+  options?: BroadcastMessageOptions,
+) => void;
+
+let _broadcastOverrideForTesting: BroadcastOverride | undefined;
+
+/**
+ * Test seam: redirect every {@link broadcastMessage} call to `fn` — a sink to
+ * capture events, a no-op to silence them, or any bespoke behavior the old
+ * mock bodies encoded. Call with no arguments to restore the real broadcast.
+ * Must be reset between tests (a lingering override silently swallows live
+ * events), so prefer calling it from `beforeEach`/`afterEach`.
+ */
+export function setBroadcastOverrideForTesting(fn?: BroadcastOverride): void {
+  _broadcastOverrideForTesting = fn;
+}
+
 /** Targeting a caller of {@link broadcastMessage} may request. */
 export type BroadcastMessageOptions = Pick<
   AssistantEventPublishOptions,
@@ -752,6 +775,10 @@ export function broadcastMessage(
   conversationId?: string,
   options?: BroadcastMessageOptions,
 ): void {
+  if (_broadcastOverrideForTesting) {
+    _broadcastOverrideForTesting(msg, conversationId, options);
+    return;
+  }
   const resolvedConversationId = conversationId ?? extractConversationId(msg);
   const targetClientId = options?.targetClientId;
   const targetInterfaceId = options?.targetInterfaceId;

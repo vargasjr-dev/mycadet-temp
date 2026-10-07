@@ -7,17 +7,17 @@
  * must not, or the client ends a turn that is still streaming.
  */
 
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
 import type { AssistantEvent } from "../../../api/index.js";
+import { setBroadcastOverrideForTesting } from "../../assistant-event-hub.js";
 
 // Keep the memory system off so addMessage skips indexing side effects.
 setConfig("memory", { enabled: false });
 
 // Capture what reaches connected clients, keeping the rest of the hub's
 // surface intact for the module graph's other importers.
-const eventHub = await import("../../assistant-event-hub.js");
 const broadcastEvents: AssistantEvent[] = [];
 
 /** The terminal turn events among everything broadcast so far. */
@@ -25,12 +25,9 @@ function completions(): AssistantEvent[] {
   return broadcastEvents.filter((e) => e.type === "message_complete");
 }
 
-mock.module("../../assistant-event-hub.js", () => ({
-  ...eventHub,
-  broadcastMessage: (event: AssistantEvent) => {
-    broadcastEvents.push(event);
-  },
-}));
+setBroadcastOverrideForTesting((event: AssistantEvent) => {
+  broadcastEvents.push(event);
+});
 
 const { createConversation } =
   await import("../../../persistence/conversation-crud.js");

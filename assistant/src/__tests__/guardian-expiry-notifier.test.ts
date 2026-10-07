@@ -32,11 +32,9 @@ mock.module("../runtime/gateway-client.js", () => ({
 
 // Capture hub broadcasts (interaction_resolved) emitted by pendingInteractions.
 const broadcasts: Array<Record<string, unknown>> = [];
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: Record<string, unknown>) => {
-    broadcasts.push(msg);
-  },
-}));
+setBroadcastOverrideForTesting((msg: Record<string, unknown>) => {
+  broadcasts.push(msg);
+});
 
 // The sweep withdraws cards via this module; mocking it keeps the sweep
 // import light (no surface/slack transitive deps). The completeness result
@@ -86,6 +84,7 @@ mock.module("../channels/gateway-guardian-requests.js", () => ({
 
 import { notifyExpiredGuardianRequest } from "../approvals/guardian-expiry-notifier.js";
 import type { GuardianRequestWire } from "../channels/gateway-guardian-requests.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
 import { runGuardianExpirySweep } from "../runtime/routes/guardian-expiry-sweep.js";
 

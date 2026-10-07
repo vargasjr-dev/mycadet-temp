@@ -8,9 +8,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 // Module mocks are process-global; the test runner isolates each test file in
 // its own process, so they cannot leak into other files.
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
 
 let entries: unknown[] = [];
 mock.module("../hooks/registry.js", () => ({
@@ -19,6 +17,7 @@ mock.module("../hooks/registry.js", () => ({
 
 import { callWithTimeout, runHook } from "../plugins/pipeline.js";
 import type { Message } from "../providers/types.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 
 function userPromptCtx(latestMessages: Message[]) {
   return {

@@ -220,8 +220,8 @@ mock.module("../../persistence/conversation-disk-view.js", () => ({
 // event to a wire frame and broadcasts it; `broadcastWakeSurface` broadcasts
 // the ui_surface card. Route both back to the originating conversation's
 // probe by the `conversationId` stamped on the frame.
-mock.module("../assistant-event-hub.js", () => ({
-  broadcastMessage: (frame: CapturedFrame & { conversationId?: string }) => {
+setBroadcastOverrideForTesting(
+  (frame: CapturedFrame & { conversationId?: string }) => {
     const probe = frame.conversationId
       ? wakeConvRegistry.get(frame.conversationId)
       : undefined;
@@ -243,7 +243,7 @@ mock.module("../assistant-event-hub.js", () => ({
     probe.emittedEvents.push(frame);
     probe.persistedAtEachEmit.push(probe.persistedTailCalls.length);
   },
-}));
+);
 
 // Sync invalidations published after persisting a wake trigger
 // (`persistTriggerAsEvent`). Captured so tests can assert connected clients are
@@ -391,6 +391,7 @@ import {
   __resetWakeChainForTests,
   wakeAgentForOpportunity,
 } from "../agent-wake.js";
+import { setBroadcastOverrideForTesting } from "../assistant-event-hub.js";
 
 // ── Test helpers ─────────────────────────────────────────────────────
 

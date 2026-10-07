@@ -3,11 +3,9 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type { AssistantEvent } from "../api/index.js";
 
 let broadcastedMessages: AssistantEvent[] = [];
-const realEventHub = await import("../runtime/assistant-event-hub.js");
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  ...realEventHub,
-  broadcastMessage: (msg: AssistantEvent) => broadcastedMessages.push(msg),
-}));
+setBroadcastOverrideForTesting((msg: AssistantEvent) =>
+  broadcastedMessages.push(msg),
+);
 
 // These surfaces are shown live and asserted through their client messages, so
 // history holds nothing. Stand in an empty store: the completion path reads
@@ -25,6 +23,7 @@ const { createSurfaceMutex, handleSurfaceAction, surfaceProxyResolver } =
 import type { Conversation } from "../daemon/conversation.js";
 import type { SurfaceType, UiSurfaceShow } from "../daemon/message-protocol.js";
 import type { UserMessageAttachment } from "../daemon/message-types/shared.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 interface ProcessMessageCall {

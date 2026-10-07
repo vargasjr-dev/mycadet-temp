@@ -186,26 +186,25 @@ type ApprovalBehavior = "allow" | "deny";
 let approvalBehavior: ApprovalBehavior = "allow";
 const confirmationRequests: Array<Record<string, unknown>> = [];
 
-mock.module("../assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: { type?: string; requestId?: string }) => {
-    if (msg?.type !== "confirmation_request") {
-      return;
-    }
-    confirmationRequests.push(msg as Record<string, unknown>);
-    const decision = approvalBehavior;
-    const interaction = pendingInteractions.resolve(
-      msg.requestId as string,
-      decision === "allow" ? "approved" : "rejected",
-    );
-    interaction?.directResolve?.(decision);
-  },
-}));
+setBroadcastOverrideForTesting((msg: { type?: string; requestId?: string }) => {
+  if (msg?.type !== "confirmation_request") {
+    return;
+  }
+  confirmationRequests.push(msg as Record<string, unknown>);
+  const decision = approvalBehavior;
+  const interaction = pendingInteractions.resolve(
+    msg.requestId as string,
+    decision === "allow" ? "approved" : "rejected",
+  );
+  interaction?.directResolve?.(decision);
+});
 
 import { eq } from "drizzle-orm";
 
 import { getDb, getSqlite } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
 import { acpSessionHistory } from "../../persistence/schema/index.js";
+import { setBroadcastOverrideForTesting } from "../assistant-event-hub.js";
 
 const { ROUTES } = await import("./acp-routes.js");
 

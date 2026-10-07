@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { SecretRequestEvent } from "../api/events/secret-request.js";
 import type { AssistantEvent } from "../api/index.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { setConfig } from "./helpers/set-config.js";
 
 // Capture all logger calls so we can verify secret values never appear
@@ -31,11 +32,9 @@ mock.module("../util/logger.js", () => ({
 
 // Capture broadcastMessage calls
 const broadcastedMessages: AssistantEvent[] = [];
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: AssistantEvent) => {
-    broadcastedMessages.push(msg);
-  },
-}));
+setBroadcastOverrideForTesting((msg: AssistantEvent) => {
+  broadcastedMessages.push(msg);
+});
 
 // Stub pendingInteractions — SecretPrompter registers/resolves there now
 // Use a real Map so SecretPrompter can store and retrieve promptResolve/promptReject callbacks.

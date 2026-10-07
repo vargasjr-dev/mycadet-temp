@@ -30,11 +30,9 @@ mock.module("../persistence/conversation-disk-view.js", () => ({
 
 const broadcastMessages: unknown[] = [];
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: unknown) => {
-    broadcastMessages.push(msg);
-  },
-}));
+setBroadcastOverrideForTesting((msg: unknown) => {
+  broadcastMessages.push(msg);
+});
 
 mock.module("../runtime/confirmation-request-guardian-bridge.js", () => ({
   bridgeConfirmationRequestToGuardian: () => {},
@@ -134,6 +132,7 @@ import {
   processMessage,
   processMessageInBackground,
 } from "../daemon/process-message.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { setConfig } from "./helpers/set-config.js";
 
 function createDeferred<T = void>(): Deferred<T> {

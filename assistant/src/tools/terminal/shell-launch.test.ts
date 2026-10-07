@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { setConfig } from "../../__tests__/helpers/set-config.js";
 import type { WakeOptions } from "../../runtime/agent-wake.js";
+import { setBroadcastOverrideForTesting } from "../../runtime/assistant-event-hub.js";
 import { SHELL_DID_NOT_START_MESSAGE } from "../shared/shell-output.js";
 import type { ToolContext } from "../types.js";
 
@@ -47,11 +48,7 @@ mock.module("node:child_process", () => ({
 
 setConfig("timeouts", { shellDefaultTimeoutSec: 30, shellMaxTimeoutSec: 60 });
 
-const realHub = await import("../../runtime/assistant-event-hub.js");
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  ...realHub,
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
 
 const realWake = await import("../../runtime/agent-wake.js");
 const wakeCalls: WakeOptions[] = [];

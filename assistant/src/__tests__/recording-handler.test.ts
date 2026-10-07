@@ -136,11 +136,9 @@ mock.module("node:fs", () => {
 
 // Capture broadcastMessage calls
 const broadcastedMessages: Array<{ type: string; [k: string]: unknown }> = [];
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: unknown) => {
-    broadcastedMessages.push(msg as { type: string; [k: string]: unknown });
-  },
-}));
+setBroadcastOverrideForTesting((msg: unknown) => {
+  broadcastedMessages.push(msg as { type: string; [k: string]: unknown });
+});
 
 // ─── Imports (after mocks) ──────────────────────────────────────────────────
 
@@ -151,6 +149,7 @@ import {
   handleRecordingStop,
 } from "../daemon/handlers/recording.js";
 import type { RecordingStatus } from "../daemon/message-types/computer-use.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 
 // ─── Test helpers ───────────────────────────────────────────────────────────
 

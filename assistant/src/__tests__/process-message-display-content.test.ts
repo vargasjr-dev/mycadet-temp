@@ -93,9 +93,7 @@ mock.module("../persistence/conversation-disk-view.js", () => ({
   updateMetaFile: () => {},
 }));
 
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: () => {},
-}));
+setBroadcastOverrideForTesting(() => {});
 
 mock.module("../runtime/sync/resource-sync-events.js", () => ({
   publishConversationMessagesChanged: () => {},
@@ -150,6 +148,7 @@ import type { UserMessageAttachment } from "../daemon/message-protocol.js";
 import { processMessage } from "../daemon/process-message.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import type { Message } from "../providers/types.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 
 function makeTestConversation() {
   const messages: Message[] = [];

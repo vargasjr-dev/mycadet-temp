@@ -12,14 +12,10 @@ import {
 let callOrder: string[] = [];
 
 let broadcastedMessages: AssistantEvent[] = [];
-const realEventHub = await import("../runtime/assistant-event-hub.js");
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  ...realEventHub,
-  broadcastMessage: (msg: AssistantEvent) => {
-    callOrder.push(`broadcast:${msg.type}`);
-    broadcastedMessages.push(msg);
-  },
-}));
+setBroadcastOverrideForTesting((msg: AssistantEvent) => {
+  callOrder.push(`broadcast:${msg.type}`);
+  broadcastedMessages.push(msg);
+});
 
 let loggedWarnings: Array<{ fields: Record<string, unknown>; msg: string }> =
   [];
@@ -110,6 +106,7 @@ const {
 import type { Conversation } from "../daemon/conversation.js";
 import type { SurfaceStateEntry } from "../daemon/conversation-surface-state.js";
 import type { SurfaceType } from "../daemon/message-protocol.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 const CONVERSATION_ID = "conv-history-restored-1";

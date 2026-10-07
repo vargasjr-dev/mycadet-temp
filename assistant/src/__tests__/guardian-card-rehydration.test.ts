@@ -17,13 +17,9 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type { AssistantEvent } from "../api/index.js";
 
 const broadcasts: AssistantEvent[] = [];
-const realEventHub = await import("../runtime/assistant-event-hub.js");
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  ...realEventHub,
-  broadcastMessage: (msg: AssistantEvent) => {
-    broadcasts.push(msg);
-  },
-}));
+setBroadcastOverrideForTesting((msg: AssistantEvent) => {
+  broadcasts.push(msg);
+});
 
 // Stand in for the messages table: `markSurfaceCompleted` scans it for the
 // block carrying the surface id and writes the patched content back.
@@ -63,6 +59,7 @@ const { withdrawGuardianRequestCards } =
   await import("../approvals/guardian-card-withdrawal.js");
 const { renderHistoryContent } = await import("../daemon/handlers/shared.js");
 
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import type { SimGuardianRequest } from "./guardian-gateway-sim.js";
 
 const CONVERSATION_ID = "conv-rehydration-1";

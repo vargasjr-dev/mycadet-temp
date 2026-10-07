@@ -122,11 +122,9 @@ mock.module("../home/feed-writer.js", () => ({
 }));
 
 const broadcastEvents: Array<Record<string, unknown>> = [];
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: Record<string, unknown>) => {
-    broadcastEvents.push(msg);
-  },
-}));
+setBroadcastOverrideForTesting((msg: Record<string, unknown>) => {
+  broadcastEvents.push(msg);
+});
 
 mock.module("../runtime/services/conversation-serializer.js", () => ({
   buildConversationDetailResponse: () => null,
@@ -168,6 +166,7 @@ mock.module("../daemon/conversation-store.js", () => ({
   getOrCreateConversation: async () => activeConversation,
 }));
 
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { ROUTES } from "../runtime/routes/conversation-management-routes.js";
 import { callHandler } from "./helpers/call-route-handler.js";
 

@@ -123,20 +123,18 @@ let approvalBehavior: "allow" | "deny" = "allow";
 const confirmationRequests: Array<Record<string, unknown>> = [];
 const broadcasts: Array<Record<string, unknown>> = [];
 
-mock.module("../../assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: { type?: string; requestId?: string }) => {
-    broadcasts.push(msg as Record<string, unknown>);
-    if (msg?.type !== "confirmation_request") {
-      return;
-    }
-    confirmationRequests.push(msg as Record<string, unknown>);
-    const interaction = pendingInteractions.resolve(
-      msg.requestId as string,
-      approvalBehavior === "allow" ? "approved" : "rejected",
-    );
-    interaction?.directResolve?.(approvalBehavior);
-  },
-}));
+setBroadcastOverrideForTesting((msg: { type?: string; requestId?: string }) => {
+  broadcasts.push(msg as Record<string, unknown>);
+  if (msg?.type !== "confirmation_request") {
+    return;
+  }
+  confirmationRequests.push(msg as Record<string, unknown>);
+  const interaction = pendingInteractions.resolve(
+    msg.requestId as string,
+    approvalBehavior === "allow" ? "approved" : "rejected",
+  );
+  interaction?.directResolve?.(approvalBehavior);
+});
 
 // The credential a spawn would resolve, which every credential-failure marker
 // is compared against before it is served. Only the vault read is stubbed:
@@ -165,6 +163,7 @@ import {
   AcpSessionNotFoundError,
 } from "../../../acp/session-manager.js";
 import { initializeDb } from "../../../persistence/db-init.js";
+import { setBroadcastOverrideForTesting } from "../../assistant-event-hub.js";
 import { FailedDependencyError, NotFoundError } from "../errors.js";
 
 const { ROUTES } = await import("../acp-routes.js");

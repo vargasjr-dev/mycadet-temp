@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { setConfig } from "../../__tests__/helpers/set-config.js";
+import { setBroadcastOverrideForTesting } from "../../runtime/assistant-event-hub.js";
 import {
   MAX_OUTPUT_LENGTH,
   OUTPUT_TRUNCATED_TAG,
@@ -23,13 +24,9 @@ setConfig("timeouts", { shellDefaultTimeoutSec: 30, shellMaxTimeoutSec: 60 });
 type CapturedEvent = { type: string } & Record<string, unknown>;
 const events: CapturedEvent[] = [];
 
-const realHub = await import("../../runtime/assistant-event-hub.js");
-mock.module("../../runtime/assistant-event-hub.js", () => ({
-  ...realHub,
-  broadcastMessage: (msg: unknown) => {
-    events.push(msg as CapturedEvent);
-  },
-}));
+setBroadcastOverrideForTesting((msg: unknown) => {
+  events.push(msg as CapturedEvent);
+});
 
 // Background completion wakes the agent; that side-effect is out of scope here.
 const realWake = await import("../../runtime/agent-wake.js");

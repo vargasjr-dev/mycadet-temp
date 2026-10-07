@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { setConfig } from "../__tests__/helpers/set-config.js";
 import type { QuestionRequestEvent } from "../api/events/question-request.js";
 import type { AssistantEvent } from "../api/index.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import type {
   QuestionBatchSubmission,
   QuestionPromptResult,
@@ -52,11 +53,7 @@ mock.module("../runtime/pending-interactions.js", () => ({
 // the real module so other tests in the same `bun test` run (which
 // share module-level mocks) still see e.g. `assistantEventHub`.
 let _sentBuffer: AssistantEvent[] = [];
-const realEventHub = await import("../runtime/assistant-event-hub.js");
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  ...realEventHub,
-  broadcastMessage: (msg: AssistantEvent) => _sentBuffer.push(msg),
-}));
+setBroadcastOverrideForTesting((msg: AssistantEvent) => _sentBuffer.push(msg));
 
 const { QuestionPrompter, QuestionBatchValidationError, buildBatchEntries } =
   await import("./question-prompter.js");

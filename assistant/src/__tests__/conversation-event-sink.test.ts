@@ -1,12 +1,14 @@
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
+
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 
 const published: Array<{ type: string; conversationId: string | undefined }> =
   [];
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: { type: string }, conversationId?: string) => {
+setBroadcastOverrideForTesting(
+  (msg: { type: string }, conversationId?: string) => {
     published.push({ type: msg.type, conversationId });
   },
-}));
+);
 
 const { conversationEventSink } =
   await import("../daemon/conversation-event-sink.js");

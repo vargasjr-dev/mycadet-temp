@@ -11,16 +11,14 @@
  * drains itself instead of leaving the promoted message at the head of a queue
  * that never runs.
  */
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
 
 const broadcasts: AssistantEvent[] = [];
-mock.module("../runtime/assistant-event-hub.js", () => ({
-  broadcastMessage: (msg: AssistantEvent) => {
-    broadcasts.push(msg);
-  },
-}));
+setBroadcastOverrideForTesting((msg: AssistantEvent) => {
+  broadcasts.push(msg);
+});
 
 import type { Conversation } from "../daemon/conversation.js";
 import type { QueuedMessage } from "../daemon/conversation-queue-manager.js";
@@ -32,6 +30,7 @@ import {
   deleteQueuedMessage,
   steerToMessage,
 } from "../daemon/handlers/conversations.js";
+import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 
 const CONV = "queued-cancel-conv";
 
