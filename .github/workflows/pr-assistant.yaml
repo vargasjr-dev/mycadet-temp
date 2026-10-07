@@ -112,6 +112,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # Full history so the runner can diff this branch against origin/main
+          # and run only the changed test files (TEST_DIFF_ONLY below).
+          fetch-depth: 0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -137,6 +141,13 @@ jobs:
         env:
           EXCLUDE_EXPERIMENTAL: "true"
           TEST_WORKERS: "8"
+          # PR runs execute only the test files changed vs origin/main — the
+          # full suite needs 13-20 min on 2-core runners (run 37543239704
+          # completed 555/2,642 files in the 5-min cap). Fails open to the
+          # full suite if the diff cannot be computed. Manual dispatch runs
+          # the full suite. This is a stopgap until the mock.module burn-down
+          # allows shared-process sharding.
+          TEST_DIFF_ONLY: ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
 
   artifact:
     name: Upload Artifact

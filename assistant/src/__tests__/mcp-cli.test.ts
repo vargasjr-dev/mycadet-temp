@@ -13,6 +13,20 @@ import {
 
 import { Command } from "commander";
 
+import { installFastTimers } from "./fast-timers.js";
+
+// The CLI's auth poll loop sleeps `intervalMs` between IPC checks; with real
+// timers each poll pays a 2s wait even though the mocked IPC answers on the
+// first check. Accelerated clocks fire the poll timers as microtasks, so the
+// loop converges as fast as the (mocked) IPC does.
+let restoreTimers: () => void;
+beforeAll(() => {
+  restoreTimers = installFastTimers();
+});
+afterAll(() => {
+  restoreTimers();
+});
+
 // ── Module mocks (must precede imports that pull them in) ──────────────
 
 type MockIpcResult = { ok: boolean; result?: unknown; error?: string };

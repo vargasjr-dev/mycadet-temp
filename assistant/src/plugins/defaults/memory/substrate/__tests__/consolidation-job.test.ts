@@ -50,7 +50,22 @@ import {
   test,
 } from "bun:test";
 
+import { installFastTimers } from "../../../../../__tests__/fast-timers.js";
 import { CONSOLIDATION_ALLOWED_TOOLS } from "../consolidation-tool-surface.js";
+
+// The job's pacing (settle windows, retry/backoff waits) runs on production
+// timers; accelerated clocks fire them in call order as microtasks so the
+// observable sequence is identical without the wall-clock burn. The 10ms
+// mid-write append below keeps its ordering: scheduled before the job's
+// settle timer, so it fires (and lands) between the job's first and second
+// buffer reads exactly as with real timers.
+let restoreTimers: () => void;
+beforeAll(() => {
+  restoreTimers = installFastTimers();
+});
+afterAll(() => {
+  restoreTimers();
+});
 
 // ── runBackgroundJob mock ───────────────────────────────────────────
 //
@@ -1199,6 +1214,14 @@ describe("memoryV2ConsolidateJob: runtime-owned consumption", () => {
     // The consume writes a temp file beside the buffer; a directory it
     // cannot write to makes it throw. The job must not guess at the
     // buffer's state: no removal, no follow-ups.
+    //
+    // Root (uid 0) bypasses directory permissions via CAP_DAC_OVERRIDE, so
+    // the throw precondition cannot be arranged — the consume succeeds and
+    // the buffer is consumed. Skip rather than assert the wrong thing; the
+    // behavior is exercised on non-root CI runners.
+    if (typeof process.getuid === "function" && process.getuid() === 0) {
+      return;
+    }
     chmodSync(memoryDir(), 0o500);
     try {
       const result = await memoryV2ConsolidateJob(makeJob(), CONFIG);

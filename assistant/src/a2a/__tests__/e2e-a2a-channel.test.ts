@@ -10,9 +10,31 @@
  * mocked config for feature flag checks.
  */
 
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "bun:test";
 
 import type { ChannelReplyPayload } from "@mycadet/gateway-client";
+
+import { installFastTimers } from "../../__tests__/fast-timers.js";
+
+// Push notifications fire fire-and-forget with retry backoff; the tests wait
+// out those timers before asserting on the recorded pushes. Accelerated
+// clocks fire the retry timers in call order as microtasks, so "wait for the
+// pushes to settle" converges immediately without changing what is observed.
+let restoreTimers: () => void;
+beforeAll(() => {
+  restoreTimers = installFastTimers();
+});
+afterAll(() => {
+  restoreTimers();
+});
 
 // ---------------------------------------------------------------------------
 // Mock state

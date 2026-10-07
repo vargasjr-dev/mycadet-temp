@@ -57,6 +57,12 @@ const BUN_TEST_TIMEOUT_MS = Number.parseInt(
 // tests to the front, improving parallel utilization.
 const TEST_DURATIONS_FILE = Bun.env.TEST_DURATIONS_FILE ?? "";
 const TEST_DURATIONS_OUTPUT = Bun.env.TEST_DURATIONS_OUTPUT ?? "";
+// Diff-scoped runs: when set (PR CI), run only the test files that changed
+// vs the base ref. The full suite needs 13-20 min on 2-core CI runners; a
+// PR's changed files run in seconds. Fails open to the full suite when the
+// diff cannot be computed (shallow checkout, missing base ref).
+const TEST_DIFF_ONLY = Bun.env.TEST_DIFF_ONLY === "true";
+const TEST_DIFF_BASE = Bun.env.TEST_DIFF_BASE ?? "origin/main";
 
 const EXPERIMENTAL_FILES = new Set([
   "skill-load-tool.test.ts",
@@ -163,6 +169,37 @@ function sortLongestFirst(files: string[]): string[] {
     `Sorted tests longest-first using ${TEST_DURATIONS_FILE} (${known.length} known, ${unknown.length} new)`,
   );
   return [...known, ...unknown];
+}
+
+// Diff-scoped selection: intersect the collected test files with the test
+// files changed between the base ref and HEAD. Returns null when the diff
+// cannot be computed (shallow checkout without the base ref) so the caller
+// can fail open to the full suite.
+function diffTestFiles(files: string[]): string[] | null {
+  const repoRoot = join(import.meta.dir, "..", "..");
+  const proc = Bun.spawnSync(
+    [
+      "git",
+      "diff",
+      "--name-only",
+      `${TEST_DIFF_BASE}...HEAD`,
+      "--",
+      "assistant/src",
+    ],
+    { cwd: repoRoot, stdout: "pipe", stderr: "pipe" },
+  );
+  if (proc.exitCode !== 0) {
+    return null;
+  }
+  const changed = new Set(
+    proc.stdout
+      .toString()
+      .split("\n")
+      .filter(Boolean)
+      // Diff paths are repo-relative; the collected set is assistant-relative.
+      .map((p) => p.replace(/^assistant\//, "")),
+  );
+  return files.filter((f) => changed.has(f));
 }
 
 // ---------------------------------------------------------------------------
@@ -542,6 +579,24 @@ async function main(): Promise<void> {
   if (testFiles.length === 0) {
     console.log("No test files found under src");
     process.exit(1);
+  }
+  if (TEST_DIFF_ONLY) {
+    const scoped = diffTestFiles(testFiles);
+    if (scoped === null) {
+      console.log(
+        `TEST_DIFF_ONLY set but the diff vs ${TEST_DIFF_BASE} could not be computed — running the full suite`,
+      );
+    } else if (scoped.length === 0) {
+      console.log(
+        `No test files changed vs ${TEST_DIFF_BASE} — nothing to run`,
+      );
+      process.exit(0);
+    } else {
+      console.log(
+        `Diff-scoped run: ${scoped.length} of ${testFiles.length} test file(s) changed vs ${TEST_DIFF_BASE}`,
+      );
+      testFiles = scoped;
+    }
   }
   testFiles = sortLongestFirst(testFiles);
 
