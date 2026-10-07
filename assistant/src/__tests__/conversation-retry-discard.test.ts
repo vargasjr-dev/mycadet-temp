@@ -253,8 +253,10 @@ describe("discardLastAssistantDisplayTurn keeps the memory-retrospective cursor 
 
     expect(getMessages(CONV_ID).some((m) => m.id === assistantId)).toBe(false);
     // The hook chain is fire-and-forget from the delete primitive, so the
-    // stamp lands shortly after the discard returns.
-    const deadline = Date.now() + 2_000;
+    // stamp lands shortly after the discard returns — but hook discovery is
+    // async and unbounded under CI's 8-workers-on-2-cores contention, so the
+    // budget needs CI headroom (same family as message-deleted-hook-dispatch).
+    const deadline = Date.now() + 10_000;
     let stamped =
       getRetrospectiveState(CONV_ID)?.lastProcessedCreatedAt ?? null;
     while (stamped === null && Date.now() < deadline) {
