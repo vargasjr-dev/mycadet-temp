@@ -96,7 +96,7 @@ describe("tunnel origin derivation", () => {
     expect(tunnelOriginForPlatformHost("dev-cloud.mycadet.ai")).toBe(
       "https://tunnel-dev.mycadet.ai",
     );
-    expect(tunnelOriginForPlatformHost("cloud.mycadet.ai")).toBeNull();
+    expect(tunnelOriginForPlatformHost("mycadet.ai")).toBeNull();
     expect(tunnelOriginForPlatformHost("localhost")).toBeNull();
     expect(tunnelOriginForPlatformHost("example.com")).toBeNull();
     expect(
