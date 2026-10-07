@@ -375,3 +375,12 @@ export const TtsServiceSchema = z
   );
 
 export type TtsService = z.infer<typeof TtsServiceSchema>;
+
+/**
+ * Normalizes a user/config-supplied TTS provider id to its canonical form
+ * (legacy rebrand ids like `vellum` map to `cadet`). Exported for tooling
+ * that validates provider ids outside the schema parse.
+ */
+export function normalizeTtsProviderId(value: string): string {
+  return value === "vellum" ? "cadet" : value;
+}

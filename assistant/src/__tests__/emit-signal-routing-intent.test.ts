@@ -486,7 +486,7 @@ describe("access-request cadet floor", () => {
     expect(dispatched.shouldNotify).toBe(true);
     expect(dispatched.selectedChannels).toContain("vellum");
     expect(dispatched.reasoningSummary).toContain(
-      "cadet forced: decisionable access request",
+      "vellum forced: decisionable access request",
     );
   });
 
@@ -648,7 +648,7 @@ describe("access-request cadet floor", () => {
       reasoningSummary: string;
     };
     expect(dispatched.shouldNotify).toBe(false);
-    expect(dispatched.reasoningSummary).not.toContain("cadet forced");
+    expect(dispatched.reasoningSummary).not.toContain("vellum forced");
   });
 });
 
@@ -696,7 +696,7 @@ describe("high/critical urgency channel force", () => {
     expect(dispatched.selectedChannels).toContain("platform");
     expect(dispatched.selectedChannels).toContain("telegram");
     expect(dispatched.reasoningSummary).toContain(
-      "(cadet, platform forced: high urgency)",
+      "(vellum, platform forced: high urgency)",
     );
   });
 
@@ -712,7 +712,7 @@ describe("high/critical urgency channel force", () => {
     expect(updateDecisionMock).toHaveBeenCalledWith("dec-urg-1", {
       selectedChannels: ["vellum", "telegram", "platform"],
       reasoningSummary:
-        "LLM selected telegram only (cadet, platform forced: high urgency)",
+        "LLM selected telegram only (vellum, platform forced: high urgency)",
       validationResults: {
         dedupeKey: "dedupe-urg-1",
         channelCount: 3,
@@ -839,7 +839,7 @@ describe("high/critical urgency channel force", () => {
     };
     expect(dispatched.selectedChannels).toEqual(["vellum", "telegram"]);
     expect(dispatched.reasoningSummary).toContain(
-      "(cadet forced: high urgency)",
+      "(vellum forced: high urgency)",
     );
   });
 
@@ -976,7 +976,7 @@ describe("exclusive channelAllowlist policy", () => {
     };
     expect(dispatched.selectedChannels).toEqual(["vellum"]);
     expect(dispatched.shouldNotify).toBe(true);
-    expect(dispatched.reasoningSummary).toContain("channelAllowlist: cadet");
+    expect(dispatched.reasoningSummary).toContain("channelAllowlist: vellum");
   });
 
   test("access-request floor still adds cadet when the allowlist omitted it", async () => {
@@ -1009,7 +1009,7 @@ describe("exclusive channelAllowlist policy", () => {
     expect(dispatched.shouldNotify).toBe(true);
     expect(dispatched.selectedChannels).toContain("vellum");
     expect(dispatched.reasoningSummary).toContain(
-      "cadet forced: decisionable access request",
+      "vellum forced: decisionable access request",
     );
   });
 });

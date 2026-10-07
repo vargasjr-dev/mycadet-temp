@@ -86,7 +86,7 @@ function writeSkill(
 
   let frontmatter = `---\nname: "${name}"\ndescription: "${description}"`;
   if (options?.includes && options.includes.length > 0) {
-    frontmatter += `\nmetadata:\n  vellum:\n    includes:\n`;
+    frontmatter += `\nmetadata:\n  cadet:\n    includes:\n`;
     for (const inc of options.includes) {
       frontmatter += `      - "${inc}"\n`;
     }

@@ -2,18 +2,18 @@
   "version": 6,
   "providers": [
     {
-      "id": "vellum",
-      "displayName": "Vellum",
-      "subtitle": "Text-to-speech through your Vellum account \u2014 billed to Vellum credits, no separate API key needed.",
+      "id": "cadet",
+      "displayName": "Cadet",
+      "subtitle": "Text-to-speech through your Cadet account \u2014 billed to Cadet credits, no separate API key needed.",
       "setupMode": "cli",
-      "setupHint": "Connect your Vellum account to enable managed speech.",
+      "setupHint": "Connect your Cadet account to enable managed speech.",
       "credentialMode": "credential",
       "credentialNamespace": "vellum",
       "supportsVoiceSelection": true,
       "credentialsGuide": {
-        "description": "Connect this assistant to your Vellum account; managed speech uses that connection instead of a provider API key.",
+        "description": "Connect this assistant to your Cadet account; managed speech uses that connection instead of a provider API key.",
         "url": "https://cloud.mycadet.ai/",
-        "linkLabel": "Open Vellum Platform"
+        "linkLabel": "Open Cadet Platform"
       }
     },
     {

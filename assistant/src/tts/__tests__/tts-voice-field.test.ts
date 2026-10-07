@@ -11,8 +11,8 @@ describe("ttsVoiceFieldFor", () => {
     expect(ttsVoiceFieldFor("elevenlabs").path).toBe(
       "services.tts.providers.elevenlabs.voiceId",
     );
-    expect(ttsVoiceFieldFor("vellum").path).toBe(
-      "services.tts.providers.vellum.model",
+    expect(ttsVoiceFieldFor("cadet").path).toBe(
+      "services.tts.providers.cadet.model",
     );
     expect(ttsVoiceFieldFor("deepgram").path).toBe(
       "services.tts.providers.deepgram.model",
@@ -21,7 +21,7 @@ describe("ttsVoiceFieldFor", () => {
 
   test("only ElevenLabs enforces the alphanumeric id format", () => {
     expect(ttsVoiceFieldFor("elevenlabs").alphanumericOnly).toBe(true);
-    expect(ttsVoiceFieldFor("vellum").alphanumericOnly).toBe(false);
+    expect(ttsVoiceFieldFor("cadet").alphanumericOnly).toBe(false);
     expect(ttsVoiceFieldFor("deepgram").alphanumericOnly).toBe(false);
   });
 

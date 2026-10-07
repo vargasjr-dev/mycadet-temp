@@ -41,7 +41,7 @@ describe("serializeCandidatesForPrompt", () => {
 
     const result = serializeCandidatesForPrompt(set);
     expect(result).not.toBeNull();
-    expect(result).toContain("Channel: cadet");
+    expect(result).toContain("Channel: vellum");
     expect(result).toContain("id=conv-001");
     expect(result).toContain('title="Reminder thread"');
     expect(result).toContain('lastEvent="schedule.notify"');
@@ -106,7 +106,7 @@ describe("serializeCandidatesForPrompt", () => {
     };
 
     const result = serializeCandidatesForPrompt(set)!;
-    expect(result).toContain("Channel: cadet");
+    expect(result).toContain("Channel: vellum");
     expect(result).toContain("Channel: telegram");
     expect(result).toContain("id=conv-001");
     expect(result).toContain("id=conv-002");

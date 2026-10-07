@@ -84,7 +84,7 @@ describe("chat-completions extraBody", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(ProviderError);
       const rejected = error as ProviderError;
-      expect(rejected.provider).toBe("vellum");
+      expect(rejected.provider).toBe("cadet");
       expect(rejected.statusCode).toBe(400);
       expect(rejected.rawRequest).toEqual(
         expect.objectContaining({
@@ -132,7 +132,7 @@ describe("chat-completions extraBody", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(ContextOverflowError);
       const rejected = error as ContextOverflowError;
-      expect(rejected.provider).toBe("vellum");
+      expect(rejected.provider).toBe("cadet");
       expect(rejected.rawRequest).toEqual(
         expect.objectContaining({
           model: "qwen/qwen3-8b",

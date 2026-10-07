@@ -386,7 +386,7 @@ describe("inference-profile writes are availability-aware", () => {
       /Provider "gemini" is a valid provider id, but no gemini connection\/API key is configured/,
     );
     await expect(promise).rejects.toThrow(
-      /Recreate with --provider cadet --model gemini-3\.6-flash/,
+      /Recreate with --provider vellum --model gemini-3\.6-flash/,
     );
     await expect(promise).rejects.toThrow(/allowUnavailable/);
     expect(persistedProfiles()).toEqual({});
@@ -491,7 +491,7 @@ describe("inference-profile writes are availability-aware", () => {
     });
     await expect(promise).rejects.toBeInstanceOf(BadRequestError);
     await expect(promise).rejects.toThrow(
-      /Update it with --provider cadet --model gemini-3\.6-flash/,
+      /Update it with --provider vellum --model gemini-3\.6-flash/,
     );
     expect(persistedProfiles()).toMatchObject({
       "my-fast": { provider: "anthropic" },
@@ -984,7 +984,7 @@ describe("PUT inference/active-profile validation", () => {
       /no gemini connection\/API key is configured/,
     );
     await expect(promise).rejects.toThrow(
-      /assistant inference profiles update my-gemini --provider cadet --model gemini-3\.6-flash/,
+      /assistant inference profiles update my-gemini --provider vellum --model gemini-3\.6-flash/,
     );
     await expect(promise).rejects.toThrow(
       /assistant inference send --profile my-gemini "Reply with OK"/,

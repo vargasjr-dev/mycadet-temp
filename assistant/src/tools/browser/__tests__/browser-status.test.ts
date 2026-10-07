@@ -219,7 +219,7 @@ describe("executeBrowserStatus", () => {
     expect(extension.userActions).toEqual([
       CHROME_EXTENSION_INSTALL_HINT,
       DESKTOP_APP_INSTALL_HINT,
-      "Tell the user to make sure a browser is open with the Cadet Chrome extension on.",
+      "Tell the user to make sure a browser is open with the Vellum Chrome extension on.",
     ]);
   });
 
@@ -247,7 +247,7 @@ describe("executeBrowserStatus", () => {
     expect(extension.userActions).toEqual([
       CHROME_EXTENSION_INSTALL_HINT,
       DESKTOP_APP_INSTALL_HINT,
-      "Tell the user to make sure a browser is open with the Cadet Chrome extension on.",
+      "Tell the user to make sure a browser is open with the Vellum Chrome extension on.",
     ]);
   });
 

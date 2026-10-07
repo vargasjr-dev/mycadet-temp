@@ -288,7 +288,7 @@ describe("notifications send", () => {
     expect(parsed).toEqual({
       ok: false,
       error:
-        'Invalid source-channel "water_reminder". Must be one of: assistant_tool, cadet, phone, telegram, slack, scheduler, watcher',
+        'Invalid source-channel "water_reminder". Must be one of: assistant_tool, vellum, phone, telegram, slack, scheduler, watcher',
     });
     expect(ipcCalls).toHaveLength(0);
   });
@@ -303,7 +303,7 @@ describe("notifications send", () => {
     expect(exitCode).toBe(0);
     const normalizedHelp = stdout.replace(/\s+/g, " ");
     expect(normalizedHelp).toContain(
-      "One of: assistant_tool, cadet, phone, telegram, slack, scheduler, watcher",
+      "One of: assistant_tool, vellum, phone, telegram, slack, scheduler, watcher",
     );
     expect(normalizedHelp).toContain("(default: assistant_tool)");
   });

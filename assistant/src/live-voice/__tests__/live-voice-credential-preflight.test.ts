@@ -287,7 +287,7 @@ describe("resolveLiveVoiceCredentialReadiness", () => {
 
 describe("resolveLiveVoiceCredentialReadiness — managed (cadet) TTS", () => {
   test("cadet TTS with a full platform connection → ready", async () => {
-    ttsProvider = "vellum";
+    ttsProvider = "cadet";
     ttsProviders = {};
     managedAvailable = true;
 
@@ -296,7 +296,7 @@ describe("resolveLiveVoiceCredentialReadiness — managed (cadet) TTS", () => {
   });
 
   test("cadet TTS without a platform connection → connection copy, not API-key copy", async () => {
-    ttsProvider = "vellum";
+    ttsProvider = "cadet";
     ttsProviders = {};
     managedAvailable = false;
 
@@ -304,9 +304,9 @@ describe("resolveLiveVoiceCredentialReadiness — managed (cadet) TTS", () => {
     expect(readiness.missing).toEqual([
       {
         kind: "tts",
-        providerId: "vellum",
+        providerId: "cadet",
         reason:
-          'TTS provider "vellum" needs a Cadet platform connection for managed speech',
+          'TTS provider "cadet" needs a Cadet platform connection for managed speech',
       },
     ]);
     expect(readiness.userMessage).toContain("assistant platform connect");

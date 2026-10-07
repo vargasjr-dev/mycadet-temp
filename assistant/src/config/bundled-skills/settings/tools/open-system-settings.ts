@@ -75,7 +75,7 @@ export async function run(
   const settingsName =
     platform === "windows" ? "Windows Settings" : "System Settings";
   return {
-    content: `Opened ${settingsName} to ${meta.label}. Please enable Vellum Assistant.`,
+    content: `Opened ${settingsName} to ${meta.label}. Please enable Cadet.`,
     isError: false,
   };
 }

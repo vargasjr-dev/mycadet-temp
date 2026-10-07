@@ -217,7 +217,7 @@ describe("parseFrontmatterFields", () => {
       'description: "A test skill"',
       "metadata:",
       '  emoji: "\uD83D\uDD0C"',
-      "  vellum:",
+      "  cadet:",
       '    display-name: "Test Skill"',
       "    some-custom-field: true",
       "---",

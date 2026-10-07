@@ -29,7 +29,7 @@ function writeSkill(
   mkdirSync(skillDir, { recursive: true });
   writeFileSync(
     join(skillDir, "SKILL.md"),
-    `---\nname: "${name}"\ndescription: "${description}"\nmetadata: {"vellum":{"feature-flag":"${skillId}"}}\n---\n\n${body}\n`,
+    `---\nname: "${name}"\ndescription: "${description}"\nmetadata: {"cadet":{"feature-flag":"${skillId}"}}\n---\n\n${body}\n`,
   );
 }
 

@@ -99,7 +99,7 @@ const fakeCatalog: FakeCatalogEntry[] = [
   makeEntry("fish-audio", "synthesized-play", "pcm", true),
   makeEntry("deepgram", "synthesized-play", "pcm", false),
   makeEntry("compressed-only", "synthesized-play", "none", false),
-  makeEntry("vellum", "synthesized-play", "pcm", false),
+  makeEntry("cadet", "synthesized-play", "pcm", false),
 ];
 
 // The catalog is also the adapter-resolution point (`getTtsProvider`), so the
@@ -477,12 +477,12 @@ describe("resolveCallTtsProvider with requiresPcmAudio", () => {
     registerStubProvider("deepgram", async () => {
       throw new Error("should not be used");
     });
-    registerStubProvider("vellum", async () => {
+    registerStubProvider("cadet", async () => {
       return { audio: Buffer.from("x"), contentType: "audio/mpeg" };
     });
 
     const result = await resolveCallTtsProvider();
-    expect(result.provider?.id).toBe("vellum");
+    expect(result.provider?.id).toBe("cadet");
     expect(result.useSynthesizedPath).toBe(true);
   });
 
@@ -797,16 +797,16 @@ describe("speakSystemPrompt aborted synthesis", () => {
 describe("cadet managed playability", () => {
   test("playable only when the platform identity is fully provisioned", async () => {
     // The stored secret resolves, but availability decides.
-    storedKeys["vellum"] = "stored";
+    storedKeys["cadet"] = "stored";
     mockManagedSpeechAvailable = true;
-    const playable = await evaluateTelephonyTtsPlayability("vellum");
+    const playable = await evaluateTelephonyTtsPlayability("cadet");
     expect(playable.status).toBe("playable");
   });
 
   test("half-connected platform (secret without identity) is not playable", async () => {
-    storedKeys["vellum"] = "stored";
+    storedKeys["cadet"] = "stored";
     mockManagedSpeechAvailable = false;
-    const playable = await evaluateTelephonyTtsPlayability("vellum");
+    const playable = await evaluateTelephonyTtsPlayability("cadet");
     expect(playable).toMatchObject({
       status: "not-playable",
       reason: "missing-platform-connection",

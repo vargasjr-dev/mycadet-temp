@@ -30,9 +30,9 @@ export const TTS_VOICE_FIELD_BY_PROVIDER: Record<string, TtsVoiceField> = {
     label: "ElevenLabs voice",
     alphanumericOnly: true,
   },
-  vellum: {
+  cadet: {
     path: "services.tts.providers.cadet.model",
-    label: "Vellum managed voice",
+    label: "Cadet managed voice",
     alphanumericOnly: false,
   },
   deepgram: {

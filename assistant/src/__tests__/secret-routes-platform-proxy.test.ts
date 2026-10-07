@@ -285,7 +285,7 @@ describe("secret routes managed proxy registry sync", () => {
       "vellum:platform_assistant_id",
     ]) {
       await expect(deleteCredential(name)).rejects.toThrow(
-        "Cadet credentials cannot be deleted",
+        "Vellum credentials cannot be deleted",
       );
     }
 
@@ -384,13 +384,13 @@ describe("secret routes managed proxy registry sync", () => {
 
     await expect(
       addCredential("vellum:platform_assistant_id", "asst-1"),
-    ).rejects.toThrow("Unknown cadet credential: platform_assistant_id");
+    ).rejects.toThrow("Unknown vellum credential: platform_assistant_id");
     await expect(
       addCredential("vellum:platform_organization_id", "org-1"),
-    ).rejects.toThrow("Unknown cadet credential: platform_organization_id");
+    ).rejects.toThrow("Unknown vellum credential: platform_organization_id");
     await expect(
       addCredential("vellum:platform_user_id", "user-1"),
-    ).rejects.toThrow("Unknown cadet credential: platform_user_id");
+    ).rejects.toThrow("Unknown vellum credential: platform_user_id");
 
     expect(
       secureKeyStore[credentialKey("vellum", "platform_assistant_id")],
@@ -416,7 +416,7 @@ describe("secret routes managed proxy registry sync", () => {
 
     await expect(
       addCredential("vellum:platform_assistant_id", "   "),
-    ).rejects.toThrow("Unknown cadet credential: platform_assistant_id");
+    ).rejects.toThrow("Unknown vellum credential: platform_assistant_id");
 
     expect(secureKeyStore[key]).toBe("leftover-asst");
     expect(platformAssistantIdOverride).toBe("asst-1");

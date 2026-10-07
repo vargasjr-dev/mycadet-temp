@@ -3,63 +3,63 @@
   "skills": {
     "acp": {
       "docsSlug": "acp",
-      "sha256": "856f7eb970aec89fd8095cb58315df7c675c81903a1add2b9b8962151a4ac27e"
+      "sha256": "f5d2fdcc05287136f6faf3273b4f7a1403daad409148029e07d65439197a3006"
     },
     "app-builder": {
       "docsSlug": "app-builder",
-      "sha256": "9fff654b8f611331996267476a21d47a6eacd260ac2d800e92be92d5db373a5e"
+      "sha256": "758b2dd3786c21607e3f1180a623ed8c6cb4c910ece5a6f0864fa22d8a62dd8f"
     },
     "computer-use": {
       "docsSlug": "computer-use",
-      "sha256": "ab840ea498793e330861d954445871976ae33b04061bf841ad93d7f2949ae0a9"
+      "sha256": "9cdf20ad857d3ab03c4b299c1fe902b307eacab75227e35c60fc801aa60ddda7"
     },
     "contacts": {
       "docsSlug": "contacts",
-      "sha256": "d32a898db0fa4ce155e83766ef893661b5dc458e98ac134f8421adff6fed9501"
+      "sha256": "43660c2f84eb82e1639457902d45864bd51c0c63beccb4c7fd18d5b96734b900"
     },
     "document-editor": {
       "docsSlug": "document",
-      "sha256": "2932aab14bc1050e9901f1771351ca0c6539edca2acec61ac49e2c3ac6f7b76c"
+      "sha256": "0b01d94175d39377c44f8f741cca1df9be6e26c181a8a628b9a50c119c676e6b"
     },
     "followups": {
       "docsSlug": "followups",
-      "sha256": "d34b30de6ec6bd57916f3e7a9b3ee8136809609b9f145009aeecd5dee549b3bb"
+      "sha256": "851b94b8291924aee6bebb554a411ea826f8ba2a5ef7c4addfeab7e94822f095"
     },
     "image-studio": {
       "docsSlug": "image-studio",
-      "sha256": "20b556e8da2423e07114c2eac6ac20e3f770457f36ac869896a3b89293b7db61"
+      "sha256": "e02b95612feadea07ce246c6ffce173751d1b66f10064a499a618e3a90cdb9c8"
     },
     "media-processing": {
       "docsSlug": "media-processing",
-      "sha256": "aa38b7020be5ef92cd4f065b9d30a135947cd800bb09884b3fdc3323a49c8ac8"
+      "sha256": "88aeea881f34ac94658ed71db4c4ef7d98ddbaeb85e490a6e0b201e3000de833"
     },
     "messaging": {
       "docsSlug": "messaging",
-      "sha256": "5303770a66d0b52704ce6d7393f2c21704146b34c9f91b5d441a87479bd81cb3"
+      "sha256": "9626ecd79c3742694f63e523d821b3c94861f171aecd3c9ae8b9b2f717b2a171"
     },
     "phone-calls": {
       "docsSlug": "phone-calls",
-      "sha256": "cdfe66613ff51eda90db034a77b4cfcb8fabd5970b3730d1ff31612ae94c4f41"
+      "sha256": "9584c5a066f572f9924570b108b2bd61996ed774055f19d1db43113211b89169"
     },
     "playbooks": {
       "docsSlug": "playbooks",
-      "sha256": "651bdbdee8719763cc7492b3800134c2e9ac4a88d97ea58e8a8144fcc78ae441"
+      "sha256": "149ab803c0fa60aba968158a6f2ac2683f5826cabce2e9b2c2e41208cb6547fa"
     },
     "schedule": {
       "docsSlug": "schedule",
-      "sha256": "ebfad7b3518fab2bf210721459566c0071046bab83428804c8cf8c73a9d4afe9"
+      "sha256": "49ca7c31afa2f177454e86b97d62eef77ec440310ee592ffc55529607934fb4c"
     },
     "skill-management": {
       "docsSlug": "skill-management",
-      "sha256": "57dac1438ed7c7587a5cff1a9140155479fc8e4df3022e9189c919bac6d12bb4"
+      "sha256": "a17e039047fdabbb8711e74ae511252f2b15c5d72ee26db88112917f1dc48cd3"
     },
     "subagent": {
       "docsSlug": "subagent",
-      "sha256": "099293c722a13d35f99bb92b03ff73acdd7e7ac3c3e5e6d7c28b48aa3cc18099"
+      "sha256": "91040744527ee294031f640edcb32d0ba166f289eeb542e5f8f983a060d57355"
     },
     "transcribe": {
       "docsSlug": "transcribe",
-      "sha256": "8e50033d564e9751f6db6ad75d6604df23b321722a93d402579185cbbdf7ede0"
+      "sha256": "a54efb2d268e9dd09ad7d041b95e1cef5600198dbbe5efae1c3bd2ef6417fa7a"
     }
   }
 }

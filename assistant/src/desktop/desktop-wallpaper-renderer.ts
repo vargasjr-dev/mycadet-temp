@@ -19,7 +19,7 @@ function wallpaperWordmark(
 ): string {
   const normalized = name?.replace(/\s+/g, " ").trim();
   const label =
-    normalized && !isTemplatePlaceholder(normalized) ? normalized : "Vellum";
+    normalized && !isTemplatePlaceholder(normalized) ? normalized : "Cadet";
   const text = `<text id="wordmark" font-family="Liberation Sans, Arial, sans-serif" font-size="64" font-weight="700" letter-spacing="1.5">${escapeXmlContent(`${label} OS`)}</text>`;
   const Resvg = getResvg();
   const bounds = new Resvg(

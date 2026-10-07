@@ -173,7 +173,7 @@ describe("132-web-search-mode-to-provider", () => {
     webSearchModeToProviderMigration.run(workspaceDir);
     const parsed = AssistantConfigSchema.parse(readConfig());
 
-    expect(parsed.services["web-search"].provider).toBe("vellum");
+    expect(parsed.services["web-search"].provider).toBe("cadet");
   });
 
   describe("down", () => {

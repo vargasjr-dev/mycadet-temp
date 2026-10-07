@@ -38,6 +38,20 @@ const STT_PROVIDER_ALIASES: Record<
 };
 
 /**
+ * Normalizes a user/config-supplied provider id to its canonical form
+ * (legacy rebrand ids like `vellum` map to `cadet`). Exported for tooling
+ * that validates provider ids outside the schema parse.
+ */
+export function normalizeSttProviderId(
+  value: string,
+): (typeof VALID_STT_PROVIDERS)[number] {
+  return (
+    STT_PROVIDER_ALIASES[value] ??
+    (value as (typeof VALID_STT_PROVIDERS)[number])
+  );
+}
+
+/**
  * Sparse provider config map under `services.stt.providers`.
  *
  * This is a forward-compatible record that accepts any provider ID as key

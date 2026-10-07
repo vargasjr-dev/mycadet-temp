@@ -426,7 +426,7 @@ describe("routing identities", () => {
       provider: "vellum",
       auth: { type: "platform" },
     });
-    fakeProviders.set("conn:cadet", { name: "anthropic", tag: "managed" });
+    fakeProviders.set("conn:vellum", { name: "anthropic", tag: "managed" });
 
     const provider = await tryResolveProviderForConnectionName(
       "ignored-stale-name",
@@ -453,7 +453,7 @@ describe("routing identities", () => {
       provider: "vellum",
       auth: { type: "platform" },
     });
-    fakeProviders.set("conn:cadet", { name: "vellum", tag: "gpu" });
+    fakeProviders.set("conn:vellum", { name: "vellum", tag: "gpu" });
 
     const provider = await tryResolveProviderForConnectionName(
       "ignored-stale-name",

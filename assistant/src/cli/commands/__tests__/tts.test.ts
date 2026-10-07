@@ -345,8 +345,8 @@ describe("tts voice — active-provider routing", () => {
     ipcResponders.config_set = { ok: true, result: {} };
   }
 
-  test("managed (cadet) writes to services.tts.providers.vellum.model", async () => {
-    respondProvider("vellum");
+  test("managed (cadet) writes to services.tts.providers.cadet.model", async () => {
+    respondProvider("cadet");
 
     const { exitCode } = await runCommand(["tts", "voice", "aura-2-zeus-en"]);
 
@@ -354,13 +354,13 @@ describe("tts voice — active-provider routing", () => {
     const setCall = ipcCalls.find((c) => c.method === "config_set");
     expect(setCall).toBeDefined();
     expect(setCall!.params.body.path).toBe(
-      "services.tts.providers.vellum.model",
+      "services.tts.providers.cadet.model",
     );
     expect(setCall!.params.body.value).toBe("aura-2-zeus-en");
   });
 
   test("an ElevenLabs voice id on a managed assistant still writes vellum.model", async () => {
-    respondProvider("vellum");
+    respondProvider("cadet");
 
     const { exitCode } = await runCommand([
       "tts",
@@ -371,7 +371,7 @@ describe("tts voice — active-provider routing", () => {
     expect(exitCode).toBe(0);
     const setCall = ipcCalls.find((c) => c.method === "config_set");
     expect(setCall!.params.body.path).toBe(
-      "services.tts.providers.vellum.model",
+      "services.tts.providers.cadet.model",
     );
   });
 
@@ -401,7 +401,7 @@ describe("tts voice — active-provider routing", () => {
   });
 
   test("no voice id exits code 1 without touching config", async () => {
-    respondProvider("vellum");
+    respondProvider("cadet");
 
     const { exitCode } = await runCommand(["tts", "voice"]);
 
@@ -410,7 +410,7 @@ describe("tts voice — active-provider routing", () => {
   });
 
   test("--json emits the provider and path it wrote", async () => {
-    respondProvider("vellum");
+    respondProvider("cadet");
 
     const { exitCode, stdout } = await runCommand([
       "tts",
@@ -422,8 +422,8 @@ describe("tts voice — active-provider routing", () => {
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout.trim());
     expect(parsed.ok).toBe(true);
-    expect(parsed.provider).toBe("vellum");
-    expect(parsed.path).toBe("services.tts.providers.vellum.model");
+    expect(parsed.provider).toBe("cadet");
+    expect(parsed.path).toBe("services.tts.providers.cadet.model");
     expect(parsed.voiceId).toBe("aura-2-luna-en");
   });
 

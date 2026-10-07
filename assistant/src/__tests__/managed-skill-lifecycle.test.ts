@@ -77,7 +77,7 @@ describe("managed skill lifecycle: scaffold → catalog → prompt → delete", 
 name: "E2E Custom Skill"
 description: "Exercises custom managed skill loading."
 metadata:
-  vellum:
+  cadet:
     activation-hints:
       - user asks for custom lifecycle verification
 ---

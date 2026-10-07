@@ -129,7 +129,7 @@ describe("frontmatter feature-flag integration", () => {
     const metadataObj = parsed!.fields.metadata as Record<string, unknown>;
     expect(metadataObj).toBeTruthy();
 
-    const cadet = metadataObj.vellum as Record<string, unknown>;
+    const cadet = metadataObj.cadet as Record<string, unknown>;
     expect(cadet["feature-flag"]).toBe("a2a-channel");
   });
 
@@ -191,7 +191,7 @@ describe("frontmatter feature-flag integration", () => {
     const parsed = parseFrontmatterFields(SKILL_MD_WITH_FLAG);
     expect(parsed).not.toBeNull();
     const metadataObj = parsed!.fields.metadata as Record<string, unknown>;
-    const cadet = metadataObj.vellum as Record<string, unknown>;
+    const cadet = metadataObj.cadet as Record<string, unknown>;
     const flagId = cadet["feature-flag"];
     expect(flagId).toBe("a2a-channel");
 

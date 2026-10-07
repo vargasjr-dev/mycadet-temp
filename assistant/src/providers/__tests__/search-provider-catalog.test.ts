@@ -76,9 +76,9 @@ describe("search-provider-catalog", () => {
   });
 
   test("cadet is a managed provider outside the BYOK fallback chain", () => {
-    expect(getSearchProvider("vellum")?.kind).toBe("managed");
-    expect(BYOK_SEARCH_PROVIDERS.map((p) => p.id)).not.toContain("vellum");
-    expect(SEARCH_PROVIDER_FALLBACK_ORDER).not.toContain("vellum");
+    expect(getSearchProvider("cadet")?.kind).toBe("managed");
+    expect(BYOK_SEARCH_PROVIDERS.map((p) => p.id)).not.toContain("cadet");
+    expect(SEARCH_PROVIDER_FALLBACK_ORDER).not.toContain("cadet");
   });
 
   test("getSearchProvider returns the matching entry", () => {

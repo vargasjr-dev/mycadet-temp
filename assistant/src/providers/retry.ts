@@ -449,7 +449,7 @@ function retryErrorType(error: unknown): string {
  * though 400s are otherwise final.
  */
 const MANAGED_PROXY_UNSUPPORTED_MODEL_PATTERN =
-  /is not yet supported on the Vellum hosted service/;
+  /is not yet supported on the Cadet hosted service/;
 
 /**
  * Whether the failure indicts one model rather than the upstream serving it: a

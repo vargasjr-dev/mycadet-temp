@@ -24,7 +24,11 @@ import {
   setNestedValue,
 } from "../../../loader.js";
 import { VALID_CONVERSATION_TIMEOUTS } from "../../../schemas/elevenlabs.js";
-import { VALID_STT_PROVIDERS } from "../../../schemas/stt.js";
+import {
+  normalizeSttProviderId,
+  VALID_STT_PROVIDERS,
+} from "../../../schemas/stt.js";
+import { normalizeTtsProviderId } from "../../../schemas/tts.js";
 import { voicePickerHint } from "./shared.js";
 
 /**
@@ -283,23 +287,37 @@ function validateSetting(
     }
     case "tts_provider": {
       const catalogIds: readonly string[] = listCatalogProviderIds();
-      if (typeof value !== "string" || !catalogIds.includes(value.trim())) {
+      if (typeof value !== "string") {
         return {
           ok: false,
           error: `tts_provider must be one of: ${catalogIds.join(", ")}`,
         };
       }
-      return { ok: true, coerced: value.trim() };
+      const coercedTts = normalizeTtsProviderId(value.trim());
+      if (!catalogIds.includes(coercedTts)) {
+        return {
+          ok: false,
+          error: `tts_provider must be one of: ${catalogIds.join(", ")}`,
+        };
+      }
+      return { ok: true, coerced: coercedTts };
     }
     case "stt_provider": {
       const sttIds: readonly string[] = VALID_STT_PROVIDERS;
-      if (typeof value !== "string" || !sttIds.includes(value.trim())) {
+      if (typeof value !== "string") {
         return {
           ok: false,
           error: `stt_provider must be one of: ${sttIds.join(", ")}`,
         };
       }
-      return { ok: true, coerced: value.trim() };
+      const coercedStt = normalizeSttProviderId(value.trim());
+      if (!sttIds.includes(coercedStt)) {
+        return {
+          ok: false,
+          error: `stt_provider must be one of: ${sttIds.join(", ")}`,
+        };
+      }
+      return { ok: true, coerced: coercedStt };
     }
     case "stt_model": {
       const families = listProviderModelFamilies(

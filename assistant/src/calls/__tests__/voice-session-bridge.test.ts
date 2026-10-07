@@ -1098,7 +1098,7 @@ describe("default call protocol numbered rules", () => {
     expect(preSpeechLanguageRuleFragment("es", "deepgram")).toContain(
       'configured listening language ("es")',
     );
-    expect(preSpeechLanguageRuleFragment("es", "vellum")).toContain(
+    expect(preSpeechLanguageRuleFragment("es", "cadet")).toContain(
       "default to English only when neither gives a language",
     );
     for (const autoDetect of ["multi", "", "  ", undefined]) {

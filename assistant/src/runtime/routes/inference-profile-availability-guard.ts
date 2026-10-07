@@ -54,7 +54,7 @@ export function verifyProfileCommand(name: string): string {
 
 function managedAlternative(model: string, repair: ProfileRepairHint): string {
   const served =
-    "this model is served by your signed-in Vellum-managed route (no API key needed)";
+    "this model is served by your signed-in Cadet-managed route (no API key needed)";
   const quotedModel = shellQuote(model);
   switch (repair.kind) {
     case "create":

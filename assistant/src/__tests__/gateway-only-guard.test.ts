@@ -33,6 +33,8 @@ const ALLOWLIST = new Set([
   // --- Documentation and comments that mention the port for explanatory purposes ---
   "AGENTS.md", // documents the gateway-only rule itself
   "ARCHITECTURE.md", // architecture overview with port references
+  "clients/docs/src/content/internals/architecture.md", // docs port of ARCHITECTURE.md (same explanatory port references)
+  "clients/docs/src/content/internals/gateway-architecture.md", // docs port of gateway architecture prose
   "assistant/src/runtime/middleware/twilio-validation.ts", // comment explaining proxy URL rewriting
 
   // --- Code generation tooling (documents the default server URL, not API consumption) ---

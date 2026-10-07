@@ -10,7 +10,7 @@ import { UnprocessableEntityError } from "../errors.js";
 import type { RouteDefinition } from "../types.js";
 
 let storedApiKey: string | undefined = "assistant-key";
-let platformBaseUrl = "https://platform.vellum.ai";
+let platformBaseUrl = "https://cloud.mycadet.ai";
 
 // Spread the real module: replacing it wholesale strips the other exports the
 // route graph pulls in.
@@ -92,7 +92,7 @@ const UPSTREAM_ITEM = {
 
 beforeEach(() => {
   storedApiKey = "assistant-key";
-  platformBaseUrl = "https://platform.vellum.ai";
+  platformBaseUrl = "https://cloud.mycadet.ai";
   calls = [];
   process.env.VELLUM_MARKETING_URL = "https://marketing.test";
   process.env.VELLUM_WEB_URL = "https://web.test";
@@ -120,8 +120,8 @@ describe("which deployment the roadmap calls reach", () => {
   // and local to every launcher, so trusting it would let exactly the assistant
   // with no label post to the real roadmap.
   test.each([
-    ["https://staging-platform.vellum.ai", "staging"],
-    ["https://dev-platform.vellum.ai", "dev"],
+    ["https://staging-cloud.mycadet.ai", "staging"],
+    ["https://dev-cloud.mycadet.ai", "dev"],
     ["http://localhost:8000", "local"],
   ])(
     "an unconfigured %s assistant refuses to touch the public roadmap",
@@ -131,18 +131,18 @@ describe("which deployment the roadmap calls reach", () => {
       delete process.env.VELLUM_ENVIRONMENT;
       stubFetch({ items: [], total: 0 });
 
-      await expect(list({})).rejects.toThrow("The Cadet roadmap has no");
+      await expect(list({})).rejects.toThrow("The Vellum roadmap has no");
       expect(calls).toHaveLength(0);
     },
   );
 
   test("VELLUM_ENVIRONMENT=production does not by itself unlock the real roadmap", async () => {
-    platformBaseUrl = "https://dev-platform.vellum.ai";
+    platformBaseUrl = "https://dev-cloud.mycadet.ai";
     delete process.env.VELLUM_MARKETING_URL;
     process.env.VELLUM_ENVIRONMENT = "production";
     stubFetch({ items: [], total: 0 });
 
-    await expect(list({})).rejects.toThrow("The Cadet roadmap has no");
+    await expect(list({})).rejects.toThrow("The Vellum roadmap has no");
     expect(calls).toHaveLength(0);
   });
 
@@ -209,7 +209,7 @@ describe("which deployment the roadmap calls reach", () => {
   });
 
   test("a named endpoint is honored on any deployment", async () => {
-    platformBaseUrl = "https://dev-platform.vellum.ai";
+    platformBaseUrl = "https://dev-cloud.mycadet.ai";
     stubFetch({ items: [], total: 0 });
 
     await list({});
@@ -343,11 +343,11 @@ describe("roadmap writes", () => {
         body: { title: "Dark mode", status: "planned" },
       }),
     ).rejects.toThrow(
-      "An assistant can change only an item's title and description; status is set by Cadet staff.",
+      "An assistant can change only an item's title and description; status is set by Vellum staff.",
     );
     await expect(
       update({ pathParams: { slug: "dark-mode" }, body: { tags: [] } }),
-    ).rejects.toThrow("tags is set by Cadet staff");
+    ).rejects.toThrow("tags is set by Vellum staff");
     expect(calls).toHaveLength(0);
   });
 
@@ -360,7 +360,7 @@ describe("roadmap writes", () => {
         body: { titel: "Dark mode", status: "planned" },
       }),
     ).rejects.toThrow(
-      "An assistant can change only an item's title and description; status is set by Cadet staff; titel is not a roadmap update field.",
+      "An assistant can change only an item's title and description; status is set by Vellum staff; titel is not a roadmap update field.",
     );
     expect(calls).toHaveLength(0);
   });
@@ -486,7 +486,7 @@ describe("upstream failures", () => {
     }) as typeof fetch;
 
     await expect(list({})).rejects.toThrow(
-      "Could not reach the Cadet roadmap service",
+      "Could not reach the Vellum roadmap service",
     );
   });
 });

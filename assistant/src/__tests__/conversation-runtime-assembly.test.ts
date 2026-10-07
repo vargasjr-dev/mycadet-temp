@@ -2091,7 +2091,7 @@ describe("buildUnifiedTurnContextBlock", () => {
 
     const text = buildUnifiedTurnContextBlock(options);
     // Essential fields remain
-    expect(text).toContain("source_channel: cadet");
+    expect(text).toContain("source_channel: vellum");
     expect(text).toContain(`canonical_actor_identity: ${uuid}`);
     expect(text).toContain("trust_class: guardian");
     // Redundant fields are omitted

@@ -104,7 +104,7 @@ describe("seedCanonicalConnections labels", () => {
     const conns = listConnections(db);
     const byName = Object.fromEntries(conns.map((c) => [c.name, c]));
 
-    expect(byName["vellum"]?.label).toBe("Cadet");
+    expect(byName["vellum"]?.label).toBe("Vellum");
   });
 
   test("second boot preserves user-customized label", () => {
@@ -142,6 +142,6 @@ describe("seedCanonicalConnections labels", () => {
     seedCanonicalConnections(db);
 
     const conn = getConnection(db, "vellum");
-    expect(conn?.label).toBe("Cadet");
+    expect(conn?.label).toBe("Vellum");
   });
 });

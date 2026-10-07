@@ -179,7 +179,7 @@ export function routingIdentityModelIssue(
       return `Model "${model}" is an encoded routing string; store the native model id "${routed.model}".`;
     }
     return getManagedUpstream(model) === null
-      ? `Model "${model}" is not served by the Vellum managed route.`
+      ? `Model "${model}" is not served by the Cadet managed route.`
       : null;
   }
   if (provider === "chatgpt") {

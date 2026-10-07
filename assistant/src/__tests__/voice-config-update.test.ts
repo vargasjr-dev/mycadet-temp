@@ -153,7 +153,7 @@ describe("voice_config_update — tts_provider", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect((readConfig().services as any).tts.provider).toBe("vellum");
+    expect((readConfig().services as any).tts.provider).toBe("cadet");
   });
 
   test("broadcasts ttsProvider to client", async () => {
@@ -226,7 +226,7 @@ describe("voice_config_update — tts_voice_id (managed/vellum active)", () => {
     invalidateConfigCache();
   }
 
-  test("writes a Deepgram Aura model id to services.tts.providers.vellum.model", async () => {
+  test("writes a Deepgram Aura model id to services.tts.providers.cadet.model", async () => {
     makeVellumActive();
 
     const result = await run(
@@ -236,7 +236,7 @@ describe("voice_config_update — tts_voice_id (managed/vellum active)", () => {
 
     expect(result.isError).toBe(false);
     const config = readConfig();
-    expect((config.services as any)?.tts?.providers?.vellum?.model).toBe(
+    expect((config.services as any)?.tts?.providers?.cadet?.model).toBe(
       "aura-2-zeus-en",
     );
     // The ElevenLabs field is never touched when cadet is active.
@@ -254,7 +254,7 @@ describe("voice_config_update — tts_voice_id (managed/vellum active)", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.tts?.providers?.vellum?.model).toBe(
+    expect((readConfig().services as any)?.tts?.providers?.cadet?.model).toBe(
       "EXAVITQu4vr4xnSDxMaL",
     );
   });
@@ -325,7 +325,7 @@ describe("voice_config_update — tts_voice_id (managed/vellum active)", () => {
     );
 
     expect(result.isError).toBe(true);
-    expect((readConfig().services as any)?.tts?.providers?.vellum?.model).toBe(
+    expect((readConfig().services as any)?.tts?.providers?.cadet?.model).toBe(
       undefined,
     );
   });
@@ -545,7 +545,7 @@ describe("voice_config_update — stt_provider", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.stt?.provider).toBe("vellum");
+    expect((readConfig().services as any)?.stt?.provider).toBe("cadet");
   });
 
   test("rejects the cadet provider without a platform connection", async () => {

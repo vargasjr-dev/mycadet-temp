@@ -223,7 +223,7 @@ export const cadetTtsProviderDefinition: TtsProviderDefinition = {
     description:
       "Connect this assistant to your Cadet account; managed speech uses that connection instead of a provider API key.",
     url: "https://cloud.mycadet.ai/",
-    linkLabel: "Open Vellum Platform",
+    linkLabel: "Open Cadet Platform",
   },
   callMode: "synthesized-play",
   allowNativeFallback: false,
