@@ -49,7 +49,7 @@ const JINJA_VERSION = "0.5.5";
  * spawns them with counts as part of the contract, so an install that keeps
  * the v3 scripts would silently ignore the cap.
  */
-export const RUNTIME_VERSION = `ort-${ONNXRUNTIME_NODE_VERSION}_hf-${TRANSFORMERS_VERSION}_jinja-${JINJA_VERSION}_workers-v4`;
+export const RUNTIME_VERSION = `ort-${ONNXRUNTIME_NODE_VERSION}_hf-${TRANSFORMERS_VERSION}_jinja-${JINJA_VERSION}_workers-v5`;
 
 const WORKER_FILENAME = "embed-worker.mjs";
 const RERANK_WORKER_FILENAME = "rerank-worker.mjs";

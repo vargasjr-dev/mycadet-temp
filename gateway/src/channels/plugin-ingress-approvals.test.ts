@@ -134,7 +134,12 @@ describe("ingressDeclarationDigest", () => {
     ).toBe("a32e2511180b489c31e147ebb926e72b");
     expect(
       ingressDeclarationDigest([route({ path: "hook", signer: "cadet" })]),
-    ).toBe("db809d978434fd3804c8faad82851069");
+    ).toBe("04618755acc9ada5c52357492904d240");
+    // Re-recorded when the default scheme's id was renamed (its string is
+    // part of the digest input). Safe: default-scheme routes are served
+    // without approval, so no persisted approval digest ever referenced the
+    // old value; plugin-scheme digests (the approval-bearing ones) are
+    // untouched and their golden above still holds.
   });
 
   it("keeps the digest a route had before verification existed", () => {

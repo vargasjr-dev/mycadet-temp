@@ -47,8 +47,8 @@ test("preserves unrelated policies and does not rewrite on repeated startup", ()
   expect(JSON.parse(content).DownloadRestrictions).toBe(1);
   expect(readFileSync(otherPath, "utf8")).toBe(unrelated);
   expect(readdirSync(directory).sort()).toEqual([
-    "organization.json",
     "cadet-desktop.json",
+    "organization.json",
   ]);
 
   const before = statSync(path);

@@ -450,7 +450,7 @@ describe("normalizeTelegramUpdate: rooms", () => {
       normalizeTelegramUpdate(
         makeGroupMessage({
           text: "/summary@Cadet_Bot last week",
-          entities: [{ type: "bot_command", offset: 0, length: 19 }],
+          entities: [{ type: "bot_command", offset: 0, length: 18 }],
         }),
         { bot: BOT },
       ),
