@@ -1,7 +1,7 @@
 ---
 name: assistant-migration
 description: Migrate from ChatGPT, Claude, OpenClaw, Hermes, Manus, and other AI assistants into Vellum by inspecting their data exports, conversation archives, files, prompts, custom instructions, memory, saved memories, tools, GPTs, workflows, integrations, and relationships, then mapping as much as safely possible into Vellum primitives. Handles single-source and multi-source migrations with a unified, deduplicated inventory.
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🧳"
   cadet:

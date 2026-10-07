@@ -1,7 +1,7 @@
 ---
 name: self-upgrade
 description: Upgrade vellum to the latest version, restart the assistant, and restart the gateway
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "⬆️"
   cadet:

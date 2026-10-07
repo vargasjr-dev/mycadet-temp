@@ -1,7 +1,7 @@
 ---
 name: cadet-heartbeat
 description: Configure periodic background checklist runs
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "💓"
   cadet:

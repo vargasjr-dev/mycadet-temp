@@ -1,7 +1,7 @@
 ---
 name: twilio-setup
 description: Configure Twilio credentials and phone numbers for voice calls
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "📱"

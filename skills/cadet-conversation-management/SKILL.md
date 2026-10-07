@@ -1,7 +1,7 @@
 ---
 name: cadet-conversation-management
 description: Manage conversation threads (rename, list, search, export)
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "💬"
   cadet:

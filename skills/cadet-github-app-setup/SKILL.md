@@ -1,7 +1,7 @@
 ---
 name: cadet-github-app-setup
 description: Create and configure a GitHub App so the assistant can push commits, open PRs, and comment under its own bot identity. Use when the user wants the assistant to have its own GitHub identity, or when setting up git push access for the first time.
-compatibility: "Designed for Vellum personal assistants. Requires Python 3, bun, and the assistant credentials CLI."
+compatibility: "Designed for Cadet personal assistants. Requires Python 3, bun, and the assistant credentials CLI."
 metadata:
   icon: assets/icon.svg
   emoji: "🤖"

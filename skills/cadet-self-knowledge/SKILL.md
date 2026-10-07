@@ -1,7 +1,7 @@
 ---
 name: cadet-self-knowledge
 description: Answer questions about Vellum, its config, billing, and hosting from live sources of truth
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🪞"
   cadet:

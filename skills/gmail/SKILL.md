@@ -1,7 +1,7 @@
 ---
 name: gmail
 description: Manage Gmail email — drafting, sending, organizing, filters, vacation replies, and inbox analysis
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "📨"

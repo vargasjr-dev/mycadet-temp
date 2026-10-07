@@ -1,7 +1,7 @@
 ---
 name: cadet-skills-catalog
 description: Discover bundled skills and search/install community skills from the skills.sh registry
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🧩"
   cadet:

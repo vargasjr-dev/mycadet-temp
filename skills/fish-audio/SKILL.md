@@ -1,7 +1,7 @@
 ---
 name: fish-audio
 description: "Generate expressive audio clips using Fish Audio S2 TTS with bracket emotion tags. Record voice memos, narration, audio messages, or any spoken content."
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🎙️"
   cadet:

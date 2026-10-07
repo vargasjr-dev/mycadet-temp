@@ -1,7 +1,7 @@
 ---
 name: macos-automation
 description: Automate native macOS apps and system interactions via osascript (AppleScript)
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "🍎"

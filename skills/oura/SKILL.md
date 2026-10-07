@@ -1,7 +1,7 @@
 ---
 name: oura
 description: Pull sleep, activity, readiness, heart rate, and other health data from a connected Oura Ring via the Oura Cloud API V2
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "💍"
   cadet:

@@ -1,7 +1,7 @@
 ---
 name: vercel-token-setup
 description: Set up a Vercel API token for publishing apps using browser automation
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "▲"

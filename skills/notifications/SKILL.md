@@ -1,7 +1,7 @@
 ---
 name: notifications
 description: Send notifications through the unified notification router
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🔔"
   cadet:

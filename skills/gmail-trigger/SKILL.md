@@ -1,7 +1,7 @@
 ---
 name: gmail-trigger
 description: "Beta. Act on new Gmail as it arrives: get pinged only for urgent mail, digest newsletters, forward invoices — any standing instruction, across one or several accounts."
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "📬"
   cadet:

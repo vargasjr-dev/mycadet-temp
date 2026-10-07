@@ -1,7 +1,7 @@
 ---
 name: cadet-client-capabilities
 description: Truthful answers about what the Vellum client apps can and cannot do on the user's device. Device location and GPS are unavailable in every client and there is no location permission prompt to approve, so location requests are answered by asking for a typed city or address instead.
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "📍"
   cadet:

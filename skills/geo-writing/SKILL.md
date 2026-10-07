@@ -1,7 +1,7 @@
 ---
 name: geo-writing
 description: Generates GEO/AEO-optimized articles designed to get AI engines (ChatGPT, Perplexity, Claude, Gemini) to cite your brand. Handles research, writing, and file output. Suggests listicle or head-to-head as starting formats if the user is unsure.
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "✍️"
   cadet:

@@ -1,7 +1,7 @@
 ---
 name: cadet-memory-v2-migration
 description: Perform a one-time migration from memory v1, to memory v2, which was introduced in 0.8.0.
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🧠"
   cadet:

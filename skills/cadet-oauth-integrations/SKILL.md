@@ -1,7 +1,7 @@
 ---
 name: cadet-oauth-integrations
 description: Act on behalf of your user in any third-party software that supports OAuth 2.0
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   emoji: "🔌"
   cadet:

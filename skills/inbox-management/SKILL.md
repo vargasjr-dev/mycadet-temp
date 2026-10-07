@@ -1,7 +1,7 @@
 ---
 name: inbox-management
 description: Ongoing Gmail inbox management via scheduled runs. Archives known noise, flags urgent items, drafts replies in-thread (never auto-sends), and catches stale follow-ups. Empty polls spend no model tokens. Starts in flag-only mode.
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "📬"

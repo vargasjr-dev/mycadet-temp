@@ -1,7 +1,7 @@
 ---
 name: start-the-day
 description: "An on-demand personal daily briefing — weather, headlines, the shape of your day, and one thing worth your attention — in a sharp executive-assistant voice. The general-purpose morning brief; richer work or admin digests compose it as their general layer."
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "🌅"

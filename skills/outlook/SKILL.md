@@ -1,7 +1,7 @@
 ---
 name: outlook
 description: Manage Outlook email — drafting, sending, organizing, rules, vacation replies, and inbox analysis
-compatibility: "Designed for Vellum personal assistants"
+compatibility: "Designed for Cadet personal assistants"
 metadata:
   icon: assets/icon.svg
   emoji: "📧"
